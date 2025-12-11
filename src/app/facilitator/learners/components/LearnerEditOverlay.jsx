@@ -19,8 +19,8 @@ const normalizeHumorLevel = (value) => {
 	return HUMOR_LEVELS.includes(v) ? v : 'calm';
 };
 
-export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave }) {
-	const [activeTab, setActiveTab] = useState('basic'); // 'basic' | 'targets' | 'ai-features' | 'timers'
+export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, onDelete, onSetCurrent, isCurrentLearner }) {
+	const [activeTab, setActiveTab] = useState(learner?.initialTab || 'basic'); // 'basic' | 'targets' | 'ai-features' | 'timers'
 	
 	// Form state
 	const [name, setName] = useState('');
@@ -45,6 +45,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 	useEffect(() => {
 		if (!learner) return;
 		
+		setActiveTab(learner.initialTab || 'basic');
 		setName(learner.name || '');
 		setGrade(learner.grade || 'K');
 		setHumorLevel(normalizeHumorLevel(learner.humor_level));
@@ -370,6 +371,86 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave })
 									<p style={{ margin: '6px 0 0', fontSize: 13, color: '#6b7280' }}>
 										Number of golden keys available to unlock bonus time
 									</p>
+								</div>
+
+								{/* Additional Actions */}
+								<div style={{ 
+									marginTop: 24, 
+									paddingTop: 24, 
+									borderTop: '1px solid #e5e7eb',
+									display: 'flex',
+									gap: 12,
+									flexWrap: 'wrap'
+								}}>
+									{!isCurrentLearner && learner?.id && onSetCurrent && (
+										<button
+											onClick={() => {
+												onSetCurrent(learner, true);
+											}}
+											style={{
+												display: 'inline-flex',
+												alignItems: 'center',
+												gap: 8,
+												padding: '8px 16px',
+												background: '#10b981',
+												color: '#fff',
+												border: 'none',
+												borderRadius: 8,
+												fontSize: 14,
+												fontWeight: 500,
+												cursor: 'pointer'
+											}}
+										>
+											✓ Set as Current Learner
+										</button>
+									)}
+									{learner?.id && (
+										<a
+											href={`/facilitator/learners/${learner.id}/transcripts`}
+											target="_blank"
+											rel="noopener noreferrer"
+											style={{
+												display: 'inline-flex',
+												alignItems: 'center',
+												gap: 8,
+												padding: '8px 16px',
+												background: '#3b82f6',
+												color: '#fff',
+												borderRadius: 8,
+												textDecoration: 'none',
+												fontSize: 14,
+												fontWeight: 500,
+												cursor: 'pointer'
+											}}
+										>
+											📄 View Transcripts
+										</a>
+									)}
+									{learner?.id && onDelete && (
+										<button
+											onClick={() => {
+												if (window.confirm(`Are you sure you want to delete ${name}? This cannot be undone.`)) {
+													onDelete(learner.id, name);
+													onClose();
+												}
+											}}
+											style={{
+												display: 'inline-flex',
+												alignItems: 'center',
+												gap: 8,
+												padding: '8px 16px',
+												background: '#ef4444',
+												color: '#fff',
+												border: 'none',
+												borderRadius: 8,
+												fontSize: 14,
+												fontWeight: 500,
+												cursor: 'pointer'
+											}}
+										>
+											🗑️ Delete Learner
+										</button>
+									)}
 								</div>
 							</div>
 						)}

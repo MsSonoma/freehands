@@ -395,7 +395,7 @@ export default function LearnersPage() {
 										</div>
 									</div>
 
-								{/* Action buttons */}
+								{/* Tab buttons */}
 								<div
 									className="learner-card-actions"
 									style={{
@@ -407,66 +407,87 @@ export default function LearnersPage() {
 									}}
 									onClick={(e) => e.stopPropagation()}
 								>
-										{!isSelected && (
-											<button
-											onClick={(e) => {
-												e.stopPropagation();
-												handleSelectLearner(learner, true);
-											}}
-											title="Set as current learner"
-											style={{
-												border: 'none',
-												background: '#10b981',
-												color: '#fff',
-												borderRadius: 6,
-												padding: '4px 8px',
-												fontSize: 12,
-												fontWeight: 600,
-												cursor: 'pointer'
-											}}
-											>
-												Set Current
-											</button>
-										)}
-										{learner.id && (
-											<Link
-											href={`/facilitator/learners/${learner.id}/transcripts`}
-											title="View transcripts"
-											style={{
-												border: 'none',
-												background: '#3b82f6',
-												color: '#fff',
-												borderRadius: 6,
-												padding: '4px 8px',
-												fontSize: 18,
-												cursor: 'pointer',
-												textDecoration: 'none',
-												display: 'flex',
-												alignItems: 'center'
-											}}
-											>
-												📄
-											</Link>
-										)}
-										<button
+									<button
 										onClick={(e) => {
 											e.stopPropagation();
-											handleDelete(learner.id, learner.name);
+											setEditingLearner({ ...learner, initialTab: 'basic' });
 										}}
-										title="Delete learner"
+										title="Basic Info"
 										style={{
 											border: 'none',
-											background: '#ef4444',
+											background: '#3b82f6',
 											color: '#fff',
 											borderRadius: 6,
 											padding: '4px 8px',
-											fontSize: 18,
-											cursor: 'pointer'
+											fontSize: 16,
+											cursor: 'pointer',
+											display: 'flex',
+											alignItems: 'center'
 										}}
-										>
-											🗑️
-										</button>
-									</div>
+									>
+										👤
+									</button>
+									<button
+										onClick={(e) => {
+											e.stopPropagation();
+											setEditingLearner({ ...learner, initialTab: 'targets' });
+										}}
+										title="Learning Targets"
+										style={{
+											border: 'none',
+											background: '#3b82f6',
+											color: '#fff',
+											borderRadius: 6,
+											padding: '4px 8px',
+											fontSize: 16,
+											cursor: 'pointer',
+											display: 'flex',
+											alignItems: 'center'
+										}}
+									>
+										🎯
+									</button>
+									<button
+										onClick={(e) => {
+											e.stopPropagation();
+											setEditingLearner({ ...learner, initialTab: 'ai-features' });
+										}}
+										title="AI Features"
+										style={{
+											border: 'none',
+											background: '#3b82f6',
+											color: '#fff',
+											borderRadius: 6,
+											padding: '4px 8px',
+											fontSize: 16,
+											cursor: 'pointer',
+											display: 'flex',
+											alignItems: 'center'
+										}}
+									>
+										🤖
+									</button>
+									<button
+										onClick={(e) => {
+											e.stopPropagation();
+											setEditingLearner({ ...learner, initialTab: 'timers' });
+										}}
+										title="Timers"
+										style={{
+											border: 'none',
+											background: '#3b82f6',
+											color: '#fff',
+											borderRadius: 6,
+											padding: '4px 8px',
+											fontSize: 16,
+											cursor: 'pointer',
+											display: 'flex',
+											alignItems: 'center'
+										}}
+									>
+										⏱️
+									</button>
+								</div>
 								</div>
 							);
 						})}
@@ -487,6 +508,9 @@ export default function LearnersPage() {
 					await handleSaveLearner(idx, updates);
 				}
 			}}
+			onDelete={handleDelete}
+			onSetCurrent={handleSelectLearner}
+			isCurrentLearner={editingLearner?.id === selectedLearnerId}
 		/>
 		
 		<GatedOverlay
