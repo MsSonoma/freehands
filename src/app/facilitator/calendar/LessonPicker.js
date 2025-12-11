@@ -147,6 +147,7 @@ export default function LessonPicker({
 
   const handleLessonClick = async (lesson) => {
     setSelectedLesson(lesson)
+    setLessonDetails(null) // Clear previous data
     setLoading(true)
     try {
       // Load lesson details
@@ -154,12 +155,21 @@ export default function LessonPicker({
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
       
-      // Fetch lesson content to get blurb, description, grade, difficulty, etc.
+      // Fetch lesson content to get metadata
       const lessonPath = lesson.key
       const res = await fetch(`/api/lessons/load?key=${encodeURIComponent(lessonPath)}`, {
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}
       })
       const lessonData = res.ok ? await res.json() : null
+      
+      // Check if lesson is currently activated for this learner
+      const { data: activeSession } = await supabase
+        .from('lesson_sessions')
+        .select('*')
+        .eq('learner_id', learnerId)
+        .eq('lesson_id', lessonPath)
+        .is('ended_at', null)
+        .maybeSingle()
       
       // Fetch completion/medal data for this learner
       const { data: historyData } = await supabase
@@ -171,19 +181,30 @@ export default function LessonPicker({
         .limit(1)
         .maybeSingle()
       
+      // Map difficulty string to number for display
+      let difficultyLevel = null
+      if (lessonData?.difficulty) {
+        const diffStr = lessonData.difficulty.toLowerCase()
+        if (diffStr.includes('easy') || diffStr.includes('beginner')) difficultyLevel = 1
+        else if (diffStr.includes('medium') || diffStr.includes('intermediate')) difficultyLevel = 2
+        else if (diffStr.includes('hard') || diffStr.includes('advanced') || diffStr.includes('challenge')) difficultyLevel = 3
+      }
+      
       setLessonDetails({
-        description: lessonData?.blurb || lessonData?.description || 'No description available',
+        description: lessonData?.teachingNotes || lessonData?.blurb || lessonData?.description || 'No description available',
         grade: lessonData?.grade,
-        difficulty: lessonData?.difficulty,
+        difficulty: difficultyLevel,
         medalsAvailable: lessonData?.medals_available || [],
-        activated: lessonData?.activated !== false, // default to true if not specified
+        activated: !!activeSession,
+        activatedAt: activeSession?.started_at,
         completed: !!historyData,
         completedAt: historyData?.completed_at,
         score: historyData?.score,
         medal: historyData?.medal_tier
       })
     } catch (err) {
-      setLessonDetails({ description: 'Error loading lesson details', completed: false })
+      console.error('Error loading lesson details:', err)
+      setLessonDetails({ description: 'Error loading lesson details', completed: false, activated: false })
     } finally {
       setLoading(false)
     }
@@ -558,22 +579,26 @@ export default function LessonPicker({
                   )}
 
                   {/* Activated Status */}
-                  {lessonDetails.activated !== undefined && (
-                    <div style={{
-                      padding: '12px',
-                      background: lessonDetails.activated ? '#d1fae5' : '#fee2e2',
-                      borderRadius: '8px',
-                      border: lessonDetails.activated ? '1px solid #a7f3d0' : '1px solid #fecaca'
+                  <div style={{
+                    padding: '12px',
+                    background: lessonDetails.activated ? '#d1fae5' : '#f3f4f6',
+                    borderRadius: '8px',
+                    border: lessonDetails.activated ? '1px solid #a7f3d0' : '1px solid #d1d5db'
+                  }}>
+                    <div style={{ 
+                      fontSize: '12px', 
+                      fontWeight: '600', 
+                      color: lessonDetails.activated ? '#065f46' : '#6b7280',
+                      marginBottom: lessonDetails.activated && lessonDetails.activatedAt ? '4px' : '0'
                     }}>
-                      <div style={{ 
-                        fontSize: '12px', 
-                        fontWeight: '600', 
-                        color: lessonDetails.activated ? '#065f46' : '#991b1b' 
-                      }}>
-                        {lessonDetails.activated ? '✓ Activated' : '⚠️ Not Activated'}
-                      </div>
+                      {lessonDetails.activated ? '✓ Currently Activated for This Learner' : '○ Not Currently Active'}
                     </div>
-                  )}
+                    {lessonDetails.activated && lessonDetails.activatedAt && (
+                      <div style={{ fontSize: '13px', color: '#047857' }}>
+                        Started: {new Date(lessonDetails.activatedAt).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Completion Status */}
                   {lessonDetails.completed && (
