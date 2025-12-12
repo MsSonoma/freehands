@@ -72,17 +72,29 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
   const calendarDays = generateCalendarDays()
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-300 overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md border border-gray-500 overflow-hidden">
       {/* Calendar Header with Learner Selector */}
-      <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-300">
-        <div className="flex items-center justify-center gap-4">
+      <div style={{ 
+        padding: '12px 16px', 
+        background: 'linear-gradient(to right, #eff6ff, #eef2ff)',
+        borderBottom: '1px solid #e5e7eb'
+      }}>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
           {/* Learner Selector */}
           {learners.length > 0 && (
             <select
               value={selectedLearnerId}
               onChange={(e) => onLearnerChange(e.target.value)}
-              className="px-4 py-2 text-base font-semibold rounded bg-white border border-gray-300 hover:bg-gray-50 transition shadow-sm cursor-pointer"
-              style={{ minWidth: '160px' }}
+              style={{
+                padding: '6px 10px',
+                fontSize: 13,
+                fontWeight: 600,
+                borderRadius: 6,
+                background: '#fff',
+                border: '1px solid #d1d5db',
+                cursor: 'pointer',
+                minWidth: '160px'
+              }}
             >
               {learners.map(learner => (
                 <option key={learner.id} value={learner.id}>
@@ -95,8 +107,17 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
           <select
             value={currentMonthIndex}
             onChange={handleMonthChange}
-            className="px-4 py-2 text-base font-semibold rounded bg-white border border-gray-300 hover:bg-gray-50 transition shadow-sm cursor-pointer"
-            style={{ minWidth: '140px' }}
+            style={{
+              padding: '6px 10px',
+              fontSize: 13,
+              fontWeight: 600,
+              borderRadius: 6,
+              background: '#fff',
+              border: '1px solid #d1d5db',
+              cursor: 'pointer',
+              flex: 1,
+              minWidth: '140px'
+            }}
           >
             {monthNames.map((month, idx) => (
               <option key={idx} value={idx}>
@@ -108,8 +129,16 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
           <select
             value={currentYear}
             onChange={handleYearChange}
-            className="px-4 py-2 text-base font-semibold rounded bg-white border border-gray-300 hover:bg-gray-50 transition shadow-sm cursor-pointer"
-            style={{ minWidth: '100px' }}
+            style={{
+              padding: '6px 10px',
+              fontSize: 13,
+              fontWeight: 600,
+              borderRadius: 6,
+              background: '#fff',
+              border: '1px solid #d1d5db',
+              cursor: 'pointer',
+              minWidth: '100px'
+            }}
           >
             {yearOptions.map(year => (
               <option key={year} value={year}>
@@ -121,21 +150,32 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
       </div>
 
       {/* Calendar Table */}
-      <div className="p-4">
+      <div style={{ padding: 12 }}>
         {/* Day Headers */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }} className="border-b-2 border-gray-300 mb-2">
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(7, 1fr)', 
+          gap: 4,
+          marginBottom: 8
+        }}>
           {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
-            <div key={day} className="text-center text-sm font-bold text-gray-700 py-3 px-2 bg-gray-50 border-r border-gray-200 last:border-r-0">
+            <div key={day} style={{ 
+              textAlign: 'center', 
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#6b7280',
+              padding: '4px 0'
+            }}>
               {day}
             </div>
           ))}
         </div>
 
         {/* Calendar Days Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px' }} className="bg-gray-300">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
           {calendarDays.map((item, idx) => {
             if (!item.day) {
-              return <div key={idx} className="bg-gray-100" style={{ minHeight: '100px' }} />
+              return <div key={idx} style={{ aspectRatio: '1', background: 'transparent' }} />
             }
 
             const dateStr = item.date
@@ -148,56 +188,52 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
               <button
                 key={idx}
                 onClick={() => handleDateClick(dateStr)}
-                style={{ 
-                  minHeight: '100px', 
-                  display: 'block', 
-                  width: '100%',
-                  position: 'relative',
-                  padding: '8px',
-                  textAlign: 'left',
-                  transition: 'all 0.2s',
+                style={{
+                  aspectRatio: '1',
+                  border: '1px solid',
+                  borderColor: isSelected ? '#3b82f6' : isToday ? '#10b981' : '#e5e7eb',
+                  borderRadius: 6,
+                  background: isSelected ? '#dbeafe' : isToday ? '#d1fae5' : lessonCount > 0 ? '#fef3c7' : '#fff',
                   cursor: 'pointer',
-                  border: 'none',
-                  background: isPast 
-                    ? '#f3f4f6' 
-                    : isSelected 
-                      ? '#dbeafe' 
-                      : lessonCount > 0 
-                        ? '#f0fdf4' 
-                        : '#ffffff',
-                  color: isPast ? '#9ca3af' : '#111827',
-                  boxShadow: isToday ? 'inset 0 0 0 2px #2563eb' : 'none'
+                  fontSize: 12,
+                  fontWeight: lessonCount > 0 ? 700 : 400,
+                  color: isPast ? '#9ca3af' : '#1f2937',
+                  position: 'relative',
+                  transition: 'all 0.15s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  justifyContent: 'flex-start',
+                  padding: '4px'
                 }}
                 onMouseEnter={(e) => {
-                  if (!isPast) e.currentTarget.style.background = isSelected ? '#bfdbfe' : lessonCount > 0 ? '#dcfce7' : '#f9fafb'
+                  e.currentTarget.style.transform = 'scale(1.05)'
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = isPast 
-                    ? '#f3f4f6' 
-                    : isSelected 
-                      ? '#dbeafe' 
-                      : lessonCount > 0 
-                        ? '#f0fdf4' 
-                        : '#ffffff'
+                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.boxShadow = 'none'
                 }}
               >
-                <div className="flex flex-col h-full">
-                  <span style={{ 
-                    fontSize: '18px', 
-                    fontWeight: '600', 
-                    marginBottom: '4px',
-                    color: isToday ? '#2563eb' : isPast ? '#9ca3af' : '#111827'
-                  }}>
-                    {item.day}
-                  </span>
-                  {lessonCount > 0 && (
-                    <div className="mt-auto">
-                      <span className="inline-block px-2 py-1 text-xs font-bold bg-green-600 text-white rounded">
-                        {lessonCount} lesson{lessonCount > 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <span style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '600',
+                  color: isToday ? '#10b981' : isPast ? '#9ca3af' : '#1f2937'
+                }}>
+                  {item.day}
+                </span>
+                {lessonCount > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 4,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 4,
+                    height: 4,
+                    borderRadius: '50%',
+                    background: '#f59e0b'
+                  }} />
+                )}
               </button>
             )
           })}
