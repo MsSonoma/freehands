@@ -20,18 +20,18 @@ CREATE INDEX IF NOT EXISTS idx_no_school_dates_facilitator_learner_date
 ALTER TABLE public.no_school_dates ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
-CREATE POLICY \"Users can view their own no-school dates\"
+CREATE POLICY "Users can view their own no-school dates"
   ON public.no_school_dates FOR SELECT
   USING (auth.uid() = facilitator_id);
 
-CREATE POLICY \"Users can create their own no-school dates\"
+CREATE POLICY "Users can create their own no-school dates"
   ON public.no_school_dates FOR INSERT
   WITH CHECK (auth.uid() = facilitator_id);
 
-CREATE POLICY \"Users can update their own no-school dates\"
+CREATE POLICY "Users can update their own no-school dates"
   ON public.no_school_dates FOR UPDATE
   USING (auth.uid() = facilitator_id);
 
-CREATE POLICY \"Users can delete their own no-school dates\"
+CREATE POLICY "Users can delete their own no-school dates"
   ON public.no_school_dates FOR DELETE
   USING (auth.uid() = facilitator_id);
