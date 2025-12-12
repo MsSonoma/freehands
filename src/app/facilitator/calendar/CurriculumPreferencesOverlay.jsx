@@ -6,7 +6,9 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient'
 export default function CurriculumPreferencesOverlay({ learnerId, onClose, onSaved }) {
   const [bannedWords, setBannedWords] = useState('')
   const [bannedTopics, setBannedTopics] = useState('')
+  const [bannedConcepts, setBannedConcepts] = useState('')
   const [focusTopics, setFocusTopics] = useState('')
+  const [focusConcepts, setFocusConcepts] = useState('')
   const [focusKeywords, setFocusKeywords] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -44,7 +46,9 @@ export default function CurriculumPreferencesOverlay({ learnerId, onClose, onSav
         if (prefs) {
           setBannedWords(prefs.banned_words?.join(', ') || '')
           setBannedTopics(prefs.banned_topics?.join(', ') || '')
+          setBannedConcepts(prefs.banned_concepts?.join(', ') || '')
           setFocusTopics(prefs.focus_topics?.join(', ') || '')
+          setFocusConcepts(prefs.focus_concepts?.join(', ') || '')
           setFocusKeywords(prefs.focus_keywords?.join(', ') || '')
         }
       }
@@ -89,7 +93,9 @@ export default function CurriculumPreferencesOverlay({ learnerId, onClose, onSav
           learnerId,
           bannedWords: parseList(bannedWords),
           bannedTopics: parseList(bannedTopics),
+          bannedConcepts: parseList(bannedConcepts),
           focusTopics: parseList(focusTopics),
+          focusConcepts: parseList(focusConcepts),
           focusKeywords: parseList(focusKeywords)
         })
       })
@@ -220,6 +226,36 @@ export default function CurriculumPreferencesOverlay({ learnerId, onClose, onSav
               </p>
             </div>
 
+            {/* Banned Concepts */}
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: 14,
+                fontWeight: 600,
+                color: '#374151',
+                marginBottom: 6
+              }}>
+                Banned Concepts
+              </label>
+              <input
+                type="text"
+                value={bannedConcepts}
+                onChange={(e) => setBannedConcepts(e.target.value)}
+                placeholder="Enter concepts to avoid, separated by commas"
+                style={{
+                  width: '100%',
+                  padding: 10,
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  boxSizing: 'border-box'
+                }}
+              />
+              <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+                Example: evolution, big bang theory, democracy
+              </p>
+            </div>
+
             {/* Focus Topics */}
             <div>
               <label style={{
@@ -247,6 +283,36 @@ export default function CurriculumPreferencesOverlay({ learnerId, onClose, onSav
               />
               <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
                 Example: Christianity, environmental science, local history
+              </p>
+            </div>
+
+            {/* Focus Concepts */}
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: 14,
+                fontWeight: 600,
+                color: '#374151',
+                marginBottom: 6
+              }}>
+                Focus Concepts
+              </label>
+              <input
+                type="text"
+                value={focusConcepts}
+                onChange={(e) => setFocusConcepts(e.target.value)}
+                placeholder="Enter concepts to emphasize, separated by commas"
+                style={{
+                  width: '100%',
+                  padding: 10,
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  boxSizing: 'border-box'
+                }}
+              />
+              <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+                Example: critical thinking, problem solving, collaboration
               </p>
             </div>
 

@@ -68,7 +68,7 @@ export async function POST(request) {
     }
 
     const body = await request.json()
-    const { learnerId, bannedWords, bannedTopics, focusTopics, focusKeywords } = body
+    const { learnerId, bannedWords, bannedTopics, bannedConcepts, focusTopics, focusConcepts, focusKeywords } = body
 
     if (!learnerId) {
       return NextResponse.json({ error: 'Learner ID is required' }, { status: 400 })
@@ -81,7 +81,9 @@ export async function POST(request) {
         learner_id: learnerId,
         banned_words: bannedWords || [],
         banned_topics: bannedTopics || [],
+        banned_concepts: bannedConcepts || [],
         focus_topics: focusTopics || [],
+        focus_concepts: focusConcepts || [],
         focus_keywords: focusKeywords || [],
         updated_at: new Date().toISOString()
       }, {
