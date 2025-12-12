@@ -236,7 +236,9 @@ export default function LessonPlanner({
       }
 
       // Find the Monday of the week containing startDate
-      const start = new Date(startDate)
+      // Parse as local date to avoid timezone issues
+      const [year, month, day] = startDate.split('-').map(Number)
+      const start = new Date(year, month - 1, day)
       const dayOfWeek = start.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
       const daysToMonday = dayOfWeek === 0 ? -6 : -(dayOfWeek - 1) // Move back to Monday
       start.setDate(start.getDate() + daysToMonday)
@@ -247,7 +249,7 @@ export default function LessonPlanner({
           currentDate.setDate(start.getDate() + (week * 7) + dayIndex)
           
           const dayName = DAYS[currentDate.getDay()]
-          const dateStr = currentDate.toISOString().split('T')[0]
+          const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`
           const daySubjects = weeklyPattern[dayName] || []
 
           for (const subjectInfo of daySubjects) {
@@ -429,8 +431,9 @@ export default function LessonPlanner({
         {/* Generate Button */}
         <button
           onClick={() => {
-            const today = new Date().toISOString().split('T')[0]
-            generatePlannedLessons(today, 4)
+            const today = new Date()
+            const localDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+            generatePlannedLessons(localDateStr, 4)
           }}
           disabled={generating || !learnerId}
           style={{
