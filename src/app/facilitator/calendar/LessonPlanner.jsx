@@ -33,6 +33,8 @@ export default function LessonPlanner({
   const [generatorDate, setGeneratorDate] = useState(null)
   const [generating, setGenerating] = useState(false)
   const [templateId, setTemplateId] = useState(null)
+  const [planStartDate, setPlanStartDate] = useState('')
+  const [planDuration, setPlanDuration] = useState(1)
 
   useEffect(() => {
     loadCustomSubjects()
@@ -235,13 +237,10 @@ export default function LessonPlanner({
         return
       }
 
-      // Find the Monday of the week containing startDate
+      // Start from the exact date provided (no Monday adjustment)
       // Parse as local date to avoid timezone issues
       const [year, month, day] = startDate.split('-').map(Number)
       const start = new Date(year, month - 1, day)
-      const dayOfWeek = start.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
-      const daysToMonday = dayOfWeek === 0 ? -6 : -(dayOfWeek - 1) // Move back to Monday
-      start.setDate(start.getDate() + daysToMonday)
       
       for (let week = 0; week < weeks; week++) {
         for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
@@ -428,28 +427,95 @@ export default function LessonPlanner({
           })}
         </div>
 
-        {/* Generate Button */}
-        <button
-          onClick={() => {
-            const today = new Date()
-            const localDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-            generatePlannedLessons(localDateStr, 4)
-          }}
-          disabled={generating || !learnerId}
-          style={{
-            width: '100%',
-            padding: '12px',
-            fontSize: 14,
-            fontWeight: 600,
-            borderRadius: 6,
-            border: 'none',
-            background: generating || !learnerId ? '#9ca3af' : '#10b981',
-            color: '#fff',
-            cursor: generating || !learnerId ? 'not-allowed' : 'pointer'
-          }}
-        >
-          {generating ? 'Generating Lesson Plan...' : 'Generate 4-Week Lesson Plan'}
-        </button>
+        {/* Generate Plan Controls */}
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          alignItems: 'flex-end'
+        }}>
+          {/* Starting Date Selector */}
+          <div style={{ flex: 1 }}>
+            <label style={{
+              display: 'block',
+              fontSize: 12,
+              fontWeight: 500,
+              color: '#374151',
+              marginBottom: 4
+            }}>
+              Starting Date
+            </label>
+            <input
+              type="date"
+              value={planStartDate}
+              onChange={(e) => setPlanStartDate(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px',
+                fontSize: 13,
+                borderRadius: 6,
+                border: '1px solid #d1d5db',
+                background: '#fff'
+              }}
+            />
+          </div>
+
+          {/* Duration Selector */}
+          <div style={{ flex: 1 }}>
+            <label style={{
+              display: 'block',
+              fontSize: 12,
+              fontWeight: 500,
+              color: '#374151',
+              marginBottom: 4
+            }}>
+              Duration
+            </label>
+            <select
+              value={planDuration}
+              onChange={(e) => setPlanDuration(Number(e.target.value))}
+              style={{
+                width: '100%',
+                padding: '8px',
+                fontSize: 13,
+                borderRadius: 6,
+                border: '1px solid #d1d5db',
+                background: '#fff'
+              }}
+            >
+              <option value={1}>1 Month</option>
+              <option value={2}>2 Months</option>
+              <option value={3}>3 Months</option>
+              <option value={4}>4 Months</option>
+            </select>
+          </div>
+
+          {/* Generate Button */}
+          <button
+            onClick={() => {
+              const startDate = planStartDate || (() => {
+                const today = new Date()
+                return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+              })()
+              const weeksToGenerate = planDuration * 4 // Approximate weeks per month
+              generatePlannedLessons(startDate, weeksToGenerate)
+            }}
+            disabled={generating || !learnerId}
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              fontSize: 13,
+              fontWeight: 600,
+              borderRadius: 6,
+              border: 'none',
+              background: generating || !learnerId ? '#9ca3af' : '#10b981',
+              color: '#fff',
+              cursor: generating || !learnerId ? 'not-allowed' : 'pointer',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {generating ? 'Generating...' : 'Generate Lesson Plan'}
+          </button>
+        </div>
       </div>
 
       {/* Custom Subjects Section */}
