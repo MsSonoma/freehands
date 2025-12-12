@@ -260,10 +260,10 @@ export default function DayViewOverlay({
                 Reason (optional)
               </label>
               <input
-                type=\"text\"
+                type="text"
                 value={noSchoolInputValue}
                 onChange={(e) => setNoSchoolInputValue(e.target.value)}
-                placeholder=\"e.g., Holiday, Field Trip, Teacher Planning Day\"
+                placeholder="e.g., Holiday, Field Trip, Teacher Planning Day"
                 autoFocus
                 style={{
                   width: '100%',
