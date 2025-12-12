@@ -234,7 +234,6 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
                   </div>
                 )}
                 {lessonCount > 0 && (
-                {lessonCount > 0 && (
                   <div style={{
                     position: 'absolute',
                     bottom: 4,

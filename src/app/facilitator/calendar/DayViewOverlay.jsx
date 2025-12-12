@@ -223,7 +223,7 @@ export default function DayViewOverlay({
           padding: 12,
           background: noSchoolReason ? '#fef3c7' : '#f9fafb',
           borderRadius: 8,
-          border: 1px solid $\{noSchoolReason ? '#fbbf24' : '#e5e7eb'\}
+          border: `1px solid ${noSchoolReason ? '#fbbf24' : '#e5e7eb'}`
         }}>
           {noSchoolReason ? (
             <div>
