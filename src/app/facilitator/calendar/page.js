@@ -20,6 +20,7 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState(null)
   const [scheduledLessons, setScheduledLessons] = useState({}) // Format: { 'YYYY-MM-DD': [{...}] }
   const [scheduledForSelectedDate, setScheduledForSelectedDate] = useState([])
+  const [plannedLessons, setPlannedLessons] = useState({}) // Format: { 'YYYY-MM-DD': [{...}] }
   const [loading, setLoading] = useState(true)
   const [tier, setTier] = useState('free')
   const [hasAccess, setHasAccess] = useState(false)
@@ -368,7 +369,7 @@ export default function CalendarPage() {
                 <LessonCalendar
                   learnerId={selectedLearnerId}
                   onDateSelect={setSelectedDate}
-                  scheduledLessons={scheduledLessons}
+                  scheduledLessons={activeTab === 'scheduler' ? scheduledLessons : plannedLessons}
                   learners={learners}
                   selectedLearnerId={selectedLearnerId}
                   onLearnerChange={setSelectedLearnerId}
@@ -530,6 +531,8 @@ export default function CalendarPage() {
                     learnerId={selectedLearnerId}
                     tier={tier}
                     selectedDate={selectedDate}
+                    plannedLessons={plannedLessons}
+                    onPlannedLessonsChange={setPlannedLessons}
                     onLessonGenerated={loadSchedule}
                   />
                 )}

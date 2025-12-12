@@ -12,6 +12,8 @@ export default function LessonPlanner({
   learnerId, 
   tier,
   selectedDate,
+  plannedLessons = {},
+  onPlannedLessonsChange,
   onLessonGenerated 
 }) {
   const [customSubjects, setCustomSubjects] = useState([])
@@ -29,7 +31,6 @@ export default function LessonPlanner({
   const [showGenerator, setShowGenerator] = useState(false)
   const [generatorData, setGeneratorData] = useState(null)
   const [generatorDate, setGeneratorDate] = useState(null)
-  const [plannedLessons, setPlannedLessons] = useState({})
   const [generating, setGenerating] = useState(false)
   const [templateId, setTemplateId] = useState(null)
 
@@ -283,7 +284,9 @@ export default function LessonPlanner({
         }
       }
 
-      setPlannedLessons(lessons)
+      if (onPlannedLessonsChange) {
+        onPlannedLessonsChange(lessons)
+      }
     } catch (err) {
       console.error('Error generating planned lessons:', err)
       alert('Failed to generate lesson plan')
