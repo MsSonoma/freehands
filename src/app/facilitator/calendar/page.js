@@ -10,6 +10,7 @@ import GatedOverlay from '@/app/components/GatedOverlay'
 import LessonCalendar from './LessonCalendar'
 import LessonPicker from './LessonPicker'
 import LessonPlanner from './LessonPlanner'
+import DayViewOverlay from './DayViewOverlay'
 
 export default function CalendarPage() {
   const router = useRouter()
@@ -27,6 +28,8 @@ export default function CalendarPage() {
   const [tableExists, setTableExists] = useState(true)
   const [rescheduling, setRescheduling] = useState(null) // Track which lesson is being rescheduled
   const [activeTab, setActiveTab] = useState('scheduler') // 'scheduler' or 'planner'
+  const [showDayView, setShowDayView] = useState(false)
+  const [noSchoolDates, setNoSchoolDates] = useState({}) // Format: { 'YYYY-MM-DD': 'reason' }
 
   // Check PIN requirement on mount
   useEffect(() => {
@@ -72,6 +75,7 @@ export default function CalendarPage() {
   useEffect(() => {
     if (selectedLearnerId) {
       loadSchedule()
+      loadNoSchoolDates()
     }
   }, [selectedLearnerId])
 
@@ -79,6 +83,7 @@ export default function CalendarPage() {
     const handleVisibilityChange = () => {
       if (!document.hidden && selectedLearnerId) {
         loadSchedule()
+        loadNoSchoolDates()
       }
     }
 
@@ -212,6 +217,41 @@ export default function CalendarPage() {
     }
   }
 
+  const loadNoSchoolDates = async () => {
+    if (!selectedLearnerId) return
+    
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session?.access_token) return
+
+      const response = await fetch(
+        `/api/no-school-dates?learnerId=${selectedLearnerId}`,
+        {
+          headers: {
+            'authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!response.ok) return
+      
+      const data = await response.json()
+      const dates = data.dates || []
+
+      const grouped = {}
+      dates.forEach(item => {
+        grouped[item.date] = item.reason || ''
+      })
+
+      setNoSchoolDates(grouped)
+    } catch (err) {
+      console.error('Error loading no-school dates:', err)
+    }
+  }
+
   const handleScheduleLesson = async (lessonKey, date) => {
     try {
       const supabase = getSupabaseClient()
@@ -316,6 +356,56 @@ export default function CalendarPage() {
     }
   }
 
+  const handleNoSchoolSet = async (date, reason) => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return
+
+      if (reason === null) {
+        // Delete no-school date
+        const response = await fetch(
+          `/api/no-school-dates?learnerId=${selectedLearnerId}&date=${date}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        )
+
+        if (!response.ok) throw new Error('Failed to remove no-school date')
+      } else {
+        // Set no-school date
+        const response = await fetch('/api/no-school-dates', {
+          method: 'POST',
+          headers: {
+            'authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            learnerId: selectedLearnerId,
+            date,
+            reason
+          })
+        })
+
+        if (!response.ok) throw new Error('Failed to set no-school date')
+      }
+
+      await loadNoSchoolDates()
+    } catch (err) {
+      console.error('Error setting no-school date:', err)
+      alert('Failed to update no-school date')
+    }
+  }
+
+  const handleDateSelect = (dateStr) => {
+    setSelectedDate(dateStr)
+    setShowDayView(true)
+  }
+
   if (authLoading || loading) {
     return <div style={{ padding: '24px' }}><p>Loading…</p></div>
   }
@@ -368,8 +458,9 @@ export default function CalendarPage() {
               <div>
                 <LessonCalendar
                   learnerId={selectedLearnerId}
-                  onDateSelect={setSelectedDate}
+                  onDateSelect={handleDateSelect}
                   scheduledLessons={activeTab === 'scheduler' ? scheduledLessons : plannedLessons}
+                  noSchoolDates={noSchoolDates}
                   learners={learners}
                   selectedLearnerId={selectedLearnerId}
                   onLearnerChange={setSelectedLearnerId}
@@ -635,6 +726,24 @@ export default function CalendarPage() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Day View Overlay */}
+            {showDayView && selectedDate && (
+              <DayViewOverlay
+                selectedDate={selectedDate}
+                scheduledLessons={scheduledLessons[selectedDate] || []}
+                plannedLessons={plannedLessons[selectedDate] || []}
+                learnerId={selectedLearnerId}
+                tier={tier}
+                noSchoolReason={noSchoolDates[selectedDate] || null}
+                onClose={() => setShowDayView(false)}
+                onLessonGenerated={() => {
+                  loadSchedule()
+                  loadNoSchoolDates()
+                }}
+                onNoSchoolSet={handleNoSchoolSet}
+              />
             )}
           </>
         ) : (
