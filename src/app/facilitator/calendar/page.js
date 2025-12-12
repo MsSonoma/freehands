@@ -9,6 +9,7 @@ import { ensurePinAllowed } from '@/app/lib/pinGate'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import LessonCalendar from './LessonCalendar'
 import LessonPicker from './LessonPicker'
+import LessonPlanner from './LessonPlanner'
 
 export default function CalendarPage() {
   const router = useRouter()
@@ -24,6 +25,7 @@ export default function CalendarPage() {
   const [hasAccess, setHasAccess] = useState(false)
   const [tableExists, setTableExists] = useState(true)
   const [rescheduling, setRescheduling] = useState(null) // Track which lesson is being rescheduled
+  const [activeTab, setActiveTab] = useState('scheduler') // 'scheduler' or 'planner'
 
   // Check PIN requirement on mount
   useEffect(() => {
@@ -373,208 +375,264 @@ export default function CalendarPage() {
                 />
               </div>
 
-              {/* Right Panel: Scheduler for Selected Day */}
+              {/* Right Panel: Tabs for Scheduler and Planner */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {/* Date Header - only shows when date is selected */}
-                {selectedDate && (
-                  <div style={{ 
-                    background: 'linear-gradient(to right, #dbeafe, #e0e7ff)', 
-                    borderRadius: '8px', 
-                    padding: '10px 12px',
-                    border: '1px solid #93c5fd'
-                  }}>
-                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e40af', marginBottom: '2px' }}>
-                      {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#3b82f6' }}>
-                      {scheduledForSelectedDate.length} scheduled
-                    </div>
-                  </div>
-                )}
-
-                {/* Scheduled Lessons - Show first if any exist */}
-                {selectedDate && scheduledForSelectedDate.length > 0 && (
-                  <div className="bg-white rounded-lg shadow-md border border-gray-300 overflow-hidden">
-                    <div style={{ background: '#f0fdf4', padding: '8px 12px', borderBottom: '1px solid #bbf7d0' }}>
-                      <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#065f46', margin: 0 }}>
-                        Scheduled for This Day
-                      </h3>
-                    </div>
-                    <div>
-                      {scheduledForSelectedDate.map(item => {
-                        const [subject, filename] = item.lesson_key.split('/')
-                        const lessonName = filename?.replace('.json', '').replace(/_/g, ' ') || item.lesson_key
-                        
-                        return (
-                          <div
-                            key={item.id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px',
-                              padding: '8px 12px',
-                              borderBottom: '1px solid #e5e7eb'
-                            }}
-                          >
-                            <div style={{ flex: '1', minWidth: 0 }}>
-                              <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>
-                                {lessonName}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => setRescheduling(item.id)}
-                              style={{
-                                padding: '3px 10px',
-                                fontSize: '11px',
-                                fontWeight: '600',
-                                borderRadius: '4px',
-                                border: 'none',
-                                cursor: 'pointer',
-                                background: '#eff6ff',
-                                color: '#1e40af',
-                                transition: 'background 0.15s'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
-                              onMouseLeave={(e) => e.currentTarget.style.background = '#eff6ff'}
-                            >
-                              Reschedule
-                            </button>
-                            <button
-                              onClick={() => handleRemoveScheduledLesson(item)}
-                              style={{
-                                padding: '3px 10px',
-                                fontSize: '11px',
-                                fontWeight: '600',
-                                borderRadius: '4px',
-                                border: 'none',
-                                cursor: 'pointer',
-                                background: '#fee2e2',
-                                color: '#991b1b',
-                                transition: 'background 0.15s'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
-                              onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Reschedule popup modal */}
-                {rescheduling && scheduledForSelectedDate.find(item => item.id === rescheduling) && (
-                  <div 
-                    style={{ 
-                      position: 'fixed',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'rgba(0,0,0,0.3)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      zIndex: 10000
+                {/* Tab Headers */}
+                <div style={{
+                  display: 'flex',
+                  gap: 8,
+                  borderBottom: '2px solid #e5e7eb'
+                }}>
+                  <button
+                    onClick={() => setActiveTab('scheduler')}
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      border: 'none',
+                      borderBottom: activeTab === 'scheduler' ? '2px solid #2563eb' : '2px solid transparent',
+                      background: 'transparent',
+                      color: activeTab === 'scheduler' ? '#2563eb' : '#6b7280',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      marginBottom: -2
                     }}
-                    onClick={() => setRescheduling(null)}
                   >
-                    <div 
-                      style={{
-                        background: '#fff',
-                        borderRadius: 8,
-                        padding: 20,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                        maxWidth: 320,
-                        width: '90%'
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1f2937' }}>
-                        📅 Reschedule Lesson
-                      </div>
-                      <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 16 }}>
-                        {(() => {
-                          const item = scheduledForSelectedDate.find(item => item.id === rescheduling)
-                          const parts = item.lesson_key?.split('/')
-                          const filename = parts?.[1] || item.lesson_key
-                          return filename?.replace('.json', '').replace(/_/g, ' ') || item.lesson_key
-                        })()}
-                      </div>
-                      
-                      <input
-                        type="date"
-                        defaultValue={selectedDate}
-                        style={{
-                          width: '100%',
-                          padding: '10px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: 6,
-                          fontSize: 14,
-                          marginBottom: 16,
-                          boxSizing: 'border-box'
-                        }}
-                        id="reschedule-date"
-                      />
+                    Add Lesson
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('planner')}
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      border: 'none',
+                      borderBottom: activeTab === 'planner' ? '2px solid #2563eb' : '2px solid transparent',
+                      background: 'transparent',
+                      color: activeTab === 'planner' ? '#2563eb' : '#6b7280',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      marginBottom: -2
+                    }}
+                  >
+                    Lesson Planner
+                  </button>
+                </div>
 
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button
-                          onClick={() => {
-                            const dateInput = document.getElementById('reschedule-date')
-                            if (dateInput?.value) {
-                              const item = scheduledForSelectedDate.find(item => item.id === rescheduling)
-                              handleRescheduleLesson(item, dateInput.value)
-                            }
-                          }}
-                          style={{
-                            flex: 1,
-                            padding: '10px',
-                            border: 'none',
-                            borderRadius: 6,
-                            background: '#2563eb',
-                            color: '#fff',
-                            fontSize: 14,
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Reschedule
-                        </button>
-                        <button
-                          onClick={() => setRescheduling(null)}
-                          style={{
-                            flex: 1,
-                            padding: '10px',
-                            border: '1px solid #d1d5db',
-                            borderRadius: 6,
-                            background: '#fff',
-                            color: '#374151',
-                            fontSize: 14,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Cancel
-                        </button>
+                {/* Tab Content */}
+                {activeTab === 'scheduler' ? (
+                  <>
+                    {/* Date Header - only shows when date is selected */}
+                    {selectedDate && (
+                      <div style={{ 
+                        background: 'linear-gradient(to right, #dbeafe, #e0e7ff)', 
+                        borderRadius: '8px', 
+                        padding: '10px 12px',
+                        border: '1px solid #93c5fd'
+                      }}>
+                        <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e40af', marginBottom: '2px' }}>
+                          {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#3b82f6' }}>
+                          {scheduledForSelectedDate.length} scheduled
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    )}
+
+                    {/* Scheduled Lessons - Show first if any exist */}
+                    {selectedDate && scheduledForSelectedDate.length > 0 && (
+                      <div className="bg-white rounded-lg shadow-md border border-gray-300 overflow-hidden">
+                        <div style={{ background: '#f0fdf4', padding: '8px 12px', borderBottom: '1px solid #bbf7d0' }}>
+                          <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#065f46', margin: 0 }}>
+                            Scheduled for This Day
+                          </h3>
+                        </div>
+                        <div>
+                          {scheduledForSelectedDate.map(item => {
+                            const [subject, filename] = item.lesson_key.split('/')
+                            const lessonName = filename?.replace('.json', '').replace(/_/g, ' ') || item.lesson_key
+                            
+                            return (
+                              <div
+                                key={item.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  padding: '8px 12px',
+                                  borderBottom: '1px solid #e5e7eb'
+                                }}
+                              >
+                                <div style={{ flex: '1', minWidth: 0 }}>
+                                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>
+                                    {lessonName}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => setRescheduling(item.id)}
+                                  style={{
+                                    padding: '3px 10px',
+                                    fontSize: '11px',
+                                    fontWeight: '600',
+                                    borderRadius: '4px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    background: '#eff6ff',
+                                    color: '#1e40af',
+                                    transition: 'background 0.15s'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = '#eff6ff'}
+                                >
+                                  Reschedule
+                                </button>
+                                <button
+                                  onClick={() => handleRemoveScheduledLesson(item)}
+                                  style={{
+                                    padding: '3px 10px',
+                                    fontSize: '11px',
+                                    fontWeight: '600',
+                                    borderRadius: '4px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    background: '#fee2e2',
+                                    color: '#991b1b',
+                                    transition: 'background 0.15s'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Lesson Picker */}
+                    <LessonPicker
+                      learnerId={selectedLearnerId}
+                      selectedDate={selectedDate}
+                      onScheduleLesson={handleScheduleLesson}
+                      scheduledLessonsForDate={scheduledForSelectedDate}
+                    />
+                  </>
+                ) : (
+                  <LessonPlanner
+                    learnerId={selectedLearnerId}
+                    tier={tier}
+                    selectedDate={selectedDate}
+                    onLessonGenerated={loadSchedule}
+                  />
                 )}
-
-                {/* Lesson Picker - always visible */}
-                <LessonPicker
-                  learnerId={selectedLearnerId}
-                  selectedDate={selectedDate}
-                  onScheduleLesson={handleScheduleLesson}
-                  scheduledLessonsForDate={scheduledForSelectedDate}
-                />
               </div>
             </div>
+
+            {/* Reschedule popup modal - outside tabs */}
+            {rescheduling && scheduledForSelectedDate.find(item => item.id === rescheduling) && (
+              <div 
+                style={{ 
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(0,0,0,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 10000
+                }}
+                onClick={() => setRescheduling(null)}
+              >
+                <div 
+                  style={{
+                    background: '#fff',
+                    borderRadius: 8,
+                    padding: 20,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                    maxWidth: 320,
+                    width: '90%'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1f2937' }}>
+                    📅 Reschedule Lesson
+                  </div>
+                  <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 16 }}>
+                    {(() => {
+                      const item = scheduledForSelectedDate.find(item => item.id === rescheduling)
+                      const parts = item.lesson_key?.split('/')
+                      const filename = parts?.[1] || item.lesson_key
+                      return filename?.replace('.json', '').replace(/_/g, ' ') || item.lesson_key
+                    })()}
+                  </div>
+                  
+                  <input
+                    type="date"
+                    defaultValue={selectedDate}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: 6,
+                      fontSize: 14,
+                      marginBottom: 16,
+                      boxSizing: 'border-box'
+                    }}
+                    id="reschedule-date"
+                  />
+
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => {
+                        const dateInput = document.getElementById('reschedule-date')
+                        if (dateInput?.value) {
+                          const item = scheduledForSelectedDate.find(item => item.id === rescheduling)
+                          handleRescheduleLesson(item, dateInput.value)
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        border: 'none',
+                        borderRadius: 6,
+                        background: '#2563eb',
+                        color: '#fff',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Reschedule
+                    </button>
+                    <button
+                      onClick={() => setRescheduling(null)}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 6,
+                        background: '#fff',
+                        color: '#374151',
+                        fontSize: 14,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
