@@ -235,7 +235,11 @@ export default function LessonPlanner({
         return
       }
 
+      // Find the Monday of the week containing startDate
       const start = new Date(startDate)
+      const dayOfWeek = start.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
+      const daysToMonday = dayOfWeek === 0 ? -6 : -(dayOfWeek - 1) // Move back to Monday
+      start.setDate(start.getDate() + daysToMonday)
       
       for (let week = 0; week < weeks; week++) {
         for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
