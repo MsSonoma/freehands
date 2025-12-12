@@ -2,7 +2,7 @@
 'use client'
 import { useState } from 'react'
 import LessonGeneratorOverlay from './LessonGeneratorOverlay'
-import LessonEditor from '@/app/components/LessonEditor'
+import LessonEditor from '@/components/LessonEditor'
 
 export default function DayViewOverlay({ 
   selectedDate, 
