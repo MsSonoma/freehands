@@ -215,6 +215,7 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
                   e.currentTarget.style.transform = 'scale(1)'
                   e.currentTarget.style.boxShadow = 'none'
                 }}
+              >
                 <span style={{ 
                   fontSize: '14px', 
                   fontWeight: '600',

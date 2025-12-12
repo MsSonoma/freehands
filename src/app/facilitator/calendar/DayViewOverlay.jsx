@@ -47,7 +47,7 @@ export default function DayViewOverlay({
     setLessonEditorLoading(true)
     
     try {
-      const response = await fetch(/api/facilitator/lessons/$\{encodeURIComponent(scheduledLesson.lesson_key)\})
+      const response = await fetch(`/api/facilitator/lessons/${encodeURIComponent(scheduledLesson.lesson_key)}`)
       if (!response.ok) throw new Error('Failed to load lesson')
       
       const data = await response.json()
@@ -65,7 +65,7 @@ export default function DayViewOverlay({
     setLessonEditorSaving(true)
     
     try {
-      const response = await fetch(/api/facilitator/lessons/$\{encodeURIComponent(editingLesson)\}, {
+      const response = await fetch(`/api/facilitator/lessons/${encodeURIComponent(editingLesson)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lesson: updatedLesson })

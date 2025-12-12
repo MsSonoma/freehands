@@ -15,7 +15,7 @@ export async function GET(request) {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      global: { headers: { Authorization: `Bearer ```` } }
+      global: { headers: { Authorization: `Bearer ${token}` } }
     })
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
@@ -58,7 +58,7 @@ export async function POST(request) {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      global: { headers: { Authorization: `Bearer ```` } }
+      global: { headers: { Authorization: `Bearer ${token}` } }
     })
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
@@ -109,7 +109,7 @@ export async function DELETE(request) {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      global: { headers: { Authorization: `Bearer ```` } }
+      global: { headers: { Authorization: `Bearer ${token}` } }
     })
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
