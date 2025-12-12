@@ -422,111 +422,111 @@ export default function CalendarPage() {
                   </button>
                 </div>
 
-                {/* Tab Content */}
-                {activeTab === 'scheduler' ? (
-                  <>
-                    {/* Date Header - only shows when date is selected */}
-                    {selectedDate && (
-                      <div style={{ 
-                        background: 'linear-gradient(to right, #dbeafe, #e0e7ff)', 
-                        borderRadius: '8px', 
-                        padding: '10px 12px',
-                        border: '1px solid #93c5fd'
-                      }}>
-                        <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e40af', marginBottom: '2px' }}>
-                          {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#3b82f6' }}>
-                          {scheduledForSelectedDate.length} scheduled
-                        </div>
+                {/* Tab Content - Both tabs remain mounted, only visibility changes */}
+                <div style={{ display: activeTab === 'scheduler' ? 'block' : 'none' }}>
+                  {/* Date Header - only shows when date is selected */}
+                  {selectedDate && (
+                    <div style={{ 
+                      background: 'linear-gradient(to right, #dbeafe, #e0e7ff)', 
+                      borderRadius: '8px', 
+                      padding: '10px 12px',
+                      border: '1px solid #93c5fd'
+                    }}>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e40af', marginBottom: '2px' }}>
+                        {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
                       </div>
-                    )}
+                      <div style={{ fontSize: '12px', color: '#3b82f6' }}>
+                        {scheduledForSelectedDate.length} scheduled
+                      </div>
+                    </div>
+                  )}
 
-                    {/* Scheduled Lessons - Show first if any exist */}
-                    {selectedDate && scheduledForSelectedDate.length > 0 && (
-                      <div className="bg-white rounded-lg shadow-md border border-gray-300 overflow-hidden">
-                        <div style={{ background: '#f0fdf4', padding: '8px 12px', borderBottom: '1px solid #bbf7d0' }}>
-                          <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#065f46', margin: 0 }}>
-                            Scheduled for This Day
-                          </h3>
-                        </div>
-                        <div>
-                          {scheduledForSelectedDate.map(item => {
-                            const [subject, filename] = item.lesson_key.split('/')
-                            const lessonName = filename?.replace('.json', '').replace(/_/g, ' ') || item.lesson_key
-                            
-                            return (
-                              <div
-                                key={item.id}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '10px',
-                                  padding: '8px 12px',
-                                  borderBottom: '1px solid #e5e7eb'
-                                }}
-                              >
-                                <div style={{ flex: '1', minWidth: 0 }}>
-                                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>
-                                    {lessonName}
-                                  </div>
+                  {/* Scheduled Lessons - Show first if any exist */}
+                  {selectedDate && scheduledForSelectedDate.length > 0 && (
+                    <div className="bg-white rounded-lg shadow-md border border-gray-300 overflow-hidden">
+                      <div style={{ background: '#f0fdf4', padding: '8px 12px', borderBottom: '1px solid #bbf7d0' }}>
+                        <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#065f46', margin: 0 }}>
+                          Scheduled for This Day
+                        </h3>
+                      </div>
+                      <div>
+                        {scheduledForSelectedDate.map(item => {
+                          const [subject, filename] = item.lesson_key.split('/')
+                          const lessonName = filename?.replace('.json', '').replace(/_/g, ' ') || item.lesson_key
+                          
+                          return (
+                            <div
+                              key={item.id}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '8px 12px',
+                                borderBottom: '1px solid #e5e7eb'
+                              }}
+                            >
+                              <div style={{ flex: '1', minWidth: 0 }}>
+                                <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>
+                                  {lessonName}
                                 </div>
-                                <button
-                                  onClick={() => setRescheduling(item.id)}
-                                  style={{
-                                    padding: '3px 10px',
-                                    fontSize: '11px',
-                                    fontWeight: '600',
-                                    borderRadius: '4px',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    background: '#eff6ff',
-                                    color: '#1e40af',
-                                    transition: 'background 0.15s'
-                                  }}
-                                  onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
-                                  onMouseLeave={(e) => e.currentTarget.style.background = '#eff6ff'}
-                                >
-                                  Reschedule
-                                </button>
-                                <button
-                                  onClick={() => handleRemoveScheduledLesson(item)}
-                                  style={{
-                                    padding: '3px 10px',
-                                    fontSize: '11px',
-                                    fontWeight: '600',
-                                    borderRadius: '4px',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    background: '#fee2e2',
-                                    color: '#991b1b',
-                                    transition: 'background 0.15s'
-                                  }}
-                                  onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
-                                  onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
-                                >
-                                  Remove
-                                </button>
                               </div>
-                            )
-                          })}
-                        </div>
+                              <button
+                                onClick={() => setRescheduling(item.id)}
+                                style={{
+                                  padding: '3px 10px',
+                                  fontSize: '11px',
+                                  fontWeight: '600',
+                                  borderRadius: '4px',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  background: '#eff6ff',
+                                  color: '#1e40af',
+                                  transition: 'background 0.15s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#eff6ff'}
+                              >
+                                Reschedule
+                              </button>
+                              <button
+                                onClick={() => handleRemoveScheduledLesson(item)}
+                                style={{
+                                  padding: '3px 10px',
+                                  fontSize: '11px',
+                                  fontWeight: '600',
+                                  borderRadius: '4px',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  background: '#fee2e2',
+                                  color: '#991b1b',
+                                  transition: 'background 0.15s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          )
+                        })}
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {/* Lesson Picker */}
-                    <LessonPicker
-                      learnerId={selectedLearnerId}
-                      selectedDate={selectedDate}
-                      onScheduleLesson={handleScheduleLesson}
-                      scheduledLessonsForDate={scheduledForSelectedDate}
-                    />
-                  </>
-                ) : (
+                  {/* Lesson Picker */}
+                  <LessonPicker
+                    learnerId={selectedLearnerId}
+                    selectedDate={selectedDate}
+                    onScheduleLesson={handleScheduleLesson}
+                    scheduledLessonsForDate={scheduledForSelectedDate}
+                  />
+                </div>
+
+                <div style={{ display: activeTab === 'planner' ? 'block' : 'none' }}>
                   <LessonPlanner
                     learnerId={selectedLearnerId}
                     tier={tier}
@@ -535,7 +535,7 @@ export default function CalendarPage() {
                     onPlannedLessonsChange={setPlannedLessons}
                     onLessonGenerated={loadSchedule}
                   />
-                )}
+                </div>
               </div>
             </div>
 
