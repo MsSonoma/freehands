@@ -400,7 +400,7 @@ export default function CalendarPage() {
                       marginBottom: -2
                     }}
                   >
-                    Add Lesson
+                    Schedule Lessons
                   </button>
                   <button
                     onClick={() => setActiveTab('planner')}
