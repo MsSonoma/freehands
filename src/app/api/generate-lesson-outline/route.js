@@ -51,7 +51,7 @@ async function callOpenAI(prompt) {
   return JSON.parse(cleaned)
 }
 
-function buildOutlinePrompt({ subject, grade, difficulty, preferences }) {
+function buildOutlinePrompt({ subject, grade, difficulty, preferences, context }) {
   let preferencesText = ''
   
   if (preferences) {
@@ -69,10 +69,13 @@ function buildOutlinePrompt({ subject, grade, difficulty, preferences }) {
     }
   }
 
+  // Add lesson history context if provided
+  let contextText = context || ''
+
   return `Generate a lesson outline for:
 - Subject: ${subject}
 - Grade: ${grade}
-- Difficulty: ${difficulty}${preferencesText}
+- Difficulty: ${difficulty}${preferencesText}${contextText}
 
 Return ONLY a JSON object with this exact structure:
 {
@@ -102,7 +105,7 @@ export async function POST(request) {
     }
 
     const body = await request.json()
-    const { subject, grade, difficulty, learnerId } = body
+    const { subject, grade, difficulty, learnerId, context } = body
 
     if (!subject || !grade || !difficulty) {
       return NextResponse.json({ 
@@ -124,7 +127,7 @@ export async function POST(request) {
     }
 
     // Generate outline using OpenAI
-    const prompt = buildOutlinePrompt({ subject, grade, difficulty, preferences })
+    const prompt = buildOutlinePrompt({ subject, grade, difficulty, preferences, context })
     const outline = await callOpenAI(prompt)
 
     return NextResponse.json({ 

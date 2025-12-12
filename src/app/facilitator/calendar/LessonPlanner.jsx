@@ -237,6 +237,111 @@ export default function LessonPlanner({
         return
       }
 
+      // Fetch lesson history (completed, scheduled, planned)
+      const [historyRes, medalsRes, scheduledRes, preferencesRes] = await Promise.all([
+        fetch(`/api/learner/lesson-history?learner_id=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`/api/learner/medals?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`/api/lesson-schedule?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`/api/curriculum-preferences?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } })
+      ])
+
+      let lessonContext = []
+      let curriculumPrefs = {}
+
+      // Build chronological lesson history with scores
+      if (historyRes.ok && medalsRes.ok) {
+        const history = await historyRes.json()
+        const medals = await medalsRes.json()
+        
+        // Completed lessons with scores
+        const completed = (history.sessions || [])
+          .filter(s => s.status === 'completed')
+          .map(s => ({
+            name: s.lesson_id,
+            date: s.ended_at,
+            status: 'completed',
+            score: medals[s.lesson_id]?.bestPercent || null
+          }))
+
+        // Incomplete lessons
+        const incomplete = (history.sessions || [])
+          .filter(s => s.status === 'incomplete')
+          .map(s => ({
+            name: s.lesson_id,
+            date: s.started_at,
+            status: 'incomplete'
+          }))
+
+        lessonContext = [...completed, ...incomplete]
+      }
+
+      // Add scheduled lessons
+      if (scheduledRes.ok) {
+        const scheduled = await scheduledRes.json()
+        const scheduledLessons = (scheduled || []).map(s => ({
+          name: s.lesson_key,
+          date: s.scheduled_date,
+          status: 'scheduled'
+        }))
+        lessonContext = [...lessonContext, ...scheduledLessons]
+      }
+
+      // Add planned lessons from current plan
+      Object.entries(plannedLessons || {}).forEach(([date, dayLessons]) => {
+        dayLessons.forEach(lesson => {
+          lessonContext.push({
+            name: lesson.title || lesson.id,
+            date,
+            status: 'planned'
+          })
+        })
+      })
+
+      // Sort chronologically
+      lessonContext.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+      // Get curriculum preferences
+      if (preferencesRes.ok) {
+        curriculumPrefs = await preferencesRes.json()
+      }
+
+      // Build context string for GPT
+      let contextText = ''
+      if (lessonContext.length > 0) {
+        contextText += '\n\nLearner Lesson History (chronological):\n'
+        lessonContext.forEach(l => {
+          if (l.status === 'completed' && l.score !== null) {
+            contextText += `- ${l.name} (${l.status}, score: ${l.score}%)\n`
+          } else {
+            contextText += `- ${l.name} (${l.status})\n`
+          }
+        })
+      }
+
+      // Add curriculum preferences (only non-empty fields)
+      if (curriculumPrefs.focus_concepts) {
+        contextText += `\n\nFocus Concepts: ${curriculumPrefs.focus_concepts}`
+      }
+      if (curriculumPrefs.focus_topics) {
+        contextText += `\n\nFocus Topics: ${curriculumPrefs.focus_topics}`
+      }
+      if (curriculumPrefs.focus_words) {
+        contextText += `\n\nFocus Words: ${curriculumPrefs.focus_words}`
+      }
+      if (curriculumPrefs.banned_concepts) {
+        contextText += `\n\nBanned Concepts: ${curriculumPrefs.banned_concepts}`
+      }
+      if (curriculumPrefs.banned_topics) {
+        contextText += `\n\nBanned Topics: ${curriculumPrefs.banned_topics}`
+      }
+      if (curriculumPrefs.banned_words) {
+        contextText += `\n\nBanned Words: ${curriculumPrefs.banned_words}`
+      }
+
+      if (contextText) {
+        contextText += '\n\nIMPORTANT: Do not repeat lessons already completed, scheduled, or planned. Plan new lessons that build on what the learner has already done.'
+      }
+
       // Start from the exact date provided (no Monday adjustment)
       // Parse as local date to avoid timezone issues
       const [year, month, day] = startDate.split('-').map(Number)
@@ -264,7 +369,8 @@ export default function LessonPlanner({
                   subject: subjectInfo.subject,
                   grade: '3rd', // Default - user can change in generator
                   difficulty: 'intermediate',
-                  learnerId
+                  learnerId,
+                  context: contextText  // Include lesson history and preferences
                 })
               })
 
