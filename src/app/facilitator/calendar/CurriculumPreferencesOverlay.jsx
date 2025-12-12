@@ -145,155 +145,35 @@ export default function CurriculumPreferencesOverlay({ learnerId, onClose, onSav
         onClick={(e) => e.stopPropagation()}
       >
         <h2 style={{ 
-          fontSize: 24, 
+          fontSize: 20, 
           fontWeight: 700, 
-          marginBottom: 8,
+          marginBottom: 4,
           color: '#1f2937'
         }}>
           Curriculum Preferences
         </h2>
         <p style={{ 
-          fontSize: 14, 
+          fontSize: 13, 
           color: '#6b7280', 
-          marginBottom: 24 
+          marginBottom: 16 
         }}>
           Customize what content should be included or excluded when generating lessons for this learner.
         </p>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>
+          <div style={{ textAlign: 'center', padding: 24, color: '#9ca3af' }}>
             Loading preferences...
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Banned Words */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: 14,
-                fontWeight: 600,
-                color: '#374151',
-                marginBottom: 6
-              }}>
-                Banned Words
-              </label>
-              <input
-                type="text"
-                value={bannedWords}
-                onChange={(e) => setBannedWords(e.target.value)}
-                placeholder="Enter words to avoid, separated by commas"
-                style={{
-                  width: '100%',
-                  padding: 10,
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
-              />
-              <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
-                Example: war, violence, religion
-              </p>
-            </div>
-
-            {/* Banned Topics */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: 14,
-                fontWeight: 600,
-                color: '#374151',
-                marginBottom: 6
-              }}>
-                Banned Topics
-              </label>
-              <input
-                type="text"
-                value={bannedTopics}
-                onChange={(e) => setBannedTopics(e.target.value)}
-                placeholder="Enter topics to exclude, separated by commas"
-                style={{
-                  width: '100%',
-                  padding: 10,
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
-              />
-              <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
-                Example: colonialism, Christopher Columbus, evolution
-              </p>
-            </div>
-
-            {/* Banned Concepts */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: 14,
-                fontWeight: 600,
-                color: '#374151',
-                marginBottom: 6
-              }}>
-                Banned Concepts
-              </label>
-              <input
-                type="text"
-                value={bannedConcepts}
-                onChange={(e) => setBannedConcepts(e.target.value)}
-                placeholder="Enter concepts to avoid, separated by commas"
-                style={{
-                  width: '100%',
-                  padding: 10,
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
-              />
-              <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
-                Example: evolution, big bang theory, democracy
-              </p>
-            </div>
-
-            {/* Focus Topics */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: 14,
-                fontWeight: 600,
-                color: '#374151',
-                marginBottom: 6
-              }}>
-                Focus Topics
-              </label>
-              <input
-                type="text"
-                value={focusTopics}
-                onChange={(e) => setFocusTopics(e.target.value)}
-                placeholder="Enter topics to emphasize, separated by commas"
-                style={{
-                  width: '100%',
-                  padding: 10,
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
-              />
-              <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
-                Example: Christianity, environmental science, local history
-              </p>
-            </div>
-
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Focus Concepts */}
             <div>
               <label style={{
                 display: 'block',
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: 600,
                 color: '#374151',
-                marginBottom: 6
+                marginBottom: 4
               }}>
                 Focus Concepts
               </label>
@@ -301,29 +181,53 @@ export default function CurriculumPreferencesOverlay({ learnerId, onClose, onSav
                 type="text"
                 value={focusConcepts}
                 onChange={(e) => setFocusConcepts(e.target.value)}
-                placeholder="Enter concepts to emphasize, separated by commas"
+                placeholder="Concepts to emphasize (comma-separated)"
                 style={{
                   width: '100%',
-                  padding: 10,
+                  padding: 8,
                   border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
+                  borderRadius: 4,
+                  fontSize: 13,
                   boxSizing: 'border-box'
                 }}
               />
-              <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
-                Example: critical thinking, problem solving, collaboration
-              </p>
+            </div>
+
+            {/* Focus Topics */}
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#374151',
+                marginBottom: 4
+              }}>
+                Focus Topics
+              </label>
+              <input
+                type="text"
+                value={focusTopics}
+                onChange={(e) => setFocusTopics(e.target.value)}
+                placeholder="Topics to emphasize (comma-separated)"
+                style={{
+                  width: '100%',
+                  padding: 8,
+                  border: '1px solid #d1d5db',
+                  borderRadius: 4,
+                  fontSize: 13,
+                  boxSizing: 'border-box'
+                }}
+              />
             </div>
 
             {/* Focus Keywords */}
             <div>
               <label style={{
                 display: 'block',
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: 600,
                 color: '#374151',
-                marginBottom: 6
+                marginBottom: 4
               }}>
                 Focus Keywords
               </label>
@@ -331,19 +235,97 @@ export default function CurriculumPreferencesOverlay({ learnerId, onClose, onSav
                 type="text"
                 value={focusKeywords}
                 onChange={(e) => setFocusKeywords(e.target.value)}
-                placeholder="Enter keywords to include, separated by commas"
+                placeholder="Keywords to include (comma-separated)"
                 style={{
                   width: '100%',
-                  padding: 10,
+                  padding: 8,
                   border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
+                  borderRadius: 4,
+                  fontSize: 13,
                   boxSizing: 'border-box'
                 }}
               />
-              <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
-                Example: sustainability, critical thinking, problem solving
-              </p>
+            </div>
+
+            {/* Banned Concepts */}
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#374151',
+                marginBottom: 4
+              }}>
+                Banned Concepts
+              </label>
+              <input
+                type="text"
+                value={bannedConcepts}
+                onChange={(e) => setBannedConcepts(e.target.value)}
+                placeholder="Concepts to avoid (comma-separated)"
+                style={{
+                  width: '100%',
+                  padding: 8,
+                  border: '1px solid #d1d5db',
+                  borderRadius: 4,
+                  fontSize: 13,
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* Banned Topics */}
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#374151',
+                marginBottom: 4
+              }}>
+                Banned Topics
+              </label>
+              <input
+                type="text"
+                value={bannedTopics}
+                onChange={(e) => setBannedTopics(e.target.value)}
+                placeholder="Topics to exclude (comma-separated)"
+                style={{
+                  width: '100%',
+                  padding: 8,
+                  border: '1px solid #d1d5db',
+                  borderRadius: 4,
+                  fontSize: 13,
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* Banned Words */}
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#374151',
+                marginBottom: 4
+              }}>
+                Banned Words
+              </label>
+              <input
+                type="text"
+                value={bannedWords}
+                onChange={(e) => setBannedWords(e.target.value)}
+                placeholder="Words to avoid (comma-separated)"
+                style={{
+                  width: '100%',
+                  padding: 8,
+                  border: '1px solid #d1d5db',
+                  borderRadius: 4,
+                  fontSize: 13,
+                  boxSizing: 'border-box'
+                }}
+              />
             </div>
           </div>
         )}
@@ -352,7 +334,7 @@ export default function CurriculumPreferencesOverlay({ learnerId, onClose, onSav
         <div style={{ 
           display: 'flex', 
           gap: 12, 
-          marginTop: 24,
+          marginTop: 16,
           justifyContent: 'flex-end'
         }}>
           <button
