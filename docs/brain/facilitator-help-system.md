@@ -24,10 +24,12 @@ Three reusable help components live in `src/components/FacilitatorHelp/`:
    - "Don't show again" button stores dismissal in localStorage
    - Props: `helpKey` (unique ID), `title`, `children` (help content)
 
-2. **WorkflowGuide** - Collapsible numbered step guide
-   - Displays multi-step workflows at top of complex pages
-   - Expandable/collapsible with persistent dismiss option
-   - Props: `workflowKey` (unique ID), `title`, `steps` (array of {step, description}), `defaultOpen`
+2. **WorkflowGuide** - Workflow icon (📋) with modal overlay
+   - Shows multi-step workflow guide when user clicks clipboard emoji
+   - Displays numbered steps in centered modal overlay with backdrop
+   - User can click backdrop or close button to dismiss
+   - "Don't show again" button stores dismissal in localStorage
+   - Props: `workflowKey` (unique ID), `title`, `steps` (array of {step, description})
 
 3. **PageHeader** - Consistent page title with optional subtitle
    - Replaces inconsistent h1/p patterns across facilitator pages
@@ -85,8 +87,8 @@ import { InlineExplainer, WorkflowGuide, PageHeader } from '@/components/Facilit
 ## Key Files
 
 ### Components
-- `src/components/FacilitatorHelp/InlineExplainer.jsx` - Info icon tooltip component
-- `src/components/FacilitatorHelp/WorkflowGuide.jsx` - Collapsible step guide
+- `src/components/FacilitatorHelp/InlineExplainer.jsx` - Question mark emoji modal component
+- `src/components/FacilitatorHelp/WorkflowGuide.jsx` - Clipboard emoji modal with numbered steps
 - `src/components/FacilitatorHelp/PageHeader.jsx` - Consistent page header
 - `src/components/FacilitatorHelp/index.js` - Named exports
 
@@ -173,8 +175,10 @@ Example:
 
 ## Recent Changes
 
+**2025-12-15**: Converted WorkflowGuide from inline collapsible block to modal overlay. Changed from full-width blue box with clipboard SVG to 📋 emoji button. Removed defaultOpen prop (modal controlled by user click). Now matches InlineExplainer pattern - emoji button opens centered modal with backdrop.
 
 **2025-12-15**: Updated InlineExplainer to use modal overlay instead of positioned tooltip. Changed button from blue circle with SVG icon to ❓ emoji. Removed placement prop (no longer needed). Modal centers on screen with backdrop, preventing layout issues and overflow problems.
+
 **2025-12-15**: Initial implementation of help system. Added InlineExplainer, WorkflowGuide, PageHeader components. Deployed help content to calendar, learners, lessons pages. Created this brain file.
 
 ---

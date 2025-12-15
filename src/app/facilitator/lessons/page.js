@@ -609,7 +609,6 @@ export default function FacilitatorLessonsPage() {
       <WorkflowGuide
         workflowKey="lesson-approval-workflow"
         title="How Lesson Approval & Scheduling Works"
-        defaultOpen={false}
         steps={[
           { 
             step: 'Select a learner', 
