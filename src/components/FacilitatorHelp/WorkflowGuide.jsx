@@ -33,6 +33,7 @@ export default function WorkflowGuide({ workflowKey, title, steps }) {
   };
 
   const handleToggle = () => {
+    console.log('WorkflowGuide toggle clicked, current isVisible:', isVisible);
     setIsVisible(!isVisible);
   };
 

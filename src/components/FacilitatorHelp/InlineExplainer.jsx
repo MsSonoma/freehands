@@ -33,6 +33,7 @@ export default function InlineExplainer({ helpKey, title, children }) {
   };
 
   const handleToggle = () => {
+    console.log('InlineExplainer toggle clicked, current isVisible:', isVisible);
     setIsVisible(!isVisible);
   };
 
