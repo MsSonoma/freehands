@@ -85,11 +85,18 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
     <div className="bg-white rounded-lg shadow-md border border-gray-500 overflow-hidden">
       {/* Calendar Header with Learner Selector */}
       <div style={{ 
-        padding: '12px 16px', 
+        padding: '12px 8px', 
         background: 'linear-gradient(to right, #eff6ff, #eef2ff)',
         borderBottom: '1px solid #e5e7eb'
       }}>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: 4, 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          maxWidth: '100%'
+        }}>
           {/* Learner Selector */}
           {learners.length > 0 && (
             <select
@@ -103,7 +110,9 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
                 background: '#fff',
                 border: '1px solid #d1d5db',
                 cursor: 'pointer',
-                minWidth: '160px'
+                minWidth: '120px',
+                maxWidth: '160px',
+                flex: '1 1 auto'
               }}
             >
               {learners.map(learner => (
@@ -125,8 +134,9 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
               background: '#fff',
               border: '1px solid #d1d5db',
               cursor: 'pointer',
-              flex: 1,
-              minWidth: '140px'
+              minWidth: '100px',
+              maxWidth: '140px',
+              flex: '1 1 auto'
             }}
           >
             {monthNames.map((month, idx) => (
@@ -147,7 +157,9 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
               background: '#fff',
               border: '1px solid #d1d5db',
               cursor: 'pointer',
-              minWidth: '100px'
+              minWidth: '80px',
+              maxWidth: '100px',
+              flex: '0 1 auto'
             }}
           >
             {yearOptions.map(year => (
@@ -158,7 +170,7 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
           </select>
 
           {/* Month navigation arrows */}
-          <div style={{ display: 'flex', gap: 4 }}>
+          <div style={{ display: 'flex', gap: 4, flex: '0 0 auto' }}>
             <button
               onClick={handleMonthDown}
               style={{
