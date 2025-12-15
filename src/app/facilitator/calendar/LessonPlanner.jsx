@@ -837,14 +837,14 @@ export default function LessonPlanner({
         .weekly-pattern-grid {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
-          gap: 8px;
+          gap: 4px;
           margin-bottom: 16px;
         }
 
         .day-column {
           border: 1px solid #e5e7eb;
           border-radius: 6px;
-          padding: 12px;
+          padding: 6px;
           background: #f9fafb;
           min-width: 0;
         }
@@ -853,6 +853,8 @@ export default function LessonPlanner({
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          padding: 3px 4px !important;
+          font-size: 9px !important;
         }
 
         .abbr-label {
@@ -863,26 +865,7 @@ export default function LessonPlanner({
           display: inline;
         }
 
-        @media (max-width: 900px) {
-          .weekly-pattern-grid {
-            gap: 6px;
-          }
-          .day-column {
-            padding: 8px;
-          }
-        }
-
         @media (max-width: 768px) {
-          .weekly-pattern-grid {
-            gap: 3px;
-          }
-          .day-column {
-            padding: 4px;
-          }
-          .subject-button {
-            padding: 3px 4px !important;
-            font-size: 9px !important;
-          }
           .abbr-label {
             display: inline;
           }
