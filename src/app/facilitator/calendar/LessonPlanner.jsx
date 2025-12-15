@@ -473,29 +473,34 @@ export default function LessonPlanner({
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Workflow Guide */}
-      <WorkflowGuide
-        workflowKey="lesson-planner-workflow"
-        title="How Automated Lesson Planning Works"
-        steps={[
-          { 
-            step: 'Set your weekly pattern', 
-            description: 'Check which subjects you want to teach on each day of the week below' 
-          },
-          { 
-            step: 'Choose start date and duration', 
-            description: 'Select when to begin and how many weeks/months to plan' 
-          },
-          { 
-            step: 'Generate lesson plan', 
-            description: 'We create lesson outlines based on your learner\'s history and grade level' 
-          },
-          { 
-            step: 'Review and generate full lessons', 
-            description: 'Click dates in the calendar to see planned lessons. Generate full lesson content for any outline you like' 
-          }
-        ]}
-      />
+      {/* Title and Workflow Guide */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1f2937', margin: 0 }}>
+          Create a Lesson Plan
+        </h2>
+        <WorkflowGuide
+          workflowKey="lesson-planner-workflow"
+          title="How Automated Lesson Planning Works"
+          steps={[
+            { 
+              step: 'Set your weekly pattern', 
+              description: 'Check which subjects you want to teach on each day of the week below' 
+            },
+            { 
+              step: 'Choose start date and duration', 
+              description: 'Select when to begin and how many weeks/months to plan' 
+            },
+            { 
+              step: 'Generate lesson plan', 
+              description: 'We create lesson outlines based on your learner\'s history and grade level' 
+            },
+            { 
+              step: 'Review and generate full lessons', 
+              description: 'Click dates in the calendar to see planned lessons. Generate full lesson content for any outline you like' 
+            }
+          ]}
+        />
+      </div>
 
       {/* Weekly Pattern Section */}
       <div style={{
