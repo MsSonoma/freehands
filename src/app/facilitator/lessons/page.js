@@ -568,7 +568,31 @@ export default function FacilitatorLessonsPage() {
         <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 12 }}>
             <div style={{ flex: 1 }}>
-              <h1 style={{ marginTop: 0, marginBottom: 4, textAlign: 'left', fontSize: 22 }}>Lesson Library</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h1 style={{ marginTop: 0, marginBottom: 4, textAlign: 'left', fontSize: 22 }}>Lesson Library</h1>
+                <WorkflowGuide
+                  workflowKey="lesson-approval-workflow"
+                  title="How Lesson Approval & Scheduling Works"
+                  steps={[
+                    { 
+                      step: 'Select a learner', 
+                      description: 'Choose which student you want to manage lessons for' 
+                    },
+                    { 
+                      step: 'Load and browse lessons', 
+                      description: 'Click "Load Lessons" to see available curriculum filtered by grade' 
+                    },
+                    { 
+                      step: 'Make lessons available', 
+                      description: 'Check "Available" to show a lesson in the learner\'s lesson list (they can start it anytime)' 
+                    },
+                    { 
+                      step: 'Schedule for specific dates (optional)', 
+                      description: 'Click the calendar icon to assign a lesson to a specific date. This makes it appear on that day.' 
+                    }
+                  ]}
+                />
+              </div>
               <p style={{ color: '#6b7280', marginTop: 0, marginBottom: 0, textAlign: 'left', fontSize: 14 }}>
                 Browse, approve, and schedule lessons for your learners
               </p>
@@ -600,30 +624,6 @@ export default function FacilitatorLessonsPage() {
         </div>
       
         <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
-      
-      {/* Workflow Guide */}
-      <WorkflowGuide
-        workflowKey="lesson-approval-workflow"
-        title="How Lesson Approval & Scheduling Works"
-        steps={[
-          { 
-            step: 'Select a learner', 
-            description: 'Choose which student you want to manage lessons for' 
-          },
-          { 
-            step: 'Load and browse lessons', 
-            description: 'Click "Load Lessons" to see available curriculum filtered by grade' 
-          },
-          { 
-            step: 'Make lessons available', 
-            description: 'Check "Available" to show a lesson in the learner\'s lesson list (they can start it anytime)' 
-          },
-          { 
-            step: 'Schedule for specific dates (optional)', 
-            description: 'Click the calendar icon to assign a lesson to a specific date. This makes it appear on that day.' 
-          }
-        ]}
-      />
       
       {learners.length === 0 ? (
         <div style={{
