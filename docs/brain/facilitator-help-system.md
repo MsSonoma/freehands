@@ -37,8 +37,14 @@ Three reusable help components live in `src/components/FacilitatorHelp/`:
 
 **InlineExplainer** placed next to:
 - Tab labels (Calendar Scheduler vs Planner)
-- Feature icons (Targets, AI Features, Timers on Learners page)
 - Complex controls (Weekly pattern grid, timer dials)
+
+**InlineExplainer (Footer Help Pattern)** placed in overlay footers:
+- Learners page: Targets, AI Features, and Timers overlays
+- Help button (❓ Show/Hide Help) appears in left side of footer
+- Expands inline help text above footer buttons
+- Uses `showHelp` state to toggle visibility
+- Help content changes based on active tab context
 
 **WorkflowGuide** placed at:
 - Top of calendar Planner tab (automated lesson planning workflow)
