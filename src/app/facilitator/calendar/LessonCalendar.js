@@ -158,28 +158,12 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
           </select>
 
           {/* Month navigation arrows */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <button
-              onClick={handleMonthUp}
-              style={{
-                padding: '2px 8px',
-                fontSize: 12,
-                fontWeight: 600,
-                borderRadius: 4,
-                background: '#fff',
-                border: '1px solid #d1d5db',
-                cursor: 'pointer',
-                lineHeight: 1
-              }}
-              title="Next month"
-            >
-              ▲
-            </button>
+          <div style={{ display: 'flex', gap: 4 }}>
             <button
               onClick={handleMonthDown}
               style={{
-                padding: '2px 8px',
-                fontSize: 12,
+                padding: '4px 10px',
+                fontSize: 14,
                 fontWeight: 600,
                 borderRadius: 4,
                 background: '#fff',
@@ -189,7 +173,23 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
               }}
               title="Previous month"
             >
-              ▼
+              ◀
+            </button>
+            <button
+              onClick={handleMonthUp}
+              style={{
+                padding: '4px 10px',
+                fontSize: 14,
+                fontWeight: 600,
+                borderRadius: 4,
+                background: '#fff',
+                border: '1px solid #d1d5db',
+                cursor: 'pointer',
+                lineHeight: 1
+              }}
+              title="Next month"
+            >
+              ▶
             </button>
           </div>
         </div>
