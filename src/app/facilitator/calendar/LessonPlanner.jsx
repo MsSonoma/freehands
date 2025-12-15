@@ -282,8 +282,8 @@ export default function LessonPlanner({
 
       // Add scheduled lessons
       if (scheduledRes.ok) {
-        const scheduled = await scheduledRes.json()
-        const scheduledLessons = (scheduled || []).map(s => ({
+        const scheduledData = await scheduledRes.json()
+        const scheduledLessons = (scheduledData.schedule || []).map(s => ({
           name: s.lesson_key,
           date: s.scheduled_date,
           status: 'scheduled'
