@@ -24,8 +24,8 @@ Three reusable help components live in `src/components/FacilitatorHelp/`:
    - "Don't show again" button stores dismissal in localStorage
    - Props: `helpKey` (unique ID), `title`, `children` (help content)
 
-2. **WorkflowGuide** - Workflow icon (📋) with modal overlay
-   - Shows multi-step workflow guide when user clicks clipboard emoji
+2. **WorkflowGuide** - Workflow guide (❓) with modal overlay
+   - Shows multi-step workflow guide when user clicks question mark emoji
    - Displays numbered steps in centered modal overlay with backdrop
    - User can click backdrop or close button to dismiss
    - "Don't show again" button stores dismissal in localStorage
@@ -87,8 +87,8 @@ import { InlineExplainer, WorkflowGuide, PageHeader } from '@/components/Facilit
 ## Key Files
 
 ### Components
-- `src/components/FacilitatorHelp/InlineExplainer.jsx` - Question mark emoji modal component
-- `src/components/FacilitatorHelp/WorkflowGuide.jsx` - Clipboard emoji modal with numbered steps
+- `src/components/FacilitatorHelp/InlineExplainer.jsx` - Question mark emoji modal for contextual help
+- `src/components/FacilitatorHelp/WorkflowGuide.jsx` - Question mark emoji modal with numbered workflow steps
 - `src/components/FacilitatorHelp/PageHeader.jsx` - Consistent page header
 - `src/components/FacilitatorHelp/index.js` - Named exports
 
@@ -175,7 +175,9 @@ Example:
 
 ## Recent Changes
 
-**2025-12-15**: Converted WorkflowGuide from inline collapsible block to modal overlay. Changed from full-width blue box with clipboard SVG to 📋 emoji button. Removed defaultOpen prop (modal controlled by user click). Now matches InlineExplainer pattern - emoji button opens centered modal with backdrop.
+**2025-12-15**: Unified both help components to use ❓ emoji. WorkflowGuide and InlineExplainer now use identical button styling for consistency. Both open centered modal overlays with backdrop on click.
+
+**2025-12-15**: Converted WorkflowGuide from inline collapsible block to modal overlay. Changed from full-width blue box to emoji button. Removed defaultOpen prop (modal controlled by user click). Matches InlineExplainer pattern - emoji button opens centered modal with backdrop.
 
 **2025-12-15**: Updated InlineExplainer to use modal overlay instead of positioned tooltip. Changed button from blue circle with SVG icon to ❓ emoji. Removed placement prop (no longer needed). Modal centers on screen with backdrop, preventing layout issues and overflow problems.
 

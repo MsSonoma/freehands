@@ -48,7 +48,7 @@ export default function WorkflowGuide({ workflowKey, title, steps }) {
         type="button"
         style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
       >
-        📋
+        ❓
       </button>
 
       {isVisible && (
