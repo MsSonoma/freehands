@@ -928,6 +928,5 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 					</div>
 				</div>
 			</div>
-		</div>
 	);
 }
