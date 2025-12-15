@@ -380,11 +380,16 @@ export default function LessonPlanner({
       }
 
       if (contextText) {
+        contextText += '\n\n=== CRITICAL: AVOID ALL REPETITION ==='
+        contextText += '\nThe lessons listed above have ALREADY been completed, scheduled, or planned.'
+        contextText += '\nYou MUST create entirely NEW lessons on DIFFERENT topics.'
+        contextText += '\nIf a topic like "Addition" was already covered, do NOT create "Addition Practice" or "More Addition".'
+        contextText += '\nInstead, progress to the NEXT concept in the subject (e.g., Subtraction, Place Value, etc.).'
         contextText += '\n\nCurriculum Evolution Guidelines:'
-        contextText += '\n- Build sequentially on completed topics (reference prior concepts in new lessons)'
-        contextText += '\n- Do NOT repeat lessons already completed, scheduled, or planned'
-        contextText += '\n- Create logical topic progressions within each subject'
-        contextText += `\n- Recommended difficulty: ${recommendedDifficulty} (stay at same level for 3-4 lessons before increasing)`
+        contextText += '\n- Each new lesson must advance to a NEW topic not yet covered'
+        contextText += '\n- Build sequentially (e.g., after "Fractions Intro" → "Comparing Fractions" → "Adding Fractions")'
+        contextText += '\n- Reference prior concepts but teach something genuinely new'
+        contextText += `\n- Target difficulty: ${recommendedDifficulty} (maintain for 3-4 lessons before advancing)`
       }
 
       // Start from the exact date provided (no Monday adjustment)
