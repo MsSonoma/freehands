@@ -529,16 +529,26 @@ export default function CalendarPage() {
                 .calendar-container {
                   flex-direction: row;
                   align-items: flex-start;
+                  height: calc(100vh - 100px);
                 }
-                .calendar-container > div {
+                .calendar-container > .calendar-panel {
                   flex: 1;
                   min-width: 0;
+                  position: sticky;
+                  top: 24px;
+                  align-self: flex-start;
+                }
+                .calendar-container > .content-panel {
+                  flex: 1;
+                  min-width: 0;
+                  overflow-y: auto;
+                  max-height: calc(100vh - 100px);
                 }
               }
             `}</style>
             <div className="calendar-container">
               {/* Left Panel: Calendar */}
-              <div>
+              <div className="calendar-panel">
                 <LessonCalendar
                   learnerId={selectedLearnerId}
                   onDateSelect={handleDateSelect}
@@ -552,7 +562,7 @@ export default function CalendarPage() {
               </div>
 
               {/* Right Panel: Tabs for Scheduler and Planner */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className="content-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <PageHeader
                   title="Lesson Calendar"
                   subtitle="Organize your teaching schedule with manual scheduling or automated planning"
