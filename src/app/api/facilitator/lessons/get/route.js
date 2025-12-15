@@ -37,7 +37,16 @@ export async function GET(request){
       .download(storagePath)
     
     if (downloadError || !fileData) {
-      return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
+      console.error('Lesson download error:', {
+        storagePath,
+        bucket: 'lessons',
+        error: downloadError
+      })
+      return NextResponse.json({ 
+        error: 'Lesson not found',
+        details: downloadError?.message,
+        path: storagePath
+      }, { status: 404 })
     }
     
     const raw = await fileData.text()
