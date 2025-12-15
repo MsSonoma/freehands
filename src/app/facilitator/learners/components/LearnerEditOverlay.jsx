@@ -856,7 +856,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 					<div style={footerStyle}>
 						{/* Help Section in Footer */}
 						{(activeTab === 'targets' || activeTab === 'ai-features' || activeTab === 'timers') && (
-							<div style={{ flex: 1 }}>
+							<div style={{ flex: 1, position: 'relative' }}>
 								<button
 									onClick={() => setShowHelp(!showHelp)}
 									style={{
@@ -875,14 +875,20 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 								</button>
 								{showHelp && (
 									<div style={{
-										marginTop: 8,
+										position: 'absolute',
+										bottom: '100%',
+										left: 0,
+										marginBottom: 8,
 										padding: 12,
 										background: '#f9fafb',
 										borderRadius: 6,
 										border: '1px solid #e5e7eb',
 										fontSize: 14,
 										color: '#374151',
-										lineHeight: 1.5
+										lineHeight: 1.5,
+										minWidth: 300,
+										maxWidth: 400,
+										boxShadow: '0 -2px 8px rgba(0,0,0,0.1)'
 									}}>
 										{activeTab === 'targets' && (
 											<>
