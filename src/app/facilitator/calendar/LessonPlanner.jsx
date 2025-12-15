@@ -240,7 +240,7 @@ export default function LessonPlanner({
       // Fetch lesson history (completed, scheduled, planned)
       const [historyRes, medalsRes, scheduledRes, preferencesRes] = await Promise.all([
         fetch(`/api/learner/lesson-history?learner_id=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/learner/medals?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`/api/medals?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`/api/lesson-schedule?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`/api/curriculum-preferences?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } })
       ])
@@ -249,9 +249,14 @@ export default function LessonPlanner({
       let curriculumPrefs = {}
 
       // Build chronological lesson history with scores
-      if (historyRes.ok && medalsRes.ok) {
+      if (historyRes.ok) {
         const history = await historyRes.json()
-        const medals = await medalsRes.json()
+        let medals = {}
+        
+        // Get medals if available
+        if (medalsRes.ok) {
+          medals = await medalsRes.json()
+        }
         
         // Completed lessons with scores
         const completed = (history.sessions || [])
