@@ -507,7 +507,7 @@ export default function LessonPlanner({
         background: '#fff',
         borderRadius: 8,
         border: '1px solid #e5e7eb',
-        padding: '16px 8px'
+        padding: '16px 4px'
       }}>
         <div style={{ 
           display: 'flex', 
@@ -839,14 +839,14 @@ export default function LessonPlanner({
         .weekly-pattern-grid {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
-          gap: 4px;
+          gap: 2px;
           margin-bottom: 16px;
         }
 
         .day-column {
           border: 1px solid #e5e7eb;
-          border-radius: 6px;
-          padding: 4px;
+          border-radius: 4px;
+          padding: 2px;
           background: #f9fafb;
           min-width: 0;
         }
