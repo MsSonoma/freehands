@@ -496,7 +496,7 @@ export default function CalendarPage() {
   return (
     <>
       <div style={{ minHeight: '100vh', background: '#f9fafb', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24 }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: 12 }}>
 
         {/* Database Setup Warning */}
         {!tableExists && (
@@ -521,7 +521,7 @@ export default function CalendarPage() {
               .calendar-container {
                 display: flex;
                 flex-direction: column;
-                gap: 1.5rem;
+                gap: 1rem;
                 align-items: stretch;
               }
               
@@ -530,12 +530,13 @@ export default function CalendarPage() {
                   flex-direction: row;
                   align-items: flex-start;
                   height: calc(100vh - 100px);
+                  gap: 0.75rem;
                 }
                 .calendar-container > .calendar-panel {
                   flex: 1;
                   min-width: 0;
                   position: sticky;
-                  top: 24px;
+                  top: 12px;
                   align-self: flex-start;
                 }
                 .calendar-container > .content-panel {
