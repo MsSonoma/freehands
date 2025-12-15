@@ -40,12 +40,19 @@ export async function GET(request){
       console.error('Lesson download error:', {
         storagePath,
         bucket: 'lessons',
-        error: downloadError
+        error: downloadError,
+        errorMessage: downloadError?.message,
+        errorName: downloadError?.name,
+        errorStatus: downloadError?.status,
+        errorStatusCode: downloadError?.statusCode,
+        fullError: JSON.stringify(downloadError, null, 2)
       })
       return NextResponse.json({ 
         error: 'Lesson not found',
-        details: downloadError?.message,
-        path: storagePath
+        details: JSON.stringify(downloadError),
+        path: storagePath,
+        errorMessage: downloadError?.message,
+        errorStatus: downloadError?.status || downloadError?.statusCode
       }, { status: 404 })
     }
     
