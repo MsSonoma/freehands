@@ -11,11 +11,13 @@ Before making changes to core systems:
 
 3. **IMPLEMENT**: Make code changes based on what the USER requested (not your assumptions)
 
-4. **DOCUMENT**: On each response, AUTOMATICALLY update brain documentation if code changes were made:
+4. **DOCUMENT**: After making code changes, IMMEDIATELY update brain documentation BEFORE committing:
+   - **SEQUENCE**: Code edit → Brain file update → Changelog entry → Commit/push
    - If brain file exists: Update relevant section (rewrite completely, kill zombies, don't append)
    - If NO brain file exists for core system: Create one using "How It Works", "What NOT To Do", "Key Files" structure
    - Core systems: APIs, flows, persistence, authentication, UI patterns, prompt engineering, data schemas, integrations
    - Update manifest.json (timestamp + keywords for new/updated files)
+   - **NEVER commit code changes without updating the brain file first**
    - If no code changes were made in this response, inform user and skip brain update
 
 5. **LOG**: Include brain changes in changelog.md entry: "Updated {topic}.md section X" or "Created {topic}.md"
@@ -24,11 +26,11 @@ Before making changes to core systems:
 
 ## CRITICAL GUARDRAILS
 
-- **On each response**: Check if code changes were made; if yes, update brain files automatically
+- **Mandatory sequence**: Code edit → Brain update → Changelog → Commit (NEVER commit without brain update)
 - **Never append to brain files** (always rewrite sections completely to kill zombies)
 - **Check manifest first**: if system is already listed, update that file, don't create duplicate
-- **Brain updates are automatic** (like changelog entries - just do them after code changes)
-- **If no changes**: Inform user no brain update needed and proceed normally
+- **Brain updates happen BEFORE commits** (not after, not when user asks - immediately after code changes)
+- **If no code changes**: Inform user no brain update needed and proceed normally
 - **Never trust your memory over what's in the brain file**
 - **If brain file contradicts your understanding, the brain file is correct**
 - **Core systems requiring documentation**: APIs, flows, persistence, authentication, UI patterns, prompt engineering, data schemas, integrations
