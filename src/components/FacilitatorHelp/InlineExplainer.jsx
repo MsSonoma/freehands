@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * InlineExplainer - Contextual help component with dismissible overlay
@@ -51,7 +52,7 @@ export default function InlineExplainer({ helpKey, title, children }) {
         ❓
       </button>
 
-      {isVisible && (
+      {isVisible && typeof document !== 'undefined' && createPortal(
         <>
           {/* Backdrop */}
           <div 
@@ -88,7 +89,8 @@ export default function InlineExplainer({ helpKey, title, children }) {
               </button>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </>
   );

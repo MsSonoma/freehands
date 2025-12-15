@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * WorkflowGuide - Step-by-step guide modal for complex multi-page workflows
@@ -51,7 +52,7 @@ export default function WorkflowGuide({ workflowKey, title, steps }) {
         ❓
       </button>
 
-      {isVisible && (
+      {isVisible && typeof document !== 'undefined' && createPortal(
         <>
           {/* Backdrop */}
           <div 
@@ -102,7 +103,8 @@ export default function WorkflowGuide({ workflowKey, title, steps }) {
               </button>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </>
   );
