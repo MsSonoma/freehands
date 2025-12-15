@@ -51,16 +51,17 @@ export default function DayViewOverlay({
     setLessonEditorLoading(true)
     
     try {
-      const supabase = getSupabaseClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      // Use facilitator_id from the scheduled lesson (who owns the lesson file)
+      // not the current user (who is viewing the calendar)
+      const userId = scheduledLesson.facilitator_id
       
-      if (!user) {
-        throw new Error('Not authenticated')
+      if (!userId) {
+        throw new Error('Facilitator ID missing from scheduled lesson')
       }
       
       const params = new URLSearchParams({
         file: scheduledLesson.lesson_key,
-        userId: user.id
+        userId: userId
       })
       
       const response = await fetch(`/api/facilitator/lessons/get?${params}`)
