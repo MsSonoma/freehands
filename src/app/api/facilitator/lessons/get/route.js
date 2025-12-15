@@ -24,8 +24,12 @@ export async function GET(request){
     
     const supabase = createClient(url, svc, { auth: { persistSession: false } })
     
+    // Strip 'generated/' prefix if present - storage uses flat structure
+    // but lesson_key in schedule includes folder prefix for routing
+    const fileName = file.replace(/^generated\//, '')
+    
     // Download from Supabase Storage using SDK
-    const storagePath = `facilitator-lessons/${userId}/${file}`
+    const storagePath = `facilitator-lessons/${userId}/${fileName}`
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('lessons')
       .download(storagePath)
