@@ -15,27 +15,11 @@ import { createPortal } from 'react-dom';
  */
 export default function InlineExplainer({ helpKey, title, children }) {
   const [isVisible, setIsVisible] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (helpKey) {
-      const dismissed = localStorage.getItem(`help-dismissed-${helpKey}`);
-      setIsDismissed(dismissed === 'true');
-    }
-  }, [helpKey]);
-
-  const handleDismiss = () => {
-    if (helpKey) {
-      localStorage.setItem(`help-dismissed-${helpKey}`, 'true');
-      setIsDismissed(true);
-      setIsVisible(false);
-    }
-  };
 
   const handleToggle = () => {
     console.log('InlineExplainer toggle clicked, current isVisible:', isVisible);
@@ -43,10 +27,6 @@ export default function InlineExplainer({ helpKey, title, children }) {
     console.log('InlineExplainer setting isVisible to:', newValue);
     setIsVisible(newValue);
   };
-
-  if (isDismissed) {
-    return null;
-  }
 
   console.log('InlineExplainer render - isMounted:', isMounted, 'isVisible:', isVisible, 'will show portal:', isMounted && isVisible);
 
@@ -123,23 +103,6 @@ export default function InlineExplainer({ helpKey, title, children }) {
               <div style={{ fontSize: '0.875rem', color: '#374151' }}>
                 {children}
               </div>
-              <button
-                onClick={handleDismiss}
-                style={{
-                  marginTop: '16px',
-                  fontSize: '0.75rem',
-                  color: '#2563eb',
-                  textDecoration: 'underline',
-                  border: 'none',
-                  background: 'none',
-                  cursor: 'pointer'
-                }}
-                type="button"
-                onMouseOver={(e) => e.target.style.color = '#1e40af'}
-                onMouseOut={(e) => e.target.style.color = '#2563eb'}
-              >
-                Don&apos;t show again
-              </button>
             </div>
           </div>
         </>,

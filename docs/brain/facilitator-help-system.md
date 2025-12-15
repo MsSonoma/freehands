@@ -21,14 +21,12 @@ Three reusable help components live in `src/components/FacilitatorHelp/`:
    - Shows on-demand help text when user clicks question mark emoji
    - Help content displays in centered modal overlay with backdrop
    - User can click backdrop or close button to dismiss
-   - "Don't show again" button stores dismissal in localStorage
    - Props: `helpKey` (unique ID), `title`, `children` (help content)
 
 2. **WorkflowGuide** - Workflow guide (❓) with modal overlay
    - Shows multi-step workflow guide when user clicks question mark emoji
    - Displays numbered steps in centered modal overlay with backdrop
    - User can click backdrop or close button to dismiss
-   - "Don't show again" button stores dismissal in localStorage
    - Props: `workflowKey` (unique ID), `title`, `steps` (array of {step, description})
 
 3. **PageHeader** - Consistent page title with optional subtitle
@@ -49,14 +47,6 @@ Three reusable help components live in `src/components/FacilitatorHelp/`:
 **PageHeader** replaces:
 - Standalone h1/p combos on Calendar, Learners, Lessons pages
 - Provides consistent page context and color legend (calendar colors)
-
-### Persistence Mechanism
-
-All help dismissals stored in **localStorage** with keys:
-- `help-dismissed-{helpKey}` for InlineExplainer
-- `workflow-dismissed-{workflowKey}` for WorkflowGuide
-
-No server-side tracking. Each browser/device has independent dismissal state. Users can clear localStorage to reset help visibility.
 
 ### Import Pattern
 
@@ -175,9 +165,11 @@ Example:
 
 ## Recent Changes
 
-**2025-12-15**: Unified both help components to use ❓ emoji. WorkflowGuide and InlineExplainer now use identical button styling for consistency. Both open centered modal overlays with backdrop on click.
+**2025-12-15**: Removed "Don't show again" functionality. Help is now fully voluntary - users click ❓ to view, click backdrop/X to close. No localStorage persistence needed. Simplified component state.
 
-**2025-12-15**: Converted WorkflowGuide from inline collapsible block to modal overlay. Changed from full-width blue box to emoji button. Removed defaultOpen prop (modal controlled by user click). Matches InlineExplainer pattern - emoji button opens centered modal with backdrop.
+**2025-12-15**: Fixed modal overlay rendering using React Portal and inline styles instead of Tailwind classes. Modals now properly display above page content with backdrop.
+
+**2025-12-15**: Unified both help components to use ❓ emoji. WorkflowGuide and InlineExplainer now use identical button styling for consistency. Both open centered modal overlays with backdrop on click.
 
 **2025-12-15**: Updated InlineExplainer to use modal overlay instead of positioned tooltip. Changed button from blue circle with SVG icon to ❓ emoji. Removed placement prop (no longer needed). Modal centers on screen with backdrop, preventing layout issues and overflow problems.
 

@@ -15,27 +15,11 @@ import { createPortal } from 'react-dom';
  */
 export default function WorkflowGuide({ workflowKey, title, steps }) {
   const [isVisible, setIsVisible] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (workflowKey) {
-      const dismissed = localStorage.getItem(`workflow-dismissed-${workflowKey}`);
-      setIsDismissed(dismissed === 'true');
-    }
-  }, [workflowKey]);
-
-  const handleDismiss = () => {
-    if (workflowKey) {
-      localStorage.setItem(`workflow-dismissed-${workflowKey}`, 'true');
-      setIsDismissed(true);
-      setIsVisible(false);
-    }
-  };
 
   const handleToggle = () => {
     console.log('WorkflowGuide toggle clicked, current isVisible:', isVisible);
@@ -43,10 +27,6 @@ export default function WorkflowGuide({ workflowKey, title, steps }) {
     console.log('WorkflowGuide setting isVisible to:', newValue);
     setIsVisible(newValue);
   };
-
-  if (isDismissed) {
-    return null;
-  }
 
   console.log('WorkflowGuide render - isMounted:', isMounted, 'isVisible:', isVisible, 'will show portal:', isMounted && isVisible);
 
@@ -150,24 +130,6 @@ export default function WorkflowGuide({ workflowKey, title, steps }) {
                   </li>
                 ))}
               </ol>
-              
-              <button
-                onClick={handleDismiss}
-                style={{
-                  marginTop: '16px',
-                  fontSize: '0.75rem',
-                  color: '#2563eb',
-                  textDecoration: 'underline',
-                  border: 'none',
-                  background: 'none',
-                  cursor: 'pointer'
-                }}
-                type="button"
-                onMouseOver={(e) => e.target.style.color = '#1e40af'}
-                onMouseOut={(e) => e.target.style.color = '#2563eb'}
-              >
-                Don&apos;t show again
-              </button>
             </div>
           </div>
         </>,
