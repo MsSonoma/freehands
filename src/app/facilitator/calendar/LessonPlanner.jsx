@@ -842,13 +842,31 @@ export default function LessonPlanner({
           background: #f9fafb;
         }
 
-        @media (min-width: 601px) {
+        @media (min-width: 480px) {
+          .weekly-pattern-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (min-width: 640px) {
+          .weekly-pattern-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+
+        @media (min-width: 768px) {
+          .weekly-pattern-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+        }
+
+        @media (min-width: 1024px) {
           .weekly-pattern-grid {
             grid-template-columns: repeat(7, 1fr);
           }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 479px) {
           .day-column {
             padding: 8px;
           }
