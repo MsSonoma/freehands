@@ -830,7 +830,7 @@ export default function LessonPlanner({
       <style jsx>{`
         .weekly-pattern-grid {
           display: grid;
-          grid-template-columns: 1fr;
+          grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
           gap: 8px;
           margin-bottom: 16px;
         }
@@ -842,31 +842,10 @@ export default function LessonPlanner({
           background: #f9fafb;
         }
 
-        @media (min-width: 480px) {
-          .weekly-pattern-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        @media (min-width: 640px) {
-          .weekly-pattern-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
-        }
-
-        @media (min-width: 768px) {
-          .weekly-pattern-grid {
-            grid-template-columns: repeat(4, 1fr);
-          }
-        }
-
-        @media (min-width: 1024px) {
-          .weekly-pattern-grid {
-            grid-template-columns: repeat(7, 1fr);
-          }
-        }
-
         @media (max-width: 479px) {
+          .weekly-pattern-grid {
+            grid-template-columns: 1fr;
+          }
           .day-column {
             padding: 8px;
           }
