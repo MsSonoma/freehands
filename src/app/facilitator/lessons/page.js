@@ -928,10 +928,10 @@ export default function FacilitatorLessonsPage() {
                         />
                       )}
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                        {isScheduled && <span style={{ fontSize: 14 }} title="Scheduled for today">📅</span>}
-                        {!isScheduled && futureDate && <span style={{ fontSize: 14, opacity: 0.5 }} title={`Scheduled for ${futureDate}`}>📅</span>}
-                        {hasActiveKey && <span style={{ fontSize: 14 }} title="Golden Key Active">🔑</span>}
-                        {medalEmoji && <span style={{ fontSize: 16 }} title={`${medalInfo.medalTier} - ${medalInfo.bestPercent}%`}>{medalEmoji}</span>}
+                        {isScheduled && <span style={{ fontSize: 12 }} title="Scheduled for today">📅</span>}
+                        {!isScheduled && futureDate && <span style={{ fontSize: 12, opacity: 0.5 }} title={`Scheduled for ${futureDate}`}>📅</span>}
+                        {hasActiveKey && <span style={{ fontSize: 12 }} title="Golden Key Active">🔑</span>}
+                        {medalEmoji && <span style={{ fontSize: 12 }} title={`${medalInfo.medalTier} - ${medalInfo.bestPercent}%`}>{medalEmoji}</span>}
                       </div>
                       <div style={{ flex: 1, minWidth: 150 }}>
                         <div style={{ fontWeight: 600, color: '#1f2937', fontSize: 14 }}>
@@ -993,7 +993,7 @@ export default function FacilitatorLessonsPage() {
                           }}
                           title="Edit lesson"
                         >
-                          ✏️ Edit
+                          ✏️ <span className="button-text-tablet">Edit</span>
                         </button>
 
                         {learnerSelected && (
@@ -1018,7 +1018,7 @@ export default function FacilitatorLessonsPage() {
                               }}
                               title={noteText ? 'Edit note' : 'Add note'}
                             >
-                              📝 {noteText ? 'Note' : 'Notes'}
+                              📝 <span className="button-text-tablet">{noteText ? 'Note' : 'Notes'}</span>
                             </button>
 
                             <button
@@ -1041,7 +1041,7 @@ export default function FacilitatorLessonsPage() {
                               }}
                               title="Schedule lesson"
                             >
-                              📅 Schedule
+                              📅 <span className="button-text-tablet">Schedule</span>
                             </button>
                           </>
                         )}
