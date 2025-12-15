@@ -507,13 +507,15 @@ export default function LessonPlanner({
         background: '#fff',
         borderRadius: 8,
         border: '1px solid #e5e7eb',
-        padding: 16
+        padding: '16px 8px'
       }}>
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          marginBottom: 12
+          marginBottom: 12,
+          paddingLeft: 8,
+          paddingRight: 8
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1f2937', margin: 0 }}>
