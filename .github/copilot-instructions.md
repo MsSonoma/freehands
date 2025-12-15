@@ -39,13 +39,21 @@ Before making changes to core systems:
 
 ### Modes (Internal Discipline)
 
+- **Research mode**: Check manifest.json → read brain file → read code → understand before acting
 - **Code mode**: Implement smallest viable change that satisfies request; keep changes scoped and ASCII-clean
 - **Debug mode**: Reproduce, isolate root cause, apply least-broad fix; avoid unrelated refactors
 - **Record mode**: Document what changed and why to prevent drift; update changelog entry
 
 ### Read-First Protocol
 
-- Before any Code or Debug action, scan directly-related files and recent changelog entries (latest 20) in `docs/brain/changelog.md`
+Before any Code or Debug action, follow this sequence:
+
+1. **Check manifest.json**: Does a brain file cover this system/feature/component?
+2. **Read brain file if exists**: It is canonical truth about design, patterns, gotchas
+3. **Scan directly-related code files** for implementation specifics (function signatures, props, line numbers)
+4. **Read latest 20 changelog entries** in `docs/brain/changelog.md` for recent changes
+
+Additional guidelines:
 - Prefer local sources over web
 - Do not reference UI/runtime in Ms. Sonoma payloads
 

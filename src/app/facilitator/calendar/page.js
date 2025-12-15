@@ -546,6 +546,7 @@ export default function CalendarPage() {
                   learners={learners}
                   selectedLearnerId={selectedLearnerId}
                   onLearnerChange={setSelectedLearnerId}
+                  isPlannedView={activeTab === 'planner'}
                 />
               </div>
 

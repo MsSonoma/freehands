@@ -2,7 +2,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-export default function LessonCalendar({ learnerId, onDateSelect, scheduledLessons = {}, noSchoolDates = {}, learners = [], selectedLearnerId, onLearnerChange }) {
+export default function LessonCalendar({ learnerId, onDateSelect, scheduledLessons = {}, noSchoolDates = {}, learners = [], selectedLearnerId, onLearnerChange, isPlannedView = false }) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
 
@@ -240,7 +240,7 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
                   border: '1px solid',
                   borderColor: isNoSchool ? '#f59e0b' : isSelected ? '#3b82f6' : isToday ? '#10b981' : '#e5e7eb',
                   borderRadius: 6,
-                  background: isNoSchool ? '#fef3c7' : isSelected ? '#dbeafe' : isToday ? '#d1fae5' : lessonCount > 0 ? '#fef3c7' : '#fff',
+                  background: isNoSchool ? '#fef3c7' : isSelected ? '#dbeafe' : isToday ? '#d1fae5' : lessonCount > 0 ? (isPlannedView ? '#dbeafe' : '#fef3c7') : '#fff',
                   cursor: 'pointer',
                   fontSize: 12,
                   fontWeight: lessonCount > 0 ? 700 : 400,
@@ -288,7 +288,7 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
                     width: 4,
                     height: 4,
                     borderRadius: '50%',
-                    background: '#f59e0b'
+                    background: isPlannedView ? '#3b82f6' : '#f59e0b'
                   }} />
                 )}
               </button>
