@@ -30,33 +30,33 @@ export async function GET(request){
       return NextResponse.json({ error: 'Storage not configured' }, { status: 500 })
     }
     
-    // Download from Supabase Storage
+    // Download from Supabase Storage using direct REST API
+    // (SDK .download() method fails with StorageUnknownError, direct fetch works)
     const storagePath = `facilitator-lessons/${userId}/${file}`
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from('lessons')
-      .download(storagePath)
+    const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/lessons/${storagePath}`
     
-    if (downloadError || !fileData) {
+    const response = await fetch(storageUrl, {
+      headers: {
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY
+      }
+    })
+    
+    if (!response.ok) {
       console.error('Lesson download error:', {
         storagePath,
         bucket: 'lessons',
-        error: downloadError,
-        errorMessage: downloadError?.message,
-        errorName: downloadError?.name,
-        errorStatus: downloadError?.status,
-        errorStatusCode: downloadError?.statusCode,
-        fullError: JSON.stringify(downloadError, null, 2)
+        status: response.status,
+        statusText: response.statusText
       })
       return NextResponse.json({ 
         error: 'Lesson not found',
-        details: JSON.stringify(downloadError),
         path: storagePath,
-        errorMessage: downloadError?.message,
-        errorStatus: downloadError?.status || downloadError?.statusCode
+        status: response.status
       }, { status: 404 })
     }
     
-    const raw = await fileData.text()
+    const raw = await response.text()
     const lesson = JSON.parse(raw)
     
     // Normalize question field names: Q/q -> prompt/question, A/a -> answer/expected
