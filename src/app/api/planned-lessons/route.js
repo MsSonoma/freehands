@@ -89,12 +89,19 @@ export async function POST(request) {
       return NextResponse.json({ error: 'learnerId and plannedLessons required' }, { status: 400 })
     }
 
-    // Delete existing planned lessons for this learner (we'll replace them)
-    await adminSupabase
-      .from('planned_lessons')
-      .delete()
-      .eq('learner_id', learnerId)
-      .eq('facilitator_id', user.id)
+    // Get all dates in the new plan
+    const newPlanDates = Object.keys(plannedLessons)
+
+    // Delete existing planned lessons ONLY for dates in the new plan
+    // This allows multiple non-overlapping plans to coexist
+    if (newPlanDates.length > 0) {
+      await adminSupabase
+        .from('planned_lessons')
+        .delete()
+        .eq('learner_id', learnerId)
+        .eq('facilitator_id', user.id)
+        .in('scheduled_date', newPlanDates)
+    }
 
     // Insert all the planned lessons
     const rows = []
