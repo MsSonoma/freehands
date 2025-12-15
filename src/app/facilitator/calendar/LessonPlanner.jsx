@@ -868,16 +868,20 @@ export default function LessonPlanner({
             gap: 6px;
           }
           .day-column {
-            padding: 10px;
+            padding: 8px;
           }
         }
 
         @media (max-width: 768px) {
           .weekly-pattern-grid {
-            gap: 4px;
+            gap: 3px;
           }
           .day-column {
-            padding: 8px;
+            padding: 4px;
+          }
+          .subject-button {
+            padding: 3px 4px !important;
+            font-size: 9px !important;
           }
           .abbr-label {
             display: inline;
@@ -894,6 +898,10 @@ export default function LessonPlanner({
           }
           .day-column {
             padding: 12px;
+          }
+          .subject-button {
+            padding: 4px 6px !important;
+            font-size: 10px !important;
           }
           .abbr-label {
             display: none;
