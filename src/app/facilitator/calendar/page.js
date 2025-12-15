@@ -75,6 +75,7 @@ export default function CalendarPage() {
   useEffect(() => {
     if (selectedLearnerId) {
       loadSchedule()
+      loadPlannedLessons()
       loadNoSchoolDates()
     }
   }, [selectedLearnerId])
@@ -217,6 +218,38 @@ export default function CalendarPage() {
     }
   }
 
+  const loadPlannedLessons = async () => {
+    if (!selectedLearnerId) return
+    
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session?.access_token) return
+
+      const response = await fetch(
+        `/api/planned-lessons?learnerId=${selectedLearnerId}`,
+        {
+          headers: {
+            'authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!response.ok) {
+        setPlannedLessons({})
+        return
+      }
+      
+      const data = await response.json()
+      setPlannedLessons(data.plannedLessons || {})
+    } catch (err) {
+      console.error('Error loading planned lessons:', err)
+      setPlannedLessons({})
+    }
+  }
+
   const loadNoSchoolDates = async () => {
     if (!selectedLearnerId) return
     
@@ -249,6 +282,33 @@ export default function CalendarPage() {
       setNoSchoolDates(grouped)
     } catch (err) {
       console.error('Error loading no-school dates:', err)
+    }
+  }
+
+  const savePlannedLessons = async (lessons) => {
+    setPlannedLessons(lessons)
+    
+    if (!selectedLearnerId) return
+    
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session?.access_token) return
+
+      await fetch('/api/planned-lessons', {
+        method: 'POST',
+        headers: {
+          'authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          learnerId: selectedLearnerId,
+          plannedLessons: lessons
+        })
+      })
+    } catch (err) {
+      console.error('Error saving planned lessons:', err)
     }
   }
 
@@ -623,7 +683,7 @@ export default function CalendarPage() {
                     tier={tier}
                     selectedDate={selectedDate}
                     plannedLessons={plannedLessons}
-                    onPlannedLessonsChange={setPlannedLessons}
+                    onPlannedLessonsChange={savePlannedLessons}
                     onLessonGenerated={loadSchedule}
                   />
                 </div>
