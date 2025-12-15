@@ -16,6 +16,11 @@ import { createPortal } from 'react-dom';
 export default function WorkflowGuide({ workflowKey, title, steps }) {
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (workflowKey) {
@@ -53,7 +58,7 @@ export default function WorkflowGuide({ workflowKey, title, steps }) {
         ❓
       </button>
 
-      {isVisible && typeof document !== 'undefined' && createPortal(
+      {isMounted && isVisible && createPortal(
         <>
           {/* Backdrop */}
           <div 

@@ -16,6 +16,11 @@ import { createPortal } from 'react-dom';
 export default function InlineExplainer({ helpKey, title, children }) {
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (helpKey) {
@@ -53,7 +58,7 @@ export default function InlineExplainer({ helpKey, title, children }) {
         ❓
       </button>
 
-      {isVisible && typeof document !== 'undefined' && createPortal(
+      {isMounted && isVisible && createPortal(
         <>
           {/* Backdrop */}
           <div 
