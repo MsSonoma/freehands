@@ -57,6 +57,16 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
     setCurrentMonth(new Date(newYear, currentMonthIndex))
   }
 
+  const handleMonthUp = () => {
+    const newMonth = new Date(currentYear, currentMonthIndex + 1)
+    setCurrentMonth(newMonth)
+  }
+
+  const handleMonthDown = () => {
+    const newMonth = new Date(currentYear, currentMonthIndex - 1)
+    setCurrentMonth(newMonth)
+  }
+
   const handleDateClick = (dateStr) => {
     if (!dateStr) return
     setSelectedDate(dateStr)
@@ -146,6 +156,42 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
               </option>
             ))}
           </select>
+
+          {/* Month navigation arrows */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <button
+              onClick={handleMonthUp}
+              style={{
+                padding: '2px 8px',
+                fontSize: 12,
+                fontWeight: 600,
+                borderRadius: 4,
+                background: '#fff',
+                border: '1px solid #d1d5db',
+                cursor: 'pointer',
+                lineHeight: 1
+              }}
+              title="Next month"
+            >
+              ▲
+            </button>
+            <button
+              onClick={handleMonthDown}
+              style={{
+                padding: '2px 8px',
+                fontSize: 12,
+                fontWeight: 600,
+                borderRadius: 4,
+                background: '#fff',
+                border: '1px solid #d1d5db',
+                cursor: 'pointer',
+                lineHeight: 1
+              }}
+              title="Previous month"
+            >
+              ▼
+            </button>
+          </div>
         </div>
       </div>
 
