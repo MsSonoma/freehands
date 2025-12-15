@@ -585,10 +585,16 @@ export default function LessonPlanner({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {allSubjects.map(subject => {
                     const isSelected = daySubjects.some(s => s.subject === subject)
+                    const getSubjectLabel = (subj) => {
+                      if (subj === 'language arts') return <span><span className="full-label">Language Arts</span><span className="abbr-label">LA</span></span>
+                      if (subj === 'social studies') return <span><span className="full-label">Social Studies</span><span className="abbr-label">SS</span></span>
+                      return subj.charAt(0).toUpperCase() + subj.slice(1)
+                    }
                     return (
                       <button
                         key={subject}
                         onClick={() => toggleSubjectForDay(day, subject)}
+                        className="subject-button"
                         style={{
                           padding: '4px 6px',
                           fontSize: 10,
@@ -602,7 +608,7 @@ export default function LessonPlanner({
                           border: '1px solid ' + (isSelected ? '#93c5fd' : '#e5e7eb')
                         }}
                       >
-                        {subject.charAt(0).toUpperCase() + subject.slice(1)}
+                        {getSubjectLabel(subject)}
                       </button>
                     )
                   })}
@@ -840,6 +846,21 @@ export default function LessonPlanner({
           border-radius: 6px;
           padding: 12px;
           background: #f9fafb;
+          min-width: 0;
+        }
+
+        .subject-button {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .abbr-label {
+          display: none;
+        }
+
+        .full-label {
+          display: inline;
         }
 
         @media (max-width: 900px) {
@@ -858,6 +879,12 @@ export default function LessonPlanner({
           .day-column {
             padding: 8px;
           }
+          .abbr-label {
+            display: inline;
+          }
+          .full-label {
+            display: none;
+          }
         }
 
         @media (max-width: 640px) {
@@ -867,6 +894,12 @@ export default function LessonPlanner({
           }
           .day-column {
             padding: 12px;
+          }
+          .abbr-label {
+            display: none;
+          }
+          .full-label {
+            display: inline;
           }
         }
       `}</style>
