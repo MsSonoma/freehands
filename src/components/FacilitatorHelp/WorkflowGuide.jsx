@@ -66,38 +66,85 @@ export default function WorkflowGuide({ workflowKey, title, steps }) {
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-[9998]"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 9998
+            }}
             onClick={handleToggle}
           />
           
           {/* Modal */}
-          <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4">
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '16px'
+          }}>
             <div 
-              className="bg-white rounded-lg shadow-2xl max-w-lg w-full p-6 relative"
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                maxWidth: '32rem',
+                width: '100%',
+                padding: '24px',
+                position: 'relative'
+              }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-start justify-between mb-4">
-                <h4 className="font-semibold text-lg text-gray-900 pr-8">{title}</h4>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h4 style={{ fontWeight: 600, fontSize: '1.125rem', color: '#111827', paddingRight: '32px' }}>{title}</h4>
                 <button
                   onClick={handleToggle}
-                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                  style={{
+                    position: 'absolute',
+                    top: '16px',
+                    right: '16px',
+                    color: '#9ca3af',
+                    fontSize: '1.5rem',
+                    lineHeight: 1,
+                    border: 'none',
+                    background: 'none',
+                    cursor: 'pointer'
+                  }}
                   aria-label="Close"
                   type="button"
+                  onMouseOver={(e) => e.target.style.color = '#4b5563'}
+                  onMouseOut={(e) => e.target.style.color = '#9ca3af'}
                 >
                   ×
                 </button>
               </div>
               
-              <ol className="space-y-3">
+              <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                 {steps.map((step, index) => (
-                  <li key={index} className="flex">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-sm font-semibold flex items-center justify-center mr-3 mt-0.5">
+                  <li key={index} style={{ display: 'flex', marginBottom: '12px' }}>
+                    <span style={{
+                      flexShrink: 0,
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      backgroundColor: '#2563eb',
+                      color: 'white',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '12px',
+                      marginTop: '2px'
+                    }}>
                       {index + 1}
                     </span>
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900 text-sm">{step.step}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 500, color: '#111827', fontSize: '0.875rem' }}>{step.step}</div>
                       {step.description && (
-                        <div className="text-sm text-gray-600 mt-1">{step.description}</div>
+                        <div style={{ fontSize: '0.875rem', color: '#4b5563', marginTop: '4px' }}>{step.description}</div>
                       )}
                     </div>
                   </li>
@@ -106,8 +153,18 @@ export default function WorkflowGuide({ workflowKey, title, steps }) {
               
               <button
                 onClick={handleDismiss}
-                className="mt-4 text-xs text-blue-600 hover:text-blue-800 underline"
+                style={{
+                  marginTop: '16px',
+                  fontSize: '0.75rem',
+                  color: '#2563eb',
+                  textDecoration: 'underline',
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer'
+                }}
                 type="button"
+                onMouseOver={(e) => e.target.style.color = '#1e40af'}
+                onMouseOut={(e) => e.target.style.color = '#2563eb'}
               >
                 Don&apos;t show again
               </button>
