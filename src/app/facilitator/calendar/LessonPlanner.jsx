@@ -844,7 +844,7 @@ export default function LessonPlanner({
         .day-column {
           border: 1px solid #e5e7eb;
           border-radius: 6px;
-          padding: 6px;
+          padding: 4px;
           background: #f9fafb;
           min-width: 0;
         }
