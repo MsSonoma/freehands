@@ -67,7 +67,7 @@ export default function DayViewOverlay({
       if (!response.ok) throw new Error('Failed to load lesson')
       
       const data = await response.json()
-      setLessonEditorData(data.lesson)
+      setLessonEditorData(data)
     } catch (err) {
       console.error('Error loading lesson:', err)
       alert('Failed to load lesson for editing')
