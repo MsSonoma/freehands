@@ -568,9 +568,9 @@ export default function FacilitatorLessonsPage() {
         <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 12 }}>
             <div style={{ flex: 1 }}>
-              <h1 style={{ marginTop: 0, marginBottom: 4, textAlign: 'left', fontSize: 22 }}>Lessons</h1>
+              <h1 style={{ marginTop: 0, marginBottom: 4, textAlign: 'left', fontSize: 22 }}>Lesson Library</h1>
               <p style={{ color: '#6b7280', marginTop: 0, marginBottom: 0, textAlign: 'left', fontSize: 14 }}>
-                Browse, assign, and schedule lesson content for your learners.
+                Browse, approve, and schedule lessons for your learners
               </p>
             </div>
             <button
@@ -600,10 +600,6 @@ export default function FacilitatorLessonsPage() {
         </div>
       
         <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
-      <PageHeader
-        title="Lesson Library"
-        subtitle="Browse, approve, and schedule lessons for your learners"
-      />
       
       {/* Workflow Guide */}
       <WorkflowGuide
