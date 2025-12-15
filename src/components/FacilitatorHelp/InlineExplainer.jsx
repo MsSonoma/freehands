@@ -39,12 +39,16 @@ export default function InlineExplainer({ helpKey, title, children }) {
 
   const handleToggle = () => {
     console.log('InlineExplainer toggle clicked, current isVisible:', isVisible);
-    setIsVisible(!isVisible);
+    const newValue = !isVisible;
+    console.log('InlineExplainer setting isVisible to:', newValue);
+    setIsVisible(newValue);
   };
 
   if (isDismissed) {
     return null;
   }
+
+  console.log('InlineExplainer render - isMounted:', isMounted, 'isVisible:', isVisible, 'will show portal:', isMounted && isVisible);
 
   return (
     <>

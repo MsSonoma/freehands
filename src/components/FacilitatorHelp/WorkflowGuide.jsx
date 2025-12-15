@@ -39,12 +39,16 @@ export default function WorkflowGuide({ workflowKey, title, steps }) {
 
   const handleToggle = () => {
     console.log('WorkflowGuide toggle clicked, current isVisible:', isVisible);
-    setIsVisible(!isVisible);
+    const newValue = !isVisible;
+    console.log('WorkflowGuide setting isVisible to:', newValue);
+    setIsVisible(newValue);
   };
 
   if (isDismissed) {
     return null;
   }
+
+  console.log('WorkflowGuide render - isMounted:', isMounted, 'isVisible:', isVisible, 'will show portal:', isMounted && isVisible);
 
   return (
     <>
