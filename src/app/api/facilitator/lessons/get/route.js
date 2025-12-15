@@ -1,19 +1,8 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-
-async function getSupabaseAdmin(){
-  try {
-    const { createClient } = await import('@supabase/supabase-js')
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!url || !svc) return null
-    return createClient(url, svc, { auth: { persistSession: false } })
-  } catch {
-    return null
-  }
-}
 
 export async function GET(request){
   try {
@@ -25,40 +14,34 @@ export async function GET(request){
       return NextResponse.json({ error: 'Missing file or userId parameter' }, { status: 400 })
     }
     
-    const supabase = await getSupabaseAdmin()
-    if (!supabase) {
+    // Create Supabase client with service role key for storage access
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
+    
+    if (!url || !svc) {
       return NextResponse.json({ error: 'Storage not configured' }, { status: 500 })
     }
     
-    // Download from Supabase Storage using direct REST API
-    // (SDK .download() method fails with StorageUnknownError, direct fetch works)
+    const supabase = createClient(url, svc, { auth: { persistSession: false } })
+    
+    // Download from Supabase Storage using SDK
     const storagePath = `facilitator-lessons/${userId}/${file}`
-    // Encode each path component properly for URL
-    const encodedPath = storagePath.split('/').map(encodeURIComponent).join('/')
-    const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/lessons/${encodedPath}`
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from('lessons')
+      .download(storagePath)
     
-    const response = await fetch(storageUrl, {
-      headers: {
-        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY
-      }
-    })
-    
-    if (!response.ok) {
+    if (downloadError || !fileData) {
       console.error('Lesson download error:', {
         storagePath,
-        bucket: 'lessons',
-        status: response.status,
-        statusText: response.statusText
+        error: downloadError
       })
       return NextResponse.json({ 
         error: 'Lesson not found',
-        path: storagePath,
-        status: response.status
+        path: storagePath
       }, { status: 404 })
     }
     
-    const raw = await response.text()
+    const raw = await fileData.text()
     const lesson = JSON.parse(raw)
     
     // Normalize question field names: Q/q -> prompt/question, A/a -> answer/expected
