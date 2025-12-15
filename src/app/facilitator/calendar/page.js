@@ -597,7 +597,6 @@ export default function CalendarPage() {
                   <InlineExplainer
                     helpKey="calendar-scheduler-tab"
                     title="Schedule Tab"
-                    placement="bottom"
                   >
                     <p>Use this tab to manually assign lessons to specific dates. Click a date on the calendar, browse your lesson library, and add lessons one at a time.</p>
                     <p className="mt-2 text-xs text-gray-500">Best for custom schedules and one-off lessons.</p>
@@ -623,7 +622,6 @@ export default function CalendarPage() {
                   <InlineExplainer
                     helpKey="calendar-planner-tab"
                     title="Planner Tab"
-                    placement="bottom"
                   >
                     <p>Generate multi-week lesson outlines automatically. Set a weekly pattern (which subjects on which days), choose duration, and we&apos;ll create a curriculum plan.</p>
                     <p className="mt-2 text-xs text-gray-500">Best for consistent schedules and long-term planning.</p>

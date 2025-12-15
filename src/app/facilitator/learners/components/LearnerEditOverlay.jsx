@@ -571,7 +571,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 								<InlineExplainer
 									helpKey="phase-timers-details"
 									title="About Phase Timers"
-									placement="bottom"
+
 								>
 									<p><strong>Play Timer:</strong> Time for games and warm-up activities at the start of each phase. The learner can explore and have fun before focusing on lesson work.</p>
 									<p className="mt-2"><strong>Work Timer:</strong> Time for actual lesson tasks (questions, exercises, etc). When this expires, a 30-second countdown begins before moving to the next phase.</p>

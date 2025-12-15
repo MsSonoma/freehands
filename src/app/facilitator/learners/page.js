@@ -226,7 +226,7 @@ export default function LearnersPage() {
 								<InlineExplainer
 									helpKey="learner-targets-info"
 									title="Learning Targets"
-									placement="bottom"
+
 								>
 									<p>Set how many questions appear in each lesson phase (Comprehension, Exercise, Worksheet, Test).</p>
 									<p className="mt-2 text-xs text-gray-500">Higher numbers = more practice, longer lessons.</p>
@@ -237,7 +237,7 @@ export default function LearnersPage() {
 								<InlineExplainer
 									helpKey="learner-ai-features-info"
 									title="AI Features"
-									placement="bottom"
+
 								>
 									<p>Control which AI-powered activities are available: Ask (custom questions), Poem generation, Story mode, and Fill-in-Fun games.</p>
 									<p className="mt-2 text-xs text-gray-500">Disable features you don&apos;t want learners to access during lessons.</p>

@@ -517,7 +517,6 @@ export default function LessonPlanner({
             <InlineExplainer
               helpKey="weekly-pattern-explainer"
               title="Weekly Pattern"
-              placement="right"
             >
               <p>Check the subjects you want to teach on each day. This pattern repeats every week for the duration you specify.</p>
               <p className="mt-2">Example: Check "Math" on Monday, Wednesday, Friday to schedule 3 math lessons per week.</p>

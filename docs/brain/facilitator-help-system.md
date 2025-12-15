@@ -17,11 +17,12 @@ The facilitator help system provides **contextual in-app guidance** for complex 
 
 Three reusable help components live in `src/components/FacilitatorHelp/`:
 
-1. **InlineExplainer** - Info icon with dismissible tooltip
-   - Shows on-demand help text next to confusing UI elements
-   - User can click info icon to toggle tooltip
+1. **InlineExplainer** - Help icon (❓) with modal overlay
+   - Shows on-demand help text when user clicks question mark emoji
+   - Help content displays in centered modal overlay with backdrop
+   - User can click backdrop or close button to dismiss
    - "Don't show again" button stores dismissal in localStorage
-   - Props: `helpKey` (unique ID), `title`, `children` (help content), `placement` (position)
+   - Props: `helpKey` (unique ID), `title`, `children` (help content)
 
 2. **WorkflowGuide** - Collapsible numbered step guide
    - Displays multi-step workflows at top of complex pages
@@ -111,13 +112,14 @@ Trade-off: Dismissals don't sync across devices. User can dismiss on phone, stil
 
 ### Why Inline vs Modal?
 
-Tested both approaches. Inline explainers won because:
-- Users can read help while looking at the UI element being explained
-- No context switch to modal/separate help page
-- Less intrusive - only shows when user requests (clicks icon)
-- Dismissible without disrupting workflow
+Initially tested relative-positioned tooltips, but they caused layout issues and could overflow off screen. Switched to **centered modal overlay** because:
+- Always visible and readable regardless of button position
+- No layout shift or overflow issues
+- Clean backdrop focus on help content
+- Consistent behavior across all screen sizes
+- Familiar modal pattern users understand
 
-Modal guides used only for multi-step workflows spanning multiple actions (planner, lesson approval).
+Modal used for both individual explainers and multi-step workflows. Single consistent interaction pattern.
 
 ### Why Not Just Add Text to Pages?
 
@@ -171,6 +173,8 @@ Example:
 
 ## Recent Changes
 
+
+**2025-12-15**: Updated InlineExplainer to use modal overlay instead of positioned tooltip. Changed button from blue circle with SVG icon to ❓ emoji. Removed placement prop (no longer needed). Modal centers on screen with backdrop, preventing layout issues and overflow problems.
 **2025-12-15**: Initial implementation of help system. Added InlineExplainer, WorkflowGuide, PageHeader components. Deployed help content to calendar, learners, lessons pages. Created this brain file.
 
 ---
