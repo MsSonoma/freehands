@@ -12,7 +12,7 @@ export default function AboutPage() {
       <div className={styles.hero}>
         <h1 className={styles.title}>About Ms. Sonoma</h1>
         <p className={styles.subtitle}>
-          Understanding AI safety and how to use the app effectively
+          AI-powered lessons personalized to each learner, with comprehensive safety protections
         </p>
       </div>
 
@@ -493,6 +493,15 @@ export default function AboutPage() {
             </div>
           </section>
         )}
+      </div>
+
+      <div className={styles.domainNote}>
+        <p className={styles.domainText}>
+          <strong>About mssonoma.app:</strong> This is the Ms. Sonoma learning platform where 
+          facilitators and learners access lessons, track progress, and use interactive features. 
+          Visit <a href="https://mssonoma.com" target="_blank" rel="noopener noreferrer" className={styles.domainLink}>mssonoma.com</a> to 
+          learn more about our educational approach and philosophy.
+        </p>
       </div>
 
       <div className={styles.footer}>

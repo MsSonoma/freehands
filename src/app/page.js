@@ -29,14 +29,14 @@ export default function Home() {
         </div>
         <div className={styles.heroCopy}>
           <h1 className={styles.heroTitle}>Ms. Sonoma</h1>
-          <p className={styles.heroSub}>Guided learning with a caring Educator.</p>
+          <p className={styles.heroSub}>Guided learning with a caring Facilitator.</p>
           <div className={styles.ctaRow}>
             <a href="/learn" className={`${styles.cta} ${styles.ctaSecondary}`}>Learn</a>
             <a href="/facilitator" className={`${styles.cta} ${styles.ctaPrimary}`}>Facilitator</a>
           </div>
           <div className={styles.aboutRow}>
             <a href="/about" className={styles.aboutLink}>
-              About AI Safety & How to Use →
+              How AI Works & Safety Protections →
             </a>
           </div>
         </div>
