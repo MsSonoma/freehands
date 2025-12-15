@@ -917,13 +917,15 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 							>
 								Cancel
 							</button>
-						<button
-							onClick={handleSave}
-							style={buttonStyle}
-							disabled={saving}
-						>
-							{saving ? 'Saving…' : 'Save Changes'}
-						</button>
+							<button
+								onClick={handleSave}
+								style={buttonStyle}
+								disabled={saving}
+							>
+								{saving ? 'Saving…' : 'Save Changes'}
+							</button>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
