@@ -10,6 +10,7 @@ export default function DayViewOverlay({
   scheduledLessons = [], 
   plannedLessons = [], 
   learnerId,
+  learnerGrade,
   tier,
   onClose,
   onLessonGenerated,
@@ -175,6 +176,7 @@ export default function DayViewOverlay({
     return (
       <LessonGeneratorOverlay
         learnerId={learnerId}
+        learnerGrade={learnerGrade}
         tier={tier}
         scheduledDate={selectedDate}
         prefilledData={generatorData}

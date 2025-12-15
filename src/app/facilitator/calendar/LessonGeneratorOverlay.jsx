@@ -10,6 +10,7 @@ const difficulties = ['beginner', 'intermediate', 'advanced']
 
 export default function LessonGeneratorOverlay({ 
   learnerId,
+  learnerGrade,
   tier, 
   onClose, 
   onGenerated,
@@ -17,7 +18,7 @@ export default function LessonGeneratorOverlay({
   prefilledData 
 }) {
   const [form, setForm] = useState({
-    grade: prefilledData?.grade || '', 
+    grade: prefilledData?.grade || learnerGrade || '', 
     difficulty: prefilledData?.difficulty || 'intermediate', 
     subject: prefilledData?.subject || 'math', 
     title: prefilledData?.title || '', 

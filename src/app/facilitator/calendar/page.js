@@ -850,6 +850,7 @@ export default function CalendarPage() {
                 scheduledLessons={scheduledLessons[selectedDate] || []}
                 plannedLessons={plannedLessons[selectedDate] || []}
                 learnerId={selectedLearnerId}
+                learnerGrade={learners.find(l => l.id === selectedLearnerId)?.grade || '3rd'}
                 tier={tier}
                 noSchoolReason={noSchoolDates[selectedDate] || null}
                 onClose={() => setShowDayView(false)}
