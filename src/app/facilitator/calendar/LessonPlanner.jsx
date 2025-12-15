@@ -475,23 +475,13 @@ export default function LessonPlanner({
         </div>
 
         {/* Day of Week Grid */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: 8,
-          marginBottom: 16
-        }}>
+        <div className="weekly-pattern-grid">
           {DAYS.map(day => {
             const daySubjects = weeklyPattern[day] || []
             return (
               <div 
-                key={day} 
-                style={{
-                  border: '1px solid #e5e7eb',
-                  borderRadius: 6,
-                  padding: 12,
-                  background: '#f9fafb'
-                }}
+                key={day}
+                className="day-column"
               >
                 <div style={{ 
                   fontSize: 12, 
@@ -747,6 +737,34 @@ export default function LessonPlanner({
           }}
         />
       )}
+
+      <style jsx>{`
+        .weekly-pattern-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 8px;
+          margin-bottom: 16px;
+        }
+
+        .day-column {
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          padding: 12px;
+          background: #f9fafb;
+        }
+
+        @media (min-width: 601px) {
+          .weekly-pattern-grid {
+            grid-template-columns: repeat(7, 1fr);
+          }
+        }
+
+        @media (max-width: 600px) {
+          .day-column {
+            padding: 8px;
+          }
+        }
+      `}</style>
     </div>
   )
 }
