@@ -33,7 +33,9 @@ export async function GET(request){
     // Download from Supabase Storage using direct REST API
     // (SDK .download() method fails with StorageUnknownError, direct fetch works)
     const storagePath = `facilitator-lessons/${userId}/${file}`
-    const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/lessons/${storagePath}`
+    // Encode each path component properly for URL
+    const encodedPath = storagePath.split('/').map(encodeURIComponent).join('/')
+    const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/lessons/${encodedPath}`
     
     const response = await fetch(storageUrl, {
       headers: {
