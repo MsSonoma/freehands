@@ -11,6 +11,7 @@ import LessonCalendar from './LessonCalendar'
 import LessonPicker from './LessonPicker'
 import LessonPlanner from './LessonPlanner'
 import DayViewOverlay from './DayViewOverlay'
+import { InlineExplainer, PageHeader } from '@/components/FacilitatorHelp'
 
 export default function CalendarPage() {
   const router = useRouter()
@@ -552,11 +553,28 @@ export default function CalendarPage() {
 
               {/* Right Panel: Tabs for Scheduler and Planner */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <PageHeader
+                  title="Lesson Calendar"
+                  subtitle="Organize your teaching schedule with manual scheduling or automated planning"
+                >
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-medium">
+                      <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
+                      Scheduled
+                    </span>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                      Planned
+                    </span>
+                  </div>
+                </PageHeader>
+                
                 {/* Tab Headers */}
                 <div style={{
                   display: 'flex',
                   gap: 8,
-                  borderBottom: '2px solid #e5e7eb'
+                  borderBottom: '2px solid #e5e7eb',
+                  alignItems: 'center'
                 }}>
                   <button
                     onClick={() => setActiveTab('scheduler')}
@@ -576,6 +594,14 @@ export default function CalendarPage() {
                   >
                     Schedule Lessons
                   </button>
+                  <InlineExplainer
+                    helpKey="calendar-scheduler-tab"
+                    title="Schedule Tab"
+                    placement="bottom"
+                  >
+                    <p>Use this tab to manually assign lessons to specific dates. Click a date on the calendar, browse your lesson library, and add lessons one at a time.</p>
+                    <p className="mt-2 text-xs text-gray-500">Best for custom schedules and one-off lessons.</p>
+                  </InlineExplainer>
                   <button
                     onClick={() => setActiveTab('planner')}
                     style={{
@@ -594,6 +620,14 @@ export default function CalendarPage() {
                   >
                     Lesson Planner
                   </button>
+                  <InlineExplainer
+                    helpKey="calendar-planner-tab"
+                    title="Planner Tab"
+                    placement="bottom"
+                  >
+                    <p>Generate multi-week lesson outlines automatically. Set a weekly pattern (which subjects on which days), choose duration, and we'll create a curriculum plan.</p>
+                    <p className="mt-2 text-xs text-gray-500">Best for consistent schedules and long-term planning.</p>
+                  </InlineExplainer>
                 </div>
 
                 {/* Tab Content - Both tabs remain mounted, only visibility changes */}

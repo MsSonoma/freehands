@@ -1,4 +1,25 @@
 {
+  "facilitator-help-system": {
+    "file": "facilitator-help-system.md",
+    "systems": [
+      "facilitator help components",
+      "InlineExplainer",
+      "WorkflowGuide",
+      "PageHeader",
+      "contextual help",
+      "dismissible tooltips",
+      "localStorage persistence",
+      "help content guidelines",
+      "calendar tab explainers",
+      "phase timers explanation",
+      "learner configuration help",
+      "lesson approval workflow",
+      "weekly pattern explainer",
+      "beta tester feedback"
+    ],
+    "last_updated": "2025-12-15T16:00:00Z",
+    "status": "canonical"
+  },
   "calendar-lesson-planning": {
     "file": "calendar-lesson-planning.md",
     "systems": [

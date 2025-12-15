@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import CurriculumPreferencesOverlay from './CurriculumPreferencesOverlay'
 import LessonGeneratorOverlay from './LessonGeneratorOverlay'
+import { InlineExplainer, WorkflowGuide } from '@/components/FacilitatorHelp'
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 const CORE_SUBJECTS = ['math', 'language arts', 'science', 'social studies', 'general']
@@ -472,6 +473,30 @@ export default function LessonPlanner({
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Workflow Guide */}
+      <WorkflowGuide
+        workflowKey="lesson-planner-workflow"
+        title="How Automated Lesson Planning Works"
+        steps={[
+          { 
+            step: 'Set your weekly pattern', 
+            description: 'Check which subjects you want to teach on each day of the week below' 
+          },
+          { 
+            step: 'Choose start date and duration', 
+            description: 'Select when to begin and how many weeks/months to plan' 
+          },
+          { 
+            step: 'Generate lesson plan', 
+            description: 'We create lesson outlines based on your learner\'s history and grade level' 
+          },
+          { 
+            step: 'Review and generate full lessons', 
+            description: 'Click dates in the calendar to see planned lessons. Generate full lesson content for any outline you like' 
+          }
+        ]}
+      />
+
       {/* Weekly Pattern Section */}
       <div style={{
         background: '#fff',
@@ -483,11 +508,21 @@ export default function LessonPlanner({
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          marginBottom: 16
+          marginBottom: 12
         }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1f2937', margin: 0 }}>
-            Weekly Schedule Pattern
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1f2937', margin: 0 }}>
+              Weekly Schedule Pattern
+            </h3>
+            <InlineExplainer
+              helpKey="weekly-pattern-explainer"
+              title="Weekly Pattern"
+              placement="right"
+            >
+              <p>Check the subjects you want to teach on each day. This pattern repeats every week for the duration you specify.</p>
+              <p className="mt-2">Example: Check "Math" on Monday, Wednesday, Friday to schedule 3 math lessons per week.</p>
+            </InlineExplainer>
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               onClick={() => setShowPreferences(true)}

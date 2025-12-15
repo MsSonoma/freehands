@@ -8,6 +8,7 @@ import {
 	TIMER_TYPE_NAMES,
 	getDefaultPhaseTimers
 } from '@/app/session/utils/phaseTimerDefaults';
+import { InlineExplainer } from '@/components/FacilitatorHelp';
 
 const GRADES = ['K', ...Array.from({length: 12}, (_, i) => String(i + 1))];
 const TARGETS = Array.from({length: 18}, (_, i) => String(i + 3)); // 3-20
@@ -555,19 +556,32 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 
 						{activeTab === 'timers' && (
 							<div>
-						{/* Info note */}
+						{/* Info note with explanation */}
 						<div style={{
 							background: '#eff6ff',
 							border: '1px solid #bfdbfe',
-							borderRadius: 6,
-							padding: 8,
-							marginBottom: 12,
-							fontSize: 12,
-							color: '#1e40af',
-							lineHeight: 1.4
+							borderRadius: 8,
+							padding: 12,
+							marginBottom: 16
 						}}>
-							<strong>How it works:</strong> Each phase has Play time (for games before work) and Work time (for actual lesson tasks). 
-							Click phase names for details.
+							<div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+								<h4 style={{ fontSize: 14, fontWeight: 700, color: '#1e40af', margin: 0 }}>
+									Phase Timers Explained
+								</h4>
+								<InlineExplainer
+									helpKey="phase-timers-details"
+									title="About Phase Timers"
+									placement="bottom"
+								>
+									<p><strong>Play Timer:</strong> Time for games and warm-up activities at the start of each phase. The learner can explore and have fun before focusing on lesson work.</p>
+									<p className="mt-2"><strong>Work Timer:</strong> Time for actual lesson tasks (questions, exercises, etc). When this expires, a 30-second countdown begins before moving to the next phase.</p>
+									<p className="mt-2 text-xs">Timers create structure and help learners manage their time during lessons.</p>
+								</InlineExplainer>
+							</div>
+							<p style={{ fontSize: 12, color: '#1e40af', margin: 0, lineHeight: 1.4 }}>
+								Each lesson phase has two timers: <strong>Play</strong> (games before work) and <strong>Work</strong> (actual tasks). 
+								Click phase names for details.
+							</p>
 						</div>						{/* Phase timers */}
 						{['discussion', 'comprehension', 'exercise', 'worksheet', 'test'].map((phase) => (
 							<div key={phase} style={{ marginBottom: 12 }}>

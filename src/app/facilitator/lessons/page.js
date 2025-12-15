@@ -9,6 +9,7 @@ import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
+import { PageHeader, WorkflowGuide } from '@/components/FacilitatorHelp'
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
@@ -599,6 +600,36 @@ export default function FacilitatorLessonsPage() {
         </div>
       
         <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
+      <PageHeader
+        title="Lesson Library"
+        subtitle="Browse, approve, and schedule lessons for your learners"
+      />
+      
+      {/* Workflow Guide */}
+      <WorkflowGuide
+        workflowKey="lesson-approval-workflow"
+        title="How Lesson Approval & Scheduling Works"
+        defaultOpen={false}
+        steps={[
+          { 
+            step: 'Select a learner', 
+            description: 'Choose which student you want to manage lessons for' 
+          },
+          { 
+            step: 'Load and browse lessons', 
+            description: 'Click "Load Lessons" to see available curriculum filtered by grade' 
+          },
+          { 
+            step: 'Make lessons available', 
+            description: 'Check "Available" to show a lesson in the learner\'s lesson list (they can start it anytime)' 
+          },
+          { 
+            step: 'Schedule for specific dates (optional)', 
+            description: 'Click the calendar icon to assign a lesson to a specific date. This makes it appear on that day.' 
+          }
+        ]}
+      />
+      
       {learners.length === 0 ? (
         <div style={{
           padding: 24,
