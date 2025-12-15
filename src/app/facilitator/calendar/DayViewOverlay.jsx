@@ -51,7 +51,19 @@ export default function DayViewOverlay({
     setLessonEditorLoading(true)
     
     try {
-      const response = await fetch(`/api/facilitator/lessons/${encodeURIComponent(scheduledLesson.lesson_key)}`)
+      const supabase = getSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        throw new Error('Not authenticated')
+      }
+      
+      const params = new URLSearchParams({
+        file: scheduledLesson.lesson_key,
+        userId: user.id
+      })
+      
+      const response = await fetch(`/api/facilitator/lessons/get?${params}`)
       if (!response.ok) throw new Error('Failed to load lesson')
       
       const data = await response.json()
