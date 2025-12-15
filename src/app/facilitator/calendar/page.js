@@ -625,7 +625,7 @@ export default function CalendarPage() {
                     title="Planner Tab"
                     placement="bottom"
                   >
-                    <p>Generate multi-week lesson outlines automatically. Set a weekly pattern (which subjects on which days), choose duration, and we'll create a curriculum plan.</p>
+                    <p>Generate multi-week lesson outlines automatically. Set a weekly pattern (which subjects on which days), choose duration, and we&apos;ll create a curriculum plan.</p>
                     <p className="mt-2 text-xs text-gray-500">Best for consistent schedules and long-term planning.</p>
                   </InlineExplainer>
                 </div>

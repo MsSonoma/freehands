@@ -240,7 +240,7 @@ export default function LearnersPage() {
 									placement="bottom"
 								>
 									<p>Control which AI-powered activities are available: Ask (custom questions), Poem generation, Story mode, and Fill-in-Fun games.</p>
-									<p className="mt-2 text-xs text-gray-500">Disable features you don't want learners to access during lessons.</p>
+									<p className="mt-2 text-xs text-gray-500">Disable features you don&apos;t want learners to access during lessons.</p>
 								</InlineExplainer>
 							</div>
 							<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
