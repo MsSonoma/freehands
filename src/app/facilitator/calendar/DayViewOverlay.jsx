@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import LessonGeneratorOverlay from './LessonGeneratorOverlay'
 import LessonEditor from '@/components/LessonEditor'
+import { getSupabaseClient } from '@/lib/supabase'
 
 export default function DayViewOverlay({ 
   selectedDate, 
@@ -101,9 +102,20 @@ export default function DayViewOverlay({
     setRedoingLesson(plannedLesson.id)
     
     try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      if (!token) {
+        throw new Error('Not authenticated')
+      }
+
       const response = await fetch('/api/generate-lesson-outline', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           subject: plannedLesson.subject,
           grade: plannedLesson.grade || '3rd',
