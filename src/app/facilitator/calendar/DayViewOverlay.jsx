@@ -67,7 +67,7 @@ export default function DayViewOverlay({
       const response = await fetch(`/api/facilitator/lessons/get?${params}`)
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('Lesson load failed:', errorData)
+        console.error('Lesson load failed:', JSON.stringify(errorData, null, 2))
         throw new Error(errorData.error || 'Failed to load lesson')
       }
       
