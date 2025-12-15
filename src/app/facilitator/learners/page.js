@@ -167,7 +167,7 @@ export default function LearnersPage() {
 				}
 			}
 			
-			setEditingLearner(null);
+			setEditingBasicInfo(null);
 		} catch (err) {
 			throw err; // Let overlay handle the error
 		}
