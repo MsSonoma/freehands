@@ -312,6 +312,28 @@ export default function CalendarPage() {
     }
   }
 
+  const handlePlannedLessonUpdate = (date, lessonId, updatedLesson) => {
+    const updated = { ...plannedLessons }
+    if (updated[date]) {
+      const index = updated[date].findIndex(l => l.id === lessonId)
+      if (index !== -1) {
+        updated[date][index] = updatedLesson
+        savePlannedLessons(updated)
+      }
+    }
+  }
+
+  const handlePlannedLessonRemove = (date, lessonId) => {
+    const updated = { ...plannedLessons }
+    if (updated[date]) {
+      updated[date] = updated[date].filter(l => l.id !== lessonId)
+      if (updated[date].length === 0) {
+        delete updated[date]
+      }
+      savePlannedLessons(updated)
+    }
+  }
+
   const handleScheduleLesson = async (lessonKey, date) => {
     try {
       const supabase = getSupabaseClient()
@@ -803,6 +825,8 @@ export default function CalendarPage() {
                   loadNoSchoolDates()
                 }}
                 onNoSchoolSet={handleNoSchoolSet}
+                onPlannedLessonUpdate={handlePlannedLessonUpdate}
+                onPlannedLessonRemove={handlePlannedLessonRemove}
               />
             )}
           </>

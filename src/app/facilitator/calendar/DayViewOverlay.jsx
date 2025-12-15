@@ -13,6 +13,8 @@ export default function DayViewOverlay({
   onClose,
   onLessonGenerated,
   onNoSchoolSet,
+  onPlannedLessonUpdate,
+  onPlannedLessonRemove,
   noSchoolReason = null
 }) {
   const [showGenerator, setShowGenerator] = useState(false)
@@ -23,6 +25,7 @@ export default function DayViewOverlay({
   const [lessonEditorSaving, setLessonEditorSaving] = useState(false)
   const [showNoSchoolInput, setShowNoSchoolInput] = useState(false)
   const [noSchoolInputValue, setNoSchoolInputValue] = useState(noSchoolReason || '')
+  const [redoingLesson, setRedoingLesson] = useState(null)
 
   const formattedDate = new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
     weekday: 'long',
@@ -90,6 +93,52 @@ export default function DayViewOverlay({
       onNoSchoolSet(selectedDate, noSchoolInputValue.trim() || null)
     }
     setShowNoSchoolInput(false)
+  }
+
+  const handleRedoClick = async (plannedLesson) => {
+    if (!onPlannedLessonUpdate) return
+    
+    setRedoingLesson(plannedLesson.id)
+    
+    try {
+      const response = await fetch('/api/generate-lesson-outline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: plannedLesson.subject,
+          grade: plannedLesson.grade || '3rd',
+          difficulty: plannedLesson.difficulty || 'intermediate',
+          learnerId
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to generate outline')
+      
+      const result = await response.json()
+      const newOutline = result.outline
+      
+      // Keep the same id and subject, but update title and description
+      const updatedLesson = {
+        ...plannedLesson,
+        title: newOutline.title,
+        description: newOutline.description
+      }
+      
+      onPlannedLessonUpdate(selectedDate, plannedLesson.id, updatedLesson)
+    } catch (err) {
+      console.error('Error regenerating lesson:', err)
+      alert('Failed to regenerate lesson outline')
+    } finally {
+      setRedoingLesson(null)
+    }
+  }
+
+  const handleRemoveClick = (plannedLesson) => {
+    if (!onPlannedLessonRemove) return
+    
+    if (confirm(`Remove "${plannedLesson.title}" from ${formattedDate}?`)) {
+      onPlannedLessonRemove(selectedDate, plannedLesson.id)
+    }
   }
 
   // If generator overlay is open, show it
@@ -441,22 +490,58 @@ export default function DayViewOverlay({
                       {lesson.subject}  {lesson.grade}  {lesson.difficulty}
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleGenerateClick(lesson)}
-                    style={{
-                      padding: '6px 12px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      background: '#2563eb',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 4,
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    Generate
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <button
+                      onClick={() => handleGenerateClick(lesson)}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        background: '#2563eb',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      Generate
+                    </button>
+                    <button
+                      onClick={() => handleRedoClick(lesson)}
+                      disabled={redoingLesson === lesson.id}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        background: '#fff',
+                        color: '#2563eb',
+                        border: '1px solid #93c5fd',
+                        borderRadius: 4,
+                        cursor: redoingLesson === lesson.id ? 'not-allowed' : 'pointer',
+                        opacity: redoingLesson === lesson.id ? 0.6 : 1,
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {redoingLesson === lesson.id ? 'Redoing...' : 'Redo'}
+                    </button>
+                    <button
+                      onClick={() => handleRemoveClick(lesson)}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        background: '#fff',
+                        color: '#dc2626',
+                        border: '1px solid #fca5a5',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
