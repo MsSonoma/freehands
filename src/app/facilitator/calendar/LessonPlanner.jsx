@@ -343,8 +343,48 @@ export default function LessonPlanner({
         contextText += `\n\nBanned Words: ${curriculumPrefs.banned_words}`
       }
 
+      // Calculate recommended difficulty based on recent performance
+      const recentCompleted = lessonContext
+        .filter(l => l.status === 'completed' && l.score !== null)
+        .slice(-6) // Last 6 completed lessons
+      
+      let recommendedDifficulty = 'intermediate' // Safe default
+      
+      if (recentCompleted.length >= 3) {
+        const avgScore = recentCompleted.reduce((sum, l) => sum + l.score, 0) / recentCompleted.length
+        
+        // Detect current level from recent lesson keywords
+        const recentBeginner = recentCompleted.slice(-3).filter(l => 
+          l.name.toLowerCase().includes('beginner') || 
+          l.name.toLowerCase().includes('introduction') ||
+          l.name.toLowerCase().includes('basics')
+        ).length
+        
+        const recentAdvanced = recentCompleted.slice(-3).filter(l => 
+          l.name.toLowerCase().includes('advanced') || 
+          l.name.toLowerCase().includes('expert') ||
+          l.name.toLowerCase().includes('mastery')
+        ).length
+        
+        // Bidirectional adjustment based on performance
+        if (avgScore >= 85 && recentAdvanced >= 2) {
+          recommendedDifficulty = 'advanced' // Already advanced, doing great
+        } else if (avgScore >= 80 && recentBeginner === 0) {
+          recommendedDifficulty = 'advanced' // Ready to move up from intermediate
+        } else if (avgScore <= 65) {
+          recommendedDifficulty = 'beginner' // Struggling - move down
+        } else if (avgScore <= 70 && recentAdvanced >= 2) {
+          recommendedDifficulty = 'intermediate' // Struggling at advanced - move down
+        }
+        // else stays at intermediate (safe middle ground)
+      }
+
       if (contextText) {
-        contextText += '\n\nIMPORTANT: Do not repeat lessons already completed, scheduled, or planned. Plan new lessons that build on what the learner has already done.'
+        contextText += '\n\nCurriculum Evolution Guidelines:'
+        contextText += '\n- Build sequentially on completed topics (reference prior concepts in new lessons)'
+        contextText += '\n- Do NOT repeat lessons already completed, scheduled, or planned'
+        contextText += '\n- Create logical topic progressions within each subject'
+        contextText += `\n- Recommended difficulty: ${recommendedDifficulty} (stay at same level for 3-4 lessons before increasing)`
       }
 
       // Start from the exact date provided (no Monday adjustment)
@@ -373,7 +413,7 @@ export default function LessonPlanner({
                 body: JSON.stringify({
                   subject: subjectInfo.subject,
                   grade: '3rd', // Default - user can change in generator
-                  difficulty: 'intermediate',
+                  difficulty: recommendedDifficulty,
                   learnerId,
                   context: contextText  // Include lesson history and preferences
                 })
