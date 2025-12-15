@@ -216,46 +216,7 @@ export default function LearnersPage() {
 			`}</style>
 			<main style={{ padding: 7, overflowX: 'hidden', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
 				<div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
-					<PageHeader
-						title="Learners"
-						subtitle="Manage your students and customize their learning experience"
-					>
-						<div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
-							<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-								<span style={{ fontSize: 13, color: '#6b7280' }}>🎯 Targets</span>
-								<InlineExplainer
-									helpKey="learner-targets-info"
-									title="Learning Targets"
-
-								>
-									<p>Set how many questions appear in each lesson phase (Comprehension, Exercise, Worksheet, Test).</p>
-									<p className="mt-2 text-xs text-gray-500">Higher numbers = more practice, longer lessons.</p>
-								</InlineExplainer>
-							</div>
-							<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-								<span style={{ fontSize: 13, color: '#6b7280' }}>🤖 AI Features</span>
-								<InlineExplainer
-									helpKey="learner-ai-features-info"
-									title="AI Features"
-
-								>
-									<p>Control which AI-powered activities are available: Ask (custom questions), Poem generation, Story mode, and Fill-in-Fun games.</p>
-									<p className="mt-2 text-xs text-gray-500">Disable features you don&apos;t want learners to access during lessons.</p>
-								</InlineExplainer>
-							</div>
-							<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-								<span style={{ fontSize: 13, color: '#6b7280' }}>⏱️ Timers</span>
-								<InlineExplainer
-									helpKey="learner-timers-info"
-									title="Phase Timers"
-									placement="bottom"
-								>
-									<p>Set Play time (games/exploration) and Work time (lesson tasks) for each of the 5 lesson phases.</p>
-									<p className="mt-2 text-xs text-gray-500">Timers help learners manage time and stay focused.</p>
-								</InlineExplainer>
-							</div>
-						</div>
-					</PageHeader>
+<PageHeader title="Learners" subtitle="Manage your students and customize their learning experience" />
 
 					{/* Header with plan info */}
 					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>

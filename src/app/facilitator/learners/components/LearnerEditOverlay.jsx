@@ -39,6 +39,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [phaseTimers, setPhaseTimers] = useState(getDefaultPhaseTimers());
 	const [hoveredTooltip, setHoveredTooltip] = useState(null);
 	const [clickedTooltip, setClickedTooltip] = useState(null);
+	const [showHelp, setShowHelp] = useState(false);
 	
 	const [saving, setSaving] = useState(false);
 
@@ -849,6 +850,62 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 							</div>
 						)}
 					</div>
+
+					{/* Inline Help Section */}
+					{(activeTab === 'targets' || activeTab === 'ai-features' || activeTab === 'timers') && (
+						<div style={{ padding: '0 24px 16px' }}>
+							<button
+								onClick={() => setShowHelp(!showHelp)}
+								style={{
+									display: 'flex',
+									alignItems: 'center',
+									gap: 6,
+									background: 'none',
+									border: 'none',
+									cursor: 'pointer',
+									color: '#3b82f6',
+									fontSize: 14,
+									fontWeight: 500
+								}}
+							>
+								❓ {showHelp ? 'Hide' : 'Show'} Help
+							</button>
+							{showHelp && (
+								<div style={{
+									marginTop: 8,
+									padding: 12,
+									background: '#f9fafb',
+									borderRadius: 6,
+									border: '1px solid #e5e7eb',
+									fontSize: 14,
+									color: '#374151',
+									lineHeight: 1.5
+								}}>
+									{activeTab === 'targets' && (
+										<>
+											<p><strong>Learning Targets</strong></p>
+											<p style={{ marginTop: 8 }}>Set how many questions appear in each lesson phase (Comprehension, Exercise, Worksheet, Test).</p>
+											<p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>Higher numbers = more practice, longer lessons.</p>
+										</>
+									)}
+									{activeTab === 'ai-features' && (
+										<>
+											<p><strong>AI Features</strong></p>
+											<p style={{ marginTop: 8 }}>Control which AI-powered activities are available: Ask (custom questions), Poem generation, Story mode, and Fill-in-Fun games.</p>
+											<p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>Disable features you don&apos;t want learners to access during lessons.</p>
+										</>
+									)}
+									{activeTab === 'timers' && (
+										<>
+											<p><strong>Phase Timers</strong></p>
+											<p style={{ marginTop: 8 }}>Set Play time (games/exploration) and Work time (lesson tasks) for each of the 5 lesson phases.</p>
+											<p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>Timers help learners manage time and stay focused.</p>
+										</>
+									)}
+								</div>
+							)}
+						</div>
+					)}
 
 					{/* Footer */}
 					<div style={footerStyle}>
