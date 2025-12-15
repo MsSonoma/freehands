@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import LessonGeneratorOverlay from './LessonGeneratorOverlay'
 import LessonEditor from '@/components/LessonEditor'
-import { getSupabaseClient } from '@/lib/supabase'
+import { getSupabaseClient } from '@/app/lib/supabaseClient'
 
 export default function DayViewOverlay({ 
   selectedDate, 
