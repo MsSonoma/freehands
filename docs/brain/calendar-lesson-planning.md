@@ -30,7 +30,9 @@ The Calendar page includes an automated lesson planner that generates lesson out
 - Each row = one lesson outline for one date
 - Survives page refresh, long absences, logout/login
 - Tied to specific facilitator + learner combination
-- POST replaces entire plan (delete all existing, insert new)
+- **POST uses date-specific overwrite**: only deletes/replaces dates included in new plan
+- **Multiple non-overlapping plans coexist**: schedule Jan + Mar separately, both persist
+- **Overlapping dates are replaced**: reschedule Jan 15-31 overwrites only those dates, Jan 1-14 untouched
 
 **Data Format:**
 ```javascript
@@ -56,7 +58,7 @@ plannedLessons = {
 
 **`/api/planned-lessons`**
 - **GET** `?learnerId=X` - Load all planned lessons for learner, returns `{plannedLessons: {...}}`
-- **POST** - Save entire lesson plan (replaces existing), expects `{learnerId, plannedLessons}`
+- **POST** - Save lesson plan with date-specific overwrite (only replaces dates in new plan), expects `{learnerId, plannedLessons}`
 - **DELETE** `?learnerId=X` - Clear all planned lessons for learner
 
 **`/api/learner/lesson-history`** - completed/incomplete sessions  
@@ -118,6 +120,9 @@ Check actual route files, not assumptions.
 ### ❌ DON'T: Forget to handle API response wrapper objects
 **Why**: Some APIs return raw arrays, others return `{data: [...]}` or `{schedule: [...]}`. Always check the route to see actual response structure. Using `.map()` on a wrapper object causes "not a function" errors.
 
+### ❌ DON'T: Delete ALL planned lessons on every save
+**Why**: Users want to schedule multiple non-overlapping time periods (e.g., January + March). Full replacement would delete January when scheduling March. Use date-specific deletion instead.
+
 ### ✅ DO: Save planned lessons to database immediately after generation
 **Why**: Persistence must be automatic and immediate. User expects generated plan to "just work" across sessions.
 
@@ -127,8 +132,8 @@ Check actual route files, not assumptions.
 ### ✅ DO: Handle API failures gracefully with defaults
 **Why**: External data should enhance generation, not block it. Default to empty arrays/objects when APIs fail.
 
-### ✅ DO: Use POST to replace entire plan atomically
-**Why**: Prevents partial updates, duplicate entries, or orphaned records. Delete all existing planned lessons for learner, then insert new plan in one transaction-like operation.
+### ✅ DO: Use date-specific overwrite for POST saves
+**Why**: Allows multiple non-overlapping plans to coexist. Only deletes dates that are in the new plan, preserving all other dates. Enables incremental planning and gap-filling without losing unrelated lessons.
 
 ## Key Files
 
@@ -146,9 +151,9 @@ Check actual route files, not assumptions.
   - Handles errors and updates state
 
 **API Routes:**
-- `src/app/api/planned-lessons/route.js` (NEW)
+- `src/app/api/planned-lessons/route.js`
   - GET: load by learner, transform DB rows to `{date: [lessons]}` format
-  - POST: delete all existing, insert new rows for each date/lesson
+  - POST: date-specific overwrite - extracts dates from new plan, deletes only those dates (.in filter), inserts new rows
   - DELETE: clear all planned lessons for learner
   - RLS policies ensure facilitator can only access own data
 
@@ -166,6 +171,20 @@ Check actual route files, not assumptions.
   - UNIQUE constraint prevents exact duplicates
 
 ## Recent Changes
+
+**2025-12-15**: Changed to date-specific overwrite for planned lessons
+- POST now only deletes dates included in the new plan (uses `.in('scheduled_date', newPlanDates)`)
+- Multiple non-overlapping plans can coexist (schedule Jan + Mar separately, both persist)
+- Overlapping dates are replaced (reschedule Jan 15-31 overwrites only those dates)
+- Enables incremental planning and gap-filling without losing unrelated lessons
+- Removed full-replacement logic that deleted all planned lessons on every save
+
+**2025-12-15**: Added adaptive difficulty progression
+- Analyzes last 6 completed lessons to calculate recommended difficulty
+- Moves up to advanced if avg ≥80-85% and appropriate current level
+- Moves down to beginner if avg ≤65%, or to intermediate if avg ≤70% while at advanced
+- Defaults to intermediate with <3 completed lessons
+- Enhanced GPT instructions with "Curriculum Evolution Guidelines" and anti-repetition directives
 
 **2025-12-15**: Added database persistence for planned lessons
 - Created `planned_lessons` table with JSONB lesson_data column
