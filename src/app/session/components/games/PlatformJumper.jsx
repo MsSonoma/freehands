@@ -38,10 +38,10 @@ export default function PlatformJumper({ onBack }) {
       // Reserve space for controls and padding
       const controlsWidth = newIsLandscape ? 350 : 0; // Increased to account for two control sets (175px each)
       const controlsHeight = newIsLandscape ? 0 : 220;
-      const padding = newIsLandscape ? 60 : 40; // Padding around elements
+      const padding = newIsLandscape ? 10 : 40; // Minimal padding in landscape
       
       const availableWidth = window.innerWidth - controlsWidth - padding;
-      const availableHeight = window.innerHeight - controlsHeight - padding - 80; // Extra for header/back button
+      const availableHeight = window.innerHeight - controlsHeight - padding - (newIsLandscape ? 40 : 80); // Extra for header/back button
       
       const scaleX = availableWidth / GAME_WIDTH;
       const scaleY = availableHeight / GAME_HEIGHT;
@@ -1303,10 +1303,10 @@ export default function PlatformJumper({ onBack }) {
       flexDirection: isLandscape ? 'row' : 'column',
       alignItems: 'center',
       justifyContent: isLandscape ? 'space-evenly' : 'center',
-      padding: isLandscape ? '10px' : '10px',
+      padding: isLandscape ? '5px' : '10px',
       boxSizing: 'border-box',
       background: '#f9fafb',
-      gap: isLandscape ? '10px' : '10px',
+      gap: isLandscape ? '5px' : '10px',
       overflow: 'hidden'
     }}>
       {/* Left controls (landscape only) */}
@@ -1317,7 +1317,7 @@ export default function PlatformJumper({ onBack }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '8px',
+        gap: isLandscape ? '4px' : '8px',
         maxWidth: '100%',
         overflow: 'visible',
         flexShrink: 1,
@@ -1340,8 +1340,8 @@ export default function PlatformJumper({ onBack }) {
           transform: `scale(${scale})`,
           transformOrigin: 'center center',
           background: 'linear-gradient(180deg, #bfdbfe 0%, #dbeafe 100%)',
-          border: '4px solid #1f2937',
-          borderRadius: '8px',
+          border: isLandscape ? '2px solid #1f2937' : '4px solid #1f2937',
+          borderRadius: isLandscape ? '4px' : '8px',
           overflow: 'hidden',
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
         }}>
