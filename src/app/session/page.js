@@ -1447,17 +1447,7 @@ function SessionPageInner() {
         const w = window.innerWidth;
         const h = window.innerHeight;
   const wideAspect = h > 0 && (w / h) >= 1.0;
-        const wasLandscape = isMobileLandscape;
         setIsMobileLandscape(!!wideAspect);
-        // Debug: log orientation changes
-        if (wasLandscape !== !!wideAspect) {
-          console.log('[ORIENTATION CHANGE]', wasLandscape ? 'Landscape→Portrait' : 'Portrait→Landscape', {
-            width: w,
-            height: h,
-            ratio: w/h,
-            isMobileLandscape: !!wideAspect
-          });
-        }
       } catch {}
     };
     check();
@@ -7533,23 +7523,8 @@ function SessionPageInner() {
                 storyState === 'inactive' &&
                 fillInFunState === 'inactive'
               );
-              // Debug: log button visibility state
-              if (phase === 'discussion' && subPhase === 'awaiting-learner') {
-                console.log('[FOOTER BUTTONS] canShow:', canShow, 'isMobileLandscape:', isMobileLandscape, {
-                  phase,
-                  subPhase,
-                  isSpeaking,
-                  captionsDone,
-                  showOpeningActions,
-                  askState,
-                  riddleState,
-                  poemState,
-                  storyState,
-                  fillInFunState
-                });
-              }
               if (!canShow) return null;
-              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px', background: 'rgba(255,0,0,0.1)' };
+              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px' };
               const btn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
               const goBtn = { ...btn, background:'#c7442e', boxShadow:'0 2px 12px rgba(199,68,46,0.28)' };
               const disabledBtn = { ...btn, opacity:0.5, cursor:'not-allowed' };
@@ -7589,10 +7564,8 @@ function SessionPageInner() {
               const canShow = (
                 inQnA && !isSpeaking && showOpeningActions && askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive' && fillInFunState === 'inactive'
               );
-              // Debug Q&A buttons
-              console.log('[QNA BUTTONS] canShow:', canShow, 'isMobileLandscape:', isMobileLandscape, { inQnA, phase, subPhase });
               if (!canShow) return null;
-              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px', background: 'rgba(0,0,255,0.1)' };
+              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px' };
               const btn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
               const goBtn = { ...btn, background:'#c7442e', boxShadow:'0 2px 12px rgba(199,68,46,0.28)' };
               const disabledBtn = { ...btn, opacity:0.5, cursor:'not-allowed' };
@@ -7739,12 +7712,10 @@ function SessionPageInner() {
             try {
               // Show teaching gate Repeat Vocab/Examples and Next when awaiting-gate; hide while speaking
               const shouldShow = (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && askState === 'inactive');
-              console.log('[TEACHING GATE BUTTONS]', { shouldShow, phase, subPhase, isSpeaking, askState, isShortHeight, isMobileLandscape });
               if (shouldShow) {
                 const containerStyle = {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8,
                   paddingLeft: isMobileLandscape ? 12 : '4%', paddingRight: isMobileLandscape ? 12 : '4%', marginBottom: 6,
-                  background: 'rgba(0,255,0,0.1)'
                 };
                 const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, minWidth:56, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
                 // Button labels: "Repeat Sentence"/"Next Sentence" during sentence navigation, "Restart Vocab"/"Next: Examples" at final gate
@@ -7758,8 +7729,7 @@ function SessionPageInner() {
                   nextLabel = 'Next Sentence';
                 }
                 const ariaLabel = teachingStage === 'examples' ? 'Teaching gate: repeat examples or move to next stage' : 'Teaching gate: repeat vocab or move to next stage';
-                console.log('[TEACHING GATE] isShortHeight check - returning null?', isShortHeight);
-                // REMOVED: if (isShortHeight) return null; - let buttons always show in footer
+                // Buttons always render in footer (isShortHeight check removed)
                 return (
                   <div style={containerStyle} aria-label={ariaLabel}>
                     <button type="button" style={btnBase} onClick={handleGateYes}>{repeatLabel}</button>
