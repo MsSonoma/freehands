@@ -466,11 +466,11 @@ export default function PlatformJumper({ onBack }) {
         { x: 380, y: 120, width: 40, height: 20 },
         { x: 460, y: 180, width: 40, height: 20 },
         { x: 540, y: 250, width: 40, height: 20 },
-        { x: 620, y: 450, width: 50, height: 20, trampoline: true },
-        { x: 700, y: 120, width: 100, height: 20 },
+        { x: 620, y: 350, width: 50, height: 20 },
+        { x: 700, y: 200, width: 100, height: 20 },
       ],
       startPos: { x: 25, y: 420 },
-      goalArea: { x: 700, y: 70, width: 100, height: 50 }
+      goalArea: { x: 700, y: 150, width: 100, height: 50 }
     },
     26: {
       name: 'Narrow Bounce',
