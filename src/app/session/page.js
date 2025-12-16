@@ -871,9 +871,20 @@ function SessionPageInner() {
     // Skip if countdown was already completed (e.g., after refresh/takeover)
     if (playExpiredCountdownCompleted) return;
     
-    // Transition to work timer FIRST so snapshot saves in work timer mode
-    // Phase transition (subPhase change) will happen when countdown completes or user clicks Start Now
-    transitionToWorkTimer(phaseName);
+    // Transition to work timer inline (avoid dependency on transitionToWorkTimer callback)
+    // Clear the play timer storage so work timer starts fresh
+    const playTimerKey = lessonKey 
+      ? `session_timer_state:${lessonKey}:${phaseName}:play`
+      : `session_timer_state:${phaseName}:play`;
+    try {
+      sessionStorage.removeItem(playTimerKey);
+    } catch {}
+    
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'work'
+    }));
+    
     setPlayExpiredCountdownCompleted(true);
     
     // Clear all opening action sequences to prevent hangover at transition to work subphase
@@ -910,7 +921,7 @@ function SessionPageInner() {
     
     // Note: Prefetch is handled by the awaiting-begin useEffect when phase transitions
     // No need to prefetch here to avoid TDZ issues with state dependencies
-  }, [playExpiredCountdownCompleted, scheduleSaveSnapshot, transitionToWorkTimer]);
+  }, [playExpiredCountdownCompleted, scheduleSaveSnapshot, lessonKey, setCurrentTimerMode]);
   
   // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode)
   const handlePlayExpiredComplete = useCallback(async () => {
