@@ -134,12 +134,13 @@
       "session ownership",
       "device conflict detection",
       "PIN-validated takeover",
-      "gate-based conflict resolution",
+      "early conflict check",
+      "snapshot restore sequencing",
       "timer state persistence",
       "cross-device session transfer",
       "learner lesson sessions"
     ],
-    "last_updated": "2025-11-20T23:00:00Z",
+    "last_updated": "2025-12-15T22:00:00Z",
     "status": "canonical"
   },
   "MentorInterceptor": {

@@ -532,11 +532,11 @@ export default function PlatformJumper({ onBack }) {
         { x: 395, y: 450, width: 35, height: 20, trampoline: true },
         { x: 475, y: 150, width: 40, height: 20 },
         { x: 560, y: 300, width: 35, height: 20 },
-        { x: 640, y: 450, width: 35, height: 20, trampoline: true },
-        { x: 720, y: 120, width: 80, height: 20 },
+        { x: 640, y: 400, width: 35, height: 20 },
+        { x: 720, y: 250, width: 80, height: 20 },
       ],
       startPos: { x: 22, y: 420 },
-      goalArea: { x: 720, y: 70, width: 80, height: 50 }
+      goalArea: { x: 720, y: 200, width: 80, height: 50 }
     },
     30: {
       name: 'Trampoline Tower',
