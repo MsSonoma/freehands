@@ -546,6 +546,9 @@ function SessionPageInner() {
   // Learner grade state (for grade-appropriate speech)
   const [learnerGrade, setLearnerGrade] = useState('');
   
+  // Auto-advance phases setting (per-learner)
+  const [autoAdvancePhases, setAutoAdvancePhases] = useState(true);
+  
   // Lesson quota gate state
   const [showQuotaGate, setShowQuotaGate] = useState(false);
   const [quotaGateInfo, setQuotaGateInfo] = useState({ remaining: 0, limit: 0, tier: 'free' });
@@ -640,6 +643,9 @@ function SessionPageInner() {
           setStoryDisabled(!!learner?.story_disabled);
           setFillInFunDisabled(!!learner?.fill_in_fun_disabled);
           
+          // Load auto-advance phases setting (default true = show buttons)
+          setAutoAdvancePhases(learner?.auto_advance_phases !== false);
+          
           // Load phase timer settings (11 timers)
           const timers = loadPhaseTimersForLearner(learner);
           setPhaseTimers(timers);
@@ -722,6 +728,8 @@ function SessionPageInner() {
               setPoemDisabled(!!learner?.poem_disabled);
               setStoryDisabled(!!learner?.story_disabled);
               setFillInFunDisabled(!!learner?.fill_in_fun_disabled);
+              // Reload auto-advance setting
+              setAutoAdvancePhases(learner?.auto_advance_phases !== false);
             }
           } catch (e) {
             // Silent error handling
@@ -1128,6 +1136,49 @@ function SessionPageInner() {
     triggerTransition();
   }, [needsPlayExpiredTransition, phase]);
   // Note: lessonData NOT in deps to avoid TDZ - we check it exists but don't trigger on changes
+
+  // Auto-advance through phase transitions when autoAdvancePhases is false
+  // Only applies to phase transition Begin buttons (after initial lesson start)
+  useEffect(() => {
+    if (autoAdvancePhases) return; // Setting is ON, show buttons normally
+    if (!lessonData?.id) return; // Wait for lesson data
+    if (ticker === 0) return; // Initial Begin button - always show (lesson hasn't started)
+    
+    // Detect awaiting-begin states (phase transition entrances)
+    const isAwaitingBegin = 
+      (phase === 'teaching' && subPhase === 'awaiting-learner') || // Initial start uses ticker=0 check above
+      (phase === 'discussion' && subPhase === 'awaiting-learner') ||
+      (phase === 'comprehension' && subPhase === 'comprehension-start') ||
+      (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') ||
+      (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') ||
+      (phase === 'test' && (subPhase === 'test-awaiting-begin' || subPhase === 'review-start'));
+    
+    if (!isAwaitingBegin) return;
+    
+    // Auto-click Begin button after brief delay (let entrance screen render)
+    const timer = setTimeout(async () => {
+      try {
+        console.log('[AUTO-ADVANCE] Triggering phase start:', phase, subPhase);
+        
+        if (phase === 'discussion' || phase === 'teaching') {
+          if (handleStartLessonRef.current) await handleStartLessonRef.current();
+        } else if (phase === 'comprehension') {
+          if (handleGoComprehensionRef.current) await handleGoComprehensionRef.current();
+        } else if (phase === 'exercise') {
+          if (handleGoExerciseRef.current) await handleGoExerciseRef.current();
+        } else if (phase === 'worksheet') {
+          if (handleGoWorksheetRef.current) await handleGoWorksheetRef.current();
+        } else if (phase === 'test') {
+          if (handleGoTestRef.current) await handleGoTestRef.current();
+        }
+      } catch (e) {
+        console.error('[AUTO-ADVANCE] Failed to advance phase:', e);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [autoAdvancePhases, phase, subPhase, ticker]);
+  // Note: lessonData checked but not in deps to avoid TDZ
 
   // Helper: speak arbitrary frontend text via unified captions + TTS
   // Use a ref so early functions can call it before it's fully defined

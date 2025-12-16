@@ -40,6 +40,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [hoveredTooltip, setHoveredTooltip] = useState(null);
 	const [clickedTooltip, setClickedTooltip] = useState(null);
 	const [showHelp, setShowHelp] = useState(false);
+	const [autoAdvancePhases, setAutoAdvancePhases] = useState(true);
 	
 	const [saving, setSaving] = useState(false);
 
@@ -61,6 +62,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setStoryDisabled(!!learner.story_disabled);
 		setFillInFunDisabled(!!learner.fill_in_fun_disabled);
 		setPhaseTimers({ ...getDefaultPhaseTimers(), ...loadPhaseTimersForLearner(learner) });
+		setAutoAdvancePhases(learner.auto_advance_phases !== false); // Default true if not set
 	}, [learner]);
 
 	const handleTimerChange = (phase, type, value) => {
@@ -108,6 +110,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 				poem_disabled: poemDisabled,
 				story_disabled: storyDisabled,
 				fill_in_fun_disabled: fillInFunDisabled,
+				auto_advance_phases: autoAdvancePhases,
 				...phaseTimers
 			});
 			onClose();
@@ -355,6 +358,46 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 									</select>
 									<p style={{ margin: '6px 0 0', fontSize: 13, color: '#6b7280' }}>
 										Number of golden keys available to unlock bonus time
+									</p>
+								</div>
+
+								<div style={fieldStyle}>
+									<label style={labelStyle}>Phase Begin Buttons</label>
+									<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+										<button
+											onClick={() => setAutoAdvancePhases(!autoAdvancePhases)}
+											style={{
+												display: 'flex',
+												alignItems: 'center',
+												width: 52,
+												height: 28,
+												borderRadius: 14,
+												border: 'none',
+												padding: 2,
+												cursor: 'pointer',
+												background: autoAdvancePhases ? '#3b82f6' : '#d1d5db',
+												transition: 'background 0.2s',
+												position: 'relative'
+											}}
+										>
+											<div style={{
+												width: 24,
+												height: 24,
+												borderRadius: '50%',
+												background: '#fff',
+												boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+												transform: autoAdvancePhases ? 'translateX(24px)' : 'translateX(0)',
+												transition: 'transform 0.2s'
+											}} />
+										</button>
+										<span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>
+											{autoAdvancePhases ? 'Show Buttons' : 'Auto-Advance'}
+										</span>
+									</div>
+									<p style={{ margin: '6px 0 0', fontSize: 13, color: '#6b7280' }}>
+										{autoAdvancePhases 
+											? 'Learner must click "Begin" at each phase transition' 
+											: 'Phases auto-start after completion (prevents break stalling). Initial Begin button still shows.'}
 									</p>
 								</div>
 
