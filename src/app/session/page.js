@@ -972,7 +972,7 @@ function SessionPageInner() {
       ...prev,
       [phaseName]: false // Explicitly mark as failed due to timeout
     }));
-  }, [setWorkPhaseCompletions]);
+  }, []); // setWorkPhaseCompletions is stable useCallback, not needed in deps
   
   // Mark work phase as completed (called when advancing to next phase with time remaining)
   const markWorkPhaseComplete = useCallback((phaseName) => {
@@ -980,7 +980,7 @@ function SessionPageInner() {
       ...prev,
       [phaseName]: true
     }));
-  }, [setWorkPhaseCompletions]);
+  }, []); // setWorkPhaseCompletions is stable useCallback, not needed in deps
   
   // Check if golden key should be earned (4/5 work phases completed)
   const checkGoldenKeyEarn = useCallback(() => {
