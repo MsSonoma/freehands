@@ -705,7 +705,7 @@ function SessionPageInner() {
         setLearnerGrade('');
       }
     })();
-  }, [subjectParam, lessonParam, goldenKeyFromUrl, lessonKey, setCurrentTimerMode]); // Re-run when lesson changes
+  }, [subjectParam, lessonParam, goldenKeyFromUrl, lessonKey]); // Re-run when lesson changes. setCurrentTimerMode is stable useCallback, not needed in deps
   
   // Also listen for storage changes to pick up timer and grade updates from facilitator page
   useEffect(() => {
@@ -857,7 +857,7 @@ function SessionPageInner() {
       ...prev,
       [phaseName]: 'play'
     }));
-  }, [setCurrentTimerMode]);
+  }, []); // setCurrentTimerMode is stable useCallback, not needed in deps
   
   // Transition from play to work timer (called when "Go" button is clicked during play mode)
   const transitionToWorkTimer = useCallback((phaseName) => {
@@ -873,7 +873,7 @@ function SessionPageInner() {
       ...prev,
       [phaseName]: 'work'
     }));
-  }, [lessonKey, setCurrentTimerMode]);
+  }, [lessonKey]); // setCurrentTimerMode is stable useCallback, not needed in deps
   
   // Handle play timer expiration (show 30-second countdown overlay)
   const handlePlayTimeUp = useCallback((phaseName) => {
