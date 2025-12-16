@@ -3650,7 +3650,7 @@ function SessionPageInner() {
     sessionConflictChecked,
     onSessionConflict: (existingSession) => {
       setShowTakeoverDialog(true);
-      setTakeoverSessionInfo(existingSession);
+      setConflictingSession(existingSession);
     },
   });
 
