@@ -78,27 +78,29 @@ Timer state in snapshot payload:
 
 ### Play Timer Expiration: Countdown Once
 
-**CRITICAL FIX (2025-12-16)**: 30-second countdown only plays once when user is present during timer expiration.
+**CRITICAL FIX (2025-12-16)**: 30-second countdown only plays during live timer expiration, NEVER after page refresh.
 
-**Problem**: Timer ticks down even when page is closed (intended). If timer expires while page is closed, countdown should NOT replay when user returns. If timer expires while page is open, countdown should show once. Previous implementation set flag when countdown started showing, which didn't handle "timer expired while closed" case.
+**Problem**: Timer ticks down even when page is closed (intended). Countdown should only show if timer expires while page is actively loaded and user is present. Should never show after refresh, takeover, or return from page close.
 
-**Solution**: Set `playExpiredCountdownCompleted` flag when countdown COMPLETES (user dismissed or auto-complete), not when it starts. On restore, check if play timer already expired (elapsed >= target) and skip countdown entirely.
+**Solution**: Set `playExpiredCountdownCompleted = true` on ANY snapshot restore. Countdown only plays if timer expires naturally while page is running, never on restore path.
 
 **Flow:**
-1. **Timer expires while page OPEN**:
+1. **Timer expires while page actively loaded**:
    - `handlePlayTimeUp()` called → show countdown overlay
    - User watches countdown or clicks "Start Now"
    - `handlePlayExpiredComplete()` or `handlePlayExpiredStartNow()` called
    - Set `playExpiredCountdownCompleted = true` and transition to work timer
-   - On refresh: flag true, countdown skipped
 
-2. **Timer expires while page CLOSED**:
+2. **Any page refresh/reload (during or after countdown)**:
+   - Snapshot restore runs
+   - Set `playExpiredCountdownCompleted = true` immediately (blocks countdown)
+   - Countdown never shows
+
+3. **Timer expires while page closed**:
    - Timer ticks in sessionStorage, reaches target
    - No `handlePlayTimeUp()` fires (page not loaded)
    - User returns, snapshot restore runs
-   - Restore logic detects: `mode === 'play' && elapsed >= target`
-   - Set `playExpiredCountdownCompleted = true` immediately
-   - Transition to work mode automatically
+   - Restore sets flag, detects expired timer, transitions to work mode
    - Countdown never shows
 
 **Implementation:**
@@ -118,11 +120,16 @@ Timer state in snapshot payload:
    - Transition to work timer
    - Call phase handler
 
-4. **Snapshot restore** (useSnapshotPersistence.js ~585-630):
+4. **Snapshot restore** (useSnapshotPersistence.js ~500):
 ```javascript
+// Always set countdown flag on ANY restore - countdown only plays on live timer expiration
+setPlayExpiredCountdownCompleted(true);
+```
+
+5. **Timer expiration detection** (useSnapshotPersistence.js ~605):
+```javascript
+// If play timer expired during restore, transition to work mode
 if (timerModeValue === 'play' && adjustedElapsed >= target) {
-  // Timer expired while page closed - skip countdown
-  setPlayExpiredCountdownCompleted(true);
   setCurrentTimerMode({ [timerPhaseName]: 'work' });
   sessionStorage.removeItem(playTimerKey);
 }
