@@ -325,7 +325,7 @@ function SessionPageInner() {
     };
     
     checkConflictEarly();
-  }, [trackingLearnerId, normalizedLessonKey, browserSessionId, sessionConflictChecked, startTrackedSession]);
+  }, [trackingLearnerId, normalizedLessonKey, browserSessionId, sessionConflictChecked]); // startTrackedSession not stable, omit from deps (TDZ fix)
   
   // Force target reload when learner changes
   const reloadTargetsForCurrentLearner = useCallback(async () => {
