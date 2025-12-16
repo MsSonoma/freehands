@@ -867,18 +867,13 @@ function SessionPageInner() {
   }, [lessonKey, setCurrentTimerMode]);
   
   // Handle play timer expiration (show 30-second countdown overlay)
-  const handlePlayTimeUp = useCallback((phaseName) => {
+  const handlePlayTimeUp = useCallback(async (phaseName) => {
     // Skip if countdown was already completed (e.g., after refresh/takeover)
     if (playExpiredCountdownCompleted) return;
     
-    setShowPlayTimeExpired(true);
-    setPlayExpiredPhase(phaseName);
+    // Transition to work timer FIRST so snapshot saves in work state
+    transitionToWorkTimer(phaseName);
     setPlayExpiredCountdownCompleted(true);
-    
-    // Save snapshot immediately so restoration knows countdown already happened
-    scheduleSaveSnapshot('play-timer-expired');
-    // Close games overlay if it's open
-    setShowGames(false);
     
     // Clear all opening action sequences to prevent hangover at transition to work subphase
     setShowOpeningActions(false);
@@ -900,9 +895,38 @@ function SessionPageInner() {
     setFillInFunCollectedWords({});
     setFillInFunCurrentIndex(0);
     
+    // Close games overlay if it's open
+    setShowGames(false);
+    
+    // Trigger the appropriate phase handler to start work phase
+    // This transitions subPhase to the work state (e.g., awaiting-begin)
+    try {
+      if (phaseName === 'discussion' || phase === 'discussion' || phase === 'teaching') {
+        if (handleStartLessonRef.current) await handleStartLessonRef.current();
+      } else if (phaseName === 'comprehension' || phase === 'comprehension') {
+        if (handleGoComprehensionRef.current) await handleGoComprehensionRef.current();
+      } else if (phaseName === 'exercise' || phase === 'exercise') {
+        if (handleGoExerciseRef.current) await handleGoExerciseRef.current();
+      } else if (phaseName === 'worksheet' || phase === 'worksheet') {
+        if (handleGoWorksheetRef.current) await handleGoWorksheetRef.current();
+      } else if (phaseName === 'test' || phase === 'test') {
+        if (handleGoTestRef.current) await handleGoTestRef.current();
+      }
+    } catch (e) {
+      // Phase start failed, but timer already transitioned
+    }
+    
+    // Show countdown overlay AFTER transitioning (overlay appears on top of work phase)
+    setShowPlayTimeExpired(true);
+    setPlayExpiredPhase(phaseName);
+    
+    // Save snapshot immediately - now in work state with countdown completed flag
+    // On restore, page will be in work state and skip showing countdown
+    scheduleSaveSnapshot('play-timer-expired');
+    
     // Note: Prefetch is handled by the awaiting-begin useEffect when phase transitions
     // No need to prefetch here to avoid TDZ issues with state dependencies
-  }, [playExpiredCountdownCompleted, scheduleSaveSnapshot]);
+  }, [playExpiredCountdownCompleted, scheduleSaveSnapshot, transitionToWorkTimer, phase]);
   
   // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode)
   const handlePlayExpiredComplete = useCallback(async () => {

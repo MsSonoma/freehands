@@ -82,29 +82,46 @@ Timer state in snapshot payload:
 
 **Problem**: When play timer expired, 30-second countdown overlay appeared. If user refreshed page during countdown or takeover occurred, countdown would replay on restoration, creating confusing UX and tangling with snapshot/takeover flow.
 
-**Solution**: Track countdown completion in snapshot
+**Solution**: Transition to work phase BEFORE showing countdown, save snapshot in work state
 ```javascript
 {
-  playExpiredCountdownCompleted: boolean
+  playExpiredCountdownCompleted: boolean,
+  currentTimerMode: 'work',  // Already transitioned
+  phase: 'comprehension',
+  subPhase: 'awaiting-begin'  // Work state, not entrance
 }
 ```
 
 **Flow:**
 1. Play timer hits zero → `handlePlayTimeUp()` called
 2. Check if `playExpiredCountdownCompleted === true` (already shown) → skip countdown
-3. If not completed, show countdown and set `playExpiredCountdownCompleted = true`
-4. **Save snapshot immediately** with completion flag
-5. On refresh/takeover restore, countdown skipped because flag set
-6. Auto-advance to work phase proceeds normally
+3. If not completed:
+   a. Call `transitionToWorkTimer(phaseName)` - switches to work timer
+   b. Set `playExpiredCountdownCompleted = true`
+   c. Clear opening action states
+   d. **Call phase handler** (handleStartLesson/handleGoComprehension/etc.) to transition subPhase to work state
+   e. Show countdown overlay (appears on top of work phase UI)
+   f. **Save snapshot** with completion flag - now in work state (e.g., awaiting-begin)
+4. On refresh/takeover restore:
+   - Flag is true → countdown skipped
+   - Already in work state (awaiting-begin) → no additional transition needed
+   - User immediately continues work phase
 
-**Why save snapshot at countdown start (not end)?**
+**Why transition BEFORE saving snapshot?**
 - Countdown completion happens 30 seconds later (or user clicks "Start Now")
-- If refresh/takeover happens DURING countdown, flag must already be saved
-- Saving at start ensures restoration never replays countdown
-- Avoids double-countdown UX after page reload
+- If refresh/takeover happens DURING countdown, must already be in work state
+- Snapshot captures: work timer mode, work subPhase, and completion flag
+- On restore, page lands in work state with no countdown replay
+- Avoids confusing "entrance with no play timer" state
+
+**Countdown overlay behavior:**
+- Shows on top of work phase UI (already transitioned behind it)
+- User sees countdown counting down while work phase is technically active
+- On "Start Now" or countdown complete, overlay closes and work phase continues
+- On refresh, overlay never appears and work phase is already showing
 
 **Key Files:**
-- `src/app/session/page.js`: Add `playExpiredCountdownCompleted` state, check in `handlePlayTimeUp()`
+- `src/app/session/page.js`: Transition to work + call phase handler in `handlePlayTimeUp()` before saving snapshot
 - `src/app/session/sessionSnapshotStore.js`: Add field to snapshot normalization
 - `src/app/session/hooks/useSnapshotPersistence.js`: Save/restore flag
 
