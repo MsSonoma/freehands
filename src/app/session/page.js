@@ -315,6 +315,10 @@ function SessionPageInner() {
           setShowTakeoverDialog(true);
         } else {
           console.log('[SESSION CONFLICT CHECK] No conflict, session started:', sessionResult?.id);
+          // Start polling to detect if another device takes over this session
+          if (typeof startSessionPolling === 'function') {
+            startSessionPolling();
+          }
         }
       } catch (err) {
         console.error('[SESSION CONFLICT CHECK] Error during early conflict check:', err);
@@ -324,7 +328,7 @@ function SessionPageInner() {
     };
     
     checkConflictEarly();
-  }, [trackingLearnerId, normalizedLessonKey, browserSessionId, sessionConflictChecked, startTrackedSession]);
+  }, [trackingLearnerId, normalizedLessonKey, browserSessionId, sessionConflictChecked, startTrackedSession, startSessionPolling]);
   
   // Force target reload when learner changes
   const reloadTargetsForCurrentLearner = useCallback(async () => {
