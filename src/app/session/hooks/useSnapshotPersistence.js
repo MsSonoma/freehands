@@ -139,6 +139,8 @@ export function useSnapshotPersistence({
   sessionStartRef,
   preferHtmlAudioOnceRef,
   resumeAppliedRef,
+  // Session conflict check
+  sessionConflictChecked,
   // Functions
   speakFrontend,
   getSnapshotStorageKey,
@@ -362,6 +364,12 @@ export function useSnapshotPersistence({
 
     // Wait for lessonData.id before attempting restore - this is the most reliable key
     if (!lessonData?.id) {
+      return;
+    }
+
+    // CRITICAL: Wait for session conflict check to complete before restoring snapshot
+    // This prevents showing the takeover dialog AFTER snapshot has been applied
+    if (!sessionConflictChecked) {
       return;
     }
 
@@ -654,6 +662,7 @@ export function useSnapshotPersistence({
     lessonData?.id,
     WORKSHEET_TARGET,
     TEST_TARGET,
+    sessionConflictChecked,
     // Refs and functions are stable
     didRunRestoreRef,
     restoredSnapshotRef,

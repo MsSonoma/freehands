@@ -243,6 +243,7 @@ function SessionPageInner() {
   // Session takeover UI state (hoist before hooks that reference them)
   const [showTakeoverDialog, setShowTakeoverDialog] = useState(false);
   const [conflictingSession, setConflictingSession] = useState(null);
+  const [sessionConflictChecked, setSessionConflictChecked] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -262,6 +263,42 @@ function SessionPageInner() {
       setTrackingLearnerId(null);
     }
   }, []);
+
+  // CRITICAL: Check for session conflicts BEFORE snapshot restore runs
+  // This prevents the user from experiencing the snapshot restore twice:
+  // once during initial load, then again after PIN entry
+  useEffect(() => {
+    const checkConflictEarly = async () => {
+      // Only run once
+      if (sessionConflictChecked) return;
+      
+      // Wait for required IDs to be available
+      if (!trackingLearnerId || !normalizedLessonKey || !browserSessionId) return;
+      
+      console.log('[SESSION CONFLICT CHECK] Running early conflict check before snapshot restore');
+      setSessionConflictChecked(true);
+      
+      try {
+        const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+        const sessionResult = await startTrackedSession(browserSessionId, deviceName);
+        
+        // If conflict detected, show takeover dialog immediately
+        if (sessionResult?.conflict) {
+          console.log('[SESSION CONFLICT CHECK] Conflict detected, showing takeover dialog:', sessionResult.existingSession);
+          setConflictingSession(sessionResult.existingSession);
+          setShowTakeoverDialog(true);
+        } else {
+          console.log('[SESSION CONFLICT CHECK] No conflict, session started:', sessionResult?.id);
+        }
+      } catch (err) {
+        console.error('[SESSION CONFLICT CHECK] Error during early conflict check:', err);
+        // On error, mark as checked so snapshot restore can proceed
+        setSessionConflictChecked(true);
+      }
+    };
+    
+    checkConflictEarly();
+  }, [trackingLearnerId, normalizedLessonKey, browserSessionId, sessionConflictChecked, startTrackedSession]);
 
   // lessonSessionKey removed - using lessonKey for both snapshots and session tracking
 
@@ -3609,6 +3646,7 @@ function SessionPageInner() {
     lessonKey,
     // Session tracking
     browserSessionId,
+    sessionConflictChecked,
     onSessionConflict: (existingSession) => {
       setShowTakeoverDialog(true);
       setTakeoverSessionInfo(existingSession);
@@ -4537,30 +4575,10 @@ function SessionPageInner() {
     // Ensure audio and mic permissions are handled as part of Begin (in-gesture)
   // mic permission will be requested only when user starts recording
 
-    // Kick off Supabase session tracking once the learner actually begins this lesson
-    if (trackingLearnerId && normalizedLessonKey && typeof startTrackedSession === 'function') {
-      console.log('[SESSION] Starting session tracking for learner:', trackingLearnerId, 'lesson:', normalizedLessonKey, 'sessionId:', browserSessionId);
-      try {
-        // Extract device name from user agent
-        const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
-        
-        const sessionResult = await startTrackedSession(browserSessionId, deviceName);
-        
-        // Check for conflict (another device has active session)
-        if (sessionResult?.conflict) {
-          console.log('[SESSION] Conflict detected at Begin:', sessionResult.existingSession);
-          setConflictingSession(sessionResult.existingSession);
-          setShowTakeoverDialog(true);
-          return; // Don't start lesson - wait for user to take over or cancel
-        }
-        
-        console.log('[SESSION] Session started, ID:', sessionResult?.id);
-      } catch (sessionErr) {
-        console.error('[SESSION] Session start failed:', sessionErr);
-      }
-    } else {
-      console.warn('[SESSION] Session tracking not started - learnerId:', trackingLearnerId, 'normalizedLessonKey:', normalizedLessonKey, 'startFunc:', typeof startTrackedSession);
-    }
+    // Session was already started during early conflict check
+    // Skip redundant session start here to avoid double-starting
+    // The early conflict check (before snapshot restore) already called startTrackedSession
+    console.log('[SESSION] Session already started during early conflict check, skipping duplicate start');
 
     // Immediately update UI so it feels responsive
     setShowBegin(false);

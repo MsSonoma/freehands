@@ -2,9 +2,9 @@
 
 ## Core Architecture
 
-**GATE-BASED CONFLICT DETECTION, NO POLLING**
+**EARLY CONFLICT DETECTION, NO POLLING**
 
-Session ownership enforced at atomic checkpoint gates, exactly when snapshots save. No polling, no intervals, no performance overhead.
+Session ownership enforced at page load before snapshot restore. No polling, no intervals, no performance overhead.
 
 ## How It Works
 
@@ -12,22 +12,30 @@ Session ownership enforced at atomic checkpoint gates, exactly when snapshots sa
 
 Each learner+lesson combination can have **exactly one active session** at any time. Session ownership is tracked in `lesson_sessions` table with device identification and activity timestamps.
 
-When Device B attempts to access the same lesson that Device A is using, conflict is detected at the first snapshot save gate, triggering immediate takeover dialog with PIN validation.
+When Device B attempts to access the same lesson that Device A is using, conflict is detected immediately at page load before any snapshot restore, triggering takeover dialog with PIN validation.
 
-### Conflict Detection Strategy: Fail-Fast at First Gate
+### Conflict Detection Strategy: Check Before Snapshot Restore
 
-**When new device attempts to save snapshot:**
-1. Gate attempts to save with current `session_id` (browser-generated UUID stored in sessionStorage)
-2. Database detects conflict (different `session_id` already owns this learner+lesson)
-3. Save returns conflict error with existing session details (device name, last activity)
-4. UI immediately shows `SessionTakeoverDialog` before any lesson content loads
-5. User enters 4-digit PIN to validate ownership transfer
-6. On PIN success:
+**CRITICAL FIX (2025-12-15)**: Conflict check now runs BEFORE snapshot restore to prevent double-snapshot handling.
+
+**When new device loads lesson page:**
+1. Page generates `browserSessionId` (UUID stored in sessionStorage)
+2. Once `trackingLearnerId`, `normalizedLessonKey`, and `browserSessionId` are available, page calls `startTrackedSession()`
+3. Database detects conflict (different `session_id` already owns this learner+lesson)
+4. `startTrackedSession()` returns `{conflict: true, existingSession: {...}}`
+5. UI immediately shows `SessionTakeoverDialog` **BEFORE snapshot restore runs**
+6. Snapshot restore logic waits for `sessionConflictChecked` flag before proceeding
+7. User enters 4-digit PIN to validate ownership transfer
+8. On PIN success:
    - Old session deactivated (`ended_at` set, event logged)
    - New session created with current `session_id`
-   - Snapshot restored from database (most recent for this learner+lesson)
+   - Page reloads to restore snapshot from database (most recent for this learner+lesson)
    - localStorage updated with restored snapshot
    - Lesson resumes from checkpoint
+
+**Why this sequencing matters:**
+- OLD BUG: Snapshot restored → User sees lesson content → Conflict detected → Dialog appears → PIN entered → Reload → Snapshot restored AGAIN
+- NEW FIX: Conflict detected → Dialog appears → PIN entered → Reload → Snapshot restored ONCE
 
 **Old device behavior:**
 - No active notification (no polling)
