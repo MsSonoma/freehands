@@ -529,6 +529,7 @@ function SessionPageInner() {
   }, []);
   const [showPlayTimeExpired, setShowPlayTimeExpired] = useState(false);
   const [playExpiredPhase, setPlayExpiredPhase] = useState(null); // Which phase's play timer expired
+  const [playExpiredCountdownCompleted, setPlayExpiredCountdownCompleted] = useState(false); // Track if countdown was already shown
   const [goldenKeyEarned, setGoldenKeyEarned] = useState(false); // True if earned during this session
   const [goldenKeyBonus, setGoldenKeyBonus] = useState(0); // Bonus minutes from golden key
   const [completingLesson, setCompletingLesson] = useState(false); // Track if completion is in progress
@@ -867,8 +868,15 @@ function SessionPageInner() {
   
   // Handle play timer expiration (show 30-second countdown overlay)
   const handlePlayTimeUp = useCallback((phaseName) => {
+    // Skip if countdown was already completed (e.g., after refresh/takeover)
+    if (playExpiredCountdownCompleted) return;
+    
     setShowPlayTimeExpired(true);
     setPlayExpiredPhase(phaseName);
+    setPlayExpiredCountdownCompleted(true);
+    
+    // Save snapshot immediately so restoration knows countdown already happened
+    scheduleSaveSnapshot('play-timer-expired');
     // Close games overlay if it's open
     setShowGames(false);
     
@@ -894,7 +902,7 @@ function SessionPageInner() {
     
     // Note: Prefetch is handled by the awaiting-begin useEffect when phase transitions
     // No need to prefetch here to avoid TDZ issues with state dependencies
-  }, []);
+  }, [playExpiredCountdownCompleted, scheduleSaveSnapshot]);
   
   // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode)
   const handlePlayExpiredComplete = useCallback(async () => {
@@ -3544,6 +3552,7 @@ function SessionPageInner() {
   storyPlot,
   storyPhase,
     storyTranscript,
+    playExpiredCountdownCompleted,
     currentCompIndex,
     currentExIndex,
     currentWorksheetIndex,
@@ -3590,6 +3599,7 @@ function SessionPageInner() {
   setStoryPlot,
   setStoryPhase,
     setStoryTranscript,
+    setPlayExpiredCountdownCompleted,
     setCurrentCompIndex,
     setCurrentExIndex,
     setCurrentWorksheetIndex,

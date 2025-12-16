@@ -76,6 +76,38 @@ Timer state in snapshot payload:
 - Restoring from snapshot ensures timer continuity after takeover
 - sessionStorage still used as fast cache between gates on same device
 
+### Play Timer Expiration: Countdown Once
+
+**CRITICAL FIX (2025-12-16)**: 30-second countdown only plays once, never replays after refresh/takeover.
+
+**Problem**: When play timer expired, 30-second countdown overlay appeared. If user refreshed page during countdown or takeover occurred, countdown would replay on restoration, creating confusing UX and tangling with snapshot/takeover flow.
+
+**Solution**: Track countdown completion in snapshot
+```javascript
+{
+  playExpiredCountdownCompleted: boolean
+}
+```
+
+**Flow:**
+1. Play timer hits zero → `handlePlayTimeUp()` called
+2. Check if `playExpiredCountdownCompleted === true` (already shown) → skip countdown
+3. If not completed, show countdown and set `playExpiredCountdownCompleted = true`
+4. **Save snapshot immediately** with completion flag
+5. On refresh/takeover restore, countdown skipped because flag set
+6. Auto-advance to work phase proceeds normally
+
+**Why save snapshot at countdown start (not end)?**
+- Countdown completion happens 30 seconds later (or user clicks "Start Now")
+- If refresh/takeover happens DURING countdown, flag must already be saved
+- Saving at start ensures restoration never replays countdown
+- Avoids double-countdown UX after page reload
+
+**Key Files:**
+- `src/app/session/page.js`: Add `playExpiredCountdownCompleted` state, check in `handlePlayTimeUp()`
+- `src/app/session/sessionSnapshotStore.js`: Add field to snapshot normalization
+- `src/app/session/hooks/useSnapshotPersistence.js`: Save/restore flag
+
 ### Database Schema
 
 #### `lesson_sessions` Table Extensions

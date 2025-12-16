@@ -199,6 +199,7 @@ export function normalizeSnapshot(obj) {
     storyUsedThisGate: !!obj.storyUsedThisGate,
     storyTranscript: sanitizeStoryTranscript(obj.storyTranscript || []),
   teachingFlowState: sanitizeTeachingFlowState(obj.teachingFlowState),
+    playExpiredCountdownCompleted: !!obj.playExpiredCountdownCompleted,
 
     // Normalized resume pointer (kept minimal and safe)
     resume: (() => {
