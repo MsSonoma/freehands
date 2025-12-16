@@ -7589,8 +7589,10 @@ function SessionPageInner() {
               const canShow = (
                 inQnA && !isSpeaking && showOpeningActions && askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive' && fillInFunState === 'inactive'
               );
+              // Debug Q&A buttons
+              console.log('[QNA BUTTONS] canShow:', canShow, 'isMobileLandscape:', isMobileLandscape, { inQnA, phase, subPhase });
               if (!canShow) return null;
-              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px' };
+              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px', background: 'rgba(0,0,255,0.1)' };
               const btn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
               const goBtn = { ...btn, background:'#c7442e', boxShadow:'0 2px 12px rgba(199,68,46,0.28)' };
               const disabledBtn = { ...btn, opacity:0.5, cursor:'not-allowed' };
