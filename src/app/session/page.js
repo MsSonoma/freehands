@@ -7759,7 +7759,7 @@ function SessionPageInner() {
                 }
                 const ariaLabel = teachingStage === 'examples' ? 'Teaching gate: repeat examples or move to next stage' : 'Teaching gate: repeat vocab or move to next stage';
                 console.log('[TEACHING GATE] isShortHeight check - returning null?', isShortHeight);
-                if (isShortHeight) return null; // already rendered in controls row above
+                // REMOVED: if (isShortHeight) return null; - let buttons always show in footer
                 return (
                   <div style={containerStyle} aria-label={ariaLabel}>
                     <button type="button" style={btnBase} onClick={handleGateYes}>{repeatLabel}</button>
