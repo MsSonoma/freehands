@@ -277,13 +277,12 @@ function SessionPageInner() {
   const {
     startSession: startTrackedSession,
     endSession: endTrackedSession,
-    startPolling: startSessionPolling,
   } = useSessionTracking(
     trackingLearnerId,
     normalizedLessonKey,
     false, // autoStart
     (session) => {
-      // Session taken over callback
+      // Session taken over callback (unused - gate-based detection handles this)
       console.log('[SESSION TAKEOVER] Callback triggered, showing dialog for session:', session);
       setConflictingSession(session);
       setShowTakeoverDialog(true);
@@ -315,10 +314,8 @@ function SessionPageInner() {
           setShowTakeoverDialog(true);
         } else {
           console.log('[SESSION CONFLICT CHECK] No conflict, session started:', sessionResult?.id);
-          // Start polling to detect if another device takes over this session
-          if (typeof startSessionPolling === 'function') {
-            startSessionPolling();
-          }
+          // Gate-based detection handles future conflicts through snapshot saves
+          // No polling needed - conflicts detected when Device A tries to save next snapshot
         }
       } catch (err) {
         console.error('[SESSION CONFLICT CHECK] Error during early conflict check:', err);
@@ -328,7 +325,7 @@ function SessionPageInner() {
     };
     
     checkConflictEarly();
-  }, [trackingLearnerId, normalizedLessonKey, browserSessionId, sessionConflictChecked, startTrackedSession, startSessionPolling]);
+  }, [trackingLearnerId, normalizedLessonKey, browserSessionId, sessionConflictChecked, startTrackedSession]);
   
   // Force target reload when learner changes
   const reloadTargetsForCurrentLearner = useCallback(async () => {
