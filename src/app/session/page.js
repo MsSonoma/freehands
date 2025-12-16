@@ -7739,10 +7739,12 @@ function SessionPageInner() {
             try {
               // Show teaching gate Repeat Vocab/Examples and Next when awaiting-gate; hide while speaking
               const shouldShow = (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && askState === 'inactive');
+              console.log('[TEACHING GATE BUTTONS]', { shouldShow, phase, subPhase, isSpeaking, askState, isShortHeight, isMobileLandscape });
               if (shouldShow) {
                 const containerStyle = {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8,
                   paddingLeft: isMobileLandscape ? 12 : '4%', paddingRight: isMobileLandscape ? 12 : '4%', marginBottom: 6,
+                  background: 'rgba(0,255,0,0.1)'
                 };
                 const btnBase = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, minWidth:56, fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
                 // Button labels: "Repeat Sentence"/"Next Sentence" during sentence navigation, "Restart Vocab"/"Next: Examples" at final gate
@@ -7756,6 +7758,7 @@ function SessionPageInner() {
                   nextLabel = 'Next Sentence';
                 }
                 const ariaLabel = teachingStage === 'examples' ? 'Teaching gate: repeat examples or move to next stage' : 'Teaching gate: repeat vocab or move to next stage';
+                console.log('[TEACHING GATE] isShortHeight check - returning null?', isShortHeight);
                 if (isShortHeight) return null; // already rendered in controls row above
                 return (
                   <div style={containerStyle} aria-label={ariaLabel}>
