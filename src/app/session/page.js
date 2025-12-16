@@ -1082,7 +1082,10 @@ function SessionPageInner() {
   // Trigger work phase transition when play timer expired during restore
   useEffect(() => {
     if (!needsPlayExpiredTransition) return;
-    if (!lessonData?.id) return; // Wait for lesson data to load
+    if (!lessonData?.id) {
+      console.log('[PLAY EXPIRED] Waiting for lessonData to load');
+      return; // Wait for lesson data to load
+    }
     
     const triggerTransition = async () => {
       try {
@@ -1123,7 +1126,8 @@ function SessionPageInner() {
     };
     
     triggerTransition();
-  }, [needsPlayExpiredTransition, phase, lessonData]);
+  }, [needsPlayExpiredTransition, phase]);
+  // Note: lessonData NOT in deps to avoid TDZ - we check it exists but don't trigger on changes
 
   // Helper: speak arbitrary frontend text via unified captions + TTS
   // Use a ref so early functions can call it before it's fully defined
