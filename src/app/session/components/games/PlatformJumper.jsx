@@ -497,10 +497,11 @@ export default function PlatformJumper({ onBack }) {
         { x: 350, y: 100, width: 60, height: 20 },
         { x: 480, y: 420, width: 40, height: 20, trampoline: true },
         { x: 560, y: 440, width: 40, height: 20, trampoline: true },
-        { x: 700, y: 120, width: 100, height: 20 },
+        { x: 650, y: 300, width: 60, height: 20 },
+        { x: 740, y: 200, width: 60, height: 20 },
       ],
       startPos: { x: 25, y: 410 },
-      goalArea: { x: 700, y: 70, width: 100, height: 50 }
+      goalArea: { x: 740, y: 150, width: 60, height: 50 }
     },
     28: {
       name: 'Timing Test',
