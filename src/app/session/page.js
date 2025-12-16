@@ -7523,6 +7523,21 @@ function SessionPageInner() {
                 storyState === 'inactive' &&
                 fillInFunState === 'inactive'
               );
+              // Debug: log button visibility state
+              if (phase === 'discussion' && subPhase === 'awaiting-learner') {
+                console.log('[FOOTER BUTTONS] canShow:', canShow, 'isMobileLandscape:', isMobileLandscape, {
+                  phase,
+                  subPhase,
+                  isSpeaking,
+                  captionsDone,
+                  showOpeningActions,
+                  askState,
+                  riddleState,
+                  poemState,
+                  storyState,
+                  fillInFunState
+                });
+              }
               if (!canShow) return null;
               const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px' };
               const btn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
