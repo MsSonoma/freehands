@@ -611,6 +611,25 @@ export function useSnapshotPersistence({
                 ...(prev || {}),
                 [timerPhaseName]: timerModeValue,
               }));
+              
+              // Check if play timer expired while page was closed
+              // If timer was in 'play' mode and elapsed >= target, countdown never played
+              // Skip countdown by setting flag and transition to work mode
+              if (timerModeValue === 'play' && Number.isFinite(target) && adjustedElapsed >= target) {
+                // Timer expired while page was closed - skip countdown entirely
+                if (typeof setPlayExpiredCountdownCompleted === 'function') {
+                  setPlayExpiredCountdownCompleted(true);
+                }
+                // Transition to work timer
+                setCurrentTimerMode((prev) => ({
+                  ...(prev || {}),
+                  [timerPhaseName]: 'work',
+                }));
+                // Clear play timer storage
+                try {
+                  sessionStorage.removeItem(storageKey);
+                } catch {}
+              }
             }
           }
         } catch {}

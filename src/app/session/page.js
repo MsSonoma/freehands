@@ -868,9 +868,6 @@ function SessionPageInner() {
   
   // Handle play timer expiration (show 30-second countdown overlay)
   const handlePlayTimeUp = useCallback((phaseName) => {
-    // Skip if countdown was already completed (e.g., after refresh/takeover)
-    if (playExpiredCountdownCompleted) return;
-    
     setShowPlayTimeExpired(true);
     setPlayExpiredPhase(phaseName);
     // Close games overlay if it's open
@@ -896,9 +893,6 @@ function SessionPageInner() {
     setFillInFunCollectedWords({});
     setFillInFunCurrentIndex(0);
     
-    // Set flag at end to indicate countdown was shown
-    setPlayExpiredCountdownCompleted(true);
-    
     // Note: Prefetch is handled by the awaiting-begin useEffect when phase transitions
     // No need to prefetch here to avoid TDZ issues with state dependencies
   }, [playExpiredCountdownCompleted]);
@@ -906,6 +900,7 @@ function SessionPageInner() {
   // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode)
   const handlePlayExpiredComplete = useCallback(async () => {
     setShowPlayTimeExpired(false);
+    setPlayExpiredCountdownCompleted(true); // Mark countdown as completed
     if (playExpiredPhase) {
       transitionToWorkTimer(playExpiredPhase);
       
@@ -933,6 +928,7 @@ function SessionPageInner() {
   // Handle manual "Start Now" from PlayTimeExpiredOverlay
   const handlePlayExpiredStartNow = useCallback(async () => {
     setShowPlayTimeExpired(false);
+    setPlayExpiredCountdownCompleted(true); // Mark countdown as completed
     if (playExpiredPhase) {
       transitionToWorkTimer(playExpiredPhase);
       
