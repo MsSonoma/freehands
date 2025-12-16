@@ -264,6 +264,32 @@ function SessionPageInner() {
     }
   }, []);
 
+  // lessonSessionKey removed - using lessonKey for both snapshots and session tracking
+
+  // Normalized key for visual aids (strips folder prefixes so same lesson from different routes shares visual aids)
+  const visualAidsLessonKey = useMemo(() => {
+    if (!lessonParam) return null;
+    // Strip folder prefixes like generated/, facilitator/, math/, etc.
+    const normalizedLesson = lessonParam.replace(/^(generated|facilitator|math|science|language-arts|social-studies|demo)\//, '');
+    return normalizedLesson;
+  }, [lessonParam]);
+
+  const {
+    startSession: startTrackedSession,
+    endSession: endTrackedSession,
+    startPolling: startSessionPolling,
+  } = useSessionTracking(
+    trackingLearnerId,
+    normalizedLessonKey,
+    false, // autoStart
+    (session) => {
+      // Session taken over callback
+      console.log('[SESSION TAKEOVER] Callback triggered, showing dialog for session:', session);
+      setConflictingSession(session);
+      setShowTakeoverDialog(true);
+    }
+  );
+
   // CRITICAL: Check for session conflicts BEFORE snapshot restore runs
   // This prevents the user from experiencing the snapshot restore twice:
   // once during initial load, then again after PIN entry
@@ -299,32 +325,6 @@ function SessionPageInner() {
     
     checkConflictEarly();
   }, [trackingLearnerId, normalizedLessonKey, browserSessionId, sessionConflictChecked, startTrackedSession]);
-
-  // lessonSessionKey removed - using lessonKey for both snapshots and session tracking
-
-  // Normalized key for visual aids (strips folder prefixes so same lesson from different routes shares visual aids)
-  const visualAidsLessonKey = useMemo(() => {
-    if (!lessonParam) return null;
-    // Strip folder prefixes like generated/, facilitator/, math/, etc.
-    const normalizedLesson = lessonParam.replace(/^(generated|facilitator|math|science|language-arts|social-studies|demo)\//, '');
-    return normalizedLesson;
-  }, [lessonParam]);
-
-  const {
-    startSession: startTrackedSession,
-    endSession: endTrackedSession,
-    startPolling: startSessionPolling,
-  } = useSessionTracking(
-    trackingLearnerId,
-    normalizedLessonKey,
-    false, // autoStart
-    (session) => {
-      // Session taken over callback
-      console.log('[SESSION TAKEOVER] Callback triggered, showing dialog for session:', session);
-      setConflictingSession(session);
-      setShowTakeoverDialog(true);
-    }
-  );
   
   // Force target reload when learner changes
   const reloadTargetsForCurrentLearner = useCallback(async () => {
