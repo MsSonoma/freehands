@@ -18,6 +18,7 @@ export default function PlatformJumper({ onBack }) {
 
   // Detect orientation - must be declared early to avoid hook order issues
   const [isLandscape, setIsLandscape] = useState(typeof window !== 'undefined' ? window.innerWidth > window.innerHeight : false);
+  const [scale, setScale] = useState(1);
 
   const gameLoopRef = useRef(null);
   const keysPressed = useRef({});
@@ -27,11 +28,29 @@ export default function PlatformJumper({ onBack }) {
   const isJumpingRef = useRef(false);
   const currentPlatformRef = useRef(null);
 
-  // Orientation detection effect
+  // Orientation detection and responsive scaling
   useEffect(() => {
     const handleResize = () => {
-      setIsLandscape(window.innerWidth > window.innerHeight);
+      const newIsLandscape = window.innerWidth > window.innerHeight;
+      setIsLandscape(newIsLandscape);
+      
+      // Calculate scale based on available viewport space
+      // Reserve space for controls and padding
+      const controlsWidth = newIsLandscape ? 200 : 0;
+      const controlsHeight = newIsLandscape ? 0 : 200;
+      const padding = 80; // Total padding (40px on each side)
+      
+      const availableWidth = window.innerWidth - controlsWidth - padding;
+      const availableHeight = window.innerHeight - controlsHeight - padding - 100; // Extra for header/back button
+      
+      const scaleX = availableWidth / GAME_WIDTH;
+      const scaleY = availableHeight / GAME_HEIGHT;
+      const newScale = Math.min(scaleX, scaleY, 1.2); // Cap at 1.2x to avoid over-scaling on large screens
+      
+      setScale(Math.max(newScale, 0.4)); // Minimum scale of 0.4 for very small screens
     };
+    
+    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -1277,15 +1296,16 @@ export default function PlatformJumper({ onBack }) {
   return (
     <div style={{
       width: '100%',
-      height: '100%',
+      height: '100vh',
       display: 'flex',
       flexDirection: isLandscape ? 'row' : 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '20px',
+      padding: isLandscape ? '20px' : '10px',
       boxSizing: 'border-box',
       background: '#f9fafb',
-      gap: '20px'
+      gap: isLandscape ? '20px' : '10px',
+      overflow: 'hidden'
     }}>
       {/* Left controls (landscape only) */}
       {isLandscape && gameStarted && !gameWon && !gameLost && <TouchControls />}
@@ -1295,12 +1315,16 @@ export default function PlatformJumper({ onBack }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '16px'
+        gap: '8px',
+        maxWidth: '100%',
+        overflow: 'visible'
       }}>
         <div style={{
-          fontSize: '20px',
+          fontSize: `${Math.max(14, 20 * scale)}px`,
           fontWeight: 700,
-          color: '#1f2937'
+          color: '#1f2937',
+          textAlign: 'center',
+          whiteSpace: 'nowrap'
         }}>
           Level {level}: {currentLevel.name}
         </div>
@@ -1309,6 +1333,8 @@ export default function PlatformJumper({ onBack }) {
           position: 'relative',
           width: GAME_WIDTH,
           height: GAME_HEIGHT,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
           background: 'linear-gradient(180deg, #bfdbfe 0%, #dbeafe 100%)',
           border: '4px solid #1f2937',
           borderRadius: '8px',
@@ -1528,16 +1554,17 @@ export default function PlatformJumper({ onBack }) {
         <button
           onClick={onBack}
           style={{
-            marginTop: '20px',
-            padding: '10px 24px',
-            fontSize: '16px',
+            marginTop: '8px',
+            padding: `${Math.max(6, 10 * scale)}px ${Math.max(16, 24 * scale)}px`,
+            fontSize: `${Math.max(12, 16 * scale)}px`,
             fontWeight: 600,
             background: '#6b7280',
           color: 'white',
           border: 'none',
           borderRadius: '6px',
           cursor: 'pointer',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          whiteSpace: 'nowrap'
         }}
         onMouseEnter={(e) => e.target.style.background = '#4b5563'}
         onMouseLeave={(e) => e.target.style.background = '#6b7280'}
