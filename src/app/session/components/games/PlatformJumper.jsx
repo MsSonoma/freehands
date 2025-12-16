@@ -36,18 +36,18 @@ export default function PlatformJumper({ onBack }) {
       
       // Calculate scale based on available viewport space
       // Reserve space for controls and padding
-      const controlsWidth = newIsLandscape ? 200 : 0;
-      const controlsHeight = newIsLandscape ? 0 : 200;
-      const padding = 80; // Total padding (40px on each side)
+      const controlsWidth = newIsLandscape ? 350 : 0; // Increased to account for two control sets (175px each)
+      const controlsHeight = newIsLandscape ? 0 : 220;
+      const padding = newIsLandscape ? 60 : 40; // Padding around elements
       
       const availableWidth = window.innerWidth - controlsWidth - padding;
-      const availableHeight = window.innerHeight - controlsHeight - padding - 100; // Extra for header/back button
+      const availableHeight = window.innerHeight - controlsHeight - padding - 80; // Extra for header/back button
       
       const scaleX = availableWidth / GAME_WIDTH;
       const scaleY = availableHeight / GAME_HEIGHT;
-      const newScale = Math.min(scaleX, scaleY, 1.2); // Cap at 1.2x to avoid over-scaling on large screens
+      const newScale = Math.min(scaleX, scaleY, 1.0); // Cap at 1.0x for landscape to ensure fit
       
-      setScale(Math.max(newScale, 0.4)); // Minimum scale of 0.4 for very small screens
+      setScale(Math.max(newScale, 0.3)); // Minimum scale of 0.3 for very small screens
     };
     
     handleResize();
@@ -1146,7 +1146,9 @@ export default function PlatformJumper({ onBack }) {
       alignItems: 'center',
       userSelect: 'none',
       WebkitUserSelect: 'none',
-      WebkitTouchCallout: 'none'
+      WebkitTouchCallout: 'none',
+      flexShrink: 0,
+      minWidth: 'fit-content'
     }}>
       {/* Left and Right arrows in a row */}
       <div style={{
@@ -1300,11 +1302,11 @@ export default function PlatformJumper({ onBack }) {
       display: 'flex',
       flexDirection: isLandscape ? 'row' : 'column',
       alignItems: 'center',
-      justifyContent: 'center',
-      padding: isLandscape ? '20px' : '10px',
+      justifyContent: isLandscape ? 'space-evenly' : 'center',
+      padding: isLandscape ? '10px' : '10px',
       boxSizing: 'border-box',
       background: '#f9fafb',
-      gap: isLandscape ? '20px' : '10px',
+      gap: isLandscape ? '10px' : '10px',
       overflow: 'hidden'
     }}>
       {/* Left controls (landscape only) */}
@@ -1317,7 +1319,9 @@ export default function PlatformJumper({ onBack }) {
         alignItems: 'center',
         gap: '8px',
         maxWidth: '100%',
-        overflow: 'visible'
+        overflow: 'visible',
+        flexShrink: 1,
+        minWidth: 0
       }}>
         <div style={{
           fontSize: `${Math.max(14, 20 * scale)}px`,
