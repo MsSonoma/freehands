@@ -868,6 +868,9 @@ function SessionPageInner() {
   
   // Handle play timer expiration (show 30-second countdown overlay)
   const handlePlayTimeUp = useCallback((phaseName) => {
+    // Skip if countdown was already completed (flag set during restore or previous completion)
+    if (playExpiredCountdownCompleted) return;
+    
     setShowPlayTimeExpired(true);
     setPlayExpiredPhase(phaseName);
     // Close games overlay if it's open

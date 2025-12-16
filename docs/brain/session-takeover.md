@@ -106,9 +106,10 @@ Timer state in snapshot payload:
 **Implementation:**
 
 1. **handlePlayTimeUp** (page.js ~870-900):
+   - Check flag: `if (playExpiredCountdownCompleted) return;`
    - Show countdown overlay: `setShowPlayTimeExpired(true)`
    - Clear opening action states
-   - **NO flag setting** - flag set on completion
+   - Flag prevents countdown if set during restore or previous completion
 
 2. **handlePlayExpiredComplete** (page.js ~907-930):
    - `setPlayExpiredCountdownCompleted(true)` - countdown was seen
