@@ -128,6 +128,7 @@ export function useSnapshotPersistence({
   setIsSpeaking,
   setCurrentTimerMode,
   setWorkPhaseCompletions,
+  setNeedsPlayExpiredTransition,
   // Refs
   restoredSnapshotRef,
   restoreFoundRef,
@@ -630,6 +631,10 @@ export function useSnapshotPersistence({
                 try {
                   sessionStorage.removeItem(storageKey);
                 } catch {}
+                // Trigger phase transition to work phase
+                if (typeof setNeedsPlayExpiredTransition === 'function') {
+                  setNeedsPlayExpiredTransition(timerPhaseName);
+                }
               }
             }
           }

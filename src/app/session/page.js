@@ -530,6 +530,7 @@ function SessionPageInner() {
   const [showPlayTimeExpired, setShowPlayTimeExpired] = useState(false);
   const [playExpiredPhase, setPlayExpiredPhase] = useState(null); // Which phase's play timer expired
   const [playExpiredCountdownCompleted, setPlayExpiredCountdownCompleted] = useState(false); // Track if countdown was already shown
+  const [needsPlayExpiredTransition, setNeedsPlayExpiredTransition] = useState(null); // Phase that needs work transition after restore
   const [goldenKeyEarned, setGoldenKeyEarned] = useState(false); // True if earned during this session
   const [goldenKeyBonus, setGoldenKeyBonus] = useState(0); // Bonus minutes from golden key
   const [completingLesson, setCompletingLesson] = useState(false); // Track if completion is in progress
@@ -1077,6 +1078,34 @@ function SessionPageInner() {
   useEffect(() => {
     try { ttsCache.clear(); } catch {}
   }, [phase]);
+
+  // Trigger work phase transition when play timer expired during restore
+  useEffect(() => {
+    if (!needsPlayExpiredTransition) return;
+    
+    const triggerTransition = async () => {
+      try {
+        const phaseName = needsPlayExpiredTransition;
+        if (phaseName === 'discussion' || phase === 'discussion' || phase === 'teaching') {
+          if (handleStartLessonRef.current) await handleStartLessonRef.current();
+        } else if (phaseName === 'comprehension' || phase === 'comprehension') {
+          if (handleGoComprehensionRef.current) await handleGoComprehensionRef.current();
+        } else if (phaseName === 'exercise' || phase === 'exercise') {
+          if (handleGoExerciseRef.current) await handleGoExerciseRef.current();
+        } else if (phaseName === 'worksheet' || phase === 'worksheet') {
+          if (handleGoWorksheetRef.current) await handleGoWorksheetRef.current();
+        } else if (phaseName === 'test' || phase === 'test') {
+          if (handleGoTestRef.current) await handleGoTestRef.current();
+        }
+      } catch (e) {
+        console.error('[PLAY EXPIRED] Failed to transition to work phase:', e);
+      } finally {
+        setNeedsPlayExpiredTransition(null); // Clear flag
+      }
+    };
+    
+    triggerTransition();
+  }, [needsPlayExpiredTransition, phase]);
 
   // Helper: speak arbitrary frontend text via unified captions + TTS
   // Use a ref so early functions can call it before it's fully defined
@@ -3625,6 +3654,7 @@ function SessionPageInner() {
     setIsSpeaking,
     setCurrentTimerMode,
     setWorkPhaseCompletions,
+    setNeedsPlayExpiredTransition,
   getTeachingFlowSnapshot: getTeachingFlowSnapshotBridge,
   applyTeachingFlowSnapshot: applyTeachingFlowSnapshotBridge,
     // Refs

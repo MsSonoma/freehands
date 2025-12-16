@@ -127,14 +127,31 @@ Timer state in snapshot payload:
 setPlayExpiredCountdownCompleted(true);
 ```
 
-5. **Timer expiration detection** (useSnapshotPersistence.js ~605):
+5. **Timer expiration detection** (useSnapshotPersistence.js ~620):
 ```javascript
-// If play timer expired during restore, transition to work mode
+// If play timer expired during restore, transition to work mode and trigger phase handler
 if (timerModeValue === 'play' && adjustedElapsed >= target) {
+  setPlayExpiredCountdownCompleted(true);
   setCurrentTimerMode({ [timerPhaseName]: 'work' });
   sessionStorage.removeItem(playTimerKey);
+  setNeedsPlayExpiredTransition(timerPhaseName); // Trigger phase handler after restore
 }
 ```
+
+6. **Work phase transition effect** (page.js ~1082):
+```javascript
+useEffect(() => {
+  if (!needsPlayExpiredTransition) return;
+  // Call appropriate phase handler (handleStartLesson, handleGoComprehension, etc.)
+  // based on phase name, then clear flag
+}, [needsPlayExpiredTransition, phase]);
+```
+
+**Result**: When play timer expires with page closed, restore automatically:
+1. Sets countdown completed flag (blocks countdown)
+2. Transitions timer to work mode
+3. Triggers phase handler to start work phase
+4. User lands directly in work phase entrance, can click Go to begin
 
 **Key Files:**
 - `src/app/session/page.js`: Flag setting in completion handlers, not in handlePlayTimeUp
