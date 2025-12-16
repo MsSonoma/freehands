@@ -82,13 +82,13 @@ Timer state in snapshot payload:
 
 **Problem**: When play timer expired, 30-second countdown overlay appeared. If user refreshed page during countdown or takeover occurred, countdown would replay on restoration, creating confusing UX and tangling with snapshot/takeover flow.
 
-**Solution**: Transition to work phase BEFORE showing countdown, save snapshot in work state
+**Solution**: Transition timer to work mode BEFORE showing countdown, save snapshot with work timer + completion flag
 ```javascript
 {
   playExpiredCountdownCompleted: boolean,
-  currentTimerMode: 'work',  // Already transitioned
-  phase: 'comprehension',
-  subPhase: 'awaiting-begin'  // Work state, not entrance
+  currentTimerMode: 'work',  // Timer already transitioned to work
+  phase: 'comprehension',    // Phase stays same until countdown completes
+  subPhase: 'awaiting-learner'  // Still in entrance until countdown completes
 }
 ```
 
@@ -96,32 +96,35 @@ Timer state in snapshot payload:
 1. Play timer hits zero → `handlePlayTimeUp()` called
 2. Check if `playExpiredCountdownCompleted === true` (already shown) → skip countdown
 3. If not completed:
-   a. Call `transitionToWorkTimer(phaseName)` - switches to work timer
+   a. Call `transitionToWorkTimer(phaseName)` - switches timer mode to 'work'
    b. Set `playExpiredCountdownCompleted = true`
    c. Clear opening action states
-   d. **Call phase handler** (handleStartLesson/handleGoComprehension/etc.) to transition subPhase to work state
-   e. Show countdown overlay (appears on top of work phase UI)
-   f. **Save snapshot** with completion flag - now in work state (e.g., awaiting-begin)
-4. On refresh/takeover restore:
+   d. Show countdown overlay
+   e. **Save snapshot** with completion flag - timer mode is 'work'
+4. Countdown completes or user clicks "Start Now":
+   - `handlePlayExpiredComplete()` or `handlePlayExpiredStartNow()` calls phase handler
+   - Phase handler transitions subPhase to work state (e.g., awaiting-begin)
+5. On refresh/takeover restore:
    - Flag is true → countdown skipped
-   - Already in work state (awaiting-begin) → no additional transition needed
-   - User immediately continues work phase
+   - Timer mode is 'work' → work timer active
+   - Phase handlers are NOT called again (entrance state preserved)
+   - User lands in entrance with work timer, can click Go to start
 
-**Why transition BEFORE saving snapshot?**
-- Countdown completion happens 30 seconds later (or user clicks "Start Now")
-- If refresh/takeover happens DURING countdown, must already be in work state
-- Snapshot captures: work timer mode, work subPhase, and completion flag
-- On restore, page lands in work state with no countdown replay
-- Avoids confusing "entrance with no play timer" state
+**Why transition timer but NOT call phase handlers?**
+- Timer mode transition is safe and idempotent (just switches timer key)
+- Phase handlers have side effects (API calls, state transitions, loading states)
+- Calling phase handlers during countdown creates race conditions with refresh/takeover
+- Simpler: Let countdown completion call phase handlers, restoration skips countdown but preserves state
+- On restore with countdown skipped, user sees entrance screen with work timer and can click Go
 
 **Countdown overlay behavior:**
-- Shows on top of work phase UI (already transitioned behind it)
-- User sees countdown counting down while work phase is technically active
-- On "Start Now" or countdown complete, overlay closes and work phase continues
-- On refresh, overlay never appears and work phase is already showing
+- Shows after timer transitions to work mode
+- Timer shows work mode duration while countdown overlays
+- On "Start Now" or countdown complete, calls phase handler and closes overlay
+- On refresh during countdown, overlay never appears and user sees entrance with work timer
 
 **Key Files:**
-- `src/app/session/page.js`: Transition to work + call phase handler in `handlePlayTimeUp()` before saving snapshot
+- `src/app/session/page.js`: Transition timer in `handlePlayTimeUp()`, phase handlers called by countdown completion
 - `src/app/session/sessionSnapshotStore.js`: Add field to snapshot normalization
 - `src/app/session/hooks/useSnapshotPersistence.js`: Save/restore flag
 
