@@ -421,7 +421,7 @@ function SessionPageInner() {
     } catch (err) {
       throw err;
     }
-  }, [trackingLearnerId, normalizedLessonKey, browserSessionId, conflictingSession, endTrackedSession]);
+  }, [trackingLearnerId, normalizedLessonKey, browserSessionId, conflictingSession, startTrackedSession]); // endTrackedSession not used, removed (TDZ fix)
 
   const handleCancelTakeover = useCallback(() => {
     setShowTakeoverDialog(false);
@@ -1137,50 +1137,7 @@ function SessionPageInner() {
   }, [needsPlayExpiredTransition, phase]);
   // Note: lessonData NOT in deps to avoid TDZ - we check it exists but don't trigger on changes
 
-  // Auto-advance through phase transitions when autoAdvancePhases is false
-  // Only applies to phase transition Begin buttons (after initial lesson start)
-  useEffect(() => {
-    if (autoAdvancePhases) return; // Setting is ON, show buttons normally
-    if (!lessonData?.id) return; // Wait for lesson data
-    if (ticker === 0) return; // Initial Begin button - always show (lesson hasn't started)
-    
-    // Detect awaiting-begin states (phase transition entrances)
-    const isAwaitingBegin = 
-      (phase === 'teaching' && subPhase === 'awaiting-learner') || // Initial start uses ticker=0 check above
-      (phase === 'discussion' && subPhase === 'awaiting-learner') ||
-      (phase === 'comprehension' && subPhase === 'comprehension-start') ||
-      (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') ||
-      (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') ||
-      (phase === 'test' && (subPhase === 'test-awaiting-begin' || subPhase === 'review-start'));
-    
-    if (!isAwaitingBegin) return;
-    
-    // Auto-click Begin button after brief delay (let entrance screen render)
-    const timer = setTimeout(async () => {
-      try {
-        console.log('[AUTO-ADVANCE] Triggering phase start:', phase, subPhase);
-        
-        if (phase === 'discussion' || phase === 'teaching') {
-          if (handleStartLessonRef.current) await handleStartLessonRef.current();
-        } else if (phase === 'comprehension') {
-          if (handleGoComprehensionRef.current) await handleGoComprehensionRef.current();
-        } else if (phase === 'exercise') {
-          if (handleGoExerciseRef.current) await handleGoExerciseRef.current();
-        } else if (phase === 'worksheet') {
-          if (handleGoWorksheetRef.current) await handleGoWorksheetRef.current();
-        } else if (phase === 'test') {
-          if (handleGoTestRef.current) await handleGoTestRef.current();
-        }
-      } catch (e) {
-        console.error('[AUTO-ADVANCE] Failed to advance phase:', e);
-      }
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [autoAdvancePhases, phase, subPhase, ticker]);
-  // Note: lessonData checked but not in deps to avoid TDZ
-
-  // Helper: speak arbitrary frontend text via unified captions + TTS
+  // Prefetch intro lines and first question when entering awaiting-begin states
   // Use a ref so early functions can call it before it's fully defined
   const speakFrontendRef = useRef(null);
   const speakFrontend = useCallback(async (...args) => {
@@ -1294,6 +1251,50 @@ function SessionPageInner() {
       } catch {}
     })();
   }, []);
+
+  // Auto-advance through phase transitions when autoAdvancePhases is false
+  // Only applies to phase transition Begin buttons (after initial lesson start)
+  // Placed after state declarations (ticker, phase, subPhase, etc.) to avoid TDZ errors
+  useEffect(() => {
+    if (autoAdvancePhases) return; // Setting is ON, show buttons normally
+    if (!lessonData?.id) return; // Wait for lesson data
+    if (ticker === 0) return; // Initial Begin button - always show (lesson hasn't started)
+    
+    // Detect awaiting-begin states (phase transition entrances)
+    const isAwaitingBegin = 
+      (phase === 'teaching' && subPhase === 'awaiting-learner') || // Initial start uses ticker=0 check above
+      (phase === 'discussion' && subPhase === 'awaiting-learner') ||
+      (phase === 'comprehension' && subPhase === 'comprehension-start') ||
+      (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') ||
+      (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') ||
+      (phase === 'test' && (subPhase === 'test-awaiting-begin' || subPhase === 'review-start'));
+    
+    if (!isAwaitingBegin) return;
+    
+    // Auto-click Begin button after brief delay (let entrance screen render)
+    const timer = setTimeout(async () => {
+      try {
+        console.log('[AUTO-ADVANCE] Triggering phase start:', phase, subPhase);
+        
+        if (phase === 'discussion' || phase === 'teaching') {
+          if (handleStartLessonRef.current) await handleStartLessonRef.current();
+        } else if (phase === 'comprehension') {
+          if (handleGoComprehensionRef.current) await handleGoComprehensionRef.current();
+        } else if (phase === 'exercise') {
+          if (handleGoExerciseRef.current) await handleGoExerciseRef.current();
+        } else if (phase === 'worksheet') {
+          if (handleGoWorksheetRef.current) await handleGoWorksheetRef.current();
+        } else if (phase === 'test') {
+          if (handleGoTestRef.current) await handleGoTestRef.current();
+        }
+      } catch (e) {
+        console.error('[AUTO-ADVANCE] Failed to advance phase:', e);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [autoAdvancePhases, phase, subPhase, ticker]);
+  // Note: lessonData checked but not in deps to avoid TDZ
 
   // Prefetch intro lines and first question when entering awaiting-begin states
   // Placed after state declarations to avoid TDZ errors
@@ -7115,7 +7116,7 @@ function SessionPageInner() {
       completionInProgressRef.current = false;
       setCompletingLesson(false);
     }
-  }, [effectiveLessonTitle, lessonParam, router, sessionTimerMinutes, endTrackedSession, trackingLearnerId]);
+  }, [effectiveLessonTitle, lessonParam, router, sessionTimerMinutes, trackingLearnerId]); // endTrackedSession not stable, omit from deps (TDZ fix)
 
   // No portrait spacer: timeline should sit directly under the header in portrait mode.
 
