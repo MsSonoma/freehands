@@ -1082,20 +1082,38 @@ function SessionPageInner() {
   // Trigger work phase transition when play timer expired during restore
   useEffect(() => {
     if (!needsPlayExpiredTransition) return;
+    if (!lessonData?.id) return; // Wait for lesson data to load
     
     const triggerTransition = async () => {
       try {
         const phaseName = needsPlayExpiredTransition;
+        console.log('[PLAY EXPIRED] Triggering work phase transition for:', phaseName);
+        
         if (phaseName === 'discussion' || phase === 'discussion' || phase === 'teaching') {
-          if (handleStartLessonRef.current) await handleStartLessonRef.current();
+          if (handleStartLessonRef.current) {
+            console.log('[PLAY EXPIRED] Calling handleStartLesson');
+            await handleStartLessonRef.current();
+          }
         } else if (phaseName === 'comprehension' || phase === 'comprehension') {
-          if (handleGoComprehensionRef.current) await handleGoComprehensionRef.current();
+          if (handleGoComprehensionRef.current) {
+            console.log('[PLAY EXPIRED] Calling handleGoComprehension');
+            await handleGoComprehensionRef.current();
+          }
         } else if (phaseName === 'exercise' || phase === 'exercise') {
-          if (handleGoExerciseRef.current) await handleGoExerciseRef.current();
+          if (handleGoExerciseRef.current) {
+            console.log('[PLAY EXPIRED] Calling handleGoExercise');
+            await handleGoExerciseRef.current();
+          }
         } else if (phaseName === 'worksheet' || phase === 'worksheet') {
-          if (handleGoWorksheetRef.current) await handleGoWorksheetRef.current();
+          if (handleGoWorksheetRef.current) {
+            console.log('[PLAY EXPIRED] Calling handleGoWorksheet');
+            await handleGoWorksheetRef.current();
+          }
         } else if (phaseName === 'test' || phase === 'test') {
-          if (handleGoTestRef.current) await handleGoTestRef.current();
+          if (handleGoTestRef.current) {
+            console.log('[PLAY EXPIRED] Calling handleGoTest');
+            await handleGoTestRef.current();
+          }
         }
       } catch (e) {
         console.error('[PLAY EXPIRED] Failed to transition to work phase:', e);
@@ -1105,7 +1123,7 @@ function SessionPageInner() {
     };
     
     triggerTransition();
-  }, [needsPlayExpiredTransition, phase]);
+  }, [needsPlayExpiredTransition, phase, lessonData]);
 
   // Helper: speak arbitrary frontend text via unified captions + TTS
   // Use a ref so early functions can call it before it's fully defined
