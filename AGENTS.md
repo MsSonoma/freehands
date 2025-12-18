@@ -44,8 +44,7 @@ Changelog Workflow
 - Single source: `docs/brain/changelog.md` is the live, newest-first change log.
 - Read-before-reply: BrainMaker and Copilot must read the latest 20 entries before responding to any prompt.
 - Write-after-reply: Append a new entry at the top using `<UTC timestamp> | <ENGINE> | <150-char summary>`; ASCII-only; no secrets.
-- Trim policy: Keep only the most recent 20 entries in the file.
-- Collision handling: If two writes race, rewrite to restore newest-first order and re-apply the 20-entry trim.
+- Collision handling: If two writes race, rewrite to restore newest-first order.
 
 Ownership Boundaries
 - Signals are constitutional and read-only for everyone. Neither BrainMaker nor Copilot may edit `.github/Signals/*` or restate signal texts; they may only reference them.

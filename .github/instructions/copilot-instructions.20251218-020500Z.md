@@ -65,8 +65,8 @@ Additional guidelines:
 - **Order**: Newest entries at top (reverse chronological)
 - **Format per line**: `YYYY-MM-DDTHH:MM:SSZ | Copilot | <summary up to 150 chars>`
 - ASCII-only; no secrets
-- On each response, write new entry at top
-- If concurrent edits occur, rewrite to restore newest-first order
+- On each response, write new entry at top and trim to most recent 20 entries
+- If concurrent edits occur, rewrite to restore newest-first order and re-apply 20-line trim
 
 ### Changelog Discipline
 
@@ -110,4 +110,3 @@ Additional guidelines:
 
 **Remember**: When in doubt, consult the brain files. They are canonical truth.
 
-```

@@ -500,8 +500,12 @@ export function useSnapshotPersistence({
   try { setStoryPlot(typeof snap.storyPlot === 'string' ? snap.storyPlot : ''); } catch {}
   try { setStoryPhase(typeof snap.storyPhase === 'string' ? snap.storyPhase : ''); } catch {}
         try { setStoryTranscript(Array.isArray(snap.storyTranscript) ? snap.storyTranscript : []); } catch {}
-        // Always set countdown flag on ANY restore - countdown only plays on live timer expiration, never after refresh
-        try { if (typeof setPlayExpiredCountdownCompleted === 'function') setPlayExpiredCountdownCompleted(true); } catch {}
+        // Restore countdown flag from snapshot; do not force-enable on every restore
+        try {
+          if (typeof setPlayExpiredCountdownCompleted === 'function') {
+            setPlayExpiredCountdownCompleted(!!snap.playExpiredCountdownCompleted);
+          }
+        } catch {}
         // Three-stage teaching state
         try { if (typeof snap.teachingStage === 'string') setTeachingStage(snap.teachingStage); } catch {}
         try { if (snap.stageRepeats && typeof snap.stageRepeats === 'object') setStageRepeats({ definitions: Number.isFinite(snap.stageRepeats.definitions) ? snap.stageRepeats.definitions : 0, explanation: Number.isFinite(snap.stageRepeats.explanation) ? snap.stageRepeats.explanation : 0, examples: Number.isFinite(snap.stageRepeats.examples) ? snap.stageRepeats.examples : 0 }); } catch {}
