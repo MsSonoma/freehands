@@ -66,7 +66,7 @@ Is this CLEARLY a generation request? (explicit imperative verbs?)
 #### Layer 1: Confirmation Before Parameter Collection (Primary Defense)
 When intent is ambiguous, Mr. Mentor should ASK before starting parameter collection:
 
-**Question:** "Would you like me to generate a custom lesson, or would you prefer me to search for existing lessons?"
+**Question:** "Would you like me to generate a custom lesson?"
 
 **Only proceed with generation if user confirms:**
 - "yes, generate"
@@ -112,8 +112,8 @@ User: "I need a language arts lesson but I don't want one of the ones we have in
        the library. It should have a Christmas theme, please make some recommendations."
 
 WRONG: "Is this lesson for Emma's grade (4)?"
-RIGHT: "Would you like me to generate a custom lesson, or would you prefer me to 
-        search for existing lessons and recommend Christmas-themed options?"
+RIGHT: "Would you like me to generate a custom lesson?"
+       (If they say no: "Let me search for Christmas-themed language arts lessons...")
 ```
 
 ### ❌ DON'T 
