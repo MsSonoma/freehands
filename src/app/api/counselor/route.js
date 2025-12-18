@@ -152,10 +152,12 @@ CRITICAL DISTINCTION - Recommendations vs Generation:
 - NEVER assume they want generation just because they mention a topic. Default to searching and recommending.
 
 CRITICAL CONFIRMATION STEP - Before Collecting Generation Parameters:
-- If you're unsure whether they want to GENERATE a new lesson vs SEARCH/RECOMMEND existing lessons, ASK FIRST: "Would you like me to generate a custom lesson?"
-- Only start collecting generation parameters (grade, subject, difficulty) if they explicitly confirm they want generation ("yes", "yes, generate", "create one", "make a lesson")
-- If they say "no", "search", "recommend", "I'm not sure", or anything other than clear confirmation → SEARCH existing lessons instead
-- This confirmation prevents awkward parameter collection when they just wanted recommendations
+- NEVER start collecting generation parameters (grade, subject, difficulty) without explicit confirmation first
+- Even if user says "I need a lesson not in the library" or "recommend lessons to create", they are asking for IDEAS not actual generation
+- You MUST ask: "Would you like me to generate a custom lesson?" and wait for their response
+- Only start collecting generation parameters if they explicitly confirm they want generation ("yes", "yes, generate", "create one", "make a lesson")
+- If they say "no", "search", "recommend", "I'm not sure", "not yet", "I want ideas first" → SEARCH existing lessons and provide recommendations
+- This confirmation prevents accidentally entering generation flow when they just want suggestions
 
 CRITICAL ESCAPE MECHANISM - If You're Already Collecting Generation Parameters:
 - If user responds with ANYTHING that is NOT a direct answer to the parameter you asked for, they are trying to ESCAPE generation
@@ -1296,6 +1298,9 @@ export async function POST(req) {
   let userMessage = ''
   let conversationHistory = []
   let followup = null
+  let requireGenerationConfirmation = false
+  let generationConfirmed = false
+  let disableTools = []
     
     const contentType = (req.headers?.get?.('content-type') || '').toLowerCase()
     let learnerTranscript = null
@@ -1308,6 +1313,9 @@ export async function POST(req) {
         learnerTranscript = body.learner_transcript || null
         goalsNotes = body.goals_notes || null
         followup = body.followup || null
+        requireGenerationConfirmation = !!body.require_generation_confirmation
+        generationConfirmed = !!body.generation_confirmed
+        disableTools = Array.isArray(body.disableTools) ? body.disableTools.filter(Boolean) : []
       } else {
         const textBody = await req.text()
         userMessage = textBody.trim()
@@ -1379,7 +1387,7 @@ export async function POST(req) {
       : baseMessages
 
     // Define available functions
-    const tools = [
+    let tools = [
       {
         type: 'function',
         function: {
@@ -1592,6 +1600,16 @@ export async function POST(req) {
       }
     ]
 
+    // Apply per-request tool disabling (e.g., block generate_lesson after user declines)
+    if (disableTools.length > 0) {
+      const disabled = new Set(disableTools)
+      tools = tools.filter(tool => {
+        const fnName = tool?.function?.name
+        if (!fnName) return true
+        return !disabled.has(fnName)
+      })
+    }
+
     if (isFollowup) {
       const assistantMessage = followup?.assistantMessage
       const functionResults = Array.isArray(followup?.functionResults) ? followup.functionResults : []
@@ -1710,6 +1728,23 @@ export async function POST(req) {
     
     // Handle function calls
     if (toolCalls && toolCalls.length > 0) {
+      // Intercept generation tool calls when confirmation is required but not yet granted
+      const hasGenerateCall = toolCalls.some(tc => tc?.function?.name === 'generate_lesson')
+      if (requireGenerationConfirmation && !generationConfirmed && hasGenerateCall) {
+        const mentorReply = 'Would you like me to generate a custom lesson?'
+        const audioContent = await synthesizeAudio(mentorReply, logPrefix)
+
+        return NextResponse.json({
+          reply: mentorReply,
+          audio: audioContent,
+          toolLog,
+          needsConfirmation: true,
+          confirmationTool: 'generate_lesson',
+          functionCalls: toolCalls.map(tc => ({ name: tc.function.name, args: JSON.parse(tc.function.arguments) })),
+          usage: parsedBody?.usage || null
+        })
+      }
+
       const functionResults = []
       
       for (const toolCall of toolCalls) {

@@ -8,6 +8,14 @@
 
 ## How It Works
 
+### Frontend Confirmation Gate
+
+- Every counselor request sets `require_generation_confirmation: true`.
+- If GPT tries to call `generate_lesson`, the API now returns a confirmation prompt instead of executing.
+- The frontend marks `pendingConfirmationTool = 'generate_lesson'` and asks the user.
+- If the user declines, the next request disables `generate_lesson` (`disableTools: ['generate_lesson']`) and appends a decline note to the user message: "(User declined generation. Respond by providing assistance with the user's problem.)" so GPT assists instead of forcing generation.
+- If the user confirms, the next request sets `generation_confirmed: true` and allows the tool call.
+
 ### Recommendations vs Generation Decision Logic
 
 Mr. Mentor must distinguish between two fundamentally different user intents:

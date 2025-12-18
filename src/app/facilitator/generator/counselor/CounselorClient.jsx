@@ -75,6 +75,7 @@ export default function CounselorClient() {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [pendingConfirmationTool, setPendingConfirmationTool] = useState(null)
   
   // MentorInterceptor instance
   const interceptorRef = useRef(null)
@@ -1421,6 +1422,26 @@ export default function CounselorClient() {
     const message = userInput.trim()
     if (!message || loading) return
 
+    // Flags for generation confirmation flow
+    let generationConfirmed = false
+    const disableTools = []
+    let declineNote = null
+
+    if (pendingConfirmationTool === 'generate_lesson') {
+      const lower = message.toLowerCase()
+      const yesPattern = /\b(yes|yep|yeah|sure|ok|okay|alright|do it|go ahead|please|generate|create)\b/
+      const noPattern = /\b(no|nah|not now|stop|cancel|wait|hold on|recommend|advice|idea|later|don['’]?t|do not)\b/
+
+      if (yesPattern.test(lower)) {
+        generationConfirmed = true
+      } else {
+        disableTools.push('generate_lesson')
+        declineNote = '(User declined generation. Respond by providing assistance with the user\'s problem.)'
+      }
+
+      setPendingConfirmationTool(null)
+    }
+
     // If no session ID exists (e.g., after delete), generate a new one
     if (!sessionId) {
       const newSessionIdentifier = generateSessionIdentifier()
@@ -1648,6 +1669,7 @@ Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
       // Interceptor didn't handle - forward to API
       setLoadingThought("Consulting my knowledge base...")
       const forwardMessage = interceptResult.apiForward?.message || message
+      const finalForwardMessage = declineNote ? `${forwardMessage}\n\n${declineNote}` : forwardMessage
       const forwardContext = interceptResult.apiForward?.context || {}
 
       // Start session if this is the first message
@@ -1672,13 +1694,13 @@ Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
       // Add user message to conversation
       const updatedHistory = [
         ...conversationHistory,
-        { role: 'user', content: forwardMessage }
+        { role: 'user', content: finalForwardMessage }
       ]
       setConversationHistory(updatedHistory)
 
       // Display user message in captions
-      setCaptionText(forwardMessage)
-      setCaptionSentences([forwardMessage])
+      setCaptionText(finalForwardMessage)
+      setCaptionSentences([finalForwardMessage])
       setCaptionIndex(0)
 
       // Get auth token for function calling
@@ -1695,7 +1717,7 @@ Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
         method: 'POST',
         headers: headers,
         body: JSON.stringify({
-          message: forwardMessage,
+          message: finalForwardMessage,
           // Send previous conversation history (API will append current message to build full context)
           history: conversationHistory,
           // Include learner context if a learner is selected
@@ -1703,7 +1725,10 @@ Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
           // Include persistent goals notes
           goals_notes: goalsNotes || null,
           // Include any context from interceptor
-          interceptor_context: Object.keys(forwardContext).length > 0 ? forwardContext : undefined
+          interceptor_context: Object.keys(forwardContext).length > 0 ? forwardContext : undefined,
+          require_generation_confirmation: true,
+          generation_confirmed: generationConfirmed,
+          disableTools
         })
       })
 
@@ -1758,6 +1783,10 @@ Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
             }
           }
         }
+      }
+
+      if (data.needsConfirmation && data.confirmationTool === 'generate_lesson') {
+        setPendingConfirmationTool('generate_lesson')
       }
 
       if (data.needsFollowUp && data.followUp) {
