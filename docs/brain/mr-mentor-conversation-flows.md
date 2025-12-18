@@ -150,6 +150,16 @@ Then: ABANDON generation flow immediately
 
 ## What NOT To Do
 
+### ❌ DON'T Skip Confirmation When Intent Is Ambiguous
+```
+User: "I need a language arts lesson but I don't want one of the ones we have in 
+       the library. It should have a Christmas theme, please make some recommendations."
+
+WRONG: "Is this lesson for Emma's grade (4)?"
+RIGHT: "Would you like me to generate a custom lesson?"
+       (If they say no: "Let me search for Christmas-themed language arts lessons...")
+```
+
 ### ❌ DON'T Trigger Generation on Advice-Seeking Language
 ```
 User: "Emma has one more Language Arts lesson and then it's Christmas vacation. 
