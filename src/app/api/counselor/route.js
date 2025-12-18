@@ -120,7 +120,7 @@ You have 5 function calling tools available. Use them actively during conversati
    - Only collect parameters after they confirm they want generation
    - ALWAYS search first to avoid duplicates
    - Takes 30-60 seconds to complete
-   - ESCAPE HATCH: If user says "stop", "no", "I don't want to generate" during parameter collection, abandon and give recommendations instead
+   - ESCAPE HATCH: If during parameter collection user gives ANY response that isn't the parameter you asked for (you ask "What grade?" they say anything OTHER than a grade), abandon and give recommendations instead
 
 4. SCHEDULE_LESSON - Add lessons to calendars
    - When they say "schedule this" "add that to Monday" "put it on the calendar" → YOU MUST ACTUALLY CALL THIS FUNCTION
@@ -1443,7 +1443,7 @@ export async function POST(req) {
         type: 'function',
         function: {
           name: 'generate_lesson',
-          description: 'Generate a custom lesson ONLY when facilitator explicitly requests generation using imperative verbs like "create a lesson", "generate a lesson", "make me a lesson". DO NOT use when they ask for suggestions, recommendations, advice, or ideas - search and recommend existing lessons instead. CRITICAL: If while collecting parameters, user responds with anything that is NOT a direct parameter answer (e.g., you ask "What grade?" and they say something OTHER than a grade like "3rd" or "5th"), they are backing out. Any conversational response, explanation, or non-parameter text means they want to escape. DO NOT call this function - respond conversationally and search/recommend instead.',
+          description: 'Generate a custom lesson ONLY after explicit user confirmation. NEVER call this function unless: (1) User explicitly said words like "yes, generate", "create it", "make the lesson" in their MOST RECENT message, OR (2) You just asked "Would you like me to generate a custom lesson?" and they responded "yes" or similar affirmative. DO NOT call if user asks for "recommendations", "suggestions", "ideas", or talks about lessons "not in the library" without explicit generation confirmation. When in doubt, ask confirmation first, do not call this function.',
           parameters: {
             type: 'object',
             properties: {
