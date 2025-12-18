@@ -465,9 +465,9 @@ function getCapabilitiesInfo(args) {
     },
     
     generate_lesson: {
-      name: 'generate_lesson', If uncertain, ASK FIRST: "Would you like me to generate a custom lesson or search existing lessons?" Only proceed with generation after explicit confirmation.
+      name: 'generate_lesson',
       purpose: 'Create a custom lesson when existing lessons don\'t meet the need AND user explicitly requests generation',
-      when_to_use: 'ONLY when facilitator uses imperative generation language: "create a lesson", "generate a lesson", "make me a lesson". DO NOT use when they ask "do you have suggestions?", "what do you recommend?", "any ideas?", or similar advice-seeking language. For recommendations, search existing lessons instead.',
+      when_to_use: 'ONLY when facilitator uses imperative generation language: "create a lesson", "generate a lesson", "make me a lesson". DO NOT use when they ask "do you have suggestions?", "what do you recommend?", "any ideas?", or similar advice-seeking language. For recommendations, search existing lessons instead. If uncertain, ASK FIRST: "Would you like me to generate a custom lesson?" Only proceed with generation after explicit confirmation.',
       parameters: {
         title: 'Required. Lesson title like "Photosynthesis Basics"',
         subject: 'Required. One of: math, science, language arts, social studies',
