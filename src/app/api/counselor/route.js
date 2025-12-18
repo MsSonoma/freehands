@@ -112,10 +112,13 @@ You have 5 function calling tools available. Use them actively during conversati
    - When they ask "tell me about lesson X" → USE THIS TOOL
    - Returns: vocabulary, teaching notes, question counts
 
-3. GENERATE_LESSON - Create new custom lessons
-   - When they explicitly ask you to create a lesson → USE THIS TOOL
+3. GENERATE_LESSON - Create new custom lessons (ONLY when user wants actual generation)
+   - ONLY use when user explicitly says: "create a lesson", "generate a lesson", "make me a lesson"
+   - DO NOT use when user asks: "do you have suggestions?", "what do you recommend?", "any ideas?", "give me advice"
+   - If they ask for recommendations/suggestions/advice: search existing lessons and recommend, don't generate
    - ALWAYS search first to avoid duplicates
    - Takes 30-60 seconds to complete
+   - ESCAPE HATCH: If user says "stop", "no", "I don't want to generate", abandon generation and give recommendations instead
 
 4. SCHEDULE_LESSON - Add lessons to calendars
    - When they say "schedule this" "add that to Monday" "put it on the calendar" → YOU MUST ACTUALLY CALL THIS FUNCTION
@@ -140,6 +143,12 @@ You have 5 function calling tools available. Use them actively during conversati
    - When they want to review past advice or plans → USE THIS TOOL
    - Uses fuzzy matching to find relevant past conversations
    - Searches both current and archived conversations
+
+CRITICAL DISTINCTION - Recommendations vs Generation:
+- If user asks "do you have suggestions?", "what lessons do you recommend?", "any ideas?", "give me advice" → SEARCH existing lessons and recommend them. DO NOT start lesson generation.
+- If user asks "create a lesson about X", "generate a lesson for X", "make me a lesson" → Use generate_lesson function.
+- NEVER assume they want generation just because they mention a topic. Default to searching and recommending.
+- If they say "stop", "no", "I don't want to generate", "give me advice instead" during parameter collection → STOP asking for parameters and provide recommendations instead.
 
 CRITICAL: When someone asks about lessons, DON'T say "I can't access" or "I'm unable to" - JUST USE THE SEARCH TOOL.
 CRITICAL: When someone asks you to schedule a lesson, you MUST call the schedule_lesson function. DO NOT confirm scheduling without actually calling it.
@@ -443,8 +452,8 @@ function getCapabilitiesInfo(args) {
     
     generate_lesson: {
       name: 'generate_lesson',
-      purpose: 'Create a custom lesson when existing lessons don\'t meet the need',
-      when_to_use: 'When facilitator explicitly asks you to create/generate a lesson, or after searching shows no good match',
+      purpose: 'Create a custom lesson when existing lessons don\'t meet the need AND user explicitly requests generation',
+      when_to_use: 'ONLY when facilitator uses imperative generation language: "create a lesson", "generate a lesson", "make me a lesson". DO NOT use when they ask "do you have suggestions?", "what do you recommend?", "any ideas?", or similar advice-seeking language. For recommendations, search existing lessons instead.',
       parameters: {
         title: 'Required. Lesson title like "Photosynthesis Basics"',
         subject: 'Required. One of: math, science, language arts, social studies',
@@ -1415,7 +1424,7 @@ export async function POST(req) {
         type: 'function',
         function: {
           name: 'generate_lesson',
-          description: 'Generate a custom lesson for a facilitator. Use this when the facilitator asks you to create a lesson on a specific topic.',
+          description: 'Generate a custom lesson ONLY when facilitator explicitly requests generation using imperative verbs like "create a lesson", "generate a lesson", "make me a lesson". DO NOT use when they ask for suggestions, recommendations, advice, or ideas - search and recommend existing lessons instead. If user says "stop", "no", or "I don\'t want to generate" during parameter collection, abandon this function and recommend existing lessons.',
           parameters: {
             type: 'object',
             properties: {

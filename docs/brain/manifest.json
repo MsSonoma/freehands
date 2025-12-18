@@ -1,4 +1,21 @@
 {
+  "mr-mentor-conversation-flows": {
+    "file": "mr-mentor-conversation-flows.md",
+    "systems": [
+      "Mr. Mentor decision logic",
+      "lesson generation vs recommendations",
+      "function calling triggers",
+      "escape hatch mechanisms",
+      "recommendation intent detection",
+      "generation intent detection",
+      "parameter collection abandonment",
+      "search_lessons prioritization",
+      "generate_lesson restrictions",
+      "conversational flow control"
+    ],
+    "last_updated": "2025-12-18T00:00:00Z",
+    "status": "canonical"
+  },
   "facilitator-help-system": {
     "file": "facilitator-help-system.md",
     "systems": [
