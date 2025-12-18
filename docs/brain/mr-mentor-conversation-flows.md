@@ -35,24 +35,58 @@ Mr. Mentor must distinguish between two fundamentally different user intents:
 #### Response Flow
 
 ```
-User mentions topic
+User mentions topic or ambiguous intent
   |
   v
-Is this a generation request? (imperative verbs?)
+Is this CLEARLY a generation request? (explicit imperative verbs?)
   |
-  +--NO--> SEARCH existing lessons
+  +--NO--> Is intent unclear?
   |          |
-  |          v
-  |        Recommend top results
+  |          +--YES--> ASK: "Would you like me to generate a custom 
+  |          |               lesson or search existing lessons?"
+  |          |          |
+  |          |          +--"generate"/"create"/"yes"--> Start parameter collection
+  |          |          |
+  |          |          +--"no"/"search"/"recommend"--> SEARCH existing lessons
   |          |
-  |          v
-  |        Offer to generate IF nothing suitable
+  |          +--NO (clearly wants recommendations)--> SEARCH existing lessons
+  |                    |
+  |                    v
+  |                  Recommend top results
+  |                    |
+  |                    v
+  |                  Offer to generate IF nothing suitable
   |
   +--YES--> Start generation parameter collection
              |
              v
            Collect: grade, subject, difficulty, title, description
-             |
+  Two-Layer Protection:**
+
+#### Layer 1: Confirmation Before Parameter Collection (Primary Defense)
+When intent is ambiguous, Mr. Mentor should ASK before starting parameter collection:
+
+**Question:** "Would you like me to generate a custom lesson, or would you prefer me to search for existing lessons?"
+
+**Only proceed with generation if user confirms:**
+- "yes, generate"
+- "create one"
+- "make a lesson"
+- Clear affirmative for generation
+
+**Switch to search/recommend if user says:**
+- "no"
+- "search"
+- "recommend"
+- "I'm not sure"
+- "show me what you have"
+- Anything other than clear generation confirmation
+
+**Why This Works:** Prevents awkward parameter collection when user just wanted recommendations. Gives user explicit choice before committing to generation flow.
+
+#### Layer 2: Escape During Parameter Collection (Backup Defense)
+
+**           |
              v
            Call generate_lesson function
 ```
@@ -72,7 +106,17 @@ If user says during parameter collection:
 - "I don't want to generate"
 - "give me advice instead"
 - "I don't want you to generate the lesson"
+Skip Confirmation When Intent Is Ambiguous
+```
+User: "I need a language arts lesson but I don't want one of the ones we have in 
+       the library. It should have a Christmas theme, please make some recommendations."
 
+WRONG: "Is this lesson for Emma's grade (4)?"
+RIGHT: "Would you like me to generate a custom lesson, or would you prefer me to 
+        search for existing lessons and recommend Christmas-themed options?"
+```
+
+### ❌ DON'T 
 Then: ABANDON generation flow immediately
 - Stop asking for parameters
 - Switch to recommendation mode

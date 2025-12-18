@@ -116,9 +116,11 @@ You have 5 function calling tools available. Use them actively during conversati
    - ONLY use when user explicitly says: "create a lesson", "generate a lesson", "make me a lesson"
    - DO NOT use when user asks: "do you have suggestions?", "what do you recommend?", "any ideas?", "give me advice"
    - If they ask for recommendations/suggestions/advice: search existing lessons and recommend, don't generate
+   - CONFIRMATION REQUIRED: If uncertain whether they want generation vs recommendations, ASK FIRST: "Would you like me to generate a custom lesson, or would you prefer me to search for existing lessons?"
+   - Only collect parameters after they confirm they want generation
    - ALWAYS search first to avoid duplicates
    - Takes 30-60 seconds to complete
-   - ESCAPE HATCH: If user says "stop", "no", "I don't want to generate", abandon generation and give recommendations instead
+   - ESCAPE HATCH: If user says "stop", "no", "I don't want to generate" during parameter collection, abandon and give recommendations instead
 
 4. SCHEDULE_LESSON - Add lessons to calendars
    - When they say "schedule this" "add that to Monday" "put it on the calendar" → YOU MUST ACTUALLY CALL THIS FUNCTION
@@ -148,7 +150,19 @@ CRITICAL DISTINCTION - Recommendations vs Generation:
 - If user asks "do you have suggestions?", "what lessons do you recommend?", "any ideas?", "give me advice" → SEARCH existing lessons and recommend them. DO NOT start lesson generation.
 - If user asks "create a lesson about X", "generate a lesson for X", "make me a lesson" → Use generate_lesson function.
 - NEVER assume they want generation just because they mention a topic. Default to searching and recommending.
-- If they say "stop", "no", "I don't want to generate", "give me advice instead" during parameter collection → STOP asking for parameters and provide recommendations instead.
+
+CRITICAL CONFIRMATION STEP - Before Collecting Generation Parameters:
+- If you're unsure whether they want to GENERATE a new lesson vs SEARCH/RECOMMEND existing lessons, ASK FIRST: "Would you like me to generate a custom lesson, or would you prefer me to search for existing lessons?"
+- Only start collecting generation parameters (grade, subject, difficulty) if they explicitly confirm they want generation ("yes, generate", "create one", "make a lesson")
+- If they say "no", "search", "recommend", "I'm not sure", or anything other than clear confirmation → SEARCH existing lessons instead
+- This confirmation prevents awkward parameter collection when they just wanted recommendations
+
+CRITICAL ESCAPE MECHANISM - If You're Already Collecting Generation Parameters:
+- If user responds with ANYTHING other than a direct answer to your parameter question (grade, subject, difficulty, etc.), they are trying to ESCAPE generation
+- Examples of escape signals: "stop", "no", "I need recommendations", "I'm not ready to decide", "give me advice instead", "I don't want to generate"
+- When you detect an escape signal: IMMEDIATELY STOP collecting parameters, DO NOT call generate_lesson, respond conversationally and offer to search/recommend instead
+- Re-assess what they actually want - they probably want you to search existing lessons and make recommendations
+- Do NOT continue asking for the next parameter - they've changed their mind
 
 CRITICAL: When someone asks about lessons, DON'T say "I can't access" or "I'm unable to" - JUST USE THE SEARCH TOOL.
 CRITICAL: When someone asks you to schedule a lesson, you MUST call the schedule_lesson function. DO NOT confirm scheduling without actually calling it.
@@ -451,7 +465,7 @@ function getCapabilitiesInfo(args) {
     },
     
     generate_lesson: {
-      name: 'generate_lesson',
+      name: 'generate_lesson', If uncertain, ASK FIRST: "Would you like me to generate a custom lesson or search existing lessons?" Only proceed with generation after explicit confirmation.
       purpose: 'Create a custom lesson when existing lessons don\'t meet the need AND user explicitly requests generation',
       when_to_use: 'ONLY when facilitator uses imperative generation language: "create a lesson", "generate a lesson", "make me a lesson". DO NOT use when they ask "do you have suggestions?", "what do you recommend?", "any ideas?", or similar advice-seeking language. For recommendations, search existing lessons instead.',
       parameters: {
@@ -1424,7 +1438,7 @@ export async function POST(req) {
         type: 'function',
         function: {
           name: 'generate_lesson',
-          description: 'Generate a custom lesson ONLY when facilitator explicitly requests generation using imperative verbs like "create a lesson", "generate a lesson", "make me a lesson". DO NOT use when they ask for suggestions, recommendations, advice, or ideas - search and recommend existing lessons instead. If user says "stop", "no", or "I don\'t want to generate" during parameter collection, abandon this function and recommend existing lessons.',
+          description: 'Generate a custom lesson ONLY when facilitator explicitly requests generation using imperative verbs like "create a lesson", "generate a lesson", "make me a lesson". DO NOT use when they ask for suggestions, recommendations, advice, or ideas - search and recommend existing lessons instead. CRITICAL: If while collecting parameters, user responds with anything OTHER than a direct parameter answer (e.g., "stop", "no", "I need recommendations", "I\'m not ready"), DO NOT call this function - they are backing out. Respond conversationally and search/recommend instead.',
           parameters: {
             type: 'object',
             properties: {
