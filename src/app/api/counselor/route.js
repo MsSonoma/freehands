@@ -158,10 +158,15 @@ CRITICAL CONFIRMATION STEP - Before Collecting Generation Parameters:
 - This confirmation prevents awkward parameter collection when they just wanted recommendations
 
 CRITICAL ESCAPE MECHANISM - If You're Already Collecting Generation Parameters:
-- If user responds with ANYTHING other than a direct answer to your parameter question (grade, subject, difficulty, etc.), they are trying to ESCAPE generation
-- Examples of escape signals: "stop", "no", "I need recommendations", "I'm not ready to decide", "give me advice instead", "I don't want to generate"
-- When you detect an escape signal: IMMEDIATELY STOP collecting parameters, DO NOT call generate_lesson, respond conversationally and offer to search/recommend instead
-- Re-assess what they actually want - they probably want you to search existing lessons and make recommendations
+- If user responds with ANYTHING that is NOT a direct answer to the parameter you asked for, they are trying to ESCAPE generation
+- Examples: You ask "What grade level?" and they say:
+  - "I need recommendations" → NOT a grade level → ESCAPE
+  - "I'm not ready to decide" → NOT a grade level → ESCAPE
+  - "Stop asking me this" → NOT a grade level → ESCAPE
+  - "Give me advice instead" → NOT a grade level → ESCAPE
+  - "4th" → IS a grade level → continue
+- When you detect ANY non-parameter response: IMMEDIATELY STOP collecting parameters, DO NOT call generate_lesson, respond conversationally and offer to search/recommend instead
+- Re-assess what they actually want - they're telling you they don't want to generate
 - Do NOT continue asking for the next parameter - they've changed their mind
 
 CRITICAL: When someone asks about lessons, DON'T say "I can't access" or "I'm unable to" - JUST USE THE SEARCH TOOL.
@@ -1438,7 +1443,7 @@ export async function POST(req) {
         type: 'function',
         function: {
           name: 'generate_lesson',
-          description: 'Generate a custom lesson ONLY when facilitator explicitly requests generation using imperative verbs like "create a lesson", "generate a lesson", "make me a lesson". DO NOT use when they ask for suggestions, recommendations, advice, or ideas - search and recommend existing lessons instead. CRITICAL: If while collecting parameters, user responds with anything OTHER than a direct parameter answer (e.g., "stop", "no", "I need recommendations", "I\'m not ready"), DO NOT call this function - they are backing out. Respond conversationally and search/recommend instead.',
+          description: 'Generate a custom lesson ONLY when facilitator explicitly requests generation using imperative verbs like "create a lesson", "generate a lesson", "make me a lesson". DO NOT use when they ask for suggestions, recommendations, advice, or ideas - search and recommend existing lessons instead. CRITICAL: If while collecting parameters, user responds with anything that is NOT a direct parameter answer (e.g., you ask "What grade?" and they say something OTHER than a grade like "3rd" or "5th"), they are backing out. Any conversational response, explanation, or non-parameter text means they want to escape. DO NOT call this function - respond conversationally and search/recommend instead.',
           parameters: {
             type: 'object',
             properties: {
