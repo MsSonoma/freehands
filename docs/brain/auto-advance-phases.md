@@ -6,32 +6,12 @@ Per-learner setting that automatically advances through phase transitions by ski
 
 ## How It Works
 
-**Database Field**: `learners.auto_advance_phases` (boolean, default `true`)
-- `true`: Show Begin buttons at phase transitions (default behavior)
-- `false`: Auto-click Begin buttons after 500ms delay
-
-**UI Control**: Facilitator → Learners → Edit Learner → Basic Info tab
-- Pill switch toggle after Golden Keys field
-- Label: "Phase Begin Buttons"
-- Description explains behavior difference
-
-**Session Behavior**:
-1. Load `autoAdvancePhases` from learner profile
-2. useEffect watches `phase`, `subPhase`, `ticker` state
-3. Detect awaiting-begin states:
-   - `awaiting-learner` (teaching/discussion)
-   - `comprehension-start`
-   - `exercise-awaiting-begin`
-   - `worksheet-awaiting-begin`
-   - `test-awaiting-begin` or `review-start`
-4. If `autoAdvancePhases === false` AND `ticker > 0` AND awaiting-begin:
-   - Wait 500ms (entrance screen renders)
-   - Call phase handler automatically
-
-**Initial Begin Exception**:
-- First Begin button (lesson start, `ticker === 0`) ALWAYS shows
-- Auto-advance only applies to phase transitions after teaching begins
-- Preserves learner readiness and consent to start
+- Storage: `learners.auto_advance_phases` boolean (default true). `true` = show Begin buttons; `false` = auto-click them after a 500ms delay.
+- UI: Facilitator → Learners → Edit Learner → Basic Info tab. Toggle labeled "Phase Begin Buttons"; on save it sends `auto_advance_phases`.
+- Persistence: `clientApi.updateLearner/createLearner` write `auto_advance_phases` to Supabase (flat + JSON schemas) and to the localStorage fallback (`facilitator_learners`). `normalizeRow` defaults to true when null so `false` survives refresh.
+- Session load: `session/page.js` reads `learner.auto_advance_phases` into state; storage change listener rehydrates when learner selection changes.
+- Runtime: useEffect watches `phase`, `subPhase`, `ticker`. If `autoAdvancePhases === false` and `ticker > 0` in awaiting-begin states (`awaiting-learner`, `comprehension-start`, `exercise-awaiting-begin`, `worksheet-awaiting-begin`, `test-awaiting-begin`, `review-start`), wait 500ms then call the appropriate handler.
+- Initial Begin exception: First Begin (`ticker === 0`) always shows; no auto-advance during opening or play phase.
 
 ## What NOT To Do
 

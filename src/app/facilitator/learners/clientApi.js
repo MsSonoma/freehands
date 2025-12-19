@@ -45,6 +45,7 @@ function readLocal() {
     return raw.map(item => ({
       ...item,
       humor_level: resolveHumorLevel(item?.humor_level ?? null, DEFAULT_HUMOR_LEVEL),
+      auto_advance_phases: item?.auto_advance_phases !== false,
     }));
   } catch { return []; }
 }
@@ -133,6 +134,7 @@ export async function createLearner(payload) {
         poem_disabled: !!payload.poem_disabled,
         story_disabled: !!payload.story_disabled,
         fill_in_fun_disabled: !!payload.fill_in_fun_disabled,
+        auto_advance_phases: payload.auto_advance_phases !== false,
       }, uid);
       if (!error) { supabaseLearnersMode = 'flat'; return normalizeRow(data); }
       if (!isUndefinedColumnOrTable(error)) throw new Error(error.message || 'Failed to create learner');
@@ -144,6 +146,7 @@ export async function createLearner(payload) {
       grade: payload.grade,
       targets: targetValues,
       humor_level: humorLevel,
+      auto_advance_phases: payload.auto_advance_phases !== false,
     }, uid);
     if (!error2) { supabaseLearnersMode = 'json'; return normalizeRow(data2); }
     if (isUndefinedColumnOrTable(error2)) { supabaseLearnersMode = 'disabled'; return createLocal(payload); }
@@ -232,6 +235,7 @@ export async function updateLearner(id, updates) {
         ...(updates.poem_disabled !== undefined ? { poem_disabled: !!updates.poem_disabled } : {}),
         ...(updates.story_disabled !== undefined ? { story_disabled: !!updates.story_disabled } : {}),
         ...(updates.fill_in_fun_disabled !== undefined ? { fill_in_fun_disabled: !!updates.fill_in_fun_disabled } : {}),
+        ...(updates.auto_advance_phases !== undefined ? { auto_advance_phases: !!updates.auto_advance_phases } : {}),
         // Phase timer fields (11 total)
         ...(updates.discussion_play_min !== undefined ? { discussion_play_min: Number(updates.discussion_play_min) } : {}),
         ...(updates.discussion_work_min !== undefined ? { discussion_work_min: Number(updates.discussion_work_min) } : {}),
@@ -260,6 +264,7 @@ export async function updateLearner(id, updates) {
       ...(updates.grade !== undefined ? { grade: updates.grade } : {}),
       ...(Object.keys(targetValues).length > 0 ? { targets: targetValues } : {}),
       ...(typeof humorLevel === 'string' ? { humor_level: humorLevel } : {}),
+      ...(updates.auto_advance_phases !== undefined ? { auto_advance_phases: !!updates.auto_advance_phases } : {}),
     };
     const { data: data2, error: error2 } = await updateWithOwner(supabase, id, jsonPayload, uid);
     if (!error2) { supabaseLearnersMode = 'json'; return normalizeRow(data2); }
@@ -309,6 +314,7 @@ function normalizeRow(row) {
     poem_disabled: !!row.poem_disabled,
     story_disabled: !!row.story_disabled,
     fill_in_fun_disabled: !!row.fill_in_fun_disabled,
+    auto_advance_phases: row.auto_advance_phases !== false,
     // Phase timer fields
     discussion_play_min: c(row.discussion_play_min),
     discussion_work_min: c(row.discussion_work_min),
@@ -369,6 +375,7 @@ function createLocal(payload) {
     poem_disabled: !!payload.poem_disabled,
     story_disabled: !!payload.story_disabled,
     fill_in_fun_disabled: !!payload.fill_in_fun_disabled,
+    auto_advance_phases: payload.auto_advance_phases !== false,
   };
   list.unshift(item); writeLocal(list); return item;
 }
@@ -393,6 +400,7 @@ function updateLocal(id, updates) {
       ...(updates.poem_disabled !== undefined ? { poem_disabled: !!updates.poem_disabled } : {}),
       ...(updates.story_disabled !== undefined ? { story_disabled: !!updates.story_disabled } : {}),
       ...(updates.fill_in_fun_disabled !== undefined ? { fill_in_fun_disabled: !!updates.fill_in_fun_disabled } : {}),
+      ...(updates.auto_advance_phases !== undefined ? { auto_advance_phases: !!updates.auto_advance_phases } : {}),
     };
     list[idx] = updated; writeLocal(list); return updated;
   }
