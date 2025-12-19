@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2025-12-09T22:00:00Z  
+**Last updated**: 2025-12-19T04:20:00Z  
 **Status**: Canonical
 
 ## How It Works
@@ -77,8 +77,9 @@ If user clicks Go button during the 30-second countdown:
 
 When work timer expires or user completes phase:
 - `workPhaseCompletions` object tracks completion per phase (true/false)
-- Completing 4 out of 5 work phases earns golden key
+- Completing 3 on-time work phases earns a golden key (play timers ignored)
 - Golden key adds bonus time to all future play timers
+- `workTimeRemaining` records minutes left on each work timer when the phase ends (0 on timeout) and is surfaced in facilitator review for transparency
 
 ### Timer Defaults
 
@@ -142,6 +143,8 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
 
 ### Phase Handlers
 ## Recent Changes
+
+**2025-12-19**: Golden key eligibility now requires three on-time work timers. Facilitator test review shows remaining work time per phase based on work timers only; play timers are ignored.
 
 **2025-12-18**: Restore no longer forces `playExpiredCountdownCompleted` to true. The countdown flag is restored from snapshot state and only set during restore when an expired play timer is detected. Live sessions resumed after a restore can still show the 30-second countdown on the next play timeout.
 

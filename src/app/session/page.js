@@ -511,6 +511,27 @@ function SessionPageInner() {
       return next;
     });
   }, []);
+  const [workTimeRemaining, setWorkTimeRemainingState] = useState({
+    discussion: null,
+    comprehension: null,
+    exercise: null,
+    worksheet: null,
+    test: null,
+  }); // Minutes remaining when each work timer stopped (null when never started)
+  const workTimeRemainingRef = useRef(workTimeRemaining);
+  const setWorkTimeRemaining = useCallback((updater) => {
+    setWorkTimeRemainingState(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : (updater || {
+        discussion: null,
+        comprehension: null,
+        exercise: null,
+        worksheet: null,
+        test: null,
+      });
+      workTimeRemainingRef.current = next;
+      return next;
+    });
+  }, []);
   const [showPlayTimeExpired, setShowPlayTimeExpired] = useState(false);
   const [playExpiredPhase, setPlayExpiredPhase] = useState(null); // Which phase's play timer expired
   const [playExpiredCountdownCompleted, setPlayExpiredCountdownCompleted] = useState(false); // Track if countdown was already shown
@@ -956,26 +977,11 @@ function SessionPageInner() {
       ...prev,
       [phaseName]: false // Explicitly mark as failed due to timeout
     }));
-  }, []); // setWorkPhaseCompletions is stable useCallback, not needed in deps
-  
-  // Mark work phase as completed (called when advancing to next phase with time remaining)
-  const markWorkPhaseComplete = useCallback((phaseName) => {
-    setWorkPhaseCompletions(prev => ({
+    setWorkTimeRemaining(prev => ({
       ...prev,
-      [phaseName]: true
+      [phaseName]: 0
     }));
   }, []); // setWorkPhaseCompletions is stable useCallback, not needed in deps
-  
-  // Check if golden key should be earned (4/5 work phases completed)
-  const checkGoldenKeyEarn = useCallback(() => {
-    const completedCount = Object.values(workPhaseCompletions).filter(Boolean).length;
-    if (completedCount >= 4 && !goldenKeyEarned) {
-      setGoldenKeyEarned(true);
-      // TODO: Persist golden key to database
-      return true;
-    }
-    return false;
-  }, [workPhaseCompletions, goldenKeyEarned]);
   
   // Get current phase timer duration (in minutes)
   const getCurrentPhaseTimerDuration = useCallback((phaseName, timerType) => {
@@ -983,6 +989,56 @@ function SessionPageInner() {
     const key = `${phaseName.toLowerCase()}_${timerType}_min`;
     return phaseTimers[key] || 5;
   }, [phaseTimers]);
+
+  // Compute remaining minutes for a work timer from sessionStorage
+  const getWorkTimerRemainingMinutes = useCallback((phaseName) => {
+    if (!phaseName) return null;
+    try {
+      const storageKey = lessonKey 
+        ? `session_timer_state:${lessonKey}:${phaseName}:work`
+        : `session_timer_state:${phaseName}:work`;
+      const timerState = sessionStorage.getItem(storageKey);
+      if (!timerState) return null;
+      const state = JSON.parse(timerState);
+      const elapsedSeconds = Number(state.elapsedSeconds || 0);
+      const key = `${String(phaseName).toLowerCase()}_work_min`;
+      const totalMinutesFromTimers = (phaseTimers && typeof phaseTimers[key] === 'number') ? phaseTimers[key] : null;
+      const totalMinutes = (typeof totalMinutesFromTimers === 'number' && totalMinutesFromTimers > 0)
+        ? totalMinutesFromTimers
+        : getCurrentPhaseTimerDuration(phaseName, 'work');
+      const totalSeconds = Math.max(0, totalMinutes * 60);
+      const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
+      return remainingSeconds / 60;
+    } catch {
+      return null;
+    }
+  }, [lessonKey, phaseTimers, getCurrentPhaseTimerDuration]);
+
+  // Mark work phase as completed (called when advancing to next phase with time remaining)
+  const markWorkPhaseComplete = useCallback((phaseName) => {
+    const remainingMinutes = getWorkTimerRemainingMinutes(phaseName);
+    const prevStatus = workPhaseCompletionsRef.current ? !!workPhaseCompletionsRef.current[phaseName] : false;
+    const hasRemaining = typeof remainingMinutes === 'number' ? remainingMinutes > 0 : prevStatus;
+    setWorkPhaseCompletions(prev => ({
+      ...prev,
+      [phaseName]: hasRemaining
+    }));
+    setWorkTimeRemaining(prev => ({
+      ...prev,
+      [phaseName]: typeof remainingMinutes === 'number' ? remainingMinutes : (prev?.[phaseName] ?? null)
+    }));
+  }, [getWorkTimerRemainingMinutes]);
+  
+  // Check if golden key should be earned (3+ work phases completed on time)
+  const checkGoldenKeyEarn = useCallback(() => {
+    const completedCount = Object.values(workPhaseCompletions).filter(Boolean).length;
+    if (completedCount >= 3 && !goldenKeyEarned) {
+      setGoldenKeyEarned(true);
+      // TODO: Persist golden key to database
+      return true;
+    }
+    return false;
+  }, [workPhaseCompletions, goldenKeyEarned]);
 
   // Helper to get the current phase name from phase state
   const getCurrentPhaseName = useCallback(() => {
@@ -4666,6 +4722,13 @@ function SessionPageInner() {
         worksheet: false,
         test: false
       });
+      setWorkTimeRemaining({
+        discussion: null,
+        comprehension: null,
+        exercise: null,
+        worksheet: null,
+        test: null
+      });
       
       setTimerPaused(false);
     } catch (e) {
@@ -5164,7 +5227,7 @@ function SessionPageInner() {
   try { scheduleSaveSnapshot('begin-worksheet'); } catch {}
     // Auto-start congrats speech so captions immediately return to transcript
     try { setCongratsStarted(true); } catch {}
-    // Check if learner earned golden key (4/5 work phases completed)
+    // Check if learner earned golden key (3 on-time work phases completed)
     checkGoldenKeyEarn();
     // Persist medal on effect when congrats
   }, [generatedTest, testCorrectByIndex, speakFrontend, markWorkPhaseComplete, checkGoldenKeyEarn]);
@@ -6918,7 +6981,7 @@ function SessionPageInner() {
     setCompletingLesson(true);
 
     try {
-      // Check if golden key was earned (4/5 work phases completed without timing out)
+      // Check if golden key was earned (3 on-time work phases completed)
       const earnedKey = checkGoldenKeyEarn();
       if (earnedKey) {
         // Increment golden key in database
@@ -7435,6 +7498,22 @@ function SessionPageInner() {
           });
           const btn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'6px 10px', fontWeight:700, border:'none', cursor:'pointer', boxShadow:'0 2px 6px rgba(0,0,0,0.18)' };
           const card = { background:'#ffffff', border:'1px solid #e5e7eb', borderRadius:12, padding:16, boxShadow:'0 2px 10px rgba(0,0,0,0.04)'};
+          const workPhases = ['discussion','comprehension','exercise','worksheet','test'];
+          const formatRemainingLabel = (phaseKey) => {
+            const minutesLeft = (() => {
+              const stored = workTimeRemaining?.[phaseKey];
+              if (typeof stored === 'number') return stored;
+              const fallback = getWorkTimerRemainingMinutes(phaseKey);
+              return typeof fallback === 'number' ? fallback : null;
+            })();
+            if (minutesLeft == null) return '—';
+            const totalSeconds = Math.round(Math.max(0, minutesLeft * 60));
+            const mins = Math.floor(totalSeconds / 60);
+            const secs = String(totalSeconds % 60).padStart(2, '0');
+            return `${mins}:${secs}`;
+          };
+          const onTimeCount = Object.values(workPhaseCompletions || {}).filter(Boolean).length;
+          const meetsGoldenKey = onTimeCount >= 3;
           const askOverride = async (i) => {
             const ok = await ensurePinAllowed('facilitator');
             if (!ok) return;
@@ -7452,6 +7531,28 @@ function SessionPageInner() {
                   {percent}% grade
                 </div>
                 <div style={{ fontSize: 'clamp(1.2rem, 2.6vw, 1.5rem)' }} aria-label="Medal preview">{medal}</div>
+              </div>
+              <div style={{ ...card, display:'flex', flexDirection:'column', gap:8 }}>
+                <div style={{ fontWeight:800 }}>Work timers</div>
+                <div style={{ fontWeight:700, color: meetsGoldenKey ? '#065f46' : '#7f1d1d' }}>
+                  {meetsGoldenKey ? 'Golden key eligible (3+ on-time work timers)' : 'Golden key not yet met (needs 3 on-time work timers)'}
+                </div>
+                <div style={{ fontSize:13, color:'#4b5563' }}>Play timers are ignored for this check.</div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(170px, 1fr))', gap:8 }}>
+                  {workPhases.map((p) => {
+                    const onTime = !!(workPhaseCompletions && workPhaseCompletions[p]);
+                    const remainingLabel = formatRemainingLabel(p);
+                    const statusText = remainingLabel === '—' ? 'not started' : (onTime ? 'on time' : 'timed out / incomplete');
+                    const statusColor = statusText === 'not started' ? '#374151' : (onTime ? '#065f46' : '#7f1d1d');
+                    return (
+                      <div key={p} style={{ padding:10, border:'1px solid #e5e7eb', borderRadius:8, background:'#f9fafb', display:'flex', flexDirection:'column', gap:4 }}>
+                        <div style={{ fontWeight:700, textTransform:'capitalize' }}>{p}</div>
+                        <div style={{ fontFamily:'monospace', fontWeight:700 }}>{remainingLabel}</div>
+                        <div style={{ fontSize:12, color: statusColor }}>{statusText}</div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               {/* No in-pane Complete action; final red button appears in footer after congrats speech */}
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
