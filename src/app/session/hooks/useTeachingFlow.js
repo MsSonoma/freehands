@@ -205,15 +205,15 @@ export function useTeachingFlow({
     try { setTeachingGateLocked?.(true); } catch {}
     setCanSend(false);
     setSubPhase('teaching-3stage'); // hide gate buttons while we generate examples
-    
+    let result = null;
+    let lessonTitle = '';
+    let stageLabel = teachingStage === 'definitions' ? 'vocabulary definitions' : 'examples';
+    let contextInfo = '';
+
     try {
       // Start generating example questions BEFORE speaking so GPT completes during speech
-      const lessonTitle = getCleanLessonTitle();
+      lessonTitle = getCleanLessonTitle();
       const notes = getTeachingNotes() || '';
-      
-      // Determine what we just covered
-      let stageLabel = teachingStage === 'definitions' ? 'vocabulary definitions' : 'examples';
-      let contextInfo = '';
       
       // For definitions stage with sentence-by-sentence gating, reference the specific sentence
       if (teachingStage === 'definitions' && vocabSentencesRef.current.length > 0) {
@@ -269,29 +269,29 @@ export function useTeachingFlow({
       await speakFrontend('Do you have any questions?');
       
       // By now GPT should be done or nearly done - wait for it to complete
-      const result = await gptPromise;
+      result = await gptPromise;
+    } catch (err) {
+      // Error generating example questions - continue to fallback
+    }
 
-      if (result.success) {
-        const sampleText = (result.text || '').trim();
-        if (sampleText) {
-          // Speak the suggested follow-up questions after the prompt line
-          try { await speakFrontend(sampleText); } catch {}
-        }
-      }
+    try {
+      const cleanedTitle = (lessonTitle || getCleanLessonTitle() || 'this topic').trim();
+      const fallback = `You could ask questions like... What does ${cleanedTitle} mean in simple words? How would we use ${cleanedTitle} in real life? Could you show one more example?`;
+      const sampleText = (result && result.success && (result.text || '').trim()) ? (result.text || '').trim() : fallback;
+      try { await speakFrontend(sampleText); } catch {}
       
-      // If we just finished definitions stage, prefetch examples GPT content
-      // This starts loading in the background while student reads sample questions
-      if (teachingStage === 'definitions' && result.success && result.text) {
+      // If we just finished definitions stage and we successfully got text, prefetch examples GPT content
+      if (teachingStage === 'definitions' && result && result.success && result.text) {
         console.log('[TEACHING] Triggering examples GPT prefetch after sample questions loaded');
         prefetchExamplesContent();
       }
     } catch (err) {
-      // Error generating example questions - silent
+      // Silent fallback failure
+    } finally {
+      setSubPhase('awaiting-gate');
+      setCanSend(false);
+      try { setTeachingGateLocked?.(false); } catch {}
     }
-    
-    setSubPhase('awaiting-gate');
-    setCanSend(false);
-    try { setTeachingGateLocked?.(false); } catch {}
   };
 
   /**
