@@ -10,7 +10,7 @@ Per-learner setting that automatically advances through phase transitions by ski
 - UI: Facilitator → Learners → Edit Learner → Basic Info tab. Toggle labeled "Phase Begin Buttons"; on save it sends `auto_advance_phases`.
 - Persistence: `clientApi.updateLearner/createLearner` write `auto_advance_phases` to Supabase (flat + JSON schemas) and to the localStorage fallback (`facilitator_learners`). `normalizeRow` defaults to true when null so `false` survives refresh.
 - Session load: `session/page.js` reads `learner.auto_advance_phases` into state; storage change listener rehydrates when learner selection changes.
-- Runtime: useEffect watches `phase`, `subPhase`, `ticker`, and reruns when lesson data finishes loading. If `autoAdvancePhases === false` and we are in an awaiting-begin state (`awaiting-learner`, `comprehension-start`, `exercise-awaiting-begin`, `worksheet-awaiting-begin`, `test-awaiting-begin`, `review-start`), wait 500ms then call the appropriate handler. Only the very first Begin (discussion `awaiting-learner` while `ticker === 0`) is exempt so users must explicitly start the lesson. UI hides Begin buttons when auto-advance is off to prevent flash before auto-click.
+- Runtime: useEffect watches `phase`, `subPhase`, `ticker`, and reruns when lesson data finishes loading. If `autoAdvancePhases === false` and we are in an awaiting-begin state (`awaiting-learner`, `comprehension-start`, `exercise-awaiting-begin`, `worksheet-awaiting-begin`, `test-awaiting-begin`, `review-start`), wait 500ms then call the appropriate Begin handler (not Go) so intros and opening actions still run. Only the very first Begin (discussion `awaiting-learner` while `ticker === 0`) is exempt so users must explicitly start the lesson. UI hides Begin buttons when auto-advance is off to prevent flash before auto-click.
 - Initial Begin exception: Skip automation only when `phase === 'discussion'`, `subPhase === 'awaiting-learner'`, and `ticker === 0`; later phase resets to `ticker = 0` should still auto-advance.
 
 ## What NOT To Do
@@ -22,6 +22,7 @@ Per-learner setting that automatically advances through phase transitions by ski
 - ❌ Don't add to dependency array: lessonData (causes TDZ)
 - ❌ Don't gate the entire feature on `ticker`—only the first discussion Begin uses the `ticker === 0` exemption
 - ❌ Don't render Begin buttons during auto-advance (except the initial Begin) or they will flash
+- ❌ Don't call Go handlers from auto-advance; use Begin handlers so intros/opening actions render
 - ✅ Only auto-click Begin buttons at phase transitions
 - ✅ Always let entrance screens render (500ms delay)
 

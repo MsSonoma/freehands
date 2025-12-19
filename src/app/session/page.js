@@ -486,10 +486,15 @@ function SessionPageInner() {
   
   // Refs for Go handlers (to avoid TDZ in early callbacks)
   const handleStartLessonRef = useRef(null);
-  const handleGoComprehensionRef = useRef(null);
-  const handleGoExerciseRef = useRef(null);
-  const handleGoWorksheetRef = useRef(null);
-  const handleGoTestRef = useRef(null);
+    const handleGoComprehensionRef = useRef(null);
+    const handleGoExerciseRef = useRef(null);
+    const handleGoWorksheetRef = useRef(null);
+    const handleGoTestRef = useRef(null);
+    const beginSessionRef = useRef(null);
+    const beginComprehensionRef = useRef(null);
+    const beginExerciseRef = useRef(null);
+    const beginWorksheetRef = useRef(null);
+    const beginTestRef = useRef(null);
 
   // Session Timer state
   const [timerPaused, setTimerPaused] = useState(false);
@@ -1278,15 +1283,15 @@ function SessionPageInner() {
         console.log('[AUTO-ADVANCE] Triggering phase start:', phase, subPhase);
         
         if (phase === 'discussion' || phase === 'teaching') {
-          if (handleStartLessonRef.current) await handleStartLessonRef.current();
+          if (beginSessionRef.current) await beginSessionRef.current();
         } else if (phase === 'comprehension') {
-          if (handleGoComprehensionRef.current) await handleGoComprehensionRef.current();
+          if (beginComprehensionRef.current) await beginComprehensionRef.current();
         } else if (phase === 'exercise') {
-          if (handleGoExerciseRef.current) await handleGoExerciseRef.current();
+          if (beginExerciseRef.current) await beginExerciseRef.current();
         } else if (phase === 'worksheet') {
-          if (handleGoWorksheetRef.current) await handleGoWorksheetRef.current();
+          if (beginWorksheetRef.current) await beginWorksheetRef.current();
         } else if (phase === 'test') {
-          if (handleGoTestRef.current) await handleGoTestRef.current();
+          if (beginTestRef.current) await beginTestRef.current();
         }
       } catch (e) {
         console.error('[AUTO-ADVANCE] Failed to advance phase:', e);
@@ -5624,6 +5629,15 @@ function SessionPageInner() {
     // Keep input disabled until Go is pressed
     setCanSend(false);
   };
+
+  // Keep Begin handler refs in sync for auto-advance triggers
+  useEffect(() => {
+    beginSessionRef.current = beginSession;
+    beginComprehensionRef.current = beginComprehensionPhase;
+    beginExerciseRef.current = beginSkippedExercise;
+    beginWorksheetRef.current = beginWorksheetPhase;
+    beginTestRef.current = beginTestPhase;
+  }, []);
 
   // Footer actions: Resume current state (re-run the current part), or Restart entire lesson fresh
   const { handleResumeClick, handleRestartClick } = useResumeRestart({

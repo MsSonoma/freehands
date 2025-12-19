@@ -1,3 +1,4 @@
+2025-12-18T05:50:00Z | Copilot | FIX: Auto-advance now calls Begin handlers (not Go) and keeps opening actions; Begin buttons hidden during auto-advance only.
 2025-12-18T05:35:00Z | Copilot | UX: Hide Begin buttons during auto-advance (except first Begin) to avoid flash; updated doc/manifest.
 2025-12-18T05:15:00Z | Copilot | FIX: Auto-advance skips only first Begin (discussion/ticker=0); later phase Begin buttons now auto-fire; updated doc and manifest.
 2025-12-18T04:45:00Z | Copilot | FIX: Auto-advance uses comprehension-start (actual awaiting state) and doc/manifest updated.
