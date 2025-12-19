@@ -86,6 +86,12 @@ const currentQuestion = generatedComprehension[comprehensionIndex]
 
 No fallbacks. No pool slicing. No refill logic. If index exceeds array length, phase is complete.
 
+### Test Phase Responsiveness
+
+- `handleGoTest` keeps `canSend` true while the first question TTS plays, so MC/TF buttons render immediately even during audio playback.
+- `speakingLock` is bypassed when `phase === 'test' && subPhase === 'test-active'`, allowing quick-answer controls to stay visible while Ms. Sonoma is speaking.
+- After each test answer, `testActiveIndex` advances and `canSend` is re-enabled before feedback/next-question TTS finishes, so learners can answer the next item without waiting for audio to end.
+
 ### Storage Keys
 
 localStorage uses lesson-specific keys:

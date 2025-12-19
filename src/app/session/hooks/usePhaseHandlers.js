@@ -239,10 +239,10 @@ export function usePhaseHandlers({
       setQaAnswersUnlocked(true);
       const formatted = ensureQuestionMark(`1. ${formatQuestionForSpeech(item, { layout: 'multiline' })}`);
       activeQuestionBodyRef.current = formatted;
-      setCanSend(false);
+      // Keep input available while the first question is being read
+      setCanSend(true);
       await speakFrontend(formatted, { mcLayout: 'multiline' });
     } catch {}
-    setCanSend(true);
   }, [phase, generatedTest, setShowOpeningActions, setQaAnswersUnlocked, setCanSend, activeQuestionBodyRef, speakFrontend, transitionToWorkTimer]);
 
   // Handler: Start the lesson now (fallback/generic)

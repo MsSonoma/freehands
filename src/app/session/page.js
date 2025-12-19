@@ -4333,7 +4333,8 @@ function SessionPageInner() {
 
   // Disable sending when the UI is not ready or while Ms. Sonoma is speaking
   const comprehensionAwaitingBegin = (phase === 'comprehension' && subPhase === 'comprehension-start');
-  const speakingLock = !!isSpeaking; // lock input anytime she is speaking
+  // Allow answering Test items while TTS is still playing so buttons appear immediately
+  const speakingLock = (phase === 'test' && subPhase === 'test-active') ? false : !!isSpeaking;
   // Derived gating: when Opening/Go buttons are visible, keep input inactive without mutating canSend
   const discussionButtonsVisible = (
     phase === 'discussion' &&
@@ -6607,6 +6608,9 @@ function SessionPageInner() {
             const nextQ = ensureQuestionMark(`${nextIdx + 1}. ${formatQuestionForSpeech(nextObj, { layout: 'multiline' })}`);
             // Remember the exact next test question spoken
             activeQuestionBodyRef.current = nextQ;
+            try { setTestActiveIndex(nextIdx); } catch {}
+            // Allow answering while the next question is still being read
+            try { setCanSend(true); } catch {}
             try { await speakFrontend(`${speech} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
             
             // Prefetch trigger: load next question while student works
@@ -6621,9 +6625,7 @@ function SessionPageInner() {
             // ATOMIC SNAPSHOT: Save after answering test question (includes next question in response)
             try { await scheduleSaveSnapshot('test-answered'); } catch {}
             
-            setTestActiveIndex(nextIdx);
             try { scheduleSaveSnapshot('test-advance'); } catch {}
-            setCanSend(true);
             return;
           }
 
