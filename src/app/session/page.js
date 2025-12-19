@@ -7551,6 +7551,11 @@ function SessionPageInner() {
               const needBeginWorksheet = (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin');
               const needBeginTest = (phase === 'test' && subPhase === 'test-awaiting-begin');
               if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest)) return null;
+
+              // Hide phase Begin buttons when auto-advance is OFF so they don't flash before auto-click
+              const isInitialBegin = (needBeginDiscussion && ticker === 0);
+              const shouldShowButtons = autoAdvancePhases || isInitialBegin;
+              if (!shouldShowButtons) return null;
               const ctaStyle = { background:'#c7442e', color:'#fff', borderRadius:10, padding:'10px 18px', fontWeight:800, fontSize:'clamp(1rem, 2.6vw, 1.125rem)', border:'none', boxShadow:'0 2px 12px rgba(199,68,46,0.28)', cursor:'pointer' };
               const rowStyle = { display:'flex', alignItems:'center', justifyContent:'center', gap:12, paddingLeft:12, paddingRight:12, marginBottom:4 };
               return (

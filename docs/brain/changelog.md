@@ -1,3 +1,4 @@
+2025-12-18T05:35:00Z | Copilot | UX: Hide Begin buttons during auto-advance (except first Begin) to avoid flash; updated doc/manifest.
 2025-12-18T05:15:00Z | Copilot | FIX: Auto-advance skips only first Begin (discussion/ticker=0); later phase Begin buttons now auto-fire; updated doc and manifest.
 2025-12-18T04:45:00Z | Copilot | FIX: Auto-advance uses comprehension-start (actual awaiting state) and doc/manifest updated.
 2025-12-18T04:30:00Z | Copilot | FIX: Auto-advance now reruns after lesson load (added lessonData dep) and doc updated; manifest timestamp refreshed.
