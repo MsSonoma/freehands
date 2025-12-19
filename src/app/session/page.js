@@ -6802,7 +6802,7 @@ function SessionPageInner() {
       const nextSentence = hotkeys?.nextSentence || DEFAULT_HOTKEYS.nextSentence;
       const isNextSentenceKey = nextSentence && code === nextSentence;
 
-      // Prioritize Next Sentence behavior during the teaching gate when PageDown is shared
+      // Prioritize Next Sentence behavior during the teaching gate (handles custom overlaps)
       if (
         isNextSentenceKey &&
         phase === 'teaching' &&

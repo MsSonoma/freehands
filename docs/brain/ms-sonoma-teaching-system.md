@@ -246,6 +246,7 @@ Before shipping to Ms. Sonoma, verify:
 
 ### Hotkey Behavior
 
+- Default bindings: Skip = PageDown; Next Sentence = End; Repeat = PageUp.
 - Teaching gate Next Sentence hotkey (PageDown) only fires after TTS finishes or has been skipped; while speech is active the key is ignored.
 - Skip still routes through the central speech abort to halt TTS before advancing.
 
