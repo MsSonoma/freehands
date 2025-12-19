@@ -3,10 +3,10 @@
 export const DEFAULT_HOTKEYS = Object.freeze({
   beginSend: 'Enter',            // Begin overlays + Send in input + Go button
   micHold: 'NumpadAdd',          // Hold to record voice
-  skip: 'ArrowRight',            // Skip forward + Next Sentence (teaching gate)
-  repeat: 'ArrowLeft',           // Repeat last speech
+  skip: 'PageDown',              // Skip forward + Next Sentence (teaching gate)
+  repeat: 'PageUp',              // Repeat last speech
   muteToggle: 'NumpadMultiply',  // Toggle mute
-  nextSentence: 'ArrowRight',    // Next sentence in teaching (same as skip)
+  nextSentence: 'PageDown',      // Next sentence in teaching (same as skip)
   goButton: 'Enter'              // Go button in opening actions (same as beginSend)
 });
 

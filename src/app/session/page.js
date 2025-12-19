@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useRef, useEffect, useMemo, useCallback, Suspense } from "react";
 import { ensurePinAllowed } from "../lib/pinGate";
-import { getHotkeysLocal, fetchHotkeysServer, DEFAULT_HOTKEYS, isTextEntryTarget } from "../lib/hotkeys";
+import { getHotkeysLocal, setHotkeysLocal, fetchHotkeysServer, DEFAULT_HOTKEYS, isTextEntryTarget } from "../lib/hotkeys";
 import { useRouter, useSearchParams } from "next/navigation";
 import { jsPDF } from "jspdf";
 import { loadRuntimeVariables } from "../lib/runtimeVariables";
@@ -82,8 +82,12 @@ function mapToAssistantCaptionEntries(sentences) {
     return { text, role: 'assistant' };
   });
 }
-
-function normalizeTranscriptLines(entries) {
+        const res = await fetchHotkeysServer();
+        if (res?.ok && res.hotkeys) {
+          const { next, changed } = remapLegacyArrowHotkeys(res.hotkeys);
+          setHotkeys(next);
+          if (changed) setHotkeysLocal(next);
+        }
   if (!Array.isArray(entries)) return [];
   return entries
     .map((entry) => {
@@ -1231,8 +1235,29 @@ function SessionPageInner() {
   const [generatedExercise, setGeneratedExercise] = useState(null);
   const [currentCompIndex, setCurrentCompIndex] = useState(0);
   const [currentExIndex, setCurrentExIndex] = useState(0);
+  // Remap legacy Arrow hotkeys to Page keys (skip/repeat/nextSentence) to avoid input focus conflicts
+  const remapLegacyArrowHotkeys = useCallback((hk) => {
+    const next = { ...(hk || {}) };
+    let changed = false;
+    const swap = (key, from, to) => {
+      if (next[key] === from) {
+        next[key] = to;
+        changed = true;
+      }
+    };
+    swap('skip', 'ArrowRight', 'PageDown');
+    swap('nextSentence', 'ArrowRight', 'PageDown');
+    swap('repeat', 'ArrowLeft', 'PageUp');
+    return { next, changed };
+  }, []);
+
   // Facilitator-configurable hotkeys (local-first, then server when available)
-  const [hotkeys, setHotkeys] = useState(() => getHotkeysLocal());
+  const [hotkeys, setHotkeys] = useState(() => {
+    const base = getHotkeysLocal();
+    const { next, changed } = remapLegacyArrowHotkeys(base);
+    if (changed) setHotkeysLocal(next);
+    return next;
+  });
   useEffect(() => {
     // Refresh from local storage on mount and when updated in another tab/window
     try {
@@ -6806,7 +6831,7 @@ function SessionPageInner() {
       
       const code = e.code || e.key;
       const target = e.target;
-      if (isTextEntryTarget(target)) return; // don't steal keys while typing in inputs/textareas
+      const targetIsInput = isTextEntryTarget(target);
       if (!hotkeys) return;
 
       const { muteToggle, skip, repeat } = { ...DEFAULT_HOTKEYS, ...hotkeys };
@@ -6818,32 +6843,38 @@ function SessionPageInner() {
       }
 
       if (skip && code === skip) {
+        // Always stop default PageDown behavior so inputs don't hijack the key
+        e.preventDefault();
         // Skip speech when speaking
         if (isSpeaking && typeof handleSkipSpeech === 'function') {
-          e.preventDefault();
           handleSkipSpeech();
-          return;
         }
+        return;
       }
 
       // Next Sentence during teaching gate (separate hotkey)
       const nextSentence = hotkeys?.nextSentence || DEFAULT_HOTKEYS.nextSentence;
       if (nextSentence && code === nextSentence) {
+        // Block default even when not active to avoid cursor movement
+        e.preventDefault();
         if (phase === 'teaching' && subPhase === 'awaiting-gate' && typeof handleGateNo === 'function') {
-          e.preventDefault();
           handleGateNo();
-          return;
         }
+        return;
       }
 
       if (repeat && code === repeat) {
         console.log('[HOTKEY DEBUG] Repeat key pressed. isSpeaking:', isSpeaking, 'showRepeatButton:', showRepeatButton, 'handleRepeatSpeech:', typeof handleRepeatSpeech);
+        // Block default PageUp behavior for inputs and page scroll
+        e.preventDefault();
         if (!isSpeaking && showRepeatButton && typeof handleRepeatSpeech === 'function') {
-          e.preventDefault();
           handleRepeatSpeech();
-          return;
         }
+        return;
       }
+
+      // If focus is in an input and no hotkey matched, allow normal behavior
+      if (targetIsInput) return;
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
