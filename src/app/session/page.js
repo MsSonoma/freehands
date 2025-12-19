@@ -3366,6 +3366,11 @@ function SessionPageInner() {
   handleGoWorksheetRef.current = handleGoWorksheet;
   handleGoTestRef.current = handleGoTest;
   handleStartLessonRef.current = handleStartLesson;
+  beginSessionRef.current = beginSession;
+  beginComprehensionRef.current = beginComprehensionPhase;
+  beginExerciseRef.current = beginSkippedExercise;
+  beginWorksheetRef.current = beginWorksheetPhase;
+  beginTestRef.current = beginTestPhase;
 
 
   useEffect(() => {
@@ -5629,15 +5634,6 @@ function SessionPageInner() {
     // Keep input disabled until Go is pressed
     setCanSend(false);
   };
-
-  // Keep Begin handler refs in sync for auto-advance triggers
-  useEffect(() => {
-    beginSessionRef.current = beginSession;
-    beginComprehensionRef.current = beginComprehensionPhase;
-    beginExerciseRef.current = beginSkippedExercise;
-    beginWorksheetRef.current = beginWorksheetPhase;
-    beginTestRef.current = beginTestPhase;
-  }, []);
 
   // Footer actions: Resume current state (re-run the current part), or Restart entire lesson fresh
   const { handleResumeClick, handleRestartClick } = useResumeRestart({
