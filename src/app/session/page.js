@@ -82,31 +82,6 @@ function mapToAssistantCaptionEntries(sentences) {
     return { text, role: 'assistant' };
   });
 }
-        const res = await fetchHotkeysServer();
-        if (res?.ok && res.hotkeys) {
-          const { next, changed } = remapLegacyArrowHotkeys(res.hotkeys);
-          setHotkeys(next);
-          if (changed) setHotkeysLocal(next);
-        }
-  if (!Array.isArray(entries)) return [];
-  return entries
-    .map((entry) => {
-      if (!entry) return null;
-      if (typeof entry === 'string') {
-        const text = entry.replace(/\s+/g, ' ').trim();
-        if (!text) return null;
-        return { role: 'assistant', text };
-      }
-      if (typeof entry === 'object') {
-        const text = typeof entry.text === 'string' ? entry.text.trim() : '';
-        if (!text) return null;
-        const role = entry.role === 'user' ? 'user' : 'assistant';
-        return { role, text };
-      }
-      return null;
-    })
-    .filter(Boolean);
-}
 
 // Dynamically load per-user targets at runtime (recomputed on each call)
 async function ensureRuntimeTargets(forceReload = false) {
