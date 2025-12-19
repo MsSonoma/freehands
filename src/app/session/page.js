@@ -3366,11 +3366,6 @@ function SessionPageInner() {
   handleGoWorksheetRef.current = handleGoWorksheet;
   handleGoTestRef.current = handleGoTest;
   handleStartLessonRef.current = handleStartLesson;
-  beginSessionRef.current = beginSession;
-  beginComprehensionRef.current = beginComprehensionPhase;
-  beginExerciseRef.current = beginSkippedExercise;
-  beginWorksheetRef.current = beginWorksheetPhase;
-  beginTestRef.current = beginTestPhase;
 
 
   useEffect(() => {
@@ -5107,6 +5102,13 @@ function SessionPageInner() {
     // Keep input disabled until Go is pressed
     setCanSend(false);
   };
+
+  // Keep Begin handler refs in sync (after definitions to avoid TDZ)
+  beginSessionRef.current = beginSession;
+  beginComprehensionRef.current = beginComprehensionPhase;
+  beginExerciseRef.current = beginSkippedExercise;
+  beginWorksheetRef.current = beginWorksheetPhase;
+  beginTestRef.current = beginTestPhase;
 
   // During facilitator review (now a Test subphase): keep preview grade percent and count in sync with correctness array.
   useEffect(() => {
