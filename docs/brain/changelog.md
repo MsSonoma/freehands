@@ -1,3 +1,4 @@
+2025-12-19T05:30:00Z | Copilot | FIX: Teaching gate now uses a dedicated lock while sample questions load/play so the three-question suggestions always run before controls/hotkey show; updated teaching brain + manifest.
 2025-12-19T05:00:00Z | Copilot | FIX: Teaching gate Next/Next hotkey stay hidden while the 3-question suggestions load/play; updated teaching brain + manifest.
 2025-12-19T04:30:00Z | Copilot | UX: Test review now shows per-phase work timer remaining (work-only) and golden key readiness now needs 3 on-time work timers; updated timer doc and manifest.
 2025-12-19T03:14:40Z | Copilot | FIX: Teaching gate now speaks the generated "You could ask questions like..." follow-ups explicitly after the prompt to prevent silent skips; updated teaching doc and manifest.

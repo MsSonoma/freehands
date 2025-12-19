@@ -15,6 +15,7 @@ export function useTeachingFlow({
   setSubPhase,
   setPhase,
   setTeachingStage,
+  setTeachingGateLocked,
   setStageRepeats,
   setCaptionSentences,
   setCaptionIndex,
@@ -201,6 +202,7 @@ export function useTeachingFlow({
    * Gate prompt: "Do you have any questions?" + example questions
    */
   const promptGateRepeat = async () => {
+    try { setTeachingGateLocked?.(true); } catch {}
     setCanSend(false);
     setSubPhase('teaching-3stage'); // hide gate buttons while we generate examples
     
@@ -289,6 +291,7 @@ export function useTeachingFlow({
     
     setSubPhase('awaiting-gate');
     setCanSend(false);
+    try { setTeachingGateLocked?.(false); } catch {}
   };
 
   /**

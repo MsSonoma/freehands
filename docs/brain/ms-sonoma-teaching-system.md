@@ -1,7 +1,7 @@
 # Ms. Sonoma Teaching System
 
 **Status**: Canonical  
-**Last Updated**: 2025-12-19T05:00:00Z
+**Last Updated**: 2025-12-19T05:30:00Z
 
 ## How It Works
 
@@ -253,7 +253,7 @@ Before shipping to Ms. Sonoma, verify:
 ### Teaching Gate Flow
 
 - After "Do you have any questions?" Ms. Sonoma now explicitly speaks the generated "You could ask questions like..." follow-ups so they cannot be skipped while still loading.
-- Teaching gate controls (Repeat/Next and the PageDown hotkey) stay hidden/blocked while the gate prompt or sample question TTS is still loading, so learners cannot skip past the three-question suggestions before they finish playing.
+- Teaching gate controls (Repeat/Next and the PageDown hotkey) stay hidden/blocked while the gate prompt or sample question TTS is loading/playing; a dedicated gate lock covers this sequence so learners cannot skip past the three-question suggestions before they finish.
 
 ### Slot Policy
 
