@@ -3021,51 +3021,33 @@ function SessionPageInner() {
     // Mark that skip just fired to prevent Begin hotkey from auto-triggering
     skipJustFiredRef.current = true;
     setTimeout(() => { skipJustFiredRef.current = false; }, 300);
-    
-    // Stop all audio playback
-    if (audioRef.current) {
-      try { audioRef.current.pause(); } catch {}
-      try { audioRef.current.src = ''; } catch {}
-      audioRef.current = null;
-    }
-    
-    // Stop WebAudio source
-    if (webAudioSourceRef.current) {
-      try { webAudioSourceRef.current.stop(); } catch {}
-      try { webAudioSourceRef.current.disconnect(); } catch {}
-      webAudioSourceRef.current = null;
-    }
-    
-    // Stop synthetic playback
-    try { clearSynthetic(); } catch {}
-    
-    // Pause video
-    if (videoRef.current) {
-      try { videoRef.current.pause(); } catch {}
-    }
-    
-    // Clear captions
-    try { clearCaptionTimers(); } catch {}
-    
-    // Clear speech guard timer
-    try { clearSpeechGuard(); } catch {}
-    
-    // Set speaking to false
-    try { setIsSpeaking(false); } catch {}
-    
-  // Hide repeat button during the skip action
-  try { setShowRepeatButton(false); } catch {}
-    
+
+    // Abort everything but keep existing transcript/captions on screen
+    abortAllActivity(true);
+
+    // Explicitly stop any pending WebAudio source and guard timers
+    try {
+      if (webAudioSourceRef.current) {
+        try { webAudioSourceRef.current.stop(); } catch {}
+        try { webAudioSourceRef.current.disconnect(); } catch {}
+        webAudioSourceRef.current = null;
+      }
+      clearSpeechGuard();
+    } catch {}
+
+    // Hide repeat button during the skip action
+    try { setShowRepeatButton(false); } catch {}
+
     // Enable input immediately when skipping
     try { setCanSend(true); } catch {}
-    
+
     // Scroll transcript to bottom
     try {
       if (captionBoxRef.current) {
         captionBoxRef.current.scrollTop = captionBoxRef.current.scrollHeight;
       }
     } catch {}
-    
+
     // Show opening actions if in the right phase/state
     try {
       if (
@@ -3078,7 +3060,7 @@ function SessionPageInner() {
         setShowOpeningActions(true);
       }
     } catch {}
-    
+
     // Reset playback state refs
     webAudioStartedAtRef.current = 0;
     webAudioPausedAtRef.current = 0;
@@ -3090,7 +3072,7 @@ function SessionPageInner() {
         setShowRepeatButton(true);
       }
     } catch {}
-  }, [phase, subPhase, askState, riddleState, poemState, clearSynthetic, clearSpeechGuard]);
+  }, [abortAllActivity, phase, subPhase, askState, riddleState, poemState, clearSpeechGuard]);
 
   // Repeat speech: replay the last TTS audio without updating captions
   const handleRepeatSpeech = useCallback(async () => {
