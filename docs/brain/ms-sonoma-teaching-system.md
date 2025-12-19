@@ -244,6 +244,11 @@ Before shipping to Ms. Sonoma, verify:
 
 **Closing**: End of session
 
+### Hotkey Behavior
+
+- Teaching gate Next Sentence hotkey (PageDown) only fires after TTS finishes or has been skipped; while speech is active the key is ignored.
+- Skip still routes through the central speech abort to halt TTS before advancing.
+
 ### Slot Policy
 
 - Build with templates in code

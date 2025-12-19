@@ -1,3 +1,4 @@
+2025-12-19T02:54:56Z | Copilot | UX: Next Sentence hotkey now waits for TTS to finish/skip in teaching gate; updated ms-sonoma teaching doc and manifest.
 2025-12-19T02:36:48Z | Copilot | UX: Hotkeys migrated from ArrowLeft/Right to PageUp/PageDown (skip/repeat/next sentence) and blocked default input scrolling so skip works even with text field focused.
 2025-12-19T02:28:00Z | Copilot | UX: Test MC/TF buttons now stay visible while TTS plays (bypass speaking lock, enable canSend during question playback); updated lesson-assessment brain + manifest.
 2025-12-18T07:55:00Z | Copilot | FIX: Auto-advance skips test review-start so Begin Test no longer re-fires on completion; updated auto-advance doc and manifest timestamp.

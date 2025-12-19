@@ -6803,7 +6803,14 @@ function SessionPageInner() {
       const isNextSentenceKey = nextSentence && code === nextSentence;
 
       // Prioritize Next Sentence behavior during the teaching gate when PageDown is shared
-      if (isNextSentenceKey && phase === 'teaching' && subPhase === 'awaiting-gate' && typeof handleGateNo === 'function') {
+      if (
+        isNextSentenceKey &&
+        phase === 'teaching' &&
+        subPhase === 'awaiting-gate' &&
+        typeof handleGateNo === 'function'
+      ) {
+        // Only fire after TTS finishes or has been skipped
+        if (isSpeaking) return;
         e.preventDefault();
         handleGateNo();
         return;

@@ -206,9 +206,10 @@
       "factual accuracy",
       "instruction hardening",
       "creative features lenient validation",
-      "opening actions button visibility"
+      "opening actions button visibility",
+      "teaching gate hotkey gating"
     ],
-    "last_updated": "2025-12-08T23:15:00Z",
+    "last_updated": "2025-12-19T02:54:56Z",
     "status": "canonical"
   },
   "beta-program": {
