@@ -1258,7 +1258,8 @@ function SessionPageInner() {
   useEffect(() => {
     if (autoAdvancePhases) return; // Setting is ON, show buttons normally
     if (!lessonData?.id) return; // Wait for lesson data
-    if (ticker === 0) return; // Initial Begin button - always show (lesson hasn't started)
+    const isInitialBegin = (phase === 'discussion' && subPhase === 'awaiting-learner' && ticker === 0);
+    if (isInitialBegin) return; // Keep the very first Begin button visible
     
     // Detect awaiting-begin states (phase transition entrances)
     const isAwaitingBegin = 
