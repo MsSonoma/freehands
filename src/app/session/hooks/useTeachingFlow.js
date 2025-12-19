@@ -259,7 +259,8 @@ export function useTeachingFlow({
           step: 'gate-example-questions',
           teachingNotes: notes || undefined,
           stage: teachingStage
-        }
+        },
+        { skipAudio: true } // We'll speak the generated sample questions explicitly after fetch
       );
       
       // While GPT is generating, speak "Do you have any questions?"
@@ -267,9 +268,13 @@ export function useTeachingFlow({
       
       // By now GPT should be done or nearly done - wait for it to complete
       const result = await gptPromise;
-      
-      if (!result.success) {
-        // Failed to generate example questions - silent
+
+      if (result.success) {
+        const sampleText = (result.text || '').trim();
+        if (sampleText) {
+          // Speak the suggested follow-up questions after the prompt line
+          try { await speakFrontend(sampleText); } catch {}
+        }
       }
       
       // If we just finished definitions stage, prefetch examples GPT content

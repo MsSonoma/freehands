@@ -250,6 +250,10 @@ Before shipping to Ms. Sonoma, verify:
 - Teaching gate Next Sentence hotkey (PageDown) only fires after TTS finishes or has been skipped; while speech is active the key is ignored.
 - Skip still routes through the central speech abort to halt TTS before advancing.
 
+### Teaching Gate Flow
+
+- After "Do you have any questions?" Ms. Sonoma now explicitly speaks the generated "You could ask questions like..." follow-ups so they cannot be skipped while still loading.
+
 ### Slot Policy
 
 - Build with templates in code

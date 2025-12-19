@@ -1,3 +1,4 @@
+2025-12-19T03:14:40Z | Copilot | FIX: Teaching gate now speaks the generated "You could ask questions like..." follow-ups explicitly after the prompt to prevent silent skips; updated teaching doc and manifest.
 2025-12-19T03:02:42Z | Copilot | UX: Default hotkeys swapped so Skip=PageDown and Next Sentence=End; updated teaching hotkey notes and manifest.
 2025-12-19T02:54:56Z | Copilot | UX: Next Sentence hotkey now waits for TTS to finish/skip in teaching gate; updated ms-sonoma teaching doc and manifest.
 2025-12-19T02:36:48Z | Copilot | UX: Hotkeys migrated from ArrowLeft/Right to PageUp/PageDown (skip/repeat/next sentence) and blocked default input scrolling so skip works even with text field focused.
