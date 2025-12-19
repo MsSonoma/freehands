@@ -1264,7 +1264,7 @@ function SessionPageInner() {
     const isAwaitingBegin = 
       (phase === 'teaching' && subPhase === 'awaiting-learner') || // Initial start uses ticker=0 check above
       (phase === 'discussion' && subPhase === 'awaiting-learner') ||
-      (phase === 'comprehension' && subPhase === 'comprehension-start') ||
+      (phase === 'comprehension' && subPhase === 'comprehension-awaiting-begin') ||
       (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') ||
       (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') ||
       (phase === 'test' && (subPhase === 'test-awaiting-begin' || subPhase === 'review-start'));

@@ -1,3 +1,4 @@
+2025-12-18T04:15:00Z | Copilot | FIX: Auto-advance now detects comprehension-awaiting-begin; doc updated; manifest timestamp refreshed.
 2025-12-18T03:50:00Z | Copilot | FIX: Phase Begin Buttons toggle now persists auto_advance_phases to Supabase/local cache; updated auto-advance-phases doc/manifest.
 2025-12-18T02:25:00Z | Copilot | CHANGE: Removed changelog trimming rule; keep newest-first ordering without deleting older entries. Updated AGENTS and Copilot instructions accordingly.
 2025-12-18T01:30:00Z | Copilot | FIX: Countdown flag restored from snapshot instead of forced true on every restore; live play expirations still show 30s overlay while away-expired restores stay suppressed. Updated timer-system and session-takeover docs.
