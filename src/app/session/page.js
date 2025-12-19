@@ -1264,7 +1264,7 @@ function SessionPageInner() {
     const isAwaitingBegin = 
       (phase === 'teaching' && subPhase === 'awaiting-learner') || // Initial start uses ticker=0 check above
       (phase === 'discussion' && subPhase === 'awaiting-learner') ||
-      (phase === 'comprehension' && subPhase === 'comprehension-awaiting-begin') ||
+      (phase === 'comprehension' && subPhase === 'comprehension-start') ||
       (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') ||
       (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') ||
       (phase === 'test' && (subPhase === 'test-awaiting-begin' || subPhase === 'review-start'));
@@ -1300,7 +1300,7 @@ function SessionPageInner() {
   // Placed after state declarations to avoid TDZ errors
   useEffect(() => {
     try {
-      if (subPhase === 'comprehension-awaiting-begin') {
+      if (subPhase === 'comprehension-start') {
         // Prefetch random intro from COMPREHENSION_INTROS
         const intro = COMPREHENSION_INTROS[Math.floor(Math.random() * COMPREHENSION_INTROS.length)];
         if (Array.isArray(generatedComprehension) && generatedComprehension.length > 0) {

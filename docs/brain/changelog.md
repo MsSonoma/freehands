@@ -1,3 +1,4 @@
+2025-12-18T04:45:00Z | Copilot | FIX: Auto-advance uses comprehension-start (actual awaiting state) and doc/manifest updated.
 2025-12-18T04:30:00Z | Copilot | FIX: Auto-advance now reruns after lesson load (added lessonData dep) and doc updated; manifest timestamp refreshed.
 2025-12-18T04:15:00Z | Copilot | FIX: Auto-advance now detects comprehension-awaiting-begin; doc updated; manifest timestamp refreshed.
 2025-12-18T03:50:00Z | Copilot | FIX: Phase Begin Buttons toggle now persists auto_advance_phases to Supabase/local cache; updated auto-advance-phases doc/manifest.

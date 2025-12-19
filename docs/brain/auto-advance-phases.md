@@ -10,7 +10,7 @@ Per-learner setting that automatically advances through phase transitions by ski
 - UI: Facilitator → Learners → Edit Learner → Basic Info tab. Toggle labeled "Phase Begin Buttons"; on save it sends `auto_advance_phases`.
 - Persistence: `clientApi.updateLearner/createLearner` write `auto_advance_phases` to Supabase (flat + JSON schemas) and to the localStorage fallback (`facilitator_learners`). `normalizeRow` defaults to true when null so `false` survives refresh.
 - Session load: `session/page.js` reads `learner.auto_advance_phases` into state; storage change listener rehydrates when learner selection changes.
-- Runtime: useEffect watches `phase`, `subPhase`, `ticker`, and reruns when lesson data finishes loading. If `autoAdvancePhases === false` and `ticker > 0` in awaiting-begin states (`awaiting-learner`, `comprehension-awaiting-begin`, `exercise-awaiting-begin`, `worksheet-awaiting-begin`, `test-awaiting-begin`, `review-start`), wait 500ms then call the appropriate handler.
+- Runtime: useEffect watches `phase`, `subPhase`, `ticker`, and reruns when lesson data finishes loading. If `autoAdvancePhases === false` and `ticker > 0` in awaiting-begin states (`awaiting-learner`, `comprehension-start`, `exercise-awaiting-begin`, `worksheet-awaiting-begin`, `test-awaiting-begin`, `review-start`), wait 500ms then call the appropriate handler.
 - Initial Begin exception: First Begin (`ticker === 0`) always shows; no auto-advance during opening or play phase.
 
 ## What NOT To Do
