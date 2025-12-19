@@ -1293,8 +1293,8 @@ function SessionPageInner() {
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [autoAdvancePhases, phase, subPhase, ticker]);
-  // Note: lessonData checked but not in deps to avoid TDZ
+  }, [autoAdvancePhases, phase, subPhase, ticker, lessonData?.id]);
+  // lessonData in deps so auto-advance rechecks once lesson loads
 
   // Prefetch intro lines and first question when entering awaiting-begin states
   // Placed after state declarations to avoid TDZ errors
