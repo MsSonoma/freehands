@@ -6872,8 +6872,8 @@ function SessionPageInner() {
         subPhase === 'awaiting-gate' &&
         typeof handleGateNo === 'function'
       ) {
-        // Only fire after TTS finishes or has been skipped
-        if (isSpeaking) return;
+        // Only fire after TTS finishes (and loading completes) or has been skipped
+        if (isSpeaking || ttsLoadingCount > 0) return;
         e.preventDefault();
         handleGateNo();
         return;
@@ -6910,7 +6910,7 @@ function SessionPageInner() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hotkeys, toggleMute, isSpeaking, handleSkipSpeech, showRepeatButton, handleRepeatSpeech, showGames, phase, subPhase, handleGateNo]);
+  }, [hotkeys, toggleMute, isSpeaking, ttsLoadingCount, handleSkipSpeech, showRepeatButton, handleRepeatSpeech, showGames, phase, subPhase, handleGateNo]);
 
   const renderDiscussionControls = () => {
     if (subPhase === "awaiting-learner") {
@@ -7943,8 +7943,9 @@ function SessionPageInner() {
               Now gated behind Start the lesson: hidden until qaAnswersUnlocked is true. */}
           {(() => {
             try {
-              // Show teaching gate Repeat Vocab/Examples and Next when awaiting-gate; hide while speaking
-              const shouldShow = (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && askState === 'inactive');
+              // Show teaching gate Repeat Vocab/Examples and Next when awaiting-gate; hide while speaking or while TTS is still loading
+              const gateLoading = ttsLoadingCount > 0;
+              const shouldShow = (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && !gateLoading && askState === 'inactive');
               if (shouldShow) {
                 const containerStyle = {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8,
@@ -7965,8 +7966,8 @@ function SessionPageInner() {
                 // Buttons always render in footer (isShortHeight check removed)
                 return (
                   <div style={containerStyle} aria-label={ariaLabel}>
-                    <button type="button" style={btnBase} onClick={handleGateYes}>{repeatLabel}</button>
-                    <button type="button" style={btnBase} onClick={handleGateNo}>{nextLabel}</button>
+                    <button type="button" style={btnBase} onClick={gateLoading ? undefined : handleGateYes}>{repeatLabel}</button>
+                    <button type="button" style={btnBase} onClick={gateLoading ? undefined : handleGateNo}>{nextLabel}</button>
                     <button
                       type="button"
                       style={{ ...btnBase, minWidth: 160, background: '#374151', opacity: (askState !== 'inactive') ? 0.6 : 1, cursor: (askState !== 'inactive') ? 'not-allowed' : 'pointer' }}

@@ -1,3 +1,4 @@
+2025-12-19T05:00:00Z | Copilot | FIX: Teaching gate Next/Next hotkey stay hidden while the 3-question suggestions load/play; updated teaching brain + manifest.
 2025-12-19T04:30:00Z | Copilot | UX: Test review now shows per-phase work timer remaining (work-only) and golden key readiness now needs 3 on-time work timers; updated timer doc and manifest.
 2025-12-19T03:14:40Z | Copilot | FIX: Teaching gate now speaks the generated "You could ask questions like..." follow-ups explicitly after the prompt to prevent silent skips; updated teaching doc and manifest.
 2025-12-19T03:02:42Z | Copilot | UX: Default hotkeys swapped so Skip=PageDown and Next Sentence=End; updated teaching hotkey notes and manifest.
