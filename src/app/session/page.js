@@ -5103,13 +5103,6 @@ function SessionPageInner() {
     setCanSend(false);
   };
 
-  // Keep Begin handler refs in sync (after definitions to avoid TDZ)
-  beginSessionRef.current = beginSession;
-  beginComprehensionRef.current = beginComprehensionPhase;
-  beginExerciseRef.current = beginSkippedExercise;
-  beginWorksheetRef.current = beginWorksheetPhase;
-  beginTestRef.current = beginTestPhase;
-
   // During facilitator review (now a Test subphase): keep preview grade percent and count in sync with correctness array.
   useEffect(() => {
     const inTestReview = (phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review'));
@@ -5636,6 +5629,13 @@ function SessionPageInner() {
     // Keep input disabled until Go is pressed
     setCanSend(false);
   };
+
+  // Keep Begin handler refs in sync (after definitions to avoid TDZ)
+  beginSessionRef.current = beginSession;
+  beginComprehensionRef.current = beginComprehensionPhase;
+  beginExerciseRef.current = beginSkippedExercise;
+  beginWorksheetRef.current = beginWorksheetPhase;
+  beginTestRef.current = beginTestPhase;
 
   // Footer actions: Resume current state (re-run the current part), or Restart entire lesson fresh
   const { handleResumeClick, handleRestartClick } = useResumeRestart({
