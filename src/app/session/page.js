@@ -6817,6 +6817,16 @@ function SessionPageInner() {
         return;
       }
 
+      const nextSentence = hotkeys?.nextSentence || DEFAULT_HOTKEYS.nextSentence;
+      const isNextSentenceKey = nextSentence && code === nextSentence;
+
+      // Prioritize Next Sentence behavior during the teaching gate when PageDown is shared
+      if (isNextSentenceKey && phase === 'teaching' && subPhase === 'awaiting-gate' && typeof handleGateNo === 'function') {
+        e.preventDefault();
+        handleGateNo();
+        return;
+      }
+
       if (skip && code === skip) {
         // Always stop default PageDown behavior so inputs don't hijack the key
         e.preventDefault();
@@ -6827,14 +6837,9 @@ function SessionPageInner() {
         return;
       }
 
-      // Next Sentence during teaching gate (separate hotkey)
-      const nextSentence = hotkeys?.nextSentence || DEFAULT_HOTKEYS.nextSentence;
-      if (nextSentence && code === nextSentence) {
-        // Block default even when not active to avoid cursor movement
+      // Next Sentence hotkey (non-teaching contexts fall back to default behavior blocker only)
+      if (isNextSentenceKey) {
         e.preventDefault();
-        if (phase === 'teaching' && subPhase === 'awaiting-gate' && typeof handleGateNo === 'function') {
-          handleGateNo();
-        }
         return;
       }
 
