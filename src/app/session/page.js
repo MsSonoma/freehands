@@ -1273,7 +1273,7 @@ function SessionPageInner() {
       (phase === 'comprehension' && subPhase === 'comprehension-start') ||
       (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') ||
       (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') ||
-      (phase === 'test' && (subPhase === 'test-awaiting-begin' || subPhase === 'review-start'));
+      (phase === 'test' && subPhase === 'test-awaiting-begin');
     
     if (!isAwaitingBegin) return;
     

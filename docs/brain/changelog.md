@@ -1,3 +1,4 @@
+2025-12-18T07:55:00Z | Copilot | FIX: Auto-advance skips test review-start so Begin Test no longer re-fires on completion; updated auto-advance doc and manifest timestamp.
 2025-12-18T06:35:00Z | Copilot | FIX: Move Begin ref assignment after all Begin handlers to prevent TDZ in production builds; doc/manifest updated.
 2025-12-18T06:20:00Z | Copilot | FIX: Assigned Begin handler refs after definitions to avoid TDZ while keeping auto-advance on Begin handlers.
 2025-12-18T06:05:00Z | Copilot | FIX: Begin handler refs set synchronously with Go refs so auto-advance keeps opening actions and intros.
