@@ -252,8 +252,9 @@ Before shipping to Ms. Sonoma, verify:
 
 ### Teaching Gate Flow
 
-- After "Do you have any questions?" Ms. Sonoma now explicitly speaks the generated "You could ask questions like..." follow-ups so they cannot be skipped while still loading.
-- Teaching gate controls (Repeat/Next and the PageDown hotkey) stay hidden/blocked while the gate prompt or sample question TTS is loading/playing; a dedicated gate lock covers this sequence so learners cannot skip past the three-question suggestions before they finish. If the AI response fails or comes back empty, a deterministic fallback set of three example questions is spoken immediately so the gate always has suggestions.
+- After "Do you have any questions?" Ms. Sonoma explicitly speaks the generated "You could ask questions like..." follow-ups; if GPT is empty or errors, a deterministic three-question fallback is spoken.
+- Gate controls (Repeat/Next and the PageDown hotkey) stay hidden/blocked while the gate prompt or sample questions load/play under a dedicated lock so learners hear the three suggestions before moving on.
+- If Skip is pressed during this locked sequence, the lock clears and the gate snaps back to awaiting-gate so controls/hotkey surface instead of hanging; captions already contain the sample questions even when TTS is skipped.
 
 ### Slot Policy
 

@@ -3129,7 +3129,16 @@ function SessionPageInner() {
         setShowRepeatButton(true);
       }
     } catch {}
-  }, [abortAllActivity, phase, subPhase, askState, riddleState, poemState, clearSpeechGuard]);
+
+    // If skip fires during the teaching gate lock, force-unlock the gate so controls don't hang
+    try {
+      if (phase === 'teaching' && (teachingGateLocked || subPhase === 'teaching-3stage')) {
+        setTeachingGateLocked(false);
+        setSubPhase('awaiting-gate');
+        setCanSend(false);
+      }
+    } catch {}
+  }, [abortAllActivity, phase, subPhase, askState, riddleState, poemState, clearSpeechGuard, teachingGateLocked]);
 
   // Repeat speech: replay the last TTS audio without updating captions
   const handleRepeatSpeech = useCallback(async () => {
