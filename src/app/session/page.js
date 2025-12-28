@@ -1031,14 +1031,15 @@ function SessionPageInner() {
   
   // Check if golden key should be earned (3+ work phases completed on time)
   const checkGoldenKeyEarn = useCallback(() => {
-    const completedCount = Object.values(workPhaseCompletions).filter(Boolean).length;
+    const completions = workPhaseCompletionsRef.current || workPhaseCompletions;
+    const completedCount = completions ? Object.values(completions).filter(Boolean).length : 0;
     if (completedCount >= 3 && !goldenKeyEarned) {
       setGoldenKeyEarned(true);
       // TODO: Persist golden key to database
       return true;
     }
     return false;
-  }, [workPhaseCompletions, goldenKeyEarned]);
+  }, [goldenKeyEarned, workPhaseCompletions]);
 
   // Helper to get the current phase name from phase state
   const getCurrentPhaseName = useCallback(() => {

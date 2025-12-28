@@ -80,6 +80,7 @@ When the work timer expires or the phase is completed (including when Test hands
 - Completing 3 on-time work phases earns a golden key (play timers ignored)
 - Golden key adds bonus time to all future play timers
 - `workTimeRemaining` records minutes left on each work timer when the phase ends (0 on timeout) and is surfaced in facilitator review for transparency; entering Test review now captures and freezes the remaining test work time so review/grading cannot keep an active timer running
+- Golden key detection uses the live `workPhaseCompletionsRef` so a just-marked phase (e.g., Test on review entry) counts immediately without waiting for React state flush
 
 ### Timer Defaults
 
@@ -145,6 +146,8 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
 ## Recent Changes
 
 **2025-12-28**: Entering Test review now calls `markWorkPhaseComplete('test')`, clears the test timer, and records remaining work time immediately. Grading/review can no longer show an active or timed-out test after all questions are answered.
+
+**2025-12-28**: Golden key detection now reads `workPhaseCompletionsRef` to include phases marked complete in the same tick (no stale state), ensuring earned keys are awarded when the third on-time work phase finishes.
 
 **2025-12-19**: Golden key eligibility now requires three on-time work timers. Facilitator test review shows remaining work time per phase based on work timers only; play timers are ignored.
 
