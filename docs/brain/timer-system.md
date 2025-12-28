@@ -75,11 +75,11 @@ If user clicks Go button during the 30-second countdown:
 
 ### Work Time Completion Tracking
 
-When work timer expires or user completes phase:
-- `workPhaseCompletions` object tracks completion per phase (true/false)
+When the work timer expires or the phase is completed (including when Test hands off to facilitator review):
+- `markWorkPhaseComplete` stamps the phase in `workPhaseCompletions` and clears that phase's timer entry in `currentTimerMode`
 - Completing 3 on-time work phases earns a golden key (play timers ignored)
 - Golden key adds bonus time to all future play timers
-- `workTimeRemaining` records minutes left on each work timer when the phase ends (0 on timeout) and is surfaced in facilitator review for transparency
+- `workTimeRemaining` records minutes left on each work timer when the phase ends (0 on timeout) and is surfaced in facilitator review for transparency; entering Test review now captures and freezes the remaining test work time so review/grading cannot keep an active timer running
 
 ### Timer Defaults
 
@@ -144,6 +144,8 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
 ### Phase Handlers
 ## Recent Changes
 
+**2025-12-28**: Entering Test review now calls `markWorkPhaseComplete('test')`, clears the test timer, and records remaining work time immediately. Grading/review can no longer show an active or timed-out test after all questions are answered.
+
 **2025-12-19**: Golden key eligibility now requires three on-time work timers. Facilitator test review shows remaining work time per phase based on work timers only; play timers are ignored.
 
 **2025-12-18**: Restore no longer forces `playExpiredCountdownCompleted` to true. The countdown flag is restored from snapshot state and only set during restore when an expired play timer is detected. Live sessions resumed after a restore can still show the 30-second countdown on the next play timeout.
@@ -158,6 +160,8 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
   - Restored on page load/refresh
 
 ## Recent Changes
+
+**2025-12-28**: Entering Test review now calls `markWorkPhaseComplete('test')`, clears the test timer, and records remaining work time immediately. Grading/review can no longer show an active or timed-out test after all questions are answered.
 
 **2025-12-05**: CRITICAL FIX - Removed `setShowOpeningActions(false)` from `handlePlayExpiredComplete`. This was breaking all phase transitions because phase handlers already hide buttons as part of their normal flow. The premature state change created race conditions preventing Go button from working and timer from advancing phases. Each phase handler (handleGoComprehension, handleGoExercise, etc.) manages its own button visibility - timer handler should not interfere.
 

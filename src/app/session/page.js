@@ -5273,6 +5273,20 @@ function SessionPageInner() {
   // ------------------------------
   // Automatic Test Review Sequence
   // When the test target is reached and Ms. Sonoma has finished speaking, enter review.
+  const enterTestReview = useCallback((options = {}) => {
+    const disableSending = options?.disableSending;
+    if (typeof subPhase === 'string' && subPhase.startsWith('review')) return;
+    if (disableSending) {
+      try { setCanSend(false); } catch {}
+    }
+    markWorkPhaseComplete('test');
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      test: null
+    }));
+    try { setSubPhase('review-start'); } catch {}
+  }, [subPhase, markWorkPhaseComplete]);
+
   useEffect(() => {
     try {
       // Do not retrigger if we're already in test-review or in congrats
@@ -5288,11 +5302,10 @@ function SessionPageInner() {
       const idxDone = (typeof testActiveIndex === 'number' ? testActiveIndex : 0) >= limit;
       const finished = limit > 0 && (answeredCount >= limit || judgedCount >= limit || idxDone);
       if (finished) {
-        try { setCanSend(false); } catch {}
-        try { setSubPhase('review-start'); } catch {}
+        enterTestReview({ disableSending: true });
       }
     } catch {}
-  }, [phase, subPhase, generatedTest, testUserAnswers, testCorrectByIndex, testActiveIndex, isSpeaking]);
+  }, [phase, subPhase, generatedTest, testUserAnswers, testCorrectByIndex, testActiveIndex, isSpeaking, enterTestReview]);
 
   // Direct trigger: when target is met during test (by answers or judged), enter Review after TTS completes
   useEffect(() => {
@@ -5308,11 +5321,10 @@ function SessionPageInner() {
       const judgedCount = Array.isArray(testCorrectByIndex) ? testCorrectByIndex.filter(v => typeof v !== 'undefined').length : 0;
       const idxDone = (typeof testActiveIndex === 'number' ? testActiveIndex : 0) >= limit;
       if (answeredCount >= limit || judgedCount >= limit || idxDone || (typeof ticker === 'number' && ticker >= limit)) {
-        try { setCanSend(false); } catch {}
-        try { setSubPhase('review-start'); } catch {}
+        enterTestReview({ disableSending: true });
       }
     } catch {}
-  }, [phase, generatedTest, testUserAnswers, testCorrectByIndex, testActiveIndex, ticker, isSpeaking, subPhase]);
+  }, [phase, generatedTest, testUserAnswers, testCorrectByIndex, testActiveIndex, ticker, isSpeaking, subPhase, enterTestReview]);
   const finalizeTestAndFarewell = async ({ correctCount, total, percent } = {}) => {
     if (!generatedTest || !generatedTest.length) return;
     const fallbackTotal = generatedTest.length;
@@ -6687,14 +6699,12 @@ function SessionPageInner() {
           try { await speakFrontend(closingLine); } catch {}
           reviewDeferRef.current = false;
           // Go directly to review; congrats is gated after Accept
-          try { setCanSend(false); } catch {}
-          try { setSubPhase('review-start'); } catch {}
+          enterTestReview({ disableSending: true });
           try { scheduleSaveSnapshot('test-review-start'); } catch {}
           return;
         } catch {
           // Hard fallback: force facilitator review to avoid dead-ends (defer score to review phase)
-          try { setCanSend(false); } catch {}
-          try { setSubPhase('review-start'); } catch {}
+          enterTestReview({ disableSending: true });
           return;
         }
         const totalLimit = Math.min(TEST_TARGET || generatedTest.length, generatedTest.length);
@@ -9703,11 +9713,9 @@ function PhaseDetail({
                 };
                 // Clear input immediately
                 setLearnerInput("");
-                // If we've met or exceeded the target, do not await anything � go straight to review.
+                // If we've met or exceeded the target, do not await anything - go straight to review.
                 if (nextTicker >= TEST_TARGET) {
-                  try { setCanSend(false); } catch {}
-                  // Review is a subphase of Test; keep phase pinned to 'test'
-                  try { setSubPhase("review-start"); } catch {}
+                  enterTestReview({ disableSending: true });
                   // Fire-and-forget the API call so logs/metrics are not lost, but do not block UI.
                   try { callMsSonoma("Test: Black screen, overlay questions, grade after all answers, no hints or rephrasing.", learnerInput, payload); } catch {}
                   return;

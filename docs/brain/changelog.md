@@ -1,3 +1,4 @@
+2025-12-28T16:45:00Z | Copilot | FIX: Test review now clears test timer, marks work complete, and records remaining work time so grading no longer shows timeouts; updated timer brain + manifest.
 2025-12-28T15:19:45Z | Copilot | FIX: Awards page now shows medals even when lesson metadata is missing by falling back to lesson_key info and rendering dynamic subjects; updated awards page grouping.
 2025-12-19T06:00:00Z | Copilot | FIX: Teaching gate now speaks fallback sample questions if GPT returns empty and still unlocks controls afterward; gate lock remains until suggestions are spoken. Updated teaching brain + manifest.
 2025-12-19T05:30:00Z | Copilot | FIX: Teaching gate now uses a dedicated lock while sample questions load/play so the three-question suggestions always run before controls/hotkey show; updated teaching brain + manifest.
