@@ -89,16 +89,23 @@ export default function AwardsPage() {
       
       const subjectLessons = allLessons[subject] || []
       const lesson = subjectLessons.find(l => l.file === file)
-      
-      if (lesson) {
-        if (!grouped[subject]) grouped[subject] = []
-        grouped[subject].push({
-          ...lesson,
-          medalTier: medalData.medalTier,
-          bestPercent: medalData.bestPercent,
-          file
-        })
+
+      const fallbackLesson = {
+        title: (file || '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() || file || 'Lesson',
+        blurb: '',
+        grade: null,
+        difficulty: null,
+        subject,
+        file
       }
+
+      if (!grouped[subject]) grouped[subject] = []
+      grouped[subject].push({
+        ...(lesson || fallbackLesson),
+        medalTier: medalData.medalTier,
+        bestPercent: medalData.bestPercent ?? 0,
+        file
+      })
     })
     
     // Sort lessons within each subject by medal tier (gold > silver > bronze)
@@ -116,6 +123,7 @@ export default function AwardsPage() {
 
   const loading = medalsLoading || lessonsLoading
   const groupedMedals = medalsBySubject()
+  const subjectsToRender = Array.from(new Set([...subjects, ...Object.keys(groupedMedals)]))
   const hasMedals = Object.keys(groupedMedals).length > 0
   const totalMedals = Object.values(groupedMedals).reduce((sum, arr) => sum + arr.length, 0)
 
@@ -217,7 +225,7 @@ export default function AwardsPage() {
             </div>
           </div>
 
-          {subjects.map(subject => {
+          {subjectsToRender.map(subject => {
             const lessons = groupedMedals[subject]
             if (!lessons || lessons.length === 0) return null
 
