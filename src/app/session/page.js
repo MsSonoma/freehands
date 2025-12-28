@@ -2946,6 +2946,11 @@ function SessionPageInner() {
   }, [phase, subPhase, loading, canSend, showBegin, isSpeaking]);
   useEffect(() => () => { try { if (tipTimerRef.current) clearTimeout(tipTimerRef.current); } catch {} }, []);
 
+  // Three-stage teaching state and helpers (defined early to avoid TDZ with skip handler)
+  const [teachingStage, setTeachingStage] = useState('idle'); // 'idle' | 'definitions' | 'examples'
+  const [teachingGateLocked, setTeachingGateLocked] = useState(false); // Locks gate controls while sample questions load/play
+  const [stageRepeats, setStageRepeats] = useState({ definitions: 0, explanation: 0, examples: 0 });
+
   // Audio playback hook - manages all TTS audio, video sync, and caption scheduling
   const {
     playAudioFromBase64: playAudioFromBase64Hook,
@@ -3651,11 +3656,6 @@ function SessionPageInner() {
       setSubPhase(step.next);
     }
   };
-
-  // Three-stage teaching state and helpers
-  const [teachingStage, setTeachingStage] = useState('idle'); // 'idle' | 'definitions' | 'examples'
-  const [teachingGateLocked, setTeachingGateLocked] = useState(false); // Locks gate controls while sample questions load/play
-  const [stageRepeats, setStageRepeats] = useState({ definitions: 0, explanation: 0, examples: 0 });
 
   // Bridge teaching-flow snapshot helpers so persistence can reference them before the hook initializes
   const teachingFlowSnapshotGetRef = useRef(null);

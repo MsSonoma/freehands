@@ -1,3 +1,4 @@
+2025-12-28T21:23:58Z | Copilot | FIX: Teaching gate skip handler now TDZ-safe (state declared before skip); docs/manifest updated for teaching gate flow.
 2025-12-28T19:10:40Z | Copilot | FIX: Skip during teaching gate now unlocks the gate after the prompt so controls and hotkey surface instead of hanging; updated teaching brain and manifest.
 2025-12-28T17:06:00Z | Copilot | FIX: Golden key awarding now uses live workPhaseCompletionsRef so the 3rd on-time phase (including test on review entry) counts immediately; updated timer doc and manifest.
 2025-12-28T16:45:00Z | Copilot | FIX: Test review now clears test timer, marks work complete, and records remaining work time so grading no longer shows timeouts; updated timer brain + manifest.
