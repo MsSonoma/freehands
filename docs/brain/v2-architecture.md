@@ -32,7 +32,13 @@ The v1 session page (`src/app/session/page.js`) is a 9,797-line monolith managin
 **NOT phase-by-phase rewrite** (coordinating multiple systems per phase)  
 **YES parallel implementation** (old system intact, new system feature-flagged)
 
-### Feature Flag
+### Direct Test Access
+
+**Test route:** `http://localhost:3001/session/v2test`
+
+Navigate directly to the V2 test harness without feature flags or V1 flow. This is a standalone test page for AudioEngine validation.
+
+### Feature Flag (for production integration later)
 ```javascript
 // Enable V2 in browser console:
 localStorage.setItem('session_architecture_v2', 'true');
@@ -41,6 +47,8 @@ localStorage.setItem('session_architecture_v2', 'true');
 localStorage.removeItem('session_architecture_v2');
 window.location.reload();
 ```
+
+Note: Feature flag only works when already on a session page. For testing, use the direct route above.
 
 ### Implementation Sequence
 

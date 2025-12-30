@@ -26,6 +26,9 @@ export default function SessionPageV2() {
   );
 }
 
+// Export inner component for direct test route
+export { SessionPageV2Inner };
+
 function SessionPageV2Inner() {
   const searchParams = useSearchParams();
   const subjectParam = searchParams?.get('subject') || 'math';
