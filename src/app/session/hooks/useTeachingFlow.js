@@ -563,49 +563,59 @@ export function useTeachingFlow({
       // Wait for GPT to complete
       result = await gptPromise;
     }
-    
-    if (result.success && result.text) {
-      // Split the GPT response into sentences
-      const sentences = splitIntoSentences(result.text).filter(s => s.trim());
-      
-      if (sentences.length === 0) {
-        return false;
-      }
-      
-      // Store all sentences for sentence-by-sentence gating
-      exampleSentencesRef.current = sentences;
-      setExampleSentences(sentences);
-      exampleSentenceIndexRef.current = 0;
-      setExampleSentenceIndex(0);
-      isInSentenceModeRef.current = true;
-      setIsInSentenceMode(true);
-      
-      // Show loading overlay during save (consistent with subsequent sentences)
-      setTtsLoadingCount(prev => prev + 1);
-      
-      // ATOMIC SNAPSHOT: Save BEFORE speaking so skip doesn't lose progress
-      try { await scheduleSaveSnapshot('example-sentence-1'); } catch (err) {
-        console.error('[TEACHING FLOW] First example sentence save failed:', err);
-      }
-      
-      setTtsLoadingCount(prev => prev - 1);
-      
-      // Speak the first sentence
-      try { await speakFrontend(sentences[0]); } catch {}
-      
-      // Prefetch next sentence AFTER speaking completes (while student reads/processes)
-      if (sentences.length > 1) {
-        ttsCache.prefetch(sentences[1]);
-      }
-      
-      // Set subPhase to awaiting-gate so buttons appear
-      setSubPhase('awaiting-gate');
-      setCanSend(false);
-      
-      return true;
+
+    // Build sentence list from GPT or fallback so the examples stage always speaks
+    let sentences = [];
+    if (result && result.success && result.text) {
+      sentences = splitIntoSentences(result.text).filter(s => s.trim());
+    }
+
+    if (!sentences.length) {
+      const lessonTitle = (getCleanLessonTitle() || 'this topic').trim();
+      const shortTitle = lessonTitle ? lessonTitle.split(/\s+/).slice(0, 3).join(' ') : 'this topic';
+      console.warn('[TEACHING] Using fallback examples because GPT returned no text');
+      sentences = [
+        `Tiny example for ${shortTitle} shows the idea in action.`,
+        'We move slowly together and notice what changes.',
+        'Then we say what the result means.',
+      ];
+    }
+
+    if (!sentences.length) {
+      return !!(result && result.success);
     }
     
-    return !!result.success;
+    // Store all sentences for sentence-by-sentence gating
+    exampleSentencesRef.current = sentences;
+    setExampleSentences(sentences);
+    exampleSentenceIndexRef.current = 0;
+    setExampleSentenceIndex(0);
+    isInSentenceModeRef.current = true;
+    setIsInSentenceMode(true);
+    
+    // Show loading overlay during save (consistent with subsequent sentences)
+    setTtsLoadingCount(prev => prev + 1);
+    
+    // ATOMIC SNAPSHOT: Save BEFORE speaking so skip doesn't lose progress
+    try { await scheduleSaveSnapshot('example-sentence-1'); } catch (err) {
+      console.error('[TEACHING FLOW] First example sentence save failed:', err);
+    }
+    
+    setTtsLoadingCount(prev => prev - 1);
+    
+    // Speak the first sentence
+    try { await speakFrontend(sentences[0]); } catch {}
+    
+    // Prefetch next sentence AFTER speaking completes (while student reads/processes)
+    if (sentences.length > 1) {
+      ttsCache.prefetch(sentences[1]);
+    }
+    
+    // Set subPhase to awaiting-gate so buttons appear
+    setSubPhase('awaiting-gate');
+    setCanSend(false);
+    
+    return true;
   };
 
   /**
