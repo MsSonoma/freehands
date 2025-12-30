@@ -564,11 +564,14 @@ export function useTeachingFlow({
       result = await gptPromise;
     }
 
+    // Clone text immediately to avoid race conditions with mutations
+    const gptText = result?.text ? String(result.text) : '';
+    
     // Build sentence list from GPT only
-    console.log('[TEACHING EXAMPLES DEBUG] GPT result:', result ? { success: result.success, textLength: result.text?.length } : 'null');
-    console.log('[TEACHING EXAMPLES DEBUG] GPT raw text:', result?.text);
-    const sentences = (result && result.success && result.text)
-      ? splitIntoSentences(result.text).filter(s => s.trim())
+    console.log('[TEACHING EXAMPLES DEBUG] GPT result:', result ? { success: result.success, textLength: gptText.length } : 'null');
+    console.log('[TEACHING EXAMPLES DEBUG] GPT raw text:', gptText);
+    const sentences = (result && result.success && gptText)
+      ? splitIntoSentences(gptText).filter(s => s.trim())
       : [];
     console.log('[TEACHING EXAMPLES DEBUG] Sentences after split:', sentences.length, 'sentences:', sentences);
     if (!sentences.length) {
