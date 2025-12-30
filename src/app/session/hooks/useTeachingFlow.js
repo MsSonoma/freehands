@@ -565,10 +565,15 @@ export function useTeachingFlow({
     }
 
     // Build sentence list from GPT only
+    console.log('[TEACHING EXAMPLES DEBUG] GPT result:', result ? { success: result.success, textLength: result.text?.length, textPreview: result.text?.substring(0, 100) } : 'null');
     const sentences = (result && result.success && result.text)
       ? splitIntoSentences(result.text).filter(s => s.trim())
       : [];
-    if (!sentences.length) return !!(result && result.success);
+    console.log('[TEACHING EXAMPLES DEBUG] Sentences after split:', sentences.length, 'sentences:', sentences);
+    if (!sentences.length) {
+      console.log('[TEACHING EXAMPLES DEBUG] No sentences, returning early');
+      return !!(result && result.success);
+    }
     
     // Store all sentences for sentence-by-sentence gating
     exampleSentencesRef.current = sentences;
@@ -597,6 +602,7 @@ export function useTeachingFlow({
     }
     
     // Set subPhase to awaiting-gate so buttons appear
+    console.log('[TEACHING EXAMPLES DEBUG] Setting awaiting-gate after speaking first sentence');
     setSubPhase('awaiting-gate');
     setCanSend(false);
     
