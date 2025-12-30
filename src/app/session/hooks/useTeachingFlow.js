@@ -565,7 +565,8 @@ export function useTeachingFlow({
     }
 
     // Build sentence list from GPT only
-    console.log('[TEACHING EXAMPLES DEBUG] GPT result:', result ? { success: result.success, textLength: result.text?.length, textPreview: result.text?.substring(0, 100) } : 'null');
+    console.log('[TEACHING EXAMPLES DEBUG] GPT result:', result ? { success: result.success, textLength: result.text?.length } : 'null');
+    console.log('[TEACHING EXAMPLES DEBUG] GPT raw text:', result?.text);
     const sentences = (result && result.success && result.text)
       ? splitIntoSentences(result.text).filter(s => s.trim())
       : [];
