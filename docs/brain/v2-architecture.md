@@ -1,6 +1,6 @@
 # Session Page V2 Architecture
 
-**Status:** Complete session flow (teaching → comprehension → closing)  
+**Status:** Complete session flow (teaching → comprehension → exercise → closing)  
 **Created:** 2025-12-30  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
@@ -278,46 +278,57 @@ expect(engine.isPlaying).toBe(true);
   - Randomly selected from predefined messages
   - Emits closingComplete event
   - Zero coupling to other phases
+- **ExercisePhase component** (`src/app/session/v2/ExercisePhase.jsx`) - 300 lines
+  - Multiple choice and true/false questions with scoring
+  - Plays each question with TTS
+  - Displays answer options (radio buttons)
+  - Validates answers and tracks score
+  - Emits exerciseComplete with final score and percentage
+  - Zero coupling to other phases
 - **Services layer** (`src/app/session/v2/services.js`) - API integrations
   - fetchTTS(): Calls /api/tts endpoint, returns base64 audio
   - loadLesson(): Fetches lesson JSON from /lessons/{subject}/{key}.json
   - generateTestLesson(): Fallback test data
   - Zero coupling to components or state
-- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 655 lines
+- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 850 lines
   - PhaseOrchestrator initialization and event handling
-  - Phase-specific controls (teaching, comprehension, closing)
+  - Phase-specific controls (teaching, comprehension, exercise, closing)
   - Automatic phase transitions
   - Real lesson loading and TTS audio
   - Teaching controls: Start, Next, Repeat, Restart, Skip
   - Comprehension controls: Answer input, Submit, Skip
+  - Exercise controls: Radio button answer selection, Submit, Skip
+  - Exercise scoring: Live score display, percentage calculation
   - Closing phase: Displays encouraging message
   - Audio transport controls: Stop, Pause, Resume, Mute
   - Live displays: Current phase, current sentence, live caption, system state
   - Event log showing all component events
-  - Flow: Start Session → Teaching (definitions → examples) → Comprehension (question → answer) → Closing (encouragement) → Complete
+  - Flow: Start Session → Teaching (definitions → examples) → Comprehension (question → answer) → Exercise (multiple choice questions with scoring) → Closing (encouragement) → Complete
 
 ### 🚧 In Progress
-- None (complete session flow: teaching → comprehension → closing → complete)
+- None (complete session flow with exercise scoring: teaching → comprehension → exercise → closing → complete)
 
 ### 📋 Next Steps
-1. Browser test: Full session flow end-to-end
-2. Browser test: Verify all phase transitions
+1. Browser test: Full session flow with exercise scoring
+2. Browser test: Verify exercise question progression and scoring
 3. Build discussion activities (Ask, Riddle, Poem, Story, Fill-in-Fun)
-4. Build exercise/worksheet/test phases
-5. Add snapshot persistence
-6. Add timer integration
-7. Add keyboard hotkeys
-8. Add Mr. Mentor integration
+4. Build worksheet phase (fill-in-blank questions)
+5. Build test phase (graded questions with review)
+6. Add snapshot persistence
+7. Add timer integration
+8. Add keyboard hotkeys
+9. Add Mr. Mentor integration
 
 ---
 
 ## Key Files
 
 **V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (655 lines)
+- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (850 lines)
 - `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
 - `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
 - `src/app/session/v2/ComprehensionPhase.jsx` - Comprehension question flow (200 lines)
+- `src/app/session/v2/ExercisePhase.jsx` - Exercise questions with scoring (300 lines)
 - `src/app/session/v2/ClosingPhase.jsx` - Closing message with encouragement (150 lines)
 - `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
 - `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading)

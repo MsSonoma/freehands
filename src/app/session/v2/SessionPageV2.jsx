@@ -4,9 +4,10 @@
  * Session Page V2 - Full Session Flow
  * 
  * Architecture:
- * - PhaseOrchestrator: Manages phase transitions (teaching → comprehension → closing)
+ * - PhaseOrchestrator: Manages phase transitions (teaching → comprehension → exercise → closing)
  * - TeachingController: Manages definitions → examples
  * - ComprehensionPhase: Manages question → answer → feedback
+ * - ExercisePhase: Manages multiple choice/true-false questions with scoring
  * - ClosingPhase: Manages closing message
  * - AudioEngine: Self-contained playback
  * - Event-driven: Zero state coupling between components
@@ -19,6 +20,7 @@ import { useSearchParams } from 'next/navigation';
 import { AudioEngine } from './AudioEngine';
 import { TeachingController } from './TeachingController';
 import { ComprehensionPhase } from './ComprehensionPhase';
+import { ExercisePhase } from './ExercisePhase';
 import { ClosingPhase } from './ClosingPhase';
 import { PhaseOrchestrator } from './PhaseOrchestrator';
 import { loadLesson, generateTestLesson } from './services';
@@ -43,6 +45,7 @@ function SessionPageV2Inner() {
   const orchestratorRef = useRef(null);
   const teachingControllerRef = useRef(null);
   const comprehensionPhaseRef = useRef(null);
+  const exercisePhaseRef = useRef(null);
   const closingPhaseRef = useRef(null);
   
   const [lessonData, setLessonData] = useState(null);
@@ -58,6 +61,12 @@ function SessionPageV2Inner() {
   
   const [comprehensionState, setComprehensionState] = useState('idle');
   const [comprehensionAnswer, setComprehensionAnswer] = useState('');
+  
+  const [exerciseState, setExerciseState] = useState('idle');
+  const [currentExerciseQuestion, setCurrentExerciseQuestion] = useState(null);
+  const [exerciseScore, setExerciseScore] = useState(0);
+  const [exerciseTotalQuestions, setExerciseTotalQuestions] = useState(0);
+  const [selectedExerciseAnswer, setSelectedExerciseAnswer] = useState('');
   
   const [closingState, setClosingState] = useState('idle');
   const [closingMessage, setClosingMessage] = useState('');
@@ -207,6 +216,8 @@ function SessionPageV2Inner() {
         startTeachingPhase();
       } else if (data.phase === 'comprehension') {
         startComprehensionPhase();
+      } else if (data.phase === 'exercise') {
+        startExercisePhase();
       } else if (data.phase === 'closing') {
         startClosingPhase();
       }
@@ -278,6 +289,71 @@ function SessionPageV2Inner() {
     
     phase.on('error', (data) => {
       addEvent(`❌ Error: ${data.message}`);
+    });
+    
+    // Start phase
+    phase.start();
+  };
+  
+  // Start exercise phase
+  const startExercisePhase = () => {
+    if (!audioEngineRef.current || !lessonData?.exercise) return;
+    
+    // Generate exercise questions from lesson data
+    const questions = lessonData.exercise.questions || [];
+    
+    if (questions.length === 0) {
+      // If no exercise questions, skip to closing
+      addEvent('⚠️ No exercise questions - skipping to closing');
+      if (orchestratorRef.current) {
+        orchestratorRef.current.onExerciseComplete();
+      }
+      return;
+    }
+    
+    const phase = new ExercisePhase({
+      audioEngine: audioEngineRef.current,
+      questions: questions
+    });
+    
+    exercisePhaseRef.current = phase;
+    
+    // Subscribe to question events
+    phase.on('questionStart', (data) => {
+      addEvent(`📝 Question ${data.questionIndex + 1}/${data.totalQuestions}`);
+      setCurrentExerciseQuestion(data.question);
+      setExerciseTotalQuestions(data.totalQuestions);
+    });
+    
+    phase.on('questionReady', (data) => {
+      setExerciseState('awaiting-answer');
+      addEvent('❓ Question ready for answer...');
+    });
+    
+    phase.on('answerSubmitted', (data) => {
+      const result = data.isCorrect ? '✅ Correct!' : '❌ Incorrect';
+      addEvent(`${result} (Score: ${data.score}/${data.totalQuestions})`);
+      setExerciseScore(data.score);
+      setSelectedExerciseAnswer('');
+    });
+    
+    phase.on('questionSkipped', (data) => {
+      addEvent(`⏭️ Skipped (Score: ${data.score}/${data.totalQuestions})`);
+      setSelectedExerciseAnswer('');
+    });
+    
+    phase.on('exerciseComplete', (data) => {
+      addEvent(`🎉 Exercise complete! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
+      setExerciseState('complete');
+      
+      // Notify orchestrator
+      if (orchestratorRef.current) {
+        orchestratorRef.current.onExerciseComplete();
+      }
+      
+      // Cleanup
+      phase.destroy();
+      exercisePhaseRef.current = null;
     });
     
     // Start phase
@@ -383,6 +459,17 @@ function SessionPageV2Inner() {
     comprehensionPhaseRef.current.skip();
   };
   
+  // Exercise handlers
+  const submitExerciseAnswer = () => {
+    if (!exercisePhaseRef.current || !selectedExerciseAnswer) return;
+    exercisePhaseRef.current.submitAnswer(selectedExerciseAnswer);
+  };
+  
+  const skipExerciseQuestion = () => {
+    if (!exercisePhaseRef.current) return;
+    exercisePhaseRef.current.skip();
+  };
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -409,7 +496,7 @@ function SessionPageV2Inner() {
         {/* Header */}
         <div className="bg-white rounded-lg shadow p-6">
           <h1 className="text-2xl font-bold mb-2">V2 Architecture - Full Session Flow</h1>
-          <p className="text-gray-600">PhaseOrchestrator + TeachingController + ComprehensionPhase</p>
+          <p className="text-gray-600">PhaseOrchestrator + TeachingController + ComprehensionPhase + ExercisePhase</p>
           {lessonData && (
             <div className="mt-4 text-sm text-gray-500 space-y-1">
               <div className="font-semibold">{lessonData.title}</div>
@@ -542,6 +629,67 @@ function SessionPageV2Inner() {
               {comprehensionState === 'complete' && (
                 <div className="text-green-600 font-semibold">
                   ✓ Comprehension Complete
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Exercise Phase */}
+          {currentPhase === 'exercise' && (
+            <div>
+              <div className="mb-4 p-4 bg-purple-50 rounded">
+                <div className="font-semibold text-lg">Exercise Questions</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  State: {exerciseState} | Score: {exerciseScore}/{exerciseTotalQuestions}
+                </div>
+              </div>
+              
+              {currentExerciseQuestion && exerciseState === 'awaiting-answer' && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded">
+                    <div className="font-semibold mb-3">{currentExerciseQuestion.question}</div>
+                    
+                    <div className="space-y-2">
+                      {currentExerciseQuestion.options.map((option, index) => (
+                        <label
+                          key={index}
+                          className="flex items-center p-3 bg-white border rounded hover:bg-blue-50 cursor-pointer"
+                        >
+                          <input
+                            type="radio"
+                            name="exercise-answer"
+                            value={option}
+                            checked={selectedExerciseAnswer === option}
+                            onChange={(e) => setSelectedExerciseAnswer(e.target.value)}
+                            className="mr-3"
+                          />
+                          <span>{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <button
+                      onClick={submitExerciseAnswer}
+                      disabled={!selectedExerciseAnswer}
+                      className="px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Submit Answer
+                    </button>
+                    <button
+                      onClick={skipExerciseQuestion}
+                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {exerciseState === 'complete' && (
+                <div className="text-green-600 font-semibold">
+                  ✓ Exercise Complete - Score: {exerciseScore}/{exerciseTotalQuestions} ({Math.round((exerciseScore / exerciseTotalQuestions) * 100)}%)
                 </div>
               )}
             </div>

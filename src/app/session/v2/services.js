@@ -137,7 +137,38 @@ export function generateTestLesson() {
       question: 'How do plants make their own food?',
       sampleAnswer: 'Plants use photosynthesis to convert sunlight into energy.'
     },
-    exercise: [],
+    exercise: {
+      questions: [
+        {
+          type: 'mc',
+          question: 'What is the main purpose of photosynthesis?',
+          options: [
+            'To make food from sunlight',
+            'To absorb water from soil',
+            'To produce oxygen only',
+            'To create carbon dioxide'
+          ],
+          answer: 'To make food from sunlight'
+        },
+        {
+          type: 'mc',
+          question: 'What gives plants their green color?',
+          options: [
+            'Water',
+            'Chlorophyll',
+            'Oxygen',
+            'Soil nutrients'
+          ],
+          answer: 'Chlorophyll'
+        },
+        {
+          type: 'tf',
+          question: 'Plants need carbon dioxide to perform photosynthesis.',
+          options: ['True', 'False'],
+          answer: 'True'
+        }
+      ]
+    },
     worksheet: [],
     test: [],
     discussion: {}
