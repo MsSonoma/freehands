@@ -574,11 +574,13 @@ export function useTeachingFlow({
       const lessonTitle = (getCleanLessonTitle() || 'this topic').trim();
       const shortTitle = lessonTitle ? lessonTitle.split(/\s+/).slice(0, 3).join(' ') : 'this topic';
       console.warn('[TEACHING] Using fallback examples because GPT returned no text');
-      sentences = [
-        `Tiny example for ${shortTitle} shows the idea in action.`,
-        'We move slowly together and notice what changes.',
-        'Then we say what the result means.',
-      ];
+      const fallback = [
+        `Let's walk through simple examples for ${shortTitle}.`,
+        'We start with a tiny case and change one thing.',
+        'We notice what shifts and say it in kid words.',
+        'We keep it short and clear so it is easy to follow.'
+      ].join(' ');
+      sentences = splitIntoSentences(fallback).filter((s) => s.trim());
     }
 
     if (!sentences.length) {
