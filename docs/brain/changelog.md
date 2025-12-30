@@ -1,3 +1,4 @@
+2025-12-30T23:55:00Z | Copilot | FIX: Added 800ms cooldown to handleGateNo (teaching gate Next button) to prevent rapid successive calls from Next Sentence hotkey (End key) or rapid button clicks from skipping through all sentences instantly. Cooldown prevents examples stage from being auto-skipped when hotkey held down or rapidly pressed. Updated teaching flow hook.
 2025-12-30T14:22:52Z | Copilot | FIX: Examples stage now uses deterministic fallback sentences when GPT returns empty so kids hear examples before comprehension; teaching brain/manifest updated.
 2025-12-30T14:32:57Z | Copilot | FIX: Removed examples deterministic fallback—GPT output only; updated teaching doc and manifest timestamp.
 2025-12-30T14:29:32Z | Copilot | FIX: Examples fallback now a short paragraph split into sentences (not fixed count) so all lines are read when GPT returns empty; teaching brain/manifest updated.
