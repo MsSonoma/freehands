@@ -169,7 +169,25 @@ export function generateTestLesson() {
         }
       ]
     },
-    worksheet: [],
+    worksheet: {
+      questions: [
+        {
+          question: 'Plants use a process called _____ to convert sunlight into energy.',
+          answer: 'photosynthesis',
+          hint: 'Think about the main process we learned about'
+        },
+        {
+          question: 'The green pigment that captures light energy is called _____.',
+          answer: 'chlorophyll',
+          hint: 'It starts with "chloro"'
+        },
+        {
+          question: 'Plants absorb _____ from the air to make food.',
+          answer: 'carbon dioxide',
+          hint: 'It\'s a gas with the formula CO2'
+        }
+      ]
+    },
     test: [],
     discussion: {}
   };

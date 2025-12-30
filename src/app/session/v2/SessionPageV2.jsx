@@ -4,10 +4,11 @@
  * Session Page V2 - Full Session Flow
  * 
  * Architecture:
- * - PhaseOrchestrator: Manages phase transitions (teaching → comprehension → exercise → closing)
+ * - PhaseOrchestrator: Manages phase transitions (teaching → comprehension → exercise → worksheet → closing)
  * - TeachingController: Manages definitions → examples
  * - ComprehensionPhase: Manages question → answer → feedback
  * - ExercisePhase: Manages multiple choice/true-false questions with scoring
+ * - WorksheetPhase: Manages fill-in-blank questions with text input
  * - ClosingPhase: Manages closing message
  * - AudioEngine: Self-contained playback
  * - Event-driven: Zero state coupling between components
@@ -21,6 +22,7 @@ import { AudioEngine } from './AudioEngine';
 import { TeachingController } from './TeachingController';
 import { ComprehensionPhase } from './ComprehensionPhase';
 import { ExercisePhase } from './ExercisePhase';
+import { WorksheetPhase } from './WorksheetPhase';
 import { ClosingPhase } from './ClosingPhase';
 import { PhaseOrchestrator } from './PhaseOrchestrator';
 import { loadLesson, generateTestLesson } from './services';
@@ -46,6 +48,7 @@ function SessionPageV2Inner() {
   const teachingControllerRef = useRef(null);
   const comprehensionPhaseRef = useRef(null);
   const exercisePhaseRef = useRef(null);
+  const worksheetPhaseRef = useRef(null);
   const closingPhaseRef = useRef(null);
   
   const [lessonData, setLessonData] = useState(null);
@@ -67,6 +70,13 @@ function SessionPageV2Inner() {
   const [exerciseScore, setExerciseScore] = useState(0);
   const [exerciseTotalQuestions, setExerciseTotalQuestions] = useState(0);
   const [selectedExerciseAnswer, setSelectedExerciseAnswer] = useState('');
+  
+  const [worksheetState, setWorksheetState] = useState('idle');
+  const [currentWorksheetQuestion, setCurrentWorksheetQuestion] = useState(null);
+  const [worksheetScore, setWorksheetScore] = useState(0);
+  const [worksheetTotalQuestions, setWorksheetTotalQuestions] = useState(0);
+  const [worksheetAnswer, setWorksheetAnswer] = useState('');
+  const [lastWorksheetFeedback, setLastWorksheetFeedback] = useState(null);
   
   const [closingState, setClosingState] = useState('idle');
   const [closingMessage, setClosingMessage] = useState('');
@@ -218,6 +228,8 @@ function SessionPageV2Inner() {
         startComprehensionPhase();
       } else if (data.phase === 'exercise') {
         startExercisePhase();
+      } else if (data.phase === 'worksheet') {
+        startWorksheetPhase();
       } else if (data.phase === 'closing') {
         startClosingPhase();
       }
@@ -360,6 +372,80 @@ function SessionPageV2Inner() {
     phase.start();
   };
   
+  // Start worksheet phase
+  const startWorksheetPhase = () => {
+    if (!audioEngineRef.current || !lessonData?.worksheet) return;
+    
+    // Generate worksheet questions from lesson data
+    const questions = lessonData.worksheet.questions || [];
+    
+    if (questions.length === 0) {
+      // If no worksheet questions, skip to closing
+      addEvent('⚠️ No worksheet questions - skipping to closing');
+      if (orchestratorRef.current) {
+        orchestratorRef.current.onWorksheetComplete();
+      }
+      return;
+    }
+    
+    const phase = new WorksheetPhase({
+      audioEngine: audioEngineRef.current,
+      questions: questions
+    });
+    
+    worksheetPhaseRef.current = phase;
+    
+    // Subscribe to question events
+    phase.on('questionStart', (data) => {
+      addEvent(`📝 Worksheet ${data.questionIndex + 1}/${data.totalQuestions}`);
+      setCurrentWorksheetQuestion(data.question);
+      setWorksheetTotalQuestions(data.totalQuestions);
+      setLastWorksheetFeedback(null);
+    });
+    
+    phase.on('questionReady', (data) => {
+      setWorksheetState('awaiting-answer');
+      addEvent('❓ Fill in the blank...');
+    });
+    
+    phase.on('answerSubmitted', (data) => {
+      const result = data.isCorrect ? '✅ Correct!' : `❌ Incorrect - Answer: ${data.correctAnswer}`;
+      addEvent(`${result} (Score: ${data.score}/${data.totalQuestions})`);
+      setWorksheetScore(data.score);
+      setWorksheetAnswer('');
+      setLastWorksheetFeedback({
+        isCorrect: data.isCorrect,
+        correctAnswer: data.correctAnswer
+      });
+    });
+    
+    phase.on('questionSkipped', (data) => {
+      addEvent(`⏭️ Skipped - Answer: ${data.correctAnswer} (Score: ${data.score}/${data.totalQuestions})`);
+      setWorksheetAnswer('');
+      setLastWorksheetFeedback({
+        isCorrect: false,
+        correctAnswer: data.correctAnswer
+      });
+    });
+    
+    phase.on('worksheetComplete', (data) => {
+      addEvent(`🎉 Worksheet complete! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
+      setWorksheetState('complete');
+      
+      // Notify orchestrator
+      if (orchestratorRef.current) {
+        orchestratorRef.current.onWorksheetComplete();
+      }
+      
+      // Cleanup
+      phase.destroy();
+      worksheetPhaseRef.current = null;
+    });
+    
+    // Start phase
+    phase.start();
+  };
+  
   // Start closing phase
   const startClosingPhase = () => {
     if (!audioEngineRef.current || !lessonData) return;
@@ -470,6 +556,17 @@ function SessionPageV2Inner() {
     exercisePhaseRef.current.skip();
   };
   
+  // Worksheet handlers
+  const submitWorksheetAnswer = () => {
+    if (!worksheetPhaseRef.current || !worksheetAnswer.trim()) return;
+    worksheetPhaseRef.current.submitAnswer(worksheetAnswer);
+  };
+  
+  const skipWorksheetQuestion = () => {
+    if (!worksheetPhaseRef.current) return;
+    worksheetPhaseRef.current.skip();
+  };
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -496,7 +593,7 @@ function SessionPageV2Inner() {
         {/* Header */}
         <div className="bg-white rounded-lg shadow p-6">
           <h1 className="text-2xl font-bold mb-2">V2 Architecture - Full Session Flow</h1>
-          <p className="text-gray-600">PhaseOrchestrator + TeachingController + ComprehensionPhase + ExercisePhase</p>
+          <p className="text-gray-600">PhaseOrchestrator + Teaching + Comprehension + Exercise + Worksheet</p>
           {lessonData && (
             <div className="mt-4 text-sm text-gray-500 space-y-1">
               <div className="font-semibold">{lessonData.title}</div>
@@ -690,6 +787,78 @@ function SessionPageV2Inner() {
               {exerciseState === 'complete' && (
                 <div className="text-green-600 font-semibold">
                   ✓ Exercise Complete - Score: {exerciseScore}/{exerciseTotalQuestions} ({Math.round((exerciseScore / exerciseTotalQuestions) * 100)}%)
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Worksheet Phase */}
+          {currentPhase === 'worksheet' && (
+            <div>
+              <div className="mb-4 p-4 bg-teal-50 rounded">
+                <div className="font-semibold text-lg">Worksheet - Fill in the Blank</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  State: {worksheetState} | Score: {worksheetScore}/{worksheetTotalQuestions}
+                </div>
+              </div>
+              
+              {currentWorksheetQuestion && worksheetState === 'awaiting-answer' && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded">
+                    <div className="font-semibold mb-3">{currentWorksheetQuestion.question}</div>
+                    
+                    {currentWorksheetQuestion.hint && (
+                      <div className="text-sm text-gray-600 italic mb-3">
+                        Hint: {currentWorksheetQuestion.hint}
+                      </div>
+                    )}
+                    
+                    <input
+                      type="text"
+                      value={worksheetAnswer}
+                      onChange={(e) => setWorksheetAnswer(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && worksheetAnswer.trim()) {
+                          submitWorksheetAnswer();
+                        }
+                      }}
+                      className="w-full p-3 border rounded-lg text-lg"
+                      placeholder="Type your answer..."
+                      autoFocus
+                    />
+                  </div>
+                  
+                  {lastWorksheetFeedback && (
+                    <div className={`p-3 rounded ${lastWorksheetFeedback.isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {lastWorksheetFeedback.isCorrect ? (
+                        '✓ Correct!'
+                      ) : (
+                        `✗ The correct answer was: ${lastWorksheetFeedback.correctAnswer}`
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-3">
+                    <button
+                      onClick={submitWorksheetAnswer}
+                      disabled={!worksheetAnswer.trim()}
+                      className="px-6 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Submit Answer
+                    </button>
+                    <button
+                      onClick={skipWorksheetQuestion}
+                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {worksheetState === 'complete' && (
+                <div className="text-green-600 font-semibold">
+                  ✓ Worksheet Complete - Score: {worksheetScore}/{worksheetTotalQuestions} ({Math.round((worksheetScore / worksheetTotalQuestions) * 100)}%)
                 </div>
               )}
             </div>
