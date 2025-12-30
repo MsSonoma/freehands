@@ -27,6 +27,7 @@ import { WorksheetPhase } from './WorksheetPhase';
 import { TestPhase } from './TestPhase';
 import { ClosingPhase } from './ClosingPhase';
 import { PhaseOrchestrator } from './PhaseOrchestrator';
+import { SnapshotService } from './SnapshotService';
 import { loadLesson, generateTestLesson } from './services';
 
 export default function SessionPageV2() {
@@ -47,6 +48,7 @@ function SessionPageV2Inner() {
   const videoRef = useRef(null);
   const audioEngineRef = useRef(null);
   const orchestratorRef = useRef(null);
+  const snapshotServiceRef = useRef(null);
   const teachingControllerRef = useRef(null);
   const comprehensionPhaseRef = useRef(null);
   const exercisePhaseRef = useRef(null);
@@ -93,6 +95,8 @@ function SessionPageV2Inner() {
   const [closingState, setClosingState] = useState('idle');
   const [closingMessage, setClosingMessage] = useState('');
 
+  const [snapshotLoaded, setSnapshotLoaded] = useState(false);
+  const [resumePhase, setResumePhase] = useState(null);
   
   const [currentCaption, setCurrentCaption] = useState('');
   const [engineState, setEngineState] = useState('idle');
@@ -134,6 +138,39 @@ function SessionPageV2Inner() {
     
     loadLessonData();
   }, [lessonId]);
+  
+  // Initialize SnapshotService after lesson loads
+  useEffect(() => {
+    if (!lessonData) return;
+    
+    // Generate session ID (in production, this would come from route params)
+    const sessionId = `session_${Date.now()}`;
+    const learnerId = 'test_learner'; // In production, from auth
+    
+    const service = new SnapshotService({
+      sessionId: sessionId,
+      learnerId: learnerId,
+      lessonKey: lessonData.key,
+      supabaseClient: null // Using localStorage fallback for now
+    });
+    
+    snapshotServiceRef.current = service;
+    
+    // Load existing snapshot
+    service.initialize().then(snapshot => {
+      if (snapshot) {
+        addEvent(`💾 Loaded snapshot - Resume from: ${snapshot.currentPhase}`);
+        setResumePhase(snapshot.currentPhase);
+      } else {
+        addEvent('💾 No snapshot found - Starting fresh');
+      }
+      setSnapshotLoaded(true);
+    });
+    
+    return () => {
+      snapshotServiceRef.current = null;
+    };
+  }, [lessonData]);
   
   const addEvent = (msg) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -252,6 +289,15 @@ function SessionPageV2Inner() {
     orchestrator.on('sessionComplete', (data) => {
       addEvent('🏁 Session complete!');
       setCurrentPhase('complete');
+      
+      // Delete snapshot (session finished)
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.deleteSnapshot().then(() => {
+          addEvent('💾 Cleared session snapshot');
+        }).catch(err => {
+          console.error('[SessionPageV2] Delete snapshot error:', err);
+        });
+      }
     });
     
     return () => {
@@ -268,6 +314,18 @@ function SessionPageV2Inner() {
     const handleTeachingComplete = (data) => {
       addEvent(`🎉 Teaching complete! (${data.vocabCount} vocab, ${data.exampleCount} examples)`);
       setTeachingStage('complete');
+      
+      // Save snapshot
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.savePhaseCompletion('teaching', {
+          vocabCount: data.vocabCount,
+          exampleCount: data.exampleCount
+        }).then(() => {
+          addEvent('💾 Saved teaching progress');
+        }).catch(err => {
+          console.error('[SessionPageV2] Save teaching error:', err);
+        });
+      }
       
       // Notify orchestrator
       if (orchestratorRef.current) {
@@ -302,6 +360,18 @@ function SessionPageV2Inner() {
     phase.on('comprehensionComplete', (data) => {
       addEvent(`✅ Comprehension complete: ${data.answer || '(skipped)'}`);
       setComprehensionState('complete');
+      
+      // Save snapshot
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.savePhaseCompletion('comprehension', {
+          answer: data.answer,
+          submitted: !!data.answer
+        }).then(() => {
+          addEvent('💾 Saved comprehension progress');
+        }).catch(err => {
+          console.error('[SessionPageV2] Save comprehension error:', err);
+        });
+      }
       
       // Notify orchestrator
       if (orchestratorRef.current) {
@@ -371,6 +441,20 @@ function SessionPageV2Inner() {
     phase.on('exerciseComplete', (data) => {
       addEvent(`🎉 Exercise complete! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
       setExerciseState('complete');
+      
+      // Save snapshot
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.savePhaseCompletion('exercise', {
+          score: data.score,
+          totalQuestions: data.totalQuestions,
+          percentage: data.percentage,
+          answers: data.answers
+        }).then(() => {
+          addEvent('💾 Saved exercise progress');
+        }).catch(err => {
+          console.error('[SessionPageV2] Save exercise error:', err);
+        });
+      }
       
       // Notify orchestrator
       if (orchestratorRef.current) {
@@ -445,6 +529,20 @@ function SessionPageV2Inner() {
     phase.on('worksheetComplete', (data) => {
       addEvent(`🎉 Worksheet complete! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
       setWorksheetState('complete');
+      
+      // Save snapshot
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.savePhaseCompletion('worksheet', {
+          score: data.score,
+          totalQuestions: data.totalQuestions,
+          percentage: data.percentage,
+          answers: data.answers
+        }).then(() => {
+          addEvent('💾 Saved worksheet progress');
+        }).catch(err => {
+          console.error('[SessionPageV2] Save worksheet error:', err);
+        });
+      }
       
       // Notify orchestrator
       if (orchestratorRef.current) {
@@ -523,6 +621,21 @@ function SessionPageV2Inner() {
     phase.on('testComplete', (data) => {
       addEvent(`🎉 Test complete! Final grade: ${data.grade} (${data.percentage}%)`);
       setTestState('complete');
+      
+      // Save snapshot
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.savePhaseCompletion('test', {
+          score: data.score,
+          totalQuestions: data.totalQuestions,
+          percentage: data.percentage,
+          grade: data.grade,
+          answers: data.answers
+        }).then(() => {
+          addEvent('💾 Saved test progress');
+        }).catch(err => {
+          console.error('[SessionPageV2] Save test error:', err);
+        });
+      }
       
       // Notify orchestrator
       if (orchestratorRef.current) {
