@@ -72,6 +72,17 @@ export function scheduleCaptionsForAudio(audio, sentences, startIndex, refs, set
     let elapsed = 0;
     setCaptionIndex(startIndex);
     
+    // For single-sentence batches, schedule captionsDone at end of audio
+    if (sentences.length === 1) {
+      const timer = window.setTimeout(() => {
+        try {
+          const end = captionBatchEndRef.current || (startIndex + sentences.length);
+          if (startIndex >= end - 1) setCaptionsDone(true);
+        } catch {}
+      }, Math.round(safeDuration * 1000));
+      captionTimersRef.current.push(timer);
+    }
+    
     for (let i = 1; i < sentences.length; i += 1) {
       const prevWords = countWords(sentences[i - 1]) || 1;
       const step = Math.max(minPerSentence, safeDuration * (prevWords / totalWords));
