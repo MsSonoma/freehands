@@ -1,22 +1,20 @@
 "use client";
 
 /**
- * Session Page V2 - AudioEngine Test Harness
+ * Session Page V2 - Complete Teaching Flow
  * 
- * This demonstrates the AudioEngine working in isolation with all three playback paths.
+ * Architecture:
+ * - TeachingController: Manages definitions → examples with sentence-by-sentence navigation
+ * - AudioEngine: Self-contained playback with event emission
+ * - Event-driven: Zero state coupling between components
+ * 
  * Enable via localStorage flag: localStorage.setItem('session_architecture_v2', 'true')
- * 
- * Test Controls:
- * - Synthetic: Plays captions with timing, no audio (fastest to test)
- * - HTMLAudio: Preferred path, uses Audio element
- * - WebAudio: iOS fallback, uses Web Audio API
- * - Stop/Pause/Resume/Mute controls
- * - Real-time state display
  */
 
 import { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AudioEngine } from './AudioEngine';
+import { TeachingController } from './TeachingController';
 
 export default function SessionPageV2() {
   return (
@@ -31,59 +29,89 @@ export { SessionPageV2Inner };
 
 function SessionPageV2Inner() {
   const searchParams = useSearchParams();
-  const subjectParam = searchParams?.get('subject') || 'math';
-  const lessonParam = searchParams?.get('lesson') || '';
-  const difficultyParam = searchParams?.get('difficulty') || 'beginner';
+  const lessonId = searchParams?.get('lesson') || '';
   
   const videoRef = useRef(null);
-  const engineRef = useRef(null);
+  const audioEngineRef = useRef(null);
+  const teachingControllerRef = useRef(null);
   
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [currentCaption, setCurrentCaption] = useState(0);
-  const [captions, setCaptions] = useState([]);
+  const [lessonData, setLessonData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  const [teachingStage, setTeachingStage] = useState('idle');
+  const [sentenceIndex, setSentenceIndex] = useState(0);
+  const [totalSentences, setTotalSentences] = useState(0);
+  const [isInSentenceMode, setIsInSentenceMode] = useState(true);
+  
+  const [currentCaption, setCurrentCaption] = useState('');
+  const [engineState, setEngineState] = useState('idle');
   const [events, setEvents] = useState([]);
   
-  // Test sentences
-  const testSentences = [
-    "Welcome to the V2 architecture test.",
-    "This is testing the AudioEngine component.",
-    "It manages all audio playback independently.",
-    "Watch the caption index change in real time.",
-    "The video should play during audio.",
-    "And pause when audio stops."
-  ];
+  // Load lesson data
+  useEffect(() => {
+    async function loadLesson() {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // For now, use hardcoded test data
+        // TODO: Load from API when lessonId provided
+        const testLesson = {
+          title: 'Photosynthesis Basics',
+          vocab: [
+            { term: 'Photosynthesis', definition: 'The process plants use to make food from sunlight.' },
+            { term: 'Chlorophyll', definition: 'The green pigment in plants that captures light energy.' },
+            { term: 'Carbon Dioxide', definition: 'A gas plants absorb from the air to make food.' }
+          ],
+          examples: [
+            'Plants perform photosynthesis to create energy from sunlight.',
+            'Chlorophyll makes leaves appear green during the growing season.',
+            'Without carbon dioxide, photosynthesis cannot occur in plants.'
+          ]
+        };
+        
+        setLessonData(testLesson);
+        setLoading(false);
+      } catch (err) {
+        console.error('[SessionPageV2] Lesson load error:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    }
+    
+    loadLesson();
+  }, [lessonId]);
   
   // Initialize AudioEngine
   useEffect(() => {
     if (!videoRef.current) return;
     
     const engine = new AudioEngine({ videoElement: videoRef.current });
-    engineRef.current = engine;
+    audioEngineRef.current = engine;
     
-    // Subscribe to all events
+    // Subscribe to AudioEngine events
     engine.on('start', (data) => {
-      addEvent('🎬 Audio started');
-      setIsPlaying(true);
-      setCaptions(data.sentences);
-      setCurrentCaption(data.startIndex);
+      addEvent('🎬 AudioEngine START');
+      setEngineState('playing');
     });
     
     engine.on('end', (data) => {
-      addEvent(`🏁 Audio ended (completed: ${data.completed})`);
-      setIsPlaying(false);
+      addEvent(`🏁 AudioEngine END (completed: ${data.completed})`);
+      setEngineState('idle');
     });
     
-    engine.on('captionChange', (index) => {
-      setCurrentCaption(index);
+    engine.on('captionChange', (data) => {
+      setCurrentCaption(data.text);
     });
     
     engine.on('captionsDone', () => {
-      addEvent('📝 All captions displayed');
+      setCurrentCaption('');
     });
     
-    engine.on('error', (err) => {
-      addEvent(`❌ Error: ${err.message || err}`);
+    engine.on('error', (data) => {
+      addEvent(`❌ AudioEngine ERROR: ${data.message}`);
+      setEngineState('error');
     });
     
     return () => {
@@ -91,332 +119,315 @@ function SessionPageV2Inner() {
     };
   }, []);
   
+  // Initialize TeachingController when lesson loads
+  useEffect(() => {
+    if (!lessonData || !audioEngineRef.current) return;
+    
+    const controller = new TeachingController({
+      audioEngine: audioEngineRef.current,
+      lessonData: lessonData
+    });
+    
+    teachingControllerRef.current = controller;
+    
+    // Subscribe to TeachingController events
+    controller.on('stageChange', (data) => {
+      addEvent(`📖 Stage: ${data.stage} (${data.totalSentences} sentences)`);
+      setTeachingStage(data.stage);
+      setTotalSentences(data.totalSentences);
+      setSentenceIndex(0);
+      setIsInSentenceMode(true);
+    });
+    
+    controller.on('sentenceAdvance', (data) => {
+      addEvent(`➡️ Sentence ${data.index + 1}/${data.total}`);
+      setSentenceIndex(data.index);
+    });
+    
+    controller.on('sentenceComplete', (data) => {
+      addEvent(`✅ Sentence ${data.index + 1} complete`);
+    });
+    
+    controller.on('finalGateReached', (data) => {
+      addEvent(`🚪 Final gate: ${data.stage}`);
+      setIsInSentenceMode(false);
+    });
+    
+    controller.on('teachingComplete', (data) => {
+      addEvent(`🎉 Teaching complete! (${data.vocabCount} vocab, ${data.exampleCount} examples)`);
+      setTeachingStage('complete');
+    });
+    
+    return () => {
+      controller.destroy();
+      teachingControllerRef.current = null;
+    };
+  }, [lessonData]);
+  
   const addEvent = (msg) => {
     const timestamp = new Date().toLocaleTimeString();
-    setEvents(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 10));
+    setEvents(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 15));
   };
   
-  const playSynthetic = () => {
-    if (engineRef.current) {
-      addEvent('▶️ Playing synthetic (no audio)...');
-      engineRef.current.playAudio('', testSentences);
-    }
+  const startTeaching = async () => {
+    if (!teachingControllerRef.current) return;
+    await teachingControllerRef.current.startTeaching();
   };
   
-  const playHTMLAudio = async () => {
-    if (engineRef.current) {
-      addEvent('▶️ Fetching TTS for HTML path...');
-      try {
-        // Call a mock TTS endpoint or use a test base64
-        // For now, fall back to synthetic
-        addEvent('⚠️ No TTS endpoint configured, using synthetic');
-        engineRef.current.playAudio('', testSentences);
-      } catch (err) {
-        addEvent(`❌ TTS fetch failed: ${err.message}`);
-      }
-    }
+  const nextSentence = () => {
+    if (!teachingControllerRef.current) return;
+    teachingControllerRef.current.nextSentence();
   };
   
-  const playWebAudio = () => {
-    if (engineRef.current) {
-      addEvent('▶️ WebAudio path not implemented yet');
-      // Would decode base64 to ArrayBuffer here
-      engineRef.current.playAudio('', testSentences);
-    }
+  const repeatSentence = () => {
+    if (!teachingControllerRef.current) return;
+    teachingControllerRef.current.repeatSentence();
   };
   
-  const stop = () => {
-    if (engineRef.current) {
-      addEvent('⏹️ Stopping playback');
-      engineRef.current.stop();
-    }
+  const skipToExamples = () => {
+    if (!teachingControllerRef.current) return;
+    teachingControllerRef.current.skipToExamples();
   };
   
-  const pause = () => {
-    if (engineRef.current) {
-      addEvent('⏸️ Pausing playback');
-      engineRef.current.pause();
-      setIsPlaying(false);
-    }
+  const restartStage = () => {
+    if (!teachingControllerRef.current) return;
+    teachingControllerRef.current.restartStage();
   };
   
-  const resume = () => {
-    if (engineRef.current) {
-      addEvent('▶️ Resuming playback');
-      engineRef.current.resume();
-      setIsPlaying(true);
-    }
+  const stopAudio = () => {
+    if (!audioEngineRef.current) return;
+    audioEngineRef.current.stop();
+  };
+  
+  const pauseAudio = () => {
+    if (!audioEngineRef.current) return;
+    audioEngineRef.current.pause();
+  };
+  
+  const resumeAudio = () => {
+    if (!audioEngineRef.current) return;
+    audioEngineRef.current.resume();
   };
   
   const toggleMute = () => {
-    if (engineRef.current) {
-      const newMuted = !isMuted;
-      engineRef.current.setMuted(newMuted);
-      setIsMuted(newMuted);
-      addEvent(newMuted ? '🔇 Muted' : '🔊 Unmuted');
-    }
+    if (!audioEngineRef.current) return;
+    audioEngineRef.current.setMuted(!audioEngineRef.current.isMuted);
   };
   
-  const clearEvents = () => setEvents([]);
-
-  return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: '100vh',
-      background: '#0a0a0a',
-      color: '#e0e0e0',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: '1rem 2rem',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-      }}>
-        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>
-          🚀 AudioEngine Test Harness
-        </h1>
-        <p style={{ margin: '0.25rem 0 0 0', opacity: 0.9, fontSize: '0.9rem' }}>
-          Testing V2 architecture: {subjectParam} / {lessonParam || 'demo'}
-        </p>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-lg">Loading lesson...</div>
       </div>
-      
-      {/* Main Content */}
-      <div style={{ display: 'flex', flex: 1, gap: '1rem', padding: '1rem' }}>
-        {/* Video + Caption Panel */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {/* Video */}
-          <div style={{
-            background: '#1a1a1a',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            aspectRatio: '16/9'
-          }}>
-            <video
-              ref={videoRef}
-              src="/media/msSonoma_introVideo.mp4"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              muted
-              loop
-            />
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-red-100 text-red-700 p-6 rounded-lg max-w-md">
+          <h2 className="font-bold mb-2">Error loading lesson</h2>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h1 className="text-2xl font-bold mb-2">V2 Architecture - Teaching Flow</h1>
+          <p className="text-gray-600">TeachingController + AudioEngine with event-driven architecture</p>
+          {lessonData && (
+            <div className="mt-4 text-sm text-gray-500 space-y-1">
+              <div className="font-semibold">{lessonData.title}</div>
+              <div>Vocab: {lessonData.vocab?.length || 0} terms</div>
+              <div>Examples: {lessonData.examples?.length || 0} sentences</div>
+            </div>
+          )}
+        </div>
+        
+        {/* Video Panel */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Video</h2>
+          <video
+            ref={videoRef}
+            src="/media/sonoma_vid_bg_loop.mp4"
+            loop
+            muted
+            playsInline
+            className="w-full rounded-lg bg-black"
+            style={{ maxHeight: '300px' }}
+          />
+        </div>
+        
+        {/* Teaching Controls */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Teaching Controls</h2>
+          
+          {/* Stage Info */}
+          <div className="mb-4 p-4 bg-gray-50 rounded">
+            <div className="font-semibold text-lg">Stage: {teachingStage}</div>
+            {(teachingStage === 'definitions' || teachingStage === 'examples') && (
+              <div className="text-sm text-gray-600 mt-1">
+                Sentence {sentenceIndex + 1} of {totalSentences}
+                {!isInSentenceMode && <span className="ml-2 text-yellow-600">(Final Gate)</span>}
+              </div>
+            )}
           </div>
           
-          {/* Caption Display */}
-          <div style={{
-            background: '#1a1a1a',
-            borderRadius: '8px',
-            padding: '1.5rem',
-            minHeight: '150px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1rem'
-          }}>
-            <div style={{ fontSize: '0.85rem', opacity: 0.7, fontWeight: 'bold' }}>
-              CAPTIONS ({currentCaption + 1} / {captions.length || 0})
-            </div>
-            <div style={{
-              fontSize: '1.25rem',
-              lineHeight: '1.6',
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              {captions[currentCaption] || 'No caption playing'}
-            </div>
-            
-            {/* All captions */}
-            <div style={{
-              fontSize: '0.75rem',
-              opacity: 0.5,
-              maxHeight: '100px',
-              overflow: 'auto',
-              borderTop: '1px solid #333',
-              paddingTop: '0.5rem'
-            }}>
-              {captions.map((s, i) => (
-                <div
-                  key={i}
-                  style={{
-                    padding: '0.25rem',
-                    background: i === currentCaption ? '#667eea22' : 'transparent',
-                    color: i === currentCaption ? '#fff' : '#888'
-                  }}
+          {/* Start Button */}
+          {teachingStage === 'idle' && (
+            <button
+              onClick={startTeaching}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+            >
+              Start Teaching
+            </button>
+          )}
+          
+          {/* Navigation Controls */}
+          {(teachingStage === 'definitions' || teachingStage === 'examples') && (
+            <div className="space-y-3">
+              <div className="flex gap-3 flex-wrap">
+                <button
+                  onClick={nextSentence}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
-                  {i + 1}. {s}
-                </div>
-              ))}
+                  {isInSentenceMode 
+                    ? 'Next Sentence' 
+                    : teachingStage === 'definitions' 
+                      ? 'Continue to Examples' 
+                      : 'Complete Teaching'
+                  }
+                </button>
+                <button
+                  onClick={repeatSentence}
+                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                  disabled={!isInSentenceMode}
+                >
+                  Repeat
+                </button>
+                <button
+                  onClick={restartStage}
+                  className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                >
+                  Restart Stage
+                </button>
+                {teachingStage === 'definitions' && (
+                  <button
+                    onClick={skipToExamples}
+                    className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                  >
+                    Skip to Examples
+                  </button>
+                )}
+              </div>
+              
+              {/* Audio Transport */}
+              <div className="flex gap-2 pt-2 border-t">
+                <button
+                  onClick={stopAudio}
+                  className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                  Stop
+                </button>
+                <button
+                  onClick={pauseAudio}
+                  className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                >
+                  Pause
+                </button>
+                <button
+                  onClick={resumeAudio}
+                  className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  Resume
+                </button>
+                <button
+                  onClick={toggleMute}
+                  className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700"
+                >
+                  Toggle Mute
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {/* Complete */}
+          {teachingStage === 'complete' && (
+            <div className="text-green-600 font-semibold text-lg">
+              ✓ Teaching Complete
+            </div>
+          )}
+        </div>
+        
+        {/* Current Sentence */}
+        {teachingControllerRef.current && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold mb-4">Current Sentence</h2>
+            <div className="text-xl p-4 bg-blue-50 rounded min-h-[80px] flex items-center">
+              {teachingControllerRef.current.currentSentence || (
+                <span className="text-gray-400">No sentence</span>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Live Caption */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Live Caption</h2>
+          <div className="text-2xl text-center py-8 min-h-[120px] flex items-center justify-center">
+            {currentCaption || <span className="text-gray-400">No caption</span>}
+          </div>
+        </div>
+        
+        {/* System State */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">System State</h2>
+          <div className="space-y-3">
+            <div>
+              <div className="text-sm font-semibold text-gray-600 mb-1">TeachingController</div>
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${
+                  teachingStage === 'definitions' || teachingStage === 'examples' ? 'bg-blue-500' :
+                  teachingStage === 'complete' ? 'bg-green-500' :
+                  'bg-gray-300'
+                }`} />
+                <span className="font-mono">{teachingStage}</span>
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-gray-600 mb-1">AudioEngine</div>
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${
+                  engineState === 'playing' ? 'bg-green-500' :
+                  engineState === 'error' ? 'bg-red-500' :
+                  'bg-gray-300'
+                }`} />
+                <span className="font-mono">{engineState}</span>
+              </div>
             </div>
           </div>
         </div>
         
-        {/* Controls Panel */}
-        <div style={{ width: '350px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {/* State Display */}
-          <div style={{
-            background: '#1a1a1a',
-            borderRadius: '8px',
-            padding: '1rem'
-          }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.75rem' }}>
-              ENGINE STATE
-            </div>
-            <div style={{ fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Playing:</span>
-                <span style={{ color: isPlaying ? '#4ade80' : '#666' }}>
-                  {isPlaying ? '✓ Yes' : '✗ No'}
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Muted:</span>
-                <span style={{ color: isMuted ? '#f87171' : '#666' }}>
-                  {isMuted ? '✓ Yes' : '✗ No'}
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Caption Index:</span>
-                <span style={{ color: '#667eea' }}>{currentCaption}</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Playback Controls */}
-          <div style={{
-            background: '#1a1a1a',
-            borderRadius: '8px',
-            padding: '1rem'
-          }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.75rem' }}>
-              PLAYBACK TESTS
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <button onClick={playSynthetic} style={buttonStyle('#667eea')}>
-                ▶️ Test Synthetic
-              </button>
-              <button onClick={playHTMLAudio} style={buttonStyle('#764ba2')}>
-                ▶️ Test HTMLAudio
-              </button>
-              <button onClick={playWebAudio} style={buttonStyle('#8b5cf6')}>
-                ▶️ Test WebAudio
-              </button>
-            </div>
-          </div>
-          
-          {/* Transport Controls */}
-          <div style={{
-            background: '#1a1a1a',
-            borderRadius: '8px',
-            padding: '1rem'
-          }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.75rem' }}>
-              TRANSPORT
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              <button onClick={stop} style={buttonStyle('#ef4444')}>
-                ⏹️ Stop
-              </button>
-              <button onClick={isPlaying ? pause : resume} style={buttonStyle('#f59e0b')}>
-                {isPlaying ? '⏸️ Pause' : '▶️ Resume'}
-              </button>
-              <button onClick={toggleMute} style={buttonStyle('#10b981')}>
-                {isMuted ? '🔊 Unmute' : '🔇 Mute'}
-              </button>
-            </div>
-          </div>
-          
-          {/* Event Log */}
-          <div style={{
-            background: '#1a1a1a',
-            borderRadius: '8px',
-            padding: '1rem',
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '0.75rem'
-            }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>
-                EVENT LOG
-              </div>
-              <button onClick={clearEvents} style={{
-                ...buttonStyle('#666'),
-                fontSize: '0.7rem',
-                padding: '0.25rem 0.5rem'
-              }}>
-                Clear
-              </button>
-            </div>
-            <div style={{
-              fontSize: '0.75rem',
-              fontFamily: 'monospace',
-              overflow: 'auto',
-              flex: 1
-            }}>
-              {events.length === 0 && (
-                <div style={{ opacity: 0.5, fontStyle: 'italic' }}>
-                  No events yet. Click a test button above.
-                </div>
-              )}
-              {events.map((event, i) => (
-                <div key={i} style={{
-                  padding: '0.25rem 0',
-                  borderBottom: i < events.length - 1 ? '1px solid #333' : 'none'
-                }}>
-                  {event}
-                </div>
-              ))}
-            </div>
+        {/* Event Log */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Event Log</h2>
+          <div className="space-y-1 font-mono text-sm">
+            {events.length === 0 && (
+              <div className="text-gray-400">No events yet</div>
+            )}
+            {events.map((event, i) => (
+              <div key={i} className="text-gray-700">{event}</div>
+            ))}
           </div>
         </div>
-      </div>
-      
-      {/* Footer */}
-      <div style={{
-        padding: '1rem 2rem',
-        background: '#1a1a1a',
-        borderTop: '1px solid #333',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
-          V2 Architecture: AudioEngine isolated test
-        </div>
-        <button
-          onClick={() => {
-            localStorage.removeItem('session_architecture_v2');
-            window.location.reload();
-          }}
-          style={{
-            ...buttonStyle('#667eea'),
-            fontSize: '0.85rem',
-            padding: '0.5rem 1rem'
-          }}
-        >
-          ← Back to V1
-        </button>
+        
       </div>
     </div>
   );
 }
-
-const buttonStyle = (color) => ({
-  background: color,
-  color: 'white',
-  border: 'none',
-  borderRadius: '6px',
-  padding: '0.75rem',
-  fontSize: '0.9rem',
-  fontWeight: '600',
-  cursor: 'pointer',
-  transition: 'transform 0.1s, opacity 0.2s',
-  ':hover': {
-    transform: 'scale(1.02)',
-    opacity: 0.9
-  }
-});

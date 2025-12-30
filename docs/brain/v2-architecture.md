@@ -1,6 +1,6 @@
 # Session Page V2 Architecture
 
-**Status:** Stub implementation (feature flag working)  
+**Status:** Teaching flow implementation (AudioEngine + TeachingController complete)  
 **Created:** 2025-12-30  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
@@ -261,33 +261,46 @@ expect(engine.isPlaying).toBe(true);
   - Pause/resume support
   - Speech guard timeout
 - **AudioEngine tests** (`AudioEngine.test.jsx`) - Unit tests + manual browser test helpers
-- **Test harness UI** (`SessionPageV2.jsx` updated) - Interactive browser test
-  - Video panel with caption display
-  - Test buttons for Synthetic/HTMLAudio/WebAudio paths
-  - Stop/Pause/Resume/Mute controls
-  - Real-time state display (isPlaying, isMuted, captionIndex)
-  - Event log showing all AudioEngine events
-  - Ready to test in browser via feature flag
+- **TeachingController component** (`src/app/session/v2/TeachingController.jsx`) - 400 lines
+  - Two-stage teaching flow: definitions → examples
+  - Consumes AudioEngine via events (zero state coupling)
+  - Sentence-by-sentence navigation with gate controls
+  - Events: stageChange, sentenceAdvance, sentenceComplete, finalGateReached, teachingComplete
+  - Public API: startTeaching(), nextSentence(), repeatSentence(), skipToExamples(), restartStage()
+  - Content extraction from lesson data (vocab + examples)
+  - Sentence splitting logic
+- **Complete Teaching Flow UI** (`SessionPageV2.jsx` updated) - 433 lines
+  - Real lesson data loading (hardcoded test data for now)
+  - TeachingController initialization and event handling
+  - Teaching controls: Start, Next, Repeat, Restart, Skip
+  - Audio transport controls: Stop, Pause, Resume, Mute
+  - Live displays: Current sentence, live caption, system state
+  - Event log showing AudioEngine + TeachingController events
+  - Stage progression: idle → definitions → examples → complete
 
 ### 🚧 In Progress
-- None (test harness complete, ready for browser validation)
+- None (teaching flow complete and ready for testing)
 
 ### 📋 Next Steps
-1. Browser test: Verify AudioEngine works (synthetic path first)
-2. Browser test: Verify video coordination
-3. Browser test: Verify caption timing
-4. Build TeachingController component
-5. Connect TeachingController to AudioEngine via events
+1. Browser test: Load V2 and start teaching
+2. Browser test: Verify definitions → examples transition
+3. Browser test: Verify sentence navigation works
+4. Browser test: Verify gate controls work
+5. Add real TTS API integration
+6. Add real lesson API integration
+7. Build PhaseOrchestrator (discussion → teaching → comprehension → closing)
+8. Build question flows (comprehension, exercise, worksheet, test)
 
 ---
 
 ## Key Files
 
 **V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Main entry point (stub)
-- `src/app/session/v2/AudioEngine.jsx` - TODO
-- `src/app/session/v2/TeachingController.jsx` - TODO
+- `src/app/session/v2/SessionPageV2.jsx` - Complete teaching flow UI (433 lines)
+- `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
+- `src/app/session/v2/TeachingController.jsx` - Teaching stage machine (400 lines)
 - `src/app/session/v2/PhaseOrchestrator.jsx` - TODO
+- `src/app/session/v2test/page.jsx` - Direct test route
 
 **V1 Implementation (keep intact):**
 - `src/app/session/page.js` - Original monolith (9,797 lines)
