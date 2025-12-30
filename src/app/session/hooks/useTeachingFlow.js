@@ -598,10 +598,14 @@ export function useTeachingFlow({
     setTtsLoadingCount(prev => prev - 1);
     
     // Speak the first sentence
-    try { await speakFrontend(sentences[0]); } catch {}
+    console.log('[TEACHING] Speaking example sentence 1:', sentences[0].substring(0, 50));
+    try { await speakFrontend(sentences[0]); } catch (err) {
+      console.error('[TEACHING] Error speaking example sentence 1:', err);
+    }
     
     // Prefetch next sentence AFTER speaking completes (while student reads/processes)
     if (sentences.length > 1) {
+      console.log('[TEACHING] Prefetching example sentence 2:', sentences[1].substring(0, 50));
       ttsCache.prefetch(sentences[1]);
     }
     
