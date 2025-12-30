@@ -188,7 +188,44 @@ export function generateTestLesson() {
         }
       ]
     },
-    test: [],
+    test: {
+      questions: [
+        {
+          type: 'mc',
+          question: 'Which of these is NOT needed for photosynthesis?',
+          options: [
+            'Sunlight',
+            'Water',
+            'Soil nutrients',
+            'Carbon dioxide'
+          ],
+          answer: 'Soil nutrients'
+        },
+        {
+          type: 'fill',
+          question: 'The main product of photosynthesis that plants use for energy is _____.',
+          answer: 'glucose',
+          hint: 'It\'s a type of sugar'
+        },
+        {
+          type: 'tf',
+          question: 'Photosynthesis only occurs in green plants.',
+          options: ['True', 'False'],
+          answer: 'False'
+        },
+        {
+          type: 'mc',
+          question: 'Where does photosynthesis primarily occur in a plant?',
+          options: [
+            'Roots',
+            'Leaves',
+            'Stems',
+            'Flowers'
+          ],
+          answer: 'Leaves'
+        }
+      ]
+    },
     discussion: {}
   };
 }

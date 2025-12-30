@@ -21,7 +21,7 @@
 export class PhaseOrchestrator {
   // Private state
   #lessonData = null;
-  #currentPhase = 'idle'; // 'idle' | 'discussion' | 'teaching' | 'comprehension' | 'exercise' | 'worksheet' | 'closing' | 'complete'
+  #currentPhase = 'idle'; // 'idle' | 'discussion' | 'teaching' | 'comprehension' | 'exercise' | 'worksheet' | 'test' | 'closing' | 'complete'
   #phaseHistory = [];
   
   #listeners = new Map();
@@ -85,6 +85,10 @@ export class PhaseOrchestrator {
   }
   
   onWorksheetComplete() {
+    this.#transitionTo('test');
+  }
+  
+  onTestComplete() {
     this.#transitionTo('closing');
   }
   
@@ -94,7 +98,7 @@ export class PhaseOrchestrator {
   
   // Public API: Manual phase navigation (for testing)
   skipToPhase(phase) {
-    const validPhases = ['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet', 'closing'];
+    const validPhases = ['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet', 'test', 'closing'];
     if (!validPhases.includes(phase)) {
       throw new Error(`Invalid phase: ${phase}`);
     }

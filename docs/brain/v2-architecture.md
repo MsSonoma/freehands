@@ -1,6 +1,6 @@
 # Session Page V2 Architecture
 
-**Status:** Complete session flow (teaching → comprehension → exercise → worksheet → closing)  
+**Status:** Complete session flow (teaching → comprehension → exercise → worksheet → test → closing)  
 **Created:** 2025-12-30  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
@@ -293,14 +293,23 @@ expect(engine.isPlaying).toBe(true);
   - Shows instant feedback (correct/incorrect with answer)
   - Tracks score and emits worksheetComplete
   - Zero coupling to other phases
+- **TestPhase component** (`src/app/session/v2/TestPhase.jsx`) - 400 lines
+  - Graded assessment with MC/TF/fill-in questions
+  - Plays each question with TTS
+  - Mixed question types (radio buttons for MC/TF, text input for fill-in)
+  - Tracks all answers and calculates grade (A-F)
+  - Review mode shows all questions with correct/incorrect highlighting
+  - Navigation: previous/next review, skip review
+  - Emits testComplete with grade and percentage
+  - Zero coupling to other phases
 - **Services layer** (`src/app/session/v2/services.js`) - API integrations
   - fetchTTS(): Calls /api/tts endpoint, returns base64 audio
   - loadLesson(): Fetches lesson JSON from /lessons/{subject}/{key}.json
   - generateTestLesson(): Fallback test data
   - Zero coupling to components or state
-- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 1000 lines
+- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 1200 lines
   - PhaseOrchestrator initialization and event handling
-  - Phase-specific controls (teaching, comprehension, exercise, worksheet, closing)
+  - Phase-specific controls (teaching, comprehension, exercise, worksheet, test with review, closing)
   - Automatic phase transitions
   - Real lesson loading and TTS audio
   - Teaching controls: Start, Next, Repeat, Restart, Skip
@@ -309,36 +318,39 @@ expect(engine.isPlaying).toBe(true);
   - Exercise scoring: Live score display, percentage calculation
   - Worksheet controls: Text input with Enter key support, Submit, Skip
   - Worksheet feedback: Instant correct/incorrect display with correct answer
+  - Test controls: Mixed UI (radio/text based on question type), Submit, Skip
+  - Test grading: Letter grade (A-F) and percentage
+  - Test review: Question-by-question review with correct answers highlighted, Previous/Next navigation
   - Closing phase: Displays encouraging message
   - Audio transport controls: Stop, Pause, Resume, Mute
   - Live displays: Current phase, current sentence, live caption, system state
   - Event log showing all component events
-  - Flow: Start Session → Teaching (definitions → examples) → Comprehension (question → answer) → Exercise (MC/TF scoring) → Worksheet (fill-in-blank) → Closing (encouragement) → Complete
+  - Flow: Start Session → Teaching (definitions → examples) → Comprehension (question → answer) → Exercise (MC/TF scoring) → Worksheet (fill-in-blank) → Test (graded with review) → Closing (encouragement) → Complete
 
 ### 🚧 In Progress
-- None (complete session flow: teaching → comprehension → exercise → worksheet → closing → complete)
+- None (complete session flow: teaching → comprehension → exercise → worksheet → test → closing → complete)
 
 ### 📋 Next Steps
-1. Browser test: Full session flow with exercise and worksheet scoring
-2. Browser test: Verify worksheet answer validation (case-insensitive, partial match)
+1. Browser test: Full session flow with all assessment phases
+2. Browser test: Verify test review navigation and grading
 3. Build discussion activities (Ask, Riddle, Poem, Story, Fill-in-Fun)
-4. Build test phase (graded questions with review)
-5. Add snapshot persistence
-6. Add timer integration
-7. Add keyboard hotkeys
-8. Add Mr. Mentor integration
+4. Add snapshot persistence (save/restore after each phase)
+5. Add timer integration (session + work phase timers)
+6. Add keyboard hotkeys (PageUp/PageDown, Space, etc.)
+7. Add Mr. Mentor integration (counselor flow)
 
 ---
 
 ## Key Files
 
 **V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (1000 lines)
+- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (1200 lines)
 - `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
 - `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
 - `src/app/session/v2/ComprehensionPhase.jsx` - Comprehension question flow (200 lines)
 - `src/app/session/v2/ExercisePhase.jsx` - Exercise questions with scoring (300 lines)
 - `src/app/session/v2/WorksheetPhase.jsx` - Fill-in-blank questions (300 lines)
+- `src/app/session/v2/TestPhase.jsx` - Graded test with review (400 lines)
 - `src/app/session/v2/ClosingPhase.jsx` - Closing message with encouragement (150 lines)
 - `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
 - `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading)

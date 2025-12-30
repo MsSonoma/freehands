@@ -4,11 +4,12 @@
  * Session Page V2 - Full Session Flow
  * 
  * Architecture:
- * - PhaseOrchestrator: Manages phase transitions (teaching → comprehension → exercise → worksheet → closing)
+ * - PhaseOrchestrator: Manages phase transitions (teaching → comprehension → exercise → worksheet → test → closing)
  * - TeachingController: Manages definitions → examples
  * - ComprehensionPhase: Manages question → answer → feedback
  * - ExercisePhase: Manages multiple choice/true-false questions with scoring
  * - WorksheetPhase: Manages fill-in-blank questions with text input
+ * - TestPhase: Manages graded test questions with review
  * - ClosingPhase: Manages closing message
  * - AudioEngine: Self-contained playback
  * - Event-driven: Zero state coupling between components
@@ -23,6 +24,7 @@ import { TeachingController } from './TeachingController';
 import { ComprehensionPhase } from './ComprehensionPhase';
 import { ExercisePhase } from './ExercisePhase';
 import { WorksheetPhase } from './WorksheetPhase';
+import { TestPhase } from './TestPhase';
 import { ClosingPhase } from './ClosingPhase';
 import { PhaseOrchestrator } from './PhaseOrchestrator';
 import { loadLesson, generateTestLesson } from './services';
@@ -49,6 +51,7 @@ function SessionPageV2Inner() {
   const comprehensionPhaseRef = useRef(null);
   const exercisePhaseRef = useRef(null);
   const worksheetPhaseRef = useRef(null);
+  const testPhaseRef = useRef(null);
   const closingPhaseRef = useRef(null);
   
   const [lessonData, setLessonData] = useState(null);
@@ -77,6 +80,15 @@ function SessionPageV2Inner() {
   const [worksheetTotalQuestions, setWorksheetTotalQuestions] = useState(0);
   const [worksheetAnswer, setWorksheetAnswer] = useState('');
   const [lastWorksheetFeedback, setLastWorksheetFeedback] = useState(null);
+  
+  const [testState, setTestState] = useState('idle');
+  const [currentTestQuestion, setCurrentTestQuestion] = useState(null);
+  const [testScore, setTestScore] = useState(0);
+  const [testTotalQuestions, setTestTotalQuestions] = useState(0);
+  const [testAnswer, setTestAnswer] = useState('');
+  const [testGrade, setTestGrade] = useState(null);
+  const [testReviewAnswer, setTestReviewAnswer] = useState(null);
+  const [testReviewIndex, setTestReviewIndex] = useState(0);
   
   const [closingState, setClosingState] = useState('idle');
   const [closingMessage, setClosingMessage] = useState('');
@@ -230,6 +242,8 @@ function SessionPageV2Inner() {
         startExercisePhase();
       } else if (data.phase === 'worksheet') {
         startWorksheetPhase();
+      } else if (data.phase === 'test') {
+        startTestPhase();
       } else if (data.phase === 'closing') {
         startClosingPhase();
       }
@@ -446,6 +460,84 @@ function SessionPageV2Inner() {
     phase.start();
   };
   
+  // Start test phase
+  const startTestPhase = () => {
+    if (!audioEngineRef.current || !lessonData?.test) return;
+    
+    // Generate test questions from lesson data
+    const questions = lessonData.test.questions || [];
+    
+    if (questions.length === 0) {
+      // If no test questions, skip to closing
+      addEvent('⚠️ No test questions - skipping to closing');
+      if (orchestratorRef.current) {
+        orchestratorRef.current.onTestComplete();
+      }
+      return;
+    }
+    
+    const phase = new TestPhase({
+      audioEngine: audioEngineRef.current,
+      questions: questions
+    });
+    
+    testPhaseRef.current = phase;
+    
+    // Subscribe to test events
+    phase.on('questionStart', (data) => {
+      addEvent(`📝 Test Question ${data.questionIndex + 1}/${data.totalQuestions}`);
+      setCurrentTestQuestion(data.question);
+      setTestTotalQuestions(data.totalQuestions);
+      setTestAnswer('');
+    });
+    
+    phase.on('questionReady', (data) => {
+      setTestState('awaiting-answer');
+      addEvent('❓ Answer the test question...');
+    });
+    
+    phase.on('answerSubmitted', (data) => {
+      const result = data.isCorrect ? '✅ Correct!' : '❌ Incorrect';
+      addEvent(`${result} (Score: ${data.score}/${data.totalQuestions})`);
+      setTestScore(data.score);
+      setTestAnswer('');
+    });
+    
+    phase.on('questionSkipped', (data) => {
+      addEvent(`⏭️ Skipped (Score: ${data.score}/${data.totalQuestions})`);
+      setTestAnswer('');
+    });
+    
+    phase.on('testQuestionsComplete', (data) => {
+      addEvent(`📊 Test questions done! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%) - Grade: ${data.grade}`);
+      setTestGrade(data);
+      setTestState('reviewing');
+    });
+    
+    phase.on('reviewQuestion', (data) => {
+      setTestReviewAnswer(data.answer);
+      setTestReviewIndex(data.reviewIndex);
+      addEvent(`📖 Review ${data.reviewIndex + 1}/${data.totalReviews}`);
+    });
+    
+    phase.on('testComplete', (data) => {
+      addEvent(`🎉 Test complete! Final grade: ${data.grade} (${data.percentage}%)`);
+      setTestState('complete');
+      
+      // Notify orchestrator
+      if (orchestratorRef.current) {
+        orchestratorRef.current.onTestComplete();
+      }
+      
+      // Cleanup
+      phase.destroy();
+      testPhaseRef.current = null;
+    });
+    
+    // Start phase
+    phase.start();
+  };
+  
   // Start closing phase
   const startClosingPhase = () => {
     if (!audioEngineRef.current || !lessonData) return;
@@ -567,6 +659,43 @@ function SessionPageV2Inner() {
     worksheetPhaseRef.current.skip();
   };
   
+  // Test handlers
+  const submitTestAnswer = () => {
+    if (!testPhaseRef.current) return;
+    
+    const question = currentTestQuestion;
+    if (!question) return;
+    
+    if (question.type === 'fill') {
+      if (!testAnswer.trim()) return;
+      testPhaseRef.current.submitAnswer(testAnswer);
+    } else {
+      // MC/TF
+      if (!testAnswer) return;
+      testPhaseRef.current.submitAnswer(testAnswer);
+    }
+  };
+  
+  const skipTestQuestion = () => {
+    if (!testPhaseRef.current) return;
+    testPhaseRef.current.skip();
+  };
+  
+  const nextTestReview = () => {
+    if (!testPhaseRef.current) return;
+    testPhaseRef.current.nextReview();
+  };
+  
+  const previousTestReview = () => {
+    if (!testPhaseRef.current) return;
+    testPhaseRef.current.previousReview();
+  };
+  
+  const skipTestReview = () => {
+    if (!testPhaseRef.current) return;
+    testPhaseRef.current.skipReview();
+  };
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -593,7 +722,7 @@ function SessionPageV2Inner() {
         {/* Header */}
         <div className="bg-white rounded-lg shadow p-6">
           <h1 className="text-2xl font-bold mb-2">V2 Architecture - Full Session Flow</h1>
-          <p className="text-gray-600">PhaseOrchestrator + Teaching + Comprehension + Exercise + Worksheet</p>
+          <p className="text-gray-600">Teaching + Comprehension + Exercise + Worksheet + Test + Review</p>
           {lessonData && (
             <div className="mt-4 text-sm text-gray-500 space-y-1">
               <div className="font-semibold">{lessonData.title}</div>
@@ -859,6 +988,168 @@ function SessionPageV2Inner() {
               {worksheetState === 'complete' && (
                 <div className="text-green-600 font-semibold">
                   ✓ Worksheet Complete - Score: {worksheetScore}/{worksheetTotalQuestions} ({Math.round((worksheetScore / worksheetTotalQuestions) * 100)}%)
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Test Phase */}
+          {currentPhase === 'test' && (
+            <div>
+              <div className="mb-4 p-4 bg-red-50 rounded">
+                <div className="font-semibold text-lg">Test - Final Assessment</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  State: {testState} | Score: {testScore}/{testTotalQuestions}
+                  {testGrade && ` | Grade: ${testGrade.grade} (${testGrade.percentage}%)`}
+                </div>
+              </div>
+              
+              {/* Test Questions */}
+              {currentTestQuestion && testState === 'awaiting-answer' && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded">
+                    <div className="font-semibold mb-3">{currentTestQuestion.question}</div>
+                    
+                    {currentTestQuestion.type === 'fill' ? (
+                      // Fill-in-blank input
+                      <div>
+                        {currentTestQuestion.hint && (
+                          <div className="text-sm text-gray-600 italic mb-3">
+                            Hint: {currentTestQuestion.hint}
+                          </div>
+                        )}
+                        <input
+                          type="text"
+                          value={testAnswer}
+                          onChange={(e) => setTestAnswer(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && testAnswer.trim()) {
+                              submitTestAnswer();
+                            }
+                          }}
+                          className="w-full p-3 border rounded-lg text-lg"
+                          placeholder="Type your answer..."
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      // Multiple choice / True-False radio buttons
+                      <div className="space-y-2">
+                        {currentTestQuestion.options.map((option, index) => (
+                          <label
+                            key={index}
+                            className="flex items-center p-3 bg-white border rounded hover:bg-blue-50 cursor-pointer"
+                          >
+                            <input
+                              type="radio"
+                              name="test-answer"
+                              value={option}
+                              checked={testAnswer === option}
+                              onChange={(e) => setTestAnswer(e.target.value)}
+                              className="mr-3"
+                            />
+                            <span>{option}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <button
+                      onClick={submitTestAnswer}
+                      disabled={!testAnswer || (currentTestQuestion.type === 'fill' && !testAnswer.trim())}
+                      className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Submit Answer
+                    </button>
+                    <button
+                      onClick={skipTestQuestion}
+                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Test Review */}
+              {testState === 'reviewing' && testReviewAnswer && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="font-semibold">Question {testReviewIndex + 1}:</div>
+                      <div className={`px-3 py-1 rounded text-sm font-semibold ${testReviewAnswer.isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {testReviewAnswer.isCorrect ? '✓ Correct' : '✗ Incorrect'}
+                      </div>
+                    </div>
+                    
+                    <div className="mb-3">{testReviewAnswer.question}</div>
+                    
+                    {testReviewAnswer.type === 'fill' ? (
+                      // Fill-in-blank review
+                      <div className="space-y-2">
+                        <div>
+                          <span className="font-semibold">Your Answer:</span> {testReviewAnswer.userAnswer || '(skipped)'}
+                        </div>
+                        {!testReviewAnswer.isCorrect && (
+                          <div className="text-green-700">
+                            <span className="font-semibold">Correct Answer:</span> {testReviewAnswer.correctAnswer}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      // MC/TF review
+                      <div className="space-y-2">
+                        {testReviewAnswer.options.map((option, index) => {
+                          const isUserAnswer = option === testReviewAnswer.userAnswer;
+                          const isCorrectAnswer = option === testReviewAnswer.correctAnswer;
+                          
+                          let bgClass = 'bg-white';
+                          if (isCorrectAnswer) bgClass = 'bg-green-100 border-green-500';
+                          else if (isUserAnswer && !isCorrectAnswer) bgClass = 'bg-red-100 border-red-500';
+                          
+                          return (
+                            <div key={index} className={`p-3 border rounded ${bgClass}`}>
+                              <div className="flex items-center justify-between">
+                                <span>{option}</span>
+                                {isCorrectAnswer && <span className="text-green-700 font-semibold">✓ Correct</span>}
+                                {isUserAnswer && !isCorrectAnswer && <span className="text-red-700 font-semibold">✗ Your answer</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <button
+                      onClick={previousTestReview}
+                      disabled={testReviewIndex === 0}
+                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ← Previous
+                    </button>
+                    <button
+                      onClick={nextTestReview}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Next →
+                    </button>
+                    <button
+                      onClick={skipTestReview}
+                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    >
+                      Skip Review
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {testState === 'complete' && testGrade && (
+                <div className="text-green-600 font-semibold text-lg">
+                  ✓ Test Complete - Grade: {testGrade.grade} ({testGrade.percentage}%) - Score: {testScore}/{testTotalQuestions}
                 </div>
               )}
             </div>
