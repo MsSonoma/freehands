@@ -58,6 +58,14 @@ import GatedOverlay from '../components/GatedOverlay';
 import { loadPhaseTimersForLearner, TIMER_TYPES } from './utils/phaseTimerDefaults';
 
 export default function SessionPage(){
+  // Feature flag: Enable V2 architecture via localStorage
+  // localStorage.setItem('session_architecture_v2', 'true') to enable
+  // V2 is a complete parallel implementation with clean boundaries (see docs/brain/v2-architecture.md)
+  if (typeof window !== 'undefined' && localStorage.getItem('session_architecture_v2') === 'true') {
+    const SessionPageV2 = require('./v2/SessionPageV2').default;
+    return <SessionPageV2 />;
+  }
+  
   return (
     <Suspense fallback={null}>
       <SessionPageInner />

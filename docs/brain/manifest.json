@@ -1,4 +1,21 @@
 {
+  "v2-architecture": {
+    "file": "v2-architecture.md",
+    "systems": [
+      "parallel implementation strategy",
+      "feature flag system",
+      "architectural boundaries",
+      "event-driven communication",
+      "AudioEngine component",
+      "TeachingController component",
+      "PhaseOrchestrator component",
+      "snapshot compatibility layer",
+      "migration sequence",
+      "V1 vs V2 separation"
+    ],
+    "last_updated": "2025-12-30T00:00:00Z",
+    "status": "active-development"
+  },
   "mr-mentor-conversation-flows": {
     "file": "mr-mentor-conversation-flows.md",
     "systems": [
