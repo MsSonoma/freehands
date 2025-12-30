@@ -1,7 +1,7 @@
 # Ms. Sonoma Teaching System
 
 **Status**: Canonical  
-**Last Updated**: 2025-12-30T14:29:32Z
+**Last Updated**: 2025-12-30T14:32:57Z
 
 ## How It Works
 
@@ -253,7 +253,7 @@ Before shipping to Ms. Sonoma, verify:
 ### Teaching Gate Flow
 
 - After "Do you have any questions?" Ms. Sonoma explicitly speaks the generated "You could ask questions like..." follow-ups; if GPT is empty or errors, a deterministic three-question fallback is spoken.
-- If the examples GPT call returns no text, a short fallback paragraph (start small, change one thing, notice the shift, say what it means) is split and read fully so the examples stage never skips straight to comprehension.
+- If the examples GPT call returns no text, the stage ends (no deterministic fallback injected); rely on GPT output only.
 - Gate controls (Repeat/Next and the PageDown hotkey) stay hidden/blocked while the gate prompt or sample questions load/play under a dedicated lock so learners hear the three suggestions before moving on.
 - If Skip is pressed during this locked sequence, the lock clears and the gate snaps back to awaiting-gate so controls/hotkey surface instead of hanging; captions already contain the sample questions even when TTS is skipped.
 - Frontend safety: teaching gate state lives before the skip handler to avoid TDZ ReferenceError crashes in minified builds when Skip fires during the gate.

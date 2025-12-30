@@ -564,28 +564,11 @@ export function useTeachingFlow({
       result = await gptPromise;
     }
 
-    // Build sentence list from GPT or fallback so the examples stage always speaks
-    let sentences = [];
-    if (result && result.success && result.text) {
-      sentences = splitIntoSentences(result.text).filter(s => s.trim());
-    }
-
-    if (!sentences.length) {
-      const lessonTitle = (getCleanLessonTitle() || 'this topic').trim();
-      const shortTitle = lessonTitle ? lessonTitle.split(/\s+/).slice(0, 3).join(' ') : 'this topic';
-      console.warn('[TEACHING] Using fallback examples because GPT returned no text');
-      const fallback = [
-        `Let's walk through simple examples for ${shortTitle}.`,
-        'We start with a tiny case and change one thing.',
-        'We notice what shifts and say it in kid words.',
-        'We keep it short and clear so it is easy to follow.'
-      ].join(' ');
-      sentences = splitIntoSentences(fallback).filter((s) => s.trim());
-    }
-
-    if (!sentences.length) {
-      return !!(result && result.success);
-    }
+    // Build sentence list from GPT only
+    const sentences = (result && result.success && result.text)
+      ? splitIntoSentences(result.text).filter(s => s.trim())
+      : [];
+    if (!sentences.length) return !!(result && result.success);
     
     // Store all sentences for sentence-by-sentence gating
     exampleSentencesRef.current = sentences;

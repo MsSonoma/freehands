@@ -1,4 +1,5 @@
 2025-12-30T14:22:52Z | Copilot | FIX: Examples stage now uses deterministic fallback sentences when GPT returns empty so kids hear examples before comprehension; teaching brain/manifest updated.
+2025-12-30T14:32:57Z | Copilot | FIX: Removed examples deterministic fallback—GPT output only; updated teaching doc and manifest timestamp.
 2025-12-30T14:29:32Z | Copilot | FIX: Examples fallback now a short paragraph split into sentences (not fixed count) so all lines are read when GPT returns empty; teaching brain/manifest updated.
 2025-12-28T21:23:58Z | Copilot | FIX: Teaching gate skip handler now TDZ-safe (state declared before skip); docs/manifest updated for teaching gate flow.
 2025-12-28T19:10:40Z | Copilot | FIX: Skip during teaching gate now unlocks the gate after the prompt so controls and hotkey surface instead of hanging; updated teaching brain and manifest.
