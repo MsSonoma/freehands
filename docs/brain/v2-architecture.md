@@ -253,14 +253,21 @@ expect(engine.isPlaying).toBe(true);
   - Pause/resume support
   - Speech guard timeout
 - **AudioEngine tests** (`AudioEngine.test.jsx`) - Unit tests + manual browser test helpers
+- **Test harness UI** (`SessionPageV2.jsx` updated) - Interactive browser test
+  - Video panel with caption display
+  - Test buttons for Synthetic/HTMLAudio/WebAudio paths
+  - Stop/Pause/Resume/Mute controls
+  - Real-time state display (isPlaying, isMuted, captionIndex)
+  - Event log showing all AudioEngine events
+  - Ready to test in browser via feature flag
 
 ### 🚧 In Progress
-- Wiring AudioEngine into SessionPageV2 (next step)
+- None (test harness complete, ready for browser validation)
 
 ### 📋 Next Steps
-1. Create V2 session UI shell (video panel, caption panel, input panel)
-2. Wire AudioEngine to UI (test with hardcoded sentences)
-3. Verify all three audio paths work in browser
+1. Browser test: Verify AudioEngine works (synthetic path first)
+2. Browser test: Verify video coordination
+3. Browser test: Verify caption timing
 4. Build TeachingController component
 5. Connect TeachingController to AudioEngine via events
 
