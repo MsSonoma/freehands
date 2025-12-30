@@ -8,6 +8,7 @@
  * - Loads lesson vocab and examples
  * - Breaks into sentences
  * - Sentence-by-sentence navigation with gate controls
+ * - Fetches TTS audio for each sentence
  * - Emits events: stageChange, sentenceAdvance, teachingComplete
  * - Zero knowledge of phase transitions or snapshot persistence
  * 
@@ -17,6 +18,8 @@
  *   controller.on('stageChange', (stage) => updateUI(stage));
  *   await controller.startTeaching();
  */
+
+import { fetchTTS } from './services';
 
 export class TeachingController {
   // Private state
@@ -231,8 +234,11 @@ export class TeachingController {
       });
     });
     
-    // Play through AudioEngine
-    await this.#audioEngine.playAudio('', [sentence]);
+    // Fetch TTS audio
+    const audioBase64 = await fetchTTS(sentence);
+    
+    // Play through AudioEngine (falls back to synthetic if TTS fails)
+    await this.#audioEngine.playAudio(audioBase64 || '', [sentence]);
   }
   
   #advanceDefinition() {
@@ -296,8 +302,11 @@ export class TeachingController {
       });
     });
     
-    // Play through AudioEngine
-    await this.#audioEngine.playAudio('', [sentence]);
+    // Fetch TTS audio
+    const audioBase64 = await fetchTTS(sentence);
+    
+    // Play through AudioEngine (falls back to synthetic if TTS fails)
+    await this.#audioEngine.playAudio(audioBase64 || '', [sentence]);
   }
   
   #advanceExample() {

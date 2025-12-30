@@ -15,6 +15,7 @@ import { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AudioEngine } from './AudioEngine';
 import { TeachingController } from './TeachingController';
+import { loadLesson, generateTestLesson } from './services';
 
 export default function SessionPageV2() {
   return (
@@ -50,28 +51,30 @@ function SessionPageV2Inner() {
   
   // Load lesson data
   useEffect(() => {
-    async function loadLesson() {
+    async function loadLessonData() {
       try {
         setLoading(true);
         setError(null);
         
-        // For now, use hardcoded test data
-        // TODO: Load from API when lessonId provided
-        const testLesson = {
-          title: 'Photosynthesis Basics',
-          vocab: [
-            { term: 'Photosynthesis', definition: 'The process plants use to make food from sunlight.' },
-            { term: 'Chlorophyll', definition: 'The green pigment in plants that captures light energy.' },
-            { term: 'Carbon Dioxide', definition: 'A gas plants absorb from the air to make food.' }
-          ],
-          examples: [
-            'Plants perform photosynthesis to create energy from sunlight.',
-            'Chlorophyll makes leaves appear green during the growing season.',
-            'Without carbon dioxide, photosynthesis cannot occur in plants.'
-          ]
-        };
+        let lesson;
         
-        setLessonData(testLesson);
+        // Try to load real lesson if lessonId provided
+        if (lessonId) {
+          try {
+            lesson = await loadLesson(lessonId);
+            addEvent(`📚 Loaded lesson: ${lesson.title}`);
+          } catch (err) {
+            console.warn('[SessionPageV2] Failed to load lesson, using test data:', err);
+            lesson = generateTestLesson();
+            addEvent('📚 Using test lesson (load failed)');
+          }
+        } else {
+          // No lessonId - use test data
+          lesson = generateTestLesson();
+          addEvent('📚 Using test lesson (no lessonId)');
+        }
+        
+        setLessonData(lesson);
         setLoading(false);
       } catch (err) {
         console.error('[SessionPageV2] Lesson load error:', err);
@@ -80,8 +83,13 @@ function SessionPageV2Inner() {
       }
     }
     
-    loadLesson();
+    loadLessonData();
   }, [lessonId]);
+  
+  const addEvent = (msg) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setEvents(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 15));
+  };
   
   // Initialize AudioEngine
   useEffect(() => {
@@ -163,11 +171,6 @@ function SessionPageV2Inner() {
       teachingControllerRef.current = null;
     };
   }, [lessonData]);
-  
-  const addEvent = (msg) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setEvents(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 15));
-  };
   
   const startTeaching = async () => {
     if (!teachingControllerRef.current) return;
