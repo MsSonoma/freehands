@@ -7,6 +7,7 @@
  * - PhaseOrchestrator: Manages phase transitions (teaching → comprehension → closing)
  * - TeachingController: Manages definitions → examples
  * - ComprehensionPhase: Manages question → answer → feedback
+ * - ClosingPhase: Manages closing message
  * - AudioEngine: Self-contained playback
  * - Event-driven: Zero state coupling between components
  * 
@@ -18,6 +19,7 @@ import { useSearchParams } from 'next/navigation';
 import { AudioEngine } from './AudioEngine';
 import { TeachingController } from './TeachingController';
 import { ComprehensionPhase } from './ComprehensionPhase';
+import { ClosingPhase } from './ClosingPhase';
 import { PhaseOrchestrator } from './PhaseOrchestrator';
 import { loadLesson, generateTestLesson } from './services';
 
@@ -41,6 +43,7 @@ function SessionPageV2Inner() {
   const orchestratorRef = useRef(null);
   const teachingControllerRef = useRef(null);
   const comprehensionPhaseRef = useRef(null);
+  const closingPhaseRef = useRef(null);
   
   const [lessonData, setLessonData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -55,6 +58,10 @@ function SessionPageV2Inner() {
   
   const [comprehensionState, setComprehensionState] = useState('idle');
   const [comprehensionAnswer, setComprehensionAnswer] = useState('');
+  
+  const [closingState, setClosingState] = useState('idle');
+  const [closingMessage, setClosingMessage] = useState('');
+
   
   const [currentCaption, setCurrentCaption] = useState('');
   const [engineState, setEngineState] = useState('idle');
@@ -201,9 +208,7 @@ function SessionPageV2Inner() {
       } else if (data.phase === 'comprehension') {
         startComprehensionPhase();
       } else if (data.phase === 'closing') {
-        // TODO: Implement closing phase
-        addEvent('✅ Session complete (closing phase not implemented yet)');
-        orchestrator.onClosingComplete();
+        startClosingPhase();
       }
     });
     
@@ -273,6 +278,44 @@ function SessionPageV2Inner() {
     
     phase.on('error', (data) => {
       addEvent(`❌ Error: ${data.message}`);
+    });
+    
+    // Start phase
+    phase.start();
+  };
+  
+  // Start closing phase
+  const startClosingPhase = () => {
+    if (!audioEngineRef.current || !lessonData) return;
+    
+    const phase = new ClosingPhase({
+      audioEngine: audioEngineRef.current,
+      lessonTitle: lessonData.title || 'this lesson'
+    });
+    
+    closingPhaseRef.current = phase;
+    
+    // Subscribe to state changes
+    phase.on('stateChange', (data) => {
+      setClosingState(data.state);
+      setClosingMessage(data.message);
+      if (data.state === 'playing') {
+        addEvent(`💬 Closing: ${data.message}`);
+      }
+    });
+    
+    phase.on('closingComplete', (data) => {
+      addEvent('✅ Closing complete');
+      setClosingState('complete');
+      
+      // Notify orchestrator
+      if (orchestratorRef.current) {
+        orchestratorRef.current.onClosingComplete();
+      }
+      
+      // Cleanup
+      phase.destroy();
+      closingPhaseRef.current = null;
     });
     
     // Start phase
@@ -499,6 +542,28 @@ function SessionPageV2Inner() {
               {comprehensionState === 'complete' && (
                 <div className="text-green-600 font-semibold">
                   ✓ Comprehension Complete
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Closing Phase */}
+          {currentPhase === 'closing' && (
+            <div>
+              <div className="mb-4 p-4 bg-green-50 rounded">
+                <div className="font-semibold text-lg">Closing Message</div>
+                <div className="text-sm text-gray-600 mt-1">State: {closingState}</div>
+              </div>
+              
+              {closingState === 'playing' && closingMessage && (
+                <div className="p-4 bg-blue-50 rounded mb-3">
+                  <div className="text-lg text-gray-800">{closingMessage}</div>
+                </div>
+              )}
+              
+              {closingState === 'complete' && (
+                <div className="text-green-600 font-semibold">
+                  ✓ Closing Complete
                 </div>
               )}
             </div>

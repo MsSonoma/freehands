@@ -1,6 +1,6 @@
 # Session Page V2 Architecture
 
-**Status:** Full session flow with phase orchestration (teaching → comprehension)  
+**Status:** Complete session flow (teaching → comprehension → closing)  
 **Created:** 2025-12-30  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
@@ -273,44 +273,52 @@ expect(engine.isPlaying).toBe(true);
   - Simple validation (answer exists)
   - Emits comprehensionComplete event
   - Zero coupling to other phases
+- **ClosingPhase component** (`src/app/session/v2/ClosingPhase.jsx`) - 150 lines
+  - Plays encouraging closing message with TTS
+  - Randomly selected from predefined messages
+  - Emits closingComplete event
+  - Zero coupling to other phases
 - **Services layer** (`src/app/session/v2/services.js`) - API integrations
   - fetchTTS(): Calls /api/tts endpoint, returns base64 audio
   - loadLesson(): Fetches lesson JSON from /lessons/{subject}/{key}.json
   - generateTestLesson(): Fallback test data
   - Zero coupling to components or state
-- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 550 lines
+- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 655 lines
   - PhaseOrchestrator initialization and event handling
-  - Phase-specific controls (teaching, comprehension)
+  - Phase-specific controls (teaching, comprehension, closing)
   - Automatic phase transitions
   - Real lesson loading and TTS audio
   - Teaching controls: Start, Next, Repeat, Restart, Skip
   - Comprehension controls: Answer input, Submit, Skip
+  - Closing phase: Displays encouraging message
   - Audio transport controls: Stop, Pause, Resume, Mute
   - Live displays: Current phase, current sentence, live caption, system state
   - Event log showing all component events
-  - Flow: Start Session → Teaching (definitions → examples) → Comprehension (question → answer) → Complete
+  - Flow: Start Session → Teaching (definitions → examples) → Comprehension (question → answer) → Closing (encouragement) → Complete
 
 ### 🚧 In Progress
-- None (teaching → comprehension flow complete)
+- None (complete session flow: teaching → comprehension → closing → complete)
 
 ### 📋 Next Steps
-1. Browser test: Full session flow from start to comprehension
-2. Browser test: Verify phase transitions work
-3. Add closing phase (summary, encouragement)
-4. Build discussion activities (Ask, Riddle, Poem, Story, Fill-in-Fun)
-5. Build exercise/worksheet/test phases
-6. Add snapshot persistence
-7. Add timer integration
+1. Browser test: Full session flow end-to-end
+2. Browser test: Verify all phase transitions
+3. Build discussion activities (Ask, Riddle, Poem, Story, Fill-in-Fun)
+4. Build exercise/worksheet/test phases
+5. Add snapshot persistence
+6. Add timer integration
+7. Add keyboard hotkeys
+8. Add Mr. Mentor integration
 
 ---
 
 ## Key Files
 
 **V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (550 lines)
+- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (655 lines)
 - `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
 - `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
 - `src/app/session/v2/ComprehensionPhase.jsx` - Comprehension question flow (200 lines)
+- `src/app/session/v2/ClosingPhase.jsx` - Closing message with encouragement (150 lines)
 - `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
 - `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading)
 - `src/app/session/v2test/page.jsx` - Direct test route
