@@ -1,11 +1,13 @@
 "use client";
 
 /**
- * Session Page V2 - Complete Teaching Flow
+ * Session Page V2 - Full Session Flow
  * 
  * Architecture:
- * - TeachingController: Manages definitions → examples with sentence-by-sentence navigation
- * - AudioEngine: Self-contained playback with event emission
+ * - PhaseOrchestrator: Manages phase transitions (teaching → comprehension → closing)
+ * - TeachingController: Manages definitions → examples
+ * - ComprehensionPhase: Manages question → answer → feedback
+ * - AudioEngine: Self-contained playback
  * - Event-driven: Zero state coupling between components
  * 
  * Enable via localStorage flag: localStorage.setItem('session_architecture_v2', 'true')
@@ -15,6 +17,8 @@ import { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AudioEngine } from './AudioEngine';
 import { TeachingController } from './TeachingController';
+import { ComprehensionPhase } from './ComprehensionPhase';
+import { PhaseOrchestrator } from './PhaseOrchestrator';
 import { loadLesson, generateTestLesson } from './services';
 
 export default function SessionPageV2() {
@@ -34,16 +38,23 @@ function SessionPageV2Inner() {
   
   const videoRef = useRef(null);
   const audioEngineRef = useRef(null);
+  const orchestratorRef = useRef(null);
   const teachingControllerRef = useRef(null);
+  const comprehensionPhaseRef = useRef(null);
   
   const [lessonData, setLessonData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  const [currentPhase, setCurrentPhase] = useState('idle');
+  
   const [teachingStage, setTeachingStage] = useState('idle');
   const [sentenceIndex, setSentenceIndex] = useState(0);
   const [totalSentences, setTotalSentences] = useState(0);
   const [isInSentenceMode, setIsInSentenceMode] = useState(true);
+  
+  const [comprehensionState, setComprehensionState] = useState('idle');
+  const [comprehensionAnswer, setComprehensionAnswer] = useState('');
   
   const [currentCaption, setCurrentCaption] = useState('');
   const [engineState, setEngineState] = useState('idle');
@@ -161,16 +172,117 @@ function SessionPageV2Inner() {
       setIsInSentenceMode(false);
     });
     
-    controller.on('teachingComplete', (data) => {
-      addEvent(`🎉 Teaching complete! (${data.vocabCount} vocab, ${data.exampleCount} examples)`);
-      setTeachingStage('complete');
-    });
+    // Note: teachingComplete handled in startTeachingPhase, not here
     
     return () => {
       controller.destroy();
       teachingControllerRef.current = null;
     };
   }, [lessonData]);
+  
+  // Initialize PhaseOrchestrator when lesson loads
+  useEffect(() => {
+    if (!lessonData) return;
+    
+    const orchestrator = new PhaseOrchestrator({
+      lessonData: lessonData
+    });
+    
+    orchestratorRef.current = orchestrator;
+    
+    // Subscribe to phase transitions
+    orchestrator.on('phaseChange', (data) => {
+      addEvent(`🔄 Phase: ${data.phase}`);
+      setCurrentPhase(data.phase);
+      
+      // Start phase-specific controller
+      if (data.phase === 'teaching') {
+        startTeachingPhase();
+      } else if (data.phase === 'comprehension') {
+        startComprehensionPhase();
+      } else if (data.phase === 'closing') {
+        // TODO: Implement closing phase
+        addEvent('✅ Session complete (closing phase not implemented yet)');
+        orchestrator.onClosingComplete();
+      }
+    });
+    
+    orchestrator.on('sessionComplete', (data) => {
+      addEvent('🏁 Session complete!');
+      setCurrentPhase('complete');
+    });
+    
+    return () => {
+      orchestrator.destroy();
+      orchestratorRef.current = null;
+    };
+  }, [lessonData]);
+  
+  // Start teaching phase
+  const startTeachingPhase = () => {
+    if (!teachingControllerRef.current) return;
+    
+    // Wire up teaching complete to orchestrator
+    const handleTeachingComplete = (data) => {
+      addEvent(`🎉 Teaching complete! (${data.vocabCount} vocab, ${data.exampleCount} examples)`);
+      setTeachingStage('complete');
+      
+      // Notify orchestrator
+      if (orchestratorRef.current) {
+        orchestratorRef.current.onTeachingComplete();
+      }
+    };
+    
+    teachingControllerRef.current.on('teachingComplete', handleTeachingComplete);
+    teachingControllerRef.current.startTeaching();
+  };
+  
+  // Start comprehension phase
+  const startComprehensionPhase = () => {
+    if (!audioEngineRef.current || !lessonData?.comprehension) return;
+    
+    const phase = new ComprehensionPhase({
+      audioEngine: audioEngineRef.current,
+      question: lessonData.comprehension.question || 'What did you learn?',
+      sampleAnswer: lessonData.comprehension.sampleAnswer || ''
+    });
+    
+    comprehensionPhaseRef.current = phase;
+    
+    // Subscribe to state changes
+    phase.on('stateChange', (data) => {
+      setComprehensionState(data.state);
+      if (data.state === 'awaiting-answer') {
+        addEvent('❓ Waiting for answer...');
+      }
+    });
+    
+    phase.on('comprehensionComplete', (data) => {
+      addEvent(`✅ Comprehension complete: ${data.answer || '(skipped)'}`);
+      setComprehensionState('complete');
+      
+      // Notify orchestrator
+      if (orchestratorRef.current) {
+        orchestratorRef.current.onComprehensionComplete();
+      }
+      
+      // Cleanup
+      phase.destroy();
+      comprehensionPhaseRef.current = null;
+    });
+    
+    phase.on('error', (data) => {
+      addEvent(`❌ Error: ${data.message}`);
+    });
+    
+    // Start phase
+    phase.start();
+  };
+  
+  const startSession = () => {
+    if (!orchestratorRef.current) return;
+    orchestratorRef.current.startSession();
+  };
   
   const startTeaching = async () => {
     if (!teachingControllerRef.current) return;
@@ -217,6 +329,17 @@ function SessionPageV2Inner() {
     audioEngineRef.current.setMuted(!audioEngineRef.current.isMuted);
   };
   
+  // Comprehension handlers
+  const submitComprehensionAnswer = () => {
+    if (!comprehensionPhaseRef.current) return;
+    comprehensionPhaseRef.current.submitAnswer(comprehensionAnswer);
+  };
+  
+  const skipComprehension = () => {
+    if (!comprehensionPhaseRef.current) return;
+    comprehensionPhaseRef.current.skip();
+  };
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -242,11 +365,12 @@ function SessionPageV2Inner() {
         
         {/* Header */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h1 className="text-2xl font-bold mb-2">V2 Architecture - Teaching Flow</h1>
-          <p className="text-gray-600">TeachingController + AudioEngine with event-driven architecture</p>
+          <h1 className="text-2xl font-bold mb-2">V2 Architecture - Full Session Flow</h1>
+          <p className="text-gray-600">PhaseOrchestrator + TeachingController + ComprehensionPhase</p>
           {lessonData && (
             <div className="mt-4 text-sm text-gray-500 space-y-1">
               <div className="font-semibold">{lessonData.title}</div>
+              <div>Current Phase: <span className="font-bold text-blue-600">{currentPhase}</span></div>
               <div>Vocab: {lessonData.vocab?.length || 0} terms</div>
               <div>Examples: {lessonData.examples?.length || 0} sentences</div>
             </div>
@@ -267,105 +391,156 @@ function SessionPageV2Inner() {
           />
         </div>
         
-        {/* Teaching Controls */}
+        {/* Phase Controls */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Teaching Controls</h2>
+          <h2 className="text-lg font-semibold mb-4">Phase Controls</h2>
           
-          {/* Stage Info */}
-          <div className="mb-4 p-4 bg-gray-50 rounded">
-            <div className="font-semibold text-lg">Stage: {teachingStage}</div>
-            {(teachingStage === 'definitions' || teachingStage === 'examples') && (
-              <div className="text-sm text-gray-600 mt-1">
-                Sentence {sentenceIndex + 1} of {totalSentences}
-                {!isInSentenceMode && <span className="ml-2 text-yellow-600">(Final Gate)</span>}
-              </div>
-            )}
-          </div>
-          
-          {/* Start Button */}
-          {teachingStage === 'idle' && (
+          {/* Session Start */}
+          {currentPhase === 'idle' && (
             <button
-              onClick={startTeaching}
+              onClick={startSession}
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
             >
-              Start Teaching
+              Start Session
             </button>
           )}
           
-          {/* Navigation Controls */}
-          {(teachingStage === 'definitions' || teachingStage === 'examples') && (
-            <div className="space-y-3">
-              <div className="flex gap-3 flex-wrap">
-                <button
-                  onClick={nextSentence}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  {isInSentenceMode 
-                    ? 'Next Sentence' 
-                    : teachingStage === 'definitions' 
-                      ? 'Continue to Examples' 
-                      : 'Complete Teaching'
-                  }
-                </button>
-                <button
-                  onClick={repeatSentence}
-                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
-                  disabled={!isInSentenceMode}
-                >
-                  Repeat
-                </button>
-                <button
-                  onClick={restartStage}
-                  className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
-                >
-                  Restart Stage
-                </button>
-                {teachingStage === 'definitions' && (
-                  <button
-                    onClick={skipToExamples}
-                    className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                  >
-                    Skip to Examples
-                  </button>
+          {/* Teaching Phase */}
+          {currentPhase === 'teaching' && (
+            <div>
+              <div className="mb-4 p-4 bg-gray-50 rounded">
+                <div className="font-semibold text-lg">Teaching Stage: {teachingStage}</div>
+                {(teachingStage === 'definitions' || teachingStage === 'examples') && (
+                  <div className="text-sm text-gray-600 mt-1">
+                    Sentence {sentenceIndex + 1} of {totalSentences}
+                    {!isInSentenceMode && <span className="ml-2 text-yellow-600">(Final Gate)</span>}
+                  </div>
                 )}
               </div>
               
-              {/* Audio Transport */}
-              <div className="flex gap-2 pt-2 border-t">
-                <button
-                  onClick={stopAudio}
-                  className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-                >
-                  Stop
-                </button>
-                <button
-                  onClick={pauseAudio}
-                  className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
-                >
-                  Pause
-                </button>
-                <button
-                  onClick={resumeAudio}
-                  className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-                >
-                  Resume
-                </button>
-                <button
-                  onClick={toggleMute}
-                  className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700"
-                >
-                  Toggle Mute
-                </button>
-              </div>
+              {(teachingStage === 'definitions' || teachingStage === 'examples') && (
+                <div className="space-y-3">
+                  <div className="flex gap-3 flex-wrap">
+                    <button
+                      onClick={nextSentence}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      {isInSentenceMode 
+                        ? 'Next Sentence' 
+                        : teachingStage === 'definitions' 
+                          ? 'Continue to Examples' 
+                          : 'Complete Teaching'
+                      }
+                    </button>
+                    <button
+                      onClick={repeatSentence}
+                      className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                      disabled={!isInSentenceMode}
+                    >
+                      Repeat
+                    </button>
+                    <button
+                      onClick={restartStage}
+                      className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                    >
+                      Restart Stage
+                    </button>
+                    {teachingStage === 'definitions' && (
+                      <button
+                        onClick={skipToExamples}
+                        className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                      >
+                        Skip to Examples
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           
-          {/* Complete */}
-          {teachingStage === 'complete' && (
-            <div className="text-green-600 font-semibold text-lg">
-              ✓ Teaching Complete
+          {/* Comprehension Phase */}
+          {currentPhase === 'comprehension' && (
+            <div>
+              <div className="mb-4 p-4 bg-blue-50 rounded">
+                <div className="font-semibold text-lg">Comprehension Question</div>
+                <div className="text-sm text-gray-600 mt-1">State: {comprehensionState}</div>
+              </div>
+              
+              {comprehensionState === 'awaiting-answer' && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Your Answer:</label>
+                    <textarea
+                      value={comprehensionAnswer}
+                      onChange={(e) => setComprehensionAnswer(e.target.value)}
+                      className="w-full p-3 border rounded-lg"
+                      rows={4}
+                      placeholder="Type your answer here..."
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={submitComprehensionAnswer}
+                      className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    >
+                      Submit Answer
+                    </button>
+                    <button
+                      onClick={skipComprehension}
+                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {comprehensionState === 'complete' && (
+                <div className="text-green-600 font-semibold">
+                  ✓ Comprehension Complete
+                </div>
+              )}
             </div>
           )}
+          
+          {/* Session Complete */}
+          {currentPhase === 'complete' && (
+            <div className="text-green-600 font-semibold text-lg">
+              ✓ Session Complete!
+            </div>
+          )}
+        </div>
+        
+        {/* Audio Transport Controls */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Audio Transport</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={stopAudio}
+              className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Stop
+            </button>
+            <button
+              onClick={pauseAudio}
+              className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
+            >
+              Pause
+            </button>
+            <button
+              onClick={resumeAudio}
+              className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Resume
+            </button>
+            <button
+              onClick={toggleMute}
+              className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Toggle Mute
+            </button>
+          </div>
         </div>
         
         {/* Current Sentence */}

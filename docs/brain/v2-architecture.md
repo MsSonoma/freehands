@@ -1,6 +1,6 @@
 # Session Page V2 Architecture
 
-**Status:** Teaching flow with real TTS and lesson loading  
+**Status:** Full session flow with phase orchestration (teaching → comprehension)  
 **Created:** 2025-12-30  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
@@ -261,51 +261,58 @@ expect(engine.isPlaying).toBe(true);
   - Pause/resume support
   - Speech guard timeout
 - **AudioEngine tests** (`AudioEngine.test.jsx`) - Unit tests + manual browser test helpers
-- **TeachingController component** (`src/app/session/v2/TeachingController.jsx`) - 400 lines
-  - Two-stage teaching flow: definitions → examples
-  - Consumes AudioEngine via events (zero state coupling)
-  - Sentence-by-sentence navigation with gate controls
-  - **Real TTS integration**: Fetches Google TTS audio for each sentence
-  - Events: stageChange, sentenceAdvance, sentenceComplete, finalGateReached, teachingComplete
-  - Public API: startTeaching(), nextSentence(), repeatSentence(), skipToExamples(), restartStage()
-  - Content extraction from lesson data (vocab + examples)
-  - Sentence splitting logic
+- **PhaseOrchestrator component** (`src/app/session/v2/PhaseOrchestrator.jsx`) - 150 lines
+  - Manages session phase flow: teaching → comprehension → closing
+  - Owns phase state machine
+  - Emits phaseChange, sessionComplete events
+  - Consumes phase completion events
+  - Zero knowledge of phase implementation details
+- **ComprehensionPhase component** (`src/app/session/v2/ComprehensionPhase.jsx`) - 200 lines
+  - Plays comprehension question with TTS
+  - Captures kid's typed answer
+  - Simple validation (answer exists)
+  - Emits comprehensionComplete event
+  - Zero coupling to other phases
 - **Services layer** (`src/app/session/v2/services.js`) - API integrations
   - fetchTTS(): Calls /api/tts endpoint, returns base64 audio
   - loadLesson(): Fetches lesson JSON from /lessons/{subject}/{key}.json
   - generateTestLesson(): Fallback test data
   - Zero coupling to components or state
-- **Complete Teaching Flow UI** (`SessionPageV2.jsx` updated) - 435 lines
-  - **Real lesson loading**: Loads from API if lessonId provided, falls back to test data
-  - **Real TTS audio**: Plays actual Google TTS voice (not just captions)
-  - TeachingController initialization and event handling
+- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 550 lines
+  - PhaseOrchestrator initialization and event handling
+  - Phase-specific controls (teaching, comprehension)
+  - Automatic phase transitions
+  - Real lesson loading and TTS audio
   - Teaching controls: Start, Next, Repeat, Restart, Skip
+  - Comprehension controls: Answer input, Submit, Skip
   - Audio transport controls: Stop, Pause, Resume, Mute
-  - Live displays: Current sentence, live caption, system state
-  - Event log showing AudioEngine + TeachingController events
-  - Stage progression: idle → definitions → examples → complete
+  - Live displays: Current phase, current sentence, live caption, system state
+  - Event log showing all component events
+  - Flow: Start Session → Teaching (definitions → examples) → Comprehension (question → answer) → Complete
 
 ### 🚧 In Progress
-- None (teaching flow with real TTS complete)
+- None (teaching → comprehension flow complete)
 
 ### 📋 Next Steps
-1. Browser test: Load V2 with real lesson (e.g., ?lesson=5th_math_01)
-2. Browser test: Verify real TTS audio plays
-3. Browser test: Verify definitions → examples transition
-4. Build PhaseOrchestrator (discussion → teaching → comprehension → closing)
-5. Build comprehension phase (ask question, capture answer, feedback)
-6. Build question flows (exercise, worksheet, test)
+1. Browser test: Full session flow from start to comprehension
+2. Browser test: Verify phase transitions work
+3. Add closing phase (summary, encouragement)
+4. Build discussion activities (Ask, Riddle, Poem, Story, Fill-in-Fun)
+5. Build exercise/worksheet/test phases
+6. Add snapshot persistence
+7. Add timer integration
 
----5 lines)
-- `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
-- `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
-- `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading
+---
+
+## Key Files
 
 **V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Complete teaching flow UI (433 lines)
+- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (550 lines)
 - `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
-- `src/app/session/v2/TeachingController.jsx` - Teaching stage machine (400 lines)
-- `src/app/session/v2/PhaseOrchestrator.jsx` - TODO
+- `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
+- `src/app/session/v2/ComprehensionPhase.jsx` - Comprehension question flow (200 lines)
+- `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
+- `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading)
 - `src/app/session/v2test/page.jsx` - Direct test route
 
 **V1 Implementation (keep intact):**
