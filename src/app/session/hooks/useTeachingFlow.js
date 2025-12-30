@@ -72,6 +72,9 @@ export function useTeachingFlow({
   // Prefetch promise for examples GPT content (loaded in background during definitions gate)
   const examplesGptPromiseRef = useRef(null);
   
+  // Cooldown to prevent rapid successive handleGateNo calls (from held hotkey or rapid clicks)
+  const lastGateNoTimeRef = useRef(0);
+  
   const getTeachingFlowSnapshot = useCallback(() => {
     return {
       vocabSentences: Array.isArray(vocabSentencesRef.current)
@@ -691,6 +694,15 @@ export function useTeachingFlow({
    * Handle "No" button - advance to next sentence or next stage
    */
   const handleGateNo = async () => {
+    // Cooldown: prevent rapid successive calls (held hotkey or rapid clicks)
+    const now = Date.now();
+    const cooldown = 800; // milliseconds - minimum time between advances
+    if (now - lastGateNoTimeRef.current < cooldown) {
+      console.log('[TEACHING] handleGateNo blocked by cooldown - last call was', now - lastGateNoTimeRef.current, 'ms ago');
+      return;
+    }
+    lastGateNoTimeRef.current = now;
+    
     console.log('[TEACHING] handleGateNo called - stage:', teachingStage, 'vocabSentences.length:', vocabSentencesRef.current.length, 'currentIndex:', vocabSentenceIndexRef.current);
     
     if (teachingStage === 'definitions') {
