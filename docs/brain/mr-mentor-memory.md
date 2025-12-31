@@ -140,6 +140,11 @@ Response (search results):
 - On learner switch, loads new memory via `GET /api/conversation-memory?learner_id={id}`
 - Search UI (planned) will call `GET /api/conversation-memory?search={keywords}`
 
+## Related Brain Files
+
+- **[mr-mentor-sessions.md](mr-mentor-sessions.md)** - Memory system integrates with session management
+- **[mr-mentor-conversation-flows.md](mr-mentor-conversation-flows.md)** - Function calling tools retrieve memory context
+
 ## Key Files
 
 - `src/app/api/conversation-memory/route.js` - GET/POST endpoints, summarization logic, archival

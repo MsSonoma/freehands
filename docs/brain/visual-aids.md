@@ -130,6 +130,11 @@ During lesson sessions, visual aids appear in `SessionVisualAidsCarousel`:
 - This is the final guardrail against text appearing in images
 - Without it, even carefully worded prompts can accidentally trigger text rendering
 
+## Related Brain Files
+
+- **[ai-rewrite-system.md](ai-rewrite-system.md)** - AI rewrite improves DALL-E 3 prompts for visual aid generation
+- **[ms-sonoma-teaching-system.md](ms-sonoma-teaching-system.md)** - Visual aids displayed during teaching phase
+
 ## Key Files
 
 ### API Routes

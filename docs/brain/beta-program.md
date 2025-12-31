@@ -247,6 +247,12 @@ Require facilitator to complete fields covering:
 - Ms. Sonoma remains unaware of Beta program
 - No mentions of tutorials, surveys, or Beta in child-facing content
 
+## Related Brain Files
+
+- **[facilitator-help-system.md](facilitator-help-system.md)** - Beta tier gates facilitator tutorial
+- **[lesson-quota.md](lesson-quota.md)** - Beta tier affects daily lesson quotas
+- **[device-leases.md](device-leases.md)** - Beta tier sets concurrent device limits
+
 ## Key Files
 
 ### Route Guards

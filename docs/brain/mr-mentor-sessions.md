@@ -145,6 +145,11 @@ Features:
 - Warning about consequences
 - Cancel button returns to facilitator page
 
+## Related Brain Files
+
+- **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Three-layer persistence for conversation state
+- **[mr-mentor-memory.md](mr-mentor-memory.md)** - Conversation memory accessed during sessions
+
 ## Key Files
 
 - `src/app/counselor/CounselorClient.jsx` - Session initialization, polling, takeover handling, conversation sync

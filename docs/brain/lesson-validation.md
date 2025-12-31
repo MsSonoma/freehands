@@ -66,6 +66,11 @@ Return the full, improved lesson JSON."
 4. If issues: Make second call to fix quality
 5. Mr. Mentor confirms completion with improved lesson
 
+## Related Brain Files
+
+- **[lesson-editor.md](lesson-editor.md)** - Validation runs automatically on lesson editor save
+- **[mr-mentor-conversation-flows.md](mr-mentor-conversation-flows.md)** - Mr. Mentor auto-validates generated lessons
+
 ## Key Files
 
 - `src/app/lib/lessonValidation.js` - Validation logic, critical issue checks, change request builder

@@ -457,6 +457,13 @@ expect(engine.isPlaying).toBe(true);
 
 ---
 
+## Related Brain Files
+
+- **[snapshot-persistence.md](snapshot-persistence.md)** - V2 reimplements snapshot system with SnapshotService
+- **[timer-system.md](timer-system.md)** - V2 reimplements timers with TimerService
+- **[tts-prefetching.md](tts-prefetching.md)** - V2 reimplements TTS with AudioEngine
+- **[ms-sonoma-teaching-system.md](ms-sonoma-teaching-system.md)** - V2 reimplements teaching flow with TeachingController
+
 ## Key Files
 
 **V2 Implementation:**

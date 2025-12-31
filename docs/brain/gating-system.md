@@ -124,6 +124,12 @@ export default function PremiumFeaturePage() {
 }
 ```
 
+## Related Brain Files
+
+- **[beta-program.md](beta-program.md)** - Universal gates enforce beta tier restrictions
+- **[device-leases.md](device-leases.md)** - GatedOverlay wraps device lease enforcement
+- **[lesson-quota.md](lesson-quota.md)** - GatedOverlay wraps lesson quota enforcement
+
 ## Key Files
 
 - `src/app/components/GatedOverlay.jsx` - Overlay component

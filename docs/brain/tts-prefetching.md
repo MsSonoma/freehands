@@ -277,6 +277,10 @@ await speakFrontend(nextProblem);
 ttsCache.prefetch(generatedComprehension[currentCompIndex]);
 ```
 
+## Related Brain Files
+
+- **[ms-sonoma-teaching-system.md](ms-sonoma-teaching-system.md)** - TTS integrates with Ms. Sonoma teaching flow and phase transitions
+
 ## Key Files
 
 **Core Module**:

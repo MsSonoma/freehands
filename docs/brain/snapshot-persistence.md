@@ -78,6 +78,11 @@ With guard in place, completion cleanup is atomic - either all persistence clear
 - `skip-forward` (navigation)
 - `skip-back` (navigation)
 
+## Related Brain Files
+
+- **[timer-system.md](timer-system.md)** - Timer state (currentTimerMode, workPhaseCompletions, golden key) persisted in snapshots
+- **[session-takeover.md](session-takeover.md)** - Takeover flow triggers snapshot restore with timer state
+
 ## Key Files
 
 - `src/app/session/sessionSnapshotStore.js` - Save/restore with localStorage+database

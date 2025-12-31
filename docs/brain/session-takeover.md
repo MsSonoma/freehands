@@ -102,6 +102,11 @@ Timer state in snapshot payload:
   - Snapshot restore runs, rehydrates flag from snapshot (defaults to false)
   - Countdown remains available for a future live play timeout
 
+## Related Brain Files
+
+- **[snapshot-persistence.md](snapshot-persistence.md)** - Takeover triggers snapshot restore flow
+- **[timer-system.md](timer-system.md)** - Timer state preserved during takeover (golden key progress)
+
 **Implementation:**
 
 1. **handlePlayTimeUp** (page.js ~870-900):

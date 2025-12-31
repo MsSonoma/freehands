@@ -355,6 +355,11 @@ You worked hard today. You learned how zeros change numbers in multiplication. S
 - Only show opening actions in discussion awaiting-learner phase or during entrance states
 - This is a recurring bug - see changelog entries 2025-12-08T23:15:00Z, 2025-12-02T20:00:00Z, 2025-12-02T20:15:00Z
 
+## Related Brain Files
+
+- **[tts-prefetching.md](tts-prefetching.md)** - TTS powers audio playback for Ms. Sonoma speech
+- **[visual-aids.md](visual-aids.md)** - Visual aids displayed during teaching phase
+
 ## Key Files
 
 ### Core API

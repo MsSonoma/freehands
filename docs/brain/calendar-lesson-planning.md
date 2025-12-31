@@ -135,6 +135,10 @@ Check actual route files, not assumptions.
 ### ✅ DO: Use date-specific overwrite for POST saves
 **Why**: Allows multiple non-overlapping plans to coexist. Only deletes dates that are in the new plan, preserving all other dates. Enables incremental planning and gap-filling without losing unrelated lessons.
 
+## Related Brain Files
+
+- **[lesson-assessment-architecture.md](lesson-assessment-architecture.md)** - Planner uses medals API from assessment system
+
 ## Key Files
 
 **Component:**

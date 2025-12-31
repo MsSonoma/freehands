@@ -119,6 +119,11 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
 - `playExpiredPhase` must be set so correct work handler fires
 - Overlay should display which phase learner will return to
 
+## Related Brain Files
+
+- **[snapshot-persistence.md](snapshot-persistence.md)** - Timer state saved in snapshots (sessionStorage + database)
+- **[session-takeover.md](session-takeover.md)** - Timer state preserved across device takeover
+
 ## Key Files
 
 ### Core Timer Logic

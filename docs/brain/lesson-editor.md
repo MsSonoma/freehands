@@ -95,6 +95,11 @@ Facilitators edit generated lessons through a structured, form-based interface t
 - Text Preview (still available)
 - Request AI Changes (for AI-assisted editing)
 
+## Related Brain Files
+
+- **[lesson-validation.md](lesson-validation.md)** - Editor triggers automatic validation on save
+- **[ai-rewrite-system.md](ai-rewrite-system.md)** - AIRewriteButton improves lesson content quality
+
 ## Key Files
 
 - Facilitator generated lessons page - Edit Lesson button

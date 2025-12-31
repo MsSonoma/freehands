@@ -79,6 +79,11 @@ const handleRewriteDescription = async (index) => {
 }
 ```
 
+## Related Brain Files
+
+- **[visual-aids.md](visual-aids.md)** - AI rewrite optimizes DALL-E 3 prompts for visual aid generation
+- **[lesson-editor.md](lesson-editor.md)** - AIRewriteButton integrated in lesson editor for content improvement
+
 ## Key Files
 
 - `src/components/AIRewriteButton.jsx` - Reusable button component
