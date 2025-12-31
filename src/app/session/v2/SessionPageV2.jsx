@@ -391,6 +391,12 @@ function SessionPageV2Inner() {
       setIsInSentenceMode(false);
     });
     
+    controller.on('requestSnapshotSave', (data) => {
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.saveProgress(data.trigger, data.data);
+      }
+    });
+    
     // Note: teachingComplete handled in startTeachingPhase, not here
     
     return () => {
@@ -638,6 +644,12 @@ function SessionPageV2Inner() {
       addEvent(`❌ Error: ${data.message}`);
     });
     
+    phase.on('requestSnapshotSave', (data) => {
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.saveProgress(data.trigger, data.data);
+      }
+    });
+    
     // Start phase
     phase.start();
   };
@@ -731,6 +743,12 @@ function SessionPageV2Inner() {
       // Cleanup
       phase.destroy();
       exercisePhaseRef.current = null;
+    });
+    
+    phase.on('requestSnapshotSave', (data) => {
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.saveProgress(data.trigger, data.data);
+      }
     });
     
     // Start phase
@@ -835,6 +853,12 @@ function SessionPageV2Inner() {
       // Cleanup
       phase.destroy();
       worksheetPhaseRef.current = null;
+    });
+    
+    phase.on('requestSnapshotSave', (data) => {
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.saveProgress(data.trigger, data.data);
+      }
     });
     
     // Start phase
@@ -950,6 +974,12 @@ function SessionPageV2Inner() {
       // Cleanup
       phase.destroy();
       testPhaseRef.current = null;
+    });
+    
+    phase.on('requestSnapshotSave', (data) => {
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.saveProgress(data.trigger, data.data);
+      }
     });
     
     // Start phase

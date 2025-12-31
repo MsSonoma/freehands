@@ -173,6 +173,80 @@ export class SnapshotService {
     }
   }
   
+  // Public API: Save progress incrementally (granular saves for V1 parity)
+  // Called after each user action (sentence completion, question answered, etc.)
+  async saveProgress(trigger = 'action', updateData = {}) {
+    if (this.#saveInProgress) {
+      // Don't queue granular saves - just skip to avoid backup
+      return;
+    }
+    
+    this.#saveInProgress = true;
+    
+    try {
+      // Merge update data into current phase data
+      const currentPhase = this.#snapshot?.currentPhase || 'idle';
+      const allPhaseData = {
+        ...(this.#snapshot?.phaseData || {}),
+        [currentPhase]: {
+          ...(this.#snapshot?.phaseData?.[currentPhase] || {}),
+          ...updateData,
+          lastAction: trigger,
+          lastActionAt: new Date().toISOString()
+        }
+      };
+      
+      const snapshot = {
+        sessionId: this.#sessionId,
+        learnerId: this.#learnerId,
+        lessonKey: this.#lessonKey,
+        currentPhase: currentPhase,
+        completedPhases: this.#snapshot?.completedPhases || [],
+        phaseData: allPhaseData,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      if (!this.#supabaseClient) {
+        // For granular saves, update localStorage throttled
+        this.#saveToLocalStorage(snapshot);
+        this.#snapshot = snapshot;
+        this.#lastSaveTime = Date.now();
+        return snapshot;
+      }
+      
+      // Upsert snapshot
+      const { data, error } = await this.#supabaseClient
+        .from('snapshots')
+        .upsert({
+          session_id: this.#sessionId,
+          learner_id: this.#learnerId,
+          lesson_key: this.#lessonKey,
+          current_phase: currentPhase,
+          completed_phases: this.#snapshot?.completedPhases || [],
+          phase_data: allPhaseData,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'session_id,learner_id'
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      this.#snapshot = snapshot;
+      this.#lastSaveTime = Date.now();
+      
+      return snapshot;
+    } catch (err) {
+      console.error('[SnapshotService] Granular save error:', err);
+      // Don't throw - granular saves should fail silently
+    } finally {
+      this.#saveInProgress = false;
+    }
+  }
+  
   // Public API: Delete snapshot (session complete or restart)
   async deleteSnapshot() {
     if (!this.#supabaseClient) {

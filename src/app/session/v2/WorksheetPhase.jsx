@@ -147,6 +147,16 @@ export class WorksheetPhase {
       totalQuestions: this.#questions.length
     });
     
+    // Request granular snapshot save (V1 behavioral parity)
+    this.#emit('requestSnapshotSave', {
+      trigger: 'worksheet-answer',
+      data: {
+        questionIndex: this.#currentQuestionIndex,
+        score: this.#score,
+        totalQuestions: this.#questions.length
+      }
+    });
+    
     // Play praise for correct answers (V1 engagement pattern)
     if (isCorrect) {
       const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];

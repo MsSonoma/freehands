@@ -125,6 +125,18 @@ export class ComprehensionPhase {
       return;
     }
     
+    // Emit answer capture for session tracking
+    this.#emit('answerCaptured', {
+      question: this.#question,
+      answer: this.#userAnswer
+    });
+    
+    // Request granular snapshot save (V1 behavioral parity)
+    this.#emit('requestSnapshotSave', {
+      trigger: 'comprehension-answer',
+      data: { question: this.#question, answer: this.#userAnswer }
+    });
+    
     // Play praise TTS (V1 behavior - positive reinforcement)
     this.#state = 'playing-feedback';
     this.#emit('stateChange', { state: 'playing-feedback' });

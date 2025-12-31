@@ -266,6 +266,12 @@ export class TeachingController {
       total: this.#vocabSentences.length
     });
     
+    // Request granular snapshot save (V1 behavioral parity)
+    this.#emit('requestSnapshotSave', {
+      trigger: 'teaching-definition',
+      data: { stage: 'definitions', sentenceIndex: this.#currentSentenceIndex }
+    });
+    
     this.#playCurrentDefinition();
   }
   
@@ -332,6 +338,12 @@ export class TeachingController {
       stage: 'examples',
       index: this.#currentSentenceIndex,
       total: this.#exampleSentences.length
+    });
+    
+    // Request granular snapshot save (V1 behavioral parity)
+    this.#emit('requestSnapshotSave', {
+      trigger: 'teaching-example',
+      data: { stage: 'examples', sentenceIndex: this.#currentSentenceIndex }
     });
     
     this.#playCurrentExample();

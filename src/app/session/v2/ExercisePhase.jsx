@@ -148,6 +148,16 @@ export class ExercisePhase {
       totalQuestions: this.#questions.length
     });
     
+    // Request granular snapshot save (V1 behavioral parity)
+    this.#emit('requestSnapshotSave', {
+      trigger: 'exercise-answer',
+      data: {
+        questionIndex: this.#currentQuestionIndex,
+        score: this.#score,
+        totalQuestions: this.#questions.length
+      }
+    });
+    
     // Play praise TTS if correct (V1 behavior)
     if (isCorrect) {
       this.#state = 'playing-feedback';
