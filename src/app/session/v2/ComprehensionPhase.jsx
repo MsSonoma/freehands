@@ -46,17 +46,22 @@ const INTRO_PHRASES = [
 export class ComprehensionPhase {
   // Private state
   #audioEngine = null;
+  #eventBus = null;
+  #timerService = null;
   #question = '';
   #sampleAnswer = '';
   
   #state = 'idle'; // 'idle' | 'playing-question' | 'awaiting-answer' | 'complete'
   #userAnswer = '';
+  #timerMode = 'play'; // 'play' | 'work'
   
   #listeners = new Map();
   #audioEndListener = null;
   
   constructor(options = {}) {
     this.#audioEngine = options.audioEngine;
+    this.#eventBus = options.eventBus;
+    this.#timerService = options.timerService;
     this.#question = options.question || '';
     this.#sampleAnswer = options.sampleAnswer || '';
     
@@ -113,7 +118,18 @@ export class ComprehensionPhase {
     
     // Show Go button gate (V1 pacing pattern)
     this.#state = 'awaiting-go';
-    this.#emit('stateChange', { state: 'awaiting-go', question: this.#question });
+    this.#timerMode = 'play';
+    
+    // Start play timer (3 minutes exploration time)
+    if (this.#timerService) {
+      this.#timerService.startPlayTimer('comprehension');
+    }
+    
+    this.#emit('stateChange', { 
+      state: 'awaiting-go', 
+      question: this.#question,
+      timerMode: 'play'
+    });
   }
   
   // Public API: User clicked Go button
@@ -123,18 +139,26 @@ export class ComprehensionPhase {
       return;
     }
     
+    // Transition to work mode
+    this.#timerMode = 'work';
+    if (this.#timerService) {
+      this.#timerService.transitionToWork('comprehension');
+    }
+    
     this.#state = 'playing-question';
     
     this.#emit('stateChange', {
       state: 'playing-question',
-      question: this.#question
+      question: this.#question,
+      timerMode: 'work'
     });
     
     // Listen for audio end
     this.#setupAudioEndListener(() => {
       this.#state = 'awaiting-answer';
       this.#emit('stateChange', {
-        state: 'awaiting-answer'
+        state: 'awaiting-answer',
+        timerMode: 'work'
       });
     });
     

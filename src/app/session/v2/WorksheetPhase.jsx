@@ -46,18 +46,23 @@ const INTRO_PHRASES = [
 export class WorksheetPhase {
   // Private state
   #audioEngine = null;
+  #eventBus = null;
+  #timerService = null;
   #questions = [];
   
   #state = 'idle'; // 'idle' | 'playing-question' | 'awaiting-answer' | 'complete'
   #currentQuestionIndex = 0;
   #answers = []; // Array of { question, userAnswer, correctAnswer, isCorrect }
   #score = 0;
+  #timerMode = 'play'; // 'play' | 'work'
   
   #listeners = new Map();
   #audioEndListener = null;
   
   constructor(options = {}) {
     this.#audioEngine = options.audioEngine;
+    this.#eventBus = options.eventBus;
+    this.#timerService = options.timerService;
     this.#questions = options.questions || [];
     
     if (!this.#audioEngine) {
@@ -133,7 +138,14 @@ export class WorksheetPhase {
     
     // Show Go button gate (V1 pacing pattern)
     this.#state = 'awaiting-go';
-    this.#emit('stateChange', { state: 'awaiting-go' });
+    this.#timerMode = 'play';
+    
+    // Start play timer (3 minutes exploration time)
+    if (this.#timerService) {
+      this.#timerService.startPlayTimer('worksheet');
+    }
+    
+    this.#emit('stateChange', { state: 'awaiting-go', timerMode: 'play' });
   }
   
   // Public API: User clicked Go button
@@ -141,6 +153,12 @@ export class WorksheetPhase {
     if (this.#state !== 'awaiting-go') {
       console.warn('[WorksheetPhase] Cannot go in state:', this.#state);
       return;
+    }
+    
+    // Transition to work mode
+    this.#timerMode = 'work';
+    if (this.#timerService) {
+      this.#timerService.transitionToWork('worksheet');
     }
     
     this.#currentQuestionIndex = 0;
