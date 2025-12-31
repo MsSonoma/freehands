@@ -1,6 +1,6 @@
 # Session Page V2 Architecture
 
-**Status:** Complete session flow with snapshot persistence  
+**Status:** Complete session flow with discussion, assessments, and snapshot persistence  
 **Created:** 2025-12-30  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
@@ -273,6 +273,13 @@ expect(engine.isPlaying).toBe(true);
   - Simple validation (answer exists)
   - Emits comprehensionComplete event
   - Zero coupling to other phases
+- **DiscussionPhase component** (`src/app/session/v2/DiscussionPhase.jsx`) - 200 lines
+  - Manages discussion activities: Ask, Riddle, Poem, Story, Fill-in-Fun
+  - Plays prompt with TTS
+  - Captures student response (typed text)
+  - Cycles through multiple activities in sequence
+  - Emits discussionComplete when all activities done
+  - Zero coupling to other phases
 - **ClosingPhase component** (`src/app/session/v2/ClosingPhase.jsx`) - 150 lines
   - Plays encouraging closing message with TTS
   - Randomly selected from predefined messages
@@ -315,12 +322,13 @@ expect(engine.isPlaying).toBe(true);
   - loadLesson(): Fetches lesson JSON from /lessons/{subject}/{key}.json
   - generateTestLesson(): Fallback test data
   - Zero coupling to components or state
-- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 1400 lines
-  - PhaseOrchestrator initialization and event handling
+- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 1550 lines
+  - PhaseOrchestrator initialization with discussion enabled
   - SnapshotService initialization and auto-save after each phase
-  - Phase-specific controls (teaching, comprehension, exercise, worksheet, test with review, closing)
+  - Phase-specific controls (discussion, teaching, comprehension, exercise, worksheet, test with review, closing)
   - Automatic phase transitions
   - Real lesson loading and TTS audio
+  - Discussion controls: Multiple activities, text response, Submit, Skip
   - Teaching controls: Start, Next, Repeat, Restart, Skip
   - Comprehension controls: Answer input, Submit, Skip
   - Exercise controls: Radio button answer selection, Submit, Skip
@@ -332,33 +340,33 @@ expect(engine.isPlaying).toBe(true);
   - Test review: Question-by-question review with correct answers highlighted, Previous/Next navigation
   - Closing phase: Displays encouraging message
   - Audio transport controls: Stop, Pause, Resume, Mute
-  - Snapshot auto-save: Saves after teaching, comprehension, exercise, worksheet, test completion
+  - Snapshot auto-save: Saves after discussion, teaching, comprehension, exercise, worksheet, test completion
   - Snapshot resume: Loads on start, displays resume phase
   - Live displays: Current phase, current sentence, live caption, system state
   - Event log showing all component events including snapshot saves
-  - Flow: Start Session → Teaching (definitions → examples) → Comprehension (question → answer) → Exercise (MC/TF scoring) → Worksheet (fill-in-blank) → Test (graded with review) → Closing (encouragement) → Complete
+  - Flow: Start Session → Discussion (Ask/Riddle/Poem/Story/Fill-in-Fun) → Teaching (definitions → examples) → Comprehension (question → answer) → Exercise (MC/TF scoring) → Worksheet (fill-in-blank) → Test (graded with review) → Closing (encouragement) → Complete
 
 ### 🚧 In Progress
 - None (complete session flow with snapshot persistence and resume)
 
 ### 📋 Next Steps
-1. Browser test: Full session flow with snapshot auto-save
+1. Browser test: Full session flow with discussion activities and snapshot auto-save
 2. Browser test: Resume from saved snapshot
 3. Integrate real Supabase client (replace localStorage fallback)
-4. Build discussion activities (Ask, Riddle, Poem, Story, Fill-in-Fun)
-5. Add timer integration (session + work phase timers)
-6. Add keyboard hotkeys (PageUp/PageDown, Space, etc.)
-7. Add Mr. Mentor integration (counselor flow)
+4. Add timer integration (session + work phase timers)
+5. Add keyboard hotkeys (PageUp/PageDown, Space, etc.)
+6. Add Mr. Mentor integration (counselor flow)
 
 ---
 
 ## Key Files
 
 **V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (1400 lines)
+- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (1550 lines)
 - `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
 - `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
 - `src/app/session/v2/ComprehensionPhase.jsx` - Comprehension question flow (200 lines)
+- `src/app/session/v2/DiscussionPhase.jsx` - Discussion activities (200 lines)
 - `src/app/session/v2/ExercisePhase.jsx` - Exercise questions with scoring (300 lines)
 - `src/app/session/v2/WorksheetPhase.jsx` - Fill-in-blank questions (300 lines)
 - `src/app/session/v2/TestPhase.jsx` - Graded test with review (400 lines)

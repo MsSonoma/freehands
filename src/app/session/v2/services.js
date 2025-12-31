@@ -226,6 +226,31 @@ export function generateTestLesson() {
         }
       ]
     },
-    discussion: {}
+    discussion: {
+      activities: [
+        {
+          type: 'ask',
+          prompt: 'What are some things you already know about how plants grow?'
+        },
+        {
+          type: 'riddle',
+          prompt: 'I am green and I help plants make food. What am I?'
+        },
+        {
+          type: 'poem',
+          prompt: 'Plants need sunlight, water, and air. With these three gifts, they grow with care. They make their food through chemistry. This process is called photosynthesis, you see!'
+        },
+        {
+          type: 'story',
+          prompt: 'Once upon a time, there was a tiny seed. It got buried in the soil. Soon, rain came and the sun shone bright. The seed started to sprout! Day by day, it grew taller. Its green leaves reached for the sunlight. The plant was using photosynthesis to make its own food. And it grew strong and healthy!'
+        },
+        {
+          type: 'fill-in-fun',
+          prompt: 'Plants use _____ to make their food.',
+          answer: 'sunlight',
+          hint: 'It comes from the sky and makes you warm'
+        }
+      ]
+    }
   };
 }

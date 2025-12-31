@@ -26,9 +26,10 @@ import { ExercisePhase } from './ExercisePhase';
 import { WorksheetPhase } from './WorksheetPhase';
 import { TestPhase } from './TestPhase';
 import { ClosingPhase } from './ClosingPhase';
+import { DiscussionPhase } from './DiscussionPhase';
 import { PhaseOrchestrator } from './PhaseOrchestrator';
 import { SnapshotService } from './SnapshotService';
-import { loadLesson, generateTestLesson } from './services';
+import { loadLesson, generateTestLesson, fetchTTS } from './services';
 
 export default function SessionPageV2() {
   return (
@@ -51,6 +52,7 @@ function SessionPageV2Inner() {
   const snapshotServiceRef = useRef(null);
   const teachingControllerRef = useRef(null);
   const comprehensionPhaseRef = useRef(null);
+  const discussionPhaseRef = useRef(null);
   const exercisePhaseRef = useRef(null);
   const worksheetPhaseRef = useRef(null);
   const testPhaseRef = useRef(null);
@@ -94,6 +96,12 @@ function SessionPageV2Inner() {
   
   const [closingState, setClosingState] = useState('idle');
   const [closingMessage, setClosingMessage] = useState('');
+  
+  const [discussionState, setDiscussionState] = useState('idle');
+  const [discussionActivity, setDiscussionActivity] = useState(null);
+  const [discussionPrompt, setDiscussionPrompt] = useState('');
+  const [discussionResponse, setDiscussionResponse] = useState('');
+  const [discussionActivityIndex, setDiscussionActivityIndex] = useState(0);
 
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
@@ -260,7 +268,8 @@ function SessionPageV2Inner() {
     if (!lessonData) return;
     
     const orchestrator = new PhaseOrchestrator({
-      lessonData: lessonData
+      lessonData: lessonData,
+      useDiscussion: true // Enable discussion phase
     });
     
     orchestratorRef.current = orchestrator;
@@ -271,7 +280,9 @@ function SessionPageV2Inner() {
       setCurrentPhase(data.phase);
       
       // Start phase-specific controller
-      if (data.phase === 'teaching') {
+      if (data.phase === 'discussion') {
+        startDiscussionPhase();
+      } else if (data.phase === 'teaching') {
         startTeachingPhase();
       } else if (data.phase === 'comprehension') {
         startComprehensionPhase();
@@ -305,6 +316,90 @@ function SessionPageV2Inner() {
       orchestratorRef.current = null;
     };
   }, [lessonData]);
+  
+  // Start discussion phase
+  const startDiscussionPhase = () => {
+    if (!audioEngineRef.current || !lessonData?.discussion) return;
+    
+    const activities = lessonData.discussion.activities || [];
+    
+    if (activities.length === 0) {
+      // No discussion activities - skip to teaching
+      addEvent('⚠️ No discussion activities - skipping to teaching');
+      if (orchestratorRef.current) {
+        orchestratorRef.current.onDiscussionComplete();
+      }
+      return;
+    }
+    
+    // Start with first activity
+    const firstActivity = activities[0];
+    setDiscussionActivityIndex(0);
+    
+    const phase = new DiscussionPhase(
+      audioEngineRef.current,
+      { fetchTTS },
+      { emit: addEvent }
+    );
+    
+    discussionPhaseRef.current = phase;
+    
+    // Subscribe to events
+    phase.on('discussionStart', (data) => {
+      addEvent(`💬 Discussion: ${data.activity}`);
+      setDiscussionActivity(data.activity);
+      setDiscussionState('playing-prompt');
+    });
+    
+    phase.on('promptComplete', (data) => {
+      addEvent('❓ Prompt complete - waiting for response...');
+      setDiscussionState('awaiting-response');
+    });
+    
+    phase.on('responseSubmitted', (data) => {
+      addEvent(`✅ Response submitted`);
+    });
+    
+    phase.on('discussionComplete', (data) => {
+      // Check if there are more activities
+      const nextIndex = discussionActivityIndex + 1;
+      
+      if (nextIndex < activities.length) {
+        // Start next activity
+        setDiscussionActivityIndex(nextIndex);
+        const nextActivity = activities[nextIndex];
+        phase.start(nextActivity.type, nextActivity.prompt);
+      } else {
+        // All activities complete
+        addEvent('🎉 All discussion activities complete!');
+        setDiscussionState('complete');
+        
+        // Save snapshot
+        if (snapshotServiceRef.current) {
+          snapshotServiceRef.current.savePhaseCompletion('discussion', {
+            activitiesCompleted: activities.length
+          }).then(() => {
+            addEvent('💾 Saved discussion progress');
+          }).catch(err => {
+            console.error('[SessionPageV2] Save discussion error:', err);
+          });
+        }
+        
+        // Notify orchestrator
+        if (orchestratorRef.current) {
+          orchestratorRef.current.onDiscussionComplete();
+        }
+        
+        // Cleanup
+        phase.destroy();
+        discussionPhaseRef.current = null;
+      }
+    });
+    
+    // Start first activity
+    phase.start(firstActivity.type, firstActivity.prompt);
+    setDiscussionPrompt(firstActivity.prompt);
+  };
   
   // Start teaching phase
   const startTeachingPhase = () => {
@@ -739,6 +834,19 @@ function SessionPageV2Inner() {
     audioEngineRef.current.setMuted(!audioEngineRef.current.isMuted);
   };
   
+  // Discussion handlers
+  const submitDiscussionResponse = () => {
+    if (!discussionPhaseRef.current) return;
+    discussionPhaseRef.current.submitResponse(discussionResponse);
+    setDiscussionResponse(''); // Clear input after submit
+  };
+  
+  const skipDiscussion = () => {
+    if (!discussionPhaseRef.current) return;
+    discussionPhaseRef.current.skip();
+    setDiscussionResponse(''); // Clear input on skip
+  };
+  
   // Comprehension handlers
   const submitComprehensionAnswer = () => {
     if (!comprehensionPhaseRef.current) return;
@@ -923,6 +1031,58 @@ function SessionPageV2Inner() {
                       </button>
                     )}
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Discussion Phase */}
+          {currentPhase === 'discussion' && (
+            <div>
+              <div className="mb-4 p-4 bg-pink-50 rounded">
+                <div className="font-semibold text-lg">Discussion Activity</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  Activity: {discussionActivity} | State: {discussionState}
+                </div>
+              </div>
+              
+              <div className="mb-4 p-3 bg-gray-100 rounded">
+                <div className="text-sm font-semibold mb-1">Prompt:</div>
+                <div>{discussionPrompt}</div>
+              </div>
+              
+              {discussionState === 'awaiting-response' && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Your Response:</label>
+                    <textarea
+                      value={discussionResponse}
+                      onChange={(e) => setDiscussionResponse(e.target.value)}
+                      className="w-full p-3 border rounded-lg"
+                      rows={4}
+                      placeholder="Type your response here..."
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={submitDiscussionResponse}
+                      className="px-6 py-2 bg-pink-600 text-white rounded hover:bg-pink-700"
+                    >
+                      Submit Response
+                    </button>
+                    <button
+                      onClick={skipDiscussion}
+                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {discussionState === 'complete' && (
+                <div className="text-green-600 font-semibold">
+                  ✓ Discussion Activity Complete
                 </div>
               )}
             </div>

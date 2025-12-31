@@ -1,7 +1,7 @@
 /**
  * PhaseOrchestrator - Manages session phase flow
  * 
- * Coordinates transitions between phases: discussion → teaching → comprehension → closing
+ * Coordinates transitions between phases: discussion → teaching → comprehension → exercise → worksheet → test → closing
  * Zero knowledge of phase implementation details.
  * Phases emit completion events, orchestrator advances to next phase.
  * 
@@ -12,7 +12,7 @@
  * - Zero coupling to phase internals
  * 
  * Usage:
- *   const orchestrator = new PhaseOrchestrator({ lessonData });
+ *   const orchestrator = new PhaseOrchestrator({ lessonData, useDiscussion });
  *   orchestrator.on('phaseChange', (phase) => updateUI(phase));
  *   orchestrator.on('sessionComplete', () => showResults());
  *   await orchestrator.startSession();
@@ -23,11 +23,13 @@ export class PhaseOrchestrator {
   #lessonData = null;
   #currentPhase = 'idle'; // 'idle' | 'discussion' | 'teaching' | 'comprehension' | 'exercise' | 'worksheet' | 'test' | 'closing' | 'complete'
   #phaseHistory = [];
+  #useDiscussion = false;
   
   #listeners = new Map();
   
   constructor(options = {}) {
     this.#lessonData = options.lessonData;
+    this.#useDiscussion = options.useDiscussion || false;
     
     if (!this.#lessonData) {
       throw new Error('PhaseOrchestrator requires lessonData');
@@ -66,12 +68,19 @@ export class PhaseOrchestrator {
   async startSession() {
     this.#phaseHistory = [];
     
-    // For now, skip discussion and go straight to teaching
-    // TODO: Add discussion phase when ready
-    await this.#transitionTo('teaching');
+    // Start with discussion phase if enabled, otherwise skip to teaching
+    if (this.#useDiscussion) {
+      await this.#transitionTo('discussion');
+    } else {
+      await this.#transitionTo('teaching');
+    }
   }
   
   // Public API: Phase completion handlers
+  onDiscussionComplete() {
+    this.#transitionTo('teaching');
+  }
+  
   onTeachingComplete() {
     this.#transitionTo('comprehension');
   }
