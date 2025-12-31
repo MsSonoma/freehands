@@ -1,6 +1,6 @@
 # Session Page V2 Architecture
 
-**Status:** Complete session flow with discussion, assessments, and snapshot persistence  
+**Status:** Complete session flow with timers, discussion, assessments, and snapshot persistence  
 **Created:** 2025-12-30  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
@@ -317,52 +317,62 @@ expect(engine.isPlaying).toBe(true);
   - Deletes snapshot on session complete
   - Supabase integration with localStorage fallback
   - Zero coupling to phase components
+- **TimerService** (`src/app/session/v2/TimerService.jsx`) - 350 lines
+  - Session timer: Tracks total session duration
+  - Work phase timers: Tracks exercise, worksheet, test times
+  - Golden key tracking: 3 on-time work phase completions
+  - Time limits: Exercise 3min, Worksheet 5min, Test 10min
+  - Serialization for snapshot persistence
+  - Emits timer events (tick, complete, eligible)
+  - Zero coupling to phase components
 - **Services layer** (`src/app/session/v2/services.js`) - API integrations
   - fetchTTS(): Calls /api/tts endpoint, returns base64 audio
   - loadLesson(): Fetches lesson JSON from /lessons/{subject}/{key}.json
   - generateTestLesson(): Fallback test data
   - Zero coupling to components or state
-- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 1550 lines
+- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 1700 lines
   - PhaseOrchestrator initialization with discussion enabled
   - SnapshotService initialization and auto-save after each phase
+  - TimerService initialization with session + work phase timers
   - Phase-specific controls (discussion, teaching, comprehension, exercise, worksheet, test with review, closing)
   - Automatic phase transitions
   - Real lesson loading and TTS audio
+  - Timer display: Session time, work phase time, time remaining, golden key status
   - Discussion controls: Multiple activities, text response, Submit, Skip
   - Teaching controls: Start, Next, Repeat, Restart, Skip
   - Comprehension controls: Answer input, Submit, Skip
-  - Exercise controls: Radio button answer selection, Submit, Skip
-  - Exercise scoring: Live score display, percentage calculation
-  - Worksheet controls: Text input with Enter key support, Submit, Skip
-  - Worksheet feedback: Instant correct/incorrect display with correct answer
-  - Test controls: Mixed UI (radio/text based on question type), Submit, Skip
-  - Test grading: Letter grade (A-F) and percentage
+  - Exercise controls: Radio button answer selection, Submit, Skip (with timer)
+  - Exercise scoring: Live score display, percentage calculation, on-time status
+  - Worksheet controls: Text input with Enter key support, Submit, Skip (with timer)
+  - Worksheet feedback: Instant correct/incorrect display with correct answer, on-time status
+  - Test controls: Mixed UI (radio/text based on question type), Submit, Skip (with timer)
+  - Test grading: Letter grade (A-F), percentage, on-time status
   - Test review: Question-by-question review with correct answers highlighted, Previous/Next navigation
+  - Golden key award: Displayed when 3 work phases completed on-time
   - Closing phase: Displays encouraging message
   - Audio transport controls: Stop, Pause, Resume, Mute
   - Snapshot auto-save: Saves after discussion, teaching, comprehension, exercise, worksheet, test completion
   - Snapshot resume: Loads on start, displays resume phase
-  - Live displays: Current phase, current sentence, live caption, system state
-  - Event log showing all component events including snapshot saves
-  - Flow: Start Session → Discussion (Ask/Riddle/Poem/Story/Fill-in-Fun) → Teaching (definitions → examples) → Comprehension (question → answer) → Exercise (MC/TF scoring) → Worksheet (fill-in-blank) → Test (graded with review) → Closing (encouragement) → Complete
+  - Live displays: Current phase, session time, work phase time, golden key status
+  - Event log showing all component events including timer milestones
+  - Flow: Start Session → Discussion (Ask/Riddle/Poem/Story/Fill-in-Fun) → Teaching (definitions → examples) → Comprehension (question → answer) → Exercise (MC/TF scoring + timer) → Worksheet (fill-in-blank + timer) → Test (graded with review + timer) → Closing (encouragement) → Complete (show final time + golden key)
 
 ### 🚧 In Progress
 - None (complete session flow with snapshot persistence and resume)
 
 ### 📋 Next Steps
-1. Browser test: Full session flow with discussion activities and snapshot auto-save
-2. Browser test: Resume from saved snapshot
+1. Browser test: Full session flow with timers, discussion, assessments, and snapshot
+2. Browser test: Verify golden key award logic (3 on-time completions)
 3. Integrate real Supabase client (replace localStorage fallback)
-4. Add timer integration (session + work phase timers)
-5. Add keyboard hotkeys (PageUp/PageDown, Space, etc.)
-6. Add Mr. Mentor integration (counselor flow)
+4. Add keyboard hotkeys (PageUp/PageDown, Space, etc.)
+5. Add Mr. Mentor integration (counselor flow)
 
 ---
 
 ## Key Files
 
 **V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (1550 lines)
+- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (1700 lines)
 - `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
 - `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
 - `src/app/session/v2/ComprehensionPhase.jsx` - Comprehension question flow (200 lines)
@@ -373,6 +383,7 @@ expect(engine.isPlaying).toBe(true);
 - `src/app/session/v2/ClosingPhase.jsx` - Closing message with encouragement (150 lines)
 - `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
 - `src/app/session/v2/SnapshotService.jsx` - Session persistence (300 lines)
+- `src/app/session/v2/TimerService.jsx` - Session and work phase timers (350 lines)
 - `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading)
 - `src/app/session/v2test/page.jsx` - Direct test route
 

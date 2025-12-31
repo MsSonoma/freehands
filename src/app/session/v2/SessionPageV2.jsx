@@ -50,6 +50,7 @@ function SessionPageV2Inner() {
   const audioEngineRef = useRef(null);
   const orchestratorRef = useRef(null);
   const snapshotServiceRef = useRef(null);
+  const timerServiceRef = useRef(null);
   const teachingControllerRef = useRef(null);
   const comprehensionPhaseRef = useRef(null);
   const discussionPhaseRef = useRef(null);
@@ -105,6 +106,11 @@ function SessionPageV2Inner() {
 
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
+  
+  const [sessionTime, setSessionTime] = useState('0:00');
+  const [workPhaseTime, setWorkPhaseTime] = useState('0:00');
+  const [workPhaseRemaining, setWorkPhaseRemaining] = useState('0:00');
+  const [goldenKeyEligible, setGoldenKeyEligible] = useState(false);
   
   const [currentCaption, setCurrentCaption] = useState('');
   const [engineState, setEngineState] = useState('idle');
@@ -179,6 +185,62 @@ function SessionPageV2Inner() {
       snapshotServiceRef.current = null;
     };
   }, [lessonData]);
+  
+  // Initialize TimerService
+  useEffect(() => {
+    const timer = new TimerService(
+      { emit: addEvent },
+      {
+        workPhaseTimeLimits: {
+          exercise: 180,   // 3 minutes
+          worksheet: 300,  // 5 minutes
+          test: 600        // 10 minutes
+        }
+      }
+    );
+    
+    timerServiceRef.current = timer;
+    
+    // Subscribe to timer events
+    timer.eventBus.on = (event, handler) => {
+      // Simple event subscription for timer updates
+      if (event === 'sessionTimerTick') {
+        const interval = setInterval(() => {
+          const time = timer.getSessionTime();
+          setSessionTime(time.formatted);
+        }, 1000);
+        return () => clearInterval(interval);
+      }
+    };
+    
+    // Listen for session timer ticks
+    const tickInterval = setInterval(() => {
+      if (timerServiceRef.current) {
+        const sessionTime = timerServiceRef.current.getSessionTime();
+        setSessionTime(sessionTime.formatted);
+        
+        // Update work phase time if active
+        const workPhase = timerServiceRef.current.currentWorkPhase;
+        if (workPhase) {
+          const workTime = timerServiceRef.current.getWorkPhaseTime(workPhase);
+          if (workTime) {
+            setWorkPhaseTime(workTime.formatted);
+            setWorkPhaseRemaining(workTime.remainingFormatted);
+          }
+        }
+        
+        // Update golden key status
+        const goldenKey = timerServiceRef.current.getGoldenKeyStatus();
+        setGoldenKeyEligible(goldenKey.eligible);
+      }
+    }, 1000);
+    
+    return () => {
+      clearInterval(tickInterval);
+      timer.destroy();
+      timerServiceRef.current = null;
+    };
+  }, []);
   
   const addEvent = (msg) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -300,6 +362,21 @@ function SessionPageV2Inner() {
     orchestrator.on('sessionComplete', (data) => {
       addEvent('🏁 Session complete!');
       setCurrentPhase('complete');
+      
+      // Stop session timer
+      if (timerServiceRef.current) {
+        timerServiceRef.current.stopSessionTimer();
+        const time = timerServiceRef.current.getSessionTime();
+        addEvent(`⏱️ Total session time: ${time.formatted}`);
+        
+        // Show golden key status
+        const goldenKey = timerServiceRef.current.getGoldenKeyStatus();
+        if (goldenKey.eligible) {
+          addEvent(`🔑 Golden Key Earned! (${goldenKey.onTimeCompletions}/3 on-time)`);
+        } else {
+          addEvent(`🔑 Golden Key not earned (${goldenKey.onTimeCompletions}/3 on-time)`);
+        }
+      }
       
       // Delete snapshot (session finished)
       if (snapshotServiceRef.current) {
@@ -502,6 +579,12 @@ function SessionPageV2Inner() {
       return;
     }
     
+    // Start work phase timer
+    if (timerServiceRef.current) {
+      timerServiceRef.current.startWorkPhaseTimer('exercise');
+      addEvent('⏱️ Exercise timer started (3 min limit)');
+    }
+    
     const phase = new ExercisePhase({
       audioEngine: audioEngineRef.current,
       questions: questions
@@ -536,6 +619,16 @@ function SessionPageV2Inner() {
     phase.on('exerciseComplete', (data) => {
       addEvent(`🎉 Exercise complete! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
       setExerciseState('complete');
+      
+      // Complete work phase timer
+      if (timerServiceRef.current) {
+        timerServiceRef.current.completeWorkPhaseTimer('exercise');
+        const time = timerServiceRef.current.getWorkPhaseTime('exercise');
+        if (time) {
+          const status = time.onTime ? '✅ On time!' : '⏰ Time exceeded';
+          addEvent(`⏱️ Exercise completed in ${time.formatted} ${status}`);
+        }
+      }
       
       // Save snapshot
       if (snapshotServiceRef.current) {
@@ -579,6 +672,12 @@ function SessionPageV2Inner() {
         orchestratorRef.current.onWorksheetComplete();
       }
       return;
+    }
+    
+    // Start work phase timer
+    if (timerServiceRef.current) {
+      timerServiceRef.current.startWorkPhaseTimer('worksheet');
+      addEvent('⏱️ Worksheet timer started (5 min limit)');
     }
     
     const phase = new WorksheetPhase({
@@ -625,6 +724,16 @@ function SessionPageV2Inner() {
       addEvent(`🎉 Worksheet complete! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
       setWorksheetState('complete');
       
+      // Complete work phase timer
+      if (timerServiceRef.current) {
+        timerServiceRef.current.completeWorkPhaseTimer('worksheet');
+        const time = timerServiceRef.current.getWorkPhaseTime('worksheet');
+        if (time) {
+          const status = time.onTime ? '✅ On time!' : '⏰ Time exceeded';
+          addEvent(`⏱️ Worksheet completed in ${time.formatted} ${status}`);
+        }
+      }
+      
       // Save snapshot
       if (snapshotServiceRef.current) {
         snapshotServiceRef.current.savePhaseCompletion('worksheet', {
@@ -667,6 +776,12 @@ function SessionPageV2Inner() {
         orchestratorRef.current.onTestComplete();
       }
       return;
+    }
+    
+    // Start work phase timer
+    if (timerServiceRef.current) {
+      timerServiceRef.current.startWorkPhaseTimer('test');
+      addEvent('⏱️ Test timer started (10 min limit)');
     }
     
     const phase = new TestPhase({
@@ -716,6 +831,22 @@ function SessionPageV2Inner() {
     phase.on('testComplete', (data) => {
       addEvent(`🎉 Test complete! Final grade: ${data.grade} (${data.percentage}%)`);
       setTestState('complete');
+      
+      // Complete work phase timer
+      if (timerServiceRef.current) {
+        timerServiceRef.current.completeWorkPhaseTimer('test');
+        const time = timerServiceRef.current.getWorkPhaseTime('test');
+        if (time) {
+          const status = time.onTime ? '✅ On time!' : '⏰ Time exceeded';
+          addEvent(`⏱️ Test completed in ${time.formatted} ${status}`);
+        }
+        
+        // Check golden key status
+        const goldenKey = timerServiceRef.current.getGoldenKeyStatus();
+        if (goldenKey.eligible) {
+          addEvent('🔑 Golden Key Earned! 3 on-time completions!');
+        }
+      }
       
       // Save snapshot
       if (snapshotServiceRef.current) {
@@ -786,6 +917,13 @@ function SessionPageV2Inner() {
   
   const startSession = () => {
     if (!orchestratorRef.current) return;
+    
+    // Start session timer
+    if (timerServiceRef.current) {
+      timerServiceRef.current.startSessionTimer();
+      addEvent('⏱️ Session timer started');
+    }
+    
     orchestratorRef.current.startSession();
   };
   
@@ -950,6 +1088,33 @@ function SessionPageV2Inner() {
               <div>Current Phase: <span className="font-bold text-blue-600">{currentPhase}</span></div>
               <div>Vocab: {lessonData.vocab?.length || 0} terms</div>
               <div>Examples: {lessonData.examples?.length || 0} sentences</div>
+            </div>
+          )}
+          {currentPhase !== 'idle' && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="text-sm space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Session Time:</span>
+                  <span className="font-mono text-lg font-semibold text-blue-600">{sessionTime}</span>
+                </div>
+                {['exercise', 'worksheet', 'test'].includes(currentPhase) && (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Work Phase:</span>
+                      <span className="font-mono text-lg font-semibold text-green-600">{workPhaseTime}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Time Remaining:</span>
+                      <span className="font-mono text-lg font-semibold text-orange-600">{workPhaseRemaining}</span>
+                    </div>
+                  </>
+                )}
+                {goldenKeyEligible && (
+                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                    <span className="text-yellow-800 font-semibold">🔑 Golden Key Earned!</span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
