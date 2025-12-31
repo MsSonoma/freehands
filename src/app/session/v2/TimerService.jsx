@@ -48,14 +48,13 @@ export class TimerService {
     this.onTimeCompletions = 0;
     this.goldenKeyAwarded = false;
     
-    // Bind methods
+    // Bind public methods
     this.startSessionTimer = this.startSessionTimer.bind(this);
     this.stopSessionTimer = this.stopSessionTimer.bind(this);
     this.startWorkPhaseTimer = this.startWorkPhaseTimer.bind(this);
     this.completeWorkPhaseTimer = this.completeWorkPhaseTimer.bind(this);
     this.stopWorkPhaseTimer = this.stopWorkPhaseTimer.bind(this);
-    this.#tickSessionTimer = this.#tickSessionTimer.bind(this);
-    this.#tickWorkPhaseTimers = this.#tickWorkPhaseTimers.bind(this);
+    // Private methods are automatically bound
   }
   
   /**

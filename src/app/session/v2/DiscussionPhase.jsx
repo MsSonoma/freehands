@@ -33,11 +33,11 @@ export class DiscussionPhase {
     this.currentResponse = '';
     this.abortController = null;
     
-    // Bind methods
+    // Bind public methods
     this.start = this.start.bind(this);
     this.skip = this.skip.bind(this);
     this.submitResponse = this.submitResponse.bind(this);
-    this.#handleAudioComplete = this.#handleAudioComplete.bind(this);
+    // Private methods are automatically bound
   }
   
   /**
