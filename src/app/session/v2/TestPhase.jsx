@@ -33,6 +33,14 @@ const PRAISE_PHRASES = [
   "Nice work!"
 ];
 
+// Intro phrases for phase start (matches V1 pacing)
+const INTRO_PHRASES = [
+  "Time for the test.",
+  "Let's start the test.",
+  "Ready for your test?",
+  "Let's see what you learned."
+];
+
 export class TestPhase {
   // Private state
   #audioEngine = null;
@@ -104,6 +112,30 @@ export class TestPhase {
   
   // Public API: Start phase
   async start() {
+    // Play intro TTS (V1 pacing pattern)
+    const intro = INTRO_PHRASES[Math.floor(Math.random() * INTRO_PHRASES.length)];
+    this.#state = 'playing-intro';
+    this.#emit('stateChange', { state: 'playing-intro' });
+    
+    try {
+      const introAudio = await fetchTTS(intro);
+      await this.#audioEngine.playAudio(introAudio || '', [intro]);
+    } catch (err) {
+      console.error('[TestPhase] Intro TTS failed:', err);
+    }
+    
+    // Show Go button gate (V1 pacing pattern)
+    this.#state = 'awaiting-go';
+    this.#emit('stateChange', { state: 'awaiting-go' });
+  }
+  
+  // Public API: User clicked Go button
+  async go() {
+    if (this.#state !== 'awaiting-go') {
+      console.warn('[TestPhase] Cannot go in state:', this.#state);
+      return;
+    }
+    
     this.#currentQuestionIndex = 0;
     this.#answers = [];
     this.#score = 0;

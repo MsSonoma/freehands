@@ -1410,6 +1410,17 @@ function SessionPageV2Inner() {
                 <div className="text-sm text-gray-600 mt-1">State: {comprehensionState}</div>
               </div>
               
+              {comprehensionState === 'awaiting-go' && (
+                <div className="text-center">
+                  <button
+                    onClick={() => comprehensionPhaseRef.current?.go()}
+                    className="px-8 py-3 bg-blue-600 text-white text-lg rounded-lg hover:bg-blue-700"
+                  >
+                    Go
+                  </button>
+                </div>
+              )}
+              
               {comprehensionState === 'awaiting-answer' && (
                 <div className="space-y-3">
                   <div>
@@ -1456,6 +1467,17 @@ function SessionPageV2Inner() {
                   State: {exerciseState} | Score: {exerciseScore}/{exerciseTotalQuestions}
                 </div>
               </div>
+              
+              {exerciseState === 'awaiting-go' && (
+                <div className="text-center">
+                  <button
+                    onClick={() => exercisePhaseRef.current?.go()}
+                    className="px-8 py-3 bg-purple-600 text-white text-lg rounded-lg hover:bg-purple-700"
+                  >
+                    Go
+                  </button>
+                </div>
+              )}
               
               {currentExerciseQuestion && exerciseState === 'awaiting-answer' && (
                 <div className="space-y-4">
@@ -1517,6 +1539,17 @@ function SessionPageV2Inner() {
                   State: {worksheetState} | Score: {worksheetScore}/{worksheetTotalQuestions}
                 </div>
               </div>
+              
+              {worksheetState === 'awaiting-go' && (
+                <div className="text-center">
+                  <button
+                    onClick={() => worksheetPhaseRef.current?.go()}
+                    className="px-8 py-3 bg-teal-600 text-white text-lg rounded-lg hover:bg-teal-700"
+                  >
+                    Go
+                  </button>
+                </div>
+              )}
               
               {currentWorksheetQuestion && worksheetState === 'awaiting-answer' && (
                 <div className="space-y-4">
@@ -1590,6 +1623,17 @@ function SessionPageV2Inner() {
                   {testGrade && ` | Grade: ${testGrade.grade} (${testGrade.percentage}%)`}
                 </div>
               </div>
+              
+              {testState === 'awaiting-go' && (
+                <div className="text-center">
+                  <button
+                    onClick={() => testPhaseRef.current?.go()}
+                    className="px-8 py-3 bg-red-600 text-white text-lg rounded-lg hover:bg-red-700"
+                  >
+                    Go
+                  </button>
+                </div>
+              )}
               
               {/* Test Questions */}
               {currentTestQuestion && testState === 'awaiting-answer' && (

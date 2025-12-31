@@ -33,6 +33,14 @@ const PRAISE_PHRASES = [
   'Keep it up!'
 ];
 
+// Intro phrases for phase start (V1 pacing pattern)
+const INTRO_PHRASES = [
+  "Now let's check your understanding.",
+  "Time to see what you learned.",
+  "Let's test your knowledge.",
+  "Ready for a question?"
+];
+
 export class ComprehensionPhase {
   // Private state
   #audioEngine = null;
@@ -89,6 +97,30 @@ export class ComprehensionPhase {
   
   // Public API: Start phase
   async start() {
+    // Play intro TTS (V1 pacing pattern)
+    const intro = INTRO_PHRASES[Math.floor(Math.random() * INTRO_PHRASES.length)];
+    this.#state = 'playing-intro';
+    this.#emit('stateChange', { state: 'playing-intro' });
+    
+    try {
+      const introAudio = await fetchTTS(intro);
+      await this.#audioEngine.playAudio(introAudio || '', [intro]);
+    } catch (err) {
+      console.error('[ComprehensionPhase] Intro TTS failed:', err);
+    }
+    
+    // Show Go button gate (V1 pacing pattern)
+    this.#state = 'awaiting-go';
+    this.#emit('stateChange', { state: 'awaiting-go', question: this.#question });
+  }
+  
+  // Public API: User clicked Go button
+  async go() {
+    if (this.#state !== 'awaiting-go') {
+      console.warn('[ComprehensionPhase] Cannot go in state:', this.#state);
+      return;
+    }
+    
     this.#state = 'playing-question';
     
     this.#emit('stateChange', {
