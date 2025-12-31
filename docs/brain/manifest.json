@@ -2,28 +2,28 @@
   "goals-clipboard": {
     "file": "goals-clipboard.md",
     "systems": [
-      "goals clipboard overlay",
-      "persistent goals per learner/facilitator",
-      "goals_notes database column",
-      "API endpoints (load/save)",
-      "Mr. Mentor integration (system prompt)",
-      "auto-load on learner switch",
-      "600 character limit"
+      "goals-clipboard-overlay",
+      "goals_notes",
+      "/api/load-goals",
+      "/api/save-goals",
+      "Mr-Mentor-integration",
+      "auto-load-learner-switch",
+      "600-character-limit"
     ],
-    "last_updated": "2025-12-31T12:30:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   },
   "lesson-notes": {
     "file": "lesson-notes.md",
     "systems": [
-      "facilitator lesson notes",
-      "lesson_notes JSONB column",
-      "note UI in facilitator/lessons",
-      "Mr. Mentor transcript integration",
-      "note display per lesson",
-      "learner-specific context"
+      "lesson_notes",
+      "JSONB-column",
+      "note-UI",
+      "Mr-Mentor-transcript-integration",
+      "learner-specific-context",
+      "note-display-per-lesson"
     ],
-    "last_updated": "2025-12-31T12:30:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   },
   "lesson-validation": {
@@ -73,18 +73,19 @@
   "api-routes": {
     "file": "api-routes.md",
     "systems": [
-      "/api/sonoma endpoint",
-      "request format (instructions, innertext, session)",
-      "response format (reply)",
-      "logging controls (SONOMA_LOG_PREVIEW_MAX)",
-      "stateless architecture",
-      "instruction-driven behavior",
-      "LLM provider configuration",
-      "TTS endpoint",
-      "visual aids endpoint",
-      "content safety endpoint"
+      "/api/sonoma",
+      "instructions-field",
+      "innertext-field",
+      "session-field",
+      "SONOMA_LOG_PREVIEW_MAX",
+      "stateless-api",
+      "instruction-driven-behavior",
+      "LLM-provider-configuration",
+      "/api/tts",
+      "/api/visual-aids",
+      "/api/content-safety"
     ],
-    "last_updated": "2025-12-31T00:00:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   },
   "v2-architecture": {
@@ -108,59 +109,55 @@
     "file": "mr-mentor-conversation-flows.md",
     "systems": [
       "Mr. Mentor decision logic",
-      "lesson generation vs recommendations",
-      "function calling triggers",
-      "escape hatch mechanisms",
-      "recommendation intent detection",
-      "generation intent detection",
-      "parameter collection abandonment",
-      "search_lessons prioritization",
-      "generate_lesson restrictions",
-      "conversational flow control"
+      "search_lessons",
+      "generate_lesson",
+      "function-calling-triggers",
+      "escape-hatch-mechanisms",
+      "recommendation-intent",
+      "generation-intent",
+      "parameter-abandonment",
+      "require_generation_confirmation",
+      "conversational-flow-control"
     ],
-    "last_updated": "2025-12-18T00:00:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   },
   "facilitator-help-system": {
     "file": "facilitator-help-system.md",
     "systems": [
-      "facilitator help components",
       "InlineExplainer",
       "WorkflowGuide",
       "PageHeader",
-      "contextual help",
-      "dismissible tooltips",
-      "localStorage persistence",
-      "help content guidelines",
-      "calendar tab explainers",
-      "phase timers explanation",
-      "learner configuration help",
-      "lesson approval workflow",
-      "weekly pattern explainer",
-      "beta tester feedback"
+      "help-button",
+      "contextual-help",
+      "dismissible-tooltips",
+      "localStorage-help-state",
+      "calendar-tab-explainers",
+      "phase-timers-explanation",
+      "learner-configuration-help",
+      "lesson-approval-workflow",
+      "weekly-pattern-explainer",
+      "beta-tester-feedback"
     ],
-    "last_updated": "2025-12-15T16:00:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   },
   "calendar-lesson-planning": {
     "file": "calendar-lesson-planning.md",
     "systems": [
-      "lesson plan generation",
-      "planned lessons persistence",
-      "weekly pattern",
-      "calendar automation",
-      "lesson outline generation",
-      "curriculum context",
-      "medals API",
-      "lesson history integration",
-      "planned_lessons table",
-      "database persistence",
+      "planned_lessons",
       "savePlannedLessons",
       "loadPlannedLessons",
-      "date-specific overwrite",
-      "adaptive difficulty progression"
+      "weekly-pattern",
+      "calendar-automation",
+      "lesson-outline-generation",
+      "curriculum-context",
+      "medals-API",
+      "lesson-history-integration",
+      "date-specific-overwrite",
+      "adaptive-difficulty-progression"
     ],
-    "last_updated": "2025-12-15T02:30:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   },
   "tts-prefetching": {
@@ -235,19 +232,17 @@
   "lesson-assessment-architecture": {
     "file": "lesson-assessment-architecture.md",
     "systems": [
-      "lesson assessment generation",
-      "question array persistence",
-      "comprehension questions",
-      "exercise questions",
-      "worksheet generation",
-      "test generation",
-      "atomic restore",
-      "localStorage assessment caching",
       "buildQAPool",
-      "shuffle arrays",
-      "refresh button"
+      "shuffle-arrays",
+      "atomic-restore",
+      "refresh-button",
+      "comprehension-questions",
+      "exercise-questions",
+      "worksheet-questions",
+      "test-questions",
+      "localStorage-assessment-caching"
     ],
-    "last_updated": "2025-12-19T02:28:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   },
   "session-takeover": {
@@ -268,15 +263,19 @@
   "MentorInterceptor": {
     "file": "MentorInterceptor_Architecture.md",
     "systems": [
-      "Mr. Mentor",
-      "counselor flows",
-      "generate flow",
-      "schedule flow",
-      "edit flow",
-      "recall flow",
-      "search flow"
+      "Mr. Mentor frontend",
+      "MentorInterceptor.js",
+      "intent-detection",
+      "confidence-scoring",
+      "fuzzy-matching",
+      "parameter-extraction",
+      "generate-flow",
+      "schedule-flow",
+      "edit-flow",
+      "recall-flow",
+      "search-flow"
     ],
-    "last_updated": "2025-11-17T23:45:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   },
   "visual-aids": {
@@ -354,16 +353,20 @@
     "file": "riddle-system.md",
     "systems": [
       "riddles",
-      "wordplay riddles",
-      "localStorage rotation",
+      "wordplay-riddles",
+      "localStorage-rotation",
       "pickNextRiddle",
-      "riddle transformation",
-      "lateral thinking",
-      "subject-specific riddles",
-      "hardcoded riddle catalog",
-      "riddle validation"
+      "transformation-patterns",
+      "quality-classification",
+      "personification",
+      "homonym-wordplay",
+      "visual-metaphor",
+      "lateral-thinking",
+      "subject-specific-riddles",
+      "hardcoded-riddle-catalog",
+      "riddle-validation"
     ],
-    "last_updated": "2025-12-03T00:00:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   },
   "mr-mentor-session-persistence": {
@@ -420,49 +423,49 @@
   "lesson-editor": {
     "file": "lesson-editor.md",
     "systems": [
-      "structured lesson editor",
-      "form-based editing",
-      "dynamic field management",
-      "vocabulary term editor",
-      "multiple choice editor",
-      "true/false editor",
-      "short answer editor",
-      "fill-in-blank editor",
-      "sample Q&A editor",
-      "word problems editor",
-      "validation and auto-cleanup"
+      "structured-lesson-editor",
+      "form-based-editing",
+      "vocabulary-term-editor",
+      "multiple-choice-editor",
+      "true-false-editor",
+      "short-answer-editor",
+      "fill-in-blank-editor",
+      "sample-QA-editor",
+      "word-problems-editor",
+      "validation-auto-cleanup",
+      "dynamic-field-management"
     ],
-    "last_updated": "2025-12-31T13:00:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   },
   "ai-rewrite-system": {
     "file": "ai-rewrite-system.md",
     "systems": [
-      "AIRewriteButton component",
-      "AI rewrite API",
-      "visual-aid-description purpose",
-      "generation-prompt purpose",
-      "general purpose",
-      "kid-friendly language rewriting",
-      "DALL-E 3 prompt improvement",
-      "Visual Aids Carousel integration"
+      "AIRewriteButton",
+      "/api/rewrite",
+      "visual-aid-description-purpose",
+      "generation-prompt-purpose",
+      "general-purpose",
+      "kid-friendly-rewriting",
+      "DALL-E-3-prompt-improvement",
+      "Visual-Aids-Carousel-integration"
     ],
-    "last_updated": "2025-12-31T13:00:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   },
   "device-leases": {
     "file": "device-leases.md",
     "systems": [
-      "concurrent device limiting",
-      "device_leases table",
-      "tier-based device caps",
-      "device claim API",
-      "device release API",
-      "device status API",
-      "lease expiration",
-      "lease extension"
+      "device_leases",
+      "tier-based-device-caps",
+      "/api/device-claim",
+      "/api/device-release",
+      "/api/device-status",
+      "lease-expiration",
+      "lease-extension",
+      "concurrent-device-limiting"
     ],
-    "last_updated": "2025-12-31T13:00:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   },
   "lesson-quota": {
@@ -497,16 +500,16 @@
   "gating-system": {
     "file": "gating-system.md",
     "systems": [
-      "universal gating system",
-      "GatedOverlay component",
-      "useAccessControl hook",
-      "auth gates",
-      "tier gates",
-      "feature preview while gated",
-      "authentication flow integration",
-      "upgrade flow integration"
+      "GatedOverlay",
+      "useAccessControl",
+      "auth-gates",
+      "tier-gates",
+      "feature-preview-while-gated",
+      "authentication-flow-integration",
+      "upgrade-flow-integration",
+      "universal-gating"
     ],
-    "last_updated": "2025-12-31T13:00:00Z",
+    "last_updated": "2025-12-31T16:00:00Z",
     "status": "canonical"
   }
 }

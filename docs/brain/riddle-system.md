@@ -107,6 +107,69 @@ If riddles are to be activated:
 
 ---
 
+## Riddle Transformation Guidelines
+
+### Quality Classification
+
+**✓ True Riddles (20% - Keep & Polish)**
+- Use wordplay, misdirection, puns, lateral thinking
+- Examples: gen-08 (joke), lang-01 (short), lang-03 (incorrectly), math-01 (seven)
+
+**⚠ Educational Questions (60% - Transform)**
+- Direct subject queries lacking riddle qualities
+- Examples: math-19 (How many cents...), sci-29 (organ that pumps blood), lang-19 (What type of word...)
+
+**❌ Broken/Duplicates (20% - Delete or Fix)**
+- Multiple valid answers, subject mismatches, duplicates
+- Examples: gen-13 & gen-30 (piano duplicate), sci-02 & gen-26 (umbrella mismatch)
+
+### Transformation Patterns
+
+**Pattern 1: Personification**  
+*Before*: "What is the organ that pumps blood?" (quiz question)  
+*After*: "I have four rooms but no doors. I beat all day but I'm not a drum. What am I?" (heart - riddle)
+
+**Pattern 2: Homonym/Wordplay**  
+*Before*: "What do you call a six sided shape?" (definition)  
+*After*: "I have six sides but I'm not a cube. Bees make my shape when they work. What am I?" (hexagon - connects to honeycomb)
+
+**Pattern 3: Visual Metaphor**  
+*Before*: "How many degrees in a right angle?" (fact recall)  
+*After*: "I'm the corner of a square, standing up straight and tall. If you measure me, I'm perfect for making walls. What am I?" (right angle/90 degrees)
+
+**Pattern 4: Action Pun**  
+*Before*: "What type of word describes an action?" (grammar term)  
+*After*: "I'm a word that likes to DO things. Run, jump, and think are my friends. What part of speech am I?" (verb - emphasis on action)
+
+**Pattern 5: Double Meaning**  
+*Before*: "What is the smallest two digit number?" (arithmetic)  
+*After*: "I'm twice as much as five, but also where your fingers begin to count. What number am I?" (ten - wordplay on digits)
+
+### Subject-Specific Guidelines
+
+**Math Riddles**: Use number homophones (one/won, eight/ate), shape metaphors (circle = wheel), counting puns (dozen), visual tricks (six upside down = nine)
+
+**Science Riddles**: Physical properties as personality (fire grows, water runs), natural phenomena metaphors (cloud cries), scientific processes as stories (photosynthesis = cooking)
+
+**Language Arts Riddles**: Spelling tricks (incorrectly, short), grammar puns (verb = DO word), literary double meanings (book spine), sound-alike confusion
+
+**Social Studies Riddles**: Geography puns (river mouth/bed), historical wordplay (liberty = freedom), place name tricks (Mississippi has four i's), civic metaphors (trade = exchange)
+
+### Validation Checklist
+
+Before accepting a transformed riddle:
+
+- [ ] **Wordplay present** - Uses pun, double meaning, metaphor, or lateral thinking
+- [ ] **Misdirection works** - Initial interpretation differs from answer
+- [ ] **Single clear answer** - No ambiguity or multiple solutions
+- [ ] **Age appropriate** - 6-12 year olds can understand clues
+- [ ] **Subject relevant** - Connects to subject concept
+- [ ] **Fair clues** - Enough information to solve without guessing
+- [ ] **Surprise factor** - Makes you smile, groan, or say "aha!"
+- [ ] **Not a quiz question** - Requires lateral thinking, not just recall
+
+---
+
 ## Key Files
 
 ### `src/app/lib/riddles.js`
@@ -118,15 +181,6 @@ If riddles are to be activated:
 ### Dead Imports (Not Currently Used)
 - `src/app/session/[sessionId]/page.js` - imports but never calls
 - Teaching system components - no riddle UI elements
-
----
-
-## Transformation Guide Reference
-
-For detailed rules on creating/editing riddles, see:
-- **docs/brain/riddle-transformation-guide.md** - Patterns, examples, validation checklist
-- **Audit results**: Only ~20% of original riddles exhibited true wordplay
-- **Transformation success**: 100% of riddles now use misdirection, metaphor, or lateral thinking
 
 ---
 

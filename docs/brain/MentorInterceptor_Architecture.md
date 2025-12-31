@@ -559,6 +559,11 @@ Returns:
 - Parameter gathering is patient (re-asks if unclear)
 - Bypass commands give users escape hatch
 
+## Related Brain Files
+
+- **[mr-mentor-conversation-flows.md](mr-mentor-conversation-flows.md)** - Backend function calling and generation vs recommendation logic
+- **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Session ownership and conversation persistence
+
 ## Open Questions
 
 - Should interceptor state persist in sessionStorage?
