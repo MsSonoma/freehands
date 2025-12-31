@@ -21,6 +21,18 @@
 
 import { fetchTTS } from './services';
 
+// Praise phrases for correct answers (matches V1 engagement pattern)
+const PRAISE_PHRASES = [
+  "Great job!",
+  "That's correct!",
+  "Perfect!",
+  "Excellent work!",
+  "You got it!",
+  "Well done!",
+  "Fantastic!",
+  "Nice work!"
+];
+
 export class TestPhase {
   // Private state
   #audioEngine = null;
@@ -100,7 +112,7 @@ export class TestPhase {
   }
   
   // Public API: Submit answer
-  submitAnswer(answer) {
+  async submitAnswer(answer) {
     if (this.#state !== 'awaiting-answer') {
       console.warn('[TestPhase] Cannot submit answer in state:', this.#state);
       return;
@@ -130,6 +142,19 @@ export class TestPhase {
       score: this.#score,
       totalQuestions: this.#questions.length
     });
+    
+    // Play praise for correct answers (V1 engagement pattern)
+    if (isCorrect) {
+      const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
+      try {
+        this.#state = 'playing-feedback';
+        this.#emit('stateChange', { state: 'playing-feedback' });
+        const praiseUrl = await fetchTTS(praise);
+        await this.#audioEngine.playAudio(praiseUrl, [praise]);
+      } catch (error) {
+        console.warn('[TestPhase] Failed to play praise:', error);
+      }
+    }
     
     // Move to next question or enter review
     this.#advanceQuestion();
