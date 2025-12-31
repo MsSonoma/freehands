@@ -1242,31 +1242,42 @@ function SessionPageV2Inner() {
           {currentPhase !== 'idle' && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="text-sm space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Session Time:</span>
-                  <span className="font-mono text-lg font-semibold text-blue-600">{sessionTime}</span>
+                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                  <span className="text-gray-700 font-semibold">Session Time:</span>
+                  <span className="font-mono text-2xl font-bold text-blue-600">{sessionTime}</span>
                 </div>
                 {['exercise', 'worksheet', 'test'].includes(currentPhase) && (
                   <>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Work Phase:</span>
+                    <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                      <span className="text-gray-600">Work Phase Elapsed:</span>
                       <span className="font-mono text-lg font-semibold text-green-600">{workPhaseTime}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Time Remaining:</span>
-                      <span className="font-mono text-lg font-semibold text-orange-600">{workPhaseRemaining}</span>
                     </div>
                   </>
                 )}
                 {goldenKeyEligible && (
-                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                    <span className="text-yellow-800 font-semibold">🔑 Golden Key Earned!</span>
+                  <div className="mt-2 p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg animate-pulse">
+                    <span className="text-yellow-800 font-bold text-lg">🔑 Golden Key Earned!</span>
                   </div>
                 )}
               </div>
             </div>
           )}
         </div>
+        
+        {/* Phase Timer Overlay - Prominent countdown for work phases (V1 visual parity) */}
+        {['exercise', 'worksheet', 'test'].includes(currentPhase) && workPhaseRemaining && (
+          <div className="fixed top-4 right-4 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-lg shadow-2xl p-4 z-50 border-4 border-white">
+            <div className="text-xs font-semibold uppercase tracking-wide opacity-90 mb-1">
+              {currentPhase} Timer
+            </div>
+            <div className="font-mono text-3xl font-bold leading-none">
+              {workPhaseRemaining}
+            </div>
+            <div className="text-xs mt-1 opacity-80">
+              Time Remaining
+            </div>
+          </div>
+        )}
         
         {/* Video Panel */}
         <div className="bg-white rounded-lg shadow p-6">
