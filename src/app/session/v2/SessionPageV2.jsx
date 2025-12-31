@@ -1721,17 +1721,65 @@ function SessionPageV2Inner() {
                 <div className="text-sm text-gray-600 mt-1">
                   State: {exerciseState} | Score: {exerciseScore}/{exerciseTotalQuestions}
                 </div>
+                {exerciseTimerMode && (
+                  <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                    exerciseTimerMode === 'play' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {exerciseTimerMode === 'play' ? '🟢 Play Time' : '🟠 Work Time'}
+                  </div>
+                )}
               </div>
               
               {exerciseState === 'awaiting-go' && (
-                <div className="text-center">
-                  <button
-                    onClick={() => exercisePhaseRef.current?.go()}
-                    className="px-8 py-3 bg-purple-600 text-white text-lg rounded-lg hover:bg-purple-700"
-                  >
-                    Go
-                  </button>
-                </div>
+                <>
+                  {/* Opening Actions - Show during play time only */}
+                  {exerciseTimerMode === 'play' && !openingActionActive && (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
+                      <h3 className="font-bold text-lg mb-3 text-gray-800">🎯 Opening Actions</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startAsk()}
+                          className="px-4 py-3 bg-white border-2 border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 font-semibold shadow-sm"
+                        >
+                          ❓ Ask Ms. Sonoma
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startRiddle()}
+                          className="px-4 py-3 bg-white border-2 border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 font-semibold shadow-sm"
+                        >
+                          🧩 Riddle
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startPoem()}
+                          className="px-4 py-3 bg-white border-2 border-pink-300 text-pink-700 rounded-lg hover:bg-pink-50 font-semibold shadow-sm"
+                        >
+                          📜 Poem
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startStory()}
+                          className="px-4 py-3 bg-white border-2 border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 font-semibold shadow-sm"
+                        >
+                          📖 Story
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startFillInFun()}
+                          className="px-4 py-3 bg-white border-2 border-green-300 text-green-700 rounded-lg hover:bg-green-50 font-semibold shadow-sm"
+                        >
+                          🎨 Fill-in-Fun
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="text-center">
+                    <button
+                      onClick={() => exercisePhaseRef.current?.go()}
+                      className="px-8 py-3 bg-purple-600 text-white text-lg rounded-lg hover:bg-purple-700"
+                    >
+                      Go
+                    </button>
+                  </div>
+                </>
               )}
               
               {currentExerciseQuestion && exerciseState === 'awaiting-answer' && (
@@ -1793,17 +1841,65 @@ function SessionPageV2Inner() {
                 <div className="text-sm text-gray-600 mt-1">
                   State: {worksheetState} | Score: {worksheetScore}/{worksheetTotalQuestions}
                 </div>
+                {worksheetTimerMode && (
+                  <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                    worksheetTimerMode === 'play' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {worksheetTimerMode === 'play' ? '🟢 Play Time' : '🟠 Work Time'}
+                  </div>
+                )}
               </div>
               
               {worksheetState === 'awaiting-go' && (
-                <div className="text-center">
-                  <button
-                    onClick={() => worksheetPhaseRef.current?.go()}
-                    className="px-8 py-3 bg-teal-600 text-white text-lg rounded-lg hover:bg-teal-700"
-                  >
-                    Go
-                  </button>
-                </div>
+                <>
+                  {/* Opening Actions - Show during play time only */}
+                  {worksheetTimerMode === 'play' && !openingActionActive && (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
+                      <h3 className="font-bold text-lg mb-3 text-gray-800">🎯 Opening Actions</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startAsk()}
+                          className="px-4 py-3 bg-white border-2 border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 font-semibold shadow-sm"
+                        >
+                          ❓ Ask Ms. Sonoma
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startRiddle()}
+                          className="px-4 py-3 bg-white border-2 border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 font-semibold shadow-sm"
+                        >
+                          🧩 Riddle
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startPoem()}
+                          className="px-4 py-3 bg-white border-2 border-pink-300 text-pink-700 rounded-lg hover:bg-pink-50 font-semibold shadow-sm"
+                        >
+                          📜 Poem
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startStory()}
+                          className="px-4 py-3 bg-white border-2 border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 font-semibold shadow-sm"
+                        >
+                          📖 Story
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startFillInFun()}
+                          className="px-4 py-3 bg-white border-2 border-green-300 text-green-700 rounded-lg hover:bg-green-50 font-semibold shadow-sm"
+                        >
+                          🎨 Fill-in-Fun
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="text-center">
+                    <button
+                      onClick={() => worksheetPhaseRef.current?.go()}
+                      className="px-8 py-3 bg-teal-600 text-white text-lg rounded-lg hover:bg-teal-700"
+                    >
+                      Go
+                    </button>
+                  </div>
+                </>
               )}
               
               {currentWorksheetQuestion && worksheetState === 'awaiting-answer' && (
@@ -1877,17 +1973,65 @@ function SessionPageV2Inner() {
                   State: {testState} | Score: {testScore}/{testTotalQuestions}
                   {testGrade && ` | Grade: ${testGrade.grade} (${testGrade.percentage}%)`}
                 </div>
+                {testTimerMode && (
+                  <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                    testTimerMode === 'play' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {testTimerMode === 'play' ? '🟢 Play Time' : '🟠 Work Time'}
+                  </div>
+                )}
               </div>
               
               {testState === 'awaiting-go' && (
-                <div className="text-center">
-                  <button
-                    onClick={() => testPhaseRef.current?.go()}
-                    className="px-8 py-3 bg-red-600 text-white text-lg rounded-lg hover:bg-red-700"
-                  >
-                    Go
-                  </button>
-                </div>
+                <>
+                  {/* Opening Actions - Show during play time only */}
+                  {testTimerMode === 'play' && !openingActionActive && (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
+                      <h3 className="font-bold text-lg mb-3 text-gray-800">🎯 Opening Actions</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startAsk()}
+                          className="px-4 py-3 bg-white border-2 border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 font-semibold shadow-sm"
+                        >
+                          ❓ Ask Ms. Sonoma
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startRiddle()}
+                          className="px-4 py-3 bg-white border-2 border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 font-semibold shadow-sm"
+                        >
+                          🧩 Riddle
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startPoem()}
+                          className="px-4 py-3 bg-white border-2 border-pink-300 text-pink-700 rounded-lg hover:bg-pink-50 font-semibold shadow-sm"
+                        >
+                          📜 Poem
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startStory()}
+                          className="px-4 py-3 bg-white border-2 border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 font-semibold shadow-sm"
+                        >
+                          📖 Story
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startFillInFun()}
+                          className="px-4 py-3 bg-white border-2 border-green-300 text-green-700 rounded-lg hover:bg-green-50 font-semibold shadow-sm"
+                        >
+                          🎨 Fill-in-Fun
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="text-center">
+                    <button
+                      onClick={() => testPhaseRef.current?.go()}
+                      className="px-8 py-3 bg-red-600 text-white text-lg rounded-lg hover:bg-red-700"
+                    >
+                      Go
+                    </button>
+                  </div>
+                </>
               )}
               
               {/* Test Questions */}
