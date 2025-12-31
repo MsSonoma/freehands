@@ -501,15 +501,6 @@ export class TimerService {
     
     this.#saveToSessionStorage();
   }
-    
-    // Save to sessionStorage after each tick
-    this.#saveToSessionStorage();
-    
-    this.eventBus.emit('sessionTimerTick', {
-      elapsed: this.sessionElapsed,
-      formatted: this.#formatTime(this.sessionElapsed)
-    });
-  }
   
   /**
    * Tick work phase timers
@@ -573,8 +564,6 @@ export class TimerService {
     }
     
     // Clear sessionStorage on destroy
-    this.#clearSessionStorage();
-  }
     this.#clearSessionStorage();
   }
   
