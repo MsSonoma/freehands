@@ -19,6 +19,7 @@
 
 import { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
 import { AudioEngine } from './AudioEngine';
 import { TeachingController } from './TeachingController';
 import { ComprehensionPhase } from './ComprehensionPhase';
@@ -29,6 +30,9 @@ import { ClosingPhase } from './ClosingPhase';
 import { DiscussionPhase } from './DiscussionPhase';
 import { PhaseOrchestrator } from './PhaseOrchestrator';
 import { SnapshotService } from './SnapshotService';
+import { TimerService } from './TimerService';
+import { KeyboardService } from './KeyboardService';
+import EventBus from './EventBus';
 import { loadLesson, generateTestLesson, fetchTTS } from './services';
 
 export default function SessionPageV2() {
@@ -45,6 +49,7 @@ export { SessionPageV2Inner };
 function SessionPageV2Inner() {
   const searchParams = useSearchParams();
   const lessonId = searchParams?.get('lesson') || '';
+  const regenerateParam = searchParams?.get('regenerate'); // Support generated lessons
   
   const videoRef = useRef(null);
   const audioEngineRef = useRef(null);
@@ -126,8 +131,25 @@ function SessionPageV2Inner() {
         
         let lesson;
         
-        // Try to load real lesson if lessonId provided
-        if (lessonId) {
+        // Check for generated lesson (regenerate parameter)
+        if (regenerateParam) {
+          try {
+            addEvent('🤖 Loading generated lesson...');
+            const response = await fetch(`/api/lesson-engine/regenerate?key=${regenerateParam}`);
+            if (!response.ok) {
+              throw new Error(`Failed to load generated lesson: ${response.statusText}`);
+            }
+            const data = await response.json();
+            lesson = data.lesson;
+            addEvent(`📚 Loaded generated lesson: ${lesson.title || 'Untitled'}`);
+          } catch (err) {
+            console.warn('[SessionPageV2] Failed to load generated lesson, using test data:', err);
+            lesson = generateTestLesson();
+            addEvent('📚 Using test lesson (generated load failed)');
+          }
+        }
+        // Try to load public lesson if lessonId provided
+        else if (lessonId) {
           try {
             lesson = await loadLesson(lessonId);
             addEvent(`📚 Loaded lesson: ${lesson.title}`);
@@ -137,7 +159,7 @@ function SessionPageV2Inner() {
             addEvent('📚 Using test lesson (load failed)');
           }
         } else {
-          // No lessonId - use test data
+          // No lessonId or regenerate - use test data
           lesson = generateTestLesson();
           addEvent('📚 Using test lesson (no lessonId)');
         }
@@ -152,7 +174,7 @@ function SessionPageV2Inner() {
     }
     
     loadLessonData();
-  }, [lessonId]);
+  }, [lessonId, regenerateParam]);
   
   // Initialize SnapshotService after lesson loads
   useEffect(() => {
@@ -162,11 +184,17 @@ function SessionPageV2Inner() {
     const sessionId = `session_${Date.now()}`;
     const learnerId = 'test_learner'; // In production, from auth
     
+    // Initialize Supabase client
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+    
     const service = new SnapshotService({
       sessionId: sessionId,
       learnerId: learnerId,
       lessonKey: lessonData.key,
-      supabaseClient: null // Using localStorage fallback for now
+      supabaseClient: supabase
     });
     
     snapshotServiceRef.current = service;
@@ -189,8 +217,31 @@ function SessionPageV2Inner() {
   
   // Initialize TimerService
   useEffect(() => {
+    const eventBus = new EventBus();
+    
+    // Forward timer events to UI
+    eventBus.on('sessionTimerTick', (data) => {
+      setSessionTime(data.formatted);
+    });
+    
+    eventBus.on('workPhaseTimerTick', (data) => {
+      setWorkPhaseTime(data.formatted);
+      setWorkPhaseRemaining(data.remainingFormatted);
+    });
+    
+    eventBus.on('workPhaseTimerComplete', (data) => {
+      addEvent(`⏱️ ${data.phase} timer complete!`);
+    });
+    
+    eventBus.on('goldenKeyEligibilityChanged', (data) => {
+      setGoldenKeyEligible(data.eligible);
+      if (data.eligible) {
+        addEvent('🔑 Golden Key earned!');
+      }
+    });
+    
     const timer = new TimerService(
-      { emit: addEvent },
+      eventBus,
       {
         workPhaseTimeLimits: {
           exercise: 180,   // 3 minutes
@@ -202,42 +253,7 @@ function SessionPageV2Inner() {
     
     timerServiceRef.current = timer;
     
-    // Subscribe to timer events
-    timer.eventBus.on = (event, handler) => {
-      // Simple event subscription for timer updates
-      if (event === 'sessionTimerTick') {
-        const interval = setInterval(() => {
-          const time = timer.getSessionTime();
-          setSessionTime(time.formatted);
-        }, 1000);
-        return () => clearInterval(interval);
-      }
-    };
-    
-    // Listen for session timer ticks
-    const tickInterval = setInterval(() => {
-      if (timerServiceRef.current) {
-        const sessionTime = timerServiceRef.current.getSessionTime();
-        setSessionTime(sessionTime.formatted);
-        
-        // Update work phase time if active
-        const workPhase = timerServiceRef.current.currentWorkPhase;
-        if (workPhase) {
-          const workTime = timerServiceRef.current.getWorkPhaseTime(workPhase);
-          if (workTime) {
-            setWorkPhaseTime(workTime.formatted);
-            setWorkPhaseRemaining(workTime.remainingFormatted);
-          }
-        }
-        
-        // Update golden key status
-        const goldenKey = timerServiceRef.current.getGoldenKeyStatus();
-        setGoldenKeyEligible(goldenKey.eligible);
-      }
-    }, 1000);
-    
     return () => {
-      clearInterval(tickInterval);
       timer.destroy();
       timerServiceRef.current = null;
     };
@@ -245,13 +261,14 @@ function SessionPageV2Inner() {
   
   // Initialize KeyboardService
   useEffect(() => {
-    const keyboard = new KeyboardService({
-      emit: (event, data) => {
-        if (event === 'hotkeyPressed') {
-          handleHotkey(data);
-        }
-      }
+    const eventBus = new EventBus();
+    
+    // Forward hotkey events
+    eventBus.on('hotkeyPressed', (data) => {
+      handleHotkey(data);
     });
+    
+    const keyboard = new KeyboardService(eventBus);
     
     keyboardServiceRef.current = keyboard;
     keyboard.init();
@@ -273,6 +290,26 @@ function SessionPageV2Inner() {
     
     const engine = new AudioEngine({ videoElement: videoRef.current });
     audioEngineRef.current = engine;
+    
+    // Initialize audio system (required for iOS)
+    const initAudio = async () => {
+      try {
+        await engine.initialize();
+        addEvent('🔊 Audio initialized');
+      } catch (err) {
+        console.error('[SessionPageV2] Audio init failed:', err);
+      }
+    };
+    
+    // Auto-initialize on first user interaction
+    const unlockAudio = () => {
+      initAudio();
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+    };
+    
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
     
     // Subscribe to AudioEngine events
     engine.on('start', (data) => {
@@ -438,10 +475,12 @@ function SessionPageV2Inner() {
     const firstActivity = activities[0];
     setDiscussionActivityIndex(0);
     
+    const eventBus = new EventBus();
+    
     const phase = new DiscussionPhase(
       audioEngineRef.current,
-      { fetchTTS },
-      { emit: addEvent }
+      { fetchTTS: fetchTTS },
+      eventBus
     );
     
     discussionPhaseRef.current = phase;
