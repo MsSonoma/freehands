@@ -400,5 +400,113 @@
     ],
     "last_updated": "2025-12-09T20:00:00Z",
     "status": "canonical"
+  },
+  "content-safety": {
+    "file": "content-safety.md",
+    "systems": [
+      "7-layer content safety defense",
+      "profanity filter",
+      "LLM moderation API",
+      "system instructions hardening",
+      "output validation",
+      "feature-specific constraints",
+      "rate limiting and monitoring",
+      "template-based Ask/Poem/Story",
+      "AI rewrite safety"
+    ],
+    "last_updated": "2025-12-31T13:00:00Z",
+    "status": "canonical"
+  },
+  "lesson-editor": {
+    "file": "lesson-editor.md",
+    "systems": [
+      "structured lesson editor",
+      "form-based editing",
+      "dynamic field management",
+      "vocabulary term editor",
+      "multiple choice editor",
+      "true/false editor",
+      "short answer editor",
+      "fill-in-blank editor",
+      "sample Q&A editor",
+      "word problems editor",
+      "validation and auto-cleanup"
+    ],
+    "last_updated": "2025-12-31T13:00:00Z",
+    "status": "canonical"
+  },
+  "ai-rewrite-system": {
+    "file": "ai-rewrite-system.md",
+    "systems": [
+      "AIRewriteButton component",
+      "AI rewrite API",
+      "visual-aid-description purpose",
+      "generation-prompt purpose",
+      "general purpose",
+      "kid-friendly language rewriting",
+      "DALL-E 3 prompt improvement",
+      "Visual Aids Carousel integration"
+    ],
+    "last_updated": "2025-12-31T13:00:00Z",
+    "status": "canonical"
+  },
+  "device-leases": {
+    "file": "device-leases.md",
+    "systems": [
+      "concurrent device limiting",
+      "device_leases table",
+      "tier-based device caps",
+      "device claim API",
+      "device release API",
+      "device status API",
+      "lease expiration",
+      "lease extension"
+    ],
+    "last_updated": "2025-12-31T13:00:00Z",
+    "status": "canonical"
+  },
+  "lesson-quota": {
+    "file": "lesson-quota.md",
+    "systems": [
+      "daily unique lesson starts",
+      "lesson_unique_starts table",
+      "timezone-aware day boundaries",
+      "tier-based quotas",
+      "quota check API",
+      "quota enforcement API",
+      "server-side validation"
+    ],
+    "last_updated": "2025-12-31T13:00:00Z",
+    "status": "canonical"
+  },
+  "story-feature": {
+    "file": "story-feature.md",
+    "systems": [
+      "continuous story narrative",
+      "story setup phase (characters, setting, plot)",
+      "story continuation across phases",
+      "story ending in Test phase",
+      "story transcript preservation",
+      "story state management",
+      "handleStoryStart handler",
+      "handleStoryYourTurn handler"
+    ],
+    "last_updated": "2025-12-31T13:00:00Z",
+    "status": "canonical"
+  },
+  "gating-system": {
+    "file": "gating-system.md",
+    "systems": [
+      "universal gating system",
+      "GatedOverlay component",
+      "useAccessControl hook",
+      "auth gates",
+      "tier gates",
+      "feature preview while gated",
+      "authentication flow integration",
+      "upgrade flow integration"
+    ],
+    "last_updated": "2025-12-31T13:00:00Z",
+    "status": "canonical"
   }
 }

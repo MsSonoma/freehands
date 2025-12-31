@@ -288,6 +288,93 @@ Expected: Offer to generate ONLY if search yields poor results
 
 ---
 
+## Multi-Screen Overlay System
+
+The Mr. Mentor interface includes a multi-screen overlay system allowing users to switch between video and different tool views without leaving the counselor page.
+
+### Screen Toggle Buttons
+Located on same row as "Discussing learner" dropdown, five buttons for switching views:
+- **👨‍🏫 Mr. Mentor**: Default video view
+- **📚 Lessons**: Facilitator lessons list (scrollable)
+- **📅 Calendar**: Lesson calendar panel
+- **✨ Generated**: Generated lessons list (scrollable)
+- **🎨 Maker**: Lesson creation form
+
+### Overlay Components
+
+All overlay components fit in video screen area, match half-screen format:
+
+**CalendarOverlay** (`overlays/CalendarOverlay.jsx`)
+- Shows only calendar panel (not scheduling panel)
+- Learner selector at top
+- Month/year navigation
+- Visual indicators for scheduled lessons
+- Shows scheduled lessons for selected date
+
+**LessonsOverlay** (`overlays/LessonsOverlay.jsx`)
+- Learner selector
+- Subject-based expandable sections
+- Grade filters per subject
+- Shows approved lessons, medals, progress
+- Fully scrollable list
+
+**GeneratedLessonsOverlay** (`overlays/GeneratedLessonsOverlay.jsx`)
+- Subject and grade filters
+- Status indicators (approved, needs update)
+- Scrollable lesson list
+- Color-coded by status
+
+**LessonMakerOverlay** (`overlays/LessonMakerOverlay.jsx`)
+- Compact lesson generation form
+- Quota display
+- All fields from full lesson maker
+- Inline success/error messages
+- Scrollable form
+
+### State Management
+- `activeScreen` state tracks currently displayed view
+- Default is 'mentor' (video view)
+- Screen state independent of conversation state
+- All overlays receive necessary props (learnerId, learners, tier, etc.)
+
+### Visual Design
+- Buttons use emoji icons for quick recognition
+- Active button has blue border and light blue background
+- Inactive buttons have gray border and white background
+- All overlays use consistent styling with gradient headers
+- Fully responsive and scrollable
+
+### File Structure
+```
+src/app/facilitator/tools/counselor/
+├── CounselorClient.jsx (main component - updated)
+├── ClipboardOverlay.jsx (existing)
+└── overlays/
+    ├── CalendarOverlay.jsx
+    ├── LessonsOverlay.jsx
+    ├── GeneratedLessonsOverlay.jsx
+    └── LessonMakerOverlay.jsx
+```
+
+### Usage
+1. **Viewing Different Screens**: Click emoji buttons to switch views
+2. **Learner Selection**: Available in most overlays; syncs with main dropdown
+3. **Returning to Video**: Click 👨‍🏫 button to return to Mr. Mentor video
+
+### Props Flow
+- `learners` array passed from parent to overlays
+- `selectedLearnerId` synced across all components
+- `tier` passed to LessonMaker for quota checks
+- All overlays handle their own data fetching
+
+### Responsive Behavior
+- Overlays fill entire video panel area
+- Scrollable content areas for long lists
+- Compact headers to maximize content space
+- Works in both portrait and landscape modes
+
+---
+
 ## Related Brain Files
 
 - **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Session ownership, device takeover, conversation persistence
@@ -297,4 +384,5 @@ Expected: Offer to generate ONLY if search yields poor results
 
 ## Changelog
 
+- **2025-12-31:** Appended multi-screen overlay system documentation (CalendarOverlay, LessonsOverlay, GeneratedLessonsOverlay, LessonMakerOverlay)
 - **2025-12-18:** Created brain file documenting recommendations vs generation decision logic and escape hatches (fix for locked-in generation flow)
