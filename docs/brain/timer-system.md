@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2025-12-19T04:20:00Z  
+**Last updated**: 2025-12-31T20:00:00Z  
 **Status**: Canonical
 
 ## How It Works
@@ -9,18 +9,17 @@
 
 **V1**: Each phase (discussion, comprehension, exercise, worksheet, test) has two timer modes.
 
-**V2**: Play/work timer modes only apply to phases 2-5 (Teaching, Repeat, Transition, Comprehension, Closing). Discussion phase has no timer - "Begin" button advances to teaching immediately.
+**V2**: Play/work timer modes only apply to phases 2-5 (Comprehension, Exercise, Worksheet, Test). Discussion phase has no timer - greeting → Begin → teaching flow with no play time.
 
 **Rationale**: Removing play timer from discussion phase eliminates infinite play timer exploit (learner could refresh during discussion to reset play timer indefinitely without starting teaching).
 
 **Timer Modes:**
-1. **Play Timer** (green) - Expected to use full time; learner can interact with Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games
+1. **Play Timer** (green) - Expected to use full time; learner can interact with Ask, Riddle, Poem, Story, Fill-in-Fun opening actions
 2. **Work Timer** (amber/red) - Learner should complete phase; input focused on lesson questions
 
-**V1** Timer mode tracked per-phase in `currentTimerMode` state object:
+**V2** Timer mode tracked only for phases 2-5:
 ```javascript
 {
-  discussion: 'play' | 'work',
   comprehension: 'play' | 'work',
   exercise: 'play' | 'work',
   worksheet: 'play' | 'work',
@@ -28,16 +27,53 @@
 }
 ```
 
-**V2** Timer mode tracked only for phases 2-5:
-```javascript
-{
-  teaching: 'play' | 'work',
-  repeat: 'play' | 'work',
-  transition: 'play' | 'work',
-  comprehension: 'play' | 'work',
-  closing: 'play' | 'work'
-}
-```
+### Phase 2 Implementation (V2)
+
+**TimerService Extensions:**
+- `playTimers` Map: phase → `{ startTime, elapsed, timeLimit, expired }`
+- `playTimerInterval`: 1-second tick interval for active play timers
+- `currentPlayPhase`: Currently active play phase (only one at a time)
+- `mode`: Current timer mode ('play' | 'work')
+
+**Play Timer Methods:**
+- `startPlayTimer(phase, timeLimit)`: Starts play timer for phase (phases 2-5 only)
+  - Validates phase (discussion rejected)
+  - Initializes timer state
+  - Emits `playTimerStart` event
+  - Starts tick interval if not running
+- `stopPlayTimer(phase)`: Stops play timer for phase
+  - Removes timer from Map
+  - Clears interval if no active timers
+  - Saves to sessionStorage
+- `transitionToWork(phase)`: Transitions from play to work mode
+  - Stops play timer
+  - Sets mode to 'work'
+  - Starts work phase timer
+- `#tickPlayTimers()`: Private tick method (1-second interval)
+  - Updates elapsed time
+  - Emits `playTimerTick` event
+  - Checks for expiration (remaining === 0)
+  - Emits `playTimerExpired` event when time up
+  - Auto-stops timer on expiration
+
+**Play Timer Events:**
+- `playTimerStart`: { phase, timestamp, timeLimit, formattedLimit }
+- `playTimerTick`: { phase, elapsed, remaining, formatted, remainingFormatted }
+- `playTimerExpired`: { phase, timestamp }
+
+**PlayTimeExpiredOverlay:**
+- Displays when `playTimerExpired` event fires
+- 30-second countdown (green → amber at 5 seconds)
+- "Time to Get Back to Work!" message
+- "Go Now" button to skip countdown
+- Auto-advances to work mode when countdown reaches 0
+- Calls `timerService.transitionToWork(phase)` on transition
+
+**Persistence:**
+- `serialize()` includes playTimers state (phase, elapsed, timeLimit, expired)
+- `restore()` resumes play timers from snapshot (recalculates startTime from elapsed)
+- `#saveToSessionStorage()` saves currentPlayPhase, playTimerElapsed, playTimerExpired
+- `#loadFromSessionStorage()` restores play timer and resumes tick interval if not expired
 
 ### Timer State Persistence
 
