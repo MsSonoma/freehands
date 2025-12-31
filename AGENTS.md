@@ -42,9 +42,19 @@ Brain File Enforcement (MANDATORY after code changes)
 
 Changelog Workflow
 - Single source: `docs/brain/changelog.md` is the live, newest-first change log.
-- Read-before-reply: BrainMaker and Copilot must read the latest 20 entries before responding to any prompt.
-- Write-after-reply: Append a new entry at the top using `<UTC timestamp> | <ENGINE> | <150-char summary>`; ASCII-only; no secrets.
+- Read-before-reply: BrainMaker and Copilot must read the latest 20 entries FIRST before any other documentation.
+- Write-after-reply: Append a new entry at the top using `<UTC timestamp> | <ENGINE> | <150-char summary> [#brain-file-id: keyword1, keyword2]`; ASCII-only; no secrets.
+- Keyword markup: Always include `[#brain-file-id: keywords]` when entry relates to a brain file. Use manifest.json file IDs and system keywords.
 - Collision handling: If two writes race, rewrite to restore newest-first order.
+
+Changelog Flow Architecture (MANDATORY)
+1. **Read changelog.md FIRST** (latest 20 entries) - this prevents zombie drift
+2. **Extract keyword markup** from entries: `[#brain-file-id: terms]`
+3. **Check manifest.json** for matching file-id (direct jump to canonical docs)
+4. **Read brain file completely** (canonical truth about current design)
+5. **THEN scan code** (implementation specifics only after understanding design)
+
+This sequence ensures: Changelog → Manifest → Brain file → Code. Never skip changelog or reverse this order.
 
 Ownership Boundaries
 - Signals are constitutional and read-only for everyone. Neither BrainMaker nor Copilot may edit `.github/Signals/*` or restate signal texts; they may only reference them.

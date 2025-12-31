@@ -20,7 +20,7 @@ Before making changes to core systems:
    - **NEVER commit code changes without updating the brain file first**
    - If no code changes were made in this response, inform user and skip brain update
 
-5. **LOG**: Include brain changes in changelog.md entry: "Updated {topic}.md section X" or "Created {topic}.md"
+5. **LOG**: Include brain changes in changelog.md entry with keyword markup: "Updated {topic}.md section X [#{file-id}: keyword1, keyword2]" or "Created {topic}.md [#{file-id}: keyword1, keyword2]"
 
 ---
 
@@ -48,12 +48,14 @@ Before making changes to core systems:
 
 ### Read-First Protocol
 
-Before any Code or Debug action, follow this sequence:
+Before any Code or Debug action, follow this MANDATORY sequence:
 
-1. **Check manifest.json**: Does a brain file cover this system/feature/component?
-2. **Read brain file if exists**: It is canonical truth about design, patterns, gotchas
-3. **Scan directly-related code files** for implementation specifics (function signatures, props, line numbers)
-4. **Read latest 20 changelog entries** in `docs/brain/changelog.md` for recent changes
+1. **Read changelog.md FIRST** - Latest 20 entries in `docs/brain/changelog.md`. Extract keyword markup `[#brain-file-id: terms]` from relevant entries.
+2. **Check manifest.json** - Use file-id from changelog markup to find brain file. Match keywords to system.
+3. **Read brain file completely** - It is canonical truth about design, patterns, gotchas.
+4. **Scan directly-related code files** - Implementation specifics (function signatures, props, line numbers) ONLY after understanding design.
+
+This sequence prevents zombie drift: Changelog → Manifest → Brain file → Code. Never reverse this order.
 
 Additional guidelines:
 - Prefer local sources over web
@@ -63,7 +65,11 @@ Additional guidelines:
 
 - **File**: `docs/brain/changelog.md` (create if missing)
 - **Order**: Newest entries at top (reverse chronological)
-- **Format per line**: `YYYY-MM-DDTHH:MM:SSZ | Copilot | <summary up to 150 chars>`
+- **Format per line**: `YYYY-MM-DDTHH:MM:SSZ | Copilot | <summary up to 150 chars> [#brain-file-id: keyword1, keyword2]`
+- **Keyword markup**: ALWAYS include `[#brain-file-id: keywords]` when entry relates to a brain file
+  - Use manifest.json file IDs (e.g., `#snapshot-persistence`, `#timer-system`, `#mr-mentor-conversation-flows`)
+  - Include 2-5 relevant keywords from manifest (e.g., `atomic-gates`, `timer-state`, `golden-key`)
+  - Multiple brain files: `[#file-1: terms] [#file-2: terms]`
 - ASCII-only; no secrets
 - On each response, write new entry at top
 - If concurrent edits occur, rewrite to restore newest-first order
