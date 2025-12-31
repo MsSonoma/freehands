@@ -39,11 +39,10 @@ Ms. Sonoma operates as a **stateless, instruction-only system**:
 
 **Allowed Phases**:
 
-1. **Opening** (no teaching)
-   - Greeting with child's exact name and lesson title (1-2 sentences)
-   - One short encouragement
-   - A short joke starting with [VERBATIM]: "Wanna hear a joke?" or "Let's start with a joke."
-   - One playful silly question (final sentence)
+1. **Opening** (V2: greeting only, no activities)
+   - **V1**: Greeting with child's exact name and lesson title (1-2 sentences) + encouragement + joke + silly question
+   - **V2**: Greeting with child's exact name and lesson title (1-2 sentences) only. No joke, no silly question. "Begin" button advances to teaching immediately.
+   - **Rationale**: V2 removes opening actions from discussion phase to eliminate play timer exploit. Opening actions (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games) moved to play time in phases 2-5.
 
 2. **Teaching Definitions** (first stage)
    - One short kid-friendly definition per vocab term (one sentence each)

@@ -7,12 +7,17 @@
 
 ### Play vs Work Timers
 
-Each phase (discussion, comprehension, exercise, worksheet, test) has two timer modes:
+**V1**: Each phase (discussion, comprehension, exercise, worksheet, test) has two timer modes.
 
+**V2**: Play/work timer modes only apply to phases 2-5 (Teaching, Repeat, Transition, Comprehension, Closing). Discussion phase has no timer - "Begin" button advances to teaching immediately.
+
+**Rationale**: Removing play timer from discussion phase eliminates infinite play timer exploit (learner could refresh during discussion to reset play timer indefinitely without starting teaching).
+
+**Timer Modes:**
 1. **Play Timer** (green) - Expected to use full time; learner can interact with Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games
 2. **Work Timer** (amber/red) - Learner should complete phase; input focused on lesson questions
 
-Timer mode is tracked per-phase in `currentTimerMode` state object:
+**V1** Timer mode tracked per-phase in `currentTimerMode` state object:
 ```javascript
 {
   discussion: 'play' | 'work',
@@ -20,6 +25,17 @@ Timer mode is tracked per-phase in `currentTimerMode` state object:
   exercise: 'play' | 'work',
   worksheet: 'play' | 'work',
   test: 'play' | 'work'
+}
+```
+
+**V2** Timer mode tracked only for phases 2-5:
+```javascript
+{
+  teaching: 'play' | 'work',
+  repeat: 'play' | 'work',
+  transition: 'play' | 'work',
+  comprehension: 'play' | 'work',
+  closing: 'play' | 'work'
 }
 ```
 

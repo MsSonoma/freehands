@@ -9,6 +9,7 @@
  * - Captures kid's typed answer
  * - Simple validation (answer exists)
  * - Plays praise TTS after correct answer (V1 behavior)
+ * - TTS prefetching for performance (eliminates wait times)
  * - Emits comprehensionComplete event
  * 
  * Usage:
@@ -18,6 +19,7 @@
  */
 
 import { fetchTTS } from './services';
+import { ttsCache } from '../utils/ttsCache';
 
 // V1 praise phrases (from CELEBRATE_CORRECT array)
 const PRAISE_PHRASES = [
@@ -136,8 +138,17 @@ export class ComprehensionPhase {
       });
     });
     
-    // Fetch TTS and play question
-    const audioBase64 = await fetchTTS(this.#question);
+    // Check cache first (instant if prefetched)
+    let audioBase64 = ttsCache.get(this.#question);
+    
+    if (!audioBase64) {
+      // Cache miss - fetch synchronously
+      audioBase64 = await fetchTTS(this.#question);
+      if (audioBase64) {
+        ttsCache.set(this.#question, audioBase64);
+      }
+    }
+    
     await this.#audioEngine.playAudio(audioBase64 || '', [this.#question]);
   }
   

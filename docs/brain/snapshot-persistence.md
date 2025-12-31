@@ -54,10 +54,8 @@ With guard in place, completion cleanup is atomic - either all persistence clear
 ## Checkpoint Gates (Where Snapshots Save)
 
 ### Opening Phase
-- `first-interaction` - When user clicks any button except Begin (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games, or Go)
-  - Prevents infinite play timer hack via refresh
-  - Fires once per session on first button click
-  - Persists timer state before user can exploit refresh
+- **V1**: `first-interaction` - When user clicks any button except Begin (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games, or Go). Prevents infinite play timer hack via refresh.
+- **V2**: No first-interaction gate needed. Discussion phase has no opening actions or play timer - "Begin" button advances to teaching immediately. Play timer exploit eliminated by architectural simplification.
 
 ### Teaching Flow
 - `begin-teaching-definitions`

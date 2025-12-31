@@ -9,6 +9,7 @@
  * - Breaks into sentences
  * - Sentence-by-sentence navigation with gate controls
  * - Fetches TTS audio for each sentence
+ * - Prefetches N+1 audio during N playback (eliminates wait times)
  * - Emits events: stageChange, sentenceAdvance, teachingComplete
  * - Zero knowledge of phase transitions or snapshot persistence
  * 
@@ -20,6 +21,7 @@
  */
 
 import { fetchTTS } from './services';
+import { ttsCache } from '../utils/ttsCache';
 
 export class TeachingController {
   // Private state
@@ -234,8 +236,23 @@ export class TeachingController {
       });
     });
     
-    // Fetch TTS audio
-    const audioBase64 = await fetchTTS(sentence);
+    // Check cache first (instant if prefetched)
+    let audioBase64 = ttsCache.get(sentence);
+    
+    if (!audioBase64) {
+      // Cache miss - fetch synchronously
+      audioBase64 = await fetchTTS(sentence);
+      if (audioBase64) {
+        ttsCache.set(sentence, audioBase64);
+      }
+    }
+    
+    // Prefetch next sentence in background (eliminates wait on Next click)
+    const nextIndex = this.#currentSentenceIndex + 1;
+    if (nextIndex < this.#vocabSentences.length) {
+      const nextSentence = this.#vocabSentences[nextIndex];
+      ttsCache.prefetch(nextSentence);
+    }
     
     // Play through AudioEngine (falls back to synthetic if TTS fails)
     await this.#audioEngine.playAudio(audioBase64 || '', [sentence]);
@@ -251,11 +268,14 @@ export class TeachingController {
     const nextIndex = this.#currentSentenceIndex + 1;
     
     if (nextIndex >= this.#vocabSentences.length) {
-      // Reached end - show final gate
+      // Reached end - show final gate with sample questions
       this.#isInSentenceMode = false;
       this.#emit('finalGateReached', {
         stage: 'definitions'
       });
+      
+      // Play gate prompt with sample questions (V2 architecture requirement)
+      this.#playGatePrompt('definitions');
       return;
     }
     
@@ -308,8 +328,23 @@ export class TeachingController {
       });
     });
     
-    // Fetch TTS audio
-    const audioBase64 = await fetchTTS(sentence);
+    // Check cache first (instant if prefetched)
+    let audioBase64 = ttsCache.get(sentence);
+    
+    if (!audioBase64) {
+      // Cache miss - fetch synchronously
+      audioBase64 = await fetchTTS(sentence);
+      if (audioBase64) {
+        ttsCache.set(sentence, audioBase64);
+      }
+    }
+    
+    // Prefetch next sentence in background (eliminates wait on Next click)
+    const nextIndex = this.#currentSentenceIndex + 1;
+    if (nextIndex < this.#exampleSentences.length) {
+      const nextSentence = this.#exampleSentences[nextIndex];
+      ttsCache.prefetch(nextSentence);
+    }
     
     // Play through AudioEngine (falls back to synthetic if TTS fails)
     await this.#audioEngine.playAudio(audioBase64 || '', [sentence]);
@@ -325,11 +360,14 @@ export class TeachingController {
     const nextIndex = this.#currentSentenceIndex + 1;
     
     if (nextIndex >= this.#exampleSentences.length) {
-      // Reached end - show final gate
+      // Reached end - show final gate with sample questions
       this.#isInSentenceMode = false;
       this.#emit('finalGateReached', {
         stage: 'examples'
       });
+      
+      // Play gate prompt with sample questions (V2 architecture requirement)
+      this.#playGatePrompt('examples');
       return;
     }
     
@@ -363,6 +401,77 @@ export class TeachingController {
       vocabCount: this.#vocabSentences.length,
       exampleCount: this.#exampleSentences.length
     });
+  }
+  
+  // Private: Gate prompt with sample questions
+  async #playGatePrompt(stage) {
+    // Generate "Do you have any questions? You could ask questions like..." with 3 examples
+    const content = stage === 'definitions' 
+      ? this.#vocabSentences.join(' ')
+      : this.#exampleSentences.join(' ');
+    
+    const prompt = `Based on this ${stage === 'definitions' ? 'vocabulary' : 'examples'} content, generate exactly 3 simple questions a child might ask. Return ONLY the following format with no additional text:
+
+Content: ${content.substring(0, 500)}
+
+Format your response EXACTLY like this:
+Do you have any questions? You could ask questions like... What does [term] mean? How do I use [term] in a sentence? Can you give me another example of [term]?`;
+
+    try {
+      // Try GPT-4 for sample questions
+      const response = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: prompt,
+          phase: 'teaching-gate',
+          maxTokens: 150
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const gateText = data.reply || '';
+        
+        if (gateText && gateText.includes('Do you have any questions')) {
+          // GPT succeeded - play generated gate prompt
+          let gateAudio = ttsCache.get(gateText);
+          
+          if (!gateAudio) {
+            gateAudio = await fetchTTS(gateText);
+            if (gateAudio) {
+              ttsCache.set(gateText, gateAudio);
+            }
+          }
+          
+          await this.#audioEngine.playAudio(gateAudio || '', [gateText]);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('[TeachingController] Gate prompt generation failed, using fallback:', err);
+    }
+    
+    // Fallback: Deterministic three-question pattern (V2 architecture requirement)
+    const vocabTerms = this.#lessonData?.vocab || [];
+    const firstTerm = vocabTerms[0]?.term || vocabTerms[0] || 'this topic';
+    const secondTerm = vocabTerms[1]?.term || vocabTerms[1] || 'these ideas';
+    const thirdTerm = vocabTerms[2]?.term || vocabTerms[2] || 'this lesson';
+    
+    const fallbackText = stage === 'definitions'
+      ? `Do you have any questions? You could ask questions like... What does ${firstTerm} mean? How is ${secondTerm} different from other words? Can you explain ${thirdTerm} in another way?`
+      : `Do you have any questions? You could ask questions like... How do I use ${firstTerm} in a sentence? Can you give me another example with ${secondTerm}? Why would I use ${thirdTerm}?`;
+    
+    let fallbackAudio = ttsCache.get(fallbackText);
+    
+    if (!fallbackAudio) {
+      fallbackAudio = await fetchTTS(fallbackText);
+      if (fallbackAudio) {
+        ttsCache.set(fallbackText, fallbackAudio);
+      }
+    }
+    
+    await this.#audioEngine.playAudio(fallbackAudio || '', [fallbackText]);
   }
   
   // Private: Audio coordination

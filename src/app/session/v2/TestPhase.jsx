@@ -8,6 +8,7 @@
  * Architecture:
  * - Loads test questions (MC/TF/fill-in-blank)
  * - Plays each question with TTS
+ * - Prefetches N+1 question during N playback (eliminates wait times)
  * - Presents appropriate UI (radio/text input)
  * - Validates answers and tracks results
  * - Calculates grade and shows review
@@ -20,6 +21,7 @@
  */
 
 import { fetchTTS } from './services';
+import { ttsCache } from '../utils/ttsCache';
 
 // Praise phrases for correct answers (matches V1 engagement pattern)
 const PRAISE_PHRASES = [
@@ -331,8 +333,24 @@ export class TestPhase {
       });
     });
     
-    // Fetch TTS and play question
-    const audioBase64 = await fetchTTS(question.question);
+    // Check cache first (instant if prefetched)
+    let audioBase64 = ttsCache.get(question.question);
+    
+    if (!audioBase64) {
+      // Cache miss - fetch synchronously
+      audioBase64 = await fetchTTS(question.question);
+      if (audioBase64) {
+        ttsCache.set(question.question, audioBase64);
+      }
+    }
+    
+    // Prefetch next question in background (eliminates wait on Next click)
+    const nextIndex = this.#currentQuestionIndex + 1;
+    if (nextIndex < this.#questions.length) {
+      const nextQuestion = this.#questions[nextIndex].question;
+      ttsCache.prefetch(nextQuestion);
+    }
+    
     await this.#audioEngine.playAudio(audioBase64 || '', [question.question]);
   }
   

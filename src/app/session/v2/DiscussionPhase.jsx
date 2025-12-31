@@ -1,123 +1,179 @@
 /**
- * DiscussionPhase.jsx
- * Manages discussion activities before teaching phase
- * Plays discussion prompts with TTS and captures student responses
+ * DiscussionPhase.jsx (V2 Simplified)
  * 
- * Activities:
- * - Ask: Open-ended question about the topic
- * - Riddle: Fun riddle related to the topic
- * - Poem: Short poem introducing the topic
- * - Story: Mini-story related to the topic
- * - Fill-in-Fun: Interactive fill-in-blank game
+ * V2 Architectural Decision: Greeting-only discussion phase
+ * - No opening actions (Ask, Riddle, Poem, Story, Fill-in-Fun, Games)
+ * - No play timer (eliminates infinite play timer exploit)
+ * - Single "Begin" button advances to teaching after greeting
+ * - Opening actions moved to play time in phases 2-5 (Teaching, Repeat, Transition, Comprehension, Closing)
+ * 
+ * Plays greeting TTS: "Hi [name], ready to learn about [topic]?"
+ * Shows Begin button
+ * Emits discussionComplete event when Begin clicked
  * 
  * Events emitted:
- * - discussionStart: { activity } - Discussion activity started
- * - promptPlaying: { activity, audio } - TTS audio playing
- * - promptComplete: { activity } - TTS finished
- * - responseSubmitted: { activity, response } - Student submitted response
- * - activitySkipped: { activity } - Activity skipped
- * - discussionComplete: { activity, response } - Discussion complete
+ * - greetingPlaying: { greetingText } - Greeting TTS started
+ * - greetingComplete: { } - Greeting TTS finished
+ * - discussionComplete: { } - Begin button clicked, advance to teaching
  */
 
 'use client';
 
+import { fetchTTS } from './services';
+import { ttsCache } from '../utils/ttsCache';
+
 export class DiscussionPhase {
-  constructor(audioEngine, ttsService, eventBus) {
-    this.audioEngine = audioEngine;
-    this.ttsService = ttsService;
-    this.eventBus = eventBus;
+  // Private state
+  #audioEngine = null;
+  #eventBus = null;
+  #learnerName = '';
+  #lessonTitle = '';
+  
+  #state = 'idle'; // 'idle' | 'playing-greeting' | 'awaiting-begin' | 'complete'
+  #audioEndListener = null;
+  
+  constructor(options = {}) {
+    this.#audioEngine = options.audioEngine;
+    this.#eventBus = options.eventBus;
+    this.#learnerName = options.learnerName || 'friend';
+    this.#lessonTitle = options.lessonTitle || 'this topic';
     
-    // Internal state
-    this.currentActivity = null;
-    this.state = 'idle'; // idle | playing-prompt | awaiting-response | complete
-    this.currentResponse = '';
-    this.abortController = null;
+    if (!this.#audioEngine) {
+      throw new Error('DiscussionPhase requires audioEngine');
+    }
     
-    // Bind public methods
-    this.start = this.start.bind(this);
-    this.skip = this.skip.bind(this);
-    this.submitResponse = this.submitResponse.bind(this);
-    // Private methods are automatically bound
+    if (!this.#eventBus) {
+      throw new Error('DiscussionPhase requires eventBus');
+    }
   }
   
   /**
-   * Start a discussion activity
-   * @param {string} activity - Activity type: 'ask' | 'riddle' | 'poem' | 'story' | 'fill-in-fun'
-   * @param {string} prompt - The prompt text to play
+   * Start discussion phase - play greeting
    */
-  async start(activity, prompt) {
-    if (this.state !== 'idle') {
+  async start() {
+    if (this.#state !== 'idle') {
       console.warn('[DiscussionPhase] Cannot start - already running');
       return;
     }
     
-    this.currentActivity = activity;
-    this.state = 'playing-prompt';
-    this.currentResponse = '';
-    this.abortController = new AbortController();
+    this.#state = 'playing-greeting';
     
-    this.eventBus.emit('discussionStart', { activity });
+    // Generate greeting: "Hi [name], ready to learn about [topic]?"
+    const greetingText = `Hi ${this.#learnerName}, ready to learn about ${this.#lessonTitle}?`;
+    
+    this.#eventBus.emit('greetingPlaying', { greetingText });
     
     try {
-      // Fetch TTS audio for the prompt
-      const audioUrl = await this.ttsService.fetchTTS(prompt);
+      // Check cache first
+      let greetingAudio = ttsCache.get(greetingText);
       
-      // Check if aborted during fetch
-      if (this.abortController.signal.aborted) {
-        console.log('[DiscussionPhase] Aborted during TTS fetch');
-        return;
+      if (!greetingAudio) {
+        greetingAudio = await fetchTTS(greetingText);
+        if (greetingAudio) {
+          ttsCache.set(greetingText, greetingAudio);
+        }
       }
-      
-      this.eventBus.emit('promptPlaying', { activity, audio: audioUrl });
       
       // Listen for audio completion
-      this.audioEngine.on('end', this.#handleAudioComplete);
+      this.#setupAudioEndListener(() => {
+        this.#state = 'awaiting-begin';
+        this.#eventBus.emit('greetingComplete', {});
+      });
       
-      // Play the prompt
-      await this.audioEngine.playAudio(audioUrl, [prompt]);
-      
-      // Check if aborted during playback
-      if (this.abortController.signal.aborted) {
-        console.log('[DiscussionPhase] Aborted during playback');
-        return;
-      }
-      
-      // Prompt finished - wait for response
-      this.state = 'awaiting-response';
-      this.eventBus.emit('promptComplete', { activity });
+      // Play greeting
+      await this.#audioEngine.playAudio(greetingAudio || '', [greetingText]);
       
     } catch (error) {
-      console.error('[DiscussionPhase] Error playing prompt:', error);
-      this.state = 'idle';
-      this.currentActivity = null;
-      this.abortController = null;
+      console.error('[DiscussionPhase] Error playing greeting:', error);
+      // Proceed to awaiting-begin even if TTS fails
+      this.#state = 'awaiting-begin';
+      this.#eventBus.emit('greetingComplete', {});
     }
   }
   
   /**
-   * Submit student response to discussion prompt
-   * @param {string} response - Student's typed response
+   * User clicked Begin button - advance to teaching
    */
-  submitResponse(response) {
-    if (this.state !== 'awaiting-response') {
-      console.warn('[DiscussionPhase] Cannot submit - not awaiting response');
+  begin() {
+    if (this.#state !== 'awaiting-begin') {
+      console.warn('[DiscussionPhase] Cannot begin - not ready');
       return;
     }
     
-    this.currentResponse = response;
-    this.state = 'complete';
+    this.#state = 'complete';
     
-    this.eventBus.emit('responseSubmitted', { 
-      activity: this.currentActivity, 
-      response 
-    });
+    // Remove audio listener
+    if (this.#audioEndListener) {
+      this.#audioEngine.off('end', this.#audioEndListener);
+      this.#audioEndListener = null;
+    }
     
-    this.eventBus.emit('discussionComplete', { 
-      activity: this.currentActivity, 
-      response 
-    });
+    this.#eventBus.emit('discussionComplete', {});
+  }
+  
+  /**
+   * Skip greeting and go straight to teaching
+   */
+  skip() {
+    // Stop any playing audio
+    if (this.#state === 'playing-greeting') {
+      this.#audioEngine.stop();
+    }
     
-    // Reset state
+    this.#state = 'complete';
+    
+    // Remove audio listener
+    if (this.#audioEndListener) {
+      this.#audioEngine.off('end', this.#audioEndListener);
+      this.#audioEndListener = null;
+    }
+    
+    this.#eventBus.emit('discussionComplete', {});
+  }
+  
+  // Getters
+  get state() {
+    return this.#state;
+  }
+  
+  get learnerName() {
+    return this.#learnerName;
+  }
+  
+  get lessonTitle() {
+    return this.#lessonTitle;
+  }
+  
+  // Private: Audio coordination
+  #setupAudioEndListener(callback) {
+    // Remove previous listener
+    if (this.#audioEndListener) {
+      this.#audioEngine.off('end', this.#audioEndListener);
+    }
+    
+    // Create new listener
+    this.#audioEndListener = (data) => {
+      if (data.completed) {
+        callback();
+      }
+    };
+    
+    this.#audioEngine.on('end', this.#audioEndListener);
+  }
+  
+  /**
+   * Cleanup
+   */
+  destroy() {
+    if (this.#audioEndListener) {
+      this.#audioEngine.off('end', this.#audioEndListener);
+      this.#audioEndListener = null;
+    }
+    
+    this.#state = 'idle';
+  }
+}
+
     this.currentActivity = null;
     this.state = 'idle';
     this.abortController = null;

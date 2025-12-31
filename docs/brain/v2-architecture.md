@@ -82,6 +82,34 @@ V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical 
 
 ---
 
+## V2 Architectural Decisions
+
+### Discussion Phase Simplification (2025-12-31)
+
+**Decision:** Remove opening actions (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games) from discussion phase in V2.
+
+**Rationale:**
+1. **Play Timer Exploit Elimination** - V1 has infinite play timer hack: learner can refresh during discussion phase to reset play timer indefinitely without ever starting teaching. Removing opening actions from discussion phase eliminates exploit entirely.
+2. **Architectural Clarity** - Opening actions are complex multi-step state machines (949 lines in useDiscussionHandlers.js). Removing from discussion phase simplifies V2 architecture while retaining play/work timer modes for phases 2-5 where they provide value.
+3. **First-Interaction Gate Obsolete** - With no play time in discussion phase, first-interaction snapshot gate is no longer needed for exploit prevention.
+
+**Implementation:**
+- Discussion phase: greeting TTS + single "Begin" button → advances to teaching
+- No opening action buttons in discussion phase
+- No play timer in discussion phase (instant transition)
+- Play/work timer modes still apply to Teaching, Repeat, Transition, Comprehension, Closing phases
+- Opening action buttons (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games) appear during play time in phases 2-5
+
+**User Flow:**
+1. Learner clicks Start Lesson
+2. Discussion phase loads, plays greeting: "Hi [name], ready to learn about [topic]?"
+3. Learner clicks "Begin" button
+4. Teaching phase starts with play timer (green) - opening action buttons available
+5. Learner can interact with opening actions during play time in teaching phase
+6. Play timer expires → PlayTimeExpiredOverlay → work timer starts → teaching questions begin
+
+---
+
 ## Why V2 Exists
 
 The v1 session page (`src/app/session/page.js`) is a 9,797-line monolith managing 30+ coupled state machines simultaneously:
