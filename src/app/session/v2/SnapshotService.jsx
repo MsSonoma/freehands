@@ -89,6 +89,7 @@ export class SnapshotService {
         currentPhase: data.current_phase,
         completedPhases: data.completed_phases || [],
         phaseData: data.phase_data || {},
+        timerState: data.timer_state || null,
         lastUpdated: data.updated_at,
         createdAt: data.created_at
       };
@@ -100,6 +101,12 @@ export class SnapshotService {
   
   // Public API: Save phase completion
   async savePhaseCompletion(phase, phaseData = {}) {
+    // Check prevention flag (set during lesson cleanup)
+    if (typeof window !== 'undefined' && window.__PREVENT_SNAPSHOT_SAVE__) {
+      console.log('[SnapshotService] Snapshot save blocked by cleanup flag');
+      return { success: false, blocked: true };
+    }
+    
     if (this.#saveInProgress) {
       console.warn('[SnapshotService] Save already in progress, queuing...');
       // Wait for current save to complete
@@ -129,6 +136,7 @@ export class SnapshotService {
         currentPhase: phase,
         completedPhases: completedPhases,
         phaseData: allPhaseData,
+        timerState: phaseData.timerState || null,
         lastUpdated: new Date().toISOString()
       };
       
@@ -150,6 +158,7 @@ export class SnapshotService {
           current_phase: phase,
           completed_phases: completedPhases,
           phase_data: allPhaseData,
+          timer_state: snapshot.timerState,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'session_id,learner_id'
@@ -176,6 +185,12 @@ export class SnapshotService {
   // Public API: Save progress incrementally (granular saves for V1 parity)
   // Called after each user action (sentence completion, question answered, etc.)
   async saveProgress(trigger = 'action', updateData = {}) {
+    // Check prevention flag (set during lesson cleanup)
+    if (typeof window !== 'undefined' && window.__PREVENT_SNAPSHOT_SAVE__) {
+      console.log('[SnapshotService] Snapshot save blocked by cleanup flag');
+      return { success: false, blocked: true };
+    }
+    
     if (this.#saveInProgress) {
       // Don't queue granular saves - just skip to avoid backup
       return;
@@ -305,9 +320,13 @@ export class SnapshotService {
   }
   
   // Private: LocalStorage fallback (for testing without Supabase)
+  #getLocalStorageKey() {
+    return `atomic_snapshot:${this.#learnerId}:${this.#lessonKey}`;
+  }
+  
   #loadFromLocalStorage() {
     try {
-      const key = `snapshot_${this.#sessionId}_${this.#learnerId}`;
+      const key = this.#getLocalStorageKey();
       const json = localStorage.getItem(key);
       if (!json) return null;
       return JSON.parse(json);
@@ -319,7 +338,7 @@ export class SnapshotService {
   
   #saveToLocalStorage(snapshot) {
     try {
-      const key = `snapshot_${this.#sessionId}_${this.#learnerId}`;
+      const key = this.#getLocalStorageKey();
       localStorage.setItem(key, JSON.stringify(snapshot));
     } catch (err) {
       console.error('[SnapshotService] LocalStorage save error:', err);
@@ -328,7 +347,7 @@ export class SnapshotService {
   
   #deleteFromLocalStorage() {
     try {
-      const key = `snapshot_${this.#sessionId}_${this.#learnerId}`;
+      const key = this.#getLocalStorageKey();
       localStorage.removeItem(key);
     } catch (err) {
       console.error('[SnapshotService] LocalStorage delete error:', err);

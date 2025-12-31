@@ -1,4 +1,92 @@
 {
+  "goals-clipboard": {
+    "file": "goals-clipboard.md",
+    "systems": [
+      "goals clipboard overlay",
+      "persistent goals per learner/facilitator",
+      "goals_notes database column",
+      "API endpoints (load/save)",
+      "Mr. Mentor integration (system prompt)",
+      "auto-load on learner switch",
+      "600 character limit"
+    ],
+    "last_updated": "2025-12-31T12:30:00Z",
+    "status": "canonical"
+  },
+  "lesson-notes": {
+    "file": "lesson-notes.md",
+    "systems": [
+      "facilitator lesson notes",
+      "lesson_notes JSONB column",
+      "note UI in facilitator/lessons",
+      "Mr. Mentor transcript integration",
+      "note display per lesson",
+      "learner-specific context"
+    ],
+    "last_updated": "2025-12-31T12:30:00Z",
+    "status": "canonical"
+  },
+  "lesson-validation": {
+    "file": "lesson-validation.md",
+    "systems": [
+      "automatic lesson quality validation",
+      "two-call improvement flow",
+      "lessonValidation.js",
+      "critical issue checks",
+      "toast notification progress",
+      "Lesson Maker integration",
+      "Mr. Mentor auto-validation"
+    ],
+    "last_updated": "2025-12-31T12:30:00Z",
+    "status": "canonical"
+  },
+  "mr-mentor-memory": {
+    "file": "mr-mentor-memory.md",
+    "systems": [
+      "conversation memory persistence",
+      "automatic summarization (GPT-4o-mini)",
+      "incremental summary updates",
+      "conversation_updates table",
+      "conversation_history_archive table",
+      "fuzzy search (full-text)",
+      "function calling tools (get/search memory)",
+      "auto-archival (50 turns)",
+      "dual context (facilitator/learner)"
+    ],
+    "last_updated": "2025-12-31T12:30:00Z",
+    "status": "canonical"
+  },
+  "mr-mentor-sessions": {
+    "file": "mr-mentor-sessions.md",
+    "systems": [
+      "single-device session enforcement",
+      "session takeover with PIN",
+      "mentor_sessions table",
+      "cross-device conversation persistence",
+      "session polling (8 seconds)",
+      "SessionTakeoverDialog component",
+      "automatic stale session cleanup"
+    ],
+    "last_updated": "2025-12-31T12:30:00Z",
+    "status": "canonical"
+  },
+  "api-routes": {
+    "file": "api-routes.md",
+    "systems": [
+      "/api/sonoma endpoint",
+      "request format (instructions, innertext, session)",
+      "response format (reply)",
+      "logging controls (SONOMA_LOG_PREVIEW_MAX)",
+      "stateless architecture",
+      "instruction-driven behavior",
+      "LLM provider configuration",
+      "TTS endpoint",
+      "visual aids endpoint",
+      "content safety endpoint"
+    ],
+    "last_updated": "2025-12-31T00:00:00Z",
+    "status": "canonical"
+  },
   "v2-architecture": {
     "file": "v2-architecture.md",
     "systems": [

@@ -266,7 +266,7 @@ export class TeachingController {
       total: this.#vocabSentences.length
     });
     
-    // Request granular snapshot save (V1 behavioral parity)
+    // Request granular snapshot save BEFORE TTS to capture state before user can interrupt
     this.#emit('requestSnapshotSave', {
       trigger: 'teaching-definition',
       data: { stage: 'definitions', sentenceIndex: this.#currentSentenceIndex }
@@ -340,7 +340,7 @@ export class TeachingController {
       total: this.#exampleSentences.length
     });
     
-    // Request granular snapshot save (V1 behavioral parity)
+    // Request granular snapshot save BEFORE TTS to capture state before user can interrupt
     this.#emit('requestSnapshotSave', {
       trigger: 'teaching-example',
       data: { stage: 'examples', sentenceIndex: this.#currentSentenceIndex }

@@ -448,6 +448,11 @@ function SessionPageV2Inner() {
       addEvent('🏁 Session complete!');
       setCurrentPhase('complete');
       
+      // Set prevention flag to block any snapshot saves during cleanup
+      if (typeof window !== 'undefined') {
+        window.__PREVENT_SNAPSHOT_SAVE__ = true;
+      }
+      
       // Stop session timer
       if (timerServiceRef.current) {
         timerServiceRef.current.stopSessionTimer();
@@ -467,8 +472,17 @@ function SessionPageV2Inner() {
       if (snapshotServiceRef.current) {
         snapshotServiceRef.current.deleteSnapshot().then(() => {
           addEvent('💾 Cleared session snapshot');
+          
+          // Clear prevention flag after cleanup completes
+          if (typeof window !== 'undefined') {
+            delete window.__PREVENT_SNAPSHOT_SAVE__;
+          }
         }).catch(err => {
           console.error('[SessionPageV2] Delete snapshot error:', err);
+          // Clear flag even on error
+          if (typeof window !== 'undefined') {
+            delete window.__PREVENT_SNAPSHOT_SAVE__;
+          }
         });
       }
     });

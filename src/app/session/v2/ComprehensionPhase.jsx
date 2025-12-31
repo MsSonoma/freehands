@@ -163,11 +163,13 @@ export class ComprehensionPhase {
       answer: this.#userAnswer
     });
     
-    // Request granular snapshot save (V1 behavioral parity)
-    this.#emit('requestSnapshotSave', {
-      trigger: 'comprehension-answer',
-      data: { question: this.#question, answer: this.#userAnswer }
-    });
+    // Request granular snapshot save with setTimeout to ensure React state flush
+    setTimeout(() => {
+      this.#emit('requestSnapshotSave', {
+        trigger: 'comprehension-answer',
+        data: { question: this.#question, answer: this.#userAnswer }
+      });
+    }, 0);
     
     // Play praise TTS (V1 behavior - positive reinforcement)
     this.#state = 'playing-feedback';

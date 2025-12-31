@@ -48,6 +48,14 @@ export class TimerService {
     this.onTimeCompletions = 0;
     this.goldenKeyAwarded = false;
     
+    // SessionStorage cache for refresh recovery
+    this.lessonKey = options.lessonKey || null;
+    this.phase = options.phase || null;
+    this.mode = 'play'; // play or work
+    
+    // Restore from sessionStorage if available
+    this.#loadFromSessionStorage();
+    
     // Bind public methods
     this.startSessionTimer = this.startSessionTimer.bind(this);
     this.stopSessionTimer = this.stopSessionTimer.bind(this);
@@ -313,6 +321,9 @@ export class TimerService {
     const now = Date.now();
     this.sessionElapsed = Math.floor((now - this.sessionStartTime) / 1000);
     
+    // Save to sessionStorage after each tick
+    this.#saveToSessionStorage();
+    
     this.eventBus.emit('sessionTimerTick', {
       elapsed: this.sessionElapsed,
       formatted: this.#formatTime(this.sessionElapsed)
@@ -331,6 +342,9 @@ export class TimerService {
     
     const now = Date.now();
     timer.elapsed = Math.floor((now - timer.startTime) / 1000);
+    
+    // Save to sessionStorage after each tick
+    this.#saveToSessionStorage();
     
     const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
     const onTime = timer.elapsed <= timer.timeLimit;
@@ -372,6 +386,66 @@ export class TimerService {
       this.workPhaseInterval = null;
     }
     
-    this.workPhaseTimers.clear();
+    // Clear sessionStorage on destroy
+    this.#clearSessionStorage();
+  }
+  
+  // SessionStorage cache methods
+  #getSessionStorageKey() {
+    if (!this.lessonKey || !this.phase) return null;
+    return `session_timer_state:${this.lessonKey}:${this.phase}:${this.mode}`;
+  }
+  
+  #loadFromSessionStorage() {
+    if (typeof window === 'undefined') return;
+    
+    const key = this.#getSessionStorageKey();
+    if (!key) return;
+    
+    try {
+      const stored = sessionStorage.getItem(key);
+      if (!stored) return;
+      
+      const data = JSON.parse(stored);
+      this.sessionElapsed = data.sessionElapsed || 0;
+      this.onTimeCompletions = data.onTimeCompletions || 0;
+      this.goldenKeyAwarded = data.goldenKeyAwarded || false;
+      
+      console.log('[TimerService] Restored from sessionStorage:', data);
+    } catch (err) {
+      console.error('[TimerService] SessionStorage load error:', err);
+    }
+  }
+  
+  #saveToSessionStorage() {
+    if (typeof window === 'undefined') return;
+    
+    const key = this.#getSessionStorageKey();
+    if (!key) return;
+    
+    try {
+      const data = {
+        sessionElapsed: this.sessionElapsed,
+        onTimeCompletions: this.onTimeCompletions,
+        goldenKeyAwarded: this.goldenKeyAwarded,
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem(key, JSON.stringify(data));
+    } catch (err) {
+      console.error('[TimerService] SessionStorage save error:', err);
+    }
+  }
+  
+  #clearSessionStorage() {
+    if (typeof window === 'undefined') return;
+    
+    const key = this.#getSessionStorageKey();
+    if (!key) return;
+    
+    try {
+      sessionStorage.removeItem(key);
+    } catch (err) {
+      console.error('[TimerService] SessionStorage clear error:', err);
+    }
   }
 }
