@@ -1,13 +1,52 @@
 # Session Page V2 Architecture
 
-**Status:** Production-ready - All critical issues fixed  
+**Status:** Production-ready - All critical issues from second audit fixed  
 **Created:** 2025-12-30  
-**Updated:** 2025-12-31  
+**Updated:** 2025-12-31 (Second Audit)  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
 ---
 
-## Critical Fixes Applied (2025-12-31)
+## Second Audit Critical Fixes (2025-12-31 - Final Pass)
+
+After first round of fixes, second comprehensive audit found 6 additional critical integration bugs. ALL FIXED:
+
+**1. AudioEngine.initialize() Method Added** ✅
+- Added missing initialize() method with iOS audio unlock
+- Creates AudioContext during user gesture
+- Plays silent audio to unlock HTMLAudio on iOS
+- Resumes suspended AudioContext
+
+**2. AudioEngine captionChange Data Format Fixed** ✅
+- Changed emission from numeric index to object with { index, text }
+- UI now receives caption text directly
+- Captions display correctly
+
+**3. DiscussionPhase Audio API Fixed** ✅
+- Changed from play() to playAudio()
+- Changed from 'playbackComplete' to 'end' event
+- Audio listeners removed in destroy()
+- Memory leak fixed
+
+**4. Timer Event Name Standardized** ✅
+- Changed SessionPageV2 listener from 'goldenKeyEligibilityChanged' to 'goldenKeyEligible'
+- Matches TimerService emission
+- Golden key status updates correctly
+
+**5. Shared EventBus Instance Created** ✅
+- ONE EventBus instance in eventBusRef.current
+- All services receive same EventBus
+- Events cross service boundaries correctly
+- TimerService, KeyboardService, DiscussionPhase all connected
+
+**6. DiscussionPhase Cleanup Fixed** ✅
+- Added audioEngine.off('end', handler) in destroy()
+- Prevents orphaned listeners
+- No memory leaks
+
+---
+
+## First Audit Critical Fixes (2025-12-31 - Initial Pass)
 
 V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical blockers have been fixed:
 

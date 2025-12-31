@@ -71,13 +71,10 @@ export class DiscussionPhase {
       this.eventBus.emit('promptPlaying', { activity, audio: audioUrl });
       
       // Listen for audio completion
-      const cleanup = this.audioEngine.on('playbackComplete', this.#handleAudioComplete);
+      this.audioEngine.on('end', this.#handleAudioComplete);
       
       // Play the prompt
-      await this.audioEngine.play(audioUrl);
-      
-      // Clean up listener
-      cleanup();
+      await this.audioEngine.playAudio(audioUrl, [prompt]);
       
       // Check if aborted during playback
       if (this.abortController.signal.aborted) {
@@ -193,6 +190,10 @@ export class DiscussionPhase {
     if (this.abortController) {
       this.abortController.abort();
     }
+    
+    // Remove AudioEngine listeners
+    this.audioEngine.off('end', this.#handleAudioComplete);
+    
     this.audioEngine.stop();
     this.currentActivity = null;
     this.state = 'idle';

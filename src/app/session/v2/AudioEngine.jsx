@@ -72,6 +72,34 @@ export class AudioEngine {
     });
   }
   
+  // Public API: Initialize (iOS audio unlock)
+  async initialize() {
+    // iOS audio unlock - create AudioContext during user gesture
+    if (!this.#audioContext || this.#audioContext.state === 'closed') {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) {
+        this.#audioContext = new AudioContext();
+        this.#gainNode = this.#audioContext.createGain();
+        this.#gainNode.gain.value = this.#isMuted ? 0 : 1;
+        this.#gainNode.connect(this.#audioContext.destination);
+      }
+    }
+    
+    if (this.#audioContext && this.#audioContext.state === 'suspended') {
+      await this.#audioContext.resume();
+    }
+    
+    // Play silent audio to unlock HTMLAudio on iOS
+    const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+    silentAudio.muted = true;
+    silentAudio.volume = 0;
+    try {
+      await silentAudio.play();
+    } catch {
+      // Ignore errors from silent audio
+    }
+  }
+  
   // Public API: Playback control
   async playAudio(base64Audio, sentences = [], startIndex = 0, options = {}) {
     this.#lastAudioBase64 = base64Audio;
@@ -411,7 +439,10 @@ export class AudioEngine {
     sentences.forEach((sentence, i) => {
       const timer = setTimeout(() => {
         this.#currentCaptionIndex = startIndex + i;
-        this.#emit('captionChange', this.#currentCaptionIndex);
+        this.#emit('captionChange', {
+          index: this.#currentCaptionIndex,
+          text: sentences[i] || ''
+        });
       }, i * interval);
       
       this.#captionTimers.push(timer);

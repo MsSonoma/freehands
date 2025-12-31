@@ -53,6 +53,7 @@ function SessionPageV2Inner() {
   
   const videoRef = useRef(null);
   const audioEngineRef = useRef(null);
+  const eventBusRef = useRef(null); // Shared EventBus for all services
   const orchestratorRef = useRef(null);
   const snapshotServiceRef = useRef(null);
   const timerServiceRef = useRef(null);
@@ -176,6 +177,18 @@ function SessionPageV2Inner() {
     loadLessonData();
   }, [lessonId, regenerateParam]);
   
+  // Initialize shared EventBus (must be first)
+  useEffect(() => {
+    eventBusRef.current = new EventBus();
+    
+    return () => {
+      if (eventBusRef.current) {
+        eventBusRef.current.clear();
+        eventBusRef.current = null;
+      }
+    };
+  }, []);
+  
   // Initialize SnapshotService after lesson loads
   useEffect(() => {
     if (!lessonData) return;
@@ -217,23 +230,25 @@ function SessionPageV2Inner() {
   
   // Initialize TimerService
   useEffect(() => {
-    const eventBus = new EventBus();
+    if (!eventBusRef.current) return;
+    
+    const eventBus = eventBusRef.current;
     
     // Forward timer events to UI
-    eventBus.on('sessionTimerTick', (data) => {
+    const unsubSessionTick = eventBus.on('sessionTimerTick', (data) => {
       setSessionTime(data.formatted);
     });
     
-    eventBus.on('workPhaseTimerTick', (data) => {
+    const unsubWorkTick = eventBus.on('workPhaseTimerTick', (data) => {
       setWorkPhaseTime(data.formatted);
       setWorkPhaseRemaining(data.remainingFormatted);
     });
     
-    eventBus.on('workPhaseTimerComplete', (data) => {
+    const unsubWorkComplete = eventBus.on('workPhaseTimerComplete', (data) => {
       addEvent(`⏱️ ${data.phase} timer complete!`);
     });
     
-    eventBus.on('goldenKeyEligibilityChanged', (data) => {
+    const unsubGoldenKey = eventBus.on('goldenKeyEligible', (data) => {
       setGoldenKeyEligible(data.eligible);
       if (data.eligible) {
         addEvent('🔑 Golden Key earned!');
@@ -261,10 +276,12 @@ function SessionPageV2Inner() {
   
   // Initialize KeyboardService
   useEffect(() => {
-    const eventBus = new EventBus();
+    if (!eventBusRef.current) return;
+    
+    const eventBus = eventBusRef.current;
     
     // Forward hotkey events
-    eventBus.on('hotkeyPressed', (data) => {
+    const unsubHotkey = eventBus.on('hotkeyPressed', (data) => {
       handleHotkey(data);
     });
     
@@ -458,7 +475,7 @@ function SessionPageV2Inner() {
   
   // Start discussion phase
   const startDiscussionPhase = () => {
-    if (!audioEngineRef.current || !lessonData?.discussion) return;
+    if (!audioEngineRef.current || !eventBusRef.current || !lessonData?.discussion) return;
     
     const activities = lessonData.discussion.activities || [];
     
@@ -475,33 +492,31 @@ function SessionPageV2Inner() {
     const firstActivity = activities[0];
     setDiscussionActivityIndex(0);
     
-    const eventBus = new EventBus();
-    
     const phase = new DiscussionPhase(
       audioEngineRef.current,
       { fetchTTS: fetchTTS },
-      eventBus
+      eventBusRef.current
     );
     
     discussionPhaseRef.current = phase;
     
     // Subscribe to events
-    phase.on('discussionStart', (data) => {
+    eventBusRef.current.on('discussionStart', (data) => {
       addEvent(`💬 Discussion: ${data.activity}`);
       setDiscussionActivity(data.activity);
       setDiscussionState('playing-prompt');
     });
     
-    phase.on('promptComplete', (data) => {
+    eventBusRef.current.on('promptComplete', (data) => {
       addEvent('❓ Prompt complete - waiting for response...');
       setDiscussionState('awaiting-response');
     });
     
-    phase.on('responseSubmitted', (data) => {
+    eventBusRef.current.on('responseSubmitted', (data) => {
       addEvent(`✅ Response submitted`);
     });
     
-    phase.on('discussionComplete', (data) => {
+    eventBusRef.current.on('discussionComplete', (data) => {
       // Check if there are more activities
       const nextIndex = discussionActivityIndex + 1;
       
