@@ -118,6 +118,23 @@ export class AudioEngine {
     this.#isPlaying = true;
     this.#emit('start', { sentences, startIndex });
     
+    // Start video playback (V1 behavior - video syncs with audio)
+    if (this.#videoElement) {
+      try {
+        const playPromise = this.#videoElement.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(err => {
+            console.warn('[AudioEngine] Video play failed:', err);
+          });
+        }
+      } catch (err) {
+        console.warn('[AudioEngine] Video play error:', err);
+      }
+    }
+    
+    // Start video playback (V1 behavior)
+    this.#startVideo();
+    
     // Choose playback path
     if (!base64Audio) {
       // Synthetic path (no audio)

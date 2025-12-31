@@ -8,6 +8,7 @@
  * - Plays comprehension question with TTS
  * - Captures kid's typed answer
  * - Simple validation (answer exists)
+ * - Plays praise TTS after correct answer (V1 behavior)
  * - Emits comprehensionComplete event
  * 
  * Usage:
@@ -17,6 +18,20 @@
  */
 
 import { fetchTTS } from './services';
+
+// V1 praise phrases (from CELEBRATE_CORRECT array)
+const PRAISE_PHRASES = [
+  'Great job!',
+  'Excellent!',
+  'You got it!',
+  'Nice work!',
+  'Well done!',
+  'Perfect!',
+  'Awesome!',
+  'Fantastic!',
+  'You are doing great!',
+  'Keep it up!'
+];
 
 export class ComprehensionPhase {
   // Private state
@@ -95,7 +110,7 @@ export class ComprehensionPhase {
   }
   
   // Public API: Submit answer
-  submitAnswer(answer) {
+  async submitAnswer(answer) {
     if (this.#state !== 'awaiting-answer') {
       console.warn('[ComprehensionPhase] Cannot submit answer in state:', this.#state);
       return;
@@ -110,9 +125,25 @@ export class ComprehensionPhase {
       return;
     }
     
-    // Simple validation - just check that answer exists
-    // V1 sends to GPT for evaluation, but for V2 we'll keep it simple for now
-    this.#complete();
+    // Play praise TTS (V1 behavior - positive reinforcement)
+    this.#state = 'playing-feedback';
+    this.#emit('stateChange', { state: 'playing-feedback' });
+    
+    const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
+    
+    try {
+      const praiseAudio = await fetchTTS(praise);
+      await this.#audioEngine.playAudio(praiseAudio || '', [praise]);
+      
+      // Wait for praise to finish, then complete
+      this.#setupAudioEndListener(() => {
+        this.#complete();
+      });
+    } catch (err) {
+      console.error('[ComprehensionPhase] Praise TTS failed:', err);
+      // Complete anyway if praise fails
+      this.#complete();
+    }
   }
   
   // Public API: Skip (move on without answer)
