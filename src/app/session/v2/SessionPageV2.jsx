@@ -79,12 +79,14 @@ function SessionPageV2Inner() {
   
   const [comprehensionState, setComprehensionState] = useState('idle');
   const [comprehensionAnswer, setComprehensionAnswer] = useState('');
+  const [comprehensionTimerMode, setComprehensionTimerMode] = useState('play');
   
   const [exerciseState, setExerciseState] = useState('idle');
   const [currentExerciseQuestion, setCurrentExerciseQuestion] = useState(null);
   const [exerciseScore, setExerciseScore] = useState(0);
   const [exerciseTotalQuestions, setExerciseTotalQuestions] = useState(0);
   const [selectedExerciseAnswer, setSelectedExerciseAnswer] = useState('');
+  const [exerciseTimerMode, setExerciseTimerMode] = useState('play');
   
   const [worksheetState, setWorksheetState] = useState('idle');
   const [currentWorksheetQuestion, setCurrentWorksheetQuestion] = useState(null);
@@ -92,6 +94,7 @@ function SessionPageV2Inner() {
   const [worksheetTotalQuestions, setWorksheetTotalQuestions] = useState(0);
   const [worksheetAnswer, setWorksheetAnswer] = useState('');
   const [lastWorksheetFeedback, setLastWorksheetFeedback] = useState(null);
+  const [worksheetTimerMode, setWorksheetTimerMode] = useState('play');
   
   const [testState, setTestState] = useState('idle');
   const [currentTestQuestion, setCurrentTestQuestion] = useState(null);
@@ -101,6 +104,7 @@ function SessionPageV2Inner() {
   const [testGrade, setTestGrade] = useState(null);
   const [testReviewAnswer, setTestReviewAnswer] = useState(null);
   const [testReviewIndex, setTestReviewIndex] = useState(0);
+  const [testTimerMode, setTestTimerMode] = useState('play');
   
   const [closingState, setClosingState] = useState('idle');
   const [closingMessage, setClosingMessage] = useState('');
@@ -614,6 +618,8 @@ function SessionPageV2Inner() {
     
     const phase = new ComprehensionPhase({
       audioEngine: audioEngineRef.current,
+      eventBus: eventBusRef.current,
+      timerService: timerServiceRef.current,
       question: lessonData.comprehension.question || 'What did you learn?',
       sampleAnswer: lessonData.comprehension.sampleAnswer || ''
     });
@@ -623,6 +629,9 @@ function SessionPageV2Inner() {
     // Subscribe to state changes
     phase.on('stateChange', (data) => {
       setComprehensionState(data.state);
+      if (data.timerMode) {
+        setComprehensionTimerMode(data.timerMode);
+      }
       if (data.state === 'awaiting-answer') {
         addEvent('❓ Waiting for answer...');
       }
@@ -692,10 +701,20 @@ function SessionPageV2Inner() {
     
     const phase = new ExercisePhase({
       audioEngine: audioEngineRef.current,
+      eventBus: eventBusRef.current,
+      timerService: timerServiceRef.current,
       questions: questions
     });
     
     exercisePhaseRef.current = phase;
+    
+    // Subscribe to state changes
+    phase.on('stateChange', (data) => {
+      setExerciseState(data.state);
+      if (data.timerMode) {
+        setExerciseTimerMode(data.timerMode);
+      }
+    });
     
     // Subscribe to question events
     phase.on('questionStart', (data) => {
@@ -793,10 +812,20 @@ function SessionPageV2Inner() {
     
     const phase = new WorksheetPhase({
       audioEngine: audioEngineRef.current,
+      eventBus: eventBusRef.current,
+      timerService: timerServiceRef.current,
       questions: questions
     });
     
     worksheetPhaseRef.current = phase;
+    
+    // Subscribe to state changes
+    phase.on('stateChange', (data) => {
+      setWorksheetState(data.state);
+      if (data.timerMode) {
+        setWorksheetTimerMode(data.timerMode);
+      }
+    });
     
     // Subscribe to question events
     phase.on('questionStart', (data) => {
@@ -903,10 +932,20 @@ function SessionPageV2Inner() {
     
     const phase = new TestPhase({
       audioEngine: audioEngineRef.current,
+      eventBus: eventBusRef.current,
+      timerService: timerServiceRef.current,
       questions: questions
     });
     
     testPhaseRef.current = phase;
+    
+    // Subscribe to state changes
+    phase.on('stateChange', (data) => {
+      setTestState(data.state);
+      if (data.timerMode) {
+        setTestTimerMode(data.timerMode);
+      }
+    });
     
     // Subscribe to test events
     phase.on('questionStart', (data) => {
