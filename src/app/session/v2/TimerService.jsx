@@ -1,10 +1,15 @@
 /**
  * TimerService.jsx
- * Manages session and work phase timers
+ * Manages session, play, and work phase timers
  * 
  * Timers:
  * - Session timer: Tracks total session duration from start to complete
- * - Work phase timers: Tracks time for exercise, worksheet, test phases (for golden key)
+ * - Play timers: Green timer for exploration/opening actions (phases 2-5: Comprehension, Exercise, Worksheet, Test)
+ * - Work phase timers: Amber/red timer for focused work (for golden key)
+ * 
+ * Timer Modes:
+ * - Phase 1 (Discussion): No play timer, no opening actions (eliminates play timer exploit)
+ * - Phases 2-5 (Comprehension, Exercise, Worksheet, Test): Play timer → opening actions → work timer
  * 
  * Golden Key Requirements:
  * - Need 3 work phases completed within time limit
@@ -15,7 +20,11 @@
  * - sessionTimerStart: { timestamp } - Session timer started
  * - sessionTimerTick: { elapsed, formatted } - Every second while running
  * - sessionTimerStop: { elapsed, formatted } - Session timer stopped
+ * - playTimerStart: { phase, timestamp, timeLimit } - Play timer started
+ * - playTimerTick: { phase, elapsed, remaining, formatted } - Every second during play time
+ * - playTimerExpired: { phase } - Play timer reached 0:00
  * - workPhaseTimerStart: { phase, timestamp } - Work phase timer started
+ * - workPhaseTimerTick: { phase, elapsed, remaining, onTime } - Every second during work time
  * - workPhaseTimerComplete: { phase, elapsed, onTime } - Work phase completed
  * - workPhaseTimerStop: { phase, elapsed } - Work phase stopped
  * - goldenKeyEligible: { completedPhases } - 3 on-time work phases achieved
@@ -31,6 +40,19 @@ export class TimerService {
     this.sessionStartTime = null;
     this.sessionElapsed = 0; // seconds
     this.sessionInterval = null;
+    
+    // Play timers (phases 2-5: comprehension, exercise, worksheet, test)
+    this.playTimers = new Map(); // phase -> { startTime, elapsed, timeLimit, expired }
+    this.playTimerInterval = null;
+    this.currentPlayPhase = null;
+    
+    // Play timer time limits (seconds) - default 3 minutes per phase
+    this.playTimerLimits = options.playTimerLimits || {
+      comprehension: 180, // 3 minutes
+      exercise: 180,      // 3 minutes  
+      worksheet: 180,     // 3 minutes
+      test: 180           // 3 minutes
+    };
     
     // Work phase timers
     this.workPhaseTimers = new Map(); // phase -> { startTime, elapsed, timeLimit, completed }
@@ -59,6 +81,9 @@ export class TimerService {
     // Bind public methods
     this.startSessionTimer = this.startSessionTimer.bind(this);
     this.stopSessionTimer = this.stopSessionTimer.bind(this);
+    this.startPlayTimer = this.startPlayTimer.bind(this);
+    this.stopPlayTimer = this.stopPlayTimer.bind(this);
+    this.transitionToWork = this.transitionToWork.bind(this);
     this.startWorkPhaseTimer = this.startWorkPhaseTimer.bind(this);
     this.completeWorkPhaseTimer = this.completeWorkPhaseTimer.bind(this);
     this.stopWorkPhaseTimer = this.stopWorkPhaseTimer.bind(this);
@@ -103,6 +128,88 @@ export class TimerService {
       elapsed,
       formatted
     });
+  }
+  
+  /**
+   * Starts the play timer for a phase (phases 2-5 only).
+   * Play timers allow exploration/opening actions with a time limit.
+   * When expired, transitions to work mode via PlayTimeExpiredOverlay.
+   * 
+   * @param {string} phase - Phase name ('comprehension', 'exercise', 'worksheet', 'test')
+   * @param {number} [timeLimit] - Optional time limit override (seconds)
+   */
+  startPlayTimer(phase, timeLimit = null) {
+    // Discussion phase has no play timer (architectural decision)
+    if (phase === 'discussion') return;
+    
+    // Only valid for phases 2-5
+    const validPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
+    if (!validPhases.includes(phase)) {
+      console.warn(`[TimerService] Invalid phase "${phase}" for play timer`);
+      return;
+    }
+    
+    const limit = timeLimit !== null ? timeLimit : this.playTimerLimits[phase];
+    if (!limit) {
+      console.warn(`[TimerService] No time limit configured for phase "${phase}"`);
+      return;
+    }
+    
+    // Initialize play timer
+    this.playTimers.set(phase, {
+      startTime: Date.now(),
+      elapsed: 0,
+      timeLimit: limit,
+      expired: false
+    });
+    this.currentPlayPhase = phase;
+    this.mode = 'play';
+    
+    this.eventBus.emit('playTimerStart', {
+      phase,
+      timestamp: Date.now(),
+      timeLimit: limit,
+      formattedLimit: this.#formatTime(limit)
+    });
+    
+    // Start tick interval if not already running
+    if (!this.playTimerInterval) {
+      this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
+    }
+    
+    this.#saveToSessionStorage();
+  }
+  
+  /**
+   * Stops the play timer for a phase.
+   * 
+   * @param {string} phase - Phase name
+   */
+  stopPlayTimer(phase) {
+    this.playTimers.delete(phase);
+    if (this.currentPlayPhase === phase) {
+      this.currentPlayPhase = null;
+    }
+    
+    // Clear interval if no active play timers
+    if (this.playTimers.size === 0 && this.playTimerInterval) {
+      clearInterval(this.playTimerInterval);
+      this.playTimerInterval = null;
+    }
+    
+    this.#saveToSessionStorage();
+  }
+  
+  /**
+   * Transitions from play mode to work mode for a phase.
+   * Stops play timer and starts work timer.
+   * 
+   * @param {string} phase - Phase name
+   */
+  transitionToWork(phase) {
+    this.stopPlayTimer(phase);
+    this.mode = 'work';
+    this.startWorkPhaseTimer(phase);
   }
   
   /**
@@ -272,6 +379,12 @@ export class TimerService {
   serialize() {
     return {
       sessionElapsed: this.sessionElapsed,
+      playTimers: Array.from(this.playTimers.entries()).map(([phase, timer]) => ({
+        phase,
+        elapsed: timer.elapsed,
+        timeLimit: timer.timeLimit,
+        expired: timer.expired
+      })),
       workPhaseTimers: Array.from(this.workPhaseTimers.entries()).map(([phase, timer]) => ({
         phase,
         elapsed: timer.elapsed,
@@ -280,7 +393,8 @@ export class TimerService {
         onTime: timer.onTime
       })),
       onTimeCompletions: this.onTimeCompletions,
-      goldenKeyAwarded: this.goldenKeyAwarded
+      goldenKeyAwarded: this.goldenKeyAwarded,
+      mode: this.mode
     };
   }
   
@@ -294,6 +408,28 @@ export class TimerService {
     this.sessionElapsed = data.sessionElapsed || 0;
     this.onTimeCompletions = data.onTimeCompletions || 0;
     this.goldenKeyAwarded = data.goldenKeyAwarded || false;
+    this.mode = data.mode || 'play';
+    
+    // Restore play timers
+    if (data.playTimers) {
+      this.playTimers.clear();
+      
+      data.playTimers.forEach(timer => {
+        this.playTimers.set(timer.phase, {
+          startTime: Date.now() - (timer.elapsed * 1000), // Resume from elapsed
+          elapsed: timer.elapsed,
+          timeLimit: timer.timeLimit,
+          expired: timer.expired
+        });
+        
+        if (!timer.expired) {
+          this.currentPlayPhase = timer.phase;
+          if (!this.playTimerInterval) {
+            this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
+          }
+        }
+      });
+    }
     
     // Restore work phase timers
     if (data.workPhaseTimers) {
@@ -320,6 +456,51 @@ export class TimerService {
     
     const now = Date.now();
     this.sessionElapsed = Math.floor((now - this.sessionStartTime) / 1000);
+    
+    this.eventBus.emit('sessionTimerTick', {
+      elapsed: this.sessionElapsed,
+      formatted: this.#formatTime(this.sessionElapsed)
+    });
+    
+    this.#saveToSessionStorage();
+  }
+  
+  /**
+   * Tick play timers
+   * @private
+   */
+  #tickPlayTimers() {
+    if (!this.currentPlayPhase) return;
+    
+    const timer = this.playTimers.get(this.currentPlayPhase);
+    if (!timer || timer.expired) return;
+    
+    const now = Date.now();
+    timer.elapsed = Math.floor((now - timer.startTime) / 1000);
+    const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
+    
+    this.eventBus.emit('playTimerTick', {
+      phase: this.currentPlayPhase,
+      elapsed: timer.elapsed,
+      remaining,
+      formatted: this.#formatTime(timer.elapsed),
+      remainingFormatted: this.#formatTime(remaining)
+    });
+    
+    // Check for expiration
+    if (remaining === 0 && !timer.expired) {
+      timer.expired = true;
+      this.eventBus.emit('playTimerExpired', {
+        phase: this.currentPlayPhase,
+        timestamp: Date.now()
+      });
+      
+      // Stop the play timer
+      this.stopPlayTimer(this.currentPlayPhase);
+    }
+    
+    this.#saveToSessionStorage();
+  }
     
     // Save to sessionStorage after each tick
     this.#saveToSessionStorage();
@@ -381,12 +562,19 @@ export class TimerService {
       this.sessionInterval = null;
     }
     
+    if (this.playTimerInterval) {
+      clearInterval(this.playTimerInterval);
+      this.playTimerInterval = null;
+    }
+    
     if (this.workPhaseInterval) {
       clearInterval(this.workPhaseInterval);
       this.workPhaseInterval = null;
     }
     
     // Clear sessionStorage on destroy
+    this.#clearSessionStorage();
+  }
     this.#clearSessionStorage();
   }
   
@@ -410,6 +598,26 @@ export class TimerService {
       this.sessionElapsed = data.sessionElapsed || 0;
       this.onTimeCompletions = data.onTimeCompletions || 0;
       this.goldenKeyAwarded = data.goldenKeyAwarded || false;
+      this.mode = data.mode || 'play';
+      
+      // Restore play timer state if present
+      if (data.currentPlayPhase && data.playTimerElapsed !== undefined) {
+        const phase = data.currentPlayPhase;
+        const limit = this.playTimerLimits[phase];
+        if (limit) {
+          this.playTimers.set(phase, {
+            startTime: Date.now() - (data.playTimerElapsed * 1000),
+            elapsed: data.playTimerElapsed,
+            timeLimit: limit,
+            expired: data.playTimerExpired || false
+          });
+          this.currentPlayPhase = phase;
+          
+          if (!data.playTimerExpired && !this.playTimerInterval) {
+            this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
+          }
+        }
+      }
       
       console.log('[TimerService] Restored from sessionStorage:', data);
     } catch (err) {
@@ -428,8 +636,20 @@ export class TimerService {
         sessionElapsed: this.sessionElapsed,
         onTimeCompletions: this.onTimeCompletions,
         goldenKeyAwarded: this.goldenKeyAwarded,
+        mode: this.mode,
         timestamp: Date.now()
       };
+      
+      // Save play timer state if active
+      if (this.currentPlayPhase) {
+        const timer = this.playTimers.get(this.currentPlayPhase);
+        if (timer) {
+          data.currentPlayPhase = this.currentPlayPhase;
+          data.playTimerElapsed = timer.elapsed;
+          data.playTimerExpired = timer.expired;
+        }
+      }
+      
       sessionStorage.setItem(key, JSON.stringify(data));
     } catch (err) {
       console.error('[TimerService] SessionStorage save error:', err);
