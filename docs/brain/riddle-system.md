@@ -87,23 +87,34 @@ Every riddle must pass the checklist:
 
 ## Current Integration Status
 
-### ⚠️ Riddles Are NOT Used
-Despite full implementation, riddles are **orphaned code**:
-- `riddles.js` exists and exports 200 riddles (40 per subject)
-- `pickNextRiddle()` is imported in teaching files but **never called**
-- Opening phase uses greeting + encouragement + menu (no joke, no riddle)
-- No API endpoints for riddle delivery
-- No UI components for riddle display/answer validation
+### ✅ Riddles Are Active
 
-### Historical Context
-The old teaching system brain file mentioned **jokes** in the opening flow, not riddles. Riddles were prepared as a feature but never integrated into the live session flow.
+Riddles are fully integrated into the discussion phase opening actions:
 
-### Future Integration Options
-If riddles are to be activated:
-1. **Replace jokes in opening** - Use riddles as warm-up instead of jokes
-2. **Add to menu** - "Wanna hear a riddle?" as optional pre-lesson activity
-3. **Comprehension rewards** - Unlock riddle after completing comprehension question
-4. **Subject alignment** - Only show riddles matching current lesson subject
+**User Flow:**
+1. Learner enters discussion phase
+2. Opening actions menu displays (Ask, Riddle, Poem, Story, Fill-in-Fun, Games)
+3. User clicks "Riddle" button
+4. `pickNextRiddle(subject)` selects riddle from localStorage rotation
+5. Riddle presents with TTS playback
+6. State machine handles: 'presented' → 'awaiting-solve' → 'inactive'
+
+**Implementation:**
+- **Handler**: `handleStartRiddle` in `src/app/session/hooks/useDiscussionHandlers.js` (line 308)
+- **Imports**: `pickNextRiddle`, `renderRiddle` from `src/app/lib/riddles.js`
+- **State Machine**: `riddleState` tracks 'presented', 'awaiting-solve', 'inactive'
+- **User Actions**:
+  - **Solve attempt**: `judgeRiddleAttempt` validates answer
+  - **Request hint**: `requestRiddleHint` calls Ms. Sonoma for contextual hint
+  - **Reveal answer**: `revealRiddleAnswer` shows solution with encouragement
+  - **Back to menu**: `handleRiddleBack` returns to opening actions
+
+**Active Components:**
+- Riddle selection algorithm with localStorage rotation
+- TTS integration for riddle narration
+- Answer validation (currently returns false, needs implementation)
+- Hint generation via Ms. Sonoma API
+- Full state management in discussion phase
 
 ---
 
