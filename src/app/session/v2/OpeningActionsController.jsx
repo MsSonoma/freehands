@@ -231,6 +231,302 @@ export class OpeningActionsController {
   }
   
   /**
+   * Start Poem action
+   */
+  async startPoem() {
+    this.#currentAction = 'poem';
+    this.#actionState = {
+      stage: 'reading'
+    };
+    
+    this.#eventBus.emit('openingActionStart', {
+      action: 'poem',
+      phase: this.#phase
+    });
+    
+    // Generate subject-themed poem using GPT-4
+    const instruction = [
+      `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
+      `Write a short, fun poem (4-8 lines) about ${this.#subject}.`,
+      'Make it age-appropriate, educational, and upbeat.',
+      'Use simple rhymes and clear language.'
+    ].join(' ');
+    
+    try {
+      const response = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction, innertext: '' })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Poem generation failed');
+      }
+      
+      const data = await response.json();
+      const poem = data.reply || 'Learning is fun, every single day!';
+      
+      this.#actionState.poem = poem;
+      await this.#audioEngine.speak(poem);
+      
+      return { success: true, poem };
+    } catch (err) {
+      console.error('[OpeningActionsController] Poem error:', err);
+      
+      const fallback = 'Learning is fun, every single day! Knowledge helps us grow in every way!';
+      this.#actionState.poem = fallback;
+      await this.#audioEngine.speak(fallback);
+      
+      return { success: true, poem: fallback };
+    }
+  }
+  
+  /**
+   * Complete Poem action
+   */
+  completePoem() {
+    if (this.#currentAction !== 'poem') return;
+    
+    this.#eventBus.emit('openingActionComplete', {
+      action: 'poem',
+      phase: this.#phase
+    });
+    
+    this.#currentAction = null;
+    this.#actionState = {};
+  }
+  
+  /**
+   * Start Story action (collaborative storytelling)
+   */
+  async startStory() {
+    this.#currentAction = 'story';
+    this.#actionState = {
+      stage: 'setup',
+      transcript: [],
+      turn: 0
+    };
+    
+    this.#eventBus.emit('openingActionStart', {
+      action: 'story',
+      phase: this.#phase
+    });
+    
+    // Start story setup
+    const setupPrompt = 'Let\'s tell a story together! What kind of character should we have?';
+    await this.#audioEngine.speak(setupPrompt);
+    
+    return { success: true, prompt: setupPrompt };
+  }
+  
+  /**
+   * Continue story with learner input
+   */
+  async continueStory(userInput) {
+    if (this.#currentAction !== 'story') {
+      return { success: false, error: 'Story not active' };
+    }
+    
+    const trimmed = (userInput || '').trim();
+    if (!trimmed) {
+      return { success: false, error: 'Please say something for the story!' };
+    }
+    
+    // Add user input to transcript
+    this.#actionState.transcript.push({ role: 'user', text: trimmed });
+    this.#actionState.turn++;
+    
+    // Generate story continuation
+    const storyContext = this.#actionState.transcript.map(turn => 
+      turn.role === 'user' ? `Child: "${turn.text}"` : `You: "${turn.text}"`
+    ).join(' ');
+    
+    const instruction = [
+      `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
+      `Continue this collaborative story: ${storyContext}`,
+      'Add 1-2 exciting sentences based on what the child said.',
+      'Keep it fun, age-appropriate, and encourage their creativity.',
+      'End with "What happens next?" if the story should continue.'
+    ].join(' ');
+    
+    try {
+      const response = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction, innertext: '' })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Story continuation failed');
+      }
+      
+      const data = await response.json();
+      const continuation = data.reply || 'And then something amazing happened! What happens next?';
+      
+      this.#actionState.transcript.push({ role: 'assistant', text: continuation });
+      await this.#audioEngine.speak(continuation);
+      
+      return { success: true, continuation };
+    } catch (err) {
+      console.error('[OpeningActionsController] Story error:', err);
+      
+      const fallback = 'That\'s a great idea! The adventure continues. What happens next?';
+      this.#actionState.transcript.push({ role: 'assistant', text: fallback });
+      await this.#audioEngine.speak(fallback);
+      
+      return { success: true, continuation: fallback };
+    }
+  }
+  
+  /**
+   * Complete Story action
+   */
+  completeStory() {
+    if (this.#currentAction !== 'story') return;
+    
+    this.#eventBus.emit('openingActionComplete', {
+      action: 'story',
+      phase: this.#phase
+    });
+    
+    this.#currentAction = null;
+    this.#actionState = {};
+  }
+  
+  /**
+   * Start Fill-in-Fun action (Mad Libs style)
+   */
+  async startFillInFun() {
+    this.#currentAction = 'fill-in-fun';
+    this.#actionState = {
+      stage: 'collecting',
+      template: null,
+      words: [],
+      currentIndex: 0
+    };
+    
+    this.#eventBus.emit('openingActionStart', {
+      action: 'fill-in-fun',
+      phase: this.#phase
+    });
+    
+    // Generate fill-in-fun template
+    const instruction = [
+      `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
+      `Create a fun Mad Libs style story about ${this.#subject}.`,
+      'Use this format: "The [ADJECTIVE] [NOUN] was [VERB]ing in the [PLACE]."',
+      'Make it educational and age-appropriate.',
+      'Include 4-5 blanks with labels like [ADJECTIVE], [NOUN], [VERB], [PLACE].'
+    ].join(' ');
+    
+    try {
+      const response = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction, innertext: '' })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Fill-in-Fun generation failed');
+      }
+      
+      const data = await response.json();
+      const template = data.reply || 'The [ADJECTIVE] [NOUN] was [VERB]ing!';
+      
+      this.#actionState.template = template;
+      
+      // Extract word types needed
+      const wordTypes = template.match(/\[([A-Z]+)\]/g) || [];
+      this.#actionState.wordTypes = wordTypes.map(type => type.replace(/[\[\]]/g, ''));
+      
+      const firstPrompt = `Let's play Fill-in-Fun! Give me a ${this.#actionState.wordTypes[0].toLowerCase()}.`;
+      await this.#audioEngine.speak(firstPrompt);
+      
+      return { success: true, template, prompt: firstPrompt };
+    } catch (err) {
+      console.error('[OpeningActionsController] Fill-in-Fun error:', err);
+      
+      const fallbackTemplate = 'The [ADJECTIVE] [NOUN] was very [ADJECTIVE]!';
+      this.#actionState.template = fallbackTemplate;
+      this.#actionState.wordTypes = ['ADJECTIVE', 'NOUN', 'ADJECTIVE'];
+      
+      const firstPrompt = 'Let\'s play Fill-in-Fun! Give me an adjective.';
+      await this.#audioEngine.speak(firstPrompt);
+      
+      return { success: true, template: fallbackTemplate, prompt: firstPrompt };
+    }
+  }
+  
+  /**
+   * Add word to Fill-in-Fun
+   */
+  async addFillInFunWord(word) {
+    if (this.#currentAction !== 'fill-in-fun') {
+      return { success: false, error: 'Fill-in-Fun not active' };
+    }
+    
+    const trimmed = (word || '').trim();
+    if (!trimmed) {
+      return { success: false, error: 'Please say a word!' };
+    }
+    
+    this.#actionState.words.push(trimmed);
+    this.#actionState.currentIndex++;
+    
+    // Check if we need more words
+    if (this.#actionState.currentIndex < this.#actionState.wordTypes.length) {
+      const nextType = this.#actionState.wordTypes[this.#actionState.currentIndex];
+      const prompt = `Great! Now give me a ${nextType.toLowerCase()}.`;
+      await this.#audioEngine.speak(prompt);
+      
+      return { success: true, prompt };
+    } else {
+      // All words collected - read completed story
+      this.#actionState.stage = 'complete';
+      
+      let completedStory = this.#actionState.template;
+      this.#actionState.words.forEach(word => {
+        completedStory = completedStory.replace(/\[[A-Z]+\]/, word);
+      });
+      
+      const finalText = `Here's your story: ${completedStory}`;
+      await this.#audioEngine.speak(finalText);
+      
+      return { success: true, completed: true, story: completedStory };
+    }
+  }
+  
+  /**
+   * Complete Fill-in-Fun action
+   */
+  completeFillInFun() {
+    if (this.#currentAction !== 'fill-in-fun') return;
+    
+    this.#eventBus.emit('openingActionComplete', {
+      action: 'fill-in-fun',
+      phase: this.#phase
+    });
+    
+    this.#currentAction = null;
+    this.#actionState = {};
+  }
+  
+  /**
+   * Complete Riddle action
+   */
+  completeRiddle() {
+    if (this.#currentAction !== 'riddle') return;
+    
+    this.#eventBus.emit('openingActionComplete', {
+      action: 'riddle',
+      phase: this.#phase
+    });
+    
+    this.#currentAction = null;
+    this.#actionState = {};
+  }
+  
+  /**
    * Get current action state (for UI rendering)
    * @returns {Object} { action, stage, data }
    */

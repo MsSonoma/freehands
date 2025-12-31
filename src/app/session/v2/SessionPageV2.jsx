@@ -32,6 +32,8 @@ import { PhaseOrchestrator } from './PhaseOrchestrator';
 import { SnapshotService } from './SnapshotService';
 import { TimerService } from './TimerService';
 import { KeyboardService } from './KeyboardService';
+import { OpeningActionsController } from './OpeningActionsController';
+import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
 import EventBus from './EventBus';
 import { loadLesson, generateTestLesson, fetchTTS } from './services';
 
@@ -59,6 +61,7 @@ function SessionPageV2Inner() {
   const timerServiceRef = useRef(null);
   const keyboardServiceRef = useRef(null);
   const teachingControllerRef = useRef(null);
+  const openingActionsControllerRef = useRef(null);
   const comprehensionPhaseRef = useRef(null);
   const discussionPhaseRef = useRef(null);
   const exercisePhaseRef = useRef(null);
@@ -114,6 +117,11 @@ function SessionPageV2Inner() {
   const [discussionPrompt, setDiscussionPrompt] = useState('');
   const [discussionResponse, setDiscussionResponse] = useState('');
   const [discussionActivityIndex, setDiscussionActivityIndex] = useState(0);
+  
+  // Opening actions state
+  const [openingActionActive, setOpeningActionActive] = useState(false);
+  const [openingActionType, setOpeningActionType] = useState(null);
+  const [openingActionState, setOpeningActionState] = useState({});
 
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
@@ -419,6 +427,44 @@ function SessionPageV2Inner() {
     });
     
     orchestratorRef.current = orchestrator;
+    
+    // Initialize OpeningActionsController
+    if (audioEngineRef.current && eventBusRef.current) {
+      const openingController = new OpeningActionsController(
+        eventBusRef.current,
+        audioEngineRef.current,
+        {
+          phase: currentPhase,
+          subject: lessonData.subject || 'math',
+          learnerGrade: learnerGrade || '',
+          difficulty: difficultyParam || 'moderate'
+        }
+      );
+      
+      openingActionsControllerRef.current = openingController;
+      
+      // Subscribe to opening action events
+      eventBusRef.current.on('openingActionStart', (data) => {
+        addEvent(`🎯 Opening action: ${data.type}`);
+        setOpeningActionActive(true);
+        setOpeningActionType(data.type);
+        setOpeningActionState(openingController.getState() || {});
+      });
+      
+      eventBusRef.current.on('openingActionComplete', (data) => {
+        addEvent(`✅ Opening action complete: ${data.type}`);
+        setOpeningActionActive(false);
+        setOpeningActionType(null);
+        setOpeningActionState({});
+      });
+      
+      eventBusRef.current.on('openingActionCancel', (data) => {
+        addEvent(`❌ Opening action cancelled: ${data.type}`);
+        setOpeningActionActive(false);
+        setOpeningActionType(null);
+        setOpeningActionState({});
+      });
+    }
     
     // Subscribe to phase transitions
     orchestrator.on('phaseChange', (data) => {
@@ -1472,17 +1518,162 @@ function SessionPageV2Inner() {
               <div className="mb-4 p-4 bg-blue-50 rounded">
                 <div className="font-semibold text-lg">Comprehension Question</div>
                 <div className="text-sm text-gray-600 mt-1">State: {comprehensionState}</div>
+                {comprehensionTimerMode && (
+                  <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                    comprehensionTimerMode === 'play' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {comprehensionTimerMode === 'play' ? '🟢 Play Time' : '🟠 Work Time'}
+                  </div>
+                )}
               </div>
               
               {comprehensionState === 'awaiting-go' && (
-                <div className="text-center">
-                  <button
-                    onClick={() => comprehensionPhaseRef.current?.go()}
-                    className="px-8 py-3 bg-blue-600 text-white text-lg rounded-lg hover:bg-blue-700"
-                  >
-                    Go
-                  </button>
-                </div>
+                <>
+                  {/* Opening Actions - Show during play time only */}
+                  {comprehensionTimerMode === 'play' && !openingActionActive && (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
+                      <h3 className="font-bold text-lg mb-3 text-gray-800">🎯 Opening Actions</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startAsk()}
+                          className="px-4 py-3 bg-white border-2 border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 font-semibold shadow-sm"
+                        >
+                          ❓ Ask Ms. Sonoma
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startRiddle()}
+                          className="px-4 py-3 bg-white border-2 border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 font-semibold shadow-sm"
+                        >
+                          🧩 Riddle
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startPoem()}
+                          className="px-4 py-3 bg-white border-2 border-pink-300 text-pink-700 rounded-lg hover:bg-pink-50 font-semibold shadow-sm"
+                        >
+                          📜 Poem
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startStory()}
+                          className="px-4 py-3 bg-white border-2 border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 font-semibold shadow-sm"
+                        >
+                          📖 Story
+                        </button>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.startFillInFun()}
+                          className="px-4 py-3 bg-white border-2 border-green-300 text-green-700 rounded-lg hover:bg-green-50 font-semibold shadow-sm"
+                        >
+                          🎨 Fill-in-Fun
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Active Opening Action UI */}
+                  {openingActionActive && (
+                    <div className="mb-6 p-4 bg-yellow-50 rounded-lg border-2 border-yellow-300">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-bold text-lg text-gray-800">
+                          {openingActionType === 'ask' && '❓ Ask Ms. Sonoma'}
+                          {openingActionType === 'riddle' && '🧩 Riddle'}
+                          {openingActionType === 'poem' && '📜 Poem'}
+                          {openingActionType === 'story' && '📖 Story'}
+                          {openingActionType === 'fillInFun' && '🎨 Fill-in-Fun'}
+                        </h3>
+                        <button
+                          onClick={() => openingActionsControllerRef.current?.destroy()}
+                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      
+                      {/* Ask UI */}
+                      {openingActionType === 'ask' && openingActionState.stage === 'awaiting-question' && (
+                        <div className="space-y-3">
+                          <textarea
+                            placeholder="What would you like to ask Ms. Sonoma?"
+                            className="w-full p-3 border rounded-lg"
+                            rows={3}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey && e.target.value.trim()) {
+                                e.preventDefault();
+                                openingActionsControllerRef.current?.submitAsk(e.target.value.trim());
+                              }
+                            }}
+                          />
+                          <button
+                            onClick={(e) => {
+                              const textarea = e.target.previousElementSibling;
+                              if (textarea.value.trim()) {
+                                openingActionsControllerRef.current?.submitAsk(textarea.value.trim());
+                              }
+                            }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                          >
+                            Submit Question
+                          </button>
+                        </div>
+                      )}
+                      
+                      {/* Riddle UI */}
+                      {openingActionType === 'riddle' && (
+                        <div className="space-y-3">
+                          {openingActionState.stage === 'question' && (
+                            <div className="space-y-2">
+                              <button
+                                onClick={() => openingActionsControllerRef.current?.getRiddleHint()}
+                                className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 mr-2"
+                              >
+                                💡 Hint
+                              </button>
+                              <button
+                                onClick={() => openingActionsControllerRef.current?.revealRiddleAnswer()}
+                                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                              >
+                                🔍 Reveal Answer
+                              </button>
+                            </div>
+                          )}
+                          {openingActionState.stage === 'complete' && (
+                            <button
+                              onClick={() => openingActionsControllerRef.current?.completeRiddle()}
+                              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                            >
+                              ✓ Done
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Story UI */}
+                      {openingActionType === 'story' && openingActionState.stage === 'telling' && (
+                        <div className="space-y-3">
+                          <button
+                            onClick={() => openingActionsControllerRef.current?.continueStory()}
+                            className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 mr-2"
+                          >
+                            ➡️ Continue Story
+                          </button>
+                          <button
+                            onClick={() => openingActionsControllerRef.current?.completeStory()}
+                            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            ✓ Finish Story
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="text-center">
+                    <button
+                      onClick={() => comprehensionPhaseRef.current?.go()}
+                      className="px-8 py-3 bg-blue-600 text-white text-lg rounded-lg hover:bg-blue-700"
+                    >
+                      Go
+                    </button>
+                  </div>
+                </>
               )}
               
               {comprehensionState === 'awaiting-answer' && (
@@ -2001,6 +2192,16 @@ function SessionPageV2Inner() {
         </div>
         
       </div>
+      
+      {/* PlayTimeExpiredOverlay */}
+      <PlayTimeExpiredOverlay
+        eventBus={eventBusRef.current}
+        timerService={timerServiceRef.current}
+        phase={currentPhase}
+        onTransition={() => {
+          addEvent('⏰ Transitioned to work mode');
+        }}
+      />
     </div>
   );
 }
