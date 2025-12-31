@@ -51,6 +51,7 @@ function SessionPageV2Inner() {
   const orchestratorRef = useRef(null);
   const snapshotServiceRef = useRef(null);
   const timerServiceRef = useRef(null);
+  const keyboardServiceRef = useRef(null);
   const teachingControllerRef = useRef(null);
   const comprehensionPhaseRef = useRef(null);
   const discussionPhaseRef = useRef(null);
@@ -242,6 +243,25 @@ function SessionPageV2Inner() {
     };
   }, []);
   
+  // Initialize KeyboardService
+  useEffect(() => {
+    const keyboard = new KeyboardService({
+      emit: (event, data) => {
+        if (event === 'hotkeyPressed') {
+          handleHotkey(data);
+        }
+      }
+    });
+    
+    keyboardServiceRef.current = keyboard;
+    keyboard.init();
+    
+    return () => {
+      keyboard.destroy();
+      keyboardServiceRef.current = null;
+    };
+  }, []);
+  
   const addEvent = (msg) => {
     const timestamp = new Date().toLocaleTimeString();
     setEvents(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 15));
@@ -340,6 +360,11 @@ function SessionPageV2Inner() {
     orchestrator.on('phaseChange', (data) => {
       addEvent(`🔄 Phase: ${data.phase}`);
       setCurrentPhase(data.phase);
+      
+      // Update keyboard service phase
+      if (keyboardServiceRef.current) {
+        keyboardServiceRef.current.setPhase(data.phase);
+      }
       
       // Start phase-specific controller
       if (data.phase === 'discussion') {
@@ -913,6 +938,46 @@ function SessionPageV2Inner() {
     
     // Start phase
     phase.start();
+  };
+  
+  // Handle keyboard hotkeys
+  const handleHotkey = (data) => {
+    const { action, phase, key } = data;
+    
+    addEvent(`⌨️ Hotkey: ${key} (${action})`);
+    
+    // Handle phase-specific actions
+    if (action === 'skip') {
+      if (phase === 'teaching') {
+        skipSentence();
+      } else if (phase === 'discussion') {
+        skipDiscussion();
+      } else if (phase === 'comprehension') {
+        skipComprehension();
+      } else if (phase === 'exercise') {
+        skipExerciseQuestion();
+      } else if (phase === 'worksheet') {
+        skipWorksheetQuestion();
+      } else if (phase === 'test') {
+        skipTestQuestion();
+      }
+    } else if (action === 'repeat' && phase === 'teaching') {
+      repeatSentence();
+    } else if (action === 'next' && phase === 'teaching') {
+      nextSentence();
+    } else if (action === 'pause') {
+      // Toggle pause/resume
+      if (audioEngineRef.current) {
+        const state = audioEngineRef.current.state;
+        if (state === 'playing') {
+          pauseAudio();
+        } else if (state === 'paused') {
+          resumeAudio();
+        }
+      }
+    } else if (action === 'stop') {
+      stopAudio();
+    }
   };
   
   const startSession = () => {
@@ -1699,6 +1764,33 @@ function SessionPageV2Inner() {
                 }`} />
                 <span className="font-mono">{engineState}</span>
               </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Keyboard Hotkeys */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Keyboard Hotkeys</h2>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="font-mono text-gray-600">PageDown</span>
+              <span>Skip current item</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-mono text-gray-600">PageUp</span>
+              <span>Repeat (teaching)</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-mono text-gray-600">End</span>
+              <span>Next sentence (teaching)</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-mono text-gray-600">Space</span>
+              <span>Pause/Resume audio</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-mono text-gray-600">Escape</span>
+              <span>Stop audio</span>
             </div>
           </div>
         </div>

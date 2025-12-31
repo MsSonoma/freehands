@@ -1,6 +1,6 @@
 # Session Page V2 Architecture
 
-**Status:** Complete session flow with timers, discussion, assessments, and snapshot persistence  
+**Status:** Complete session flow with keyboard hotkeys, timers, discussion, assessments, and snapshot persistence  
 **Created:** 2025-12-30  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
@@ -325,54 +325,64 @@ expect(engine.isPlaying).toBe(true);
   - Serialization for snapshot persistence
   - Emits timer events (tick, complete, eligible)
   - Zero coupling to phase components
+- **KeyboardService** (`src/app/session/v2/KeyboardService.jsx`) - 150 lines
+  - Keyboard hotkey management
+  - Hotkeys: PageDown (skip), PageUp (repeat), End (next), Space (pause), Escape (stop)
+  - Context-aware: Different hotkeys available per phase
+  - Prevents default browser behavior
+  - Ignores hotkeys when typing in inputs (except PageUp/PageDown)
+  - Zero coupling to phase components
 - **Services layer** (`src/app/session/v2/services.js`) - API integrations
   - fetchTTS(): Calls /api/tts endpoint, returns base64 audio
   - loadLesson(): Fetches lesson JSON from /lessons/{subject}/{key}.json
   - generateTestLesson(): Fallback test data
   - Zero coupling to components or state
-- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 1700 lines
+- **Complete Session Flow UI** (`SessionPageV2.jsx` updated) - 1820 lines
   - PhaseOrchestrator initialization with discussion enabled
   - SnapshotService initialization and auto-save after each phase
   - TimerService initialization with session + work phase timers
+  - KeyboardService initialization with phase-aware hotkeys
   - Phase-specific controls (discussion, teaching, comprehension, exercise, worksheet, test with review, closing)
   - Automatic phase transitions
   - Real lesson loading and TTS audio
+  - Keyboard hotkeys: PageDown skip, PageUp repeat, End next, Space pause/resume, Escape stop
+  - Hotkey display panel showing available shortcuts
   - Timer display: Session time, work phase time, time remaining, golden key status
-  - Discussion controls: Multiple activities, text response, Submit, Skip
-  - Teaching controls: Start, Next, Repeat, Restart, Skip
-  - Comprehension controls: Answer input, Submit, Skip
-  - Exercise controls: Radio button answer selection, Submit, Skip (with timer)
+  - Discussion controls: Multiple activities, text response, Submit, Skip (hotkey enabled)
+  - Teaching controls: Start, Next, Repeat, Restart, Skip (hotkey enabled)
+  - Comprehension controls: Answer input, Submit, Skip (hotkey enabled)
+  - Exercise controls: Radio button answer selection, Submit, Skip (hotkey enabled, with timer)
   - Exercise scoring: Live score display, percentage calculation, on-time status
-  - Worksheet controls: Text input with Enter key support, Submit, Skip (with timer)
+  - Worksheet controls: Text input with Enter key support, Submit, Skip (hotkey enabled, with timer)
   - Worksheet feedback: Instant correct/incorrect display with correct answer, on-time status
-  - Test controls: Mixed UI (radio/text based on question type), Submit, Skip (with timer)
+  - Test controls: Mixed UI (radio/text based on question type), Submit, Skip (hotkey enabled, with timer)
   - Test grading: Letter grade (A-F), percentage, on-time status
   - Test review: Question-by-question review with correct answers highlighted, Previous/Next navigation
   - Golden key award: Displayed when 3 work phases completed on-time
   - Closing phase: Displays encouraging message
-  - Audio transport controls: Stop, Pause, Resume, Mute
+  - Audio transport controls: Stop, Pause, Resume, Mute (with Space hotkey)
   - Snapshot auto-save: Saves after discussion, teaching, comprehension, exercise, worksheet, test completion
   - Snapshot resume: Loads on start, displays resume phase
-  - Live displays: Current phase, session time, work phase time, golden key status
-  - Event log showing all component events including timer milestones
+  - Live displays: Current phase, session time, work phase time, golden key status, hotkey legend
+  - Event log showing all component events including hotkey presses and timer milestones
   - Flow: Start Session → Discussion (Ask/Riddle/Poem/Story/Fill-in-Fun) → Teaching (definitions → examples) → Comprehension (question → answer) → Exercise (MC/TF scoring + timer) → Worksheet (fill-in-blank + timer) → Test (graded with review + timer) → Closing (encouragement) → Complete (show final time + golden key)
 
 ### 🚧 In Progress
 - None (complete session flow with snapshot persistence and resume)
 
 ### 📋 Next Steps
-1. Browser test: Full session flow with timers, discussion, assessments, and snapshot
-2. Browser test: Verify golden key award logic (3 on-time completions)
-3. Integrate real Supabase client (replace localStorage fallback)
-4. Add keyboard hotkeys (PageUp/PageDown, Space, etc.)
-5. Add Mr. Mentor integration (counselor flow)
+1. Browser test: Full session flow with hotkeys, timers, discussion, assessments, and snapshot
+2. Browser test: Verify hotkeys work across all phases
+3. Browser test: Verify golden key award logic (3 on-time completions)
+4. Integrate real Supabase client (replace localStorage fallback)
+5. Production deployment with feature flag
 
 ---
 
 ## Key Files
 
 **V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (1700 lines)
+- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (1820 lines)
 - `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
 - `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
 - `src/app/session/v2/ComprehensionPhase.jsx` - Comprehension question flow (200 lines)
@@ -384,6 +394,7 @@ expect(engine.isPlaying).toBe(true);
 - `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
 - `src/app/session/v2/SnapshotService.jsx` - Session persistence (300 lines)
 - `src/app/session/v2/TimerService.jsx` - Session and work phase timers (350 lines)
+- `src/app/session/v2/KeyboardService.jsx` - Keyboard hotkey management (150 lines)
 - `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading)
 - `src/app/session/v2test/page.jsx` - Direct test route
 
