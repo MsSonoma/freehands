@@ -37,6 +37,119 @@ import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
 import EventBus from './EventBus';
 import { loadLesson, generateTestLesson, fetchTTS } from './services';
 
+// Timeline constants
+const timelinePhases = ["discussion", "comprehension", "exercise", "worksheet", "test"];
+const phaseLabels = {
+  discussion: "Discussion",
+  comprehension: "Comp",
+  exercise: "Exercise",
+  worksheet: "Worksheet",
+  test: "Test",
+};
+
+// Timeline component
+function Timeline({ timelinePhases, timelineHighlight, compact = false }) {
+  const columns = Array.isArray(timelinePhases) && timelinePhases.length > 0 ? timelinePhases.length : 5;
+  const gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
+  const containerRef = useRef(null);
+  const [labelFontSize, setLabelFontSize] = useState('1rem');
+
+  // Compute a shared font size so the longest label fits within a single column
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const BASE = 16; // px for measurement
+    const MIN = 12;  // px - keep readable on small screens
+    const MAX = 20;  // px - permit larger labels on wider screens
+    const PADDING_X = 18 * 2 + 4; // left+right padding plus a little slack for borders
+
+    const labels = (Array.isArray(timelinePhases) ? timelinePhases : []).map(k => String(phaseLabels[k] || ''));
+    if (!labels.length) return;
+
+    const compute = () => {
+      const totalWidth = el.clientWidth || 0;
+      if (totalWidth <= 0) { setLabelFontSize('1rem'); return; }
+      const colWidth = totalWidth / columns;
+      const available = Math.max(0, colWidth - PADDING_X);
+
+      // Build a hidden measurer span to measure widths at BASE size and bold weight (worst case)
+      const meas = document.createElement('span');
+      meas.style.position = 'fixed';
+      meas.style.left = '-99999px';
+      meas.style.top = '0';
+      meas.style.whiteSpace = 'nowrap';
+      meas.style.visibility = 'hidden';
+      const cs = window.getComputedStyle(el);
+      meas.style.fontFamily = cs.fontFamily || 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+      meas.style.fontWeight = '700'; // measure bold to avoid overflow when highlighted
+      meas.style.fontSize = `${BASE}px`;
+      document.body.appendChild(meas);
+      let maxLabelWidth = 0;
+      for (const text of labels) {
+        meas.textContent = text;
+        const w = meas.getBoundingClientRect().width;
+        if (w > maxLabelWidth) maxLabelWidth = w;
+      }
+      document.body.removeChild(meas);
+
+      if (maxLabelWidth <= 0 || available <= 0) { setLabelFontSize('1rem'); return; }
+      const scale = Math.min(1, available / maxLabelWidth);
+      const next = Math.max(MIN, Math.min(MAX, Math.floor(BASE * scale)));
+      // Map px -> rem using current root font-size for consistent scaling
+      const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const nextRem = Math.max(0.5, next / rootPx);
+      setLabelFontSize(`${nextRem}rem`);
+    };
+
+    // Initial compute + observe container size changes
+    compute();
+    const ro = new ResizeObserver(() => compute());
+    try { ro.observe(el); } catch {}
+    // Recompute on window orientation changes
+    const onResize = () => compute();
+    window.addEventListener('resize', onResize);
+    return () => {
+      try { ro.disconnect(); } catch {}
+      window.removeEventListener('resize', onResize);
+    };
+  }, [timelinePhases, columns]);
+
+  return (
+    <div ref={containerRef} style={{ display: "grid", gridTemplateColumns, gap: 'clamp(0.25rem, 0.8vw, 0.5rem)', marginBottom: compact ? 'clamp(0.125rem, 0.6vw, 0.25rem)' : 'clamp(0.25rem, 1vw, 0.625rem)', width: '100%', minWidth: 0, position: 'relative', zIndex: 9999, padding: 'clamp(0.125rem, 0.6vw, 0.375rem)', boxSizing: 'border-box' }}>
+      {timelinePhases.map((phaseKey) => (
+        <div
+          key={phaseKey}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            boxSizing: 'border-box',
+            padding: compact ? 'clamp(3px, 0.6vw, 6px) clamp(8px, 1.4vw, 12px)' : 'clamp(6px, 1vw, 10px) clamp(14px, 2vw, 18px)',
+            borderRadius: 12,
+            background: timelineHighlight === phaseKey ? "#c7442e" : "#e5e7eb",
+            color: timelineHighlight === phaseKey ? "#fff" : "#374151",
+            fontWeight: timelineHighlight === phaseKey ? 700 : 500,
+            boxShadow: timelineHighlight === phaseKey ? "0 0 0 3px #c7442e, 0 2px 8px #c7442e" : undefined,
+            border: "2px solid transparent",
+            fontSize: labelFontSize,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            minWidth: 0,
+            userSelect: 'none',
+            transition: 'background 120ms ease, transform 120ms ease'
+          }}
+        >
+          {phaseLabels[phaseKey]}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function SessionPageV2() {
   return (
     <Suspense fallback={null}>
@@ -134,6 +247,27 @@ function SessionPageV2Inner() {
   const [currentCaption, setCurrentCaption] = useState('');
   const [engineState, setEngineState] = useState('idle');
   const [events, setEvents] = useState([]);
+  
+  // Compute timeline highlight based on current phase
+  const timelineHighlight = (() => {
+    // Group teaching with discussion; comprehension is its own segment on the timeline
+    if (["discussion", "teaching", "idle"].includes(currentPhase)) {
+      return "discussion";
+    }
+    if (currentPhase === "comprehension") {
+      return "comprehension";
+    }
+    if (currentPhase === "exercise") {
+      return "exercise";
+    }
+    if (currentPhase === "worksheet") {
+      return "worksheet";
+    }
+    if (["test", "grading", "congrats"].includes(currentPhase)) {
+      return "test";
+    }
+    return currentPhase;
+  })();
   
   // Load lesson data
   useEffect(() => {
@@ -1512,8 +1646,24 @@ function SessionPageV2Inner() {
     : { flex: '1 1 auto', display: 'flex', flexDirection: 'column', overflow: 'auto', background: '#ffffff', padding: '8px 4%', marginTop: 8 };
   
   return (
-    <div style={mainLayoutStyle}>
-      {/* Video column */}
+    <>
+      {/* Phase Timeline */}
+      <div style={{
+        width: '100%',
+        background: '#ffffff',
+        padding: isMobileLandscape ? 'clamp(0.125rem, 0.6vw, 0.375rem) 0.5%' : 'clamp(0.25rem, 1vw, 0.625rem) 2%',
+        boxSizing: 'border-box'
+      }}>
+        <Timeline
+          timelinePhases={timelinePhases}
+          timelineHighlight={timelineHighlight}
+          compact={isMobileLandscape}
+        />
+      </div>
+      
+      {/* Main layout */}
+      <div style={mainLayoutStyle}>
+        {/* Video column */}
       <div ref={videoColRef} style={videoWrapperStyle}>
         <div style={videoInnerStyle}>
           <video
@@ -3404,6 +3554,7 @@ function SessionPageV2Inner() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
