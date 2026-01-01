@@ -1301,8 +1301,36 @@ function SessionPageV2Inner() {
     }
   };
   
-  const startSession = () => {
+  const startSession = async () => {
     if (!orchestratorRef.current) return;
+    
+    // Unlock video playback for Chrome autoplay policy
+    try {
+      if (videoRef.current) {
+        if (videoRef.current.readyState < 2) {
+          videoRef.current.load();
+          // Wait a moment for load to register
+          await new Promise(r => setTimeout(r, 100));
+        }
+        // Seek to first frame and start playing
+        try {
+          videoRef.current.currentTime = 0;
+          await videoRef.current.play();
+        } catch (e) {
+          // Fallback: briefly play then pause to unlock autoplay, then play again
+          const playPromise = videoRef.current.play();
+          if (playPromise && playPromise.then) {
+            await playPromise.then(() => {
+              try { videoRef.current.pause(); } catch {}
+              // Now play for real
+              try { videoRef.current.play(); } catch {}
+            }).catch(() => {});
+          }
+        }
+      }
+    } catch (e) {
+      // Silent error handling
+    }
     
     // Start session timer
     if (timerServiceRef.current) {
@@ -1495,7 +1523,14 @@ function SessionPageV2Inner() {
             loop
             playsInline
             preload="auto"
-            autoPlay
+            onLoadedMetadata={() => {
+              try {
+                // Seek to first frame without pausing to keep video ready for immediate playback
+                if (videoRef.current && videoRef.current.paused) {
+                  try { videoRef.current.currentTime = 0; } catch {}
+                }
+              } catch {}
+            }}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
           />
         </div>

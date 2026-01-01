@@ -100,9 +100,12 @@
       "PhaseOrchestrator component",
       "snapshot compatibility layer",
       "migration sequence",
-      "V1 vs V2 separation"
+      "V1 vs V2 separation",
+      "video playback coordination",
+      "Chrome autoplay unlock",
+      "user gesture unlock"
     ],
-    "last_updated": "2025-12-31T18:00:00Z",
+    "last_updated": "2026-01-01T02:30:00Z",
     "status": "active-development"
   },
   "mr-mentor-conversation-flows": {

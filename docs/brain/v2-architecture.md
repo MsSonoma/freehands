@@ -287,6 +287,35 @@ expect(engine.isPlaying).toBe(true);
 - Know about phase transitions
 - Mutate phase state
 
+### Video Playback Coordination
+
+**How It Works:**
+1. Video element has `loop`, `playsInline`, `muted`, and `preload="auto"` props - NO `autoPlay`
+2. Video is preloaded on page load but remains paused
+3. When user clicks Begin button, `startSession()` unlocks video playback:
+   - Checks if video needs load: `if (videoRef.current.readyState < 2)` → `videoRef.current.load()`
+   - Waits 100ms for load to register
+   - Seeks to first frame: `videoRef.current.currentTime = 0`
+   - Attempts to play: `await videoRef.current.play()`
+   - If play fails, uses fallback: `play().then(pause()).then(play())` to unlock Chrome autoplay
+4. After unlock, video loops continuously (has `loop` attribute)
+5. Video continues looping throughout entire session - provides brand immersion
+
+**Why This Pattern:**
+- Chrome autoplay policy requires user gesture before video/audio can play
+- V2 matches V1's exact behavior: preload → user gesture unlock → continuous loop
+- Preloading during page load ensures smooth playback start
+- Fallback pattern (play→pause→play) handles edge cases where first play() is blocked
+
+**Key Files:**
+- `SessionPageV2.jsx` lines 1304-1340: `startSession()` function with video unlock
+- `SessionPageV2.jsx` lines 1495-1507: Video element with preload settings and onLoadedMetadata handler
+
+**What NOT To Do:**
+- ❌ Don't add `autoPlay` prop - violates Chrome policy and defeats unlock pattern
+- ❌ Don't pause video when audio stops - video loops continuously (brand immersion)
+- ❌ Don't try to sync video play/pause with isSpeaking state - video always loops once unlocked
+
 ### TeachingController Component
 **Owns:**
 - Teaching stage machine (idle → definitions → examples)
