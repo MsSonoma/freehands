@@ -1647,8 +1647,13 @@ function SessionPageV2Inner() {
   
   return (
     <>
-      {/* Phase Timeline */}
+      {/* Phase Timeline - absolutely positioned in landscape to not add to page height */}
       <div style={{
+        position: isMobileLandscape ? 'absolute' : 'relative',
+        top: isMobileLandscape ? 0 : 'auto',
+        left: isMobileLandscape ? 0 : 'auto',
+        right: isMobileLandscape ? 0 : 'auto',
+        zIndex: 9999,
         width: '100%',
         background: '#ffffff',
         padding: isMobileLandscape ? 'clamp(0.125rem, 0.6vw, 0.375rem) 0.5%' : 'clamp(0.25rem, 1vw, 0.625rem) 2%',
