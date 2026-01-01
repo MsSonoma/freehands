@@ -1628,7 +1628,7 @@ function SessionPageV2Inner() {
   
   const mainLayoutStyle = isMobileLandscape
     ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, '--msSideBySideH': msSideBySideH }
-    : { display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh', background: '#ffffff' };
+    : { display: 'flex', flexDirection: 'column', width: '100%', background: '#ffffff' };
   
   const videoWrapperStyle = isMobileLandscape
     ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'visible', background: 'transparent', minWidth: 0, minHeight: 0, height: 'var(--msSideBySideH)', display: 'flex', flexDirection: 'column' }
@@ -1651,7 +1651,7 @@ function SessionPageV2Inner() {
       <div style={{
         width: '100%',
         background: '#ffffff',
-        padding: isMobileLandscape ? 'clamp(0.125rem, 0.6vw, 0.375rem) 0.5%' : 'clamp(0.25rem, 1vw, 0.625rem) 2%',
+        padding: isMobileLandscape ? 'clamp(0.125rem, 0.6vw, 0.375rem) 0.5%' : '0',
         boxSizing: 'border-box'
       }}>
         <Timeline
