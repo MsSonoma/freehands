@@ -313,6 +313,33 @@ function SessionPageV2Inner() {
     setEvents(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 15));
   };
   
+  // Orientation and layout detection (matching V1)
+  const [isMobileLandscape, setIsMobileLandscape] = useState(false);
+  const [videoColPercent, setVideoColPercent] = useState(58);
+  
+  useEffect(() => {
+    const updateLayout = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const isLandscape = w > h;
+      setIsMobileLandscape(isLandscape);
+      
+      // Video column percentage: wider for landscape
+      if (isLandscape) {
+        setVideoColPercent(w < 900 ? 55 : 58);
+      }
+    };
+    
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
+    window.addEventListener('orientationchange', updateLayout);
+    
+    return () => {
+      window.removeEventListener('resize', updateLayout);
+      window.removeEventListener('orientationchange', updateLayout);
+    };
+  }, []);
+  
   // Initialize AudioEngine
   useEffect(() => {
     if (!videoRef.current) return;
@@ -1322,19 +1349,33 @@ function SessionPageV2Inner() {
     );
   }
   
+  // Layout wrapper style: side-by-side in landscape, stacked in portrait
+  const mainLayoutStyle = isMobileLandscape
+    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#f9fafb' }
+    : { display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh', background: '#f9fafb' };
+  
+  const videoWrapperStyle = isMobileLandscape
+    ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'hidden', background: '#000', minWidth: 0, minHeight: 0 }
+    : { position: 'relative', width: '100%', height: '35vh', overflow: 'hidden', background: '#000' };
+  
+  const transcriptWrapperStyle = isMobileLandscape
+    ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'auto', minWidth: 0, minHeight: 0, background: '#ffffff' }
+    : { flex: '1 1 auto', display: 'flex', flexDirection: 'column', overflow: 'auto', background: '#ffffff', padding: '8px 4%' };
+  
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
-      {/* Full-screen video background */}
-      <video
-        ref={videoRef}
-        src="/media/ms-sonoma-3.mp4"
-        muted
-        loop
-        playsInline
-        preload="auto"
-        autoPlay
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
-      />
+    <div style={mainLayoutStyle}>
+      {/* Video column */}
+      <div style={videoWrapperStyle}>
+        <video
+          ref={videoRef}
+          src="/media/ms-sonoma-3.mp4"
+          muted
+          loop
+          playsInline
+          preload="auto"
+          autoPlay
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+        />
       
       {/* Session Timer - overlay in top left */}
       {currentPhase !== 'idle' && sessionTime && (
@@ -2907,6 +2948,28 @@ function SessionPageV2Inner() {
           addEvent('⏰ Transitioned to work mode');
         }}
       />
+      </div>
+      
+      {/* Transcript column */}
+      <div style={transcriptWrapperStyle}>
+        <div style={{
+          background: '#ffffff',
+          borderRadius: isMobileLandscape ? 0 : 14,
+          boxShadow: isMobileLandscape ? 'none' : '0 4px 12px rgba(0,0,0,0.25)',
+          padding: 12,
+          flex: '1 1 auto',
+          overflow: 'auto',
+          fontSize: 'clamp(1.125rem, 2.4vw, 1.5rem)',
+          lineHeight: 1.5,
+          color: '#111111'
+        }}>
+          {currentCaption ? (
+            <div style={{ whiteSpace: 'pre-line' }}>{currentCaption}</div>
+          ) : (
+            <div style={{ color: '#6b7280' }}>Transcript will appear here...</div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
