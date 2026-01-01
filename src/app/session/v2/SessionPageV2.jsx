@@ -1305,17 +1305,17 @@ function SessionPageV2Inner() {
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-lg">Loading lesson...</div>
+      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '1.125rem', color: '#1f2937' }}>Loading lesson...</div>
       </div>
     );
   }
   
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-red-100 text-red-700 p-6 rounded-lg max-w-md">
-          <h2 className="font-bold mb-2">Error loading lesson</h2>
+      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: '#fef2f2', color: '#b91c1c', padding: 24, borderRadius: 8, maxWidth: 448 }}>
+          <h2 style={{ fontWeight: 700, marginBottom: 8 }}>Error loading lesson</h2>
           <p>{error}</p>
         </div>
       </div>
@@ -1323,84 +1323,179 @@ function SessionPageV2Inner() {
   }
   
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h1 className="text-2xl font-bold mb-2">V2 Architecture - Full Session Flow</h1>
-          <p className="text-gray-600">Teaching + Comprehension + Exercise + Worksheet + Test + Review</p>
-          {lessonData && (
-            <div className="mt-4 text-sm text-gray-500 space-y-1">
-              <div className="font-semibold">{lessonData.title}</div>
-              <div>Current Phase: <span className="font-bold text-blue-600">{currentPhase}</span></div>
-              <div>Vocab: {lessonData.vocab?.length || 0} terms</div>
-              <div>Examples: {lessonData.examples?.length || 0} sentences</div>
-            </div>
-          )}
-          {currentPhase !== 'idle' && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="text-sm space-y-2">
-                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                  <span className="text-gray-700 font-semibold">Session Time:</span>
-                  <span className="font-mono text-2xl font-bold text-blue-600">{sessionTime}</span>
-                </div>
-                {['exercise', 'worksheet', 'test'].includes(currentPhase) && (
-                  <>
-                    <div className="flex justify-between items-center p-2 bg-green-50 rounded">
-                      <span className="text-gray-600">Work Phase Elapsed:</span>
-                      <span className="font-mono text-lg font-semibold text-green-600">{workPhaseTime}</span>
-                    </div>
-                  </>
-                )}
-                {goldenKeyEligible && (
-                  <div className="mt-2 p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg animate-pulse">
-                    <span className="text-yellow-800 font-bold text-lg">🔑 Golden Key Earned!</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
+      {/* Full-screen video background */}
+      <video
+        ref={videoRef}
+        src="/media/ms-sonoma-3.mp4"
+        muted
+        loop
+        playsInline
+        preload="auto"
+        autoPlay
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+      />
+      
+      {/* Session Timer - overlay in top left */}
+      {currentPhase !== 'idle' && sessionTime && (
+        <div style={{ 
+          position: 'absolute',
+          top: 8,
+          left: 8,
+          background: 'rgba(17,24,39,0.85)',
+          color: '#fff',
+          padding: '10px 14px',
+          borderRadius: 10,
+          fontSize: 'clamp(1rem, 2vw, 1.25rem)',
+          fontWeight: 700,
+          letterSpacing: 0.4,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+          zIndex: 10001
+        }}>
+          {sessionTime}
         </div>
-        
-        {/* Phase Timer Overlay - Prominent countdown for work phases (V1 visual parity) */}
-        {['exercise', 'worksheet', 'test'].includes(currentPhase) && workPhaseRemaining && (
-          <div className="fixed top-4 right-4 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-lg shadow-2xl p-4 z-50 border-4 border-white">
-            <div className="text-xs font-semibold uppercase tracking-wide opacity-90 mb-1">
-              {currentPhase} Timer
-            </div>
-            <div className="font-mono text-3xl font-bold leading-none">
-              {workPhaseRemaining}
-            </div>
-            <div className="text-xs mt-1 opacity-80">
-              Time Remaining
-            </div>
+      )}
+      
+      {/* Score ticker - top right */}
+      {(currentPhase === 'comprehension' || currentPhase === 'exercise') && (
+        <div style={{ 
+          position: 'absolute', 
+          top: 8, 
+          right: 8, 
+          background: 'rgba(17,24,39,0.78)', 
+          color: '#fff', 
+          padding: '6px 10px', 
+          borderRadius: 8, 
+          fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', 
+          fontWeight: 600, 
+          letterSpacing: 0.3, 
+          boxShadow: '0 2px 6px rgba(0,0,0,0.25)', 
+          zIndex: 10000, 
+          pointerEvents: 'none' 
+        }}>
+          {currentPhase === 'comprehension' ? `${comprehensionScore || 0}/${comprehensionTotalQuestions || 3}` : `${exerciseScore}/${exerciseTotalQuestions}`}
+        </div>
+      )}
+      
+      {/* Worksheet/Test question counter - top right */}
+      {((currentPhase === 'worksheet' && worksheetState === 'awaiting-answer') || (currentPhase === 'test' && testState === 'awaiting-answer')) && (
+        <div style={{ 
+          position: 'absolute', 
+          top: 8, 
+          right: 8, 
+          background: 'rgba(17,24,39,0.78)', 
+          color: '#fff', 
+          padding: '6px 10px', 
+          borderRadius: 8, 
+          fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', 
+          fontWeight: 600, 
+          letterSpacing: 0.3, 
+          boxShadow: '0 2px 6px rgba(0,0,0,0.25)', 
+          zIndex: 10000, 
+          pointerEvents: 'none' 
+        }}>
+          Question {currentPhase === 'worksheet' ? (worksheetScore + 1) : (testScore + 1)}
+        </div>
+      )}
+      
+      {/* Worksheet question overlay on video */}
+      {currentPhase === 'worksheet' && worksheetState === 'awaiting-answer' && currentWorksheetQuestion && (
+        <div style={{ 
+          position: 'absolute', 
+          inset: 0, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          padding: '24px 32px', 
+          pointerEvents: 'none', 
+          textAlign: 'center' 
+        }}>
+          <div style={{ 
+            fontSize: 'clamp(1.75rem, 4.2vw, 3.25rem)', 
+            fontWeight: 800, 
+            lineHeight: 1.18, 
+            color: '#ffffff', 
+            textShadow: '0 0 4px rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.85), 0 4px 22px rgba(0,0,0,0.65)', 
+            letterSpacing: 0.5, 
+            width: '100%' 
+          }}>
+            {currentWorksheetQuestion.question}
           </div>
-        )}
-        
-        {/* Video Panel */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Video</h2>
-          <video
-            ref={videoRef}
-            src="/media/sonoma_vid_bg_loop.mp4"
-            loop
-            muted
-            playsInline
-            className="w-full rounded-lg bg-black"
-            style={{ maxHeight: '300px' }}
-          />
         </div>
-        
-        {/* Phase Controls */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Phase Controls</h2>
+      )}
+      
+      {/* Work timer countdown overlay */}
+      {['exercise', 'worksheet', 'test'].includes(currentPhase) && workPhaseRemaining && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'linear-gradient(135deg, rgba(249,115,22,0.95) 0%, rgba(220,38,38,0.95) 100%)',
+          color: '#fff',
+          padding: '32px 48px',
+          borderRadius: 20,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          zIndex: 9999,
+          pointerEvents: 'none',
+          border: '4px solid rgba(255,255,255,0.3)'
+        }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.9, marginBottom: 8 }}>
+            {currentPhase} Timer
+          </div>
+          <div style={{ fontSize: '4rem', fontWeight: 800, fontFamily: 'monospace', lineHeight: 1 }}>
+            {workPhaseRemaining}
+          </div>
+        </div>
+      )}
+      
+      {/* Caption area - bottom center */}
+      {currentCaption && (
+        <div style={{
+          position: 'absolute',
+          bottom: 120,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(0,0,0,0.8)',
+          color: '#fff',
+          padding: '16px 32px',
+          borderRadius: 12,
+          fontSize: 'clamp(1rem, 2vw, 1.5rem)',
+          maxWidth: '90%',
+          textAlign: 'center',
+          zIndex: 10000
+        }}>
+          {currentCaption}
+        </div>
+      )}
+      
+      {/* Phase Controls - bottom center overlay */}
+      <div style={{
+        position: 'absolute',
+        bottom: 24,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 10002
+      }}>
           
           {/* Session Start */}
           {currentPhase === 'idle' && (
             <button
               onClick={startSession}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+              style={{
+                padding: '16px 40px',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 12,
+                fontSize: '1.25rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(16, 185, 129, 0.4)',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+              onMouseOver={(e) => { e.target.style.transform = 'scale(1.05)'; e.target.style.boxShadow = '0 6px 30px rgba(16, 185, 129, 0.6)'; }}
+              onMouseOut={(e) => { e.target.style.transform = 'scale(1)'; e.target.style.boxShadow = '0 4px 20px rgba(16, 185, 129, 0.4)'; }}
             >
               Start Session
             </button>
@@ -1408,95 +1503,136 @@ function SessionPageV2Inner() {
           
           {/* Teaching Phase */}
           {currentPhase === 'teaching' && (
-            <div>
-              <div className="mb-4 p-4 bg-gray-50 rounded">
-                <div className="font-semibold text-lg">Teaching Stage: {teachingStage}</div>
-                {(teachingStage === 'definitions' || teachingStage === 'examples') && (
-                  <div className="text-sm text-gray-600 mt-1">
-                    Sentence {sentenceIndex + 1} of {totalSentences}
-                    {!isInSentenceMode && <span className="ml-2 text-yellow-600">(Final Gate)</span>}
-                  </div>
-                )}
-              </div>
-              
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
               {(teachingStage === 'definitions' || teachingStage === 'examples') && (
-                <div className="space-y-3">
-                  <div className="flex gap-3 flex-wrap">
+                <>
+                  <button
+                    onClick={nextSentence}
+                    style={{
+                      padding: '12px 28px',
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 10,
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 16px rgba(59, 130, 246, 0.4)'
+                    }}
+                  >
+                    {isInSentenceMode 
+                      ? 'Next Sentence' 
+                      : teachingStage === 'definitions' 
+                        ? 'Continue to Examples' 
+                        : 'Complete Teaching'
+                    }
+                  </button>
+                  <button
+                    onClick={repeatSentence}
+                    disabled={!isInSentenceMode}
+                    style={{
+                      padding: '12px 28px',
+                      background: isInSentenceMode ? 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)' : '#9ca3af',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 10,
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: isInSentenceMode ? 'pointer' : 'not-allowed',
+                      boxShadow: isInSentenceMode ? '0 4px 16px rgba(168, 85, 247, 0.4)' : 'none'
+                    }}
+                  >
+                    Repeat
+                  </button>
+                  <button
+                    onClick={restartStage}
+                    style={{
+                      padding: '12px 28px',
+                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 10,
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 16px rgba(245, 158, 11, 0.4)'
+                    }}
+                  >
+                    Restart Stage
+                  </button>
+                  {teachingStage === 'definitions' && (
                     <button
-                      onClick={nextSentence}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      onClick={skipToExamples}
+                      style={{
+                        padding: '12px 28px',
+                        background: 'rgba(55, 65, 81, 0.9)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+                      }}
                     >
-                      {isInSentenceMode 
-                        ? 'Next Sentence' 
-                        : teachingStage === 'definitions' 
-                          ? 'Continue to Examples' 
-                          : 'Complete Teaching'
-                      }
+                      Skip to Examples
                     </button>
-                    <button
-                      onClick={repeatSentence}
-                      className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
-                      disabled={!isInSentenceMode}
-                    >
-                      Repeat
-                    </button>
-                    <button
-                      onClick={restartStage}
-                      className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
-                    >
-                      Restart Stage
-                    </button>
-                    {teachingStage === 'definitions' && (
-                      <button
-                        onClick={skipToExamples}
-                        className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                      >
-                        Skip to Examples
-                      </button>
-                    )}
-                  </div>
-                </div>
+                  )}
+                </>
               )}
             </div>
           )}
           
           {/* Discussion Phase */}
           {currentPhase === 'discussion' && (
-            <div>
-              <div className="mb-4 p-4 bg-pink-50 rounded">
-                <div className="font-semibold text-lg">Discussion Activity</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Activity: {discussionActivity} | State: {discussionState}
-                </div>
-              </div>
-              
-              <div className="mb-4 p-3 bg-gray-100 rounded">
-                <div className="text-sm font-semibold mb-1">Prompt:</div>
-                <div>{discussionPrompt}</div>
-              </div>
-              
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {discussionState === 'awaiting-response' && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-semibold mb-2">Your Response:</label>
-                    <textarea
-                      value={discussionResponse}
-                      onChange={(e) => setDiscussionResponse(e.target.value)}
-                      className="w-full p-3 border rounded-lg"
-                      rows={4}
-                      placeholder="Type your response here..."
-                    />
-                  </div>
-                  <div className="flex gap-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <textarea
+                    value={discussionResponse}
+                    onChange={(e) => setDiscussionResponse(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: 12,
+                      border: '2px solid rgba(255,255,255,0.3)',
+                      borderRadius: 8,
+                      fontSize: '1rem',
+                      background: 'rgba(255,255,255,0.95)',
+                      minHeight: 100
+                    }}
+                    rows={4}
+                    placeholder="Type your response here..."
+                  />
+                  <div style={{ display: 'flex', gap: 12 }}>
                     <button
                       onClick={submitDiscussionResponse}
-                      className="px-6 py-2 bg-pink-600 text-white rounded hover:bg-pink-700"
+                      style={{
+                        padding: '12px 28px',
+                        background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 16px rgba(236, 72, 153, 0.4)'
+                      }}
                     >
                       Submit Response
                     </button>
                     <button
                       onClick={skipDiscussion}
-                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                      style={{
+                        padding: '12px 28px',
+                        background: 'rgba(107, 114, 128, 0.9)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+                      }}
                     >
                       Skip
                     </button>
@@ -1505,7 +1641,7 @@ function SessionPageV2Inner() {
               )}
               
               {discussionState === 'complete' && (
-                <div className="text-green-600 font-semibold">
+                <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.125rem' }}>
                   ✓ Discussion Activity Complete
                 </div>
               )}
@@ -1514,53 +1650,94 @@ function SessionPageV2Inner() {
           
           {/* Comprehension Phase */}
           {currentPhase === 'comprehension' && (
-            <div>
-              <div className="mb-4 p-4 bg-blue-50 rounded">
-                <div className="font-semibold text-lg">Comprehension Question</div>
-                <div className="text-sm text-gray-600 mt-1">State: {comprehensionState}</div>
-                {comprehensionTimerMode && (
-                  <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
-                    comprehensionTimerMode === 'play' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {comprehensionTimerMode === 'play' ? '🟢 Play Time' : '🟠 Work Time'}
-                  </div>
-                )}
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               
               {comprehensionState === 'awaiting-go' && (
                 <>
                   {/* Opening Actions - Show during play time only */}
                   {comprehensionTimerMode === 'play' && !openingActionActive && (
-                    <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
-                      <h3 className="font-bold text-lg mb-3 text-gray-800">🎯 Opening Actions</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div style={{
+                      padding: 16,
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      borderRadius: 12,
+                      border: '2px solid rgba(16, 185, 129, 0.5)',
+                      marginBottom: 16,
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+                    }}>
+                      <h3 style={{ fontWeight: 700, fontSize: '1.125rem', marginBottom: 12, color: '#1f2937' }}>🎯 Opening Actions</h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startAsk()}
-                          className="px-4 py-3 bg-white border-2 border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #93c5fd',
+                            color: '#1d4ed8',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           ❓ Ask Ms. Sonoma
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startRiddle()}
-                          className="px-4 py-3 bg-white border-2 border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #c4b5fd',
+                            color: '#7c3aed',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           🧩 Riddle
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startPoem()}
-                          className="px-4 py-3 bg-white border-2 border-pink-300 text-pink-700 rounded-lg hover:bg-pink-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #f9a8d4',
+                            color: '#db2777',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           📜 Poem
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startStory()}
-                          className="px-4 py-3 bg-white border-2 border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #fdba74',
+                            color: '#ea580c',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           📖 Story
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startFillInFun()}
-                          className="px-4 py-3 bg-white border-2 border-green-300 text-green-700 rounded-lg hover:bg-green-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #86efac',
+                            color: '#16a34a',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           🎨 Fill-in-Fun
                         </button>
@@ -1570,9 +1747,16 @@ function SessionPageV2Inner() {
                   
                   {/* Active Opening Action UI */}
                   {openingActionActive && (
-                    <div className="mb-6 p-4 bg-yellow-50 rounded-lg border-2 border-yellow-300">
-                      <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-bold text-lg text-gray-800">
+                    <div style={{
+                      padding: 16,
+                      background: 'rgba(254, 252, 232, 0.98)',
+                      borderRadius: 12,
+                      border: '2px solid #fcd34d',
+                      marginBottom: 16,
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <h3 style={{ fontWeight: 700, fontSize: '1.125rem', color: '#1f2937' }}>
                           {openingActionType === 'ask' && '❓ Ask Ms. Sonoma'}
                           {openingActionType === 'riddle' && '🧩 Riddle'}
                           {openingActionType === 'poem' && '📜 Poem'}
@@ -1581,7 +1765,17 @@ function SessionPageV2Inner() {
                         </h3>
                         <button
                           onClick={() => openingActionsControllerRef.current?.destroy()}
-                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                          style={{
+                            padding: '6px 16px',
+                            background: '#ef4444',
+                            color: '#fff',
+                            borderRadius: 6,
+                            border: 'none',
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)'
+                          }}
                         >
                           Cancel
                         </button>
@@ -1589,10 +1783,16 @@ function SessionPageV2Inner() {
                       
                       {/* Ask UI */}
                       {openingActionType === 'ask' && openingActionState.stage === 'awaiting-question' && (
-                        <div className="space-y-3">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                           <textarea
                             placeholder="What would you like to ask Ms. Sonoma?"
-                            className="w-full p-3 border rounded-lg"
+                            style={{
+                              width: '100%',
+                              padding: 12,
+                              border: '1px solid #d1d5db',
+                              borderRadius: 8,
+                              fontSize: '1rem'
+                            }}
                             rows={3}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey && e.target.value.trim()) {
@@ -1608,7 +1808,16 @@ function SessionPageV2Inner() {
                                 openingActionsControllerRef.current?.submitAsk(textarea.value.trim());
                               }
                             }}
-                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                            style={{
+                              padding: '10px 20px',
+                              background: '#2563eb',
+                              color: '#fff',
+                              borderRadius: 8,
+                              border: 'none',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.4)'
+                            }}
                           >
                             Submit Question
                           </button>
@@ -1617,18 +1826,36 @@ function SessionPageV2Inner() {
                       
                       {/* Riddle UI */}
                       {openingActionType === 'riddle' && (
-                        <div className="space-y-3">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                           {openingActionState.stage === 'question' && (
-                            <div className="space-y-2">
+                            <div style={{ display: 'flex', gap: 8 }}>
                               <button
                                 onClick={() => openingActionsControllerRef.current?.getRiddleHint()}
-                                className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 mr-2"
+                                style={{
+                                  padding: '10px 20px',
+                                  background: '#ca8a04',
+                                  color: '#fff',
+                                  borderRadius: 8,
+                                  border: 'none',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  boxShadow: '0 2px 8px rgba(202, 138, 4, 0.4)'
+                                }}
                               >
                                 💡 Hint
                               </button>
                               <button
                                 onClick={() => openingActionsControllerRef.current?.revealRiddleAnswer()}
-                                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                                style={{
+                                  padding: '10px 20px',
+                                  background: '#9333ea',
+                                  color: '#fff',
+                                  borderRadius: 8,
+                                  border: 'none',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  boxShadow: '0 2px 8px rgba(147, 51, 234, 0.4)'
+                                }}
                               >
                                 🔍 Reveal Answer
                               </button>
@@ -1637,7 +1864,16 @@ function SessionPageV2Inner() {
                           {openingActionState.stage === 'complete' && (
                             <button
                               onClick={() => openingActionsControllerRef.current?.completeRiddle()}
-                              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                              style={{
+                                padding: '10px 20px',
+                                background: '#16a34a',
+                                color: '#fff',
+                                borderRadius: 8,
+                                border: 'none',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(22, 163, 74, 0.4)'
+                              }}
                             >
                               ✓ Done
                             </button>
@@ -1647,16 +1883,34 @@ function SessionPageV2Inner() {
                       
                       {/* Story UI */}
                       {openingActionType === 'story' && openingActionState.stage === 'telling' && (
-                        <div className="space-y-3">
+                        <div style={{ display: 'flex', gap: 8 }}>
                           <button
                             onClick={() => openingActionsControllerRef.current?.continueStory()}
-                            className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 mr-2"
+                            style={{
+                              padding: '10px 20px',
+                              background: '#ea580c',
+                              color: '#fff',
+                              borderRadius: 8,
+                              border: 'none',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 8px rgba(234, 88, 12, 0.4)'
+                            }}
                           >
                             ➡️ Continue Story
                           </button>
                           <button
                             onClick={() => openingActionsControllerRef.current?.completeStory()}
-                            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                            style={{
+                              padding: '10px 20px',
+                              background: '#16a34a',
+                              color: '#fff',
+                              borderRadius: 8,
+                              border: 'none',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 8px rgba(22, 163, 74, 0.4)'
+                            }}
                           >
                             ✓ Finish Story
                           </button>
@@ -1665,10 +1919,20 @@ function SessionPageV2Inner() {
                     </div>
                   )}
                   
-                  <div className="text-center">
+                  <div style={{ textAlign: 'center' }}>
                     <button
                       onClick={() => comprehensionPhaseRef.current?.go()}
-                      className="px-8 py-3 bg-blue-600 text-white text-lg rounded-lg hover:bg-blue-700"
+                      style={{
+                        padding: '14px 36px',
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                        color: '#fff',
+                        fontSize: '1.25rem',
+                        fontWeight: 700,
+                        borderRadius: 12,
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
+                      }}
                     >
                       Go
                     </button>
@@ -1677,27 +1941,52 @@ function SessionPageV2Inner() {
               )}
               
               {comprehensionState === 'awaiting-answer' && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-semibold mb-2">Your Answer:</label>
-                    <textarea
-                      value={comprehensionAnswer}
-                      onChange={(e) => setComprehensionAnswer(e.target.value)}
-                      className="w-full p-3 border rounded-lg"
-                      rows={4}
-                      placeholder="Type your answer here..."
-                    />
-                  </div>
-                  <div className="flex gap-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <textarea
+                    value={comprehensionAnswer}
+                    onChange={(e) => setComprehensionAnswer(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: 12,
+                      border: '2px solid rgba(255,255,255,0.3)',
+                      borderRadius: 8,
+                      fontSize: '1rem',
+                      background: 'rgba(255,255,255,0.95)',
+                      minHeight: 100
+                    }}
+                    rows={4}
+                    placeholder="Type your answer here..."
+                  />
+                  <div style={{ display: 'flex', gap: 12 }}>
                     <button
                       onClick={submitComprehensionAnswer}
-                      className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      style={{
+                        padding: '12px 28px',
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)'
+                      }}
                     >
                       Submit Answer
                     </button>
                     <button
                       onClick={skipComprehension}
-                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                      style={{
+                        padding: '12px 28px',
+                        background: 'rgba(107, 114, 128, 0.9)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+                      }}
                     >
                       Skip
                     </button>
@@ -1706,7 +1995,7 @@ function SessionPageV2Inner() {
               )}
               
               {comprehensionState === 'complete' && (
-                <div className="text-green-600 font-semibold">
+                <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.125rem' }}>
                   ✓ Comprehension Complete
                 </div>
               )}
@@ -1715,55 +2004,94 @@ function SessionPageV2Inner() {
           
           {/* Exercise Phase */}
           {currentPhase === 'exercise' && (
-            <div>
-              <div className="mb-4 p-4 bg-purple-50 rounded">
-                <div className="font-semibold text-lg">Exercise Questions</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  State: {exerciseState} | Score: {exerciseScore}/{exerciseTotalQuestions}
-                </div>
-                {exerciseTimerMode && (
-                  <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
-                    exerciseTimerMode === 'play' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {exerciseTimerMode === 'play' ? '🟢 Play Time' : '🟠 Work Time'}
-                  </div>
-                )}
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               
               {exerciseState === 'awaiting-go' && (
                 <>
                   {/* Opening Actions - Show during play time only */}
                   {exerciseTimerMode === 'play' && !openingActionActive && (
-                    <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
-                      <h3 className="font-bold text-lg mb-3 text-gray-800">🎯 Opening Actions</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div style={{
+                      padding: 16,
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      borderRadius: 12,
+                      border: '2px solid rgba(168, 85, 247, 0.5)',
+                      marginBottom: 16,
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+                    }}>
+                      <h3 style={{ fontWeight: 700, fontSize: '1.125rem', marginBottom: 12, color: '#1f2937' }}>🎯 Opening Actions</h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startAsk()}
-                          className="px-4 py-3 bg-white border-2 border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #93c5fd',
+                            color: '#1d4ed8',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           ❓ Ask Ms. Sonoma
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startRiddle()}
-                          className="px-4 py-3 bg-white border-2 border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #c4b5fd',
+                            color: '#7c3aed',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           🧩 Riddle
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startPoem()}
-                          className="px-4 py-3 bg-white border-2 border-pink-300 text-pink-700 rounded-lg hover:bg-pink-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #f9a8d4',
+                            color: '#db2777',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           📜 Poem
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startStory()}
-                          className="px-4 py-3 bg-white border-2 border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #fdba74',
+                            color: '#ea580c',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           📖 Story
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startFillInFun()}
-                          className="px-4 py-3 bg-white border-2 border-green-300 text-green-700 rounded-lg hover:bg-green-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #86efac',
+                            color: '#16a34a',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           🎨 Fill-in-Fun
                         </button>
@@ -1771,10 +2099,20 @@ function SessionPageV2Inner() {
                     </div>
                   )}
                   
-                  <div className="text-center">
+                  <div style={{ textAlign: 'center' }}>
                     <button
                       onClick={() => exercisePhaseRef.current?.go()}
-                      className="px-8 py-3 bg-purple-600 text-white text-lg rounded-lg hover:bg-purple-700"
+                      style={{
+                        padding: '14px 36px',
+                        background: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
+                        color: '#fff',
+                        fontSize: '1.25rem',
+                        fontWeight: 700,
+                        borderRadius: 12,
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 20px rgba(168, 85, 247, 0.4)'
+                      }}
                     >
                       Go
                     </button>
@@ -1783,15 +2121,23 @@ function SessionPageV2Inner() {
               )}
               
               {currentExerciseQuestion && exerciseState === 'awaiting-answer' && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-gray-50 rounded">
-                    <div className="font-semibold mb-3">{currentExerciseQuestion.question}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ padding: 16, background: 'rgba(255,255,255,0.95)', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+                    <div style={{ fontWeight: 600, fontSize: '1.125rem', marginBottom: 12 }}>{currentExerciseQuestion.question}</div>
                     
-                    <div className="space-y-2">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {currentExerciseQuestion.options.map((option, index) => (
                         <label
                           key={index}
-                          className="flex items-center p-3 bg-white border rounded hover:bg-blue-50 cursor-pointer"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: 12,
+                            background: selectedExerciseAnswer === option ? 'rgba(59, 130, 246, 0.1)' : '#fff',
+                            border: selectedExerciseAnswer === option ? '2px solid #3b82f6' : '1px solid #d1d5db',
+                            borderRadius: 8,
+                            cursor: 'pointer'
+                          }}
                         >
                           <input
                             type="radio"
@@ -1799,7 +2145,7 @@ function SessionPageV2Inner() {
                             value={option}
                             checked={selectedExerciseAnswer === option}
                             onChange={(e) => setSelectedExerciseAnswer(e.target.value)}
-                            className="mr-3"
+                            style={{ marginRight: 12 }}
                           />
                           <span>{option}</span>
                         </label>
@@ -1807,17 +2153,38 @@ function SessionPageV2Inner() {
                     </div>
                   </div>
                   
-                  <div className="flex gap-3">
+                  <div style={{ display: 'flex', gap: 12 }}>
                     <button
                       onClick={submitExerciseAnswer}
                       disabled={!selectedExerciseAnswer}
-                      className="px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        padding: '12px 28px',
+                        background: selectedExerciseAnswer ? 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)' : '#9ca3af',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: selectedExerciseAnswer ? 'pointer' : 'not-allowed',
+                        boxShadow: selectedExerciseAnswer ? '0 4px 16px rgba(168, 85, 247, 0.4)' : 'none',
+                        opacity: selectedExerciseAnswer ? 1 : 0.5
+                      }}
                     >
                       Submit Answer
                     </button>
                     <button
                       onClick={skipExerciseQuestion}
-                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                      style={{
+                        padding: '12px 28px',
+                        background: 'rgba(107, 114, 128, 0.9)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+                      }}
                     >
                       Skip
                     </button>
@@ -1826,7 +2193,7 @@ function SessionPageV2Inner() {
               )}
               
               {exerciseState === 'complete' && (
-                <div className="text-green-600 font-semibold">
+                <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.125rem' }}>
                   ✓ Exercise Complete - Score: {exerciseScore}/{exerciseTotalQuestions} ({Math.round((exerciseScore / exerciseTotalQuestions) * 100)}%)
                 </div>
               )}
@@ -1835,55 +2202,94 @@ function SessionPageV2Inner() {
           
           {/* Worksheet Phase */}
           {currentPhase === 'worksheet' && (
-            <div>
-              <div className="mb-4 p-4 bg-teal-50 rounded">
-                <div className="font-semibold text-lg">Worksheet - Fill in the Blank</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  State: {worksheetState} | Score: {worksheetScore}/{worksheetTotalQuestions}
-                </div>
-                {worksheetTimerMode && (
-                  <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
-                    worksheetTimerMode === 'play' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {worksheetTimerMode === 'play' ? '🟢 Play Time' : '🟠 Work Time'}
-                  </div>
-                )}
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               
               {worksheetState === 'awaiting-go' && (
                 <>
                   {/* Opening Actions - Show during play time only */}
                   {worksheetTimerMode === 'play' && !openingActionActive && (
-                    <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
-                      <h3 className="font-bold text-lg mb-3 text-gray-800">🎯 Opening Actions</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div style={{
+                      padding: 16,
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      borderRadius: 12,
+                      border: '2px solid rgba(20, 184, 166, 0.5)',
+                      marginBottom: 16,
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+                    }}>
+                      <h3 style={{ fontWeight: 700, fontSize: '1.125rem', marginBottom: 12, color: '#1f2937' }}>🎯 Opening Actions</h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startAsk()}
-                          className="px-4 py-3 bg-white border-2 border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #93c5fd',
+                            color: '#1d4ed8',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           ❓ Ask Ms. Sonoma
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startRiddle()}
-                          className="px-4 py-3 bg-white border-2 border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #c4b5fd',
+                            color: '#7c3aed',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           🧩 Riddle
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startPoem()}
-                          className="px-4 py-3 bg-white border-2 border-pink-300 text-pink-700 rounded-lg hover:bg-pink-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #f9a8d4',
+                            color: '#db2777',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           📜 Poem
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startStory()}
-                          className="px-4 py-3 bg-white border-2 border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #fdba74',
+                            color: '#ea580c',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           📖 Story
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startFillInFun()}
-                          className="px-4 py-3 bg-white border-2 border-green-300 text-green-700 rounded-lg hover:bg-green-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #86efac',
+                            color: '#16a34a',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           🎨 Fill-in-Fun
                         </button>
@@ -1891,10 +2297,20 @@ function SessionPageV2Inner() {
                     </div>
                   )}
                   
-                  <div className="text-center">
+                  <div style={{ textAlign: 'center' }}>
                     <button
                       onClick={() => worksheetPhaseRef.current?.go()}
-                      className="px-8 py-3 bg-teal-600 text-white text-lg rounded-lg hover:bg-teal-700"
+                      style={{
+                        padding: '14px 36px',
+                        background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                        color: '#fff',
+                        fontSize: '1.25rem',
+                        fontWeight: 700,
+                        borderRadius: 12,
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 20px rgba(20, 184, 166, 0.4)'
+                      }}
                     >
                       Go
                     </button>
@@ -1903,12 +2319,12 @@ function SessionPageV2Inner() {
               )}
               
               {currentWorksheetQuestion && worksheetState === 'awaiting-answer' && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-gray-50 rounded">
-                    <div className="font-semibold mb-3">{currentWorksheetQuestion.question}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ padding: 16, background: 'rgba(255,255,255,0.95)', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+                    <div style={{ fontWeight: 600, fontSize: '1.125rem', marginBottom: 12 }}>{currentWorksheetQuestion.question}</div>
                     
                     {currentWorksheetQuestion.hint && (
-                      <div className="text-sm text-gray-600 italic mb-3">
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280', fontStyle: 'italic', marginBottom: 12 }}>
                         Hint: {currentWorksheetQuestion.hint}
                       </div>
                     )}
@@ -1922,14 +2338,27 @@ function SessionPageV2Inner() {
                           submitWorksheetAnswer();
                         }
                       }}
-                      className="w-full p-3 border rounded-lg text-lg"
+                      style={{
+                        width: '100%',
+                        padding: 12,
+                        border: '2px solid rgba(20, 184, 166, 0.3)',
+                        borderRadius: 8,
+                        fontSize: '1.125rem',
+                        background: '#fff'
+                      }}
                       placeholder="Type your answer..."
                       autoFocus
                     />
                   </div>
                   
                   {lastWorksheetFeedback && (
-                    <div className={`p-3 rounded ${lastWorksheetFeedback.isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <div style={{
+                      padding: 12,
+                      borderRadius: 8,
+                      background: lastWorksheetFeedback.isCorrect ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      color: lastWorksheetFeedback.isCorrect ? '#059669' : '#dc2626',
+                      fontWeight: 600
+                    }}>
                       {lastWorksheetFeedback.isCorrect ? (
                         '✓ Correct!'
                       ) : (
@@ -1938,17 +2367,38 @@ function SessionPageV2Inner() {
                     </div>
                   )}
                   
-                  <div className="flex gap-3">
+                  <div style={{ display: 'flex', gap: 12 }}>
                     <button
                       onClick={submitWorksheetAnswer}
                       disabled={!worksheetAnswer.trim()}
-                      className="px-6 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        padding: '12px 28px',
+                        background: worksheetAnswer.trim() ? 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' : '#9ca3af',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: worksheetAnswer.trim() ? 'pointer' : 'not-allowed',
+                        boxShadow: worksheetAnswer.trim() ? '0 4px 16px rgba(20, 184, 166, 0.4)' : 'none',
+                        opacity: worksheetAnswer.trim() ? 1 : 0.5
+                      }}
                     >
                       Submit Answer
                     </button>
                     <button
                       onClick={skipWorksheetQuestion}
-                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                      style={{
+                        padding: '12px 28px',
+                        background: 'rgba(107, 114, 128, 0.9)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+                      }}
                     >
                       Skip
                     </button>
@@ -1957,7 +2407,7 @@ function SessionPageV2Inner() {
               )}
               
               {worksheetState === 'complete' && (
-                <div className="text-green-600 font-semibold">
+                <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.125rem' }}>
                   ✓ Worksheet Complete - Score: {worksheetScore}/{worksheetTotalQuestions} ({Math.round((worksheetScore / worksheetTotalQuestions) * 100)}%)
                 </div>
               )}
@@ -1966,56 +2416,94 @@ function SessionPageV2Inner() {
           
           {/* Test Phase */}
           {currentPhase === 'test' && (
-            <div>
-              <div className="mb-4 p-4 bg-red-50 rounded">
-                <div className="font-semibold text-lg">Test - Final Assessment</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  State: {testState} | Score: {testScore}/{testTotalQuestions}
-                  {testGrade && ` | Grade: ${testGrade.grade} (${testGrade.percentage}%)`}
-                </div>
-                {testTimerMode && (
-                  <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
-                    testTimerMode === 'play' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {testTimerMode === 'play' ? '🟢 Play Time' : '🟠 Work Time'}
-                  </div>
-                )}
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               
               {testState === 'awaiting-go' && (
                 <>
                   {/* Opening Actions - Show during play time only */}
                   {testTimerMode === 'play' && !openingActionActive && (
-                    <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
-                      <h3 className="font-bold text-lg mb-3 text-gray-800">🎯 Opening Actions</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div style={{
+                      padding: 16,
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      borderRadius: 12,
+                      border: '2px solid rgba(239, 68, 68, 0.5)',
+                      marginBottom: 16,
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+                    }}>
+                      <h3 style={{ fontWeight: 700, fontSize: '1.125rem', marginBottom: 12, color: '#1f2937' }}>🎯 Opening Actions</h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startAsk()}
-                          className="px-4 py-3 bg-white border-2 border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #93c5fd',
+                            color: '#1d4ed8',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           ❓ Ask Ms. Sonoma
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startRiddle()}
-                          className="px-4 py-3 bg-white border-2 border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #c4b5fd',
+                            color: '#7c3aed',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           🧩 Riddle
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startPoem()}
-                          className="px-4 py-3 bg-white border-2 border-pink-300 text-pink-700 rounded-lg hover:bg-pink-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #f9a8d4',
+                            color: '#db2777',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           📜 Poem
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startStory()}
-                          className="px-4 py-3 bg-white border-2 border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #fdba74',
+                            color: '#ea580c',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           📖 Story
                         </button>
                         <button
                           onClick={() => openingActionsControllerRef.current?.startFillInFun()}
-                          className="px-4 py-3 bg-white border-2 border-green-300 text-green-700 rounded-lg hover:bg-green-50 font-semibold shadow-sm"
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fff',
+                            border: '2px solid #86efac',
+                            color: '#16a34a',
+                            borderRadius: 8,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                          }}
                         >
                           🎨 Fill-in-Fun
                         </button>
@@ -2023,10 +2511,20 @@ function SessionPageV2Inner() {
                     </div>
                   )}
                   
-                  <div className="text-center">
+                  <div style={{ textAlign: 'center' }}>
                     <button
                       onClick={() => testPhaseRef.current?.go()}
-                      className="px-8 py-3 bg-red-600 text-white text-lg rounded-lg hover:bg-red-700"
+                      style={{
+                        padding: '14px 36px',
+                        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                        color: '#fff',
+                        fontSize: '1.25rem',
+                        fontWeight: 700,
+                        borderRadius: 12,
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 20px rgba(239, 68, 68, 0.4)'
+                      }}
                     >
                       Go
                     </button>
@@ -2036,15 +2534,15 @@ function SessionPageV2Inner() {
               
               {/* Test Questions */}
               {currentTestQuestion && testState === 'awaiting-answer' && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-gray-50 rounded">
-                    <div className="font-semibold mb-3">{currentTestQuestion.question}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ padding: 16, background: 'rgba(255,255,255,0.95)', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+                    <div style={{ fontWeight: 600, fontSize: '1.125rem', marginBottom: 12 }}>{currentTestQuestion.question}</div>
                     
                     {currentTestQuestion.type === 'fill' ? (
                       // Fill-in-blank input
                       <div>
                         {currentTestQuestion.hint && (
-                          <div className="text-sm text-gray-600 italic mb-3">
+                          <div style={{ fontSize: '0.875rem', color: '#6b7280', fontStyle: 'italic', marginBottom: 12 }}>
                             Hint: {currentTestQuestion.hint}
                           </div>
                         )}
@@ -2057,18 +2555,33 @@ function SessionPageV2Inner() {
                               submitTestAnswer();
                             }
                           }}
-                          className="w-full p-3 border rounded-lg text-lg"
+                          style={{
+                            width: '100%',
+                            padding: 12,
+                            border: '2px solid rgba(239, 68, 68, 0.3)',
+                            borderRadius: 8,
+                            fontSize: '1.125rem',
+                            background: '#fff'
+                          }}
                           placeholder="Type your answer..."
                           autoFocus
                         />
                       </div>
                     ) : (
                       // Multiple choice / True-False radio buttons
-                      <div className="space-y-2">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {currentTestQuestion.options.map((option, index) => (
                           <label
                             key={index}
-                            className="flex items-center p-3 bg-white border rounded hover:bg-blue-50 cursor-pointer"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              padding: 12,
+                              background: testAnswer === option ? 'rgba(239, 68, 68, 0.1)' : '#fff',
+                              border: testAnswer === option ? '2px solid #ef4444' : '1px solid #d1d5db',
+                              borderRadius: 8,
+                              cursor: 'pointer'
+                            }}
                           >
                             <input
                               type="radio"
@@ -2076,7 +2589,7 @@ function SessionPageV2Inner() {
                               value={option}
                               checked={testAnswer === option}
                               onChange={(e) => setTestAnswer(e.target.value)}
-                              className="mr-3"
+                              style={{ marginRight: 12 }}
                             />
                             <span>{option}</span>
                           </label>
@@ -2085,17 +2598,38 @@ function SessionPageV2Inner() {
                     )}
                   </div>
                   
-                  <div className="flex gap-3">
+                  <div style={{ display: 'flex', gap: 12 }}>
                     <button
                       onClick={submitTestAnswer}
                       disabled={!testAnswer || (currentTestQuestion.type === 'fill' && !testAnswer.trim())}
-                      className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        padding: '12px 28px',
+                        background: (testAnswer && (currentTestQuestion.type !== 'fill' || testAnswer.trim())) ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : '#9ca3af',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: (testAnswer && (currentTestQuestion.type !== 'fill' || testAnswer.trim())) ? 'pointer' : 'not-allowed',
+                        boxShadow: (testAnswer && (currentTestQuestion.type !== 'fill' || testAnswer.trim())) ? '0 4px 16px rgba(239, 68, 68, 0.4)' : 'none',
+                        opacity: (testAnswer && (currentTestQuestion.type !== 'fill' || testAnswer.trim())) ? 1 : 0.5
+                      }}
                     >
                       Submit Answer
                     </button>
                     <button
                       onClick={skipTestQuestion}
-                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                      style={{
+                        padding: '12px 28px',
+                        background: 'rgba(107, 114, 128, 0.9)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+                      }}
                     >
                       Skip
                     </button>
@@ -2105,46 +2639,53 @@ function SessionPageV2Inner() {
               
               {/* Test Review */}
               {testState === 'reviewing' && testReviewAnswer && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-gray-50 rounded">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="font-semibold">Question {testReviewIndex + 1}:</div>
-                      <div className={`px-3 py-1 rounded text-sm font-semibold ${testReviewAnswer.isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ padding: 16, background: 'rgba(255,255,255,0.95)', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                      <div style={{ fontWeight: 600 }}>Question {testReviewIndex + 1}:</div>
+                      <div style={{
+                        padding: '6px 12px',
+                        borderRadius: 8,
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        background: testReviewAnswer.isCorrect ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        color: testReviewAnswer.isCorrect ? '#059669' : '#dc2626'
+                      }}>
                         {testReviewAnswer.isCorrect ? '✓ Correct' : '✗ Incorrect'}
                       </div>
                     </div>
                     
-                    <div className="mb-3">{testReviewAnswer.question}</div>
+                    <div style={{ marginBottom: 12 }}>{testReviewAnswer.question}</div>
                     
                     {testReviewAnswer.type === 'fill' ? (
                       // Fill-in-blank review
-                      <div className="space-y-2">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <div>
-                          <span className="font-semibold">Your Answer:</span> {testReviewAnswer.userAnswer || '(skipped)'}
+                          <span style={{ fontWeight: 600 }}>Your Answer:</span> {testReviewAnswer.userAnswer || '(skipped)'}
                         </div>
                         {!testReviewAnswer.isCorrect && (
-                          <div className="text-green-700">
-                            <span className="font-semibold">Correct Answer:</span> {testReviewAnswer.correctAnswer}
+                          <div style={{ color: '#059669' }}>
+                            <span style={{ fontWeight: 600 }}>Correct Answer:</span> {testReviewAnswer.correctAnswer}
                           </div>
                         )}
                       </div>
                     ) : (
                       // MC/TF review
-                      <div className="space-y-2">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {testReviewAnswer.options.map((option, index) => {
                           const isUserAnswer = option === testReviewAnswer.userAnswer;
                           const isCorrectAnswer = option === testReviewAnswer.correctAnswer;
                           
-                          let bgClass = 'bg-white';
-                          if (isCorrectAnswer) bgClass = 'bg-green-100 border-green-500';
-                          else if (isUserAnswer && !isCorrectAnswer) bgClass = 'bg-red-100 border-red-500';
+                          let bgStyle = { background: '#fff', border: '1px solid #d1d5db' };
+                          if (isCorrectAnswer) bgStyle = { background: 'rgba(16, 185, 129, 0.1)', border: '2px solid #059669' };
+                          else if (isUserAnswer && !isCorrectAnswer) bgStyle = { background: 'rgba(239, 68, 68, 0.1)', border: '2px solid #dc2626' };
                           
                           return (
-                            <div key={index} className={`p-3 border rounded ${bgClass}`}>
-                              <div className="flex items-center justify-between">
+                            <div key={index} style={{ padding: 12, borderRadius: 8, ...bgStyle }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <span>{option}</span>
-                                {isCorrectAnswer && <span className="text-green-700 font-semibold">✓ Correct</span>}
-                                {isUserAnswer && !isCorrectAnswer && <span className="text-red-700 font-semibold">✗ Your answer</span>}
+                                {isCorrectAnswer && <span style={{ color: '#059669', fontWeight: 600 }}>✓ Correct</span>}
+                                {isUserAnswer && !isCorrectAnswer && <span style={{ color: '#dc2626', fontWeight: 600 }}>✗ Your answer</span>}
                               </div>
                             </div>
                           );
@@ -2153,23 +2694,51 @@ function SessionPageV2Inner() {
                     )}
                   </div>
                   
-                  <div className="flex gap-3">
+                  <div style={{ display: 'flex', gap: 12 }}>
                     <button
                       onClick={previousTestReview}
                       disabled={testReviewIndex === 0}
-                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        padding: '10px 20px',
+                        background: testReviewIndex === 0 ? '#9ca3af' : '#4b5563',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: testReviewIndex === 0 ? 'not-allowed' : 'pointer',
+                        opacity: testReviewIndex === 0 ? 0.5 : 1
+                      }}
                     >
                       ← Previous
                     </button>
                     <button
                       onClick={nextTestReview}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      style={{
+                        padding: '10px 20px',
+                        background: '#3b82f6',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
                     >
                       Next →
                     </button>
                     <button
                       onClick={skipTestReview}
-                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                      style={{
+                        padding: '10px 20px',
+                        background: 'rgba(107, 114, 128, 0.9)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
                     >
                       Skip Review
                     </button>
@@ -2178,7 +2747,7 @@ function SessionPageV2Inner() {
               )}
               
               {testState === 'complete' && testGrade && (
-                <div className="text-green-600 font-semibold text-lg">
+                <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.125rem' }}>
                   ✓ Test Complete - Grade: {testGrade.grade} ({testGrade.percentage}%) - Score: {testScore}/{testTotalQuestions}
                 </div>
               )}
@@ -2187,20 +2756,9 @@ function SessionPageV2Inner() {
           
           {/* Closing Phase */}
           {currentPhase === 'closing' && (
-            <div>
-              <div className="mb-4 p-4 bg-green-50 rounded">
-                <div className="font-semibold text-lg">Closing Message</div>
-                <div className="text-sm text-gray-600 mt-1">State: {closingState}</div>
-              </div>
-              
-              {closingState === 'playing' && closingMessage && (
-                <div className="p-4 bg-blue-50 rounded mb-3">
-                  <div className="text-lg text-gray-800">{closingMessage}</div>
-                </div>
-              )}
-              
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {closingState === 'complete' && (
-                <div className="text-green-600 font-semibold">
+                <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.125rem' }}>
                   ✓ Closing Complete
                 </div>
               )}
@@ -2209,42 +2767,44 @@ function SessionPageV2Inner() {
           
           {/* Session Complete */}
           {currentPhase === 'complete' && (
-            <div className="text-green-600 font-semibold text-lg">
+            <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.25rem' }}>
               ✓ Session Complete!
             </div>
           )}
         </div>
         
-        {/* Audio Transport Controls */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Audio Transport</h2>
-          <div className="flex gap-2">
-            <button
-              onClick={stopAudio}
-              className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-            >
-              Stop
-            </button>
-            <button
-              onClick={pauseAudio}
-              className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
-            >
-              Pause
-            </button>
-            <button
-              onClick={resumeAudio}
-              className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              Resume
-            </button>
-            <button
-              onClick={toggleMute}
-              className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700"
-            >
-              Toggle Mute
-            </button>
+        {/* Audio Transport Controls - Hidden debug panel (press ~ to toggle) */}
+        {false && ( // Set to true to enable debug panels
+        <div style={{ position: 'absolute', top: 100, right: 20, background: 'rgba(255,255,255,0.95)', borderRadius: 12, padding: 20, maxWidth: 400, maxHeight: '80vh', overflow: 'auto', zIndex: 9000 }}>
+          <div style={{ marginBottom: 16 }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 16 }}>Audio Transport</h2>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={stopAudio}
+                style={{ padding: '6px 12px', fontSize: '0.875rem', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+              >
+                Stop
+              </button>
+              <button
+                onClick={pauseAudio}
+                style={{ padding: '6px 12px', fontSize: '0.875rem', background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+              >
+                Pause
+              </button>
+              <button
+                onClick={resumeAudio}
+                style={{ padding: '6px 12px', fontSize: '0.875rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+              >
+                Resume
+              </button>
+              <button
+                onClick={toggleMute}
+                style={{ padding: '6px 12px', fontSize: '0.875rem', background: '#6b7280', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+              >
+                Toggle Mute
+              </button>
+            </div>
           </div>
-        </div>
         
         {/* Current Sentence */}
         {teachingControllerRef.current && (
@@ -2335,7 +2895,8 @@ function SessionPageV2Inner() {
           </div>
         </div>
         
-      </div>
+        </div>
+        )}
       
       {/* PlayTimeExpiredOverlay */}
       <PlayTimeExpiredOverlay
