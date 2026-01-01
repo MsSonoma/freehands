@@ -1465,7 +1465,7 @@ function SessionPageV2Inner() {
   const msSideBySideH = videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto');
   
   const mainLayoutStyle = isMobileLandscape
-    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#ffffff', '--msSideBySideH': msSideBySideH }
+    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, '--msSideBySideH': msSideBySideH }
     : { display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh', background: '#ffffff' };
   
   const videoWrapperStyle = isMobileLandscape
@@ -1480,7 +1480,7 @@ function SessionPageV2Inner() {
     : { position: 'relative', overflow: 'hidden', height: '100%', width: '100%', background: '#000' };
   
   const transcriptWrapperStyle = isMobileLandscape
-    ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'auto', minWidth: 0, minHeight: 0, background: 'transparent', height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', padding: 12 }
+    ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, minHeight: 0, background: 'transparent', height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)' }
     : { flex: '1 1 auto', display: 'flex', flexDirection: 'column', overflow: 'auto', background: '#ffffff', padding: '8px 4%', marginTop: 8 };
   
   return (
@@ -3194,11 +3194,13 @@ function SessionPageV2Inner() {
           borderRadius: 12,
           boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
           padding: 12,
-          flex: '1 1 auto',
+          flex: isMobileLandscape ? '1 1 auto' : '1 1 auto',
+          height: isMobileLandscape ? '100%' : 'auto',
           overflow: 'auto',
           fontSize: 'clamp(1.125rem, 2.4vw, 1.5rem)',
           lineHeight: 1.5,
-          color: '#111111'
+          color: '#111111',
+          boxSizing: 'border-box'
         }}>
           {currentCaption ? (
             <div style={{ whiteSpace: 'pre-line' }}>{currentCaption}</div>
