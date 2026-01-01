@@ -1469,7 +1469,7 @@ function SessionPageV2Inner() {
     : { display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh', background: '#ffffff' };
   
   const videoWrapperStyle = isMobileLandscape
-    ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'hidden', background: '#000', minWidth: 0, minHeight: 0, height: 'var(--msSideBySideH)', display: 'flex', flexDirection: 'column' }
+    ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'visible', background: 'transparent', minWidth: 0, minHeight: 0, height: 'var(--msSideBySideH)', display: 'flex', flexDirection: 'column' }
     : { position: 'relative', width: '92%', margin: '0 auto', height: '35vh', overflow: 'hidden', background: '#000', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)' };
   
   // Dynamic height style: in landscape with videoMaxHeight, override aspectRatio with explicit height
@@ -1480,7 +1480,7 @@ function SessionPageV2Inner() {
     : { position: 'relative', overflow: 'hidden', height: '100%', width: '100%', background: '#000' };
   
   const transcriptWrapperStyle = isMobileLandscape
-    ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'auto', minWidth: 0, minHeight: 0, background: '#ffffff', height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)' }
+    ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'auto', minWidth: 0, minHeight: 0, background: 'transparent', height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', padding: 12 }
     : { flex: '1 1 auto', display: 'flex', flexDirection: 'column', overflow: 'auto', background: '#ffffff', padding: '8px 4%', marginTop: 8 };
   
   return (
@@ -3191,8 +3191,8 @@ function SessionPageV2Inner() {
       <div style={transcriptWrapperStyle}>
         <div style={{
           background: '#ffffff',
-          borderRadius: isMobileLandscape ? 0 : 14,
-          boxShadow: isMobileLandscape ? 'none' : '0 4px 12px rgba(0,0,0,0.25)',
+          borderRadius: 12,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
           padding: 12,
           flex: '1 1 auto',
           overflow: 'auto',
@@ -3297,7 +3297,7 @@ function SessionPageV2Inner() {
             <button
               type="button"
               style={{
-                background: '#1f2937',
+                background: '#c7442e',
                 color: '#fff',
                 borderRadius: 8,
                 padding: '8px 12px',
@@ -3306,7 +3306,9 @@ function SessionPageV2Inner() {
                 cursor: 'pointer',
                 display: 'grid',
                 placeItems: 'center',
-                opacity: 1
+                fontWeight: 600,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                transition: 'background 0.2s, opacity 0.2s, box-shadow 0.2s'
               }}
               aria-label="Voice input"
               title="Hold to talk"
