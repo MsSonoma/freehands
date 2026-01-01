@@ -1655,7 +1655,7 @@ function SessionPageV2Inner() {
         right: isMobileLandscape ? 0 : 'auto',
         zIndex: 9999,
         width: '100%',
-        background: '#ffffff',
+        background: isMobileLandscape ? 'transparent' : '#ffffff',
         padding: isMobileLandscape ? 'clamp(0.125rem, 0.6vw, 0.375rem) 0.5%' : 'clamp(0.25rem, 1vw, 0.625rem) 2%',
         boxSizing: 'border-box'
       }}>
