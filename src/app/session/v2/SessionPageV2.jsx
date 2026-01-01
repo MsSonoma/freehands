@@ -1658,7 +1658,10 @@ function SessionPageV2Inner() {
         maxWidth: 600,
         margin: '0 auto',
         background: isMobileLandscape ? 'transparent' : '#ffffff',
-        padding: isMobileLandscape ? 'clamp(0.125rem, 0.6vw, 0.375rem) 0.5%' : 'clamp(0.25rem, 1vw, 0.625rem) 2%',
+        paddingTop: isMobileLandscape ? 2 : 'clamp(0.25rem, 1vw, 0.625rem)',
+        paddingBottom: isMobileLandscape ? 2 : 'clamp(0.25rem, 1vw, 0.625rem)',
+        paddingLeft: isMobileLandscape ? '0.5%' : '2%',
+        paddingRight: isMobileLandscape ? '0.5%' : '2%',
         boxSizing: 'border-box'
       }}>
         <Timeline
