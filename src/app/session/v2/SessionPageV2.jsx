@@ -1472,8 +1472,11 @@ function SessionPageV2Inner() {
     ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'hidden', background: '#000', minWidth: 0, minHeight: 0, height: 'var(--msSideBySideH)', display: 'flex', flexDirection: 'column' }
     : { position: 'relative', width: '92%', margin: '0 auto', height: '35vh', overflow: 'hidden', background: '#000', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)' };
   
+  // Dynamic height style: in landscape with videoMaxHeight, override aspectRatio with explicit height
+  const dynamicHeightStyle = (isMobileLandscape && videoMaxHeight) ? { maxHeight: videoMaxHeight, height: videoMaxHeight, minHeight: 0 } : {};
+  
   const videoInnerStyle = isMobileLandscape
-    ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', background: '#000' }
+    ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', background: '#000', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', ...dynamicHeightStyle }
     : { position: 'relative', overflow: 'hidden', height: '100%', width: '100%', background: '#000' };
   
   const transcriptWrapperStyle = isMobileLandscape
@@ -1496,6 +1499,74 @@ function SessionPageV2Inner() {
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
           />
         </div>
+      
+      {/* Video overlay controls - bottom right */}
+      <div style={{
+        position: 'absolute',
+        bottom: 16,
+        right: 16,
+        display: 'flex',
+        gap: 12,
+        zIndex: 10
+      }}>
+        {/* Mute button */}
+        <button
+          type="button"
+          onClick={() => {/* TODO: implement mute toggle */}}
+          aria-label="Mute"
+          title="Mute"
+          style={{
+            background: '#1f2937',
+            color: '#fff',
+            border: 'none',
+            width: 'clamp(34px, 6.2vw, 52px)',
+            height: 'clamp(34px, 6.2vw, 52px)',
+            display: 'grid',
+            placeItems: 'center',
+            borderRadius: '50%',
+            cursor: 'pointer',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+          }}
+        >
+          <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 5L6 9H2v6h4l5 4V5z" />
+            <path d="M19 8a5 5 0 010 8" />
+            <path d="M15 11a2 2 0 010 2" />
+          </svg>
+        </button>
+      </div>
+      
+      {/* Skip/Repeat button - bottom left */}
+      {currentPhase !== 'idle' && (
+        <button
+          type="button"
+          onClick={() => {/* TODO: implement skip/repeat */}}
+          aria-label="Repeat"
+          title="Repeat"
+          style={{
+            position: 'absolute',
+            bottom: 16,
+            left: 16,
+            background: '#1f2937',
+            color: '#fff',
+            border: 'none',
+            width: 'clamp(34px, 6.2vw, 52px)',
+            height: 'clamp(34px, 6.2vw, 52px)',
+            display: 'grid',
+            placeItems: 'center',
+            borderRadius: '50%',
+            cursor: 'pointer',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            zIndex: 10
+          }}
+        >
+          <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="1 4 1 10 7 10" />
+            <polyline points="23 20 23 14 17 14" />
+            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+          </svg>
+        </button>
+      )}
       
       {/* Session Timer - overlay in top left */}
       {currentPhase !== 'idle' && sessionTime && (
@@ -1638,29 +1709,6 @@ function SessionPageV2Inner() {
         transform: 'translateX(-50%)',
         zIndex: 10002
       }}>
-          
-          {/* Session Start */}
-          {currentPhase === 'idle' && (
-            <button
-              onClick={startSession}
-              style={{
-                padding: '16px 40px',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 12,
-                fontSize: '1.25rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 4px 20px rgba(16, 185, 129, 0.4)',
-                transition: 'transform 0.2s, box-shadow 0.2s'
-              }}
-              onMouseOver={(e) => { e.target.style.transform = 'scale(1.05)'; e.target.style.boxShadow = '0 6px 30px rgba(16, 185, 129, 0.6)'; }}
-              onMouseOut={(e) => { e.target.style.transform = 'scale(1)'; e.target.style.boxShadow = '0 4px 20px rgba(16, 185, 129, 0.4)'; }}
-            >
-              Start Session
-            </button>
-          )}
           
           {/* Teaching Phase */}
           {currentPhase === 'teaching' && (
@@ -3068,6 +3116,75 @@ function SessionPageV2Inner() {
           addEvent('⏰ Transitioned to work mode');
         }}
       />
+      
+      {/* Video overlay controls - bottom right cluster */}
+      <div style={{
+        position: 'absolute',
+        bottom: 16,
+        right: 16,
+        display: 'flex',
+        gap: 12,
+        zIndex: 10
+      }}>
+        {/* Mute button */}
+        <button
+          type="button"
+          onClick={() => {/* TODO: implement mute toggle */}}
+          aria-label="Mute"
+          title="Mute"
+          style={{
+            background: '#1f2937',
+            color: '#fff',
+            border: 'none',
+            width: 'clamp(34px, 6.2vw, 52px)',
+            height: 'clamp(34px, 6.2vw, 52px)',
+            display: 'grid',
+            placeItems: 'center',
+            borderRadius: '50%',
+            cursor: 'pointer',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+          }}
+        >
+          <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 5L6 9H2v6h4l5 4V5z" />
+            <path d="M19 8a5 5 0 010 8" />
+            <path d="M15 11a2 2 0 010 2" />
+          </svg>
+        </button>
+      </div>
+      
+      {/* Repeat button - bottom left */}
+      {currentPhase !== 'idle' && (
+        <button
+          type="button"
+          onClick={() => {/* TODO: implement repeat */}}
+          aria-label="Repeat"
+          title="Repeat"
+          style={{
+            position: 'absolute',
+            bottom: 16,
+            left: 16,
+            background: '#1f2937',
+            color: '#fff',
+            border: 'none',
+            width: 'clamp(34px, 6.2vw, 52px)',
+            height: 'clamp(34px, 6.2vw, 52px)',
+            display: 'grid',
+            placeItems: 'center',
+            borderRadius: '50%',
+            cursor: 'pointer',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            zIndex: 10
+          }}
+        >
+          <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="1 4 1 10 7 10" />
+            <polyline points="23 20 23 14 17 14" />
+            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+          </svg>
+        </button>
+      )}
+      
       </div>
       
       {/* Transcript column */}
@@ -3088,6 +3205,125 @@ function SessionPageV2Inner() {
           ) : (
             <div style={{ color: '#6b7280' }}>Transcript will appear here...</div>
           )}
+        </div>
+      </div>
+      
+      {/* Fixed footer with input controls */}
+      <div style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 999,
+        background: '#ffffff',
+        borderTop: '1px solid #e5e7eb',
+        boxShadow: '0 -4px 20px rgba(0,0,0,0.06)'
+      }}>
+        <div style={{
+          margin: '0 auto',
+          width: '100%',
+          boxSizing: 'border-box',
+          padding: '4px 12px calc(4px + env(safe-area-inset-bottom, 0px))'
+        }}>
+          
+          {/* Phase-specific Begin buttons */}
+          {(() => {
+            const needBeginComp = (currentPhase === 'comprehension' && comprehensionState === 'awaiting-go');
+            const needBeginExercise = (currentPhase === 'exercise' && exerciseState === 'awaiting-go');
+            const needBeginWorksheet = (currentPhase === 'worksheet' && worksheetState === 'awaiting-go');
+            const needBeginTest = (currentPhase === 'test' && testState === 'awaiting-go');
+            if (!(needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest)) return null;
+            
+            const ctaStyle = {
+              background: '#c7442e',
+              color: '#fff',
+              borderRadius: 10,
+              padding: '10px 18px',
+              fontWeight: 800,
+              fontSize: 'clamp(1rem, 2.6vw, 1.125rem)',
+              border: 'none',
+              boxShadow: '0 2px 12px rgba(199,68,46,0.28)',
+              cursor: 'pointer'
+            };
+            
+            return (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                paddingLeft: 12,
+                paddingRight: 12,
+                marginBottom: 4
+              }}>
+                {needBeginComp && (
+                  <button type="button" style={ctaStyle} onClick={() => comprehensionPhaseRef.current?.go()}>
+                    Begin Comprehension
+                  </button>
+                )}
+                {needBeginExercise && (
+                  <button type="button" style={ctaStyle} onClick={() => exercisePhaseRef.current?.go()}>
+                    Begin Exercise
+                  </button>
+                )}
+                {needBeginWorksheet && (
+                  <button type="button" style={ctaStyle} onClick={() => worksheetPhaseRef.current?.go()}>
+                    Begin Worksheet
+                  </button>
+                )}
+                {needBeginTest && (
+                  <button type="button" style={ctaStyle} onClick={() => testPhaseRef.current?.go()}>
+                    Begin Test
+                  </button>
+                )}
+              </div>
+            );
+          })()}
+          
+          {/* Input panel */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '4px 0'
+          }}>
+            <input
+              type="text"
+              placeholder="Type your answer..."
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                border: '1px solid #d1d5db',
+                borderRadius: 8,
+                fontSize: '1rem',
+                outline: 'none'
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  // TODO: implement send
+                }
+              }}
+            />
+            <button
+              type="button"
+              style={{
+                background: '#c7442e',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '10px 24px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(199,68,46,0.28)'
+              }}
+              onClick={() => {
+                // TODO: implement send
+              }}
+            >
+              Send
+            </button>
+          </div>
         </div>
       </div>
     </div>
