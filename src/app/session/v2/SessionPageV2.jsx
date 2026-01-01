@@ -1627,7 +1627,7 @@ function SessionPageV2Inner() {
   const msSideBySideH = videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto');
   
   const mainLayoutStyle = isMobileLandscape
-    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, '--msSideBySideH': msSideBySideH }
+    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, paddingTop: 'clamp(32px, 7vh, 52px)', '--msSideBySideH': msSideBySideH }
     : { display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh', background: '#ffffff' };
   
   const videoWrapperStyle = isMobileLandscape
