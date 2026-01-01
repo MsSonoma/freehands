@@ -315,30 +315,141 @@ function SessionPageV2Inner() {
   
   // Orientation and layout detection (matching V1)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
-  const [videoColPercent, setVideoColPercent] = useState(58);
+  const [videoMaxHeight, setVideoMaxHeight] = useState(null);
+  const [videoColPercent, setVideoColPercent] = useState(50);
+  const [sideBySideHeight, setSideBySideHeight] = useState(null);
+  const [stackedCaptionHeight, setStackedCaptionHeight] = useState(null);
+  const videoColRef = useRef(null);
+  const captionColRef = useRef(null);
   
+  // Calculate video height and column width based on viewport (matching V1 logic)
   useEffect(() => {
-    const updateLayout = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const isLandscape = w > h;
-      setIsMobileLandscape(isLandscape);
-      
-      // Video column percentage: wider for landscape
-      if (isLandscape) {
-        setVideoColPercent(w < 900 ? 55 : 58);
+    const calcVideoHeight = () => {
+      try {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const isLandscape = w > h;
+        setIsMobileLandscape(isLandscape);
+        
+        if (!isLandscape) {
+          setVideoMaxHeight(null);
+          setVideoColPercent(50);
+          return;
+        }
+        
+        // Multi-stage smooth ramp for video height: 40% at 375px -> 65% at 600px -> 70% at 700px -> 75% at 1000px
+        let frac;
+        if (h <= 375) {
+          frac = 0.40;
+        } else if (h <= 600) {
+          const t = (h - 375) / (600 - 375);
+          frac = 0.40 + t * (0.65 - 0.40);
+        } else if (h <= 700) {
+          const t = (h - 600) / (700 - 600);
+          frac = 0.65 + t * (0.70 - 0.65);
+        } else if (h <= 1000) {
+          const t = (h - 700) / (1000 - 700);
+          frac = 0.70 + t * (0.75 - 0.70);
+        } else {
+          frac = 0.75;
+        }
+        const target = Math.round(h * frac);
+        setVideoMaxHeight(target);
+        
+        // Video column width: 30% at 500px -> 50% at 700px
+        const hwMin = 500;
+        const hwMax = 700;
+        let pct;
+        if (h <= hwMin) {
+          pct = 30;
+        } else if (h >= hwMax) {
+          pct = 50;
+        } else {
+          const t2 = (h - hwMin) / (hwMax - hwMin);
+          pct = 30 + t2 * (50 - 30);
+        }
+        pct = Math.max(30, Math.min(50, Math.round(pct * 100) / 100));
+        setVideoColPercent(pct);
+      } catch {
+        setVideoMaxHeight(null);
       }
     };
     
-    updateLayout();
-    window.addEventListener('resize', updateLayout);
-    window.addEventListener('orientationchange', updateLayout);
+    calcVideoHeight();
+    window.addEventListener('resize', calcVideoHeight);
+    window.addEventListener('orientationchange', calcVideoHeight);
+    
+    // Listen to visualViewport for mobile URL bar changes
+    let vv = null;
+    try {
+      vv = window.visualViewport || null;
+    } catch {
+      vv = null;
+    }
+    const handleVV = () => calcVideoHeight();
+    if (vv) {
+      try {
+        vv.addEventListener('resize', handleVV);
+      } catch {}
+      try {
+        vv.addEventListener('scroll', handleVV);
+      } catch {}
+    }
     
     return () => {
-      window.removeEventListener('resize', updateLayout);
-      window.removeEventListener('orientationchange', updateLayout);
+      window.removeEventListener('resize', calcVideoHeight);
+      window.removeEventListener('orientationchange', calcVideoHeight);
+      if (vv) {
+        try {
+          vv.removeEventListener('resize', handleVV);
+        } catch {}
+        try {
+          vv.removeEventListener('scroll', handleVV);
+        } catch {}
+      }
     };
   }, []);
+  
+  // Measure video column height for side-by-side sync (landscape only)
+  useEffect(() => {
+    if (!isMobileLandscape) {
+      setSideBySideHeight(null);
+      return;
+    }
+    
+    const v = videoColRef.current;
+    if (!v) return;
+    
+    const measure = () => {
+      try {
+        const h = v.getBoundingClientRect().height;
+        if (Number.isFinite(h) && h > 0) {
+          const next = Math.round(h);
+          setSideBySideHeight(prev => prev !== next ? next : prev);
+        }
+      } catch {}
+    };
+    
+    measure();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => measure());
+      try {
+        ro.observe(v);
+      } catch {}
+    } else {
+      window.addEventListener('resize', measure);
+      window.addEventListener('orientationchange', measure);
+    }
+    
+    return () => {
+      try {
+        ro && ro.disconnect();
+      } catch {}
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('orientationchange', measure);
+    };
+  }, [isMobileLandscape, videoMaxHeight]);
   
   // Initialize AudioEngine
   useEffect(() => {
@@ -1350,32 +1461,41 @@ function SessionPageV2Inner() {
   }
   
   // Layout wrapper style: side-by-side in landscape, stacked in portrait
+  const videoEffectiveHeight = (videoMaxHeight && Number.isFinite(videoMaxHeight)) ? videoMaxHeight : null;
+  const msSideBySideH = videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto');
+  
   const mainLayoutStyle = isMobileLandscape
-    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#f9fafb' }
-    : { display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh', background: '#f9fafb' };
+    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#ffffff', '--msSideBySideH': msSideBySideH }
+    : { display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh', background: '#ffffff' };
   
   const videoWrapperStyle = isMobileLandscape
-    ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'hidden', background: '#000', minWidth: 0, minHeight: 0 }
-    : { position: 'relative', width: '100%', height: '35vh', overflow: 'hidden', background: '#000' };
+    ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'hidden', background: '#000', minWidth: 0, minHeight: 0, height: 'var(--msSideBySideH)', display: 'flex', flexDirection: 'column' }
+    : { position: 'relative', width: '92%', margin: '0 auto', height: '35vh', overflow: 'hidden', background: '#000', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)' };
+  
+  const videoInnerStyle = isMobileLandscape
+    ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', background: '#000' }
+    : { position: 'relative', overflow: 'hidden', height: '100%', width: '100%', background: '#000' };
   
   const transcriptWrapperStyle = isMobileLandscape
-    ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'auto', minWidth: 0, minHeight: 0, background: '#ffffff' }
-    : { flex: '1 1 auto', display: 'flex', flexDirection: 'column', overflow: 'auto', background: '#ffffff', padding: '8px 4%' };
+    ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'auto', minWidth: 0, minHeight: 0, background: '#ffffff', height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)' }
+    : { flex: '1 1 auto', display: 'flex', flexDirection: 'column', overflow: 'auto', background: '#ffffff', padding: '8px 4%', marginTop: 8 };
   
   return (
     <div style={mainLayoutStyle}>
       {/* Video column */}
-      <div style={videoWrapperStyle}>
-        <video
-          ref={videoRef}
-          src="/media/ms-sonoma-3.mp4"
-          muted
-          loop
-          playsInline
-          preload="auto"
-          autoPlay
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
-        />
+      <div ref={videoColRef} style={videoWrapperStyle}>
+        <div style={videoInnerStyle}>
+          <video
+            ref={videoRef}
+            src="/media/ms-sonoma-3.mp4"
+            muted
+            loop
+            playsInline
+            preload="auto"
+            autoPlay
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+          />
+        </div>
       
       {/* Session Timer - overlay in top left */}
       {currentPhase !== 'idle' && sessionTime && (
