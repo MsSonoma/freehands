@@ -3228,11 +3228,12 @@ function SessionPageV2Inner() {
           
           {/* Phase-specific Begin buttons */}
           {(() => {
+            const needBeginDiscussion = (currentPhase === 'idle');
             const needBeginComp = (currentPhase === 'comprehension' && comprehensionState === 'awaiting-go');
             const needBeginExercise = (currentPhase === 'exercise' && exerciseState === 'awaiting-go');
             const needBeginWorksheet = (currentPhase === 'worksheet' && worksheetState === 'awaiting-go');
             const needBeginTest = (currentPhase === 'test' && testState === 'awaiting-go');
-            if (!(needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest)) return null;
+            if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest)) return null;
             
             const ctaStyle = {
               background: '#c7442e',
@@ -3256,6 +3257,11 @@ function SessionPageV2Inner() {
                 paddingRight: 12,
                 marginBottom: 4
               }}>
+                {needBeginDiscussion && (
+                  <button type="button" style={ctaStyle} onClick={startSession}>
+                    Begin
+                  </button>
+                )}
                 {needBeginComp && (
                   <button type="button" style={ctaStyle} onClick={() => comprehensionPhaseRef.current?.go()}>
                     Begin Comprehension
@@ -3280,23 +3286,52 @@ function SessionPageV2Inner() {
             );
           })()}
           
-          {/* Input panel */}
+          {/* Input panel with mic button */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: 8,
             padding: '4px 0'
           }}>
+            {/* Mic button */}
+            <button
+              type="button"
+              style={{
+                background: '#1f2937',
+                color: '#fff',
+                borderRadius: 8,
+                padding: '8px 12px',
+                minHeight: 40,
+                border: 'none',
+                cursor: 'pointer',
+                display: 'grid',
+                placeItems: 'center',
+                opacity: 1
+              }}
+              aria-label="Voice input"
+              title="Hold to talk"
+              onClick={() => {
+                // TODO: implement mic recording
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 14a3 3 0 003-3V7a3 3 0 10-6 0v4a3 3 0 003 3z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M19 11a7 7 0 01-14 0" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 21v-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
             <input
               type="text"
               placeholder="Type your answer..."
               style={{
                 flex: 1,
                 padding: '10px 16px',
-                border: '1px solid #d1d5db',
-                borderRadius: 8,
-                fontSize: '1rem',
-                outline: 'none'
+                border: '1px solid #bdbdbd',
+                borderRadius: 6,
+                fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)',
+                outline: 'none',
+                background: '#fff',
+                color: '#111827'
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -3311,17 +3346,21 @@ function SessionPageV2Inner() {
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,
-                padding: '10px 24px',
-                fontSize: '1rem',
+                padding: '8px 12px',
                 fontWeight: 600,
                 cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(199,68,46,0.28)'
+                display: 'grid',
+                placeItems: 'center'
               }}
+              aria-label="Send response"
               onClick={() => {
                 // TODO: implement send
               }}
             >
-              Send
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+                <path d="M22 2L11 13" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           </div>
         </div>
