@@ -139,9 +139,9 @@ export class ClosingPhase {
       this.#audioEngine.off('end', this.#audioEndListener);
     }
     
-    // Create new listener
+    // Create new listener - advance on both completed and skipped
     this.#audioEndListener = (data) => {
-      if (data.completed) {
+      if (data.completed || data.skipped) {
         callback();
       }
     };

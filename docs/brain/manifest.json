@@ -1,4 +1,18 @@
 {
+  "dev-server-and-chunks": {
+    "file": "dev-server-and-chunks.md",
+    "systems": [
+      "next-dev",
+      "chunk-404",
+      "_next-static-chunks",
+      "distDir",
+      "next-config",
+      "cache-clean",
+      "restart-dev-3001"
+    ],
+    "last_updated": "2026-01-01T05:20:00Z",
+    "status": "canonical"
+  },
   "goals-clipboard": {
     "file": "goals-clipboard.md",
     "systems": [
@@ -97,15 +111,23 @@
       "event-driven communication",
       "AudioEngine component",
       "TeachingController component",
+      "GPT-based definitions generation",
+      "GPT-based examples generation",
+      "gate prompt two-phase flow",
       "PhaseOrchestrator component",
       "snapshot compatibility layer",
       "migration sequence",
       "V1 vs V2 separation",
       "video playback coordination",
       "Chrome autoplay unlock",
-      "user gesture unlock"
+      "user gesture unlock",
+      "async-nextSentence",
+      "ensureDefinitionsLoaded",
+      "ensureExamplesLoaded",
+      "loading-stages",
+      "race-condition-fix"
     ],
-    "last_updated": "2026-01-01T02:30:00Z",
+    "last_updated": "2026-01-03T04:00:00Z",
     "status": "active-development"
   },
   "mr-mentor-conversation-flows": {

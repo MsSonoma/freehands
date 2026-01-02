@@ -46,3 +46,6 @@ nice-symbol-472120-v7-30781ef9b517.json
 
 # repository hygiene: ignore oversized video not needed in repo
 public/media/ms-sonoma.mp4
+
+# dev-specific next.js build
+/.next-dev/

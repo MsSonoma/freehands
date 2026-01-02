@@ -17,9 +17,12 @@
  * Enable via localStorage flag: localStorage.setItem('session_architecture_v2', 'true')
  */
 
-import { Suspense, useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import { getLearner } from '@/app/facilitator/learners/clientApi';
+import { loadPhaseTimersForLearner } from '../utils/phaseTimerDefaults';
+import SessionTimer from '../components/SessionTimer';
 import { AudioEngine } from './AudioEngine';
 import { TeachingController } from './TeachingController';
 import { ComprehensionPhase } from './ComprehensionPhase';
@@ -35,7 +38,7 @@ import { KeyboardService } from './KeyboardService';
 import { OpeningActionsController } from './OpeningActionsController';
 import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
 import EventBus from './EventBus';
-import { loadLesson, generateTestLesson, fetchTTS } from './services';
+import { loadLesson, fetchTTS } from './services';
 
 // Timeline constants
 const timelinePhases = ["discussion", "comprehension", "exercise", "worksheet", "test"];
@@ -164,9 +167,11 @@ export { SessionPageV2Inner };
 function SessionPageV2Inner() {
   const searchParams = useSearchParams();
   const lessonId = searchParams?.get('lesson') || '';
+  const subjectParam = searchParams?.get('subject') || 'math'; // Subject folder for lesson lookup
   const regenerateParam = searchParams?.get('regenerate'); // Support generated lessons
   
   const videoRef = useRef(null);
+  const transcriptRef = useRef(null);
   const audioEngineRef = useRef(null);
   const eventBusRef = useRef(null); // Shared EventBus for all services
   const orchestratorRef = useRef(null);
@@ -239,13 +244,33 @@ function SessionPageV2Inner() {
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
   
-  const [sessionTime, setSessionTime] = useState('0:00');
   const [workPhaseTime, setWorkPhaseTime] = useState('0:00');
   const [workPhaseRemaining, setWorkPhaseRemaining] = useState('0:00');
   const [goldenKeyEligible, setGoldenKeyEligible] = useState(false);
   
+  // Learner profile state (REQUIRED - no defaults)
+  const [learnerProfile, setLearnerProfile] = useState(null);
+  const [learnerLoading, setLearnerLoading] = useState(true);
+  const [learnerError, setLearnerError] = useState(null);
+  
+  // Phase timer state (loaded from learner profile)
+  const [phaseTimers, setPhaseTimers] = useState(null);
+  const [currentTimerMode, setCurrentTimerMode] = useState({
+    discussion: null,
+    comprehension: null,
+    exercise: null,
+    worksheet: null,
+    test: null
+  });
+  const [timerRefreshKey, setTimerRefreshKey] = useState(0);
+  const [goldenKeyBonus, setGoldenKeyBonus] = useState(0);
+  const [timerPaused, setTimerPaused] = useState(false);
+  
   const [currentCaption, setCurrentCaption] = useState('');
+  const [transcriptLines, setTranscriptLines] = useState([]);
   const [engineState, setEngineState] = useState('idle');
+  const [isMuted, setIsMuted] = useState(false);
+  const [showRepeatButton, setShowRepeatButton] = useState(false);
   const [events, setEvents] = useState([]);
   
   // Compute timeline highlight based on current phase
@@ -280,35 +305,22 @@ function SessionPageV2Inner() {
         
         // Check for generated lesson (regenerate parameter)
         if (regenerateParam) {
-          try {
-            addEvent('🤖 Loading generated lesson...');
-            const response = await fetch(`/api/lesson-engine/regenerate?key=${regenerateParam}`);
-            if (!response.ok) {
-              throw new Error(`Failed to load generated lesson: ${response.statusText}`);
-            }
-            const data = await response.json();
-            lesson = data.lesson;
-            addEvent(`📚 Loaded generated lesson: ${lesson.title || 'Untitled'}`);
-          } catch (err) {
-            console.warn('[SessionPageV2] Failed to load generated lesson, using test data:', err);
-            lesson = generateTestLesson();
-            addEvent('📚 Using test lesson (generated load failed)');
+          addEvent('🤖 Loading generated lesson...');
+          const response = await fetch(`/api/lesson-engine/regenerate?key=${regenerateParam}`);
+          if (!response.ok) {
+            throw new Error(`Failed to load generated lesson: ${response.statusText}`);
           }
+          const data = await response.json();
+          lesson = data.lesson;
+          addEvent(`📚 Loaded generated lesson: ${lesson.title || 'Untitled'}`);
         }
-        // Try to load public lesson if lessonId provided
+        // Load lesson if lessonId provided
         else if (lessonId) {
-          try {
-            lesson = await loadLesson(lessonId);
-            addEvent(`📚 Loaded lesson: ${lesson.title}`);
-          } catch (err) {
-            console.warn('[SessionPageV2] Failed to load lesson, using test data:', err);
-            lesson = generateTestLesson();
-            addEvent('📚 Using test lesson (load failed)');
-          }
+          lesson = await loadLesson(lessonId, subjectParam);
+          addEvent(`📚 Loaded lesson: ${lesson.title}`);
         } else {
-          // No lessonId or regenerate - use test data
-          lesson = generateTestLesson();
-          addEvent('📚 Using test lesson (no lessonId)');
+          // No lessonId - show error
+          throw new Error('No lesson specified. Add ?lesson=filename&subject=math to URL');
         }
         
         setLessonData(lesson);
@@ -321,7 +333,60 @@ function SessionPageV2Inner() {
     }
     
     loadLessonData();
-  }, [lessonId, regenerateParam]);
+  }, [lessonId, subjectParam, regenerateParam]);
+  
+  // Load learner profile (REQUIRED - no defaults or fallback)
+  useEffect(() => {
+    async function loadLearnerProfile() {
+      try {
+        setLearnerLoading(true);
+        setLearnerError(null);
+        
+        const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+        
+        if (!learnerId || learnerId === 'demo') {
+          throw new Error('No learner selected. Please select a learner from the dashboard.');
+        }
+        
+        const learner = await getLearner(learnerId);
+        
+        if (!learner) {
+          throw new Error('Learner profile not found. Please select a valid learner.');
+        }
+        
+        setLearnerProfile(learner);
+        
+        // Load phase timer settings from learner profile
+        const timers = loadPhaseTimersForLearner(learner);
+        setPhaseTimers(timers);
+        
+        // Initialize currentTimerMode (null = not started yet)
+        setCurrentTimerMode({
+          discussion: null,
+          comprehension: null,
+          exercise: null,
+          worksheet: null,
+          test: null
+        });
+        
+        // Check for active golden key on this lesson
+        const lessonKey = lessonData?.key || `${subjectParam}/${lessonId}`;
+        const activeKeys = learner.active_golden_keys || {};
+        if (activeKeys[lessonKey]) {
+          setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
+        }
+        
+        addEvent(`👤 Loaded learner: ${learner.name}`);
+        setLearnerLoading(false);
+      } catch (err) {
+        console.error('[SessionPageV2] Learner load error:', err);
+        setLearnerError(err.message);
+        setLearnerLoading(false);
+      }
+    }
+    
+    loadLearnerProfile();
+  }, [lessonData, lessonId, subjectParam]);
   
   // Initialize shared EventBus (must be first)
   useEffect(() => {
@@ -381,10 +446,6 @@ function SessionPageV2Inner() {
     const eventBus = eventBusRef.current;
     
     // Forward timer events to UI
-    const unsubSessionTick = eventBus.on('sessionTimerTick', (data) => {
-      setSessionTime(data.formatted);
-    });
-    
     const unsubWorkTick = eventBus.on('workPhaseTimerTick', (data) => {
       setWorkPhaseTime(data.formatted);
       setWorkPhaseRemaining(data.remainingFormatted);
@@ -447,10 +508,88 @@ function SessionPageV2Inner() {
     setEvents(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 15));
   };
   
+  // Helper to get the current phase name for timer key (matching V1)
+  const getCurrentPhaseName = useCallback(() => {
+    // Map phase state to phase timer key
+    // Teaching phase uses discussion timer (they're grouped together)
+    if (currentPhase === 'discussion' || currentPhase === 'teaching') return 'discussion';
+    if (currentPhase === 'comprehension') return 'comprehension';
+    if (currentPhase === 'exercise') return 'exercise';
+    if (currentPhase === 'worksheet') return 'worksheet';
+    if (currentPhase === 'test') return 'test';
+    return null;
+  }, [currentPhase]);
+  
+  // Get timer duration for a phase and type from phaseTimers
+  const getCurrentPhaseTimerDuration = useCallback((phaseName, timerType) => {
+    if (!phaseTimers || !phaseName || !timerType) return 0;
+    const key = `${phaseName}_${timerType}_min`;
+    return phaseTimers[key] || 0;
+  }, [phaseTimers]);
+  
+  // Handle timer time-up callback
+  const handlePhaseTimerTimeUp = useCallback(() => {
+    const phaseName = getCurrentPhaseName();
+    if (!phaseName) return;
+    
+    const mode = currentTimerMode[phaseName];
+    if (mode === 'play') {
+      // Play time expired - show PlayTimeExpiredOverlay
+      addEvent(`⏱️ Play time expired for ${phaseName}`);
+      // TODO: Show PlayTimeExpiredOverlay
+    } else if (mode === 'work') {
+      // Work time exceeded - track for golden key
+      addEvent(`⏱️ Work time exceeded for ${phaseName}`);
+    }
+  }, [getCurrentPhaseName, currentTimerMode]);
+  
+  // Handle timer click (for facilitator controls)
+  const handleTimerClick = useCallback(() => {
+    // TODO: Show timer control overlay for facilitator
+    console.log('[SessionPageV2] Timer clicked');
+  }, []);
+  
+  // Handle timer pause toggle
+  const handleTimerPauseToggle = useCallback(() => {
+    setTimerPaused(prev => !prev);
+  }, []);
+  
+  // Start play timer for a phase (called when phase begins)
+  const startPhasePlayTimer = useCallback((phaseName) => {
+    if (!phaseName) return;
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'play'
+    }));
+    setTimerRefreshKey(prev => prev + 1);
+    addEvent(`🎉 Play timer started for ${phaseName}`);
+  }, []);
+  
+  // Transition from play to work timer (called when "Go" is clicked)
+  const transitionToWorkTimer = useCallback((phaseName) => {
+    if (!phaseName) return;
+    
+    // Clear the play timer storage so work timer starts fresh
+    const lessonKey = lessonData?.key || `${subjectParam}/${lessonId}`;
+    const playTimerKey = `session_timer_state:${lessonKey}:${phaseName}:play`;
+    try {
+      sessionStorage.removeItem(playTimerKey);
+    } catch {}
+    
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'work'
+    }));
+    setTimerRefreshKey(prev => prev + 1);
+    addEvent(`✏️ Work timer started for ${phaseName}`);
+  }, [lessonData, subjectParam, lessonId]);
+  
   // Orientation and layout detection (matching V1)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
   const [videoMaxHeight, setVideoMaxHeight] = useState(null);
   const [videoColPercent, setVideoColPercent] = useState(50);
+  const [isShortHeight, setIsShortHeight] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
   const [sideBySideHeight, setSideBySideHeight] = useState(null);
   const [stackedCaptionHeight, setStackedCaptionHeight] = useState(null);
   const videoColRef = useRef(null);
@@ -464,6 +603,7 @@ function SessionPageV2Inner() {
         const h = window.innerHeight;
         const isLandscape = w > h;
         setIsMobileLandscape(isLandscape);
+        setIsShortHeight(h <= 500);
         
         if (!isLandscape) {
           setVideoMaxHeight(null);
@@ -585,12 +725,41 @@ function SessionPageV2Inner() {
     };
   }, [isMobileLandscape, videoMaxHeight]);
   
+  // Auto-scroll transcript to bottom when new lines are added
+  useEffect(() => {
+    if (transcriptRef.current && transcriptLines.length > 0) {
+      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    }
+  }, [transcriptLines]);
+  
   // Initialize AudioEngine
   useEffect(() => {
-    if (!videoRef.current) return;
-    
-    const engine = new AudioEngine({ videoElement: videoRef.current });
-    audioEngineRef.current = engine;
+    let cancelled = false;
+    let retryTimer = null;
+
+    const tryInit = () => {
+      if (cancelled) return;
+
+      const videoEl = videoRef.current;
+      if (!videoEl) {
+        // videoRef is a ref, so changes won't retrigger this effect.
+        // Retry until the video element is mounted so the Begin button
+        // doesn't get stuck in "Loading...".
+        console.log('[SessionPageV2] VideoRef not ready yet');
+        retryTimer = setTimeout(tryInit, 50);
+        return;
+      }
+
+      if (audioEngineRef.current) {
+        console.log('[SessionPageV2] AudioEngine already initialized');
+        return;
+      }
+
+      console.log('[SessionPageV2] Initializing AudioEngine');
+      const engine = new AudioEngine({ videoElement: videoEl });
+      audioEngineRef.current = engine;
+      setAudioReady(true);
+      console.log('[SessionPageV2] AudioEngine ready, audioReady set to true');
     
     // Initialize audio system (required for iOS)
     const initAudio = async () => {
@@ -616,19 +785,34 @@ function SessionPageV2Inner() {
     engine.on('start', (data) => {
       addEvent('🎬 AudioEngine START');
       setEngineState('playing');
+      setShowRepeatButton(false); // Hide repeat while playing
     });
     
     engine.on('end', (data) => {
-      addEvent(`🏁 AudioEngine END (completed: ${data.completed})`);
+      addEvent(`🏁 AudioEngine END (completed: ${data.completed}, skipped: ${data.skipped || false})`);
       setEngineState('idle');
+      // Show repeat button if there's audio to replay
+      if (engine.hasAudioToReplay) {
+        setShowRepeatButton(true);
+      }
     });
     
     engine.on('captionChange', (data) => {
       setCurrentCaption(data.text);
+      // Accumulate into transcript (skip duplicates and empty lines)
+      if (data.text && data.text.trim()) {
+        setTranscriptLines(prev => {
+          if (prev.length > 0 && prev[prev.length - 1] === data.text) {
+            return prev; // Skip duplicate
+          }
+          return [...prev, data.text];
+        });
+      }
     });
     
     engine.on('captionsDone', () => {
       setCurrentCaption('');
+      // Don't clear transcript - it should persist
     });
     
     engine.on('error', (data) => {
@@ -636,18 +820,44 @@ function SessionPageV2Inner() {
       setEngineState('error');
     });
     
+      return () => {
+        try {
+          if (engine) engine.destroy();
+        } finally {
+          // Important: clear ref so a subsequent mount can re-subscribe.
+          // Without this, a destroyed engine can linger with listeners cleared.
+          if (audioEngineRef.current === engine) audioEngineRef.current = null;
+        }
+      };
+    };
+
+    const cleanupEngine = tryInit();
+
     return () => {
-      engine.destroy();
+      cancelled = true;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
+      if (typeof cleanupEngine === 'function') cleanupEngine();
     };
   }, []);
   
-  // Initialize TeachingController when lesson loads
+  // Initialize TeachingController when lesson loads.
+  // Note: audioEngineRef.current is a ref (not reactive). If lessonData loads
+  // before AudioEngine is initialized, we must re-run once audioReady flips true.
   useEffect(() => {
     if (!lessonData || !audioEngineRef.current) return;
     
     const controller = new TeachingController({
       audioEngine: audioEngineRef.current,
-      lessonData: lessonData
+      lessonData: lessonData,
+      lessonMeta: {
+        subject: subjectParam,
+        difficulty: 'medium', // TODO: Parse from URL or lesson
+        lessonId: lessonId,
+        lessonTitle: lessonData?.title || lessonId || 'this topic'
+      }
     });
     
     teachingControllerRef.current = controller;
@@ -687,7 +897,7 @@ function SessionPageV2Inner() {
       controller.destroy();
       teachingControllerRef.current = null;
     };
-  }, [lessonData]);
+  }, [lessonData, audioReady]);
   
   // Initialize PhaseOrchestrator when lesson loads
   useEffect(() => {
@@ -708,8 +918,8 @@ function SessionPageV2Inner() {
         {
           phase: currentPhase,
           subject: lessonData.subject || 'math',
-          learnerGrade: learnerGrade || '',
-          difficulty: difficultyParam || 'moderate'
+          learnerGrade: lessonData.grade || '',
+          difficulty: lessonData.difficulty || 'moderate'
         }
       );
       
@@ -740,6 +950,7 @@ function SessionPageV2Inner() {
     
     // Subscribe to phase transitions
     orchestrator.on('phaseChange', (data) => {
+      console.log('[SessionPageV2] phaseChange event received:', data.phase);
       addEvent(`🔄 Phase: ${data.phase}`);
       setCurrentPhase(data.phase);
       
@@ -751,16 +962,26 @@ function SessionPageV2Inner() {
       // Start phase-specific controller
       if (data.phase === 'discussion') {
         startDiscussionPhase();
+        // Discussion has no play timer (architectural decision from V1)
       } else if (data.phase === 'teaching') {
         startTeachingPhase();
+        // Teaching uses discussion timer (grouped together)
       } else if (data.phase === 'comprehension') {
         startComprehensionPhase();
+        // Start play timer for comprehension
+        startPhasePlayTimer('comprehension');
       } else if (data.phase === 'exercise') {
         startExercisePhase();
+        // Start play timer for exercise
+        startPhasePlayTimer('exercise');
       } else if (data.phase === 'worksheet') {
         startWorksheetPhase();
+        // Start play timer for worksheet
+        startPhasePlayTimer('worksheet');
       } else if (data.phase === 'test') {
         startTestPhase();
+        // Start play timer for test
+        startPhasePlayTimer('test');
       } else if (data.phase === 'closing') {
         startClosingPhase();
       }
@@ -775,13 +996,8 @@ function SessionPageV2Inner() {
         window.__PREVENT_SNAPSHOT_SAVE__ = true;
       }
       
-      // Stop session timer
+      // Show golden key status
       if (timerServiceRef.current) {
-        timerServiceRef.current.stopSessionTimer();
-        const time = timerServiceRef.current.getSessionTime();
-        addEvent(`⏱️ Total session time: ${time.formatted}`);
-        
-        // Show golden key status
         const goldenKey = timerServiceRef.current.getGoldenKeyStatus();
         if (goldenKey.eligible) {
           addEvent(`🔑 Golden Key Earned! (${goldenKey.onTimeCompletions}/3 on-time)`);
@@ -817,86 +1033,68 @@ function SessionPageV2Inner() {
   
   // Start discussion phase
   const startDiscussionPhase = () => {
-    if (!audioEngineRef.current || !eventBusRef.current || !lessonData?.discussion) return;
+    console.log('[SessionPageV2] startDiscussionPhase called');
+    console.log('[SessionPageV2] audioEngineRef.current:', !!audioEngineRef.current);
+    console.log('[SessionPageV2] eventBusRef.current:', !!eventBusRef.current);
     
-    const activities = lessonData.discussion.activities || [];
+    if (!audioEngineRef.current || !eventBusRef.current) return;
     
-    if (activities.length === 0) {
-      // No discussion activities - skip to teaching
-      addEvent('⚠️ No discussion activities - skipping to teaching');
-      if (orchestratorRef.current) {
-        orchestratorRef.current.onDiscussionComplete();
-      }
-      return;
-    }
+    // Get learner name and lesson title
+    const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'friend';
+    const lessonTitle = lessonData?.title || 'this topic';
     
-    // Start with first activity
-    const firstActivity = activities[0];
-    setDiscussionActivityIndex(0);
+    console.log('[SessionPageV2] Creating DiscussionPhase with learnerName:', learnerName, 'lessonTitle:', lessonTitle);
     
-    const phase = new DiscussionPhase(
-      audioEngineRef.current,
-      { fetchTTS: fetchTTS },
-      eventBusRef.current
-    );
+    const phase = new DiscussionPhase({
+      audioEngine: audioEngineRef.current,
+      eventBus: eventBusRef.current,
+      learnerName: learnerName,
+      lessonTitle: lessonTitle
+    });
     
     discussionPhaseRef.current = phase;
     
+    console.log('[SessionPageV2] Setting up event listeners');
+    
     // Subscribe to events
-    eventBusRef.current.on('discussionStart', (data) => {
-      addEvent(`💬 Discussion: ${data.activity}`);
-      setDiscussionActivity(data.activity);
-      setDiscussionState('playing-prompt');
+    eventBusRef.current.on('greetingPlaying', (data) => {
+      addEvent(`👋 Playing greeting: "${data.greetingText}"`);
+      setDiscussionState('playing-greeting');
     });
     
-    eventBusRef.current.on('promptComplete', (data) => {
-      addEvent('❓ Prompt complete - waiting for response...');
-      setDiscussionState('awaiting-response');
-    });
-    
-    eventBusRef.current.on('responseSubmitted', (data) => {
-      addEvent(`✅ Response submitted`);
+    eventBusRef.current.on('greetingComplete', (data) => {
+      addEvent('✅ Greeting complete');
+      setDiscussionState('complete');
     });
     
     eventBusRef.current.on('discussionComplete', (data) => {
-      // Check if there are more activities
-      const nextIndex = discussionActivityIndex + 1;
+      addEvent('🎉 Discussion complete - proceeding to teaching');
+      setDiscussionState('complete');
       
-      if (nextIndex < activities.length) {
-        // Start next activity
-        setDiscussionActivityIndex(nextIndex);
-        const nextActivity = activities[nextIndex];
-        phase.start(nextActivity.type, nextActivity.prompt);
-      } else {
-        // All activities complete
-        addEvent('🎉 All discussion activities complete!');
-        setDiscussionState('complete');
-        
-        // Save snapshot
-        if (snapshotServiceRef.current) {
-          snapshotServiceRef.current.savePhaseCompletion('discussion', {
-            activitiesCompleted: activities.length
-          }).then(() => {
-            addEvent('💾 Saved discussion progress');
-          }).catch(err => {
-            console.error('[SessionPageV2] Save discussion error:', err);
-          });
-        }
-        
-        // Notify orchestrator
-        if (orchestratorRef.current) {
-          orchestratorRef.current.onDiscussionComplete();
-        }
-        
-        // Cleanup
-        phase.destroy();
-        discussionPhaseRef.current = null;
+      // Save snapshot
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.savePhaseCompletion('discussion', {
+          completed: true
+        }).then(() => {
+          addEvent('💾 Saved discussion progress');
+        }).catch(err => {
+          console.error('[SessionPageV2] Save discussion error:', err);
+        });
       }
+      
+      // Notify orchestrator
+      if (orchestratorRef.current) {
+        orchestratorRef.current.onDiscussionComplete();
+      }
+      
+      // Cleanup
+      phase.destroy();
+      discussionPhaseRef.current = null;
     });
     
-    // Start first activity
-    phase.start(firstActivity.type, firstActivity.prompt);
-    setDiscussionPrompt(firstActivity.prompt);
+    // Start greeting
+    console.log('[SessionPageV2] Calling phase.start()');
+    phase.start();
   };
   
   // Start teaching phase
@@ -927,7 +1125,7 @@ function SessionPageV2Inner() {
     };
     
     teachingControllerRef.current.on('teachingComplete', handleTeachingComplete);
-    teachingControllerRef.current.startTeaching();
+    teachingControllerRef.current.startTeaching({ autoplayFirstSentence: false });
   };
   
   // Start comprehension phase
@@ -1436,7 +1634,21 @@ function SessionPageV2Inner() {
   };
   
   const startSession = async () => {
-    if (!orchestratorRef.current) return;
+    if (!orchestratorRef.current) {
+      console.warn('[SessionPageV2] No orchestrator');
+      return;
+    }
+    
+    if (!audioEngineRef.current) {
+      console.error('[SessionPageV2] Audio engine not ready');
+      return;
+    }
+    
+    // Start prefetching all teaching content immediately (background, non-blocking)
+    if (teachingControllerRef.current) {
+      teachingControllerRef.current.prefetchAll();
+      addEvent('🔄 Started background prefetch of teaching content');
+    }
     
     // Unlock video playback for Chrome autoplay policy
     try {
@@ -1466,18 +1678,12 @@ function SessionPageV2Inner() {
       // Silent error handling
     }
     
-    // Start session timer
-    if (timerServiceRef.current) {
-      timerServiceRef.current.startSessionTimer();
-      addEvent('⏱️ Session timer started');
-    }
-    
     orchestratorRef.current.startSession();
   };
   
-  const startTeaching = async () => {
+  const startTeaching = async (options = {}) => {
     if (!teachingControllerRef.current) return;
-    await teachingControllerRef.current.startTeaching();
+    await teachingControllerRef.current.startTeaching(options);
   };
   
   const nextSentence = () => {
@@ -1517,7 +1723,27 @@ function SessionPageV2Inner() {
   
   const toggleMute = () => {
     if (!audioEngineRef.current) return;
-    audioEngineRef.current.setMuted(!audioEngineRef.current.isMuted);
+    const newMuted = !audioEngineRef.current.isMuted;
+    audioEngineRef.current.setMuted(newMuted);
+    setIsMuted(newMuted);
+  };
+  
+  // Skip current TTS playback
+  const skipTTS = () => {
+    if (!audioEngineRef.current) return;
+    audioEngineRef.current.stop();
+  };
+  
+  // Skip sentence (hotkey handler for teaching phase)
+  const skipSentence = () => {
+    if (!audioEngineRef.current) return;
+    audioEngineRef.current.stop();
+  };
+  
+  // Replay current sentence
+  const replayTTS = () => {
+    if (!audioEngineRef.current) return;
+    audioEngineRef.current.replay();
   };
   
   // Discussion handlers
@@ -1603,10 +1829,39 @@ function SessionPageV2Inner() {
     testPhaseRef.current.skipReview();
   };
   
-  if (loading) {
+  // Loading state: both lesson AND learner must be loaded
+  if (loading || learnerLoading) {
     return (
       <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: '1.125rem', color: '#1f2937' }}>Loading lesson...</div>
+        <div style={{ fontSize: '1.125rem', color: '#1f2937' }}>
+          {loading ? 'Loading lesson...' : 'Loading learner profile...'}
+        </div>
+      </div>
+    );
+  }
+  
+  // Error state: show learner error if present (required), otherwise lesson error
+  if (learnerError) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: '#fef2f2', color: '#b91c1c', padding: 24, borderRadius: 8, maxWidth: 448, textAlign: 'center' }}>
+          <h2 style={{ fontWeight: 700, marginBottom: 8 }}>Learner Profile Required</h2>
+          <p style={{ marginBottom: 16 }}>{learnerError}</p>
+          <a 
+            href="/facilitator/learners" 
+            style={{ 
+              display: 'inline-block',
+              background: '#1f2937', 
+              color: '#fff', 
+              padding: '10px 20px', 
+              borderRadius: 8, 
+              textDecoration: 'none',
+              fontWeight: 600
+            }}
+          >
+            Go to Learners
+          </a>
+        </div>
       </div>
     );
   }
@@ -1632,21 +1887,24 @@ function SessionPageV2Inner() {
   
   const videoWrapperStyle = isMobileLandscape
     ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'visible', background: 'transparent', minWidth: 0, minHeight: 0, height: 'var(--msSideBySideH)', display: 'flex', flexDirection: 'column' }
-    : { position: 'relative', width: '92%', margin: '0 auto', height: '35vh', overflow: 'hidden', background: '#000', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)' };
+    : { position: 'relative', width: '100%', margin: '0 auto' };
   
   // Dynamic height style: in landscape with videoMaxHeight, override aspectRatio with explicit height
   const dynamicHeightStyle = (isMobileLandscape && videoMaxHeight) ? { maxHeight: videoMaxHeight, height: videoMaxHeight, minHeight: 0 } : {};
   
   const videoInnerStyle = isMobileLandscape
     ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', background: '#000', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', ...dynamicHeightStyle }
-    : { position: 'relative', overflow: 'hidden', height: '100%', width: '100%', background: '#000' };
+    : { position: 'relative', overflow: 'hidden', height: '35vh', width: '92%', margin: '0 auto', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000' };
   
   const transcriptWrapperStyle = isMobileLandscape
-    ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, minHeight: 0, background: 'transparent', height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)' }
-    : { flex: '1 1 auto', display: 'flex', flexDirection: 'column', overflow: 'auto', background: '#ffffff', padding: '8px 4%', marginTop: 8 };
+    ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'visible', minWidth: 0, minHeight: 0, background: 'transparent', height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)' }
+    : { flex: '1 1 auto', display: 'flex', flexDirection: 'column', overflow: 'auto', background: '#ffffff', paddingLeft: '4%', paddingRight: '4%', paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px))', marginTop: 8 };
   
   return (
     <>
+      {/* Content wrapper - add horizontal gutters in landscape */}
+      <div style={isMobileLandscape ? { width: '100%', paddingLeft: 8, paddingRight: 8, boxSizing: 'border-box' } : { width: '100%' }}>
+        
       {/* Phase Timeline - absolutely positioned in landscape to not add to page height */}
       <div style={{
         position: isMobileLandscape ? 'absolute' : 'relative',
@@ -1693,95 +1951,130 @@ function SessionPageV2Inner() {
             }}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
           />
-        </div>
-      
-      {/* Video overlay controls - bottom right */}
-      <div style={{
-        position: 'absolute',
-        bottom: 16,
-        right: 16,
-        display: 'flex',
-        gap: 12,
-        zIndex: 10
-      }}>
-        {/* Mute button */}
-        <button
-          type="button"
-          onClick={() => {/* TODO: implement mute toggle */}}
-          aria-label="Mute"
-          title="Mute"
-          style={{
-            background: '#1f2937',
-            color: '#fff',
-            border: 'none',
-            width: 'clamp(34px, 6.2vw, 52px)',
-            height: 'clamp(34px, 6.2vw, 52px)',
-            display: 'grid',
-            placeItems: 'center',
-            borderRadius: '50%',
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-          }}
-        >
-          <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M11 5L6 9H2v6h4l5 4V5z" />
-            <path d="M19 8a5 5 0 010 8" />
-            <path d="M15 11a2 2 0 010 2" />
-          </svg>
-        </button>
-      </div>
-      
-      {/* Skip/Repeat button - bottom left */}
-      {currentPhase !== 'idle' && (
-        <button
-          type="button"
-          onClick={() => {/* TODO: implement skip/repeat */}}
-          aria-label="Repeat"
-          title="Repeat"
-          style={{
+          
+          {/* Phase Timer - top left overlay (matching V1) */}
+          {phaseTimers && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] && (
+            <div style={{ 
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              zIndex: 10001
+            }}>
+              <SessionTimer
+                key={`phase-timer-${getCurrentPhaseName()}-${currentTimerMode[getCurrentPhaseName()]}-${timerRefreshKey}`}
+                phase={getCurrentPhaseName()}
+                timerType={currentTimerMode[getCurrentPhaseName()]}
+                totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()])}
+                goldenKeyBonus={currentTimerMode[getCurrentPhaseName()] === 'play' ? goldenKeyBonus : 0}
+                isPaused={timerPaused}
+                onTimeUp={handlePhaseTimerTimeUp}
+                onPauseToggle={handleTimerPauseToggle}
+                lessonKey={lessonData?.key || `${subjectParam}/${lessonId}`}
+                onTimerClick={handleTimerClick}
+              />
+            </div>
+          )}
+          
+          {/* Video overlay controls - bottom right (mute) */}
+          <div style={{
             position: 'absolute',
             bottom: 16,
-            left: 16,
-            background: '#1f2937',
-            color: '#fff',
-            border: 'none',
-            width: 'clamp(34px, 6.2vw, 52px)',
-            height: 'clamp(34px, 6.2vw, 52px)',
-            display: 'grid',
-            placeItems: 'center',
-            borderRadius: '50%',
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            right: 16,
+            display: 'flex',
+            gap: 12,
             zIndex: 10
-          }}
-        >
-          <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="1 4 1 10 7 10" />
-            <polyline points="23 20 23 14 17 14" />
-            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
-          </svg>
-        </button>
-      )}
-      
-      {/* Session Timer - overlay in top left */}
-      {currentPhase !== 'idle' && sessionTime && (
-        <div style={{ 
-          position: 'absolute',
-          top: 8,
-          left: 8,
-          background: 'rgba(17,24,39,0.85)',
-          color: '#fff',
-          padding: '10px 14px',
-          borderRadius: 10,
-          fontSize: 'clamp(1rem, 2vw, 1.25rem)',
-          fontWeight: 700,
-          letterSpacing: 0.4,
-          boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
-          zIndex: 10001
-        }}>
-          {sessionTime}
+          }}>
+            <button
+              type="button"
+              onClick={toggleMute}
+              aria-label={isMuted ? 'Unmute' : 'Mute'}
+              title={isMuted ? 'Unmute' : 'Mute'}
+              style={{
+                background: '#1f2937',
+                color: '#fff',
+                border: 'none',
+                width: 'clamp(34px, 6.2vw, 52px)',
+                height: 'clamp(34px, 6.2vw, 52px)',
+                display: 'grid',
+                placeItems: 'center',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+              }}
+            >
+              {isMuted ? (
+                <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
+              ) : (
+                <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
+              )}
+            </button>
+          </div>
+          
+          {/* Skip button - bottom left (only when speaking) */}
+          {engineState === 'playing' && (
+            <button
+              type="button"
+              onClick={skipTTS}
+              aria-label="Skip"
+              title="Skip"
+              style={{
+                position: 'absolute',
+                bottom: 16,
+                left: 16,
+                background: '#1f2937',
+                color: '#fff',
+                border: 'none',
+                width: 'clamp(34px, 6.2vw, 52px)',
+                height: 'clamp(34px, 6.2vw, 52px)',
+                display: 'grid',
+                placeItems: 'center',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                zIndex: 10
+              }}
+            >
+              <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="5 4 15 12 5 20 5 4" />
+                <line x1="19" y1="5" x2="19" y2="19" />
+              </svg>
+            </button>
+          )}
+          
+          {/* Repeat button - bottom left (when not speaking but audio available) */}
+          {engineState !== 'playing' && showRepeatButton && (
+            <button
+              type="button"
+              onClick={replayTTS}
+              aria-label="Repeat"
+              title="Repeat"
+              style={{
+                position: 'absolute',
+                bottom: 16,
+                left: 16,
+                background: '#1f2937',
+                color: '#fff',
+                border: 'none',
+                width: 'clamp(34px, 6.2vw, 52px)',
+                height: 'clamp(34px, 6.2vw, 52px)',
+                display: 'grid',
+                placeItems: 'center',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                zIndex: 10
+              }}
+            >
+              {/* Repeat icon: circular arrow */}
+              <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 1v6h-6" />
+                <path d="M7 23v-6h6" />
+                <path d="M3.51 9a9 9 0 0114.13-3.36L17 7" />
+                <path d="M20.49 15A9 9 0 015.36 18.36L7 17" />
+              </svg>
+            </button>
+          )}
         </div>
-      )}
       
       {/* Score ticker - top right */}
       {(currentPhase === 'comprehension' || currentPhase === 'exercise') && (
@@ -1876,25 +2169,7 @@ function SessionPageV2Inner() {
         </div>
       )}
       
-      {/* Caption area - bottom center */}
-      {currentCaption && (
-        <div style={{
-          position: 'absolute',
-          bottom: 120,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(0,0,0,0.8)',
-          color: '#fff',
-          padding: '16px 32px',
-          borderRadius: 12,
-          fontSize: 'clamp(1rem, 2vw, 1.5rem)',
-          maxWidth: '90%',
-          textAlign: 'center',
-          zIndex: 10000
-        }}>
-          {currentCaption}
-        </div>
-      )}
+      {/* Captions are shown only in the transcript panel (no video overlay). */}
       
       {/* Phase Controls - bottom center overlay */}
       <div style={{
@@ -1904,88 +2179,6 @@ function SessionPageV2Inner() {
         transform: 'translateX(-50%)',
         zIndex: 10002
       }}>
-          
-          {/* Teaching Phase */}
-          {currentPhase === 'teaching' && (
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-              {(teachingStage === 'definitions' || teachingStage === 'examples') && (
-                <>
-                  <button
-                    onClick={nextSentence}
-                    style={{
-                      padding: '12px 28px',
-                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 10,
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 16px rgba(59, 130, 246, 0.4)'
-                    }}
-                  >
-                    {isInSentenceMode 
-                      ? 'Next Sentence' 
-                      : teachingStage === 'definitions' 
-                        ? 'Continue to Examples' 
-                        : 'Complete Teaching'
-                    }
-                  </button>
-                  <button
-                    onClick={repeatSentence}
-                    disabled={!isInSentenceMode}
-                    style={{
-                      padding: '12px 28px',
-                      background: isInSentenceMode ? 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)' : '#9ca3af',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 10,
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      cursor: isInSentenceMode ? 'pointer' : 'not-allowed',
-                      boxShadow: isInSentenceMode ? '0 4px 16px rgba(168, 85, 247, 0.4)' : 'none'
-                    }}
-                  >
-                    Repeat
-                  </button>
-                  <button
-                    onClick={restartStage}
-                    style={{
-                      padding: '12px 28px',
-                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 10,
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 16px rgba(245, 158, 11, 0.4)'
-                    }}
-                  >
-                    Restart Stage
-                  </button>
-                  {teachingStage === 'definitions' && (
-                    <button
-                      onClick={skipToExamples}
-                      style={{
-                        padding: '12px 28px',
-                        background: 'rgba(55, 65, 81, 0.9)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
-                      }}
-                    >
-                      Skip to Examples
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-          )}
           
           {/* Discussion Phase */}
           {currentPhase === 'discussion' && (
@@ -3312,79 +3505,13 @@ function SessionPageV2Inner() {
         }}
       />
       
-      {/* Video overlay controls - bottom right cluster */}
-      <div style={{
-        position: 'absolute',
-        bottom: 16,
-        right: 16,
-        display: 'flex',
-        gap: 12,
-        zIndex: 10
-      }}>
-        {/* Mute button */}
-        <button
-          type="button"
-          onClick={() => {/* TODO: implement mute toggle */}}
-          aria-label="Mute"
-          title="Mute"
-          style={{
-            background: '#1f2937',
-            color: '#fff',
-            border: 'none',
-            width: 'clamp(34px, 6.2vw, 52px)',
-            height: 'clamp(34px, 6.2vw, 52px)',
-            display: 'grid',
-            placeItems: 'center',
-            borderRadius: '50%',
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-          }}
-        >
-          <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M11 5L6 9H2v6h4l5 4V5z" />
-            <path d="M19 8a5 5 0 010 8" />
-            <path d="M15 11a2 2 0 010 2" />
-          </svg>
-        </button>
-      </div>
-      
-      {/* Repeat button - bottom left */}
-      {currentPhase !== 'idle' && (
-        <button
-          type="button"
-          onClick={() => {/* TODO: implement repeat */}}
-          aria-label="Repeat"
-          title="Repeat"
-          style={{
-            position: 'absolute',
-            bottom: 16,
-            left: 16,
-            background: '#1f2937',
-            color: '#fff',
-            border: 'none',
-            width: 'clamp(34px, 6.2vw, 52px)',
-            height: 'clamp(34px, 6.2vw, 52px)',
-            display: 'grid',
-            placeItems: 'center',
-            borderRadius: '50%',
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-            zIndex: 10
-          }}
-        >
-          <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="1 4 1 10 7 10" />
-            <polyline points="23 20 23 14 17 14" />
-            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
-          </svg>
-        </button>
-      )}
-      
       </div>
       
       {/* Transcript column */}
       <div style={transcriptWrapperStyle}>
-        <div style={{
+        <div 
+          ref={transcriptRef}
+          style={{
           background: '#ffffff',
           borderRadius: 12,
           boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
@@ -3397,13 +3524,20 @@ function SessionPageV2Inner() {
           color: '#111111',
           boxSizing: 'border-box'
         }}>
-          {currentCaption ? (
-            <div style={{ whiteSpace: 'pre-line' }}>{currentCaption}</div>
+          {transcriptLines.length > 0 ? (
+            <div style={{ whiteSpace: 'pre-line' }}>
+              {transcriptLines.map((line, idx) => (
+                <p key={idx} style={{ marginBottom: '0.5em' }}>{line}</p>
+              ))}
+            </div>
           ) : (
             <div style={{ color: '#6b7280' }}>Transcript will appear here...</div>
           )}
         </div>
       </div>
+      
+      </div> {/* end main layout */}
+      </div> {/* end content wrapper */}
       
       {/* Fixed footer with input controls */}
       <div style={{
@@ -3420,7 +3554,7 @@ function SessionPageV2Inner() {
           margin: '0 auto',
           width: '100%',
           boxSizing: 'border-box',
-          padding: '4px 12px calc(4px + env(safe-area-inset-bottom, 0px))'
+          padding: (isShortHeight && isMobileLandscape) ? '2px 16px calc(2px + env(safe-area-inset-bottom, 0px))' : '4px 12px calc(4px + env(safe-area-inset-bottom, 0px))'
         }}>
           
           {/* Phase-specific Begin buttons */}
@@ -3455,8 +3589,8 @@ function SessionPageV2Inner() {
                 marginBottom: 4
               }}>
                 {needBeginDiscussion && (
-                  <button type="button" style={ctaStyle} onClick={startSession}>
-                    Begin
+                  <button type="button" style={{...ctaStyle, opacity: audioReady ? 1 : 0.5}} onClick={startSession} disabled={!audioReady}>
+                    {audioReady ? 'Begin' : 'Loading...'}
                   </button>
                 )}
                 {needBeginComp && (
@@ -3482,6 +3616,60 @@ function SessionPageV2Inner() {
               </div>
             );
           })()}
+
+          {/* Teaching controls (footer) */}
+          {currentPhase === 'teaching' && (
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              padding: '8px 4px'
+            }}>
+              {(teachingStage === 'idle' || teachingStage === 'definitions' || teachingStage === 'examples') && (
+                <>
+                  <button
+                    onClick={nextSentence}
+                    style={{
+                      padding: '12px 28px',
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 10,
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 16px rgba(59, 130, 246, 0.4)'
+                    }}
+                  >
+                    {isInSentenceMode
+                      ? 'Next Sentence'
+                      : teachingStage === 'definitions'
+                        ? 'Continue to Examples'
+                        : 'Complete Teaching'
+                    }
+                  </button>
+                  <button
+                    onClick={repeatSentence}
+                    disabled={!isInSentenceMode}
+                    style={{
+                      padding: '12px 28px',
+                      background: isInSentenceMode ? 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)' : '#9ca3af',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 10,
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: isInSentenceMode ? 'pointer' : 'not-allowed',
+                      boxShadow: isInSentenceMode ? '0 4px 16px rgba(168, 85, 247, 0.4)' : 'none'
+                    }}
+                  >
+                    Repeat
+                  </button>
+                </>
+              )}
+            </div>
+          )}
           
           {/* Input panel with mic button */}
           <div style={{
@@ -3563,7 +3751,6 @@ function SessionPageV2Inner() {
             </button>
           </div>
         </div>
-      </div>
       </div>
     </>
   );

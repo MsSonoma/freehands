@@ -94,6 +94,7 @@ export class TimerService {
    * Start session timer
    */
   startSessionTimer() {
+    console.log('[TimerService] startSessionTimer called');
     if (this.sessionInterval) {
       console.warn('[TimerService] Session timer already running');
       return;
@@ -102,12 +103,14 @@ export class TimerService {
     this.sessionStartTime = Date.now();
     this.sessionElapsed = 0;
     
+    console.log('[TimerService] Emitting sessionTimerStart');
     this.eventBus.emit('sessionTimerStart', {
       timestamp: this.sessionStartTime
     });
     
     // Tick every second
-    this.sessionInterval = setInterval(this.#tickSessionTimer, 1000);
+    this.sessionInterval = setInterval(this.#tickSessionTimer.bind(this), 1000);
+    console.log('[TimerService] Timer interval started');
   }
   
   /**

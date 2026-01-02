@@ -1,23 +1,25 @@
 /**
  * TeachingController - Manages two-stage teaching flow
  * 
- * Consumes AudioEngine for playback via events (no direct state coupling).
- * Owns teaching stage machine: idle → definitions → examples → complete
+ * V2 Architecture: Calls GPT to generate definitions and examples text,
+ * then splits into sentences for sentence-by-sentence navigation.
  * 
- * Architecture:
- * - Loads lesson vocab and examples
- * - Breaks into sentences
- * - Sentence-by-sentence navigation with gate controls
- * - Fetches TTS audio for each sentence
- * - Prefetches N+1 audio during N playback (eliminates wait times)
- * - Emits events: stageChange, sentenceAdvance, teachingComplete
- * - Zero knowledge of phase transitions or snapshot persistence
+ * Flow:
+ * 1. Extract vocab terms from lesson JSON (just the terms, not definitions)
+ * 2. Call GPT to generate kid-friendly definitions text
+ * 3. Split GPT response into sentences
+ * 4. User navigates sentence-by-sentence with gate controls
+ * 5. At definitions gate, transition to examples
+ * 6. Call GPT to generate examples text
+ * 7. Split into sentences, navigate, gate, complete
  * 
- * Usage:
- *   const controller = new TeachingController({ audioEngine, lessonData });
- *   controller.on('teachingComplete', () => transitionToComprehension());
- *   controller.on('stageChange', (stage) => updateUI(stage));
- *   await controller.startTeaching();
+ * Events emitted:
+ * - stageChange: { stage, totalSentences }
+ * - sentenceAdvance: { stage, index, total }
+ * - sentenceComplete: { stage, index, total }
+ * - finalGateReached: { stage }
+ * - requestSnapshotSave: { trigger, data }
+ * - teachingComplete: { vocabCount, exampleCount }
  */
 
 import { fetchTTS } from './services';
@@ -27,23 +29,72 @@ export class TeachingController {
   // Private state
   #audioEngine = null;
   #lessonData = null;
+  #lessonMeta = null; // { subject, difficulty, lessonId, lessonTitle }
   
-  #stage = 'idle'; // 'idle' | 'definitions' | 'examples' | 'complete'
+  #stage = 'idle'; // 'idle' | 'loading-definitions' | 'definitions' | 'loading-examples' | 'examples' | 'complete'
   #vocabSentences = [];
   #exampleSentences = [];
   #currentSentenceIndex = 0;
-  #isInSentenceMode = true; // Sentence nav vs final gate
+  #isInSentenceMode = true;
+  #awaitingFirstPlay = false;
   
   #listeners = new Map();
   #audioEndListener = null;
   
+  // Background prefetch promises - started early, awaited when needed
+  #definitionsGptPromise = null;
+  #examplesGptPromise = null;
+  #definitionsGatePromptPromise = null;
+  #examplesGatePromptPromise = null;
+  
   constructor(options = {}) {
     this.#audioEngine = options.audioEngine;
     this.#lessonData = options.lessonData;
+    this.#lessonMeta = options.lessonMeta || {};
+    
+    console.log('[TeachingController] Constructor - lessonData:', this.#lessonData?.title);
+    console.log('[TeachingController] Constructor - vocab count:', this.#lessonData?.vocab?.length);
+    console.log('[TeachingController] Constructor - vocab sample:', JSON.stringify(this.#lessonData?.vocab?.slice(0, 2)));
     
     if (!this.#audioEngine) {
       throw new Error('TeachingController requires audioEngine');
     }
+  }
+  
+  // Public API: Start all prefetches in background (call on Begin click)
+  prefetchAll() {
+    console.log('[TeachingController] Starting background prefetch of all GPT content');
+    
+    // Start definitions GPT (don't await) - then prefetch TTS for first few sentences
+    this.#definitionsGptPromise = this.#fetchDefinitionsFromGPT().then(sentences => {
+      // Prefetch TTS for first 3 definition sentences
+      sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
+      return sentences;
+    });
+    
+    // Start examples GPT (don't await) - then prefetch TTS for first few sentences
+    this.#examplesGptPromise = this.#fetchExamplesFromGPT().then(sentences => {
+      // Prefetch TTS for first 3 example sentences
+      sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
+      return sentences;
+    });
+    
+    // Start gate prompt GPT for definitions (don't await) - then prefetch TTS
+    this.#definitionsGatePromptPromise = this.#fetchGatePromptFromGPT('definitions').then(text => {
+      if (text) ttsCache.prefetch(text);
+      return text;
+    });
+    
+    // Start gate prompt GPT for examples (don't await) - then prefetch TTS
+    this.#examplesGatePromptPromise = this.#fetchGatePromptFromGPT('examples').then(text => {
+      if (text) ttsCache.prefetch(text);
+      return text;
+    });
+    
+    // Also prefetch the intro TTS
+    ttsCache.prefetch("First let's go over some definitions.");
+    ttsCache.prefetch("Now let's see this in action.");
+    ttsCache.prefetch("Do you have any questions?");
   }
   
   // Public API: Event subscription
@@ -75,26 +126,60 @@ export class TeachingController {
   }
   
   // Public API: Start teaching flow
-  async startTeaching() {
+  async startTeaching(options = {}) {
+    const { autoplayFirstSentence = true } = options;
     if (!this.#lessonData) {
       throw new Error('No lesson data provided');
     }
     
-    // Extract vocab and examples from lesson
-    this.#extractContent();
-    
-    if (this.#vocabSentences.length === 0) {
-      console.warn('[TeachingController] No vocab found, skipping to examples');
-      await this.#startExamples();
-      return;
-    }
-    
-    // Start definitions stage
-    await this.#startDefinitions();
+    // Start definitions stage (will call GPT)
+    await this.#startDefinitions({ autoplayFirstSentence });
   }
   
   // Public API: Sentence navigation
-  nextSentence() {
+  async nextSentence() {
+    // If in loading stage, stop current audio, await content, then play first sentence
+    if (this.#stage === 'loading-definitions') {
+      console.log('[TeachingController] nextSentence during loading-definitions - awaiting content');
+      this.#audioEngine.stop(); // Stop intro audio
+      await this.#ensureDefinitionsLoaded();
+      if (this.#vocabSentences.length > 0) {
+        this.#stage = 'definitions';
+        this.#currentSentenceIndex = 0;
+        this.#awaitingFirstPlay = false;
+        this.#emit('stageChange', { stage: 'definitions', totalSentences: this.#vocabSentences.length });
+        this.#playCurrentDefinition();
+      }
+      return;
+    }
+    if (this.#stage === 'loading-examples') {
+      console.log('[TeachingController] nextSentence during loading-examples - awaiting content');
+      this.#audioEngine.stop(); // Stop intro audio
+      await this.#ensureExamplesLoaded();
+      if (this.#exampleSentences.length > 0) {
+        this.#stage = 'examples';
+        this.#currentSentenceIndex = 0;
+        this.#awaitingFirstPlay = false;
+        this.#emit('stageChange', { stage: 'examples', totalSentences: this.#exampleSentences.length });
+        this.#playCurrentExample();
+      }
+      return;
+    }
+    
+    if (this.#stage === 'idle' || this.#stage === 'complete') {
+      return;
+    }
+    
+    if (this.#stage === 'definitions' && this.#awaitingFirstPlay) {
+      this.#awaitingFirstPlay = false;
+      this.#playCurrentDefinition();
+      return;
+    }
+    if (this.#stage === 'examples' && this.#awaitingFirstPlay) {
+      this.#awaitingFirstPlay = false;
+      this.#playCurrentExample();
+      return;
+    }
     if (this.#stage === 'definitions') {
       this.#advanceDefinition();
     } else if (this.#stage === 'examples') {
@@ -102,7 +187,47 @@ export class TeachingController {
     }
   }
   
-  repeatSentence() {
+  async repeatSentence() {
+    // If in loading stage, stop current audio, await content, then play first sentence
+    if (this.#stage === 'loading-definitions') {
+      this.#audioEngine.stop();
+      await this.#ensureDefinitionsLoaded();
+      if (this.#vocabSentences.length > 0) {
+        this.#stage = 'definitions';
+        this.#currentSentenceIndex = 0;
+        this.#awaitingFirstPlay = false;
+        this.#emit('stageChange', { stage: 'definitions', totalSentences: this.#vocabSentences.length });
+        this.#playCurrentDefinition();
+      }
+      return;
+    }
+    if (this.#stage === 'loading-examples') {
+      this.#audioEngine.stop();
+      await this.#ensureExamplesLoaded();
+      if (this.#exampleSentences.length > 0) {
+        this.#stage = 'examples';
+        this.#currentSentenceIndex = 0;
+        this.#awaitingFirstPlay = false;
+        this.#emit('stageChange', { stage: 'examples', totalSentences: this.#exampleSentences.length });
+        this.#playCurrentExample();
+      }
+      return;
+    }
+    
+    if (this.#stage === 'idle' || this.#stage === 'complete') {
+      return;
+    }
+    
+    if (this.#stage === 'definitions' && this.#awaitingFirstPlay) {
+      this.#awaitingFirstPlay = false;
+      this.#playCurrentDefinition();
+      return;
+    }
+    if (this.#stage === 'examples' && this.#awaitingFirstPlay) {
+      this.#awaitingFirstPlay = false;
+      this.#playCurrentExample();
+      return;
+    }
     if (this.#stage === 'definitions') {
       this.#playCurrentDefinition();
     } else if (this.#stage === 'examples') {
@@ -110,9 +235,9 @@ export class TeachingController {
     }
   }
   
-  skipToExamples() {
-    if (this.#stage === 'definitions') {
-      this.#startExamples();
+  async skipToExamples() {
+    if (this.#stage === 'definitions' || this.#stage === 'loading-definitions') {
+      await this.#startExamples();
     }
   }
   
@@ -120,10 +245,12 @@ export class TeachingController {
     if (this.#stage === 'definitions') {
       this.#currentSentenceIndex = 0;
       this.#isInSentenceMode = true;
+      this.#awaitingFirstPlay = false;
       this.#playCurrentDefinition();
     } else if (this.#stage === 'examples') {
       this.#currentSentenceIndex = 0;
       this.#isInSentenceMode = true;
+      this.#awaitingFirstPlay = false;
       this.#playCurrentExample();
     }
   }
@@ -159,66 +286,289 @@ export class TeachingController {
     return '';
   }
   
-  // Private: Content extraction
-  #extractContent() {
+  // Private: Extract vocab terms from lesson
+  #getVocabTerms() {
     const vocab = this.#lessonData?.vocab || [];
-    const examples = this.#lessonData?.examples || this.#lessonData?.example || [];
+    if (!Array.isArray(vocab)) return [];
     
-    // Extract definitions
-    if (Array.isArray(vocab)) {
-      const definitions = vocab
-        .map(v => {
-          if (typeof v === 'string') return v;
-          if (v?.term && v?.definition) {
-            return `${v.term}: ${v.definition}`;
-          }
-          return null;
-        })
-        .filter(Boolean);
-      
-      this.#vocabSentences = this.#splitIntoSentences(definitions.join(' '));
+    // Extract and deduplicate vocab terms
+    const termMap = new Map();
+    for (const v of vocab) {
+      const raw = (typeof v === 'string') ? v : (v?.term || v?.word || v?.key || '');
+      const term = (raw || '').trim();
+      if (term) {
+        termMap.set(term.toLowerCase(), term);
+      }
     }
-    
-    // Extract examples
-    if (Array.isArray(examples)) {
-      const exampleText = examples
-        .map(e => {
-          if (typeof e === 'string') return e;
-          if (e?.text) return e.text;
-          if (e?.example) return e.example;
-          return null;
-        })
-        .filter(Boolean)
-        .join(' ');
-      
-      this.#exampleSentences = this.#splitIntoSentences(exampleText);
-    } else if (typeof examples === 'string') {
-      this.#exampleSentences = this.#splitIntoSentences(examples);
-    }
+    return Array.from(termMap.values());
   }
   
   #splitIntoSentences(text) {
     if (!text) return [];
     
-    // Split on sentence boundaries
-    const sentences = text
-      .split(/(?<=[.!?])\s+/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
+    try {
+      const lines = String(text).split(/\n+/);
+      const out = [];
+      for (const lineRaw of lines) {
+        const line = String(lineRaw).replace(/[\t ]+/g, ' ').trimEnd();
+        if (!line) continue;
+        // Split on sentence-ending punctuation followed by whitespace
+        const parts = line
+          .split(/(?<=[.?!]["']?)\s+/)
+          .map((part) => String(part).trim())
+          .filter(Boolean);
+        if (parts.length) out.push(...parts);
+      }
+      return out.length ? out : [String(text).trim()];
+    } catch {
+      return [String(text).trim()];
+    }
+  }
+  
+  // Private: Call GPT for definitions
+  async #fetchDefinitionsFromGPT() {
+    console.log('[TeachingController] fetchDefinitionsFromGPT called');
+    console.log('[TeachingController] lessonData.vocab:', this.#lessonData?.vocab?.length, 'items');
+    const terms = this.#getVocabTerms();
+    console.log('[TeachingController] getVocabTerms returned:', terms.length, 'terms:', terms);
+    if (terms.length === 0) {
+      console.warn('[TeachingController] No vocab terms found - SKIPPING DEFINITIONS');
+      return [];
+    }
     
-    return sentences;
+    const vocabCsv = terms.join(', ');
+    const lessonTitle = this.#lessonData?.title || 'this lesson';
+    const grade = this.#lessonData?.grade || '';
+    const teachingNotes = this.#lessonData?.teachingNotes || '';
+    
+    // Build vocab context for GPT (include definitions from JSON if available)
+    const vocabContext = (this.#lessonData?.vocab || [])
+      .filter(v => v?.term && v?.definition)
+      .map(v => `${v.term}: ${v.definition}`)
+      .join('\n');
+    
+    const instruction = [
+      `Grade: ${grade}`,
+      `Lesson (do not read aloud): "${lessonTitle}"`,
+      '',
+      'No intro: Do not greet or introduce yourself; begin immediately with the definitions.',
+      `Definitions: Define these words: ${vocabCsv}. Keep it warm, playful, and brief. Do not ask a question.`,
+      '',
+      vocabContext ? `Reference definitions (paraphrase naturally, preserve accuracy):\n${vocabContext}` : '',
+      teachingNotes ? `Teaching notes: ${teachingNotes}` : '',
+      '',
+      'CRITICAL ACCURACY: All definitions must be factually accurate. If vocab definitions are provided above, base your teaching on that content - paraphrase naturally but preserve meaning exactly.',
+      '',
+      'Kid-friendly: Use simple everyday words a 5 year old can understand. Keep sentences short (about 6-12 words). One idea per sentence.',
+      '',
+      'Always respond with natural spoken text only. No emojis, decorative characters, or symbols.'
+    ].filter(Boolean).join('\n');
+    
+    try {
+      const response = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instruction,
+          input: '',
+          context: {
+            phase: 'teaching',
+            step: 'definitions',
+            lessonTitle,
+            vocab: this.#lessonData?.vocab || []
+          },
+          skipAudio: true
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GPT request failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const text = data.reply || data.text || '';
+      
+      if (!text) {
+        console.warn('[TeachingController] Empty GPT response for definitions');
+        return [];
+      }
+      
+      const sentences = this.#splitIntoSentences(text);
+      console.log('[TeachingController] GPT definitions split into', sentences.length, 'sentences');
+      return sentences;
+      
+    } catch (err) {
+      console.error('[TeachingController] GPT definitions error:', err);
+      return [];
+    }
+  }
+  
+  // Private: Call GPT for examples
+  async #fetchExamplesFromGPT() {
+    const terms = this.#getVocabTerms();
+    const lessonTitle = this.#lessonData?.title || 'this lesson';
+    const grade = this.#lessonData?.grade || '';
+    const teachingNotes = this.#lessonData?.teachingNotes || '';
+    
+    const vocabContext = terms.length > 0 
+      ? `Use these vocabulary words naturally in your examples: ${terms.join(', ')}.`
+      : '';
+    
+    const instruction = [
+      `Grade: ${grade}`,
+      `Lesson (do not read aloud): "${lessonTitle}"`,
+      '',
+      'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
+      `Examples: Show 2-3 tiny worked examples appropriate for this lesson. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations. Give only the examples.`,
+      '',
+      teachingNotes ? `Teaching notes: ${teachingNotes}` : '',
+      '',
+      'CRITICAL ACCURACY: All examples must be correct. Verify accuracy before presenting.',
+      '',
+      'Kid-friendly: Use simple everyday words. Keep sentences short (about 6-12 words). One idea per sentence.',
+      '',
+      'Always respond with natural spoken text only. No emojis, decorative characters, or symbols.'
+    ].filter(Boolean).join('\n');
+    
+    try {
+      const response = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instruction,
+          input: '',
+          context: {
+            phase: 'teaching',
+            step: 'examples',
+            lessonTitle,
+            vocab: this.#lessonData?.vocab || []
+          },
+          skipAudio: true
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GPT request failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const text = data.reply || data.text || '';
+      
+      if (!text) {
+        console.warn('[TeachingController] Empty GPT response for examples');
+        return [];
+      }
+      
+      const sentences = this.#splitIntoSentences(text);
+      console.log('[TeachingController] GPT examples split into', sentences.length, 'sentences');
+      return sentences;
+      
+    } catch (err) {
+      console.error('[TeachingController] GPT examples error:', err);
+      return [];
+    }
+  }
+  
+  // Private: Fetch gate prompt sample questions from GPT
+  async #fetchGatePromptFromGPT(stage) {
+    const lessonTitle = this.#lessonMeta?.lessonTitle || this.#lessonData?.title || 'this topic';
+    const subject = this.#lessonMeta?.subject || 'math';
+    const difficulty = this.#lessonMeta?.difficulty || 'medium';
+    
+    const stageLabel = stage === 'definitions' ? 'vocabulary definitions' : 'examples';
+    
+    const instruction = [
+      `The lesson is "${lessonTitle}".`,
+      `We just covered ${stageLabel}.`,
+      'Generate 2-3 short example questions a child might ask about this topic.',
+      'Start with: "You could ask questions like..."',
+      'Then list the questions briefly and naturally.',
+      'Keep it very short and friendly.',
+      'Do not answer the questions.',
+      'Kid-friendly style rules: Use simple everyday words a 5-7 year old can understand. Keep sentences short (about 6-12 words).',
+      'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, or symbols.'
+    ].join(' ');
+    
+    try {
+      const response = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instruction,
+          input: '',
+          context: {
+            phase: 'teaching',
+            subject,
+            difficulty,
+            lessonTitle,
+            step: 'gate-example-questions',
+            stage
+          },
+          skipAudio: true
+        })
+      });
+      
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.reply || data.text || null;
+    } catch (err) {
+      console.error('[TeachingController] Gate prompt GPT error:', err);
+      return null;
+    }
   }
   
   // Private: Definitions stage
-  async #startDefinitions() {
-    this.#stage = 'definitions';
+  async #startDefinitions({ autoplayFirstSentence = true } = {}) {
+    console.log('[TeachingController] #startDefinitions called');
+    // Set loading stage - nextSentence will await content if called during this
+    this.#stage = 'loading-definitions';
     this.#currentSentenceIndex = 0;
     this.#isInSentenceMode = true;
     
+    // Speak intro
+    const introText = "First let's go over some definitions.";
+    let introAudio = ttsCache.get(introText);
+    if (!introAudio) {
+      introAudio = await fetchTTS(introText);
+      if (introAudio) ttsCache.set(introText, introAudio);
+    }
+    await this.#audioEngine.playAudio(introAudio || '', [introText]);
+    
+    // If user skipped during intro and triggered nextSentence, stage might have changed
+    // In that case, definitions are already loaded and playing - don't double-load
+    if (this.#stage !== 'loading-definitions') {
+      console.log('[TeachingController] Stage changed during intro (user skipped) - content already handled');
+      return;
+    }
+    
+    // Ensure definitions are loaded (uses prefetch if available)
+    await this.#ensureDefinitionsLoaded();
+    
+    if (this.#vocabSentences.length === 0) {
+      console.warn('[TeachingController] No definitions generated, SKIPPING TO EXAMPLES');
+      await this.#startExamples();
+      return;
+    }
+    
+    // NOW set stage to definitions (content is ready, user can interact)
+    this.#stage = 'definitions';
+    
+    // Emit stage change AFTER data is ready (no loading state)
     this.#emit('stageChange', {
       stage: 'definitions',
       totalSentences: this.#vocabSentences.length
     });
+    
+    this.#awaitingFirstPlay = !autoplayFirstSentence;
+    
+    if (!autoplayFirstSentence) {
+      // Prefetch first sentence TTS
+      const firstSentence = this.#vocabSentences[0];
+      if (firstSentence) {
+        ttsCache.prefetch(firstSentence);
+      }
+      return;
+    }
     
     await this.#playCurrentDefinition();
   }
@@ -227,7 +577,7 @@ export class TeachingController {
     const sentence = this.#vocabSentences[this.#currentSentenceIndex];
     if (!sentence) return;
     
-    // Listen for audio end to enable gate controls
+    // Listen for audio end
     this.#setupAudioEndListener(() => {
       this.#emit('sentenceComplete', {
         stage: 'definitions',
@@ -236,25 +586,22 @@ export class TeachingController {
       });
     });
     
-    // Check cache first (instant if prefetched)
+    // Check cache first
     let audioBase64 = ttsCache.get(sentence);
     
     if (!audioBase64) {
-      // Cache miss - fetch synchronously
       audioBase64 = await fetchTTS(sentence);
       if (audioBase64) {
         ttsCache.set(sentence, audioBase64);
       }
     }
     
-    // Prefetch next sentence in background (eliminates wait on Next click)
+    // Prefetch next sentence
     const nextIndex = this.#currentSentenceIndex + 1;
     if (nextIndex < this.#vocabSentences.length) {
-      const nextSentence = this.#vocabSentences[nextIndex];
-      ttsCache.prefetch(nextSentence);
+      ttsCache.prefetch(this.#vocabSentences[nextIndex]);
     }
     
-    // Play through AudioEngine (falls back to synthetic if TTS fails)
     await this.#audioEngine.playAudio(audioBase64 || '', [sentence]);
   }
   
@@ -268,13 +615,11 @@ export class TeachingController {
     const nextIndex = this.#currentSentenceIndex + 1;
     
     if (nextIndex >= this.#vocabSentences.length) {
-      // Reached end - show final gate with sample questions
+      // Reached end - show final gate
       this.#isInSentenceMode = false;
-      this.#emit('finalGateReached', {
-        stage: 'definitions'
-      });
+      this.#emit('finalGateReached', { stage: 'definitions' });
       
-      // Play gate prompt with sample questions (V2 architecture requirement)
+      // Play gate prompt (uses prefetched GPT content)
       this.#playGatePrompt('definitions');
       return;
     }
@@ -286,7 +631,6 @@ export class TeachingController {
       total: this.#vocabSentences.length
     });
     
-    // Request granular snapshot save BEFORE TTS to capture state before user can interrupt
     this.#emit('requestSnapshotSave', {
       trigger: 'teaching-definition',
       data: { stage: 'definitions', sentenceIndex: this.#currentSentenceIndex }
@@ -297,21 +641,45 @@ export class TeachingController {
   
   // Private: Examples stage
   async #startExamples() {
+    // Set loading stage to block nextSentence/repeatSentence during intro and GPT fetch
+    this.#stage = 'loading-examples';
+    this.#currentSentenceIndex = 0;
+    this.#isInSentenceMode = true;
+    
+    // Speak intro
+    const introText = "Now let's see this in action.";
+    let introAudio = ttsCache.get(introText);
+    if (!introAudio) {
+      introAudio = await fetchTTS(introText);
+      if (introAudio) ttsCache.set(introText, introAudio);
+    }
+    await this.#audioEngine.playAudio(introAudio || '', [introText]);
+    
+    // If user skipped during intro and triggered nextSentence, stage might have changed
+    if (this.#stage !== 'loading-examples') {
+      console.log('[TeachingController] Stage changed during examples intro (user skipped) - content already handled');
+      return;
+    }
+    
+    // Ensure examples are loaded (uses prefetch if available)
+    await this.#ensureExamplesLoaded();
+    
     if (this.#exampleSentences.length === 0) {
-      // No examples - teaching complete
+      console.warn('[TeachingController] No examples generated, completing teaching');
       this.#completeTeaching();
       return;
     }
     
+    // NOW set stage to examples (content is ready, user can interact)
     this.#stage = 'examples';
-    this.#currentSentenceIndex = 0;
-    this.#isInSentenceMode = true;
     
+    // Emit stage change AFTER data is ready (no loading state)
     this.#emit('stageChange', {
       stage: 'examples',
       totalSentences: this.#exampleSentences.length
     });
     
+    this.#awaitingFirstPlay = false;
     await this.#playCurrentExample();
   }
   
@@ -319,7 +687,6 @@ export class TeachingController {
     const sentence = this.#exampleSentences[this.#currentSentenceIndex];
     if (!sentence) return;
     
-    // Listen for audio end
     this.#setupAudioEndListener(() => {
       this.#emit('sentenceComplete', {
         stage: 'examples',
@@ -328,25 +695,20 @@ export class TeachingController {
       });
     });
     
-    // Check cache first (instant if prefetched)
     let audioBase64 = ttsCache.get(sentence);
     
     if (!audioBase64) {
-      // Cache miss - fetch synchronously
       audioBase64 = await fetchTTS(sentence);
       if (audioBase64) {
         ttsCache.set(sentence, audioBase64);
       }
     }
     
-    // Prefetch next sentence in background (eliminates wait on Next click)
     const nextIndex = this.#currentSentenceIndex + 1;
     if (nextIndex < this.#exampleSentences.length) {
-      const nextSentence = this.#exampleSentences[nextIndex];
-      ttsCache.prefetch(nextSentence);
+      ttsCache.prefetch(this.#exampleSentences[nextIndex]);
     }
     
-    // Play through AudioEngine (falls back to synthetic if TTS fails)
     await this.#audioEngine.playAudio(audioBase64 || '', [sentence]);
   }
   
@@ -360,13 +722,9 @@ export class TeachingController {
     const nextIndex = this.#currentSentenceIndex + 1;
     
     if (nextIndex >= this.#exampleSentences.length) {
-      // Reached end - show final gate with sample questions
+      // Reached end - show final gate
       this.#isInSentenceMode = false;
-      this.#emit('finalGateReached', {
-        stage: 'examples'
-      });
-      
-      // Play gate prompt with sample questions (V2 architecture requirement)
+      this.#emit('finalGateReached', { stage: 'examples' });
       this.#playGatePrompt('examples');
       return;
     }
@@ -378,7 +736,6 @@ export class TeachingController {
       total: this.#exampleSentences.length
     });
     
-    // Request granular snapshot save BEFORE TTS to capture state before user can interrupt
     this.#emit('requestSnapshotSave', {
       trigger: 'teaching-example',
       data: { stage: 'examples', sentenceIndex: this.#currentSentenceIndex }
@@ -391,7 +748,6 @@ export class TeachingController {
   #completeTeaching() {
     this.#stage = 'complete';
     
-    // Remove audio listener
     if (this.#audioEndListener) {
       this.#audioEngine.off('end', this.#audioEndListener);
       this.#audioEndListener = null;
@@ -403,87 +759,104 @@ export class TeachingController {
     });
   }
   
-  // Private: Gate prompt with sample questions
+  // Private: Gate prompt - uses prefetched GPT content for zero latency
+  // 1. Speak "Do you have any questions?"
+  // 2. Speak prefetched GPT sample questions (or fallback)
   async #playGatePrompt(stage) {
-    // Generate "Do you have any questions? You could ask questions like..." with 3 examples
-    const content = stage === 'definitions' 
-      ? this.#vocabSentences.join(' ')
-      : this.#exampleSentences.join(' ');
+    const lessonTitle = this.#lessonMeta?.lessonTitle || this.#lessonData?.title || 'this topic';
     
-    const prompt = `Based on this ${stage === 'definitions' ? 'vocabulary' : 'examples'} content, generate exactly 3 simple questions a child might ask. Return ONLY the following format with no additional text:
-
-Content: ${content.substring(0, 500)}
-
-Format your response EXACTLY like this:
-Do you have any questions? You could ask questions like... What does [term] mean? How do I use [term] in a sentence? Can you give me another example of [term]?`;
-
-    try {
-      // Try GPT-4 for sample questions
-      const response = await fetch('/api/sonoma', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: prompt,
-          phase: 'teaching-gate',
-          maxTokens: 150
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const gateText = data.reply || '';
-        
-        if (gateText && gateText.includes('Do you have any questions')) {
-          // GPT succeeded - play generated gate prompt
-          let gateAudio = ttsCache.get(gateText);
-          
-          if (!gateAudio) {
-            gateAudio = await fetchTTS(gateText);
-            if (gateAudio) {
-              ttsCache.set(gateText, gateAudio);
-            }
-          }
-          
-          await this.#audioEngine.playAudio(gateAudio || '', [gateText]);
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn('[TeachingController] Gate prompt generation failed, using fallback:', err);
+    // 1. Speak "Do you have any questions?"
+    const questionText = 'Do you have any questions?';
+    let questionAudio = ttsCache.get(questionText);
+    if (!questionAudio) {
+      questionAudio = await fetchTTS(questionText);
+      if (questionAudio) ttsCache.set(questionText, questionAudio);
     }
+    await this.#audioEngine.playAudio(questionAudio || '', [questionText]);
     
-    // Fallback: Deterministic three-question pattern (V2 architecture requirement)
-    const vocabTerms = this.#lessonData?.vocab || [];
-    const firstTerm = vocabTerms[0]?.term || vocabTerms[0] || 'this topic';
-    const secondTerm = vocabTerms[1]?.term || vocabTerms[1] || 'these ideas';
-    const thirdTerm = vocabTerms[2]?.term || vocabTerms[2] || 'this lesson';
+    // 2. Get prefetched GPT content (should already be ready)
+    let sampleText = null;
+    const prefetchPromise = stage === 'definitions' 
+      ? this.#definitionsGatePromptPromise 
+      : this.#examplesGatePromptPromise;
     
-    const fallbackText = stage === 'definitions'
-      ? `Do you have any questions? You could ask questions like... What does ${firstTerm} mean? How is ${secondTerm} different from other words? Can you explain ${thirdTerm} in another way?`
-      : `Do you have any questions? You could ask questions like... How do I use ${firstTerm} in a sentence? Can you give me another example with ${secondTerm}? Why would I use ${thirdTerm}?`;
-    
-    let fallbackAudio = ttsCache.get(fallbackText);
-    
-    if (!fallbackAudio) {
-      fallbackAudio = await fetchTTS(fallbackText);
-      if (fallbackAudio) {
-        ttsCache.set(fallbackText, fallbackAudio);
+    if (prefetchPromise) {
+      try {
+        sampleText = await prefetchPromise;
+        console.log('[TeachingController] Using prefetched gate prompt for', stage);
+      } catch (err) {
+        console.error('[TeachingController] Prefetched gate prompt error:', err);
+      }
+      // Clear the promise
+      if (stage === 'definitions') {
+        this.#definitionsGatePromptPromise = null;
+      } else {
+        this.#examplesGatePromptPromise = null;
       }
     }
     
-    await this.#audioEngine.playAudio(fallbackAudio || '', [fallbackText]);
+    // 3. Fallback if prefetch failed or returned empty
+    const cleanTitle = (lessonTitle || 'this topic').trim();
+    if (!sampleText) {
+      sampleText = `You could ask questions like... What does ${cleanTitle} mean in simple words? How would we use ${cleanTitle} in real life? Could you show one more example?`;
+    }
+    
+    // 4. Speak GPT-generated (or fallback) sample questions
+    let sampleAudio = ttsCache.get(sampleText);
+    if (!sampleAudio) {
+      sampleAudio = await fetchTTS(sampleText);
+      if (sampleAudio) ttsCache.set(sampleText, sampleAudio);
+    }
+    await this.#audioEngine.playAudio(sampleAudio || '', [sampleText]);
+  }
+  
+  // Private: Ensure definitions are loaded (await pending promise if needed)
+  async #ensureDefinitionsLoaded() {
+    if (this.#vocabSentences.length > 0) return; // Already loaded
+    
+    if (this.#definitionsGptPromise) {
+      console.log('[TeachingController] Awaiting pending definitions GPT promise');
+      this.#emit('loading', { stage: 'definitions' });
+      this.#vocabSentences = await this.#definitionsGptPromise;
+      this.#definitionsGptPromise = null;
+      console.log('[TeachingController] Definitions loaded:', this.#vocabSentences.length, 'sentences');
+    } else {
+      // No promise pending and no content - fetch now
+      console.log('[TeachingController] No pending promise, fetching definitions now');
+      this.#emit('loading', { stage: 'definitions' });
+      this.#vocabSentences = await this.#fetchDefinitionsFromGPT();
+      console.log('[TeachingController] Definitions fetched:', this.#vocabSentences.length, 'sentences');
+    }
+  }
+  
+  // Private: Ensure examples are loaded (await pending promise if needed)
+  async #ensureExamplesLoaded() {
+    if (this.#exampleSentences.length > 0) return; // Already loaded
+    
+    if (this.#examplesGptPromise) {
+      console.log('[TeachingController] Awaiting pending examples GPT promise');
+      this.#emit('loading', { stage: 'examples' });
+      this.#exampleSentences = await this.#examplesGptPromise;
+      this.#examplesGptPromise = null;
+      console.log('[TeachingController] Examples loaded:', this.#exampleSentences.length, 'sentences');
+    } else {
+      // No promise pending and no content - fetch now
+      console.log('[TeachingController] No pending promise, fetching examples now');
+      this.#emit('loading', { stage: 'examples' });
+      this.#exampleSentences = await this.#fetchExamplesFromGPT();
+      console.log('[TeachingController] Examples fetched:', this.#exampleSentences.length, 'sentences');
+    }
   }
   
   // Private: Audio coordination
   #setupAudioEndListener(callback) {
-    // Remove previous listener
     if (this.#audioEndListener) {
       this.#audioEngine.off('end', this.#audioEndListener);
     }
     
-    // Create new listener
     this.#audioEndListener = (data) => {
-      if (data.completed) {
+      // Advance on both completed and skipped playback
+      if (data.completed || data.skipped) {
         callback();
       }
     };

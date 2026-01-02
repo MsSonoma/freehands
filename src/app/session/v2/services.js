@@ -47,44 +47,55 @@ export async function fetchMultiSentenceTTS(sentences) {
 }
 
 /**
- * Load lesson data from API
- * @param {string} lessonKey - Lesson identifier (e.g., "4th_math_01")
+ * Load lesson data from public lessons directory
+ * @param {string} lessonFilename - Lesson filename (e.g., "4th_Geometry_Angles_Classification_Beginner")
+ * @param {string} subject - Subject folder (e.g., "math", "science", "language arts", "social studies")
  * @returns {Promise<Object>} Lesson data object
  */
-export async function loadLesson(lessonKey) {
-  if (!lessonKey) {
-    throw new Error('Lesson key required');
+export async function loadLesson(lessonFilename, subject = 'math') {
+  if (!lessonFilename) {
+    throw new Error('Lesson filename required');
   }
   
   try {
-    // Parse lesson key format: "{grade}_{subject}_{number}"
-    const parts = lessonKey.split('_');
-    if (parts.length < 3) {
-      throw new Error('Invalid lesson key format');
+    // Normalize inputs
+    const normalizedSubject = (subject || 'math').toLowerCase();
+    // Strip .json if present, then add it back for consistency
+    const baseFilename = lessonFilename.replace(/\.json$/i, '');
+    const filename = `${baseFilename}.json`;
+    
+    // Try primary subject folder
+    const subjectFolders = [normalizedSubject, 'math', 'language arts', 'science', 'social studies'];
+    let response = null;
+    let usedSubject = normalizedSubject;
+    
+    for (const folder of subjectFolders) {
+      const url = `/lessons/${encodeURIComponent(folder)}/${encodeURIComponent(filename)}`;
+      console.log('[Lesson] Trying:', url);
+      response = await fetch(url);
+      if (response.ok) {
+        usedSubject = folder;
+        break;
+      }
+      if (folder === normalizedSubject) {
+        // Only try fallback folders if primary failed
+        continue;
+      }
     }
     
-    const grade = parts[0];
-    const subject = parts.slice(1, -1).join(' ');
-    const lessonNumber = parts[parts.length - 1];
-    
-    // Fetch from public lessons directory
-    const response = await fetch(`/lessons/${subject}/${grade}_${subject}_${lessonNumber}.json`);
-    
-    if (!response.ok) {
-      throw new Error(`Lesson not found: ${lessonKey}`);
+    if (!response || !response.ok) {
+      throw new Error(`Lesson not found: ${filename}`);
     }
     
     const lessonData = await response.json();
     
-    // Validate required fields
-    if (!lessonData.title) {
-      throw new Error('Lesson missing title');
-    }
+    // Extract grade from filename (e.g., "4th" from "4th_Geometry...")
+    const grade = baseFilename.split('_')[0] || '';
     
     return {
-      key: lessonKey,
+      key: baseFilename,
       title: lessonData.title || 'Untitled Lesson',
-      subject: subject,
+      subject: usedSubject,
       grade: grade,
       vocab: lessonData.vocab || [],
       examples: lessonData.examples || lessonData.example || [],

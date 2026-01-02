@@ -51,6 +51,8 @@ export class DiscussionPhase {
    * Start discussion phase - play greeting
    */
   async start() {
+    console.log('[DiscussionPhase] start() called, state:', this.#state);
+    
     if (this.#state !== 'idle') {
       console.warn('[DiscussionPhase] Cannot start - already running');
       return;
@@ -61,6 +63,7 @@ export class DiscussionPhase {
     // Generate greeting: "Hi [name], ready to learn about [topic]?"
     const greetingText = `Hi ${this.#learnerName}, ready to learn about ${this.#lessonTitle}?`;
     
+    console.log('[DiscussionPhase] Emitting greetingPlaying event, text:', greetingText);
     this.#eventBus.emit('greetingPlaying', { greetingText });
     
     try {
@@ -68,26 +71,33 @@ export class DiscussionPhase {
       let greetingAudio = ttsCache.get(greetingText);
       
       if (!greetingAudio) {
+        console.log('[DiscussionPhase] Fetching TTS for greeting...');
         greetingAudio = await fetchTTS(greetingText);
+        console.log('[DiscussionPhase] TTS fetched, length:', greetingAudio?.length);
         if (greetingAudio) {
           ttsCache.set(greetingText, greetingAudio);
         }
+      } else {
+        console.log('[DiscussionPhase] Using cached greeting audio');
       }
       
-      // Listen for audio completion
+      // Listen for audio completion - automatically proceed to teaching
       this.#setupAudioEndListener(() => {
-        this.#state = 'awaiting-begin';
+        console.log('[DiscussionPhase] Audio end listener fired');
+        this.#state = 'complete';
         this.#eventBus.emit('greetingComplete', {});
+        // Automatically begin teaching after greeting
+        this.#eventBus.emit('discussionComplete', {});
       });
       
       // Play greeting
+      console.log('[DiscussionPhase] Playing greeting audio...');
       await this.#audioEngine.playAudio(greetingAudio || '', [greetingText]);
       
     } catch (error) {
       console.error('[DiscussionPhase] Error playing greeting:', error);
-      // Proceed to awaiting-begin even if TTS fails
-      this.#state = 'awaiting-begin';
-      this.#eventBus.emit('greetingComplete', {});
+      this.#state = 'idle';
+      throw error;
     }
   }
   
@@ -151,9 +161,9 @@ export class DiscussionPhase {
       this.#audioEngine.off('end', this.#audioEndListener);
     }
     
-    // Create new listener
+    // Create new listener - advance on both completed and skipped
     this.#audioEndListener = (data) => {
-      if (data.completed) {
+      if (data.completed || data.skipped) {
         callback();
       }
     };

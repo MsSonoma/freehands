@@ -142,6 +142,8 @@ export class PhaseOrchestrator {
     // Update state
     this.#currentPhase = nextPhase;
     
+    console.log('[PhaseOrchestrator] transitionTo:', nextPhase, 'from:', prevPhase);
+    
     // Emit event
     this.#emit('phaseChange', {
       phase: nextPhase,

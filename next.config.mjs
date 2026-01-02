@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Prevent dev/prod build artifact collisions.
+  // Dev writes to .next-dev; prod build/start uses .next.
+  distDir: process.env.NODE_ENV === 'production' ? '.next' : '.next-dev',
   // Intentionally minimal config; rely on Next.js defaults for dev/prod.
   async headers() {
     // Relax CSP specifically for billing routes to support Stripe Elements/iframes/fonts.

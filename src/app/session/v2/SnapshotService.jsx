@@ -23,10 +23,58 @@ export class SnapshotService {
   #learnerId = null;
   #lessonKey = null;
   #supabaseClient = null;
+  #forceLocalStorage = false;
   
   #snapshot = null;
   #lastSaveTime = null;
   #saveInProgress = false;
+
+  #formatErrorForLog(err) {
+    try {
+      if (!err) return { kind: 'unknown', value: err };
+      if (err instanceof Error) {
+        return {
+          kind: 'Error',
+          name: err.name,
+          message: err.message,
+          stack: err.stack
+        };
+      }
+      return {
+        kind: typeof err,
+        message: err.message,
+        code: err.code,
+        details: err.details,
+        hint: err.hint,
+        status: err.status,
+        statusCode: err.statusCode
+      };
+    } catch (_) {
+      return { kind: 'unformattable' };
+    }
+  }
+
+  #shouldFallbackToLocalStorage(err) {
+    // Common Supabase/PostgREST errors when the 'snapshots' table isn't present
+    const code = err?.code;
+    const message = err?.message || '';
+    return (
+      code === 'PGRST205' ||
+      code === '42P01' ||
+      /Could not find the table/i.test(message) ||
+      /relation .*snapshots.* does not exist/i.test(message) ||
+      /schema cache/i.test(message)
+    );
+  }
+
+  #disableSupabaseForSession(reason, err) {
+    if (this.#forceLocalStorage) return;
+    this.#forceLocalStorage = true;
+    console.warn(
+      `[SnapshotService] Falling back to localStorage for this session (${reason}).`,
+      this.#formatErrorForLog(err)
+    );
+  }
   
   constructor(options = {}) {
     this.#sessionId = options.sessionId;
@@ -60,7 +108,7 @@ export class SnapshotService {
   
   // Public API: Load snapshot from database
   async loadSnapshot() {
-    if (!this.#supabaseClient) {
+    if (!this.#supabaseClient || this.#forceLocalStorage) {
       console.warn('[SnapshotService] No Supabase client - using localStorage fallback');
       return this.#loadFromLocalStorage();
     }
@@ -75,6 +123,10 @@ export class SnapshotService {
       
       if (error && error.code !== 'PGRST116') {
         // PGRST116 = no rows returned (not an error for new sessions)
+        if (this.#shouldFallbackToLocalStorage(error)) {
+          this.#disableSupabaseForSession('loadSnapshot', error);
+          return this.#loadFromLocalStorage();
+        }
         throw error;
       }
       
@@ -94,7 +146,11 @@ export class SnapshotService {
         createdAt: data.created_at
       };
     } catch (err) {
-      console.error('[SnapshotService] Load error:', err);
+      if (this.#shouldFallbackToLocalStorage(err)) {
+        this.#disableSupabaseForSession('loadSnapshot catch', err);
+        return this.#loadFromLocalStorage();
+      }
+      console.error('[SnapshotService] Load error:', this.#formatErrorForLog(err), err);
       return null;
     }
   }
@@ -140,7 +196,7 @@ export class SnapshotService {
         lastUpdated: new Date().toISOString()
       };
       
-      if (!this.#supabaseClient) {
+      if (!this.#supabaseClient || this.#forceLocalStorage) {
         console.warn('[SnapshotService] No Supabase client - using localStorage fallback');
         this.#saveToLocalStorage(snapshot);
         this.#snapshot = snapshot;
@@ -167,6 +223,13 @@ export class SnapshotService {
         .single();
       
       if (error) {
+        if (this.#shouldFallbackToLocalStorage(error)) {
+          this.#disableSupabaseForSession('savePhaseCompletion upsert', error);
+          this.#saveToLocalStorage(snapshot);
+          this.#snapshot = snapshot;
+          this.#lastSaveTime = Date.now();
+          return snapshot;
+        }
         throw error;
       }
       
@@ -175,7 +238,38 @@ export class SnapshotService {
       
       return snapshot;
     } catch (err) {
-      console.error('[SnapshotService] Save error:', err);
+      if (this.#shouldFallbackToLocalStorage(err)) {
+        this.#disableSupabaseForSession('savePhaseCompletion catch', err);
+        // Best-effort fallback so the session can proceed.
+        try {
+          const completedPhases = this.#snapshot?.completedPhases || [];
+          const allPhaseData = {
+            ...(this.#snapshot?.phaseData || {}),
+            [phase]: {
+              ...phaseData,
+              completedAt: new Date().toISOString()
+            }
+          };
+          const snapshot = {
+            sessionId: this.#sessionId,
+            learnerId: this.#learnerId,
+            lessonKey: this.#lessonKey,
+            currentPhase: phase,
+            completedPhases: completedPhases.includes(phase) ? completedPhases : [...completedPhases, phase],
+            phaseData: allPhaseData,
+            timerState: phaseData.timerState || null,
+            lastUpdated: new Date().toISOString()
+          };
+          this.#saveToLocalStorage(snapshot);
+          this.#snapshot = snapshot;
+          this.#lastSaveTime = Date.now();
+          return snapshot;
+        } catch (fallbackErr) {
+          console.error('[SnapshotService] Save fallback error:', this.#formatErrorForLog(fallbackErr), fallbackErr);
+          return { success: false, fallbackFailed: true };
+        }
+      }
+      console.error('[SnapshotService] Save error:', this.#formatErrorForLog(err), err);
       throw err;
     } finally {
       this.#saveInProgress = false;
@@ -221,7 +315,7 @@ export class SnapshotService {
         lastUpdated: new Date().toISOString()
       };
       
-      if (!this.#supabaseClient) {
+      if (!this.#supabaseClient || this.#forceLocalStorage) {
         // For granular saves, update localStorage throttled
         this.#saveToLocalStorage(snapshot);
         this.#snapshot = snapshot;
@@ -247,6 +341,13 @@ export class SnapshotService {
         .single();
       
       if (error) {
+        if (this.#shouldFallbackToLocalStorage(error)) {
+          this.#disableSupabaseForSession('saveProgress upsert', error);
+          this.#saveToLocalStorage(snapshot);
+          this.#snapshot = snapshot;
+          this.#lastSaveTime = Date.now();
+          return snapshot;
+        }
         throw error;
       }
       
@@ -255,7 +356,39 @@ export class SnapshotService {
       
       return snapshot;
     } catch (err) {
-      console.error('[SnapshotService] Granular save error:', err);
+      if (this.#shouldFallbackToLocalStorage(err)) {
+        this.#disableSupabaseForSession('saveProgress catch', err);
+        // Best-effort silent fallback
+        try {
+          const currentPhase = this.#snapshot?.currentPhase || 'idle';
+          const allPhaseData = {
+            ...(this.#snapshot?.phaseData || {}),
+            [currentPhase]: {
+              ...(this.#snapshot?.phaseData?.[currentPhase] || {}),
+              ...updateData,
+              lastAction: trigger,
+              lastActionAt: new Date().toISOString()
+            }
+          };
+          const snapshot = {
+            sessionId: this.#sessionId,
+            learnerId: this.#learnerId,
+            lessonKey: this.#lessonKey,
+            currentPhase,
+            completedPhases: this.#snapshot?.completedPhases || [],
+            phaseData: allPhaseData,
+            lastUpdated: new Date().toISOString()
+          };
+          this.#saveToLocalStorage(snapshot);
+          this.#snapshot = snapshot;
+          this.#lastSaveTime = Date.now();
+          return snapshot;
+        } catch (_) {
+          // Still silent
+        }
+        return;
+      }
+      console.error('[SnapshotService] Granular save error:', this.#formatErrorForLog(err), err);
       // Don't throw - granular saves should fail silently
     } finally {
       this.#saveInProgress = false;
@@ -264,7 +397,7 @@ export class SnapshotService {
   
   // Public API: Delete snapshot (session complete or restart)
   async deleteSnapshot() {
-    if (!this.#supabaseClient) {
+    if (!this.#supabaseClient || this.#forceLocalStorage) {
       console.warn('[SnapshotService] No Supabase client - using localStorage fallback');
       this.#deleteFromLocalStorage();
       this.#snapshot = null;
@@ -279,12 +412,24 @@ export class SnapshotService {
         .eq('learner_id', this.#learnerId);
       
       if (error) {
+        if (this.#shouldFallbackToLocalStorage(error)) {
+          this.#disableSupabaseForSession('deleteSnapshot', error);
+          this.#deleteFromLocalStorage();
+          this.#snapshot = null;
+          return;
+        }
         throw error;
       }
       
       this.#snapshot = null;
     } catch (err) {
-      console.error('[SnapshotService] Delete error:', err);
+      if (this.#shouldFallbackToLocalStorage(err)) {
+        this.#disableSupabaseForSession('deleteSnapshot catch', err);
+        this.#deleteFromLocalStorage();
+        this.#snapshot = null;
+        return;
+      }
+      console.error('[SnapshotService] Delete error:', this.#formatErrorForLog(err), err);
       throw err;
     }
   }

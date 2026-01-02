@@ -50,6 +50,18 @@ export class AudioEngine {
       this.#listeners.set(event, []);
     }
     this.#listeners.get(event).push(callback);
+
+    // If the UI subscribes after playback has already started, immediately
+    // deliver the current caption so transcripts don't stay blank.
+    if (event === 'captionChange') {
+      try {
+        const idx = Math.max(0, Math.min(this.#lastSentences.length - 1, this.#currentCaptionIndex));
+        const text = this.#lastSentences[idx] || '';
+        callback({ index: this.#currentCaptionIndex, text });
+      } catch {
+        // Ignore subscriber sync errors
+      }
+    }
   }
   
   off(event, callback) {
@@ -113,54 +125,59 @@ export class AudioEngine {
       console.warn('[AudioEngine] No sentences provided');
       return;
     }
-    
-    this.#currentCaptionIndex = startIndex;
+
+    // Emit the first caption immediately so transcript shows even before timeupdate fires
+    const clampedIndex = Math.max(0, Math.min(sentences.length - 1, startIndex));
+    this.#currentCaptionIndex = clampedIndex;
+    this.#emit('captionChange', {
+      index: this.#currentCaptionIndex,
+      text: sentences[clampedIndex] || ''
+    });
     this.#isPlaying = true;
     this.#emit('start', { sentences, startIndex });
     
-    // Start video playback (V1 behavior - video syncs with audio)
-    if (this.#videoElement) {
-      try {
-        const playPromise = this.#videoElement.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(err => {
-            console.warn('[AudioEngine] Video play failed:', err);
-          });
-        }
-      } catch (err) {
-        console.warn('[AudioEngine] Video play error:', err);
-      }
-    }
-    
-    // Start video playback (V1 behavior)
-    this.#startVideo();
+    // NOTE: Video playback is started by audio.onplay handler in #playHTMLAudio
+    // or by #playSynthetic. This ensures video syncs with actual audio start.
     
     // Choose playback path
     if (!base64Audio) {
-      // Synthetic path (no audio)
+      // Synthetic path (no audio) - start video here since there's no audio.onplay
+      this.#startVideo();
       await this.#playSynthetic(sentences, startIndex);
-    } else {
-      // Try HTMLAudio first (better mobile compatibility)
-      try {
-        await this.#playHTMLAudio(base64Audio, sentences, startIndex, options);
-      } catch (err) {
-        console.warn('[AudioEngine] HTMLAudio failed, trying WebAudio:', err);
-        try {
-          await this.#playWebAudio(base64Audio, sentences, startIndex, options);
-        } catch (err2) {
-          console.error('[AudioEngine] Both audio paths failed:', err2);
-          this.#isPlaying = false;
-          this.#emit('error', err2);
-          this.#emit('end', { completed: false });
-        }
-      }
+      return;
+    }
+
+    // Try HTMLAudio first (better mobile compatibility). If both audio paths fail
+    // (bad base64, autoplay restrictions, decode errors), fall back to synthetic
+    // so the learner still gets captions and the session can proceed.
+    try {
+      await this.#playHTMLAudio(base64Audio, sentences, startIndex, options);
+      return;
+    } catch (err) {
+      console.warn('[AudioEngine] HTMLAudio failed, trying WebAudio:', err);
+    }
+
+    try {
+      await this.#playWebAudio(base64Audio, sentences, startIndex, options);
+      return;
+    } catch (err2) {
+      console.error('[AudioEngine] Both audio paths failed; falling back to synthetic captions:', err2);
+      this.#emit('error', err2);
+      await this.#playSynthetic(sentences, startIndex);
     }
   }
   
   stop() {
-    // Stop HTMLAudio
+    const wasPlaying = this.#isPlaying;
+    
+    // Stop HTMLAudio - remove handlers FIRST to prevent spurious events
     if (this.#audioElement) {
       try {
+        // Remove event handlers before manipulating audio element
+        this.#audioElement.onended = null;
+        this.#audioElement.onerror = null;
+        this.#audioElement.ontimeupdate = null;
+        this.#audioElement.onpause = null;
         this.#audioElement.pause();
         this.#audioElement.src = '';
         this.#audioElement = null;
@@ -188,6 +205,11 @@ export class AudioEngine {
     this.#clearSpeechGuard();
     
     this.#isPlaying = false;
+    
+    // Emit 'end' with skipped: true so controllers can advance
+    if (wasPlaying) {
+      this.#emit('end', { completed: false, skipped: true });
+    }
   }
   
   pause() {
@@ -264,6 +286,16 @@ export class AudioEngine {
     }
   }
   
+  // Replay the last played audio from the beginning
+  replay() {
+    if (!this.#lastSentences || this.#lastSentences.length === 0) {
+      console.warn('[AudioEngine] No previous audio to replay');
+      return;
+    }
+    
+    this.playAudio(this.#lastAudioBase64, this.#lastSentences, 0);
+  }
+  
   // Getters
   get isPlaying() {
     return this.#isPlaying;
@@ -277,6 +309,10 @@ export class AudioEngine {
     return this.#currentCaptionIndex;
   }
   
+  get hasAudioToReplay() {
+    return !!(this.#lastAudioBase64 && this.#lastSentences && this.#lastSentences.length > 0);
+  }
+
   // Private: HTMLAudio path
   async #playHTMLAudio(base64, sentences, startIndex, options = {}) {
     const blob = this.#base64ToBlob(base64);
@@ -293,10 +329,6 @@ export class AudioEngine {
         audio.currentTime = options.resumeAtSeconds;
       }
       
-      audio.onplay = () => {
-        this.#startVideo();
-      };
-      
       audio.ontimeupdate = () => {
         if (!audio.duration || audio.duration <= 0) return;
         
@@ -308,7 +340,10 @@ export class AudioEngine {
         
         if (index !== this.#currentCaptionIndex) {
           this.#currentCaptionIndex = index + startIndex;
-          this.#emit('captionChange', this.#currentCaptionIndex);
+          this.#emit('captionChange', {
+            index: this.#currentCaptionIndex,
+            text: sentences[index] || ''
+          });
         }
         
         // Rearm guard as we get progress updates
@@ -339,13 +374,19 @@ export class AudioEngine {
       
       const playPromise = audio.play();
       
+      // Start video when audio play succeeds (more reliable than onplay event)
+      if (playPromise && playPromise.then) {
+        playPromise.then(() => {
+          this.#startVideo();
+        }).catch(reject);
+      } else {
+        // Fallback for browsers that don't return a promise
+        this.#startVideo();
+      }
+      
       // Arm initial guard with estimated duration
       const estimatedDuration = this.#computeHeuristicDuration(sentences);
       this.#armSpeechGuard(estimatedDuration + 2);
-      
-      if (playPromise && playPromise.catch) {
-        playPromise.catch(reject);
-      }
     });
   }
   
@@ -497,7 +538,8 @@ export class AudioEngine {
     }
   }
   
-  // Private: Video coordination
+  // Private: Video coordination - plays/pauses video in sync with TTS
+  // Video is a loop that continues from current position, no seeking
   #startVideo() {
     if (!this.#videoElement) return;
     
@@ -509,7 +551,7 @@ export class AudioEngine {
           // Retry once after 100ms (Chrome autoplay quirk)
           setTimeout(() => {
             try {
-              this.#videoElement.play();
+              this.#videoElement?.play()?.catch(() => {});
             } catch {}
           }, 100);
         });
@@ -521,6 +563,7 @@ export class AudioEngine {
   #cleanup() {
     this.#isPlaying = false;
     
+    // Pause video when audio ends (video syncs with TTS)
     if (this.#videoElement) {
       try {
         this.#videoElement.pause();
@@ -532,10 +575,33 @@ export class AudioEngine {
   }
   
   // Private: Utilities
+  #parseAudioInput(rawInput) {
+    if (!rawInput) return null;
+
+    const raw = String(rawInput).trim();
+    if (!raw) return null;
+
+    // Accept either a data URL or a raw base64 string.
+    const match = raw.match(/^data:(audio\/[^;]+);base64,(.*)$/i);
+    const contentType = match?.[1] || 'audio/mpeg';
+    let b64 = (match?.[2] || raw).trim();
+
+    // Normalize: strip whitespace, base64url -> base64, add padding.
+    b64 = b64.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+    const pad = b64.length % 4;
+    if (pad === 2) b64 += '==';
+    else if (pad === 3) b64 += '=';
+    else if (pad === 1) b64 += '===';
+
+    return { contentType, b64 };
+  }
+
   #base64ToBlob(base64) {
-    const parts = base64.split(';base64,');
-    const contentType = parts[0].split(':')[1] || 'audio/wav';
-    const raw = atob(parts[1]);
+    const parsed = this.#parseAudioInput(base64);
+    if (!parsed) return new Blob([], { type: 'audio/mpeg' });
+
+    const { contentType, b64 } = parsed;
+    const raw = atob(b64);
     const bytes = new Uint8Array(raw.length);
     
     for (let i = 0; i < raw.length; i++) {
@@ -546,8 +612,10 @@ export class AudioEngine {
   }
   
   #base64ToArrayBuffer(base64) {
-    const parts = base64.split(';base64,');
-    const raw = atob(parts[1]);
+    const parsed = this.#parseAudioInput(base64);
+    if (!parsed) return new Uint8Array(0).buffer;
+
+    const raw = atob(parsed.b64);
     const bytes = new Uint8Array(raw.length);
     
     for (let i = 0; i < raw.length; i++) {

@@ -106,8 +106,10 @@ export async function POST(req) {
     const base64 = res?.audioContent
       ? (typeof res.audioContent === 'string' ? res.audioContent : Buffer.from(res.audioContent).toString('base64'))
       : undefined
+    // Add data URL prefix for AudioEngine compatibility
+    const dataUrl = base64 ? `data:audio/mp3;base64,${base64}` : undefined
     // Synth ok
-    return NextResponse.json({ reply: text, audio: base64 })
+    return NextResponse.json({ reply: text, audio: dataUrl })
   } catch (e) {
     // Synthesis failed
     return NextResponse.json({ error: 'tts_failed' }, { status: 500 })
