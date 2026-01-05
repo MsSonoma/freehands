@@ -22,6 +22,8 @@
 
 import { fetchTTS } from './services';
 import { ttsCache } from '../utils/ttsCache';
+import { buildAcceptableList, judgeAnswer } from './judging';
+import { deriveCorrectAnswerText, ensureQuestionMark, formatQuestionForSpeech } from '../utils/questionFormatting';
 
 // Praise phrases for correct answers (matches V1 engagement pattern)
 const PRAISE_PHRASES = [
@@ -59,6 +61,8 @@ export class TestPhase {
   
   #listeners = new Map();
   #audioEndListener = null;
+  #questionPlaybackToken = 0;
+  #interactionInFlight = false;
   
   constructor(options = {}) {
     this.#audioEngine = options.audioEngine;
@@ -77,14 +81,31 @@ export class TestPhase {
     // Normalize questions to standard format
     this.#questions = this.#questions.map((q, index) => {
       const type = q.type || 'mc';
-      
+
+      const opts = Array.isArray(q.options) ? q.options : (Array.isArray(q.choices) ? q.choices : []);
+      const correctIndex = typeof q.correct === 'number'
+        ? q.correct
+        : (typeof q.answer === 'number' ? q.answer : null);
+
+      let answer = q.answer ?? q.correct ?? '';
+      if (typeof answer === 'number' && Number.isFinite(answer) && opts && opts.length) {
+        const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.:\)\-]\s*/i;
+        const raw = String(opts[answer] ?? '').trim();
+        answer = raw.replace(anyLabel, '').trim();
+      }
+
       return {
         id: q.id || `q${index}`,
-        type: type,
+        type,
+        sourceType: (type === 'fill' || type === 'fib') ? 'fib' : (q.sourceType || null),
         question: q.question || q.text || '',
-        options: q.options || [],
-        answer: q.answer || q.correct || '',
-        hint: q.hint || ''
+        options: opts,
+        answer,
+        correct: correctIndex,
+        hint: q.hint || '',
+        expectedAny: Array.isArray(q.expectedAny) ? q.expectedAny : undefined,
+        keywords: Array.isArray(q.keywords) ? q.keywords : undefined,
+        minKeywords: Number.isInteger(q.minKeywords) ? q.minKeywords : undefined
       };
     });
   }
@@ -120,27 +141,44 @@ export class TestPhase {
   // Public API: Start phase
   async start() {
     // Play intro TTS (V1 pacing pattern)
+    // IMPORTANT: Do not await AudioEngine.playAudio() here. If the user presses
+    // Skip (AudioEngine.stop), AudioEngine intentionally removes HTMLAudio/WebAudio
+    // handlers, which can leave the underlying playback promise unresolved.
+    // We must advance the UI gate on the AudioEngine 'end' event (completed OR skipped).
     const intro = INTRO_PHRASES[Math.floor(Math.random() * INTRO_PHRASES.length)];
     this.#state = 'playing-intro';
     this.#emit('stateChange', { state: 'playing-intro' });
-    
+
+    const finishIntro = () => {
+      if (this.#state !== 'playing-intro') return;
+
+      // Show Go button gate (V1 pacing pattern)
+      this.#state = 'awaiting-go';
+      this.#timerMode = 'play';
+
+      // Start play timer (3 minutes exploration time)
+      if (this.#timerService) {
+        this.#timerService.startPlayTimer('test');
+      }
+
+      this.#emit('stateChange', { state: 'awaiting-go', timerMode: 'play' });
+    };
+
+    // Advance on both completed and skipped.
+    this.#setupAudioEndListener(() => {
+      finishIntro();
+    });
+
     try {
       const introAudio = await fetchTTS(intro);
-      await this.#audioEngine.playAudio(introAudio || '', [intro]);
+      this.#audioEngine.playAudio(introAudio || '', [intro]).catch((err) => {
+        console.error('[TestPhase] Intro playback error:', err);
+        finishIntro();
+      });
     } catch (err) {
       console.error('[TestPhase] Intro TTS failed:', err);
+      finishIntro();
     }
-    
-    // Show Go button gate (V1 pacing pattern)
-    this.#state = 'awaiting-go';
-    this.#timerMode = 'play';
-    
-    // Start play timer (3 minutes exploration time)
-    if (this.#timerService) {
-      this.#timerService.startPlayTimer('test');
-    }
-    
-    this.#emit('stateChange', { state: 'awaiting-go', timerMode: 'play' });
   }
   
   // Public API: User clicked Go button
@@ -150,11 +188,18 @@ export class TestPhase {
       return;
     }
     
+    // Remove the intro audio end listener so it cannot fire during questions
+    if (this.#audioEndListener) {
+      this.#audioEngine.off('end', this.#audioEndListener);
+      this.#audioEndListener = null;
+    }
+    
     // Transition to work mode
     this.#timerMode = 'work';
     if (this.#timerService) {
       this.#timerService.transitionToWork('test');
     }
+    this.#emit('stateChange', { state: 'working', timerMode: 'work' });
     
     this.#currentQuestionIndex = 0;
     this.#answers = [];
@@ -169,64 +214,128 @@ export class TestPhase {
       console.warn('[TestPhase] Cannot submit answer in state:', this.#state);
       return;
     }
-    
-    const question = this.#questions[this.#currentQuestionIndex];
-    const isCorrect = this.#checkAnswer(answer, question.answer, question.type);
-    
-    if (isCorrect) {
-      this.#score++;
+
+    // Prevent double-submits / submit+skip races while judging/feedback is in-flight.
+    if (this.#interactionInFlight) {
+      return;
     }
+    this.#interactionInFlight = true;
     
-    // Record answer
-    this.#answers.push({
-      questionId: question.id,
-      type: question.type,
-      question: question.question,
-      options: question.options,
-      userAnswer: answer,
-      correctAnswer: question.answer,
-      isCorrect: isCorrect
-    });
-    
-    this.#emit('answerSubmitted', {
-      questionIndex: this.#currentQuestionIndex,
-      isCorrect: isCorrect,
-      score: this.#score,
-      totalQuestions: this.#questions.length
-    });
-    
-    // Request granular snapshot save (V1 behavioral parity)
-    this.#emit('requestSnapshotSave', {
-      trigger: 'test-answer',
-      data: {
+    try {
+      const question = this.#questions[this.#currentQuestionIndex];
+      const acceptable = buildAcceptableList(question);
+      const isCorrect = await judgeAnswer(answer, acceptable, question);
+
+      // V1 Test rule: single attempt. If correct, praise and advance.
+      // If incorrect, speak the correct answer and advance.
+      if (isCorrect) {
+        this.#score++;
+      }
+
+      const correctText = deriveCorrectAnswerText(question, acceptable) || String(question.answer || '');
+
+      // Emit result (single-attempt test).
+      this.#emit('answerSubmitted', {
         questionIndex: this.#currentQuestionIndex,
+        isCorrect,
+        correctAnswer: isCorrect ? correctText : undefined,
         score: this.#score,
         totalQuestions: this.#questions.length
-      }
-    });
+      });
     
-    // Play praise for correct answers (V1 engagement pattern)
-    if (isCorrect) {
-      const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
+      // Request granular snapshot save (V1 behavioral parity)
+      this.#emit('requestSnapshotSave', {
+        trigger: 'test-answer',
+        data: {
+          questionIndex: this.#currentQuestionIndex,
+          score: this.#score,
+          totalQuestions: this.#questions.length
+        }
+      });
+
+      if (isCorrect) {
+        // Record answer
+        this.#answers.push({
+          questionId: question.id,
+          type: question.type,
+          question: question.question,
+          options: question.options,
+          userAnswer: answer,
+          correctAnswer: correctText,
+          isCorrect: true
+        });
+
+        // Play praise for correct answers (V1 engagement pattern)
+        const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
+        try {
+          // Ensure question TTS cannot overlap feedback if user answered mid-playback.
+          this.#audioEngine.stop();
+          this.#state = 'playing-feedback';
+          this.#emit('stateChange', { state: 'playing-feedback' });
+          const praiseUrl = await fetchTTS(praise);
+          await this.#audioEngine.playAudio(praiseUrl, [praise]);
+        } catch (error) {
+          console.warn('[TestPhase] Failed to play praise:', error);
+        }
+
+        // Move to next question or enter review
+        this.#advanceQuestion();
+        return;
+      }
+
+      // Incorrect: speak correct answer immediately, then advance (no retries)
+      const reveal = correctText ? `Not quite right. The correct answer is ${correctText}.` : "Not quite right.";
       try {
+        // Ensure question TTS cannot overlap feedback if user answered mid-playback.
+        this.#audioEngine.stop();
         this.#state = 'playing-feedback';
         this.#emit('stateChange', { state: 'playing-feedback' });
-        const praiseUrl = await fetchTTS(praise);
-        await this.#audioEngine.playAudio(praiseUrl, [praise]);
+        const revealUrl = await fetchTTS(reveal);
+        if (revealUrl) {
+          await this.#audioEngine.playAudio(revealUrl, [reveal]);
+        }
       } catch (error) {
-        console.warn('[TestPhase] Failed to play praise:', error);
+        console.warn('[TestPhase] Failed to play reveal:', error);
       }
+
+      // Record answer
+      this.#answers.push({
+        questionId: question.id,
+        type: question.type,
+        question: question.question,
+        options: question.options,
+        userAnswer: answer,
+        correctAnswer: correctText,
+        isCorrect: false
+      });
+
+      this.#emit('answerRevealed', {
+        questionIndex: this.#currentQuestionIndex,
+        correctAnswer: correctText
+      });
+
+      this.#advanceQuestion();
+    } finally {
+      this.#interactionInFlight = false;
     }
-    
-    // Move to next question or enter review
-    this.#advanceQuestion();
   }
   
   // Public API: Skip question (counts as incorrect)
   skip() {
     if (this.#state !== 'awaiting-answer') return;
+
+    // Prevent skip racing with an in-flight submit.
+    if (this.#interactionInFlight) {
+      return;
+    }
+    this.#interactionInFlight = true;
     
     const question = this.#questions[this.#currentQuestionIndex];
+
+    // Stop any current question TTS so it cannot continue after skipping.
+    try {
+      this.#audioEngine.stop();
+    } catch {}
     
     // Record as skipped (incorrect)
     this.#answers.push({
@@ -246,6 +355,7 @@ export class TestPhase {
     });
     
     this.#advanceQuestion();
+    this.#interactionInFlight = false;
   }
   
   // Public API: Start review
@@ -327,14 +437,15 @@ export class TestPhase {
   
   // Private: Question playback
   async #playCurrentQuestion() {
+    const playbackToken = ++this.#questionPlaybackToken;
+
     if (this.#currentQuestionIndex >= this.#questions.length) {
       this.#enterReview();
       return;
     }
     
-    const question = this.#questions[this.#currentQuestionIndex];
-    
-    this.#state = 'playing-question';
+    const questionIndex = this.#currentQuestionIndex;
+    const question = this.#questions[questionIndex];
     
     this.#emit('questionStart', {
       questionIndex: this.#currentQuestionIndex,
@@ -342,55 +453,50 @@ export class TestPhase {
       totalQuestions: this.#questions.length
     });
     
-    // Listen for audio end
-    this.#setupAudioEndListener(() => {
-      this.#state = 'awaiting-answer';
-      this.#emit('questionReady', {
-        questionIndex: this.#currentQuestionIndex,
-        question: question
-      });
+    // V1 Test pattern: Set awaiting-answer BEFORE TTS so buttons appear immediately
+    // User can answer while question is still being read aloud
+    this.#state = 'awaiting-answer';
+    this.#emit('questionReady', {
+      questionIndex: this.#currentQuestionIndex,
+      question: question
     });
     
+    const spokenQuestion = ensureQuestionMark(formatQuestionForSpeech(question, { layout: 'multiline' }));
+
     // Check cache first (instant if prefetched)
-    let audioBase64 = ttsCache.get(question.question);
+    let audioBase64 = ttsCache.get(spokenQuestion);
     
     if (!audioBase64) {
       // Cache miss - fetch synchronously
-      audioBase64 = await fetchTTS(question.question);
+      audioBase64 = await fetchTTS(spokenQuestion);
       if (audioBase64) {
-        ttsCache.set(question.question, audioBase64);
+        ttsCache.set(spokenQuestion, audioBase64);
       }
+    }
+
+    // If the user mashed skip/next and we advanced while TTS was loading, do not
+    // play stale audio for an old question.
+    if (
+      playbackToken !== this.#questionPlaybackToken ||
+      this.#currentQuestionIndex !== questionIndex ||
+      this.#state === 'complete' ||
+      this.#state === 'reviewing'
+    ) {
+      return;
     }
     
     // Prefetch next question in background (eliminates wait on Next click)
     const nextIndex = this.#currentQuestionIndex + 1;
     if (nextIndex < this.#questions.length) {
-      const nextQuestion = this.#questions[nextIndex].question;
-      ttsCache.prefetch(nextQuestion);
+      const nextQ = this.#questions[nextIndex];
+      const nextSpoken = ensureQuestionMark(formatQuestionForSpeech(nextQ, { layout: 'multiline' }));
+      ttsCache.prefetch(nextSpoken);
     }
     
-    await this.#audioEngine.playAudio(audioBase64 || '', [question.question]);
-  }
-  
-  // Private: Answer validation
-  #checkAnswer(userAnswer, correctAnswer, type) {
-    if (!userAnswer || !correctAnswer) return false;
-    
-    // Normalize for comparison
-    const normalize = (str) => String(str).toLowerCase().trim().replace(/\s+/g, ' ');
-    
-    const normalizedUser = normalize(userAnswer);
-    const normalizedCorrect = normalize(correctAnswer);
-    
-    if (type === 'fill') {
-      // Fill-in-blank: exact or partial match
-      if (normalizedUser === normalizedCorrect) return true;
-      if (normalizedUser.includes(normalizedCorrect)) return true;
-      return false;
-    }
-    
-    // MC/TF: exact match
-    return normalizedUser === normalizedCorrect;
+    // TTS plays in background - don't await so user can answer while listening
+    this.#audioEngine.playAudio(audioBase64 || '', [spokenQuestion]).catch(err => {
+      console.error('[TestPhase] Question TTS playback error:', err);
+    });
   }
   
   // Private: Question progression

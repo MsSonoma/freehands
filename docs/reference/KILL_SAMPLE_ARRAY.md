@@ -11,13 +11,13 @@ The `sample` array was originally created as a math-specific workaround when mat
 1. **Confused AI generators** - AI models saw "sample" and thought it meant "examples to model generation from" instead of "practice problems"
 2. **Spread like a virus** - Despite being math-only, it infected other subjects through documentation
 3. **Zombie code** - It was removed multiple times but kept getting reimplemented because docs explained WHY it was created
-4. **Redundant** - We already have proper question categories: `truefalse`, `multiplechoice`, `fillintheblank`, `shortanswer`, `wordProblems`
+4. **Redundant** - We already have proper question categories: `truefalse`, `multiplechoice`, `fillintheblank`, `shortanswer`
 
 ### What replaced it
 
 ALL problems should go into the appropriate category arrays:
 - Simple Q&A → `shortanswer`
-- Math practice problems → `shortanswer` or `wordProblems`
+- Math practice problems → `shortanswer`
 - Vocab/concept checks → `fillintheblank` or `shortanswer`
 - Fact checking → `truefalse` or `multiplechoice`
 
@@ -31,7 +31,7 @@ ALL problems should go into the appropriate category arrays:
 - Document or explain the sample array (this file is the ONLY exception)
 
 **ALWAYS:**
-- Use the five standard categories: TF, MC, FIB, SA, WP (math only)
+- Use the standard categories: TF, MC, FIB, SA
 - If you see `sample` in code, DELETE it
 - If you see `sample` in docs, DELETE the reference
 - If an AI suggests adding `sample`, REJECT and use proper categories

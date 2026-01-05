@@ -21,6 +21,8 @@
 
 import { fetchTTS } from './services';
 import { ttsCache } from '../utils/ttsCache';
+import { buildAcceptableList, judgeAnswer } from './judging';
+import { deriveCorrectAnswerText } from '../utils/questionFormatting';
 
 // V1 praise phrases for correct answers
 const PRAISE_PHRASES = [
@@ -48,6 +50,7 @@ export class ExercisePhase {
   #eventBus = null;
   #timerService = null;
   #questions = [];
+  #wrongAttempts = new Map();
   
   #state = 'idle'; // 'idle' | 'playing-question' | 'awaiting-answer' | 'complete'
   #currentQuestionIndex = 0;
@@ -86,12 +89,26 @@ export class ExercisePhase {
       }
       
       // Structured question
+      const opts = Array.isArray(q.options) ? q.options : (Array.isArray(q.choices) ? q.choices : []);
+      const correctIndex = typeof q.correct === 'number'
+        ? q.correct
+        : (typeof q.answer === 'number' ? q.answer : null);
+
+      // Prefer answer text when present; if answer is numeric index, map to option text.
+      let answer = q.answer ?? q.correct ?? '';
+      if (typeof answer === 'number' && Number.isFinite(answer) && opts && opts.length) {
+        const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.:\)\-]\s*/i;
+        const raw = String(opts[answer] ?? '').trim();
+        answer = raw.replace(anyLabel, '').trim();
+      }
+
       return {
         id: q.id || `q${index}`,
         type: q.type || 'mc', // 'mc' (multiple choice) or 'tf' (true/false)
         question: q.question || q.text || '',
-        options: q.options || [],
-        answer: q.answer || q.correct || ''
+        options: opts,
+        answer,
+        correct: correctIndex
       };
     });
   }
@@ -178,26 +195,41 @@ export class ExercisePhase {
     }
     
     const question = this.#questions[this.#currentQuestionIndex];
-    const isCorrect = this.#checkAnswer(answer, question.answer);
+    const acceptable = buildAcceptableList(question);
+    const isCorrect = await judgeAnswer(answer, acceptable, question);
+
+    // Track wrong attempts before emitting so attempt count is accurate.
+    let attempts = this.#wrongAttempts.get(question.id) || 0;
+    if (!isCorrect) {
+      attempts += 1;
+      this.#wrongAttempts.set(question.id, attempts);
+    } else {
+      this.#wrongAttempts.delete(question.id);
+      attempts = 0;
+    }
     
     if (isCorrect) {
       this.#score++;
     }
+
+    const correctText = deriveCorrectAnswerText(question, acceptable) || String(question.answer || '');
     
     // Record answer
     this.#answers.push({
       questionId: question.id,
       question: question.question,
       userAnswer: answer,
-      correctAnswer: question.answer,
+      correctAnswer: correctText,
       isCorrect: isCorrect
     });
     
     this.#emit('answerSubmitted', {
       questionIndex: this.#currentQuestionIndex,
       isCorrect: isCorrect,
+      attempts,
       score: this.#score,
-      totalQuestions: this.#questions.length
+      totalQuestions: this.#questions.length,
+      correctAnswer: correctText
     });
     
     // Request granular snapshot save (V1 behavioral parity)
@@ -223,6 +255,18 @@ export class ExercisePhase {
       }
     }
     
+    if (!isCorrect) {
+      // After three tries, reveal and advance
+      if (attempts >= 3) {
+        this.#emit('answerRevealed', {
+          questionIndex: this.#currentQuestionIndex,
+          correctAnswer: correctText
+        });
+        this.#advanceQuestion();
+      }
+      return;
+    }
+
     // Move to next question or complete
     this.#advanceQuestion();
   }
@@ -245,7 +289,8 @@ export class ExercisePhase {
     this.#emit('questionSkipped', {
       questionIndex: this.#currentQuestionIndex,
       score: this.#score,
-      totalQuestions: this.#questions.length
+      totalQuestions: this.#questions.length,
+      correctAnswer: question.answer
     });
     
     this.#advanceQuestion();
@@ -286,21 +331,18 @@ export class ExercisePhase {
     
     const question = this.#questions[this.#currentQuestionIndex];
     
-    this.#state = 'playing-question';
-    
     this.#emit('questionStart', {
       questionIndex: this.#currentQuestionIndex,
       question: question,
       totalQuestions: this.#questions.length
     });
     
-    // Listen for audio end
-    this.#setupAudioEndListener(() => {
-      this.#state = 'awaiting-answer';
-      this.#emit('questionReady', {
-        questionIndex: this.#currentQuestionIndex,
-        question: question
-      });
+    // V1 Test pattern: Set awaiting-answer BEFORE TTS so buttons appear immediately
+    // User can answer while question is still being read aloud
+    this.#state = 'awaiting-answer';
+    this.#emit('questionReady', {
+      questionIndex: this.#currentQuestionIndex,
+      question: question
     });
     
     // Check cache first (instant if prefetched)
@@ -321,16 +363,10 @@ export class ExercisePhase {
       ttsCache.prefetch(nextQuestion);
     }
     
-    await this.#audioEngine.playAudio(audioBase64 || '', [question.question]);
-  }
-  
-  // Private: Answer validation
-  #checkAnswer(userAnswer, correctAnswer) {
-    if (!userAnswer || !correctAnswer) return false;
-    
-    // Normalize for comparison
-    const normalize = (str) => String(str).toLowerCase().trim();
-    return normalize(userAnswer) === normalize(correctAnswer);
+    // TTS plays in background - don't await so user can answer while listening
+    this.#audioEngine.playAudio(audioBase64 || '', [question.question]).catch(err => {
+      console.error('[ExercisePhase] Question TTS playback error:', err);
+    });
   }
   
   // Private: Question progression

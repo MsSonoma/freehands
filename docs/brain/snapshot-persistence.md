@@ -51,6 +51,45 @@ With guard in place, completion cleanup is atomic - either all persistence clear
 3. If database found, write to localStorage for next time
 4. Apply state exactly, no post-restore modifications
 
+### V2 Resume Flow
+On session load:
+1. **SnapshotService.initialize()** loads existing snapshot during mount effect (async)
+2. If snapshot found:
+   - Sets `resumePhase` state to `snapshot.currentPhase`
+   - Sets `offerResume` to true (unless snapshot is at beginning: idle/discussion phase)
+   - Displays Resume and Start Over buttons in footer, hides Begin button
+3. If no snapshot or snapshot at beginning:
+   - Sets `offerResume` to false
+   - Shows normal Begin button
+4. Sets `snapshotLoaded` to true when load completes
+
+**Resume button:**
+- Hides Resume/Restart buttons
+- Calls `startSession()` which checks `resumePhase` and calls `orchestrator.skipToPhase(resumePhase)`
+- Phase controller restores granular state from `snapshot.phaseData[phase]`
+- Timer state restored via `timerServiceRef.current.restoreState(snapshot.timerState)`
+
+**Start Over button:**
+- Confirms with user (cannot be reversed)
+- Calls `snapshotServiceRef.current.deleteSnapshot()` to clear localStorage and database
+- Clears `resumePhase` state to null
+- Calls `startSession()` which starts fresh from discussion/teaching (no resume)
+
+### V2 Save Flow
+On phase transition:
+1. **PhaseOrchestrator** emits `phaseChange` event with new phase name
+2. **SessionPageV2** calls `savePhaseCompletion(phase)` immediately
+   - This updates `SnapshotService.#snapshot.currentPhase` so granular saves know which phase we're in
+3. Phase controller starts and emits `requestSnapshotSave` events for each action
+4. **saveProgress()** uses `this.#snapshot.currentPhase` to store data under correct phase key
+
+Without step 2, all granular saves use 'idle' as currentPhase and snapshots are saved to wrong phase.
+
+**Key files (V2):**
+- [SessionPageV2.jsx](../src/app/session/v2/SessionPageV2.jsx) lines 548-603 (SnapshotService mount + load), 2467-2517 (resume check in startSession)
+- [SnapshotService.jsx](../src/app/session/v2/SnapshotService.jsx) - async save/load with Supabase fallback to localStorage
+- [PhaseOrchestrator.jsx](../src/app/session/v2/PhaseOrchestrator.jsx) - skipToPhase method for resume
+
 ## Checkpoint Gates (Where Snapshots Save)
 
 ### Opening Phase
@@ -141,3 +180,72 @@ When user switches devices:
 5. Subsequent saves/restores use localStorage (fast)
 
 **Session conflicts** (same learner+lesson on two devices simultaneously): Handled by session-takeover system, see [session-takeover.md](session-takeover.md). Takeover dialog appears at first gate when conflict detected, requires PIN validation.
+## V2 Assessment Print System
+
+**Integration:** V2 SessionPageV2 uses V1's `useAssessmentDownloads` hook for worksheet/test PDF generation and persistence.
+
+### Architecture
+
+**Persistent Arrays:**
+- `generatedWorksheet` and `generatedTest` state variables hold shuffled question arrays
+- Arrays persist until user presses red "Refresh" button in HeaderBar dropdown
+- Stored in `assessmentStore` (localStorage + Supabase Storage)
+- Key format: `lesson_assessments:{learnerId}:{lessonKey}`
+
+**Event-Driven Print:**
+HeaderBar dropdown dispatches custom events:
+- `'ms:print:worksheet'` → PDF of worksheet questions (student-facing)
+- `'ms:print:test'` → PDF of test questions (student-facing)
+- `'ms:print:combined'` → Facilitator Key (notes, vocab, worksheet+test Q&A)
+- `'ms:print:refresh'` → Regenerates arrays, clears persistence, resets progress
+
+V2 listens for these events in useEffect hook (matches V1 pattern):
+```javascript
+useEffect(() => {
+  const onWs = () => { try { handleDownloadWorksheet(); } catch {} };
+  const onTest = () => { try { handleDownloadTest(); } catch {} };
+  const onCombined = () => { try { handleDownloadWorksheetTestCombined(); } catch {} };
+  const onRefresh = () => { try { handleRefreshWorksheetAndTest(); } catch {} };
+  
+  window.addEventListener('ms:print:worksheet', onWs);
+  window.addEventListener('ms:print:test', onTest);
+  window.addEventListener('ms:print:combined', onCombined);
+  window.addEventListener('ms:print:refresh', onRefresh);
+  
+  return () => {
+    window.removeEventListener('ms:print:worksheet', onWs);
+    // ... cleanup
+  };
+}, [handleDownloadWorksheet, handleDownloadTest, ...]);
+```
+
+### Key Files
+
+- `src/app/session/v2/SessionPageV2.jsx` (lines 261-268, 325-398, 628-680)
+  - Generated assessment state: `generatedWorksheet`, `generatedTest`, `downloadError`
+  - Helper functions: `getAssessmentStorageKey`, `createPdfForItems`, `shareOrPreviewPdf`, `reserveWords`
+  - Hook initialization with learner targets
+  - Print event listeners
+- `src/app/session/hooks/useAssessmentDownloads.js`
+  - Handles PDF generation (jsPDF)
+  - Manages assessment persistence (saveAssessments, clearAssessments)
+  - Regenerates arrays on refresh
+- `src/app/session/assessment/assessmentStore.js`
+  - localStorage + Supabase dual-write for cross-device access
+- `src/app/HeaderBar.js` (lines 614-685)
+  - Hamburger dropdown buttons dispatch print events
+
+**Implementation Notes:**
+- `createPdfForItems` lives in SessionPageV2 as a `useCallback` (jsPDF). Keep it defined above `useAssessmentDownloads` initialization to avoid TDZ/build errors; it uses adaptive font sizing and multi-page fallback (V1 parity).
+
+### Refresh Behavior
+
+When user clicks red "Refresh" button:
+1. PIN validation via `ensurePinAllowed('refresh')`
+2. Clear persisted arrays: `clearAssessments(key, { learnerId })`
+3. Reset state: `setGeneratedWorksheet(null)`, `setGeneratedTest(null)`
+4. Clear worksheet/test progress indices
+5. Regenerate: New shuffle from lesson data pools
+6. Save to storage: `saveAssessments(key, { worksheet, test }, { learnerId })`
+
+Arrays do NOT regenerate on page refresh - they restore from storage. Only explicit "Refresh" button regenerates.

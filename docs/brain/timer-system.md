@@ -13,6 +13,8 @@
 
 **Rationale**: Removing play timer from discussion phase eliminates infinite play timer exploit (learner could refresh during discussion to reset play timer indefinitely without starting teaching).
 
+**Work timer spans discussion + teaching**: The discussion work timer starts when the discussion phase begins and runs through the entire teaching phase. It is completed when teaching finishes, so the countdown must **not** be stopped at `discussionComplete`. Completing it early will freeze the visible timer as soon as the teaching controls appear.
+
 **Timer Modes:**
 1. **Play Timer** (green) - Expected to use full time; learner can interact with Ask, Riddle, Poem, Story, Fill-in-Fun opening actions
 2. **Work Timer** (amber/red) - Learner should complete phase; input focused on lesson questions
@@ -68,6 +70,23 @@
 - "Go Now" button to skip countdown
 - Auto-advances to work mode when countdown reaches 0
 - Calls `timerService.transitionToWork(phase)` on transition
+
+**V1 Implementation (page.js):**
+- Parent-controlled via `showPlayTimeExpired` and `playExpiredPhase` state
+- Rendered outside main container (position: fixed, inset: 0, zIndex: 10005)
+- Props: `isOpen`, `phase`, `onComplete`, `onStartNow`
+- Full-screen backdrop blur overlay
+
+**V2 Implementation (SessionPageV2.jsx):**
+- Parent-controlled via `showPlayTimeExpired` and `playExpiredPhase` state
+- Event listener for `playTimerExpired` in TimerService useEffect
+- Rendered outside main container at end of component (position: fixed, inset: 0, zIndex: 10005)
+- Props: `isOpen`, `phase`, `onComplete` (handlePlayExpiredComplete), `onStartNow` (handlePlayExpiredStartNow)
+- Full-screen backdrop blur overlay matching V1 styling exactly
+
+**V2 Key Files:**
+- `src/app/session/v2/PlayTimeExpiredOverlay.jsx` - Overlay component (V1 parity)
+- `src/app/session/v2/SessionPageV2.jsx` - State, event listeners, handlers, render
 
 **Persistence:**
 - `serialize()` includes playTimers state (phase, elapsed, timeLimit, expired)

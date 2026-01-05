@@ -28,7 +28,6 @@ Before making changes to core systems:
 
 - **Mandatory sequence**: Code edit → Brain update → Changelog → Commit (NEVER commit without brain update)
 - **Never append to brain files** (always rewrite sections completely to kill zombies)
-- **No fallback unless requested**: Do not add silent defaults, compatibility fallbacks, or schema/behavior “best-effort” logic unless the USER explicitly asks for fallback/compatibility mode. If required data is missing, fail loudly or ask a clarifying question.
 - **Check manifest first**: if system is already listed, update that file, don't create duplicate
 - **Brain updates happen BEFORE commits** (not after, not when user asks - immediately after code changes)
 - **If no code changes**: Inform user no brain update needed and proceed normally
@@ -116,5 +115,3 @@ Additional guidelines:
 ---
 
 **Remember**: When in doubt, consult the brain files. They are canonical truth.
-
-```

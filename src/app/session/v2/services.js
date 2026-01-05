@@ -99,6 +99,12 @@ export async function loadLesson(lessonFilename, subject = 'math') {
       grade: grade,
       vocab: lessonData.vocab || [],
       examples: lessonData.examples || lessonData.example || [],
+      // Question pools for comprehension/exercise (V1 pattern)
+      truefalse: lessonData.truefalse || [],
+      multiplechoice: lessonData.multiplechoice || [],
+      fillintheblank: lessonData.fillintheblank || [],
+      shortanswer: lessonData.shortanswer || [],
+      // Legacy single-question format (deprecated)
       comprehension: lessonData.comprehension || {},
       exercise: lessonData.exercise || [],
       worksheet: lessonData.worksheet || [],

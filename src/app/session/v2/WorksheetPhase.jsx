@@ -22,6 +22,9 @@
 
 import { fetchTTS } from './services';
 import { ttsCache } from '../utils/ttsCache';
+import { buildAcceptableList, judgeAnswer } from './judging';
+import { deriveCorrectAnswerText } from '../utils/questionFormatting';
+import { HINT_FIRST, HINT_SECOND, pickHint } from '../utils/feedbackMessages';
 
 // Praise phrases for correct answers (matches V1 engagement pattern)
 const PRAISE_PHRASES = [
@@ -49,6 +52,7 @@ export class WorksheetPhase {
   #eventBus = null;
   #timerService = null;
   #questions = [];
+  #wrongAttempts = new Map();
   
   #state = 'idle'; // 'idle' | 'playing-question' | 'awaiting-answer' | 'complete'
   #currentQuestionIndex = 0;
@@ -79,6 +83,7 @@ export class WorksheetPhase {
         // Simple string question
         return {
           id: `q${index}`,
+          sourceType: 'fib',
           question: q,
           answer: ''
         };
@@ -87,8 +92,16 @@ export class WorksheetPhase {
       // Structured question
       return {
         id: q.id || `q${index}`,
+        sourceType: 'fib',
         question: q.question || q.text || '',
-        answer: q.answer || q.correct || '',
+        // Preserve all answer schema variants so buildAcceptableList/judgeAnswer
+        // can behave consistently with other phases.
+        expectedAny: Array.isArray(q.expectedAny) ? q.expectedAny : undefined,
+        expected: q.expected ?? undefined,
+        answer: q.answer ?? q.correct ?? '',
+        correct: (typeof q.correct === 'number' ? q.correct : undefined),
+        choices: Array.isArray(q.choices) ? q.choices : undefined,
+        options: Array.isArray(q.options) ? q.options : undefined,
         hint: q.hint || ''
       };
     });
@@ -160,6 +173,7 @@ export class WorksheetPhase {
     if (this.#timerService) {
       this.#timerService.transitionToWork('worksheet');
     }
+    this.#emit('stateChange', { state: 'working', timerMode: 'work' });
     
     this.#currentQuestionIndex = 0;
     this.#answers = [];
@@ -176,25 +190,28 @@ export class WorksheetPhase {
     }
     
     const question = this.#questions[this.#currentQuestionIndex];
-    const isCorrect = this.#checkAnswer(answer, question.answer);
-    
-    if (isCorrect) {
+    const acceptable = buildAcceptableList(question);
+    const isCorrect = await judgeAnswer(answer, acceptable, question);
+
+    // Track wrong attempts so hint/reveal logic matches V1/V2 comprehension.
+    let attempts = this.#wrongAttempts.get(question.id) || 0;
+    if (!isCorrect) {
+      attempts += 1;
+      this.#wrongAttempts.set(question.id, attempts);
+    } else {
+      this.#wrongAttempts.delete(question.id);
+      attempts = 0;
       this.#score++;
     }
-    
-    // Record answer
-    this.#answers.push({
-      questionId: question.id,
-      question: question.question,
-      userAnswer: answer,
-      correctAnswer: question.answer,
-      isCorrect: isCorrect
-    });
-    
+
+    const correctText = deriveCorrectAnswerText(question, acceptable) || String(question.answer || '');
+
+    // Emit attempt result, but do NOT reveal the correct answer on early misses.
     this.#emit('answerSubmitted', {
       questionIndex: this.#currentQuestionIndex,
-      isCorrect: isCorrect,
-      correctAnswer: question.answer,
+      isCorrect,
+      correctAnswer: isCorrect ? correctText : undefined,
+      attempts,
       score: this.#score,
       totalQuestions: this.#questions.length
     });
@@ -209,8 +226,17 @@ export class WorksheetPhase {
       }
     });
     
-    // Play praise for correct answers (V1 engagement pattern)
     if (isCorrect) {
+      // Record final answer
+      this.#answers.push({
+        questionId: question.id,
+        question: question.question,
+        userAnswer: answer,
+        correctAnswer: correctText,
+        isCorrect: true
+      });
+
+      // Play praise for correct answers (V1 engagement pattern)
       const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
       try {
         this.#state = 'playing-feedback';
@@ -220,9 +246,53 @@ export class WorksheetPhase {
       } catch (error) {
         console.warn('[WorksheetPhase] Failed to play praise:', error);
       }
+
+      // Move to next question or complete
+      this.#advanceQuestion();
+      return;
     }
-    
-    // Move to next question or complete
+
+    // Incorrect: hint, hint, reveal on 3rd (spoken feedback only)
+    if (attempts < 3) {
+      const qKey = String(question.id || this.#currentQuestionIndex);
+      const hint = attempts === 1 ? pickHint(HINT_FIRST, qKey) : pickHint(HINT_SECOND, qKey);
+      try {
+        const hintUrl = await fetchTTS(hint);
+        if (hintUrl) {
+          await this.#audioEngine.playAudio(hintUrl, [hint]);
+        }
+      } catch (error) {
+        console.warn('[WorksheetPhase] Failed to play hint:', error);
+      }
+      return;
+    }
+
+    // Reveal and advance
+    this.#wrongAttempts.delete(question.id);
+    const reveal = correctText ? `The correct answer is ${correctText}.` : "Let's move on.";
+    try {
+      const revealUrl = await fetchTTS(reveal);
+      if (revealUrl) {
+        await this.#audioEngine.playAudio(revealUrl, [reveal]);
+      }
+    } catch (error) {
+      console.warn('[WorksheetPhase] Failed to play reveal:', error);
+    }
+
+    // Record final answer as incorrect after 3 attempts
+    this.#answers.push({
+      questionId: question.id,
+      question: question.question,
+      userAnswer: answer,
+      correctAnswer: correctText,
+      isCorrect: false
+    });
+
+    this.#emit('answerRevealed', {
+      questionIndex: this.#currentQuestionIndex,
+      correctAnswer: correctText
+    });
+
     this.#advanceQuestion();
   }
   
@@ -286,21 +356,18 @@ export class WorksheetPhase {
     
     const question = this.#questions[this.#currentQuestionIndex];
     
-    this.#state = 'playing-question';
-    
     this.#emit('questionStart', {
       questionIndex: this.#currentQuestionIndex,
       question: question,
       totalQuestions: this.#questions.length
     });
     
-    // Listen for audio end
-    this.#setupAudioEndListener(() => {
-      this.#state = 'awaiting-answer';
-      this.#emit('questionReady', {
-        questionIndex: this.#currentQuestionIndex,
-        question: question
-      });
+    // V1 Test pattern: Set awaiting-answer BEFORE TTS so input appears immediately
+    // User can answer while question is still being read aloud
+    this.#state = 'awaiting-answer';
+    this.#emit('questionReady', {
+      questionIndex: this.#currentQuestionIndex,
+      question: question
     });
     
     // Check cache first (instant if prefetched)
@@ -321,27 +388,10 @@ export class WorksheetPhase {
       ttsCache.prefetch(nextQuestion);
     }
     
-    await this.#audioEngine.playAudio(audioBase64 || '', [question.question]);
-  }
-  
-  // Private: Answer validation
-  #checkAnswer(userAnswer, correctAnswer) {
-    if (!userAnswer || !correctAnswer) return false;
-    
-    // Normalize for comparison (case-insensitive, trim whitespace)
-    const normalize = (str) => String(str).toLowerCase().trim().replace(/\s+/g, ' ');
-    
-    const normalizedUser = normalize(userAnswer);
-    const normalizedCorrect = normalize(correctAnswer);
-    
-    // Exact match after normalization
-    if (normalizedUser === normalizedCorrect) return true;
-    
-    // Allow partial match if user answer contains the correct answer
-    // (e.g., "The answer is photosynthesis" matches "photosynthesis")
-    if (normalizedUser.includes(normalizedCorrect)) return true;
-    
-    return false;
+    // TTS plays in background - don't await so user can answer while listening
+    this.#audioEngine.playAudio(audioBase64 || '', [question.question]).catch(err => {
+      console.error('[WorksheetPhase] Question TTS playback error:', err);
+    });
   }
   
   // Private: Question progression

@@ -59,24 +59,26 @@ export class TimerService {
     this.workPhaseInterval = null;
     this.currentWorkPhase = null;
     
-    // Work phase time limits (seconds)
+    // Work phase time limits (seconds) - all phases have work timers
     this.workPhaseTimeLimits = options.workPhaseTimeLimits || {
-      exercise: 180,   // 3 minutes
-      worksheet: 300,  // 5 minutes
-      test: 600        // 10 minutes
+      discussion: 300,    // 5 minutes
+      comprehension: 180, // 3 minutes
+      exercise: 180,      // 3 minutes
+      worksheet: 300,     // 5 minutes
+      test: 600           // 10 minutes
     };
     
-    // Golden key tracking
+    // Golden key tracking (only counts comprehension, exercise, worksheet, test)
     this.onTimeCompletions = 0;
     this.goldenKeyAwarded = false;
     
-    // SessionStorage cache for refresh recovery
+    // SessionStorage cache for refresh recovery (not used - use explicit restoreState instead)
     this.lessonKey = options.lessonKey || null;
     this.phase = options.phase || null;
     this.mode = 'play'; // play or work
     
-    // Restore from sessionStorage if available
-    this.#loadFromSessionStorage();
+    // Don't auto-restore from sessionStorage - only restore explicitly via restoreState()
+    // this prevents stale timer data from previous lessons leaking into new sessions
     
     // Bind public methods
     this.startSessionTimer = this.startSessionTimer.bind(this);
@@ -199,8 +201,6 @@ export class TimerService {
       clearInterval(this.playTimerInterval);
       this.playTimerInterval = null;
     }
-    
-    this.#saveToSessionStorage();
   }
   
   /**
@@ -217,10 +217,11 @@ export class TimerService {
   
   /**
    * Start work phase timer
-   * @param {string} phase - Phase name: 'exercise' | 'worksheet' | 'test'
+   * @param {string} phase - Phase name: 'discussion' | 'comprehension' | 'exercise' | 'worksheet' | 'test'
    */
   startWorkPhaseTimer(phase) {
-    if (!['exercise', 'worksheet', 'test'].includes(phase)) {
+    const validPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+    if (!validPhases.includes(phase)) {
       console.warn('[TimerService] Invalid work phase:', phase);
       return;
     }
@@ -250,7 +251,7 @@ export class TimerService {
     
     // Start work phase ticker if not running
     if (!this.workPhaseInterval) {
-      this.workPhaseInterval = setInterval(this.#tickWorkPhaseTimers, 1000);
+      this.workPhaseInterval = setInterval(this.#tickWorkPhaseTimers.bind(this), 1000);
     }
   }
   
@@ -288,16 +289,17 @@ export class TimerService {
       formatted: this.#formatTime(elapsed)
     });
     
-    // Track on-time completions for golden key
-    if (onTime) {
+    // Track on-time completions for golden key (comprehension, exercise, worksheet, test count)
+    const goldenKeyPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
+    if (onTime && goldenKeyPhases.includes(phase)) {
       this.onTimeCompletions++;
       
-      // Check golden key eligibility (3 on-time work phases)
+      // Check golden key eligibility (3 on-time work phases from comp/exercise/worksheet/test)
       if (this.onTimeCompletions >= 3 && !this.goldenKeyAwarded) {
         this.goldenKeyAwarded = true;
         this.eventBus.emit('goldenKeyEligible', {
           completedPhases: Array.from(this.workPhaseTimers.keys())
-            .filter(p => this.workPhaseTimers.get(p).onTime)
+            .filter(p => goldenKeyPhases.includes(p) && this.workPhaseTimers.get(p).onTime)
         });
       }
     }
@@ -402,6 +404,14 @@ export class TimerService {
   }
   
   /**
+   * Get state for snapshot persistence (alias for serialize)
+   * @returns {Object}
+   */
+  getState() {
+    return this.serialize();
+  }
+  
+  /**
    * Restore state from snapshot
    * @param {Object} data - Serialized state
    */
@@ -451,6 +461,14 @@ export class TimerService {
   }
   
   /**
+   * Restore state from snapshot (alias for restore)
+   * @param {Object} data - Serialized state
+   */
+  restoreState(data) {
+    this.restore(data);
+  }
+  
+  /**
    * Tick session timer
    * @private
    */
@@ -464,8 +482,6 @@ export class TimerService {
       elapsed: this.sessionElapsed,
       formatted: this.#formatTime(this.sessionElapsed)
     });
-    
-    this.#saveToSessionStorage();
   }
   
   /**
@@ -481,6 +497,19 @@ export class TimerService {
     const now = Date.now();
     timer.elapsed = Math.floor((now - timer.startTime) / 1000);
     const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
+    
+    // Write to sessionStorage for TimerControlOverlay compatibility
+    if (this.lessonKey && this.currentPlayPhase) {
+      const storageKey = `session_timer_state:${this.lessonKey}:${this.currentPlayPhase}:play`;
+      try {
+        sessionStorage.setItem(storageKey, JSON.stringify({
+          elapsedSeconds: timer.elapsed,
+          startTime: timer.startTime,
+          totalMinutes: Math.ceil(timer.timeLimit / 60),
+          pausedAt: null
+        }));
+      } catch {}
+    }
     
     this.eventBus.emit('playTimerTick', {
       phase: this.currentPlayPhase,
@@ -501,8 +530,6 @@ export class TimerService {
       // Stop the play timer
       this.stopPlayTimer(this.currentPlayPhase);
     }
-    
-    this.#saveToSessionStorage();
   }
   
   /**
@@ -518,11 +545,21 @@ export class TimerService {
     const now = Date.now();
     timer.elapsed = Math.floor((now - timer.startTime) / 1000);
     
-    // Save to sessionStorage after each tick
-    this.#saveToSessionStorage();
-    
     const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
     const onTime = timer.elapsed <= timer.timeLimit;
+    
+    // Write to sessionStorage for TimerControlOverlay compatibility
+    if (this.lessonKey && this.currentWorkPhase) {
+      const storageKey = `session_timer_state:${this.lessonKey}:${this.currentWorkPhase}:work`;
+      try {
+        sessionStorage.setItem(storageKey, JSON.stringify({
+          elapsedSeconds: timer.elapsed,
+          startTime: timer.startTime,
+          totalMinutes: Math.ceil(timer.timeLimit / 60),
+          pausedAt: null
+        }));
+      } catch {}
+    }
     
     this.eventBus.emit('workPhaseTimerTick', {
       phase: this.currentWorkPhase,

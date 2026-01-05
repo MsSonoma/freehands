@@ -13,6 +13,7 @@ After first round of fixes, second comprehensive audit found 6 additional critic
 
 **Post-audit UX/telemetry fixes (2026-01-01)**
 - Teaching controls (Next/Repeat/Restart/Skip) are anchored in the fixed footer instead of overlaid on the video to match V1 footer placement and avoid covering the video.
+- Worksheet Q&A controls are anchored in the fixed footer (answer input + submit/skip) and must not render as on-video overlays.
 - `captionChange` payloads from HTMLAudio now emit `{ index, text }`, keeping transcript rendering consistent with WebAudio/Synthetic paths.
 - Session timer interval is bound to the TimerService instance, ensuring `sessionTimerTick` events fire and the on-screen timer advances.
 - HTMLAudio path emits the first caption immediately so transcripts populate as soon as playback starts (no blank transcript on first line).
@@ -98,6 +99,98 @@ V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical 
 
 ## V2 Architectural Decisions
 
+### Phase Entry Gating (Begin Buttons) (2026-01-02)
+
+**Decision:** Each Q&A phase (Comprehension, Exercise, Worksheet, Test) uses an explicit **Begin** gate before showing Opening Actions and the **Go** control.
+
+**Rules:**
+- The Begin gate state must be **reset on every phase transition**.
+- Phase entry must **never** auto-complete a Q&A phase or depend on question array contents. Phase entry must always reach the Begin gate.
+- Timeline phase navigation (clicking a phase tile) is allowed, but must be **PIN-gated**.
+
+**Why:** If a prior phase leaves the "opening actions shown" gate enabled, the next phase's Begin CTA can be hidden, leaving the session stuck with the timeline highlighting the new phase but no visible way to start it.
+
+**Why:** If phase entry tries to pre-select questions and then "early exits" (missing targets, empty pools), the app can silently skip the entire phase (and cascade to Closing) before the user ever sees Begin/Opening Actions.
+
+**Implementation notes:**
+- On every `phaseChange`, reset the per-phase UI gates (e.g., `showOpeningActions`, any active opening action state, and any games overlay) before rendering the next phase.
+- Timeline click-to-skip must call `ensurePinAllowed('timeline')` before navigating.
+- Timeline click-to-skip must stop active TTS before jumping (only when speech is currently playing) and then call `PhaseOrchestrator.skipToPhase(targetPhase)`.
+- Timeline click-to-skip must not bypass Begin gating; after a jump, the destination phase should still present its Begin CTA (then Opening Actions, then Go).
+- Comprehension initialization must **wait for learnerProfile** to be loaded. If the orchestrator enters Comprehension before learner load completes, the app retries comprehension initialization once `learnerLoading` is false and `learnerProfile` is present.
+- Worksheet and Test initialization must follow the same rule as Comprehension: if the orchestrator enters the phase before learner load completes, initialization must be retried after learner load.
+- Any helper that reads learner targets must not rely on a stale closure captured before learner load. Use a ref-backed lookup (read the latest learner profile) so phaseChange handlers created early can still access targets later.
+- End-of-comprehension is **not** end-of-lesson. When Comprehension completes, the app speaks a short transition line and advances the orchestrator to Exercise. The Exercise phase must then show its own Begin gate ("Begin Exercise") before Opening Actions/Go.
+- For Q&A phases that select questions from pools, do not compute/slice the question array during phase entry. Do it on **Go** so Begin and Opening Actions are always reachable.
+- If required data is missing (e.g., learner targets), fail loudly (blocking error) rather than silently skipping the phase.
+
+**Non-goal:** Do not render large work-timer countdown overlays that obscure the video. Timer UI should be non-blocking and must not cover core interactions.
+
+**Worksheet UI rule:** Do not render Worksheet question/answer controls as on-video overlays. Worksheet answering uses the fixed footer input (same surface as Comprehension/Exercise).
+
+**Test UI rule:** Do not render Test question/answer controls as on-video overlays. Test answering uses the fixed footer input (same surface as Comprehension/Exercise/Worksheet).
+
+**Test speech + parsing rule (MC/TF parity):** When speaking a Test question, MC options must be spoken with letter labels (A., B., C., D.) and included with the question (same utterance). Learner answers may be the letter or the option text.
+
+**Test question sourcing rule:** Test must be able to meet the learner's Test target by sourcing from all allowed pools.
+- Prefer `lessonData.test.questions[]` when present (generated lessons).
+- Otherwise, build the pool from: `multiplechoice`, `truefalse`, `fillintheblank`, and `shortanswer`.
+
+**Worksheet judging rule (Comprehension parity):** Worksheet uses the same retry loop as Comprehension.
+- Judge the learner answer (MC/TF locally; SA/FIB via `/api/judge-short-answer` through `judging.js` with local fallback).
+- On wrong attempt 1: speak a gentle retry hint (no UI feedback).
+- On wrong attempt 2: speak a stronger hint (no UI feedback).
+- On wrong attempt 3: speak the correct answer, then advance to the next question.
+- Do not reveal the correct answer in the event log or other UI surfaces on attempts 1-2. Reveals happen only via speech (and optional non-primary logging after the reveal event).
+
+**Worksheet judging data rule:** Worksheet question normalization must preserve answer schema fields (especially `expectedAny[]`).
+- Do not drop `expectedAny` when mapping lesson questions into phase-internal objects.
+- If `expectedAny` is lost, `/api/judge-short-answer` can be sent an empty acceptable list and become overly-lenient.
+
+**Test judging rule (V1 parity):** Test is single-attempt.
+- Judge the learner answer (MC/TF locally; SA/FIB via `/api/judge-short-answer` through `judging.js` with local fallback).
+- If correct: speak praise, then advance.
+- If incorrect: speak the correct answer immediately, then advance.
+
+**Test ticker rule (single-attempt):** The Test question counter must advance on every answered/skipped question.
+- Do not derive the question counter from `score` (score only increments on correct answers).
+- Use the current question index (questionNumber = questionIndex + 1) so incorrect answers still advance the ticker.
+
+**Test Skip/Next robustness rule (no premature actions):** In Test, user actions must never break the phase even when pressed repeatedly during async work.
+- The learner may mash Skip/Submit while question TTS is still loading or while judging is in-flight.
+- The phase must not double-advance, throw, or play stale audio for a previously-skipped question.
+- When an action advances to a new question while a prior question's TTS fetch is in-flight, the stale fetch result must be discarded (do not play it).
+- While a Submit/Skip transition is in-flight, additional Submit/Skip presses must be safely ignored (no double grading, no double skipping).
+- The Test intro line ("Time for the test") must also be skippable: the phase must advance to `awaiting-go` on AudioEngine `end` (completed OR skipped) and must not depend on awaiting `playAudio()`.
+
+### Exercise: Inline Q&A (Comprehension Parity) (2026-01-02)
+
+**Decision:** Exercise uses the same inline (V1-style) Q&A flow as Comprehension: questions are spoken via TTS, and the learner answers using the footer input.
+
+**Rules:**
+- Questions are spoken via TTS using V1 formatting (`formatQuestionForSpeech` + `ensureQuestionMark`).
+- The footer input is the primary answer surface for Exercise (no per-question overlay UI).
+- For MC/TF, quick buttons appear (A/B/C/D or True/False) and submit immediately.
+- Wrong answers follow V1 retry behavior: hint, hint, then reveal on the 3rd incorrect attempt.
+
+**Implementation notes:**
+- Exercise must show "Begin Exercise" on phase entry (Exercise state `awaiting-go`). Question selection must not block this gate.
+- Exercise question selection comes only from the allowed pools (TF/MC/FIB/SA) and is limited by the learner target for Exercise.
+- Exercise question selection happens on **Go** (lazy initialization). This keeps Begin/Opening Actions independent from pool/target checks.
+- If learner targets are missing, Exercise must block with a clear error (no silent fallback; no auto-advance).
+
+**Worksheet/Test:** Worksheet and Test follow the same no-skip rule. Missing targets or empty pools must block with a clear error instead of auto-advancing to the next phase.
+- The "Go" control in the Opening Actions footer must call the inline Exercise Go handler (not an ExercisePhase controller).
+- Keyboard skip for Exercise should route to the inline skip handler, which advances to the next question and preserves the hint/hint/reveal attempt tracking.
+
+### Question Pool Rules (No `sample`) (2026-01-02)
+
+**Rule:** V2 must not read or depend on `lesson.sample` / `lessonData.sample`.
+
+**Allowed pools:** `truefalse`, `multiplechoice`, `fillintheblank`, `shortanswer`.
+
+**Why:** `sample` is a killed zombie category (see `docs/reference/KILL_SAMPLE_ARRAY.md`). Any runtime reference tends to spread and causes schema drift.
+
 ### Discussion Phase Simplification (2025-12-31)
 
 **Decision:** Remove opening actions (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games) from discussion phase in V2.
@@ -112,6 +205,7 @@ V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical 
 - No opening action buttons in discussion phase
 - No play timer in discussion phase (instant transition)
 - Play/work timer modes still apply to Teaching, Repeat, Transition, Comprehension, Closing phases
+- The discussion work timer **spans both discussion and teaching**. It starts on discussion entry and must be completed when teaching finishes (not on `discussionComplete`), or the visible timer will freeze as soon as the "Start Definitions" CTA appears.
 - Opening action buttons (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games) appear during play time in phases 2-5
 
 **User Flow:**
@@ -376,7 +470,7 @@ expect(engine.isPlaying).toBe(true);
 - Save snapshots (emits events for PhaseOrchestrator to handle)
 - Control phase transitions
 - Read definitions/examples from JSON (always calls GPT)
-- Emit 'loading' stage changes (prefetch eliminates loading states)
+- Emit 'loading' stage changes (prefetch eliminates loading states; only surfaced on first Start Definitions click if definitions are still loading)
 
 **Race Condition Fix (2026-01-03):**
 When user presses Next/Skip during intro audio (e.g., "First let's go over some definitions"), the GPT content may not be ready yet. Fixed with async content awaiting:
@@ -399,6 +493,8 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
 - User can press Next/Skip anytime - never blocked
 - If content not ready, brief wait then plays (no forced finishes)
 - If content ready, plays immediately (zero latency from prefetch)
+- First CTA shows "Start Definitions" until the first Next click; if definitions are still loading after that click, the button shows an inline spinner and disables Repeat until content is ready
+- During the definitions gate, the "Continue to Examples" button is hidden while the "Do you have any questions?" + suggested questions audio plays and only appears after that sequence finishes
 
 ### PhaseOrchestrator Component
 **Owns:**
@@ -450,6 +546,7 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
 - Brain file documentation (this file)
 - Manifest entry
 - Changelog entry
+- Q&A judging parity: Comprehension now matches V1 retry flow (hint, hint, reveal on 3rd) and does NOT advance on incorrect answers; Exercise/Worksheet match the same retry + reveal behavior; Test remains single-attempt grading with correct-answer reveal. SA/FIB route through `/api/judge-short-answer` with local fallback; MC/TF use V1-style local leniency (letters, TF synonyms).
 - **AudioEngine component** (`src/app/session/v2/AudioEngine.jsx`) - 600 lines
   - Three playback paths: HTMLAudio (preferred), WebAudio (iOS), Synthetic (no audio)
   - Event-driven architecture (start, end, captionChange, captionsDone, error)
@@ -465,12 +562,23 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
   - Emits phaseChange, sessionComplete events
   - Consumes phase completion events
   - Zero knowledge of phase implementation details
-- **ComprehensionPhase component** (`src/app/session/v2/ComprehensionPhase.jsx`) - 200 lines
-  - Plays comprehension question with TTS
-  - Captures kid's typed answer
-  - Simple validation (answer exists)
-  - Emits comprehensionComplete event
-  - Zero coupling to other phases
+- **ComprehensionPhase** - DEPRECATED (2026-01-03)
+  - **No longer used** - comprehension is now handled inline in SessionPageV2
+  - V2 uses V1's multi-question pattern instead of single-question class
+  - Questions loaded from lesson pools: truefalse, multiplechoice, fillintheblank, shortanswer
+  - Questions shuffled and limited to the learner's configured target
+    - Source of truth: Learners page "Learning Targets" overlay (stored on learner record)
+    - Fields supported (all phases): learner.{comprehension,exercise,worksheet,test} (normalized) or learner.targets.{comprehension,exercise,worksheet,test}
+    - No fallback: V2 does not default targets. If targets are missing/invalid, the session blocks with an error.
+    - Ticker behavior: the top-right score ticker uses learner targets for its denominator and does not display default targets while learner data is loading
+  - Questions spoken via TTS, user types answer in footer input
+  - State: generatedComprehension (array), currentCompIndex, currentCompProblem
+  - Handlers: handleComprehensionGo (speaks question), handleComprehensionSubmit (validates; holds on incorrect with hint/hint/reveal after 3 tries), handleComprehensionSkip
+  - Judging: shared V2 judging helper `src/app/session/v2/judging.js`
+    - MC/TF: local judge (`isAnswerCorrectLocal`) with acceptable list that includes letters + option text
+    - SA/FIB: POST `/api/judge-short-answer` then fallback to local judge
+  - Video overlay removed - uses footer input during awaiting-answer state
+  - Quick-answer buttons (MC/TF): clicking a quick button submits that answer immediately and does not populate the text input
 - **DiscussionPhase component** (`src/app/session/v2/DiscussionPhase.jsx`) - 200 lines
   - Manages discussion activities: Ask, Riddle, Poem, Story, Fill-in-Fun
   - Plays prompt with TTS
@@ -485,24 +593,41 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
   - Zero coupling to other phases
 - **ExercisePhase component** (`src/app/session/v2/ExercisePhase.jsx`) - 300 lines
   - Multiple choice and true/false questions with scoring
+  - Question count is limited to the learner's configured target (exercise)
   - Plays each question with TTS
   - Displays answer options (radio buttons)
-  - Validates answers and tracks score
+  - Validates answers via shared judging helper (`judging.js`) and tracks score
+    - Accepts MC letters (A-D) and option text (V1 parity)
+  - Question sourcing supports both lesson schemas:
+    - Generated lesson schema: lessonData.exercise.questions[]
+    - V1 pool schema fallback: lessonData.multiplechoice[] + lessonData.truefalse[]
   - Emits exerciseComplete with final score and percentage
   - Zero coupling to other phases
 - **WorksheetPhase component** (`src/app/session/v2/WorksheetPhase.jsx`) - 300 lines
   - Fill-in-blank questions with text input
+  - Question count is limited to the learner's configured target (worksheet)
   - Plays each question with TTS
-  - Text input for answers (supports Enter key)
-  - Validates answers (case-insensitive, partial matching)
+  - Answer UI is rendered in SessionPageV2 using the fixed footer input (supports Enter key)
+  - Validates answers via shared judging helper (`judging.js`)
+    - FIB uses `/api/judge-short-answer` with local fallback
   - Shows instant feedback (correct/incorrect with answer)
   - Tracks score and emits worksheetComplete
+  - Question sourcing supports both lesson schemas:
+    - Generated lesson schema: lessonData.worksheet.questions[]
+    - V1 pool schema fallback: lessonData.fillintheblank[]
   - Zero coupling to other phases
 - **TestPhase component** (`src/app/session/v2/TestPhase.jsx`) - 400 lines
   - Graded assessment with MC/TF/fill-in questions
+  - Question count is limited to the learner's configured target (test)
   - Plays each question with TTS
   - Mixed question types (radio buttons for MC/TF, text input for fill-in)
   - Tracks all answers and calculates grade (A-F)
+  - Judging: shared judging helper (`judging.js`)
+    - FIB uses `/api/judge-short-answer` with local fallback
+    - MC/TF uses local judge with letter/synonym acceptance
+  - Question sourcing supports both lesson schemas:
+    - Generated lesson schema: lessonData.test.questions[]
+    - V1 pool schema fallback: mix of lessonData.multiplechoice[] + lessonData.truefalse[] + lessonData.fillintheblank[]
   - Review mode shows all questions with correct/incorrect highlighting
   - Navigation: previous/next review, skip review
   - Emits testComplete with grade and percentage
@@ -551,9 +676,9 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
   - Comprehension controls: Answer input, Submit, Skip (hotkey enabled)
   - Exercise controls: Radio button answer selection, Submit, Skip (hotkey enabled, with timer)
   - Exercise scoring: Live score display, percentage calculation, on-time status
-  - Worksheet controls: Text input with Enter key support, Submit, Skip (hotkey enabled, with timer)
+  - Worksheet controls: Answer input in fixed footer (Enter submits), Submit/Skip (hotkey enabled, with timer); no on-video Worksheet overlays
   - Worksheet feedback: Instant correct/incorrect display with correct answer, on-time status
-  - Test controls: Mixed UI (radio/text based on question type), Submit, Skip (hotkey enabled, with timer)
+  - Test controls: Answer input in fixed footer (Enter submits); no on-video Test Q&A overlays
   - Test grading: Letter grade (A-F), percentage, on-time status
   - Test review: Question-by-question review with correct answers highlighted, Previous/Next navigation
   - Golden key award: Displayed when 3 work phases completed on-time
@@ -589,10 +714,10 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
 ## Key Files
 
 **V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (1820 lines)
+- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (3500+ lines, includes comprehension logic)
 - `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
 - `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
-- `src/app/session/v2/ComprehensionPhase.jsx` - Comprehension question flow (200 lines)
+- `src/app/session/v2/ComprehensionPhase.jsx` - DEPRECATED, not used (comprehension handled inline in SessionPageV2)
 - `src/app/session/v2/DiscussionPhase.jsx` - Discussion activities (200 lines)
 - `src/app/session/v2/ExercisePhase.jsx` - Exercise questions with scoring (300 lines)
 - `src/app/session/v2/WorksheetPhase.jsx` - Fill-in-blank questions (300 lines)
@@ -602,7 +727,7 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
 - `src/app/session/v2/SnapshotService.jsx` - Session persistence (300 lines)
 - `src/app/session/v2/TimerService.jsx` - Session and work phase timers (350 lines)
 - `src/app/session/v2/KeyboardService.jsx` - Keyboard hotkey management (150 lines)
-- `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading)
+- `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading, includes question pools)
 - `src/app/session/v2test/page.jsx` - Direct test route
 
 **V1 Implementation (keep intact):**

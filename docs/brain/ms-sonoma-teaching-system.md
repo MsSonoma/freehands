@@ -1,7 +1,7 @@
 # Ms. Sonoma Teaching System
 
 **Status**: Canonical  
-**Last Updated**: 2025-12-30T14:32:57Z
+**Last Updated**: 2026-01-03T16:00:00Z
 
 ## How It Works
 
@@ -243,6 +243,17 @@ Before shipping to Ms. Sonoma, verify:
 
 **Closing**: End of session
 
+### Opening Actions UI (V2)
+
+- OpeningActionsController spins up only after audioReady is true and eventBus/audioEngine exist; this prevents dead Ask/Poem/Story/Riddle/Fill-in-Fun buttons when the footer first appears. Controller and listeners are destroyed/removed on unmount to avoid duplicate handlers.
+- Opening actions buttons appear only during play-time awaiting-go states; header cancel calls OpeningActionsController.destroy() and clears local state.
+- Active panel binds to OpeningActionsController events (action + type payloads). Ask textarea submits via Enter or button, clears input, shows answer banner, and Done calls completeAsk.
+- Riddle panel shows current question, Hint/Reveal buttons call controller, banners show hint/answer when emitted, Done always available to finish.
+- Poem plays via audio; Done button triggers completePoem after playback completes stage.
+- Story shows transcript log; Enter/Continue button forwards text to continueStory, Finish calls completeStory.
+- Fill-in-Fun prompts next word type; Enter/Submit sends word to addFillInFunWord, Cancel uses completeFillInFun to reset; completion event closes panel and, when present, shows final story text.
+- Active opening action panels render inside the fixed footer (centered card, no video overlay) matching V1 behavior; cancel clears state without covering the video.
+
 ### Hotkey Behavior
 
 - Default bindings: Skip = PageDown; Next Sentence = End; Repeat = PageUp.
@@ -254,8 +265,10 @@ Before shipping to Ms. Sonoma, verify:
 - After "Do you have any questions?" Ms. Sonoma explicitly speaks the generated "You could ask questions like..." follow-ups; if GPT is empty or errors, a deterministic three-question fallback is spoken.
 - If the examples GPT call returns no text, the stage ends (no deterministic fallback injected); rely on GPT output only.
 - Gate controls (Repeat/Next and the PageDown hotkey) stay hidden/blocked while the gate prompt or sample questions load/play under a dedicated lock so learners hear the three suggestions before moving on.
-- If Skip is pressed during this locked sequence, the lock clears and the gate snaps back to awaiting-gate so controls/hotkey surface instead of hanging; captions already contain the sample questions even when TTS is skipped.
+- If Skip is pressed during this locked sequence, skipGatePrompt stops audio, emits gatePromptComplete, and snaps back to awaiting-gate so controls/hotkey surface instead of hanging; captions already contain the sample questions even when TTS is skipped.
 - Frontend safety: teaching gate state lives before the skip handler to avoid TDZ ReferenceError crashes in minified builds when Skip fires during the gate.
+- Teaching CTAs (Start Definitions / Next Sentence) render as soon as teaching begins, even during the loading-definitions intro, allowing immediate advance into definitions; Next triggers nextSentence which stops intro audio and begins definitions playback.
+- Discussion screen shows a Start Definitions button; it calls skipDiscussion to stop the greeting audio and emit discussionComplete immediately so orchestrator enters teaching without waiting for the greeting to finish.
 
 ### Slot Policy
 

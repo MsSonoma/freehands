@@ -1,130 +1,291 @@
 /**
  * PlayTimeExpiredOverlay.jsx
  * 
- * Overlay displayed when play timer expires. Shows 30-second countdown before
- * transitioning to work mode. Allows learner to skip countdown with Go button.
+ * Full-screen overlay displayed when play timer expires. Shows 30-second countdown
+ * before transitioning to work mode. Matches V1's immersive overlay design.
  * 
- * V2 architectural patterns:
- * - Event-driven communication via EventBus
- * - Private fields for encapsulation
- * - Auto-cleans up on unmount
+ * The 30-second countdown is PERSISTENT:
+ * - Stored with timestamp when started so it survives page refresh
+ * - Continues ticking even when app is closed (timestamp math on reload)
+ * - If expired while app was closed, immediately triggers onComplete
+ * - Once expired, clears storage and moves to work mode
  * 
- * Timer colors:
- * - Green: countdown > 5 seconds
- * - Amber: countdown <= 5 seconds (warning)
+ * Props (V1-style parent-controlled):
+ * - isOpen: boolean - Whether overlay is visible (parent controls this)
+ * - phase: string - Current phase name for display
+ * - lessonKey: string - Unique lesson identifier for storage key
+ * - onComplete: function - Called when countdown reaches 0
+ * - onStartNow: function - Called when user clicks "Start Now" button
  * 
- * Events:
- * - playTimerExpired: Triggers overlay display
- * 
- * Methods:
- * - transitionToWork(): Calls TimerService.transitionToWork(phase)
+ * Timer colors (V1 parity):
+ * - Green (#22c55e): countdown > 5 seconds
+ * - Amber (#fbbf24): countdown <= 5 seconds (warning)
  */
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
-const COUNTDOWN_DURATION = 30; // seconds
+const WARNING_DURATION = 30; // 30 seconds
 
-export default function PlayTimeExpiredOverlay({ 
-  eventBus, 
-  timerService, 
-  phase,
-  onTransition 
+export default function PlayTimeExpiredOverlay({
+  isOpen,
+  phase = 'lesson',
+  lessonKey = 'default',
+  onComplete,
+  onStartNow
 }) {
-  const [show, setShow] = useState(false);
-  const [countdown, setCountdown] = useState(COUNTDOWN_DURATION);
-  const countdownIntervalRef = useRef(null);
-  const listenerRemoversRef = useRef([]);
+  const [countdown, setCountdown] = useState(WARNING_DURATION);
+  const intervalRef = useRef(null);
+  const hasCalledCompleteRef = useRef(false);
   
+  // Storage key for this phase's warning timer
+  const storageKey = `play_expired_warning:${lessonKey}:${phase}`;
+  
+  // Clear the warning timer storage
+  const clearWarningStorage = useCallback(() => {
+    try {
+      sessionStorage.removeItem(storageKey);
+    } catch {}
+  }, [storageKey]);
+  
+  // Handle completion (only call once)
+  const handleComplete = useCallback(() => {
+    if (hasCalledCompleteRef.current) return;
+    hasCalledCompleteRef.current = true;
+    
+    // Clear storage since we're done
+    clearWarningStorage();
+    
+    // Clear interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    onComplete?.();
+  }, [clearWarningStorage, onComplete]);
+  
+  // Handle "Start Now" button
+  const handleStartNow = useCallback(() => {
+    // Clear storage since user is manually starting
+    clearWarningStorage();
+    
+    // Clear interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    onStartNow?.();
+  }, [clearWarningStorage, onStartNow]);
+
   useEffect(() => {
-    // Listen for play timer expiration
-    const removeExpiredListener = eventBus.on('playTimerExpired', (data) => {
-      if (data.phase === phase) {
-        setShow(true);
-        setCountdown(COUNTDOWN_DURATION);
-        startCountdown();
+    if (!isOpen) {
+      // Reset the completion flag when closed
+      hasCalledCompleteRef.current = false;
+      return;
+    }
+    
+    // Check for existing warning timer in storage
+    let startTimestamp = null;
+    try {
+      const stored = sessionStorage.getItem(storageKey);
+      if (stored) {
+        const data = JSON.parse(stored);
+        startTimestamp = data.startTimestamp;
       }
-    });
+    } catch {}
     
-    listenerRemoversRef.current.push(removeExpiredListener);
+    // If no stored timestamp, this is a fresh start - save current time
+    if (!startTimestamp) {
+      startTimestamp = Date.now();
+      try {
+        sessionStorage.setItem(storageKey, JSON.stringify({
+          startTimestamp,
+          phase
+        }));
+      } catch {}
+    }
     
-    return () => {
-      stopCountdown();
-      listenerRemoversRef.current.forEach(remove => remove());
-      listenerRemoversRef.current = [];
-    };
-  }, [eventBus, phase]);
-  
-  const startCountdown = () => {
-    if (countdownIntervalRef.current) return;
+    // Calculate how much time has elapsed since the warning started
+    const elapsedMs = Date.now() - startTimestamp;
+    const elapsedSeconds = Math.floor(elapsedMs / 1000);
+    const remaining = Math.max(0, WARNING_DURATION - elapsedSeconds);
     
-    countdownIntervalRef.current = setInterval(() => {
-      setCountdown(prev => {
-        const next = prev - 1;
-        
-        if (next <= 0) {
-          handleTransition();
-          return 0;
-        }
-        
-        return next;
-      });
+    // If already expired, immediately complete
+    if (remaining <= 0) {
+      setCountdown(0);
+      // Use setTimeout to avoid calling during render
+      setTimeout(() => handleComplete(), 0);
+      return;
+    }
+    
+    // Set initial countdown from persisted state
+    setCountdown(remaining);
+    
+    // Tick every second using timestamp math for accuracy
+    intervalRef.current = setInterval(() => {
+      const nowElapsed = Math.floor((Date.now() - startTimestamp) / 1000);
+      const nowRemaining = Math.max(0, WARNING_DURATION - nowElapsed);
+      
+      setCountdown(nowRemaining);
+      
+      if (nowRemaining <= 0) {
+        handleComplete();
+      }
     }, 1000);
-  };
-  
-  const stopCountdown = () => {
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
-  };
-  
-  const handleTransition = () => {
-    stopCountdown();
-    setShow(false);
-    
-    // Transition to work mode
-    timerService.transitionToWork(phase);
-    
-    // Notify parent
-    if (onTransition) {
-      onTransition();
-    }
-  };
-  
-  const handleGoClick = () => {
-    handleTransition();
-  };
-  
-  if (!show) return null;
-  
-  const isWarning = countdown <= 5;
-  const timerColor = isWarning ? 'text-amber-500' : 'text-green-500';
-  
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isOpen, storageKey, phase, handleComplete]);
+
+  if (!isOpen) return null;
+
+  const phaseDisplay = phase.charAt(0).toUpperCase() + phase.slice(1);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl p-8 max-w-md text-center">
-        <h2 className="text-2xl font-bold mb-4">Time to Get Back to Work!</h2>
-        
-        <p className="text-gray-700 mb-6">
-          Your play time is up. Time to focus on your lesson.
-        </p>
-        
-        <div className={`text-6xl font-bold mb-6 ${timerColor}`}>
-          {countdown}
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 10005,
+        background: 'rgba(17, 24, 39, 0.95)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 32,
+        backdropFilter: 'blur(8px)'
+      }}
+    >
+      <div style={{
+        textAlign: 'center',
+        maxWidth: 600
+      }}>
+        {/* Timer icon */}
+        <div style={{
+          fontSize: 'clamp(4rem, 10vw, 6rem)',
+          marginBottom: 24
+        }}>
+          ⏰
         </div>
-        
-        <p className="text-sm text-gray-500 mb-6">
-          Starting work mode automatically...
+
+        {/* Main message */}
+        <h2 style={{
+          fontSize: 'clamp(1.75rem, 5vw, 2.5rem)',
+          fontWeight: 800,
+          color: '#fff',
+          marginBottom: 16,
+          lineHeight: 1.2,
+          textShadow: '0 2px 8px rgba(0,0,0,0.4)'
+        }}>
+          Time to Get Back to Work!
+        </h2>
+
+        {/* Explanation */}
+        <p style={{
+          fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
+          color: '#e5e7eb',
+          marginBottom: 24,
+          lineHeight: 1.5,
+          textShadow: '0 1px 4px rgba(0,0,0,0.3)'
+        }}>
+          Your play time is up. Don't worry—you'll be able to play again as soon as you finish the {phaseDisplay} phase!
         </p>
-        
-        <button
-          onClick={handleGoClick}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg transition-colors"
-        >
-          Go Now
-        </button>
+
+        {/* Countdown display */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.1)',
+          borderRadius: 16,
+          padding: '24px 40px',
+          marginBottom: 24,
+          backdropFilter: 'blur(4px)',
+          border: '2px solid rgba(255, 255, 255, 0.2)'
+        }}>
+          <div style={{
+            fontSize: 'clamp(0.9rem, 2vw, 1.1rem)',
+            color: '#9ca3af',
+            marginBottom: 8,
+            fontWeight: 600,
+            letterSpacing: 0.5
+          }}>
+            Starting work in
+          </div>
+          <div style={{
+            fontSize: 'clamp(3rem, 8vw, 5rem)',
+            fontWeight: 900,
+            color: countdown <= 5 ? '#fbbf24' : '#22c55e',
+            fontFamily: 'monospace',
+            lineHeight: 1,
+            textShadow: countdown <= 5 
+              ? '0 0 20px rgba(251, 191, 36, 0.6)' 
+              : '0 0 20px rgba(34, 197, 94, 0.5)',
+            transition: 'color 0.3s, text-shadow 0.3s'
+          }}>
+            {countdown}
+          </div>
+          <div style={{
+            fontSize: 'clamp(0.85rem, 1.8vw, 1rem)',
+            color: '#9ca3af',
+            marginTop: 8,
+            fontWeight: 600
+          }}>
+            {countdown === 1 ? 'second' : 'seconds'}
+          </div>
+        </div>
+
+        {/* Start Now button */}
+        {onStartNow && (
+          <button
+            onClick={handleStartNow}
+            style={{
+              padding: '16px 32px',
+              fontSize: 'clamp(1.1rem, 2.5vw, 1.3rem)',
+              fontWeight: 700,
+              background: '#22c55e',
+              color: 'white',
+              border: 'none',
+              borderRadius: 12,
+              cursor: 'pointer',
+              marginBottom: 24,
+              boxShadow: '0 4px 12px rgba(34, 197, 94, 0.4)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#16a34a';
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 16px rgba(34, 197, 94, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#22c55e';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.4)';
+            }}
+          >
+            Start Now
+          </button>
+        )}
+
+        {/* Encouragement */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+          color: '#fbbf24',
+          fontWeight: 700,
+          textShadow: '0 1px 4px rgba(0,0,0,0.3)'
+        }}>
+          <span style={{ fontSize: '1.5em' }}>✏️</span>
+          <span>You've got this!</span>
+          <span style={{ fontSize: '1.5em' }}>✏️</span>
+        </div>
       </div>
     </div>
   );

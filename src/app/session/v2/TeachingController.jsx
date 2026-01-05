@@ -46,6 +46,10 @@ export class TeachingController {
   #examplesGptPromise = null;
   #definitionsGatePromptPromise = null;
   #examplesGatePromptPromise = null;
+
+  #gatePromptActive = false;
+  #gatePromptStage = null;
+  #gatePromptSkipped = false;
   
   constructor(options = {}) {
     this.#audioEngine = options.audioEngine;
@@ -764,6 +768,13 @@ export class TeachingController {
   // 2. Speak prefetched GPT sample questions (or fallback)
   async #playGatePrompt(stage) {
     const lessonTitle = this.#lessonMeta?.lessonTitle || this.#lessonData?.title || 'this topic';
+
+    this.#gatePromptActive = true;
+    this.#gatePromptStage = stage;
+    this.#gatePromptSkipped = false;
+    this.#emit('gatePromptStart', { stage });
+    let gateError = null;
+    try {
     
     // 1. Speak "Do you have any questions?"
     const questionText = 'Do you have any questions?';
@@ -808,6 +819,28 @@ export class TeachingController {
       if (sampleAudio) ttsCache.set(sampleText, sampleAudio);
     }
     await this.#audioEngine.playAudio(sampleAudio || '', [sampleText]);
+    } catch (err) {
+      gateError = err;
+      throw err;
+    } finally {
+      if (this.#gatePromptActive) {
+        this.#emit('gatePromptComplete', { stage, error: gateError, skipped: this.#gatePromptSkipped });
+      }
+      this.#gatePromptActive = false;
+      this.#gatePromptStage = null;
+      this.#gatePromptSkipped = false;
+    }
+  }
+
+  skipGatePrompt() {
+    if (!this.#gatePromptActive) return;
+    this.#gatePromptSkipped = true;
+    try {
+      this.#audioEngine.stop();
+    } catch {}
+    this.#emit('gatePromptComplete', { stage: this.#gatePromptStage, skipped: true });
+    this.#gatePromptActive = false;
+    this.#gatePromptStage = null;
   }
   
   // Private: Ensure definitions are loaded (await pending promise if needed)

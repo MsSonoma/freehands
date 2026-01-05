@@ -119,15 +119,46 @@
       "migration sequence",
       "V1 vs V2 separation",
       "video playback coordination",
-      "Chrome autoplay unlock",
       "user gesture unlock",
       "async-nextSentence",
       "ensureDefinitionsLoaded",
       "ensureExamplesLoaded",
       "loading-stages",
-      "race-condition-fix"
+      "race-condition-fix",
+      "comprehension-question-array",
+      "learner-targets",
+      "phase-question-counts",
+      "footer-input",
+      "TTS-spoken-questions",
+      "generatedComprehension",
+      "handleComprehensionGo",
+      "handleComprehensionSubmit",
+      "handleComprehensionSkip",
+      "judging.js",
+      "/api/judge-short-answer",
+      "hint-hint-reveal",
+      "worksheet-judging-parity",
+      "test-judging-parity",
+      "test-single-attempt",
+      "no-early-answer-reveal",
+      "exercise-inline-qa",
+      "comprehension-to-exercise-transition",
+      "begin-exercise",
+      "worksheet-footer-input",
+      "test-footer-input",
+      "test-quick-answer-buttons",
+      "formatQuestionForSpeech",
+      "test-review",
+      "golden-key-display",
+      "work-timer-grid",
+      "facilitator-override",
+      "transcript-column-placement",
+      "no-video-overlays",
+      "timeline-jump",
+      "test-skip-robustness",
+      "no-premature-actions"
     ],
-    "last_updated": "2026-01-03T04:00:00Z",
+    "last_updated": "2026-01-02T12:00:00Z",
     "status": "active-development"
   },
   "mr-mentor-conversation-flows": {
@@ -259,9 +290,10 @@
       "PlayTimeExpiredOverlay",
       "playTimerStart event",
       "playTimerTick event",
-      "playTimerExpired event"
+      "playTimerExpired event",
+      "V2 parent-controlled overlay"
     ],
-    "last_updated": "2025-12-31T20:00:00Z",
+    "last_updated": "2026-01-03T17:00:00Z",
     "status": "canonical"
   },
   "lesson-assessment-architecture": {
@@ -355,7 +387,7 @@
       "Fill-in-Fun",
       "opening actions play time"
     ],
-    "last_updated": "2025-12-31T20:00:00Z",
+    "last_updated": "2026-01-03T16:00:00Z",
     "status": "canonical"
   },
   "beta-program": {

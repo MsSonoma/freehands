@@ -63,6 +63,7 @@ export class OpeningActionsController {
     
     this.#eventBus.emit('openingActionStart', {
       action: 'ask',
+      type: 'ask',
       phase: this.#phase
     });
     
@@ -134,6 +135,7 @@ export class OpeningActionsController {
     
     this.#eventBus.emit('openingActionCancel', {
       action: 'ask',
+      type: 'ask',
       phase: this.#phase
     });
     
@@ -149,6 +151,7 @@ export class OpeningActionsController {
     
     this.#eventBus.emit('openingActionComplete', {
       action: 'ask',
+      type: 'ask',
       phase: this.#phase
     });
     
@@ -172,6 +175,7 @@ export class OpeningActionsController {
     
     this.#eventBus.emit('openingActionStart', {
       action: 'riddle',
+      type: 'riddle',
       phase: this.#phase
     });
     
@@ -223,6 +227,7 @@ export class OpeningActionsController {
     
     this.#eventBus.emit('openingActionComplete', {
       action: 'riddle',
+      type: 'riddle',
       phase: this.#phase
     });
     
@@ -241,6 +246,7 @@ export class OpeningActionsController {
     
     this.#eventBus.emit('openingActionStart', {
       action: 'poem',
+      type: 'poem',
       phase: this.#phase
     });
     
@@ -279,6 +285,8 @@ export class OpeningActionsController {
       
       return { success: true, poem: fallback };
     }
+    
+    this.#actionState.stage = 'complete';
   }
   
   /**
@@ -289,6 +297,7 @@ export class OpeningActionsController {
     
     this.#eventBus.emit('openingActionComplete', {
       action: 'poem',
+      type: 'poem',
       phase: this.#phase
     });
     
@@ -309,6 +318,7 @@ export class OpeningActionsController {
     
     this.#eventBus.emit('openingActionStart', {
       action: 'story',
+      type: 'story',
       phase: this.#phase
     });
     
@@ -364,6 +374,7 @@ export class OpeningActionsController {
       const continuation = data.reply || 'And then something amazing happened! What happens next?';
       
       this.#actionState.transcript.push({ role: 'assistant', text: continuation });
+      this.#actionState.stage = 'telling';
       await this.#audioEngine.speak(continuation);
       
       return { success: true, continuation };
@@ -372,6 +383,7 @@ export class OpeningActionsController {
       
       const fallback = 'That\'s a great idea! The adventure continues. What happens next?';
       this.#actionState.transcript.push({ role: 'assistant', text: fallback });
+      this.#actionState.stage = 'telling';
       await this.#audioEngine.speak(fallback);
       
       return { success: true, continuation: fallback };
@@ -386,6 +398,7 @@ export class OpeningActionsController {
     
     this.#eventBus.emit('openingActionComplete', {
       action: 'story',
+      type: 'story',
       phase: this.#phase
     });
     
@@ -407,6 +420,7 @@ export class OpeningActionsController {
     
     this.#eventBus.emit('openingActionStart', {
       action: 'fill-in-fun',
+      type: 'fill-in-fun',
       phase: this.#phase
     });
     
@@ -491,6 +505,13 @@ export class OpeningActionsController {
       
       const finalText = `Here's your story: ${completedStory}`;
       await this.#audioEngine.speak(finalText);
+      this.#eventBus.emit('openingActionComplete', {
+        action: 'fill-in-fun',
+        type: 'fill-in-fun',
+        phase: this.#phase
+      });
+      this.#currentAction = null;
+      this.#actionState = {};
       
       return { success: true, completed: true, story: completedStory };
     }
@@ -504,6 +525,7 @@ export class OpeningActionsController {
     
     this.#eventBus.emit('openingActionComplete', {
       action: 'fill-in-fun',
+      type: 'fill-in-fun',
       phase: this.#phase
     });
     
@@ -519,6 +541,7 @@ export class OpeningActionsController {
     
     this.#eventBus.emit('openingActionComplete', {
       action: 'riddle',
+      type: 'riddle',
       phase: this.#phase
     });
     

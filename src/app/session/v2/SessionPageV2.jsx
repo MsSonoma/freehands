@@ -1,12 +1,12 @@
-"use client";
+﻿"use client";
 
 /**
  * Session Page V2 - Full Session Flow
  * 
  * Architecture:
- * - PhaseOrchestrator: Manages phase transitions (teaching → comprehension → exercise → worksheet → test → closing)
- * - TeachingController: Manages definitions → examples
- * - ComprehensionPhase: Manages question → answer → feedback
+ * - PhaseOrchestrator: Manages phase transitions (teaching â†’ comprehension â†’ exercise â†’ worksheet â†’ test â†’ closing)
+ * - TeachingController: Manages definitions â†’ examples
+ * - ComprehensionPhase: Manages question â†’ answer â†’ feedback
  * - ExercisePhase: Manages multiple choice/true-false questions with scoring
  * - WorksheetPhase: Manages fill-in-blank questions with text input
  * - TestPhase: Manages graded test questions with review
@@ -37,6 +37,7 @@ import { TimerService } from './TimerService';
 import { KeyboardService } from './KeyboardService';
 import { OpeningActionsController } from './OpeningActionsController';
 import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
+import TimerControlOverlay from '../components/TimerControlOverlay';
 import EventBus from './EventBus';
 import { loadLesson, fetchTTS } from './services';
 
@@ -51,7 +52,7 @@ const phaseLabels = {
 };
 
 // Timeline component
-function Timeline({ timelinePhases, timelineHighlight, compact = false }) {
+function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPhase }) {
   const columns = Array.isArray(timelinePhases) && timelinePhases.length > 0 ? timelinePhases.length : 5;
   const gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
   const containerRef = useRef(null);
@@ -123,6 +124,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false }) {
       {timelinePhases.map((phaseKey) => (
         <div
           key={phaseKey}
+          onClick={onJumpPhase ? () => onJumpPhase(phaseKey) : undefined}
           style={{
             width: '100%',
             display: 'flex',
@@ -142,6 +144,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false }) {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             minWidth: 0,
+            cursor: onJumpPhase ? 'pointer' : 'default',
             userSelect: 'none',
             transition: 'background 120ms ease, transform 120ms ease'
           }}
@@ -186,6 +189,7 @@ function SessionPageV2Inner() {
   const worksheetPhaseRef = useRef(null);
   const testPhaseRef = useRef(null);
   const closingPhaseRef = useRef(null);
+  const timelineJumpInProgressRef = useRef(false); // Debounce timeline jumps
   
   const [lessonData, setLessonData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -199,6 +203,9 @@ function SessionPageV2Inner() {
   const [isInSentenceMode, setIsInSentenceMode] = useState(true);
   
   const [comprehensionState, setComprehensionState] = useState('idle');
+  const [currentComprehensionQuestion, setCurrentComprehensionQuestion] = useState(null);
+  const [comprehensionScore, setComprehensionScore] = useState(0);
+  const [comprehensionTotalQuestions, setComprehensionTotalQuestions] = useState(0);
   const [comprehensionAnswer, setComprehensionAnswer] = useState('');
   const [comprehensionTimerMode, setComprehensionTimerMode] = useState('play');
   
@@ -266,6 +273,13 @@ function SessionPageV2Inner() {
   const [goldenKeyBonus, setGoldenKeyBonus] = useState(0);
   const [timerPaused, setTimerPaused] = useState(false);
   
+  // Play timer expired overlay state (V1 parity)
+  const [showPlayTimeExpired, setShowPlayTimeExpired] = useState(false);
+  const [playExpiredPhase, setPlayExpiredPhase] = useState(null);
+  
+  // Timer control overlay state (facilitator controls)
+  const [showTimerControl, setShowTimerControl] = useState(false);
+  
   const [currentCaption, setCurrentCaption] = useState('');
   const [transcriptLines, setTranscriptLines] = useState([]);
   const [engineState, setEngineState] = useState('idle');
@@ -305,19 +319,19 @@ function SessionPageV2Inner() {
         
         // Check for generated lesson (regenerate parameter)
         if (regenerateParam) {
-          addEvent('🤖 Loading generated lesson...');
+          addEvent('ðŸ¤– Loading generated lesson...');
           const response = await fetch(`/api/lesson-engine/regenerate?key=${regenerateParam}`);
           if (!response.ok) {
             throw new Error(`Failed to load generated lesson: ${response.statusText}`);
           }
           const data = await response.json();
           lesson = data.lesson;
-          addEvent(`📚 Loaded generated lesson: ${lesson.title || 'Untitled'}`);
+          addEvent(`ðŸ“š Loaded generated lesson: ${lesson.title || 'Untitled'}`);
         }
         // Load lesson if lessonId provided
         else if (lessonId) {
           lesson = await loadLesson(lessonId, subjectParam);
-          addEvent(`📚 Loaded lesson: ${lesson.title}`);
+          addEvent(`ðŸ“š Loaded lesson: ${lesson.title}`);
         } else {
           // No lessonId - show error
           throw new Error('No lesson specified. Add ?lesson=filename&subject=math to URL');
@@ -376,7 +390,7 @@ function SessionPageV2Inner() {
           setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
         }
         
-        addEvent(`👤 Loaded learner: ${learner.name}`);
+        addEvent(`ðŸ‘¤ Loaded learner: ${learner.name}`);
         setLearnerLoading(false);
       } catch (err) {
         console.error('[SessionPageV2] Learner load error:', err);
@@ -426,10 +440,10 @@ function SessionPageV2Inner() {
     // Load existing snapshot
     service.initialize().then(snapshot => {
       if (snapshot) {
-        addEvent(`💾 Loaded snapshot - Resume from: ${snapshot.currentPhase}`);
+        addEvent(`ðŸ’¾ Loaded snapshot - Resume from: ${snapshot.currentPhase}`);
         setResumePhase(snapshot.currentPhase);
       } else {
-        addEvent('💾 No snapshot found - Starting fresh');
+        addEvent('ðŸ’¾ No snapshot found - Starting fresh');
       }
       setSnapshotLoaded(true);
     });
@@ -452,14 +466,21 @@ function SessionPageV2Inner() {
     });
     
     const unsubWorkComplete = eventBus.on('workPhaseTimerComplete', (data) => {
-      addEvent(`⏱️ ${data.phase} timer complete!`);
+      addEvent(`â±ï¸ ${data.phase} timer complete!`);
     });
     
     const unsubGoldenKey = eventBus.on('goldenKeyEligible', (data) => {
       setGoldenKeyEligible(data.eligible);
       if (data.eligible) {
-        addEvent('🔑 Golden Key earned!');
+        addEvent('ðŸ”‘ Golden Key earned!');
       }
+    });
+    
+    // Play timer expired event (V1 parity - triggers 30-second overlay)
+    const unsubPlayExpired = eventBus.on('playTimerExpired', (data) => {
+      console.log('[SessionPageV2] playTimerExpired event received:', data);
+      setPlayExpiredPhase(data.phase || currentPhase);
+      setShowPlayTimeExpired(true);
     });
     
     const timer = new TimerService(
@@ -535,18 +556,19 @@ function SessionPageV2Inner() {
     const mode = currentTimerMode[phaseName];
     if (mode === 'play') {
       // Play time expired - show PlayTimeExpiredOverlay
-      addEvent(`⏱️ Play time expired for ${phaseName}`);
-      // TODO: Show PlayTimeExpiredOverlay
+      addEvent(`â±ï¸ Play time expired for ${phaseName}`);
+      setPlayExpiredPhase(phaseName);
+      setShowPlayTimeExpired(true);
     } else if (mode === 'work') {
       // Work time exceeded - track for golden key
-      addEvent(`⏱️ Work time exceeded for ${phaseName}`);
+      addEvent(`â±ï¸ Work time exceeded for ${phaseName}`);
     }
   }, [getCurrentPhaseName, currentTimerMode]);
   
   // Handle timer click (for facilitator controls)
   const handleTimerClick = useCallback(() => {
-    // TODO: Show timer control overlay for facilitator
-    console.log('[SessionPageV2] Timer clicked');
+    console.log('[SessionPageV2] Timer clicked - showing timer control overlay');
+    setShowTimerControl(true);
   }, []);
   
   // Handle timer pause toggle
@@ -562,7 +584,7 @@ function SessionPageV2Inner() {
       [phaseName]: 'play'
     }));
     setTimerRefreshKey(prev => prev + 1);
-    addEvent(`🎉 Play timer started for ${phaseName}`);
+    addEvent(`ðŸŽ‰ Play timer started for ${phaseName}`);
   }, []);
   
   // Transition from play to work timer (called when "Go" is clicked)
@@ -581,7 +603,196 @@ function SessionPageV2Inner() {
       [phaseName]: 'work'
     }));
     setTimerRefreshKey(prev => prev + 1);
-    addEvent(`✏️ Work timer started for ${phaseName}`);
+    addEvent(`âœï¸ Work timer started for ${phaseName}`);
+  }, [lessonData, subjectParam, lessonId]);
+  
+  // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode) - V1 parity
+  const handlePlayExpiredComplete = useCallback(async () => {
+    setShowPlayTimeExpired(false);
+    const phaseToStart = playExpiredPhase;
+    setPlayExpiredPhase(null);
+    
+    if (phaseToStart) {
+      transitionToWorkTimer(phaseToStart);
+      
+      // Automatically start the lesson based on the current phase
+      try {
+        if (phaseToStart === 'discussion' || currentPhase === 'discussion' || currentPhase === 'teaching') {
+          // Start teaching/discussion
+          startSession();
+        } else if (phaseToStart === 'comprehension' || currentPhase === 'comprehension') {
+          // Comprehension auto-starts when phase begins
+        } else if (phaseToStart === 'exercise' || currentPhase === 'exercise') {
+          // Exercise auto-starts when phase begins
+        } else if (phaseToStart === 'worksheet' || currentPhase === 'worksheet') {
+          // Worksheet auto-starts when phase begins
+        } else if (phaseToStart === 'test' || currentPhase === 'test') {
+          // Test auto-starts when phase begins
+        }
+      } catch (e) {
+        console.warn('[SessionPageV2] Auto-start failed:', e);
+      }
+    }
+  }, [playExpiredPhase, currentPhase, transitionToWorkTimer]);
+  
+  // Handle manual "Start Now" from PlayTimeExpiredOverlay - V1 parity
+  const handlePlayExpiredStartNow = useCallback(async () => {
+    setShowPlayTimeExpired(false);
+    const phaseToStart = playExpiredPhase;
+    setPlayExpiredPhase(null);
+    
+    if (phaseToStart) {
+      transitionToWorkTimer(phaseToStart);
+      
+      // Trigger the appropriate Go handler
+      try {
+        if (phaseToStart === 'discussion' || currentPhase === 'discussion' || currentPhase === 'teaching') {
+          startSession();
+        } else if (phaseToStart === 'comprehension' || currentPhase === 'comprehension') {
+          // Comprehension phase handles its own Go
+        } else if (phaseToStart === 'exercise' || currentPhase === 'exercise') {
+          // Exercise phase handles its own Go
+        } else if (phaseToStart === 'worksheet' || currentPhase === 'worksheet') {
+          // Worksheet phase handles its own Go
+        } else if (phaseToStart === 'test' || currentPhase === 'test') {
+          // Test phase handles its own Go
+        }
+      } catch (e) {
+        console.warn('[SessionPageV2] Start now failed:', e);
+      }
+    }
+  }, [playExpiredPhase, currentPhase, transitionToWorkTimer]);
+  
+  // Handle timeline phase jump - allows user to click timeline to skip to a phase
+  const handleTimelineJump = useCallback(async (targetPhase) => {
+    console.log('[SessionPageV2] handleTimelineJump called with:', targetPhase);
+    console.log('[SessionPageV2] timelineJumpInProgressRef:', timelineJumpInProgressRef);
+    console.log('[SessionPageV2] timelineJumpInProgressRef.current:', timelineJumpInProgressRef.current);
+    
+    // Debounce: Block rapid successive clicks
+    if (timelineJumpInProgressRef.current) {
+      console.warn('[SessionPageV2] Timeline jump BLOCKED - jump already in progress for:', targetPhase);
+      return;
+    }
+    
+    // Set jump in progress flag IMMEDIATELY (before any async operations)
+    timelineJumpInProgressRef.current = true;
+    console.log('[SessionPageV2] Flag NOW set to true, value:', timelineJumpInProgressRef.current, 'for:', targetPhase);
+    
+    // Only allow jumping to valid phases
+    const validPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+    if (!validPhases.includes(targetPhase)) {
+      console.warn('[SessionPageV2] Invalid timeline jump target:', targetPhase);
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+    
+    // Guard: Need orchestrator
+    if (!orchestratorRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked - no orchestrator');
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+    
+    // Guard: Need audio engine
+    if (!audioEngineRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked - no audio engine');
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+    
+    console.log('[SessionPageV2] Timeline jump proceeding to:', targetPhase);
+    
+    // Stop any playing audio first
+    try {
+      if (audioEngineRef.current) {
+        audioEngineRef.current.stop();
+      }
+    } catch (e) {
+      console.warn('[SessionPageV2] Error stopping audio:', e);
+    }
+    
+    // Ensure video is playing (unlock autoplay)
+    try {
+      if (videoRef.current && videoRef.current.paused) {
+        videoRef.current.currentTime = 0;
+        await videoRef.current.play();
+      }
+    } catch (e) {
+      // Silent - video may need user interaction first
+    }
+    
+    // Reset opening actions state to prevent zombie UI
+    setOpeningActionActive(false);
+    setOpeningActionType(null);
+    setOpeningActionState({});
+    
+    // Destroy any existing phase controllers to avoid conflicts
+    if (discussionPhaseRef.current) {
+      try { discussionPhaseRef.current.destroy(); } catch {}
+      discussionPhaseRef.current = null;
+    }
+    if (comprehensionPhaseRef.current) {
+      try { comprehensionPhaseRef.current.destroy(); } catch {}
+      comprehensionPhaseRef.current = null;
+    }
+    if (exercisePhaseRef.current) {
+      try { exercisePhaseRef.current.destroy(); } catch {}
+      exercisePhaseRef.current = null;
+    }
+    if (worksheetPhaseRef.current) {
+      try { worksheetPhaseRef.current.destroy(); } catch {}
+      worksheetPhaseRef.current = null;
+    }
+    if (testPhaseRef.current) {
+      try { testPhaseRef.current.destroy(); } catch {}
+      testPhaseRef.current = null;
+    }
+    if (closingPhaseRef.current) {
+      try { closingPhaseRef.current.destroy(); } catch {}
+      closingPhaseRef.current = null;
+    }
+    
+    // Reset phase-specific states
+    setDiscussionState('idle');
+    setComprehensionState('idle');
+    setExerciseState('idle');
+    setWorksheetState('idle');
+    setTestState('idle');
+    
+    // Hide PlayTimeExpiredOverlay if showing
+    setShowPlayTimeExpired(false);
+    setPlayExpiredPhase(null);
+    
+    // Clear timer storage for the target phase (fresh start)
+    const lessonKey = lessonData?.key || `${subjectParam}/${lessonId}`;
+    try {
+      // Clear play timer storage
+      sessionStorage.removeItem(`session_timer_state:${lessonKey}:${targetPhase}:play`);
+      // Clear work timer storage
+      sessionStorage.removeItem(`session_timer_state:${lessonKey}:${targetPhase}:work`);
+      // Clear warning timer storage (30-second countdown)
+      sessionStorage.removeItem(`play_expired_warning:${lessonKey}:${targetPhase}`);
+    } catch {}
+    
+    // Use orchestrator's skipToPhase method - this will emit phaseChange
+    // which triggers startComprehensionPhase/startExercisePhase/etc.
+    orchestratorRef.current.skipToPhase(targetPhase);
+    
+    // Reset timer for the new phase
+    // Discussion has no play timer - goes directly to work mode
+    // All other phases start in play mode
+    const timerMode = targetPhase === 'discussion' ? 'work' : 'play';
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [targetPhase]: timerMode
+    }));
+    setTimerRefreshKey(k => k + 1);
+    
+    // Clear jump in progress flag after a short delay to allow phase to initialize
+    setTimeout(() => {
+      timelineJumpInProgressRef.current = false;
+    }, 500);
   }, [lessonData, subjectParam, lessonId]);
   
   // Orientation and layout detection (matching V1)
@@ -765,7 +976,7 @@ function SessionPageV2Inner() {
     const initAudio = async () => {
       try {
         await engine.initialize();
-        addEvent('🔊 Audio initialized');
+        addEvent('ðŸ”Š Audio initialized');
       } catch (err) {
         console.error('[SessionPageV2] Audio init failed:', err);
       }
@@ -783,13 +994,13 @@ function SessionPageV2Inner() {
     
     // Subscribe to AudioEngine events
     engine.on('start', (data) => {
-      addEvent('🎬 AudioEngine START');
+      addEvent('ðŸŽ¬ AudioEngine START');
       setEngineState('playing');
       setShowRepeatButton(false); // Hide repeat while playing
     });
     
     engine.on('end', (data) => {
-      addEvent(`🏁 AudioEngine END (completed: ${data.completed}, skipped: ${data.skipped || false})`);
+      addEvent(`ðŸ AudioEngine END (completed: ${data.completed}, skipped: ${data.skipped || false})`);
       setEngineState('idle');
       // Show repeat button if there's audio to replay
       if (engine.hasAudioToReplay) {
@@ -816,7 +1027,7 @@ function SessionPageV2Inner() {
     });
     
     engine.on('error', (data) => {
-      addEvent(`❌ AudioEngine ERROR: ${data.message}`);
+      addEvent(`âŒ AudioEngine ERROR: ${data.message}`);
       setEngineState('error');
     });
     
@@ -864,7 +1075,7 @@ function SessionPageV2Inner() {
     
     // Subscribe to TeachingController events
     controller.on('stageChange', (data) => {
-      addEvent(`📖 Stage: ${data.stage} (${data.totalSentences} sentences)`);
+      addEvent(`ðŸ“– Stage: ${data.stage} (${data.totalSentences} sentences)`);
       setTeachingStage(data.stage);
       setTotalSentences(data.totalSentences);
       setSentenceIndex(0);
@@ -872,16 +1083,16 @@ function SessionPageV2Inner() {
     });
     
     controller.on('sentenceAdvance', (data) => {
-      addEvent(`➡️ Sentence ${data.index + 1}/${data.total}`);
+      addEvent(`âž¡ï¸ Sentence ${data.index + 1}/${data.total}`);
       setSentenceIndex(data.index);
     });
     
     controller.on('sentenceComplete', (data) => {
-      addEvent(`✅ Sentence ${data.index + 1} complete`);
+      addEvent(`âœ… Sentence ${data.index + 1} complete`);
     });
     
     controller.on('finalGateReached', (data) => {
-      addEvent(`🚪 Final gate: ${data.stage}`);
+      addEvent(`ðŸšª Final gate: ${data.stage}`);
       setIsInSentenceMode(false);
     });
     
@@ -927,21 +1138,21 @@ function SessionPageV2Inner() {
       
       // Subscribe to opening action events
       eventBusRef.current.on('openingActionStart', (data) => {
-        addEvent(`🎯 Opening action: ${data.type}`);
+        addEvent(`ðŸŽ¯ Opening action: ${data.type}`);
         setOpeningActionActive(true);
         setOpeningActionType(data.type);
         setOpeningActionState(openingController.getState() || {});
       });
       
       eventBusRef.current.on('openingActionComplete', (data) => {
-        addEvent(`✅ Opening action complete: ${data.type}`);
+        addEvent(`âœ… Opening action complete: ${data.type}`);
         setOpeningActionActive(false);
         setOpeningActionType(null);
         setOpeningActionState({});
       });
       
       eventBusRef.current.on('openingActionCancel', (data) => {
-        addEvent(`❌ Opening action cancelled: ${data.type}`);
+        addEvent(`âŒ Opening action cancelled: ${data.type}`);
         setOpeningActionActive(false);
         setOpeningActionType(null);
         setOpeningActionState({});
@@ -951,7 +1162,9 @@ function SessionPageV2Inner() {
     // Subscribe to phase transitions
     orchestrator.on('phaseChange', (data) => {
       console.log('[SessionPageV2] phaseChange event received:', data.phase);
-      addEvent(`🔄 Phase: ${data.phase}`);
+      console.log('[SessionPageV2] phaseChange audioEngineRef:', !!audioEngineRef.current);
+      console.log('[SessionPageV2] phaseChange lessonData:', !!lessonData);
+      addEvent(`ðŸ”„ Phase: ${data.phase}`);
       setCurrentPhase(data.phase);
       
       // Update keyboard service phase
@@ -962,10 +1175,12 @@ function SessionPageV2Inner() {
       // Start phase-specific controller
       if (data.phase === 'discussion') {
         startDiscussionPhase();
-        // Discussion has no play timer (architectural decision from V1)
+        // Discussion has no play timer - start directly in work mode
+        setCurrentTimerMode(prev => ({ ...prev, discussion: 'work' }));
+        setTimerRefreshKey(k => k + 1);
       } else if (data.phase === 'teaching') {
         startTeachingPhase();
-        // Teaching uses discussion timer (grouped together)
+        // Teaching uses discussion timer (grouped together, already in work mode)
       } else if (data.phase === 'comprehension') {
         startComprehensionPhase();
         // Start play timer for comprehension
@@ -988,7 +1203,7 @@ function SessionPageV2Inner() {
     });
     
     orchestrator.on('sessionComplete', (data) => {
-      addEvent('🏁 Session complete!');
+      addEvent('ðŸ Session complete!');
       setCurrentPhase('complete');
       
       // Set prevention flag to block any snapshot saves during cleanup
@@ -1000,16 +1215,16 @@ function SessionPageV2Inner() {
       if (timerServiceRef.current) {
         const goldenKey = timerServiceRef.current.getGoldenKeyStatus();
         if (goldenKey.eligible) {
-          addEvent(`🔑 Golden Key Earned! (${goldenKey.onTimeCompletions}/3 on-time)`);
+          addEvent(`ðŸ”‘ Golden Key Earned! (${goldenKey.onTimeCompletions}/3 on-time)`);
         } else {
-          addEvent(`🔑 Golden Key not earned (${goldenKey.onTimeCompletions}/3 on-time)`);
+          addEvent(`ðŸ”‘ Golden Key not earned (${goldenKey.onTimeCompletions}/3 on-time)`);
         }
       }
       
       // Delete snapshot (session finished)
       if (snapshotServiceRef.current) {
         snapshotServiceRef.current.deleteSnapshot().then(() => {
-          addEvent('💾 Cleared session snapshot');
+          addEvent('ðŸ’¾ Cleared session snapshot');
           
           // Clear prevention flag after cleanup completes
           if (typeof window !== 'undefined') {
@@ -1058,17 +1273,17 @@ function SessionPageV2Inner() {
     
     // Subscribe to events
     eventBusRef.current.on('greetingPlaying', (data) => {
-      addEvent(`👋 Playing greeting: "${data.greetingText}"`);
+      addEvent(`ðŸ‘‹ Playing greeting: "${data.greetingText}"`);
       setDiscussionState('playing-greeting');
     });
     
     eventBusRef.current.on('greetingComplete', (data) => {
-      addEvent('✅ Greeting complete');
+      addEvent('âœ… Greeting complete');
       setDiscussionState('complete');
     });
     
     eventBusRef.current.on('discussionComplete', (data) => {
-      addEvent('🎉 Discussion complete - proceeding to teaching');
+      addEvent('ðŸŽ‰ Discussion complete - proceeding to teaching');
       setDiscussionState('complete');
       
       // Save snapshot
@@ -1076,7 +1291,7 @@ function SessionPageV2Inner() {
         snapshotServiceRef.current.savePhaseCompletion('discussion', {
           completed: true
         }).then(() => {
-          addEvent('💾 Saved discussion progress');
+          addEvent('ðŸ’¾ Saved discussion progress');
         }).catch(err => {
           console.error('[SessionPageV2] Save discussion error:', err);
         });
@@ -1103,7 +1318,7 @@ function SessionPageV2Inner() {
     
     // Wire up teaching complete to orchestrator
     const handleTeachingComplete = (data) => {
-      addEvent(`🎉 Teaching complete! (${data.vocabCount} vocab, ${data.exampleCount} examples)`);
+      addEvent(`ðŸŽ‰ Teaching complete! (${data.vocabCount} vocab, ${data.exampleCount} examples)`);
       setTeachingStage('complete');
       
       // Save snapshot
@@ -1112,7 +1327,7 @@ function SessionPageV2Inner() {
           vocabCount: data.vocabCount,
           exampleCount: data.exampleCount
         }).then(() => {
-          addEvent('💾 Saved teaching progress');
+          addEvent('ðŸ’¾ Saved teaching progress');
         }).catch(err => {
           console.error('[SessionPageV2] Save teaching error:', err);
         });
@@ -1130,14 +1345,37 @@ function SessionPageV2Inner() {
   
   // Start comprehension phase
   const startComprehensionPhase = () => {
-    if (!audioEngineRef.current || !lessonData?.comprehension) return;
+    console.log('[SessionPageV2] startComprehensionPhase called');
+    console.log('[SessionPageV2] startComprehensionPhase audioEngineRef:', !!audioEngineRef.current);
+    if (!audioEngineRef.current || !lessonData) {
+      console.log('[SessionPageV2] startComprehensionPhase - guard failed, returning early');
+      return;
+    }
+    
+    // Build comprehension questions from MC and TF pools (V1 parity: comprehension uses all question types)
+    const questions = buildQuestionPool(3, []); // 3 questions, no exclusions
+    console.log('[SessionPageV2] startComprehensionPhase built questions:', questions.length);
+    
+    if (questions.length === 0) {
+      // If no comprehension questions, skip to exercise
+      addEvent('⚠️ No comprehension questions - skipping to exercise');
+      if (orchestratorRef.current) {
+        orchestratorRef.current.onComprehensionComplete();
+      }
+      return;
+    }
+    
+    // Start work phase timer
+    if (timerServiceRef.current) {
+      timerServiceRef.current.startWorkPhaseTimer('comprehension');
+      addEvent('⏱️ Comprehension timer started');
+    }
     
     const phase = new ComprehensionPhase({
       audioEngine: audioEngineRef.current,
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
-      question: lessonData.comprehension.question || 'What did you learn?',
-      sampleAnswer: lessonData.comprehension.sampleAnswer || ''
+      questions: questions
     });
     
     comprehensionPhaseRef.current = phase;
@@ -1149,12 +1387,12 @@ function SessionPageV2Inner() {
         setComprehensionTimerMode(data.timerMode);
       }
       if (data.state === 'awaiting-answer') {
-        addEvent('❓ Waiting for answer...');
+        addEvent('â“ Waiting for answer...');
       }
     });
     
     phase.on('comprehensionComplete', (data) => {
-      addEvent(`✅ Comprehension complete: ${data.answer || '(skipped)'}`);
+      addEvent(`âœ… Comprehension complete: ${data.answer || '(skipped)'}`);
       setComprehensionState('complete');
       
       // Save snapshot
@@ -1163,7 +1401,7 @@ function SessionPageV2Inner() {
           answer: data.answer,
           submitted: !!data.answer
         }).then(() => {
-          addEvent('💾 Saved comprehension progress');
+          addEvent('ðŸ’¾ Saved comprehension progress');
         }).catch(err => {
           console.error('[SessionPageV2] Save comprehension error:', err);
         });
@@ -1180,7 +1418,7 @@ function SessionPageV2Inner() {
     });
     
     phase.on('error', (data) => {
-      addEvent(`❌ Error: ${data.message}`);
+      addEvent(`âŒ Error: ${data.message}`);
     });
     
     phase.on('requestSnapshotSave', (data) => {
@@ -1194,15 +1432,46 @@ function SessionPageV2Inner() {
   };
   
   // Start exercise phase
-  const startExercisePhase = () => {
-    if (!audioEngineRef.current || !lessonData?.exercise) return;
+  // Helper: Build question pool from lesson data arrays (V1 parity)
+  const buildQuestionPool = (target = 5, excludeTypes = []) => {
+    const shuffle = (arr) => {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    };
     
-    // Generate exercise questions from lesson data
-    const questions = lessonData.exercise.questions || [];
+    const tf = !excludeTypes.includes('tf') && Array.isArray(lessonData?.truefalse) 
+      ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf', type: 'tf' })) : [];
+    const mc = !excludeTypes.includes('mc') && Array.isArray(lessonData?.multiplechoice) 
+      ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc', type: 'mc' })) : [];
+    const fib = !excludeTypes.includes('fib') && Array.isArray(lessonData?.fillintheblank) 
+      ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib', type: 'fib' })) : [];
+    const sa = !excludeTypes.includes('short') && Array.isArray(lessonData?.shortanswer) 
+      ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short', type: 'short' })) : [];
+    
+    // Pool all questions, shuffle, and take target count
+    const pool = shuffle([...tf, ...mc, ...fib, ...sa]);
+    return pool.slice(0, Math.min(target, pool.length));
+  };
+
+  const startExercisePhase = () => {
+    console.log('[SessionPageV2] startExercisePhase called');
+    console.log('[SessionPageV2] startExercisePhase audioEngineRef:', !!audioEngineRef.current);
+    if (!audioEngineRef.current || !lessonData) {
+      console.log('[SessionPageV2] startExercisePhase - guard failed, returning early');
+      return;
+    }
+    
+    // Build exercise questions from MC and TF pools (V1 parity: exercise uses MC/TF)
+    const questions = buildQuestionPool(5, ['fib', 'short']);
+    console.log('[SessionPageV2] startExercisePhase built questions:', questions.length);
     
     if (questions.length === 0) {
-      // If no exercise questions, skip to closing
-      addEvent('⚠️ No exercise questions - skipping to closing');
+      // If no exercise questions, skip to worksheet
+      addEvent('âš ï¸ No exercise questions - skipping to worksheet');
       if (orchestratorRef.current) {
         orchestratorRef.current.onExerciseComplete();
       }
@@ -1212,7 +1481,7 @@ function SessionPageV2Inner() {
     // Start work phase timer
     if (timerServiceRef.current) {
       timerServiceRef.current.startWorkPhaseTimer('exercise');
-      addEvent('⏱️ Exercise timer started (3 min limit)');
+      addEvent('â±ï¸ Exercise timer started (3 min limit)');
     }
     
     const phase = new ExercisePhase({
@@ -1234,30 +1503,30 @@ function SessionPageV2Inner() {
     
     // Subscribe to question events
     phase.on('questionStart', (data) => {
-      addEvent(`📝 Question ${data.questionIndex + 1}/${data.totalQuestions}`);
+      addEvent(`ðŸ“ Question ${data.questionIndex + 1}/${data.totalQuestions}`);
       setCurrentExerciseQuestion(data.question);
       setExerciseTotalQuestions(data.totalQuestions);
     });
     
     phase.on('questionReady', (data) => {
       setExerciseState('awaiting-answer');
-      addEvent('❓ Question ready for answer...');
+      addEvent('â“ Question ready for answer...');
     });
     
     phase.on('answerSubmitted', (data) => {
-      const result = data.isCorrect ? '✅ Correct!' : '❌ Incorrect';
+      const result = data.isCorrect ? 'âœ… Correct!' : 'âŒ Incorrect';
       addEvent(`${result} (Score: ${data.score}/${data.totalQuestions})`);
       setExerciseScore(data.score);
       setSelectedExerciseAnswer('');
     });
     
     phase.on('questionSkipped', (data) => {
-      addEvent(`⏭️ Skipped (Score: ${data.score}/${data.totalQuestions})`);
+      addEvent(`â­ï¸ Skipped (Score: ${data.score}/${data.totalQuestions})`);
       setSelectedExerciseAnswer('');
     });
     
     phase.on('exerciseComplete', (data) => {
-      addEvent(`🎉 Exercise complete! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
+      addEvent(`ðŸŽ‰ Exercise complete! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
       setExerciseState('complete');
       
       // Complete work phase timer
@@ -1265,8 +1534,8 @@ function SessionPageV2Inner() {
         timerServiceRef.current.completeWorkPhaseTimer('exercise');
         const time = timerServiceRef.current.getWorkPhaseTime('exercise');
         if (time) {
-          const status = time.onTime ? '✅ On time!' : '⏰ Time exceeded';
-          addEvent(`⏱️ Exercise completed in ${time.formatted} ${status}`);
+          const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
+          addEvent(`â±ï¸ Exercise completed in ${time.formatted} ${status}`);
         }
       }
       
@@ -1278,7 +1547,7 @@ function SessionPageV2Inner() {
           percentage: data.percentage,
           answers: data.answers
         }).then(() => {
-          addEvent('💾 Saved exercise progress');
+          addEvent('ðŸ’¾ Saved exercise progress');
         }).catch(err => {
           console.error('[SessionPageV2] Save exercise error:', err);
         });
@@ -1306,14 +1575,22 @@ function SessionPageV2Inner() {
   
   // Start worksheet phase
   const startWorksheetPhase = () => {
-    if (!audioEngineRef.current || !lessonData?.worksheet) return;
+    console.log('[SessionPageV2] startWorksheetPhase called');
+    console.log('[SessionPageV2] startWorksheetPhase audioEngineRef:', !!audioEngineRef.current);
+    if (!audioEngineRef.current || !lessonData) {
+      console.log('[SessionPageV2] startWorksheetPhase - guard failed, returning early');
+      return;
+    }
     
-    // Generate worksheet questions from lesson data
-    const questions = lessonData.worksheet.questions || [];
+    // Build worksheet questions from FIB pool (V1 parity: worksheet uses fill-in-blank)
+    const fib = Array.isArray(lessonData?.fillintheblank) 
+      ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib', type: 'fib' })) : [];
+    const questions = fib.slice(0, 5);
+    console.log('[SessionPageV2] startWorksheetPhase built questions:', questions.length);
     
     if (questions.length === 0) {
-      // If no worksheet questions, skip to closing
-      addEvent('⚠️ No worksheet questions - skipping to closing');
+      // If no worksheet questions, skip to test
+      addEvent('âš ï¸ No worksheet questions - skipping to test');
       if (orchestratorRef.current) {
         orchestratorRef.current.onWorksheetComplete();
       }
@@ -1323,7 +1600,7 @@ function SessionPageV2Inner() {
     // Start work phase timer
     if (timerServiceRef.current) {
       timerServiceRef.current.startWorkPhaseTimer('worksheet');
-      addEvent('⏱️ Worksheet timer started (5 min limit)');
+      addEvent('â±ï¸ Worksheet timer started (5 min limit)');
     }
     
     const phase = new WorksheetPhase({
@@ -1345,7 +1622,7 @@ function SessionPageV2Inner() {
     
     // Subscribe to question events
     phase.on('questionStart', (data) => {
-      addEvent(`📝 Worksheet ${data.questionIndex + 1}/${data.totalQuestions}`);
+      addEvent(`ðŸ“ Worksheet ${data.questionIndex + 1}/${data.totalQuestions}`);
       setCurrentWorksheetQuestion(data.question);
       setWorksheetTotalQuestions(data.totalQuestions);
       setLastWorksheetFeedback(null);
@@ -1353,11 +1630,11 @@ function SessionPageV2Inner() {
     
     phase.on('questionReady', (data) => {
       setWorksheetState('awaiting-answer');
-      addEvent('❓ Fill in the blank...');
+      addEvent('â“ Fill in the blank...');
     });
     
     phase.on('answerSubmitted', (data) => {
-      const result = data.isCorrect ? '✅ Correct!' : `❌ Incorrect - Answer: ${data.correctAnswer}`;
+      const result = data.isCorrect ? 'âœ… Correct!' : `âŒ Incorrect - Answer: ${data.correctAnswer}`;
       addEvent(`${result} (Score: ${data.score}/${data.totalQuestions})`);
       setWorksheetScore(data.score);
       setWorksheetAnswer('');
@@ -1368,7 +1645,7 @@ function SessionPageV2Inner() {
     });
     
     phase.on('questionSkipped', (data) => {
-      addEvent(`⏭️ Skipped - Answer: ${data.correctAnswer} (Score: ${data.score}/${data.totalQuestions})`);
+      addEvent(`â­ï¸ Skipped - Answer: ${data.correctAnswer} (Score: ${data.score}/${data.totalQuestions})`);
       setWorksheetAnswer('');
       setLastWorksheetFeedback({
         isCorrect: false,
@@ -1377,7 +1654,7 @@ function SessionPageV2Inner() {
     });
     
     phase.on('worksheetComplete', (data) => {
-      addEvent(`🎉 Worksheet complete! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
+      addEvent(`ðŸŽ‰ Worksheet complete! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
       setWorksheetState('complete');
       
       // Complete work phase timer
@@ -1385,8 +1662,8 @@ function SessionPageV2Inner() {
         timerServiceRef.current.completeWorkPhaseTimer('worksheet');
         const time = timerServiceRef.current.getWorkPhaseTime('worksheet');
         if (time) {
-          const status = time.onTime ? '✅ On time!' : '⏰ Time exceeded';
-          addEvent(`⏱️ Worksheet completed in ${time.formatted} ${status}`);
+          const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
+          addEvent(`â±ï¸ Worksheet completed in ${time.formatted} ${status}`);
         }
       }
       
@@ -1398,7 +1675,7 @@ function SessionPageV2Inner() {
           percentage: data.percentage,
           answers: data.answers
         }).then(() => {
-          addEvent('💾 Saved worksheet progress');
+          addEvent('ðŸ’¾ Saved worksheet progress');
         }).catch(err => {
           console.error('[SessionPageV2] Save worksheet error:', err);
         });
@@ -1426,14 +1703,20 @@ function SessionPageV2Inner() {
   
   // Start test phase
   const startTestPhase = () => {
-    if (!audioEngineRef.current || !lessonData?.test) return;
+    console.log('[SessionPageV2] startTestPhase called');
+    console.log('[SessionPageV2] startTestPhase audioEngineRef:', !!audioEngineRef.current);
+    if (!audioEngineRef.current || !lessonData) {
+      console.log('[SessionPageV2] startTestPhase - guard failed, returning early');
+      return;
+    }
     
-    // Generate test questions from lesson data
-    const questions = lessonData.test.questions || [];
+    // Build test questions from all pools (V1 parity: test uses mix of all types)
+    const questions = buildQuestionPool(10, []);
+    console.log('[SessionPageV2] startTestPhase built questions:', questions.length);
     
     if (questions.length === 0) {
       // If no test questions, skip to closing
-      addEvent('⚠️ No test questions - skipping to closing');
+      addEvent('âš ï¸ No test questions - skipping to closing');
       if (orchestratorRef.current) {
         orchestratorRef.current.onTestComplete();
       }
@@ -1443,7 +1726,7 @@ function SessionPageV2Inner() {
     // Start work phase timer
     if (timerServiceRef.current) {
       timerServiceRef.current.startWorkPhaseTimer('test');
-      addEvent('⏱️ Test timer started (10 min limit)');
+      addEvent('â±ï¸ Test timer started (10 min limit)');
     }
     
     const phase = new TestPhase({
@@ -1465,7 +1748,7 @@ function SessionPageV2Inner() {
     
     // Subscribe to test events
     phase.on('questionStart', (data) => {
-      addEvent(`📝 Test Question ${data.questionIndex + 1}/${data.totalQuestions}`);
+      addEvent(`ðŸ“ Test Question ${data.questionIndex + 1}/${data.totalQuestions}`);
       setCurrentTestQuestion(data.question);
       setTestTotalQuestions(data.totalQuestions);
       setTestAnswer('');
@@ -1473,23 +1756,23 @@ function SessionPageV2Inner() {
     
     phase.on('questionReady', (data) => {
       setTestState('awaiting-answer');
-      addEvent('❓ Answer the test question...');
+      addEvent('â“ Answer the test question...');
     });
     
     phase.on('answerSubmitted', (data) => {
-      const result = data.isCorrect ? '✅ Correct!' : '❌ Incorrect';
+      const result = data.isCorrect ? 'âœ… Correct!' : 'âŒ Incorrect';
       addEvent(`${result} (Score: ${data.score}/${data.totalQuestions})`);
       setTestScore(data.score);
       setTestAnswer('');
     });
     
     phase.on('questionSkipped', (data) => {
-      addEvent(`⏭️ Skipped (Score: ${data.score}/${data.totalQuestions})`);
+      addEvent(`â­ï¸ Skipped (Score: ${data.score}/${data.totalQuestions})`);
       setTestAnswer('');
     });
     
     phase.on('testQuestionsComplete', (data) => {
-      addEvent(`📊 Test questions done! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%) - Grade: ${data.grade}`);
+      addEvent(`ðŸ“Š Test questions done! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%) - Grade: ${data.grade}`);
       setTestGrade(data);
       setTestState('reviewing');
     });
@@ -1497,11 +1780,11 @@ function SessionPageV2Inner() {
     phase.on('reviewQuestion', (data) => {
       setTestReviewAnswer(data.answer);
       setTestReviewIndex(data.reviewIndex);
-      addEvent(`📖 Review ${data.reviewIndex + 1}/${data.totalReviews}`);
+      addEvent(`ðŸ“– Review ${data.reviewIndex + 1}/${data.totalReviews}`);
     });
     
     phase.on('testComplete', (data) => {
-      addEvent(`🎉 Test complete! Final grade: ${data.grade} (${data.percentage}%)`);
+      addEvent(`ðŸŽ‰ Test complete! Final grade: ${data.grade} (${data.percentage}%)`);
       setTestState('complete');
       
       // Complete work phase timer
@@ -1509,14 +1792,14 @@ function SessionPageV2Inner() {
         timerServiceRef.current.completeWorkPhaseTimer('test');
         const time = timerServiceRef.current.getWorkPhaseTime('test');
         if (time) {
-          const status = time.onTime ? '✅ On time!' : '⏰ Time exceeded';
-          addEvent(`⏱️ Test completed in ${time.formatted} ${status}`);
+          const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
+          addEvent(`â±ï¸ Test completed in ${time.formatted} ${status}`);
         }
         
         // Check golden key status
         const goldenKey = timerServiceRef.current.getGoldenKeyStatus();
         if (goldenKey.eligible) {
-          addEvent('🔑 Golden Key Earned! 3 on-time completions!');
+          addEvent('ðŸ”‘ Golden Key Earned! 3 on-time completions!');
         }
       }
       
@@ -1529,7 +1812,7 @@ function SessionPageV2Inner() {
           grade: data.grade,
           answers: data.answers
         }).then(() => {
-          addEvent('💾 Saved test progress');
+          addEvent('ðŸ’¾ Saved test progress');
         }).catch(err => {
           console.error('[SessionPageV2] Save test error:', err);
         });
@@ -1571,12 +1854,12 @@ function SessionPageV2Inner() {
       setClosingState(data.state);
       setClosingMessage(data.message);
       if (data.state === 'playing') {
-        addEvent(`💬 Closing: ${data.message}`);
+        addEvent(`ðŸ’¬ Closing: ${data.message}`);
       }
     });
     
     phase.on('closingComplete', (data) => {
-      addEvent('✅ Closing complete');
+      addEvent('âœ… Closing complete');
       setClosingState('complete');
       
       // Notify orchestrator
@@ -1597,7 +1880,7 @@ function SessionPageV2Inner() {
   const handleHotkey = (data) => {
     const { action, phase, key } = data;
     
-    addEvent(`⌨️ Hotkey: ${key} (${action})`);
+    addEvent(`âŒ¨ï¸ Hotkey: ${key} (${action})`);
     
     // Handle phase-specific actions
     if (action === 'skip') {
@@ -1647,7 +1930,7 @@ function SessionPageV2Inner() {
     // Start prefetching all teaching content immediately (background, non-blocking)
     if (teachingControllerRef.current) {
       teachingControllerRef.current.prefetchAll();
-      addEvent('🔄 Started background prefetch of teaching content');
+      addEvent('ðŸ”„ Started background prefetch of teaching content');
     }
     
     // Unlock video playback for Chrome autoplay policy
@@ -1926,6 +2209,7 @@ function SessionPageV2Inner() {
           timelinePhases={timelinePhases}
           timelineHighlight={timelineHighlight}
           compact={isMobileLandscape}
+          onJumpPhase={handleTimelineJump}
         />
       </div>
       
@@ -2077,7 +2361,8 @@ function SessionPageV2Inner() {
         </div>
       
       {/* Score ticker - top right */}
-      {(currentPhase === 'comprehension' || currentPhase === 'exercise') && (
+      {/* Comprehension/Exercise score counter - top right */}
+      {(currentPhase === 'comprehension' && comprehensionState === 'awaiting-answer') && (
         <div style={{ 
           position: 'absolute', 
           top: 8, 
@@ -2093,7 +2378,27 @@ function SessionPageV2Inner() {
           zIndex: 10000, 
           pointerEvents: 'none' 
         }}>
-          {currentPhase === 'comprehension' ? `${comprehensionScore || 0}/${comprehensionTotalQuestions || 3}` : `${exerciseScore}/${exerciseTotalQuestions}`}
+          {comprehensionScore}/{comprehensionTotalQuestions}
+        </div>
+      )}
+      
+      {currentPhase === 'exercise' && (
+        <div style={{ 
+          position: 'absolute', 
+          top: 8, 
+          right: 8, 
+          background: 'rgba(17,24,39,0.78)', 
+          color: '#fff', 
+          padding: '6px 10px', 
+          borderRadius: 8, 
+          fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', 
+          fontWeight: 600, 
+          letterSpacing: 0.3, 
+          boxShadow: '0 2px 6px rgba(0,0,0,0.25)', 
+          zIndex: 10000, 
+          pointerEvents: 'none' 
+        }}>
+          {exerciseScore}/{exerciseTotalQuestions}
         </div>
       )}
       
@@ -2118,1258 +2423,12 @@ function SessionPageV2Inner() {
         </div>
       )}
       
-      {/* Worksheet question overlay on video */}
-      {currentPhase === 'worksheet' && worksheetState === 'awaiting-answer' && currentWorksheetQuestion && (
-        <div style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          padding: '24px 32px', 
-          pointerEvents: 'none', 
-          textAlign: 'center' 
-        }}>
-          <div style={{ 
-            fontSize: 'clamp(1.75rem, 4.2vw, 3.25rem)', 
-            fontWeight: 800, 
-            lineHeight: 1.18, 
-            color: '#ffffff', 
-            textShadow: '0 0 4px rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.85), 0 4px 22px rgba(0,0,0,0.65)', 
-            letterSpacing: 0.5, 
-            width: '100%' 
-          }}>
-            {currentWorksheetQuestion.question}
-          </div>
-        </div>
-      )}
-      
-      {/* Work timer countdown overlay */}
-      {['exercise', 'worksheet', 'test'].includes(currentPhase) && workPhaseRemaining && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'linear-gradient(135deg, rgba(249,115,22,0.95) 0%, rgba(220,38,38,0.95) 100%)',
-          color: '#fff',
-          padding: '32px 48px',
-          borderRadius: 20,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-          zIndex: 9999,
-          pointerEvents: 'none',
-          border: '4px solid rgba(255,255,255,0.3)'
-        }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.9, marginBottom: 8 }}>
-            {currentPhase} Timer
-          </div>
-          <div style={{ fontSize: '4rem', fontWeight: 800, fontFamily: 'monospace', lineHeight: 1 }}>
-            {workPhaseRemaining}
-          </div>
-        </div>
-      )}
       
       {/* Captions are shown only in the transcript panel (no video overlay). */}
       
-      {/* Phase Controls - bottom center overlay */}
-      <div style={{
-        position: 'absolute',
-        bottom: 24,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 10002
-      }}>
-          
-          {/* Discussion Phase */}
-          {currentPhase === 'discussion' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {discussionState === 'awaiting-response' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <textarea
-                    value={discussionResponse}
-                    onChange={(e) => setDiscussionResponse(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: 12,
-                      border: '2px solid rgba(255,255,255,0.3)',
-                      borderRadius: 8,
-                      fontSize: '1rem',
-                      background: 'rgba(255,255,255,0.95)',
-                      minHeight: 100
-                    }}
-                    rows={4}
-                    placeholder="Type your response here..."
-                  />
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <button
-                      onClick={submitDiscussionResponse}
-                      style={{
-                        padding: '12px 28px',
-                        background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 16px rgba(236, 72, 153, 0.4)'
-                      }}
-                    >
-                      Submit Response
-                    </button>
-                    <button
-                      onClick={skipDiscussion}
-                      style={{
-                        padding: '12px 28px',
-                        background: 'rgba(107, 114, 128, 0.9)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
-                      }}
-                    >
-                      Skip
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {discussionState === 'complete' && (
-                <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.125rem' }}>
-                  ✓ Discussion Activity Complete
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Comprehension Phase */}
-          {currentPhase === 'comprehension' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              
-              {comprehensionState === 'awaiting-go' && (
-                <>
-                  {/* Opening Actions - Show during play time only */}
-                  {comprehensionTimerMode === 'play' && !openingActionActive && (
-                    <div style={{
-                      padding: 16,
-                      background: 'rgba(255, 255, 255, 0.95)',
-                      borderRadius: 12,
-                      border: '2px solid rgba(16, 185, 129, 0.5)',
-                      marginBottom: 16,
-                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
-                    }}>
-                      <h3 style={{ fontWeight: 700, fontSize: '1.125rem', marginBottom: 12, color: '#1f2937' }}>🎯 Opening Actions</h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startAsk()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #93c5fd',
-                            color: '#1d4ed8',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          ❓ Ask Ms. Sonoma
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startRiddle()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #c4b5fd',
-                            color: '#7c3aed',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          🧩 Riddle
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startPoem()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #f9a8d4',
-                            color: '#db2777',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          📜 Poem
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startStory()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #fdba74',
-                            color: '#ea580c',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          📖 Story
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startFillInFun()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #86efac',
-                            color: '#16a34a',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          🎨 Fill-in-Fun
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Active Opening Action UI */}
-                  {openingActionActive && (
-                    <div style={{
-                      padding: 16,
-                      background: 'rgba(254, 252, 232, 0.98)',
-                      borderRadius: 12,
-                      border: '2px solid #fcd34d',
-                      marginBottom: 16,
-                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                        <h3 style={{ fontWeight: 700, fontSize: '1.125rem', color: '#1f2937' }}>
-                          {openingActionType === 'ask' && '❓ Ask Ms. Sonoma'}
-                          {openingActionType === 'riddle' && '🧩 Riddle'}
-                          {openingActionType === 'poem' && '📜 Poem'}
-                          {openingActionType === 'story' && '📖 Story'}
-                          {openingActionType === 'fillInFun' && '🎨 Fill-in-Fun'}
-                        </h3>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.destroy()}
-                          style={{
-                            padding: '6px 16px',
-                            background: '#ef4444',
-                            color: '#fff',
-                            borderRadius: 6,
-                            border: 'none',
-                            fontSize: '0.875rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)'
-                          }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                      
-                      {/* Ask UI */}
-                      {openingActionType === 'ask' && openingActionState.stage === 'awaiting-question' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                          <textarea
-                            placeholder="What would you like to ask Ms. Sonoma?"
-                            style={{
-                              width: '100%',
-                              padding: 12,
-                              border: '1px solid #d1d5db',
-                              borderRadius: 8,
-                              fontSize: '1rem'
-                            }}
-                            rows={3}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey && e.target.value.trim()) {
-                                e.preventDefault();
-                                openingActionsControllerRef.current?.submitAsk(e.target.value.trim());
-                              }
-                            }}
-                          />
-                          <button
-                            onClick={(e) => {
-                              const textarea = e.target.previousElementSibling;
-                              if (textarea.value.trim()) {
-                                openingActionsControllerRef.current?.submitAsk(textarea.value.trim());
-                              }
-                            }}
-                            style={{
-                              padding: '10px 20px',
-                              background: '#2563eb',
-                              color: '#fff',
-                              borderRadius: 8,
-                              border: 'none',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.4)'
-                            }}
-                          >
-                            Submit Question
-                          </button>
-                        </div>
-                      )}
-                      
-                      {/* Riddle UI */}
-                      {openingActionType === 'riddle' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                          {openingActionState.stage === 'question' && (
-                            <div style={{ display: 'flex', gap: 8 }}>
-                              <button
-                                onClick={() => openingActionsControllerRef.current?.getRiddleHint()}
-                                style={{
-                                  padding: '10px 20px',
-                                  background: '#ca8a04',
-                                  color: '#fff',
-                                  borderRadius: 8,
-                                  border: 'none',
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  boxShadow: '0 2px 8px rgba(202, 138, 4, 0.4)'
-                                }}
-                              >
-                                💡 Hint
-                              </button>
-                              <button
-                                onClick={() => openingActionsControllerRef.current?.revealRiddleAnswer()}
-                                style={{
-                                  padding: '10px 20px',
-                                  background: '#9333ea',
-                                  color: '#fff',
-                                  borderRadius: 8,
-                                  border: 'none',
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  boxShadow: '0 2px 8px rgba(147, 51, 234, 0.4)'
-                                }}
-                              >
-                                🔍 Reveal Answer
-                              </button>
-                            </div>
-                          )}
-                          {openingActionState.stage === 'complete' && (
-                            <button
-                              onClick={() => openingActionsControllerRef.current?.completeRiddle()}
-                              style={{
-                                padding: '10px 20px',
-                                background: '#16a34a',
-                                color: '#fff',
-                                borderRadius: 8,
-                                border: 'none',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                boxShadow: '0 2px 8px rgba(22, 163, 74, 0.4)'
-                              }}
-                            >
-                              ✓ Done
-                            </button>
-                          )}
-                        </div>
-                      )}
-                      
-                      {/* Story UI */}
-                      {openingActionType === 'story' && openingActionState.stage === 'telling' && (
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <button
-                            onClick={() => openingActionsControllerRef.current?.continueStory()}
-                            style={{
-                              padding: '10px 20px',
-                              background: '#ea580c',
-                              color: '#fff',
-                              borderRadius: 8,
-                              border: 'none',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 8px rgba(234, 88, 12, 0.4)'
-                            }}
-                          >
-                            ➡️ Continue Story
-                          </button>
-                          <button
-                            onClick={() => openingActionsControllerRef.current?.completeStory()}
-                            style={{
-                              padding: '10px 20px',
-                              background: '#16a34a',
-                              color: '#fff',
-                              borderRadius: 8,
-                              border: 'none',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 8px rgba(22, 163, 74, 0.4)'
-                            }}
-                          >
-                            ✓ Finish Story
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  <div style={{ textAlign: 'center' }}>
-                    <button
-                      onClick={() => comprehensionPhaseRef.current?.go()}
-                      style={{
-                        padding: '14px 36px',
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                        color: '#fff',
-                        fontSize: '1.25rem',
-                        fontWeight: 700,
-                        borderRadius: 12,
-                        border: 'none',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
-                      }}
-                    >
-                      Go
-                    </button>
-                  </div>
-                </>
-              )}
-              
-              {comprehensionState === 'awaiting-answer' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <textarea
-                    value={comprehensionAnswer}
-                    onChange={(e) => setComprehensionAnswer(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: 12,
-                      border: '2px solid rgba(255,255,255,0.3)',
-                      borderRadius: 8,
-                      fontSize: '1rem',
-                      background: 'rgba(255,255,255,0.95)',
-                      minHeight: 100
-                    }}
-                    rows={4}
-                    placeholder="Type your answer here..."
-                  />
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <button
-                      onClick={submitComprehensionAnswer}
-                      style={{
-                        padding: '12px 28px',
-                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)'
-                      }}
-                    >
-                      Submit Answer
-                    </button>
-                    <button
-                      onClick={skipComprehension}
-                      style={{
-                        padding: '12px 28px',
-                        background: 'rgba(107, 114, 128, 0.9)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
-                      }}
-                    >
-                      Skip
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {comprehensionState === 'complete' && (
-                <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.125rem' }}>
-                  ✓ Comprehension Complete
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Exercise Phase */}
-          {currentPhase === 'exercise' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              
-              {exerciseState === 'awaiting-go' && (
-                <>
-                  {/* Opening Actions - Show during play time only */}
-                  {exerciseTimerMode === 'play' && !openingActionActive && (
-                    <div style={{
-                      padding: 16,
-                      background: 'rgba(255, 255, 255, 0.95)',
-                      borderRadius: 12,
-                      border: '2px solid rgba(168, 85, 247, 0.5)',
-                      marginBottom: 16,
-                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
-                    }}>
-                      <h3 style={{ fontWeight: 700, fontSize: '1.125rem', marginBottom: 12, color: '#1f2937' }}>🎯 Opening Actions</h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startAsk()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #93c5fd',
-                            color: '#1d4ed8',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          ❓ Ask Ms. Sonoma
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startRiddle()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #c4b5fd',
-                            color: '#7c3aed',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          🧩 Riddle
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startPoem()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #f9a8d4',
-                            color: '#db2777',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          📜 Poem
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startStory()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #fdba74',
-                            color: '#ea580c',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          📖 Story
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startFillInFun()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #86efac',
-                            color: '#16a34a',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          🎨 Fill-in-Fun
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div style={{ textAlign: 'center' }}>
-                    <button
-                      onClick={() => exercisePhaseRef.current?.go()}
-                      style={{
-                        padding: '14px 36px',
-                        background: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
-                        color: '#fff',
-                        fontSize: '1.25rem',
-                        fontWeight: 700,
-                        borderRadius: 12,
-                        border: 'none',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 20px rgba(168, 85, 247, 0.4)'
-                      }}
-                    >
-                      Go
-                    </button>
-                  </div>
-                </>
-              )}
-              
-              {currentExerciseQuestion && exerciseState === 'awaiting-answer' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ padding: 16, background: 'rgba(255,255,255,0.95)', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-                    <div style={{ fontWeight: 600, fontSize: '1.125rem', marginBottom: 12 }}>{currentExerciseQuestion.question}</div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {currentExerciseQuestion.options.map((option, index) => (
-                        <label
-                          key={index}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: 12,
-                            background: selectedExerciseAnswer === option ? 'rgba(59, 130, 246, 0.1)' : '#fff',
-                            border: selectedExerciseAnswer === option ? '2px solid #3b82f6' : '1px solid #d1d5db',
-                            borderRadius: 8,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <input
-                            type="radio"
-                            name="exercise-answer"
-                            value={option}
-                            checked={selectedExerciseAnswer === option}
-                            onChange={(e) => setSelectedExerciseAnswer(e.target.value)}
-                            style={{ marginRight: 12 }}
-                          />
-                          <span>{option}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <button
-                      onClick={submitExerciseAnswer}
-                      disabled={!selectedExerciseAnswer}
-                      style={{
-                        padding: '12px 28px',
-                        background: selectedExerciseAnswer ? 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)' : '#9ca3af',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: selectedExerciseAnswer ? 'pointer' : 'not-allowed',
-                        boxShadow: selectedExerciseAnswer ? '0 4px 16px rgba(168, 85, 247, 0.4)' : 'none',
-                        opacity: selectedExerciseAnswer ? 1 : 0.5
-                      }}
-                    >
-                      Submit Answer
-                    </button>
-                    <button
-                      onClick={skipExerciseQuestion}
-                      style={{
-                        padding: '12px 28px',
-                        background: 'rgba(107, 114, 128, 0.9)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
-                      }}
-                    >
-                      Skip
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {exerciseState === 'complete' && (
-                <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.125rem' }}>
-                  ✓ Exercise Complete - Score: {exerciseScore}/{exerciseTotalQuestions} ({Math.round((exerciseScore / exerciseTotalQuestions) * 100)}%)
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Worksheet Phase */}
-          {currentPhase === 'worksheet' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              
-              {worksheetState === 'awaiting-go' && (
-                <>
-                  {/* Opening Actions - Show during play time only */}
-                  {worksheetTimerMode === 'play' && !openingActionActive && (
-                    <div style={{
-                      padding: 16,
-                      background: 'rgba(255, 255, 255, 0.95)',
-                      borderRadius: 12,
-                      border: '2px solid rgba(20, 184, 166, 0.5)',
-                      marginBottom: 16,
-                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
-                    }}>
-                      <h3 style={{ fontWeight: 700, fontSize: '1.125rem', marginBottom: 12, color: '#1f2937' }}>🎯 Opening Actions</h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startAsk()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #93c5fd',
-                            color: '#1d4ed8',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          ❓ Ask Ms. Sonoma
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startRiddle()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #c4b5fd',
-                            color: '#7c3aed',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          🧩 Riddle
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startPoem()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #f9a8d4',
-                            color: '#db2777',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          📜 Poem
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startStory()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #fdba74',
-                            color: '#ea580c',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          📖 Story
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startFillInFun()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #86efac',
-                            color: '#16a34a',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          🎨 Fill-in-Fun
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div style={{ textAlign: 'center' }}>
-                    <button
-                      onClick={() => worksheetPhaseRef.current?.go()}
-                      style={{
-                        padding: '14px 36px',
-                        background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
-                        color: '#fff',
-                        fontSize: '1.25rem',
-                        fontWeight: 700,
-                        borderRadius: 12,
-                        border: 'none',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 20px rgba(20, 184, 166, 0.4)'
-                      }}
-                    >
-                      Go
-                    </button>
-                  </div>
-                </>
-              )}
-              
-              {currentWorksheetQuestion && worksheetState === 'awaiting-answer' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ padding: 16, background: 'rgba(255,255,255,0.95)', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-                    <div style={{ fontWeight: 600, fontSize: '1.125rem', marginBottom: 12 }}>{currentWorksheetQuestion.question}</div>
-                    
-                    {currentWorksheetQuestion.hint && (
-                      <div style={{ fontSize: '0.875rem', color: '#6b7280', fontStyle: 'italic', marginBottom: 12 }}>
-                        Hint: {currentWorksheetQuestion.hint}
-                      </div>
-                    )}
-                    
-                    <input
-                      type="text"
-                      value={worksheetAnswer}
-                      onChange={(e) => setWorksheetAnswer(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && worksheetAnswer.trim()) {
-                          submitWorksheetAnswer();
-                        }
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: 12,
-                        border: '2px solid rgba(20, 184, 166, 0.3)',
-                        borderRadius: 8,
-                        fontSize: '1.125rem',
-                        background: '#fff'
-                      }}
-                      placeholder="Type your answer..."
-                      autoFocus
-                    />
-                  </div>
-                  
-                  {lastWorksheetFeedback && (
-                    <div style={{
-                      padding: 12,
-                      borderRadius: 8,
-                      background: lastWorksheetFeedback.isCorrect ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                      color: lastWorksheetFeedback.isCorrect ? '#059669' : '#dc2626',
-                      fontWeight: 600
-                    }}>
-                      {lastWorksheetFeedback.isCorrect ? (
-                        '✓ Correct!'
-                      ) : (
-                        `✗ The correct answer was: ${lastWorksheetFeedback.correctAnswer}`
-                      )}
-                    </div>
-                  )}
-                  
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <button
-                      onClick={submitWorksheetAnswer}
-                      disabled={!worksheetAnswer.trim()}
-                      style={{
-                        padding: '12px 28px',
-                        background: worksheetAnswer.trim() ? 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' : '#9ca3af',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: worksheetAnswer.trim() ? 'pointer' : 'not-allowed',
-                        boxShadow: worksheetAnswer.trim() ? '0 4px 16px rgba(20, 184, 166, 0.4)' : 'none',
-                        opacity: worksheetAnswer.trim() ? 1 : 0.5
-                      }}
-                    >
-                      Submit Answer
-                    </button>
-                    <button
-                      onClick={skipWorksheetQuestion}
-                      style={{
-                        padding: '12px 28px',
-                        background: 'rgba(107, 114, 128, 0.9)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
-                      }}
-                    >
-                      Skip
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {worksheetState === 'complete' && (
-                <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.125rem' }}>
-                  ✓ Worksheet Complete - Score: {worksheetScore}/{worksheetTotalQuestions} ({Math.round((worksheetScore / worksheetTotalQuestions) * 100)}%)
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Test Phase */}
-          {currentPhase === 'test' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              
-              {testState === 'awaiting-go' && (
-                <>
-                  {/* Opening Actions - Show during play time only */}
-                  {testTimerMode === 'play' && !openingActionActive && (
-                    <div style={{
-                      padding: 16,
-                      background: 'rgba(255, 255, 255, 0.95)',
-                      borderRadius: 12,
-                      border: '2px solid rgba(239, 68, 68, 0.5)',
-                      marginBottom: 16,
-                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
-                    }}>
-                      <h3 style={{ fontWeight: 700, fontSize: '1.125rem', marginBottom: 12, color: '#1f2937' }}>🎯 Opening Actions</h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startAsk()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #93c5fd',
-                            color: '#1d4ed8',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          ❓ Ask Ms. Sonoma
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startRiddle()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #c4b5fd',
-                            color: '#7c3aed',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          🧩 Riddle
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startPoem()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #f9a8d4',
-                            color: '#db2777',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          📜 Poem
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startStory()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #fdba74',
-                            color: '#ea580c',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          📖 Story
-                        </button>
-                        <button
-                          onClick={() => openingActionsControllerRef.current?.startFillInFun()}
-                          style={{
-                            padding: '12px 16px',
-                            background: '#fff',
-                            border: '2px solid #86efac',
-                            color: '#16a34a',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          🎨 Fill-in-Fun
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div style={{ textAlign: 'center' }}>
-                    <button
-                      onClick={() => testPhaseRef.current?.go()}
-                      style={{
-                        padding: '14px 36px',
-                        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                        color: '#fff',
-                        fontSize: '1.25rem',
-                        fontWeight: 700,
-                        borderRadius: 12,
-                        border: 'none',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 20px rgba(239, 68, 68, 0.4)'
-                      }}
-                    >
-                      Go
-                    </button>
-                  </div>
-                </>
-              )}
-              
-              {/* Test Questions */}
-              {currentTestQuestion && testState === 'awaiting-answer' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ padding: 16, background: 'rgba(255,255,255,0.95)', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-                    <div style={{ fontWeight: 600, fontSize: '1.125rem', marginBottom: 12 }}>{currentTestQuestion.question}</div>
-                    
-                    {currentTestQuestion.type === 'fill' ? (
-                      // Fill-in-blank input
-                      <div>
-                        {currentTestQuestion.hint && (
-                          <div style={{ fontSize: '0.875rem', color: '#6b7280', fontStyle: 'italic', marginBottom: 12 }}>
-                            Hint: {currentTestQuestion.hint}
-                          </div>
-                        )}
-                        <input
-                          type="text"
-                          value={testAnswer}
-                          onChange={(e) => setTestAnswer(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && testAnswer.trim()) {
-                              submitTestAnswer();
-                            }
-                          }}
-                          style={{
-                            width: '100%',
-                            padding: 12,
-                            border: '2px solid rgba(239, 68, 68, 0.3)',
-                            borderRadius: 8,
-                            fontSize: '1.125rem',
-                            background: '#fff'
-                          }}
-                          placeholder="Type your answer..."
-                          autoFocus
-                        />
-                      </div>
-                    ) : (
-                      // Multiple choice / True-False radio buttons
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {currentTestQuestion.options.map((option, index) => (
-                          <label
-                            key={index}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              padding: 12,
-                              background: testAnswer === option ? 'rgba(239, 68, 68, 0.1)' : '#fff',
-                              border: testAnswer === option ? '2px solid #ef4444' : '1px solid #d1d5db',
-                              borderRadius: 8,
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <input
-                              type="radio"
-                              name="test-answer"
-                              value={option}
-                              checked={testAnswer === option}
-                              onChange={(e) => setTestAnswer(e.target.value)}
-                              style={{ marginRight: 12 }}
-                            />
-                            <span>{option}</span>
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <button
-                      onClick={submitTestAnswer}
-                      disabled={!testAnswer || (currentTestQuestion.type === 'fill' && !testAnswer.trim())}
-                      style={{
-                        padding: '12px 28px',
-                        background: (testAnswer && (currentTestQuestion.type !== 'fill' || testAnswer.trim())) ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : '#9ca3af',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: (testAnswer && (currentTestQuestion.type !== 'fill' || testAnswer.trim())) ? 'pointer' : 'not-allowed',
-                        boxShadow: (testAnswer && (currentTestQuestion.type !== 'fill' || testAnswer.trim())) ? '0 4px 16px rgba(239, 68, 68, 0.4)' : 'none',
-                        opacity: (testAnswer && (currentTestQuestion.type !== 'fill' || testAnswer.trim())) ? 1 : 0.5
-                      }}
-                    >
-                      Submit Answer
-                    </button>
-                    <button
-                      onClick={skipTestQuestion}
-                      style={{
-                        padding: '12px 28px',
-                        background: 'rgba(107, 114, 128, 0.9)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
-                      }}
-                    >
-                      Skip
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {/* Test Review */}
-              {testState === 'reviewing' && testReviewAnswer && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ padding: 16, background: 'rgba(255,255,255,0.95)', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <div style={{ fontWeight: 600 }}>Question {testReviewIndex + 1}:</div>
-                      <div style={{
-                        padding: '6px 12px',
-                        borderRadius: 8,
-                        fontSize: '0.875rem',
-                        fontWeight: 600,
-                        background: testReviewAnswer.isCorrect ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        color: testReviewAnswer.isCorrect ? '#059669' : '#dc2626'
-                      }}>
-                        {testReviewAnswer.isCorrect ? '✓ Correct' : '✗ Incorrect'}
-                      </div>
-                    </div>
-                    
-                    <div style={{ marginBottom: 12 }}>{testReviewAnswer.question}</div>
-                    
-                    {testReviewAnswer.type === 'fill' ? (
-                      // Fill-in-blank review
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        <div>
-                          <span style={{ fontWeight: 600 }}>Your Answer:</span> {testReviewAnswer.userAnswer || '(skipped)'}
-                        </div>
-                        {!testReviewAnswer.isCorrect && (
-                          <div style={{ color: '#059669' }}>
-                            <span style={{ fontWeight: 600 }}>Correct Answer:</span> {testReviewAnswer.correctAnswer}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      // MC/TF review
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {testReviewAnswer.options.map((option, index) => {
-                          const isUserAnswer = option === testReviewAnswer.userAnswer;
-                          const isCorrectAnswer = option === testReviewAnswer.correctAnswer;
-                          
-                          let bgStyle = { background: '#fff', border: '1px solid #d1d5db' };
-                          if (isCorrectAnswer) bgStyle = { background: 'rgba(16, 185, 129, 0.1)', border: '2px solid #059669' };
-                          else if (isUserAnswer && !isCorrectAnswer) bgStyle = { background: 'rgba(239, 68, 68, 0.1)', border: '2px solid #dc2626' };
-                          
-                          return (
-                            <div key={index} style={{ padding: 12, borderRadius: 8, ...bgStyle }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <span>{option}</span>
-                                {isCorrectAnswer && <span style={{ color: '#059669', fontWeight: 600 }}>✓ Correct</span>}
-                                {isUserAnswer && !isCorrectAnswer && <span style={{ color: '#dc2626', fontWeight: 600 }}>✗ Your answer</span>}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <button
-                      onClick={previousTestReview}
-                      disabled={testReviewIndex === 0}
-                      style={{
-                        padding: '10px 20px',
-                        background: testReviewIndex === 0 ? '#9ca3af' : '#4b5563',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 8,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: testReviewIndex === 0 ? 'not-allowed' : 'pointer',
-                        opacity: testReviewIndex === 0 ? 0.5 : 1
-                      }}
-                    >
-                      ← Previous
-                    </button>
-                    <button
-                      onClick={nextTestReview}
-                      style={{
-                        padding: '10px 20px',
-                        background: '#3b82f6',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 8,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Next →
-                    </button>
-                    <button
-                      onClick={skipTestReview}
-                      style={{
-                        padding: '10px 20px',
-                        background: 'rgba(107, 114, 128, 0.9)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 8,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Skip Review
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {testState === 'complete' && testGrade && (
-                <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.125rem' }}>
-                  ✓ Test Complete - Grade: {testGrade.grade} ({testGrade.percentage}%) - Score: {testScore}/{testTotalQuestions}
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Closing Phase */}
-          {currentPhase === 'closing' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {closingState === 'complete' && (
-                <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.125rem' }}>
-                  ✓ Closing Complete
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Session Complete */}
-          {currentPhase === 'complete' && (
-            <div style={{ color: '#10b981', fontWeight: 600, fontSize: '1.25rem' }}>
-              ✓ Session Complete!
-            </div>
-          )}
-        </div>
-        
+      
+      {/* Captions are shown only in the transcript panel (no video overlay). */}
+      
         {/* Audio Transport Controls - Hidden debug panel (press ~ to toggle) */}
         {false && ( // Set to true to enable debug panels
         <div style={{ position: 'absolute', top: 100, right: 20, background: 'rgba(255,255,255,0.95)', borderRadius: 12, padding: 20, maxWidth: 400, maxHeight: '80vh', overflow: 'auto', zIndex: 9000 }}>
@@ -3495,16 +2554,6 @@ function SessionPageV2Inner() {
         </div>
         )}
       
-      {/* PlayTimeExpiredOverlay */}
-      <PlayTimeExpiredOverlay
-        eventBus={eventBusRef.current}
-        timerService={timerServiceRef.current}
-        phase={currentPhase}
-        onTransition={() => {
-          addEvent('⏰ Transitioned to work mode');
-        }}
-      />
-      
       </div>
       
       {/* Transcript column */}
@@ -3539,6 +2588,184 @@ function SessionPageV2Inner() {
       </div> {/* end main layout */}
       </div> {/* end content wrapper */}
       
+      {/* Question Display Panel - Shows during comprehension/exercise/worksheet/test */}
+      {((currentPhase === 'comprehension' && comprehensionState === 'awaiting-answer' && currentComprehensionQuestion) ||
+        (currentPhase === 'exercise' && exerciseState === 'awaiting-answer' && currentExerciseQuestion) ||
+        (currentPhase === 'worksheet' && worksheetState === 'awaiting-answer' && currentWorksheetQuestion) ||
+        (currentPhase === 'test' && testState === 'awaiting-answer' && currentTestQuestion)) && (
+        <div style={{
+          position: 'fixed',
+          bottom: 120,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '90%',
+          maxWidth: 800,
+          zIndex: 998,
+          background: '#ffffff',
+          borderRadius: 12,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+          padding: 20,
+          border: '2px solid #c7442e'
+        }}>
+          <div style={{ fontSize: 'clamp(1.125rem, 2.2vw, 1.375rem)', lineHeight: 1.5, color: '#111827', marginBottom: 16 }}>
+            {currentPhase === 'comprehension' && currentComprehensionQuestion?.question}
+            {currentPhase === 'exercise' && currentExerciseQuestion?.question}
+            {currentPhase === 'worksheet' && currentWorksheetQuestion?.question}
+            {currentPhase === 'test' && currentTestQuestion?.question}
+          </div>
+          
+          {/* Answer input based on question type */}
+          {(() => {
+            const question = currentPhase === 'comprehension' ? currentComprehensionQuestion :
+                           currentPhase === 'exercise' ? currentExerciseQuestion :
+                           currentPhase === 'worksheet' ? currentWorksheetQuestion :
+                           currentTestQuestion;
+            
+            const answer = currentPhase === 'comprehension' ? comprehensionAnswer :
+                          currentPhase === 'exercise' ? selectedExerciseAnswer :
+                          currentPhase === 'worksheet' ? worksheetAnswer :
+                          testAnswer;
+            
+            const setAnswer = currentPhase === 'comprehension' ? setComprehensionAnswer :
+                             currentPhase === 'exercise' ? setSelectedExerciseAnswer :
+                             currentPhase === 'worksheet' ? setWorksheetAnswer :
+                             setTestAnswer;
+            
+            const submitHandler = currentPhase === 'comprehension' ? submitComprehensionAnswer :
+                                 currentPhase === 'exercise' ? submitExerciseAnswer :
+                                 currentPhase === 'worksheet' ? submitWorksheetAnswer :
+                                 submitTestAnswer;
+            
+            const skipHandler = currentPhase === 'comprehension' ? skipComprehension :
+                               currentPhase === 'exercise' ? skipExerciseQuestion :
+                               currentPhase === 'worksheet' ? skipWorksheetQuestion :
+                               skipTestQuestion;
+            
+            // Multiple choice or true/false - show buttons
+            if ((question?.type === 'mc' || question?.type === 'tf') && Array.isArray(question?.options) && question.options.length > 0) {
+              return (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                    {question.options.map((option, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setAnswer(option)}
+                        style={{
+                          padding: '12px 16px',
+                          fontSize: 'clamp(1rem, 2vw, 1.125rem)',
+                          background: answer === option ? '#c7442e' : '#f3f4f6',
+                          color: answer === option ? '#fff' : '#111827',
+                          border: answer === option ? '2px solid #c7442e' : '2px solid #e5e7eb',
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          fontWeight: answer === option ? 600 : 400
+                        }}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={skipHandler}
+                      style={{
+                        padding: '10px 20px',
+                        fontSize: 'clamp(0.95rem, 1.8vw, 1.05rem)',
+                        background: '#9ca3af',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 600
+                      }}
+                    >
+                      Skip
+                    </button>
+                    <button
+                      onClick={submitHandler}
+                      disabled={!answer}
+                      style={{
+                        padding: '10px 24px',
+                        fontSize: 'clamp(0.95rem, 1.8vw, 1.05rem)',
+                        background: answer ? '#c7442e' : '#d1d5db',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: answer ? 'pointer' : 'not-allowed',
+                        fontWeight: 600
+                      }}
+                    >
+                      Submit
+                    </button>
+                  </div>
+                </>
+              );
+            }
+            
+            // Text input for fill-in-blank or short answer
+            return (
+              <>
+                <input
+                  type="text"
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && answer.trim()) {
+                      submitHandler();
+                    }
+                  }}
+                  placeholder="Type your answer..."
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    fontSize: 'clamp(1rem, 2vw, 1.125rem)',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: 8,
+                    marginBottom: 16,
+                    outline: 'none'
+                  }}
+                  autoFocus
+                />
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={skipHandler}
+                    style={{
+                      padding: '10px 20px',
+                      fontSize: 'clamp(0.95rem, 1.8vw, 1.05rem)',
+                      background: '#9ca3af',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      fontWeight: 600
+                    }}
+                  >
+                    Skip
+                  </button>
+                  <button
+                    onClick={submitHandler}
+                    disabled={!answer.trim()}
+                    style={{
+                      padding: '10px 24px',
+                      fontSize: 'clamp(0.95rem, 1.8vw, 1.05rem)',
+                      background: answer.trim() ? '#c7442e' : '#d1d5db',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      cursor: answer.trim() ? 'pointer' : 'not-allowed',
+                      fontWeight: 600
+                    }}
+                  >
+                    Submit
+                  </button>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+      
       {/* Fixed footer with input controls */}
       <div style={{
         position: 'fixed',
@@ -3556,6 +2783,102 @@ function SessionPageV2Inner() {
           boxSizing: 'border-box',
           padding: (isShortHeight && isMobileLandscape) ? '2px 16px calc(2px + env(safe-area-inset-bottom, 0px))' : '4px 12px calc(4px + env(safe-area-inset-bottom, 0px))'
         }}>
+          
+          {/* Opening Actions buttons - shown during play timer (awaiting-go state) */}
+          {((currentPhase === 'comprehension' && comprehensionState === 'awaiting-go') ||
+            (currentPhase === 'exercise' && exerciseState === 'awaiting-go') ||
+            (currentPhase === 'worksheet' && worksheetState === 'awaiting-go') ||
+            (currentPhase === 'test' && testState === 'awaiting-go')) && !openingActionActive && (
+            <div style={{
+              display: 'flex',
+              gap: 8,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              marginBottom: 8,
+              padding: '0 12px'
+            }}>
+              <button
+                onClick={() => openingActionsControllerRef.current?.startAsk()}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                  background: '#3b82f6',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 6px rgba(59,130,246,0.3)'
+                }}
+              >
+                Ask Ms. Sonoma
+              </button>
+              <button
+                onClick={() => openingActionsControllerRef.current?.startRiddle()}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                  background: '#8b5cf6',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 6px rgba(139,92,246,0.3)'
+                }}
+              >
+                Riddle
+              </button>
+              <button
+                onClick={() => openingActionsControllerRef.current?.startPoem()}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                  background: '#ec4899',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 6px rgba(236,72,153,0.3)'
+                }}
+              >
+                Poem
+              </button>
+              <button
+                onClick={() => openingActionsControllerRef.current?.startStory()}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                  background: '#f59e0b',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 6px rgba(245,158,11,0.3)'
+                }}
+              >
+                Story
+              </button>
+              <button
+                onClick={() => openingActionsControllerRef.current?.startFillInFun()}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                  background: '#10b981',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 6px rgba(16,185,129,0.3)'
+                }}
+              >
+                Fill-in-Fun
+              </button>
+            </div>
+          )}
           
           {/* Phase-specific Begin buttons */}
           {(() => {
@@ -3752,6 +3075,50 @@ function SessionPageV2Inner() {
           </div>
         </div>
       </div>
+      
+      {/* Play Time Expired Overlay - V1 parity: full-screen overlay outside main container */}
+      {showPlayTimeExpired && playExpiredPhase && (
+        <PlayTimeExpiredOverlay
+          isOpen={showPlayTimeExpired}
+          phase={playExpiredPhase}
+          lessonKey={lessonData?.key || `${subjectParam}/${lessonId}`}
+          onComplete={handlePlayExpiredComplete}
+          onStartNow={handlePlayExpiredStartNow}
+        />
+      )}
+      
+      {/* Timer Control Overlay - Facilitator controls for timer and golden key */}
+      {showTimerControl && (
+        <TimerControlOverlay
+          isOpen={showTimerControl}
+          onClose={() => setShowTimerControl(false)}
+          lessonKey={lessonData?.key || `${subjectParam}/${lessonId}`}
+          phase={getCurrentPhaseName()}
+          timerType={currentTimerMode[getCurrentPhaseName()] || 'work'}
+          totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()] || 'work')}
+          goldenKeyBonus={goldenKeyBonus}
+          isPaused={timerPaused}
+          onUpdateTime={(seconds) => {
+            // Force timer refresh to pick up new elapsed time from storage
+            setTimerRefreshKey(k => k + 1);
+          }}
+          onTogglePause={() => setTimerPaused(prev => !prev)}
+          hasGoldenKey={goldenKeyBonus > 0}
+          isGoldenKeySuspended={false}
+          onApplyGoldenKey={() => {
+            // Apply golden key bonus
+            if (phaseTimers) {
+              setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
+            }
+          }}
+          onSuspendGoldenKey={() => setGoldenKeyBonus(0)}
+          onUnsuspendGoldenKey={() => {
+            if (phaseTimers) {
+              setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
+            }
+          }}
+        />
+      )}
     </>
   );
 }
