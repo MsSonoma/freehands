@@ -8,6 +8,8 @@ Snapshots save at explicit checkpoints only. No autosave, no polling, no drift c
 
 **Scope:** This document covers snapshot saves and restores for lesson state persistence. For session ownership and device conflict detection, see [session-takeover.md](session-takeover.md).
 
+**Identity:** Snapshot identity is strictly `(learnerId, lessonKey)` where `lessonKey` is the canonical filename (no subject prefix, no `.json`). V2 now derives this with the same helper as V1 (`getSnapshotStorageKey` rules: URL param first, then manifest file, then lesson id; strip prefixes/extensions). Lesson == session; no extra sessionId dimension is used in the key, so golden key, timers, and snapshots all share the same canonical `lessonKey`.
+
 ## Complete Lesson Cleanup
 
 When user clicks "Complete Lesson" button:
@@ -40,10 +42,11 @@ With guard in place, completion cleanup is atomic - either all persistence clear
    - One snapshot per learner+lesson (setItem replaces, doesn't stack)
    - Same-browser restore is instant (no database lag)
 
-2. **Database/Storage** - Async backup
-   - Cross-device access
-   - Falls back when localStorage cleared
-   - 10-20 second replication lag on read replicas
+2. **Database/Storage** - Async backup (cross-device)
+  - Saved via `/api/snapshots` (server route)
+  - Primary storage: `learner_snapshots` table keyed by `user_id + learner_id + lesson_key`
+  - Fallback storage: Supabase Storage `learner-snapshots` bucket when DB table/columns are missing
+  - Used when localStorage is empty (new device, cleared storage)
 
 ### Restore Strategy: localStorage First
 1. Try localStorage (instant)
@@ -51,69 +54,59 @@ With guard in place, completion cleanup is atomic - either all persistence clear
 3. If database found, write to localStorage for next time
 4. Apply state exactly, no post-restore modifications
 
+Initialization now fails loudly when identity is missing: SnapshotService construction is wrapped in try/catch, and `snapshotLoaded` is set in a `finally` so Begin gating does not hang. Missing `lessonKey`/`learnerId` surfaces as an error instead of silently starting over.
+
 ### V2 Resume Flow
 On session load:
 1. **SnapshotService.initialize()** loads existing snapshot during mount effect (async)
 2. If snapshot found:
    - Sets `resumePhase` state to `snapshot.currentPhase`
-   - Sets `offerResume` to true (unless snapshot is at beginning: idle/discussion phase)
-   - Displays Resume and Start Over buttons in footer, hides Begin button
+  - Displays Resume and Start Over buttons in footer when `resumePhase` is not at beginning (not idle/discussion)
 3. If no snapshot or snapshot at beginning:
-   - Sets `offerResume` to false
    - Shows normal Begin button
 4. Sets `snapshotLoaded` to true when load completes
 
+**Begin gating:** The top-level Begin button is disabled until both `audioReady` and `snapshotLoaded` are true, preventing a refresh race where the user can start a fresh session before the snapshot finishes loading.
+
 **Resume button:**
 - Hides Resume/Restart buttons
-- Calls `startSession()` which checks `resumePhase` and calls `orchestrator.skipToPhase(resumePhase)`
+- Calls `startSession()` which, when `resumePhase` is set, starts PhaseOrchestrator directly at that phase via `startSession({ startPhase: resumePhase })`
+- This avoids starting Discussion first and then skipping, because Discussion/Teaching can still complete later and override the manual skip.
 - Phase controller restores granular state from `snapshot.phaseData[phase]`
 - Timer state restored via `timerServiceRef.current.restoreState(snapshot.timerState)`
 
 **Start Over button:**
 - Confirms with user (cannot be reversed)
 - Calls `snapshotServiceRef.current.deleteSnapshot()` to clear localStorage and database
-- Clears `resumePhase` state to null
-- Calls `startSession()` which starts fresh from discussion/teaching (no resume)
+- Calls `timerServiceRef.current.reset()` to clear timer Maps and remove all `session_timer_state:{lessonKey}:*` keys
+- Clears `resumePhase` state **and** `resumePhaseRef` to null (prevents stale closure values)
+- Calls `startSession({ ignoreResume: true })` which forces a fresh start from discussion/teaching (no resume)
+
+**Resume phase source of truth:** `startSession` reads `resumePhaseRef.current` so it always uses the latest loaded snapshot. Call sites that should never resume (Start Over, PlayTimeExpired overlay auto-start) pass `{ ignoreResume: true }` so they cannot jump to a saved phase accidentally.
 
 ### V2 Save Flow
 On phase transition:
-1. **PhaseOrchestrator** emits `phaseChange` event with new phase name
-2. **SessionPageV2** calls `savePhaseCompletion(phase)` immediately
-   - This updates `SnapshotService.#snapshot.currentPhase` so granular saves know which phase we're in
-3. Phase controller starts and emits `requestSnapshotSave` events for each action
-4. **saveProgress()** uses `this.#snapshot.currentPhase` to store data under correct phase key
+1. **PhaseOrchestrator** emits `phaseChange` with the new phase name.
+2. **SessionPageV2** calls `savePhaseCompletion(phase)` immediately so `SnapshotService.#snapshot.currentPhase` is set before granular saves run.
+3. Each phase controller emits `requestSnapshotSave` after user actions (answers, skips, teaching sentence advances), and **saveProgress()** writes under the active phase key. `saveProgress()` now accepts `phaseOverride` so seed saves can force the correct phase even if currentPhase has not advanced yet.
+4. Q&A phases (comprehension, exercise, worksheet, test) call `saveProgress('<phase>-init')` on phase start with `{ questions, nextQuestionIndex, score, answers, timerMode: 'play', phaseOverride: '<phase>' }` to freeze deterministic question pools for resume.
+5. The same Q&A phases emit `<phase>-answer` and `<phase>-skip` saves that include `questions`, `answers`, `nextQuestionIndex`, `score`, and `timerMode` (Test also includes `reviewIndex`). This keeps snapshots aligned to the next pending question.
+6. Resume path: `start*Phase` reads `snapshot.phaseData.<phase>` and passes it as `resumeState` so controllers skip intros/Go, restore timer mode (play/work), reuse the exact question array, and drop the learner at `nextQuestionIndex` (Test also restores `reviewIndex`).
 
-Without step 2, all granular saves use 'idle' as currentPhase and snapshots are saved to wrong phase.
+Without step 2, granular saves would use `idle` as currentPhase and store under the wrong phase. Without step 4, question pools would reshuffle on resume and lose intra-phase progress.
 
 **Key files (V2):**
-- [SessionPageV2.jsx](../src/app/session/v2/SessionPageV2.jsx) lines 548-603 (SnapshotService mount + load), 2467-2517 (resume check in startSession)
-- [SnapshotService.jsx](../src/app/session/v2/SnapshotService.jsx) - async save/load with Supabase fallback to localStorage
+- [SessionPageV2.jsx](../src/app/session/v2/SessionPageV2.jsx) lines 548-603 (SnapshotService mount + load), 1432-1910 (phase start wiring for Q&A resume), 2467-2517 (resume check in startSession)
+- [SnapshotService.jsx](../src/app/session/v2/SnapshotService.jsx) - localStorage-first restore; server sync via `/api/snapshots` (DB + storage fallback)
 - [PhaseOrchestrator.jsx](../src/app/session/v2/PhaseOrchestrator.jsx) - skipToPhase method for resume
 
 ## Checkpoint Gates (Where Snapshots Save)
 
-### Opening Phase
-- **V1**: `first-interaction` - When user clicks any button except Begin (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games, or Go). Prevents infinite play timer hack via refresh.
-- **V2**: No first-interaction gate needed. Discussion phase has no opening actions or play timer - "Begin" button advances to teaching immediately. Play timer exploit eliminated by architectural simplification.
-
-### Teaching Flow
-- `begin-teaching-definitions`
-- `vocab-sentence-1` (before TTS)
-- `vocab-sentence-N` (before each subsequent TTS)
-- `begin-teaching-examples`
-- `example-sentence-1` (before TTS)
-- `example-sentence-N` (before each subsequent TTS)
-
-### Comprehension Flow
-- `comprehension-active` (after each answer, wrapped in setTimeout for React state flush)
-
-### Other Phases
-- `begin-discussion`
-- `begin-worksheet`
-- `begin-exercise`
-- `begin-test`
-- `skip-forward` (navigation)
-- `skip-back` (navigation)
+- **Discussion entry**: `begin-discussion` (no opening actions in V2).
+- **Teaching**: `begin-teaching-definitions`, `vocab-sentence-1/N` (before each TTS), `begin-teaching-examples`, `example-sentence-1/N` (before each TTS).
+- **Q&A seeding** (deterministic resume): `comprehension-init`, `exercise-init`, `worksheet-init`, `test-init` fire on phase start and persist question arrays + `nextQuestionIndex` + `score` + `answers` + `timerMode` (with `phaseOverride`).
+- **Q&A granular**: `comprehension-active`, `exercise-answer`, `exercise-skip`, `worksheet-answer`, `worksheet-skip`, `test-answer`, `test-skip` after each submission/skip (payload includes questions, answers, next index, timerMode; Test also includes reviewIndex).
+- **Navigation**: `skip-forward`, `skip-back` (timeline jumps).
 
 ## Related Brain Files
 

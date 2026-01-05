@@ -23,7 +23,7 @@
 import { fetchTTS } from './services';
 import { ttsCache } from '../utils/ttsCache';
 import { buildAcceptableList, judgeAnswer } from './judging';
-import { deriveCorrectAnswerText } from '../utils/questionFormatting';
+import { deriveCorrectAnswerText, formatQuestionForSpeech } from '../utils/questionFormatting';
 import { HINT_FIRST, HINT_SECOND, pickHint } from '../utils/feedbackMessages';
 
 // Praise phrases for correct answers (matches V1 engagement pattern)
@@ -53,6 +53,7 @@ export class WorksheetPhase {
   #timerService = null;
   #questions = [];
   #wrongAttempts = new Map();
+  #resumeState = null;
   
   #state = 'idle'; // 'idle' | 'playing-question' | 'awaiting-answer' | 'complete'
   #currentQuestionIndex = 0;
@@ -68,6 +69,7 @@ export class WorksheetPhase {
     this.#eventBus = options.eventBus;
     this.#timerService = options.timerService;
     this.#questions = options.questions || [];
+    this.#resumeState = options.resumeState || null;
     
     if (!this.#audioEngine) {
       throw new Error('WorksheetPhase requires audioEngine');
@@ -137,6 +139,42 @@ export class WorksheetPhase {
   
   // Public API: Start phase
   async start() {
+    // Resume path: skip intro/go and jump straight to the stored question.
+    if (this.#resumeState) {
+      if (Array.isArray(this.#resumeState.questions) && this.#resumeState.questions.length) {
+        this.#questions = this.#resumeState.questions;
+      }
+
+      this.#score = Number(this.#resumeState.score || 0);
+      this.#answers = Array.isArray(this.#resumeState.answers) ? this.#resumeState.answers : [];
+      this.#timerMode = this.#resumeState.timerMode || 'work';
+
+      if (this.#timerService) {
+        if (this.#timerMode === 'work') {
+          this.#timerService.transitionToWork('worksheet');
+        } else {
+          this.#timerService.startPlayTimer('worksheet');
+        }
+      }
+
+      const nextIndex = Math.min(
+        Math.max(this.#resumeState.nextQuestionIndex ?? 0, 0),
+        this.#questions.length
+      );
+
+      this.#currentQuestionIndex = nextIndex;
+
+      if (this.#currentQuestionIndex >= this.#questions.length) {
+        this.#complete();
+        return;
+      }
+
+      this.#state = 'awaiting-answer';
+      this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
+      await this.#playCurrentQuestion();
+      return;
+    }
+
     // Play intro TTS (V1 pacing pattern)
     const intro = INTRO_PHRASES[Math.floor(Math.random() * INTRO_PHRASES.length)];
     this.#state = 'playing-intro';
@@ -220,9 +258,12 @@ export class WorksheetPhase {
     this.#emit('requestSnapshotSave', {
       trigger: 'worksheet-answer',
       data: {
-        questionIndex: this.#currentQuestionIndex,
+        nextQuestionIndex: Math.min(this.#currentQuestionIndex + 1, this.#questions.length),
         score: this.#score,
-        totalQuestions: this.#questions.length
+        totalQuestions: this.#questions.length,
+        questions: this.#questions,
+        answers: [...this.#answers],
+        timerMode: this.#timerMode
       }
     });
     
@@ -301,6 +342,11 @@ export class WorksheetPhase {
     if (this.#state !== 'awaiting-answer') return;
     
     const question = this.#questions[this.#currentQuestionIndex];
+
+    // Stop any current question TTS so it cannot continue after skipping
+    try {
+      this.#audioEngine.stop();
+    } catch {}
     
     // Record as skipped (incorrect)
     this.#answers.push({
@@ -316,6 +362,18 @@ export class WorksheetPhase {
       correctAnswer: question.answer,
       score: this.#score,
       totalQuestions: this.#questions.length
+    });
+
+    this.#emit('requestSnapshotSave', {
+      trigger: 'worksheet-skip',
+      data: {
+        nextQuestionIndex: Math.min(this.#currentQuestionIndex + 1, this.#questions.length),
+        score: this.#score,
+        totalQuestions: this.#questions.length,
+        questions: this.#questions,
+        answers: [...this.#answers],
+        timerMode: this.#timerMode
+      }
     });
     
     this.#advanceQuestion();
@@ -370,26 +428,29 @@ export class WorksheetPhase {
       question: question
     });
     
+    // Format question for TTS (add "True/False:" prefix for TF, letter options for MC)
+    const formattedQuestion = formatQuestionForSpeech(question);
+    
     // Check cache first (instant if prefetched)
-    let audioBase64 = ttsCache.get(question.question);
+    let audioBase64 = ttsCache.get(formattedQuestion);
     
     if (!audioBase64) {
       // Cache miss - fetch synchronously
-      audioBase64 = await fetchTTS(question.question);
+      audioBase64 = await fetchTTS(formattedQuestion);
       if (audioBase64) {
-        ttsCache.set(question.question, audioBase64);
+        ttsCache.set(formattedQuestion, audioBase64);
       }
     }
     
     // Prefetch next question in background (eliminates wait on Next click)
     const nextIndex = this.#currentQuestionIndex + 1;
     if (nextIndex < this.#questions.length) {
-      const nextQuestion = this.#questions[nextIndex].question;
+      const nextQuestion = formatQuestionForSpeech(this.#questions[nextIndex]);
       ttsCache.prefetch(nextQuestion);
     }
     
     // TTS plays in background - don't await so user can answer while listening
-    this.#audioEngine.playAudio(audioBase64 || '', [question.question]).catch(err => {
+    this.#audioEngine.playAudio(audioBase64 || '', [formattedQuestion]).catch(err => {
       console.error('[WorksheetPhase] Question TTS playback error:', err);
     });
   }

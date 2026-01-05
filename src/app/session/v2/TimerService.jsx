@@ -89,7 +89,44 @@ export class TimerService {
     this.startWorkPhaseTimer = this.startWorkPhaseTimer.bind(this);
     this.completeWorkPhaseTimer = this.completeWorkPhaseTimer.bind(this);
     this.stopWorkPhaseTimer = this.stopWorkPhaseTimer.bind(this);
+    this.reset = this.reset.bind(this);
     // Private methods are automatically bound
+  }
+
+  #timerOverlayKeyPrefix() {
+    if (!this.lessonKey) return null;
+    return `session_timer_state:${this.lessonKey}:`;
+  }
+
+  #removeTimerOverlayKey(phase, mode) {
+    if (typeof window === 'undefined') return;
+    if (!this.lessonKey || !phase || !mode) return;
+    const key = `session_timer_state:${this.lessonKey}:${phase}:${mode}`;
+    try { sessionStorage.removeItem(key); } catch {}
+  }
+
+  #removeTimerOverlayKeysForPhase(phase) {
+    this.#removeTimerOverlayKey(phase, 'play');
+    this.#removeTimerOverlayKey(phase, 'work');
+  }
+
+  #clearAllTimerOverlayKeysForLesson() {
+    if (typeof window === 'undefined') return;
+    const prefix = this.#timerOverlayKeyPrefix();
+    if (!prefix) return;
+
+    try {
+      const toRemove = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i);
+        if (k && k.startsWith(prefix)) {
+          toRemove.push(k);
+        }
+      }
+      for (const k of toRemove) {
+        try { sessionStorage.removeItem(k); } catch {}
+      }
+    } catch {}
   }
   
   /**
@@ -191,6 +228,7 @@ export class TimerService {
    * @param {string} phase - Phase name
    */
   stopPlayTimer(phase) {
+    this.#removeTimerOverlayKeysForPhase(phase);
     this.playTimers.delete(phase);
     if (this.currentPlayPhase === phase) {
       this.currentPlayPhase = null;
@@ -242,6 +280,7 @@ export class TimerService {
     });
     
     this.currentWorkPhase = phase;
+    this.mode = 'work';
     
     this.eventBus.emit('workPhaseTimerStart', {
       phase,
@@ -288,6 +327,9 @@ export class TimerService {
       onTime,
       formatted: this.#formatTime(elapsed)
     });
+
+    // Clear TimerControlOverlay sessionStorage mirror for this phase.
+    this.#removeTimerOverlayKey(phase, 'work');
     
     // Track on-time completions for golden key (comprehension, exercise, worksheet, test count)
     const goldenKeyPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
@@ -325,8 +367,46 @@ export class TimerService {
       elapsed,
       formatted: this.#formatTime(elapsed)
     });
-    
+
+    this.#removeTimerOverlayKey(phase, 'work');
+    this.workPhaseTimers.delete(phase);
+    if (this.currentWorkPhase === phase) {
+      this.currentWorkPhase = null;
+    }
+  }
+
+  /**
+   * Reset all timers and clear per-phase sessionStorage mirrors.
+   * Use for "Start Over" and lesson restarts without a full page refresh.
+   */
+  reset() {
+    if (this.sessionInterval) {
+      clearInterval(this.sessionInterval);
+      this.sessionInterval = null;
+    }
+    if (this.playTimerInterval) {
+      clearInterval(this.playTimerInterval);
+      this.playTimerInterval = null;
+    }
+    if (this.workPhaseInterval) {
+      clearInterval(this.workPhaseInterval);
+      this.workPhaseInterval = null;
+    }
+
+    this.sessionStartTime = null;
+    this.sessionElapsed = 0;
+
+    this.playTimers.clear();
+    this.currentPlayPhase = null;
+
+    this.workPhaseTimers.clear();
     this.currentWorkPhase = null;
+
+    this.onTimeCompletions = 0;
+    this.goldenKeyAwarded = false;
+    this.mode = 'play';
+
+    this.#clearAllTimerOverlayKeysForLesson();
   }
   
   /**
@@ -588,22 +668,8 @@ export class TimerService {
    * Clean up timers
    */
   destroy() {
-    if (this.sessionInterval) {
-      clearInterval(this.sessionInterval);
-      this.sessionInterval = null;
-    }
-    
-    if (this.playTimerInterval) {
-      clearInterval(this.playTimerInterval);
-      this.playTimerInterval = null;
-    }
-    
-    if (this.workPhaseInterval) {
-      clearInterval(this.workPhaseInterval);
-      this.workPhaseInterval = null;
-    }
-    
-    // Clear sessionStorage on destroy
+    this.reset();
+    // Legacy: also clear the old single-key sessionStorage if present.
     this.#clearSessionStorage();
   }
   

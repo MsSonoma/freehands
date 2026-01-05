@@ -52,10 +52,10 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setName(learner.name || '');
 		setGrade(learner.grade || 'K');
 		setHumorLevel(normalizeHumorLevel(learner.humor_level));
-		setComprehension(String(learner.comprehension ?? learner.targets?.comprehension ?? 3));
-		setExercise(String(learner.exercise ?? learner.targets?.exercise ?? 3));
-		setWorksheet(String(learner.worksheet ?? learner.targets?.worksheet ?? 3));
-		setTest(String(learner.test ?? learner.targets?.test ?? 3));
+		setComprehension(String(learner.targets?.comprehension ?? learner.comprehension ?? ''));
+		setExercise(String(learner.targets?.exercise ?? learner.exercise ?? ''));
+		setWorksheet(String(learner.targets?.worksheet ?? learner.worksheet ?? ''));
+		setTest(String(learner.targets?.test ?? learner.test ?? ''));
 		setGoldenKeys(String(learner.golden_keys ?? 0));
 		setAskDisabled(!!learner.ask_disabled);
 		setPoemDisabled(!!learner.poem_disabled);

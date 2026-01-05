@@ -53,6 +53,7 @@ export class ComprehensionPhase {
   #timerService = null;
   #questions = [];
   #wrongAttempts = new Map();
+  #resumeState = null;
   
   #state = 'idle'; // 'idle' | 'playing-intro' | 'awaiting-go' | 'awaiting-answer' | 'playing-feedback' | 'complete'
   #currentQuestionIndex = 0;
@@ -68,6 +69,7 @@ export class ComprehensionPhase {
     this.#eventBus = options.eventBus;
     this.#timerService = options.timerService;
     this.#questions = options.questions || [];
+    this.#resumeState = options.resumeState || null;
     
     if (!this.#audioEngine) {
       throw new Error('ComprehensionPhase requires audioEngine');
@@ -145,6 +147,43 @@ export class ComprehensionPhase {
   
   // Public API: Start phase
   async start() {
+    // Resume path: skip intro/go and jump to the stored question.
+    if (this.#resumeState) {
+      if (Array.isArray(this.#resumeState.questions) && this.#resumeState.questions.length) {
+        this.#questions = this.#resumeState.questions;
+      }
+
+      this.#score = Number(this.#resumeState.score || 0);
+      this.#answers = Array.isArray(this.#resumeState.answers) ? this.#resumeState.answers : [];
+      this.#timerMode = this.#resumeState.timerMode || 'work';
+
+      if (this.#timerService) {
+        if (this.#timerMode === 'work') {
+          this.#timerService.transitionToWork('comprehension');
+        } else {
+          this.#timerService.startPlayTimer('comprehension');
+        }
+      }
+
+      const nextIndex = Math.min(
+        Math.max(this.#resumeState.nextQuestionIndex ?? 0, 0),
+        this.#questions.length
+      );
+
+      this.#currentQuestionIndex = nextIndex;
+
+      // If everything was already answered, mark complete.
+      if (this.#currentQuestionIndex >= this.#questions.length) {
+        this.#complete();
+        return;
+      }
+
+      this.#state = 'awaiting-answer';
+      this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
+      await this.#playCurrentQuestion();
+      return;
+    }
+
     // Play intro TTS (V1 pacing pattern)
     const intro = INTRO_PHRASES[Math.floor(Math.random() * INTRO_PHRASES.length)];
     this.#state = 'playing-intro';
@@ -238,9 +277,12 @@ export class ComprehensionPhase {
     this.#emit('requestSnapshotSave', {
       trigger: 'comprehension-answer',
       data: {
-        questionIndex: this.#currentQuestionIndex,
+        nextQuestionIndex: Math.min(this.#currentQuestionIndex + 1, this.#questions.length),
         score: this.#score,
-        totalQuestions: this.#questions.length
+        totalQuestions: this.#questions.length,
+        questions: this.#questions,
+        answers: [...this.#answers],
+        timerMode: this.#timerMode
       }
     });
     
@@ -275,6 +317,31 @@ export class ComprehensionPhase {
   
   // Public API: Skip question
   skip() {
+    // Stop any current audio
+    try {
+      this.#audioEngine.stop();
+    } catch {}
+    
+    // Handle skip based on current state
+    if (this.#state === 'playing-intro') {
+      // Skip intro and go to awaiting-go
+      this.#state = 'awaiting-go';
+      this.#timerMode = 'play';
+      
+      if (this.#timerService) {
+        this.#timerService.startPlayTimer('comprehension');
+      }
+      
+      this.#emit('stateChange', { state: 'awaiting-go', timerMode: 'play' });
+      return;
+    }
+    
+    if (this.#state === 'awaiting-go') {
+      // Treat as clicking GO button
+      this.go();
+      return;
+    }
+    
     if (this.#state !== 'awaiting-answer') return;
     
     const question = this.#questions[this.#currentQuestionIndex];
@@ -293,6 +360,18 @@ export class ComprehensionPhase {
       score: this.#score,
       totalQuestions: this.#questions.length,
       correctAnswer: question.answer
+    });
+
+    this.#emit('requestSnapshotSave', {
+      trigger: 'comprehension-skip',
+      data: {
+        nextQuestionIndex: Math.min(this.#currentQuestionIndex + 1, this.#questions.length),
+        score: this.#score,
+        totalQuestions: this.#questions.length,
+        questions: this.#questions,
+        answers: [...this.#answers],
+        timerMode: this.#timerMode
+      }
     });
     
     this.#advanceQuestion();

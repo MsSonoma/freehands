@@ -2,7 +2,7 @@
 
 **Status:** Production-ready - All critical issues from second audit fixed  
 **Created:** 2025-12-30  
-**Updated:** 2025-12-31 (Second Audit)  
+**Updated:** 2026-01-04  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
 ---
@@ -13,7 +13,7 @@ After first round of fixes, second comprehensive audit found 6 additional critic
 
 **Post-audit UX/telemetry fixes (2026-01-01)**
 - Teaching controls (Next/Repeat/Restart/Skip) are anchored in the fixed footer instead of overlaid on the video to match V1 footer placement and avoid covering the video.
-- Worksheet Q&A controls are anchored in the fixed footer (answer input + submit/skip) and must not render as on-video overlays.
+- All Q&A phase controls (Comprehension, Exercise, Worksheet, Test) are anchored in the fixed footer (answer input or MC/TF quick buttons + submit/skip) and must not render as on-video overlays.
 - `captionChange` payloads from HTMLAudio now emit `{ index, text }`, keeping transcript rendering consistent with WebAudio/Synthetic paths.
 - Session timer interval is bound to the TimerService instance, ensuring `sessionTimerTick` events fire and the on-screen timer advances.
 - HTMLAudio path emits the first caption immediately so transcripts populate as soon as playback starts (no blank transcript on first line).
@@ -120,6 +120,8 @@ V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical 
 - Comprehension initialization must **wait for learnerProfile** to be loaded. If the orchestrator enters Comprehension before learner load completes, the app retries comprehension initialization once `learnerLoading` is false and `learnerProfile` is present.
 - Worksheet and Test initialization must follow the same rule as Comprehension: if the orchestrator enters the phase before learner load completes, initialization must be retried after learner load.
 - Any helper that reads learner targets must not rely on a stale closure captured before learner load. Use a ref-backed lookup (read the latest learner profile) so phaseChange handlers created early can still access targets later.
+- Learner identity must be **pinned at load** (sessionLearnerId). Target overrides must key off the pinned id, not `localStorage.learner_id`, to avoid mid-session drift. Phase init must bail until `learnerProfile` is loaded instead of calling target helpers on null.
+- If a Q&A phase is entered before learnerProfile is available, **defer init and retry** after learner load. Begin buttons must call the initializer if the phase ref is null, then start the phase. Play timers must only start after the phase is initialized; if init is deferred, mark the timer pending and start it when init completes.
 - End-of-comprehension is **not** end-of-lesson. When Comprehension completes, the app speaks a short transition line and advances the orchestrator to Exercise. The Exercise phase must then show its own Begin gate ("Begin Exercise") before Opening Actions/Go.
 - For Q&A phases that select questions from pools, do not compute/slice the question array during phase entry. Do it on **Go** so Begin and Opening Actions are always reachable.
 - If required data is missing (e.g., learner targets), fail loudly (blocking error) rather than silently skipping the phase.
@@ -205,6 +207,7 @@ V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical 
 - No opening action buttons in discussion phase
 - No play timer in discussion phase (instant transition)
 - Play/work timer modes still apply to Teaching, Repeat, Transition, Comprehension, Closing phases
+- Lesson title in discussion/closing flows comes from `lessonData.title` with `lessonId` fallback; never reference undeclared locals when wiring DiscussionPhase
 - The discussion work timer **spans both discussion and teaching**. It starts on discussion entry and must be completed when teaching finishes (not on `discussionComplete`), or the visible timer will freeze as soon as the "Start Definitions" CTA appears.
 - Opening action buttons (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games) appear during play time in phases 2-5
 
@@ -504,8 +507,10 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
 - Snapshot save/restore coordination
 
 **Exposes:**
-- `transitionToPhase(phaseName)`
-- Events: `onPhaseChange`
+- `startSession()` - starts at Discussion (if enabled) or Teaching
+- `startSession({ startPhase })` - starts directly at the requested phase (used by Resume)
+- `skipToPhase(phase)` - manual navigation (e.g., timeline jumps)
+- Events: `phaseChange`, `sessionComplete`
 
 **Does NOT:**
 - Render UI (presentation components subscribe to events)
@@ -568,8 +573,10 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
   - Questions loaded from lesson pools: truefalse, multiplechoice, fillintheblank, shortanswer
   - Questions shuffled and limited to the learner's configured target
     - Source of truth: Learners page "Learning Targets" overlay (stored on learner record)
-    - Fields supported (all phases): learner.{comprehension,exercise,worksheet,test} (normalized) or learner.targets.{comprehension,exercise,worksheet,test}
-    - No fallback: V2 does not default targets. If targets are missing/invalid, the session blocks with an error.
+    - Fields supported (all phases): learner.{comprehension,exercise,worksheet,test} (normalized), learner.targets.{comprehension,exercise,worksheet,test}, or the JSON-string `targets` column (parsed if Supabase returns it as text)
+    - Legacy compatibility: comprehension also accepts the V1 alias `discussion` (flat or targets.discussion) so older learner rows keep working without defaults
+    - Also honors V1 per-learner overrides stored in localStorage (`target_{phase}_{learnerId}` or `target_{phase}`) when those values are positive (user-set only; no defaults)
+    - No fallback: V2 does not default targets. If targets are missing/invalid, the session blocks with a Learner Required error and directs facilitators back to the Learners page to set targets.
     - Ticker behavior: the top-right score ticker uses learner targets for its denominator and does not display default targets while learner data is loading
   - Questions spoken via TTS, user types answer in footer input
   - State: generatedComprehension (array), currentCompIndex, currentCompProblem

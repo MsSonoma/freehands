@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2025-12-31T20:00:00Z  
+**Last updated**: 2026-01-05T14:01:05Z  
 **Status**: Canonical
 
 ## How It Works
@@ -9,7 +9,7 @@
 
 **V1**: Each phase (discussion, comprehension, exercise, worksheet, test) has two timer modes.
 
-**V2**: Play/work timer modes only apply to phases 2-5 (Comprehension, Exercise, Worksheet, Test). Discussion phase has no timer - greeting → Begin → teaching flow with no play time.
+**V2**: Discussion has **no play timer**. Phases 2-5 (Comprehension, Exercise, Worksheet, Test) use play → work mode. A **discussion work timer** still exists and spans discussion + teaching.
 
 **Rationale**: Removing play timer from discussion phase eliminates infinite play timer exploit (learner could refresh during discussion to reset play timer indefinitely without starting teaching).
 
@@ -69,7 +69,7 @@
 - "Time to Get Back to Work!" message
 - "Go Now" button to skip countdown
 - Auto-advances to work mode when countdown reaches 0
-- Calls `timerService.transitionToWork(phase)` on transition
+- In V2, the parent handler first updates UI timer mode (play -> work) and then calls the phase controller `go()`, which performs the authoritative `timerService.transitionToWork(phase)` internally.
 
 **V1 Implementation (page.js):**
 - Parent-controlled via `showPlayTimeExpired` and `playExpiredPhase` state
@@ -96,10 +96,12 @@
 
 ### Timer State Persistence
 
-Timer state persists to sessionStorage to prevent refresh exploits:
+Timer state mirrors to sessionStorage for TimerControlOverlay compatibility:
 - Key pattern: `session_timer_state:{lessonKey}:{phase}:{mode}`
-- Cleared when transitioning from play to work mode
-- First interaction gate saves snapshot to lock timer state
+- Keys are written on each tick by TimerService.
+- Keys must be cleared for the whole lesson on reset/start-over to avoid stale timers (especially discussion work timers) reappearing after restart.
+
+**Important (V2 lifecycle):** The TimerService instance must remain stable for the duration of a session and must not be recreated on every phase transition. Recreating it will lose timer Maps and can leave stale sessionStorage keys behind.
 
 ### Play Time Expiration Flow
 
@@ -128,14 +130,12 @@ When play timer reaches 00:00:
 3. **handlePlayExpiredComplete** fires when countdown completes:
    - Hides overlay (`showPlayTimeExpired = false`)
    - Transitions to work timer for expired phase
-   - Automatically calls phase-specific start handler:
-     - `handleStartLesson` for discussion/teaching
-     - `handleGoComprehension` for comprehension
-     - `handleGoExercise` for exercise
-     - `handleGoWorksheet` for worksheet
-     - `handleGoTest` for test
+   - Automatically starts the work phase:
+     - Discussion/Teaching: calls `startSession()` (orchestrator start)
+     - Comprehension/Exercise/Worksheet/Test: calls the phase controller `go()` (`comprehensionPhaseRef.current.go()`, etc.)
    - Each phase handler hides play buttons as part of its normal flow
    - Clears `playExpiredPhase`
+  - When discussion/teaching needs to auto-start, `startSession({ ignoreResume: true })` is used so a stale snapshot resumePhase cannot skip ahead during an active lesson.
 
 ### Go Button Override
 

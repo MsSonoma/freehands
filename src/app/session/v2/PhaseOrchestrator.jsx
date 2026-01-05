@@ -65,14 +65,27 @@ export class PhaseOrchestrator {
   }
   
   // Public API: Start session
-  async startSession() {
+  // If options.startPhase is provided, the session begins directly at that phase.
+  async startSession(options = {}) {
     this.#phaseHistory = [];
-    
+    // Reset phase state so new sessions always start cleanly
+    this.#currentPhase = 'idle';
+
+    const startPhase = options?.startPhase || null;
+    if (startPhase) {
+      const validPhases = ['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet', 'test', 'closing'];
+      if (!validPhases.includes(startPhase)) {
+        throw new Error(`Invalid startPhase: ${startPhase}`);
+      }
+      this.#transitionTo(startPhase);
+      return;
+    }
+
     // Start with discussion phase if enabled, otherwise skip to teaching
     if (this.#useDiscussion) {
-      await this.#transitionTo('discussion');
+      this.#transitionTo('discussion');
     } else {
-      await this.#transitionTo('teaching');
+      this.#transitionTo('teaching');
     }
   }
   

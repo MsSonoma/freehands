@@ -17,7 +17,7 @@
  * Enable via localStorage flag: localStorage.setItem('session_architecture_v2', 'true')
  */
 
-import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
+import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { getLearner } from '@/app/facilitator/learners/clientApi';
@@ -40,6 +40,25 @@ import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
 import TimerControlOverlay from '../components/TimerControlOverlay';
 import EventBus from './EventBus';
 import { loadLesson, fetchTTS } from './services';
+import { formatMcOptions, isMultipleChoice, isTrueFalse } from '../utils/questionFormatting';
+import { getSnapshotStorageKey } from '../utils/snapshotPersistenceUtils';
+
+// Derive a canonical lesson key (filename only, no subject prefix, no .json) for per-learner persistence.
+function deriveCanonicalLessonKey({ lessonData, lessonId }) {
+  try {
+    // Prefer explicit lesson key/id, fall back to URL param.
+    const base = getSnapshotStorageKey({ lessonData, lessonParam: lessonId });
+    return base || '';
+  } catch {
+    try {
+      let key = lessonData?.key || lessonData?.id || lessonId || '';
+      if (key.includes('/')) key = key.split('/').pop();
+      return String(key || '').replace(/\.json$/i, '');
+    } catch {
+      return '';
+    }
+  }
+}
 
 // Timeline constants
 const timelinePhases = ["discussion", "comprehension", "exercise", "worksheet", "test"];
@@ -172,6 +191,19 @@ function SessionPageV2Inner() {
   const lessonId = searchParams?.get('lesson') || '';
   const subjectParam = searchParams?.get('subject') || 'math'; // Subject folder for lesson lookup
   const regenerateParam = searchParams?.get('regenerate'); // Support generated lessons
+
+  // Stable session id (persists across refreshes in this tab; V1 parity)
+  const [browserSessionId] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    let sid = sessionStorage.getItem('lesson_session_id');
+    if (!sid) {
+      sid = (typeof crypto !== 'undefined' && crypto?.randomUUID)
+        ? crypto.randomUUID()
+        : `sid_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+      try { sessionStorage.setItem('lesson_session_id', sid); } catch {}
+    }
+    return sid;
+  });
   
   const videoRef = useRef(null);
   const transcriptRef = useRef(null);
@@ -189,11 +221,19 @@ function SessionPageV2Inner() {
   const worksheetPhaseRef = useRef(null);
   const testPhaseRef = useRef(null);
   const closingPhaseRef = useRef(null);
+  const sessionLearnerIdRef = useRef(null); // pinned learner id for this session
+  const pendingPlayTimersRef = useRef({}); // track phases waiting to start play timer after init
   const timelineJumpInProgressRef = useRef(false); // Debounce timeline jumps
+  const pendingTimerStateRef = useRef(null);
+  const startSessionRef = useRef(null);
+  const resumePhaseRef = useRef(null);
   
   const [lessonData, setLessonData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Canonical per-lesson persistence key (lesson == session identity)
+  const lessonKey = useMemo(() => deriveCanonicalLessonKey({ lessonData, lessonId }), [lessonData, lessonId]);
   
   const [currentPhase, setCurrentPhase] = useState('idle');
   
@@ -286,6 +326,10 @@ function SessionPageV2Inner() {
   const [isMuted, setIsMuted] = useState(false);
   const [showRepeatButton, setShowRepeatButton] = useState(false);
   const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    resumePhaseRef.current = resumePhase;
+  }, [resumePhase]);
   
   // Compute timeline highlight based on current phase
   const timelineHighlight = (() => {
@@ -337,7 +381,12 @@ function SessionPageV2Inner() {
           throw new Error('No lesson specified. Add ?lesson=filename&subject=math to URL');
         }
         
-        setLessonData(lesson);
+        const canonicalKey = deriveCanonicalLessonKey({ lessonData: lesson, lessonId });
+        if (!canonicalKey) {
+          throw new Error('Unable to determine lesson key for persistence.');
+        }
+
+        setLessonData({ ...lesson, key: canonicalKey });
         setLoading(false);
       } catch (err) {
         console.error('[SessionPageV2] Lesson load error:', err);
@@ -368,6 +417,8 @@ function SessionPageV2Inner() {
           throw new Error('Learner profile not found. Please select a valid learner.');
         }
         
+        // Pin the session learner id to avoid mid-session localStorage drift.
+        sessionLearnerIdRef.current = learner.id;
         setLearnerProfile(learner);
         
         // Load phase timer settings from learner profile
@@ -384,7 +435,9 @@ function SessionPageV2Inner() {
         });
         
         // Check for active golden key on this lesson
-        const lessonKey = lessonData?.key || `${subjectParam}/${lessonId}`;
+        if (!lessonKey) {
+          throw new Error('Missing canonical lesson key for golden key lookup.');
+        }
         const activeKeys = learner.active_golden_keys || {};
         if (activeKeys[lessonKey]) {
           setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
@@ -400,7 +453,7 @@ function SessionPageV2Inner() {
     }
     
     loadLearnerProfile();
-  }, [lessonData, lessonId, subjectParam]);
+  }, [lessonData, lessonId, lessonKey, subjectParam]);
   
   // Initialize shared EventBus (must be first)
   useEffect(() => {
@@ -416,91 +469,138 @@ function SessionPageV2Inner() {
   
   // Initialize SnapshotService after lesson loads
   useEffect(() => {
-    if (!lessonData) return;
-    
-    // Generate session ID (in production, this would come from route params)
-    const sessionId = `session_${Date.now()}`;
-    const learnerId = 'test_learner'; // In production, from auth
-    
-    // Initialize Supabase client
+    if (!lessonData || !learnerProfile || !browserSessionId || !lessonKey) return;
+
+    let cancelled = false;
+    setSnapshotLoaded(false);
+
+    const sessionId = browserSessionId;
+    const learnerId = learnerProfile.id;
+
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
-    
-    const service = new SnapshotService({
-      sessionId: sessionId,
-      learnerId: learnerId,
-      lessonKey: lessonData.key,
-      supabaseClient: supabase
-    });
-    
-    snapshotServiceRef.current = service;
-    
-    // Load existing snapshot
-    service.initialize().then(snapshot => {
-      if (snapshot) {
-        addEvent(`ðŸ’¾ Loaded snapshot - Resume from: ${snapshot.currentPhase}`);
-        setResumePhase(snapshot.currentPhase);
-      } else {
-        addEvent('ðŸ’¾ No snapshot found - Starting fresh');
-      }
+
+    try {
+      const service = new SnapshotService({
+        sessionId,
+        learnerId,
+        lessonKey,
+        supabaseClient: supabase
+      });
+
+      snapshotServiceRef.current = service;
+
+      service.initialize().then(snapshot => {
+        if (cancelled) return;
+        if (snapshot) {
+          addEvent(`💾 Loaded snapshot - Resume from: ${snapshot.currentPhase}`);
+          setResumePhase(snapshot.currentPhase);
+          resumePhaseRef.current = snapshot.currentPhase;
+
+          if (snapshot.timerState) {
+            if (timerServiceRef.current) {
+              try { timerServiceRef.current.restoreState(snapshot.timerState); } catch {}
+            } else {
+              pendingTimerStateRef.current = snapshot.timerState;
+            }
+          }
+        } else {
+          addEvent('💾 No snapshot found - Starting fresh');
+        }
+      }).catch(err => {
+        if (cancelled) return;
+        console.error('[SessionPageV2] Snapshot init error:', err);
+        setError('Unable to load saved progress for this lesson.');
+      }).finally(() => {
+        if (!cancelled) {
+          setSnapshotLoaded(true);
+        }
+      });
+    } catch (err) {
+      console.error('[SessionPageV2] Snapshot service construction failed:', err);
+      setError('Unable to initialize persistence for this lesson.');
       setSnapshotLoaded(true);
-    });
-    
+    }
+
     return () => {
+      cancelled = true;
       snapshotServiceRef.current = null;
     };
-  }, [lessonData]);
+  }, [lessonData, learnerProfile, browserSessionId, lessonKey]);
   
   // Initialize TimerService
   useEffect(() => {
-    if (!eventBusRef.current) return;
-    
+    if (!eventBusRef.current || !lessonKey || !phaseTimers) return;
+
     const eventBus = eventBusRef.current;
-    
+
+    // Convert minutes -> seconds; golden key bonus applies to play timers only.
+    const playBonusSec = Math.max(0, Number(goldenKeyBonus || 0)) * 60;
+    const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+
+    const playTimerLimits = {
+      comprehension: m2s(phaseTimers.comprehension_play_min) + playBonusSec,
+      exercise: m2s(phaseTimers.exercise_play_min) + playBonusSec,
+      worksheet: m2s(phaseTimers.worksheet_play_min) + playBonusSec,
+      test: m2s(phaseTimers.test_play_min) + playBonusSec
+    };
+
+    const workPhaseTimeLimits = {
+      discussion: m2s(phaseTimers.discussion_work_min),
+      comprehension: m2s(phaseTimers.comprehension_work_min),
+      exercise: m2s(phaseTimers.exercise_work_min),
+      worksheet: m2s(phaseTimers.worksheet_work_min),
+      test: m2s(phaseTimers.test_work_min)
+    };
+
     // Forward timer events to UI
     const unsubWorkTick = eventBus.on('workPhaseTimerTick', (data) => {
       setWorkPhaseTime(data.formatted);
       setWorkPhaseRemaining(data.remainingFormatted);
     });
-    
+
     const unsubWorkComplete = eventBus.on('workPhaseTimerComplete', (data) => {
       addEvent(`â±ï¸ ${data.phase} timer complete!`);
     });
-    
+
     const unsubGoldenKey = eventBus.on('goldenKeyEligible', (data) => {
       setGoldenKeyEligible(data.eligible);
       if (data.eligible) {
         addEvent('ðŸ”‘ Golden Key earned!');
       }
     });
-    
+
     // Play timer expired event (V1 parity - triggers 30-second overlay)
     const unsubPlayExpired = eventBus.on('playTimerExpired', (data) => {
-      console.log('[SessionPageV2] playTimerExpired event received:', data);
-      setPlayExpiredPhase(data.phase || currentPhase);
+      setPlayExpiredPhase(data.phase || null);
       setShowPlayTimeExpired(true);
     });
-    
-    const timer = new TimerService(
-      eventBus,
-      {
-        workPhaseTimeLimits: {
-          exercise: 180,   // 3 minutes
-          worksheet: 300,  // 5 minutes
-          test: 600        // 10 minutes
-        }
-      }
-    );
-    
+
+    const timer = new TimerService(eventBus, {
+      lessonKey,
+      playTimerLimits,
+      workPhaseTimeLimits
+    });
+
     timerServiceRef.current = timer;
-    
+
+    // Apply any snapshot-restored timer state once timer exists
+    if (pendingTimerStateRef.current) {
+      try { timer.restoreState(pendingTimerStateRef.current); } catch {}
+      pendingTimerStateRef.current = null;
+    }
+
     return () => {
+      try { unsubWorkTick?.(); } catch {}
+      try { unsubWorkComplete?.(); } catch {}
+      try { unsubGoldenKey?.(); } catch {}
+      try { unsubPlayExpired?.(); } catch {}
       timer.destroy();
       timerServiceRef.current = null;
     };
-  }, []);
+  }, [lessonId, lessonKey, phaseTimers, goldenKeyBonus]);
   
   // Initialize KeyboardService
   useEffect(() => {
@@ -528,6 +628,61 @@ function SessionPageV2Inner() {
     const timestamp = new Date().toLocaleTimeString();
     setEvents(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 15));
   };
+
+  // Learner target helper: no silent defaults. Returns positive integer or null (caller must block start).
+  const getLearnerTarget = useCallback((phaseName) => {
+    const asNumber = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    const parsedTargets = (() => {
+      const t = learnerProfile?.targets;
+      if (!t) return null;
+      if (typeof t === 'object') return t;
+      if (typeof t === 'string') {
+        try { return JSON.parse(t); } catch { return null; }
+      }
+      return null;
+    })();
+
+    const fromFlat = asNumber(learnerProfile && learnerProfile[phaseName]);
+    const fromNested = asNumber(parsedTargets?.[phaseName]);
+    // Legacy V1 fallback: some learners stored comprehension under "discussion" (V1 alias)
+    const fromLegacy = phaseName === 'comprehension'
+      ? (asNumber(learnerProfile && learnerProfile.discussion) ?? asNumber(parsedTargets?.discussion))
+      : null;
+
+    let fromOverride = null;
+    // Use the pinned session learner id (or loaded profile id) to avoid override lookups drifting mid-session.
+    const lid = sessionLearnerIdRef.current || learnerProfile?.id || null;
+    try {
+      const overrideKeys = [];
+      if (lid && lid !== 'demo') {
+        overrideKeys.push(`target_${phaseName}_${lid}`);
+      }
+      overrideKeys.push(`target_${phaseName}`);
+
+      for (const key of overrideKeys) {
+        const raw = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+        const num = asNumber(raw);
+        if (num && num > 0) {
+          fromOverride = num;
+          break;
+        }
+      }
+    } catch {}
+
+    const raw = [fromFlat, fromNested, fromLegacy, fromOverride].find(v => Number.isFinite(v) && v > 0) ?? null;
+    if (!Number.isFinite(raw) || raw <= 0) {
+      setLearnerError(`Missing learner target for ${phaseName}. Update the learner targets and retry.`);
+      setError(null);
+      addEvent(`⚠️ Missing learner target for ${phaseName}`);
+      return null;
+    }
+
+    return Math.trunc(raw);
+  }, [learnerProfile]);
   
   // Helper to get the current phase name for timer key (matching V1)
   const getCurrentPhaseName = useCallback(() => {
@@ -540,6 +695,32 @@ function SessionPageV2Inner() {
     if (currentPhase === 'test') return 'test';
     return null;
   }, [currentPhase]);
+
+  // Resolve phase ref by name
+  const getPhaseRef = (phaseName) => {
+    const map = {
+      comprehension: comprehensionPhaseRef,
+      exercise: exercisePhaseRef,
+      worksheet: worksheetPhaseRef,
+      test: testPhaseRef
+    };
+    return map[phaseName] || null;
+  };
+
+  // Begin button handler: ensure phase exists, then start; start pending timer if queued.
+  const handleBeginPhase = (phaseName) => {
+    ensurePhaseInitialized(phaseName);
+    const ref = getPhaseRef(phaseName);
+    if (ref?.current?.start) {
+      ref.current.start();
+    } else {
+      addEvent(`⚠️ Unable to start ${phaseName} (not initialized yet)`);
+    }
+    if (pendingPlayTimersRef.current?.[phaseName]) {
+      startPhasePlayTimer(phaseName);
+      delete pendingPlayTimersRef.current[phaseName];
+    }
+  };
   
   // Get timer duration for a phase and type from phaseTimers
   const getCurrentPhaseTimerDuration = useCallback((phaseName, timerType) => {
@@ -592,10 +773,11 @@ function SessionPageV2Inner() {
     if (!phaseName) return;
     
     // Clear the play timer storage so work timer starts fresh
-    const lessonKey = lessonData?.key || `${subjectParam}/${lessonId}`;
-    const playTimerKey = `session_timer_state:${lessonKey}:${phaseName}:play`;
+    const playTimerKey = lessonKey ? `session_timer_state:${lessonKey}:${phaseName}:play` : null;
     try {
-      sessionStorage.removeItem(playTimerKey);
+      if (playTimerKey) {
+        sessionStorage.removeItem(playTimerKey);
+      }
     } catch {}
     
     setCurrentTimerMode(prev => ({
@@ -604,7 +786,7 @@ function SessionPageV2Inner() {
     }));
     setTimerRefreshKey(prev => prev + 1);
     addEvent(`âœï¸ Work timer started for ${phaseName}`);
-  }, [lessonData, subjectParam, lessonId]);
+  }, [lessonKey]);
   
   // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode) - V1 parity
   const handlePlayExpiredComplete = useCallback(async () => {
@@ -619,15 +801,15 @@ function SessionPageV2Inner() {
       try {
         if (phaseToStart === 'discussion' || currentPhase === 'discussion' || currentPhase === 'teaching') {
           // Start teaching/discussion
-          startSession();
+            startSessionRef.current?.({ ignoreResume: true });
         } else if (phaseToStart === 'comprehension' || currentPhase === 'comprehension') {
-          // Comprehension auto-starts when phase begins
+          comprehensionPhaseRef.current?.go();
         } else if (phaseToStart === 'exercise' || currentPhase === 'exercise') {
-          // Exercise auto-starts when phase begins
+          exercisePhaseRef.current?.go();
         } else if (phaseToStart === 'worksheet' || currentPhase === 'worksheet') {
-          // Worksheet auto-starts when phase begins
+          worksheetPhaseRef.current?.go();
         } else if (phaseToStart === 'test' || currentPhase === 'test') {
-          // Test auto-starts when phase begins
+          testPhaseRef.current?.go();
         }
       } catch (e) {
         console.warn('[SessionPageV2] Auto-start failed:', e);
@@ -647,15 +829,15 @@ function SessionPageV2Inner() {
       // Trigger the appropriate Go handler
       try {
         if (phaseToStart === 'discussion' || currentPhase === 'discussion' || currentPhase === 'teaching') {
-          startSession();
+            startSessionRef.current?.({ ignoreResume: true });
         } else if (phaseToStart === 'comprehension' || currentPhase === 'comprehension') {
-          // Comprehension phase handles its own Go
+          comprehensionPhaseRef.current?.go();
         } else if (phaseToStart === 'exercise' || currentPhase === 'exercise') {
-          // Exercise phase handles its own Go
+          exercisePhaseRef.current?.go();
         } else if (phaseToStart === 'worksheet' || currentPhase === 'worksheet') {
-          // Worksheet phase handles its own Go
+          worksheetPhaseRef.current?.go();
         } else if (phaseToStart === 'test' || currentPhase === 'test') {
-          // Test phase handles its own Go
+          testPhaseRef.current?.go();
         }
       } catch (e) {
         console.warn('[SessionPageV2] Start now failed:', e);
@@ -765,14 +947,19 @@ function SessionPageV2Inner() {
     setPlayExpiredPhase(null);
     
     // Clear timer storage for the target phase (fresh start)
-    const lessonKey = lessonData?.key || `${subjectParam}/${lessonId}`;
     try {
       // Clear play timer storage
-      sessionStorage.removeItem(`session_timer_state:${lessonKey}:${targetPhase}:play`);
+      if (lessonKey) {
+        sessionStorage.removeItem(`session_timer_state:${lessonKey}:${targetPhase}:play`);
+      }
       // Clear work timer storage
-      sessionStorage.removeItem(`session_timer_state:${lessonKey}:${targetPhase}:work`);
+      if (lessonKey) {
+        sessionStorage.removeItem(`session_timer_state:${lessonKey}:${targetPhase}:work`);
+      }
       // Clear warning timer storage (30-second countdown)
-      sessionStorage.removeItem(`play_expired_warning:${lessonKey}:${targetPhase}`);
+      if (lessonKey) {
+        sessionStorage.removeItem(`play_expired_warning:${lessonKey}:${targetPhase}`);
+      }
     } catch {}
     
     // Use orchestrator's skipToPhase method - this will emit phaseChange
@@ -793,7 +980,7 @@ function SessionPageV2Inner() {
     setTimeout(() => {
       timelineJumpInProgressRef.current = false;
     }, 500);
-  }, [lessonData, subjectParam, lessonId]);
+  }, [lessonKey]);
   
   // Orientation and layout detection (matching V1)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
@@ -1166,6 +1353,11 @@ function SessionPageV2Inner() {
       console.log('[SessionPageV2] phaseChange lessonData:', !!lessonData);
       addEvent(`ðŸ”„ Phase: ${data.phase}`);
       setCurrentPhase(data.phase);
+
+      // Keep snapshot currentPhase aligned so granular saves write under the active phase.
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.saveProgress('phase-change', { phaseOverride: data.phase });
+      }
       
       // Update keyboard service phase
       if (keyboardServiceRef.current) {
@@ -1182,21 +1374,34 @@ function SessionPageV2Inner() {
         startTeachingPhase();
         // Teaching uses discussion timer (grouped together, already in work mode)
       } else if (data.phase === 'comprehension') {
-        startComprehensionPhase();
-        // Start play timer for comprehension
-        startPhasePlayTimer('comprehension');
+        const started = startComprehensionPhase();
+        if (started) {
+          // Start play timer for comprehension once phase exists
+          startPhasePlayTimer('comprehension');
+        } else {
+          pendingPlayTimersRef.current.comprehension = true;
+        }
       } else if (data.phase === 'exercise') {
-        startExercisePhase();
-        // Start play timer for exercise
-        startPhasePlayTimer('exercise');
+        const started = startExercisePhase();
+        if (started) {
+          startPhasePlayTimer('exercise');
+        } else {
+          pendingPlayTimersRef.current.exercise = true;
+        }
       } else if (data.phase === 'worksheet') {
-        startWorksheetPhase();
-        // Start play timer for worksheet
-        startPhasePlayTimer('worksheet');
+        const started = startWorksheetPhase();
+        if (started) {
+          startPhasePlayTimer('worksheet');
+        } else {
+          pendingPlayTimersRef.current.worksheet = true;
+        }
       } else if (data.phase === 'test') {
-        startTestPhase();
-        // Start play timer for test
-        startPhasePlayTimer('test');
+        const started = startTestPhase();
+        if (started) {
+          startPhasePlayTimer('test');
+        } else {
+          pendingPlayTimersRef.current.test = true;
+        }
       } else if (data.phase === 'closing') {
         startClosingPhase();
       }
@@ -1245,6 +1450,14 @@ function SessionPageV2Inner() {
       orchestratorRef.current = null;
     };
   }, [lessonData]);
+
+  // If learnerProfile finishes loading after a Q&A phase was entered, initialize that phase and start any pending play timer.
+  useEffect(() => {
+    if (!learnerProfile) return;
+    if (currentPhase === 'comprehension' || currentPhase === 'exercise' || currentPhase === 'worksheet' || currentPhase === 'test') {
+      ensurePhaseInitialized(currentPhase);
+    }
+  }, [learnerProfile, currentPhase]);
   
   // Start discussion phase
   const startDiscussionPhase = () => {
@@ -1253,10 +1466,11 @@ function SessionPageV2Inner() {
     console.log('[SessionPageV2] eventBusRef.current:', !!eventBusRef.current);
     
     if (!audioEngineRef.current || !eventBusRef.current) return;
-    
+
+    const lessonTitle = lessonData?.title || lessonId || 'this topic';
+
     // Get learner name and lesson title
     const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'friend';
-    const lessonTitle = lessonData?.title || 'this topic';
     
     console.log('[SessionPageV2] Creating DiscussionPhase with learnerName:', learnerName, 'lessonTitle:', lessonTitle);
     
@@ -1267,24 +1481,37 @@ function SessionPageV2Inner() {
       lessonTitle: lessonTitle
     });
     
+
     discussionPhaseRef.current = phase;
     
     console.log('[SessionPageV2] Setting up event listeners');
-    
-    // Subscribe to events
-    eventBusRef.current.on('greetingPlaying', (data) => {
+
+    let didComplete = false;
+    // Subscribe to events (capture unsubs so we can cleanly tear down)
+    const unsubGreetingPlaying = eventBusRef.current.on('greetingPlaying', (data) => {
       addEvent(`ðŸ‘‹ Playing greeting: "${data.greetingText}"`);
       setDiscussionState('playing-greeting');
     });
     
-    eventBusRef.current.on('greetingComplete', (data) => {
+    const unsubGreetingComplete = eventBusRef.current.on('greetingComplete', (data) => {
       addEvent('âœ… Greeting complete');
       setDiscussionState('complete');
     });
     
-    eventBusRef.current.on('discussionComplete', (data) => {
+    const unsubDiscussionComplete = eventBusRef.current.on('discussionComplete', (data) => {
+      if (didComplete) return;
+      didComplete = true;
+
       addEvent('ðŸŽ‰ Discussion complete - proceeding to teaching');
       setDiscussionState('complete');
+
+      // Cleanup FIRST to remove discussion audio end listener.
+      try { unsubGreetingPlaying?.(); } catch {}
+      try { unsubGreetingComplete?.(); } catch {}
+      try { unsubDiscussionComplete?.(); } catch {}
+
+      try { phase.destroy(); } catch {}
+      discussionPhaseRef.current = null;
       
       // Save snapshot
       if (snapshotServiceRef.current) {
@@ -1301,10 +1528,6 @@ function SessionPageV2Inner() {
       if (orchestratorRef.current) {
         orchestratorRef.current.onDiscussionComplete();
       }
-      
-      // Cleanup
-      phase.destroy();
-      discussionPhaseRef.current = null;
     });
     
     // Start greeting
@@ -1349,11 +1572,21 @@ function SessionPageV2Inner() {
     console.log('[SessionPageV2] startComprehensionPhase audioEngineRef:', !!audioEngineRef.current);
     if (!audioEngineRef.current || !lessonData) {
       console.log('[SessionPageV2] startComprehensionPhase - guard failed, returning early');
-      return;
+      return false;
     }
+    if (!learnerProfile) {
+      addEvent('⏸️ Learner not loaded yet - delaying comprehension init');
+      return false;
+    }
+
+    const snapshot = snapshotServiceRef.current?.snapshot;
+    const savedComp = snapshot?.phaseData?.comprehension || null;
+    const savedCompQuestions = Array.isArray(savedComp?.questions) && savedComp.questions.length ? savedComp.questions : null;
     
     // Build comprehension questions from MC and TF pools (V1 parity: comprehension uses all question types)
-    const questions = buildQuestionPool(3, []); // 3 questions, no exclusions
+    const compTarget = savedCompQuestions ? savedCompQuestions.length : getLearnerTarget('comprehension');
+    if (!compTarget) return false;
+    const questions = savedCompQuestions || buildQuestionPool(compTarget, []); // target-driven, no exclusions
     console.log('[SessionPageV2] startComprehensionPhase built questions:', questions.length);
     
     if (questions.length === 0) {
@@ -1362,20 +1595,33 @@ function SessionPageV2Inner() {
       if (orchestratorRef.current) {
         orchestratorRef.current.onComprehensionComplete();
       }
-      return;
+      return false;
     }
-    
-    // Start work phase timer
-    if (timerServiceRef.current) {
-      timerServiceRef.current.startWorkPhaseTimer('comprehension');
-      addEvent('⏱️ Comprehension timer started');
+
+    // Persist question order immediately so mid-phase resume has deterministic pools.
+    if (snapshotServiceRef.current) {
+      snapshotServiceRef.current.saveProgress('comprehension-init', {
+        phaseOverride: 'comprehension',
+        questions,
+        nextQuestionIndex: savedComp?.nextQuestionIndex || 0,
+        score: savedComp?.score || 0,
+        answers: savedComp?.answers || [],
+        timerMode: savedComp?.timerMode || 'play'
+      });
     }
     
     const phase = new ComprehensionPhase({
       audioEngine: audioEngineRef.current,
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
-      questions: questions
+      questions: questions,
+      resumeState: savedComp ? {
+        questions,
+        nextQuestionIndex: savedComp.nextQuestionIndex ?? savedComp.questionIndex ?? 0,
+        score: savedComp.score || 0,
+        answers: savedComp.answers || [],
+        timerMode: savedComp.timerMode || 'work'
+      } : null
     });
     
     comprehensionPhaseRef.current = phase;
@@ -1389,6 +1635,29 @@ function SessionPageV2Inner() {
       if (data.state === 'awaiting-answer') {
         addEvent('â“ Waiting for answer...');
       }
+    });
+
+    // Subscribe to question events (required for footer Q&A wiring)
+    phase.on('questionStart', (data) => {
+      setCurrentComprehensionQuestion(data.question);
+      setComprehensionTotalQuestions(data.totalQuestions);
+    });
+
+    phase.on('questionReady', (data) => {
+      setCurrentComprehensionQuestion(data.question);
+      setComprehensionState('awaiting-answer');
+    });
+
+    phase.on('answerSubmitted', (data) => {
+      setComprehensionScore(data.score);
+      setComprehensionTotalQuestions(data.totalQuestions);
+      setComprehensionAnswer('');
+    });
+
+    phase.on('questionSkipped', (data) => {
+      setComprehensionScore(data.score);
+      setComprehensionTotalQuestions(data.totalQuestions);
+      setComprehensionAnswer('');
     });
     
     phase.on('comprehensionComplete', (data) => {
@@ -1427,8 +1696,9 @@ function SessionPageV2Inner() {
       }
     });
     
-    // Start phase
-    phase.start();
+    // Don't auto-start - let Begin button call phase.start()
+    // phase.start();
+    return true;
   };
   
   // Start exercise phase
@@ -1462,11 +1732,21 @@ function SessionPageV2Inner() {
     console.log('[SessionPageV2] startExercisePhase audioEngineRef:', !!audioEngineRef.current);
     if (!audioEngineRef.current || !lessonData) {
       console.log('[SessionPageV2] startExercisePhase - guard failed, returning early');
-      return;
+      return false;
     }
+    if (!learnerProfile) {
+      addEvent('⏸️ Learner not loaded yet - delaying exercise init');
+      return false;
+    }
+
+    const snapshot = snapshotServiceRef.current?.snapshot;
+    const savedExercise = snapshot?.phaseData?.exercise || null;
+    const savedExerciseQuestions = Array.isArray(savedExercise?.questions) && savedExercise.questions.length ? savedExercise.questions : null;
     
+    const exerciseTarget = savedExerciseQuestions ? savedExerciseQuestions.length : getLearnerTarget('exercise');
+    if (!exerciseTarget) return false;
     // Build exercise questions from MC and TF pools (V1 parity: exercise uses MC/TF)
-    const questions = buildQuestionPool(5, ['fib', 'short']);
+    const questions = savedExerciseQuestions || buildQuestionPool(exerciseTarget, ['fib', 'short']);
     console.log('[SessionPageV2] startExercisePhase built questions:', questions.length);
     
     if (questions.length === 0) {
@@ -1475,20 +1755,32 @@ function SessionPageV2Inner() {
       if (orchestratorRef.current) {
         orchestratorRef.current.onExerciseComplete();
       }
-      return;
+      return false;
     }
-    
-    // Start work phase timer
-    if (timerServiceRef.current) {
-      timerServiceRef.current.startWorkPhaseTimer('exercise');
-      addEvent('â±ï¸ Exercise timer started (3 min limit)');
+
+    if (snapshotServiceRef.current) {
+      snapshotServiceRef.current.saveProgress('exercise-init', {
+        phaseOverride: 'exercise',
+        questions,
+        nextQuestionIndex: savedExercise?.nextQuestionIndex ?? savedExercise?.questionIndex ?? 0,
+        score: savedExercise?.score || 0,
+        answers: savedExercise?.answers || [],
+        timerMode: savedExercise?.timerMode || 'play'
+      });
     }
     
     const phase = new ExercisePhase({
       audioEngine: audioEngineRef.current,
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
-      questions: questions
+      questions: questions,
+      resumeState: savedExercise ? {
+        questions,
+        nextQuestionIndex: savedExercise.nextQuestionIndex ?? savedExercise.questionIndex ?? 0,
+        score: savedExercise.score || 0,
+        answers: savedExercise.answers || [],
+        timerMode: savedExercise.timerMode || 'work'
+      } : null
     });
     
     exercisePhaseRef.current = phase;
@@ -1569,8 +1861,9 @@ function SessionPageV2Inner() {
       }
     });
     
-    // Start phase
-    phase.start();
+    // Don't auto-start - let Begin button call phase.start()
+    // phase.start();
+    return true;
   };
   
   // Start worksheet phase
@@ -1579,13 +1872,23 @@ function SessionPageV2Inner() {
     console.log('[SessionPageV2] startWorksheetPhase audioEngineRef:', !!audioEngineRef.current);
     if (!audioEngineRef.current || !lessonData) {
       console.log('[SessionPageV2] startWorksheetPhase - guard failed, returning early');
-      return;
+      return false;
     }
+    if (!learnerProfile) {
+      addEvent('⏸️ Learner not loaded yet - delaying worksheet init');
+      return false;
+    }
+
+    const snapshot = snapshotServiceRef.current?.snapshot;
+    const savedWorksheet = snapshot?.phaseData?.worksheet || null;
+    const savedWorksheetQuestions = Array.isArray(savedWorksheet?.questions) && savedWorksheet.questions.length ? savedWorksheet.questions : null;
     
     // Build worksheet questions from FIB pool (V1 parity: worksheet uses fill-in-blank)
     const fib = Array.isArray(lessonData?.fillintheblank) 
       ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib', type: 'fib' })) : [];
-    const questions = fib.slice(0, 5);
+    const worksheetTarget = savedWorksheetQuestions ? savedWorksheetQuestions.length : getLearnerTarget('worksheet');
+    if (!worksheetTarget) return false;
+    const questions = savedWorksheetQuestions || fib.slice(0, Math.min(worksheetTarget, fib.length));
     console.log('[SessionPageV2] startWorksheetPhase built questions:', questions.length);
     
     if (questions.length === 0) {
@@ -1594,20 +1897,32 @@ function SessionPageV2Inner() {
       if (orchestratorRef.current) {
         orchestratorRef.current.onWorksheetComplete();
       }
-      return;
+      return false;
     }
-    
-    // Start work phase timer
-    if (timerServiceRef.current) {
-      timerServiceRef.current.startWorkPhaseTimer('worksheet');
-      addEvent('â±ï¸ Worksheet timer started (5 min limit)');
+
+    if (snapshotServiceRef.current) {
+      snapshotServiceRef.current.saveProgress('worksheet-init', {
+        phaseOverride: 'worksheet',
+        questions,
+        nextQuestionIndex: savedWorksheet?.nextQuestionIndex ?? savedWorksheet?.questionIndex ?? 0,
+        score: savedWorksheet?.score || 0,
+        answers: savedWorksheet?.answers || [],
+        timerMode: savedWorksheet?.timerMode || 'play'
+      });
     }
     
     const phase = new WorksheetPhase({
       audioEngine: audioEngineRef.current,
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
-      questions: questions
+      questions: questions,
+      resumeState: savedWorksheet ? {
+        questions,
+        nextQuestionIndex: savedWorksheet.nextQuestionIndex ?? savedWorksheet.questionIndex ?? 0,
+        score: savedWorksheet.score || 0,
+        answers: savedWorksheet.answers || [],
+        timerMode: savedWorksheet.timerMode || 'work'
+      } : null
     });
     
     worksheetPhaseRef.current = phase;
@@ -1697,8 +2012,9 @@ function SessionPageV2Inner() {
       }
     });
     
-    // Start phase
-    phase.start();
+    // Don't auto-start - let Begin button call phase.start()
+    // phase.start();
+    return true;
   };
   
   // Start test phase
@@ -1707,11 +2023,21 @@ function SessionPageV2Inner() {
     console.log('[SessionPageV2] startTestPhase audioEngineRef:', !!audioEngineRef.current);
     if (!audioEngineRef.current || !lessonData) {
       console.log('[SessionPageV2] startTestPhase - guard failed, returning early');
-      return;
+      return false;
     }
+    if (!learnerProfile) {
+      addEvent('⏸️ Learner not loaded yet - delaying test init');
+      return false;
+    }
+
+    const snapshot = snapshotServiceRef.current?.snapshot;
+    const savedTest = snapshot?.phaseData?.test || null;
+    const savedTestQuestions = Array.isArray(savedTest?.questions) && savedTest.questions.length ? savedTest.questions : null;
     
+    const testTarget = savedTestQuestions ? savedTestQuestions.length : getLearnerTarget('test');
+    if (!testTarget) return false;
     // Build test questions from all pools (V1 parity: test uses mix of all types)
-    const questions = buildQuestionPool(10, []);
+    const questions = savedTestQuestions || buildQuestionPool(testTarget, []);
     console.log('[SessionPageV2] startTestPhase built questions:', questions.length);
     
     if (questions.length === 0) {
@@ -1720,20 +2046,34 @@ function SessionPageV2Inner() {
       if (orchestratorRef.current) {
         orchestratorRef.current.onTestComplete();
       }
-      return;
+      return false;
     }
     
-    // Start work phase timer
-    if (timerServiceRef.current) {
-      timerServiceRef.current.startWorkPhaseTimer('test');
-      addEvent('â±ï¸ Test timer started (10 min limit)');
+    if (snapshotServiceRef.current) {
+      snapshotServiceRef.current.saveProgress('test-init', {
+        phaseOverride: 'test',
+        questions,
+        nextQuestionIndex: savedTest?.nextQuestionIndex ?? savedTest?.questionIndex ?? 0,
+        score: savedTest?.score || 0,
+        answers: savedTest?.answers || [],
+        timerMode: savedTest?.timerMode || 'play',
+        reviewIndex: savedTest?.reviewIndex || 0
+      });
     }
     
     const phase = new TestPhase({
       audioEngine: audioEngineRef.current,
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
-      questions: questions
+      questions: questions,
+      resumeState: savedTest ? {
+        questions,
+        nextQuestionIndex: savedTest.nextQuestionIndex ?? savedTest.questionIndex ?? 0,
+        score: savedTest.score || 0,
+        answers: savedTest.answers || [],
+        timerMode: savedTest.timerMode || 'work',
+        reviewIndex: savedTest.reviewIndex || 0
+      } : null
     });
     
     testPhaseRef.current = phase;
@@ -1834,8 +2174,38 @@ function SessionPageV2Inner() {
       }
     });
     
-    // Start phase
-    phase.start();
+    // Don't auto-start - let Begin button call phase.start()
+    // phase.start();
+    return true;
+  };
+
+  // Ensure a phase instance exists (e.g., when learner loads after phaseChange fired).
+  const ensurePhaseInitialized = (phaseName) => {
+    const refMap = {
+      comprehension: comprehensionPhaseRef,
+      exercise: exercisePhaseRef,
+      worksheet: worksheetPhaseRef,
+      test: testPhaseRef
+    };
+    const startMap = {
+      comprehension: startComprehensionPhase,
+      exercise: startExercisePhase,
+      worksheet: startWorksheetPhase,
+      test: startTestPhase
+    };
+
+    const ref = refMap[phaseName];
+    const starter = startMap[phaseName];
+    if (!ref || !starter) return false;
+    if (ref.current) return true;
+    if (!learnerProfile) return false;
+
+    const started = starter();
+    if (started && pendingPlayTimersRef.current?.[phaseName]) {
+      startPhasePlayTimer(phaseName);
+      delete pendingPlayTimersRef.current[phaseName];
+    }
+    return started;
   };
   
   // Start closing phase
@@ -1872,8 +2242,8 @@ function SessionPageV2Inner() {
       closingPhaseRef.current = null;
     });
     
-    // Start phase
-    phase.start();
+    // Don't auto-start - let Begin button call phase.start()
+    // phase.start();
   };
   
   // Handle keyboard hotkeys
@@ -1916,7 +2286,7 @@ function SessionPageV2Inner() {
     }
   };
   
-  const startSession = async () => {
+  const startSession = async (options = {}) => {
     if (!orchestratorRef.current) {
       console.warn('[SessionPageV2] No orchestrator');
       return;
@@ -1961,8 +2331,36 @@ function SessionPageV2Inner() {
       // Silent error handling
     }
     
-    orchestratorRef.current.startSession();
+    const normalizeResumePhase = (phase) => {
+      // Defensive: old snapshots may contain sub-phases that aren't valid orchestrator phases.
+      if (!phase) return null;
+      if (phase === 'grading' || phase === 'congrats') return 'test';
+      if (phase === 'complete') return 'closing';
+      return phase;
+    };
+
+    const resolvedPhase = options?.ignoreResume
+      ? (options?.startPhase || null)
+      : (options?.startPhase || resumePhaseRef.current);
+    const target = normalizeResumePhase(resolvedPhase);
+
+    // Resume flow (snapshot): start the orchestrator directly at the target phase.
+    // Critical: do NOT start Discussion first then skip, because Discussion/Teaching can still complete
+    // and override the manual skip later.
+    if (target && target !== 'idle') {
+      try {
+        await orchestratorRef.current.startSession({ startPhase: target });
+      } catch (e) {
+        console.warn('[SessionPageV2] Resume startSession(startPhase) failed; starting fresh:', e);
+        await orchestratorRef.current.startSession();
+      }
+    } else {
+      await orchestratorRef.current.startSession();
+    }
   };
+
+  // Allow early-declared callbacks to invoke startSession without TDZ issues.
+  startSessionRef.current = startSession;
   
   const startTeaching = async (options = {}) => {
     if (!teachingControllerRef.current) return;
@@ -2082,7 +2480,7 @@ function SessionPageV2Inner() {
     const question = currentTestQuestion;
     if (!question) return;
     
-    if (question.type === 'fill') {
+    if (question.type === 'fill' || question.type === 'fib' || question.sourceType === 'fib') {
       if (!testAnswer.trim()) return;
       testPhaseRef.current.submitAnswer(testAnswer);
     } else {
@@ -2253,7 +2651,7 @@ function SessionPageV2Inner() {
                 isPaused={timerPaused}
                 onTimeUp={handlePhaseTimerTimeUp}
                 onPauseToggle={handleTimerPauseToggle}
-                lessonKey={lessonData?.key || `${subjectParam}/${lessonId}`}
+                lessonKey={lessonKey}
                 onTimerClick={handleTimerClick}
               />
             </div>
@@ -2588,184 +2986,6 @@ function SessionPageV2Inner() {
       </div> {/* end main layout */}
       </div> {/* end content wrapper */}
       
-      {/* Question Display Panel - Shows during comprehension/exercise/worksheet/test */}
-      {((currentPhase === 'comprehension' && comprehensionState === 'awaiting-answer' && currentComprehensionQuestion) ||
-        (currentPhase === 'exercise' && exerciseState === 'awaiting-answer' && currentExerciseQuestion) ||
-        (currentPhase === 'worksheet' && worksheetState === 'awaiting-answer' && currentWorksheetQuestion) ||
-        (currentPhase === 'test' && testState === 'awaiting-answer' && currentTestQuestion)) && (
-        <div style={{
-          position: 'fixed',
-          bottom: 120,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '90%',
-          maxWidth: 800,
-          zIndex: 998,
-          background: '#ffffff',
-          borderRadius: 12,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-          padding: 20,
-          border: '2px solid #c7442e'
-        }}>
-          <div style={{ fontSize: 'clamp(1.125rem, 2.2vw, 1.375rem)', lineHeight: 1.5, color: '#111827', marginBottom: 16 }}>
-            {currentPhase === 'comprehension' && currentComprehensionQuestion?.question}
-            {currentPhase === 'exercise' && currentExerciseQuestion?.question}
-            {currentPhase === 'worksheet' && currentWorksheetQuestion?.question}
-            {currentPhase === 'test' && currentTestQuestion?.question}
-          </div>
-          
-          {/* Answer input based on question type */}
-          {(() => {
-            const question = currentPhase === 'comprehension' ? currentComprehensionQuestion :
-                           currentPhase === 'exercise' ? currentExerciseQuestion :
-                           currentPhase === 'worksheet' ? currentWorksheetQuestion :
-                           currentTestQuestion;
-            
-            const answer = currentPhase === 'comprehension' ? comprehensionAnswer :
-                          currentPhase === 'exercise' ? selectedExerciseAnswer :
-                          currentPhase === 'worksheet' ? worksheetAnswer :
-                          testAnswer;
-            
-            const setAnswer = currentPhase === 'comprehension' ? setComprehensionAnswer :
-                             currentPhase === 'exercise' ? setSelectedExerciseAnswer :
-                             currentPhase === 'worksheet' ? setWorksheetAnswer :
-                             setTestAnswer;
-            
-            const submitHandler = currentPhase === 'comprehension' ? submitComprehensionAnswer :
-                                 currentPhase === 'exercise' ? submitExerciseAnswer :
-                                 currentPhase === 'worksheet' ? submitWorksheetAnswer :
-                                 submitTestAnswer;
-            
-            const skipHandler = currentPhase === 'comprehension' ? skipComprehension :
-                               currentPhase === 'exercise' ? skipExerciseQuestion :
-                               currentPhase === 'worksheet' ? skipWorksheetQuestion :
-                               skipTestQuestion;
-            
-            // Multiple choice or true/false - show buttons
-            if ((question?.type === 'mc' || question?.type === 'tf') && Array.isArray(question?.options) && question.options.length > 0) {
-              return (
-                <>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-                    {question.options.map((option, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setAnswer(option)}
-                        style={{
-                          padding: '12px 16px',
-                          fontSize: 'clamp(1rem, 2vw, 1.125rem)',
-                          background: answer === option ? '#c7442e' : '#f3f4f6',
-                          color: answer === option ? '#fff' : '#111827',
-                          border: answer === option ? '2px solid #c7442e' : '2px solid #e5e7eb',
-                          borderRadius: 8,
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          fontWeight: answer === option ? 600 : 400
-                        }}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                    <button
-                      onClick={skipHandler}
-                      style={{
-                        padding: '10px 20px',
-                        fontSize: 'clamp(0.95rem, 1.8vw, 1.05rem)',
-                        background: '#9ca3af',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 8,
-                        cursor: 'pointer',
-                        fontWeight: 600
-                      }}
-                    >
-                      Skip
-                    </button>
-                    <button
-                      onClick={submitHandler}
-                      disabled={!answer}
-                      style={{
-                        padding: '10px 24px',
-                        fontSize: 'clamp(0.95rem, 1.8vw, 1.05rem)',
-                        background: answer ? '#c7442e' : '#d1d5db',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 8,
-                        cursor: answer ? 'pointer' : 'not-allowed',
-                        fontWeight: 600
-                      }}
-                    >
-                      Submit
-                    </button>
-                  </div>
-                </>
-              );
-            }
-            
-            // Text input for fill-in-blank or short answer
-            return (
-              <>
-                <input
-                  type="text"
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && answer.trim()) {
-                      submitHandler();
-                    }
-                  }}
-                  placeholder="Type your answer..."
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    fontSize: 'clamp(1rem, 2vw, 1.125rem)',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: 8,
-                    marginBottom: 16,
-                    outline: 'none'
-                  }}
-                  autoFocus
-                />
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                  <button
-                    onClick={skipHandler}
-                    style={{
-                      padding: '10px 20px',
-                      fontSize: 'clamp(0.95rem, 1.8vw, 1.05rem)',
-                      background: '#9ca3af',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      fontWeight: 600
-                    }}
-                  >
-                    Skip
-                  </button>
-                  <button
-                    onClick={submitHandler}
-                    disabled={!answer.trim()}
-                    style={{
-                      padding: '10px 24px',
-                      fontSize: 'clamp(0.95rem, 1.8vw, 1.05rem)',
-                      background: answer.trim() ? '#c7442e' : '#d1d5db',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 8,
-                      cursor: answer.trim() ? 'pointer' : 'not-allowed',
-                      fontWeight: 600
-                    }}
-                  >
-                    Submit
-                  </button>
-                </div>
-              </>
-            );
-          })()}
-        </div>
-      )}
-      
       {/* Fixed footer with input controls */}
       <div style={{
         position: 'fixed',
@@ -2784,7 +3004,7 @@ function SessionPageV2Inner() {
           padding: (isShortHeight && isMobileLandscape) ? '2px 16px calc(2px + env(safe-area-inset-bottom, 0px))' : '4px 12px calc(4px + env(safe-area-inset-bottom, 0px))'
         }}>
           
-          {/* Opening Actions buttons - shown during play timer (awaiting-go state) */}
+          {/* Opening Actions + GO button - shown AFTER Begin pressed, during play timer */}
           {((currentPhase === 'comprehension' && comprehensionState === 'awaiting-go') ||
             (currentPhase === 'exercise' && exerciseState === 'awaiting-go') ||
             (currentPhase === 'worksheet' && worksheetState === 'awaiting-go') ||
@@ -2798,6 +3018,36 @@ function SessionPageV2Inner() {
               padding: '0 12px'
             }}>
               <button
+                onClick={() => {
+                  if (currentPhase === 'comprehension') {
+                    transitionToWorkTimer('comprehension');
+                    comprehensionPhaseRef.current?.go();
+                  } else if (currentPhase === 'exercise') {
+                    transitionToWorkTimer('exercise');
+                    exercisePhaseRef.current?.go();
+                  } else if (currentPhase === 'worksheet') {
+                    transitionToWorkTimer('worksheet');
+                    worksheetPhaseRef.current?.go();
+                  } else if (currentPhase === 'test') {
+                    transitionToWorkTimer('test');
+                    testPhaseRef.current?.go();
+                  }
+                }}
+                style={{
+                  padding: '10px 20px',
+                  fontSize: 'clamp(1rem, 2vw, 1.125rem)',
+                  background: '#c7442e',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  boxShadow: '0 2px 8px rgba(199,68,46,0.4)'
+                }}
+              >
+                GO!
+              </button>
+              <button
                 onClick={() => openingActionsControllerRef.current?.startAsk()}
                 style={{
                   padding: '8px 16px',
@@ -2807,8 +3057,7 @@ function SessionPageV2Inner() {
                   border: 'none',
                   borderRadius: 8,
                   cursor: 'pointer',
-                  fontWeight: 600,
-                  boxShadow: '0 2px 6px rgba(59,130,246,0.3)'
+                  fontWeight: 600
                 }}
               >
                 Ask Ms. Sonoma
@@ -2823,8 +3072,7 @@ function SessionPageV2Inner() {
                   border: 'none',
                   borderRadius: 8,
                   cursor: 'pointer',
-                  fontWeight: 600,
-                  boxShadow: '0 2px 6px rgba(139,92,246,0.3)'
+                  fontWeight: 600
                 }}
               >
                 Riddle
@@ -2839,8 +3087,7 @@ function SessionPageV2Inner() {
                   border: 'none',
                   borderRadius: 8,
                   cursor: 'pointer',
-                  fontWeight: 600,
-                  boxShadow: '0 2px 6px rgba(236,72,153,0.3)'
+                  fontWeight: 600
                 }}
               >
                 Poem
@@ -2855,8 +3102,7 @@ function SessionPageV2Inner() {
                   border: 'none',
                   borderRadius: 8,
                   cursor: 'pointer',
-                  fontWeight: 600,
-                  boxShadow: '0 2px 6px rgba(245,158,11,0.3)'
+                  fontWeight: 600
                 }}
               >
                 Story
@@ -2871,8 +3117,7 @@ function SessionPageV2Inner() {
                   border: 'none',
                   borderRadius: 8,
                   cursor: 'pointer',
-                  fontWeight: 600,
-                  boxShadow: '0 2px 6px rgba(16,185,129,0.3)'
+                  fontWeight: 600
                 }}
               >
                 Fill-in-Fun
@@ -2883,11 +3128,13 @@ function SessionPageV2Inner() {
           {/* Phase-specific Begin buttons */}
           {(() => {
             const needBeginDiscussion = (currentPhase === 'idle');
-            const needBeginComp = (currentPhase === 'comprehension' && comprehensionState === 'awaiting-go');
-            const needBeginExercise = (currentPhase === 'exercise' && exerciseState === 'awaiting-go');
-            const needBeginWorksheet = (currentPhase === 'worksheet' && worksheetState === 'awaiting-go');
-            const needBeginTest = (currentPhase === 'test' && testState === 'awaiting-go');
+            const needBeginComp = (currentPhase === 'comprehension' && (!comprehensionState || comprehensionState === 'idle'));
+            const needBeginExercise = (currentPhase === 'exercise' && (!exerciseState || exerciseState === 'idle'));
+            const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
+            const needBeginTest = (currentPhase === 'test' && (!testState || testState === 'idle'));
             if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest)) return null;
+
+            const offerResume = !!snapshotLoaded && !!resumePhase && resumePhase !== 'idle' && resumePhase !== 'discussion';
             
             const ctaStyle = {
               background: '#c7442e',
@@ -2912,27 +3159,64 @@ function SessionPageV2Inner() {
                 marginBottom: 4
               }}>
                 {needBeginDiscussion && (
-                  <button type="button" style={{...ctaStyle, opacity: audioReady ? 1 : 0.5}} onClick={startSession} disabled={!audioReady}>
-                    {audioReady ? 'Begin' : 'Loading...'}
-                  </button>
+                  offerResume ? (
+                    <>
+                      <button
+                        type="button"
+                        style={{...ctaStyle, opacity: (audioReady && snapshotLoaded) ? 1 : 0.5}}
+                        onClick={startSession}
+                        disabled={!(audioReady && snapshotLoaded)}
+                      >
+                        Resume
+                      </button>
+                      <button
+                        type="button"
+                        style={{
+                          ...ctaStyle,
+                          background: '#374151',
+                          boxShadow: '0 2px 12px rgba(17,24,39,0.24)',
+                          opacity: (audioReady && snapshotLoaded) ? 1 : 0.5
+                        }}
+                        onClick={async () => {
+                          try { await snapshotServiceRef.current?.deleteSnapshot?.(); } catch {}
+                          resumePhaseRef.current = null;
+                          setResumePhase(null);
+                          try { timerServiceRef.current?.reset?.(); } catch {}
+                          try { await startSession({ ignoreResume: true }); } catch {}
+                        }}
+                        disabled={!(audioReady && snapshotLoaded)}
+                      >
+                        Start Over
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      style={{...ctaStyle, opacity: (audioReady && snapshotLoaded) ? 1 : 0.5}}
+                      onClick={startSession}
+                      disabled={!(audioReady && snapshotLoaded)}
+                    >
+                      {(audioReady && snapshotLoaded) ? 'Begin' : 'Loading...'}
+                    </button>
+                  )
                 )}
                 {needBeginComp && (
-                  <button type="button" style={ctaStyle} onClick={() => comprehensionPhaseRef.current?.go()}>
+                  <button type="button" style={ctaStyle} onClick={() => handleBeginPhase('comprehension')}>
                     Begin Comprehension
                   </button>
                 )}
                 {needBeginExercise && (
-                  <button type="button" style={ctaStyle} onClick={() => exercisePhaseRef.current?.go()}>
+                  <button type="button" style={ctaStyle} onClick={() => handleBeginPhase('exercise')}>
                     Begin Exercise
                   </button>
                 )}
                 {needBeginWorksheet && (
-                  <button type="button" style={ctaStyle} onClick={() => worksheetPhaseRef.current?.go()}>
+                  <button type="button" style={ctaStyle} onClick={() => handleBeginPhase('worksheet')}>
                     Begin Worksheet
                   </button>
                 )}
                 {needBeginTest && (
-                  <button type="button" style={ctaStyle} onClick={() => testPhaseRef.current?.go()}>
+                  <button type="button" style={ctaStyle} onClick={() => handleBeginPhase('test')}>
                     Begin Test
                   </button>
                 )}
@@ -2994,85 +3278,203 @@ function SessionPageV2Inner() {
             </div>
           )}
           
-          {/* Input panel with mic button */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '4px 0'
-          }}>
-            {/* Mic button */}
-            <button
-              type="button"
-              style={{
-                background: '#c7442e',
-                color: '#fff',
-                borderRadius: 8,
-                padding: '8px 12px',
-                minHeight: 40,
-                border: 'none',
-                cursor: 'pointer',
-                display: 'grid',
-                placeItems: 'center',
-                fontWeight: 600,
-                boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
-                transition: 'background 0.2s, opacity 0.2s, box-shadow 0.2s'
-              }}
-              aria-label="Voice input"
-              title="Hold to talk"
-              onClick={() => {
-                // TODO: implement mic recording
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 14a3 3 0 003-3V7a3 3 0 10-6 0v4a3 3 0 003 3z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M19 11a7 7 0 01-14 0" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 21v-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <input
-              type="text"
-              placeholder="Type your answer..."
-              style={{
-                flex: 1,
-                padding: '10px 16px',
-                border: '1px solid #bdbdbd',
-                borderRadius: 6,
-                fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)',
-                outline: 'none',
-                background: '#fff',
-                color: '#111827'
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  // TODO: implement send
-                }
-              }}
-            />
-            <button
-              type="button"
-              style={{
-                background: '#c7442e',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 8,
-                padding: '8px 12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'grid',
-                placeItems: 'center'
-              }}
-              aria-label="Send response"
-              onClick={() => {
-                // TODO: implement send
-              }}
-            >
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                <path d="M22 2L11 13" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
+          {/* Q&A footer for phases 2-5 */}
+          {(() => {
+            const qaPhase = ['comprehension', 'exercise', 'worksheet', 'test'].includes(currentPhase) ? currentPhase : null;
+            const awaitingAnswer =
+              (qaPhase === 'comprehension' && comprehensionState === 'awaiting-answer') ||
+              (qaPhase === 'exercise' && exerciseState === 'awaiting-answer') ||
+              (qaPhase === 'worksheet' && worksheetState === 'awaiting-answer') ||
+              (qaPhase === 'test' && testState === 'awaiting-answer');
+
+            if (!qaPhase || !awaitingAnswer) return null;
+
+            const q =
+              qaPhase === 'comprehension' ? currentComprehensionQuestion :
+              qaPhase === 'exercise' ? currentExerciseQuestion :
+              qaPhase === 'worksheet' ? currentWorksheetQuestion :
+              currentTestQuestion;
+
+            const isFill = qaPhase === 'worksheet'
+              || (qaPhase === 'test' && (q?.type === 'fill' || q?.type === 'fib' || q?.sourceType === 'fib'))
+              || (qaPhase === 'comprehension' && !isMultipleChoice(q) && !isTrueFalse(q));
+
+            const isMc = !isFill && isMultipleChoice(q);
+            const isTf = !isFill && !isMc && isTrueFalse(q);
+
+            const getOpts = () => {
+              if (isTf) return ['True', 'False'];
+              const raw = Array.isArray(q?.options) ? q.options : (Array.isArray(q?.choices) ? q.choices : []);
+              const labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+              const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.:\)\-]\s*/i;
+              return raw.filter(Boolean).map((o, i) => ({
+                key: labels[i] || String(i),
+                label: labels[i] || '',
+                value: String(o ?? '').trim().replace(anyLabel, '').trim()
+              }));
+            };
+
+            const currentValue =
+              qaPhase === 'comprehension' ? comprehensionAnswer :
+              qaPhase === 'exercise' ? selectedExerciseAnswer :
+              qaPhase === 'worksheet' ? worksheetAnswer :
+              testAnswer;
+
+            const setValue = (v) => {
+              if (qaPhase === 'comprehension') setComprehensionAnswer(v);
+              else if (qaPhase === 'exercise') setSelectedExerciseAnswer(v);
+              else if (qaPhase === 'worksheet') setWorksheetAnswer(v);
+              else if (qaPhase === 'test') setTestAnswer(v);
+            };
+
+            const onSubmit = () => {
+              if (qaPhase === 'comprehension') submitComprehensionAnswer();
+              else if (qaPhase === 'exercise') submitExerciseAnswer();
+              else if (qaPhase === 'worksheet') submitWorksheetAnswer();
+              else if (qaPhase === 'test') submitTestAnswer();
+            };
+
+            const onSkip = () => {
+              if (qaPhase === 'comprehension') skipComprehension();
+              else if (qaPhase === 'exercise') skipExerciseQuestion();
+              else if (qaPhase === 'worksheet') skipWorksheetQuestion();
+              else if (qaPhase === 'test') skipTestQuestion();
+            };
+
+            const canSubmit = !!String(currentValue || '').trim();
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 0' }}>
+                {(isMc || isTf) && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {(isTf ? getOpts().map((v) => ({ key: v, label: '', value: v })) : getOpts()).map((opt) => {
+                      const selected = String(currentValue || '').toLowerCase() === String(opt.value || '').toLowerCase();
+                      return (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => {
+                            setValue(opt.value);
+
+                            // V1/V2 parity: MC/TF quick buttons submit immediately.
+                            if (qaPhase === 'comprehension') {
+                              comprehensionPhaseRef.current?.submitAnswer(opt.value);
+                              setComprehensionAnswer('');
+                            } else if (qaPhase === 'exercise') {
+                              exercisePhaseRef.current?.submitAnswer(opt.value);
+                              setSelectedExerciseAnswer('');
+                            } else if (qaPhase === 'test') {
+                              testPhaseRef.current?.submitAnswer(opt.value);
+                              setTestAnswer('');
+                            }
+                          }}
+                          style={{
+                            padding: '10px 14px',
+                            borderRadius: 10,
+                            border: selected ? '2px solid #1f2937' : '1px solid #bdbdbd',
+                            background: selected ? '#1f2937' : '#fff',
+                            color: selected ? '#fff' : '#111827',
+                            cursor: 'pointer',
+                            fontWeight: 700,
+                            fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)'
+                          }}
+                        >
+                          {opt.label ? `${opt.label}. ${opt.value}` : opt.value}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {isFill && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      type="button"
+                      style={{
+                        background: '#c7442e',
+                        color: '#fff',
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        minHeight: 40,
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'grid',
+                        placeItems: 'center',
+                        fontWeight: 600,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.25)'
+                      }}
+                      aria-label="Voice input"
+                      title="Hold to talk"
+                      onClick={() => {
+                        // TODO: implement mic recording
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 14a3 3 0 003-3V7a3 3 0 10-6 0v4a3 3 0 003 3z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M19 11a7 7 0 01-14 0" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M12 21v-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                    <input
+                      type="text"
+                      placeholder="Type your answer..."
+                      value={currentValue}
+                      style={{
+                        flex: 1,
+                        padding: '10px 16px',
+                        border: '1px solid #bdbdbd',
+                        borderRadius: 6,
+                        fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)',
+                        outline: 'none',
+                        background: '#fff',
+                        color: '#111827'
+                      }}
+                      onChange={(e) => setValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          onSubmit();
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={onSkip}
+                    style={{
+                      background: '#9ca3af',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '10px 16px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Skip
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onSubmit}
+                    disabled={!canSubmit}
+                    style={{
+                      background: canSubmit ? '#c7442e' : '#9ca3af',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '10px 16px',
+                      fontWeight: 800,
+                      cursor: canSubmit ? 'pointer' : 'not-allowed'
+                    }}
+                  >
+                    Submit
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
       
@@ -3081,7 +3483,7 @@ function SessionPageV2Inner() {
         <PlayTimeExpiredOverlay
           isOpen={showPlayTimeExpired}
           phase={playExpiredPhase}
-          lessonKey={lessonData?.key || `${subjectParam}/${lessonId}`}
+          lessonKey={lessonKey}
           onComplete={handlePlayExpiredComplete}
           onStartNow={handlePlayExpiredStartNow}
         />
@@ -3092,7 +3494,7 @@ function SessionPageV2Inner() {
         <TimerControlOverlay
           isOpen={showTimerControl}
           onClose={() => setShowTimerControl(false)}
-          lessonKey={lessonData?.key || `${subjectParam}/${lessonId}`}
+          lessonKey={lessonKey}
           phase={getCurrentPhaseName()}
           timerType={currentTimerMode[getCurrentPhaseName()] || 'work'}
           totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()] || 'work')}

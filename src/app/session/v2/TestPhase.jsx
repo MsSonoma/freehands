@@ -63,12 +63,14 @@ export class TestPhase {
   #audioEndListener = null;
   #questionPlaybackToken = 0;
   #interactionInFlight = false;
+  #resumeState = null;
   
   constructor(options = {}) {
     this.#audioEngine = options.audioEngine;
     this.#eventBus = options.eventBus;
     this.#timerService = options.timerService;
     this.#questions = options.questions || [];
+    this.#resumeState = options.resumeState || null;
     
     if (!this.#audioEngine) {
       throw new Error('TestPhase requires audioEngine');
@@ -140,6 +142,45 @@ export class TestPhase {
   
   // Public API: Start phase
   async start() {
+    // Resume path: skip intro/go and jump directly to the stored question/review index.
+    if (this.#resumeState) {
+      if (Array.isArray(this.#resumeState.questions) && this.#resumeState.questions.length) {
+        this.#questions = this.#resumeState.questions;
+      }
+
+      this.#score = Number(this.#resumeState.score || 0);
+      this.#answers = Array.isArray(this.#resumeState.answers) ? this.#resumeState.answers : [];
+      this.#timerMode = this.#resumeState.timerMode || 'work';
+
+      if (this.#timerService) {
+        if (this.#timerMode === 'work') {
+          this.#timerService.transitionToWork('test');
+        } else {
+          this.#timerService.startPlayTimer('test');
+        }
+      }
+
+      const nextIndex = Math.min(
+        Math.max(this.#resumeState.nextQuestionIndex ?? 0, 0),
+        this.#questions.length
+      );
+
+      this.#currentQuestionIndex = nextIndex;
+
+      // If questions already finished, restore review position.
+      if (this.#currentQuestionIndex >= this.#questions.length) {
+        this.#state = 'reviewing';
+        this.#reviewIndex = Math.max(Math.min(this.#resumeState.reviewIndex ?? 0, this.#answers.length), 0);
+        this.startReview();
+        return;
+      }
+
+      this.#state = 'awaiting-answer';
+      this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
+      await this.#playCurrentQuestion();
+      return;
+    }
+
     // Play intro TTS (V1 pacing pattern)
     // IMPORTANT: Do not await AudioEngine.playAudio() here. If the user presses
     // Skip (AudioEngine.stop), AudioEngine intentionally removes HTMLAudio/WebAudio
@@ -247,9 +288,13 @@ export class TestPhase {
       this.#emit('requestSnapshotSave', {
         trigger: 'test-answer',
         data: {
-          questionIndex: this.#currentQuestionIndex,
+          nextQuestionIndex: Math.min(this.#currentQuestionIndex + 1, this.#questions.length),
           score: this.#score,
-          totalQuestions: this.#questions.length
+          totalQuestions: this.#questions.length,
+          questions: this.#questions,
+          answers: [...this.#answers],
+          timerMode: this.#timerMode,
+          reviewIndex: this.#reviewIndex
         }
       });
 
@@ -352,6 +397,19 @@ export class TestPhase {
       questionIndex: this.#currentQuestionIndex,
       score: this.#score,
       totalQuestions: this.#questions.length
+    });
+
+    this.#emit('requestSnapshotSave', {
+      trigger: 'test-skip',
+      data: {
+        nextQuestionIndex: Math.min(this.#currentQuestionIndex + 1, this.#questions.length),
+        score: this.#score,
+        totalQuestions: this.#questions.length,
+        questions: this.#questions,
+        answers: [...this.#answers],
+        timerMode: this.#timerMode,
+        reviewIndex: this.#reviewIndex
+      }
     });
     
     this.#advanceQuestion();
