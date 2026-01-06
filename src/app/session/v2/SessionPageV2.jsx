@@ -3364,12 +3364,15 @@ function SessionPageV2Inner() {
     });
     
     phase.on('testQuestionsComplete', (data) => {
+      console.log('[SessionPageV2] testQuestionsComplete event received:', data);
       addEvent(`ðŸ“Š Test questions done! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%) - Grade: ${data.grade}`);
       setTestGrade(data);
+      console.log('[SessionPageV2] Setting testState to reviewing');
       setTestState('reviewing');
     });
     
     phase.on('reviewQuestion', (data) => {
+      console.log('[SessionPageV2] reviewQuestion event received:', data);
       setTestReviewAnswer(data.answer);
       setTestReviewIndex(data.reviewIndex);
       addEvent(`ðŸ“– Review ${data.reviewIndex + 1}/${data.totalReviews}`);
