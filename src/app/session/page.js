@@ -289,7 +289,6 @@ function SessionPageInner() {
       if (!trackingLearnerId || !normalizedLessonKey || !browserSessionId) return;
       
       console.log('[SESSION CONFLICT CHECK] Running early conflict check before snapshot restore');
-      setSessionConflictChecked(true);
       
       try {
         const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
@@ -308,6 +307,7 @@ function SessionPageInner() {
       } catch (err) {
         console.error('[SESSION CONFLICT CHECK] Error during early conflict check:', err);
         // On error, mark as checked so snapshot restore can proceed
+      } finally {
         setSessionConflictChecked(true);
       }
     };
@@ -2185,25 +2185,22 @@ function SessionPageInner() {
               const shuffle = shuffleHook;
               const shuffleArr = shuffleArrHook;
               const selectMixed = selectMixedHook;
+              const blendByType = blendByTypeHook;
               let gW = [];
               let gT = [];
               let gComp = [];
               let gEx = [];
               
-              // Generate comprehension and exercise arrays first
+              // Generate comprehension and exercise arrays first with 80/20 MC+TF vs SA/FIB blend
               try {
                 const pool = buildQAPool(data);
-                const shuffled = Array.isArray(pool) ? (Array.from(pool)) : [];
-                for (let i = shuffled.length - 1; i > 0; i -= 1) {
-                  const j = Math.floor(Math.random() * (i + 1));
-                  [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-                }
+                const available = Array.isArray(pool) ? [...pool] : [];
                 console.log('[ARRAY GEN] Using targets - COMPREHENSION:', COMPREHENSION_TARGET, 'EXERCISE:', EXERCISE_TARGET);
-                const totalNeeded = Math.max(0, (COMPREHENSION_TARGET || 0)) + Math.max(0, (EXERCISE_TARGET || 0));
-                let take = shuffled.slice(0, Math.min(totalNeeded, shuffled.length));
-                gComp = take.slice(0, Math.min(COMPREHENSION_TARGET, take.length));
-                gEx = take.slice(gComp.length, Math.min(gComp.length + EXERCISE_TARGET, take.length));
-                console.log('[ARRAY GEN] Generated arrays - comprehension:', gComp.length, 'exercise:', gEx.length, 'from pool:', shuffled.length);
+                const compBlend = blendByType({ source: available, target: COMPREHENSION_TARGET });
+                gComp = compBlend.selected || [];
+                const exBlend = blendByType({ source: compBlend.remainder || [], target: EXERCISE_TARGET });
+                gEx = exBlend.selected || [];
+                console.log('[ARRAY GEN] Generated arrays - comprehension:', gComp.length, 'exercise:', gEx.length, 'from pool:', available.length);
                 // Validate array sizes match targets
                 if (gComp.length < COMPREHENSION_TARGET) {
                   console.error('[ARRAY GEN] WARNING: Comprehension array too short!', gComp.length, '<', COMPREHENSION_TARGET);
@@ -2925,6 +2922,7 @@ function SessionPageInner() {
     takeMixed: takeMixedHook,
     buildFromCategories: buildFromCategoriesHook,
     generateAssessments: generateAssessmentsHook,
+    blendByType: blendByTypeHook,
   } = useAssessmentGeneration({
     lessonData,
     subjectParam,

@@ -310,34 +310,42 @@ export class TestPhase {
           isCorrect: true
         });
 
-        // Play praise for correct answers (V1 engagement pattern)
+        // Play praise for correct answers (V1 engagement pattern) - fire-and-forget to avoid blocking progression
         const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
         try {
-          // Ensure question TTS cannot overlap feedback if user answered mid-playback.
           this.#audioEngine.stop();
           this.#state = 'playing-feedback';
           this.#emit('stateChange', { state: 'playing-feedback' });
           const praiseUrl = await fetchTTS(praise);
-          await this.#audioEngine.playAudio(praiseUrl, [praise]);
+          this.#audioEngine.playAudio(praiseUrl, [praise]).catch((err) => {
+            console.warn('[TestPhase] Praise playback error:', err);
+          });
         } catch (error) {
           console.warn('[TestPhase] Failed to play praise:', error);
         }
 
         // Move to next question or enter review
-        this.#advanceQuestion();
+        const nextIndex = this.#currentQuestionIndex + 1;
+        this.#currentQuestionIndex = nextIndex;
+        if (nextIndex >= this.#questions.length) {
+          this.#enterReview();
+        } else {
+          this.#playCurrentQuestion();
+        }
         return;
       }
 
       // Incorrect: speak correct answer immediately, then advance (no retries)
       const reveal = correctText ? `Not quite right. The correct answer is ${correctText}.` : "Not quite right.";
       try {
-        // Ensure question TTS cannot overlap feedback if user answered mid-playback.
         this.#audioEngine.stop();
         this.#state = 'playing-feedback';
         this.#emit('stateChange', { state: 'playing-feedback' });
         const revealUrl = await fetchTTS(reveal);
         if (revealUrl) {
-          await this.#audioEngine.playAudio(revealUrl, [reveal]);
+          this.#audioEngine.playAudio(revealUrl, [reveal]).catch((err) => {
+            console.warn('[TestPhase] Reveal playback error:', err);
+          });
         }
       } catch (error) {
         console.warn('[TestPhase] Failed to play reveal:', error);
@@ -359,7 +367,13 @@ export class TestPhase {
         correctAnswer: correctText
       });
 
-      this.#advanceQuestion();
+      const nextIndex = this.#currentQuestionIndex + 1;
+      this.#currentQuestionIndex = nextIndex;
+      if (nextIndex >= this.#questions.length) {
+        this.#enterReview();
+      } else {
+        this.#playCurrentQuestion();
+      }
     } finally {
       this.#interactionInFlight = false;
     }
@@ -392,7 +406,7 @@ export class TestPhase {
       correctAnswer: question.answer,
       isCorrect: false
     });
-    
+
     this.#emit('questionSkipped', {
       questionIndex: this.#currentQuestionIndex,
       score: this.#score,
@@ -412,7 +426,13 @@ export class TestPhase {
       }
     });
     
-    this.#advanceQuestion();
+    const nextIndex = this.#currentQuestionIndex + 1;
+    this.#currentQuestionIndex = nextIndex;
+    if (nextIndex >= this.#questions.length) {
+      this.#enterReview();
+    } else {
+      this.#playCurrentQuestion();
+    }
     this.#interactionInFlight = false;
   }
   

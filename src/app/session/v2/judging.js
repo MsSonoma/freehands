@@ -14,6 +14,12 @@ import {
   letterForAnswer,
 } from '../utils/questionFormatting';
 
+function keepNonEmpty(v) {
+  if (v == null) return false;
+  if (typeof v === 'string') return v.trim().length > 0;
+  return true;
+}
+
 function uniqStrings(list) {
   const out = [];
   const seen = new Set();
@@ -49,12 +55,20 @@ function optionTextAt(problem, index) {
  * - answer as numeric index
  */
 export function buildAcceptableList(problem) {
-  const expectedAny = Array.isArray(problem?.expectedAny) ? problem.expectedAny : [];
+  const expectedAny = Array.isArray(problem?.expectedAny)
+    ? problem.expectedAny.filter(keepNonEmpty)
+    : [];
+  const acceptableAlt = Array.isArray(problem?.acceptable)
+    ? problem.acceptable.filter(keepNonEmpty)
+    : [];
   const rawExpected = [problem?.answer, problem?.expected].find(
     (v) => v != null && String(v).trim().length > 0
   );
 
-  let acceptable = expectedAny.length ? expectedAny : (rawExpected != null ? [rawExpected] : []);
+  let acceptable = [...expectedAny, ...acceptableAlt];
+  if (!acceptable.length) {
+    acceptable = rawExpected != null ? [rawExpected] : [];
+  }
 
   // If the schema provides a numeric correct index, include its letter + option text.
   const correctIndex =
@@ -110,13 +124,15 @@ export async function judgeAnswer(learnerAnswerRaw, acceptableList, problem) {
   if (!shouldUseBackend) return localFallback();
 
   try {
-    const questionText = String(problem?.prompt || problem?.question || '').trim();
-    const expectedAnswer =
-      String(acceptable[0] ?? '') ||
-      String([problem?.answer, problem?.expected].find((v) => v != null) ?? '').trim();
+    const questionText = String(
+      problem?.question || problem?.prompt || problem?.Q || problem?.q || ''
+    ).trim();
+    const expectedAnswer = String(problem?.answer || problem?.expected || '').trim();
 
     const keywords = Array.isArray(problem?.keywords) ? problem.keywords : [];
-    const minKeywords = Number.isInteger(problem?.minKeywords) ? problem.minKeywords : 0;
+    const minKeywords = Number.isInteger(problem?.minKeywords)
+      ? problem.minKeywords
+      : (keywords.length > 0 ? 1 : 0);
 
     const res = await fetch('/api/judge-short-answer', {
       method: 'POST',

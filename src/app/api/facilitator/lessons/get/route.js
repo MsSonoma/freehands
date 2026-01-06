@@ -7,11 +7,16 @@ export const runtime = 'nodejs'
 export async function GET(request){
   try {
     const { searchParams } = new URL(request.url)
-    const file = searchParams.get('file')
-    const userId = searchParams.get('userId')
-    
-    if (!file || !userId) {
-      return NextResponse.json({ error: 'Missing file or userId parameter' }, { status: 400 })
+    let file = searchParams.get('file')
+
+    if (!file) {
+      return NextResponse.json({ error: 'Missing file parameter' }, { status: 400 })
+    }
+
+    const authHeader = request.headers.get('authorization') || ''
+    const accessToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
     // Create Supabase client with service role key for storage access
@@ -22,11 +27,24 @@ export async function GET(request){
       return NextResponse.json({ error: 'Storage not configured' }, { status: 500 })
     }
     
+    const supabaseAuth = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } })
+    const { data: userResult, error: userError } = await supabaseAuth.auth.getUser(accessToken)
+    const userId = userResult?.user?.id || null
+    if (userError || !userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const supabase = createClient(url, svc, { auth: { persistSession: false } })
     
-    // Strip 'generated/' prefix if present - storage uses flat structure
-    // but lesson_key in schedule includes folder prefix for routing
-    const fileName = file.replace(/^generated\//, '')
+    // Strip 'generated/' prefix if present and ensure .json extension
+    // Storage uses flat structure but lesson_key in schedule includes folder prefix for routing
+    let fileName = file.replace(/^generated\//, '')
+    if (fileName.includes('..')) {
+      return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
+    }
+    if (!fileName.endsWith('.json')) {
+      fileName = `${fileName}.json`
+    }
     
     // Download from Supabase Storage using SDK
     const storagePath = `facilitator-lessons/${userId}/${fileName}`

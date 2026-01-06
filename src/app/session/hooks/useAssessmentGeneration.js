@@ -59,6 +59,74 @@ export function useAssessmentGeneration({
     return result;
   };
 
+  const questionKey = (q) => {
+    return (q?.prompt || q?.question || q?.q || q?.Q || '').toString().trim().toLowerCase();
+  };
+
+  const isPrimaryType = (q) => {
+    const qt = String(q?.questionType || q?.type || q?.sourceType || '').toLowerCase();
+    return qt === 'mc' || qt === 'multiplechoice' || qt === 'tf' || qt === 'truefalse';
+  };
+
+  // Blend questions to roughly 80% MC/TF (primary) and 20% SA/FIB (secondary)
+  const blendByType = ({ source = [], target = 0, seed = [] } = {}) => {
+    const seedKeys = new Set((seed || []).map(questionKey).filter(Boolean));
+    const all = [];
+    const seenAll = new Set();
+    const pushUnique = (arr = []) => {
+      for (const item of arr) {
+        const k = questionKey(item);
+        if (k && seenAll.has(k)) continue;
+        if (k) seenAll.add(k);
+        all.push(item);
+      }
+    };
+    pushUnique(seed);
+    pushUnique(source);
+
+    const primPool = shuffle(all.filter(isPrimaryType));
+    const secPool = shuffle(all.filter((q) => !isPrimaryType(q)));
+
+    const seedPrim = primPool.filter((q) => seedKeys.has(questionKey(q)));
+    const seedSec = secPool.filter((q) => seedKeys.has(questionKey(q)));
+    const basePrim = primPool.filter((q) => !seedKeys.has(questionKey(q)));
+    const baseSec = secPool.filter((q) => !seedKeys.has(questionKey(q)));
+
+    const desiredSecondary = Math.max(0, Math.round(target * 0.2));
+    const desiredPrimary = Math.max(0, target - desiredSecondary);
+
+    const out = [];
+    const takeFrom = (pool, count) => {
+      const copy = Array.isArray(pool) ? [...pool] : [];
+      while (count > 0 && copy.length) {
+        out.push(copy.shift());
+        count -= 1;
+      }
+      return copy;
+    };
+
+    let remainingSeedSec = takeFrom(seedSec, Math.min(seedSec.length, desiredSecondary));
+    let remainingSeedPrim = takeFrom(seedPrim, Math.min(seedPrim.length, desiredPrimary));
+
+    const remainingSecondaryNeed = Math.max(0, desiredSecondary - seedSec.length + remainingSeedSec.length);
+    const remainingPrimaryNeed = Math.max(0, desiredPrimary - seedPrim.length + remainingSeedPrim.length);
+
+    const afterSec = takeFrom(baseSec, remainingSecondaryNeed);
+    const afterPrim = takeFrom(basePrim, remainingPrimaryNeed);
+
+    let remaining = target - out.length;
+    let spillPool = [...afterPrim, ...afterSec, ...remainingSeedPrim, ...remainingSeedSec];
+    while (remaining > 0 && spillPool.length) {
+      out.push(spillPool.shift());
+      remaining -= 1;
+    }
+
+    const selectedKeys = new Set(out.map(questionKey).filter(Boolean));
+    const remainder = all.filter((q) => !selectedKeys.has(questionKey(q)));
+
+    return { selected: out.slice(0, target), remainder };
+  };
+
   // Select a blended set (for math): ~70% from categories and ~30% from word problems
   // REMOVED: samples parameter - no longer using deprecated sample array
   const selectMixed = (categories = [], wpArr = [], target = 0, isTest = false) => {
@@ -81,64 +149,27 @@ export function useAssessmentGeneration({
 
   // Math-specific: build mixed worksheet/test from categories, words
   // REMOVED: samples parameter - no longer using deprecated sample array
-  // Caps Short Answer and Fill-in-the-Blank at 10% each
   const takeMixed = (target, isTest, { words, data }) => {
-    const desiredWp = Math.round(target * 0.3);
-    const wpSel = (words || []).slice(0, desiredWp).map(q => ({ ...(isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q), sourceType: 'word', questionType: 'sa' }));
-    
-    // Cap SA/FIB to 15% each in the remainder from categories
-    const remainder = Math.max(0, target - wpSel.length);
-    const cap = Math.max(0, Math.floor(target * 0.15));
-    
+    const wpSel = (words || []).map((q) => ({ ...(isTest ? ({ ...q, expected: q.expected ?? q.answer }) : q), sourceType: 'word', questionType: 'sa' }));
     const tf = Array.isArray(data.truefalse) ? data.truefalse.map(q => ({ ...q, sourceType: 'tf', questionType: 'tf' })) : [];
     const mc = Array.isArray(data.multiplechoice) ? data.multiplechoice.map(q => ({ ...q, sourceType: 'mc', questionType: 'mc' })) : [];
     const fib = Array.isArray(data.fillintheblank) ? data.fillintheblank.map(q => ({ ...q, sourceType: 'fib', questionType: 'sa' })) : [];
     const sa = Array.isArray(data.shortanswer) ? data.shortanswer.map(q => ({ ...q, sourceType: 'short', questionType: 'sa' })) : [];
-    const cats = [...tf, ...mc, ...fib, ...sa];
-    
-    const fromBase = cats;
-    
-    const saArr = fromBase.filter(q => /short\s*answer|shortanswer/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'short');
-    const fibArr = fromBase.filter(q => /fill\s*in\s*the\s*blank|fillintheblank/i.test(String(q?.type||'')) || String(q?.sourceType||'') === 'fib');
-    const others = fromBase.filter(q => !saArr.includes(q) && !fibArr.includes(q));
-    
-    const saPick = shuffleArr(saArr).slice(0, Math.min(cap, saArr.length));
-    const fibPick = shuffleArr(fibArr).slice(0, Math.min(cap, fibArr.length));
-    const remaining = Math.max(0, remainder - saPick.length - fibPick.length);
-    const otherPick = shuffleArr(others).slice(0, remaining);
-    const baseSel = shuffleArr([...saPick, ...fibPick, ...otherPick]);
-    
-    // Combine word problems and category questions, then deduplicate
-    const combined = [...wpSel, ...baseSel];
-    const deduplicated = deduplicateQuestions(combined);
-    const mixed = shuffleArr(deduplicated);
-    
-    return mixed;
+    const combined = [...wpSel, ...tf, ...mc, ...fib, ...sa];
+    const blended = blendByType({ source: combined, target });
+    return blended.selected;
   };
 
-  // Non-math: build from category arrays, capping Short Answer and Fill-in-the-Blank at 15% each
+  // Non-math: build from category arrays using 80/20 MC+TF vs SA+FIB mix
   const buildFromCategories = (target = 0, data) => {
     const tf = Array.isArray(data.truefalse) ? data.truefalse.map(q => ({ ...q, sourceType: 'tf', questionType: 'tf' })) : [];
     const mc = Array.isArray(data.multiplechoice) ? data.multiplechoice.map(q => ({ ...q, sourceType: 'mc', questionType: 'mc' })) : [];
     const fib = Array.isArray(data.fillintheblank) ? data.fillintheblank.map(q => ({ ...q, sourceType: 'fib', questionType: 'sa' })) : [];
     const sa = Array.isArray(data.shortanswer) ? data.shortanswer.map(q => ({ ...q, sourceType: 'short', questionType: 'sa' })) : [];
-    
-    const anyCats = tf.length || mc.length || fib.length || sa.length;
-    if (!anyCats) return null;
-    
-    const cap = Math.max(0, Math.floor(target * 0.15)); // 15% cap for SA and FIB each
-    const saPick = shuffle(sa).slice(0, Math.min(cap, sa.length));
-    const fibPick = shuffle(fib).slice(0, Math.min(cap, fib.length));
-    const others = shuffle([...tf, ...mc]);
-    const remaining = Math.max(0, target - saPick.length - fibPick.length);
-    const otherPick = others.slice(0, remaining);
-    
-    // Combine all questions and deduplicate before final shuffle
-    const combined = [...saPick, ...fibPick, ...otherPick];
-    const deduplicated = deduplicateQuestions(combined);
-    const built = shuffle(deduplicated);
-    
-    return built;
+    const combined = [...tf, ...mc, ...fib, ...sa];
+    if (!combined.length) return null;
+    const blended = blendByType({ source: combined, target });
+    return blended.selected;
   };
 
   // Main generation function: creates worksheet and test arrays
@@ -190,5 +221,6 @@ export function useAssessmentGeneration({
     takeMixed,
     buildFromCategories,
     generateAssessments,
+    blendByType,
   };
 }

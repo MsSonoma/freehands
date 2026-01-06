@@ -23,6 +23,16 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
 
   useEffect(() => { recomputeScrollState(); }, [items, stackedHeight, fullHeight, compact, recomputeScrollState]);
 
+  // Keep the latest caption in view (V1 behavior: always pinned to the newest line)
+  useEffect(() => {
+    if (!boxRef?.current) return;
+    const el = boxRef.current;
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+      recomputeScrollState();
+    });
+  }, [items.length, boxRef, recomputeScrollState]);
+
   useEffect(() => {
     if (!boxRef?.current) return;
     const el = boxRef.current;

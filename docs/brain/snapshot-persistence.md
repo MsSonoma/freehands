@@ -48,6 +48,16 @@ With guard in place, completion cleanup is atomic - either all persistence clear
   - Fallback storage: Supabase Storage `learner-snapshots` bucket when DB table/columns are missing
   - Used when localStorage is empty (new device, cleared storage)
 
+### Transcript Persistence (Captions + Answers)
+- Snapshot payload now includes a `transcript` block `{ lines: [{ text, role }], activeIndex }` stored alongside `phaseData`/`timerState`.
+- Lines are appended on every captionChange (assistant role) and on each learner submission/quick-button click (user role). Duplicates are ignored.
+- Active caption index tracks the highlighted assistant line in CaptionPanel; user lines do not change the active index.
+- Caption panel auto-scrolls to the newest line (V1 parity) so the latest caption is always visible even as user lines append.
+- Transcript state is cleared when snapshots are absent or Start Over ignores resume; new sessions begin with an empty transcript while Resume restores the saved transcript.
+- When a snapshot restores to the beginning (`idle`/`discussion`), transcript state is explicitly cleared and persisted as empty so captions do not carry over when no Resume button is shown.
+- Saves use the existing granular `saveProgress('transcript', ...)` gate; no polling/intervals added.
+- Restore path normalizes old string arrays to `{ text, role:'assistant' }` objects and seeds `currentCaption`/highlight before Begin/Resume is shown.
+
 ### Restore Strategy: localStorage First
 1. Try localStorage (instant)
 2. If not found, try database
@@ -175,70 +185,30 @@ When user switches devices:
 **Session conflicts** (same learner+lesson on two devices simultaneously): Handled by session-takeover system, see [session-takeover.md](session-takeover.md). Takeover dialog appears at first gate when conflict detected, requires PIN validation.
 ## V2 Assessment Print System
 
-**Integration:** V2 SessionPageV2 uses V1's `useAssessmentDownloads` hook for worksheet/test PDF generation and persistence.
+**Integration:** SessionPageV2 registers print handlers directly (no separate hook) and persists worksheet/test decks via `assessmentStore` (localStorage + Supabase) keyed by `lesson_assessments:{learnerId}:{lessonKey}`.
 
 ### Architecture
 
 **Persistent Arrays:**
-- `generatedWorksheet` and `generatedTest` state variables hold shuffled question arrays
-- Arrays persist until user presses red "Refresh" button in HeaderBar dropdown
-- Stored in `assessmentStore` (localStorage + Supabase Storage)
-- Key format: `lesson_assessments:{learnerId}:{lessonKey}`
+- Cached sets `generatedWorksheet`/`generatedTest` load from `getStoredAssessments(lessonKey, learnerId)` on mount.
+- Worksheet set builds from `fillintheblank` pool sized to the learner's worksheet target; test set builds from the mixed pool (`buildQuestionPool` TF/MC/FIB/SA) sized to the test target.
+- When built, sets are saved with `saveAssessments` and reused for both phase init and PDF generation. Snapshot-restored question arrays seed the cached sets when available.
 
 **Event-Driven Print:**
-HeaderBar dropdown dispatches custom events:
-- `'ms:print:worksheet'` → PDF of worksheet questions (student-facing)
-- `'ms:print:test'` → PDF of test questions (student-facing)
-- `'ms:print:combined'` → Facilitator Key (notes, vocab, worksheet+test Q&A)
-- `'ms:print:refresh'` → Regenerates arrays, clears persistence, resets progress
+- HeaderBar emits `ms:print:worksheet`, `ms:print:test`, `ms:print:combined`, `ms:print:refresh`.
+- SessionPageV2 useEffect wires listeners that call download handlers (worksheet/test PDFs, facilitator key) or refresh (clear cached sets + assessments store).
+- Download handlers are PIN-gated via `ensurePinAllowed('download')` and use a local `createPdfForItems` helper (jsPDF) with a share/preview fallback.
 
-V2 listens for these events in useEffect hook (matches V1 pattern):
-```javascript
-useEffect(() => {
-  const onWs = () => { try { handleDownloadWorksheet(); } catch {} };
-  const onTest = () => { try { handleDownloadTest(); } catch {} };
-  const onCombined = () => { try { handleDownloadWorksheetTestCombined(); } catch {} };
-  const onRefresh = () => { try { handleRefreshWorksheetAndTest(); } catch {} };
-  
-  window.addEventListener('ms:print:worksheet', onWs);
-  window.addEventListener('ms:print:test', onTest);
-  window.addEventListener('ms:print:combined', onCombined);
-  window.addEventListener('ms:print:refresh', onRefresh);
-  
-  return () => {
-    window.removeEventListener('ms:print:worksheet', onWs);
-    // ... cleanup
-  };
-}, [handleDownloadWorksheet, handleDownloadTest, ...]);
-```
+**Refresh Behavior:**
+- `ensurePinAllowed('refresh')` → `clearAssessments(lessonKey, learnerId)` → clear cached sets. Next print regenerates from lesson pools using current learner targets.
+
+**Layout Rules:**
+- PDF generation auto-selects the largest body font that fits the worksheet/test content on a single page (available height = page height minus top/bottom margins). Range: 8–18pt; headers are capped at 20pt.
+- If the content cannot fit even at the minimum size, the generator keeps 8pt and spills to additional pages with guarded page breaks (bottom margin respected). Choices render slightly smaller than prompts and indent by 6pt.
+- Worksheet spacing is compact (spacer ≈ 0.35× body font, min 3pt); Test uses wider spacing (≈0.7× body font, min 4pt) to keep pages balanced while filling available space.
 
 ### Key Files
 
-- `src/app/session/v2/SessionPageV2.jsx` (lines 261-268, 325-398, 628-680)
-  - Generated assessment state: `generatedWorksheet`, `generatedTest`, `downloadError`
-  - Helper functions: `getAssessmentStorageKey`, `createPdfForItems`, `shareOrPreviewPdf`, `reserveWords`
-  - Hook initialization with learner targets
-  - Print event listeners
-- `src/app/session/hooks/useAssessmentDownloads.js`
-  - Handles PDF generation (jsPDF)
-  - Manages assessment persistence (saveAssessments, clearAssessments)
-  - Regenerates arrays on refresh
-- `src/app/session/assessment/assessmentStore.js`
-  - localStorage + Supabase dual-write for cross-device access
-- `src/app/HeaderBar.js` (lines 614-685)
-  - Hamburger dropdown buttons dispatch print events
-
-**Implementation Notes:**
-- `createPdfForItems` lives in SessionPageV2 as a `useCallback` (jsPDF). Keep it defined above `useAssessmentDownloads` initialization to avoid TDZ/build errors; it uses adaptive font sizing and multi-page fallback (V1 parity).
-
-### Refresh Behavior
-
-When user clicks red "Refresh" button:
-1. PIN validation via `ensurePinAllowed('refresh')`
-2. Clear persisted arrays: `clearAssessments(key, { learnerId })`
-3. Reset state: `setGeneratedWorksheet(null)`, `setGeneratedTest(null)`
-4. Clear worksheet/test progress indices
-5. Regenerate: New shuffle from lesson data pools
-6. Save to storage: `saveAssessments(key, { worksheet, test }, { learnerId })`
-
-Arrays do NOT regenerate on page refresh - they restore from storage. Only explicit "Refresh" button regenerates.
+- `src/app/session/v2/SessionPageV2.jsx` – cached assessment load/save, worksheet/test builders, jsPDF helpers, ms:print listeners, refresh handler.
+- `src/app/session/assessment/assessmentStore.js` – dual-write persistence for assessment sets.
+- `src/app/HeaderBar.js` – dispatches ms:print events from the hamburger/print menu.

@@ -24,7 +24,7 @@ When Device B attempts to access the same lesson that Device A is using, conflic
 3. Database detects conflict (different `session_id` already owns this learner+lesson)
 4. `startTrackedSession()` returns `{conflict: true, existingSession: {...}}`
 5. UI immediately shows `SessionTakeoverDialog` **BEFORE snapshot restore runs**
-6. Snapshot restore logic waits for `sessionConflictChecked` flag before proceeding
+6. Snapshot restore logic waits for `sessionConflictChecked` flag before proceeding, and the flag flips **only after** the ownership check returns (success or conflict) so restore cannot run while the takeover dialog is pending
 7. User enters 4-digit PIN to validate ownership transfer
 8. On PIN success:
    - Old session deactivated (`ended_at` set, event logged)

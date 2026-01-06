@@ -44,7 +44,6 @@ import GamesOverlay from '../components/games/GamesOverlay';
 import EventBus from './EventBus';
 import { loadLesson, fetchTTS } from './services';
 import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech, ensureQuestionMark } from '../utils/questionFormatting';
-import { ensureExactCount } from '../utils/assessmentGenerationUtils';
 import { getSnapshotStorageKey } from '../utils/snapshotPersistenceUtils';
 import { ensurePinAllowed } from '@/app/lib/pinGate';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
@@ -413,6 +412,27 @@ function SessionPageV2Inner() {
   useEffect(() => {
     resumePhaseRef.current = resumePhase;
   }, [resumePhase]);
+
+  // Broadcast lesson title to HeaderBar so the header matches V1 in mobile landscape
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const title = (() => {
+      try {
+        const raw = lessonData?.title || lessonData?.lessonTitle || lessonKey || lessonId || '';
+        return typeof raw === 'string' ? raw.trim() : String(raw || '');
+      } catch {
+        return '';
+      }
+    })();
+    try {
+      window.dispatchEvent(new CustomEvent('ms:session:title', { detail: title }));
+    } catch {}
+    return () => {
+      try {
+        window.dispatchEvent(new CustomEvent('ms:session:title', { detail: '' }));
+      } catch {}
+    };
+  }, [lessonData, lessonKey, lessonId]);
 
   // Reset opening action input/errors when switching action types
   useEffect(() => {
@@ -891,22 +911,82 @@ function SessionPageV2Inner() {
     }
   }, [getAssessmentStorageKey, learnerProfile]);
 
+  const questionKey = useCallback((q) => {
+    return (q?.prompt || q?.question || q?.Q || q?.q || '').toString().trim().toLowerCase();
+  }, []);
+
+  const isPrimaryType = useCallback((q) => {
+    const qt = String(q?.questionType || q?.type || q?.sourceType || '').toLowerCase();
+    return qt === 'mc' || qt === 'multiplechoice' || qt === 'tf' || qt === 'truefalse';
+  }, []);
+
+  const blendByType = useCallback((pool = [], target = 0) => {
+    const shuffleLocal = (arr) => {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    };
+
+    const deduped = [];
+    const seen = new Set();
+    for (const item of pool) {
+      const key = questionKey(item);
+      if (key && seen.has(key)) continue;
+      if (key) seen.add(key);
+      deduped.push(item);
+    }
+
+    const primaryPool = shuffleLocal(deduped.filter(isPrimaryType));
+    const secondaryPool = shuffleLocal(deduped.filter((q) => !isPrimaryType(q)));
+
+    const desiredSecondary = Math.max(0, Math.round(target * 0.2));
+    const desiredPrimary = Math.max(0, target - desiredSecondary);
+
+    const out = [];
+    const takeFrom = (arr, count) => {
+      while (count > 0 && arr.length) {
+        out.push(arr.shift());
+        count -= 1;
+      }
+    };
+
+    takeFrom(secondaryPool, desiredSecondary);
+    takeFrom(primaryPool, desiredPrimary);
+
+    let remaining = target - out.length;
+    const spill = [...primaryPool, ...secondaryPool];
+    takeFrom(spill, remaining);
+
+    // If still short (e.g., after dedup), backfill by cycling the original pool so we always hit the target count.
+    if (out.length < target && pool.length) {
+      const refill = shuffleLocal(pool);
+      let idx = 0;
+      while (out.length < target && refill.length) {
+        out.push(refill[idx % refill.length]);
+        idx += 1;
+      }
+    }
+
+    return out.slice(0, target);
+  }, [isPrimaryType, questionKey]);
+
   const buildWorksheetSet = useCallback(() => {
     const target = getLearnerTarget('worksheet');
     if (!lessonData || !target) return [];
-    const fib = Array.isArray(lessonData.fillintheblank)
-      ? lessonData.fillintheblank.map((q) => ({ ...q, sourceType: q.sourceType || 'fib', type: q.type || 'fib' }))
-      : [];
-    const ensured = ensureExactCount(fib, target, [fib], true);
-    return ensured.slice(0, target).map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
+    const pool = buildQuestionPool(target, []);
+    const selected = pool.slice(0, target).map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
+    return selected;
   }, [lessonData, getLearnerTarget]);
 
   const buildTestSet = useCallback(() => {
     const target = getLearnerTarget('test');
     if (!lessonData || !target) return [];
     const pool = buildQuestionPool(target, []);
-    const ensured = ensureExactCount(pool, target, [pool], true);
-    return ensured.slice(0, target).map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
+    const selected = pool.slice(0, target).map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
+    return selected;
   }, [lessonData, getLearnerTarget, buildQuestionPool]);
 
   const shareOrPreviewPdf = useCallback(async (blob, fileName = 'document.pdf', previewWin = null) => {
@@ -2510,7 +2590,7 @@ function SessionPageV2Inner() {
     const savedComp = forceFresh ? null : (snapshot?.phaseData?.comprehension || null);
     const savedCompQuestions = !forceFresh && Array.isArray(savedComp?.questions) && savedComp.questions.length ? savedComp.questions : null;
     
-    // Build comprehension questions from MC and TF pools (V1 parity: comprehension uses all question types)
+    // Build comprehension questions with 80/20 MC+TF vs SA+FIB blend (all types allowed)
     const compTarget = savedCompQuestions ? savedCompQuestions.length : getLearnerTarget('comprehension');
     if (!compTarget) return false;
     const questions = savedCompQuestions || buildQuestionPool(compTarget, []); // target-driven, no exclusions
@@ -2633,17 +2713,8 @@ function SessionPageV2Inner() {
   };
   
   // Start exercise phase
-  // Helper: Build question pool from lesson data arrays (V1 parity)
+  // Helper: Build question pool from lesson data arrays with 80/20 MC+TF vs SA+FIB blend
   function buildQuestionPool(target = 5, excludeTypes = []) {
-    const shuffle = (arr) => {
-      const copy = [...arr];
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-      return copy;
-    };
-    
     const tf = !excludeTypes.includes('tf') && Array.isArray(lessonData?.truefalse) 
       ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf', type: 'tf' })) : [];
     const mc = !excludeTypes.includes('mc') && Array.isArray(lessonData?.multiplechoice) 
@@ -2653,9 +2724,9 @@ function SessionPageV2Inner() {
     const sa = !excludeTypes.includes('short') && Array.isArray(lessonData?.shortanswer) 
       ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short', type: 'short' })) : [];
     
-    // Pool all questions, shuffle, and take target count
-    const pool = shuffle([...tf, ...mc, ...fib, ...sa]);
-    return pool.slice(0, Math.min(target, pool.length));
+    const pool = [...tf, ...mc, ...fib, ...sa];
+    const blended = blendByType(pool, target);
+    return blended;
   }
 
   const startExercisePhase = () => {
@@ -2678,8 +2749,8 @@ function SessionPageV2Inner() {
     
     const exerciseTarget = savedExerciseQuestions ? savedExerciseQuestions.length : getLearnerTarget('exercise');
     if (!exerciseTarget) return false;
-    // Build exercise questions from MC and TF pools (V1 parity: exercise uses MC/TF)
-    const questions = savedExerciseQuestions || buildQuestionPool(exerciseTarget, ['fib', 'short']);
+    // Build exercise questions with 80/20 MC+TF vs SA+FIB blend
+    const questions = savedExerciseQuestions || buildQuestionPool(exerciseTarget, []);
     console.log('[SessionPageV2] startExercisePhase built questions:', questions.length);
     
     if (questions.length === 0) {
@@ -2981,15 +3052,16 @@ function SessionPageV2Inner() {
       return false;
     }
 
-    const forceFresh = timelineJumpForceFreshPhaseRef.current === 'test';
+    const forceFresh = false; // test deck should persist unless explicitly refreshed
 
     const snapshot = snapshotServiceRef.current?.snapshot;
-    const savedTest = forceFresh ? null : (snapshot?.phaseData?.test || null);
-    const savedTestQuestions = !forceFresh && Array.isArray(savedTest?.questions) && savedTest.questions.length ? savedTest.questions : null;
-    if (savedTestQuestions && savedTestQuestions.length && (!generatedTest || !generatedTest.length)) {
+    const savedTest = snapshot?.phaseData?.test || null;
+    const savedTestQuestions = Array.isArray(savedTest?.questions) && savedTest.questions.length ? savedTest.questions : null;
+    if (savedTestQuestions && (!generatedTest || !generatedTest.length)) {
       setGeneratedTest(savedTestQuestions);
     }
 
+    // Prefer saved deck, then cached generation; rebuild only when none exist.
     let questions = savedTestQuestions || generatedTest || [];
     if (!questions.length) {
       questions = buildTestSet();
@@ -2999,7 +3071,14 @@ function SessionPageV2Inner() {
       }
     }
 
-    const testTarget = questions.length || getLearnerTarget('test');
+    // Trim deck to the learner target so completion enters review after the expected count.
+    const targetCount = getLearnerTarget('test') || questions.length;
+    const maxQuestions = targetCount > 0 ? targetCount : questions.length;
+    if (maxQuestions && questions.length > maxQuestions) {
+      questions = questions.slice(0, maxQuestions);
+    }
+
+    const testTarget = questions.length;
     if (!testTarget) return false;
     console.log('[SessionPageV2] startTestPhase built questions:', questions.length);
     
@@ -3012,30 +3091,34 @@ function SessionPageV2Inner() {
       return false;
     }
     
+    const restoreNextIndex = Math.min(savedTest?.nextQuestionIndex ?? savedTest?.questionIndex ?? 0, questions.length);
+    const restoreAnswers = (Array.isArray(savedTest?.answers) ? savedTest.answers : []).slice(0, questions.length);
+    const restoreReviewIndex = Math.min(savedTest?.reviewIndex || 0, restoreAnswers.length);
+
     if (snapshotServiceRef.current) {
       snapshotServiceRef.current.saveProgress('test-init', {
         phaseOverride: 'test',
         questions,
-        nextQuestionIndex: forceFresh ? 0 : (savedTest?.nextQuestionIndex ?? savedTest?.questionIndex ?? 0),
+        nextQuestionIndex: restoreNextIndex,
         score: forceFresh ? 0 : (savedTest?.score || 0),
-        answers: forceFresh ? [] : (savedTest?.answers || []),
+        answers: restoreAnswers,
         timerMode: forceFresh ? 'play' : (savedTest?.timerMode || 'play'),
-        reviewIndex: forceFresh ? 0 : (savedTest?.reviewIndex || 0)
+        reviewIndex: restoreReviewIndex
       });
     }
-    
+
     const phase = new TestPhase({
       audioEngine: audioEngineRef.current,
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
       questions: questions,
-      resumeState: (!forceFresh && savedTest) ? {
+      resumeState: savedTest ? {
         questions,
-        nextQuestionIndex: savedTest.nextQuestionIndex ?? savedTest.questionIndex ?? 0,
+        nextQuestionIndex: restoreNextIndex,
         score: savedTest.score || 0,
-        answers: savedTest.answers || [],
+        answers: restoreAnswers,
         timerMode: savedTest.timerMode || 'work',
-        reviewIndex: savedTest.reviewIndex || 0
+        reviewIndex: restoreReviewIndex
       } : null
     });
     
@@ -4557,12 +4640,12 @@ function SessionPageV2Inner() {
               qaPhase === 'worksheet' ? currentWorksheetQuestion :
               currentTestQuestion;
 
-            const isFill = qaPhase === 'worksheet'
-              || (qaPhase === 'test' && (q?.type === 'fill' || q?.type === 'fib' || q?.sourceType === 'fib'))
-              || (qaPhase === 'comprehension' && !isMultipleChoice(q) && !isTrueFalse(q));
-
-            const isMc = !isFill && isMultipleChoice(q);
-            const isTf = !isFill && !isMc && isTrueFalse(q);
+            const isMc = isMultipleChoice(q);
+            const isTf = !isMc && isTrueFalse(q);
+            const isFill =
+              (qaPhase === 'worksheet' && !isMc && !isTf) ||
+              (qaPhase === 'test' && ((q?.type === 'fill' || q?.type === 'fib' || q?.sourceType === 'fib') || (!isMc && !isTf))) ||
+              ((qaPhase === 'comprehension' || qaPhase === 'exercise') && !isMc && !isTf);
 
             const getOpts = () => {
               if (isTf) return ['True', 'False'];

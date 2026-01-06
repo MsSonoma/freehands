@@ -94,8 +94,9 @@ export class WorksheetPhase {
       // Structured question
       return {
         id: q.id || `q${index}`,
-        sourceType: 'fib',
-        question: q.question || q.text || '',
+        sourceType: q.sourceType || q.type || q.questionType || 'fib',
+        type: q.type ?? q.questionType ?? undefined,
+        question: q.question || q.text || q.prompt || '',
         // Preserve all answer schema variants so buildAcceptableList/judgeAnswer
         // can behave consistently with other phases.
         expectedAny: Array.isArray(q.expectedAny) ? q.expectedAny : undefined,

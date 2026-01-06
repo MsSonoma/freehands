@@ -25,6 +25,7 @@ import { fetchTTS } from './services';
 import { ttsCache } from '../utils/ttsCache';
 import { buildAcceptableList, judgeAnswer } from './judging';
 import { deriveCorrectAnswerText, formatQuestionForSpeech } from '../utils/questionFormatting';
+import { HINT_FIRST, HINT_SECOND, pickHint } from '../utils/feedbackMessages';
 
 // V1 praise phrases for correct answers
 const PRAISE_PHRASES = [
@@ -300,14 +301,52 @@ export class ComprehensionPhase {
     }
     
     if (!isCorrect) {
-      // After three tries, reveal and advance
-      if (attempts >= 3) {
-        this.#emit('answerRevealed', {
-          questionIndex: this.#currentQuestionIndex,
-          correctAnswer: correctText
-        });
-        this.#advanceQuestion();
+      // Wrong: hint, hint, then reveal on 3rd (V1 parity).
+      if (attempts < 3) {
+        const qKey = String(question.id || this.#currentQuestionIndex);
+        const hint = attempts === 1 ? pickHint(HINT_FIRST, qKey) : pickHint(HINT_SECOND, qKey);
+        try {
+          // Ensure question TTS cannot overlap feedback.
+          this.#audioEngine.stop();
+        } catch {}
+
+        try {
+          this.#state = 'playing-feedback';
+          this.#emit('stateChange', { state: 'playing-feedback' });
+          const hintUrl = await fetchTTS(hint);
+          if (hintUrl) {
+            await this.#audioEngine.playAudio(hintUrl, [hint]);
+          }
+        } catch (error) {
+          console.warn('[ComprehensionPhase] Failed to play hint:', error);
+        }
+
+        // Return to awaiting-answer so learner can try again.
+        this.#state = 'awaiting-answer';
+        this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
+        return;
       }
+
+      // Reveal and advance
+      this.#emit('answerRevealed', {
+        questionIndex: this.#currentQuestionIndex,
+        correctAnswer: correctText
+      });
+
+      const reveal = correctText ? `The correct answer is ${correctText}.` : "Let's move on.";
+      try {
+        try { this.#audioEngine.stop(); } catch {}
+        this.#state = 'playing-feedback';
+        this.#emit('stateChange', { state: 'playing-feedback' });
+        const revealUrl = await fetchTTS(reveal);
+        if (revealUrl) {
+          await this.#audioEngine.playAudio(revealUrl, [reveal]);
+        }
+      } catch (error) {
+        console.warn('[ComprehensionPhase] Failed to play reveal:', error);
+      }
+
+      this.#advanceQuestion();
       return;
     }
 

@@ -235,6 +235,10 @@ export class SnapshotService {
         ? (phaseData.timerState || null)
         : (this.#snapshot?.timerState || null);
 
+      const transcript = (phaseData && typeof phaseData === 'object' && Object.prototype.hasOwnProperty.call(phaseData, 'transcript'))
+        ? (phaseData.transcript || null)
+        : (this.#snapshot?.transcript || null);
+
       const snapshot = {
         sessionId: this.#sessionId,
         learnerId: this.#learnerId,
@@ -242,6 +246,7 @@ export class SnapshotService {
         currentPhase: phase,
         completedPhases: completedPhases,
         phaseData: allPhaseData,
+        transcript,
         timerState,
         lastUpdated: new Date().toISOString()
       };
@@ -302,6 +307,10 @@ export class SnapshotService {
         }
       };
       
+      const transcript = (mergedUpdate && typeof mergedUpdate === 'object' && Object.prototype.hasOwnProperty.call(mergedUpdate, 'transcript'))
+        ? (mergedUpdate.transcript || null)
+        : (this.#snapshot?.transcript || null);
+
       const snapshot = {
         sessionId: this.#sessionId,
         learnerId: this.#learnerId,
@@ -309,6 +318,7 @@ export class SnapshotService {
         currentPhase: currentPhase,
         completedPhases: this.#snapshot?.completedPhases || [],
         phaseData: allPhaseData,
+        transcript,
         timerState: (mergedUpdate && typeof mergedUpdate === 'object' && 'timerState' in mergedUpdate)
           ? (mergedUpdate.timerState || null)
           : (this.#snapshot?.timerState || null),

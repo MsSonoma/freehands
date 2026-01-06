@@ -28,6 +28,13 @@ buildQAPool (shuffle with crypto-random)
 localStorage (persist after generation/restore on load)
   ↓
 Phase rendering (use arrays[phaseIndex])
+
+### Question Mix (80/20)
+
+- Each phase array targets roughly 80% Multiple Choice/True-False (primary) and 20% Fill-in-the-Blank/Short Answer (secondary).
+- Comprehension is blended first, then Exercise is blended from the remainder to avoid duplicate questions between the two phases.
+- Worksheet and Test arrays each blend independently using the same 80/20 rule.
+- If a category is short (e.g., not enough MC/TF), the blender backfills from whatever remains so targets are still met.
 ```
 
 ### Lesson Data State
