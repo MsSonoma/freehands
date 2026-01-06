@@ -313,6 +313,7 @@ export class TestPhase {
 
         // Check if we've reached the target count before playing feedback
         const reachedTarget = this.#answers.length >= this.#questions.length;
+        console.log('[TestPhase] After correct answer - answers:', this.#answers.length, 'questions:', this.#questions.length, 'reachedTarget:', reachedTarget);
 
         // Play praise for correct answers (V1 engagement pattern)
         const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
@@ -327,9 +328,12 @@ export class TestPhase {
         }
 
         // Enter review if target reached, otherwise move to next question
+        console.log('[TestPhase] About to check reachedTarget:', reachedTarget);
         if (reachedTarget) {
+          console.log('[TestPhase] Calling enterReview()');
           this.#enterReview();
         } else {
+          console.log('[TestPhase] Advancing to next question');
           const nextIndex = this.#currentQuestionIndex + 1;
           this.#currentQuestionIndex = nextIndex;
           this.#playCurrentQuestion();
@@ -369,11 +373,15 @@ export class TestPhase {
 
       // Check if we've reached the target count
       const reachedTarget = this.#answers.length >= this.#questions.length;
+      console.log('[TestPhase] After incorrect answer - answers:', this.#answers.length, 'questions:', this.#questions.length, 'reachedTarget:', reachedTarget);
 
       // Enter review if target reached, otherwise move to next question
+      console.log('[TestPhase] About to check reachedTarget:', reachedTarget);
       if (reachedTarget) {
+        console.log('[TestPhase] Calling enterReview()');
         this.#enterReview();
       } else {
+        console.log('[TestPhase] Advancing to next question');
         const nextIndex = this.#currentQuestionIndex + 1;
         this.#currentQuestionIndex = nextIndex;
         this.#playCurrentQuestion();
