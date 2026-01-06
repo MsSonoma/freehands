@@ -597,11 +597,14 @@ export class TestPhase {
   
   // Private: Enter review mode
   #enterReview() {
+    console.log('[TestPhase] #enterReview called');
     this.#state = 'reviewing';
     this.#reviewIndex = 0;
     
     const grade = this.#calculateGrade();
+    console.log('[TestPhase] Grade calculated:', grade, 'score:', this.#score, 'questions:', this.#questions.length);
     
+    console.log('[TestPhase] Emitting testQuestionsComplete event');
     this.#emit('testQuestionsComplete', {
       score: this.#score,
       totalQuestions: this.#questions.length,
@@ -609,17 +612,21 @@ export class TestPhase {
       grade: this.#calculateLetterGrade(grade)
     });
     
+    console.log('[TestPhase] Calling showReviewQuestion');
     this.#showReviewQuestion();
   }
   
   // Private: Show review question
   #showReviewQuestion() {
+    console.log('[TestPhase] #showReviewQuestion called, reviewIndex:', this.#reviewIndex, 'answers.length:', this.#answers.length);
     if (this.#reviewIndex >= this.#answers.length) {
+      console.log('[TestPhase] Review complete, calling #complete()');
       this.#complete();
       return;
     }
     
     const answer = this.#answers[this.#reviewIndex];
+    console.log('[TestPhase] Emitting reviewQuestion event for index:', this.#reviewIndex);
     
     this.#emit('reviewQuestion', {
       reviewIndex: this.#reviewIndex,
