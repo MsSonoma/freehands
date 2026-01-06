@@ -311,6 +311,9 @@ export class TestPhase {
           isCorrect: true
         });
 
+        // Check if we've reached the target count before playing feedback
+        const reachedTarget = this.#answers.length >= this.#questions.length;
+
         // Play praise for correct answers (V1 engagement pattern)
         const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
         try {
@@ -323,12 +326,12 @@ export class TestPhase {
           console.warn('[TestPhase] Failed to play praise:', error);
         }
 
-        // Move to next question or enter review
-        const nextIndex = this.#currentQuestionIndex + 1;
-        this.#currentQuestionIndex = nextIndex;
-        if (nextIndex >= this.#questions.length) {
+        // Enter review if target reached, otherwise move to next question
+        if (reachedTarget) {
           this.#enterReview();
         } else {
+          const nextIndex = this.#currentQuestionIndex + 1;
+          this.#currentQuestionIndex = nextIndex;
           this.#playCurrentQuestion();
         }
         return;
@@ -364,11 +367,15 @@ export class TestPhase {
         correctAnswer: correctText
       });
 
-      const nextIndex = this.#currentQuestionIndex + 1;
-      this.#currentQuestionIndex = nextIndex;
-      if (nextIndex >= this.#questions.length) {
+      // Check if we've reached the target count
+      const reachedTarget = this.#answers.length >= this.#questions.length;
+
+      // Enter review if target reached, otherwise move to next question
+      if (reachedTarget) {
         this.#enterReview();
       } else {
+        const nextIndex = this.#currentQuestionIndex + 1;
+        this.#currentQuestionIndex = nextIndex;
         this.#playCurrentQuestion();
       }
     } finally {
