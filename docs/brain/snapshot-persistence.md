@@ -49,12 +49,7 @@ With guard in place, completion cleanup is atomic - either all persistence clear
   - Used when localStorage is empty (new device, cleared storage)
 
 ### Transcript Persistence (Captions + Answers)
-- Snapshot payload now includes a `transcript` block `{ lines: [{ text, role }], activeIndex }` stored alongside `phaseData`/`timerState`.
-- Lines are appended on every captionChange (assistant role) and on each learner submission/quick-button click (user role). Duplicates are ignored.
-- Active caption index tracks the highlighted assistant line in CaptionPanel; user lines do not change the active index.
-- Caption panel auto-scrolls to the newest line (V1 parity) so the latest caption is always visible even as user lines append.
-- Transcript state is cleared when snapshots are absent or Start Over ignores resume; new sessions begin with an empty transcript while Resume restores the saved transcript.
-- When a snapshot restores to the beginning (`idle`/`discussion`), transcript state is explicitly cleared and persisted as empty so captions do not carry over when no Resume button is shown.
+- Restore path pins the transcript scroller to the bottom after loading so the latest caption is visible immediately after refresh (no manual scroll needed).
 - Saves use the existing granular `saveProgress('transcript', ...)` gate; no polling/intervals added.
 - Restore path normalizes old string arrays to `{ text, role:'assistant' }` objects and seeds `currentCaption`/highlight before Begin/Resume is shown.
 
@@ -76,6 +71,10 @@ On session load:
    - Shows normal Begin button
 4. Sets `snapshotLoaded` to true when load completes
 
+**Phase auto-start on resume:** When resuming into any Q&A phase (comprehension/exercise/worksheet/test), the phase instance is created and immediately started if snapshot data exists for that phase. This bypasses the intermediate Begin button (which visually sits before opening actions) and restores the learner directly to the in-phase state (intro/Go or current question). Pending play timers start as well so tickers and timer badges do not flash 0/X on refresh.
+
+**Ticker seeding on resume:** When snapshot data exists for a Q&A phase, the counters and current question are pre-seeded from the saved arrays and indices before the phase starts. This keeps the question ticker/progress display accurate immediately after a refresh (no temporary 0/X) even before the next answer is submitted.
+
 **Begin gating:** The top-level Begin button is disabled until both `audioReady` and `snapshotLoaded` are true, preventing a refresh race where the user can start a fresh session before the snapshot finishes loading.
 
 **Resume button:**
@@ -92,13 +91,18 @@ On session load:
 - Clears `resumePhase` state **and** `resumePhaseRef` to null (prevents stale closure values)
 - Calls `startSession({ ignoreResume: true })` which forces a fresh start from discussion/teaching (no resume)
 
-**Resume phase source of truth:** `startSession` reads `resumePhaseRef.current` so it always uses the latest loaded snapshot. Call sites that should never resume (Start Over, PlayTimeExpired overlay auto-start) pass `{ ignoreResume: true }` so they cannot jump to a saved phase accidentally.
+**Resume phase source of truth:** `startSession` reads `resumePhaseRef.current` so it always uses the latest loaded snapshot. Call sites that should never resume (Start Over, PlayTimeExpired overlay auto-start) pass `{ ignoreResume: true }` so they cannot jump to a saved phase accidentally. Resume normalization now derives the furthest saved phase from `currentPhase`, `completedPhases`, and `phaseData` keys, preferring the latest valid phase order (discussion → teaching → comprehension → exercise → worksheet → test → closing). Aliases `grading`/`congrats` map to `test`, and `complete` maps to `closing` before ranking.
+
+**Teaching resume state applied:** SessionPageV2 now passes `snapshot.phaseData.teaching` (stage, sentenceIndex, isInSentenceMode, vocabSentences, exampleSentences) into TeachingController so Resume lands on the exact teaching sentence and gate state instead of restarting definitions/examples.
+
+**Question set persistence (all Q&A phases):** Comprehension, Exercise, Worksheet, and Test question arrays are built once, saved to the assessment store (localStorage + Supabase), and reused on refresh/restart/resume. Snapshot `*-init` writes keep the same arrays and indices in `phaseData` so per-question snapshots align with the stored sets. Sets are only cleared in two cases: (1) the facilitator taps the red “Refresh” item in the hamburger menu (ms:print:refresh), which clears assessments and the snapshot, or (2) the lesson completes (sessionComplete), which clears assessments for a fresh next run. No other code path regenerates question arrays, preventing mismatches between printed worksheets/tests and in-session prompts.
 
 ### V2 Save Flow
 On phase transition:
 1. **PhaseOrchestrator** emits `phaseChange` with the new phase name.
 2. **SessionPageV2** calls `savePhaseCompletion(phase)` immediately so `SnapshotService.#snapshot.currentPhase` is set before granular saves run.
 3. Each phase controller emits `requestSnapshotSave` after user actions (answers, skips, teaching sentence advances), and **saveProgress()** writes under the active phase key. `saveProgress()` now accepts `phaseOverride` so seed saves can force the correct phase even if currentPhase has not advanced yet.
+4. Granular saves **wait for any in-flight save to finish** (instead of skipping) so phase-change and seed saves cannot be dropped when a prior write is still completing.
 4. Q&A phases (comprehension, exercise, worksheet, test) call `saveProgress('<phase>-init')` on phase start with `{ questions, nextQuestionIndex, score, answers, timerMode: 'play', phaseOverride: '<phase>' }` to freeze deterministic question pools for resume.
 5. The same Q&A phases emit `<phase>-answer` and `<phase>-skip` saves that include `questions`, `answers`, `nextQuestionIndex`, `score`, and `timerMode` (Test also includes `reviewIndex`). This keeps snapshots aligned to the next pending question.
 6. Resume path: `start*Phase` reads `snapshot.phaseData.<phase>` and passes it as `resumeState` so controllers skip intros/Go, restore timer mode (play/work), reuse the exact question array, and drop the learner at `nextQuestionIndex` (Test also restores `reviewIndex`).

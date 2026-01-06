@@ -263,6 +263,7 @@ Before shipping to Ms. Sonoma, verify:
 ### Teaching Gate Flow
 
 - After "Do you have any questions?" Ms. Sonoma explicitly speaks the generated "You could ask questions like..." follow-ups; if GPT is empty or errors, a deterministic three-question fallback is spoken.
+- Snapshot triggers stay stage-specific: definitions use teaching-definition / teaching-definition-gate, examples use teaching-example / teaching-example-gate, and they fire before gate playback so resume hits the correct gate/audio without falling back to definitions labels.
 - If the examples GPT call returns no text, the stage ends (no deterministic fallback injected); rely on GPT output only.
 - Gate controls (Repeat/Next and the PageDown hotkey) stay hidden/blocked while the gate prompt or sample questions load/play under a dedicated lock so learners hear the three suggestions before moving on.
 - If Skip is pressed during this locked sequence, skipGatePrompt stops audio, emits gatePromptComplete, and snaps back to awaiting-gate so controls/hotkey surface instead of hanging; captions already contain the sample questions even when TTS is skipped.

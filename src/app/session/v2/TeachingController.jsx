@@ -128,16 +128,39 @@ export class TeachingController {
       }
     });
   }
+
+  #buildSnapshotPayload() {
+    return {
+      stage: this.#stage,
+      sentenceIndex: this.#currentSentenceIndex,
+      isInSentenceMode: this.#isInSentenceMode,
+      vocabSentences: this.#vocabSentences,
+      exampleSentences: this.#exampleSentences
+    };
+  }
+
+  #emitSnapshot(trigger) {
+    this.#emit('requestSnapshotSave', {
+      trigger,
+      data: this.#buildSnapshotPayload()
+    });
+  }
   
   // Public API: Start teaching flow
   async startTeaching(options = {}) {
-    const { autoplayFirstSentence = true } = options;
+    const { autoplayFirstSentence = true, resumeState = null } = options;
     if (!this.#lessonData) {
       throw new Error('No lesson data provided');
     }
-    
-    // Start definitions stage (will call GPT)
-    await this.#startDefinitions({ autoplayFirstSentence });
+
+    // If resuming directly into examples, bypass definitions intro and go straight there.
+    if (resumeState?.stage === 'examples') {
+      await this.#startExamples({ resumeState });
+      return;
+    }
+
+    // Resume into definitions (or fresh start if no resume state).
+    await this.#startDefinitions({ autoplayFirstSentence, resumeState });
   }
   
   // Public API: Sentence navigation
@@ -522,59 +545,78 @@ export class TeachingController {
   }
   
   // Private: Definitions stage
-  async #startDefinitions({ autoplayFirstSentence = true } = {}) {
+  async #startDefinitions({ autoplayFirstSentence = true, resumeState = null } = {}) {
     console.log('[TeachingController] #startDefinitions called');
-    // Set loading stage - nextSentence will await content if called during this
-    this.#stage = 'loading-definitions';
-    this.#currentSentenceIndex = 0;
-    this.#isInSentenceMode = true;
-    
-    // Speak intro
-    const introText = "First let's go over some definitions.";
-    let introAudio = ttsCache.get(introText);
-    if (!introAudio) {
-      introAudio = await fetchTTS(introText);
-      if (introAudio) ttsCache.set(introText, introAudio);
+
+    // Resume path: preload stored sentences and skip intros when snapshot data exists.
+    const resumeIntoDefinitions = resumeState && resumeState.stage === 'definitions';
+    if (resumeIntoDefinitions && Array.isArray(resumeState.vocabSentences) && resumeState.vocabSentences.length) {
+      this.#vocabSentences = resumeState.vocabSentences;
     }
-    await this.#audioEngine.playAudio(introAudio || '', [introText]);
-    
-    // If user skipped during intro and triggered nextSentence, stage might have changed
-    // In that case, definitions are already loaded and playing - don't double-load
-    if (this.#stage !== 'loading-definitions') {
-      console.log('[TeachingController] Stage changed during intro (user skipped) - content already handled');
-      return;
+
+    if (!resumeIntoDefinitions) {
+      // Set loading stage - nextSentence will await content if called during this
+      this.#stage = 'loading-definitions';
+      this.#currentSentenceIndex = 0;
+      this.#isInSentenceMode = true;
+
+      // Speak intro
+      const introText = "First let's go over some definitions.";
+      let introAudio = ttsCache.get(introText);
+      if (!introAudio) {
+        introAudio = await fetchTTS(introText);
+        if (introAudio) ttsCache.set(introText, introAudio);
+      }
+      await this.#audioEngine.playAudio(introAudio || '', [introText]);
+
+      // If user skipped during intro and triggered nextSentence, stage might have changed
+      // In that case, definitions are already loaded and playing - don't double-load
+      if (this.#stage !== 'loading-definitions') {
+        console.log('[TeachingController] Stage changed during intro (user skipped) - content already handled');
+        return;
+      }
     }
-    
+
     // Ensure definitions are loaded (uses prefetch if available)
     await this.#ensureDefinitionsLoaded();
-    
+
     if (this.#vocabSentences.length === 0) {
       console.warn('[TeachingController] No definitions generated, SKIPPING TO EXAMPLES');
-      await this.#startExamples();
+      await this.#startExamples({ resumeState: resumeState?.stage === 'examples' ? resumeState : null });
       return;
     }
-    
+
     // NOW set stage to definitions (content is ready, user can interact)
     this.#stage = 'definitions';
-    
+    this.#isInSentenceMode = resumeIntoDefinitions ? (resumeState.isInSentenceMode !== false) : true;
+    const targetIndex = Math.max(0, Math.min(resumeIntoDefinitions ? (resumeState.sentenceIndex || 0) : 0, this.#vocabSentences.length - 1));
+    this.#currentSentenceIndex = targetIndex;
+
     // Emit stage change AFTER data is ready (no loading state)
     this.#emit('stageChange', {
       stage: 'definitions',
       totalSentences: this.#vocabSentences.length
     });
-    
-    this.#awaitingFirstPlay = !autoplayFirstSentence;
-    
-    if (!autoplayFirstSentence) {
-      // Prefetch first sentence TTS
-      const firstSentence = this.#vocabSentences[0];
-      if (firstSentence) {
-        ttsCache.prefetch(firstSentence);
-      }
+
+    this.#emitSnapshot('begin-teaching-definitions');
+
+    this.#awaitingFirstPlay = resumeIntoDefinitions ? false : !autoplayFirstSentence;
+
+    if (!this.#isInSentenceMode) {
+      await this.#playGatePrompt('definitions');
       return;
     }
-    
-    await this.#playCurrentDefinition();
+
+    if (!this.#awaitingFirstPlay) {
+      await this.#playCurrentDefinition();
+      return;
+    }
+
+    // Prefetch first sentence TTS on await gate when not autoplaying
+    const firstSentence = this.#vocabSentences[this.#currentSentenceIndex];
+    if (firstSentence) {
+      ttsCache.prefetch(firstSentence);
+    }
   }
   
   async #playCurrentDefinition() {
@@ -622,8 +664,9 @@ export class TeachingController {
       // Reached end - show final gate
       this.#isInSentenceMode = false;
       this.#emit('finalGateReached', { stage: 'definitions' });
-      
+
       // Play gate prompt (uses prefetched GPT content)
+      this.#emitSnapshot('teaching-definition-gate');
       this.#playGatePrompt('definitions');
       return;
     }
@@ -634,56 +677,68 @@ export class TeachingController {
       index: this.#currentSentenceIndex,
       total: this.#vocabSentences.length
     });
-    
-    this.#emit('requestSnapshotSave', {
-      trigger: 'teaching-definition',
-      data: { stage: 'definitions', sentenceIndex: this.#currentSentenceIndex }
-    });
-    
+
+    this.#emitSnapshot('teaching-definition');
+
     this.#playCurrentDefinition();
   }
   
   // Private: Examples stage
-  async #startExamples() {
+  async #startExamples({ resumeState = null } = {}) {
     // Set loading stage to block nextSentence/repeatSentence during intro and GPT fetch
+    const resumeIntoExamples = resumeState && resumeState.stage === 'examples';
     this.#stage = 'loading-examples';
-    this.#currentSentenceIndex = 0;
-    this.#isInSentenceMode = true;
-    
-    // Speak intro
-    const introText = "Now let's see this in action.";
-    let introAudio = ttsCache.get(introText);
-    if (!introAudio) {
-      introAudio = await fetchTTS(introText);
-      if (introAudio) ttsCache.set(introText, introAudio);
+    this.#currentSentenceIndex = resumeIntoExamples ? Math.max(0, resumeState.sentenceIndex || 0) : 0;
+    this.#isInSentenceMode = resumeIntoExamples ? (resumeState.isInSentenceMode !== false) : true;
+
+    if (resumeIntoExamples && Array.isArray(resumeState.exampleSentences) && resumeState.exampleSentences.length) {
+      this.#exampleSentences = resumeState.exampleSentences;
     }
-    await this.#audioEngine.playAudio(introAudio || '', [introText]);
-    
-    // If user skipped during intro and triggered nextSentence, stage might have changed
-    if (this.#stage !== 'loading-examples') {
-      console.log('[TeachingController] Stage changed during examples intro (user skipped) - content already handled');
-      return;
+
+    if (!resumeIntoExamples) {
+      // Speak intro
+      const introText = "Now let's see this in action.";
+      let introAudio = ttsCache.get(introText);
+      if (!introAudio) {
+        introAudio = await fetchTTS(introText);
+        if (introAudio) ttsCache.set(introText, introAudio);
+      }
+      await this.#audioEngine.playAudio(introAudio || '', [introText]);
+
+      // If user skipped during intro and triggered nextSentence, stage might have changed
+      if (this.#stage !== 'loading-examples') {
+        console.log('[TeachingController] Stage changed during examples intro (user skipped) - content already handled');
+        return;
+      }
     }
-    
+
     // Ensure examples are loaded (uses prefetch if available)
     await this.#ensureExamplesLoaded();
-    
+
     if (this.#exampleSentences.length === 0) {
       console.warn('[TeachingController] No examples generated, completing teaching');
       this.#completeTeaching();
       return;
     }
-    
+
     // NOW set stage to examples (content is ready, user can interact)
     this.#stage = 'examples';
-    
+
     // Emit stage change AFTER data is ready (no loading state)
     this.#emit('stageChange', {
       stage: 'examples',
       totalSentences: this.#exampleSentences.length
     });
-    
+
+    this.#emitSnapshot('begin-teaching-examples');
+
     this.#awaitingFirstPlay = false;
+
+    if (!this.#isInSentenceMode) {
+      await this.#playGatePrompt('examples');
+      return;
+    }
+
     await this.#playCurrentExample();
   }
   
@@ -729,6 +784,7 @@ export class TeachingController {
       // Reached end - show final gate
       this.#isInSentenceMode = false;
       this.#emit('finalGateReached', { stage: 'examples' });
+      this.#emitSnapshot('teaching-example-gate');
       this.#playGatePrompt('examples');
       return;
     }
@@ -740,11 +796,8 @@ export class TeachingController {
       total: this.#exampleSentences.length
     });
     
-    this.#emit('requestSnapshotSave', {
-      trigger: 'teaching-example',
-      data: { stage: 'examples', sentenceIndex: this.#currentSentenceIndex }
-    });
-    
+    this.#emitSnapshot('teaching-example');
+
     this.#playCurrentExample();
   }
   

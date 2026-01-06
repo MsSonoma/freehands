@@ -64,6 +64,7 @@ export class TestPhase {
   #questionPlaybackToken = 0;
   #interactionInFlight = false;
   #resumeState = null;
+
   
   constructor(options = {}) {
     this.#audioEngine = options.audioEngine;
@@ -230,10 +231,7 @@ export class TestPhase {
     }
     
     // Remove the intro audio end listener so it cannot fire during questions
-    if (this.#audioEndListener) {
-      this.#audioEngine.off('end', this.#audioEndListener);
-      this.#audioEndListener = null;
-    }
+    this.#clearAudioEndListener();
     
     // Transition to work mode
     this.#timerMode = 'work';
@@ -310,16 +308,14 @@ export class TestPhase {
           isCorrect: true
         });
 
-        // Play praise for correct answers (V1 engagement pattern) - fire-and-forget to avoid blocking progression
+        // Play praise for correct answers (V1 engagement pattern)
         const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
         try {
           this.#audioEngine.stop();
           this.#state = 'playing-feedback';
           this.#emit('stateChange', { state: 'playing-feedback' });
           const praiseUrl = await fetchTTS(praise);
-          this.#audioEngine.playAudio(praiseUrl, [praise]).catch((err) => {
-            console.warn('[TestPhase] Praise playback error:', err);
-          });
+          await this.#audioEngine.playAudio(praiseUrl, [praise]);
         } catch (error) {
           console.warn('[TestPhase] Failed to play praise:', error);
         }
@@ -343,9 +339,7 @@ export class TestPhase {
         this.#emit('stateChange', { state: 'playing-feedback' });
         const revealUrl = await fetchTTS(reveal);
         if (revealUrl) {
-          this.#audioEngine.playAudio(revealUrl, [reveal]).catch((err) => {
-            console.warn('[TestPhase] Reveal playback error:', err);
-          });
+          await this.#audioEngine.playAudio(revealUrl, [reveal]);
         }
       } catch (error) {
         console.warn('[TestPhase] Failed to play reveal:', error);
@@ -654,10 +648,7 @@ export class TestPhase {
   
   // Private: Audio coordination
   #setupAudioEndListener(callback) {
-    // Remove previous listener
-    if (this.#audioEndListener) {
-      this.#audioEngine.off('end', this.#audioEndListener);
-    }
+    this.#clearAudioEndListener();
     
     // Create new listener - advance on both completed and skipped
     this.#audioEndListener = (data) => {
@@ -671,10 +662,7 @@ export class TestPhase {
   
   // Public: Cleanup
   destroy() {
-    if (this.#audioEndListener) {
-      this.#audioEngine.off('end', this.#audioEndListener);
-      this.#audioEndListener = null;
-    }
+    this.#clearAudioEndListener();
     
     this.#listeners.clear();
   }

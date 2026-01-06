@@ -2,7 +2,7 @@
 
 **Status:** Production-ready - All critical issues from second audit fixed  
 **Created:** 2025-12-30  
-**Updated:** 2026-01-05  
+**Updated:** 2026-01-07  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
 ---
@@ -189,7 +189,8 @@ V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical 
 - Test start must still clamp the deck to the learner target and clamp saved nextQuestionIndex/answers/reviewIndex to that length so completion always enters review after the target count (no extra questions from older snapshots).
 - Question pool blending must backfill to the learner target (cycle source pool if dedup leaves fewer items) so decks never stall below target counts.
 - Test submit/skip must enter review immediately when the next index reaches deck length (no reliance on follow-up playback), preventing hangs after the last question.
-- Praise/reveal playback in Test is fire-and-forget: do not await playAudio promises before advancing or entering review so audio stalls cannot block completion.
+- Praise/reveal playback in Test must await audio completion before advancing to next question, matching WorksheetPhase pattern to prevent overlapping TTS (duplicate "Perfect!" and next question playing together).
+- Starting Test must tear down any existing TestPhase instance and stop active audio before rebuilding so duplicate listeners cannot trigger overlapping question/praise/reveal playback.
 
 **Worksheet/Test:** Worksheet and Test follow the same no-skip rule. Missing targets or empty pools must block with a clear error instead of auto-advancing to the next phase.
 - The "Go" control in the Opening Actions footer must call the inline Exercise Go handler (not an ExercisePhase controller).

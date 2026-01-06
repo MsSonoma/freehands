@@ -159,11 +159,13 @@
       "timeline-jump",
       "test-skip-robustness",
       "no-premature-actions",
+      "sequential-playback",
+      "await-audio",
       "generated-lessons",
       "facilitator-lessons",
       "supabase-lesson-load"
     ],
-    "last_updated": "2026-01-06T16:00:00Z",
+    "last_updated": "2026-01-07T05:00:00Z",
     "status": "active-development"
   },
   "mr-mentor-conversation-flows": {
@@ -271,7 +273,7 @@
       "transcript persistence",
       "caption panel"
     ],
-      "last_updated": "2026-01-05T00:00:00Z",
+      "last_updated": "2026-01-07T03:34:00Z",
     "status": "canonical"
   },
   "timer-system": {
@@ -396,7 +398,7 @@
       "Games overlay",
       "opening actions play time"
     ],
-    "last_updated": "2026-01-06T10:20:00Z",
+    "last_updated": "2026-01-07T00:15:00Z",
     "status": "canonical"
   },
   "beta-program": {

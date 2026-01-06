@@ -68,12 +68,57 @@ function deriveCanonicalLessonKey({ lessonData, lessonId }) {
 
 // Timeline constants
 const timelinePhases = ["discussion", "comprehension", "exercise", "worksheet", "test"];
+const orderedPhases = ["discussion", "teaching", "comprehension", "exercise", "worksheet", "test", "closing"];
 const phaseLabels = {
   discussion: "Discussion",
   comprehension: "Comp",
   exercise: "Exercise",
   worksheet: "Worksheet",
   test: "Test",
+};
+
+const normalizePhaseAlias = (phase) => {
+  if (!phase) return null;
+  if (phase === "grading" || phase === "congrats") return "test";
+  if (phase === "complete") return "closing";
+  return phase;
+};
+
+const deriveResumePhaseFromSnapshot = (snapshot) => {
+  if (!snapshot) return null;
+
+  const rank = (phase) => {
+    const normalized = normalizePhaseAlias(phase);
+    const idx = orderedPhases.indexOf(normalized);
+    return idx === -1 ? -1 : idx;
+  };
+
+  const addCandidate = (set, value) => {
+    if (!value) return;
+    const normalized = normalizePhaseAlias(value);
+    if (!normalized) return;
+    set.add(normalized);
+  };
+
+  const candidates = new Set();
+  addCandidate(candidates, snapshot.currentPhase);
+
+  const completed = Array.isArray(snapshot.completedPhases) ? snapshot.completedPhases : [];
+  completed.forEach((p) => addCandidate(candidates, p));
+
+  const phaseData = snapshot.phaseData && typeof snapshot.phaseData === 'object' ? Object.keys(snapshot.phaseData) : [];
+  phaseData.forEach((p) => addCandidate(candidates, p));
+
+  if (!candidates.size) return null;
+
+  let best = null;
+  for (const candidate of candidates) {
+    if (best === null || rank(candidate) > rank(best)) {
+      best = candidate;
+    }
+  }
+
+  return best;
 };
 
 // Timeline component
@@ -340,6 +385,8 @@ function SessionPageV2Inner() {
   const [showRepeatButton, setShowRepeatButton] = useState(false);
   const [events, setEvents] = useState([]);
   const [downloadError, setDownloadError] = useState('');
+  const [generatedComprehension, setGeneratedComprehension] = useState(null);
+  const [generatedExercise, setGeneratedExercise] = useState(null);
   const [generatedWorksheet, setGeneratedWorksheet] = useState(null);
   const [generatedTest, setGeneratedTest] = useState(null);
 
@@ -385,6 +432,15 @@ function SessionPageV2Inner() {
     }
   }, [persistTranscriptState]);
 
+  const scrollTranscriptToBottom = useCallback(() => {
+    const el = transcriptRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      if (!transcriptRef.current) return;
+      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    });
+  }, []);
+
   // Vocab terms for caption highlighting (Discussion/Teaching)
   const vocabTerms = useMemo(() => {
     if (!lessonData) return [];
@@ -412,6 +468,11 @@ function SessionPageV2Inner() {
   useEffect(() => {
     resumePhaseRef.current = resumePhase;
   }, [resumePhase]);
+
+  // Keep transcript pinned to the newest line on initial load/refresh (V1 parity)
+  useEffect(() => {
+    scrollTranscriptToBottom();
+  }, [transcriptLines.length, snapshotLoaded, scrollTranscriptToBottom]);
 
   // Broadcast lesson title to HeaderBar so the header matches V1 in mobile landscape
   useEffect(() => {
@@ -627,6 +688,12 @@ function SessionPageV2Inner() {
         const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
         const stored = await getStoredAssessments(lessonKey, { learnerId });
         if (cancelled || !stored) return;
+        if (Array.isArray(stored.comprehension) && stored.comprehension.length) {
+          setGeneratedComprehension(stored.comprehension);
+        }
+        if (Array.isArray(stored.exercise) && stored.exercise.length) {
+          setGeneratedExercise(stored.exercise);
+        }
         if (Array.isArray(stored.worksheet) && stored.worksheet.length) {
           setGeneratedWorksheet(stored.worksheet);
         }
@@ -682,8 +749,15 @@ function SessionPageV2Inner() {
       service.initialize().then(snapshot => {
         if (cancelled) return;
         if (snapshot) {
-          addEvent(`💾 Loaded snapshot - Resume from: ${snapshot.currentPhase}`);
-          const resumePhaseName = snapshot.currentPhase;
+          const normalizedResumePhase = deriveResumePhaseFromSnapshot(snapshot);
+          const resumePhaseName = normalizedResumePhase || snapshot.currentPhase || null;
+
+          if (normalizedResumePhase && snapshot.currentPhase && normalizedResumePhase !== snapshot.currentPhase) {
+            addEvent(`Loaded snapshot - resume normalized to ${normalizedResumePhase} (was ${snapshot.currentPhase})`);
+          } else {
+            addEvent(`💾 Loaded snapshot - Resume from: ${resumePhaseName || 'idle'}`);
+          }
+
           setResumePhase(resumePhaseName);
           resumePhaseRef.current = resumePhaseName;
 
@@ -895,21 +969,21 @@ function SessionPageV2Inner() {
     return lessonKey || null;
   }, [lessonKey]);
 
-  const persistAssessments = useCallback((worksheetSet, testSet) => {
+  const persistAssessments = useCallback((worksheetSet, testSet, comprehensionSet, exerciseSet) => {
     const key = getAssessmentStorageKey();
     if (!key) return;
     const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
     try {
       saveAssessments(key, {
-        worksheet: Array.isArray(worksheetSet) ? worksheetSet : [],
-        test: Array.isArray(testSet) ? testSet : [],
-        comprehension: [],
-        exercise: []
+        worksheet: Array.isArray(worksheetSet) ? worksheetSet : (Array.isArray(generatedWorksheet) ? generatedWorksheet : []),
+        test: Array.isArray(testSet) ? testSet : (Array.isArray(generatedTest) ? generatedTest : []),
+        comprehension: Array.isArray(comprehensionSet) ? comprehensionSet : (Array.isArray(generatedComprehension) ? generatedComprehension : []),
+        exercise: Array.isArray(exerciseSet) ? exerciseSet : (Array.isArray(generatedExercise) ? generatedExercise : [])
       }, { learnerId });
     } catch {
       /* noop */
     }
-  }, [getAssessmentStorageKey, learnerProfile]);
+  }, [generatedComprehension, generatedExercise, generatedTest, generatedWorksheet, getAssessmentStorageKey, learnerProfile]);
 
   const questionKey = useCallback((q) => {
     return (q?.prompt || q?.question || q?.Q || q?.q || '').toString().trim().toLowerCase();
@@ -1350,12 +1424,19 @@ function SessionPageV2Inner() {
   const handleRefreshWorksheetAndTest = useCallback(async () => {
     const ok = await ensurePinAllowed('refresh');
     if (!ok) return;
+    setGeneratedComprehension(null);
+    setGeneratedExercise(null);
     setGeneratedWorksheet(null);
     setGeneratedTest(null);
     const key = getAssessmentStorageKey();
+    const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
     if (key) {
-      const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
       try { await clearAssessments(key, { learnerId }); } catch {}
+    }
+    if (snapshotServiceRef.current) {
+      try { await snapshotServiceRef.current.deleteSnapshot(); } catch {}
+      resumePhaseRef.current = null;
+      setResumePhase(null);
     }
   }, [getAssessmentStorageKey, learnerProfile]);
 
@@ -2343,7 +2424,7 @@ function SessionPageV2Inner() {
       }
     });
     
-    orchestrator.on('sessionComplete', (data) => {
+    orchestrator.on('sessionComplete', async (data) => {
       addEvent('ðŸ Session complete!');
       setCurrentPhase('complete');
       
@@ -2379,6 +2460,17 @@ function SessionPageV2Inner() {
           }
         });
       }
+
+      // Clear persisted assessment sets so next session rebuilds from scratch
+      const key = getAssessmentStorageKey();
+      const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
+      if (key) {
+        try { await clearAssessments(key, { learnerId }); } catch {}
+      }
+      setGeneratedComprehension(null);
+      setGeneratedExercise(null);
+      setGeneratedWorksheet(null);
+      setGeneratedTest(null);
     });
     
     return () => {
@@ -2543,6 +2635,25 @@ function SessionPageV2Inner() {
   // Start teaching phase
   const startTeachingPhase = () => {
     if (!teachingControllerRef.current) return;
+
+    const savedTeaching = snapshotServiceRef.current?.snapshot?.phaseData?.teaching || null;
+    const resumeState = savedTeaching ? {
+      stage: savedTeaching.stage,
+      sentenceIndex: Number.isFinite(savedTeaching.sentenceIndex) ? savedTeaching.sentenceIndex : 0,
+      isInSentenceMode: savedTeaching.isInSentenceMode !== false,
+      vocabSentences: Array.isArray(savedTeaching.vocabSentences) ? savedTeaching.vocabSentences : [],
+      exampleSentences: Array.isArray(savedTeaching.exampleSentences) ? savedTeaching.exampleSentences : []
+    } : null;
+
+    if (resumeState) {
+      const total = resumeState.stage === 'examples'
+        ? resumeState.exampleSentences.length
+        : resumeState.vocabSentences.length;
+      if (resumeState.stage) setTeachingStage(resumeState.stage);
+      if (total) setTotalSentences(total);
+      setSentenceIndex(Math.max(0, Math.min(resumeState.sentenceIndex || 0, Math.max(0, total - 1))));
+      setIsInSentenceMode(resumeState.isInSentenceMode !== false);
+    }
     
     // Wire up teaching complete to orchestrator
     const handleTeachingComplete = (data) => {
@@ -2568,7 +2679,7 @@ function SessionPageV2Inner() {
     };
     
     teachingControllerRef.current.on('teachingComplete', handleTeachingComplete);
-    teachingControllerRef.current.startTeaching({ autoplayFirstSentence: false });
+    teachingControllerRef.current.startTeaching({ autoplayFirstSentence: false, resumeState });
   };
   
   // Start comprehension phase
@@ -2589,12 +2700,27 @@ function SessionPageV2Inner() {
     const snapshot = snapshotServiceRef.current?.snapshot;
     const savedComp = forceFresh ? null : (snapshot?.phaseData?.comprehension || null);
     const savedCompQuestions = !forceFresh && Array.isArray(savedComp?.questions) && savedComp.questions.length ? savedComp.questions : null;
+    if (savedCompQuestions && savedCompQuestions.length && (!generatedComprehension || !generatedComprehension.length)) {
+      setGeneratedComprehension(savedCompQuestions);
+    }
+    const storedCompQuestions = !forceFresh && Array.isArray(generatedComprehension) && generatedComprehension.length ? generatedComprehension : null;
     
     // Build comprehension questions with 80/20 MC+TF vs SA+FIB blend (all types allowed)
-    const compTarget = savedCompQuestions ? savedCompQuestions.length : getLearnerTarget('comprehension');
+    const compTarget = savedCompQuestions ? savedCompQuestions.length : (storedCompQuestions ? storedCompQuestions.length : getLearnerTarget('comprehension'));
     if (!compTarget) return false;
-    const questions = savedCompQuestions || buildQuestionPool(compTarget, []); // target-driven, no exclusions
+    const questions = savedCompQuestions || storedCompQuestions || buildQuestionPool(compTarget, []); // target-driven, no exclusions
     console.log('[SessionPageV2] startComprehensionPhase built questions:', questions.length);
+
+    const resumeIndex = (!forceFresh && savedComp) ? (savedComp.nextQuestionIndex ?? savedComp.questionIndex ?? 0) : 0;
+    const clampedIndex = Math.min(Math.max(resumeIndex, 0), Math.max(questions.length - 1, 0));
+    setComprehensionTotalQuestions(questions.length);
+    setComprehensionScore(savedComp?.score || 0);
+    if (questions[clampedIndex]) {
+      setCurrentComprehensionQuestion(questions[clampedIndex]);
+    }
+    if ((!comprehensionState || comprehensionState === 'idle') && savedComp) {
+      setComprehensionState('awaiting-answer');
+    }
     
     if (questions.length === 0) {
       // If no comprehension questions, skip to exercise
@@ -2615,6 +2741,10 @@ function SessionPageV2Inner() {
         answers: forceFresh ? [] : (savedComp?.answers || []),
         timerMode: forceFresh ? 'play' : (savedComp?.timerMode || 'play')
       });
+    }
+    if (!savedCompQuestions && !storedCompQuestions) {
+      setGeneratedComprehension(questions);
+      persistAssessments(generatedWorksheet || [], generatedTest || [], questions, generatedExercise || []);
     }
     
     const phase = new ComprehensionPhase({
@@ -2703,8 +2833,16 @@ function SessionPageV2Inner() {
       }
     });
     
-    // Don't auto-start - let Begin button call phase.start()
-    // phase.start();
+    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
+    const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'comprehension';
+    const shouldAutoStart = resumeMatch || !!savedComp;
+    if (shouldAutoStart && phase.start) {
+      phase.start();
+      if (pendingPlayTimersRef.current?.comprehension) {
+        startPhasePlayTimer('comprehension');
+        delete pendingPlayTimersRef.current.comprehension;
+      }
+    }
 
     if (forceFresh) {
       timelineJumpForceFreshPhaseRef.current = null;
@@ -2746,12 +2884,27 @@ function SessionPageV2Inner() {
     const snapshot = snapshotServiceRef.current?.snapshot;
     const savedExercise = forceFresh ? null : (snapshot?.phaseData?.exercise || null);
     const savedExerciseQuestions = !forceFresh && Array.isArray(savedExercise?.questions) && savedExercise.questions.length ? savedExercise.questions : null;
+    if (savedExerciseQuestions && savedExerciseQuestions.length && (!generatedExercise || !generatedExercise.length)) {
+      setGeneratedExercise(savedExerciseQuestions);
+    }
+    const storedExerciseQuestions = !forceFresh && Array.isArray(generatedExercise) && generatedExercise.length ? generatedExercise : null;
     
-    const exerciseTarget = savedExerciseQuestions ? savedExerciseQuestions.length : getLearnerTarget('exercise');
+    const exerciseTarget = savedExerciseQuestions ? savedExerciseQuestions.length : (storedExerciseQuestions ? storedExerciseQuestions.length : getLearnerTarget('exercise'));
     if (!exerciseTarget) return false;
     // Build exercise questions with 80/20 MC+TF vs SA+FIB blend
-    const questions = savedExerciseQuestions || buildQuestionPool(exerciseTarget, []);
+    const questions = savedExerciseQuestions || storedExerciseQuestions || buildQuestionPool(exerciseTarget, []);
     console.log('[SessionPageV2] startExercisePhase built questions:', questions.length);
+
+    const resumeIndex = (!forceFresh && savedExercise) ? (savedExercise.nextQuestionIndex ?? savedExercise.questionIndex ?? 0) : 0;
+    const clampedIndex = Math.min(Math.max(resumeIndex, 0), Math.max(questions.length - 1, 0));
+    setExerciseTotalQuestions(questions.length);
+    setExerciseScore(savedExercise?.score || 0);
+    if (questions[clampedIndex]) {
+      setCurrentExerciseQuestion(questions[clampedIndex]);
+    }
+    if ((!exerciseState || exerciseState === 'idle') && savedExercise) {
+      setExerciseState('awaiting-answer');
+    }
     
     if (questions.length === 0) {
       // If no exercise questions, skip to worksheet
@@ -2771,6 +2924,10 @@ function SessionPageV2Inner() {
         answers: forceFresh ? [] : (savedExercise?.answers || []),
         timerMode: forceFresh ? 'play' : (savedExercise?.timerMode || 'play')
       });
+    }
+    if (!savedExerciseQuestions && !storedExerciseQuestions) {
+      setGeneratedExercise(questions);
+      persistAssessments(generatedWorksheet || [], generatedTest || [], generatedComprehension || [], questions);
     }
     
     const phase = new ExercisePhase({
@@ -2865,8 +3022,16 @@ function SessionPageV2Inner() {
       }
     });
     
-    // Don't auto-start - let Begin button call phase.start()
-    // phase.start();
+    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
+    const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'exercise';
+    const shouldAutoStart = resumeMatch || !!savedExercise;
+    if (shouldAutoStart && phase.start) {
+      phase.start();
+      if (pendingPlayTimersRef.current?.exercise) {
+        startPhasePlayTimer('exercise');
+        delete pendingPlayTimersRef.current.exercise;
+      }
+    }
 
     if (forceFresh) {
       timelineJumpForceFreshPhaseRef.current = null;
@@ -2901,13 +3066,24 @@ function SessionPageV2Inner() {
       questions = buildWorksheetSet();
       if (questions.length) {
         setGeneratedWorksheet(questions);
-        persistAssessments(questions, generatedTest || []);
+        persistAssessments(questions, generatedTest || [], generatedComprehension || [], generatedExercise || []);
       }
     }
 
     const worksheetTarget = questions.length || getLearnerTarget('worksheet');
     if (!worksheetTarget) return false;
     console.log('[SessionPageV2] startWorksheetPhase built questions:', questions.length);
+
+    const resumeIndex = (!forceFresh && savedWorksheet) ? (savedWorksheet.nextQuestionIndex ?? savedWorksheet.questionIndex ?? 0) : 0;
+    const clampedIndex = Math.min(Math.max(resumeIndex, 0), Math.max(questions.length - 1, 0));
+    setWorksheetTotalQuestions(questions.length);
+    setWorksheetScore(savedWorksheet?.score || 0);
+    if (questions[clampedIndex]) {
+      setCurrentWorksheetQuestion(questions[clampedIndex]);
+    }
+    if ((!worksheetState || worksheetState === 'idle') && savedWorksheet) {
+      setWorksheetState('awaiting-answer');
+    }
     
     if (questions.length === 0) {
       // If no worksheet questions, skip to test
@@ -3030,8 +3206,16 @@ function SessionPageV2Inner() {
       }
     });
     
-    // Don't auto-start - let Begin button call phase.start()
-    // phase.start();
+    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
+    const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'worksheet';
+    const shouldAutoStart = resumeMatch || !!savedWorksheet;
+    if (shouldAutoStart && phase.start) {
+      phase.start();
+      if (pendingPlayTimersRef.current?.worksheet) {
+        startPhasePlayTimer('worksheet');
+        delete pendingPlayTimersRef.current.worksheet;
+      }
+    }
 
     if (forceFresh) {
       timelineJumpForceFreshPhaseRef.current = null;
@@ -3047,6 +3231,17 @@ function SessionPageV2Inner() {
       console.log('[SessionPageV2] startTestPhase - guard failed, returning early');
       return false;
     }
+    if (testPhaseRef.current) {
+      try {
+        testPhaseRef.current.destroy();
+      } catch (err) {
+        console.warn('[SessionPageV2] Existing TestPhase destroy failed:', err);
+      }
+      testPhaseRef.current = null;
+    }
+    try {
+      audioEngineRef.current.stop();
+    } catch {}
     if (!learnerProfile) {
       addEvent('⏸️ Learner not loaded yet - delaying test init');
       return false;
@@ -3067,7 +3262,7 @@ function SessionPageV2Inner() {
       questions = buildTestSet();
       if (questions.length) {
         setGeneratedTest(questions);
-        persistAssessments(generatedWorksheet || [], questions);
+        persistAssessments(generatedWorksheet || [], questions, generatedComprehension || [], generatedExercise || []);
       }
     }
 
@@ -3081,6 +3276,17 @@ function SessionPageV2Inner() {
     const testTarget = questions.length;
     if (!testTarget) return false;
     console.log('[SessionPageV2] startTestPhase built questions:', questions.length);
+
+    const resumeIndex = savedTest ? (savedTest.nextQuestionIndex ?? savedTest.questionIndex ?? 0) : 0;
+    const clampedIndex = Math.min(Math.max(resumeIndex, 0), Math.max(questions.length - 1, 0));
+    setTestTotalQuestions(questions.length);
+    setTestScore(savedTest?.score || 0);
+    if (questions[clampedIndex]) {
+      setCurrentTestQuestion(questions[clampedIndex]);
+    }
+    if ((!testState || testState === 'idle') && savedTest) {
+      setTestState('awaiting-answer');
+    }
     
     if (questions.length === 0) {
       // If no test questions, skip to closing
@@ -3220,8 +3426,16 @@ function SessionPageV2Inner() {
       }
     });
     
-    // Don't auto-start - let Begin button call phase.start()
-    // phase.start();
+    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
+    const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'test';
+    const shouldAutoStart = resumeMatch || !!savedTest;
+    if (shouldAutoStart && phase.start) {
+      phase.start();
+      if (pendingPlayTimersRef.current?.test) {
+        startPhasePlayTimer('test');
+        delete pendingPlayTimersRef.current.test;
+      }
+    }
 
     if (forceFresh) {
       timelineJumpForceFreshPhaseRef.current = null;

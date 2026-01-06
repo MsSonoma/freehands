@@ -281,8 +281,10 @@ export class SnapshotService {
     }
     
     if (this.#saveInProgress) {
-      // Don't queue granular saves - just skip to avoid backup
-      return;
+      // Wait for the in-flight save so we don't drop critical phaseChange/seed saves.
+      await this.#waitForSaveComplete();
+      // If still in progress after waiting (should not happen), skip to avoid deadlock.
+      if (this.#saveInProgress) return;
     }
     
     this.#saveInProgress = true;
