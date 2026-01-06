@@ -206,10 +206,16 @@ export class TestPhase {
       this.#emit('stateChange', { state: 'awaiting-go', timerMode: 'play' });
     };
 
-    // Advance on both completed and skipped.
-    this.#setupAudioEndListener(() => {
-      finishIntro();
-    });
+    // Set up audio end listener for intro - advance on both completed and skipped
+    if (this.#audioEndListener) {
+      this.#audioEngine.off('end', this.#audioEndListener);
+    }
+    this.#audioEndListener = (data) => {
+      if (data.completed || data.skipped) {
+        finishIntro();
+      }
+    };
+    this.#audioEngine.on('end', this.#audioEndListener);
 
     try {
       const introAudio = await fetchTTS(intro);
@@ -229,9 +235,6 @@ export class TestPhase {
       console.warn('[TestPhase] Cannot go in state:', this.#state);
       return;
     }
-    
-    // Remove the intro audio end listener so it cannot fire during questions
-    this.#clearAudioEndListener();
     
     // Transition to work mode
     this.#timerMode = 'work';
@@ -646,23 +649,12 @@ export class TestPhase {
     });
   }
   
-  // Private: Audio coordination
-  #setupAudioEndListener(callback) {
-    this.#clearAudioEndListener();
-    
-    // Create new listener - advance on both completed and skipped
-    this.#audioEndListener = (data) => {
-      if (data.completed || data.skipped) {
-        callback();
-      }
-    };
-    
-    this.#audioEngine.on('end', this.#audioEndListener);
-  }
-  
   // Public: Cleanup
   destroy() {
-    this.#clearAudioEndListener();
+    if (this.#audioEndListener) {
+      this.#audioEngine.off('end', this.#audioEndListener);
+      this.#audioEndListener = null;
+    }
     
     this.#listeners.clear();
   }
