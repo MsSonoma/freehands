@@ -19,7 +19,9 @@
 
 import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
+import jsPDF from 'jspdf';
 import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseClient } from '@/app/lib/supabaseClient';
 import { getLearner } from '@/app/facilitator/learners/clientApi';
 import { loadPhaseTimersForLearner } from '../utils/phaseTimerDefaults';
 import SessionTimer from '../components/SessionTimer';
@@ -38,10 +40,15 @@ import { KeyboardService } from './KeyboardService';
 import { OpeningActionsController } from './OpeningActionsController';
 import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
 import TimerControlOverlay from '../components/TimerControlOverlay';
+import GamesOverlay from '../components/games/GamesOverlay';
 import EventBus from './EventBus';
 import { loadLesson, fetchTTS } from './services';
-import { formatMcOptions, isMultipleChoice, isTrueFalse } from '../utils/questionFormatting';
+import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech, ensureQuestionMark } from '../utils/questionFormatting';
+import { ensureExactCount } from '../utils/assessmentGenerationUtils';
 import { getSnapshotStorageKey } from '../utils/snapshotPersistenceUtils';
+import { ensurePinAllowed } from '@/app/lib/pinGate';
+import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
+import CaptionPanel from '../components/CaptionPanel';
 
 // Derive a canonical lesson key (filename only, no subject prefix, no .json) for per-learner persistence.
 function deriveCanonicalLessonKey({ lessonData, lessonId }) {
@@ -214,6 +221,7 @@ function SessionPageV2Inner() {
   const timerServiceRef = useRef(null);
   const keyboardServiceRef = useRef(null);
   const teachingControllerRef = useRef(null);
+  const answerInputRef = useRef(null);
   const openingActionsControllerRef = useRef(null);
   const comprehensionPhaseRef = useRef(null);
   const discussionPhaseRef = useRef(null);
@@ -223,6 +231,7 @@ function SessionPageV2Inner() {
   const closingPhaseRef = useRef(null);
   const sessionLearnerIdRef = useRef(null); // pinned learner id for this session
   const pendingPlayTimersRef = useRef({}); // track phases waiting to start play timer after init
+  const timelineJumpForceFreshPhaseRef = useRef(null); // timeline jumps should show opening actions, not resume mid-phase
   const timelineJumpInProgressRef = useRef(false); // Debounce timeline jumps
   const pendingTimerStateRef = useRef(null);
   const startSessionRef = useRef(null);
@@ -287,6 +296,10 @@ function SessionPageV2Inner() {
   const [openingActionActive, setOpeningActionActive] = useState(false);
   const [openingActionType, setOpeningActionType] = useState(null);
   const [openingActionState, setOpeningActionState] = useState({});
+  const [openingActionInput, setOpeningActionInput] = useState('');
+  const [openingActionBusy, setOpeningActionBusy] = useState(false);
+  const [openingActionError, setOpeningActionError] = useState('');
+  const [showGames, setShowGames] = useState(false);
 
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
@@ -322,14 +335,91 @@ function SessionPageV2Inner() {
   
   const [currentCaption, setCurrentCaption] = useState('');
   const [transcriptLines, setTranscriptLines] = useState([]);
+  const [activeCaptionIndex, setActiveCaptionIndex] = useState(-1);
   const [engineState, setEngineState] = useState('idle');
   const [isMuted, setIsMuted] = useState(false);
   const [showRepeatButton, setShowRepeatButton] = useState(false);
   const [events, setEvents] = useState([]);
+  const [downloadError, setDownloadError] = useState('');
+  const [generatedWorksheet, setGeneratedWorksheet] = useState(null);
+  const [generatedTest, setGeneratedTest] = useState(null);
+
+  const persistTranscriptState = useCallback((lines, activeIdx) => {
+    if (!snapshotServiceRef.current) return;
+    try {
+      const safeLines = Array.isArray(lines)
+        ? lines.map((l) => ({ text: String(l?.text || ''), role: l?.role === 'user' ? 'user' : 'assistant' }))
+        : [];
+      const safeIdx = Number.isFinite(activeIdx) ? activeIdx : -1;
+      snapshotServiceRef.current.saveProgress('transcript', {
+        transcript: {
+          lines: safeLines,
+          activeIndex: safeIdx
+        }
+      });
+    } catch (err) {
+      console.error('[SessionPageV2] Persist transcript error:', err);
+    }
+  }, []);
+
+  const appendTranscriptLine = useCallback((line, { updateActive = false } = {}) => {
+    const text = String(line?.text || '').trim();
+    if (!text) return;
+    const role = line?.role === 'user' ? 'user' : 'assistant';
+    setTranscriptLines((prev) => {
+      const next = [...prev, { text, role }];
+      const nextActive = updateActive || role === 'assistant' ? next.length - 1 : activeCaptionIndex;
+      if (updateActive || role === 'assistant') {
+        setActiveCaptionIndex(nextActive);
+      }
+      persistTranscriptState(next, nextActive);
+      return next;
+    });
+  }, [activeCaptionIndex, persistTranscriptState]);
+
+  const resetTranscriptState = useCallback(({ persist = false } = {}) => {
+    setTranscriptLines([]);
+    setActiveCaptionIndex(-1);
+    setCurrentCaption('');
+    if (persist) {
+      persistTranscriptState([], -1);
+    }
+  }, [persistTranscriptState]);
+
+  // Vocab terms for caption highlighting (Discussion/Teaching)
+  const vocabTerms = useMemo(() => {
+    if (!lessonData) return [];
+    const normalizeList = (arr = []) => (Array.isArray(arr) ? arr : []).map((t) => String(t || '').trim()).filter(Boolean);
+    const explicit = normalizeList(lessonData.vocabulary || lessonData.vocab || lessonData.vocab_terms);
+    const fallback = (() => {
+      const rawTitle = String(lessonData.title || lessonId || '').trim();
+      if (!rawTitle) return [];
+      const stop = new Set(['with','and','the','of','a','an','to','in','on','for','by','vs','versus','about','into','from']);
+      return rawTitle
+        .split(/[^A-Za-z]+/)
+        .map(w => w.trim())
+        .filter(w => w && !stop.has(w.toLowerCase()))
+        .slice(0, 5);
+    })();
+    const terms = explicit.length ? explicit : fallback;
+    const dedup = new Map();
+    for (const t of terms) {
+      const key = t.toLowerCase();
+      if (!dedup.has(key)) dedup.set(key, t);
+    }
+    return Array.from(dedup.values()).sort((a, b) => b.length - a.length);
+  }, [lessonData, lessonId]);
 
   useEffect(() => {
     resumePhaseRef.current = resumePhase;
   }, [resumePhase]);
+
+  // Reset opening action input/errors when switching action types
+  useEffect(() => {
+    setOpeningActionInput('');
+    setOpeningActionError('');
+    setOpeningActionBusy(false);
+  }, [openingActionType]);
   
   // Compute timeline highlight based on current phase
   const timelineHighlight = (() => {
@@ -351,6 +441,22 @@ function SessionPageV2Inner() {
     }
     return currentPhase;
   })();
+
+  // Autofocus answer input when awaiting an answer in any Q&A phase (footer parity)
+  useEffect(() => {
+    const awaiting =
+      (currentPhase === 'comprehension' && comprehensionState === 'awaiting-answer') ||
+      (currentPhase === 'exercise' && exerciseState === 'awaiting-answer') ||
+      (currentPhase === 'worksheet' && worksheetState === 'awaiting-answer') ||
+      (currentPhase === 'test' && testState === 'awaiting-answer');
+    if (awaiting && answerInputRef.current) {
+      try {
+        answerInputRef.current.focus({ preventScroll: true });
+      } catch {
+        try { answerInputRef.current.focus(); } catch {}
+      }
+    }
+  }, [currentPhase, comprehensionState, exerciseState, worksheetState, testState]);
   
   // Load lesson data
   useEffect(() => {
@@ -363,19 +469,55 @@ function SessionPageV2Inner() {
         
         // Check for generated lesson (regenerate parameter)
         if (regenerateParam) {
-          addEvent('ðŸ¤– Loading generated lesson...');
+          addEvent('Loading generated lesson (regenerate)...');
           const response = await fetch(`/api/lesson-engine/regenerate?key=${regenerateParam}`);
           if (!response.ok) {
             throw new Error(`Failed to load generated lesson: ${response.statusText}`);
           }
           const data = await response.json();
           lesson = data.lesson;
-          addEvent(`ðŸ“š Loaded generated lesson: ${lesson.title || 'Untitled'}`);
+          addEvent(`Loaded generated lesson: ${lesson.title || 'Untitled'}`);
+        }
+        // Load generated lessons from facilitator storage when subject=generated
+        else if (subjectParam === 'generated') {
+          if (!lessonId) {
+            throw new Error('No lesson specified. Add ?lesson=filename.json when using subject=generated');
+          }
+
+          const supabase = getSupabaseClient();
+          if (!supabase) {
+            throw new Error('Supabase client not available for generated lessons.');
+          }
+          const { data: sessionResult } = await supabase?.auth.getSession() || {};
+          const session = sessionResult?.session;
+          const userId = session?.user?.id || null;
+          const accessToken = session?.access_token || null;
+
+          if (!userId || !accessToken) {
+            addEvent('Sign in required to load generated lessons.');
+            setError('Sign in required to load generated lessons. Please sign in and retry.');
+            setLoading(false);
+            return;
+          }
+
+          const normalizedLessonId = lessonId.endsWith('.json') ? lessonId : `${lessonId}.json`;
+          const params = new URLSearchParams({ file: normalizedLessonId });
+          addEvent('Loading generated lesson from facilitator storage...');
+          const response = await fetch(`/api/facilitator/lessons/get?${params.toString()}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          });
+          if (!response.ok) {
+            throw new Error(`Failed to load generated lesson (${response.status})`);
+          }
+          lesson = await response.json();
+          addEvent(`Loaded generated lesson: ${lesson.title || normalizedLessonId}`);
         }
         // Load lesson if lessonId provided
         else if (lessonId) {
           lesson = await loadLesson(lessonId, subjectParam);
-          addEvent(`ðŸ“š Loaded lesson: ${lesson.title}`);
+          addEvent(`Loaded lesson: ${lesson.title}`);
         } else {
           // No lessonId - show error
           throw new Error('No lesson specified. Add ?lesson=filename&subject=math to URL');
@@ -454,6 +596,31 @@ function SessionPageV2Inner() {
     
     loadLearnerProfile();
   }, [lessonData, lessonId, lessonKey, subjectParam]);
+
+  // Load persisted worksheet/test sets for printing (local+Supabase)
+  useEffect(() => {
+    if (!lessonKey) return;
+    let cancelled = false;
+
+    const loadStored = async () => {
+      try {
+        const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
+        const stored = await getStoredAssessments(lessonKey, { learnerId });
+        if (cancelled || !stored) return;
+        if (Array.isArray(stored.worksheet) && stored.worksheet.length) {
+          setGeneratedWorksheet(stored.worksheet);
+        }
+        if (Array.isArray(stored.test) && stored.test.length) {
+          setGeneratedTest(stored.test);
+        }
+      } catch {
+        /* noop */
+      }
+    };
+
+    loadStored();
+    return () => { cancelled = true; };
+  }, [lessonKey, learnerProfile]);
   
   // Initialize shared EventBus (must be first)
   useEffect(() => {
@@ -496,8 +663,27 @@ function SessionPageV2Inner() {
         if (cancelled) return;
         if (snapshot) {
           addEvent(`💾 Loaded snapshot - Resume from: ${snapshot.currentPhase}`);
-          setResumePhase(snapshot.currentPhase);
-          resumePhaseRef.current = snapshot.currentPhase;
+          const resumePhaseName = snapshot.currentPhase;
+          setResumePhase(resumePhaseName);
+          resumePhaseRef.current = resumePhaseName;
+
+          const isBeginningPhase = !resumePhaseName || resumePhaseName === 'idle' || resumePhaseName === 'discussion';
+
+          const storedTranscript = snapshot?.transcript;
+          const storedLines = Array.isArray(storedTranscript?.lines) ? storedTranscript.lines : null;
+          if (isBeginningPhase) {
+            // If snapshot is already at the beginning, start fresh and clear any stale captions.
+            resetTranscriptState({ persist: true });
+          } else if (storedLines && storedLines.length) {
+            const normalized = storedLines.map((l) => ({ text: String(l?.text || ''), role: l?.role === 'user' ? 'user' : 'assistant' }));
+            setTranscriptLines(normalized);
+            const nextActive = Number.isFinite(storedTranscript?.activeIndex) ? storedTranscript.activeIndex : (normalized.length ? normalized.length - 1 : -1);
+            setActiveCaptionIndex(nextActive);
+            const lastAssistant = [...normalized].reverse().find((l) => l.role !== 'user');
+            setCurrentCaption(lastAssistant?.text || '');
+          } else {
+            resetTranscriptState({ persist: true });
+          }
 
           if (snapshot.timerState) {
             if (timerServiceRef.current) {
@@ -507,6 +693,7 @@ function SessionPageV2Inner() {
             }
           }
         } else {
+          resetTranscriptState();
           addEvent('💾 No snapshot found - Starting fresh');
         }
       }).catch(err => {
@@ -528,7 +715,7 @@ function SessionPageV2Inner() {
       cancelled = true;
       snapshotServiceRef.current = null;
     };
-  }, [lessonData, learnerProfile, browserSessionId, lessonKey]);
+  }, [lessonData, learnerProfile, browserSessionId, lessonKey, resetTranscriptState]);
   
   // Initialize TimerService
   useEffect(() => {
@@ -683,6 +870,433 @@ function SessionPageV2Inner() {
 
     return Math.trunc(raw);
   }, [learnerProfile]);
+
+  const getAssessmentStorageKey = useCallback(() => {
+    return lessonKey || null;
+  }, [lessonKey]);
+
+  const persistAssessments = useCallback((worksheetSet, testSet) => {
+    const key = getAssessmentStorageKey();
+    if (!key) return;
+    const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
+    try {
+      saveAssessments(key, {
+        worksheet: Array.isArray(worksheetSet) ? worksheetSet : [],
+        test: Array.isArray(testSet) ? testSet : [],
+        comprehension: [],
+        exercise: []
+      }, { learnerId });
+    } catch {
+      /* noop */
+    }
+  }, [getAssessmentStorageKey, learnerProfile]);
+
+  const buildWorksheetSet = useCallback(() => {
+    const target = getLearnerTarget('worksheet');
+    if (!lessonData || !target) return [];
+    const fib = Array.isArray(lessonData.fillintheblank)
+      ? lessonData.fillintheblank.map((q) => ({ ...q, sourceType: q.sourceType || 'fib', type: q.type || 'fib' }))
+      : [];
+    const ensured = ensureExactCount(fib, target, [fib], true);
+    return ensured.slice(0, target).map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
+  }, [lessonData, getLearnerTarget]);
+
+  const buildTestSet = useCallback(() => {
+    const target = getLearnerTarget('test');
+    if (!lessonData || !target) return [];
+    const pool = buildQuestionPool(target, []);
+    const ensured = ensureExactCount(pool, target, [pool], true);
+    return ensured.slice(0, target).map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
+  }, [lessonData, getLearnerTarget, buildQuestionPool]);
+
+  const shareOrPreviewPdf = useCallback(async (blob, fileName = 'document.pdf', previewWin = null) => {
+    try {
+      const supportsFile = typeof File !== 'undefined';
+      const file = supportsFile ? new File([blob], fileName, { type: 'application/pdf' }) : null;
+      if (file && navigator?.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: fileName });
+        return;
+      }
+    } catch {
+      /* fall through */
+    }
+
+    try {
+      const url = URL.createObjectURL(blob);
+      const win = previewWin && previewWin.document ? previewWin : null;
+      if (win) {
+        try { win.addEventListener('beforeunload', () => URL.revokeObjectURL(url)); } catch {}
+        win.location.href = url;
+      } else {
+        window.location.href = url;
+        setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 10000);
+      }
+      return;
+    } catch {
+      /* fall through */
+    }
+
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        try { URL.revokeObjectURL(url); } catch {}
+        try { document.body.removeChild(a); } catch {}
+      }, 10000);
+    } catch {
+      /* noop */
+    }
+  }, []);
+
+  const createPdfForItems = useCallback(async (items = [], label = 'worksheet', previewWin = null) => {
+    try {
+      const doc = new jsPDF();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const lessonTitle = (lessonData?.title || lessonKey || lessonId || 'Lesson').trim();
+      const niceLabel = label.charAt(0).toUpperCase() + label.slice(1);
+
+      const shrinkFIBBlanks = (s, answerLength = 0) => {
+        if (!s) return s;
+        return s.replace(/_{4,}/g, (m) => {
+          let targetSize = 12;
+          if (answerLength > 0) {
+            targetSize = Math.max(12, Math.min(60, answerLength * 2));
+          } else {
+            targetSize = Math.max(12, Math.round(m.length * 0.66));
+          }
+          return '_'.repeat(targetSize);
+        });
+      };
+
+      const renderLineText = (item) => {
+        let base = String(item.prompt || item.question || item.Q || item.q || '');
+        const qType = String(item.type || '').toLowerCase();
+        const isFIB = item.sourceType === 'fib' || /fill\s*in\s*the\s*blank|fillintheblank/.test(qType);
+        const isTF = item.sourceType === 'tf' || /^(true\s*\/\s*false|truefalse|tf)$/i.test(qType);
+        if (isFIB) {
+          let answerLength = 0;
+          const answer = item.answer || item.expected || item.correct || item.key || '';
+          if (Array.isArray(item.answers) && item.answers.length > 0) {
+            answerLength = Math.max(...item.answers.map((a) => String(a || '').trim().length));
+          } else if (answer) {
+            answerLength = String(answer).trim().length;
+          }
+          base = shrinkFIBBlanks(base, answerLength);
+        }
+        const trimmed = base.trimStart();
+        if (isTF && !/^true\s*\/\s*false\s*:/i.test(trimmed) && !/^true\s*false\s*:/i.test(trimmed)) {
+          base = `True/False: ${base}`;
+        }
+        let choicesLine = null;
+        const opts = Array.isArray(item?.options)
+          ? item.options.filter(Boolean)
+          : (Array.isArray(item?.choices) ? item.choices.filter(Boolean) : []);
+        if (opts.length) {
+          const labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+          const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.\:\)\-]\s*/i;
+          const parts = opts.map((o, i) => {
+            const raw = String(o ?? '').trim();
+            const cleaned = raw.replace(anyLabel, '').trim();
+            const lbl = labels[i] || '';
+            return `${lbl}.\u00A0${cleaned}`;
+          });
+          choicesLine = parts.join('   ');
+        }
+        return { prompt: base, choicesLine };
+      };
+
+      const topMargin = 28;
+      const bottomMargin = 18;
+      const left = 14;
+      const maxWidth = 182;
+      const choiceIndent = 6;
+      const minBodyFont = 8;
+      const maxBodyFont = 18; // allow larger text on short sets while still fitting the page
+      const minChoiceFont = 8;
+
+      const getLineHeight = (size) => Math.max(size * 0.5, 4.5);
+
+      const measureContentHeight = (bodySize) => {
+        const choiceSize = Math.max(minChoiceFont, Math.min(bodySize - 1, Math.round(bodySize * 0.92)));
+        const promptLineHeight = getLineHeight(bodySize);
+        const choiceLineHeight = getLineHeight(choiceSize);
+        let height = 0;
+
+        doc.setFontSize(bodySize);
+        items.forEach((item, idx) => {
+          const num = item.number || idx + 1;
+          const { prompt: promptText, choicesLine } = renderLineText(item);
+          const promptLines = doc.splitTextToSize(`${num}. ${promptText}`, maxWidth);
+          height += promptLines.length * promptLineHeight;
+
+          if (choicesLine) {
+            doc.setFontSize(choiceSize);
+            const choiceLines = doc.splitTextToSize(choicesLine, maxWidth - choiceIndent);
+            height += choiceLines.length * choiceLineHeight;
+            doc.setFontSize(bodySize);
+          }
+
+          const spacer = label === 'worksheet' ? Math.max(bodySize * 0.35, 3) : Math.max(bodySize * 0.7, 4);
+          height += spacer;
+        });
+
+        return height;
+      };
+
+      const availableHeight = pageHeight - topMargin - bottomMargin;
+      let bodyFontSize = minBodyFont;
+      for (let size = maxBodyFont; size >= minBodyFont; size -= 0.5) {
+        if (measureContentHeight(size) <= availableHeight) {
+          bodyFontSize = size;
+          break;
+        }
+      }
+
+      const choiceFontSize = Math.max(minChoiceFont, Math.min(bodyFontSize - 1, Math.round(bodyFontSize * 0.92)));
+      const promptLineHeight = getLineHeight(bodyFontSize);
+      const choiceLineHeight = getLineHeight(choiceFontSize);
+      const spacerSize = label === 'worksheet' ? Math.max(bodyFontSize * 0.35, 3) : Math.max(bodyFontSize * 0.7, 4);
+      const bottomLimit = pageHeight - bottomMargin;
+
+      doc.setTextColor(0, 0, 0);
+      const headerSize = Math.min(20, Math.max(12, bodyFontSize + 2));
+      doc.setFontSize(headerSize);
+      const headerText = `${lessonTitle} ${niceLabel}`;
+      doc.text(headerText, 12, 14);
+      doc.setDrawColor(180, 180, 180);
+      doc.line(12, 18, 198, 18);
+
+      let y = topMargin;
+
+      const drawParagraph = (text, fontSize, lineHeight, indent = 0) => {
+        doc.setFontSize(fontSize);
+        const lines = doc.splitTextToSize(text, maxWidth - indent);
+        for (const line of lines) {
+          if (y > bottomLimit) {
+            doc.addPage();
+            y = topMargin;
+          }
+          doc.text(line, left + indent, y);
+          y += lineHeight;
+        }
+      };
+
+      items.forEach((item, idx) => {
+        const num = item.number || idx + 1;
+        const { prompt: promptText, choicesLine } = renderLineText(item);
+        drawParagraph(`${num}. ${promptText}`, bodyFontSize, promptLineHeight, 0);
+        if (choicesLine) {
+          drawParagraph(choicesLine, choiceFontSize, choiceLineHeight, choiceIndent);
+        }
+        y += spacerSize;
+      });
+
+      const fileBase = String(lessonKey || lessonId || 'lesson').replace(/\.json$/i, '');
+      const fileName = `${fileBase}-${label}.pdf`;
+      const blob = doc.output('blob');
+      await shareOrPreviewPdf(blob, fileName, previewWin);
+    } catch (err) {
+      console.error('[SessionPageV2] PDF generation failed', err);
+      setDownloadError('Failed to generate PDF.');
+    }
+  }, [lessonData, lessonKey, lessonId, shareOrPreviewPdf]);
+
+  const handleDownloadWorksheet = useCallback(async () => {
+    const ok = await ensurePinAllowed('download');
+    if (!ok) return;
+    const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
+    setDownloadError('');
+
+    let source = generatedWorksheet;
+    if (!source || !source.length) {
+      source = buildWorksheetSet();
+      if (source.length) {
+        setGeneratedWorksheet(source);
+        persistAssessments(source, generatedTest || []);
+      }
+    }
+
+    if (!source || !source.length) {
+      setDownloadError('Worksheet content is unavailable for this lesson.');
+      return;
+    }
+
+    await createPdfForItems(source.map((q, i) => ({ ...q, number: q.number || (i + 1) })), 'worksheet', previewWin);
+  }, [buildWorksheetSet, createPdfForItems, generatedTest, generatedWorksheet, persistAssessments]);
+
+  const handleDownloadTest = useCallback(async () => {
+    const ok = await ensurePinAllowed('download');
+    if (!ok) return;
+    const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
+    setDownloadError('');
+
+    let source = generatedTest;
+    if (!source || !source.length) {
+      source = buildTestSet();
+      if (source.length) {
+        setGeneratedTest(source);
+        persistAssessments(generatedWorksheet || [], source);
+      }
+    }
+
+    if (!source || !source.length) {
+      setDownloadError('Test content is unavailable for this lesson.');
+      return;
+    }
+
+    await createPdfForItems(source.map((q, i) => ({ ...q, number: q.number || (i + 1) })), 'test', previewWin);
+  }, [buildTestSet, createPdfForItems, generatedTest, generatedWorksheet, persistAssessments]);
+
+  const handleDownloadCombined = useCallback(async () => {
+    const ok = await ensurePinAllowed('download');
+    if (!ok) return;
+    const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
+    setDownloadError('');
+
+    let ws = generatedWorksheet;
+    let ts = generatedTest;
+    if (!ws || !ws.length) {
+      ws = buildWorksheetSet();
+      if (ws.length) setGeneratedWorksheet(ws);
+    }
+    if (!ts || !ts.length) {
+      ts = buildTestSet();
+      if (ts.length) setGeneratedTest(ts);
+    }
+
+    if ((ws && ws.length) || (ts && ts.length)) {
+      persistAssessments(ws || generatedWorksheet || [], ts || generatedTest || []);
+    }
+
+    if ((!ws || !ws.length) && (!ts || !ts.length)) {
+      setDownloadError('No worksheet or test content available.');
+      return;
+    }
+
+    const doc = new jsPDF();
+    const lessonTitle = (lessonData?.title || lessonKey || lessonId || 'Lesson').trim();
+    let y = 14;
+    doc.setFontSize(18);
+    doc.text(`${lessonTitle} Facilitator Key`, 14, y);
+    y += 10;
+    doc.setFontSize(12);
+
+    const renderAnswerLine = (label, num, prompt, answer) => {
+      const wrapWidth = 180;
+      const header = `${label} ${num}. ${prompt}`.trim();
+      const headerLines = doc.splitTextToSize(header, wrapWidth);
+      headerLines.forEach((line) => {
+        if (y > 280) { doc.addPage(); y = 14; doc.setFontSize(12); }
+        doc.text(line, 14, y);
+        y += 6;
+      });
+      const ansLines = doc.splitTextToSize(`Answer: ${answer}`, wrapWidth);
+      ansLines.forEach((line) => {
+        if (y > 280) { doc.addPage(); y = 14; doc.setFontSize(12); }
+        doc.text(line, 20, y);
+        y += 6;
+      });
+      y += 2;
+    };
+
+    const extractAnswer = (q) => {
+      try {
+        if (!q) return 'N/A';
+        if (Array.isArray(q.answers)) return q.answers.join(', ');
+        if (Array.isArray(q.expected)) return q.expected.join(', ');
+        if (Array.isArray(q.answer)) return q.answer.join(', ');
+        const direct = q.expected || q.answer || q.solution || q.correct || q.key || q.A || q.a;
+        if (typeof direct === 'string' && direct.trim()) return direct.trim();
+        if (typeof direct === 'number') return String(direct);
+        if (Array.isArray(q.choices)) {
+          let idx = Number.isFinite(q.correctIndex) ? q.correctIndex : -1;
+          if (idx < 0 && (q.expected || q.answer)) {
+            const target = String(q.expected || q.answer).trim().toLowerCase();
+            idx = q.choices.findIndex((c) => String(c).trim().toLowerCase() === target);
+          }
+          if (idx >= 0 && idx < q.choices.length) {
+            const letter = String.fromCharCode(65 + idx);
+            const choiceText = String(q.choices[idx]).trim();
+            return `${letter}) ${choiceText}`;
+          }
+        }
+        if (typeof q.isTrue === 'boolean') return q.isTrue ? 'True' : 'False';
+        if (typeof q.trueFalse === 'boolean') return q.trueFalse ? 'True' : 'False';
+        return 'N/A';
+      } catch {
+        return 'N/A';
+      }
+    };
+
+    if (ws && ws.length) {
+      doc.setFontSize(16);
+      doc.text('Worksheet Answers', 14, y);
+      y += 8;
+      doc.setFontSize(12);
+      ws.forEach((q, idx) => {
+        const prompt = (q.prompt || q.question || q.Q || q.q || '').toString().trim();
+        renderAnswerLine('W', q.number || idx + 1, prompt, extractAnswer(q));
+      });
+      y += 4;
+    }
+
+    if (ts && ts.length) {
+      if (y > 250) { doc.addPage(); y = 14; }
+      doc.setFontSize(16);
+      doc.text('Test Answers', 14, y);
+      y += 8;
+      doc.setFontSize(12);
+      ts.forEach((q, idx) => {
+        const prompt = (q.prompt || q.question || q.Q || q.q || '').toString().trim();
+        renderAnswerLine('T', q.number || idx + 1, prompt, extractAnswer(q));
+      });
+    }
+
+    const fileBase = String(lessonKey || lessonId || 'lesson').replace(/\.json$/i, '');
+    const fileName = `${fileBase}-key.pdf`;
+    try {
+      const blob = doc.output('blob');
+      await shareOrPreviewPdf(blob, fileName, previewWin);
+    } catch (err) {
+      console.error('[SessionPageV2] Combined PDF generation failed', err);
+      setDownloadError('Failed to generate facilitator key.');
+    }
+  }, [buildTestSet, buildWorksheetSet, generatedTest, generatedWorksheet, lessonData, lessonId, lessonKey, persistAssessments, shareOrPreviewPdf]);
+
+  const handleRefreshWorksheetAndTest = useCallback(async () => {
+    const ok = await ensurePinAllowed('refresh');
+    if (!ok) return;
+    setGeneratedWorksheet(null);
+    setGeneratedTest(null);
+    const key = getAssessmentStorageKey();
+    if (key) {
+      const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
+      try { await clearAssessments(key, { learnerId }); } catch {}
+    }
+  }, [getAssessmentStorageKey, learnerProfile]);
+
+  useEffect(() => {
+    const onWs = () => { try { handleDownloadWorksheet(); } catch {} };
+    const onTest = () => { try { handleDownloadTest(); } catch {} };
+    const onCombined = () => { try { handleDownloadCombined(); } catch {} };
+    const onRefresh = () => { try { handleRefreshWorksheetAndTest(); } catch {} };
+
+    window.addEventListener('ms:print:worksheet', onWs);
+    window.addEventListener('ms:print:test', onTest);
+    window.addEventListener('ms:print:combined', onCombined);
+    window.addEventListener('ms:print:refresh', onRefresh);
+
+    return () => {
+      window.removeEventListener('ms:print:worksheet', onWs);
+      window.removeEventListener('ms:print:test', onTest);
+      window.removeEventListener('ms:print:combined', onCombined);
+      window.removeEventListener('ms:print:refresh', onRefresh);
+    };
+  }, [handleDownloadCombined, handleDownloadTest, handleDownloadWorksheet, handleRefreshWorksheetAndTest]);
   
   // Helper to get the current phase name for timer key (matching V1)
   const getCurrentPhaseName = useCallback(() => {
@@ -740,12 +1354,23 @@ function SessionPageV2Inner() {
       addEvent(`â±ï¸ Play time expired for ${phaseName}`);
       setPlayExpiredPhase(phaseName);
       setShowPlayTimeExpired(true);
+      setShowGames(false);
     } else if (mode === 'work') {
       // Work time exceeded - track for golden key
       addEvent(`â±ï¸ Work time exceeded for ${phaseName}`);
     }
   }, [getCurrentPhaseName, currentTimerMode]);
   
+  // Close games overlay whenever we leave play time for the current phase
+  useEffect(() => {
+    if (!showGames) return;
+    const phaseName = getCurrentPhaseName();
+    const timerMode = phaseName ? currentTimerMode[phaseName] : null;
+    if (timerMode !== 'play') {
+      setShowGames(false);
+    }
+  }, [showGames, getCurrentPhaseName, currentTimerMode]);
+
   // Handle timer click (for facilitator controls)
   const handleTimerClick = useCallback(() => {
     console.log('[SessionPageV2] Timer clicked - showing timer control overlay');
@@ -908,6 +1533,14 @@ function SessionPageV2Inner() {
     setOpeningActionActive(false);
     setOpeningActionType(null);
     setOpeningActionState({});
+    setOpeningActionInput('');
+    setOpeningActionError('');
+    setOpeningActionBusy(false);
+    setShowGames(false);
+
+    // Timeline jumps should enter the destination phase fresh (Begin -> Opening Actions -> Go)
+    // even if snapshot phaseData exists. Mark the target so phase init ignores resumeState.
+    timelineJumpForceFreshPhaseRef.current = targetPhase;
     
     // Destroy any existing phase controllers to avoid conflicts
     if (discussionPhaseRef.current) {
@@ -981,6 +1614,262 @@ function SessionPageV2Inner() {
       timelineJumpInProgressRef.current = false;
     }, 500);
   }, [lessonKey]);
+
+  // Opening actions helpers
+  const syncOpeningActionState = useCallback(() => {
+    const controller = openingActionsControllerRef.current;
+    const next = controller?.getState?.() || {};
+    setOpeningActionState(next);
+    return next;
+  }, []);
+
+  const handleOpeningActionCancel = useCallback(() => {
+    const controller = openingActionsControllerRef.current;
+    if (controller?.cancelCurrent) {
+      controller.cancelCurrent();
+    }
+    setOpeningActionActive(false);
+    setOpeningActionType(null);
+    setOpeningActionState({});
+    setOpeningActionInput('');
+    setOpeningActionError('');
+    setOpeningActionBusy(false);
+  }, []);
+
+  const buildAskContext = useCallback(() => {
+    const lessonTitle = (lessonData?.title || lessonKey || lessonId || 'this lesson').toString();
+    const gradeLevel = (learnerProfile?.grade || lessonData?.grade || '').toString();
+    const subject = (lessonData?.subject || subjectParam || 'general').toString();
+    const difficulty = (lessonData?.difficulty || 'moderate').toString();
+
+    const rawVocabArray = (() => {
+      const possible = lessonData?.vocabulary || lessonData?.vocab || lessonData?.vocab_terms;
+      return Array.isArray(possible) ? possible : null;
+    })();
+
+    let vocabChunk = '';
+    if (rawVocabArray && rawVocabArray.length) {
+      const items = rawVocabArray.slice(0, 12).map((v) => {
+        if (typeof v === 'string') return { term: v, definition: '' };
+        const term = (v && (v.term || v.word || v.title || v.key || '')) || '';
+        const def = (v && (v.definition || v.meaning || v.explainer || '')) || '';
+        return { term: String(term).trim(), definition: String(def).trim() };
+      }).filter((x) => x.term);
+
+      if (items.length) {
+        const withDefs = items.some((x) => x.definition);
+        if (withDefs) {
+          const pairs = items.slice(0, 6).map((x) => `${x.term}: ${x.definition || 'definition not provided'}`).join('; ');
+          vocabChunk = `Relevant vocab for this lesson (use provided meanings): ${pairs}.`;
+        } else {
+          const list = items.map((x) => x.term).join(', ');
+          vocabChunk = `Relevant vocab for this lesson (use provided meanings): ${list}.`;
+        }
+      }
+    }
+
+    const formatProblem = (item) => {
+      if (!item) return '';
+      try {
+        const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
+        const cleaned = formatted.replace(/\s+/g, ' ').trim();
+        if (!cleaned) return '';
+        return cleaned.length > 400 ? `${cleaned.slice(0, 400)}...` : cleaned;
+      } catch {
+        return '';
+      }
+    };
+
+    let problemBody = '';
+    if (currentPhase === 'comprehension' && currentComprehensionQuestion) {
+      problemBody = formatProblem(currentComprehensionQuestion);
+    } else if (currentPhase === 'exercise' && currentExerciseQuestion) {
+      problemBody = formatProblem(currentExerciseQuestion);
+    } else if (currentPhase === 'worksheet' && currentWorksheetQuestion) {
+      problemBody = formatProblem(currentWorksheetQuestion);
+    } else if (currentPhase === 'test' && currentTestQuestion) {
+      problemBody = formatProblem(currentTestQuestion);
+    }
+
+    const problemChunk = problemBody
+      ? `Current problem context (for reference, do not re-read): "${problemBody}"`
+      : '';
+
+    return {
+      lessonTitle,
+      gradeLevel,
+      subject,
+      difficulty,
+      vocabChunk,
+      problemChunk
+    };
+  }, [lessonData, lessonKey, lessonId, learnerProfile, subjectParam, currentPhase, currentComprehensionQuestion, currentExerciseQuestion, currentWorksheetQuestion, currentTestQuestion]);
+
+  const handleOpeningAskStart = useCallback(async () => {
+    const controller = openingActionsControllerRef.current;
+    if (!controller || openingActionBusy) return;
+    setOpeningActionError('');
+    setOpeningActionBusy(true);
+    try {
+      await controller.startAsk();
+    } catch (err) {
+      console.error('[SessionPageV2] Ask start error:', err);
+      setOpeningActionError('Ask is unavailable right now. Try again.');
+    } finally {
+      setOpeningActionBusy(false);
+    }
+  }, [openingActionBusy]);
+
+  const handleOpeningAskSubmit = useCallback(async () => {
+    const controller = openingActionsControllerRef.current;
+    if (!controller) return;
+    const question = openingActionInput.trim();
+    if (!question) {
+      setOpeningActionError('Enter a question first.');
+      return;
+    }
+    setOpeningActionBusy(true);
+    setOpeningActionError('');
+    try {
+      const askContext = buildAskContext();
+      await controller.submitAskQuestion(question, askContext);
+      setOpeningActionInput('');
+      syncOpeningActionState();
+    } catch (err) {
+      console.error('[SessionPageV2] Ask submit error:', err);
+      setOpeningActionError('Could not send that question. Try again.');
+    } finally {
+      setOpeningActionBusy(false);
+    }
+  }, [openingActionInput, syncOpeningActionState, buildAskContext]);
+
+  const handleOpeningAskDone = useCallback(() => {
+    const controller = openingActionsControllerRef.current;
+    controller?.completeAsk?.();
+  }, []);
+
+  const handleOpeningRiddleHint = useCallback(async () => {
+    const controller = openingActionsControllerRef.current;
+    if (!controller) return;
+    setOpeningActionBusy(true);
+    setOpeningActionError('');
+    try {
+      await controller.revealRiddleHint();
+      syncOpeningActionState();
+    } catch (err) {
+      console.error('[SessionPageV2] Riddle hint error:', err);
+      setOpeningActionError('Could not get a hint right now.');
+    } finally {
+      setOpeningActionBusy(false);
+    }
+  }, [syncOpeningActionState]);
+
+  const handleOpeningRiddleReveal = useCallback(async () => {
+    const controller = openingActionsControllerRef.current;
+    if (!controller) return;
+    setOpeningActionBusy(true);
+    setOpeningActionError('');
+    try {
+      await controller.revealRiddleAnswer();
+      syncOpeningActionState();
+    } catch (err) {
+      console.error('[SessionPageV2] Riddle reveal error:', err);
+      setOpeningActionError('Could not reveal the answer right now.');
+    } finally {
+      setOpeningActionBusy(false);
+    }
+  }, [syncOpeningActionState]);
+
+  const handleOpeningRiddleGuess = useCallback(async () => {
+    const controller = openingActionsControllerRef.current;
+    if (!controller) return;
+    const guess = openingActionInput.trim();
+    if (!guess) {
+      setOpeningActionError('Enter your guess first.');
+      return;
+    }
+    setOpeningActionBusy(true);
+    setOpeningActionError('');
+    try {
+      await controller.submitRiddleGuess(guess);
+      setOpeningActionInput('');
+      syncOpeningActionState();
+    } catch (err) {
+      console.error('[SessionPageV2] Riddle guess error:', err);
+      setOpeningActionError('Could not submit that guess. Try again.');
+    } finally {
+      setOpeningActionBusy(false);
+    }
+  }, [openingActionInput, syncOpeningActionState]);
+
+  const handleOpeningRiddleDone = useCallback(() => {
+    const controller = openingActionsControllerRef.current;
+    controller?.completeRiddle?.();
+  }, []);
+
+  const handleOpeningPoemDone = useCallback(() => {
+    const controller = openingActionsControllerRef.current;
+    controller?.completePoem?.();
+  }, []);
+
+  const handleOpeningStoryContinue = useCallback(async () => {
+    const controller = openingActionsControllerRef.current;
+    if (!controller) return;
+    const line = openingActionInput.trim();
+    if (!line) {
+      setOpeningActionError('Add a line to continue the story.');
+      return;
+    }
+    setOpeningActionBusy(true);
+    setOpeningActionError('');
+    try {
+      await controller.continueStory(line);
+      setOpeningActionInput('');
+      syncOpeningActionState();
+    } catch (err) {
+      console.error('[SessionPageV2] Story continue error:', err);
+      setOpeningActionError('Could not continue the story right now.');
+    } finally {
+      setOpeningActionBusy(false);
+    }
+  }, [openingActionInput, syncOpeningActionState]);
+
+  const handleOpeningStoryFinish = useCallback(() => {
+    const controller = openingActionsControllerRef.current;
+    controller?.completeStory?.();
+  }, []);
+
+  const handleOpeningFillInFunSubmit = useCallback(async () => {
+    const controller = openingActionsControllerRef.current;
+    if (!controller) return;
+    const word = openingActionInput.trim();
+    if (!word) {
+      setOpeningActionError('Enter a word to keep going.');
+      return;
+    }
+    setOpeningActionBusy(true);
+    setOpeningActionError('');
+    try {
+      await controller.addFillInFunWord(word);
+      setOpeningActionInput('');
+      syncOpeningActionState();
+    } catch (err) {
+      console.error('[SessionPageV2] Fill-in-Fun add word error:', err);
+      setOpeningActionError('Could not add that word. Try another.');
+    } finally {
+      setOpeningActionBusy(false);
+    }
+  }, [openingActionInput, syncOpeningActionState]);
+
+  const handleOpeningFillInFunDone = useCallback(() => {
+    const controller = openingActionsControllerRef.current;
+    controller?.completeFillInFun?.();
+  }, []);
+
+  const handleOpeningJokeDone = useCallback(() => {
+    const controller = openingActionsControllerRef.current;
+    controller?.completeJoke?.();
+  }, []);
   
   // Orientation and layout detection (matching V1)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
@@ -1123,13 +2012,6 @@ function SessionPageV2Inner() {
     };
   }, [isMobileLandscape, videoMaxHeight]);
   
-  // Auto-scroll transcript to bottom when new lines are added
-  useEffect(() => {
-    if (transcriptRef.current && transcriptLines.length > 0) {
-      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
-    }
-  }, [transcriptLines]);
-  
   // Initialize AudioEngine
   useEffect(() => {
     let cancelled = false;
@@ -1196,15 +2078,27 @@ function SessionPageV2Inner() {
     });
     
     engine.on('captionChange', (data) => {
-      setCurrentCaption(data.text);
-      // Accumulate into transcript (skip duplicates and empty lines)
-      if (data.text && data.text.trim()) {
-        setTranscriptLines(prev => {
-          if (prev.length > 0 && prev[prev.length - 1] === data.text) {
-            return prev; // Skip duplicate
+      const text = data?.text || '';
+      const idxFromEvent = Number.isFinite(data?.index) ? data.index : null;
+      setCurrentCaption(text);
+
+      if (text && text.trim()) {
+        setTranscriptLines((prev) => {
+          const last = prev[prev.length - 1];
+          const isDuplicate = last && last.role !== 'user' && last.text === text;
+          const nextActive = idxFromEvent ?? (isDuplicate ? prev.length - 1 : prev.length);
+          if (isDuplicate) {
+            setActiveCaptionIndex(nextActive);
+            persistTranscriptState(prev, nextActive);
+            return prev;
           }
-          return [...prev, data.text];
+          const next = [...prev, { text, role: 'assistant' }];
+          setActiveCaptionIndex(nextActive);
+          persistTranscriptState(next, nextActive);
+          return next;
         });
+      } else if (idxFromEvent !== null) {
+        setActiveCaptionIndex(idxFromEvent);
       }
     });
     
@@ -1307,44 +2201,6 @@ function SessionPageV2Inner() {
     });
     
     orchestratorRef.current = orchestrator;
-    
-    // Initialize OpeningActionsController
-    if (audioEngineRef.current && eventBusRef.current) {
-      const openingController = new OpeningActionsController(
-        eventBusRef.current,
-        audioEngineRef.current,
-        {
-          phase: currentPhase,
-          subject: lessonData.subject || 'math',
-          learnerGrade: lessonData.grade || '',
-          difficulty: lessonData.difficulty || 'moderate'
-        }
-      );
-      
-      openingActionsControllerRef.current = openingController;
-      
-      // Subscribe to opening action events
-      eventBusRef.current.on('openingActionStart', (data) => {
-        addEvent(`ðŸŽ¯ Opening action: ${data.type}`);
-        setOpeningActionActive(true);
-        setOpeningActionType(data.type);
-        setOpeningActionState(openingController.getState() || {});
-      });
-      
-      eventBusRef.current.on('openingActionComplete', (data) => {
-        addEvent(`âœ… Opening action complete: ${data.type}`);
-        setOpeningActionActive(false);
-        setOpeningActionType(null);
-        setOpeningActionState({});
-      });
-      
-      eventBusRef.current.on('openingActionCancel', (data) => {
-        addEvent(`âŒ Opening action cancelled: ${data.type}`);
-        setOpeningActionActive(false);
-        setOpeningActionType(null);
-        setOpeningActionState({});
-      });
-    }
     
     // Subscribe to phase transitions
     orchestrator.on('phaseChange', (data) => {
@@ -1450,6 +2306,75 @@ function SessionPageV2Inner() {
       orchestratorRef.current = null;
     };
   }, [lessonData]);
+
+  // Initialize OpeningActionsController once audio is ready and lesson is loaded
+  useEffect(() => {
+    if (!lessonData || !audioReady || !audioEngineRef.current || !eventBusRef.current) return;
+
+    const openingController = new OpeningActionsController(
+      eventBusRef.current,
+      audioEngineRef.current,
+      {
+        phase: currentPhase,
+        subject: lessonData.subject || 'math',
+        learnerGrade: lessonData.grade || '',
+        difficulty: lessonData.difficulty || 'moderate'
+      }
+    );
+
+    openingActionsControllerRef.current = openingController;
+
+    const handleOpeningStart = (data) => {
+      const actionType = data?.type || data?.action || null;
+      addEvent(`Opening action start: ${actionType || 'unknown'}`);
+      setOpeningActionActive(true);
+      setOpeningActionType(actionType);
+      setOpeningActionState(openingController.getState() || {});
+      setOpeningActionInput('');
+      setOpeningActionError('');
+      setOpeningActionBusy(false);
+    };
+
+    const handleOpeningComplete = (data) => {
+      const actionType = data?.type || data?.action || null;
+      addEvent(`Opening action complete: ${actionType || 'unknown'}`);
+      setOpeningActionActive(false);
+      setOpeningActionType(null);
+      setOpeningActionState({});
+      setOpeningActionInput('');
+      setOpeningActionError('');
+      setOpeningActionBusy(false);
+    };
+
+    const handleOpeningCancel = (data) => {
+      const actionType = data?.type || data?.action || null;
+      addEvent(`Opening action cancelled: ${actionType || 'unknown'}`);
+      setOpeningActionActive(false);
+      setOpeningActionType(null);
+      setOpeningActionState({});
+      setOpeningActionInput('');
+      setOpeningActionError('');
+      setOpeningActionBusy(false);
+    };
+
+    const unsubStart = eventBusRef.current.on('openingActionStart', handleOpeningStart);
+    const unsubComplete = eventBusRef.current.on('openingActionComplete', handleOpeningComplete);
+    const unsubCancel = eventBusRef.current.on('openingActionCancel', handleOpeningCancel);
+
+    return () => {
+      try { unsubStart?.(); } catch {}
+      try { unsubComplete?.(); } catch {}
+      try { unsubCancel?.(); } catch {}
+      try { openingController.destroy(); } catch {}
+      openingActionsControllerRef.current = null;
+      setOpeningActionActive(false);
+      setOpeningActionType(null);
+      setOpeningActionState({});
+      setOpeningActionInput('');
+      setOpeningActionError('');
+      setOpeningActionBusy(false);
+    };
+  }, [lessonData, audioReady]);
 
   // If learnerProfile finishes loading after a Q&A phase was entered, initialize that phase and start any pending play timer.
   useEffect(() => {
@@ -1579,9 +2504,11 @@ function SessionPageV2Inner() {
       return false;
     }
 
+    const forceFresh = timelineJumpForceFreshPhaseRef.current === 'comprehension';
+
     const snapshot = snapshotServiceRef.current?.snapshot;
-    const savedComp = snapshot?.phaseData?.comprehension || null;
-    const savedCompQuestions = Array.isArray(savedComp?.questions) && savedComp.questions.length ? savedComp.questions : null;
+    const savedComp = forceFresh ? null : (snapshot?.phaseData?.comprehension || null);
+    const savedCompQuestions = !forceFresh && Array.isArray(savedComp?.questions) && savedComp.questions.length ? savedComp.questions : null;
     
     // Build comprehension questions from MC and TF pools (V1 parity: comprehension uses all question types)
     const compTarget = savedCompQuestions ? savedCompQuestions.length : getLearnerTarget('comprehension');
@@ -1603,10 +2530,10 @@ function SessionPageV2Inner() {
       snapshotServiceRef.current.saveProgress('comprehension-init', {
         phaseOverride: 'comprehension',
         questions,
-        nextQuestionIndex: savedComp?.nextQuestionIndex || 0,
-        score: savedComp?.score || 0,
-        answers: savedComp?.answers || [],
-        timerMode: savedComp?.timerMode || 'play'
+        nextQuestionIndex: forceFresh ? 0 : (savedComp?.nextQuestionIndex || 0),
+        score: forceFresh ? 0 : (savedComp?.score || 0),
+        answers: forceFresh ? [] : (savedComp?.answers || []),
+        timerMode: forceFresh ? 'play' : (savedComp?.timerMode || 'play')
       });
     }
     
@@ -1615,7 +2542,7 @@ function SessionPageV2Inner() {
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
       questions: questions,
-      resumeState: savedComp ? {
+      resumeState: (!forceFresh && savedComp) ? {
         questions,
         nextQuestionIndex: savedComp.nextQuestionIndex ?? savedComp.questionIndex ?? 0,
         score: savedComp.score || 0,
@@ -1698,12 +2625,16 @@ function SessionPageV2Inner() {
     
     // Don't auto-start - let Begin button call phase.start()
     // phase.start();
+
+    if (forceFresh) {
+      timelineJumpForceFreshPhaseRef.current = null;
+    }
     return true;
   };
   
   // Start exercise phase
   // Helper: Build question pool from lesson data arrays (V1 parity)
-  const buildQuestionPool = (target = 5, excludeTypes = []) => {
+  function buildQuestionPool(target = 5, excludeTypes = []) {
     const shuffle = (arr) => {
       const copy = [...arr];
       for (let i = copy.length - 1; i > 0; i--) {
@@ -1725,7 +2656,7 @@ function SessionPageV2Inner() {
     // Pool all questions, shuffle, and take target count
     const pool = shuffle([...tf, ...mc, ...fib, ...sa]);
     return pool.slice(0, Math.min(target, pool.length));
-  };
+  }
 
   const startExercisePhase = () => {
     console.log('[SessionPageV2] startExercisePhase called');
@@ -1739,9 +2670,11 @@ function SessionPageV2Inner() {
       return false;
     }
 
+    const forceFresh = timelineJumpForceFreshPhaseRef.current === 'exercise';
+
     const snapshot = snapshotServiceRef.current?.snapshot;
-    const savedExercise = snapshot?.phaseData?.exercise || null;
-    const savedExerciseQuestions = Array.isArray(savedExercise?.questions) && savedExercise.questions.length ? savedExercise.questions : null;
+    const savedExercise = forceFresh ? null : (snapshot?.phaseData?.exercise || null);
+    const savedExerciseQuestions = !forceFresh && Array.isArray(savedExercise?.questions) && savedExercise.questions.length ? savedExercise.questions : null;
     
     const exerciseTarget = savedExerciseQuestions ? savedExerciseQuestions.length : getLearnerTarget('exercise');
     if (!exerciseTarget) return false;
@@ -1762,10 +2695,10 @@ function SessionPageV2Inner() {
       snapshotServiceRef.current.saveProgress('exercise-init', {
         phaseOverride: 'exercise',
         questions,
-        nextQuestionIndex: savedExercise?.nextQuestionIndex ?? savedExercise?.questionIndex ?? 0,
-        score: savedExercise?.score || 0,
-        answers: savedExercise?.answers || [],
-        timerMode: savedExercise?.timerMode || 'play'
+        nextQuestionIndex: forceFresh ? 0 : (savedExercise?.nextQuestionIndex ?? savedExercise?.questionIndex ?? 0),
+        score: forceFresh ? 0 : (savedExercise?.score || 0),
+        answers: forceFresh ? [] : (savedExercise?.answers || []),
+        timerMode: forceFresh ? 'play' : (savedExercise?.timerMode || 'play')
       });
     }
     
@@ -1774,7 +2707,7 @@ function SessionPageV2Inner() {
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
       questions: questions,
-      resumeState: savedExercise ? {
+      resumeState: (!forceFresh && savedExercise) ? {
         questions,
         nextQuestionIndex: savedExercise.nextQuestionIndex ?? savedExercise.questionIndex ?? 0,
         score: savedExercise.score || 0,
@@ -1863,6 +2796,10 @@ function SessionPageV2Inner() {
     
     // Don't auto-start - let Begin button call phase.start()
     // phase.start();
+
+    if (forceFresh) {
+      timelineJumpForceFreshPhaseRef.current = null;
+    }
     return true;
   };
   
@@ -1879,16 +2816,26 @@ function SessionPageV2Inner() {
       return false;
     }
 
+    const forceFresh = timelineJumpForceFreshPhaseRef.current === 'worksheet';
+
     const snapshot = snapshotServiceRef.current?.snapshot;
-    const savedWorksheet = snapshot?.phaseData?.worksheet || null;
-    const savedWorksheetQuestions = Array.isArray(savedWorksheet?.questions) && savedWorksheet.questions.length ? savedWorksheet.questions : null;
-    
-    // Build worksheet questions from FIB pool (V1 parity: worksheet uses fill-in-blank)
-    const fib = Array.isArray(lessonData?.fillintheblank) 
-      ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib', type: 'fib' })) : [];
-    const worksheetTarget = savedWorksheetQuestions ? savedWorksheetQuestions.length : getLearnerTarget('worksheet');
+    const savedWorksheet = forceFresh ? null : (snapshot?.phaseData?.worksheet || null);
+    const savedWorksheetQuestions = !forceFresh && Array.isArray(savedWorksheet?.questions) && savedWorksheet.questions.length ? savedWorksheet.questions : null;
+    if (savedWorksheetQuestions && savedWorksheetQuestions.length && (!generatedWorksheet || !generatedWorksheet.length)) {
+      setGeneratedWorksheet(savedWorksheetQuestions);
+    }
+
+    let questions = savedWorksheetQuestions || generatedWorksheet || [];
+    if (!questions.length) {
+      questions = buildWorksheetSet();
+      if (questions.length) {
+        setGeneratedWorksheet(questions);
+        persistAssessments(questions, generatedTest || []);
+      }
+    }
+
+    const worksheetTarget = questions.length || getLearnerTarget('worksheet');
     if (!worksheetTarget) return false;
-    const questions = savedWorksheetQuestions || fib.slice(0, Math.min(worksheetTarget, fib.length));
     console.log('[SessionPageV2] startWorksheetPhase built questions:', questions.length);
     
     if (questions.length === 0) {
@@ -1904,10 +2851,10 @@ function SessionPageV2Inner() {
       snapshotServiceRef.current.saveProgress('worksheet-init', {
         phaseOverride: 'worksheet',
         questions,
-        nextQuestionIndex: savedWorksheet?.nextQuestionIndex ?? savedWorksheet?.questionIndex ?? 0,
-        score: savedWorksheet?.score || 0,
-        answers: savedWorksheet?.answers || [],
-        timerMode: savedWorksheet?.timerMode || 'play'
+        nextQuestionIndex: forceFresh ? 0 : (savedWorksheet?.nextQuestionIndex ?? savedWorksheet?.questionIndex ?? 0),
+        score: forceFresh ? 0 : (savedWorksheet?.score || 0),
+        answers: forceFresh ? [] : (savedWorksheet?.answers || []),
+        timerMode: forceFresh ? 'play' : (savedWorksheet?.timerMode || 'play')
       });
     }
     
@@ -1916,7 +2863,7 @@ function SessionPageV2Inner() {
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
       questions: questions,
-      resumeState: savedWorksheet ? {
+      resumeState: (!forceFresh && savedWorksheet) ? {
         questions,
         nextQuestionIndex: savedWorksheet.nextQuestionIndex ?? savedWorksheet.questionIndex ?? 0,
         score: savedWorksheet.score || 0,
@@ -2014,6 +2961,10 @@ function SessionPageV2Inner() {
     
     // Don't auto-start - let Begin button call phase.start()
     // phase.start();
+
+    if (forceFresh) {
+      timelineJumpForceFreshPhaseRef.current = null;
+    }
     return true;
   };
   
@@ -2030,14 +2981,26 @@ function SessionPageV2Inner() {
       return false;
     }
 
+    const forceFresh = timelineJumpForceFreshPhaseRef.current === 'test';
+
     const snapshot = snapshotServiceRef.current?.snapshot;
-    const savedTest = snapshot?.phaseData?.test || null;
-    const savedTestQuestions = Array.isArray(savedTest?.questions) && savedTest.questions.length ? savedTest.questions : null;
-    
-    const testTarget = savedTestQuestions ? savedTestQuestions.length : getLearnerTarget('test');
+    const savedTest = forceFresh ? null : (snapshot?.phaseData?.test || null);
+    const savedTestQuestions = !forceFresh && Array.isArray(savedTest?.questions) && savedTest.questions.length ? savedTest.questions : null;
+    if (savedTestQuestions && savedTestQuestions.length && (!generatedTest || !generatedTest.length)) {
+      setGeneratedTest(savedTestQuestions);
+    }
+
+    let questions = savedTestQuestions || generatedTest || [];
+    if (!questions.length) {
+      questions = buildTestSet();
+      if (questions.length) {
+        setGeneratedTest(questions);
+        persistAssessments(generatedWorksheet || [], questions);
+      }
+    }
+
+    const testTarget = questions.length || getLearnerTarget('test');
     if (!testTarget) return false;
-    // Build test questions from all pools (V1 parity: test uses mix of all types)
-    const questions = savedTestQuestions || buildQuestionPool(testTarget, []);
     console.log('[SessionPageV2] startTestPhase built questions:', questions.length);
     
     if (questions.length === 0) {
@@ -2053,11 +3016,11 @@ function SessionPageV2Inner() {
       snapshotServiceRef.current.saveProgress('test-init', {
         phaseOverride: 'test',
         questions,
-        nextQuestionIndex: savedTest?.nextQuestionIndex ?? savedTest?.questionIndex ?? 0,
-        score: savedTest?.score || 0,
-        answers: savedTest?.answers || [],
-        timerMode: savedTest?.timerMode || 'play',
-        reviewIndex: savedTest?.reviewIndex || 0
+        nextQuestionIndex: forceFresh ? 0 : (savedTest?.nextQuestionIndex ?? savedTest?.questionIndex ?? 0),
+        score: forceFresh ? 0 : (savedTest?.score || 0),
+        answers: forceFresh ? [] : (savedTest?.answers || []),
+        timerMode: forceFresh ? 'play' : (savedTest?.timerMode || 'play'),
+        reviewIndex: forceFresh ? 0 : (savedTest?.reviewIndex || 0)
       });
     }
     
@@ -2066,7 +3029,7 @@ function SessionPageV2Inner() {
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
       questions: questions,
-      resumeState: savedTest ? {
+      resumeState: (!forceFresh && savedTest) ? {
         questions,
         nextQuestionIndex: savedTest.nextQuestionIndex ?? savedTest.questionIndex ?? 0,
         score: savedTest.score || 0,
@@ -2176,6 +3139,10 @@ function SessionPageV2Inner() {
     
     // Don't auto-start - let Begin button call phase.start()
     // phase.start();
+
+    if (forceFresh) {
+      timelineJumpForceFreshPhaseRef.current = null;
+    }
     return true;
   };
 
@@ -2295,6 +3262,10 @@ function SessionPageV2Inner() {
     if (!audioEngineRef.current) {
       console.error('[SessionPageV2] Audio engine not ready');
       return;
+    }
+
+    if (options?.ignoreResume) {
+      resetTranscriptState();
     }
     
     // Start prefetching all teaching content immediately (background, non-blocking)
@@ -2443,7 +3414,12 @@ function SessionPageV2Inner() {
   // Comprehension handlers
   const submitComprehensionAnswer = () => {
     if (!comprehensionPhaseRef.current) return;
-    comprehensionPhaseRef.current.submitAnswer(comprehensionAnswer);
+    const answerText = comprehensionAnswer;
+    comprehensionPhaseRef.current.submitAnswer(answerText);
+    if (answerText && answerText.trim()) {
+      appendTranscriptLine({ text: answerText, role: 'user' });
+    }
+    setComprehensionAnswer('');
   };
   
   const skipComprehension = () => {
@@ -2455,6 +3431,7 @@ function SessionPageV2Inner() {
   const submitExerciseAnswer = () => {
     if (!exercisePhaseRef.current || !selectedExerciseAnswer) return;
     exercisePhaseRef.current.submitAnswer(selectedExerciseAnswer);
+    appendTranscriptLine({ text: selectedExerciseAnswer, role: 'user' });
   };
   
   const skipExerciseQuestion = () => {
@@ -2466,6 +3443,8 @@ function SessionPageV2Inner() {
   const submitWorksheetAnswer = () => {
     if (!worksheetPhaseRef.current || !worksheetAnswer.trim()) return;
     worksheetPhaseRef.current.submitAnswer(worksheetAnswer);
+    appendTranscriptLine({ text: worksheetAnswer, role: 'user' });
+    setWorksheetAnswer('');
   };
   
   const skipWorksheetQuestion = () => {
@@ -2483,10 +3462,14 @@ function SessionPageV2Inner() {
     if (question.type === 'fill' || question.type === 'fib' || question.sourceType === 'fib') {
       if (!testAnswer.trim()) return;
       testPhaseRef.current.submitAnswer(testAnswer);
+      appendTranscriptLine({ text: testAnswer, role: 'user' });
+      setTestAnswer('');
     } else {
       // MC/TF
       if (!testAnswer) return;
       testPhaseRef.current.submitAnswer(testAnswer);
+      appendTranscriptLine({ text: testAnswer, role: 'user' });
+      setTestAnswer('');
     }
   };
   
@@ -2756,6 +3739,42 @@ function SessionPageV2Inner() {
               </svg>
             </button>
           )}
+
+          {/* Ask overlay button - left side */}
+          {(() => {
+            const canShowAsk = !!openingActionsControllerRef.current && !openingActionActive;
+            const disabled = openingActionBusy || !canShowAsk;
+            if (!canShowAsk) return null;
+            return (
+              <button
+                type="button"
+                onClick={handleOpeningAskStart}
+                disabled={disabled}
+                aria-label="Ask Ms. Sonoma"
+                title="Ask Ms. Sonoma"
+                style={{
+                  position: 'absolute',
+                  bottom: 88,
+                  left: 16,
+                  background: disabled ? '#9ca3af' : '#2563eb',
+                  color: '#fff',
+                  border: 'none',
+                  width: 'clamp(42px, 7vw, 60px)',
+                  height: 'clamp(42px, 7vw, 60px)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: '50%',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  boxShadow: disabled ? 'none' : '0 2px 8px rgba(37,99,235,0.35)',
+                  zIndex: 10001,
+                  fontSize: 'clamp(1.2rem, 3vw, 1.6rem)',
+                  fontWeight: 800
+                }}
+              >
+                ✋
+              </button>
+            );
+          })()}
         </div>
       
       {/* Score ticker - top right */}
@@ -2956,31 +3975,15 @@ function SessionPageV2Inner() {
       
       {/* Transcript column */}
       <div style={transcriptWrapperStyle}>
-        <div 
-          ref={transcriptRef}
-          style={{
-          background: '#ffffff',
-          borderRadius: 12,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-          padding: 12,
-          flex: isMobileLandscape ? '1 1 auto' : '1 1 auto',
-          height: isMobileLandscape ? '100%' : 'auto',
-          overflow: 'auto',
-          fontSize: 'clamp(1.125rem, 2.4vw, 1.5rem)',
-          lineHeight: 1.5,
-          color: '#111111',
-          boxSizing: 'border-box'
-        }}>
-          {transcriptLines.length > 0 ? (
-            <div style={{ whiteSpace: 'pre-line' }}>
-              {transcriptLines.map((line, idx) => (
-                <p key={idx} style={{ marginBottom: '0.5em' }}>{line}</p>
-              ))}
-            </div>
-          ) : (
-            <div style={{ color: '#6b7280' }}>Transcript will appear here...</div>
-          )}
-        </div>
+        <CaptionPanel
+          sentences={transcriptLines}
+          activeIndex={activeCaptionIndex}
+          boxRef={transcriptRef}
+          fullHeight={isMobileLandscape}
+          stackedHeight={isMobileLandscape ? '100%' : null}
+          phase={currentPhase}
+          vocabTerms={vocabTerms}
+        />
       </div>
       
       </div> {/* end main layout */}
@@ -3004,126 +4007,384 @@ function SessionPageV2Inner() {
           padding: (isShortHeight && isMobileLandscape) ? '2px 16px calc(2px + env(safe-area-inset-bottom, 0px))' : '4px 12px calc(4px + env(safe-area-inset-bottom, 0px))'
         }}>
           
-          {/* Opening Actions + GO button - shown AFTER Begin pressed, during play timer */}
-          {((currentPhase === 'comprehension' && comprehensionState === 'awaiting-go') ||
-            (currentPhase === 'exercise' && exerciseState === 'awaiting-go') ||
-            (currentPhase === 'worksheet' && worksheetState === 'awaiting-go') ||
-            (currentPhase === 'test' && testState === 'awaiting-go')) && !openingActionActive && (
-            <div style={{
-              display: 'flex',
-              gap: 8,
-              flexWrap: 'wrap',
-              justifyContent: 'center',
+          {(() => {
+            const awaitingGo = (
+              (currentPhase === 'comprehension' && comprehensionState === 'awaiting-go') ||
+              (currentPhase === 'exercise' && exerciseState === 'awaiting-go') ||
+              (currentPhase === 'worksheet' && worksheetState === 'awaiting-go') ||
+              (currentPhase === 'test' && testState === 'awaiting-go')
+            );
+
+            if (!awaitingGo || openingActionActive) return null;
+
+            return (
+              <div style={{
+                display: 'flex',
+                gap: 8,
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                marginBottom: 8,
+                padding: '0 12px'
+              }}>
+                <button
+                  onClick={() => {
+                    if (currentPhase === 'comprehension') {
+                      transitionToWorkTimer('comprehension');
+                      comprehensionPhaseRef.current?.go();
+                    } else if (currentPhase === 'exercise') {
+                      transitionToWorkTimer('exercise');
+                      exercisePhaseRef.current?.go();
+                    } else if (currentPhase === 'worksheet') {
+                      transitionToWorkTimer('worksheet');
+                      worksheetPhaseRef.current?.go();
+                    } else if (currentPhase === 'test') {
+                      transitionToWorkTimer('test');
+                      testPhaseRef.current?.go();
+                    }
+                  }}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: 'clamp(1rem, 2vw, 1.125rem)',
+                    background: '#c7442e',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    boxShadow: '0 2px 8px rgba(199,68,46,0.4)'
+                  }}
+                >
+                  GO!
+                </button>
+                <button
+                  onClick={() => openingActionsControllerRef.current?.startJoke?.()}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                    background: '#111827',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Joke
+                </button>
+                <button
+                  onClick={() => openingActionsControllerRef.current?.startRiddle()}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                    background: '#8b5cf6',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Riddle
+                </button>
+                <button
+                  onClick={() => openingActionsControllerRef.current?.startPoem()}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                    background: '#ec4899',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Poem
+                </button>
+                <button
+                  onClick={() => openingActionsControllerRef.current?.startStory()}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                    background: '#f59e0b',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Story
+                </button>
+                <button
+                  onClick={() => openingActionsControllerRef.current?.startFillInFun()}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                    background: '#10b981',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Fill-in-Fun
+                </button>
+                <button
+                  onClick={() => setShowGames(true)}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                    background: '#0ea5e9',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Games
+                </button>
+              </div>
+            );
+          })()}
+
+          {openingActionActive && (() => {
+            const action = openingActionState?.action || openingActionType;
+            const data = openingActionState?.data || {};
+            const stage = openingActionState?.stage || data.stage;
+            const riddle = data.riddle || {};
+            const transcript = Array.isArray(data.transcript) ? data.transcript : [];
+            const wordTypes = Array.isArray(data.wordTypes) ? data.wordTypes : [];
+            const currentIndex = Number.isFinite(data.currentIndex) ? data.currentIndex : 0;
+            const currentWordType = wordTypes[currentIndex] || null;
+            const collectedWords = Array.isArray(data.words) ? data.words : [];
+            const cardStyle = {
+              background: '#fffaf0',
+              border: '1px solid #f59e0b',
+              borderRadius: 12,
+              padding: 12,
               marginBottom: 8,
-              padding: '0 12px'
-            }}>
-              <button
-                onClick={() => {
-                  if (currentPhase === 'comprehension') {
-                    transitionToWorkTimer('comprehension');
-                    comprehensionPhaseRef.current?.go();
-                  } else if (currentPhase === 'exercise') {
-                    transitionToWorkTimer('exercise');
-                    exercisePhaseRef.current?.go();
-                  } else if (currentPhase === 'worksheet') {
-                    transitionToWorkTimer('worksheet');
-                    worksheetPhaseRef.current?.go();
-                  } else if (currentPhase === 'test') {
-                    transitionToWorkTimer('test');
-                    testPhaseRef.current?.go();
-                  }
-                }}
-                style={{
-                  padding: '10px 20px',
-                  fontSize: 'clamp(1rem, 2vw, 1.125rem)',
-                  background: '#c7442e',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  fontWeight: 700,
-                  boxShadow: '0 2px 8px rgba(199,68,46,0.4)'
-                }}
-              >
-                GO!
-              </button>
-              <button
-                onClick={() => openingActionsControllerRef.current?.startAsk()}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                  background: '#3b82f6',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  fontWeight: 600
-                }}
-              >
-                Ask Ms. Sonoma
-              </button>
-              <button
-                onClick={() => openingActionsControllerRef.current?.startRiddle()}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                  background: '#8b5cf6',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  fontWeight: 600
-                }}
-              >
-                Riddle
-              </button>
-              <button
-                onClick={() => openingActionsControllerRef.current?.startPoem()}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                  background: '#ec4899',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  fontWeight: 600
-                }}
-              >
-                Poem
-              </button>
-              <button
-                onClick={() => openingActionsControllerRef.current?.startStory()}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                  background: '#f59e0b',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  fontWeight: 600
-                }}
-              >
-                Story
-              </button>
-              <button
-                onClick={() => openingActionsControllerRef.current?.startFillInFun()}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                  background: '#10b981',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  fontWeight: 600
-                }}
-              >
-                Fill-in-Fun
-              </button>
-            </div>
-          )}
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+            };
+            const rowStyle = { display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8, justifyContent: 'flex-end' };
+            const baseBtn = {
+              padding: '8px 14px',
+              borderRadius: 8,
+              border: 'none',
+              fontWeight: 700,
+              cursor: openingActionBusy ? 'not-allowed' : 'pointer',
+              opacity: openingActionBusy ? 0.75 : 1
+            };
+
+            const errorText = openingActionError ? (
+              <div style={{ marginTop: 6, color: '#b91c1c', fontWeight: 600 }}>
+                {openingActionError}
+              </div>
+            ) : null;
+
+            const renderInputRow = (placeholder, onEnterSend) => (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                <input
+                  type="text"
+                  value={openingActionInput}
+                  onChange={(e) => setOpeningActionInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      onEnterSend();
+                    }
+                  }}
+                  placeholder={placeholder}
+                  style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: 10 }}
+                  disabled={openingActionBusy}
+                  autoFocus
+                />
+              </div>
+            );
+
+            if (!action) return null;
+
+            if (action === 'ask') {
+              return (
+                <div style={{ padding: '0 12px' }}>
+                  <div style={cardStyle}>
+                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Ask Ms. Sonoma</div>
+                    {renderInputRow('Type your question', handleOpeningAskSubmit)}
+                    {data.answer ? (
+                      <div style={{ marginTop: 6, fontWeight: 600 }}>
+                        Answer: <span style={{ fontWeight: 400 }}>{data.answer}</span>
+                      </div>
+                    ) : null}
+                    {errorText}
+                    <div style={rowStyle}>
+                      <button type="button" style={{ ...baseBtn, background: '#111827', color: '#fff' }} onClick={handleOpeningAskSubmit} disabled={openingActionBusy}>
+                        Send
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff' }} onClick={handleOpeningAskDone} disabled={openingActionBusy}>
+                        Done
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff' }} onClick={handleOpeningActionCancel} disabled={openingActionBusy}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (action === 'riddle') {
+              return (
+                <div style={{ padding: '0 12px' }}>
+                  <div style={cardStyle}>
+                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Riddle</div>
+                    <div style={{ color: '#111827', fontWeight: 600 }}>{riddle.question || 'Riddle incoming...'}</div>
+                    {stage === 'hint' && riddle.hint ? (
+                      <div style={{ marginTop: 6, color: '#4b5563' }}>Hint: {riddle.hint}</div>
+                    ) : null}
+                    {stage === 'answer' && riddle.answer ? (
+                      <div style={{ marginTop: 6, color: '#065f46', fontWeight: 700 }}>Answer: {riddle.answer}</div>
+                    ) : null}
+                    {renderInputRow('Type your guess', handleOpeningRiddleGuess)}
+                    {errorText}
+                    <div style={rowStyle}>
+                      <button type="button" style={{ ...baseBtn, background: '#2563eb', color: '#fff' }} onClick={handleOpeningRiddleGuess} disabled={openingActionBusy}>
+                        Guess
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#8b5cf6', color: '#fff' }} onClick={handleOpeningRiddleHint} disabled={openingActionBusy}>
+                        Hint
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#7c3aed', color: '#fff' }} onClick={handleOpeningRiddleReveal} disabled={openingActionBusy}>
+                        Reveal
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff' }} onClick={handleOpeningRiddleDone} disabled={openingActionBusy}>
+                        Done
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff' }} onClick={handleOpeningActionCancel} disabled={openingActionBusy}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (action === 'poem') {
+              const poemText = data.poem || 'Generating a poem...';
+              return (
+                <div style={{ padding: '0 12px' }}>
+                  <div style={cardStyle}>
+                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Poem</div>
+                    <div style={{ whiteSpace: 'pre-wrap', color: '#111827' }}>{poemText}</div>
+                    {errorText}
+                    <div style={rowStyle}>
+                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff' }} onClick={handleOpeningPoemDone} disabled={openingActionBusy}>
+                        Done
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff' }} onClick={handleOpeningActionCancel} disabled={openingActionBusy}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (action === 'story') {
+              return (
+                <div style={{ padding: '0 12px' }}>
+                  <div style={cardStyle}>
+                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Story</div>
+                    <div style={{ maxHeight: 140, overflow: 'auto', border: '1px solid #e5e7eb', borderRadius: 8, padding: 8, background: '#fff' }}>
+                      {transcript.length === 0 && (
+                        <div style={{ color: '#6b7280' }}>Tell me about a character to start.</div>
+                      )}
+                      {transcript.map((turn, idx) => (
+                        <div key={idx} style={{ marginBottom: 6 }}>
+                          <span style={{ fontWeight: 700, color: turn.role === 'user' ? '#111827' : '#2563eb' }}>
+                            {turn.role === 'user' ? 'You' : 'Ms. Sonoma'}:
+                          </span>{' '}
+                          <span style={{ color: '#111827' }}>{turn.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {renderInputRow('Add the next part of the story', handleOpeningStoryContinue)}
+                    {errorText}
+                    <div style={rowStyle}>
+                      <button type="button" style={{ ...baseBtn, background: '#2563eb', color: '#fff' }} onClick={handleOpeningStoryContinue} disabled={openingActionBusy}>
+                        Send
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff' }} onClick={handleOpeningStoryFinish} disabled={openingActionBusy}>
+                        Finish
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff' }} onClick={handleOpeningActionCancel} disabled={openingActionBusy}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (action === 'fill-in-fun') {
+              return (
+                <div style={{ padding: '0 12px' }}>
+                  <div style={cardStyle}>
+                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Fill-in-Fun</div>
+                    {data.template ? (
+                      <div style={{ marginBottom: 6, color: '#4b5563' }}>Template: {data.template}</div>
+                    ) : null}
+                    {currentWordType ? (
+                      <div style={{ marginBottom: 6, fontWeight: 600 }}>Give me a {currentWordType.toLowerCase()}.</div>
+                    ) : (
+                      <div style={{ marginBottom: 6, color: '#6b7280' }}>Gathering blanks...</div>
+                    )}
+                    {collectedWords.length > 0 && (
+                      <div style={{ marginBottom: 6, color: '#374151' }}>
+                        Words so far: {collectedWords.join(', ')}
+                      </div>
+                    )}
+                    {renderInputRow(currentWordType ? `Type a ${currentWordType.toLowerCase()}` : 'Type a word', handleOpeningFillInFunSubmit)}
+                    {errorText}
+                    <div style={rowStyle}>
+                      <button type="button" style={{ ...baseBtn, background: '#2563eb', color: '#fff' }} onClick={handleOpeningFillInFunSubmit} disabled={openingActionBusy}>
+                        Submit
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff' }} onClick={handleOpeningFillInFunDone} disabled={openingActionBusy}>
+                        Done
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff' }} onClick={handleOpeningActionCancel} disabled={openingActionBusy}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (action === 'joke') {
+              const jokeText = data.joke || 'Sharing a quick joke...';
+              return (
+                <div style={{ padding: '0 12px' }}>
+                  <div style={cardStyle}>
+                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Joke</div>
+                    <div style={{ whiteSpace: 'pre-wrap', color: '#111827' }}>{jokeText}</div>
+                    {errorText}
+                    <div style={rowStyle}>
+                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff' }} onClick={handleOpeningJokeDone} disabled={openingActionBusy}>
+                        Done
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff' }} onClick={handleOpeningActionCancel} disabled={openingActionBusy}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            return null;
+          })()}
           
           {/* Phase-specific Begin buttons */}
           {(() => {
@@ -3181,6 +4442,7 @@ function SessionPageV2Inner() {
                           try { await snapshotServiceRef.current?.deleteSnapshot?.(); } catch {}
                           resumePhaseRef.current = null;
                           setResumePhase(null);
+                          resetTranscriptState();
                           try { timerServiceRef.current?.reset?.(); } catch {}
                           try { await startSession({ ignoreResume: true }); } catch {}
                         }}
@@ -3287,7 +4549,7 @@ function SessionPageV2Inner() {
               (qaPhase === 'worksheet' && worksheetState === 'awaiting-answer') ||
               (qaPhase === 'test' && testState === 'awaiting-answer');
 
-            if (!qaPhase || !awaitingAnswer) return null;
+            if (!qaPhase || !awaitingAnswer || openingActionActive) return null;
 
             const q =
               qaPhase === 'comprehension' ? currentComprehensionQuestion :
@@ -3334,55 +4596,110 @@ function SessionPageV2Inner() {
               else if (qaPhase === 'test') submitTestAnswer();
             };
 
-            const onSkip = () => {
-              if (qaPhase === 'comprehension') skipComprehension();
-              else if (qaPhase === 'exercise') skipExerciseQuestion();
-              else if (qaPhase === 'worksheet') skipWorksheetQuestion();
-              else if (qaPhase === 'test') skipTestQuestion();
+            const canSubmit = !!String(currentValue || '').trim();
+
+            const quickContainerStyle = {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: 8,
+              paddingLeft: isMobileLandscape ? 12 : '4%',
+              paddingRight: isMobileLandscape ? 12 : '4%',
+              marginBottom: 6
             };
 
-            const canSubmit = !!String(currentValue || '').trim();
+            const quickButtonStyle = {
+              background: '#1f2937',
+              color: '#fff',
+              borderRadius: 8,
+              padding: '8px 12px',
+              minHeight: 40,
+              minWidth: 56,
+              fontWeight: 800,
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.18)'
+            };
+
+            const options = getOpts();
 
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 0' }}>
                 {(isMc || isTf) && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {(isTf ? getOpts().map((v) => ({ key: v, label: '', value: v })) : getOpts()).map((opt) => {
-                      const selected = String(currentValue || '').toLowerCase() === String(opt.value || '').toLowerCase();
-                      return (
-                        <button
-                          key={opt.key}
-                          type="button"
-                          onClick={() => {
-                            setValue(opt.value);
+                  <div style={quickContainerStyle}>
+                    {isTf && (
+                      <>
+                        {['True', 'False'].map((val) => (
+                          <button
+                            key={val}
+                            type="button"
+                            style={quickButtonStyle}
+                            onClick={() => {
+                              setValue(val);
+                              if (qaPhase === 'comprehension') {
+                                comprehensionPhaseRef.current?.submitAnswer(val);
+                                appendTranscriptLine({ text: val, role: 'user' });
+                                setComprehensionAnswer('');
+                              } else if (qaPhase === 'exercise') {
+                                exercisePhaseRef.current?.submitAnswer(val);
+                                appendTranscriptLine({ text: val, role: 'user' });
+                                setSelectedExerciseAnswer('');
+                              } else if (qaPhase === 'worksheet') {
+                                worksheetPhaseRef.current?.submitAnswer(val);
+                                appendTranscriptLine({ text: val, role: 'user' });
+                                setWorksheetAnswer('');
+                              } else if (qaPhase === 'test') {
+                                testPhaseRef.current?.submitAnswer(val);
+                                appendTranscriptLine({ text: val, role: 'user' });
+                                setTestAnswer('');
+                              }
+                            }}
+                          >
+                            {val}
+                          </button>
+                        ))}
+                      </>
+                    )}
 
-                            // V1/V2 parity: MC/TF quick buttons submit immediately.
-                            if (qaPhase === 'comprehension') {
-                              comprehensionPhaseRef.current?.submitAnswer(opt.value);
-                              setComprehensionAnswer('');
-                            } else if (qaPhase === 'exercise') {
-                              exercisePhaseRef.current?.submitAnswer(opt.value);
-                              setSelectedExerciseAnswer('');
-                            } else if (qaPhase === 'test') {
-                              testPhaseRef.current?.submitAnswer(opt.value);
-                              setTestAnswer('');
-                            }
-                          }}
-                          style={{
-                            padding: '10px 14px',
-                            borderRadius: 10,
-                            border: selected ? '2px solid #1f2937' : '1px solid #bdbdbd',
-                            background: selected ? '#1f2937' : '#fff',
-                            color: selected ? '#fff' : '#111827',
-                            cursor: 'pointer',
-                            fontWeight: 700,
-                            fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)'
-                          }}
-                        >
-                          {opt.label ? `${opt.label}. ${opt.value}` : opt.value}
-                        </button>
-                      );
-                    })}
+                    {isMc && (
+                      (() => {
+                        const count = Math.min(4, Math.max(2, options.length || 4));
+                        const letters = ['A', 'B', 'C', 'D'].slice(0, count);
+                        return letters.map((letter, idx) => {
+                          const val = options[idx]?.value || letter;
+                          return (
+                            <button
+                              key={letter}
+                              type="button"
+                              style={quickButtonStyle}
+                              onClick={() => {
+                                setValue(val);
+                                if (qaPhase === 'comprehension') {
+                                  comprehensionPhaseRef.current?.submitAnswer(val);
+                                  appendTranscriptLine({ text: val, role: 'user' });
+                                  setComprehensionAnswer('');
+                                } else if (qaPhase === 'exercise') {
+                                  exercisePhaseRef.current?.submitAnswer(val);
+                                  appendTranscriptLine({ text: val, role: 'user' });
+                                  setSelectedExerciseAnswer('');
+                                } else if (qaPhase === 'worksheet') {
+                                  worksheetPhaseRef.current?.submitAnswer(val);
+                                  appendTranscriptLine({ text: val, role: 'user' });
+                                  setWorksheetAnswer('');
+                                } else if (qaPhase === 'test') {
+                                  testPhaseRef.current?.submitAnswer(val);
+                                  appendTranscriptLine({ text: val, role: 'user' });
+                                  setTestAnswer('');
+                                }
+                              }}
+                            >
+                              {letter}
+                            </button>
+                          );
+                        });
+                      })()
+                    )}
                   </div>
                 )}
 
@@ -3416,6 +4733,8 @@ function SessionPageV2Inner() {
                       </svg>
                     </button>
                     <input
+                      ref={answerInputRef}
+                      autoFocus
                       type="text"
                       placeholder="Type your answer..."
                       value={currentValue}
@@ -3442,21 +4761,6 @@ function SessionPageV2Inner() {
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                   <button
                     type="button"
-                    onClick={onSkip}
-                    style={{
-                      background: '#9ca3af',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 10,
-                      padding: '10px 16px',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Skip
-                  </button>
-                  <button
-                    type="button"
                     onClick={onSubmit}
                     disabled={!canSubmit}
                     style={{
@@ -3477,6 +4781,29 @@ function SessionPageV2Inner() {
           })()}
         </div>
       </div>
+      
+      {showGames && (() => {
+        const phaseName = getCurrentPhaseName();
+        const timerType = phaseName ? currentTimerMode[phaseName] : null;
+        const timerNode = (phaseTimers && phaseName && timerType === 'play') ? (
+          <SessionTimer
+            key={`games-timer-${phaseName}-${timerType}-${timerRefreshKey}`}
+            phase={phaseName}
+            timerType={timerType}
+            totalMinutes={getCurrentPhaseTimerDuration(phaseName, timerType)}
+            goldenKeyBonus={timerType === 'play' ? goldenKeyBonus : 0}
+            isPaused={timerPaused}
+            lessonKey={lessonKey}
+          />
+        ) : null;
+
+        return (
+          <GamesOverlay
+            onClose={() => setShowGames(false)}
+            playTimer={timerNode}
+          />
+        );
+      })()}
       
       {/* Play Time Expired Overlay - V1 parity: full-screen overlay outside main container */}
       {showPlayTimeExpired && playExpiredPhase && (

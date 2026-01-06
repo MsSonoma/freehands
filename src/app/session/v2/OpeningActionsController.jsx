@@ -27,6 +27,8 @@
  */
 
 import { pickNextRiddle } from '@/app/lib/riddles';
+import { pickNextJoke, renderJoke } from '@/app/lib/jokes';
+import { fetchTTS } from './services';
 import { getGradeAndDifficultyStyle } from '../utils/constants';
 
 export class OpeningActionsController {
@@ -38,7 +40,7 @@ export class OpeningActionsController {
   #difficulty;
   
   // Current action state
-  #currentAction = null; // 'ask' | 'riddle' | 'poem' | 'story' | 'fill-in-fun' | null
+  #currentAction = null; // 'ask' | 'riddle' | 'poem' | 'story' | 'fill-in-fun' | 'joke' | null
   #actionState = {}; // Action-specific state
   
   constructor(eventBus, audioEngine, options = {}) {
@@ -48,6 +50,25 @@ export class OpeningActionsController {
     this.#subject = options.subject || 'math';
     this.#learnerGrade = options.learnerGrade || '';
     this.#difficulty = options.difficulty || 'moderate';
+
+    // Provide a speak shim when AudioEngine doesn't expose one (V1 parity helper)
+    if (this.#audioEngine && typeof this.#audioEngine.speak !== 'function') {
+      this.#audioEngine.speak = async (text) => {
+        const spoken = String(text ?? '').trim();
+        if (!spoken || typeof this.#audioEngine?.playAudio !== 'function') return;
+        let audioBase64 = null;
+        try {
+          audioBase64 = await fetchTTS(spoken);
+        } catch (err) {
+          console.warn('[OpeningActionsController] TTS fetch failed, using synthetic captions:', err);
+        }
+        try {
+          await this.#audioEngine.playAudio(audioBase64, [spoken]);
+        } catch (err) {
+          console.error('[OpeningActionsController] speak shim playback failed:', err);
+        }
+      };
+    }
   }
   
   /**
@@ -77,28 +98,48 @@ export class OpeningActionsController {
    * Submit question in Ask action
    * @param {string} question - Learner's question
    */
-  async submitAskQuestion(question) {
+  async submitAskQuestion(question, askContext = {}) {
     if (this.#currentAction !== 'ask') {
       return { success: false, error: 'Ask action not active' };
     }
     
     this.#actionState.question = question;
     this.#actionState.stage = 'generating';
+
+    const {
+      lessonTitle: ctxLessonTitle,
+      vocabChunk = '',
+      problemChunk = '',
+      subject: ctxSubject,
+      difficulty: ctxDifficulty,
+      gradeLevel: ctxGradeLevel
+    } = askContext || {};
+
+    const lessonTitle = (ctxLessonTitle || this.#subject || 'this topic').toString();
+    const subject = (ctxSubject || this.#subject || 'math').toString();
+    const gradeLevel = ctxGradeLevel || this.#learnerGrade;
+    const difficulty = ctxDifficulty || this.#difficulty;
     
     // Call Ms. Sonoma API
     try {
       const instruction = [
-        `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
-        `The learner asked: "${question}"`,
+        `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(gradeLevel, difficulty)}`,
+        `Lesson title: "${lessonTitle}".`,
+        subject ? `Subject: ${subject}.` : '',
+        question ? `The learner asked: "${question}".` : '',
+        vocabChunk || '',
+        problemChunk || '',
         'Answer their question in 2-3 short sentences.',
+        'Use the provided vocab meanings when relevant so words with multiple definitions stay on-topic.',
         'Be warm, encouraging, and age-appropriate.',
+        'Do not ask the learner any questions in your reply.',
         'If the question is off-topic or inappropriate, gently redirect.'
-      ].join(' ');
+      ].filter(Boolean).join(' ');
       
       const response = await fetch('/api/sonoma', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instruction, innertext: '' })
+        body: JSON.stringify({ instruction, innertext: question })
       });
       
       if (!response.ok) {
@@ -218,6 +259,44 @@ export class OpeningActionsController {
     
     return { success: true, answer };
   }
+
+  /**
+   * Accept a learner guess for the riddle (conversational input)
+   * Uses simple normalization to compare against the answer and responds aloud.
+   * @param {string} guess - Learner's guess typed in the shared input field
+   */
+  async submitRiddleGuess(guess) {
+    if (this.#currentAction !== 'riddle') {
+      return { success: false, error: 'Riddle action not active' };
+    }
+
+    const attempt = String(guess || '').trim();
+    if (!attempt) {
+      return { success: false, error: 'Please enter a guess first.' };
+    }
+
+    const normalize = (text) => String(text || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const answer = this.#actionState?.riddle?.answer || '';
+    const isCorrect = normalize(attempt) && normalize(attempt) === normalize(answer);
+
+    let reply = '';
+    if (isCorrect) {
+      this.#actionState.stage = 'answer';
+      reply = `You got it. The answer is ${answer}. Nice thinking.`;
+    } else {
+      const hint = this.#actionState?.riddle?.hint;
+      const hintLine = hint ? `Try again. Hint: ${hint}` : 'Good try. Think about the clue words.';
+      reply = hintLine;
+    }
+
+    await this.#audioEngine.speak(reply);
+    return { success: true, correct: isCorrect, reply };
+  }
   
   /**
    * Complete Riddle action
@@ -274,6 +353,7 @@ export class OpeningActionsController {
       
       this.#actionState.poem = poem;
       await this.#audioEngine.speak(poem);
+      this.#actionState.stage = 'complete';
       
       return { success: true, poem };
     } catch (err) {
@@ -282,6 +362,7 @@ export class OpeningActionsController {
       const fallback = 'Learning is fun, every single day! Knowledge helps us grow in every way!';
       this.#actionState.poem = fallback;
       await this.#audioEngine.speak(fallback);
+      this.#actionState.stage = 'complete';
       
       return { success: true, poem: fallback };
     }
@@ -534,17 +615,50 @@ export class OpeningActionsController {
   }
   
   /**
-   * Complete Riddle action
+   * Start Joke action
    */
-  completeRiddle() {
-    if (this.#currentAction !== 'riddle') return;
-    
-    this.#eventBus.emit('openingActionComplete', {
-      action: 'riddle',
-      type: 'riddle',
+  async startJoke() {
+    this.#currentAction = 'joke';
+    this.#actionState = {
+      stage: 'reading',
+      joke: ''
+    };
+
+    this.#eventBus.emit('openingActionStart', {
+      action: 'joke',
+      type: 'joke',
       phase: this.#phase
     });
-    
+
+    try {
+      const jokeObj = pickNextJoke(this.#subject);
+      const text = renderJoke(jokeObj) || 'Here is a quick joke to start us off.';
+      this.#actionState.joke = text;
+      await this.#audioEngine.speak(text);
+      this.#actionState.stage = 'complete';
+      return { success: true, joke: text };
+    } catch (err) {
+      console.error('[OpeningActionsController] Joke error:', err);
+      const fallback = 'What do you call a funny mountain? Hill-arious.';
+      this.#actionState.joke = fallback;
+      await this.#audioEngine.speak(fallback);
+      this.#actionState.stage = 'complete';
+      return { success: true, joke: fallback };
+    }
+  }
+
+  /**
+   * Complete Joke action
+   */
+  completeJoke() {
+    if (this.#currentAction !== 'joke') return;
+
+    this.#eventBus.emit('openingActionComplete', {
+      action: 'joke',
+      type: 'joke',
+      phase: this.#phase
+    });
+
     this.#currentAction = null;
     this.#actionState = {};
   }
@@ -573,6 +687,20 @@ export class OpeningActionsController {
    * Clean up controller
    */
   destroy() {
+    this.#currentAction = null;
+    this.#actionState = {};
+  }
+
+  /**
+   * Cancel any active action
+   */
+  cancelCurrent() {
+    if (!this.#currentAction) return;
+    this.#eventBus.emit('openingActionCancel', {
+      action: this.#currentAction,
+      type: this.#currentAction,
+      phase: this.#phase
+    });
     this.#currentAction = null;
     this.#actionState = {};
   }

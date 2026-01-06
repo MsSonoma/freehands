@@ -24,7 +24,7 @@
       "auto-load-learner-switch",
       "600-character-limit"
     ],
-    "last_updated": "2025-12-31T16:00:00Z",
+    "last_updated": "2026-01-06T05:15:00Z",
     "status": "canonical"
   },
   "lesson-notes": {
@@ -154,11 +154,16 @@
       "facilitator-override",
       "transcript-column-placement",
       "no-video-overlays",
+      "caption-panel",
+      "transcript-persistence",
       "timeline-jump",
       "test-skip-robustness",
-      "no-premature-actions"
+      "no-premature-actions",
+      "generated-lessons",
+      "facilitator-lessons",
+      "supabase-lesson-load"
     ],
-      "last_updated": "2026-01-05T21:00:00Z",
+    "last_updated": "2026-01-05T23:12:20Z",
     "status": "active-development"
   },
   "mr-mentor-conversation-flows": {
@@ -262,9 +267,11 @@
       "cross-device sync",
       "snapshot restore",
       "first-interaction gate",
-      "complete lesson cleanup"
+      "complete lesson cleanup",
+      "transcript persistence",
+      "caption panel"
     ],
-    "last_updated": "2026-01-05T18:30:00Z",
+      "last_updated": "2026-01-05T00:00:00Z",
     "status": "canonical"
   },
   "timer-system": {
@@ -332,7 +339,7 @@
     "systems": [
       "Mr. Mentor frontend",
       "MentorInterceptor.js",
-      "intent-detection",
+          "last_updated": "2026-01-06T01:15:00Z",
       "confidence-scoring",
       "fuzzy-matching",
       "parameter-extraction",
@@ -382,12 +389,14 @@
       "OpeningActionsController",
       "Ask Ms. Sonoma",
       "Riddle",
+      "Joke",
       "Poem",
       "Story",
       "Fill-in-Fun",
+      "Games overlay",
       "opening actions play time"
     ],
-    "last_updated": "2026-01-03T16:00:00Z",
+    "last_updated": "2026-01-06T10:20:00Z",
     "status": "canonical"
   },
   "beta-program": {
