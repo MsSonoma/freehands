@@ -26,7 +26,7 @@
  * 5. Fill-in-Fun: Mad Libs word game
  */
 
-import { pickNextRiddle } from '@/app/lib/riddles';
+import { pickNextRiddle, renderRiddle } from '@/app/lib/riddles';
 import { pickNextJoke, renderJoke } from '@/app/lib/jokes';
 import { fetchTTS } from './services';
 import { getGradeAndDifficultyStyle } from '../utils/constants';
@@ -208,10 +208,15 @@ export class OpeningActionsController {
     
     // Pick random riddle
     const riddleObj = pickNextRiddle(this.#subject);
+    const riddleText = renderRiddle(riddleObj) || '';
     
     this.#actionState = {
       stage: 'question', // 'question' | 'hint' | 'answer'
-      riddle: riddleObj
+      riddle: {
+        ...riddleObj,
+        question: riddleText,
+        text: riddleText
+      }
     };
     
     this.#eventBus.emit('openingActionStart', {
@@ -220,10 +225,10 @@ export class OpeningActionsController {
       phase: this.#phase
     });
     
-    const text = `Here's a riddle for you! ${riddleObj.question}`;
+    const text = `Here's a riddle for you! ${riddleText}`;
     await this.#audioEngine.speak(text);
     
-    return { success: true, riddle: riddleObj };
+    return { success: true, riddle: this.#actionState.riddle };
   }
   
   /**
@@ -320,7 +325,8 @@ export class OpeningActionsController {
   async startPoem() {
     this.#currentAction = 'poem';
     this.#actionState = {
-      stage: 'reading'
+      stage: 'awaiting-topic',
+      showSuggestions: true
     };
     
     this.#eventBus.emit('openingActionStart', {
@@ -329,10 +335,35 @@ export class OpeningActionsController {
       phase: this.#phase
     });
     
-    // Generate subject-themed poem using GPT-4
+    await this.#audioEngine.speak('What would you like the poem to be about?');
+    
+    return { success: true, stage: 'awaiting-topic' };
+  }
+  
+  /**
+   * Show poem topic suggestions
+   */
+  async showPoemSuggestions() {
+    if (this.#currentAction !== 'poem') return;
+    
+    this.#actionState.showSuggestions = false;
+    await this.#audioEngine.speak('You could ask for a poem about your favorite animal, a fun adventure, or something you learned today.');
+    
+    return { success: true };
+  }
+  
+  /**
+   * Generate poem with user's topic
+   */
+  async generatePoem(topic) {
+    if (this.#currentAction !== 'poem') return { success: false, error: 'Not in poem mode' };
+    
+    this.#actionState.stage = 'generating';
+    this.#actionState.showSuggestions = false;
+    
     const instruction = [
       `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
-      `Write a short, fun poem (4-8 lines) about ${this.#subject}.`,
+      `Write a short, fun poem (4-8 lines) about ${topic}.`,
       'Make it age-appropriate, educational, and upbeat.',
       'Use simple rhymes and clear language.'
     ].join(' ');
@@ -352,6 +383,7 @@ export class OpeningActionsController {
       const poem = data.reply || 'Learning is fun, every single day!';
       
       this.#actionState.poem = poem;
+      this.#actionState.stage = 'reading';
       await this.#audioEngine.speak(poem);
       this.#actionState.stage = 'complete';
       
@@ -361,13 +393,12 @@ export class OpeningActionsController {
       
       const fallback = 'Learning is fun, every single day! Knowledge helps us grow in every way!';
       this.#actionState.poem = fallback;
+      this.#actionState.stage = 'reading';
       await this.#audioEngine.speak(fallback);
       this.#actionState.stage = 'complete';
       
       return { success: true, poem: fallback };
     }
-    
-    this.#actionState.stage = 'complete';
   }
   
   /**
@@ -389,13 +420,8 @@ export class OpeningActionsController {
   /**
    * Start Story action (collaborative storytelling)
    */
-  async startStory() {
+  async startStory(existingTranscript = []) {
     this.#currentAction = 'story';
-    this.#actionState = {
-      stage: 'setup',
-      transcript: [],
-      turn: 0
-    };
     
     this.#eventBus.emit('openingActionStart', {
       action: 'story',
@@ -403,15 +429,98 @@ export class OpeningActionsController {
       phase: this.#phase
     });
     
-    // Start story setup
-    const setupPrompt = 'Let\'s tell a story together! What kind of character should we have?';
-    await this.#audioEngine.speak(setupPrompt);
+    // Check if continuing from previous phase
+    if (existingTranscript.length > 0) {
+      this.#actionState = {
+        stage: 'awaiting-turn',
+        transcript: existingTranscript,
+        setupStep: 'complete'
+      };
+      
+      // Generate reminder and prompt based on phase
+      const isTestPhase = this.#phase === 'test';
+      const lastAssistant = [...existingTranscript].reverse().find(t => t.role === 'assistant');
+      
+      let briefSummary = 'Let me remind you where we left off in our story.';
+      if (lastAssistant) {
+        const summaryInstruction = [
+          `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
+          `Briefly paraphrase this story part in 1-2 short sentences: "${lastAssistant.text.replace(/To be continued\.?/i, '').trim()}"`,
+          'Keep it simple and exciting.',
+          'Do not add "To be continued."'
+        ].join(' ');
+        
+        try {
+          const res = await fetch('/api/sonoma', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instruction: summaryInstruction, innertext: '' })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            briefSummary = data?.reply?.trim() || briefSummary;
+          }
+        } catch (err) {
+          // Use fallback
+        }
+      }
+      
+      let prompt;
+      if (isTestPhase) {
+        prompt = `${briefSummary} How would you like the story to end?`;
+      } else {
+        // Generate suggestions for continuation
+        const storyContext = existingTranscript.slice(-4).map(turn => 
+          turn.role === 'user' ? `Child: "${turn.text}"` : `You: "${turn.text}"`
+        ).join(' ');
+        
+        const suggestionInstruction = [
+          `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
+          `Story so far: ${storyContext}`,
+          'Suggest 3 brief, exciting story possibilities for what could happen next.',
+          'Keep each suggestion to 4-6 words maximum.',
+          'Make them fun and age-appropriate.',
+          'Format as: "You could say: [option 1], or [option 2], or [option 3]."'
+        ].join(' ');
+        
+        let suggestions = 'You could say: the hero finds treasure, or a friend appears, or something magical happens.';
+        try {
+          const res = await fetch('/api/sonoma', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instruction: suggestionInstruction, innertext: '' })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            suggestions = data?.reply || suggestions;
+          }
+        } catch (err) {
+          // Use fallback
+        }
+        
+        prompt = `${briefSummary} What would you like to happen next? ${suggestions}`;
+      }
+      
+      await this.#audioEngine.speak(prompt);
+      return { success: true, prompt };
+    }
     
-    return { success: true, prompt: setupPrompt };
+    // New story - start 3-step setup
+    this.#actionState = {
+      stage: 'awaiting-setup',
+      setupStep: 'characters',
+      transcript: [],
+      characters: '',
+      setting: '',
+      plot: ''
+    };
+    
+    await this.#audioEngine.speak('Who are the characters in the story?');
+    return { success: true, prompt: 'Who are the characters in the story?' };
   }
   
   /**
-   * Continue story with learner input
+   * Continue story with learner input (handles setup steps and turns)
    */
   async continueStory(userInput) {
     if (this.#currentAction !== 'story') {
@@ -423,52 +532,122 @@ export class OpeningActionsController {
       return { success: false, error: 'Please say something for the story!' };
     }
     
-    // Add user input to transcript
-    this.#actionState.transcript.push({ role: 'user', text: trimmed });
-    this.#actionState.turn++;
+    const { setupStep } = this.#actionState;
     
-    // Generate story continuation
+    // Handle setup phase
+    if (setupStep === 'characters') {
+      this.#actionState.characters = trimmed;
+      this.#actionState.setupStep = 'setting';
+      await this.#audioEngine.speak('Where does the story take place?');
+      return { success: true, setupComplete: false };
+    }
+    
+    if (setupStep === 'setting') {
+      this.#actionState.setting = trimmed;
+      this.#actionState.setupStep = 'plot';
+      await this.#audioEngine.speak('What happens in the story?');
+      return { success: true, setupComplete: false };
+    }
+    
+    if (setupStep === 'plot') {
+      this.#actionState.plot = trimmed;
+      this.#actionState.setupStep = 'complete';
+      
+      // Generate first part of story with all setup info
+      const instruction = [
+        `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
+        'You are starting a collaborative story.',
+        `The characters are: ${this.#actionState.characters}`,
+        `The setting is: ${this.#actionState.setting}`,
+        `The plot involves: ${trimmed}`,
+        'Tell the first part of the story in 4-6 sentences.',
+        'Follow the child\'s ideas closely and make the story about what they want unless it\'s inappropriate.',
+        'Make it fun and age-appropriate for a child.',
+        'End by saying "To be continued."'
+      ].join(' ');
+      
+      let responseText = 'Once upon a time. To be continued.';
+      try {
+        const res = await fetch('/api/sonoma', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instruction, innertext: '' })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          responseText = data?.reply || responseText;
+        }
+      } catch (err) {
+        // Use fallback
+      }
+      
+      // Build transcript with setup entries
+      this.#actionState.transcript = [
+        { role: 'user', text: `Characters: ${this.#actionState.characters}` },
+        { role: 'user', text: `Setting: ${this.#actionState.setting}` },
+        { role: 'user', text: `Plot: ${trimmed}` },
+        { role: 'assistant', text: responseText }
+      ];
+      
+      this.#actionState.stage = 'complete';
+      await this.#audioEngine.speak(responseText);
+      
+      return { success: true, setupComplete: true, story: responseText };
+    }
+    
+    // Handle story continuation after setup
+    this.#actionState.transcript.push({ role: 'user', text: trimmed });
+    
+    const isTestPhase = this.#phase === 'test';
     const storyContext = this.#actionState.transcript.map(turn => 
       turn.role === 'user' ? `Child: "${turn.text}"` : `You: "${turn.text}"`
     ).join(' ');
     
-    const instruction = [
-      `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
-      `Continue this collaborative story: ${storyContext}`,
-      'Add 1-2 exciting sentences based on what the child said.',
-      'Keep it fun, age-appropriate, and encourage their creativity.',
-      'End with "What happens next?" if the story should continue.'
-    ].join(' ');
+    const instruction = isTestPhase
+      ? [
+          `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
+          'You are ending a collaborative story.',
+          `Story so far: ${storyContext}`,
+          `The child wants the story to end like this: "${trimmed.replace(/["]/g, "'")}"`,
+          'End the story based on their idea in 4-6 sentences.',
+          'Follow the child\'s ideas closely and make the ending about what they want unless it\'s inappropriate.',
+          'Make it satisfying and age-appropriate for a child.',
+          'Say "The end." at the very end.'
+        ].join(' ')
+      : [
+          `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
+          'You are telling a collaborative story in turns.',
+          `Story so far: ${storyContext}`,
+          `The child just said: "${trimmed.replace(/["]/g, "'")}"`,
+          'Continue the story in 4-6 sentences.',
+          'Follow the child\'s ideas closely unless inappropriate.',
+          'Make it fun and age-appropriate for a child.',
+          'End by saying "To be continued."'
+        ].join(' ');
+    
+    let responseText = isTestPhase 
+      ? 'And they all lived happily ever after. The end.'
+      : 'And then something amazing happened! To be continued.';
     
     try {
-      const response = await fetch('/api/sonoma', {
+      const res = await fetch('/api/sonoma', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ instruction, innertext: '' })
       });
-      
-      if (!response.ok) {
-        throw new Error('Story continuation failed');
+      if (res.ok) {
+        const data = await res.json();
+        responseText = data?.reply || responseText;
       }
-      
-      const data = await response.json();
-      const continuation = data.reply || 'And then something amazing happened! What happens next?';
-      
-      this.#actionState.transcript.push({ role: 'assistant', text: continuation });
-      this.#actionState.stage = 'telling';
-      await this.#audioEngine.speak(continuation);
-      
-      return { success: true, continuation };
     } catch (err) {
-      console.error('[OpeningActionsController] Story error:', err);
-      
-      const fallback = 'That\'s a great idea! The adventure continues. What happens next?';
-      this.#actionState.transcript.push({ role: 'assistant', text: fallback });
-      this.#actionState.stage = 'telling';
-      await this.#audioEngine.speak(fallback);
-      
-      return { success: true, continuation: fallback };
+      // Use fallback
     }
+    
+    this.#actionState.transcript.push({ role: 'assistant', text: responseText });
+    this.#actionState.stage = isTestPhase ? 'ended' : 'continued';
+    await this.#audioEngine.speak(responseText);
+    
+    return { success: true, continuation: responseText, ended: isTestPhase };
   }
   
   /**

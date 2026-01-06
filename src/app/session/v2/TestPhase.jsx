@@ -609,7 +609,8 @@ export class TestPhase {
       score: this.#score,
       totalQuestions: this.#questions.length,
       percentage: grade,
-      grade: this.#calculateLetterGrade(grade)
+      grade: this.#calculateLetterGrade(grade),
+      answers: this.#answers
     });
     
     console.log('[TestPhase] Calling showReviewQuestion');

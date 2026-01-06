@@ -18,7 +18,7 @@
  */
 
 import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
 import { createBrowserClient } from '@supabase/ssr';
 import { getSupabaseClient } from '@/app/lib/supabaseClient';
@@ -46,8 +46,196 @@ import { loadLesson, fetchTTS } from './services';
 import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech, ensureQuestionMark } from '../utils/questionFormatting';
 import { getSnapshotStorageKey } from '../utils/snapshotPersistenceUtils';
 import { ensurePinAllowed } from '@/app/lib/pinGate';
+import { upsertMedal } from '@/app/lib/medalsClient';
+import { appendTranscriptSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
 import CaptionPanel from '../components/CaptionPanel';
+
+// Test Review UI Component (matches V1)
+function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, onOverrideAnswer, onCompleteReview }) {
+  const { score, totalQuestions, percentage, grade: letterGrade, answers } = testGrade;
+  
+  const tierForPercent = (pct) => {
+    if (pct >= 90) return 'gold';
+    if (pct >= 80) return 'silver';
+    if (pct >= 70) return 'bronze';
+    return null;
+  };
+  
+  const emojiForTier = (tier) => {
+    if (tier === 'gold') return '🥇';
+    if (tier === 'silver') return '🥈';
+    if (tier === 'bronze') return '🥉';
+    return '';
+  };
+  
+  const tier = tierForPercent(percentage);
+  const medal = emojiForTier(tier);
+  
+  const card = { 
+    background: '#ffffff', 
+    border: '1px solid #e5e7eb', 
+    borderRadius: 12, 
+    padding: 16, 
+    boxShadow: '0 2px 10px rgba(0,0,0,0.04)'
+  };
+  
+  const badge = (ok) => ({
+    display: 'inline-block',
+    padding: '2px 8px',
+    borderRadius: 999,
+    fontWeight: 800,
+    fontSize: 12,
+    background: ok ? 'rgba(16,185,129,0.14)' : 'rgba(239,68,68,0.14)',
+    color: ok ? '#065f46' : '#7f1d1d',
+    border: `1px solid ${ok ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)'}`
+  });
+  
+  const btn = {
+    padding: '8px 14px',
+    borderRadius: 8,
+    border: '1px solid #d1d5db',
+    background: '#f9fafb',
+    color: '#374151',
+    fontWeight: 600,
+    fontSize: 14,
+    cursor: 'pointer',
+    transition: 'all 0.15s ease'
+  };
+  
+  const workPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+  
+  const formatRemainingLabel = (phaseKey) => {
+    const minutesLeft = workTimeRemaining?.[phaseKey] ?? null;
+    if (minutesLeft == null) return '—';
+    const totalSeconds = Math.round(Math.max(0, minutesLeft * 60));
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = String(totalSeconds % 60).padStart(2, '0');
+    return `${mins}:${secs}`;
+  };
+  
+  const onTimeCount = Object.values(workPhaseCompletions || {}).filter(Boolean).length;
+  const meetsGoldenKey = onTimeCount >= 3;
+  
+  const formatQuestionForDisplay = (q) => {
+    if (typeof q === 'string') return q;
+    return q?.question || q?.text || '';
+  };
+  
+  return (
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: 12, 
+      overflow: 'auto', 
+      paddingTop: 8, 
+      paddingBottom: 8,
+      height: '100%'
+    }}>
+      <div style={{ 
+        ...card, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        gap: 12, 
+        position: 'sticky', 
+        top: 0, 
+        zIndex: 5, 
+        background: '#ffffff' 
+      }}>
+        <div style={{ fontSize: 'clamp(1.1rem, 2.4vw, 1.4rem)', fontWeight: 800, color: '#065f46' }}>
+          {percentage}% grade
+        </div>
+        <div style={{ fontSize: 'clamp(1.2rem, 2.6vw, 1.5rem)' }} aria-label="Medal preview">{medal}</div>
+      </div>
+      
+      <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ fontWeight: 800 }}>Work timers</div>
+        <div style={{ fontWeight: 700, color: meetsGoldenKey ? '#065f46' : '#7f1d1d' }}>
+          {meetsGoldenKey ? 'Golden key eligible (3+ on-time work timers)' : 'Golden key not yet met (needs 3 on-time work timers)'}
+        </div>
+        <div style={{ fontSize: 13, color: '#4b5563' }}>Play timers are ignored for this check.</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8 }}>
+          {workPhases.map((p) => {
+            const onTime = !!(workPhaseCompletions && workPhaseCompletions[p]);
+            const remainingLabel = formatRemainingLabel(p);
+            const statusText = remainingLabel === '—' ? 'not started' : (onTime ? 'on time' : 'timed out / incomplete');
+            const statusColor = statusText === 'not started' ? '#374151' : (onTime ? '#065f46' : '#7f1d1d');
+            return (
+              <div key={p} style={{ 
+                padding: 10, 
+                border: '1px solid #e5e7eb', 
+                borderRadius: 8, 
+                background: '#f9fafb', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: 4 
+              }}>
+                <div style={{ fontWeight: 700, textTransform: 'capitalize' }}>{p}</div>
+                <div style={{ fontFamily: 'monospace', fontWeight: 700 }}>{remainingLabel}</div>
+                <div style={{ fontSize: 12, color: statusColor }}>{statusText}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {answers && answers.map((answerData, i) => {
+          const ok = answerData.isCorrect;
+          const num = i + 1;
+          const stem = formatQuestionForDisplay(answerData.question);
+          const userAns = answerData.userAnswer || '';
+          const expectedText = answerData.correctAnswer || '';
+          
+          return (
+            <div key={i} style={card}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ fontWeight: 800 }}>Question {num}</div>
+                <span style={badge(ok)}>{ok ? 'correct' : 'incorrect'}</span>
+              </div>
+              <div style={{ marginTop: 8, color: '#111827', fontWeight: 600 }}>{stem}</div>
+              <div style={{ marginTop: 6, color: '#374151' }}>
+                <span style={{ fontWeight: 700 }}>Your answer:</span> {userAns || <em style={{ color: '#6b7280' }}>No answer</em>}
+              </div>
+              {expectedText ? (
+                <div style={{ marginTop: 4, color: '#4b5563' }}>
+                  <span style={{ fontWeight: 700 }}>Expected answer:</span> {expectedText}
+                </div>
+              ) : null}
+              <div style={{ marginTop: 10 }}>
+                <button type="button" style={btn} onClick={() => onOverrideAnswer(i)}>Facilitator override</button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      <div style={{ ...card, textAlign: 'center', padding: 20 }}>
+        <button 
+          type="button" 
+          style={{
+            padding: '12px 24px',
+            borderRadius: 8,
+            border: 'none',
+            background: '#10b981',
+            color: '#ffffff',
+            fontWeight: 700,
+            fontSize: 16,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            boxShadow: '0 2px 8px rgba(16,185,129,0.3)'
+          }}
+          onClick={onCompleteReview}
+        >
+          Complete Lesson
+        </button>
+      </div>
+      
+      <div style={{ height: 8 }} />
+    </div>
+  );
+}
 
 // Derive a canonical lesson key (filename only, no subject prefix, no .json) for per-learner persistence.
 function deriveCanonicalLessonKey({ lessonData, lessonId }) {
@@ -239,6 +427,7 @@ export { SessionPageV2Inner };
 
 function SessionPageV2Inner() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const lessonId = searchParams?.get('lesson') || '';
   const subjectParam = searchParams?.get('subject') || 'math'; // Subject folder for lesson lookup
   const regenerateParam = searchParams?.get('regenerate'); // Support generated lessons
@@ -326,6 +515,21 @@ function SessionPageV2Inner() {
   const [testReviewAnswer, setTestReviewAnswer] = useState(null);
   const [testReviewIndex, setTestReviewIndex] = useState(0);
   const [testTimerMode, setTestTimerMode] = useState('play');
+  
+  const [workPhaseCompletions, setWorkPhaseCompletions] = useState({
+    discussion: false,
+    comprehension: false,
+    exercise: false,
+    worksheet: false,
+    test: false
+  });
+  const [workTimeRemaining, setWorkTimeRemaining] = useState({
+    discussion: null,
+    comprehension: null,
+    exercise: null,
+    worksheet: null,
+    test: null
+  });
   
   const [closingState, setClosingState] = useState('idle');
   const [closingMessage, setClosingMessage] = useState('');
@@ -1259,6 +1463,33 @@ function SessionPageV2Inner() {
     }
   }, [lessonData, lessonKey, lessonId, shareOrPreviewPdf]);
 
+  const handleTestOverrideAnswer = useCallback(async (index) => {
+    const ok = await ensurePinAllowed('facilitator');
+    if (!ok) return;
+    
+    setTestGrade((prevGrade) => {
+      if (!prevGrade || !prevGrade.answers) return prevGrade;
+      
+      const newAnswers = prevGrade.answers.slice();
+      newAnswers[index] = {
+        ...newAnswers[index],
+        isCorrect: !newAnswers[index].isCorrect
+      };
+      
+      const newScore = newAnswers.filter(a => a.isCorrect).length;
+      const newPercentage = Math.round((newScore / newAnswers.length) * 100);
+      const newLetterGrade = newPercentage >= 90 ? 'A' : newPercentage >= 80 ? 'B' : newPercentage >= 70 ? 'C' : newPercentage >= 60 ? 'D' : 'F';
+      
+      return {
+        ...prevGrade,
+        answers: newAnswers,
+        score: newScore,
+        percentage: newPercentage,
+        grade: newLetterGrade
+      };
+    });
+  }, []);
+
   const handleDownloadWorksheet = useCallback(async () => {
     const ok = await ensurePinAllowed('download');
     if (!ok) return;
@@ -1789,6 +2020,10 @@ function SessionPageV2Inner() {
     if (controller?.cancelCurrent) {
       controller.cancelCurrent();
     }
+    // Stop any playing audio
+    if (audioEngineRef.current) {
+      audioEngineRef.current.stop();
+    }
     setOpeningActionActive(false);
     setOpeningActionType(null);
     setOpeningActionState({});
@@ -1906,6 +2141,10 @@ function SessionPageV2Inner() {
 
   const handleOpeningAskDone = useCallback(() => {
     const controller = openingActionsControllerRef.current;
+    // Stop any playing audio before completing
+    if (audioEngineRef.current) {
+      audioEngineRef.current.stop();
+    }
     controller?.completeAsk?.();
   }, []);
 
@@ -1972,6 +2211,40 @@ function SessionPageV2Inner() {
     const controller = openingActionsControllerRef.current;
     controller?.completePoem?.();
   }, []);
+
+  const handleOpeningPoemSuggestions = useCallback(async () => {
+    const controller = openingActionsControllerRef.current;
+    if (!controller) return;
+    
+    setOpeningActionError('');
+    try {
+      await controller.showPoemSuggestions();
+    } catch (err) {
+      console.error('[SessionPageV2] Poem suggestions error:', err);
+      setOpeningActionError('Could not show suggestions.');
+    }
+  }, []);
+
+  const handleOpeningPoemSubmit = useCallback(async () => {
+    const controller = openingActionsControllerRef.current;
+    if (!controller) return;
+    
+    const topic = openingActionInput.trim();
+    if (!topic) {
+      setOpeningActionError('Please enter a poem topic.');
+      return;
+    }
+    
+    setOpeningActionError('');
+    setOpeningActionInput('');
+    
+    try {
+      await controller.generatePoem(topic);
+    } catch (err) {
+      console.error('[SessionPageV2] Poem generation error:', err);
+      setOpeningActionError('Could not generate poem.');
+    }
+  }, [openingActionInput]);
 
   const handleOpeningStoryContinue = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -2471,6 +2744,64 @@ function SessionPageV2Inner() {
       setGeneratedExercise(null);
       setGeneratedWorksheet(null);
       setGeneratedTest(null);
+      
+      // Save medal if test was completed
+      if (testGrade?.percentage != null && learnerId && lessonKey) {
+        try {
+          await upsertMedal(learnerId, lessonKey, testGrade.percentage);
+          addEvent(`🏅 Medal saved: ${testGrade.percentage}%`);
+        } catch (err) {
+          console.error('[SessionPageV2] Failed to save medal:', err);
+        }
+      }
+      
+      // Save transcript segment to mark lesson as completed
+      if (learnerId && learnerId !== 'demo' && lessonId && transcriptLines.length > 0) {
+        try {
+          const learnerName = learnerProfile?.name || (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
+          const startedAt = startSessionRef.current || new Date().toISOString();
+          const completedAt = new Date().toISOString();
+          
+          await appendTranscriptSegment({
+            learnerId,
+            learnerName,
+            lessonId,
+            lessonTitle: lessonData?.title || lessonId,
+            segment: { startedAt, completedAt, lines: transcriptLines },
+            sessionId: browserSessionId || undefined,
+          });
+          addEvent('📝 Transcript saved');
+        } catch (err) {
+          console.error('[SessionPageV2] Failed to save transcript:', err);
+        }
+      }
+      
+      // Pass golden key earned status for notification on lessons page
+      const earnedKey = timerServiceRef.current?.getGoldenKeyStatus()?.eligible || false;
+      if (earnedKey && typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('just_earned_golden_key', 'true');
+        } catch {}
+      }
+      
+      // Navigate to lessons page
+      console.log('[SessionPageV2] Attempting navigation to lessons page');
+      console.log('[SessionPageV2] router:', router);
+      console.log('[SessionPageV2] router.push type:', typeof router?.push);
+      try {
+        if (router && typeof router.push === 'function') {
+          console.log('[SessionPageV2] Using router.push');
+          router.push('/learn/lessons');
+        } else if (typeof window !== 'undefined') {
+          console.log('[SessionPageV2] Using window.location.href');
+          window.location.href = '/learn/lessons';
+        }
+      } catch (err) {
+        console.error('[SessionPageV2] Navigation error:', err);
+        if (typeof window !== 'undefined') {
+          try { window.location.href = '/learn/lessons'; } catch {}
+        }
+      }
     });
     
     return () => {
@@ -2601,6 +2932,21 @@ function SessionPageV2Inner() {
 
       addEvent('ðŸŽ‰ Discussion complete - proceeding to teaching');
       setDiscussionState('complete');
+
+      // Track work phase completion for golden key
+      if (timerServiceRef.current) {
+        const time = timerServiceRef.current.getWorkPhaseTime('discussion');
+        if (time) {
+          setWorkPhaseCompletions(prev => ({
+            ...prev,
+            discussion: time.onTime
+          }));
+          setWorkTimeRemaining(prev => ({
+            ...prev,
+            discussion: time.remaining / 60
+          }));
+        }
+      }
 
       // Cleanup FIRST to remove discussion audio end listener.
       try { unsubGreetingPlaying?.(); } catch {}
@@ -2801,6 +3147,21 @@ function SessionPageV2Inner() {
       addEvent(`âœ… Comprehension complete: ${data.answer || '(skipped)'}`);
       setComprehensionState('complete');
       
+      // Track work phase completion for golden key
+      if (timerServiceRef.current) {
+        const time = timerServiceRef.current.getWorkPhaseTime('comprehension');
+        if (time) {
+          setWorkPhaseCompletions(prev => ({
+            ...prev,
+            comprehension: time.onTime
+          }));
+          setWorkTimeRemaining(prev => ({
+            ...prev,
+            comprehension: time.remaining / 60
+          }));
+        }
+      }
+      
       // Save snapshot
       if (snapshotServiceRef.current) {
         snapshotServiceRef.current.savePhaseCompletion('comprehension', {
@@ -2988,7 +3349,9 @@ function SessionPageV2Inner() {
         const time = timerServiceRef.current.getWorkPhaseTime('exercise');
         if (time) {
           const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
-          addEvent(`â±ï¸ Exercise completed in ${time.formatted} ${status}`);
+          addEvent(`Exercise completed in ${time.formatted} ${status}`);
+          setWorkPhaseCompletions(prev => ({ ...prev, exercise: time.onTime }));
+          setWorkTimeRemaining(prev => ({ ...prev, exercise: time.remaining / 60 }));
         }
       }
       
@@ -3173,6 +3536,8 @@ function SessionPageV2Inner() {
         if (time) {
           const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
           addEvent(`â±ï¸ Worksheet completed in ${time.formatted} ${status}`);
+          setWorkPhaseCompletions(prev => ({ ...prev, worksheet: time.onTime }));
+          setWorkTimeRemaining(prev => ({ ...prev, worksheet: time.remaining / 60 }));
         }
       }
       
@@ -3367,13 +3732,9 @@ function SessionPageV2Inner() {
       console.log('[SessionPageV2] testQuestionsComplete event received:', data);
       addEvent(`ðŸ“Š Test questions done! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%) - Grade: ${data.grade}`);
       setTestGrade(data);
-      console.log('[SessionPageV2] Skipping review, calling skipReview() to complete test');
-      // V2 doesn't have review UI yet, so skip directly to completion
-      if (phase.skipReview) {
-        phase.skipReview();
-      }
+      console.log('[SessionPageV2] Setting testState to reviewing');
+      setTestState('reviewing');
     });
-    
     phase.on('reviewQuestion', (data) => {
       console.log('[SessionPageV2] reviewQuestion event received:', data);
       setTestReviewAnswer(data.answer);
@@ -3392,6 +3753,8 @@ function SessionPageV2Inner() {
         if (time) {
           const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
           addEvent(`â±ï¸ Test completed in ${time.formatted} ${status}`);
+          setWorkPhaseCompletions(prev => ({ ...prev, test: time.onTime }));
+          setWorkTimeRemaining(prev => ({ ...prev, test: time.remaining / 60 }));
         }
         
         // Check golden key status
@@ -3514,8 +3877,8 @@ function SessionPageV2Inner() {
       closingPhaseRef.current = null;
     });
     
-    // Don't auto-start - let Begin button call phase.start()
-    // phase.start();
+    // Auto-start closing phase (no Begin button needed for farewell)
+    phase.start();
   };
   
   // Handle keyboard hotkeys
@@ -4280,15 +4643,27 @@ function SessionPageV2Inner() {
       
       {/* Transcript column */}
       <div style={transcriptWrapperStyle}>
-        <CaptionPanel
-          sentences={transcriptLines}
-          activeIndex={activeCaptionIndex}
-          boxRef={transcriptRef}
-          fullHeight={isMobileLandscape}
-          stackedHeight={isMobileLandscape ? '100%' : null}
-          phase={currentPhase}
-          vocabTerms={vocabTerms}
-        />
+        {currentPhase === 'test' && testState === 'reviewing' && testGrade ? (
+          <TestReviewUI
+            testGrade={testGrade}
+            generatedTest={generatedTest}
+            timerService={timerServiceRef.current}
+            workPhaseCompletions={workPhaseCompletions}
+            workTimeRemaining={workTimeRemaining}
+            onOverrideAnswer={handleTestOverrideAnswer}
+            onCompleteReview={skipTestReview}
+          />
+        ) : (
+          <CaptionPanel
+            sentences={transcriptLines}
+            activeIndex={activeCaptionIndex}
+            boxRef={transcriptRef}
+            fullHeight={isMobileLandscape}
+            stackedHeight={isMobileLandscape ? '100%' : null}
+            phase={currentPhase}
+            vocabTerms={vocabTerms}
+          />
+        )}
       </div>
       
       </div> {/* end main layout */}
@@ -4479,8 +4854,8 @@ function SessionPageV2Inner() {
               borderRadius: 8,
               border: 'none',
               fontWeight: 700,
-              cursor: openingActionBusy ? 'not-allowed' : 'pointer',
-              opacity: openingActionBusy ? 0.75 : 1
+              cursor: 'pointer',
+              opacity: 1
             };
 
             const errorText = openingActionError ? (
@@ -4513,26 +4888,37 @@ function SessionPageV2Inner() {
             if (action === 'ask') {
               return (
                 <div style={{ padding: '0 12px' }}>
-                  <div style={cardStyle}>
-                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Ask Ms. Sonoma</div>
-                    {renderInputRow('Type your question', handleOpeningAskSubmit)}
+                  <div style={{ ...cardStyle, padding: '8px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input
+                        type="text"
+                        value={openingActionInput}
+                        onChange={(e) => setOpeningActionInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleOpeningAskSubmit();
+                          }
+                        }}
+                        placeholder="Ask Ms. Sonoma..."
+                        style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: '0.9rem' }}
+                        autoFocus
+                      />
+                      <button type="button" style={{ ...baseBtn, background: '#111827', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningAskSubmit}>
+                        Send
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningAskDone}>
+                        Done
+                      </button>
+                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningActionCancel}>
+                        Cancel
+                      </button>
+                    </div>
                     {data.answer ? (
-                      <div style={{ marginTop: 6, fontWeight: 600 }}>
+                      <div style={{ marginTop: 6, fontSize: '0.85rem', fontWeight: 600 }}>
                         Answer: <span style={{ fontWeight: 400 }}>{data.answer}</span>
                       </div>
                     ) : null}
                     {errorText}
-                    <div style={rowStyle}>
-                      <button type="button" style={{ ...baseBtn, background: '#111827', color: '#fff' }} onClick={handleOpeningAskSubmit} disabled={openingActionBusy}>
-                        Send
-                      </button>
-                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff' }} onClick={handleOpeningAskDone} disabled={openingActionBusy}>
-                        Done
-                      </button>
-                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff' }} onClick={handleOpeningActionCancel} disabled={openingActionBusy}>
-                        Cancel
-                      </button>
-                    </div>
                   </div>
                 </div>
               );
@@ -4541,91 +4927,170 @@ function SessionPageV2Inner() {
             if (action === 'riddle') {
               return (
                 <div style={{ padding: '0 12px' }}>
-                  <div style={cardStyle}>
-                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Riddle</div>
-                    <div style={{ color: '#111827', fontWeight: 600 }}>{riddle.question || 'Riddle incoming...'}</div>
-                    {stage === 'hint' && riddle.hint ? (
-                      <div style={{ marginTop: 6, color: '#4b5563' }}>Hint: {riddle.hint}</div>
-                    ) : null}
-                    {stage === 'answer' && riddle.answer ? (
-                      <div style={{ marginTop: 6, color: '#065f46', fontWeight: 700 }}>Answer: {riddle.answer}</div>
-                    ) : null}
-                    {renderInputRow('Type your guess', handleOpeningRiddleGuess)}
-                    {errorText}
-                    <div style={rowStyle}>
-                      <button type="button" style={{ ...baseBtn, background: '#2563eb', color: '#fff' }} onClick={handleOpeningRiddleGuess} disabled={openingActionBusy}>
-                        Guess
-                      </button>
-                      <button type="button" style={{ ...baseBtn, background: '#8b5cf6', color: '#fff' }} onClick={handleOpeningRiddleHint} disabled={openingActionBusy}>
-                        Hint
-                      </button>
-                      <button type="button" style={{ ...baseBtn, background: '#7c3aed', color: '#fff' }} onClick={handleOpeningRiddleReveal} disabled={openingActionBusy}>
-                        Reveal
-                      </button>
-                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff' }} onClick={handleOpeningRiddleDone} disabled={openingActionBusy}>
-                        Done
-                      </button>
-                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff' }} onClick={handleOpeningActionCancel} disabled={openingActionBusy}>
-                        Cancel
-                      </button>
+                  <div style={{ ...cardStyle, padding: '8px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827' }}>{riddle.text || riddle.question || 'Riddle incoming...'}</div>
+                        {stage === 'hint' && riddle.hint ? (
+                          <div style={{ fontSize: '0.85rem', marginTop: 4, color: '#4b5563' }}>Hint: {riddle.hint}</div>
+                        ) : null}
+                        {stage === 'answer' && riddle.answer ? (
+                          <div style={{ fontSize: '0.85rem', marginTop: 4, color: '#065f46', fontWeight: 700 }}>Answer: {riddle.answer}</div>
+                        ) : null}
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button type="button" style={{ ...baseBtn, background: '#b45309', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningRiddleHint}>
+                          Hint
+                        </button>
+                        <button type="button" style={{ ...baseBtn, background: '#374151', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningRiddleReveal}>
+                          Give me the answer
+                        </button>
+                        <button type="button" style={{ ...baseBtn, background: '#374151', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningActionCancel}>
+                          Back
+                        </button>
+                      </div>
                     </div>
+                    {errorText}
                   </div>
                 </div>
               );
             }
 
             if (action === 'poem') {
-              const poemText = data.poem || 'Generating a poem...';
-              return (
-                <div style={{ padding: '0 12px' }}>
-                  <div style={cardStyle}>
-                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Poem</div>
-                    <div style={{ whiteSpace: 'pre-wrap', color: '#111827' }}>{poemText}</div>
-                    {errorText}
-                    <div style={rowStyle}>
-                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff' }} onClick={handleOpeningPoemDone} disabled={openingActionBusy}>
-                        Done
-                      </button>
-                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff' }} onClick={handleOpeningActionCancel} disabled={openingActionBusy}>
-                        Cancel
-                      </button>
+              const stage = openingActionState.stage;
+              const showSuggestions = data.showSuggestions;
+              const poemText = data.poem;
+              
+              if (stage === 'awaiting-topic') {
+                return (
+                  <div style={{ padding: '0 12px' }}>
+                    <div style={{ ...cardStyle, padding: '8px 12px' }}>
+                      <div style={{ marginBottom: 6, fontSize: '0.85rem', color: '#6b7280' }}>What would you like the poem to be about?</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <input
+                          type="text"
+                          value={openingActionInput}
+                          onChange={(e) => setOpeningActionInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && openingActionInput.trim()) {
+                              handleOpeningPoemSubmit();
+                            }
+                          }}
+                          placeholder="e.g., dinosaurs, space, friendship..."
+                          style={{ flex: 1, padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.9rem' }}
+                          autoFocus
+                        />
+                        <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningPoemSubmit} disabled={!openingActionInput.trim()}>
+                          Send
+                        </button>
+                        {showSuggestions && (
+                          <button type="button" style={{ ...baseBtn, background: '#f59e0b', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningPoemSuggestions}>
+                            Suggestions
+                          </button>
+                        )}
+                        <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningActionCancel}>
+                          Back
+                        </button>
+                      </div>
+                      {errorText}
                     </div>
                   </div>
-                </div>
-              );
+                );
+              }
+              
+              if (stage === 'reading' || stage === 'complete') {
+                return (
+                  <div style={{ padding: '0 12px' }}>
+                    <div style={{ ...cardStyle, padding: '8px 12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ flex: 1, whiteSpace: 'pre-wrap', color: '#111827', fontSize: '0.9rem' }}>{poemText || 'Generating poem...'}</div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningPoemDone}>
+                            Done
+                          </button>
+                          <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningActionCancel}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                      {errorText}
+                    </div>
+                  </div>
+                );
+              }
             }
 
             if (action === 'story') {
+              const setupStep = data.setupStep;
+              const stage = openingActionState.stage;
+              
+              // Get prompt text based on setup step
+              let promptText = 'Tell me about a character to start.';
+              if (setupStep === 'characters') {
+                promptText = 'Who are the characters in the story?';
+              } else if (setupStep === 'setting') {
+                promptText = 'Where does the story take place?';
+              } else if (setupStep === 'plot') {
+                promptText = 'What happens in the story?';
+              } else if (stage === 'awaiting-turn') {
+                promptText = 'What happens next?';
+              } else if (stage === 'complete' || stage === 'ended') {
+                promptText = '';
+              }
+              
               return (
                 <div style={{ padding: '0 12px' }}>
-                  <div style={cardStyle}>
-                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Story</div>
-                    <div style={{ maxHeight: 140, overflow: 'auto', border: '1px solid #e5e7eb', borderRadius: 8, padding: 8, background: '#fff' }}>
-                      {transcript.length === 0 && (
-                        <div style={{ color: '#6b7280' }}>Tell me about a character to start.</div>
-                      )}
-                      {transcript.map((turn, idx) => (
-                        <div key={idx} style={{ marginBottom: 6 }}>
-                          <span style={{ fontWeight: 700, color: turn.role === 'user' ? '#111827' : '#2563eb' }}>
-                            {turn.role === 'user' ? 'You' : 'Ms. Sonoma'}:
-                          </span>{' '}
-                          <span style={{ color: '#111827' }}>{turn.text}</span>
+                  <div style={{ ...cardStyle, padding: '8px 12px' }}>
+                    {transcript.length > 0 && (
+                      <div style={{ maxHeight: 100, overflow: 'auto', border: '1px solid #e5e7eb', borderRadius: 8, padding: 6, background: '#fff', marginBottom: 6, fontSize: '0.85rem' }}>
+                        {transcript.map((turn, idx) => (
+                          <div key={idx} style={{ marginBottom: 4 }}>
+                            <span style={{ fontWeight: 700, color: turn.role === 'user' ? '#111827' : '#2563eb' }}>
+                              {turn.role === 'user' ? 'You' : 'Ms. Sonoma'}:
+                            </span>{' '}
+                            <span style={{ color: '#111827' }}>{turn.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {(stage === 'complete' || stage === 'ended') ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                        <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningStoryFinish}>
+                          Done
+                        </button>
+                        <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningActionCancel}>
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        {promptText && (
+                          <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: 6 }}>{promptText}</div>
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input
+                            type="text"
+                            value={openingActionInput}
+                            onChange={(e) => setOpeningActionInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && openingActionInput.trim()) {
+                                handleOpeningStoryContinue();
+                              }
+                            }}
+                            placeholder="Your answer..."
+                            style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: '0.9rem' }}
+                            autoFocus
+                          />
+                          <button type="button" style={{ ...baseBtn, background: '#2563eb', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningStoryContinue} disabled={!openingActionInput.trim()}>
+                            Send
+                          </button>
+                          <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningActionCancel}>
+                            Back
+                          </button>
                         </div>
-                      ))}
-                    </div>
-                    {renderInputRow('Add the next part of the story', handleOpeningStoryContinue)}
+                      </>
+                    )}
                     {errorText}
-                    <div style={rowStyle}>
-                      <button type="button" style={{ ...baseBtn, background: '#2563eb', color: '#fff' }} onClick={handleOpeningStoryContinue} disabled={openingActionBusy}>
-                        Send
-                      </button>
-                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff' }} onClick={handleOpeningStoryFinish} disabled={openingActionBusy}>
-                        Finish
-                      </button>
-                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff' }} onClick={handleOpeningActionCancel} disabled={openingActionBusy}>
-                        Cancel
-                      </button>
-                    </div>
                   </div>
                 </div>
               );
@@ -4634,34 +5099,44 @@ function SessionPageV2Inner() {
             if (action === 'fill-in-fun') {
               return (
                 <div style={{ padding: '0 12px' }}>
-                  <div style={cardStyle}>
-                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Fill-in-Fun</div>
-                    {data.template ? (
-                      <div style={{ marginBottom: 6, color: '#4b5563' }}>Template: {data.template}</div>
-                    ) : null}
-                    {currentWordType ? (
-                      <div style={{ marginBottom: 6, fontWeight: 600 }}>Give me a {currentWordType.toLowerCase()}.</div>
-                    ) : (
-                      <div style={{ marginBottom: 6, color: '#6b7280' }}>Gathering blanks...</div>
-                    )}
-                    {collectedWords.length > 0 && (
-                      <div style={{ marginBottom: 6, color: '#374151' }}>
-                        Words so far: {collectedWords.join(', ')}
-                      </div>
-                    )}
-                    {renderInputRow(currentWordType ? `Type a ${currentWordType.toLowerCase()}` : 'Type a word', handleOpeningFillInFunSubmit)}
-                    {errorText}
-                    <div style={rowStyle}>
-                      <button type="button" style={{ ...baseBtn, background: '#2563eb', color: '#fff' }} onClick={handleOpeningFillInFunSubmit} disabled={openingActionBusy}>
+                  <div style={{ ...cardStyle, padding: '8px 12px' }}>
+                    <div style={{ fontSize: '0.85rem', marginBottom: 4 }}>
+                      {currentWordType ? (
+                        <span style={{ fontWeight: 600 }}>Give me a {currentWordType.toLowerCase()}.</span>
+                      ) : (
+                        <span style={{ color: '#6b7280' }}>Gathering blanks...</span>
+                      )}
+                      {collectedWords.length > 0 && (
+                        <span style={{ color: '#374151', marginLeft: 8 }}>
+                          Words: {collectedWords.join(', ')}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input
+                        type="text"
+                        value={openingActionInput}
+                        onChange={(e) => setOpeningActionInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleOpeningFillInFunSubmit();
+                          }
+                        }}
+                        placeholder={currentWordType ? `Type a ${currentWordType.toLowerCase()}` : 'Type a word'}
+                        style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: '0.9rem' }}
+                        autoFocus
+                      />
+                      <button type="button" style={{ ...baseBtn, background: '#2563eb', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningFillInFunSubmit}>
                         Submit
                       </button>
-                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff' }} onClick={handleOpeningFillInFunDone} disabled={openingActionBusy}>
+                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningFillInFunDone}>
                         Done
                       </button>
-                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff' }} onClick={handleOpeningActionCancel} disabled={openingActionBusy}>
+                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningActionCancel}>
                         Cancel
                       </button>
                     </div>
+                    {errorText}
                   </div>
                 </div>
               );
@@ -4671,18 +5146,19 @@ function SessionPageV2Inner() {
               const jokeText = data.joke || 'Sharing a quick joke...';
               return (
                 <div style={{ padding: '0 12px' }}>
-                  <div style={cardStyle}>
-                    <div style={{ fontWeight: 800, marginBottom: 4 }}>Joke</div>
-                    <div style={{ whiteSpace: 'pre-wrap', color: '#111827' }}>{jokeText}</div>
-                    {errorText}
-                    <div style={rowStyle}>
-                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff' }} onClick={handleOpeningJokeDone} disabled={openingActionBusy}>
-                        Done
-                      </button>
-                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff' }} onClick={handleOpeningActionCancel} disabled={openingActionBusy}>
-                        Cancel
-                      </button>
+                  <div style={{ ...cardStyle, padding: '8px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ flex: 1, whiteSpace: 'pre-wrap', color: '#111827', fontSize: '0.9rem' }}>{jokeText}</div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningJokeDone}>
+                          Done
+                        </button>
+                        <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningActionCancel}>
+                          Cancel
+                        </button>
+                      </div>
                     </div>
+                    {errorText}
                   </div>
                 </div>
               );
@@ -5060,27 +5536,25 @@ function SessionPageV2Inner() {
                         }
                       }}
                     />
+                    <button
+                      type="button"
+                      onClick={onSubmit}
+                      disabled={!canSubmit}
+                      style={{
+                        background: canSubmit ? '#c7442e' : '#9ca3af',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '10px 16px',
+                        fontWeight: 800,
+                        cursor: canSubmit ? 'pointer' : 'not-allowed',
+                        minHeight: 40
+                      }}
+                    >
+                      Submit
+                    </button>
                   </div>
                 )}
-
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                  <button
-                    type="button"
-                    onClick={onSubmit}
-                    disabled={!canSubmit}
-                    style={{
-                      background: canSubmit ? '#c7442e' : '#9ca3af',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 10,
-                      padding: '10px 16px',
-                      fontWeight: 800,
-                      cursor: canSubmit ? 'pointer' : 'not-allowed'
-                    }}
-                  >
-                    Submit
-                  </button>
-                </div>
               </div>
             );
           })()}
