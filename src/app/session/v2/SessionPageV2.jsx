@@ -3367,8 +3367,11 @@ function SessionPageV2Inner() {
       console.log('[SessionPageV2] testQuestionsComplete event received:', data);
       addEvent(`ðŸ“Š Test questions done! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%) - Grade: ${data.grade}`);
       setTestGrade(data);
-      console.log('[SessionPageV2] Setting testState to reviewing');
-      setTestState('reviewing');
+      console.log('[SessionPageV2] Skipping review, calling skipReview() to complete test');
+      // V2 doesn't have review UI yet, so skip directly to completion
+      if (phase.skipReview) {
+        phase.skipReview();
+      }
     });
     
     phase.on('reviewQuestion', (data) => {
