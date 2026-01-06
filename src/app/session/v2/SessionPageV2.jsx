@@ -3427,8 +3427,10 @@ function SessionPageV2Inner() {
     });
     
     // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
+    // Also auto-start during timeline jumps so "Test + Go" starts immediately.
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'test';
-    const shouldAutoStart = resumeMatch || !!savedTest;
+    const isTimelineJump = timelineJumpInProgressRef.current;
+    const shouldAutoStart = resumeMatch || !!savedTest || isTimelineJump;
     if (shouldAutoStart && phase.start) {
       phase.start();
       if (pendingPlayTimersRef.current?.test) {
