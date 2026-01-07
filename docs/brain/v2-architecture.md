@@ -27,8 +27,9 @@ After first round of fixes, second comprehensive audit found 6 additional critic
 
 **Video priming + audio unlock (2026-01-07)**
 - V2 must not start the looping video as an "autoplay unlock" step.
-- On the Begin click (`startSession`), V2 must preload/seek the video AND do a brief play-then-pause unlock during the trusted user gesture. Seek-only is not sufficient on some browsers (notably iOS Safari) and can lead to "video does not play until refresh".
-- The video must still end in a paused state after priming.
+- On the Begin click (`startSession`), V2 must preload/seek the video AND request a video unlock during the trusted user gesture.
+- iOS Safari can fail to unlock if the app calls `play()` and then immediately `pause()` in the same tick. The reliable approach is: call `video.play()` inside the gesture, then `pause()` when the `playing` event fires.
+- The video must still end in a paused state after priming/unlock.
 - Audio unlock must be performed during the Begin click by calling `AudioEngine.initialize()`; relying only on a document-level "first interaction" listener is not sufficient because React `onClick` can run before the listener fires.
 - AudioEngine remains the sole owner of video play/pause during TTS (`#startVideo` on start, `#cleanup` pause on end).
 

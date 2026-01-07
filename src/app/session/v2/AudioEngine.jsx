@@ -39,6 +39,9 @@ export class AudioEngine {
   #webAudioPausedAt = 0;
   
   #listeners = new Map(); // Event listeners
+
+  // Video unlock bookkeeping (iOS Safari requires play() during user gesture)
+  #videoUnlockRequested = false;
   
   constructor(options = {}) {
     this.#videoElement = options.videoElement || null;
@@ -109,6 +112,46 @@ export class AudioEngine {
       await silentAudio.play();
     } catch {
       // Ignore errors from silent audio
+    }
+
+    // Video unlock (must happen inside user gesture; pause can happen later).
+    // IMPORTANT: Do NOT play-and-immediately-pause in the same tick; on some browsers
+    // (notably iOS Safari) that can prevent the play() call from "unlocking" future playback.
+    this.#requestVideoUnlock();
+  }
+
+  #requestVideoUnlock() {
+    if (this.#videoUnlockRequested) return;
+    this.#videoUnlockRequested = true;
+
+    const video = this.#videoElement;
+    if (!video) return;
+
+    try { video.muted = true; } catch {}
+    try { video.playsInline = true; } catch {}
+    try { video.preload = 'auto'; } catch {}
+
+    // Pause as soon as playback actually starts (playing event), so we end in a paused state
+    // while still getting the autoplay "unlock" side effect from play().
+    const handlePlaying = () => {
+      try { video.pause(); } catch {}
+      try { video.currentTime = 0; } catch {}
+      try { video.removeEventListener('playing', handlePlaying); } catch {}
+    };
+
+    try {
+      video.addEventListener('playing', handlePlaying);
+    } catch {}
+
+    try {
+      const p = video.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => {
+          try { video.removeEventListener('playing', handlePlaying); } catch {}
+        });
+      }
+    } catch {
+      try { video.removeEventListener('playing', handlePlaying); } catch {}
     }
   }
   

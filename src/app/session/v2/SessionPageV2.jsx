@@ -4161,40 +4161,17 @@ function SessionPageV2Inner() {
       }, 0);
     }
     
-    // Preload/prime video during user gesture but do NOT leave it playing.
-    // Video playback is owned by AudioEngine (#startVideo/#cleanup) during TTS.
+    // Prep video element (load + seek to first frame). The actual iOS autoplay unlock
+    // is handled inside AudioEngine.initialize() (play() during gesture, pause on 'playing').
     try {
       if (videoRef.current) {
-        // Defensive: ensure muted for autoplay compatibility.
         try { videoRef.current.muted = true; } catch {}
-
         if (videoRef.current.readyState < 2) {
-          videoRef.current.load();
-          // Wait a moment for load to register
-          await new Promise(r => setTimeout(r, 100));
+          try { videoRef.current.load(); } catch {}
         }
-
-        // Seek to first frame (helps ensure first render is ready).
         try { videoRef.current.currentTime = 0; } catch {}
-
-        // IMPORTANT: On some browsers (notably iOS Safari), seeking is not enough to
-        // allow later programmatic playback. Do a brief play-then-pause unlock here
-        // while we still have a trusted user gesture.
-        try {
-          const playPromise = videoRef.current.play();
-          if (playPromise && playPromise.then) {
-            await playPromise.catch(() => {});
-          }
-        } catch {}
-
-        try { videoRef.current.pause(); } catch {}
-
-        // Defensive: ensure video is paused until AudioEngine starts TTS.
-        try { videoRef.current.pause(); } catch {}
       }
-    } catch (e) {
-      // Silent error handling
-    }
+    } catch {}
     
     const normalizeResumePhase = (phase) => {
       // Defensive: old snapshots may contain sub-phases that aren't valid orchestrator phases.
