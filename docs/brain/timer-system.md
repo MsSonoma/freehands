@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2026-01-05T14:01:05Z  
+**Last updated**: 2026-01-07T19:32:42Z  
 **Status**: Canonical
 
 ## How It Works
@@ -165,6 +165,10 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
 
 ## What NOT To Do
 
+❌ **Never describe Golden Keys as unlocking Poem/Story**
+- A Golden Key adds bonus minutes to play timers (extra play time)
+- Do not label it as unlocking specific activities (Poem/Story)
+
 ❌ **Never hide play buttons manually in timer expiry handler**
 - Phase handlers (handleGoComprehension, etc.) already call `setShowOpeningActions(false)`
 - Setting it in handlePlayExpiredComplete creates race conditions and breaks phase transitions
@@ -209,6 +213,20 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
   - `workPhaseCompletions` state (line ~491)
 
 ### Timer Component
+
+#### Pace Coloring (Work Timers)
+
+`SessionTimer` colors **work** timers by comparing lesson progress ($0$-$100$) vs time elapsed ($0$-$100$):
+
+- `timeProgress = (elapsedSeconds / totalSeconds) * 100`
+- `progressDiff = lessonProgress - timeProgress`
+- Work timers:
+  - Yellow when `progressDiff < -5`
+  - Red when `progressDiff < -15` or at `00:00`
+
+**Critical wiring rule (V2 parity):** V2 must pass a real `lessonProgress` value into every `SessionTimer` render (especially the in-video overlay timer). If omitted, `SessionTimer` defaults `lessonProgress = 0`, which causes timers to turn yellow/red almost immediately as soon as timeProgress exceeds 5%/15%.
+
+**V2 implementation detail:** V2 computes `lessonProgress` using the same phase-weight mapping as V1 and derives within-phase progress from snapshot `phaseData[phase].nextQuestionIndex` vs total questions.
 - **src/app/session/components/PlayTimeExpiredOverlay.jsx**:
   - 30-second countdown overlay
   - Auto-fires `onComplete` callback when countdown finishes

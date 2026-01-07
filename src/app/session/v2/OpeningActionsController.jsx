@@ -38,6 +38,8 @@ export class OpeningActionsController {
   #subject;
   #learnerGrade;
   #difficulty;
+
+  #fillInFunTemplatePromise = null;
   
   // Current action state
   #currentAction = null; // 'ask' | 'riddle' | 'poem' | 'story' | 'fill-in-fun' | 'joke' | null
@@ -672,8 +674,9 @@ export class OpeningActionsController {
   async startFillInFun() {
     this.#currentAction = 'fill-in-fun';
     this.#actionState = {
-      stage: 'collecting',
+      stage: 'loading-template',
       template: null,
+      wordTypes: [],
       words: [],
       currentIndex: 0
     };
@@ -684,51 +687,59 @@ export class OpeningActionsController {
       phase: this.#phase
     });
     
-    // Generate fill-in-fun template
-    const instruction = [
-      `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
-      `Create a fun Mad Libs style story about ${this.#subject}.`,
-      'Use this format: "The [ADJECTIVE] [NOUN] was [VERB]ing in the [PLACE]."',
-      'Make it educational and age-appropriate.',
-      'Include 4-5 blanks with labels like [ADJECTIVE], [NOUN], [VERB], [PLACE].'
-    ].join(' ');
-    
-    try {
-      const response = await fetch('/api/sonoma', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instruction, innertext: '' })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Fill-in-Fun generation failed');
+    const intro = "Let's play Fill-in-Fun! We can create a fun and mixed-up story! You'll need to come up with words to fill in the blanks. Ready?";
+
+    const ensureTemplatePromise = () => {
+      if (!this.#fillInFunTemplatePromise) {
+        const instruction = [
+          `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
+          `Create ONE short Mad Libs template sentence about ${this.#subject}.`,
+          'The template MUST contain these blanks in this exact order:',
+          '[ADJECTIVE] then [VERB] then [PLACE] then [ADJECTIVE] then [NOUN] then [ADJECTIVE] then [NUMBER].',
+          'Return ONLY the template sentence. No intro. No explanation. No quotes. No markdown.',
+          'Do not put two blanks adjacent; ensure normal spaces/punctuation between blanks.'
+        ].join(' ');
+
+        this.#fillInFunTemplatePromise = fetch('/api/sonoma', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instruction, innertext: '' })
+        })
+          .then(async (res) => {
+            if (!res.ok) throw new Error('Fill-in-Fun generation failed');
+            const data = await res.json();
+            return String(data?.reply || '').trim();
+          })
+          .catch((err) => {
+            console.error('[OpeningActionsController] Fill-in-Fun error:', err);
+            return '';
+          });
       }
-      
-      const data = await response.json();
-      const template = data.reply || 'The [ADJECTIVE] [NOUN] was [VERB]ing!';
-      
-      this.#actionState.template = template;
-      
-      // Extract word types needed
-      const wordTypes = template.match(/\[([A-Z]+)\]/g) || [];
-      this.#actionState.wordTypes = wordTypes.map(type => type.replace(/[\[\]]/g, ''));
-      
-      const firstPrompt = `Let's play Fill-in-Fun! Give me a ${this.#actionState.wordTypes[0].toLowerCase()}.`;
-      await this.#audioEngine.speak(firstPrompt);
-      
-      return { success: true, template, prompt: firstPrompt };
-    } catch (err) {
-      console.error('[OpeningActionsController] Fill-in-Fun error:', err);
-      
-      const fallbackTemplate = 'The [ADJECTIVE] [NOUN] was very [ADJECTIVE]!';
-      this.#actionState.template = fallbackTemplate;
-      this.#actionState.wordTypes = ['ADJECTIVE', 'NOUN', 'ADJECTIVE'];
-      
-      const firstPrompt = 'Let\'s play Fill-in-Fun! Give me an adjective.';
-      await this.#audioEngine.speak(firstPrompt);
-      
-      return { success: true, template: fallbackTemplate, prompt: firstPrompt };
-    }
+      return this.#fillInFunTemplatePromise;
+    };
+
+    // Start prefetch immediately, then speak the hardwired intro.
+    const templatePromise = ensureTemplatePromise();
+    await this.#audioEngine.speak(intro);
+
+    const templateRaw = await templatePromise;
+    this.#fillInFunTemplatePromise = null;
+
+    const fallbackTemplate = 'The [ADJECTIVE] calculator was [VERB]ing in the [PLACE] with a [ADJECTIVE] [NOUN] and [ADJECTIVE] [NUMBER].';
+    const template = templateRaw && templateRaw.includes('[') ? templateRaw : fallbackTemplate;
+    this.#actionState.template = template;
+
+    // Extract word types in the order they appear
+    const wordTypes = template.match(/\[([A-Z]+)\]/g) || [];
+    const parsedTypes = wordTypes.map((t) => t.replace(/[\[\]]/g, '')).filter(Boolean);
+    this.#actionState.wordTypes = parsedTypes.length ? parsedTypes : ['ADJECTIVE', 'VERB', 'PLACE', 'ADJECTIVE', 'NOUN', 'ADJECTIVE', 'NUMBER'];
+    this.#actionState.stage = 'collecting';
+
+    const firstType = this.#actionState.wordTypes[0] || 'ADJECTIVE';
+    const firstPrompt = `Give me a ${String(firstType).toLowerCase()}.`;
+    await this.#audioEngine.speak(firstPrompt);
+
+    return { success: true, template: this.#actionState.template, prompt: firstPrompt };
   }
   
   /**
@@ -762,8 +773,8 @@ export class OpeningActionsController {
       this.#actionState.words.forEach(word => {
         completedStory = completedStory.replace(/\[[A-Z]+\]/, word);
       });
-      
-      const finalText = `Here's your story: ${completedStory}`;
+
+      const finalText = `Here's your story: ${completedStory} That was so fun and random.`;
       await this.#audioEngine.speak(finalText);
       this.#eventBus.emit('openingActionComplete', {
         action: 'fill-in-fun',

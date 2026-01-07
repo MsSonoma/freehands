@@ -469,6 +469,7 @@ function SessionPageV2Inner() {
   const pendingTimerStateRef = useRef(null);
   const startSessionRef = useRef(null);
   const resumePhaseRef = useRef(null);
+  const deferClosingStartUntilAudioEndRef = useRef(false);
   
   const [lessonData, setLessonData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -480,7 +481,6 @@ function SessionPageV2Inner() {
   const [currentPhase, setCurrentPhase] = useState('idle');
   
   const [teachingStage, setTeachingStage] = useState('idle');
-  const [teachingFirstClick, setTeachingFirstClick] = useState(false);
   const [teachingLoading, setTeachingLoading] = useState(false);
   const [comprehensionSubmitting, setComprehensionSubmitting] = useState(false);
   const [exerciseSubmitting, setExerciseSubmitting] = useState(false);
@@ -553,8 +553,13 @@ function SessionPageV2Inner() {
   const [openingActionState, setOpeningActionState] = useState({});
   const [openingActionInput, setOpeningActionInput] = useState('');
   const [openingActionBusy, setOpeningActionBusy] = useState(false);
+  const openingActionBusyRef = useRef(false);
   const [openingActionError, setOpeningActionError] = useState('');
   const [showGames, setShowGames] = useState(false);
+
+  useEffect(() => {
+    openingActionBusyRef.current = openingActionBusy;
+  }, [openingActionBusy]);
 
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
@@ -633,6 +638,13 @@ function SessionPageV2Inner() {
       return next;
     });
   }, [activeCaptionIndex, persistTranscriptState]);
+
+  // Idle "Begin" / "Resume" CTA loading state
+  const [startSessionLoading, setStartSessionLoading] = useState(false);
+  const startSessionLoadingRef = useRef(false);
+  useEffect(() => {
+    startSessionLoadingRef.current = startSessionLoading;
+  }, [startSessionLoading]);
 
   const resetTranscriptState = useCallback(({ persist = false } = {}) => {
     setTranscriptLines([]);
@@ -1733,7 +1745,6 @@ function SessionPageV2Inner() {
       
       try {
         // Prefetch greeting TTS
-        const { fetchTTS } = await import('./v2/services');
         await fetchTTS(greetingText);
       } catch (err) {
         console.error('[SessionPageV2] Failed to prefetch greeting:', err);
@@ -1758,6 +1769,63 @@ function SessionPageV2Inner() {
     const key = `${phaseName}_${timerType}_min`;
     return phaseTimers[key] || 0;
   }, [phaseTimers]);
+
+  // Calculate lesson progress percentage (V1 parity)
+  // Used by SessionTimer to determine pace color for WORK timers.
+  const calculateLessonProgress = useCallback(() => {
+    const phaseWeights = {
+      discussion: 10,
+      teaching: 30,
+      comprehension: 50,
+      exercise: 70,
+      worksheet: 85,
+      test: 95
+    };
+
+    if (currentPhase === 'complete' || currentPhase === 'closing') return 100;
+
+    const baseWeight = phaseWeights[currentPhase] || 0;
+    const snapshot = snapshotServiceRef.current?.snapshot || null;
+    const phaseData = snapshot?.phaseData || {};
+
+    const getRatioFromSnapshot = (phaseKey, totalFallback) => {
+      const pd = phaseData?.[phaseKey] || {};
+      const total = (
+        (Number.isFinite(totalFallback) && totalFallback > 0)
+          ? totalFallback
+          : (Array.isArray(pd.questions) ? pd.questions.length : 0)
+      );
+      if (!total) return 0;
+
+      const nextIdxRaw = Number.isFinite(pd.nextQuestionIndex)
+        ? pd.nextQuestionIndex
+        : (Number.isFinite(pd.questionIndex) ? pd.questionIndex : 0);
+      const nextIdx = Math.max(0, Math.min(total, nextIdxRaw));
+      return Math.max(0, Math.min(1, nextIdx / total));
+    };
+
+    let progress = baseWeight;
+
+    if (currentPhase === 'comprehension') {
+      const phaseRange = phaseWeights.comprehension - phaseWeights.teaching;
+      const ratio = getRatioFromSnapshot('comprehension', comprehensionTotalQuestions);
+      progress = phaseWeights.teaching + (ratio * phaseRange);
+    } else if (currentPhase === 'exercise') {
+      const phaseRange = phaseWeights.exercise - phaseWeights.comprehension;
+      const ratio = getRatioFromSnapshot('exercise', exerciseTotalQuestions);
+      progress = phaseWeights.comprehension + (ratio * phaseRange);
+    } else if (currentPhase === 'worksheet') {
+      const phaseRange = phaseWeights.worksheet - phaseWeights.exercise;
+      const ratio = getRatioFromSnapshot('worksheet', worksheetTotalQuestions);
+      progress = phaseWeights.exercise + (ratio * phaseRange);
+    } else if (currentPhase === 'test') {
+      const phaseRange = phaseWeights.test - phaseWeights.worksheet;
+      const ratio = getRatioFromSnapshot('test', testTotalQuestions);
+      progress = phaseWeights.worksheet + (ratio * phaseRange);
+    }
+
+    return Math.min(100, Math.max(0, progress));
+  }, [currentPhase, comprehensionTotalQuestions, exerciseTotalQuestions, worksheetTotalQuestions, testTotalQuestions]);
   
   // Handle timer time-up callback
   const handlePhaseTimerTimeUp = useCallback(() => {
@@ -2133,11 +2201,13 @@ function SessionPageV2Inner() {
   const handleOpeningAskSubmit = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
     if (!controller) return;
+    if (openingActionBusyRef.current) return;
     const question = openingActionInput.trim();
     if (!question) {
       setOpeningActionError('Enter a question first.');
       return;
     }
+    openingActionBusyRef.current = true;
     setOpeningActionBusy(true);
     setOpeningActionError('');
     try {
@@ -2149,6 +2219,7 @@ function SessionPageV2Inner() {
       console.error('[SessionPageV2] Ask submit error:', err);
       setOpeningActionError('Could not send that question. Try again.');
     } finally {
+      openingActionBusyRef.current = false;
       setOpeningActionBusy(false);
     }
   }, [openingActionInput, syncOpeningActionState, buildAskContext]);
@@ -2290,6 +2361,9 @@ function SessionPageV2Inner() {
   const handleOpeningFillInFunSubmit = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
     if (!controller) return;
+    const current = syncOpeningActionState();
+    const ready = current?.action === 'fill-in-fun' && Array.isArray(current?.data?.wordTypes) && current.data.wordTypes.length > 0;
+    if (!ready || openingActionBusy) return;
     const word = openingActionInput.trim();
     if (!word) {
       setOpeningActionError('Enter a word to keep going.');
@@ -2308,6 +2382,22 @@ function SessionPageV2Inner() {
       setOpeningActionBusy(false);
     }
   }, [openingActionInput, syncOpeningActionState]);
+
+  const handleOpeningFillInFunStart = useCallback(async () => {
+    const controller = openingActionsControllerRef.current;
+    if (!controller || openingActionBusy) return;
+    setOpeningActionError('');
+    setOpeningActionBusy(true);
+    try {
+      await controller.startFillInFun();
+      syncOpeningActionState();
+    } catch (err) {
+      console.error('[SessionPageV2] Fill-in-Fun start error:', err);
+      setOpeningActionError('Fill-in-Fun is unavailable right now. Try again.');
+    } finally {
+      setOpeningActionBusy(false);
+    }
+  }, [openingActionBusy, syncOpeningActionState]);
 
   const handleOpeningFillInFunDone = useCallback(() => {
     const controller = openingActionsControllerRef.current;
@@ -2805,6 +2895,36 @@ function SessionPageV2Inner() {
       
       // Pass golden key earned status for notification on lessons page
       const earnedKey = timerServiceRef.current?.getGoldenKeyStatus()?.eligible || false;
+
+      // If golden key was earned, persist it to the learner inventory (Supabase)
+      // NOTE: The toast on /learn/lessons is driven by sessionStorage; that alone does NOT update the DB.
+      if (earnedKey) {
+        const awardLearnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
+        if (awardLearnerId && awardLearnerId !== 'demo') {
+          try {
+            const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
+            const learner = await getLearner(awardLearnerId);
+            if (learner) {
+              await updateLearner(awardLearnerId, {
+                name: learner.name,
+                grade: learner.grade,
+                targets: {
+                  comprehension: learner.comprehension,
+                  exercise: learner.exercise,
+                  worksheet: learner.worksheet,
+                  test: learner.test
+                },
+                session_timer_minutes: learner.session_timer_minutes,
+                golden_keys: (learner.golden_keys || 0) + 1
+              });
+              addEvent('🔑 Golden Key awarded (saved to learner inventory)');
+            }
+          } catch (err) {
+            console.error('[SessionPageV2] Failed to persist golden key award:', err);
+          }
+        }
+      }
+
       if (earnedKey && typeof window !== 'undefined') {
         try {
           sessionStorage.setItem('just_earned_golden_key', 'true');
@@ -3766,12 +3886,10 @@ function SessionPageV2Inner() {
       
       // Prefetch congrats TTS for fast Complete Lesson response
       const congratsText = 'Great job completing the lesson!';
-      import('./services').then(({ fetchTTS }) => {
-        fetchTTS(congratsText).then(url => {
-          if (url) setCongratsTtsUrl(url);
-        }).catch(err => {
-          console.warn('[SessionPageV2] Failed to prefetch congrats TTS:', err);
-        });
+      fetchTTS(congratsText).then(audioBase64 => {
+        if (audioBase64) setCongratsTtsUrl(audioBase64);
+      }).catch(err => {
+        console.warn('[SessionPageV2] Failed to prefetch congrats TTS:', err);
       });
       
       // Complete work phase timer when entering review
@@ -3933,6 +4051,37 @@ function SessionPageV2Inner() {
     });
     
     // Auto-start closing phase (no Begin button needed for farewell)
+    // If we just played the "Complete Lesson" congrats message, do not cut it off.
+    if (deferClosingStartUntilAudioEndRef.current && audioEngineRef.current) {
+      const engine = audioEngineRef.current;
+      const state = engine.state;
+
+      // If congrats already finished (or never started), start immediately.
+      if (state !== 'playing' && state !== 'paused') {
+        deferClosingStartUntilAudioEndRef.current = false;
+        phase.start();
+        return;
+      }
+
+      let started = false;
+      const onEnd = () => {
+        if (started) return;
+        started = true;
+        try { engine.off?.('end', onEnd); } catch {}
+        deferClosingStartUntilAudioEndRef.current = false;
+        try { phase.start(); } catch {}
+      };
+
+      try {
+        engine.on?.('end', onEnd);
+      } catch {
+        // If we cannot subscribe, fall back to immediate start.
+        deferClosingStartUntilAudioEndRef.current = false;
+        phase.start();
+      }
+      return;
+    }
+
     phase.start();
   };
   
@@ -3987,39 +4136,61 @@ function SessionPageV2Inner() {
       return;
     }
 
+    // Ensure audio is unlocked during this user gesture (V1 parity).
+    // The auto "first interaction" listener can fire after React onClick.
+    try {
+      await audioEngineRef.current.initialize();
+    } catch {
+      // Ignore - browsers may block resume/play outside strict gesture contexts.
+    }
+
     if (options?.ignoreResume) {
       resetTranscriptState();
     }
     
-    // Start teaching prefetch immediately in background (needs to be ready by Teaching phase)
+    // Start teaching prefetch in the background (needs to be ready by Teaching phase).
+    // Defer off the Begin click call stack so the "Loading..." state can render immediately.
     if (teachingControllerRef.current) {
-      teachingControllerRef.current.prefetchAll();
-      addEvent('📄 Started background prefetch of teaching content');
+      setTimeout(() => {
+        try {
+          teachingControllerRef.current?.prefetchAll?.();
+          addEvent('📄 Started background prefetch of teaching content');
+        } catch {
+          // Silent
+        }
+      }, 0);
     }
     
-    // Unlock video playback for Chrome autoplay policy
+    // Preload/prime video during user gesture but do NOT leave it playing.
+    // Video playback is owned by AudioEngine (#startVideo/#cleanup) during TTS.
     try {
       if (videoRef.current) {
+        // Defensive: ensure muted for autoplay compatibility.
+        try { videoRef.current.muted = true; } catch {}
+
         if (videoRef.current.readyState < 2) {
           videoRef.current.load();
           // Wait a moment for load to register
           await new Promise(r => setTimeout(r, 100));
         }
-        // Seek to first frame and start playing
+
+        // Seek to first frame (helps ensure first render is ready).
+        try { videoRef.current.currentTime = 0; } catch {}
+
+        // IMPORTANT: On some browsers (notably iOS Safari), seeking is not enough to
+        // allow later programmatic playback. Do a brief play-then-pause unlock here
+        // while we still have a trusted user gesture.
         try {
-          videoRef.current.currentTime = 0;
-          await videoRef.current.play();
-        } catch (e) {
-          // Fallback: briefly play then pause to unlock autoplay, then play again
           const playPromise = videoRef.current.play();
           if (playPromise && playPromise.then) {
-            await playPromise.then(() => {
-              try { videoRef.current.pause(); } catch {}
-              // Now play for real
-              try { videoRef.current.play(); } catch {}
-            }).catch(() => {});
+            await playPromise.catch(() => {});
           }
-        }
+        } catch {}
+
+        try { videoRef.current.pause(); } catch {}
+
+        // Defensive: ensure video is paused until AudioEngine starts TTS.
+        try { videoRef.current.pause(); } catch {}
       }
     } catch (e) {
       // Silent error handling
@@ -4053,6 +4224,18 @@ function SessionPageV2Inner() {
     }
   };
 
+  const handleStartSessionClick = useCallback(async (options = {}) => {
+    if (startSessionLoadingRef.current) return;
+    startSessionLoadingRef.current = true;
+    setStartSessionLoading(true);
+    try {
+      await startSession(options);
+    } finally {
+      startSessionLoadingRef.current = false;
+      setStartSessionLoading(false);
+    }
+  }, [startSession]);
+
   // Allow early-declared callbacks to invoke startSession without TDZ issues.
   startSessionRef.current = startSession;
   
@@ -4063,11 +4246,6 @@ function SessionPageV2Inner() {
   
   const nextSentence = async () => {
     if (!teachingControllerRef.current) return;
-    
-    // Mark first click
-    if (!teachingFirstClick) {
-      setTeachingFirstClick(true);
-    }
     
     // Show loading if GPT content isn't ready
     setTeachingLoading(true);
@@ -4261,6 +4439,8 @@ function SessionPageV2Inner() {
     // Play prefetched congrats TTS immediately for responsive feel
     if (congratsTtsUrl && audioEngineRef.current) {
       try {
+        // Prevent the ClosingPhase farewell from interrupting this message.
+        deferClosingStartUntilAudioEndRef.current = true;
         audioEngineRef.current.playAudio(congratsTtsUrl, ['Great job completing the lesson!']);
       } catch (err) {
         console.warn('[SessionPageV2] Failed to play congrats TTS:', err);
@@ -4409,6 +4589,7 @@ function SessionPageV2Inner() {
                 timerType={currentTimerMode[getCurrentPhaseName()]}
                 totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()])}
                 goldenKeyBonus={currentTimerMode[getCurrentPhaseName()] === 'play' ? goldenKeyBonus : 0}
+                lessonProgress={calculateLessonProgress()}
                 isPaused={timerPaused}
                 onTimeUp={handlePhaseTimerTimeUp}
                 onPauseToggle={handleTimerPauseToggle}
@@ -4907,7 +5088,7 @@ function SessionPageV2Inner() {
                   Story
                 </button>
                 <button
-                  onClick={() => openingActionsControllerRef.current?.startFillInFun()}
+                  onClick={handleOpeningFillInFunStart}
                   style={{
                     padding: '8px 16px',
                     fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
@@ -4915,9 +5096,11 @@ function SessionPageV2Inner() {
                     color: '#fff',
                     border: 'none',
                     borderRadius: 8,
-                    cursor: 'pointer',
-                    fontWeight: 600
+                    cursor: openingActionBusy ? 'not-allowed' : 'pointer',
+                    fontWeight: 600,
+                    opacity: openingActionBusy ? 0.6 : 1
                   }}
+                  disabled={openingActionBusy}
                 >
                   Fill-in-Fun
                 </button>
@@ -5006,14 +5189,22 @@ function SessionPageV2Inner() {
                         onChange={(e) => setOpeningActionInput(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (openingActionBusy) return;
                             handleOpeningAskSubmit();
                           }
                         }}
                         placeholder="Ask Ms. Sonoma..."
                         style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: '0.9rem' }}
                         autoFocus
+                        disabled={openingActionBusy}
                       />
-                      <button type="button" style={{ ...baseBtn, background: '#111827', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningAskSubmit}>
+                      <button
+                        type="button"
+                        style={{ ...baseBtn, background: '#111827', color: '#fff', padding: '8px 12px', opacity: openingActionBusy ? 0.6 : 1, cursor: openingActionBusy ? 'not-allowed' : 'pointer' }}
+                        onClick={handleOpeningAskSubmit}
+                        disabled={openingActionBusy}
+                      >
                         Send
                       </button>
                       <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningAskDone}>
@@ -5207,6 +5398,7 @@ function SessionPageV2Inner() {
             }
 
             if (action === 'fill-in-fun') {
+              const canSubmit = !openingActionBusy && !!currentWordType && !!openingActionInput.trim();
               return (
                 <div style={{ padding: '0 12px' }}>
                   <div style={{ ...cardStyle, padding: '8px 12px' }}>
@@ -5229,14 +5421,22 @@ function SessionPageV2Inner() {
                         onChange={(e) => setOpeningActionInput(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (!canSubmit) return;
                             handleOpeningFillInFunSubmit();
                           }
                         }}
                         placeholder={currentWordType ? `Type a ${currentWordType.toLowerCase()}` : 'Type a word'}
                         style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: '0.9rem' }}
                         autoFocus
+                        disabled={openingActionBusy || !currentWordType}
                       />
-                      <button type="button" style={{ ...baseBtn, background: '#2563eb', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningFillInFunSubmit}>
+                      <button
+                        type="button"
+                        style={{ ...baseBtn, background: '#2563eb', color: '#fff', padding: '8px 12px', opacity: canSubmit ? 1 : 0.6, cursor: canSubmit ? 'pointer' : 'not-allowed' }}
+                        onClick={handleOpeningFillInFunSubmit}
+                        disabled={!canSubmit}
+                      >
                         Submit
                       </button>
                       <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningFillInFunDone}>
@@ -5326,10 +5526,10 @@ function SessionPageV2Inner() {
                       <button
                         type="button"
                         style={{...ctaStyle, opacity: (audioReady && snapshotLoaded) ? 1 : 0.5}}
-                        onClick={startSession}
-                        disabled={!(audioReady && snapshotLoaded)}
+                        onClick={() => handleStartSessionClick()}
+                        disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
                       >
-                        Resume
+                        {startSessionLoading ? 'Loading...' : 'Resume'}
                       </button>
                       <button
                         type="button"
@@ -5349,7 +5549,7 @@ function SessionPageV2Inner() {
                           setCurrentPhase('idle');
                           setDiscussionState('idle');
                         }}
-                        disabled={!(audioReady && snapshotLoaded)}
+                        disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
                       >
                         Start Over
                       </button>
@@ -5358,10 +5558,13 @@ function SessionPageV2Inner() {
                     <button
                       type="button"
                       style={{...ctaStyle, opacity: (audioReady && snapshotLoaded) ? 1 : 0.5}}
-                      onClick={startSession}
-                      disabled={!(audioReady && snapshotLoaded)}
+                      onClick={() => handleStartSessionClick()}
+                      disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
                     >
-                      {(audioReady && snapshotLoaded) ? 'Begin' : 'Loading...'}
+                      {(audioReady && snapshotLoaded)
+                        ? (startSessionLoading ? 'Loading...' : 'Begin')
+                        : 'Loading...'
+                      }
                     </button>
                   )
                 )}
@@ -5418,7 +5621,7 @@ function SessionPageV2Inner() {
                   >
                     {teachingLoading
                       ? 'Loading...'
-                      : !teachingFirstClick
+                      : teachingStage === 'idle'
                         ? 'Continue to Definitions'
                         : isInSentenceMode
                           ? 'Next Sentence'
@@ -5703,6 +5906,7 @@ function SessionPageV2Inner() {
             goldenKeyBonus={timerType === 'play' ? goldenKeyBonus : 0}
             isPaused={timerPaused}
             lessonKey={lessonKey}
+            lessonProgress={calculateLessonProgress()}
           />
         ) : null;
 

@@ -95,9 +95,9 @@ export default function GoldenKeyCounter({ learnerId, selected, onToggle }) {
           marginTop: 2
         }}>
           {selected 
-            ? 'This unlocks the poem and story Q&A for your next lesson.'
+            ? 'This adds bonus play time to your next lesson.'
             : hasKeys
-              ? 'Click the key to unlock poem & story Q&A in your next lesson.'
+              ? 'Click the key to add bonus play time to your next lesson.'
               : 'Complete a lesson within the time limit to earn golden keys!'
           }
         </div>

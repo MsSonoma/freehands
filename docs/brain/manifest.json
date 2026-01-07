@@ -165,7 +165,7 @@
       "facilitator-lessons",
       "supabase-lesson-load"
     ],
-    "last_updated": "2026-01-07T05:00:00Z",
+    "last_updated": "2026-01-07T19:39:27Z",
     "status": "active-development"
   },
   "mr-mentor-conversation-flows": {
@@ -302,7 +302,7 @@
       "playTimerExpired event",
       "V2 parent-controlled overlay"
     ],
-    "last_updated": "2026-01-05T16:45:00Z",
+    "last_updated": "2026-01-07T19:32:42Z",
     "status": "canonical"
   },
   "lesson-assessment-architecture": {
@@ -398,7 +398,7 @@
       "Games overlay",
       "opening actions play time"
     ],
-    "last_updated": "2026-01-07T00:15:00Z",
+    "last_updated": "2026-01-07T06:40:00Z",
     "status": "canonical"
   },
   "beta-program": {

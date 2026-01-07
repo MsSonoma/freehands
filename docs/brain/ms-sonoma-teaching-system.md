@@ -1,7 +1,7 @@
 # Ms. Sonoma Teaching System
 
 **Status**: Canonical  
-**Last Updated**: 2026-01-06T10:05:00Z
+**Last Updated**: 2026-01-07T06:40:00Z
 
 ## How It Works
 
@@ -250,6 +250,8 @@ Before shipping to Ms. Sonoma, verify:
 - Buttons (Joke, Riddle, Poem, Story, Fill-in-Fun, Games) show in the play-time awaiting-go bar for Q&A phases; Go/work transitions, play-time expiry, or timeline jumps clear inputs/errors/busy flags and hide the Games overlay. Ask Ms. Sonoma now lives only as a circular video overlay button (raised-hand icon) on the left side of the video, above skip/repeat, persisting across discussion, teaching, and all Q&A states and launching the same Ask panel.
 - Ask replies carry the learner question plus the on-screen Q&A prompt (if one is active) and the lesson vocab terms/definitions so answers stay on-topic and use the correct meaning for multi-sense words.
 - Active panels bind to controller events: Ask textarea submits via Enter/button and Done calls completeAsk; Joke shows current joke with Done calling completeJoke; Riddle uses Hint/Reveal plus Done; Poem waits for playback then Done triggers completePoem; Story logs transcript with Continue and Finish; Fill-in-Fun collects words via addFillInFunWord and Done/Cancel via completeFillInFun.
+- Ask is single-flight: while an Ask question is generating/playing, the Ask input and Send button disable and Enter/Send presses are ignored until the response completes.
+- Fill-in-Fun is intro-first and prefetches: clicking Fill-in-Fun immediately speaks a hardwired intro line, starts GPT template generation in the background, then begins word collection only after blanks are ready (input disabled until ready).
 - Games opens a full-screen GamesOverlay (memory, snake, catch, maze, whack-a-mole, platform jumper) with the play timer badge from SessionTimer; closes via X/background click or automatically when leaving play time or when play timer expires.
 - Active opening action panels render inside the fixed footer (centered card, no video overlay) matching V1 behavior; cancel clears panel state without covering the video. When Ask is active during Q&A, the answer footer hides so the shared Ask input is the only text field.
 - Opening actions reuse a single shared text input (same footprint as the main footer input) instead of spawning new overlays; Ask/Riddle guesses/Story/Fill-in-Fun all capture learner text there, Enter-to-send included. Riddle now accepts conversational guesses (normalized) with Ms. Sonoma responding and still supports Hint/Reveal buttons; Poem/Joke remain listen-and-done flows.

@@ -24,6 +24,22 @@ After first round of fixes, second comprehensive audit found 6 additional critic
 - Teaching phase no longer auto-plays the first sentence; audio waits for the learner's first Next/Repeat click (V1 pacing gate).
 - SnapshotService now automatically falls back to localStorage when Supabase snapshot persistence is unavailable (e.g., missing `snapshots` table / schema cache issues), so phase completion saves do not break the session flow.
 - Video now plays continuously during TTS playback: removed `#cleanup()` video pause and `onpause` handler that was stopping video between sentences.
+
+**Video priming + audio unlock (2026-01-07)**
+- V2 must not start the looping video as an "autoplay unlock" step.
+- On the Begin click (`startSession`), V2 must preload/seek the video AND do a brief play-then-pause unlock during the trusted user gesture. Seek-only is not sufficient on some browsers (notably iOS Safari) and can lead to "video does not play until refresh".
+- The video must still end in a paused state after priming.
+- Audio unlock must be performed during the Begin click by calling `AudioEngine.initialize()`; relying only on a document-level "first interaction" listener is not sufficient because React `onClick` can run before the listener fires.
+- AudioEngine remains the sole owner of video play/pause during TTS (`#startVideo` on start, `#cleanup` pause on end).
+
+**Idle Begin CTA loading feedback (2026-01-07)**
+- When the learner clicks the initial "Begin" (idle phase) or "Resume", the CTA must immediately flip to "Loading..." and disable until `startSession()` returns.
+- This prevents the first open from looking stalled while audio unlock + orchestrator start completes.
+
+**Complete Lesson farewell sequencing (2026-01-07)**
+- The Test review "Complete Lesson" click plays a short congrats line to hide end-of-lesson load.
+- The Closing phase farewell must NOT interrupt that congrats line.
+- If congrats audio is playing when Closing begins, defer `ClosingPhase.start()` until the AudioEngine emits `end`.
 - Transcript now uses V1's `CaptionPanel` (assistant/user styling, MC stack, vocab highlighting) and saves `{ lines:[{text,role}], activeIndex }` into snapshots. Caption changes and learner submissions append lines with duplicate detection; active caption highlights are restored on load for cross-device continuity. Caption panel auto-scrolls to the newest line, and transcript state resets when Start Over ignores resume so captions do not accumulate across restarts.
 
 **1. AudioEngine.initialize() Method Added** ✅
@@ -222,7 +238,7 @@ V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical 
 - No play timer in discussion phase (instant transition)
 - Play/work timer modes still apply to Teaching, Repeat, Transition, Comprehension, Closing phases
 - Lesson title in discussion/closing flows comes from `lessonData.title` with `lessonId` fallback; never reference undeclared locals when wiring DiscussionPhase
-- The discussion work timer **spans both discussion and teaching**. It starts on discussion entry and must be completed when teaching finishes (not on `discussionComplete`), or the visible timer will freeze as soon as the "Start Definitions" CTA appears.
+- The discussion work timer **spans both discussion and teaching**. It starts on discussion entry and must be completed when teaching finishes (not on `discussionComplete`), or the visible timer will freeze as soon as the definitions CTA appears.
 - Opening action buttons (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games) appear during play time in phases 2-5
 
 **User Flow:**
@@ -460,7 +476,7 @@ expect(engine.isPlaying).toBe(true);
 - Constructor accepts `lessonMeta: { subject, difficulty, lessonId, lessonTitle }`
 
 **Zero-Latency Prefetch Strategy:**
-- `prefetchAll()` called on Begin click (before discussion greeting)
+- `prefetchAll()` triggered on Begin click (deferred to next tick so it does not block the UI)
 - Starts ALL GPT calls in parallel (definitions, examples, both gate prompts)
 - GPT calls run in background during discussion greeting (~3-5 seconds)
 - When teaching starts, prefetched data is awaited (usually already complete)
@@ -487,7 +503,7 @@ expect(engine.isPlaying).toBe(true);
 - Save snapshots (emits events for PhaseOrchestrator to handle)
 - Control phase transitions
 - Read definitions/examples from JSON (always calls GPT)
-- Emit 'loading' stage changes (prefetch eliminates loading states; only surfaced on first Start Definitions click if definitions are still loading)
+- Emit 'loading' stage changes (prefetch eliminates most loading states; only surfaced when the learner clicks and definitions/examples are still loading)
 
 **Race Condition Fix (2026-01-03):**
 When user presses Next/Skip during intro audio (e.g., "First let's go over some definitions"), the GPT content may not be ready yet. Fixed with async content awaiting:
@@ -510,7 +526,13 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
 - User can press Next/Skip anytime - never blocked
 - If content not ready, brief wait then plays (no forced finishes)
 - If content ready, plays immediately (zero latency from prefetch)
-- First CTA shows "Start Definitions" until the first Next click; if definitions are still loading after that click, the button shows an inline spinner and disables Repeat until content is ready
+- Teaching CTA label is **stage-driven** (not "first click" driven):
+  - Shows "Continue to Definitions" only while `teachingStage === 'idle'` (pre-definitions)
+  - Shows "Next Sentence" while reading sentence-by-sentence
+  - Shows "Continue to Examples" at the definitions gate
+  - Shows "Complete Teaching" at the examples gate
+  - Must remain correct after refresh/resume (no local "first click" state)
+- If definitions/examples are still loading after a click, the button shows loading feedback and disables Repeat until content is ready
 - During the definitions gate, the "Continue to Examples" button is hidden while the "Do you have any questions?" + suggested questions audio plays and only appears after that sequence finishes
 
 ### PhaseOrchestrator Component
@@ -705,7 +727,7 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
   - Test controls: Answer input in fixed footer (Enter submits); no on-video Test Q&A overlays
   - Test grading: Letter grade (A-F), percentage, on-time status
   - Test review: Question-by-question review with correct answers highlighted, Previous/Next navigation
-  - Golden key award: Displayed when 3 work phases completed on-time
+  - Golden key award: Eligibility is displayed when 3 work phases complete on-time; on Complete Lesson, SessionPageV2 increments the learner's `golden_keys` inventory in Supabase (the /learn/lessons toast is only a notification flag and is not the source of truth)
   - Closing phase: Displays encouraging message
   - Audio transport controls: Stop, Pause, Resume, Mute (with Space hotkey)
   - Snapshot auto-save: Saves after discussion, teaching, comprehension, exercise, worksheet, test completion
@@ -722,7 +744,7 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
 2. Browser test: Verify Supabase snapshot persistence
 3. Browser test: Verify audio initialization on iOS
 4. Browser test: Verify timer events update UI correctly
-5. Browser test: Verify golden key award logic (3 on-time completions)
+5. Browser test: Verify golden key award persistence (3 on-time completions increments `learners.golden_keys`)
 6. Browser test: Verify generated lesson loading
 7. Production deployment with feature flag
 

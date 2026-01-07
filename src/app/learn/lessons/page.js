@@ -666,7 +666,7 @@ function LessonsPageInner(){
           <div>
             <div style={{ fontWeight: 800, marginBottom: 4 }}>Golden Key Earned!</div>
             <div style={{ fontSize: 14, fontWeight: 600, opacity: 0.9 }}>
-              Unlocks poem and story in your next lesson
+              Adds bonus play time to your next lesson
             </div>
           </div>
           <button
