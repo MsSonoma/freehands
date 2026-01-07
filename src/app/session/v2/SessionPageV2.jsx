@@ -480,6 +480,13 @@ function SessionPageV2Inner() {
   const [currentPhase, setCurrentPhase] = useState('idle');
   
   const [teachingStage, setTeachingStage] = useState('idle');
+  const [teachingFirstClick, setTeachingFirstClick] = useState(false);
+  const [teachingLoading, setTeachingLoading] = useState(false);
+  const [comprehensionSubmitting, setComprehensionSubmitting] = useState(false);
+  const [exerciseSubmitting, setExerciseSubmitting] = useState(false);
+  const [worksheetSubmitting, setWorksheetSubmitting] = useState(false);
+  const [testSubmitting, setTestSubmitting] = useState(false);
+  const [congratsTtsUrl, setCongratsTtsUrl] = useState(null);
   const [sentenceIndex, setSentenceIndex] = useState(0);
   const [totalSentences, setTotalSentences] = useState(0);
   const [isInSentenceMode, setIsInSentenceMode] = useState(true);
@@ -1714,11 +1721,28 @@ function SessionPageV2Inner() {
   };
 
   // Begin button handler: ensure phase exists, then start; start pending timer if queued.
-  const handleBeginPhase = (phaseName) => {
+  const handleBeginPhase = async (phaseName) => {
     ensurePhaseInitialized(phaseName);
+    
+    // Special handling for discussion: prefetch greeting TTS before starting
+    if (phaseName === 'discussion') {
+      setDiscussionState('loading');
+      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'friend';
+      const lessonTitle = lessonData?.title || lessonId || 'this topic';
+      const greetingText = `Hi ${learnerName}, ready to learn about ${lessonTitle}?`;
+      
+      try {
+        // Prefetch greeting TTS
+        const { fetchTTS } = await import('./v2/services');
+        await fetchTTS(greetingText);
+      } catch (err) {
+        console.error('[SessionPageV2] Failed to prefetch greeting:', err);
+      }
+    }
+    
     const ref = getPhaseRef(phaseName);
     if (ref?.current?.start) {
-      ref.current.start();
+      await ref.current.start();
     } else {
       addEvent(`⚠️ Unable to start ${phaseName} (not initialized yet)`);
     }
@@ -2936,8 +2960,9 @@ function SessionPageV2Inner() {
       addEvent('ðŸŽ‰ Discussion complete - proceeding to teaching');
       setDiscussionState('complete');
 
-      // Track work phase completion for golden key
+      // Complete work phase timer
       if (timerServiceRef.current) {
+        timerServiceRef.current.completeWorkPhaseTimer('discussion');
         const time = timerServiceRef.current.getWorkPhaseTime('discussion');
         if (time) {
           setWorkPhaseCompletions(prev => ({
@@ -3738,6 +3763,33 @@ function SessionPageV2Inner() {
       setTestGrade(data);
       console.log('[SessionPageV2] Setting testState to reviewing');
       setTestState('reviewing');
+      
+      // Prefetch congrats TTS for fast Complete Lesson response
+      const congratsText = 'Great job completing the lesson!';
+      import('./services').then(({ fetchTTS }) => {
+        fetchTTS(congratsText).then(url => {
+          if (url) setCongratsTtsUrl(url);
+        }).catch(err => {
+          console.warn('[SessionPageV2] Failed to prefetch congrats TTS:', err);
+        });
+      });
+      
+      // Complete work phase timer when entering review
+      if (timerServiceRef.current) {
+        timerServiceRef.current.completeWorkPhaseTimer('test');
+        const time = timerServiceRef.current.getWorkPhaseTime('test');
+        if (time) {
+          const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
+          addEvent(`â±ï¸ Test completed in ${time.formatted} ${status}`);
+          setWorkPhaseCompletions(prev => ({ ...prev, test: time.onTime }));
+          setWorkTimeRemaining(prev => ({ ...prev, test: time.remaining / 60 }));
+        }
+        
+        const goldenKey = timerServiceRef.current.getGoldenKeyStatus();
+        if (goldenKey.eligible) {
+          addEvent('Golden Key Earned! 3 on-time completions!');
+        }
+      }
     });
     phase.on('reviewQuestion', (data) => {
       console.log('[SessionPageV2] reviewQuestion event received:', data);
@@ -3939,10 +3991,10 @@ function SessionPageV2Inner() {
       resetTranscriptState();
     }
     
-    // Start prefetching all teaching content immediately (background, non-blocking)
+    // Start teaching prefetch immediately in background (needs to be ready by Teaching phase)
     if (teachingControllerRef.current) {
       teachingControllerRef.current.prefetchAll();
-      addEvent('ðŸ”„ Started background prefetch of teaching content');
+      addEvent('📄 Started background prefetch of teaching content');
     }
     
     // Unlock video playback for Chrome autoplay policy
@@ -4009,9 +4061,21 @@ function SessionPageV2Inner() {
     await teachingControllerRef.current.startTeaching(options);
   };
   
-  const nextSentence = () => {
+  const nextSentence = async () => {
     if (!teachingControllerRef.current) return;
-    teachingControllerRef.current.nextSentence();
+    
+    // Mark first click
+    if (!teachingFirstClick) {
+      setTeachingFirstClick(true);
+    }
+    
+    // Show loading if GPT content isn't ready
+    setTeachingLoading(true);
+    try {
+      await teachingControllerRef.current.nextSentence();
+    } finally {
+      setTeachingLoading(false);
+    }
   };
   
   const repeatSentence = () => {
@@ -4095,14 +4159,19 @@ function SessionPageV2Inner() {
   };
   
   // Comprehension handlers
-  const submitComprehensionAnswer = () => {
+  const submitComprehensionAnswer = async () => {
     if (!comprehensionPhaseRef.current) return;
     const answerText = comprehensionAnswer;
-    comprehensionPhaseRef.current.submitAnswer(answerText);
     if (answerText && answerText.trim()) {
       appendTranscriptLine({ text: answerText, role: 'user' });
     }
-    setComprehensionAnswer('');
+    setComprehensionSubmitting(true);
+    try {
+      await comprehensionPhaseRef.current.submitAnswer(answerText);
+      setComprehensionAnswer('');
+    } finally {
+      setComprehensionSubmitting(false);
+    }
   };
   
   const skipComprehension = () => {
@@ -4111,10 +4180,15 @@ function SessionPageV2Inner() {
   };
   
   // Exercise handlers
-  const submitExerciseAnswer = () => {
+  const submitExerciseAnswer = async () => {
     if (!exercisePhaseRef.current || !selectedExerciseAnswer) return;
-    exercisePhaseRef.current.submitAnswer(selectedExerciseAnswer);
     appendTranscriptLine({ text: selectedExerciseAnswer, role: 'user' });
+    setExerciseSubmitting(true);
+    try {
+      await exercisePhaseRef.current.submitAnswer(selectedExerciseAnswer);
+    } finally {
+      setExerciseSubmitting(false);
+    }
   };
   
   const skipExerciseQuestion = () => {
@@ -4123,11 +4197,16 @@ function SessionPageV2Inner() {
   };
   
   // Worksheet handlers
-  const submitWorksheetAnswer = () => {
+  const submitWorksheetAnswer = async () => {
     if (!worksheetPhaseRef.current || !worksheetAnswer.trim()) return;
-    worksheetPhaseRef.current.submitAnswer(worksheetAnswer);
     appendTranscriptLine({ text: worksheetAnswer, role: 'user' });
-    setWorksheetAnswer('');
+    setWorksheetSubmitting(true);
+    try {
+      await worksheetPhaseRef.current.submitAnswer(worksheetAnswer);
+      setWorksheetAnswer('');
+    } finally {
+      setWorksheetSubmitting(false);
+    }
   };
   
   const skipWorksheetQuestion = () => {
@@ -4136,23 +4215,28 @@ function SessionPageV2Inner() {
   };
   
   // Test handlers
-  const submitTestAnswer = () => {
+  const submitTestAnswer = async () => {
     if (!testPhaseRef.current) return;
     
     const question = currentTestQuestion;
     if (!question) return;
     
-    if (question.type === 'fill' || question.type === 'fib' || question.sourceType === 'fib') {
-      if (!testAnswer.trim()) return;
-      testPhaseRef.current.submitAnswer(testAnswer);
-      appendTranscriptLine({ text: testAnswer, role: 'user' });
-      setTestAnswer('');
-    } else {
-      // MC/TF
-      if (!testAnswer) return;
-      testPhaseRef.current.submitAnswer(testAnswer);
-      appendTranscriptLine({ text: testAnswer, role: 'user' });
-      setTestAnswer('');
+    setTestSubmitting(true);
+    try {
+      if (question.type === 'fill' || question.type === 'fib' || question.sourceType === 'fib') {
+        if (!testAnswer.trim()) return;
+        appendTranscriptLine({ text: testAnswer, role: 'user' });
+        await testPhaseRef.current.submitAnswer(testAnswer);
+        setTestAnswer('');
+      } else {
+        // MC/TF
+        if (!testAnswer) return;
+        appendTranscriptLine({ text: testAnswer, role: 'user' });
+        await testPhaseRef.current.submitAnswer(testAnswer);
+        setTestAnswer('');
+      }
+    } finally {
+      setTestSubmitting(false);
     }
   };
   
@@ -4171,8 +4255,19 @@ function SessionPageV2Inner() {
     testPhaseRef.current.previousReview();
   };
   
-  const skipTestReview = () => {
+  const skipTestReview = async () => {
     if (!testPhaseRef.current) return;
+    
+    // Play prefetched congrats TTS immediately for responsive feel
+    if (congratsTtsUrl && audioEngineRef.current) {
+      try {
+        audioEngineRef.current.playAudio(congratsTtsUrl, ['Great job completing the lesson!']);
+      } catch (err) {
+        console.warn('[SessionPageV2] Failed to play congrats TTS:', err);
+      }
+    }
+    
+    // Let completion logic happen in background (don't await)
     testPhaseRef.current.skipReview();
   };
   
@@ -5216,8 +5311,13 @@ function SessionPageV2Inner() {
                 marginBottom: 4
               }}>
                 {needBeginDiscussion && currentPhase === 'discussion' && (
-                  <button type="button" style={ctaStyle} onClick={() => handleBeginPhase('discussion')}>
-                    Begin Discussion
+                  <button 
+                    type="button" 
+                    style={{...ctaStyle, opacity: discussionState === 'loading' ? 0.7 : 1}} 
+                    onClick={() => handleBeginPhase('discussion')}
+                    disabled={discussionState === 'loading'}
+                  >
+                    {discussionState === 'loading' ? 'Loading...' : 'Begin Discussion'}
                   </button>
                 )}
                 {needBeginDiscussion && currentPhase === 'idle' && (
@@ -5302,23 +5402,29 @@ function SessionPageV2Inner() {
                 <>
                   <button
                     onClick={nextSentence}
+                    disabled={teachingLoading}
                     style={{
                       padding: '12px 28px',
-                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      background: teachingLoading ? '#9ca3af' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                       color: '#fff',
                       border: 'none',
                       borderRadius: 10,
                       fontSize: '1rem',
                       fontWeight: 600,
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 16px rgba(59, 130, 246, 0.4)'
+                      cursor: teachingLoading ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 4px 16px rgba(59, 130, 246, 0.4)',
+                      opacity: teachingLoading ? 0.7 : 1
                     }}
                   >
-                    {isInSentenceMode
-                      ? 'Next Sentence'
-                      : teachingStage === 'definitions'
-                        ? 'Continue to Examples'
-                        : 'Complete Teaching'
+                    {teachingLoading
+                      ? 'Loading...'
+                      : !teachingFirstClick
+                        ? 'Continue to Definitions'
+                        : isInSentenceMode
+                          ? 'Next Sentence'
+                          : teachingStage === 'definitions'
+                            ? 'Continue to Examples'
+                            : 'Complete Teaching'
                     }
                   </button>
                   <button
@@ -5399,7 +5505,14 @@ function SessionPageV2Inner() {
               else if (qaPhase === 'test') submitTestAnswer();
             };
 
-            const canSubmit = !!String(currentValue || '').trim();
+            const isSubmitting = (
+              (qaPhase === 'comprehension' && comprehensionSubmitting) ||
+              (qaPhase === 'exercise' && exerciseSubmitting) ||
+              (qaPhase === 'worksheet' && worksheetSubmitting) ||
+              (qaPhase === 'test' && testSubmitting)
+            );
+
+            const canSubmit = !isSubmitting && !!String(currentValue || '').trim();
 
             const quickContainerStyle = {
               display: 'flex',
@@ -5440,21 +5553,18 @@ function SessionPageV2Inner() {
                             style={quickButtonStyle}
                             onClick={() => {
                               setValue(val);
+                              appendTranscriptLine({ text: val, role: 'user' });
                               if (qaPhase === 'comprehension') {
                                 comprehensionPhaseRef.current?.submitAnswer(val);
-                                appendTranscriptLine({ text: val, role: 'user' });
                                 setComprehensionAnswer('');
                               } else if (qaPhase === 'exercise') {
                                 exercisePhaseRef.current?.submitAnswer(val);
-                                appendTranscriptLine({ text: val, role: 'user' });
                                 setSelectedExerciseAnswer('');
                               } else if (qaPhase === 'worksheet') {
                                 worksheetPhaseRef.current?.submitAnswer(val);
-                                appendTranscriptLine({ text: val, role: 'user' });
                                 setWorksheetAnswer('');
                               } else if (qaPhase === 'test') {
                                 testPhaseRef.current?.submitAnswer(val);
-                                appendTranscriptLine({ text: val, role: 'user' });
                                 setTestAnswer('');
                               }
                             }}
@@ -5478,21 +5588,18 @@ function SessionPageV2Inner() {
                               style={quickButtonStyle}
                               onClick={() => {
                                 setValue(val);
+                                appendTranscriptLine({ text: val, role: 'user' });
                                 if (qaPhase === 'comprehension') {
                                   comprehensionPhaseRef.current?.submitAnswer(val);
-                                  appendTranscriptLine({ text: val, role: 'user' });
                                   setComprehensionAnswer('');
                                 } else if (qaPhase === 'exercise') {
                                   exercisePhaseRef.current?.submitAnswer(val);
-                                  appendTranscriptLine({ text: val, role: 'user' });
                                   setSelectedExerciseAnswer('');
                                 } else if (qaPhase === 'worksheet') {
                                   worksheetPhaseRef.current?.submitAnswer(val);
-                                  appendTranscriptLine({ text: val, role: 'user' });
                                   setWorksheetAnswer('');
                                 } else if (qaPhase === 'test') {
                                   testPhaseRef.current?.submitAnswer(val);
-                                  appendTranscriptLine({ text: val, role: 'user' });
                                   setTestAnswer('');
                                 }
                               }}
@@ -5570,10 +5677,11 @@ function SessionPageV2Inner() {
                         padding: '10px 16px',
                         fontWeight: 800,
                         cursor: canSubmit ? 'pointer' : 'not-allowed',
-                        minHeight: 40
+                        minHeight: 40,
+                        opacity: isSubmitting ? 0.7 : 1
                       }}
                     >
-                      Submit
+                      {isSubmitting ? 'Loading...' : 'Submit'}
                     </button>
                   </div>
                 )}
