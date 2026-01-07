@@ -340,14 +340,34 @@ export class WorksheetPhase {
   
   // Public API: Skip question
   skip() {
-    if (this.#state !== 'awaiting-answer') return;
-    
-    const question = this.#questions[this.#currentQuestionIndex];
-
-    // Stop any current question TTS so it cannot continue after skipping
+    // Stop any audio first
     try {
       this.#audioEngine.stop();
     } catch {}
+    
+    // Handle skip based on current state
+    if (this.#state === 'playing-intro') {
+      // Skip intro and go to awaiting-go
+      this.#state = 'awaiting-go';
+      this.#timerMode = 'play';
+      
+      if (this.#timerService) {
+        this.#timerService.startPlayTimer('worksheet');
+      }
+      
+      this.#emit('stateChange', { state: 'awaiting-go', timerMode: 'play' });
+      return;
+    }
+    
+    if (this.#state === 'awaiting-go') {
+      // Treat as clicking GO button
+      this.go();
+      return;
+    }
+    
+    if (this.#state !== 'awaiting-answer') return;
+    
+    const question = this.#questions[this.#currentQuestionIndex];
     
     // Record as skipped (incorrect)
     this.#answers.push({

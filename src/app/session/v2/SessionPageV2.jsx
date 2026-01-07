@@ -1911,16 +1911,6 @@ function SessionPageV2Inner() {
       console.warn('[SessionPageV2] Error stopping audio:', e);
     }
     
-    // Ensure video is playing (unlock autoplay)
-    try {
-      if (videoRef.current && videoRef.current.paused) {
-        videoRef.current.currentTime = 0;
-        await videoRef.current.play();
-      }
-    } catch (e) {
-      // Silent - video may need user interaction first
-    }
-    
     // Reset opening actions state to prevent zombie UI
     setOpeningActionActive(false);
     setOpeningActionType(null);
@@ -2654,12 +2644,20 @@ function SessionPageV2Inner() {
         keyboardServiceRef.current.setPhase(data.phase);
       }
       
+      // For discussion and test phases, initialize them but DON'T auto-start them
+      // after a timeline jump. They should show the "Begin" button first.
+      const isTimelineJump = timelineJumpInProgressRef.current;
+      
       // Start phase-specific controller
       if (data.phase === 'discussion') {
         startDiscussionPhase();
         // Discussion has no play timer - start directly in work mode
         setCurrentTimerMode(prev => ({ ...prev, discussion: 'work' }));
         setTimerRefreshKey(k => k + 1);
+        // If timeline jump, keep discussionState as 'idle' to show Begin button
+        if (!isTimelineJump && discussionPhaseRef.current) {
+          discussionPhaseRef.current.start();
+        }
       } else if (data.phase === 'teaching') {
         startTeachingPhase();
         // Teaching uses discussion timer (grouped together, already in work mode)
@@ -2689,6 +2687,11 @@ function SessionPageV2Inner() {
         const started = startTestPhase();
         if (started) {
           startPhasePlayTimer('test');
+          // If timeline jump, keep testState as 'idle' to show Begin button
+          // Don't auto-start the phase
+          if (!isTimelineJump && testPhaseRef.current) {
+            testPhaseRef.current.start();
+          }
         } else {
           pendingPlayTimersRef.current.test = true;
         }
@@ -2973,9 +2976,8 @@ function SessionPageV2Inner() {
       }
     });
     
-    // Start greeting
-    console.log('[SessionPageV2] Calling phase.start()');
-    phase.start();
+    // Don't auto-start - let handleBeginPhase call start() when user clicks Begin
+    // This ensures Begin button shows after timeline jumps
   };
   
   // Start teaching phase
@@ -3649,7 +3651,9 @@ function SessionPageV2Inner() {
     if (questions[clampedIndex]) {
       setCurrentTestQuestion(questions[clampedIndex]);
     }
-    if ((!testState || testState === 'idle') && savedTest) {
+    // Only restore state if NOT a timeline jump - timeline jumps should always show Begin button
+    const isTimelineJump = timelineJumpInProgressRef.current;
+    if ((!testState || testState === 'idle') && savedTest && !isTimelineJump) {
       setTestState('awaiting-answer');
     }
     
@@ -3795,11 +3799,10 @@ function SessionPageV2Inner() {
       }
     });
     
-    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
-    // Also auto-start during timeline jumps so "Test + Go" starts immediately.
+    // Auto-start only when resuming into this phase so refreshes do not surface the Begin button.
+    // Timeline jumps should ALWAYS show the Begin button first, even if savedTest exists.
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'test';
-    const isTimelineJump = timelineJumpInProgressRef.current;
-    const shouldAutoStart = resumeMatch || !!savedTest || isTimelineJump;
+    const shouldAutoStart = !isTimelineJump && (resumeMatch || !!savedTest);
     if (shouldAutoStart && phase.start) {
       phase.start();
       if (pendingPlayTimersRef.current?.test) {
@@ -4052,6 +4055,18 @@ function SessionPageV2Inner() {
   const skipTTS = () => {
     if (!audioEngineRef.current) return;
     audioEngineRef.current.stop();
+    
+    // If we're in a phase with a skip handler, call it to transition state properly
+    const phaseName = getCurrentPhaseName();
+    if (phaseName === 'comprehension' && comprehensionPhaseRef.current?.skip) {
+      comprehensionPhaseRef.current.skip();
+    } else if (phaseName === 'exercise' && exercisePhaseRef.current?.skip) {
+      exercisePhaseRef.current.skip();
+    } else if (phaseName === 'worksheet' && worksheetPhaseRef.current?.skip) {
+      worksheetPhaseRef.current.skip();
+    } else if (phaseName === 'test' && testPhaseRef.current?.skip) {
+      testPhaseRef.current.skip();
+    }
   };
   
   // Skip sentence (hotkey handler for teaching phase)
@@ -5169,7 +5184,7 @@ function SessionPageV2Inner() {
           
           {/* Phase-specific Begin buttons */}
           {(() => {
-            const needBeginDiscussion = (currentPhase === 'idle');
+            const needBeginDiscussion = (currentPhase === 'idle') || (currentPhase === 'discussion' && (!discussionState || discussionState === 'idle'));
             const needBeginComp = (currentPhase === 'comprehension' && (!comprehensionState || comprehensionState === 'idle'));
             const needBeginExercise = (currentPhase === 'exercise' && (!exerciseState || exerciseState === 'idle'));
             const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
@@ -5200,7 +5215,12 @@ function SessionPageV2Inner() {
                 paddingRight: 12,
                 marginBottom: 4
               }}>
-                {needBeginDiscussion && (
+                {needBeginDiscussion && currentPhase === 'discussion' && (
+                  <button type="button" style={ctaStyle} onClick={() => handleBeginPhase('discussion')}>
+                    Begin Discussion
+                  </button>
+                )}
+                {needBeginDiscussion && currentPhase === 'idle' && (
                   offerResume ? (
                     <>
                       <button
@@ -5225,7 +5245,9 @@ function SessionPageV2Inner() {
                           setResumePhase(null);
                           resetTranscriptState();
                           try { timerServiceRef.current?.reset?.(); } catch {}
-                          try { await startSession({ ignoreResume: true }); } catch {}
+                          // Don't auto-start - let user click Begin button
+                          setCurrentPhase('idle');
+                          setDiscussionState('idle');
                         }}
                         disabled={!(audioReady && snapshotLoaded)}
                       >
