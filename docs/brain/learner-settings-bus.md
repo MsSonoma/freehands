@@ -1,7 +1,7 @@
 # Learner Settings Bus
 
 **Status**: Canonical
-**Last Updated**: 2026-01-08T03:21:10Z
+**Last Updated**: 2026-01-08T03:44:22Z
 
 ## How It Works
 
@@ -23,6 +23,10 @@ Messages are plain JS objects:
 Example:
 
 - `{"type":"learner-settings-patch","learnerId":"<uuid>","patch":{"golden_keys_enabled":false}}`
+
+Also used for play portion flags (phases 2-5 only):
+
+- `{"type":"learner-settings-patch","learnerId":"<uuid>","patch":{"play_test_enabled":false}}`
 
 ### Transport
 
@@ -55,6 +59,7 @@ Consumers should:
 Keep behavior strict:
 - Do not create local fallback state that can diverge from Supabase.
 - Treat settings as **unknown until loaded**. For example, `golden_keys_enabled` should start as `null` (unknown), then become `true`/`false` once loaded.
+- Treat `play_*_enabled` the same way: required booleans loaded from Supabase (no local fallback).
 - Avoid UI flashes: do not render Golden Key UI until `golden_keys_enabled === true` and the page is done loading learner settings.
 - Hide per-lesson Golden Key indicators (like a "🔑 Active" badge) unless `golden_keys_enabled === true`.
 - Avoid toast loss: do not clear `sessionStorage.just_earned_golden_key` while `golden_keys_enabled` is unknown; only clear/suppress once it is explicitly `false`.

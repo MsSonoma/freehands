@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2026-01-08T03:03:44Z  
+**Last updated**: 2026-01-08T03:44:22Z  
 **Status**: Canonical
 
 ## How It Works
@@ -185,6 +185,28 @@ When `golden_keys_enabled` is `false`, Golden Keys are treated as fully disabled
 - Pages subscribe to the Learner Settings Bus so facilitator-side toggles react immediately in already-open sessions/tabs.
 - If `golden_keys_enabled` is missing (not a boolean), session code fails loudly so migrations/schema drift are caught early.
 
+### Play Portion Enabled Flags (Per Learner)
+
+Phases 2-5 (Comprehension, Exercise, Worksheet, Test) each have a per-learner flag that can disable the "play portion" of that phase.
+
+Columns (boolean, default true):
+- `public.learners.play_comprehension_enabled`
+- `public.learners.play_exercise_enabled`
+- `public.learners.play_worksheet_enabled`
+- `public.learners.play_test_enabled`
+
+Definition:
+- "Play portion" means the intro + opening-actions gate + play timer.
+- When a play portion flag is `false`, the phase should begin directly in work mode.
+
+V2 behavior (implemented):
+- When play portion is disabled for a phase, "Begin" behaves like "Go": it skips intro/opening actions, skips starting the play timer, and starts the work timer immediately.
+- The session fails loudly if any `play_*_enabled` field is missing (not a boolean).
+- Live updates use the Learner Settings Bus; if a flag is turned off while sitting at the Go gate (`awaiting-go`), the session transitions to work immediately.
+
+V1 behavior:
+- V1 is not updated by this feature unless explicitly requested.
+
 ### Timer Defaults
 
 Defined in `src/app/session/utils/phaseTimerDefaults.js`:
@@ -204,6 +226,13 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
 ❌ **Never use local persistence fallback for `golden_keys_enabled`**
 - Do not store a per-learner Golden Key enabled/disabled flag in localStorage.
 - The source of truth is Supabase; the Learner Settings Bus is for immediate UI reaction only.
+
+❌ **Never use local persistence fallback for `play_*_enabled`**
+- Do not store per-learner play portion flags in localStorage.
+- Source of truth is Supabase; the bus is for immediate UI reaction only.
+
+❌ **Never add a Discussion play toggle**
+- Discussion has no play timer in V2, and this feature only targets phases 2-5.
 
 ❌ **Never award or apply Golden Key bonus when disabled**
 - If `golden_keys_enabled` is false, do not apply bonus minutes and do not write golden key awards.

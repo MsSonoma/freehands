@@ -88,10 +88,9 @@
       "conversation_history_archive table",
       "fuzzy search (full-text)",
       "function calling tools (get/search memory)",
-      "auto-archival (50 turns)",
-        "last_updated": "2026-01-05T17:05:00Z",
+      "auto-archival (50 turns)"
     ],
-    "last_updated": "2025-12-31T12:30:00Z",
+    "last_updated": "2026-01-05T17:05:00Z",
     "status": "canonical"
   },
   "mr-mentor-sessions": {
@@ -297,7 +296,7 @@
       "transcript persistence",
       "caption panel"
     ],
-      "last_updated": "2026-01-07T03:34:00Z",
+    "last_updated": "2026-01-07T03:34:00Z",
     "status": "canonical"
   },
   "timer-system": {
@@ -311,6 +310,8 @@
       "work phase completion tracking",
       "golden key timer bonus",
       "golden_keys_enabled",
+      "play_*_enabled",
+      "play portion toggles",
       "Golden Keys Off",
       "timer state persistence",
       "Go button override",
@@ -328,7 +329,7 @@
       "playTimerExpired event",
       "V2 parent-controlled overlay"
     ],
-    "last_updated": "2026-01-08T03:03:44Z",
+    "last_updated": "2026-01-08T03:44:22Z",
     "status": "canonical"
   },
   "learner-settings-bus": {
@@ -341,12 +342,13 @@
       "no localStorage persistence",
       "immediate cross-tab updates",
       "golden_keys_enabled",
+      "play_*_enabled",
       "loading flash",
       "toast gating",
       "LearnerEditOverlay",
       "optimistic toggle"
     ],
-    "last_updated": "2026-01-08T03:21:10Z",
+    "last_updated": "2026-01-08T03:44:22Z",
     "status": "canonical"
   },
   "lesson-assessment-architecture": {
@@ -385,7 +387,6 @@
     "systems": [
       "Mr. Mentor frontend",
       "MentorInterceptor.js",
-          "last_updated": "2026-01-06T01:15:00Z",
       "confidence-scoring",
       "fuzzy-matching",
       "parameter-extraction",
@@ -395,7 +396,7 @@
       "recall-flow",
       "search-flow"
     ],
-    "last_updated": "2025-12-31T17:00:00Z",
+    "last_updated": "2026-01-06T01:15:00Z",
     "status": "canonical"
   },
   "visual-aids": {

@@ -1,3 +1,4 @@
+2026-01-08T03:44:22Z | Copilot | Learners: add play portion toggles (phases 2-5); Session V2 Begin skips to work when disabled; V1 unchanged [#timer-system: play-portions, play-timers, begin-go] [#learner-settings-bus: play_*_enabled, immediate updates, no-local-fallback]
 2026-01-08T03:21:10Z | Copilot | Learn/Lessons: hide per-lesson "🔑 Active" badge unless golden_keys_enabled is on [#learner-settings-bus: golden_keys_enabled, active badge, gating]
 2026-01-08T03:19:57Z | Copilot | Learn/Lessons: prevent Golden Key manager flash by treating golden_keys_enabled as unknown until loaded; fix toast gating [#learner-settings-bus: loading flash, toast gating, golden_keys_enabled]
 2026-01-08T03:13:02Z | Copilot | Fix LearnerEditOverlay Golden Keys toggle snapping back: init form state only on open/learner-id change (avoid prop-clone rerender resets) [#learner-settings-bus: LearnerEditOverlay, optimistic toggle, immediate updates]

@@ -37,12 +37,17 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [storyDisabled, setStoryDisabled] = useState(false);
 	const [fillInFunDisabled, setFillInFunDisabled] = useState(false);
 	const [goldenKeysEnabled, setGoldenKeysEnabled] = useState(true);
+	const [playComprehensionEnabled, setPlayComprehensionEnabled] = useState(true);
+	const [playExerciseEnabled, setPlayExerciseEnabled] = useState(true);
+	const [playWorksheetEnabled, setPlayWorksheetEnabled] = useState(true);
+	const [playTestEnabled, setPlayTestEnabled] = useState(true);
 	const [phaseTimers, setPhaseTimers] = useState(getDefaultPhaseTimers());
 	const [hoveredTooltip, setHoveredTooltip] = useState(null);
 	const [clickedTooltip, setClickedTooltip] = useState(null);
 	const [showHelp, setShowHelp] = useState(false);
 	const [autoAdvancePhases, setAutoAdvancePhases] = useState(true);
 	const [savingGoldenKeysToggle, setSavingGoldenKeysToggle] = useState(false);
+	const [savingPlayPortions, setSavingPlayPortions] = useState(false);
 	
 	const [saving, setSaving] = useState(false);
 
@@ -68,6 +73,10 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setStoryDisabled(!!learner.story_disabled);
 		setFillInFunDisabled(!!learner.fill_in_fun_disabled);
 		setGoldenKeysEnabled(learner.golden_keys_enabled !== false);
+		setPlayComprehensionEnabled(learner.play_comprehension_enabled !== false);
+		setPlayExerciseEnabled(learner.play_exercise_enabled !== false);
+		setPlayWorksheetEnabled(learner.play_worksheet_enabled !== false);
+		setPlayTestEnabled(learner.play_test_enabled !== false);
 		setPhaseTimers({ ...getDefaultPhaseTimers(), ...loadPhaseTimersForLearner(learner) });
 		setAutoAdvancePhases(learner.auto_advance_phases !== false); // Default true if not set
 	}, [isOpen, learner?.id, learner?.initialTab]);
@@ -114,6 +123,10 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 				},
 				golden_keys: Number(goldenKeys),
 				golden_keys_enabled: goldenKeysEnabled,
+				play_comprehension_enabled: playComprehensionEnabled,
+				play_exercise_enabled: playExerciseEnabled,
+				play_worksheet_enabled: playWorksheetEnabled,
+				play_test_enabled: playTestEnabled,
 				ask_disabled: askDisabled,
 				poem_disabled: poemDisabled,
 				story_disabled: storyDisabled,
@@ -126,6 +139,31 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 			alert(error?.message || 'Failed to save changes');
 		} finally {
 			setSaving(false);
+		}
+	};
+
+	const handleTogglePlayPortion = async (key, next) => {
+		// Optimistic UI
+		const setMap = {
+			play_comprehension_enabled: setPlayComprehensionEnabled,
+			play_exercise_enabled: setPlayExerciseEnabled,
+			play_worksheet_enabled: setPlayWorksheetEnabled,
+			play_test_enabled: setPlayTestEnabled,
+		};
+		const setFn = setMap[key];
+		if (typeof setFn === 'function') setFn(next);
+
+		// Immediate, per-learner update (no local fallback).
+		if (typeof onPatch !== 'function' || !learner?.id) return;
+		setSavingPlayPortions(true);
+		try {
+			await onPatch({ [key]: next });
+		} catch (err) {
+			// Revert
+			if (typeof setFn === 'function') setFn(!next);
+			alert(err?.message || 'Failed to update Play Portion setting');
+		} finally {
+			setSavingPlayPortions(false);
 		}
 	};
 
@@ -427,6 +465,51 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 									</div>
 									<p style={{ margin: '6px 0 0', fontSize: 13, color: '#6b7280' }}>
 										When off, Golden Keys are hidden in lessons and sessions for this learner.
+									</p>
+								</div>
+
+								<div style={fieldStyle}>
+									<label style={labelStyle}>Play Portions (Phases 2-5)</label>
+									<div style={{ display: 'grid', gap: 10 }}>
+										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151' }}>
+											<input
+												type="checkbox"
+												checked={playComprehensionEnabled}
+												disabled={savingPlayPortions || saving}
+												onChange={(e) => handleTogglePlayPortion('play_comprehension_enabled', e.target.checked)}
+											/>
+											<span>Comprehension play portion</span>
+										</label>
+										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151' }}>
+											<input
+												type="checkbox"
+												checked={playExerciseEnabled}
+												disabled={savingPlayPortions || saving}
+												onChange={(e) => handleTogglePlayPortion('play_exercise_enabled', e.target.checked)}
+											/>
+											<span>Exercise play portion</span>
+										</label>
+										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151' }}>
+											<input
+												type="checkbox"
+												checked={playWorksheetEnabled}
+												disabled={savingPlayPortions || saving}
+												onChange={(e) => handleTogglePlayPortion('play_worksheet_enabled', e.target.checked)}
+											/>
+											<span>Worksheet play portion</span>
+										</label>
+										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151' }}>
+											<input
+												type="checkbox"
+												checked={playTestEnabled}
+												disabled={savingPlayPortions || saving}
+												onChange={(e) => handleTogglePlayPortion('play_test_enabled', e.target.checked)}
+											/>
+											<span>Test play portion</span>
+										</label>
+									</div>
+									<p style={{ margin: '6px 0 0', fontSize: 13, color: '#6b7280' }}>
+										When off, Begin skips opening actions and starts work immediately.
 									</p>
 								</div>
 

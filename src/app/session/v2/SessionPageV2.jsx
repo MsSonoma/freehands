@@ -498,6 +498,10 @@ function SessionPageV2Inner() {
   }, [lessonId, lessonData?.key, lessonKey]);
   
   const [currentPhase, setCurrentPhase] = useState('idle');
+  const currentPhaseRef = useRef('idle');
+  useEffect(() => {
+    currentPhaseRef.current = currentPhase;
+  }, [currentPhase]);
   
   const [teachingStage, setTeachingStage] = useState('idle');
   const [teachingLoading, setTeachingLoading] = useState(false);
@@ -511,6 +515,10 @@ function SessionPageV2Inner() {
   const [isInSentenceMode, setIsInSentenceMode] = useState(true);
   
   const [comprehensionState, setComprehensionState] = useState('idle');
+  const comprehensionStateRef = useRef('idle');
+  useEffect(() => {
+    comprehensionStateRef.current = comprehensionState;
+  }, [comprehensionState]);
   const [currentComprehensionQuestion, setCurrentComprehensionQuestion] = useState(null);
   const [comprehensionScore, setComprehensionScore] = useState(0);
   const [comprehensionTotalQuestions, setComprehensionTotalQuestions] = useState(0);
@@ -518,6 +526,10 @@ function SessionPageV2Inner() {
   const [comprehensionTimerMode, setComprehensionTimerMode] = useState('play');
   
   const [exerciseState, setExerciseState] = useState('idle');
+  const exerciseStateRef = useRef('idle');
+  useEffect(() => {
+    exerciseStateRef.current = exerciseState;
+  }, [exerciseState]);
   const [currentExerciseQuestion, setCurrentExerciseQuestion] = useState(null);
   const [exerciseScore, setExerciseScore] = useState(0);
   const [exerciseTotalQuestions, setExerciseTotalQuestions] = useState(0);
@@ -525,6 +537,10 @@ function SessionPageV2Inner() {
   const [exerciseTimerMode, setExerciseTimerMode] = useState('play');
   
   const [worksheetState, setWorksheetState] = useState('idle');
+  const worksheetStateRef = useRef('idle');
+  useEffect(() => {
+    worksheetStateRef.current = worksheetState;
+  }, [worksheetState]);
   const [currentWorksheetQuestion, setCurrentWorksheetQuestion] = useState(null);
   const [worksheetScore, setWorksheetScore] = useState(0);
   const [worksheetTotalQuestions, setWorksheetTotalQuestions] = useState(0);
@@ -533,6 +549,10 @@ function SessionPageV2Inner() {
   const [worksheetTimerMode, setWorksheetTimerMode] = useState('play');
   
   const [testState, setTestState] = useState('idle');
+  const testStateRef = useRef('idle');
+  useEffect(() => {
+    testStateRef.current = testState;
+  }, [testState]);
   const [currentTestQuestion, setCurrentTestQuestion] = useState(null);
   const [testScore, setTestScore] = useState(0);
   const [testTotalQuestions, setTestTotalQuestions] = useState(0);
@@ -590,6 +610,21 @@ function SessionPageV2Inner() {
   const [goldenKeyEligible, setGoldenKeyEligible] = useState(false);
   const [goldenKeysEnabled, setGoldenKeysEnabled] = useState(null);
   const goldenKeysEnabledRef = useRef(true);
+
+  // Per-learner play-portion flags (phases 2-5). Source of truth: Supabase.
+  // These are required booleans and are live-updated via the Learner Settings Bus.
+  const [playPortionsEnabled, setPlayPortionsEnabled] = useState({
+    comprehension: true,
+    exercise: true,
+    worksheet: true,
+    test: true,
+  });
+  const playPortionsEnabledRef = useRef({
+    comprehension: true,
+    exercise: true,
+    worksheet: true,
+    test: true,
+  });
   
   // Learner profile state (REQUIRED - no defaults)
   const [learnerProfile, setLearnerProfile] = useState(null);
@@ -979,6 +1014,21 @@ function SessionPageV2Inner() {
         }
         setGoldenKeysEnabled(learner.golden_keys_enabled);
         goldenKeysEnabledRef.current = learner.golden_keys_enabled;
+
+        // Play portion flags (required - no defaults or fallback)
+        const playFlags = {
+          comprehension: learner.play_comprehension_enabled,
+          exercise: learner.play_exercise_enabled,
+          worksheet: learner.play_worksheet_enabled,
+          test: learner.play_test_enabled,
+        };
+        for (const [k, v] of Object.entries(playFlags)) {
+          if (typeof v !== 'boolean') {
+            throw new Error(`Learner profile missing play_${k}_enabled flag. Please run migrations.`);
+          }
+        }
+        setPlayPortionsEnabled(playFlags);
+        playPortionsEnabledRef.current = playFlags;
         
         // Load phase timer settings from learner profile
         const timers = loadPhaseTimersForLearner(learner);
@@ -1034,6 +1084,55 @@ function SessionPageV2Inner() {
         if (!next) {
           setGoldenKeyEligible(false);
         }
+      }
+
+      const nextPlayFlags = {
+        comprehension: ('play_comprehension_enabled' in patch) ? patch.play_comprehension_enabled : undefined,
+        exercise: ('play_exercise_enabled' in patch) ? patch.play_exercise_enabled : undefined,
+        worksheet: ('play_worksheet_enabled' in patch) ? patch.play_worksheet_enabled : undefined,
+        test: ('play_test_enabled' in patch) ? patch.play_test_enabled : undefined,
+      };
+      const hasAnyPlayFlag = Object.values(nextPlayFlags).some(v => v !== undefined);
+      if (hasAnyPlayFlag) {
+        const merged = {
+          ...playPortionsEnabledRef.current,
+          ...(typeof nextPlayFlags.comprehension === 'boolean' ? { comprehension: nextPlayFlags.comprehension } : {}),
+          ...(typeof nextPlayFlags.exercise === 'boolean' ? { exercise: nextPlayFlags.exercise } : {}),
+          ...(typeof nextPlayFlags.worksheet === 'boolean' ? { worksheet: nextPlayFlags.worksheet } : {}),
+          ...(typeof nextPlayFlags.test === 'boolean' ? { test: nextPlayFlags.test } : {}),
+        };
+        setPlayPortionsEnabled(merged);
+        playPortionsEnabledRef.current = merged;
+
+        // If play portion is turned off while sitting at the Go gate, jump straight to work.
+        // (Do not attempt to interrupt intro playback states here.)
+        try {
+          const phaseNow = String(currentPhaseRef.current || '');
+          const disableNow = (
+            (phaseNow === 'comprehension' && nextPlayFlags.comprehension === false) ||
+            (phaseNow === 'exercise' && nextPlayFlags.exercise === false) ||
+            (phaseNow === 'worksheet' && nextPlayFlags.worksheet === false) ||
+            (phaseNow === 'test' && nextPlayFlags.test === false)
+          );
+          if (disableNow) {
+            const phaseStateMap = {
+              comprehension: comprehensionStateRef.current,
+              exercise: exerciseStateRef.current,
+              worksheet: worksheetStateRef.current,
+              test: testStateRef.current,
+            };
+            const refMap = {
+              comprehension: comprehensionPhaseRef,
+              exercise: exercisePhaseRef,
+              worksheet: worksheetPhaseRef,
+              test: testPhaseRef,
+            };
+            if (phaseStateMap[phaseNow] === 'awaiting-go') {
+              transitionToWorkTimer(phaseNow);
+              refMap[phaseNow]?.current?.go?.();
+            }
+          }
+        } catch {}
       }
     });
 
@@ -1896,6 +1995,18 @@ function SessionPageV2Inner() {
   // Begin button handler: ensure phase exists, then start; start pending timer if queued.
   const handleBeginPhase = async (phaseName) => {
     ensurePhaseInitialized(phaseName);
+
+    const playEnabledForPhase = (p) => {
+      if (!p) return true;
+      if (p === 'comprehension') return playPortionsEnabledRef.current?.comprehension !== false;
+      if (p === 'exercise') return playPortionsEnabledRef.current?.exercise !== false;
+      if (p === 'worksheet') return playPortionsEnabledRef.current?.worksheet !== false;
+      if (p === 'test') return playPortionsEnabledRef.current?.test !== false;
+      return true;
+    };
+    const skipPlayPortion = ['comprehension', 'exercise', 'worksheet', 'test'].includes(phaseName)
+      ? !playEnabledForPhase(phaseName)
+      : false;
     
     // Special handling for discussion: prefetch greeting TTS before starting
     if (phaseName === 'discussion') {
@@ -1914,12 +2025,19 @@ function SessionPageV2Inner() {
     
     const ref = getPhaseRef(phaseName);
     if (ref?.current?.start) {
-      await ref.current.start();
+      if (skipPlayPortion) {
+        transitionToWorkTimer(phaseName);
+        await ref.current.start({ skipPlayPortion: true });
+      } else {
+        await ref.current.start();
+      }
     } else {
       addEvent(`⚠️ Unable to start ${phaseName} (not initialized yet)`);
     }
     if (pendingPlayTimersRef.current?.[phaseName]) {
-      startPhasePlayTimer(phaseName);
+      if (!skipPlayPortion) {
+        startPhasePlayTimer(phaseName);
+      }
       delete pendingPlayTimersRef.current[phaseName];
     }
   };
@@ -2939,36 +3057,57 @@ function SessionPageV2Inner() {
       } else if (data.phase === 'comprehension') {
         const started = startComprehensionPhase();
         if (started) {
-          // Start play timer for comprehension once phase exists
-          startPhasePlayTimer('comprehension');
+          // Start play timer for comprehension once phase exists (unless play portion is disabled)
+          if (playPortionsEnabledRef.current?.comprehension !== false) {
+            startPhasePlayTimer('comprehension');
+          }
         } else {
-          pendingPlayTimersRef.current.comprehension = true;
+          if (playPortionsEnabledRef.current?.comprehension !== false) {
+            pendingPlayTimersRef.current.comprehension = true;
+          }
         }
       } else if (data.phase === 'exercise') {
         const started = startExercisePhase();
         if (started) {
-          startPhasePlayTimer('exercise');
+          if (playPortionsEnabledRef.current?.exercise !== false) {
+            startPhasePlayTimer('exercise');
+          }
         } else {
-          pendingPlayTimersRef.current.exercise = true;
+          if (playPortionsEnabledRef.current?.exercise !== false) {
+            pendingPlayTimersRef.current.exercise = true;
+          }
         }
       } else if (data.phase === 'worksheet') {
         const started = startWorksheetPhase();
         if (started) {
-          startPhasePlayTimer('worksheet');
+          if (playPortionsEnabledRef.current?.worksheet !== false) {
+            startPhasePlayTimer('worksheet');
+          }
         } else {
-          pendingPlayTimersRef.current.worksheet = true;
+          if (playPortionsEnabledRef.current?.worksheet !== false) {
+            pendingPlayTimersRef.current.worksheet = true;
+          }
         }
       } else if (data.phase === 'test') {
         const started = startTestPhase();
         if (started) {
-          startPhasePlayTimer('test');
+          if (playPortionsEnabledRef.current?.test !== false) {
+            startPhasePlayTimer('test');
+          }
           // If timeline jump, keep testState as 'idle' to show Begin button
           // Don't auto-start the phase
           if (!isTimelineJump && testPhaseRef.current) {
-            testPhaseRef.current.start();
+            if (playPortionsEnabledRef.current?.test !== false) {
+              testPhaseRef.current.start();
+            } else {
+              transitionToWorkTimer('test');
+              testPhaseRef.current.start({ skipPlayPortion: true });
+            }
           }
         } else {
-          pendingPlayTimersRef.current.test = true;
+          if (playPortionsEnabledRef.current?.test !== false) {
+            pendingPlayTimersRef.current.test = true;
+          }
         }
       } else if (data.phase === 'closing') {
         startClosingPhase();
@@ -3508,10 +3647,18 @@ function SessionPageV2Inner() {
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'comprehension';
     const shouldAutoStart = resumeMatch || !!savedComp;
     if (shouldAutoStart && phase.start) {
-      phase.start();
-      if (pendingPlayTimersRef.current?.comprehension) {
-        startPhasePlayTimer('comprehension');
-        delete pendingPlayTimersRef.current.comprehension;
+      if (playPortionsEnabledRef.current?.comprehension === false) {
+        transitionToWorkTimer('comprehension');
+        phase.start({ skipPlayPortion: true });
+        if (pendingPlayTimersRef.current?.comprehension) {
+          delete pendingPlayTimersRef.current.comprehension;
+        }
+      } else {
+        phase.start();
+        if (pendingPlayTimersRef.current?.comprehension) {
+          startPhasePlayTimer('comprehension');
+          delete pendingPlayTimersRef.current.comprehension;
+        }
       }
     }
 
@@ -3699,10 +3846,18 @@ function SessionPageV2Inner() {
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'exercise';
     const shouldAutoStart = resumeMatch || !!savedExercise;
     if (shouldAutoStart && phase.start) {
-      phase.start();
-      if (pendingPlayTimersRef.current?.exercise) {
-        startPhasePlayTimer('exercise');
-        delete pendingPlayTimersRef.current.exercise;
+      if (playPortionsEnabledRef.current?.exercise === false) {
+        transitionToWorkTimer('exercise');
+        phase.start({ skipPlayPortion: true });
+        if (pendingPlayTimersRef.current?.exercise) {
+          delete pendingPlayTimersRef.current.exercise;
+        }
+      } else {
+        phase.start();
+        if (pendingPlayTimersRef.current?.exercise) {
+          startPhasePlayTimer('exercise');
+          delete pendingPlayTimersRef.current.exercise;
+        }
       }
     }
 
@@ -3885,10 +4040,18 @@ function SessionPageV2Inner() {
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'worksheet';
     const shouldAutoStart = resumeMatch || !!savedWorksheet;
     if (shouldAutoStart && phase.start) {
-      phase.start();
-      if (pendingPlayTimersRef.current?.worksheet) {
-        startPhasePlayTimer('worksheet');
-        delete pendingPlayTimersRef.current.worksheet;
+      if (playPortionsEnabledRef.current?.worksheet === false) {
+        transitionToWorkTimer('worksheet');
+        phase.start({ skipPlayPortion: true });
+        if (pendingPlayTimersRef.current?.worksheet) {
+          delete pendingPlayTimersRef.current.worksheet;
+        }
+      } else {
+        phase.start();
+        if (pendingPlayTimersRef.current?.worksheet) {
+          startPhasePlayTimer('worksheet');
+          delete pendingPlayTimersRef.current.worksheet;
+        }
       }
     }
 
@@ -4137,10 +4300,18 @@ function SessionPageV2Inner() {
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'test';
     const shouldAutoStart = !isTimelineJump && (resumeMatch || !!savedTest);
     if (shouldAutoStart && phase.start) {
-      phase.start();
-      if (pendingPlayTimersRef.current?.test) {
-        startPhasePlayTimer('test');
-        delete pendingPlayTimersRef.current.test;
+      if (playPortionsEnabledRef.current?.test === false) {
+        transitionToWorkTimer('test');
+        phase.start({ skipPlayPortion: true });
+        if (pendingPlayTimersRef.current?.test) {
+          delete pendingPlayTimersRef.current.test;
+        }
+      } else {
+        phase.start();
+        if (pendingPlayTimersRef.current?.test) {
+          startPhasePlayTimer('test');
+          delete pendingPlayTimersRef.current.test;
+        }
       }
     }
 

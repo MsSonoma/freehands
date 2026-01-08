@@ -54,7 +54,14 @@ function writeLocal(list) {
   // This cache can leak across facilitator accounts on a shared device.
   const sanitized = (Array.isArray(list) ? list : []).map((item) => {
     if (!item || typeof item !== 'object') return item;
-    const { golden_keys_enabled, ...rest } = item;
+    const {
+      golden_keys_enabled,
+      play_comprehension_enabled,
+      play_exercise_enabled,
+      play_worksheet_enabled,
+      play_test_enabled,
+      ...rest
+    } = item;
     return rest;
   });
   localStorage.setItem(LS_KEY, JSON.stringify(sanitized));
@@ -137,6 +144,10 @@ export async function createLearner(payload) {
         golden_keys: payload.golden_keys !== undefined ? Number(payload.golden_keys) : 0,
         active_golden_keys: payload.active_golden_keys || {},
         golden_keys_enabled: payload.golden_keys_enabled !== false,
+        play_comprehension_enabled: payload.play_comprehension_enabled !== false,
+        play_exercise_enabled: payload.play_exercise_enabled !== false,
+        play_worksheet_enabled: payload.play_worksheet_enabled !== false,
+        play_test_enabled: payload.play_test_enabled !== false,
         humor_level: humorLevel,
         ask_disabled: !!payload.ask_disabled,
         poem_disabled: !!payload.poem_disabled,
@@ -156,6 +167,10 @@ export async function createLearner(payload) {
       humor_level: humorLevel,
       auto_advance_phases: payload.auto_advance_phases !== false,
       golden_keys_enabled: payload.golden_keys_enabled !== false,
+      play_comprehension_enabled: payload.play_comprehension_enabled !== false,
+      play_exercise_enabled: payload.play_exercise_enabled !== false,
+      play_worksheet_enabled: payload.play_worksheet_enabled !== false,
+      play_test_enabled: payload.play_test_enabled !== false,
     }, uid);
     if (!error2) { supabaseLearnersMode = 'json'; return normalizeRow(data2); }
     if (isUndefinedColumnOrTable(error2)) { supabaseLearnersMode = 'disabled'; return createLocal(payload); }
@@ -240,6 +255,10 @@ export async function updateLearner(id, updates) {
         ...(updates.golden_keys !== undefined ? { golden_keys: Number(updates.golden_keys) } : {}),
         ...(updates.active_golden_keys !== undefined ? { active_golden_keys: updates.active_golden_keys } : {}),
         ...(updates.golden_keys_enabled !== undefined ? { golden_keys_enabled: !!updates.golden_keys_enabled } : {}),
+        ...(updates.play_comprehension_enabled !== undefined ? { play_comprehension_enabled: !!updates.play_comprehension_enabled } : {}),
+        ...(updates.play_exercise_enabled !== undefined ? { play_exercise_enabled: !!updates.play_exercise_enabled } : {}),
+        ...(updates.play_worksheet_enabled !== undefined ? { play_worksheet_enabled: !!updates.play_worksheet_enabled } : {}),
+        ...(updates.play_test_enabled !== undefined ? { play_test_enabled: !!updates.play_test_enabled } : {}),
         ...(typeof humorLevel === 'string' ? { humor_level: humorLevel } : {}),
         ...(updates.ask_disabled !== undefined ? { ask_disabled: !!updates.ask_disabled } : {}),
         ...(updates.poem_disabled !== undefined ? { poem_disabled: !!updates.poem_disabled } : {}),
@@ -276,6 +295,10 @@ export async function updateLearner(id, updates) {
       ...(typeof humorLevel === 'string' ? { humor_level: humorLevel } : {}),
       ...(updates.auto_advance_phases !== undefined ? { auto_advance_phases: !!updates.auto_advance_phases } : {}),
       ...(updates.golden_keys_enabled !== undefined ? { golden_keys_enabled: !!updates.golden_keys_enabled } : {}),
+      ...(updates.play_comprehension_enabled !== undefined ? { play_comprehension_enabled: !!updates.play_comprehension_enabled } : {}),
+      ...(updates.play_exercise_enabled !== undefined ? { play_exercise_enabled: !!updates.play_exercise_enabled } : {}),
+      ...(updates.play_worksheet_enabled !== undefined ? { play_worksheet_enabled: !!updates.play_worksheet_enabled } : {}),
+      ...(updates.play_test_enabled !== undefined ? { play_test_enabled: !!updates.play_test_enabled } : {}),
     };
     const { data: data2, error: error2 } = await updateWithOwner(supabase, id, jsonPayload, uid);
     if (!error2) { supabaseLearnersMode = 'json'; return normalizeRow(data2); }
@@ -321,6 +344,10 @@ function normalizeRow(row) {
     golden_keys: c(row.golden_keys),
     active_golden_keys: row.active_golden_keys || {},
     golden_keys_enabled: row.golden_keys_enabled !== false,
+    play_comprehension_enabled: row.play_comprehension_enabled !== false,
+    play_exercise_enabled: row.play_exercise_enabled !== false,
+    play_worksheet_enabled: row.play_worksheet_enabled !== false,
+    play_test_enabled: row.play_test_enabled !== false,
     humor_level: humorLevel,
     ask_disabled: !!row.ask_disabled,
     poem_disabled: !!row.poem_disabled,

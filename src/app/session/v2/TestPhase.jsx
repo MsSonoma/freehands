@@ -142,7 +142,8 @@ export class TestPhase {
   }
   
   // Public API: Start phase
-  async start() {
+  async start(options = {}) {
+    const skipPlayPortion = options?.skipPlayPortion === true;
     // Resume path: skip intro/go and jump directly to the stored question/review index.
     if (this.#resumeState) {
       if (Array.isArray(this.#resumeState.questions) && this.#resumeState.questions.length) {
@@ -152,6 +153,9 @@ export class TestPhase {
       this.#score = Number(this.#resumeState.score || 0);
       this.#answers = Array.isArray(this.#resumeState.answers) ? this.#resumeState.answers : [];
       this.#timerMode = this.#resumeState.timerMode || 'work';
+      if (skipPlayPortion) {
+        this.#timerMode = 'work';
+      }
 
       if (this.#timerService) {
         if (this.#timerMode === 'work') {
@@ -179,6 +183,13 @@ export class TestPhase {
       this.#state = 'awaiting-answer';
       this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
       await this.#playCurrentQuestion();
+      return;
+    }
+
+    // Skip intro + play timer and jump straight into work mode.
+    if (skipPlayPortion) {
+      this.#state = 'awaiting-go';
+      await this.go();
       return;
     }
 
