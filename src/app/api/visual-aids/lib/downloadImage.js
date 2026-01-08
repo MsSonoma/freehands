@@ -21,6 +21,11 @@ function isRetryable(error) {
   if (error.status) {
     return RETRY_CONFIG.retryableStatuses.includes(error.status)
   }
+
+  // Supabase errors sometimes use statusCode
+  if (error.statusCode) {
+    return RETRY_CONFIG.retryableStatuses.includes(error.statusCode)
+  }
   
   if (error.response?.status) {
     return RETRY_CONFIG.retryableStatuses.includes(error.response.status)
@@ -81,6 +86,7 @@ export async function downloadAndStoreImage(imageUrl, supabase, facilitatorId, l
     if (!response.ok) {
       const error = new Error(`Failed to download image: ${response.status}`)
       error.status = response.status
+      error.stage = 'download'
       throw error
     }
     return await response.blob()
@@ -100,7 +106,11 @@ export async function downloadAndStoreImage(imageUrl, supabase, facilitatorId, l
       })
 
     if (error) {
-      throw error
+      const wrapped = new Error(error.message || 'Supabase Storage upload failed')
+      wrapped.stage = 'upload'
+      wrapped.statusCode = error.statusCode || error.status || error.code
+      wrapped.cause = error
+      throw wrapped
     }
   }, 1, `upload-${imageId}`)
 

@@ -35,6 +35,8 @@ export default function HeaderBar() {
 	const [brandFitSize, setBrandFitSize] = useState(null);
 	const [printMenuOpen, setPrintMenuOpen] = useState(false);
 	const printMenuRef = useRef(null);
+	const [facilitatorMenuOpen, setFacilitatorMenuOpen] = useState(false);
+	const facilitatorMenuCloseTimerRef = useRef(null);
 	// Mobile menu (hamburger) state and refs
 	const [navOpen, setNavOpen] = useState(false);
 	const [isNarrow, setIsNarrow] = useState(false);
@@ -205,6 +207,52 @@ export default function HeaderBar() {
 
 	// Close the nav menu on route change
 	useEffect(() => { setNavOpen(false); }, [pathname]);
+	useEffect(() => {
+		setFacilitatorMenuOpen(false);
+		try {
+			if (facilitatorMenuCloseTimerRef.current) {
+				clearTimeout(facilitatorMenuCloseTimerRef.current);
+				facilitatorMenuCloseTimerRef.current = null;
+			}
+		} catch {}
+	}, [pathname]);
+
+	const cancelFacilitatorMenuClose = useCallback(() => {
+		try {
+			if (facilitatorMenuCloseTimerRef.current) {
+				clearTimeout(facilitatorMenuCloseTimerRef.current);
+				facilitatorMenuCloseTimerRef.current = null;
+			}
+		} catch {}
+	}, []);
+
+	const openFacilitatorMenu = useCallback(() => {
+		cancelFacilitatorMenuClose();
+		setFacilitatorMenuOpen(true);
+	}, [cancelFacilitatorMenuClose]);
+
+	const closeFacilitatorMenuSoon = useCallback(() => {
+		cancelFacilitatorMenuClose();
+		try {
+			facilitatorMenuCloseTimerRef.current = setTimeout(() => {
+				setFacilitatorMenuOpen(false);
+				facilitatorMenuCloseTimerRef.current = null;
+			}, 220);
+		} catch {
+			setFacilitatorMenuOpen(false);
+		}
+	}, [cancelFacilitatorMenuClose]);
+
+	useEffect(() => {
+		return () => {
+			try {
+				if (facilitatorMenuCloseTimerRef.current) {
+					clearTimeout(facilitatorMenuCloseTimerRef.current);
+					facilitatorMenuCloseTimerRef.current = null;
+				}
+			} catch {}
+		};
+	}, []);
 
 	// Facilitator name for header label (falls back to literal 'Facilitator')
 	const [facilitatorName, setFacilitatorName] = useState('');
@@ -717,18 +765,106 @@ export default function HeaderBar() {
 							>
 								Learn
 							</Link>
-							<Link
-								href="/facilitator"
-								onClick={(e) => {
-									if (pathname.startsWith('/session')) {
-										e.preventDefault();
-										goWithPin('/facilitator');
-									}
-								}}
-							style={{ textDecoration:'none', color:'#111', fontWeight:500, whiteSpace:'nowrap' }}
+							<div
+								style={{ position:'relative', display:'inline-flex', alignItems:'center' }}
+								onMouseEnter={openFacilitatorMenu}
+								onMouseLeave={closeFacilitatorMenuSoon}
 							>
-								{facilitatorName || 'Facilitator'}
-							</Link>
+								<Link
+									href="/facilitator"
+									onMouseEnter={openFacilitatorMenu}
+									onFocus={openFacilitatorMenu}
+									onClick={async (e) => {
+										if (pathname.startsWith('/session')) {
+											e.preventDefault();
+											const ok = await goWithPin('/facilitator');
+											if (ok) setFacilitatorMenuOpen(false);
+											return;
+										}
+										setFacilitatorMenuOpen(false);
+									}}
+									style={{ textDecoration:'none', color:'#111', fontWeight:500, whiteSpace:'nowrap' }}
+								>
+									{facilitatorName || 'Facilitator'}
+								</Link>
+								{facilitatorMenuOpen && (
+									<div
+										role="menu"
+										onMouseEnter={cancelFacilitatorMenuClose}
+										onMouseLeave={closeFacilitatorMenuSoon}
+										style={{ position:'absolute', right:0, top:'100%', background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', minWidth:160, overflow:'hidden', zIndex:1400 }}
+									>
+										<Link
+											href="/facilitator/account"
+											role="menuitem"
+											onClick={async (e) => {
+												if (pathname.startsWith('/session')) {
+													e.preventDefault();
+													const ok = await goWithPin('/facilitator/account');
+													if (ok) setFacilitatorMenuOpen(false);
+													return;
+												}
+												setFacilitatorMenuOpen(false);
+											}}
+											style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', textDecoration:'none', fontWeight:600, color:'#111' }}
+										>
+											<span aria-hidden="true">⚙️</span>
+											Account
+										</Link>
+										<Link
+											href="/facilitator/learners"
+											role="menuitem"
+											onClick={async (e) => {
+												if (pathname.startsWith('/session')) {
+													e.preventDefault();
+													const ok = await goWithPin('/facilitator/learners');
+													if (ok) setFacilitatorMenuOpen(false);
+													return;
+												}
+												setFacilitatorMenuOpen(false);
+											}}
+											style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', textDecoration:'none', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
+										>
+											<span aria-hidden="true">👥</span>
+											Learners
+										</Link>
+										<Link
+											href="/facilitator/lessons"
+											role="menuitem"
+											onClick={async (e) => {
+												if (pathname.startsWith('/session')) {
+													e.preventDefault();
+													const ok = await goWithPin('/facilitator/lessons');
+													if (ok) setFacilitatorMenuOpen(false);
+													return;
+												}
+												setFacilitatorMenuOpen(false);
+											}}
+											style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', textDecoration:'none', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
+										>
+											<span aria-hidden="true">📚</span>
+											Lessons
+										</Link>
+										<Link
+											href="/facilitator/calendar"
+											role="menuitem"
+											onClick={async (e) => {
+												if (pathname.startsWith('/session')) {
+													e.preventDefault();
+													const ok = await goWithPin('/facilitator/calendar');
+													if (ok) setFacilitatorMenuOpen(false);
+													return;
+												}
+												setFacilitatorMenuOpen(false);
+											}}
+											style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', textDecoration:'none', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
+										>
+											<span aria-hidden="true">📅</span>
+											Calendar
+										</Link>
+									</div>
+								)}
+							</div>
 						</>
 					)}
 				</nav>

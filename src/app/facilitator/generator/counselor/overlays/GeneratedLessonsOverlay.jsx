@@ -145,8 +145,21 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
     setBusyItems(prev => ({ ...prev, [file]: 'editing' }))
     setError('')
     try {
-      const params = new URLSearchParams({ file, userId })
-      const res = await fetch(`/api/facilitator/lessons/get?${params}`, { cache: 'no-store' })
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) {
+        setError('Sign in required')
+        return
+      }
+
+      const params = new URLSearchParams({ file })
+      const res = await fetch(`/api/facilitator/lessons/get?${params}`, {
+        cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
       if (!res.ok) {
         setError('Failed to load lesson')
         return

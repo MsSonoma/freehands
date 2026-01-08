@@ -12,6 +12,7 @@ import { getStoredSnapshot } from '@/app/session/sessionSnapshotStore'
 import { getActiveLessonSession } from '@/app/lib/sessionTracking'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
+import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 
@@ -91,6 +92,8 @@ function LessonsPageInner(){
   const [sessionGateReady, setSessionGateReady] = useState(false)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [showGoldenKeyToast, setShowGoldenKeyToast] = useState(false) // Show golden key earned notification
+  // null = unknown (still loading learner settings); true/false = loaded value
+  const [goldenKeysEnabled, setGoldenKeysEnabled] = useState(null)
 
   const {
     sessions: lessonHistorySessions,
@@ -180,16 +183,39 @@ function LessonsPageInner(){
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const justEarned = sessionStorage.getItem('just_earned_golden_key');
-      if (justEarned === 'true') {
+      // Only show or suppress the toast once we know the learner setting.
+      // (Avoid clearing it while the setting is still loading to prevent “missing toast” bugs.)
+      if (goldenKeysEnabled === false) {
         sessionStorage.removeItem('just_earned_golden_key');
-        setShowGoldenKeyToast(true);
-        // Auto-hide after 5 seconds
-        const timer = setTimeout(() => setShowGoldenKeyToast(false), 5000);
-        return () => clearTimeout(timer);
+        return;
       }
+      if (goldenKeysEnabled !== true) return;
+
+      const justEarned = sessionStorage.getItem('just_earned_golden_key');
+      if (justEarned !== 'true') return;
+
+      sessionStorage.removeItem('just_earned_golden_key');
+      setShowGoldenKeyToast(true);
+      // Auto-hide after 5 seconds
+      const timer = setTimeout(() => setShowGoldenKeyToast(false), 5000);
+      return () => clearTimeout(timer);
     } catch {}
-  }, []);
+  }, [goldenKeysEnabled]);
+
+  // Listen for facilitator-side per-learner settings changes (no localStorage fallback)
+  useEffect(() => {
+    if (!learnerId || learnerId === 'demo') return;
+    return subscribeLearnerSettingsPatches((msg) => {
+      if (String(msg?.learnerId) !== String(learnerId)) return;
+      if (msg?.patch?.golden_keys_enabled === undefined) return;
+      const enabled = !!msg.patch.golden_keys_enabled;
+      setGoldenKeysEnabled(enabled);
+      if (!enabled) {
+        setGoldenKeySelected(false);
+        setShowGoldenKeyToast(false);
+      }
+    });
+  }, [learnerId]);
 
   useEffect(() => {
     let mounted = true
@@ -345,22 +371,29 @@ function LessonsPageInner(){
   useEffect(() => {
     if (!learnerId) {
       setActiveGoldenKeys({})
+      // Keep golden key UI hidden until we know whether a learner is selected.
+      setGoldenKeysEnabled(null)
       setLoading(false)
       return
     }
     // Demo learner doesn't need database lookup
     if (learnerId === 'demo') {
       setActiveGoldenKeys({})
+      setGoldenKeysEnabled(true)
       setLoading(false)
       return
     }
+
+    // Hide Golden Key UI until we load the learner setting.
+    setGoldenKeysEnabled(null)
+
     let cancelled = false
     ;(async () => {
       try {
         const supabase = getSupabaseClient()
-        // Load active golden keys, lesson notes, and approved lessons
+        // Load active golden keys, lesson notes, approved lessons, and golden key feature flag
         let data, error
-        const result = await supabase.from('learners').select('active_golden_keys, lesson_notes, approved_lessons').eq('id', learnerId).maybeSingle()
+        const result = await supabase.from('learners').select('active_golden_keys, lesson_notes, approved_lessons, golden_keys_enabled').eq('id', learnerId).maybeSingle()
         data = result.data
         error = result.error
         
@@ -408,6 +441,7 @@ function LessonsPageInner(){
         if (!cancelled) {
           setScheduledLessons(scheduled)
           setActiveGoldenKeys(data?.active_golden_keys || {})
+          setGoldenKeysEnabled(data?.golden_keys_enabled !== false)
           setLessonNotes(data?.lesson_notes || {})
           const { normalized: approvedNormalized } = normalizeApprovedLessonKeys(data?.approved_lessons || {})
           setAvailableLessons(approvedNormalized)
@@ -450,7 +484,7 @@ function LessonsPageInner(){
     }
     
     // Handle golden key consumption - decrement from database
-    if (goldenKeySelected && learnerId) {
+    if (goldenKeysEnabled === true && goldenKeySelected && learnerId) {
       try {
         const learner = await getLearner(learnerId)
         if (learner && learner.golden_keys > 0) {
@@ -473,7 +507,7 @@ function LessonsPageInner(){
     
     setSessionLoading(true)
     const url = `/session?subject=${encodeURIComponent(subject)}&lesson=${encodeURIComponent(fileBaseName)}`
-    const withKey = goldenKeySelected ? `${url}&goldenKey=true` : url
+    const withKey = (goldenKeysEnabled === true && goldenKeySelected) ? `${url}&goldenKey=true` : url
     router.push(withKey)
   }
 
@@ -641,7 +675,7 @@ function LessonsPageInner(){
   return (
     <main style={{ padding:24, maxWidth:980, margin:'0 auto' }}>
       {/* Golden Key Earned Toast Notification */}
-      {showGoldenKeyToast && (
+      {showGoldenKeyToast && goldenKeysEnabled === true && (
         <div style={{
           position: 'fixed',
           top: 20,
@@ -695,11 +729,13 @@ function LessonsPageInner(){
       )}
 
       {/* Golden Key Counter */}
-      <GoldenKeyCounter
-        learnerId={learnerId}
-        selected={goldenKeySelected}
-        onToggle={() => setGoldenKeySelected(prev => !prev)}
-      />
+      {goldenKeysEnabled === true && !loading && !lessonsLoading && (
+        <GoldenKeyCounter
+          learnerId={learnerId}
+          selected={goldenKeySelected}
+          onToggle={() => setGoldenKeySelected(prev => !prev)}
+        />
+      )}
 
       {learnerId && learnerId !== 'demo' && (
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, marginTop: 12 }}>
@@ -854,7 +890,7 @@ function LessonsPageInner(){
                               📅
                             </div>
                           )}
-                          {hasActiveKey && (
+                          {goldenKeysEnabled === true && hasActiveKey && (
                             <div style={{ 
                               fontSize: 16, 
                               background: '#fef3c7', 

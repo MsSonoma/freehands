@@ -11,6 +11,7 @@ const CORE_SUBJECTS = ['math', 'language arts', 'science', 'social studies', 'ge
 
 export default function LessonPlanner({ 
   learnerId, 
+  learnerGrade,
   tier,
   selectedDate,
   plannedLessons = {},
@@ -418,7 +419,7 @@ export default function LessonPlanner({
                 },
                 body: JSON.stringify({
                   subject: subjectInfo.subject,
-                  grade: '3rd', // Default - user can change in generator
+                  grade: learnerGrade || '3rd',
                   difficulty: recommendedDifficulty,
                   learnerId,
                   context: contextText  // Include lesson history and preferences
@@ -462,7 +463,7 @@ export default function LessonPlanner({
       title: lesson.title,
       description: lesson.description,
       subject: lesson.subject,
-      grade: lesson.grade,
+      grade: learnerGrade || lesson.grade,
       difficulty: lesson.difficulty
     })
     setGeneratorDate(date)

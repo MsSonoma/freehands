@@ -1,8 +1,9 @@
 ﻿// Day view overlay showing all scheduled and planned lessons for a selected date
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import LessonGeneratorOverlay from './LessonGeneratorOverlay'
 import LessonEditor from '@/components/LessonEditor'
+import VisualAidsCarousel from '@/components/VisualAidsCarousel'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 
 export default function DayViewOverlay({ 
@@ -25,9 +26,295 @@ export default function DayViewOverlay({
   const [lessonEditorData, setLessonEditorData] = useState(null)
   const [lessonEditorLoading, setLessonEditorLoading] = useState(false)
   const [lessonEditorSaving, setLessonEditorSaving] = useState(false)
+  const [showVisualAidsCarousel, setShowVisualAidsCarousel] = useState(false)
+  const [visualAidsImages, setVisualAidsImages] = useState([])
+  const [generatingVisualAids, setGeneratingVisualAids] = useState(false)
+  const [generationProgress, setGenerationProgress] = useState('')
+  const [generationCount, setGenerationCount] = useState(0)
+  const [visualAidsLessonKey, setVisualAidsLessonKey] = useState(null)
   const [showNoSchoolInput, setShowNoSchoolInput] = useState(false)
   const [noSchoolInputValue, setNoSchoolInputValue] = useState(noSchoolReason || '')
   const [redoingLesson, setRedoingLesson] = useState(null)
+
+  const MAX_GENERATIONS = 4
+
+  const computeNormalizedLessonKey = (raw) => {
+    const normalized = String(raw || '')
+      .replace(/^generated\//, '')
+      .replace(/\.json$/i, '')
+    return normalized ? `${normalized}.json` : ''
+  }
+
+  const getAuthTokenOrThrow = async () => {
+    const supabase = getSupabaseClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) throw new Error('Not authenticated')
+    return token
+  }
+
+  const loadVisualAidsData = async (lessonKeyForVisualAids) => {
+    if (!lessonKeyForVisualAids) return
+
+    try {
+      const token = await getAuthTokenOrThrow()
+      const res = await fetch(`/api/visual-aids/load?lessonKey=${encodeURIComponent(lessonKeyForVisualAids)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+
+      if (!res.ok) return
+      const data = await res.json()
+      setVisualAidsImages(data.generatedImages || [])
+      setGenerationCount(data.generationCount || 0)
+    } catch {
+      // Silent by design (matches regular lesson editor behavior)
+    }
+  }
+
+  const saveVisualAidsData = async (images, count, shouldReload = false) => {
+    if (!visualAidsLessonKey) return
+
+    try {
+      const token = await getAuthTokenOrThrow()
+
+      const selectedImages = (Array.isArray(images) ? images : []).filter(img => img?.selected)
+      const persistGenerated = !shouldReload
+
+      const res = await fetch('/api/visual-aids/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          lessonKey: visualAidsLessonKey,
+          generatedImages: images,
+          selectedImages: selectedImages,
+          generationCount: count,
+          persistGenerated
+        })
+      })
+
+      if (!res.ok) {
+        let message = 'Failed to save visual aids'
+        try {
+          const errorData = await res.json()
+          if (errorData?.error) message = errorData.error
+          if (Array.isArray(errorData?.details) && errorData.details.length > 0) {
+            const d = errorData.details[0]
+            const stage = d?.stage ? `stage: ${d.stage}` : null
+            const status = (typeof d?.status !== 'undefined') ? `status: ${d.status}` : null
+            const detailMsg = (typeof d?.message === 'string' && d.message.trim()) ? d.message.trim() : null
+            const extra = [stage, status].filter(Boolean).join(', ')
+            if (extra) message = `${message} (${extra})`
+            if (detailMsg) {
+              const clipped = detailMsg.length > 140 ? `${detailMsg.slice(0, 140)}...` : detailMsg
+              message = `${message} - ${clipped}`
+            }
+          }
+        } catch {}
+        alert(message)
+        return
+      }
+
+      if (shouldReload) {
+        const loadRes = await fetch(`/api/visual-aids/load?lessonKey=${encodeURIComponent(visualAidsLessonKey)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+
+        if (!loadRes.ok) {
+          let message = 'Saved visual aids, but failed to reload them'
+          try {
+            const errorData = await loadRes.json()
+            if (errorData?.error) message = errorData.error
+          } catch {}
+          alert(message)
+          return
+        }
+
+        const visualAidsData = await loadRes.json()
+        setVisualAidsImages(visualAidsData.generatedImages || [])
+        setGenerationCount(visualAidsData.generationCount || 0)
+      }
+    } catch (err) {
+      alert(err?.message || 'Failed to save visual aids')
+    }
+  }
+
+  const handleGenerateVisualAids = async () => {
+    if (!lessonEditorData?.teachingNotes) {
+      alert('Teaching notes are required to generate visual aids')
+      return
+    }
+    setShowVisualAidsCarousel(true)
+  }
+
+  const handleGenerateMore = async (customPrompt = '') => {
+    if (!lessonEditorData?.teachingNotes) {
+      return
+    }
+
+    if (generationCount >= MAX_GENERATIONS) {
+      alert(`You've reached the maximum of ${MAX_GENERATIONS} generations for this lesson`)
+      return
+    }
+
+    setGeneratingVisualAids(true)
+    const isFirstGeneration = visualAidsImages.length === 0
+    setGenerationProgress(isFirstGeneration ? 'Generating 3 images...' : 'Generating 3 more images...')
+
+    try {
+      const token = await getAuthTokenOrThrow()
+      const res = await fetch('/api/visual-aids/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          teachingNotes: lessonEditorData.teachingNotes,
+          lessonTitle: lessonEditorData.title,
+          customPrompt: customPrompt.trim() || undefined,
+          count: 3
+        })
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to generate more visual aids')
+      }
+
+      const data = await res.json()
+      let allImages = visualAidsImages
+      if (data.images && data.images.length > 0) {
+        allImages = [...visualAidsImages, ...data.images]
+        setVisualAidsImages(allImages)
+      }
+
+      const newCount = generationCount + 1
+      setGenerationCount(newCount)
+      setGenerationProgress('Complete!')
+      setTimeout(() => setGenerationProgress(''), 1000)
+
+      await saveVisualAidsData(allImages, newCount)
+    } catch (err) {
+      alert(err?.message || 'Failed to generate more visual aids')
+      setGenerationProgress('')
+    } finally {
+      setGeneratingVisualAids(false)
+    }
+  }
+
+  const handleUploadImage = async (file) => {
+    try {
+      const reader = new FileReader()
+      const dataURL = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+
+      const newImage = {
+        url: dataURL,
+        prompt: `Uploaded: ${file.name}`,
+        description: '',
+        id: `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        uploaded: true
+      }
+
+      const allImages = [...visualAidsImages, newImage]
+      setVisualAidsImages(allImages)
+      await saveVisualAidsData(allImages, generationCount)
+      return newImage
+    } catch {
+      alert('Failed to upload image')
+      return null
+    }
+  }
+
+  const handleRewriteDescription = async (description, lessonTitle, purpose = 'visual-aid-description') => {
+    try {
+      const token = await getAuthTokenOrThrow()
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          text: description,
+          context: lessonTitle,
+          purpose
+        })
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to rewrite text')
+      }
+
+      const data = await res.json()
+      return data.rewritten
+    } catch {
+      return null
+    }
+  }
+
+  const handleGeneratePrompt = async (teachingNotes, lessonTitle) => {
+    try {
+      const token = await getAuthTokenOrThrow()
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          text: teachingNotes,
+          context: lessonTitle,
+          purpose: 'visual-aid-prompt-from-notes'
+        })
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to generate prompt')
+      }
+
+      const data = await res.json()
+      return data.rewritten
+    } catch {
+      return null
+    }
+  }
+
+  const handleSaveVisualAids = async (selectedImages) => {
+    const updatedImages = visualAidsImages.map(img => {
+      const isSelected = selectedImages.some(sel => sel.id === img.id)
+      return {
+        ...img,
+        selected: isSelected,
+        description: selectedImages.find(sel => sel.id === img.id)?.description || img.description
+      }
+    })
+
+    setShowVisualAidsCarousel(false)
+    await saveVisualAidsData(updatedImages, generationCount, true)
+  }
+
+  useEffect(() => {
+    if (!editingLesson) return
+    const key = computeNormalizedLessonKey(editingLesson)
+    setVisualAidsLessonKey(key)
+    // Start fresh for each lesson edit session
+    setShowVisualAidsCarousel(false)
+    setVisualAidsImages([])
+    setGenerationCount(0)
+    setGenerationProgress('')
+    setGeneratingVisualAids(false)
+    loadVisualAidsData(key)
+  }, [editingLesson])
 
   const formattedDate = new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
     weekday: 'long',
@@ -38,7 +325,7 @@ export default function DayViewOverlay({
 
   const handleGenerateClick = (plannedLesson) => {
     setGeneratorData({
-      grade: plannedLesson.grade || '',
+      grade: learnerGrade || plannedLesson.grade || '',
       difficulty: plannedLesson.difficulty || 'intermediate',
       subject: plannedLesson.subject || '',
       title: plannedLesson.title || '',
@@ -52,20 +339,30 @@ export default function DayViewOverlay({
     setLessonEditorLoading(true)
     
     try {
-      // Use facilitator_id from the scheduled lesson (who owns the lesson file)
-      // not the current user (who is viewing the calendar)
-      const userId = scheduledLesson.facilitator_id
-      
-      if (!userId) {
-        throw new Error('Facilitator ID missing from scheduled lesson')
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      const authedUserId = session?.user?.id
+
+      if (!token || !authedUserId) {
+        throw new Error('Not authenticated')
       }
-      
+
+      // Safety check: scheduled lessons should belong to the signed-in facilitator
+      if (scheduledLesson.facilitator_id && scheduledLesson.facilitator_id !== authedUserId) {
+        throw new Error('Cannot edit another facilitator\'s lesson')
+      }
+
       const params = new URLSearchParams({
-        file: scheduledLesson.lesson_key,
-        userId: userId
+        file: scheduledLesson.lesson_key
       })
-      
-      const response = await fetch(`/api/facilitator/lessons/get?${params}`)
+
+      const response = await fetch(`/api/facilitator/lessons/get?${params}`, {
+        cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
       if (!response.ok) {
         const errorData = await response.json()
         console.error('Lesson load failed:', JSON.stringify(errorData, null, 2))
@@ -78,6 +375,12 @@ export default function DayViewOverlay({
       console.error('Error loading lesson:', err)
       alert('Failed to load lesson for editing')
       setEditingLesson(null)
+      setShowVisualAidsCarousel(false)
+      setVisualAidsImages([])
+      setGenerationCount(0)
+      setGenerationProgress('')
+      setGeneratingVisualAids(false)
+      setVisualAidsLessonKey(null)
     } finally {
       setLessonEditorLoading(false)
     }
@@ -87,17 +390,34 @@ export default function DayViewOverlay({
     setLessonEditorSaving(true)
     
     try {
-      const response = await fetch(`/api/facilitator/lessons/${encodeURIComponent(editingLesson)}`, {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) {
+        throw new Error('Not authenticated')
+      }
+
+      const normalizedFile = String(editingLesson || '')
+        .replace(/^generated\//, '')
+        .replace(/\.json$/i, '')
+      const file = `${normalizedFile}.json`
+
+      const response = await fetch('/api/facilitator/lessons/update', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lesson: updatedLesson })
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ file, lesson: updatedLesson })
       })
 
-      if (!response.ok) throw new Error('Failed to save lesson')
+      const js = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(js?.error || 'Failed to save lesson')
       
       alert('Lesson updated successfully!')
       setEditingLesson(null)
       setLessonEditorData(null)
+      setShowVisualAidsCarousel(false)
       if (onLessonGenerated) onLessonGenerated()
     } catch (err) {
       console.error('Error saving lesson:', err)
@@ -136,7 +456,7 @@ export default function DayViewOverlay({
         },
         body: JSON.stringify({
           subject: plannedLesson.subject,
-          grade: plannedLesson.grade || '3rd',
+          grade: learnerGrade || plannedLesson.grade || '3rd',
           difficulty: plannedLesson.difficulty || 'intermediate',
           learnerId
         })
@@ -210,6 +530,7 @@ export default function DayViewOverlay({
           if (!lessonEditorSaving && confirm('Close without saving changes?')) {
             setEditingLesson(null)
             setLessonEditorData(null)
+            setShowVisualAidsCarousel(false)
           }
         }}
       >
@@ -237,9 +558,15 @@ export default function DayViewOverlay({
                 if (!lessonEditorSaving || confirm('Cancel editing?')) {
                   setEditingLesson(null)
                   setLessonEditorData(null)
+                  setShowVisualAidsCarousel(false)
                 }
               }}
               busy={lessonEditorSaving}
+              onGenerateVisualAids={handleGenerateVisualAids}
+              generatingVisualAids={generatingVisualAids}
+              visualAidsButtonText={generatingVisualAids 
+                ? (generationProgress || 'Generating...') 
+                : (visualAidsImages.length > 0 ? '🖼️ Visual Aids' : '🖼️ Generate Visual Aids')}
             />
           ) : (
             <div style={{ textAlign: 'center', padding: 60, color: '#ef4444' }}>
@@ -247,6 +574,25 @@ export default function DayViewOverlay({
             </div>
           )}
         </div>
+
+        {showVisualAidsCarousel && (
+          <VisualAidsCarousel
+            images={visualAidsImages}
+            onClose={() => setShowVisualAidsCarousel(false)}
+            onSave={handleSaveVisualAids}
+            onGenerateMore={handleGenerateMore}
+            onUploadImage={handleUploadImage}
+            onRewriteDescription={handleRewriteDescription}
+            onGeneratePrompt={handleGeneratePrompt}
+            generating={generatingVisualAids}
+            teachingNotes={lessonEditorData?.teachingNotes || ''}
+            lessonTitle={lessonEditorData?.title || ''}
+            generationProgress={generationProgress}
+            generationCount={generationCount}
+            maxGenerations={MAX_GENERATIONS}
+            zIndex={10002}
+          />
+        )}
       </div>
     )
   }

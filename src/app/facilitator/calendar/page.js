@@ -746,6 +746,7 @@ export default function CalendarPage() {
                 <div style={{ display: activeTab === 'planner' ? 'block' : 'none' }}>
                   <LessonPlanner
                     learnerId={selectedLearnerId}
+                    learnerGrade={learners.find(l => l.id === selectedLearnerId)?.grade || '3rd'}
                     tier={tier}
                     selectedDate={selectedDate}
                     plannedLessons={plannedLessons}

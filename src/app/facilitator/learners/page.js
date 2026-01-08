@@ -12,6 +12,7 @@ import GatedOverlay from '@/app/components/GatedOverlay';
 import TutorialGuard from '@/components/TutorialGuard';
 import LearnerEditOverlay from './components/LearnerEditOverlay';
 import { PageHeader, InlineExplainer } from '@/components/FacilitatorHelp';
+import { broadcastLearnerSettingsPatch } from '@/app/lib/learnerSettingsBus';
 
 export default function LearnersPage() {
 	const router = useRouter();
@@ -527,6 +528,14 @@ export default function LearnersPage() {
 				if (idx !== -1) {
 					await handleSaveLearner(idx, updates);
 				}
+			}}
+			onPatch={async (patch) => {
+				const idx = items.findIndex(item => item.id === editingBasicInfo.id);
+				if (idx === -1) return;
+				const learner = items[idx];
+				await updateLearner(learner.id, patch);
+				setItems(prev => prev.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
+				broadcastLearnerSettingsPatch(learner.id, patch);
 			}}
 			onDelete={handleDelete}
 		/>

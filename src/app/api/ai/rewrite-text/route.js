@@ -58,7 +58,7 @@ ${text}
 
 Create a prompt that will help generate 3 different educational illustrations. Focus on:
 - Key concepts shown through VISUAL scenes, objects, and actions (not text or labels)
-- Style guidance (kid-friendly, colorful, simple, photographic or illustrated)
+- Style guidance (kid-friendly, cartoon, simple, illustrated; avoid realistic faces)
 - What types of visuals would help (real-world examples, nature scenes, everyday objects, step-by-step actions)
 - CRITICAL: Images must have NO text, words, labels, captions, or written language of any kind
 
@@ -75,7 +75,7 @@ Basic prompt: ${text}
 
 Requirements:
 - Be specific and descriptive about visual elements (objects, colors, scenes, actions)
-- Include style guidance (photographic, illustrated, kid-friendly, simple and clear)
+- Include style guidance (cartoon illustration, kid-friendly, simple and clear; avoid realistic faces)
 - Focus on showing concepts through imagery, not through text or labels
 - CRITICAL: The final image must contain NO text, words, letters, numbers, labels, captions, signs, or written language
 - Suggest visual metaphors or real-world examples instead of diagrams with text

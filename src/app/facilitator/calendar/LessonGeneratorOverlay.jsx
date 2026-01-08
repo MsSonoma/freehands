@@ -17,12 +17,50 @@ export default function LessonGeneratorOverlay({
   scheduledDate,
   prefilledData 
 }) {
+  const asTrimmedString = (value) => {
+    if (typeof value === 'string') return value.trim()
+    if (typeof value === 'number') return String(value).trim()
+    if (value == null) return ''
+    return String(value).trim()
+  }
+
+  const normalizeGradeOption = (value) => {
+    const raw = asTrimmedString(value)
+    if (!raw) return ''
+
+    const lower = raw.toLowerCase()
+    if (lower === 'k' || lower === 'kindergarten' || lower === 'kg') return 'K'
+
+    // Accept values like "3", "3rd", "3rd grade", "grade 3".
+    const match = lower.match(/\b(\d{1,2})\b/)
+    if (match) {
+      const n = Number(match[1])
+      if (!Number.isFinite(n)) return ''
+      if (n <= 0) return ''
+      if (n === 1) return '1st'
+      if (n === 2) return '2nd'
+      if (n === 3) return '3rd'
+      if (n >= 4 && n <= 12) return `${n}th`
+    }
+
+    // Already in the expected form?
+    const canonical = ['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th']
+    const found = canonical.find((g) => g.toLowerCase() === lower)
+    return found || ''
+  }
+
+  const resolveInitialGrade = () => {
+    const fromPrefill = normalizeGradeOption(prefilledData?.grade)
+    if (fromPrefill) return fromPrefill
+    return normalizeGradeOption(learnerGrade)
+  }
+
   const [form, setForm] = useState({
-    grade: prefilledData?.grade || learnerGrade || '', 
+    grade: resolveInitialGrade(), 
     difficulty: prefilledData?.difficulty || 'intermediate', 
     subject: prefilledData?.subject || 'math', 
-    title: prefilledData?.title || '', 
-    description: prefilledData?.description || '', 
+    title: String(prefilledData?.title ?? ''), 
+    description: String(prefilledData?.description ?? ''), 
     notes: '', 
     vocab: ''
   })
@@ -38,7 +76,18 @@ export default function LessonGeneratorOverlay({
 
   const ent = featuresForTier(tier)
   
-  const isFormValid = form.grade.trim() && form.title.trim() && form.description.trim()
+  const isFormValid = asTrimmedString(form.grade) && asTrimmedString(form.title) && asTrimmedString(form.description)
+
+  // If the learner grade loads after mount, default the Grade select (unless explicitly prefilled).
+  useEffect(() => {
+    if (normalizeGradeOption(prefilledData?.grade)) return
+    const next = normalizeGradeOption(learnerGrade)
+    if (!next) return
+    setForm((prev) => {
+      if (normalizeGradeOption(prev.grade)) return prev
+      return { ...prev, grade: next }
+    })
+  }, [learnerGrade, prefilledData?.grade])
 
   useEffect(() => {
     loadCustomSubjects()

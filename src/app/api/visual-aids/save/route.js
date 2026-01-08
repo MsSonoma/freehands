@@ -8,7 +8,7 @@ export const maxDuration = 25 // Vercel timeout protection (30s max, 5s buffer)
 /**
  * POST/PUT /api/visual-aids/save
  * Save or update visual aids for a lesson (facilitator-specific)
- * Body: { lessonKey, generatedImages, selectedImages, generationCount }
+ * Body: { lessonKey, generatedImages, selectedImages, generationCount, persistGenerated }
  */
 export async function POST(req) {
   try {
@@ -32,7 +32,7 @@ export async function POST(req) {
     }
 
     const body = await req.json()
-    const { lessonKey, generatedImages, generationCount } = body
+    const { lessonKey, generatedImages, generationCount, persistGenerated } = body
 
     if (!lessonKey) {
       return NextResponse.json({ error: 'Missing lessonKey' }, { status: 400 })
@@ -41,83 +41,164 @@ export async function POST(req) {
     // Normalize lesson key by stripping folder prefixes (so same lesson from different routes shares visual aids)
     const normalizedLessonKey = lessonKey.replace(/^(generated|facilitator|math|science|language-arts|social-studies|demo)\//, '')
 
-    // Download and store ONLY selected images permanently
-    // Unselected images are discarded and not saved
-    let permanentSelectedImages = []
-    const selectedImages = generatedImages.filter(img => img.selected)
-    
-    if (selectedImages && selectedImages.length > 0) {
-      
-      permanentSelectedImages = await Promise.all(
-        selectedImages.map(async (img) => {
-          try {
-            // Check if URL is already a permanent Supabase Storage URL
-            if (img.url && img.url.includes('/storage/v1/object/public/visual-aids/')) {
-              return img
-            }
+    const safeGeneratedImages = Array.isArray(generatedImages) ? generatedImages : []
+    const explicitSelectedImages = safeGeneratedImages.filter((img) => Boolean(img?.selected))
+    const bodySelectedImages = Array.isArray(body?.selectedImages) ? body.selectedImages : []
+    const selectedImages = explicitSelectedImages.length > 0 ? explicitSelectedImages : bodySelectedImages
 
-            // Check if it's a data URL (uploaded file)
-            if (img.url && img.url.startsWith('data:')) {
-              // For uploaded files, we still need to convert data URL to permanent storage
-              const permanentUrl = await downloadAndStoreImage(
-                img.url,
-                supabase,
-                user.id,
-                normalizedLessonKey,
-                img.id
-              )
-              return {
-                ...img,
-                url: permanentUrl
-              }
-            }
+    const shouldPersistGenerated = Boolean(persistGenerated)
 
-            // Download DALL-E image and upload to permanent storage
-            const permanentUrl = await downloadAndStoreImage(
-              img.url,
-              supabase,
-              user.id,
-              normalizedLessonKey,
-              img.id
-            )
+    // Fetch existing record (if present) so we can preserve/merge without wiping.
+    const { data: existing, error: existingError } = await supabase
+      .from('visual_aids')
+      .select('generated_images, selected_images')
+      .eq('facilitator_id', user.id)
+      .eq('lesson_key', normalizedLessonKey)
+      .maybeSingle()
 
-            return {
-              ...img,
-              url: permanentUrl
-            }
-          } catch (err) {
-            // Return null to filter out - don't save expired URLs
-            return null
-          }
-        })
-      )
-      
-      // Filter out failed downloads (null values)
-      permanentSelectedImages = permanentSelectedImages.filter(img => img !== null)
-      
-      // If all images failed, return error
-      if (permanentSelectedImages.length === 0) {
-        return NextResponse.json({ 
-          error: 'All images failed to download after retries. DALL-E URLs may have expired. Please regenerate the images.'
-        }, { status: 500 })
+    if (existingError && existingError.code !== 'PGRST116') {
+      return NextResponse.json({ error: existingError.message }, { status: 500 })
+    }
+
+    const existingGenerated = Array.isArray(existing?.generated_images) ? existing.generated_images : []
+    const existingSelected = Array.isArray(existing?.selected_images) ? existing.selected_images : []
+
+    const isPermanentUrl = (url) =>
+      typeof url === 'string' && url.includes('/storage/v1/object/public/visual-aids/')
+
+    const summarizePersistError = (err) => {
+      if (!err) return { stage: 'unknown', message: 'Unknown error' }
+      const stage = err.stage || 'unknown'
+      const status = err.status || err.statusCode
+      const base = err.message || String(err)
+      return {
+        stage,
+        status,
+        message: typeof status !== 'undefined' ? `${base} (status ${status})` : base
       }
     }
 
-    // Save ONLY the selected images - unselected images are discarded
-    // Store selected images in both fields so they appear on reload
+    const makePermanent = async (img) => {
+      if (!img?.url) return null
+      if (isPermanentUrl(img.url)) return img
 
-    // Save ONLY the selected images - unselected images are discarded
-    // Store selected images in both fields so they appear on reload
+      try {
+        const permanentUrl = await downloadAndStoreImage(
+          img.url,
+          supabase,
+          user.id,
+          normalizedLessonKey,
+          img.id
+        )
+        return {
+          ...img,
+          url: permanentUrl
+        }
+      } catch (err) {
+        const info = summarizePersistError(err)
+        const tagged = {
+          ...img,
+          __persistError: info
+        }
+        return tagged
+      }
+    }
+
+    // 1) Optionally persist generated images immediately (so later selection does not depend on expiring URLs).
+    let nextGeneratedImages = existingGenerated
+    if (shouldPersistGenerated && safeGeneratedImages.length > 0) {
+      const permanentCandidates = await Promise.all(safeGeneratedImages.map(makePermanent))
+      const permanentGenerated = permanentCandidates.filter((img) => Boolean(img?.url) && !img?.__persistError)
+
+      const failures = permanentCandidates
+        .filter((img) => Boolean(img?.__persistError))
+        .map((img) => img.__persistError)
+
+      if (permanentGenerated.length === 0) {
+        console.error('[visual-aids/save] persistGenerated failed', {
+          lessonKey: normalizedLessonKey,
+          failures: failures.slice(0, 3)
+        })
+        return NextResponse.json(
+          {
+            error:
+              'All images failed to persist (download and/or upload). This is not necessarily an expiry issue. See details.',
+            details: failures.slice(0, 3)
+          },
+          { status: 500 }
+        )
+      }
+
+      const byId = new Map()
+      for (const img of existingGenerated) {
+        if (img?.id) byId.set(img.id, img)
+      }
+      for (const img of permanentGenerated) {
+        if (img?.id) byId.set(img.id, img)
+      }
+
+      nextGeneratedImages = safeGeneratedImages
+        .map((img) => (img?.id ? byId.get(img.id) || img : img))
+        .filter((img) => Boolean(img?.url))
+    }
+
+    // 2) If a selection is provided, ensure selected images are permanent and update selected_images.
+    let nextSelectedImages = existingSelected
+    if (Array.isArray(selectedImages) && selectedImages.length > 0) {
+      const generatedById = new Map()
+      for (const img of nextGeneratedImages) {
+        if (img?.id) generatedById.set(img.id, img)
+      }
+
+      const selectedResolved = selectedImages.map((img) => {
+        if (img?.id && generatedById.has(img.id)) return generatedById.get(img.id)
+        return img
+      })
+
+      const permanentCandidates = await Promise.all(selectedResolved.map(makePermanent))
+      const permanentSelected = permanentCandidates.filter((img) => Boolean(img?.url) && !img?.__persistError)
+
+      const failures = permanentCandidates
+        .filter((img) => Boolean(img?.__persistError))
+        .map((img) => img.__persistError)
+
+      if (permanentSelected.length === 0) {
+        console.error('[visual-aids/save] persistSelected failed', {
+          lessonKey: normalizedLessonKey,
+          failures: failures.slice(0, 3)
+        })
+        return NextResponse.json(
+          {
+            error:
+              'All selected images failed to persist (download and/or upload). This is not necessarily an expiry issue. See details.',
+            details: failures.slice(0, 3)
+          },
+          { status: 500 }
+        )
+      }
+
+      nextSelectedImages = permanentSelected
+    }
+
+    // 3) Persist changes without wiping unrelated fields.
+    const upsertPayload = {
+      facilitator_id: user.id,
+      lesson_key: normalizedLessonKey,
+      generation_count: generationCount || 0,
+      max_generations: 4
+    }
+
+    if (shouldPersistGenerated) {
+      upsertPayload.generated_images = nextGeneratedImages
+    }
+
+    if (Array.isArray(selectedImages) && selectedImages.length > 0) {
+      upsertPayload.selected_images = nextSelectedImages
+    }
+
     const { data, error } = await supabase
       .from('visual_aids')
-      .upsert({
-        facilitator_id: user.id,
-        lesson_key: normalizedLessonKey,
-        generated_images: permanentSelectedImages,
-        selected_images: permanentSelectedImages,
-        generation_count: generationCount || 0,
-        max_generations: 4
-      }, {
+      .upsert(upsertPayload, {
         onConflict: 'facilitator_id,lesson_key'
       })
       .select()

@@ -596,10 +596,32 @@ export default function LessonsOverlay({ learnerId }) {
       })
       
       if (!res.ok) {
-        // Failed to auto-save visual aids data
+        let message = 'Failed to save visual aids'
+        try {
+          const errorData = await res.json()
+          if (errorData?.error) message = errorData.error
+          if (Array.isArray(errorData?.details) && errorData.details.length > 0) {
+            const d = errorData.details[0]
+            const stage = d?.stage ? `stage: ${d.stage}` : null
+            const status = (typeof d?.status !== 'undefined') ? `status: ${d.status}` : null
+            const detailMsg = (typeof d?.message === 'string' && d.message.trim()) ? d.message.trim() : null
+            const extra = [stage, status].filter(Boolean).join(', ')
+            if (extra) message = `${message} (${extra})`
+            try {
+              console.error('[visual-aids/save] details.json:', JSON.stringify(errorData.details, null, 2))
+            } catch {
+              console.error('[visual-aids/save] details:', errorData.details)
+            }
+            if (detailMsg) {
+              const clipped = detailMsg.length > 140 ? `${detailMsg.slice(0, 140)}...` : detailMsg
+              message = `${message} - ${clipped}`
+            }
+          }
+        } catch {}
+        setVisualAidsError(message)
       }
     } catch (err) {
-      // Silent error handling
+      setVisualAidsError(err.message || 'Failed to save visual aids')
     }
   }
 

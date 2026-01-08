@@ -67,7 +67,7 @@ export default function GamesOverlay({ onClose, playTimer }) {
           right: 0,
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.75)',
-          zIndex: 9999,
+          zIndex: 20000,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -247,7 +247,7 @@ export default function GamesOverlay({ onClose, playTimer }) {
         right: 0,
         bottom: 0,
         background: '#fff',
-        zIndex: 9999,
+        zIndex: 20000,
         overflow: 'auto',
       }}
     >

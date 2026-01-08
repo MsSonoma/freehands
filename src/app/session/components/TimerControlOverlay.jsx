@@ -15,6 +15,7 @@ import { useState, useEffect, useCallback } from 'react';
  * @param {string} phase - Current phase name
  * @param {string} timerType - 'play' or 'work'
  * @param {number} totalMinutes - Total time allocated in minutes
+ * @param {boolean} goldenKeysEnabled - Whether Golden Key logic/UI is enabled for this learner
  * @param {number} goldenKeyBonus - Additional minutes from golden key (for play timers)
  * @param {boolean} isPaused - Whether timer is currently paused
  * @param {function} onUpdateTime - Callback to update elapsed time (seconds)
@@ -32,6 +33,7 @@ export default function TimerControlOverlay({
   phase,
   timerType = 'play',
   totalMinutes = 5,
+  goldenKeysEnabled = true,
   goldenKeyBonus = 0,
   isPaused = false,
   onUpdateTime,
@@ -44,7 +46,7 @@ export default function TimerControlOverlay({
 }) {
   // Calculate effective total (add golden key bonus to play timers)
   const effectiveTotalMinutes = timerType === 'play' 
-    ? totalMinutes + (goldenKeyBonus || 0)
+    ? totalMinutes + (goldenKeysEnabled ? (goldenKeyBonus || 0) : 0)
     : totalMinutes;
   
   const totalSeconds = effectiveTotalMinutes * 60;
@@ -263,7 +265,7 @@ export default function TimerControlOverlay({
         }}>
           <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
             Current Phase: <strong>{phase}</strong> ({timerType === 'play' ? '🎮 Play Time' : '📝 Work Time'})
-            {goldenKeyBonus > 0 && timerType === 'play' && (
+            {goldenKeysEnabled && goldenKeyBonus > 0 && timerType === 'play' && (
               <span style={{ color: '#fbbf24', marginLeft: 8 }}>🔑 +{goldenKeyBonus} min bonus</span>
             )}
           </div>
@@ -396,65 +398,67 @@ export default function TimerControlOverlay({
         </div>
 
         {/* Golden Key Controls */}
-        <div style={{
-          borderTop: '1px solid #e5e7eb',
-          paddingTop: 20
-        }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 600, color: '#111' }}>🔑 Golden Key</h3>
-          
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
-              Status: <strong>{hasGoldenKey ? (isGoldenKeySuspended ? 'Active (Suspended)' : 'Active') : 'Not Applied'}</strong>
+        {goldenKeysEnabled ? (
+          <div style={{
+            borderTop: '1px solid #e5e7eb',
+            paddingTop: 20
+          }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 600, color: '#111' }}>🔑 Golden Key</h3>
+            
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
+                Status: <strong>{hasGoldenKey ? (isGoldenKeySuspended ? 'Active (Suspended)' : 'Active') : 'Not Applied'}</strong>
+              </div>
+            </div>
+
+            {!hasGoldenKey ? (
+              <button
+                onClick={handleApplyGoldenKey}
+                disabled={saving}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: 'none',
+                  borderRadius: 8,
+                  background: saving ? '#d1d5db' : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                  color: '#78350f',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 2px 8px rgba(251, 191, 36, 0.3)'
+                }}
+              >
+                Apply Golden Key to This Lesson
+              </button>
+            ) : (
+              <button
+                onClick={handleToggleSuspendGoldenKey}
+                disabled={saving}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  background: '#fff',
+                  color: '#111',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: saving ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isGoldenKeySuspended ? 'Unsuspend Golden Key Effect' : 'Suspend Golden Key Effect'}
+              </button>
+            )}
+            
+            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 8, lineStyle: 1.4 }}>
+              {isGoldenKeySuspended 
+                ? 'Key is applied but suspended - bonus time is paused until unsuspended.'
+                : hasGoldenKey 
+                  ? 'Golden key adds bonus time to play timers for this lesson.'
+                  : 'Applying a golden key will add bonus time to play timers for this lesson.'}
             </div>
           </div>
-
-          {!hasGoldenKey ? (
-            <button
-              onClick={handleApplyGoldenKey}
-              disabled={saving}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: 'none',
-                borderRadius: 8,
-                background: saving ? '#d1d5db' : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                color: '#78350f',
-                fontSize: 16,
-                fontWeight: 700,
-                cursor: saving ? 'not-allowed' : 'pointer',
-                boxShadow: '0 2px 8px rgba(251, 191, 36, 0.3)'
-              }}
-            >
-              Apply Golden Key to This Lesson
-            </button>
-          ) : (
-            <button
-              onClick={handleToggleSuspendGoldenKey}
-              disabled={saving}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: 8,
-                background: '#fff',
-                color: '#111',
-                fontSize: 16,
-                fontWeight: 600,
-                cursor: saving ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {isGoldenKeySuspended ? 'Unsuspend Golden Key Effect' : 'Suspend Golden Key Effect'}
-            </button>
-          )}
-          
-          <div style={{ fontSize: 12, color: '#6b7280', marginTop: 8, lineStyle: 1.4 }}>
-            {isGoldenKeySuspended 
-              ? 'Key is applied but suspended - bonus time is paused until unsuspended.'
-              : hasGoldenKey 
-                ? 'Golden key adds bonus time to play timers for this lesson.'
-                : 'Applying a golden key will add bonus time to play timers for this lesson.'}
-          </div>
-        </div>
+        ) : null}
 
         {/* Close Button */}
         <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 20, marginTop: 20 }}>

@@ -213,6 +213,7 @@ function EditLessonContent() {
       const token = session?.access_token
       
       const selectedImages = images.filter(img => img.selected)
+      const persistGenerated = !shouldReload
       
       const res = await fetch('/api/visual-aids/save', {
         method: 'POST',
@@ -224,11 +225,39 @@ function EditLessonContent() {
           lessonKey: lessonKey,
           generatedImages: images,
           selectedImages: selectedImages,
-          generationCount: count
+          generationCount: count,
+          persistGenerated
         })
       })
       
       if (!res.ok) {
+        let message = 'Failed to save visual aids'
+        try {
+          const errorData = await res.json()
+          if (errorData?.error) message = errorData.error
+          if (Array.isArray(errorData?.details) && errorData.details.length > 0) {
+            const d = errorData.details[0]
+            const stage = d?.stage ? `stage: ${d.stage}` : null
+            const status = (typeof d?.status !== 'undefined') ? `status: ${d.status}` : null
+            const detailMsg = (typeof d?.message === 'string' && d.message.trim()) ? d.message.trim() : null
+            const extra = [stage, status].filter(Boolean).join(', ')
+            if (extra) message = `${message} (${extra})`
+
+            // Make details copy/paste friendly (DevTools often collapses nested objects).
+            try {
+              console.error('[visual-aids/save] details.json:', JSON.stringify(errorData.details, null, 2))
+            } catch {
+              console.error('[visual-aids/save] details:', errorData.details)
+            }
+
+            // Add a tiny hint from the first failure message (kept short for UI).
+            if (detailMsg) {
+              const clipped = detailMsg.length > 140 ? `${detailMsg.slice(0, 140)}...` : detailMsg
+              message = `${message} - ${clipped}`
+            }
+          }
+        } catch {}
+        setError(message)
         return
       }
 
@@ -240,14 +269,22 @@ function EditLessonContent() {
           } : {}
         })
 
-        if (loadRes.ok) {
-          const visualAidsData = await loadRes.json()
-          setVisualAidsImages(visualAidsData.generatedImages || [])
-          setGenerationCount(visualAidsData.generationCount || 0)
+        if (!loadRes.ok) {
+          let message = 'Saved visual aids, but failed to reload them'
+          try {
+            const errorData = await loadRes.json()
+            if (errorData?.error) message = errorData.error
+          } catch {}
+          setError(message)
+          return
         }
+
+        const visualAidsData = await loadRes.json()
+        setVisualAidsImages(visualAidsData.generatedImages || [])
+        setGenerationCount(visualAidsData.generationCount || 0)
       }
     } catch (err) {
-      // Silent error handling
+      setError(err?.message || 'Failed to save visual aids')
     }
   }
 

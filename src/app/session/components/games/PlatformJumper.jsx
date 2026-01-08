@@ -59,8 +59,8 @@ export default function PlatformJumper({ onBack }) {
   const GAME_HEIGHT = 500;
   const PLAYER_SIZE = 30;
   const GRAVITY = 0.6;
-  const JUMP_STRENGTH = -10;
-  const TRAMPOLINE_BOUNCE = -18; // Stronger bounce from trampolines (80% higher than regular jump)
+  const JUMP_STRENGTH = -8;
+  const TRAMPOLINE_BOUNCE = -16; // Stronger bounce from trampolines
   const MOVE_SPEED = 5;
   const MAX_FALL_Y = GAME_HEIGHT + 50;
 
@@ -578,11 +578,13 @@ export default function PlatformJumper({ onBack }) {
         { x: 0, y: 470, width: 55, height: 20 },
         { x: 100, y: 460, width: 40, height: 20, trampoline: true },
         { x: 400, y: 60, width: 50, height: 20 },
+        // Bridge platform near the end so the level is solvable without increasing jump height.
+        { x: 200, y: 470, width: 420, height: 20 },
         { x: 600, y: 460, width: 40, height: 20, trampoline: true },
-        { x: 750, y: 80, width: 50, height: 20 },
+        { x: 750, y: 200, width: 50, height: 20 },
       ],
       startPos: { x: 22, y: 420 },
-      goalArea: { x: 750, y: 30, width: 50, height: 50 }
+      goalArea: { x: 750, y: 150, width: 50, height: 50 }
     },
     33: {
       name: 'Stairway Bounce',
@@ -920,7 +922,18 @@ export default function PlatformJumper({ onBack }) {
     }
   };
 
+  const maxLevel = Object.keys(levels).length;
   const currentLevel = levels[level];
+
+  // When the player completes the final level, briefly celebrate then return to Games.
+  useEffect(() => {
+    if (!gameWon) return;
+    if (level !== maxLevel) return;
+    const timeoutId = setTimeout(() => {
+      onBack();
+    }, 2500);
+    return () => clearTimeout(timeoutId);
+  }, [gameWon, level, maxLevel, onBack]);
 
   // Reset player position when level changes
   useEffect(() => {
@@ -992,6 +1005,34 @@ export default function PlatformJumper({ onBack }) {
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Enter key should work for both Start Level and Next Level screens.
+      if (e.key === 'Enter' && !e.repeat) {
+        if (!gameStarted && !gameWon && !gameLost) {
+          e.preventDefault();
+          startGame();
+          return;
+        }
+
+        if (gameWon) {
+          e.preventDefault();
+          if (level >= maxLevel) {
+            onBack();
+          } else {
+            nextLevel();
+          }
+          return;
+        }
+
+        if (gameLost) {
+          e.preventDefault();
+          resetLevel();
+          return;
+        }
+
+        // Do nothing with Enter during active play or on loss screen.
+        return;
+      }
+
       if (!gameStarted || gameWon || gameLost) return;
       keysPressed.current[e.key] = true;
 
@@ -1470,7 +1511,7 @@ export default function PlatformJumper({ onBack }) {
               Level Complete!
             </div>
             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-              {level < Object.keys(levels).length ? (
+              {level < maxLevel ? (
                 <button
                   onClick={nextLevel}
                   style={{
@@ -1490,24 +1531,21 @@ export default function PlatformJumper({ onBack }) {
                   Next Level →
                 </button>
               ) : (
-                <button
-                  onClick={nextLevel}
-                  style={{
-                    padding: '10px 24px',
-                    fontSize: '16px',
-                    fontWeight: 600,
-                    background: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                  onMouseEnter={(e) => e.target.style.background = '#059669'}
-                  onMouseLeave={(e) => e.target.style.background = '#10b981'}
-                >
-                  🎊 Play Again from Start
-                </button>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  color: '#1f2937'
+                }}>
+                  <div style={{ fontSize: '18px', fontWeight: 700 }}>
+                    You beat all the levels!
+                  </div>
+                  <div style={{ fontSize: '16px', color: '#6b7280', fontWeight: 600 }}>
+                    More levels are coming soon.
+                  </div>
+                </div>
               )}
             </div>
           </div>

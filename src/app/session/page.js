@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { jsPDF } from "jspdf";
 import { loadRuntimeVariables } from "../lib/runtimeVariables";
 import { getSupabaseClient } from "../lib/supabaseClient";
+import { subscribeLearnerSettingsPatches } from "../lib/learnerSettingsBus";
 import { appendTranscriptSegment, updateTranscriptLiveSegment } from "../lib/transcriptsClient";
 import { getLearner, updateLearner } from "@/app/facilitator/learners/clientApi";
 // SpinnerScreen removed here; reverting to in-panel overlay spinner
@@ -226,6 +227,8 @@ function SessionPageInner() {
   
   // Track whether this lesson has an active golden key (from URL or persisted in DB)
   const [hasGoldenKey, setHasGoldenKey] = useState(goldenKeyFromUrl);
+  const [goldenKeysEnabled, setGoldenKeysEnabled] = useState(true);
+  const goldenKeysEnabledRef = useRef(true);
   const [trackingLearnerId, setTrackingLearnerId] = useState(null);
 
   // Session takeover UI state (hoist before hooks that reference them)
@@ -639,6 +642,12 @@ function SessionPageInner() {
         const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
         if (learnerId && learnerId !== 'demo') {
           const learner = await getLearner(learnerId);
+
+          if (typeof learner?.golden_keys_enabled !== 'boolean') {
+            throw new Error('Learner profile missing golden_keys_enabled flag. Please run migrations.');
+          }
+          setGoldenKeysEnabled(learner.golden_keys_enabled);
+          goldenKeysEnabledRef.current = learner.golden_keys_enabled;
           if (learner?.session_timer_minutes) {
             setSessionTimerMinutes(Number(learner.session_timer_minutes));
           } else {
@@ -681,11 +690,11 @@ function SessionPageInner() {
           
           // Check for active golden key on this lesson
           const activeKeys = learner?.active_golden_keys || {};
-          if (activeKeys[lessonKey]) {
+          if (learner.golden_keys_enabled && activeKeys[lessonKey]) {
             setHasGoldenKey(true);
             // Apply golden key bonus to goldenKeyBonus state
             setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
-          } else if (goldenKeyFromUrl) {
+          } else if (learner.golden_keys_enabled && goldenKeyFromUrl) {
             // New golden key usage - save it to the database
             setHasGoldenKey(true);
             setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
@@ -720,6 +729,36 @@ function SessionPageInner() {
       }
     })();
   }, [subjectParam, lessonParam, goldenKeyFromUrl, lessonKey]); // Re-run when lesson changes. setCurrentTimerMode is stable useCallback, not needed in deps
+
+  // Live-update learner settings (no localStorage persistence)
+  useEffect(() => {
+    const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+    if (!learnerId || learnerId === 'demo') return;
+
+    const unsubscribe = subscribeLearnerSettingsPatches((msg) => {
+      if (!msg) return;
+      if (String(msg.learnerId || '') !== String(learnerId)) return;
+
+      const patch = msg.patch && typeof msg.patch === 'object' ? msg.patch : null;
+      if (!patch) return;
+
+      if ('golden_keys_enabled' in patch) {
+        const next = patch.golden_keys_enabled;
+        if (typeof next !== 'boolean') return;
+        setGoldenKeysEnabled(next);
+        goldenKeysEnabledRef.current = next;
+        if (!next) {
+          setHasGoldenKey(false);
+          setGoldenKeyBonus(0);
+          setIsGoldenKeySuspended(false);
+        }
+      }
+    });
+
+    return () => {
+      try { unsubscribe?.(); } catch {}
+    };
+  }, [lessonKey]);
   
   // Also listen for storage changes to pick up timer and grade updates from facilitator page
   useEffect(() => {
@@ -7972,6 +8011,7 @@ function SessionPageInner() {
               Now gated behind Start the lesson: hidden until qaAnswersUnlocked is true. */}
           {(() => {
             try {
+              if (phase === 'test') return null;
               // Show teaching gate Repeat Vocab/Examples and Next when awaiting-gate; hide while speaking or while gate is locked for sample questions
               const shouldShow = (phase === 'teaching' && subPhase === 'awaiting-gate' && !isSpeaking && !teachingGateLocked && askState === 'inactive');
               if (shouldShow) {
@@ -8313,12 +8353,13 @@ function SessionPageInner() {
           
           if (currentPhase) {
             const currentMode = currentTimerMode[currentPhase] || 'play';
-            return currentMode === 'play' ? goldenKeyBonus : 0;
+            return currentMode === 'play' && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0;
           }
           return 0;
         })()}
         isPaused={timerPaused}
-        hasGoldenKey={hasGoldenKey}
+        goldenKeysEnabled={goldenKeysEnabledRef.current !== false}
+        hasGoldenKey={goldenKeysEnabledRef.current !== false && hasGoldenKey}
         isGoldenKeySuspended={isGoldenKeySuspended}
         onUpdateTime={handleUpdateTime}
         onTogglePause={handleTimerPauseToggle}

@@ -133,15 +133,6 @@ export default function FacilitatorPage() {
     } catch (e) {}
   }, []);
 
-  async function openPortal() {
-    try {
-      // Use in-app embedded manage page to avoid stale portal history
-      window.location.assign('/billing/manage');
-    } catch (e) {
-      alert(e?.message || 'Unable to open manage page');
-    }
-  }
-
   // Clear any stale Stripe action locks when this page becomes visible again
   useEffect(() => {
     const clearLocks = () => {
@@ -241,7 +232,8 @@ export default function FacilitatorPage() {
             <div style={iconStyle}>⚙️</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Account</div>
-              <div style={{ fontSize: 13, color: '#6b7280' }}>Manage profile, security, and preferences</div>
+              <div style={{ fontSize: 13, color: '#6b7280' }}>Manage profile, security, preferences, and billing</div>
+              <div style={{ fontSize: 13, color: '#6b7280' }}>Subscription: {loading ? '…' : (plan || 'free')}</div>
             </div>
           </Link>
 
@@ -304,28 +296,6 @@ export default function FacilitatorPage() {
               <div style={{ fontSize: 13, color: '#6b7280' }}>View scheduled lessons</div>
             </div>
           </Link>
-
-          {/* Billing */}
-          <div
-            onClick={openPortal}
-            style={mainCardStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-              e.currentTarget.style.borderColor = '#111'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
-              e.currentTarget.style.borderColor = '#e5e7eb'
-            }}
-          >
-            <div style={iconStyle}>💳</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Billing</div>
-              <div style={{ fontSize: 13, color: '#6b7280' }}>
-                Subscription: {loading ? '…' : (plan || 'free')}
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Mr. Mentor video button */}

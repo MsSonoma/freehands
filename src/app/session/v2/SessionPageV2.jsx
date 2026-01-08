@@ -23,6 +23,7 @@ import jsPDF from 'jspdf';
 import { createBrowserClient } from '@supabase/ssr';
 import { getSupabaseClient } from '@/app/lib/supabaseClient';
 import { getLearner } from '@/app/facilitator/learners/clientApi';
+import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus';
 import { loadPhaseTimersForLearner } from '../utils/phaseTimerDefaults';
 import SessionTimer from '../components/SessionTimer';
 import { AudioEngine } from './AudioEngine';
@@ -50,9 +51,10 @@ import { upsertMedal } from '@/app/lib/medalsClient';
 import { appendTranscriptSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
 import CaptionPanel from '../components/CaptionPanel';
+import SessionVisualAidsCarousel from '../components/SessionVisualAidsCarousel';
 
 // Test Review UI Component (matches V1)
-function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, onOverrideAnswer, onCompleteReview }) {
+function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview }) {
   const { score, totalQuestions, percentage, grade: letterGrade, answers } = testGrade;
   
   const tierForPercent = (pct) => {
@@ -151,10 +153,12 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
       
       <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ fontWeight: 800 }}>Work timers</div>
-        <div style={{ fontWeight: 700, color: meetsGoldenKey ? '#065f46' : '#7f1d1d' }}>
-          {meetsGoldenKey ? 'Golden key eligible (3+ on-time work timers)' : 'Golden key not yet met (needs 3 on-time work timers)'}
-        </div>
-        <div style={{ fontSize: 13, color: '#4b5563' }}>Play timers are ignored for this check.</div>
+        {goldenKeysEnabled ? (
+          <div style={{ fontWeight: 700, color: meetsGoldenKey ? '#065f46' : '#7f1d1d' }}>
+            {meetsGoldenKey ? 'Golden key eligible (3+ on-time work timers)' : 'Golden key not yet met (needs 3 on-time work timers)'}
+          </div>
+        ) : null}
+        <div style={{ fontSize: 13, color: '#4b5563' }}>Play timers are ignored here.</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8 }}>
           {workPhases.map((p) => {
             const onTime = !!(workPhaseCompletions && workPhaseCompletions[p]);
@@ -378,7 +382,7 @@ function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPh
   }, [timelinePhases, columns]);
 
   return (
-    <div ref={containerRef} style={{ display: "grid", gridTemplateColumns, gap: 'clamp(0.25rem, 0.8vw, 0.5rem)', marginBottom: compact ? 'clamp(0.125rem, 0.6vw, 0.25rem)' : 'clamp(0.25rem, 1vw, 0.625rem)', width: '100%', minWidth: 0, position: 'relative', zIndex: 9999, padding: 'clamp(0.125rem, 0.6vw, 0.375rem)', boxSizing: 'border-box' }}>
+    <div ref={containerRef} style={{ display: "grid", gridTemplateColumns, gap: 'clamp(0.25rem, 0.8vw, 0.5rem)', marginBottom: compact ? 'clamp(0.125rem, 0.6vw, 0.25rem)' : 'clamp(0.25rem, 1vw, 0.625rem)', width: '100%', minWidth: 0, position: 'relative', zIndex: 50, padding: 'clamp(0.125rem, 0.6vw, 0.375rem)', boxSizing: 'border-box' }}>
       {timelinePhases.map((phaseKey) => (
         <div
           key={phaseKey}
@@ -477,6 +481,21 @@ function SessionPageV2Inner() {
 
   // Canonical per-lesson persistence key (lesson == session identity)
   const lessonKey = useMemo(() => deriveCanonicalLessonKey({ lessonData, lessonId }), [lessonData, lessonId]);
+
+  // Normalized key for visual aids (strips folder prefixes so the same lesson shares visual aids)
+  const visualAidsLessonKey = useMemo(() => {
+    const raw = lessonId || lessonData?.key || lessonKey || '';
+    if (!raw) return null;
+
+    // Visual aids are stored using a file-style key (typically includes .json).
+    // Normalize to filename-only and force a .json suffix so session matches editor saves.
+    let key = String(raw);
+    if (key.includes('/')) key = key.split('/').pop();
+    key = key.replace(/^(generated|facilitator|math|science|language-arts|social-studies|demo)\//, '');
+    key = key.replace(/\.json$/i, '');
+    if (!key) return null;
+    return `${key}.json`;
+  }, [lessonId, lessonData?.key, lessonKey]);
   
   const [currentPhase, setCurrentPhase] = useState('idle');
   
@@ -556,6 +575,8 @@ function SessionPageV2Inner() {
   const openingActionBusyRef = useRef(false);
   const [openingActionError, setOpeningActionError] = useState('');
   const [showGames, setShowGames] = useState(false);
+  const [visualAidsData, setVisualAidsData] = useState(null);
+  const [showVisualAids, setShowVisualAids] = useState(false);
 
   useEffect(() => {
     openingActionBusyRef.current = openingActionBusy;
@@ -567,6 +588,8 @@ function SessionPageV2Inner() {
   const [workPhaseTime, setWorkPhaseTime] = useState('0:00');
   const [workPhaseRemaining, setWorkPhaseRemaining] = useState('0:00');
   const [goldenKeyEligible, setGoldenKeyEligible] = useState(false);
+  const [goldenKeysEnabled, setGoldenKeysEnabled] = useState(null);
+  const goldenKeysEnabledRef = useRef(true);
   
   // Learner profile state (REQUIRED - no defaults)
   const [learnerProfile, setLearnerProfile] = useState(null);
@@ -584,7 +607,22 @@ function SessionPageV2Inner() {
   });
   const [timerRefreshKey, setTimerRefreshKey] = useState(0);
   const [goldenKeyBonus, setGoldenKeyBonus] = useState(0);
+  const goldenKeyBonusRef = useRef(0);
   const [timerPaused, setTimerPaused] = useState(false);
+
+  useEffect(() => {
+    goldenKeyBonusRef.current = Number(goldenKeyBonus || 0);
+  }, [goldenKeyBonus]);
+
+  useEffect(() => {
+    if (typeof goldenKeysEnabled === 'boolean') {
+      goldenKeysEnabledRef.current = goldenKeysEnabled;
+      try { timerServiceRef.current?.setGoldenKeysEnabled?.(goldenKeysEnabled); } catch {}
+      if (!goldenKeysEnabled) {
+        setGoldenKeyEligible(false);
+      }
+    }
+  }, [goldenKeysEnabled]);
   
   // Play timer expired overlay state (V1 parity)
   const [showPlayTimeExpired, setShowPlayTimeExpired] = useState(false);
@@ -843,6 +881,75 @@ function SessionPageV2Inner() {
     
     loadLessonData();
   }, [lessonId, subjectParam, regenerateParam]);
+
+  // Load visual aids separately from database (facilitator-specific)
+  useEffect(() => {
+    if (!visualAidsLessonKey) {
+      setVisualAidsData(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          if (!cancelled) setVisualAidsData(null);
+          return;
+        }
+
+        const { data: sessionResult } = await supabase?.auth.getSession() || {};
+        const session = sessionResult?.session;
+        const token = session?.access_token || null;
+
+        if (!token) {
+          if (!cancelled) setVisualAidsData(null);
+          return;
+        }
+
+        const res = await fetch(`/api/visual-aids/load?lessonKey=${encodeURIComponent(visualAidsLessonKey)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!res.ok) {
+          if (!cancelled) setVisualAidsData(null);
+          return;
+        }
+
+        const data = await res.json();
+        const images = Array.isArray(data?.selectedImages) ? data.selectedImages : [];
+
+        if (!cancelled) {
+          setVisualAidsData(images);
+        }
+      } catch (err) {
+        if (!cancelled) setVisualAidsData(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [visualAidsLessonKey]);
+
+  const handleExplainVisualAid = useCallback(async (aid) => {
+    const text = String(aid?.description || '').trim();
+    if (!text) return;
+    if (!audioEngineRef.current) return;
+
+    try {
+      audioEngineRef.current.stop();
+    } catch {}
+
+    const audioBase64 = await fetchTTS(text);
+    try {
+      await audioEngineRef.current.playAudio(audioBase64, [text], 0);
+    } catch (err) {
+      console.warn('[SessionPageV2] Visual aid explain failed:', err);
+    }
+  }, []);
   
   // Load learner profile (REQUIRED - no defaults or fallback)
   useEffect(() => {
@@ -866,6 +973,12 @@ function SessionPageV2Inner() {
         // Pin the session learner id to avoid mid-session localStorage drift.
         sessionLearnerIdRef.current = learner.id;
         setLearnerProfile(learner);
+
+        if (typeof learner.golden_keys_enabled !== 'boolean') {
+          throw new Error('Learner profile missing golden_keys_enabled flag. Please run migrations.');
+        }
+        setGoldenKeysEnabled(learner.golden_keys_enabled);
+        goldenKeysEnabledRef.current = learner.golden_keys_enabled;
         
         // Load phase timer settings from learner profile
         const timers = loadPhaseTimersForLearner(learner);
@@ -880,12 +993,12 @@ function SessionPageV2Inner() {
           test: null
         });
         
-        // Check for active golden key on this lesson
+        // Check for active golden key on this lesson (only affects play timers when Golden Keys are enabled)
         if (!lessonKey) {
           throw new Error('Missing canonical lesson key for golden key lookup.');
         }
         const activeKeys = learner.active_golden_keys || {};
-        if (activeKeys[lessonKey]) {
+        if (learner.golden_keys_enabled && activeKeys[lessonKey]) {
           setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
         }
         
@@ -900,6 +1013,34 @@ function SessionPageV2Inner() {
     
     loadLearnerProfile();
   }, [lessonData, lessonId, lessonKey, subjectParam]);
+
+  // Live-update learner settings (no localStorage persistence)
+  useEffect(() => {
+    if (!learnerProfile?.id) return;
+
+    const unsubscribe = subscribeLearnerSettingsPatches((msg) => {
+      if (!msg) return;
+      if (String(msg.learnerId || '') !== String(learnerProfile.id)) return;
+
+      const patch = msg.patch && typeof msg.patch === 'object' ? msg.patch : null;
+      if (!patch) return;
+
+      if ('golden_keys_enabled' in patch) {
+        const next = patch.golden_keys_enabled;
+        if (typeof next !== 'boolean') return;
+        setGoldenKeysEnabled(next);
+        goldenKeysEnabledRef.current = next;
+        try { timerServiceRef.current?.setGoldenKeysEnabled?.(next); } catch {}
+        if (!next) {
+          setGoldenKeyEligible(false);
+        }
+      }
+    });
+
+    return () => {
+      try { unsubscribe?.(); } catch {}
+    };
+  }, [learnerProfile?.id]);
 
   // Load persisted worksheet/test sets for printing (local+Supabase)
   useEffect(() => {
@@ -1040,8 +1181,10 @@ function SessionPageV2Inner() {
 
     const eventBus = eventBusRef.current;
 
-    // Convert minutes -> seconds; golden key bonus applies to play timers only.
-    const playBonusSec = Math.max(0, Number(goldenKeyBonus || 0)) * 60;
+    // Convert minutes -> seconds; golden key bonus applies to play timers only (and only when Golden Keys are enabled).
+    const playBonusSec = goldenKeysEnabledRef.current
+      ? Math.max(0, Number(goldenKeyBonusRef.current || 0)) * 60
+      : 0;
     const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
 
     const playTimerLimits = {
@@ -1070,10 +1213,10 @@ function SessionPageV2Inner() {
     });
 
     const unsubGoldenKey = eventBus.on('goldenKeyEligible', (data) => {
-      setGoldenKeyEligible(data.eligible);
-      if (data.eligible) {
-        addEvent('ðŸ”‘ Golden Key earned!');
-      }
+      if (goldenKeysEnabledRef.current === false) return;
+      const eligible = data?.eligible === true;
+      setGoldenKeyEligible(eligible);
+      if (eligible) addEvent('🔑 Golden Key earned!');
     });
 
     // Play timer expired event (V1 parity - triggers 30-second overlay)
@@ -1085,7 +1228,8 @@ function SessionPageV2Inner() {
     const timer = new TimerService(eventBus, {
       lessonKey,
       playTimerLimits,
-      workPhaseTimeLimits
+      workPhaseTimeLimits,
+      goldenKeysEnabled: goldenKeysEnabledRef.current
     });
 
     timerServiceRef.current = timer;
@@ -1104,7 +1248,24 @@ function SessionPageV2Inner() {
       timer.destroy();
       timerServiceRef.current = null;
     };
-  }, [lessonId, lessonKey, phaseTimers, goldenKeyBonus]);
+  }, [lessonKey, phaseTimers]);
+
+  // Update play timer limits when bonus/enabled state changes (do not recreate TimerService).
+  useEffect(() => {
+    if (!timerServiceRef.current || !phaseTimers) return;
+
+    const playBonusSec = goldenKeysEnabledRef.current
+      ? Math.max(0, Number(goldenKeyBonusRef.current || 0)) * 60
+      : 0;
+    const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+
+    timerServiceRef.current.setPlayTimerLimits({
+      comprehension: m2s(phaseTimers.comprehension_play_min) + playBonusSec,
+      exercise: m2s(phaseTimers.exercise_play_min) + playBonusSec,
+      worksheet: m2s(phaseTimers.worksheet_play_min) + playBonusSec,
+      test: m2s(phaseTimers.test_play_min) + playBonusSec
+    });
+  }, [phaseTimers, goldenKeyBonus, goldenKeysEnabled]);
   
   // Initialize KeyboardService
   useEffect(() => {
@@ -2824,7 +2985,7 @@ function SessionPageV2Inner() {
       }
       
       // Show golden key status
-      if (timerServiceRef.current) {
+      if (goldenKeysEnabledRef.current !== false && timerServiceRef.current) {
         const goldenKey = timerServiceRef.current.getGoldenKeyStatus();
         if (goldenKey.eligible) {
           addEvent(`ðŸ”‘ Golden Key Earned! (${goldenKey.onTimeCompletions}/3 on-time)`);
@@ -2894,7 +3055,9 @@ function SessionPageV2Inner() {
       }
       
       // Pass golden key earned status for notification on lessons page
-      const earnedKey = timerServiceRef.current?.getGoldenKeyStatus()?.eligible || false;
+      const earnedKey = (goldenKeysEnabledRef.current !== false)
+        ? (timerServiceRef.current?.getGoldenKeyStatus()?.eligible || false)
+        : false;
 
       // If golden key was earned, persist it to the learner inventory (Supabase)
       // NOTE: The toast on /learn/lessons is driven by sessionStorage; that alone does NOT update the DB.
@@ -4510,7 +4673,7 @@ function SessionPageV2Inner() {
         top: isMobileLandscape ? 52 : 'auto',
         left: isMobileLandscape ? 0 : 'auto',
         right: isMobileLandscape ? 0 : 'auto',
-        zIndex: 9999,
+        zIndex: 50,
         width: isMobileLandscape ? '100%' : '92%',
         maxWidth: 600,
         margin: '0 auto',
@@ -4553,7 +4716,7 @@ function SessionPageV2Inner() {
           />
           
           {/* Phase Timer - top left overlay (matching V1) */}
-          {phaseTimers && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] && (
+          {phaseTimers && !showGames && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] && (
             <div style={{ 
               position: 'absolute',
               top: 8,
@@ -4565,7 +4728,7 @@ function SessionPageV2Inner() {
                 phase={getCurrentPhaseName()}
                 timerType={currentTimerMode[getCurrentPhaseName()]}
                 totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()])}
-                goldenKeyBonus={currentTimerMode[getCurrentPhaseName()] === 'play' ? goldenKeyBonus : 0}
+                goldenKeyBonus={currentTimerMode[getCurrentPhaseName()] === 'play' && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
                 lessonProgress={calculateLessonProgress()}
                 isPaused={timerPaused}
                 onTimeUp={handlePhaseTimerTimeUp}
@@ -4585,6 +4748,28 @@ function SessionPageV2Inner() {
             gap: 12,
             zIndex: 10
           }}>
+            {Array.isArray(visualAidsData) && visualAidsData.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowVisualAids(true)}
+                aria-label="Visual Aids"
+                title="Visual Aids"
+                style={{
+                  background: '#1f2937',
+                  color: '#fff',
+                  border: 'none',
+                  width: 'clamp(34px, 6.2vw, 52px)',
+                  height: 'clamp(34px, 6.2vw, 52px)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+                }}
+              >
+                <span style={{ fontSize: 'clamp(16px, 3.3vw, 22px)', lineHeight: 1 }}>🖼️</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={toggleMute}
@@ -4611,106 +4796,104 @@ function SessionPageV2Inner() {
             </button>
           </div>
           
-          {/* Skip button - bottom left (only when speaking) */}
-          {engineState === 'playing' && (
-            <button
-              type="button"
-              onClick={skipTTS}
-              aria-label="Skip"
-              title="Skip"
-              style={{
-                position: 'absolute',
-                bottom: 16,
-                left: 16,
-                background: '#1f2937',
-                color: '#fff',
-                border: 'none',
-                width: 'clamp(34px, 6.2vw, 52px)',
-                height: 'clamp(34px, 6.2vw, 52px)',
-                display: 'grid',
-                placeItems: 'center',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                zIndex: 10
-              }}
-            >
-              <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="5 4 15 12 5 20 5 4" />
-                <line x1="19" y1="5" x2="19" y2="19" />
-              </svg>
-            </button>
-          )}
-          
-          {/* Repeat button - bottom left (when not speaking but audio available) */}
-          {engineState !== 'playing' && showRepeatButton && (
-            <button
-              type="button"
-              onClick={replayTTS}
-              aria-label="Repeat"
-              title="Repeat"
-              style={{
-                position: 'absolute',
-                bottom: 16,
-                left: 16,
-                background: '#1f2937',
-                color: '#fff',
-                border: 'none',
-                width: 'clamp(34px, 6.2vw, 52px)',
-                height: 'clamp(34px, 6.2vw, 52px)',
-                display: 'grid',
-                placeItems: 'center',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                zIndex: 10
-              }}
-            >
-              {/* Repeat icon: circular arrow */}
-              <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 1v6h-6" />
-                <path d="M7 23v-6h6" />
-                <path d="M3.51 9a9 9 0 0114.13-3.36L17 7" />
-                <path d="M20.49 15A9 9 0 015.36 18.36L7 17" />
-              </svg>
-            </button>
-          )}
+          {/* Bottom-left control cluster (Ask + Skip/Repeat) */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 16,
+              left: 16,
+              display: 'flex',
+              gap: 12,
+              zIndex: 10
+            }}
+          >
+            {(() => {
+              const canShowAsk = !!openingActionsControllerRef.current && !openingActionActive && normalizePhaseAlias(currentPhase) !== 'test';
+              const disabled = openingActionBusy || !canShowAsk;
+              if (!canShowAsk) return null;
+              return (
+                <button
+                  type="button"
+                  onClick={handleOpeningAskStart}
+                  disabled={disabled}
+                  aria-label="Ask Ms. Sonoma"
+                  title="Ask Ms. Sonoma"
+                  style={{
+                    background: disabled ? '#9ca3af' : '#2563eb',
+                    color: '#fff',
+                    border: 'none',
+                    width: 'clamp(34px, 6.2vw, 52px)',
+                    height: 'clamp(34px, 6.2vw, 52px)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    borderRadius: '50%',
+                    cursor: disabled ? 'not-allowed' : 'pointer',
+                    boxShadow: disabled ? 'none' : '0 2px 8px rgba(37,99,235,0.35)',
+                    fontSize: 'clamp(16px, 3.3vw, 22px)',
+                    fontWeight: 800
+                  }}
+                >
+                  ✋
+                </button>
+              );
+            })()}
 
-          {/* Ask overlay button - left side */}
-          {(() => {
-            const canShowAsk = !!openingActionsControllerRef.current && !openingActionActive;
-            const disabled = openingActionBusy || !canShowAsk;
-            if (!canShowAsk) return null;
-            return (
+            {/* Skip (only when speaking) */}
+            {engineState === 'playing' && (
               <button
                 type="button"
-                onClick={handleOpeningAskStart}
-                disabled={disabled}
-                aria-label="Ask Ms. Sonoma"
-                title="Ask Ms. Sonoma"
+                onClick={skipTTS}
+                aria-label="Skip"
+                title="Skip"
                 style={{
-                  position: 'absolute',
-                  bottom: 88,
-                  left: 16,
-                  background: disabled ? '#9ca3af' : '#2563eb',
+                  background: '#1f2937',
                   color: '#fff',
                   border: 'none',
-                  width: 'clamp(42px, 7vw, 60px)',
-                  height: 'clamp(42px, 7vw, 60px)',
+                  width: 'clamp(34px, 6.2vw, 52px)',
+                  height: 'clamp(34px, 6.2vw, 52px)',
                   display: 'grid',
                   placeItems: 'center',
                   borderRadius: '50%',
-                  cursor: disabled ? 'not-allowed' : 'pointer',
-                  boxShadow: disabled ? 'none' : '0 2px 8px rgba(37,99,235,0.35)',
-                  zIndex: 10001,
-                  fontSize: 'clamp(1.2rem, 3vw, 1.6rem)',
-                  fontWeight: 800
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
                 }}
               >
-                ✋
+                <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="5 4 15 12 5 20 5 4" />
+                  <line x1="19" y1="5" x2="19" y2="19" />
+                </svg>
               </button>
-            );
-          })()}
+            )}
+
+            {/* Repeat (when not speaking but audio available) */}
+            {engineState !== 'playing' && showRepeatButton && (
+              <button
+                type="button"
+                onClick={replayTTS}
+                aria-label="Repeat"
+                title="Repeat"
+                style={{
+                  background: '#1f2937',
+                  color: '#fff',
+                  border: 'none',
+                  width: 'clamp(34px, 6.2vw, 52px)',
+                  height: 'clamp(34px, 6.2vw, 52px)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+                }}
+              >
+                <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 1v6h-6" />
+                  <path d="M7 23v-6h6" />
+                  <path d="M3.51 9a9 9 0 0114.13-3.36L17 7" />
+                  <path d="M20.49 15A9 9 0 015.36 18.36L7 17" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
       
       {/* Score ticker - top right */}
@@ -4918,6 +5101,7 @@ function SessionPageV2Inner() {
             timerService={timerServiceRef.current}
             workPhaseCompletions={workPhaseCompletions}
             workTimeRemaining={workTimeRemaining}
+            goldenKeysEnabled={goldenKeysEnabled !== false}
             onOverrideAnswer={handleTestOverrideAnswer}
             onCompleteReview={skipTestReview}
           />
@@ -5870,6 +6054,16 @@ function SessionPageV2Inner() {
           })()}
         </div>
       </div>
+
+      {showVisualAids && Array.isArray(visualAidsData) && visualAidsData.length > 0 && (
+        <SessionVisualAidsCarousel
+          visualAids={visualAidsData}
+          onClose={() => setShowVisualAids(false)}
+          onExplain={handleExplainVisualAid}
+          videoRef={videoRef}
+          isSpeaking={engineState === 'playing'}
+        />
+      )}
       
       {showGames && (() => {
         const phaseName = getCurrentPhaseName();
@@ -5880,7 +6074,7 @@ function SessionPageV2Inner() {
             phase={phaseName}
             timerType={timerType}
             totalMinutes={getCurrentPhaseTimerDuration(phaseName, timerType)}
-            goldenKeyBonus={timerType === 'play' ? goldenKeyBonus : 0}
+            goldenKeyBonus={timerType === 'play' && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
             isPaused={timerPaused}
             lessonKey={lessonKey}
             lessonProgress={calculateLessonProgress()}
@@ -5915,23 +6109,29 @@ function SessionPageV2Inner() {
           phase={getCurrentPhaseName()}
           timerType={currentTimerMode[getCurrentPhaseName()] || 'work'}
           totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()] || 'work')}
-          goldenKeyBonus={goldenKeyBonus}
+          goldenKeysEnabled={goldenKeysEnabledRef.current !== false}
+          goldenKeyBonus={goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
           isPaused={timerPaused}
           onUpdateTime={(seconds) => {
             // Force timer refresh to pick up new elapsed time from storage
             setTimerRefreshKey(k => k + 1);
           }}
           onTogglePause={() => setTimerPaused(prev => !prev)}
-          hasGoldenKey={goldenKeyBonus > 0}
+          hasGoldenKey={goldenKeysEnabledRef.current !== false && goldenKeyBonus > 0}
           isGoldenKeySuspended={false}
           onApplyGoldenKey={() => {
+            if (goldenKeysEnabledRef.current === false) return;
             // Apply golden key bonus
             if (phaseTimers) {
               setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
             }
           }}
-          onSuspendGoldenKey={() => setGoldenKeyBonus(0)}
+          onSuspendGoldenKey={() => {
+            if (goldenKeysEnabledRef.current === false) return;
+            setGoldenKeyBonus(0);
+          }}
           onUnsuspendGoldenKey={() => {
+            if (goldenKeysEnabledRef.current === false) return;
             if (phaseTimers) {
               setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
             }

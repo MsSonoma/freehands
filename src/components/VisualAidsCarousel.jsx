@@ -19,7 +19,8 @@ export default function VisualAidsCarousel({
   lessonTitle = '',
   generationProgress = '',
   generationCount = 0,
-  maxGenerations = 4
+  maxGenerations = 4,
+  zIndex = 9999
 }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedImages, setSelectedImages] = useState(new Set())
@@ -166,9 +167,11 @@ export default function VisualAidsCarousel({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 9999,
+        zIndex,
         padding: 20
-      }}>
+      }}
+      onClick={(e) => e.stopPropagation()}
+      >
         <div style={{
           background: '#fff',
           borderRadius: 16,
@@ -344,9 +347,11 @@ export default function VisualAidsCarousel({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 9999,
+      zIndex,
       padding: 20
-    }}>
+    }}
+    onClick={(e) => e.stopPropagation()}
+    >
       <div style={{
         background: '#fff',
         borderRadius: 16,

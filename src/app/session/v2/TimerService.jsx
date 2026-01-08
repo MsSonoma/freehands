@@ -71,6 +71,9 @@ export class TimerService {
     // Golden key tracking (only counts comprehension, exercise, worksheet, test)
     this.onTimeCompletions = 0;
     this.goldenKeyAwarded = false;
+
+    // Per-learner feature gate: when disabled, golden key eligibility is not tracked/emitted.
+    this.goldenKeysEnabled = options.goldenKeysEnabled !== false;
     
     // SessionStorage cache for refresh recovery (not used - use explicit restoreState instead)
     this.lessonKey = options.lessonKey || null;
@@ -90,7 +93,18 @@ export class TimerService {
     this.completeWorkPhaseTimer = this.completeWorkPhaseTimer.bind(this);
     this.stopWorkPhaseTimer = this.stopWorkPhaseTimer.bind(this);
     this.reset = this.reset.bind(this);
+    this.setGoldenKeysEnabled = this.setGoldenKeysEnabled.bind(this);
+    this.setPlayTimerLimits = this.setPlayTimerLimits.bind(this);
     // Private methods are automatically bound
+  }
+
+  setGoldenKeysEnabled(enabled) {
+    this.goldenKeysEnabled = enabled !== false;
+  }
+
+  setPlayTimerLimits(limits) {
+    if (!limits || typeof limits !== 'object') return;
+    this.playTimerLimits = { ...this.playTimerLimits, ...limits };
   }
 
   #timerOverlayKeyPrefix() {
@@ -333,13 +347,14 @@ export class TimerService {
     
     // Track on-time completions for golden key (comprehension, exercise, worksheet, test count)
     const goldenKeyPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
-    if (onTime && goldenKeyPhases.includes(phase)) {
+    if (this.goldenKeysEnabled && onTime && goldenKeyPhases.includes(phase)) {
       this.onTimeCompletions++;
       
       // Check golden key eligibility (3 on-time work phases from comp/exercise/worksheet/test)
       if (this.onTimeCompletions >= 3 && !this.goldenKeyAwarded) {
         this.goldenKeyAwarded = true;
         this.eventBus.emit('goldenKeyEligible', {
+          eligible: true,
           completedPhases: Array.from(this.workPhaseTimers.keys())
             .filter(p => goldenKeyPhases.includes(p) && this.workPhaseTimers.get(p).onTime)
         });
@@ -451,7 +466,7 @@ export class TimerService {
    */
   getGoldenKeyStatus() {
     return {
-      eligible: this.goldenKeyAwarded,
+      eligible: this.goldenKeysEnabled ? this.goldenKeyAwarded : false,
       onTimeCompletions: this.onTimeCompletions,
       required: 3
     };

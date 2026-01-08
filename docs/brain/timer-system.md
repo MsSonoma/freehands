@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2026-01-07T19:32:42Z  
+**Last updated**: 2026-01-08T03:03:44Z  
 **Status**: Canonical
 
 ## How It Works
@@ -103,6 +103,20 @@ Timer state mirrors to sessionStorage for TimerControlOverlay compatibility:
 
 **Important (V2 lifecycle):** The TimerService instance must remain stable for the duration of a session and must not be recreated on every phase transition. Recreating it will lose timer Maps and can leave stale sessionStorage keys behind.
 
+### Games Overlay Timer Parity (V2)
+
+The Games overlay displays the play timer badge, and it must show the same time as the in-session timer.
+
+**Rule:** Only one `SessionTimer` instance should be mounted at a time for a given `{lessonKey, phase, mode}`.
+- Mounting two `SessionTimer` components simultaneously can show brief 1-second drift because each instance runs its own `setInterval` tick.
+- In Session V2, when the Games overlay is open, the on-video timer is not rendered; the Games overlay renders the timer instead.
+
+### Overlay Stacking (V2)
+
+Games and Visual Aids overlays must render above the timeline and timer overlays.
+- Timeline must not use an extremely high `zIndex`.
+- Full-screen overlays should use a higher `zIndex` than the on-video timer.
+
 ### Play Time Expiration Flow
 
 When play timer reaches 00:00:
@@ -153,6 +167,24 @@ When the work timer expires or the phase is completed (including when Test hands
 - `workTimeRemaining` records minutes left on each work timer when the phase ends (0 on timeout) and is surfaced in facilitator review for transparency; entering Test review now captures and freezes the remaining test work time so review/grading cannot keep an active timer running
 - Golden key detection uses the live `workPhaseCompletionsRef` so a just-marked phase (e.g., Test on review entry) counts immediately without waiting for React state flush
 
+### Golden Keys Enabled Flag (Per Learner)
+
+Golden Key behavior is gated by a per-learner Supabase-backed flag:
+
+- Column: `public.learners.golden_keys_enabled` (boolean, default true)
+
+When `golden_keys_enabled` is `false`, Golden Keys are treated as fully disabled for that learner:
+
+- No Golden Key bonus time is applied to play timers.
+- Golden Key eligibility is not tracked and is not emitted.
+- Golden Key awarding/persistence is skipped.
+- Golden Key UI is hidden (Learn/Lessons counter/selector and the TimerControlOverlay Golden Key section).
+- Facilitator Test review keeps showing the work timer remaining grid, but Golden Key-specific messaging is hidden.
+
+**Immediate updates (no local fallback):**
+- Pages subscribe to the Learner Settings Bus so facilitator-side toggles react immediately in already-open sessions/tabs.
+- If `golden_keys_enabled` is missing (not a boolean), session code fails loudly so migrations/schema drift are caught early.
+
 ### Timer Defaults
 
 Defined in `src/app/session/utils/phaseTimerDefaults.js`:
@@ -168,6 +200,13 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
 ❌ **Never describe Golden Keys as unlocking Poem/Story**
 - A Golden Key adds bonus minutes to play timers (extra play time)
 - Do not label it as unlocking specific activities (Poem/Story)
+
+❌ **Never use local persistence fallback for `golden_keys_enabled`**
+- Do not store a per-learner Golden Key enabled/disabled flag in localStorage.
+- The source of truth is Supabase; the Learner Settings Bus is for immediate UI reaction only.
+
+❌ **Never award or apply Golden Key bonus when disabled**
+- If `golden_keys_enabled` is false, do not apply bonus minutes and do not write golden key awards.
 
 ❌ **Never hide play buttons manually in timer expiry handler**
 - Phase handlers (handleGoComprehension, etc.) already call `setShowOpeningActions(false)`

@@ -1,4 +1,28 @@
 {
+  "facilitator-hub": {
+    "file": "facilitator-hub.md",
+    "systems": [
+      "/facilitator",
+      "hub-cards",
+      "account",
+      "billing-placement",
+      "subscription-status"
+    ],
+    "last_updated": "2026-01-08T02:06:48Z",
+    "status": "canonical"
+  },
+  "header-navigation": {
+    "file": "header-navigation.md",
+    "systems": [
+      "HeaderBar",
+      "top-nav-links",
+      "facilitator-dropdown",
+      "session-exit-pin-gate",
+      "print-menu"
+    ],
+    "last_updated": "2026-01-08T02:27:19Z",
+    "status": "canonical"
+  },
   "dev-server-and-chunks": {
     "file": "dev-server-and-chunks.md",
     "systems": [
@@ -220,7 +244,7 @@
       "date-specific-overwrite",
       "adaptive-difficulty-progression"
     ],
-    "last_updated": "2025-12-31T16:00:00Z",
+    "last_updated": "2026-01-08T01:51:21Z",
     "status": "canonical"
   },
   "tts-prefetching": {
@@ -286,6 +310,8 @@
       "play time expired flow",
       "work phase completion tracking",
       "golden key timer bonus",
+      "golden_keys_enabled",
+      "Golden Keys Off",
       "timer state persistence",
       "Go button override",
       "first-interaction timer gate",
@@ -302,7 +328,25 @@
       "playTimerExpired event",
       "V2 parent-controlled overlay"
     ],
-    "last_updated": "2026-01-07T19:32:42Z",
+    "last_updated": "2026-01-08T03:03:44Z",
+    "status": "canonical"
+  },
+  "learner-settings-bus": {
+    "file": "learner-settings-bus.md",
+    "systems": [
+      "BroadcastChannel",
+      "ms-learner-settings",
+      "ms:learner-settings-patch",
+      "per-learner settings",
+      "no localStorage persistence",
+      "immediate cross-tab updates",
+      "golden_keys_enabled",
+      "loading flash",
+      "toast gating",
+      "LearnerEditOverlay",
+      "optimistic toggle"
+    ],
+    "last_updated": "2026-01-08T03:21:10Z",
     "status": "canonical"
   },
   "lesson-assessment-architecture": {
@@ -363,9 +407,10 @@
       "image storage",
       "visual aids carousel",
       "lesson visual aids",
-      "AI rewrite visual-aid purposes"
+      "AI rewrite visual-aid purposes",
+      "session v2 integration"
     ],
-    "last_updated": "2025-11-25T19:45:00Z",
+    "last_updated": "2026-01-08T01:24:03Z",
     "status": "canonical"
   },
   "ms-sonoma-teaching-system": {
@@ -398,7 +443,7 @@
       "Games overlay",
       "opening actions play time"
     ],
-    "last_updated": "2026-01-07T06:40:00Z",
+    "last_updated": "2026-01-08T02:22:04Z",
     "status": "canonical"
   },
   "beta-program": {
@@ -431,7 +476,7 @@
       "break stalling prevention",
       "entrance automation"
     ],
-    "last_updated": "2025-12-18T07:55:00Z",
+    "last_updated": "2026-01-08T02:35:02Z",
     "status": "canonical"
   },
   "riddle-system": {

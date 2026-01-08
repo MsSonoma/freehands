@@ -20,7 +20,7 @@ const normalizeHumorLevel = (value) => {
 	return HUMOR_LEVELS.includes(v) ? v : 'calm';
 };
 
-export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, onDelete }) {
+export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, onDelete, onPatch }) {
 	const [activeTab, setActiveTab] = useState(learner?.initialTab || 'basic'); // 'basic' | 'targets' | 'ai-features' | 'timers'
 	
 	// Form state
@@ -36,16 +36,22 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [poemDisabled, setPoemDisabled] = useState(false);
 	const [storyDisabled, setStoryDisabled] = useState(false);
 	const [fillInFunDisabled, setFillInFunDisabled] = useState(false);
+	const [goldenKeysEnabled, setGoldenKeysEnabled] = useState(true);
 	const [phaseTimers, setPhaseTimers] = useState(getDefaultPhaseTimers());
 	const [hoveredTooltip, setHoveredTooltip] = useState(null);
 	const [clickedTooltip, setClickedTooltip] = useState(null);
 	const [showHelp, setShowHelp] = useState(false);
 	const [autoAdvancePhases, setAutoAdvancePhases] = useState(true);
+	const [savingGoldenKeysToggle, setSavingGoldenKeysToggle] = useState(false);
 	
 	const [saving, setSaving] = useState(false);
 
-	// Initialize form when learner changes
+	// Initialize form when overlay opens or learner identity changes.
+	// IMPORTANT: Parent passes a freshly cloned `learner` object each render, so
+	// depending on the whole object will reset local form state (including toggles)
+	// and can cause optimistic UI (like Golden Keys Off) to snap back.
 	useEffect(() => {
+		if (!isOpen) return;
 		if (!learner) return;
 		
 		setActiveTab(learner.initialTab || 'basic');
@@ -61,9 +67,10 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setPoemDisabled(!!learner.poem_disabled);
 		setStoryDisabled(!!learner.story_disabled);
 		setFillInFunDisabled(!!learner.fill_in_fun_disabled);
+		setGoldenKeysEnabled(learner.golden_keys_enabled !== false);
 		setPhaseTimers({ ...getDefaultPhaseTimers(), ...loadPhaseTimersForLearner(learner) });
 		setAutoAdvancePhases(learner.auto_advance_phases !== false); // Default true if not set
-	}, [learner]);
+	}, [isOpen, learner?.id, learner?.initialTab]);
 
 	const handleTimerChange = (phase, type, value) => {
 		const key = `${phase}_${type}_min`;
@@ -106,6 +113,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 					test: Number(test)
 				},
 				golden_keys: Number(goldenKeys),
+				golden_keys_enabled: goldenKeysEnabled,
 				ask_disabled: askDisabled,
 				poem_disabled: poemDisabled,
 				story_disabled: storyDisabled,
@@ -118,6 +126,24 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 			alert(error?.message || 'Failed to save changes');
 		} finally {
 			setSaving(false);
+		}
+	};
+
+	const handleToggleGoldenKeysEnabled = async () => {
+		const next = !goldenKeysEnabled;
+		setGoldenKeysEnabled(next);
+
+		// Immediate, per-learner update (no local fallback). If the parent doesn't provide
+		// a patch handler, this becomes a normal "Save"-only field.
+		if (typeof onPatch !== 'function' || !learner?.id) return;
+		setSavingGoldenKeysToggle(true);
+		try {
+			await onPatch({ golden_keys_enabled: next });
+		} catch (err) {
+			setGoldenKeysEnabled(!next);
+			alert(err?.message || 'Failed to update Golden Keys setting');
+		} finally {
+			setSavingGoldenKeysToggle(false);
 		}
 	};
 
@@ -362,10 +388,11 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 								</div>
 
 								<div style={fieldStyle}>
-									<label style={labelStyle}>Phase Begin Buttons</label>
+									<label style={labelStyle}>Golden Key Logic</label>
 									<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
 										<button
-											onClick={() => setAutoAdvancePhases(!autoAdvancePhases)}
+											onClick={handleToggleGoldenKeysEnabled}
+											disabled={savingGoldenKeysToggle || saving}
 											style={{
 												display: 'flex',
 												alignItems: 'center',
@@ -374,30 +401,32 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 												borderRadius: 14,
 												border: 'none',
 												padding: 2,
-												cursor: 'pointer',
-												background: autoAdvancePhases ? '#3b82f6' : '#d1d5db',
+												cursor: (savingGoldenKeysToggle || saving) ? 'not-allowed' : 'pointer',
+												background: goldenKeysEnabled ? '#3b82f6' : '#d1d5db',
 												transition: 'background 0.2s',
+												opacity: (savingGoldenKeysToggle || saving) ? 0.7 : 1,
 												position: 'relative'
 											}}
 										>
 											<div style={{
-												width: 24,
-												height: 24,
+													width: 24,
+													height: 24,
 												borderRadius: '50%',
 												background: '#fff',
 												boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-												transform: autoAdvancePhases ? 'translateX(24px)' : 'translateX(0)',
+												transform: goldenKeysEnabled ? 'translateX(24px)' : 'translateX(0)',
 												transition: 'transform 0.2s'
 											}} />
 										</button>
 										<span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>
-											{autoAdvancePhases ? 'Show Buttons' : 'Auto-Advance'}
+											{goldenKeysEnabled ? 'On' : 'Off'}
 										</span>
+										{savingGoldenKeysToggle && (
+											<span style={{ fontSize: 12, color: '#6b7280' }}>Saving...</span>
+										)}
 									</div>
 									<p style={{ margin: '6px 0 0', fontSize: 13, color: '#6b7280' }}>
-										{autoAdvancePhases 
-											? 'Learner must click "Begin" at each phase transition' 
-											: 'Phases auto-start after completion (prevents break stalling). Initial Begin button still shows.'}
+										When off, Golden Keys are hidden in lessons and sessions for this learner.
 									</p>
 								</div>
 

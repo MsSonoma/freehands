@@ -7,7 +7,7 @@ Per-learner setting that automatically advances through phase transitions by ski
 ## How It Works
 
 - Storage: `learners.auto_advance_phases` boolean (default true). `true` = show Begin buttons; `false` = auto-click them after a 500ms delay.
-- UI: Facilitator → Learners → Edit Learner → Basic Info tab. Toggle labeled "Phase Begin Buttons"; on save it sends `auto_advance_phases`.
+- UI: The Learner edit overlay no longer exposes this as a Basic Info option (the previous switch labeled "Phase Begin Buttons" was removed as outdated). Existing learners still keep their stored value.
 - Persistence: `clientApi.updateLearner/createLearner` write `auto_advance_phases` to Supabase (flat + JSON schemas) and to the localStorage fallback (`facilitator_learners`). `normalizeRow` defaults to true when null so `false` survives refresh.
 - Session load: `session/page.js` reads `learner.auto_advance_phases` into state; storage change listener rehydrates when learner selection changes.
 - Runtime: useEffect watches `phase`, `subPhase`, `ticker`, and reruns when lesson data finishes loading. If `autoAdvancePhases === false` and we are in an awaiting-begin state (`awaiting-learner`, `comprehension-start`, `exercise-awaiting-begin`, `worksheet-awaiting-begin`, `test-awaiting-begin`), wait 500ms then call the appropriate Begin handler (not Go) so intros and opening actions still run. Only the very first Begin (discussion `awaiting-learner` while `ticker === 0`) is exempt so users must explicitly start the lesson. UI hides Begin buttons when auto-advance is off to prevent flash before auto-click. Begin refs are set after all Begin handlers are declared to avoid TDZ while still tracking live handlers.
@@ -25,6 +25,7 @@ Per-learner setting that automatically advances through phase transitions by ski
 - ❌ Don't call Go handlers from auto-advance; use Begin handlers so intros/opening actions render
 - ✅ Only auto-click Begin buttons at phase transitions
 - ✅ Always let entrance screens render (500ms delay)
+- ❌ Don't re-add the removed "Phase Begin Buttons" toggle to the Learner Basic Info options
 
 ## Key Files
 
@@ -34,7 +35,7 @@ Per-learner setting that automatically advances through phase transitions by ski
 **Facilitator UI**:
 - `src/app/facilitator/learners/components/LearnerEditOverlay.jsx`
   - State: `autoAdvancePhases`
-  - UI: Pill switch in Basic Info tab
+  - UI: Toggle removed from Basic Info options (setting remains persisted and still affects runtime)
   - Save: Include in `onSave` payload
 
 **Session Logic**:

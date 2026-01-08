@@ -26,7 +26,8 @@ Visual aids are AI-generated educational images created using OpenAI's DALL-E 3.
    - `/api/visual-aids/save` downloads image and uploads to Supabase `visual-aids` bucket
    - **Retry logic**: Failed downloads retry 3 times with exponential backoff (1s, 2s, 4s delays)
    - Permanent URL stored in `visual_aids` table with `lesson_key`, `facilitator_id`
-   - Images that fail all retry attempts are excluded from saved set
+  - Images that fail all retry attempts are excluded from saved set
+  - Generated images can be persisted immediately (permanent URLs) so later selection does not depend on expiring DALL-E URLs
 
 ### Download Retry Logic
 
@@ -48,8 +49,12 @@ DALL-E temporary URLs expire after 1 hour. The save endpoint includes retry logi
 **What happens on failure:**
 - Failed images are excluded from the saved set
 - Successful images are still saved (partial save is better than total failure)
-- Clear error message if ALL images fail: "DALL-E URLs may have expired. Please regenerate."
-- Detailed logs for debugging (attempt number, error type, retry delays)
+- If ALL images fail, the API returns a failure that does NOT assume URL expiry and includes small, structured details about what failed (download vs upload and a status code when available)
+- The UI should surface the high-level error plus a small hint (download vs upload), and logs full `details` as JSON (copy/paste friendly) for debugging storage-policy vs network vs source-URL issues
+
+**Common failure mode (NOT URL expiry):**
+- If the error includes `stage: upload, status: 403` with a message like "new row violates row-level security policy", the Supabase Storage RLS policies for bucket `visual-aids` are missing or incorrect.
+- Fix by applying the storage policies that allow authenticated users to upload/update/delete objects under their own folder in the `visual-aids` bucket, while keeping reads public.
 
 ### Critical Constraint: NO TEXT IN IMAGES
 
@@ -60,7 +65,7 @@ DALL-E temporary URLs expire after 1 hour. The save endpoint includes retry logi
 1. **System prompt** (GPT-4o-mini prompt creation):
    - "NEVER include text, words, letters, labels, captions, signs, writing, numbers, or any written language"
    - "Describe only visual elements like colors, shapes, objects, people, animals, and scenery"
-   - "Use phrases like 'a colorful scene showing' or 'an illustration of' rather than 'diagram' or 'chart'"
+  - "Use phrases like 'a cartoon scene showing' or 'an illustration of' rather than 'diagram' or 'chart'"
 
 2. **User prompt** (GPT-4o-mini prompt creation):
    - "Describe a visual scene with objects and actions only - absolutely no text or labels in the image"
@@ -88,10 +93,15 @@ Both purposes reinforce the no-text constraint at the prompt improvement layer.
 ### Session Display
 
 During lesson sessions, visual aids appear in `SessionVisualAidsCarousel`:
-- Learner clicks Visual Aids button (picture icon)
-- Full-screen carousel shows images with left/right navigation
-- "Explain" button triggers Ms. Sonoma to read the kid-friendly description via TTS
-- Visual aids are lesson-specific, loaded by `lesson_key` (normalized to strip folder prefixes)
+
+- Session loads visual aids from `/api/visual-aids/load?lessonKey=...` using a Supabase access token (Bearer)
+- The `lessonKey` is normalized to strip folder prefixes; session typically uses the filename key with a `.json` suffix
+- UI shows a Visual Aids button (picture icon) only when `selectedImages` is non-empty
+- Clicking the button opens a full-screen carousel with left/right navigation
+- "Explain" triggers Ms. Sonoma TTS for the selected image description
+
+V1 integration lives in `src/app/session/page.js` (via `VideoPanel`).
+V2 integration lives in `src/app/session/v2/SessionPageV2.jsx` (button in the video overlay controls).
 
 ## What NOT To Do
 
@@ -105,7 +115,7 @@ During lesson sessions, visual aids appear in `SessionVisualAidsCarousel`:
 - ❌ "include words for"
 
 **Instead use:**
-- ✅ "a colorful scene showing"
+- ✅ "a cartoon scene showing"
 - ✅ "an illustration of"
 - ✅ "a photograph of"
 - ✅ "objects and people demonstrating"
@@ -147,7 +157,7 @@ During lesson sessions, visual aids appear in `SessionVisualAidsCarousel`:
 - **`src/app/api/visual-aids/save/route.js`** - Permanent storage
   - Downloads DALL-E image from temporary URL
   - Uploads to Supabase `visual-aids` bucket
-  - Saves metadata to `lesson_visual_aids` table
+  - Saves metadata to `visual_aids` table
   - Returns permanent URL
 
 - **`src/app/api/visual-aids/load/route.js`** - Fetch by lesson
@@ -167,6 +177,8 @@ During lesson sessions, visual aids appear in `SessionVisualAidsCarousel`:
   - Preview with left/right navigation
   - Custom prompt input
   - Rewrite description button
+  - Accepts an optional `zIndex` prop so callers can render it above other modals
+  - Stops click propagation on its overlay root so it does not trigger underlying modal backdrops (e.g., Calendar lesson editor close-confirm)
 
 - **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
   - Full-screen carousel during lesson
@@ -178,6 +190,11 @@ During lesson sessions, visual aids appear in `SessionVisualAidsCarousel`:
   - `handleGenerateVisualAids()` - initiates generation
   - Manages visual aids state and save flow
 
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
 - **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
   - `handleGenerateVisualAids()` - generation from counselor lesson creation
 
@@ -186,14 +203,24 @@ During lesson sessions, visual aids appear in `SessionVisualAidsCarousel`:
   - `onShowVisualAids()` - opens carousel
   - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
 
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
 ### Database
-- **Table**: `lesson_visual_aids`
-  - `lesson_key` (text) - normalized lesson identifier
+- **Table**: `visual_aids`
+  - `lesson_key` (text) - normalized lesson identifier (prefix-stripped, typically ends with `.json`)
   - `facilitator_id` (uuid) - owner
-  - `image_url` (text) - permanent Supabase bucket URL
-  - `prompt` (text) - DALL-E prompt used
-  - `description` (text) - kid-friendly explanation
-  - `display_order` (integer) - carousel ordering
+  - `generated_images` (jsonb) - array of saved images (permanent URLs only)
+  - `selected_images` (jsonb) - array of images used in-session (permanent URLs only)
+  - `generation_count` (int) - generation limit tracking
+  - `max_generations` (int) - configured max generations
+
+**Important**:
+- DALL-E URLs expire; the system persists images to Supabase Storage to make them permanent.
+- Generated images may be persisted (as permanent URLs) so facilitators can leave and return without losing them.
+- Session display still uses `selected_images`.
 
 - **Storage Bucket**: `visual-aids`
   - Supabase storage for permanent image files

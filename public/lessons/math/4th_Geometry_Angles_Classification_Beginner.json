@@ -47,57 +47,335 @@
   ],
   "teachingNotes": "Use angle manipulatives and protractors to measure angles. Help students identify different types of angles in real-world objects. Practice drawing and classifying angles.",
   "sample": [
-    {"question": "What type of angle is formed by the corner of a square?", "expectedAny": ["right", "right angle", "90° angle"]},
-    {"question": "An angle less than 90° is called what?", "expectedAny": ["acute", "acute angle"]},
-    {"question": "An angle more than 90° but less than 180° is called what?", "expectedAny": ["obtuse", "obtuse angle"]},
-    {"question": "What tool measures angles?", "expectedAny": ["protractor", "a protractor"]},
-    {"question": "Name the point where two rays meet.", "expectedAny": ["vertex", "the vertex"]},
-    {"question": "How many degrees are in a right angle?", "expectedAny": ["90", "90°", "ninety"]},
-    {"question": "What is a straight angle's measure?", "expectedAny": ["180", "180°", "one hundred eighty"]}
+    {
+      "question": "What type of angle is formed by the corner of a square?",
+      "expectedAny": [
+        "right",
+        "right angle",
+        "90° angle"
+      ]
+    },
+    {
+      "question": "An angle less than 90° is called what?",
+      "expectedAny": [
+        "acute",
+        "acute angle"
+      ]
+    },
+    {
+      "question": "An angle more than 90° but less than 180° is called what?",
+      "expectedAny": [
+        "obtuse",
+        "obtuse angle"
+      ]
+    },
+    {
+      "question": "What tool measures angles?",
+      "expectedAny": [
+        "protractor",
+        "a protractor"
+      ]
+    },
+    {
+      "question": "Name the point where two rays meet.",
+      "expectedAny": [
+        "vertex",
+        "the vertex"
+      ]
+    },
+    {
+      "question": "How many degrees are in a right angle?",
+      "expectedAny": [
+        "90",
+        "90°",
+        "ninety"
+      ]
+    },
+    {
+      "question": "What is a straight angle's measure?",
+      "expectedAny": [
+        "180",
+        "180°",
+        "one hundred eighty"
+      ]
+    }
   ],
   "truefalse": [
-    {"question": "An acute angle is smaller than a right angle.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
-    {"question": "An obtuse angle is less than 90°.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
-    {"question": "A straight angle measures 180°.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
-    {"question": "A right angle measures 100°.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
-    {"question": "Two angles that add to 90° are complementary.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]},
-    {"question": "A reflex angle is less than 180°.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"]},
-    {"question": "A protractor can measure angles in degrees.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"]}
+    {
+      "question": "An acute angle is smaller than a right angle.",
+      "answer": true
+    },
+    {
+      "question": "An obtuse angle is less than 90°.",
+      "answer": false
+    },
+    {
+      "question": "A straight angle measures 180°.",
+      "answer": true
+    },
+    {
+      "question": "A right angle measures 100°.",
+      "answer": false
+    },
+    {
+      "question": "Two angles that add to 90° are complementary.",
+      "answer": true
+    },
+    {
+      "question": "A reflex angle is less than 180°.",
+      "answer": false
+    },
+    {
+      "question": "A protractor can measure angles in degrees.",
+      "answer": true
+    }
   ],
   "multiplechoice": [
-    {"question": "An angle that measures 120 degrees is called:", "choices": ["acute", "right", "obtuse", "straight"], "correct": 2, "expectedAny": ["obtuse", "c", "3", "third"]},
-    {"question": "Which angle is acute?", "choices": ["45°", "90°", "135°", "180°"], "correct": 0, "expectedAny": ["45°", "45", "a", "1", "first"]},
-    {"question": "Which angle is right?", "choices": ["60°", "90°", "120°", "30°"], "correct": 1, "expectedAny": ["90°", "90", "b", "2", "second"]},
-    {"question": "Which angle is obtuse?", "choices": ["85°", "95°", "45°", "10°"], "correct": 1, "expectedAny": ["95°", "95", "b", "2", "second", "obtuse"]},
-    {"question": "Which pair is complementary?", "choices": ["30° and 60°", "40° and 40°", "100° and 80°", "90° and 90°"], "correct": 0, "expectedAny": ["30° and 60°", "a", "1", "first"]},
-    {"question": "Which pair is supplementary?", "choices": ["60° and 60°", "45° and 45°", "100° and 80°", "90° and 30°"], "correct": 2, "expectedAny": ["100° and 80°", "c", "3", "third"]},
-    {"question": "What is the measure of a straight angle?", "choices": ["90°", "120°", "180°", "360°"], "correct": 2, "expectedAny": ["180°", "180", "c", "3", "third"]}
+    {
+      "question": "An angle that measures 120 degrees is called:",
+      "choices": [
+        "acute",
+        "right",
+        "obtuse",
+        "straight"
+      ],
+      "correct": 2
+    },
+    {
+      "question": "Which angle is acute?",
+      "choices": [
+        "45°",
+        "90°",
+        "135°",
+        "180°"
+      ],
+      "correct": 0
+    },
+    {
+      "question": "Which angle is right?",
+      "choices": [
+        "60°",
+        "90°",
+        "120°",
+        "30°"
+      ],
+      "correct": 1
+    },
+    {
+      "question": "Which angle is obtuse?",
+      "choices": [
+        "85°",
+        "95°",
+        "45°",
+        "10°"
+      ],
+      "correct": 1
+    },
+    {
+      "question": "Which pair is complementary?",
+      "choices": [
+        "30° and 60°",
+        "40° and 40°",
+        "100° and 80°",
+        "90° and 90°"
+      ],
+      "correct": 0
+    },
+    {
+      "question": "Which pair is supplementary?",
+      "choices": [
+        "60° and 60°",
+        "45° and 45°",
+        "100° and 80°",
+        "90° and 30°"
+      ],
+      "correct": 2
+    },
+    {
+      "question": "What is the measure of a straight angle?",
+      "choices": [
+        "90°",
+        "120°",
+        "180°",
+        "360°"
+      ],
+      "correct": 2
+    }
   ],
   "fillintheblank": [
-    {"question": "The point where two lines meet to form an angle is called the ________.", "expectedAny": ["vertex", "the vertex"]},
-    {"question": "An angle smaller than a right angle is called ________.", "expectedAny": ["acute", "acute angle"]},
-    {"question": "An angle larger than 90° but less than 180° is ________.", "expectedAny": ["obtuse", "obtuse angle"]},
-    {"question": "Two angles that add to 180° are ________.", "expectedAny": ["supplementary", "supplementary angles"]},
-    {"question": "Two angles that add to 90° are ________.", "expectedAny": ["complementary", "complementary angles"]},
-    {"question": "A 180° angle is called a ________ angle.", "expectedAny": ["straight", "straight angle"]},
-    {"question": "An angle measuring more than 180° is called a ________ angle.", "expectedAny": ["reflex", "reflex angle"]}
+    {
+      "question": "The point where two lines meet to form an angle is called the ________.",
+      "expectedAny": [
+        "vertex",
+        "the vertex"
+      ]
+    },
+    {
+      "question": "An angle smaller than a right angle is called ________.",
+      "expectedAny": [
+        "acute",
+        "acute angle"
+      ]
+    },
+    {
+      "question": "An angle larger than 90° but less than 180° is ________.",
+      "expectedAny": [
+        "obtuse",
+        "obtuse angle"
+      ]
+    },
+    {
+      "question": "Two angles that add to 180° are ________.",
+      "expectedAny": [
+        "supplementary",
+        "supplementary angles"
+      ]
+    },
+    {
+      "question": "Two angles that add to 90° are ________.",
+      "expectedAny": [
+        "complementary",
+        "complementary angles"
+      ]
+    },
+    {
+      "question": "A 180° angle is called a ________ angle.",
+      "expectedAny": [
+        "straight",
+        "straight angle"
+      ]
+    },
+    {
+      "question": "An angle measuring more than 180° is called a ________ angle.",
+      "expectedAny": [
+        "reflex",
+        "reflex angle"
+      ]
+    }
   ],
   "shortanswer": [
-    {"question": "How can you tell if an angle is acute without measuring it?", "expectedAny": ["less than 90°", "smaller than a square corner", "less than a right angle", "narrow angle", "sharp angle", "small angle"]},
-    {"question": "Explain how to use a protractor to measure an angle.", "expectedAny": ["align baseline", "read degree scale", "place vertex at center hole", "line up one ray with 0", "match the vertex to the center", "line up and read"]},
-    {"question": "Give a real-world example of a right angle.", "expectedAny": ["book corner", "door frame", "corner of a square", "table corner", "wall corner", "paper corner"]},
-    {"question": "Describe the difference between acute and obtuse angles.", "expectedAny": ["<90 vs >90", "acute is less than 90, obtuse is between 90 and 180", "acute is sharp/narrow, obtuse is wide", "acute is small, obtuse is big"]},
-    {"question": "When are two angles complementary?", "expectedAny": ["sum 90°", "add to ninety degrees", "form a right angle together", "add up to 90", "together make 90"]},
-    {"question": "When are two angles supplementary?", "expectedAny": ["sum 180°", "add to one hundred eighty degrees", "form a straight angle together", "add up to 180", "together make 180"]},
-    {"question": "How can you classify a 135° angle?", "expectedAny": ["obtuse", "greater than 90 and less than 180", "obtuse angle", "between 90 and 180"]}
+    {
+      "question": "How can you tell if an angle is acute without measuring it?",
+      "expectedAny": [
+        "less than 90°",
+        "smaller than a square corner",
+        "less than a right angle",
+        "narrow angle",
+        "sharp angle",
+        "small angle"
+      ]
+    },
+    {
+      "question": "Explain how to use a protractor to measure an angle.",
+      "expectedAny": [
+        "align baseline",
+        "read degree scale",
+        "place vertex at center hole",
+        "line up one ray with 0",
+        "match the vertex to the center",
+        "line up and read"
+      ]
+    },
+    {
+      "question": "Give a real-world example of a right angle.",
+      "expectedAny": [
+        "book corner",
+        "door frame",
+        "corner of a square",
+        "table corner",
+        "wall corner",
+        "paper corner"
+      ]
+    },
+    {
+      "question": "Describe the difference between acute and obtuse angles.",
+      "expectedAny": [
+        "<90 vs >90",
+        "acute is less than 90, obtuse is between 90 and 180",
+        "acute is sharp/narrow, obtuse is wide",
+        "acute is small, obtuse is big"
+      ]
+    },
+    {
+      "question": "When are two angles complementary?",
+      "expectedAny": [
+        "sum 90°",
+        "add to ninety degrees",
+        "form a right angle together",
+        "add up to 90",
+        "together make 90"
+      ]
+    },
+    {
+      "question": "When are two angles supplementary?",
+      "expectedAny": [
+        "sum 180°",
+        "add to one hundred eighty degrees",
+        "form a straight angle together",
+        "add up to 180",
+        "together make 180"
+      ]
+    },
+    {
+      "question": "How can you classify a 135° angle?",
+      "expectedAny": [
+        "obtuse",
+        "greater than 90 and less than 180",
+        "obtuse angle",
+        "between 90 and 180"
+      ]
+    }
   ],
   "wordProblems": [
-    {"question": "A triangle has angles measuring 60°, 70°, and 50°. How many of these angles are acute?", "expectedAny": ["3", "three"]},
-    {"question": "One angle is 35° and another is 55°. Are they complementary?", "expectedAny": ["yes", "they add to 90°", "complementary"]},
-    {"question": "Two angles are supplementary. If one is 120°, what is the other?", "expectedAny": ["60°", "60"]},
-    {"question": "An angle measures 88°. Classify it.", "expectedAny": ["acute", "acute angle"]},
-    {"question": "An angle measures 92°. Classify it.", "expectedAny": ["obtuse", "obtuse angle"]},
-    {"question": "An angle measures 180°. What kind of angle is it?", "expectedAny": ["straight", "straight angle"]},
-    {"question": "Two complementary angles are 30° and _____.", "expectedAny": ["60°", "60"]}
+    {
+      "question": "A triangle has angles measuring 60°, 70°, and 50°. How many of these angles are acute?",
+      "expectedAny": [
+        "3",
+        "three"
+      ]
+    },
+    {
+      "question": "One angle is 35° and another is 55°. Are they complementary?",
+      "expectedAny": [
+        "yes",
+        "they add to 90°",
+        "complementary"
+      ]
+    },
+    {
+      "question": "Two angles are supplementary. If one is 120°, what is the other?",
+      "expectedAny": [
+        "60°",
+        "60"
+      ]
+    },
+    {
+      "question": "An angle measures 88°. Classify it.",
+      "expectedAny": [
+        "acute",
+        "acute angle"
+      ]
+    },
+    {
+      "question": "An angle measures 92°. Classify it.",
+      "expectedAny": [
+        "obtuse",
+        "obtuse angle"
+      ]
+    },
+    {
+      "question": "An angle measures 180°. What kind of angle is it?",
+      "expectedAny": [
+        "straight",
+        "straight angle"
+      ]
+    },
+    {
+      "question": "Two complementary angles are 30° and _____.",
+      "expectedAny": [
+        "60°",
+        "60"
+      ]
+    }
   ]
 }

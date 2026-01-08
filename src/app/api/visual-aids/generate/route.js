@@ -60,7 +60,7 @@ export async function POST(req) {
             messages: [
               {
                 role: 'system',
-                content: 'You create image prompts for educational illustrations. Describe scenes, objects, characters, and actions that visually represent lesson concepts. CRITICAL RULES: 1) NEVER include text, words, letters, labels, captions, signs, writing, numbers, or any written language in your descriptions. 2) Describe only visual elements like colors, shapes, objects, people, animals, and scenery. 3) Use phrases like "a colorful scene showing" or "an illustration of" rather than "diagram" or "chart". Keep under 80 words. Make images cheerful, simple, and age-appropriate for elementary students.'
+                content: 'You create image prompts for educational illustrations. Describe scenes, objects, characters, and actions that visually represent lesson concepts. CRITICAL RULES: 1) NEVER include text, words, letters, labels, captions, signs, writing, numbers, or any written language in your descriptions. 2) Describe only visual elements like colors, shapes, objects, people, animals, and scenery. 3) Use phrases like "a cartoon scene showing" or "an illustration of" rather than "diagram" or "chart". Prefer a cartoon illustration style; avoid photorealistic faces. Keep under 80 words. Make images cheerful, simple, and age-appropriate for elementary students.'
               },
               {
                 role: 'user',

@@ -66,7 +66,7 @@ export default function SessionVisualAidsCarousel({
       background: 'rgba(0, 0, 0, 0.95)',
       display: 'flex',
       flexDirection: 'column',
-      zIndex: 2000,
+      zIndex: 20000,
       height: '100vh',
       overflow: 'hidden'
     }}>

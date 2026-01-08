@@ -1,6 +1,6 @@
 # Calendar Lesson Planning System - Ms. Sonoma Brain File
 
-**Last Updated**: 2025-12-15T00:00:00Z  
+**Last Updated**: 2026-01-08T01:51:21Z  
 **Status**: Canonical
 
 ## How It Works
@@ -24,6 +24,18 @@ The Calendar page includes an automated lesson planner that generates lesson out
 - Retrieves curriculum preferences (focus/banned concepts/topics/words)
 - Combines into context string sent to GPT for smarter lesson planning
 - Prevents repetition of already-completed topics
+
+**Grade source of truth:**
+- Planned-lesson outlines must use the selected learner's grade as the default `grade` sent to `/api/generate-lesson-outline`.
+- Do not hardcode a default grade like "3rd" at the planner layer; that will leak into every planned lesson and any downstream generator that uses the outline.
+
+**Grade type normalization:**
+- Treat `grade` as a string in generator UIs.
+- Some data sources store grade as a number (e.g., `3`), which will crash code that assumes `.trim()` exists.
+
+**Grade option normalization:**
+- The lesson generator grade dropdown expects one of: `K`, `1st`..`12th`.
+- If the learner grade is stored as `3` or `"3"`, normalize it to `"3rd"` so the dropdown defaults correctly.
 
 **Persistence Model:**
 - Planned lessons stored in `planned_lessons` table (facilitator_id, learner_id, scheduled_date, lesson_data JSONB)
@@ -98,6 +110,37 @@ plannedLessons = {
 - `generatePlannedLessons()` completes → calls `onPlannedLessonsChange(lessons)`
 - `savePlannedLessons(lessons)` updates state AND saves to database
 - Success message shows, lessons appear on calendar immediately
+
+### Scheduled Lessons Overlay: Built-in Lesson Editor
+
+The Calendar day overlay includes an inline lesson editor for scheduled lessons.
+
+This editor matches the regular lesson editor for Visual Aids (button + carousel + generation + persistence).
+
+**Lesson load:**
+- Uses `GET /api/facilitator/lessons/get?file=<lesson_key>`
+- This endpoint requires an `Authorization: Bearer <access_token>` header.
+- The API derives the facilitator user id from the bearer token and loads from `facilitator-lessons/<userId>/...`.
+- Client code must not rely on a `userId` query param for this endpoint.
+
+**Lesson save:**
+- Uses `PUT /api/facilitator/lessons/update` with JSON body `{ file, lesson }` and `Authorization: Bearer <access_token>`.
+- The server enforces that the authenticated user can only edit their own lessons.
+
+**Visual Aids (Generate / View / Save):**
+- Uses the same facilitator Visual Aids system as the regular editor:
+  - `GET /api/visual-aids/load?lessonKey=...`
+  - `POST /api/visual-aids/generate`
+  - `POST /api/visual-aids/save`
+- All Visual Aids endpoints require `Authorization: Bearer <access_token>`.
+- The inline editor computes a normalized `lessonKey` for visual aids based on the scheduled lesson key:
+  - strips the `generated/` prefix (if present)
+  - ensures a `.json` suffix
+- The Calendar editor renders `VisualAidsCarousel` above the lesson editor modal (z-index passed explicitly).
+
+**Common failure mode:**
+- If the Calendar overlay calls `/api/facilitator/lessons/get` without the bearer token, the API returns `401 {"error":"Unauthorized"}`.
+- If the Calendar overlay calls `/api/visual-aids/*` without the bearer token, those endpoints also return `401 {"error":"Unauthorized"}`.
 
 ## What NOT To Do
 
