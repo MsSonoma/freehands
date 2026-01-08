@@ -1,7 +1,7 @@
 # Ms. Sonoma Teaching System
 
 **Status**: Canonical  
-**Last Updated**: 2026-01-07T06:40:00Z
+**Last Updated**: 2026-01-08T16:32:27Z
 
 ## How It Works
 
@@ -247,7 +247,7 @@ Before shipping to Ms. Sonoma, verify:
 
 - OpeningActionsController spins up only after audioReady is true and eventBus/audioEngine exist (dedicated effect rechecks when audio initializes so buttons never point at a null controller); controller and listeners are destroyed on unmount to prevent dead buttons or duplicate handlers. State resets on timeline jumps and play timer expiry.
 - AudioEngine shim adds speak(text) when missing (calls fetchTTS + playAudio with captions) so Ask/Joke/Riddle/Poem/Story/Fill-in-Fun can speak via a single helper like V1.
-- Buttons (Joke, Riddle, Poem, Story, Fill-in-Fun, Games) show in the play-time awaiting-go bar for Q&A phases; Go/work transitions, play-time expiry, or timeline jumps clear inputs/errors/busy flags and hide the Games overlay. Ask Ms. Sonoma lives only as a circular video overlay button (raised-hand icon) on the left side of the video, in the same bottom-left row as Skip/Repeat (aligned and evenly spaced) and launches the same Ask panel.
+- Buttons (Joke, Riddle, Poem, Story, Fill-in-Fun, Games) show in the play-time awaiting-go bar for Q&A phases; Go/work transitions, play-time expiry, or timeline jumps clear inputs/errors/busy flags and hide the Games overlay. Ask Ms. Sonoma lives only as a circular video overlay button (raised-hand icon) on the bottom-left of the video, paired with the Visual Aids button. Skip/Repeat is treated as a single-slot toggle and lives on the bottom-right with Mute.
 - Ask is hidden during the Test phase.
 - Ask replies carry the learner question plus the on-screen Q&A prompt (if one is active) and the lesson vocab terms/definitions so answers stay on-topic and use the correct meaning for multi-sense words.
 - Active panels bind to controller events: Ask textarea submits via Enter/button and Done calls completeAsk; Joke shows current joke with Done calling completeJoke; Riddle uses Hint/Reveal plus Done; Poem waits for playback then Done triggers completePoem; Story logs transcript with Continue and Finish; Fill-in-Fun collects words via addFillInFunWord and Done/Cancel via completeFillInFun.

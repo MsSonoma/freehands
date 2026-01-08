@@ -1,3 +1,4 @@
+2026-01-08T16:32:27Z | Copilot | Session V2: swap Visual Aids and Skip/Repeat overlay positions (Skip/Repeat on right with Mute; Visual Aids on left with Ask) [#ms-sonoma-teaching-system: session-v2, overlay-controls, visual-aids]
 2026-01-08T13:43:20Z | Copilot | HeaderBar: add Mr. Mentor to Facilitator hover dropdown [#header-navigation: facilitator-dropdown, mr-mentor, links]
 2026-01-08T13:36:08Z | Copilot | Facilitator: add Notifications manager page + Account launcher card + header dropdown link (Supabase-backed, no localStorage) [#notifications-system: prefs, read_at, cross-device] [#header-navigation: facilitator-dropdown, notifications]
 2026-01-08T13:26:26Z | Copilot | Session V2: PIN-gate timeline jumps + timer controls (pause + timer overlay) [#pin-protection: timeline, timer, ensurePinAllowed] [#timer-system: timer, pause-resume, overlay]

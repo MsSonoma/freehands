@@ -4938,7 +4938,7 @@ function SessionPageV2Inner() {
             </div>
           )}
           
-          {/* Video overlay controls - bottom right (mute) */}
+          {/* Video overlay controls - bottom right (Skip/Repeat + mute) */}
           <div style={{
             position: 'absolute',
             bottom: 16,
@@ -4947,12 +4947,13 @@ function SessionPageV2Inner() {
             gap: 12,
             zIndex: 10
           }}>
-            {Array.isArray(visualAidsData) && visualAidsData.length > 0 && (
+            {/* Skip/Repeat (acts as one button) */}
+            {engineState === 'playing' && (
               <button
                 type="button"
-                onClick={() => setShowVisualAids(true)}
-                aria-label="Visual Aids"
-                title="Visual Aids"
+                onClick={skipTTS}
+                aria-label="Skip"
+                title="Skip"
                 style={{
                   background: '#1f2937',
                   color: '#fff',
@@ -4966,9 +4967,41 @@ function SessionPageV2Inner() {
                   boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
                 }}
               >
-                <span style={{ fontSize: 'clamp(16px, 3.3vw, 22px)', lineHeight: 1 }}>🖼️</span>
+                <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="5 4 15 12 5 20 5 4" />
+                  <line x1="19" y1="5" x2="19" y2="19" />
+                </svg>
               </button>
             )}
+
+            {engineState !== 'playing' && showRepeatButton && (
+              <button
+                type="button"
+                onClick={replayTTS}
+                aria-label="Repeat"
+                title="Repeat"
+                style={{
+                  background: '#1f2937',
+                  color: '#fff',
+                  border: 'none',
+                  width: 'clamp(34px, 6.2vw, 52px)',
+                  height: 'clamp(34px, 6.2vw, 52px)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+                }}
+              >
+                <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 1v6h-6" />
+                  <path d="M7 23v-6h6" />
+                  <path d="M3.51 9a9 9 0 0114.13-3.36L17 7" />
+                  <path d="M20.49 15A9 9 0 015.36 18.36L7 17" />
+                </svg>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={toggleMute}
@@ -4995,7 +5028,7 @@ function SessionPageV2Inner() {
             </button>
           </div>
           
-          {/* Bottom-left control cluster (Ask + Skip/Repeat) */}
+          {/* Bottom-left control cluster (Ask + Visual Aids) */}
           <div
             style={{
               position: 'absolute',
@@ -5037,13 +5070,12 @@ function SessionPageV2Inner() {
               );
             })()}
 
-            {/* Skip (only when speaking) */}
-            {engineState === 'playing' && (
+            {Array.isArray(visualAidsData) && visualAidsData.length > 0 && (
               <button
                 type="button"
-                onClick={skipTTS}
-                aria-label="Skip"
-                title="Skip"
+                onClick={() => setShowVisualAids(true)}
+                aria-label="Visual Aids"
+                title="Visual Aids"
                 style={{
                   background: '#1f2937',
                   color: '#fff',
@@ -5057,39 +5089,7 @@ function SessionPageV2Inner() {
                   boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
                 }}
               >
-                <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="5 4 15 12 5 20 5 4" />
-                  <line x1="19" y1="5" x2="19" y2="19" />
-                </svg>
-              </button>
-            )}
-
-            {/* Repeat (when not speaking but audio available) */}
-            {engineState !== 'playing' && showRepeatButton && (
-              <button
-                type="button"
-                onClick={replayTTS}
-                aria-label="Repeat"
-                title="Repeat"
-                style={{
-                  background: '#1f2937',
-                  color: '#fff',
-                  border: 'none',
-                  width: 'clamp(34px, 6.2vw, 52px)',
-                  height: 'clamp(34px, 6.2vw, 52px)',
-                  display: 'grid',
-                  placeItems: 'center',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-                }}
-              >
-                <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 1v6h-6" />
-                  <path d="M7 23v-6h6" />
-                  <path d="M3.51 9a9 9 0 0114.13-3.36L17 7" />
-                  <path d="M20.49 15A9 9 0 015.36 18.36L7 17" />
-                </svg>
+                <span style={{ fontSize: 'clamp(16px, 3.3vw, 22px)', lineHeight: 1 }}>🖼️</span>
               </button>
             )}
           </div>
