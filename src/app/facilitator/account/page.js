@@ -89,6 +89,26 @@ export default function FacilitatorAccountPage() {
             gap: 12,
             marginBottom: 16
           }}>
+            {/* Notifications */}
+            <div
+              onClick={() => router.push('/facilitator/notifications')}
+              style={cardStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+                e.currentTarget.style.borderColor = '#9ca3af'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
+                e.currentTarget.style.borderColor = '#e5e7eb'
+              }}
+            >
+              <div style={iconStyle}>🔔</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Notifications</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>View alerts and manage notification settings</div>
+              </div>
+            </div>
+
             {/* Your Name */}
             <div
               onClick={() => setActiveOverlay('name')}

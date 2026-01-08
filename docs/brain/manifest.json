@@ -20,7 +20,21 @@
       "session-exit-pin-gate",
       "print-menu"
     ],
-    "last_updated": "2026-01-08T02:27:19Z",
+    "last_updated": "2026-01-08T13:43:20Z",
+    "status": "canonical"
+  },
+  "notifications-system": {
+    "file": "notifications-system.md",
+    "systems": [
+      "facilitator notifications",
+      "/facilitator/notifications",
+      "facilitator_notifications",
+      "facilitator_notification_prefs",
+      "read_at",
+      "notification settings",
+      "no-localStorage"
+    ],
+    "last_updated": "2026-01-08T13:36:08Z",
     "status": "canonical"
   },
   "dev-server-and-chunks": {
@@ -278,7 +292,7 @@
       "navigation PIN checks",
       "double PIN prevention"
     ],
-    "last_updated": "2025-12-03T04:00:00Z",
+    "last_updated": "2026-01-08T13:26:26Z",
     "status": "canonical"
   },
   "snapshot-persistence": {
@@ -329,7 +343,7 @@
       "playTimerExpired event",
       "V2 parent-controlled overlay"
     ],
-    "last_updated": "2026-01-08T03:44:22Z",
+    "last_updated": "2026-01-08T13:26:26Z",
     "status": "canonical"
   },
   "learner-settings-bus": {

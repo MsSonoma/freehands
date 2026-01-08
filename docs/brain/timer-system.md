@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2026-01-08T03:44:22Z  
+**Last updated**: 2026-01-08T13:26:26Z  
 **Status**: Canonical
 
 ## How It Works
@@ -116,6 +116,14 @@ The Games overlay displays the play timer badge, and it must show the same time 
 Games and Visual Aids overlays must render above the timeline and timer overlays.
 - Timeline must not use an extremely high `zIndex`.
 - Full-screen overlays should use a higher `zIndex` than the on-video timer.
+
+### PIN Gating (V2)
+
+Timer controls that can change session pacing are PIN-gated:
+- Opening the TimerControlOverlay is gated by `ensurePinAllowed('timer')`.
+- Pause/resume toggles are gated by `ensurePinAllowed('timer')`.
+
+Timeline jumps are also PIN-gated (see pin-protection.md action `timeline`).
 
 ### Play Time Expiration Flow
 

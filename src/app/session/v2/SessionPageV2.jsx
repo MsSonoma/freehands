@@ -2135,13 +2135,29 @@ function SessionPageV2Inner() {
   }, [showGames, getCurrentPhaseName, currentTimerMode]);
 
   // Handle timer click (for facilitator controls)
-  const handleTimerClick = useCallback(() => {
+  const handleTimerClick = useCallback(async () => {
+    let allowed = false;
+    try {
+      allowed = await ensurePinAllowed('timer');
+    } catch (e) {
+      console.warn('[SessionPageV2] Timer PIN gate error:', e);
+    }
+    if (!allowed) return;
+
     console.log('[SessionPageV2] Timer clicked - showing timer control overlay');
     setShowTimerControl(true);
   }, []);
   
   // Handle timer pause toggle
-  const handleTimerPauseToggle = useCallback(() => {
+  const handleTimerPauseToggle = useCallback(async () => {
+    let allowed = false;
+    try {
+      allowed = await ensurePinAllowed('timer');
+    } catch (e) {
+      console.warn('[SessionPageV2] Timer PIN gate error:', e);
+    }
+    if (!allowed) return;
+
     setTimerPaused(prev => !prev);
   }, []);
   
@@ -2268,6 +2284,18 @@ function SessionPageV2Inner() {
     if (!audioEngineRef.current) {
       console.warn('[SessionPageV2] Timeline jump blocked - no audio engine');
       timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+
+    // PIN gate: timeline jumps are facilitator-only
+    let allowed = false;
+    try {
+      allowed = await ensurePinAllowed('timeline');
+    } catch (e) {
+      console.warn('[SessionPageV2] Timeline PIN gate error:', e);
+    }
+    if (!allowed) {
+      timelineJumpInProgressRef.current = false;
       return;
     }
     

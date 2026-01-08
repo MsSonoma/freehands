@@ -14,9 +14,11 @@ The global header (HeaderBar) is rendered across pages and provides:
 On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
 
 - ⚙️ Account -> `/facilitator/account`
+- 🔔 Notifications -> `/facilitator/notifications`
 - 👥 Learners -> `/facilitator/learners`
 - 📚 Lessons -> `/facilitator/lessons`
 - 📅 Calendar -> `/facilitator/calendar`
+- 🧠 Mr. Mentor -> `/facilitator/mr-mentor`
 
 The dropdown uses a short hover grace period on mouseleave so it does not flicker closed while moving from the header link down into the menu.
 

@@ -812,6 +812,23 @@ export default function HeaderBar() {
 											Account
 										</Link>
 										<Link
+											href="/facilitator/notifications"
+											role="menuitem"
+											onClick={async (e) => {
+												if (pathname.startsWith('/session')) {
+													e.preventDefault();
+													const ok = await goWithPin('/facilitator/notifications');
+													if (ok) setFacilitatorMenuOpen(false);
+													return;
+												}
+												setFacilitatorMenuOpen(false);
+											}}
+											style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', textDecoration:'none', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
+										>
+											<span aria-hidden="true">🔔</span>
+											Notifications
+										</Link>
+										<Link
 											href="/facilitator/learners"
 											role="menuitem"
 											onClick={async (e) => {
@@ -861,6 +878,23 @@ export default function HeaderBar() {
 										>
 											<span aria-hidden="true">📅</span>
 											Calendar
+										</Link>
+										<Link
+											href="/facilitator/mr-mentor"
+											role="menuitem"
+											onClick={async (e) => {
+												if (pathname.startsWith('/session')) {
+													e.preventDefault();
+													const ok = await goWithPin('/facilitator/mr-mentor');
+													if (ok) setFacilitatorMenuOpen(false);
+													return;
+												}
+												setFacilitatorMenuOpen(false);
+											}}
+											style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', textDecoration:'none', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
+										>
+											<span aria-hidden="true">🧠</span>
+											Mr. Mentor
 										</Link>
 									</div>
 								)}

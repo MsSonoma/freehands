@@ -1,3 +1,6 @@
+2026-01-08T13:43:20Z | Copilot | HeaderBar: add Mr. Mentor to Facilitator hover dropdown [#header-navigation: facilitator-dropdown, mr-mentor, links]
+2026-01-08T13:36:08Z | Copilot | Facilitator: add Notifications manager page + Account launcher card + header dropdown link (Supabase-backed, no localStorage) [#notifications-system: prefs, read_at, cross-device] [#header-navigation: facilitator-dropdown, notifications]
+2026-01-08T13:26:26Z | Copilot | Session V2: PIN-gate timeline jumps + timer controls (pause + timer overlay) [#pin-protection: timeline, timer, ensurePinAllowed] [#timer-system: timer, pause-resume, overlay]
 2026-01-08T03:44:22Z | Copilot | Learners: add play portion toggles (phases 2-5); Session V2 Begin skips to work when disabled; V1 unchanged [#timer-system: play-portions, play-timers, begin-go] [#learner-settings-bus: play_*_enabled, immediate updates, no-local-fallback]
 2026-01-08T03:21:10Z | Copilot | Learn/Lessons: hide per-lesson "🔑 Active" badge unless golden_keys_enabled is on [#learner-settings-bus: golden_keys_enabled, active badge, gating]
 2026-01-08T03:19:57Z | Copilot | Learn/Lessons: prevent Golden Key manager flash by treating golden_keys_enabled as unknown until loaded; fix toast gating [#learner-settings-bus: loading flash, toast gating, golden_keys_enabled]

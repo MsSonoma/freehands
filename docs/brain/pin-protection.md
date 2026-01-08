@@ -39,6 +39,14 @@ Each action type maps to a preference key that controls whether PIN is required:
 | `refresh` | `refresh` | Re-generate worksheet/test | NO |
 | `timer` | `timer` | Pause/resume timer | NO |
 
+### Session Integrations
+
+Session surfaces that mutate session state should gate with `ensurePinAllowed(action)` before performing the action.
+
+**Session V2 (timeline + timer controls):**
+- Timeline jumps call `ensurePinAllowed('timeline')` before switching phases.
+- Timer controls call `ensurePinAllowed('timer')` before opening the timer control overlay and before pause/resume toggles.
+
 ### Facilitator Section Flag
 
 **Purpose**: Prevent double PIN prompts when navigating between facilitator pages
