@@ -39,6 +39,16 @@ export default function Home() {
               How AI Works & Safety Protections →
             </a>
           </div>
+          <div className={styles.externalRow}>
+            <a
+              href="https://mssonoma.com"
+              className={styles.aboutLink}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Learn about Ms. Sonoma at mssonoma.com →
+            </a>
+          </div>
         </div>
       </div>
     </main>

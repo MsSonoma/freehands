@@ -1,6 +1,7 @@
 // Lesson picker component for scheduling
 'use client'
 import { useState, useEffect } from 'react'
+import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 
 export default function LessonPicker({ 
   learnerId, 
@@ -18,7 +19,7 @@ export default function LessonPicker({
   const [selectedLesson, setSelectedLesson] = useState(null)
   const [lessonDetails, setLessonDetails] = useState(null)
 
-  const subjects = ['math', 'science', 'language arts', 'social studies', 'general']
+  const { subjectsWithoutGenerated: subjects } = useFacilitatorSubjects()
   const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
   useEffect(() => {
@@ -76,53 +77,43 @@ export default function LessonPicker({
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
-      
+
+      // Calendar "Add Lessons" should only show facilitator-owned lessons.
+      // These are served via /api/facilitator/lessons/list and scheduled via the "generated/<filename>" key format.
+      if (!token) {
+        setAllLessons({})
+        return
+      }
+
       const lessonsMap = {}
-      
-      // Load public lessons for each subject
-      for (const subject of subjects) {
-        try {
-          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
-            cache: 'no-store'
-          })
-          const list = res.ok ? await res.json() : []
-          lessonsMap[subject] = Array.isArray(list) ? list : []
-        } catch (err) {
-          lessonsMap[subject] = []
+
+      try {
+        const res = await fetch('/api/facilitator/lessons/list', {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${token}` }
+        })
+
+        if (!res.ok) {
+          setAllLessons({})
+          return
         }
-      }
-      
-      // Load generated lessons from user's storage and insert into their respective subjects
-      if (token) {
-        try {
-          const res = await fetch('/api/facilitator/lessons/list', {
-            cache: 'no-store',
-            headers: { Authorization: `Bearer ${token}` }
-          })
-          if (res.ok) {
-            const generatedList = await res.json()
-            const sortedGeneratedList = generatedList.sort((a, b) => {
-              const timeA = new Date(a.created_at || 0).getTime()
-              const timeB = new Date(b.created_at || 0).getTime()
-              return timeB - timeA
-            })
-            
-            for (const lesson of sortedGeneratedList) {
-              const subject = lesson.subject || 'math'
-              const generatedLesson = {
-                ...lesson,
-                isGenerated: true
-              }
-              
-              if (!lessonsMap[subject]) lessonsMap[subject] = []
-              lessonsMap[subject].unshift(generatedLesson)
-            }
-          }
-        } catch (err) {
-          // Silent fail on generated lessons
+
+        const ownedLessons = await res.json()
+        if (!Array.isArray(ownedLessons)) {
+          setAllLessons({})
+          return
         }
+
+        for (const lesson of ownedLessons) {
+          const subject = (lesson?.subject || 'math').toString().toLowerCase()
+          if (!lessonsMap[subject]) lessonsMap[subject] = []
+          lessonsMap[subject].push({ ...lesson, isGenerated: true })
+        }
+      } catch (err) {
+        setAllLessons({})
+        return
       }
-      
+
       setAllLessons(lessonsMap)
     } catch (err) {
       // Silent fail
@@ -247,13 +238,25 @@ export default function LessonPicker({
         const baseName = item.title || filename.replace('.json', '').replace(/_/g, ' ')
         const lessonName = (item.isGenerated || item?.isGenerated === true) ? `✨ ${baseName}` : baseName
         
-        // Extract grade from filename (e.g., "4th_multiplying_with_zeros.json")
+        // Extract grade (prefer lesson metadata; fall back to filename conventions)
         let grade = null
-        const gradeMatch = filename.match(/^(\d+)(st|nd|rd|th)_/i)
-        if (gradeMatch) {
-          grade = gradeMatch[1]
-        } else if (filename.toLowerCase().startsWith('k_')) {
-          grade = 'K'
+        if (typeof item !== 'string' && item?.grade != null) {
+          const rawGrade = String(item.grade).trim()
+          if (rawGrade.toUpperCase() === 'K' || rawGrade.toLowerCase().startsWith('k')) {
+            grade = 'K'
+          } else {
+            const num = rawGrade.match(/\d+/)
+            if (num) grade = num[0]
+          }
+        }
+
+        if (!grade) {
+          const gradeMatch = filename.match(/^(\d+)(st|nd|rd|th)_/i)
+          if (gradeMatch) {
+            grade = gradeMatch[1]
+          } else if (filename.toLowerCase().startsWith('k_')) {
+            grade = 'K'
+          }
         }
         
         // Apply grade filter

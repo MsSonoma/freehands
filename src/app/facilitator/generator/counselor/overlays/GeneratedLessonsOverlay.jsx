@@ -1,10 +1,12 @@
 // Compact generated lessons list for Mr. Mentor overlay
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import LessonEditor from '@/components/LessonEditor'
+import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 
 export default function GeneratedLessonsOverlay({ learnerId }) {
+  const { subjectNames } = useFacilitatorSubjects({ includeGenerated: true })
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [subjectFilter, setSubjectFilter] = useState('all')
@@ -341,7 +343,7 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
     }
   }
 
-  const subjects = ['all', 'math', 'science', 'language arts', 'social studies', 'general', 'generated']
+  const subjects = useMemo(() => ['all', ...subjectNames], [subjectNames])
   const grades = ['all', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
   const filteredItems = items.filter(item => {

@@ -77,6 +77,21 @@ const INTENT_PATTERNS = {
       return INTENT_PATTERNS.schedule.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
     }
   },
+
+  assign: {
+    keywords: ['assign', 'make available', 'make it available', 'show this lesson', 'show the lesson', 'available lessons', 'approve for learner'],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+
+      // Check if it's an FAQ-style question about assigning (how to)
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0 // Defer to FAQ intent
+      }
+
+      return INTENT_PATTERNS.assign.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
+    }
+  },
   
   edit: {
     keywords: ['edit', 'change', 'modify', 'update', 'fix', 'correct'],
@@ -531,6 +546,9 @@ export class MentorInterceptor {
       
       case 'schedule':
         return await this.handleSchedule(userMessage, context)
+
+      case 'assign':
+        return await this.handleAssign(userMessage, context)
       
       case 'edit':
         return await this.handleEdit(userMessage, context)
@@ -728,32 +746,100 @@ export class MentorInterceptor {
       }
     }
     
-    // Handle post-generation schedule prompt
-    if (this.state.awaitingInput === 'post_generation_schedule') {
+    // Handle post-assign confirmation
+    if (this.state.awaitingInput === 'assign_post_confirm') {
       const confirmation = detectConfirmation(userMessage)
-      
+
       if (confirmation === 'yes') {
+        this.reset()
+        return {
+          handled: true,
+          response: "Great. What would you like to do next?"
+        }
+      }
+
+      if (confirmation === 'no') {
+        const lessonKey = this.state.context?.lastAssignedLessonKey
+        const lessonTitle = this.state.context?.lastAssignedLessonTitle
+        this.reset()
+        if (lessonKey) {
+          return {
+            handled: true,
+            action: {
+              type: 'unassign',
+              lessonKey
+            },
+            response: lessonTitle
+              ? `Okay — I removed "${lessonTitle}" from that learner's available lessons. What would you like instead?`
+              : "Okay — I removed that lesson from the learner's available lessons. What would you like instead?"
+          }
+        }
+
+        return {
+          handled: true,
+          response: "Okay. What would you like instead?"
+        }
+      }
+
+      return {
+        handled: true,
+        response: "Please say yes or no."
+      }
+    }
+
+    // Handle post-generation schedule prompt
+    if (this.state.awaitingInput === 'post_generation_action') {
+      const normalized = normalizeText(userMessage)
+      const confirmation = detectConfirmation(userMessage)
+      const wantsSchedule = normalized.includes('schedule') || normalized.includes('calendar') || normalized.includes('date')
+      const wantsAssign = normalized.includes('assign') || normalized.includes('available') || normalized.includes('show') || normalized.includes('approve')
+
+      if (wantsSchedule || (confirmation === 'yes' && !wantsAssign)) {
         // Move to schedule flow with the generated lesson
         this.state.flow = 'schedule'
         this.state.context.lessonKey = this.state.selectedLesson.lessonKey
         this.state.awaitingInput = 'schedule_date'
         this.state.awaitingConfirmation = false
-        
+
         return {
           handled: true,
           response: `What date would you like to schedule ${this.state.selectedLesson.title} for ${learnerName || 'this learner'}?`
         }
-      } else if (confirmation === 'no') {
+      }
+
+      if (wantsAssign) {
+        if (!selectedLearnerId) {
+          return {
+            handled: true,
+            response: "Please select a learner from the dropdown first, then I can assign the lesson."
+          }
+        }
+
+        this.state.context.lastAssignedLessonKey = this.state.selectedLesson.lessonKey
+        this.state.context.lastAssignedLessonTitle = this.state.selectedLesson.title
+        this.state.awaitingInput = 'assign_post_confirm'
+
+        return {
+          handled: true,
+          action: {
+            type: 'assign',
+            lessonKey: this.state.selectedLesson.lessonKey
+          },
+          response: `I've assigned "${this.state.selectedLesson.title}" to ${learnerName || 'this learner'}. Is that correct?`
+        }
+      }
+
+      if (confirmation === 'no') {
         this.reset()
         return {
           handled: true,
           response: "No problem. The lesson is ready in your lessons tab whenever you need it. How else can I help you?"
         }
-      } else {
-        return {
-          handled: true,
-          response: "Would you like to schedule this lesson? Please say yes or no."
-        }
+      }
+
+      return {
+        handled: true,
+        response: `Would you like me to schedule this lesson, or assign it to ${learnerName || 'this learner'}?`
       }
     }
     
@@ -793,6 +879,8 @@ export class MentorInterceptor {
               return await this.handleGenerate(userMessage, context)
             case 'schedule':
               return await this.handleSchedule(userMessage, context)
+            case 'assign':
+              return await this.handleAssign(userMessage, context)
             case 'edit':
               return await this.handleEdit(userMessage, context)
             case 'search':
@@ -821,7 +909,7 @@ export class MentorInterceptor {
           
           return {
             handled: true,
-            response: `Would you like to schedule, edit, or discuss ${this.state.selectedLesson.title}?`
+            response: `Would you like to schedule, assign, edit, or discuss ${this.state.selectedLesson.title}?`
           }
         }
       }
@@ -836,7 +924,7 @@ export class MentorInterceptor {
           
           return {
             handled: true,
-            response: `Would you like to schedule, edit, or discuss ${lesson.title}?`
+            response: `Would you like to schedule, assign, edit, or discuss ${lesson.title}?`
           }
         }
       }
@@ -868,6 +956,28 @@ export class MentorInterceptor {
           }
         }
       }
+
+      if (normalized.includes('assign') || normalized.includes('available') || normalized.includes('show')) {
+        if (!selectedLearnerId) {
+          return {
+            handled: true,
+            response: "Please select a learner from the dropdown first, then we can assign the lesson."
+          }
+        }
+
+        this.state.context.lastAssignedLessonKey = this.state.selectedLesson.lessonKey
+        this.state.context.lastAssignedLessonTitle = this.state.selectedLesson.title
+        this.state.awaitingInput = 'assign_post_confirm'
+
+        return {
+          handled: true,
+          action: {
+            type: 'assign',
+            lessonKey: this.state.selectedLesson.lessonKey
+          },
+          response: `I've assigned "${this.state.selectedLesson.title}" to ${learnerName || 'this learner'}. Is that correct?`
+        }
+      }
       
       if (normalized.includes('edit')) {
         this.state.flow = 'edit'
@@ -895,7 +1005,7 @@ export class MentorInterceptor {
       
       return {
         handled: true,
-        response: "Would you like to schedule it, edit it, or discuss it? Please choose one."
+        response: "Would you like to schedule it, assign it, edit it, or discuss it? Please choose one."
       }
     }
     
@@ -1293,6 +1403,39 @@ export class MentorInterceptor {
       handled: true,
       response: "What lesson would you like to schedule?"
     }
+  }
+
+  /**
+   * Handle lesson assignment (make lesson available to learner)
+   */
+  async handleAssign(userMessage, context) {
+    const { selectedLearnerId, learnerName } = context
+
+    if (!selectedLearnerId) {
+      return {
+        handled: true,
+        response: "Please select a learner from the dropdown first, then I can assign a lesson."
+      }
+    }
+
+    // If we already have a selected lesson from a prior search/generation, assign it directly.
+    if (this.state.selectedLesson?.lessonKey) {
+      this.state.context.lastAssignedLessonKey = this.state.selectedLesson.lessonKey
+      this.state.context.lastAssignedLessonTitle = this.state.selectedLesson.title
+      this.state.awaitingInput = 'assign_post_confirm'
+
+      return {
+        handled: true,
+        action: {
+          type: 'assign',
+          lessonKey: this.state.selectedLesson.lessonKey
+        },
+        response: `I've assigned "${this.state.selectedLesson.title}" to ${learnerName || 'this learner'}. Is that correct?`
+      }
+    }
+
+    // Otherwise, search first so they can pick which lesson to assign.
+    return await this.handleSearch(userMessage, context)
   }
   
   /**

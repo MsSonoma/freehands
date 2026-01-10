@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import AIRewriteButton from './AIRewriteButton'
+import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 
 /**
  * LessonEditor - Structured editor for lesson JSON
@@ -32,6 +33,8 @@ export default function LessonEditor({
   const [isMobilePortrait, setIsMobilePortrait] = useState(false)
   const [showActionsMenu, setShowActionsMenu] = useState(false)
   const actionsMenuRef = useRef(null)
+
+  const { subjectsWithoutGenerated: subjectOptions } = useFacilitatorSubjects()
 
   useEffect(() => {
     if (initialLesson) {
@@ -749,11 +752,15 @@ export default function LessonEditor({
               value={lesson.subject || 'math'}
               onChange={(e) => updateField('subject', e.target.value)}
             >
-              <option value="math">Math</option>
-              <option value="science">Science</option>
-              <option value="language arts">Language Arts</option>
-              <option value="social studies">Social Studies</option>
-              <option value="general">General</option>
+              {subjectOptions.map((subject) => (
+                <option key={subject} value={subject}>
+                  {subject === 'language arts'
+                    ? 'Language Arts'
+                    : subject === 'social studies'
+                      ? 'Social Studies'
+                      : subject.charAt(0).toUpperCase() + subject.slice(1)}
+                </option>
+              ))}
             </select>
           </div>
         </div>

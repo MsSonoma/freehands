@@ -5,6 +5,9 @@ import LessonGeneratorOverlay from './LessonGeneratorOverlay'
 import LessonEditor from '@/components/LessonEditor'
 import VisualAidsCarousel from '@/components/VisualAidsCarousel'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
+import LessonNotesModal from './LessonNotesModal'
+import VisualAidsManagerModal from './VisualAidsManagerModal'
+import TypedRemoveConfirmModal from './TypedRemoveConfirmModal'
 
 export default function DayViewOverlay({ 
   selectedDate, 
@@ -20,6 +23,16 @@ export default function DayViewOverlay({
   onPlannedLessonRemove,
   noSchoolReason = null
 }) {
+  const getLocalTodayStr = () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const isPastSelectedDate = selectedDate < getLocalTodayStr()
+
   const [showGenerator, setShowGenerator] = useState(false)
   const [generatorData, setGeneratorData] = useState(null)
   const [editingLesson, setEditingLesson] = useState(null)
@@ -36,6 +49,11 @@ export default function DayViewOverlay({
   const [noSchoolInputValue, setNoSchoolInputValue] = useState(noSchoolReason || '')
   const [redoingLesson, setRedoingLesson] = useState(null)
 
+  const [authToken, setAuthToken] = useState('')
+  const [notesLesson, setNotesLesson] = useState(null)
+  const [visualAidsLesson, setVisualAidsLesson] = useState(null)
+  const [removeConfirmLesson, setRemoveConfirmLesson] = useState(null)
+
   const MAX_GENERATIONS = 4
 
   const computeNormalizedLessonKey = (raw) => {
@@ -50,7 +68,26 @@ export default function DayViewOverlay({
     const { data: { session } } = await supabase.auth.getSession()
     const token = session?.access_token
     if (!token) throw new Error('Not authenticated')
+    setAuthToken((prev) => (prev === token ? prev : token))
     return token
+  }
+
+  const handleRemoveScheduledLessonById = async (scheduleId) => {
+    if (!scheduleId) return
+    try {
+      const token = await getAuthTokenOrThrow()
+      const res = await fetch(`/api/lesson-schedule?id=${scheduleId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      if (!res.ok) throw new Error('Failed to remove lesson')
+      if (onLessonGenerated) onLessonGenerated()
+    } catch (err) {
+      alert(err?.message || 'Failed to remove lesson')
+    }
   }
 
   const loadVisualAidsData = async (lessonKeyForVisualAids) => {
@@ -809,22 +846,82 @@ export default function DayViewOverlay({
                         {subject}
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleEditClick(lesson)}
-                      style={{
-                        padding: '6px 12px',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        background: '#fff',
-                        color: '#065f46',
-                        border: '1px solid #86efac',
-                        borderRadius: 4,
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      Edit Lesson
-                    </button>
+                    {isPastSelectedDate ? (
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        <button
+                          onClick={() => setNotesLesson({ lessonKey: lesson.lesson_key, lessonTitle: lessonName })}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            background: '#fff',
+                            color: '#111827',
+                            border: '1px solid #d1d5db',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Notes
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await getAuthTokenOrThrow()
+                            } catch {
+                              return
+                            }
+                            setVisualAidsLesson({ lessonKey: lesson.lesson_key, lessonTitle: lessonName })
+                          }}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            background: '#fff',
+                            color: '#2563eb',
+                            border: '1px solid #93c5fd',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Add Image
+                        </button>
+                        <button
+                          onClick={() => setRemoveConfirmLesson({ scheduleId: lesson.id, lessonTitle: lessonName })}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            background: '#fff',
+                            color: '#dc2626',
+                            border: '1px solid #fca5a5',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleEditClick(lesson)}
+                        style={{
+                          padding: '6px 12px',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          background: '#fff',
+                          color: '#065f46',
+                          border: '1px solid #86efac',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        Edit Lesson
+                      </button>
+                    )}
                   </div>
                 </div>
               )
@@ -944,6 +1041,39 @@ export default function DayViewOverlay({
           </button>
         </div>
       </div>
+
+      <LessonNotesModal
+        open={!!notesLesson}
+        onClose={() => setNotesLesson(null)}
+        learnerId={learnerId}
+        lessonKey={notesLesson?.lessonKey}
+        lessonTitle={notesLesson?.lessonTitle || 'Lesson Notes'}
+        zIndex={10020}
+      />
+
+      <VisualAidsManagerModal
+        open={!!visualAidsLesson}
+        onClose={() => setVisualAidsLesson(null)}
+        learnerId={learnerId}
+        lessonKey={visualAidsLesson?.lessonKey}
+        lessonTitle={visualAidsLesson?.lessonTitle || 'Visual Aids'}
+        authToken={authToken}
+        zIndex={10025}
+      />
+
+      <TypedRemoveConfirmModal
+        open={!!removeConfirmLesson}
+        onClose={() => setRemoveConfirmLesson(null)}
+        title="Remove lesson?"
+        description="This cannot be undone. Type remove to confirm."
+        confirmWord="remove"
+        confirmLabel="Remove"
+        zIndex={10030}
+        onConfirm={async () => {
+          if (!removeConfirmLesson?.scheduleId) return
+          await handleRemoveScheduledLessonById(removeConfirmLesson.scheduleId)
+        }}
+      />
     </div>
   )
 }

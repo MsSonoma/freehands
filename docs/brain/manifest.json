@@ -23,6 +23,30 @@
     "last_updated": "2026-01-10T16:50:44Z",
     "status": "canonical"
   },
+  "homepage": {
+    "file": "homepage.md",
+    "systems": [
+      "/",
+      "home hero",
+      "mssonoma.com",
+      "external link",
+      "learn-more copy"
+    ],
+    "last_updated": "2026-01-10T19:44:15Z",
+    "status": "canonical"
+  },
+  "custom-subjects": {
+    "file": "custom-subjects.md",
+    "systems": [
+      "custom_subjects",
+      "/api/custom-subjects",
+      "per-facilitator subjects",
+      "subject dropdowns",
+      "Mr. Mentor subjects"
+    ],
+    "last_updated": "2026-01-10T20:06:44Z",
+    "status": "canonical"
+  },
   "notifications-system": {
     "file": "notifications-system.md",
     "systems": [
@@ -75,7 +99,7 @@
       "learner-specific-context",
       "note-display-per-lesson"
     ],
-    "last_updated": "2025-12-31T16:00:00Z",
+    "last_updated": "2026-01-10T22:54:36Z",
     "status": "canonical"
   },
   "lesson-validation": {
@@ -89,7 +113,7 @@
       "Lesson Maker integration",
       "Mr. Mentor auto-validation"
     ],
-    "last_updated": "2025-12-31T12:30:00Z",
+    "last_updated": "2026-01-10T19:35:08Z",
     "status": "canonical"
   },
   "mr-mentor-memory": {
@@ -125,6 +149,9 @@
     "file": "api-routes.md",
     "systems": [
       "/api/sonoma",
+      "/api/counselor",
+      "/api/lesson-schedule",
+      "/api/lesson-assign",
       "instructions-field",
       "innertext-field",
       "session-field",
@@ -136,7 +163,7 @@
       "/api/visual-aids",
       "/api/content-safety"
     ],
-    "last_updated": "2025-12-31T16:00:00Z",
+    "last_updated": "2026-01-10T20:31:01Z",
     "status": "canonical"
   },
   "v2-architecture": {
@@ -211,6 +238,7 @@
       "Mr. Mentor decision logic",
       "search_lessons",
       "generate_lesson",
+      "assign_lesson",
       "function-calling-triggers",
       "escape-hatch-mechanisms",
       "recommendation-intent",
@@ -219,7 +247,7 @@
       "require_generation_confirmation",
       "conversational-flow-control"
     ],
-    "last_updated": "2026-01-06T12:15:00Z",
+    "last_updated": "2026-01-10T20:31:01Z",
     "status": "canonical"
   },
   "facilitator-help-system": {
@@ -239,7 +267,7 @@
       "weekly-pattern-explainer",
       "beta-tester-feedback"
     ],
-    "last_updated": "2025-12-31T16:00:00Z",
+    "last_updated": "2026-01-10T22:32:35Z",
     "status": "canonical"
   },
   "calendar-lesson-planning": {
@@ -255,9 +283,12 @@
       "medals-API",
       "lesson-history-integration",
       "date-specific-overwrite",
-      "adaptive-difficulty-progression"
+      "adaptive-difficulty-progression",
+      "manual-scheduling",
+      "owned-lessons",
+      "LessonPicker"
     ],
-    "last_updated": "2026-01-08T01:51:21Z",
+    "last_updated": "2026-01-10T23:38:00Z",
     "status": "canonical"
   },
   "tts-prefetching": {
@@ -405,12 +436,13 @@
       "fuzzy-matching",
       "parameter-extraction",
       "generate-flow",
+      "assign-flow",
       "schedule-flow",
       "edit-flow",
       "recall-flow",
       "search-flow"
     ],
-    "last_updated": "2026-01-06T01:15:00Z",
+    "last_updated": "2026-01-10T22:54:36Z",
     "status": "canonical"
   },
   "visual-aids": {
@@ -575,12 +607,30 @@
       "true-false-editor",
       "short-answer-editor",
       "fill-in-blank-editor",
+      "new-lesson",
+      "/api/facilitator/lessons/create",
       "sample-QA-editor",
       "word-problems-editor",
       "validation-auto-cleanup",
       "dynamic-field-management"
     ],
-    "last_updated": "2025-12-31T16:00:00Z",
+    "last_updated": "2026-01-10T19:27:04Z",
+    "status": "canonical"
+  },
+  "lesson-library-downloads": {
+    "file": "lesson-library-downloads.md",
+    "systems": [
+      "/facilitator/lessons",
+      "lesson library",
+      "owned lessons",
+      "downloadable lessons",
+      "server-side download",
+      "supabase storage copy",
+      "no device storage",
+      "new-lesson",
+      "unlock gating"
+    ],
+    "last_updated": "2026-01-10T19:35:08Z",
     "status": "canonical"
   },
   "ai-rewrite-system": {
@@ -624,7 +674,7 @@
       "quota enforcement API",
       "server-side validation"
     ],
-    "last_updated": "2025-12-31T13:00:00Z",
+    "last_updated": "2026-01-10T19:42:04Z",
     "status": "canonical"
   },
   "story-feature": {

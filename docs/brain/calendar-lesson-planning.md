@@ -1,6 +1,6 @@
 # Calendar Lesson Planning System - Ms. Sonoma Brain File
 
-**Last Updated**: 2026-01-08T01:51:21Z  
+**Last Updated**: 2026-01-10T23:50:00Z  
 **Status**: Canonical
 
 ## How It Works
@@ -111,6 +111,84 @@ plannedLessons = {
 - `savePlannedLessons(lessons)` updates state AND saves to database
 - Success message shows, lessons appear on calendar immediately
 
+### Manual Scheduling: "Add Lessons" Picker
+
+The Calendar page includes an "Add Lessons" panel for manually assigning lesson files to specific dates.
+
+**Owned-only rule:**
+- The picker shows ONLY facilitator-owned lessons.
+- It does not list public curriculum lessons from `public/lessons`.
+
+**Data source and key format:**
+- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
+- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
+
+**Filtering behavior:**
+- Subject grouping uses each lesson's `subject` metadata.
+- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
+
+### Completed Past Scheduled Lessons (History View)
+
+The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
+
+**Data rule:**
+- The schedule loader fetches the learner's schedule history.
+- For dates before "today" (local YYYY-MM-DD), scheduled lessons are included only if there is a matching completion event in `lesson_session_events`.
+
+**Completion matching rule:**
+- A scheduled lesson is considered completed for a date when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching the `lesson_schedule.scheduled_date`
+
+**Lesson key canonicalization (required for completion matching):**
+- `lesson_schedule.lesson_key` is typically a path like `math/Foo.json` or `generated/Foo.json`.
+- `lesson_session_events.lesson_id` has historically been stored in multiple formats (sometimes a basename, sometimes a path).
+- For matching, canonicalize both sides to the same id:
+  - take the last path segment (basename)
+  - strip `.json` suffix
+
+**Completion query rule (visibility > micro-optimization):**
+- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
+- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
+
+**Calendar date key rule (marker dots):**
+- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
+- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
+- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
+
+**UI rule (Schedule tab only):**
+- For past (completed) scheduled lessons, actions change to:
+  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
+  - **Add Image**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
+  - **Remove**: requires typing `remove` and warns it cannot be undone.
+
+These actions are implemented on:
+- The main Calendar page schedule list
+- The Calendar Day View overlay schedule list
+- The Mr. Mentor Calendar overlay schedule list
+
+### Backfilling Calendar Schedule From Completion History
+
+If you have existing recorded completions but no corresponding `lesson_schedule` rows (so the Calendar looks empty historically), use the backfill script to insert schedule rows for each completed lesson.
+
+**Script:** `scripts/backfill-schedule-from-history.mjs`
+
+**Default source of truth:**
+- Uses `lesson_session_events` rows where `event_type = 'completed'`.
+- (Legacy) `lesson_history` can be used only when explicitly requested via `--source lesson_history`.
+
+**Dedupe rule:**
+- Inserts are idempotent because `lesson_schedule` has `UNIQUE(learner_id, lesson_key, scheduled_date)` and the script upserts on the same conflict key.
+
+**Safe usage (recommended):**
+- Dry-run first: `node scripts/backfill-schedule-from-history.mjs --dry-run`
+- Target specific learners: `node scripts/backfill-schedule-from-history.mjs --dry-run --learner Emma,Test`
+- Then run real insert: `node scripts/backfill-schedule-from-history.mjs --learner Emma,Test`
+
+**Date conversion:**
+- The script defaults to local date extraction from `occurred_at` (use `--tz utc` only if you want UTC date grouping).
+
 ### Scheduled Lessons Overlay: Built-in Lesson Editor
 
 The Calendar day overlay includes an inline lesson editor for scheduled lessons.
@@ -196,6 +274,22 @@ Check actual route files, not assumptions.
   - Loops through weeks/days/subjects generating outlines
   - Calls `onPlannedLessonsChange(lessons)` with complete plan
   - Handles errors and updates state
+
+- `src/app/facilitator/calendar/LessonPicker.js`
+  - Manual scheduling UI ("Add Lessons")
+  - Loads ONLY facilitator-owned lessons via `/api/facilitator/lessons/list`
+  - Produces `generated/<filename>` keys for scheduling and for `/api/lesson-file`
+
+- `src/app/facilitator/calendar/LessonNotesModal.jsx`
+  - Minimal notes editor for `learners.lesson_notes[lesson_key]`
+  - Empty note deletes the key from the JSONB map
+
+- `src/app/facilitator/calendar/VisualAidsManagerModal.jsx`
+  - Visual Aids manager for a lessonKey using `/api/visual-aids/load|generate|save`
+  - Uses `VisualAidsCarousel` for selection/upload/save UI
+
+- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
+  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
 
 **API Routes:**
 - `src/app/api/planned-lessons/route.js`

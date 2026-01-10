@@ -4,11 +4,12 @@
 
 Facilitators can add notes to any lesson in the `facilitator/lessons` page. These notes are stored per learner and automatically included in Mr. Mentor's learner transcript, providing context about specific challenges, progress, or needs.
 
-**Flow:**
-1. Navigate to `facilitator/lessons`, select learner, expand subject
-2. Click "📝 Add note for Mr. Mentor" button on lesson card
-3. Type note in textarea, save with button or `Ctrl+Enter` (press `Escape` to cancel)
-4. Existing notes show with "📝 Note for Mr. Mentor:" header, click "Edit Note" to modify
+**Flow (entry points):**
+1. Facilitator Lessons page: navigate to `facilitator/lessons`, select learner, expand subject
+2. Calendar schedule view (past completed lessons): click **Notes** on a scheduled lesson
+3. Mr. Mentor Calendar overlay (past completed lessons): click **Notes** on a scheduled lesson
+4. Type note text and save
+5. Empty note deletes the key from the JSONB map (no empty-string storage)
 5. When facilitator discusses learner with Mr. Mentor, notes appear in transcript:
    ```
    FACILITATOR NOTES ON LESSONS:
@@ -64,6 +65,7 @@ if (notesKeys.length > 0) {
 ## Key Files
 
 - `src/app/facilitator/lessons/page.js` - Note UI (add/edit/save), state management, Supabase updates
+- `src/app/facilitator/calendar/LessonNotesModal.jsx` - Notes modal used from Calendar schedule lists
 - `src/app/lib/learnerTranscript.js` - Transcript builder, includes notes section
 - `src/app/api/counselor/route.js` - Receives transcript with notes
 

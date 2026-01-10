@@ -1531,6 +1531,49 @@ export default function CounselorClient() {
                 // Error handled by response
               }
             }
+          } else if (action.type === 'assign' || action.type === 'unassign') {
+            setLoadingThought(action.type === 'assign'
+              ? 'Assigning this lesson to the learner...'
+              : 'Removing this lesson from the learner...'
+            )
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (token && selectedLearnerId) {
+              try {
+                const res = await fetch('/api/lesson-assign', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({
+                    learnerId: selectedLearnerId,
+                    lessonKey: action.lessonKey,
+                    assigned: action.type === 'assign'
+                  })
+                })
+
+                if (!res.ok) {
+                  const js = await res.json().catch(() => null)
+                  // Clear any pending confirmation state, since the action did not complete.
+                  if (interceptorRef.current?.reset) interceptorRef.current.reset()
+                  interceptResult.response = js?.error
+                    ? `I couldn't update lesson availability: ${js.error}`
+                    : "I couldn't update lesson availability. Please try again."
+                } else {
+                  window.dispatchEvent(new Event('mr-mentor:lesson-assigned'))
+                }
+              } catch (err) {
+                if (interceptorRef.current?.reset) interceptorRef.current.reset()
+                interceptResult.response = "I couldn't update lesson availability. Please try again."
+              }
+            } else {
+              if (interceptorRef.current?.reset) interceptorRef.current.reset()
+              interceptResult.response = 'Please select a learner first.'
+            }
           } else if (action.type === 'generate') {
             setLoadingThought("Generating your custom lesson with AI...")
             // Generate lesson via interceptor (keeps context)
@@ -1607,12 +1650,12 @@ export default function CounselorClient() {
 - Vocabulary: ${vocab}
 - Teaching Notes: ${notes}
 
-As a next step, you might consider scheduling this lesson on a day that fits your learner's routine or supplementing it with additional activities that cater to their interests and learning style or adding some images to the visual aids. Also, keep an eye on their progress and be ready to provide additional support or adjustments as needed. But first, don't forget to review the lesson in the lessons tab where you can make any changes.
+As a next step, you might consider adding this lesson to your learner's plan. You can either schedule it on a specific date, or assign it so it shows up as available for ${learnerName || 'this learner'}.
 
-Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
-                    
-                    // Set state to await schedule confirmation
-                    interceptorRef.current.state.awaitingInput = 'post_generation_schedule'
+Would you like me to schedule this lesson, or assign it to ${learnerName || 'this learner'}?`
+
+                    // Set state to await schedule vs assign
+                    interceptorRef.current.state.awaitingInput = 'post_generation_action'
                     
                     // Dispatch event to refresh lessons overlay
                     window.dispatchEvent(new CustomEvent('mr-mentor:lesson-generated'))
@@ -2462,6 +2505,8 @@ Would you like to schedule this lesson for ${learnerName || 'this learner'}?`
             <div style={{ display: activeScreen === 'calendar' ? 'block' : 'none', height: '100%' }}>
               <CalendarOverlay 
                 learnerId={selectedLearnerId}
+                learnerGrade={learners.find(l => l.id === selectedLearnerId)?.grade}
+                tier={tier}
               />
             </div>
             <div style={{ display: activeScreen === 'lessons' ? 'block' : 'none', height: '100%' }}>

@@ -376,7 +376,7 @@ export default function LessonGeneratorOverlay({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 10000,
+        zIndex: 2147483647,
         padding: 16
       }}
       onClick={onClose}

@@ -30,6 +30,9 @@ RLS enabled with policy "user can read own" using auth.uid() = user_id.
 
 ### Client Usage
 
+**Lesson Maker (Generator UI)**
+- Uses **GET /api/lessons/quota** to display today's remaining count in the Lesson Maker page.
+
 **On Begin Click**
 - Call POST with `{ lesson_key, timezone }` before navigating
 - If 429, show message and do not navigate

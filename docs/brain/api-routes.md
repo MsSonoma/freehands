@@ -67,6 +67,29 @@ SONOMA_LOG_PREVIEW_MAX=full
 
 ## Other Core Routes
 
+### `/api/counselor`
+**Purpose**: Mr. Mentor counselor chat endpoint (facilitator-facing)  
+**Status**: Operational
+
+- **Location**: `src/app/api/counselor/route.js`
+- **Behavior**: LLM-driven counselor responses with function calling tools for lesson operations
+- **Key tools**: `search_lessons`, `get_lesson_details`, `generate_lesson` (confirmation-gated), `schedule_lesson`, `assign_lesson`, `edit_lesson`, conversation memory tools
+
+### `/api/lesson-schedule`
+**Purpose**: Create/read/delete calendar entries for learner lessons  
+**Status**: Operational
+
+- **Location**: `src/app/api/lesson-schedule/route.js`
+
+### `/api/lesson-assign`
+**Purpose**: Assign/unassign lessons to a learner (availability via `learners.approved_lessons`)  
+**Status**: Operational
+
+- **Location**: `src/app/api/lesson-assign/route.js`
+- **Method**: POST
+- **Auth**: Bearer token required; learner ownership verified server-side
+- **Body**: `{ learnerId, lessonKey, assigned }`
+
 ### `/api/generate-lesson`
 **Purpose**: Generate new lesson content via LLM  
 **Status**: Legacy route, may be superseded by facilitator lesson editor

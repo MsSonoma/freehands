@@ -98,7 +98,7 @@ Curriculum Planning Expertise:
 
 YOUR TOOLS - YOU CAN USE THESE RIGHT NOW:
 
-You have 5 function calling tools available. Use them actively during conversations:
+You have 8 function calling tools available. Use them actively during conversations:
 
 1. SEARCH_LESSONS - Search the entire lesson library
    - When they ask "do you have lessons on X?" → USE THIS TOOL
@@ -129,18 +129,26 @@ You have 5 function calling tools available. Use them actively during conversati
    - CRITICAL: DO NOT say you've scheduled something unless you ACTUALLY call the schedule_lesson function
    - NEVER confirm scheduling without calling the function first
 
-5. EDIT_LESSON - Modify existing lessons (ALL lessons: installed subjects AND facilitator-created)
+5. ASSIGN_LESSON - Make a lesson available to a learner (not a calendar event)
+  - When they say "assign this lesson" "make this available" "show this lesson" → YOU MUST ACTUALLY CALL THIS FUNCTION
+  - Use this when they want the learner to see the lesson as available, without picking a date
+  - You can use the learner's NAME (like "Emma") - the system will find them
+  - Need: learner name, lesson key from search/generate
+  - CRITICAL: DO NOT say you've assigned something unless you ACTUALLY call the assign_lesson function
+  - After successful assignment, ask: "I've assigned [lesson title] to [learner name]. Is that correct?"
+
+6. EDIT_LESSON - Modify existing lessons (ALL lessons: installed subjects AND facilitator-created)
    - When they ask to change/fix/update/edit a lesson → USE THIS TOOL
    - Can edit: vocabulary, teaching notes, blurb, questions (all types)
    - Works on both pre-installed lessons AND custom facilitator lessons
 
-6. GET_CONVERSATION_MEMORY - Retrieve past conversation summaries
+7. GET_CONVERSATION_MEMORY - Retrieve past conversation summaries
    - When you need context from previous sessions → USE THIS TOOL
    - When they mention something discussed before → USE THIS TOOL
    - Automatically loads at start of each conversation for continuity
    - Can search across all past conversations with keywords
 
-7. SEARCH_CONVERSATION_HISTORY - Search past conversations with keywords
+8. SEARCH_CONVERSATION_HISTORY - Search past conversations with keywords
    - When they say "what did we discuss about X?" → USE THIS TOOL
    - When they want to review past advice or plans → USE THIS TOOL
    - Uses fuzzy matching to find relevant past conversations
@@ -174,6 +182,8 @@ CRITICAL ESCAPE MECHANISM - If You're Already Collecting Generation Parameters:
 CRITICAL: When someone asks about lessons, DON'T say "I can't access" or "I'm unable to" - JUST USE THE SEARCH TOOL.
 CRITICAL: When someone asks you to schedule a lesson, you MUST call the schedule_lesson function. DO NOT confirm scheduling without actually calling it.
 CRITICAL: NEVER say "I've scheduled" or "has been scheduled" unless you actually called the schedule_lesson function and got a success response.
+CRITICAL: When someone asks you to assign a lesson to a learner (make it available), you MUST call the assign_lesson function. DO NOT confirm assignment without actually calling it.
+CRITICAL: NEVER say "I've assigned" unless you actually called assign_lesson and got a success response.
 If you need details on parameters, call get_capabilities first.
 Use these tools proactively - they expect you to search and find things for them.
 
@@ -346,6 +356,14 @@ function buildToolLogMessage(name, phase, context = {}) {
       }
       if (phase === 'error') return 'Could not schedule the lesson.'
       break
+    case 'assign_lesson':
+      if (phase === 'start') return 'Making the lesson available to the learner...'
+      if (phase === 'success') {
+        const learner = context.learnerName ? ` for ${context.learnerName}` : ''
+        return `Lesson assigned${learner}.`
+      }
+      if (phase === 'error') return 'Could not assign the lesson.'
+      break
     case 'edit_lesson':
       if (phase === 'start') return 'Improving the lesson...'
       if (phase === 'success') return 'Lesson updates are saved.'
@@ -494,13 +512,27 @@ function getCapabilitiesInfo(args) {
       purpose: 'Add a lesson to a learner\'s calendar for a specific date',
       when_to_use: 'When facilitator asks to schedule/add a lesson to a calendar, or says "put that on Monday"',
       parameters: {
-        learnerId: 'Required. The learner\'s ID from context (you get this from learner transcript when they select a learner)',
+        learnerName: 'Required. The learner\'s name (e.g., "Emma"). The system will find the matching learner.',
         lessonKey: 'Required. Format: "subject/filename.json" (you get this from search results or after generating)',
         scheduledDate: 'Required. Date in YYYY-MM-DD format. CRITICAL: The current year is 2025. When user says "October 26th" they mean 2025-10-26, NOT 2023. Always use year 2025 unless they specify a different year. Convert natural language like "next Monday" to proper format.'
       },
       returns: 'Success confirmation with scheduled date and lesson key',
-      notes: 'Learner must be selected in dropdown for you to have their ID in context',
-      example: 'Schedule for Emma on Dec 18: {learnerId: "abc123", lessonKey: "math/Multiplication_Basics.json", scheduledDate: "2025-12-18"}'
+      notes: 'Use learnerName when calling schedule_lesson. If the name is ambiguous, ask the facilitator to clarify.',
+      example: 'Schedule for Emma on Dec 18: {learnerName: "Emma", lessonKey: "math/Multiplication_Basics.json", scheduledDate: "2025-12-18"}'
+    },
+
+    assign_lesson: {
+      name: 'assign_lesson',
+      purpose: 'Assign a lesson to a learner so it shows up as available (not scheduled on a date)',
+      when_to_use: 'When facilitator asks to assign a lesson, make it available, or show it to a learner without choosing a date',
+      parameters: {
+        learnerName: 'Required. The learner\'s name (e.g., "Emma"). The system will find the matching learner.',
+        lessonKey: 'Required. Format: "subject/filename.json" (from search results or after generating).',
+        lessonTitle: 'Optional. Human-readable title for confirmation (if known). If unknown, call get_lesson_details first.'
+      },
+      returns: 'Success confirmation with learner name and lesson key',
+      notes: 'Use assign_lesson when the user says "assign" and does not request a calendar date. For calendar placement, use schedule_lesson.',
+      example: 'Assign for Emma: {learnerName: "Emma", lessonKey: "math/Multiplication_Basics.json"}'
     },
     
     edit_lesson: {
@@ -574,6 +606,7 @@ function getCapabilitiesInfo(args) {
       'Tell me about lesson Y': 'get_lesson_details → summarize',
       'Create a lesson about X': 'generate_lesson (but search first!)',
       'Schedule lesson for learner': 'schedule_lesson (need lessonKey from search/generate)',
+      'Assign lesson to learner': 'assign_lesson (need lessonKey from search/generate)',
       'Fix/edit a lesson': 'get_lesson_details → edit_lesson (with updates)'
     }
   }
@@ -1057,6 +1090,118 @@ async function executeLessonScheduling(args, request, toolLog) {
   }
 }
 
+// Helper function to execute lesson assignment (approved_lessons)
+async function executeLessonAssignment(args, request, toolLog) {
+  try {
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      return { error: 'Authentication required' }
+    }
+
+    const baseUrl = resolveBaseUrl(request)
+    pushToolLog(toolLog, {
+      name: 'assign_lesson',
+      phase: 'start',
+      context: { learnerName: args.learnerName }
+    })
+
+    if (!args.learnerName) {
+      return { error: 'Missing learnerName - you need to specify which learner to assign for' }
+    }
+    if (!args.lessonKey) {
+      return { error: 'Missing lessonKey - need the lesson identifier like "subject/filename.json"' }
+    }
+
+    const normalizedLessonKey = normalizeLessonKey(args.lessonKey)
+
+    // Look up the learner by name via Supabase (route will verify authorization on write)
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    )
+
+    const { data: learners, error: learnersError } = await supabase
+      .from('learners')
+      .select('id, name')
+      .order('created_at', { ascending: false })
+
+    if (learnersError) {
+      return { error: 'Failed to fetch learners list', details: learnersError }
+    }
+
+    const normalizedSearchName = args.learnerName.toLowerCase().trim()
+    const matchingLearner = learners.find(l =>
+      l.name?.toLowerCase().trim() === normalizedSearchName
+    )
+
+    if (!matchingLearner) {
+      pushToolLog(toolLog, {
+        name: 'assign_lesson',
+        phase: 'error',
+        context: { message: `Learner ${args.learnerName} not found` }
+      })
+      return {
+        error: `Could not find a learner named "${args.learnerName}". Available learners: ${learners.map(l => l.name).join(', ')}`
+      }
+    }
+
+    const assignUrl = new URL('/api/lesson-assign', baseUrl)
+    const assignResponse = await fetch(assignUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader
+      },
+      body: JSON.stringify({
+        learnerId: matchingLearner.id,
+        lessonKey: normalizedLessonKey,
+        assigned: true
+      })
+    })
+
+    const result = await assignResponse.json().catch(() => ({}))
+
+    if (!assignResponse.ok) {
+      pushToolLog(toolLog, {
+        name: 'assign_lesson',
+        phase: 'error',
+        context: { message: result.error || 'Lesson assignment failed' }
+      })
+      return { error: result.error || 'Lesson assignment failed', details: result }
+    }
+
+    pushToolLog(toolLog, {
+      name: 'assign_lesson',
+      phase: 'success',
+      context: { learnerName: matchingLearner.name }
+    })
+
+    let resolvedTitle = args.lessonTitle || null
+    if (!resolvedTitle) {
+      const details = await executeGetLessonDetails({ lessonKey: normalizedLessonKey }, request, toolLog)
+      if (details?.success && details?.title) {
+        resolvedTitle = details.title
+      }
+    }
+
+    return {
+      success: true,
+      lessonKey: normalizedLessonKey,
+      learnerName: matchingLearner.name,
+      lessonTitle: resolvedTitle,
+      message: `Lesson has been assigned for ${matchingLearner.name}.`
+    }
+  } catch (err) {
+    pushToolLog(toolLog, {
+      name: 'assign_lesson',
+      phase: 'error',
+      context: { message: err?.message || String(err) }
+    })
+    return { error: err.message || String(err) }
+  }
+}
+
 // Helper function to execute lesson editing
 async function executeLessonEdit(args, request, toolLog) {
   try {
@@ -1398,8 +1543,8 @@ export async function POST(req) {
             properties: {
               action: {
                 type: 'string',
-                description: 'Specific action to get help with (optional). Options: generate_lesson, schedule_lesson, search_lessons, get_lesson_details, or omit for all capabilities.',
-                enum: ['generate_lesson', 'schedule_lesson', 'search_lessons', 'get_lesson_details', 'all']
+                description: 'Specific action to get help with (optional). Options: generate_lesson, schedule_lesson, assign_lesson, search_lessons, get_lesson_details, or omit for all capabilities.',
+                enum: ['generate_lesson', 'schedule_lesson', 'assign_lesson', 'search_lessons', 'get_lesson_details', 'all']
               }
             }
           }
@@ -1512,6 +1657,31 @@ export async function POST(req) {
               }
             },
             required: ['learnerName', 'lessonKey', 'scheduledDate']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'assign_lesson',
+          description: 'Assign a lesson to a learner so it shows up as available (not scheduled on a date). Use this when the facilitator says to assign/make available/show a lesson without picking a calendar date.',
+          parameters: {
+            type: 'object',
+            properties: {
+              learnerName: {
+                type: 'string',
+                description: 'The name of the learner (e.g., "Emma", "John"). The system will find the matching learner.'
+              },
+              lessonKey: {
+                type: 'string',
+                description: 'The lesson identifier in format "subject/filename" (e.g., "math/Addition_Basics.json")'
+              },
+              lessonTitle: {
+                type: 'string',
+                description: 'Optional human-readable title for confirmation (if known). If unknown, call get_lesson_details first.'
+              }
+            },
+            required: ['learnerName', 'lessonKey']
           }
         }
       },
@@ -1763,6 +1933,8 @@ export async function POST(req) {
             result = await executeLessonGeneration(functionArgs, req, toolLog)
           } else if (functionName === 'schedule_lesson') {
             result = await executeLessonScheduling(functionArgs, req, toolLog)
+          } else if (functionName === 'assign_lesson') {
+            result = await executeLessonAssignment(functionArgs, req, toolLog)
           } else if (functionName === 'edit_lesson') {
             result = await executeLessonEdit(functionArgs, req, toolLog)
           } else if (functionName === 'get_conversation_memory') {

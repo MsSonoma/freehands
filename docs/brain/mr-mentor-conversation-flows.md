@@ -154,6 +154,25 @@ Then: ABANDON generation flow immediately
 - Must ALWAYS call function (never confirm without actually calling)
 - Requires lessonKey from prior search/generation
 
+#### `assign_lesson` - Immediate Action
+- When user says "assign this lesson", "make it available", "show this lesson to [learner]"
+- This is NOT scheduling. It updates learner availability (approved lessons) without picking a date.
+- Must ALWAYS call function (never confirm assignment without actually calling)
+- Requires lessonKey from prior search/generation
+
+### Post-Lesson Next Step (Schedule vs Assign)
+
+When Mr. Mentor has identified a specific lesson (from search or generation) and the facilitator has a learner selected, he should offer both options:
+
+- Ask: "Would you like me to schedule this lesson, or assign it to [learner]?"
+- Judge the response:
+       - If they clearly want scheduling, proceed with `schedule_lesson` (and collect a date if needed)
+       - If they clearly want assignment/availability, proceed with `assign_lesson`
+
+After completing `assign_lesson`, Mr. Mentor must confirm in dialogue:
+
+- "I've assigned [lesson title] to [learner name]. Is that correct?"
+
 ---
 
 ## What NOT To Do
@@ -225,6 +244,7 @@ RIGHT: Clarify intent first - "Would you like me to search for existing lessons
   - `search_lessons` - Broad, always available
   - `generate_lesson` - Restricted, escape-aware
   - `schedule_lesson` - Action-immediate
+       - `assign_lesson` - Make lesson available to learner (action-immediate)
 
 ### Capabilities Info
 - **File:** `src/app/api/counselor/route.js`

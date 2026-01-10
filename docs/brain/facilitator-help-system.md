@@ -1,6 +1,6 @@
 # Facilitator Help System
 
-**Last Updated:** 2025-12-15  
+**Last Updated:** 2026-01-10  
 **Status:** Canonical
 
 ---
@@ -31,7 +31,11 @@ Three reusable help components live in `src/components/FacilitatorHelp/`:
 
 3. **PageHeader** - Consistent page title with optional subtitle
    - Replaces inconsistent h1/p patterns across facilitator pages
-   - Props: `title`, `subtitle`, `children` (optional additional help content)
+   - Props:
+     - `title`, `subtitle`, `children`
+     - `dense` (boolean): opt-in reduced vertical spacing and slightly smaller typography
+     - `className` (string): optional wrapper class for page-specific layout tweaks
+   - Design rule: `dense` should be opt-in per page so global facilitator spacing does not shift unexpectedly
 
 ### Placement Strategy
 
@@ -52,7 +56,7 @@ Three reusable help components live in `src/components/FacilitatorHelp/`:
 
 **PageHeader** replaces:
 - Standalone h1/p combos on Calendar, Learners, Lessons pages
-- Provides consistent page context and color legend (calendar colors)
+- Provides consistent page context
 
 ### Import Pattern
 
@@ -170,6 +174,11 @@ Example:
 ---
 
 ## Recent Changes
+
+**2026-01-10**: Added `PageHeader` dense mode.
+- Purpose: allow specific pages (e.g., Calendar) to reduce header vertical footprint without changing global facilitator layouts.
+- Implementation: `dense` reduces the default margins and slightly reduces title/subtitle sizing.
+- Tightness: `dense` is intentionally more compact than the default header; use it only where vertical space is at a premium.
 
 **2025-12-15**: Removed "Don't show again" functionality. Help is now fully voluntary - users click ❓ to view, click backdrop/X to close. No localStorage persistence needed. Simplified component state.
 

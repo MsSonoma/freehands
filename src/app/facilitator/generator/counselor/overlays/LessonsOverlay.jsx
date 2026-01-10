@@ -9,8 +9,8 @@ import LessonEditor from '@/components/LessonEditor'
 import VisualAidsCarousel from '@/components/VisualAidsCarousel'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
+import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 
-const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
 function normalizeApprovedLessonKeys(raw) {
@@ -47,6 +47,7 @@ function normalizeApprovedLessonKeys(raw) {
 
 export default function LessonsOverlay({ learnerId }) {
   const router = useRouter()
+  const { coreSubjects, subjectNames } = useFacilitatorSubjects({ includeGenerated: true })
   const [allLessons, setAllLessons] = useState({})
   const [approvedLessons, setApprovedLessons] = useState({})
   const [lessonNotes, setLessonNotes] = useState({})
@@ -133,8 +134,8 @@ export default function LessonsOverlay({ learnerId }) {
 
   const isLearnerScoped = Boolean(learnerId && learnerId !== 'none')
   const subjectOptions = useMemo(
-    () => SUBJECTS, // Show all subjects including 'generated' regardless of learner selection
-    []
+    () => subjectNames.filter((s) => String(s).toLowerCase() !== 'generated'), // Don't show 'generated' in this dropdown
+    [subjectNames]
   )
 
   const loadLessons = useCallback(async (force = false) => {
@@ -146,7 +147,7 @@ export default function LessonsOverlay({ learnerId }) {
       const token = session?.access_token
 
       const results = {}
-      const subjectsToFetch = SUBJECTS.filter(subject => subject !== 'generated')
+      const subjectsToFetch = coreSubjects
 
       for (const subject of subjectsToFetch) {
         try {

@@ -11,7 +11,8 @@ import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { PageHeader, WorkflowGuide } from '@/components/FacilitatorHelp'
 
-const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
+import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
+
 const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
 function normalizeApprovedLessonKeys(map = {}) {
@@ -33,11 +34,15 @@ function normalizeApprovedLessonKeys(map = {}) {
 export default function FacilitatorLessonsPage() {
   const router = useRouter()
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
+  const { coreSubjects, subjectsWithoutGenerated: subjectDropdownOptions } = useFacilitatorSubjects({ includeGenerated: true })
   const [pinChecked, setPinChecked] = useState(false)
   const [tier, setTier] = useState('free')
   const [learners, setLearners] = useState([])
   const [selectedLearnerId, setSelectedLearnerId] = useState(null)
   const [allLessons, setAllLessons] = useState({}) // { subject: [lessons] }
+  const [lessonLibraryScope, setLessonLibraryScope] = useState('owned') // owned | downloadable | all
+  const [ownedLessonKeys, setOwnedLessonKeys] = useState({}) // { 'subject/file.json': true }
+  const [downloadingLesson, setDownloadingLesson] = useState(null) // `${subject}/${file}`
   const [availableLessons, setAvailableLessons] = useState({}) // { 'subject/lesson_file': true } - lessons shown to learner
   const [scheduledLessons, setScheduledLessons] = useState({}) // { 'subject/lesson_file': true } - lessons scheduled for today
   const [futureScheduledLessons, setFutureScheduledLessons] = useState({}) // { 'subject/lesson_file': 'YYYY-MM-DD' } - lessons scheduled for future dates
@@ -190,80 +195,177 @@ export default function FacilitatorLessonsPage() {
     let cancelled = false
     ;(async () => {
       setLessonsLoading(true)
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      
+
       const lessonsMap = {}
-      
-      // Load lessons from public folders for each subject
-      for (const subject of SUBJECTS) {
-        try {
-          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
-            cache: 'no-store'
-          })
-          if (!res.ok) {
-            if (subject === 'generated' && res.status === 401) {
+
+      // Start loading public lesson lists immediately (no auth needed) and do it in parallel.
+      const publicSubjects = coreSubjects
+      await Promise.all(
+        publicSubjects.map(async (subject) => {
+          try {
+            const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { cache: 'no-store' })
+            if (!res.ok) {
               lessonsMap[subject] = []
-              continue
+              return
             }
-            let errorDetail = ''
-            try {
-              const errorData = await res.json()
-              errorDetail = errorData.detail || errorData.error || ''
-            } catch {}
+            const list = await res.json()
+            lessonsMap[subject] = Array.isArray(list) ? list : []
+          } catch {
             lessonsMap[subject] = []
-            continue
           }
-          const list = await res.json()
-          lessonsMap[subject] = Array.isArray(list) ? list : []
-        } catch (err) {
-          lessonsMap[subject] = []
-        }
+        })
+      )
+
+      // Initialize generated bucket even if we haven't loaded owned lessons yet.
+      lessonsMap['generated'] = []
+
+      // Publish public lessons ASAP so Load Lessons feels instant.
+      if (!cancelled) {
+        setAllLessons({ ...lessonsMap })
+        setLessonsLoading(false)
       }
-      
-      // Load generated lessons from user's storage
-      if (token) {
-        try {
+
+      // Now load owned lessons (requires auth) and merge them in.
+      try {
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+
+        if (token) {
           const res = await fetch('/api/facilitator/lessons/list', {
             cache: 'no-store',
             headers: { Authorization: `Bearer ${token}` }
           })
+
           if (res.ok) {
             const generatedList = await res.json()
-            const sortedGeneratedList = generatedList.sort((a, b) => {
-              const timeA = new Date(a.created_at || 0).getTime()
-              const timeB = new Date(b.created_at || 0).getTime()
+            const sortedGeneratedList = (Array.isArray(generatedList) ? generatedList : []).sort((a, b) => {
+              const timeA = new Date(a?.created_at || 0).getTime()
+              const timeB = new Date(b?.created_at || 0).getTime()
               return timeB - timeA
             })
-            
-            if (!lessonsMap['generated']) lessonsMap['generated'] = []
-            
+
+            const owned = {}
             for (const lesson of sortedGeneratedList) {
-              const subject = lesson.subject || 'math'
-              const generatedLesson = {
-                ...lesson,
-                isGenerated: true
-              }
-              
-              if (!lessonsMap[subject]) lessonsMap[subject] = []
-              lessonsMap[subject].unshift(generatedLesson)
-              
-              lessonsMap['generated'].push(generatedLesson)
+              const subj = (lesson?.subject || '').toString().toLowerCase() || 'math'
+              const file = lesson?.file
+              if (file) owned[`${subj}/${file}`] = true
             }
+            if (!cancelled) setOwnedLessonKeys(owned)
+
+            const merged = { ...lessonsMap, generated: [] }
+            for (const lesson of sortedGeneratedList.slice().reverse()) {
+              const subject = lesson.subject || 'math'
+              const generatedLesson = { ...lesson, isGenerated: true }
+              if (!merged[subject]) merged[subject] = []
+              merged[subject].unshift(generatedLesson)
+              merged['generated'].push(generatedLesson)
+            }
+
+            if (!cancelled) setAllLessons(merged)
           }
-        } catch (err) {
-          // Silent fail
         }
-      }
-      
-      if (!cancelled) {
-        setAllLessons(lessonsMap)
-        setLessonsLoading(false)
+      } catch {
+        // Silent fail
       }
     })()
     return () => { cancelled = true }
   }, []) // Load once on mount
+
+  async function refreshOwnedLessons() {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) return
+
+      const res = await fetch('/api/facilitator/lessons/list', {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) return
+
+      const generatedList = await res.json()
+      const sortedGeneratedList = (Array.isArray(generatedList) ? generatedList : []).sort((a, b) => {
+        const timeA = new Date(a?.created_at || 0).getTime()
+        const timeB = new Date(b?.created_at || 0).getTime()
+        return timeB - timeA
+      })
+
+      const owned = {}
+      for (const lesson of sortedGeneratedList) {
+        const subj = (lesson?.subject || '').toString().toLowerCase() || 'math'
+        const file = lesson?.file
+        if (file) owned[`${subj}/${file}`] = true
+      }
+      setOwnedLessonKeys(owned)
+
+      setAllLessons((prev) => {
+        const next = {}
+        for (const [subject, lessons] of Object.entries(prev || {})) {
+          if (!Array.isArray(lessons)) {
+            next[subject] = lessons
+            continue
+          }
+          next[subject] = lessons.filter((l) => !l?.isGenerated)
+        }
+
+        const ownedLessons = []
+        for (const lesson of sortedGeneratedList.slice().reverse()) {
+          const subject = lesson?.subject || 'math'
+          const generatedLesson = { ...lesson, isGenerated: true }
+          if (!next[subject]) next[subject] = []
+          next[subject].unshift(generatedLesson)
+          ownedLessons.unshift(generatedLesson)
+        }
+
+        next['generated'] = ownedLessons
+        return next
+      })
+    } catch {
+      // Silent fail
+    }
+  }
+
+  async function downloadLesson(subject, file) {
+    if (!subject || !file) return
+
+    const key = `${subject}/${file}`
+    setDownloadingLesson(key)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) {
+        alert('Not authenticated')
+        return
+      }
+
+      const res = await fetch('/api/facilitator/lessons/download', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ subject, file })
+      })
+
+      if (!res.ok) {
+        let msg = 'Download failed'
+        try {
+          const data = await res.json()
+          if (data?.error) msg = data.error
+        } catch {}
+        throw new Error(msg)
+      }
+
+      await refreshOwnedLessons()
+    } catch (e) {
+      alert(e?.message || 'Download failed')
+    } finally {
+      setDownloadingLesson(null)
+    }
+  }
 
   // Load data for selected learner - as soon as learner is selected (not waiting for button)
   useEffect(() => {
@@ -438,6 +540,19 @@ export default function FacilitatorLessonsPage() {
       if (selectedSubject !== 'all' && subject !== selectedSubject) return
       
       lessons.forEach(lesson => {
+        const isOwned = lesson?.isGenerated === true
+        const fileName = lesson?.file || null
+        const ownedKey = isOwned
+          ? `${(lesson?.subject || subject || '').toString().toLowerCase() || 'math'}/${fileName || ''}`
+          : `${(subject || '').toString().toLowerCase()}/${fileName || ''}`
+        const ownedByKey = Boolean(fileName && ownedLessonKeys?.[ownedKey])
+
+        // If a public lesson has been downloaded (owned copy exists), hide the public entry.
+        if (!isOwned && ownedByKey) return
+
+        if (lessonLibraryScope === 'owned' && !isOwned) return
+        if (lessonLibraryScope === 'downloadable' && isOwned) return
+
         const lessonKey = lesson.isGenerated 
           ? `generated/${lesson.file}` 
           : `${subject}/${lesson.file}`
@@ -597,29 +712,48 @@ export default function FacilitatorLessonsPage() {
                 Browse, approve, and schedule lessons for your learners
               </p>
             </div>
-            <button
-              onClick={() => router.push('/facilitator/generator/lesson-maker')}
-              style={{
-                padding: '10px 16px',
-                background: '#3b82f6',
-                color: '#fff',
-                border: '1px solid #3b82f6',
-                borderRadius: 8,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: 14,
-                whiteSpace: 'nowrap',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#2563eb'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#3b82f6'
-              }}
-            >
-              ✨ Generate Lesson
-            </button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => router.push('/facilitator/lessons/edit?new=1')}
+                style={{
+                  padding: '10px 16px',
+                  background: '#fff',
+                  color: '#374151',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  whiteSpace: 'nowrap'
+                }}
+                title="Create a new lesson from scratch"
+              >
+                📝 New Lesson
+              </button>
+              <button
+                onClick={() => router.push('/facilitator/generator')}
+                style={{
+                  padding: '10px 16px',
+                  background: '#3b82f6',
+                  color: '#fff',
+                  border: '1px solid #3b82f6',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#2563eb'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#3b82f6'
+                }}
+              >
+                ✨ Generate Lesson
+              </button>
+            </div>
           </div>
         </div>
       
@@ -687,7 +821,6 @@ export default function FacilitatorLessonsPage() {
                   </option>
                 ))}
               </select>
-
               <input
                 type="text"
                 placeholder="Search lessons..."
@@ -717,7 +850,7 @@ export default function FacilitatorLessonsPage() {
                 }}
               >
                 <option value="all">All Subjects</option>
-                {SUBJECTS.filter(subject => subject !== 'generated').map(subject => (
+                {subjectDropdownOptions.map(subject => (
                   <option key={subject} value={subject} style={{ textTransform: 'capitalize' }}>
                     {subject === 'language arts' ? 'Language Arts' : 
                      subject === 'social studies' ? 'Social Studies' :
@@ -745,6 +878,24 @@ export default function FacilitatorLessonsPage() {
                     Grade {grade}
                   </option>
                 ))}
+              </select>
+
+              <select
+                value={lessonLibraryScope}
+                onChange={(e) => setLessonLibraryScope(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  background: '#fff',
+                  cursor: 'pointer',
+                  minWidth: '150px'
+                }}
+              >
+                <option value="owned">Owned</option>
+                <option value="downloadable">Downloadable</option>
+                <option value="all">All Lessons</option>
               </select>
 
               <button
@@ -880,18 +1031,25 @@ export default function FacilitatorLessonsPage() {
               {filteredLessons.map(lesson => {
                 const { lessonKey, subject, displayGrade } = lesson
                 const learnerSelected = Boolean(selectedLearnerId)
-                const isScheduled = learnerSelected && !!scheduledLessons[lessonKey]
-                const futureDate = learnerSelected ? futureScheduledLessons[lessonKey] : null
-                const hasActiveKey = learnerSelected && activeGoldenKeys[lessonKey] === true
-                const medalInfo = learnerSelected ? medals[lessonKey] : null
+                const isOwned = lesson?.isGenerated === true
+                const fileName = lesson?.file || null
+                const ownedKey = isOwned
+                  ? `${(lesson?.subject || subject || '').toString().toLowerCase() || 'math'}/${fileName || ''}`
+                  : `${(subject || '').toString().toLowerCase()}/${fileName || ''}`
+                const ownedByKey = Boolean(fileName && ownedLessonKeys?.[ownedKey])
+                const isDownloadableNotOwned = !isOwned && !ownedByKey
+                const isScheduled = learnerSelected && !isDownloadableNotOwned && !!scheduledLessons[lessonKey]
+                const futureDate = learnerSelected && !isDownloadableNotOwned ? futureScheduledLessons[lessonKey] : null
+                const hasActiveKey = learnerSelected && !isDownloadableNotOwned && activeGoldenKeys[lessonKey] === true
+                const medalInfo = learnerSelected && !isDownloadableNotOwned ? medals[lessonKey] : null
                 const hasCompleted = Boolean(learnerSelected && medalInfo && medalInfo.bestPercent > 0)
                 const medalEmoji = learnerSelected && medalInfo?.medalTier ? emojiForTier(medalInfo.medalTier) : null
-                const noteText = learnerSelected ? (lessonNotes[lessonKey] || '') : ''
-                const isEditingThisNote = learnerSelected && editingNote === lessonKey
-                const isSchedulingThis = learnerSelected && scheduling === lessonKey
-                const lastCompletedAt = learnerSelected ? lessonHistoryLastCompleted?.[lessonKey] : null
-                const inProgressAt = learnerSelected ? lessonHistoryInProgress?.[lessonKey] : null
-                const hasHistory = Boolean(learnerSelected && (lastCompletedAt || inProgressAt))
+                const noteText = learnerSelected && !isDownloadableNotOwned ? (lessonNotes[lessonKey] || '') : ''
+                const isEditingThisNote = learnerSelected && !isDownloadableNotOwned && editingNote === lessonKey
+                const isSchedulingThis = learnerSelected && !isDownloadableNotOwned && scheduling === lessonKey
+                const lastCompletedAt = learnerSelected && !isDownloadableNotOwned ? lessonHistoryLastCompleted?.[lessonKey] : null
+                const inProgressAt = learnerSelected && !isDownloadableNotOwned ? lessonHistoryInProgress?.[lessonKey] : null
+                const hasHistory = Boolean(learnerSelected && !isDownloadableNotOwned && (lastCompletedAt || inProgressAt))
                 
                 return (
                   <div key={`${subject}-${lessonKey}`} style={{
@@ -907,7 +1065,7 @@ export default function FacilitatorLessonsPage() {
                       flexWrap: 'wrap'
                     }}>
                       {/* Checkbox for making lesson available to learner */}
-                      {learnerSelected && (
+                      {learnerSelected && !isDownloadableNotOwned && (
                         <input
                           type="checkbox"
                           checked={!!availableLessons[lessonKey] || !!availableLessons[lessonKey.replace('general/', 'facilitator/')]}
@@ -968,30 +1126,57 @@ export default function FacilitatorLessonsPage() {
                         gap: 8,
                         flexShrink: 0
                       }}>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)
-                          }}
-                          style={{
-                            padding: '4px 10px',
-                            border: '1px solid #d1d5db',
-                            borderRadius: 4,
-                            background: '#fff',
-                            color: '#6b7280',
-                            fontSize: 12,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4
-                          }}
-                          title="Edit lesson"
-                        >
-                          ✏️ <span className="button-text-tablet">Edit</span>
-                        </button>
+                        {isDownloadableNotOwned ? (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              downloadLesson(subject, lesson.file)
+                            }}
+                            disabled={downloadingLesson === `${subject}/${lesson.file}`}
+                            style={{
+                              padding: '6px 12px',
+                              border: '1px solid #3b82f6',
+                              borderRadius: 4,
+                              background: '#3b82f6',
+                              color: '#fff',
+                              fontSize: 12,
+                              cursor: downloadingLesson === `${subject}/${lesson.file}` ? 'wait' : 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              fontWeight: 700
+                            }}
+                            title="Unlock this lesson to edit and assign"
+                          >
+                            ⬇️ <span className="button-text-tablet">{downloadingLesson === `${subject}/${lesson.file}` ? 'Downloading...' : 'Download'}</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)
+                            }}
+                            style={{
+                              padding: '4px 10px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: 4,
+                              background: '#fff',
+                              color: '#6b7280',
+                              fontSize: 12,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                            title="Edit lesson"
+                          >
+                            ✏️ <span className="button-text-tablet">Edit</span>
+                          </button>
+                        )}
 
-                        {learnerSelected && (
+                        {learnerSelected && !isDownloadableNotOwned && (
                           <>
                             <button
                               onClick={(e) => {

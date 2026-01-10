@@ -23,6 +23,15 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
   }
 
+  const toLocalDateStr = (dateLike) => {
+    const dt = new Date(dateLike)
+    if (Number.isNaN(dt.getTime())) return null
+    const year = dt.getFullYear()
+    const month = String(dt.getMonth() + 1).padStart(2, '0')
+    const day = String(dt.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const firstDayOfMonth = (date) => {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
   }
@@ -40,7 +49,7 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
     // Add days of the month
     for (let day = 1; day <= totalDays; day++) {
       const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
-      const dateStr = date.toISOString().split('T')[0]
+      const dateStr = toLocalDateStr(date)
       days.push({ day, date: dateStr })
     }
     

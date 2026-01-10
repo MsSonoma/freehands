@@ -11,12 +11,17 @@ import LessonCalendar from './LessonCalendar'
 import LessonPicker from './LessonPicker'
 import LessonPlanner from './LessonPlanner'
 import DayViewOverlay from './DayViewOverlay'
+import LessonNotesModal from './LessonNotesModal'
+import VisualAidsManagerModal from './VisualAidsManagerModal'
+import TypedRemoveConfirmModal from './TypedRemoveConfirmModal'
 import { InlineExplainer, PageHeader } from '@/components/FacilitatorHelp'
+import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
 
 export default function CalendarPage() {
   const router = useRouter()
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
   const [pinChecked, setPinChecked] = useState(false)
+  const [authToken, setAuthToken] = useState('')
   const [learners, setLearners] = useState([])
   const [selectedLearnerId, setSelectedLearnerId] = useState('')
   const [selectedDate, setSelectedDate] = useState(null)
@@ -31,6 +36,38 @@ export default function CalendarPage() {
   const [activeTab, setActiveTab] = useState('scheduler') // 'scheduler' or 'planner'
   const [showDayView, setShowDayView] = useState(false)
   const [noSchoolDates, setNoSchoolDates] = useState({}) // Format: { 'YYYY-MM-DD': 'reason' }
+
+  const [notesItem, setNotesItem] = useState(null)
+  const [visualAidsItem, setVisualAidsItem] = useState(null)
+  const [removeConfirmItem, setRemoveConfirmItem] = useState(null)
+
+  const getLocalTodayStr = () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const toLocalDateStr = (dateLike) => {
+    const dt = new Date(dateLike)
+    if (Number.isNaN(dt.getTime())) return null
+    const year = dt.getFullYear()
+    const month = String(dt.getMonth() + 1).padStart(2, '0')
+    const day = String(dt.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  // Canonical lesson id used for matching completion events to scheduled lessons.
+  // Completion rows often store a filename-ish id, while schedule stores subject/prefix paths.
+  // Canonicalize both to the same basename-without-extension.
+  const canonicalLessonId = (raw) => {
+    if (!raw) return null
+    const normalized = normalizeLessonKey(String(raw)) || String(raw)
+    const base = normalized.includes('/') ? normalized.split('/').pop() : normalized
+    const withoutExt = String(base || '').replace(/\.json$/i, '')
+    return withoutExt || null
+  }
 
   // Check PIN requirement on mount
   useEffect(() => {
@@ -163,12 +200,13 @@ export default function CalendarPage() {
         return
       }
 
-      const startDate = new Date()
-      const endDate = new Date()
-      endDate.setMonth(endDate.getMonth() + 3)
+      if (session.access_token !== authToken) setAuthToken(session.access_token)
 
+      // Load the full schedule history for this learner.
+      // This enables retroactive backfills (from lesson_history) to show up on older months.
+      // We still filter past dates to only completed lessons after loading.
       const response = await fetch(
-        `/api/lesson-schedule?learnerId=${selectedLearnerId}&startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`,
+        `/api/lesson-schedule?learnerId=${selectedLearnerId}`,
         {
           headers: {
             'authorization': `Bearer ${session.access_token}`,
@@ -205,12 +243,61 @@ export default function CalendarPage() {
       const data = await response.json()
       const schedule = data.schedule || []
 
+      const todayStr = getLocalTodayStr()
+
+      // Build a completion lookup keyed by "canonicalLessonId|YYYY-MM-DD" from lesson_session_events.
+      // Past scheduled dates will show only completed lessons.
+      let completedKeySet = new Set()
+      let completionLookupFailed = false
+      try {
+        const pastSchedule = (schedule || []).filter(s => s?.scheduled_date && s.scheduled_date < todayStr)
+        const minPastDate = pastSchedule.reduce((min, s) => (min && min < s.scheduled_date ? min : s.scheduled_date), null)
+
+        if (pastSchedule.length > 0 && minPastDate) {
+          const startIso = `${minPastDate}T00:00:00.000Z`
+          const endIso = `${todayStr}T23:59:59.999Z`
+
+          // IMPORTANT: Do not filter by lesson_id via `.in(...)` here.
+          // lesson_session_events.lesson_id historically varies in format (basename vs subject/path),
+          // and strict filtering can cause us to miss legitimate completions.
+          const { data: historyRows, error: historyErr } = await supabase
+            .from('lesson_session_events')
+            .select('lesson_id, occurred_at')
+            .eq('learner_id', selectedLearnerId)
+            .eq('event_type', 'completed')
+            .gte('occurred_at', startIso)
+            .lte('occurred_at', endIso)
+
+          if (historyErr) {
+            completionLookupFailed = true
+          } else {
+            for (const row of historyRows || []) {
+              const completedDate = toLocalDateStr(row?.occurred_at)
+              const key = canonicalLessonId(row?.lesson_id)
+              if (completedDate && key) completedKeySet.add(`${key}|${completedDate}`)
+            }
+          }
+        }
+      } catch {
+        // If completion lookup fails, fall back to showing schedule as-is.
+        completedKeySet = new Set()
+        completionLookupFailed = true
+      }
+
       const grouped = {}
       schedule.forEach(item => {
-        if (!grouped[item.scheduled_date]) {
-          grouped[item.scheduled_date] = []
-        }
-        grouped[item.scheduled_date].push(item)
+        const dateStr = item?.scheduled_date
+        const lessonKey = item?.lesson_key
+        if (!dateStr || !lessonKey) return
+
+        const isPast = dateStr < todayStr
+        const completed = completedKeySet.has(`${canonicalLessonId(lessonKey)}|${dateStr}`)
+
+        // Past dates: show only completed lessons.
+        if (isPast && !completed && !completionLookupFailed) return
+
+        if (!grouped[dateStr]) grouped[dateStr] = []
+        grouped[dateStr].push({ ...item, completed })
       })
 
       setScheduledLessons(grouped)
@@ -369,8 +456,10 @@ export default function CalendarPage() {
     }
   }
 
-  const handleRemoveScheduledLesson = async (item) => {
-    if (!confirm('Remove this lesson from the schedule?')) return
+  const handleRemoveScheduledLesson = async (item, opts = {}) => {
+    if (!opts?.skipConfirm) {
+      if (!confirm('Remove this lesson from the schedule?')) return
+    }
 
     try {
       const supabase = getSupabaseClient()
@@ -563,27 +652,17 @@ export default function CalendarPage() {
               </div>
 
               {/* Right Panel: Tabs for Scheduler and Planner */}
-              <div className="content-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className="content-panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <PageHeader
                   title="Lesson Calendar"
                   subtitle="Organize your teaching schedule with manual scheduling or automated planning"
-                >
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-medium">
-                      <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
-                      Scheduled
-                    </span>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
-                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                      Planned
-                    </span>
-                  </div>
-                </PageHeader>
+                  dense
+                />
                 
                 {/* Tab Headers */}
                 <div style={{
                   display: 'flex',
-                  gap: 8,
+                  gap: 6,
                   borderBottom: '2px solid #e5e7eb',
                   alignItems: 'center'
                 }}>
@@ -591,8 +670,8 @@ export default function CalendarPage() {
                     onClick={() => setActiveTab('scheduler')}
                     style={{
                       flex: 1,
-                      padding: '12px 16px',
-                      fontSize: 14,
+                      padding: '6px 10px',
+                      fontSize: 13,
                       fontWeight: 600,
                       border: 'none',
                       borderBottom: activeTab === 'scheduler' ? '2px solid #2563eb' : '2px solid transparent',
@@ -616,8 +695,8 @@ export default function CalendarPage() {
                     onClick={() => setActiveTab('planner')}
                     style={{
                       flex: 1,
-                      padding: '12px 16px',
-                      fontSize: 14,
+                      padding: '6px 10px',
+                      fontSize: 13,
                       fontWeight: 600,
                       border: 'none',
                       borderBottom: activeTab === 'planner' ? '2px solid #2563eb' : '2px solid transparent',
@@ -674,6 +753,7 @@ export default function CalendarPage() {
                         {scheduledForSelectedDate.map(item => {
                           const [subject, filename] = item.lesson_key.split('/')
                           const lessonName = filename?.replace('.json', '').replace(/_/g, ' ') || item.lesson_key
+                          const isPastSelectedDate = selectedDate < getLocalTodayStr()
                           
                           return (
                             <div
@@ -691,42 +771,103 @@ export default function CalendarPage() {
                                   {lessonName}
                                 </div>
                               </div>
-                              <button
-                                onClick={() => setRescheduling(item.id)}
-                                style={{
-                                  padding: '3px 10px',
-                                  fontSize: '11px',
-                                  fontWeight: '600',
-                                  borderRadius: '4px',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  background: '#eff6ff',
-                                  color: '#1e40af',
-                                  transition: 'background 0.15s'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = '#eff6ff'}
-                              >
-                                Reschedule
-                              </button>
-                              <button
-                                onClick={() => handleRemoveScheduledLesson(item)}
-                                style={{
-                                  padding: '3px 10px',
-                                  fontSize: '11px',
-                                  fontWeight: '600',
-                                  borderRadius: '4px',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  background: '#fee2e2',
-                                  color: '#991b1b',
-                                  transition: 'background 0.15s'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
-                              >
-                                Remove
-                              </button>
+                              {isPastSelectedDate ? (
+                                <>
+                                  <button
+                                    onClick={() => setNotesItem({ ...item, lessonTitle: lessonName })}
+                                    style={{
+                                      padding: '3px 10px',
+                                      fontSize: '11px',
+                                      fontWeight: '600',
+                                      borderRadius: '4px',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      background: '#f3f4f6',
+                                      color: '#111827',
+                                      transition: 'background 0.15s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = '#f3f4f6'}
+                                  >
+                                    Notes
+                                  </button>
+                                  <button
+                                    onClick={() => setVisualAidsItem({ ...item, lessonTitle: lessonName })}
+                                    style={{
+                                      padding: '3px 10px',
+                                      fontSize: '11px',
+                                      fontWeight: '600',
+                                      borderRadius: '4px',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      background: '#eff6ff',
+                                      color: '#1e40af',
+                                      transition: 'background 0.15s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = '#eff6ff'}
+                                  >
+                                    Add Image
+                                  </button>
+                                  <button
+                                    onClick={() => setRemoveConfirmItem({ ...item, lessonTitle: lessonName })}
+                                    style={{
+                                      padding: '3px 10px',
+                                      fontSize: '11px',
+                                      fontWeight: '600',
+                                      borderRadius: '4px',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      background: '#fee2e2',
+                                      color: '#991b1b',
+                                      transition: 'background 0.15s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
+                                  >
+                                    Remove
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => setRescheduling(item.id)}
+                                    style={{
+                                      padding: '3px 10px',
+                                      fontSize: '11px',
+                                      fontWeight: '600',
+                                      borderRadius: '4px',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      background: '#eff6ff',
+                                      color: '#1e40af',
+                                      transition: 'background 0.15s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = '#eff6ff'}
+                                  >
+                                    Reschedule
+                                  </button>
+                                  <button
+                                    onClick={() => handleRemoveScheduledLesson(item)}
+                                    style={{
+                                      padding: '3px 10px',
+                                      fontSize: '11px',
+                                      fontWeight: '600',
+                                      borderRadius: '4px',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      background: '#fee2e2',
+                                      color: '#991b1b',
+                                      transition: 'background 0.15s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
+                                  >
+                                    Remove
+                                  </button>
+                                </>
+                              )}
                             </div>
                           )
                         })}
@@ -854,6 +995,36 @@ export default function CalendarPage() {
                 </div>
               </div>
             )}
+
+            <LessonNotesModal
+              open={!!notesItem}
+              onClose={() => setNotesItem(null)}
+              learnerId={selectedLearnerId}
+              lessonKey={notesItem?.lesson_key}
+              lessonTitle={notesItem?.lessonTitle || 'Lesson Notes'}
+            />
+
+            <VisualAidsManagerModal
+              open={!!visualAidsItem}
+              onClose={() => setVisualAidsItem(null)}
+              learnerId={selectedLearnerId}
+              lessonKey={visualAidsItem?.lesson_key}
+              lessonTitle={visualAidsItem?.lessonTitle || 'Visual Aids'}
+              authToken={authToken}
+            />
+
+            <TypedRemoveConfirmModal
+              open={!!removeConfirmItem}
+              onClose={() => setRemoveConfirmItem(null)}
+              title="Remove lesson?"
+              description="This cannot be undone. Type remove to confirm."
+              confirmWord="remove"
+              confirmLabel="Remove"
+              onConfirm={async () => {
+                if (!removeConfirmItem) return
+                await handleRemoveScheduledLesson(removeConfirmItem, { skipConfirm: true })
+              }}
+            />
 
             {/* Day View Overlay */}
             {showDayView && selectedDate && (

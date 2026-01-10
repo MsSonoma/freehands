@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 import AIRewriteButton from '@/components/AIRewriteButton'
+import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 
-const subjects = ['math', 'language arts', 'science', 'social studies', 'general']
 const difficulties = ['beginner', 'intermediate', 'advanced']
 
 export default function LessonMakerOverlay({ tier }) {
+  const { subjectsWithoutGenerated: subjects } = useFacilitatorSubjects()
   const [form, setForm] = useState({
     grade: '', 
     difficulty: 'intermediate', 

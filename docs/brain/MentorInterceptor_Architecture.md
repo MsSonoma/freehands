@@ -33,6 +33,26 @@ Front-end conversation handler for Mr. Mentor that intercepts user messages to:
   - Executes interceptor actions (schedule, generate, edit)
   - Falls back to API when interceptor doesn't handle
 
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+- **overlays/LessonsOverlay.jsx**
+  - Lesson search and selection UI used inside Mr. Mentor
+
 ### Intent Detection
 
 **Pattern-based detection with confidence scoring:**
@@ -48,7 +68,11 @@ INTENT_PATTERNS = {
     confidence: (msg) => keyword_count / total_words
   },
   schedule: {
-    keywords: ['schedule', 'assign', 'plan', 'set up'],
+    keywords: ['schedule', 'calendar', 'plan', 'set up'],
+    confidence: (msg) => keyword_count / total_words
+  },
+  assign: {
+    keywords: ['assign', 'make available', 'show lesson', 'available'],
     confidence: (msg) => keyword_count / total_words
   },
   edit: {
@@ -190,6 +214,12 @@ User: "yes"
 Bot: "Generating fractions... This will take about 30-60 seconds."
 ```
 
+**After generation completes:** Mr. Mentor should offer the next step:
+
+- "Would you like me to schedule this lesson, or assign it to [learner]?"
+- Scheduling requires a date (calendar event).
+- Assigning makes the lesson available to the learner without a date.
+
 **Action execution:**
 ```javascript
 {
@@ -206,8 +236,8 @@ Bot: "Generating fractions... This will take about 30-60 seconds."
 
 ### 3. Schedule Flow
 
-**Intent:** User wants to schedule a lesson for a learner  
-**Examples:** "schedule Multiplying with Zeros for Monday", "assign 4th grade math on December 18th"
+**Intent:** User wants to schedule a lesson for a learner on a specific date  
+**Examples:** "schedule Multiplying with Zeros for Monday", "put 4th grade math on December 18th"
 
 **Steps:**
 1. Detect schedule intent
@@ -247,6 +277,27 @@ POST /api/facilitator/lessons/schedule
 **Event dispatch:**
 ```javascript
 window.dispatchEvent(new Event('mr-mentor:lesson-scheduled'))
+```
+
+### 3b. Assign Flow
+
+**Intent:** User wants a lesson to show up as available to a learner (no date).  
+**Examples:** "assign this lesson to Emma", "make this lesson available", "show this lesson to her"
+
+**Steps:**
+1. Detect assign intent
+2. Check for selected learner (required)
+3. Resolve lesson (use selectedLesson from search/generation; otherwise search and ask user to select)
+4. Execute assignment immediately
+5. Confirm in dialogue: "I've assigned [lesson title] to [learner name]. Is that correct?"
+6. If user says "no", undo the assignment and ask what to do next
+
+**Action execution:**
+```javascript
+{
+  type: 'assign',
+  lessonKey: 'math/4th-multiplying-with-zeros.json'
+}
 ```
 
 ### 4. Edit Flow

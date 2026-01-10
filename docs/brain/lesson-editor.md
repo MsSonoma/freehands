@@ -2,13 +2,18 @@
 
 ## How It Works
 
-Facilitators edit generated lessons through a structured, form-based interface that maintains JSON integrity and prevents syntax errors.
+Facilitators edit owned lessons (Storage-backed) through a structured, form-based interface that maintains JSON integrity and prevents syntax errors.
+
+The editor also supports creating a brand-new lesson from scratch:
+- The Lesson Library page has a **📝 New Lesson** button.
+- This opens the Lesson Editor with a blank lesson.
+- No lesson file is created in Storage until the user presses Save.
 
 ### Structured Editing Interface
 - Form-based editing instead of raw JSON manipulation
 - Each lesson component has its own editor section
 - Visual validation and error feedback
-- Located: Facilitator Tools -> Generated Lessons -> Edit Lesson button
+- Accessed from the Lesson Library (Edit or New Lesson)
 
 ### Dynamic Field Management
 - Add unlimited items to any section (vocab terms, questions, answer options)
@@ -81,13 +86,19 @@ Facilitators edit generated lessons through a structured, form-based interface t
 
 ### Workflow
 
-1. Navigate to Facilitator Tools -> Generated Lessons
-2. Click "Edit Lesson" on any lesson card
+**Edit existing owned lesson**
+1. Go to Lesson Library
+2. Click "Edit" on an owned lesson
 3. Edit any fields in the structured form
-4. Add items with green "+ Add" buttons
-5. Remove items with red "Remove" buttons
-6. Save Changes to update the JSON file
-7. Cancel to discard changes
+4. Save Changes to update the Storage-backed JSON file
+5. Cancel to discard changes
+
+**Create a new lesson from scratch**
+1. Go to Lesson Library
+2. Click **📝 New Lesson**
+3. Fill in lesson fields (title, grade, difficulty, subject, etc.)
+4. Press Save to create the lesson in Storage
+5. Cancel to discard (no Storage file is created)
 
 ## Integration with Existing Features
 
@@ -102,9 +113,10 @@ Facilitators edit generated lessons through a structured, form-based interface t
 
 ## Key Files
 
-- Facilitator generated lessons page - Edit Lesson button
-- Structured form components for each question type
-- JSON validation and cleanup utilities
+- Structured form UI: `src/components/LessonEditor.jsx`
+- Lesson editor page: `src/app/facilitator/lessons/edit/page.js`
+- Save existing lesson: `src/app/api/lesson-edit/route.js`
+- Create new lesson on first save: `src/app/api/facilitator/lessons/create/route.js`
 
 ## What NOT To Do
 

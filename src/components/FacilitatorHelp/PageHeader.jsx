@@ -10,15 +10,15 @@
  * @param {string} subtitle - Optional subtitle or description
  * @param {JSX.Element} children - Optional additional help content
  */
-export default function PageHeader({ title, subtitle, children }) {
+export default function PageHeader({ title, subtitle, children, dense = false, className = '' }) {
   return (
-    <div className="mb-6">
-      <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+    <div className={`${dense ? 'mb-2' : 'mb-6'} ${className}`.trim()}>
+      <h1 className={`${dense ? 'text-lg leading-tight' : 'text-2xl'} font-bold text-gray-900`}>{title}</h1>
       {subtitle && (
-        <p className="mt-2 text-gray-600">{subtitle}</p>
+        <p className={`${dense ? 'mt-0.5 text-xs leading-snug' : 'mt-2'} text-gray-600`}>{subtitle}</p>
       )}
       {children && (
-        <div className="mt-3">
+        <div className={dense ? 'mt-1' : 'mt-3'}>
           {children}
         </div>
       )}

@@ -10,6 +10,7 @@ function EditLessonContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const lessonKey = searchParams.get('key')
+  const isNewLesson = searchParams.get('new') === '1'
   
   const [pinChecked, setPinChecked] = useState(false)
   const [lesson, setLesson] = useState(null)
@@ -62,7 +63,29 @@ function EditLessonContent() {
 
   // Load lesson
   useEffect(() => {
-    if (!pinChecked || !lessonKey) return
+    if (!pinChecked) return
+
+    // New lesson mode: start blank, do not create anything server-side until Save.
+    if (isNewLesson) {
+      setLesson({
+        title: '',
+        subject: 'math',
+        grade: '',
+        difficulty: '',
+        blurb: '',
+        teachingNotes: '',
+        vocab: [],
+        multiplechoice: [],
+        truefalse: [],
+        shortanswer: [],
+        fillintheblank: []
+      })
+      setLoading(false)
+      setError('')
+      return
+    }
+
+    if (!lessonKey) return
     
     let cancelled = false
     ;(async () => {
@@ -96,7 +119,7 @@ function EditLessonContent() {
     })()
     
     return () => { cancelled = true }
-  }, [pinChecked, lessonKey])
+  }, [pinChecked, lessonKey, isNewLesson])
 
   // Load learners list
   useEffect(() => {
@@ -174,6 +197,26 @@ function EditLessonContent() {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
+
+      if (isNewLesson) {
+        const res = await fetch('/api/facilitator/lessons/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({ lesson: updatedLesson })
+        })
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => null)
+          throw new Error(errorData?.error || 'Failed to create lesson')
+        }
+
+        // Success - go back to lessons page
+        router.push('/facilitator/lessons')
+        return
+      }
       
       // Visual aids are stored separately in the database, not in the lesson file
       const res = await fetch('/api/lesson-edit', {
@@ -558,15 +601,17 @@ function EditLessonContent() {
           rewritingDescription={rewritingDescription}
           rewritingTeachingNotes={rewritingTeachingNotes}
           rewritingVocabDefinition={rewritingVocabDefinition}
-          onNotes={() => setShowLearnerSelect('notes')}
-          onSchedule={() => setShowLearnerSelect('schedule')}
-          onAssign={() => setShowLearnerSelect('assign')}
-          onDelete={() => setShowDeleteConfirm(true)}
-          onGenerateVisualAids={handleGenerateVisualAids}
-          generatingVisualAids={generatingVisualAids}
-          visualAidsButtonText={generatingVisualAids 
-            ? (generationProgress || 'Generating...') 
-            : (visualAidsImages.length > 0 ? '🖼️ Visual Aids' : '🖼️ Generate Visual Aids')}
+          onNotes={!isNewLesson ? (() => setShowLearnerSelect('notes')) : undefined}
+          onSchedule={!isNewLesson ? (() => setShowLearnerSelect('schedule')) : undefined}
+          onAssign={!isNewLesson ? (() => setShowLearnerSelect('assign')) : undefined}
+          onDelete={!isNewLesson ? (() => setShowDeleteConfirm(true)) : undefined}
+          onGenerateVisualAids={!isNewLesson ? handleGenerateVisualAids : undefined}
+          generatingVisualAids={!isNewLesson ? generatingVisualAids : false}
+          visualAidsButtonText={!isNewLesson
+            ? (generatingVisualAids
+              ? (generationProgress || 'Generating...')
+              : (visualAidsImages.length > 0 ? '🖼️ Visual Aids' : '🖼️ Generate Visual Aids'))
+            : '🖼️ Visual Aids'}
         />
       )}
 

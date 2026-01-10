@@ -51,13 +51,15 @@ Return the full, improved lesson JSON."
 
 ## Integration Points
 
-**Lesson Maker** (`src/app/facilitator/tools/lesson-maker/page.js`):
+**Lesson Maker** (`/facilitator/generator`, implemented in `src/app/facilitator/generator/page.js`):
 1. User fills form and clicks "Generate Lesson"
 2. Toast: "Generating lesson..."
 3. Call `/api/facilitator/lessons/generate`
 4. Validate with `lessonValidation.validateLesson()`
 5. If issues: Toast "Improving quality...", call `/api/facilitator/lessons/request-changes`
 6. Toast: "Lesson ready!"
+
+**Legacy route:** `/facilitator/generator/lesson-maker` redirects to `/facilitator/generator`.
 
 **Mr. Mentor** (`src/app/api/counselor/route.js`):
 1. User: "Create a 5th grade science lesson on photosynthesis"
@@ -75,7 +77,7 @@ Return the full, improved lesson JSON."
 
 - `src/app/lib/lessonValidation.js` - Validation logic, critical issue checks, change request builder
 - `src/components/Toast.jsx` - Toast notification component
-- `src/app/facilitator/tools/lesson-maker/page.js` - Manual generation UI with validation flow
+- `src/app/facilitator/generator/page.js` - Manual generation UI with validation flow
 - `src/app/api/counselor/route.js` - Mr. Mentor's automatic validation + retry logic
 - `src/app/api/facilitator/lessons/generate/route.js` - Generation endpoint
 - `src/app/api/facilitator/lessons/request-changes/route.js` - Improvement endpoint

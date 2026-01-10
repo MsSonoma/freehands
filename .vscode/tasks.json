@@ -813,6 +813,18 @@
 				"social studies"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Dev Server (3001)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }
