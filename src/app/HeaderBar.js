@@ -47,8 +47,11 @@ export default function HeaderBar() {
 	const [isMobileLandscape, setIsMobileLandscape] = useState(false);
 	const [isSmallWidth, setIsSmallWidth] = useState(false); // <= 600px viewport width/height min
 	const [viewportWidth, setViewportWidth] = useState(1024); // track width explicitly for brand visibility
-	// Collapse header navigation into hamburger menu on mobile portrait (all pages)
-	const showHamburger = useMemo(() => isSmallWidth, [isSmallWidth]);
+	// Collapse header navigation into hamburger menu at 900px or below
+	const showHamburger = useMemo(() => viewportWidth <= 900, [viewportWidth]);
+	// State for nested dropdowns in hamburger menu
+	const [hamburgerPrintOpen, setHamburgerPrintOpen] = useState(false);
+	const [hamburgerFacilitatorOpen, setHamburgerFacilitatorOpen] = useState(false);
 	// Header sizing: responsive heights using clamp so it scales by screen size
 	const DEFAULT_HEADER_HEIGHT = 'clamp(56px, 9svh, 72px)';
 	const COMPACT_HEADER_HEIGHT = 'clamp(48px, 8svh, 60px)';
@@ -514,7 +517,7 @@ export default function HeaderBar() {
 								lineHeight:1.1,
 								whiteSpace:'nowrap',
 								// Only hide the brand text when on the Session page at small widths.
-								display: (pathname.startsWith('/session') && viewportWidth < 500) ? 'none' : 'inline'
+								display: (pathname.startsWith('/session') && viewportWidth < 650) ? 'none' : 'inline'
 							}}
 						>
 							Ms. Sonoma
@@ -611,69 +614,91 @@ export default function HeaderBar() {
 									id="mobile-nav-menu"
 									ref={navMenuRef}
 									role="menu"
-									style={{ position:'fixed', right: (pathname.startsWith('/session') && !isMobileLandscape) ? '4%' : 8, top: `calc(${headerHeight} + 8px)`, background:'#fff', border:'1px solid #e5e7eb', borderRadius:12, boxShadow:'0 10px 30px rgba(0,0,0,0.15)', minWidth:200, zIndex:1300, overflow:'hidden' }}
+									style={{ position:'fixed', right: (pathname.startsWith('/session') && !isMobileLandscape) ? '4%' : 8, top: `calc(${headerHeight} + 8px)`, background:'#fff', border:'1px solid #e5e7eb', borderRadius:12, boxShadow:'0 10px 30px rgba(0,0,0,0.15)', minWidth:200, zIndex:1300, overflow:'visible' }}
 								>
-									{/* Always available links first so they appear at the top of the hamburger */}
-									<div style={{ display:'flex', flexDirection:'column', borderBottom: pathname.startsWith('/session') ? '1px solid #f3f4f6' : 'none' }}>
-										<Link
-											href="/about"
-											role="menuitem"
-											onClick={async (e) => {
-												if (pathname.startsWith('/session')) {
-													e.preventDefault();
-													const ok = await goWithPin('/about');
-													if (ok) setNavOpen(false);
-												} else {
-													setNavOpen(false);
-												}
-											}}
-											style={MOBILE_MENU_ITEM_STYLE}
-										>
-											About
-										</Link>
-										<Link
-											href="/learn"
-											role="menuitem"
-											onClick={async (e) => {
-												if (pathname.startsWith('/session')) {
-													e.preventDefault();
-													const ok = await goWithPin('/learn');
-													if (ok) setNavOpen(false);
-												} else {
-													setNavOpen(false);
-												}
-											}}
-											style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6' }}
-										>
-											Learn
-										</Link>
-										<Link
-											href="/facilitator"
-											role="menuitem"
-											onClick={async (e) => {
-												if (pathname.startsWith('/session')) {
-													e.preventDefault();
-													const ok = await goWithPin('/facilitator');
-													if (ok) setNavOpen(false);
-												} else {
-													setNavOpen(false);
-												}
-											}}
-											style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6', whiteSpace:'nowrap' }}
-								>
-									{facilitatorName || 'Facilitator'}
-										</Link>
-									</div>
-
-									{/* Session print actions, if applicable (moved below the Learn/Facilitator links) */}
+									{/* Print dropdown with nested menu (only on session page) */}
 									{pathname.startsWith('/session') && (
-										<div style={{ display:'flex', flexDirection:'column', borderTop: '1px solid #f3f4f6' }}>
-											<button type="button" role="menuitem" style={MOBILE_MENU_ITEM_STYLE} onClick={() => { try { window.dispatchEvent(new Event('ms:print:worksheet')); } catch {}; setNavOpen(false); }}>Worksheet</button>
-											<button type="button" role="menuitem" style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6' }} onClick={() => { try { window.dispatchEvent(new Event('ms:print:test')); } catch {}; setNavOpen(false); }}>Test</button>
-											<button type="button" role="menuitem" style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6' }} onClick={() => { try { window.dispatchEvent(new Event('ms:print:combined')); } catch {}; setNavOpen(false); }}>Facilitator Key</button>
-											<button type="button" role="menuitem" style={{ ...MOBILE_MENU_ITEM_STYLE, color:'#c7442e', borderTop:'1px solid #f3f4f6' }} onClick={() => { try { window.dispatchEvent(new Event('ms:print:refresh')); } catch {}; setNavOpen(false); }}>Refresh</button>
+										<div style={{ position:'relative' }}>
+											<button
+												type="button"
+												role="menuitem"
+												onClick={() => setHamburgerPrintOpen(v => !v)}
+												style={{ ...MOBILE_MENU_ITEM_STYLE, justifyContent:'space-between', cursor:'pointer', width:'100%', textAlign:'left' }}
+											>
+												<span>Print</span>
+												<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: hamburgerPrintOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+													<path d="M9 18l6-6-6-6"/>
+												</svg>
+											</button>
+											{hamburgerPrintOpen && (
+												<div style={{ background:'#f9fafb', borderTop:'1px solid #e5e7eb' }}>
+													<button type="button" role="menuitem" style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111', fontSize:'0.9rem' }} onClick={() => { try { window.dispatchEvent(new Event('ms:print:worksheet')); } catch {}; setNavOpen(false); setHamburgerPrintOpen(false); }}>Worksheet</button>
+													<button type="button" role="menuitem" style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111', fontSize:'0.9rem' }} onClick={() => { try { window.dispatchEvent(new Event('ms:print:test')); } catch {}; setNavOpen(false); setHamburgerPrintOpen(false); }}>Test</button>
+													<button type="button" role="menuitem" style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111', fontSize:'0.9rem' }} onClick={() => { try { window.dispatchEvent(new Event('ms:print:combined')); } catch {}; setNavOpen(false); setHamburgerPrintOpen(false); }}>Facilitator Key</button>
+													<button type="button" role="menuitem" style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', background:'transparent', border:'none', cursor:'pointer', fontWeight:700, color:'#c7442e', fontSize:'0.9rem' }} onClick={() => { try { window.dispatchEvent(new Event('ms:print:refresh')); } catch {}; setNavOpen(false); setHamburgerPrintOpen(false); }}>Refresh</button>
+												</div>
+											)}
 										</div>
 									)}
+									
+									<Link
+										href="/about"
+										role="menuitem"
+										onClick={async (e) => {
+											if (pathname.startsWith('/session')) {
+												e.preventDefault();
+												const ok = await goWithPin('/about');
+												if (ok) setNavOpen(false);
+											} else {
+												setNavOpen(false);
+											}
+										}}
+										style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop: pathname.startsWith('/session') ? '1px solid #f3f4f6' : 'none' }}
+									>
+										About
+									</Link>
+									
+									<Link
+										href="/learn"
+										role="menuitem"
+										onClick={async (e) => {
+											if (pathname.startsWith('/session')) {
+												e.preventDefault();
+												const ok = await goWithPin('/learn');
+												if (ok) setNavOpen(false);
+											} else {
+												setNavOpen(false);
+											}
+										}}
+										style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6' }}
+									>
+										Learn
+									</Link>
+									
+									{/* Facilitator dropdown with nested menu */}
+									<div style={{ position:'relative' }}>
+										<button
+											type="button"
+											role="menuitem"
+											onClick={() => setHamburgerFacilitatorOpen(v => !v)}
+											style={{ ...MOBILE_MENU_ITEM_STYLE, borderTop:'1px solid #f3f4f6', whiteSpace:'nowrap', justifyContent:'space-between', cursor:'pointer', width:'100%', textAlign:'left' }}
+										>
+											<span>{facilitatorName || 'Facilitator'}</span>
+											<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: hamburgerFacilitatorOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+												<path d="M9 18l6-6-6-6"/>
+											</svg>
+										</button>
+										{hamburgerFacilitatorOpen && (
+											<div style={{ background:'#f9fafb', borderTop:'1px solid #e5e7eb' }}>
+												<Link href="/facilitator/account" role="menuitem" onClick={async (e) => { if (pathname.startsWith('/session')) { e.preventDefault(); const ok = await goWithPin('/facilitator/account'); if (ok) { setNavOpen(false); setHamburgerFacilitatorOpen(false); } return; } setNavOpen(false); setHamburgerFacilitatorOpen(false); }} style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', textDecoration:'none', fontWeight:600, color:'#111', fontSize:'0.9rem' }}><span aria-hidden="true">⚙️</span>Account</Link>
+												<Link href="/facilitator/notifications" role="menuitem" onClick={async (e) => { if (pathname.startsWith('/session')) { e.preventDefault(); const ok = await goWithPin('/facilitator/notifications'); if (ok) { setNavOpen(false); setHamburgerFacilitatorOpen(false); } return; } setNavOpen(false); setHamburgerFacilitatorOpen(false); }} style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', textDecoration:'none', fontWeight:600, color:'#111', fontSize:'0.9rem' }}><span aria-hidden="true">🔔</span>Notifications</Link>
+												<Link href="/facilitator/learners" role="menuitem" onClick={async (e) => { if (pathname.startsWith('/session')) { e.preventDefault(); const ok = await goWithPin('/facilitator/learners'); if (ok) { setNavOpen(false); setHamburgerFacilitatorOpen(false); } return; } setNavOpen(false); setHamburgerFacilitatorOpen(false); }} style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', textDecoration:'none', fontWeight:600, color:'#111', fontSize:'0.9rem' }}><span aria-hidden="true">👥</span>Learners</Link>
+												<Link href="/facilitator/lessons" role="menuitem" onClick={async (e) => { if (pathname.startsWith('/session')) { e.preventDefault(); const ok = await goWithPin('/facilitator/lessons'); if (ok) { setNavOpen(false); setHamburgerFacilitatorOpen(false); } return; } setNavOpen(false); setHamburgerFacilitatorOpen(false); }} style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', textDecoration:'none', fontWeight:600, color:'#111', fontSize:'0.9rem' }}><span aria-hidden="true">📚</span>Lessons</Link>
+												<Link href="/facilitator/calendar" role="menuitem" onClick={async (e) => { if (pathname.startsWith('/session')) { e.preventDefault(); const ok = await goWithPin('/facilitator/calendar'); if (ok) { setNavOpen(false); setHamburgerFacilitatorOpen(false); } return; } setNavOpen(false); setHamburgerFacilitatorOpen(false); }} style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', textDecoration:'none', fontWeight:600, color:'#111', fontSize:'0.9rem' }}><span aria-hidden="true">📅</span>Calendar</Link>
+												<Link href="/facilitator/mr-mentor" role="menuitem" onClick={async (e) => { if (pathname.startsWith('/session')) { e.preventDefault(); const ok = await goWithPin('/facilitator/mr-mentor'); if (ok) { setNavOpen(false); setHamburgerFacilitatorOpen(false); } return; } setNavOpen(false); setHamburgerFacilitatorOpen(false); }} style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', textDecoration:'none', fontWeight:600, color:'#111', fontSize:'0.9rem' }}><span aria-hidden="true">🧠</span>Mr. Mentor</Link>
+											</div>
+										)}
+									</div>
 
 									{/* Mr. Mentor actions, if applicable */}
 									{pathname.startsWith('/facilitator/mr-mentor') && (

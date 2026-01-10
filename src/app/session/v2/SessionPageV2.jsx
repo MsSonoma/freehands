@@ -2726,6 +2726,8 @@ function SessionPageV2Inner() {
   const [stackedCaptionHeight, setStackedCaptionHeight] = useState(null);
   const videoColRef = useRef(null);
   const captionColRef = useRef(null);
+  const footerRef = useRef(null);
+  const [footerHeight, setFooterHeight] = useState(0);
   
   // Calculate video height and column width based on viewport (matching V1 logic)
   useEffect(() => {
@@ -2856,6 +2858,42 @@ function SessionPageV2Inner() {
       window.removeEventListener('orientationchange', measure);
     };
   }, [isMobileLandscape, videoMaxHeight]);
+
+  // Measure the fixed footer height so portrait caption sizing can reserve exact space (V1 parity)
+  useEffect(() => {
+    const el = footerRef.current;
+    if (!el) return;
+    const measure = () => {
+      try {
+        const h = Math.ceil(el.getBoundingClientRect().height);
+        if (Number.isFinite(h) && h >= 0) setFooterHeight(h);
+      } catch {}
+    };
+    measure();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => measure());
+      try { ro.observe(el); } catch {}
+    } else if (typeof window !== 'undefined') {
+      window.addEventListener('resize', measure);
+    }
+    return () => {
+      try { ro && ro.disconnect(); } catch {}
+      if (typeof window !== 'undefined') window.removeEventListener('resize', measure);
+    };
+  }, []);
+
+  // Set portrait caption height to 35vh
+  useEffect(() => {
+    if (isMobileLandscape) {
+      setStackedCaptionHeight(null);
+    } else {
+      // 35vh for portrait mode
+      const vh = window.innerHeight;
+      const targetHeight = Math.floor(vh * 0.35);
+      setStackedCaptionHeight(targetHeight);
+    }
+  }, [isMobileLandscape]);
   
   // Initialize AudioEngine
   useEffect(() => {
@@ -5292,7 +5330,7 @@ function SessionPageV2Inner() {
       </div>
       
       {/* Transcript column */}
-      <div style={transcriptWrapperStyle}>
+      <div ref={captionColRef} style={transcriptWrapperStyle}>
         {currentPhase === 'test' && testState === 'reviewing' && testGrade ? (
           <TestReviewUI
             testGrade={testGrade}
@@ -5310,7 +5348,7 @@ function SessionPageV2Inner() {
             activeIndex={activeCaptionIndex}
             boxRef={transcriptRef}
             fullHeight={isMobileLandscape}
-            stackedHeight={isMobileLandscape ? '100%' : null}
+            stackedHeight={isMobileLandscape ? '100%' : (stackedCaptionHeight || null)}
             phase={currentPhase}
             vocabTerms={vocabTerms}
           />
@@ -5321,7 +5359,7 @@ function SessionPageV2Inner() {
       </div> {/* end content wrapper */}
       
       {/* Fixed footer with input controls */}
-      <div style={{
+      <div ref={footerRef} style={{
         position: 'fixed',
         left: 0,
         right: 0,

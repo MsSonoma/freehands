@@ -20,7 +20,7 @@
       "session-exit-pin-gate",
       "print-menu"
     ],
-    "last_updated": "2026-01-08T13:43:20Z",
+    "last_updated": "2026-01-10T16:50:44Z",
     "status": "canonical"
   },
   "notifications-system": {
@@ -202,7 +202,7 @@
       "facilitator-lessons",
       "supabase-lesson-load"
     ],
-    "last_updated": "2026-01-07T19:52:55Z",
+      "last_updated": "2026-01-10T16:09:45Z",
     "status": "active-development"
   },
   "mr-mentor-conversation-flows": {
