@@ -159,7 +159,9 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
         const minPastDate = pastSchedule.reduce((min, r) => (min && min < r.scheduled_date ? min : r.scheduled_date), null)
 
         if (pastSchedule.length > 0 && minPastDate) {
-          const historyRes = await fetch(`/api/learner/lesson-history?learner_id=${targetLearnerId}`)
+          const historyRes = await fetch(
+            `/api/learner/lesson-history?learner_id=${targetLearnerId}&from=${encodeURIComponent(minPastDate)}&to=${encodeURIComponent(todayStr)}`
+          )
           const historyJson = await historyRes.json().catch(() => null)
 
           if (!historyRes.ok) {

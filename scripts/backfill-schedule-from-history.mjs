@@ -129,23 +129,56 @@ function normalizeFacilitatorId(learnerRow) {
   return learnerRow?.facilitator_id || learnerRow?.owner_id || learnerRow?.user_id || null
 }
 
-async function runBackfill({ dryRun, learners, tz, source }) {
-  const supabase = getSupabaseAdminClient()
+function quoteOrValue(value) {
+  const v = String(value || '')
+  return `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
 
-  const allLearners = await fetchAllRows(() =>
+async function loadTargetLearners(supabase, learnerNames) {
+  const names = Array.from(
+    new Set(
+      (learnerNames || [])
+        .map(n => String(n || '').trim())
+        .filter(Boolean)
+    )
+  )
+
+  if (names.length === 0) {
+    return fetchAllRows(() =>
+      supabase
+        .from('learners')
+        .select('id, name, facilitator_id, owner_id, user_id')
+        .order('name', { ascending: true })
+    )
+  }
+
+  // Case-insensitive exact match (no wildcards) so `--learner Emma,Test` stays fast.
+  const orExpr = names.map(n => `name.ilike.${quoteOrValue(n)}`).join(',')
+  const rows = await fetchAllRows(() =>
     supabase
       .from('learners')
       .select('id, name, facilitator_id, owner_id, user_id')
+      .or(orExpr)
       .order('name', { ascending: true })
   )
 
-  const learnerFilter = new Set((learners || []).map(n => n.toLowerCase()))
-  const targetLearners = learnerFilter.size
-    ? allLearners.filter(l => learnerFilter.has(String(l?.name || '').toLowerCase()))
-    : allLearners
+  const foundLower = new Set((rows || []).map(r => String(r?.name || '').toLowerCase()))
+  const missing = names.filter(n => !foundLower.has(String(n).toLowerCase()))
+  if (missing.length > 0) {
+    throw new Error(`No learners matched these names: ${missing.join(', ')}`)
+  }
 
-  if (learnerFilter.size && targetLearners.length === 0) {
-    throw new Error(`No learners matched --learner names: ${learners.join(', ')}`)
+  return rows
+}
+
+async function runBackfill({ dryRun, learners, tz, source }) {
+  const supabase = getSupabaseAdminClient()
+
+  const targetLearners = await loadTargetLearners(supabase, learners)
+
+  console.log(`Learners matched: ${targetLearners.length}`)
+  if ((learners || []).length) {
+    console.log(`Filter: ${learners.join(', ')}`)
   }
 
   const results = []
@@ -154,6 +187,7 @@ async function runBackfill({ dryRun, learners, tz, source }) {
   let totalAlreadyPresent = 0
 
   for (const learner of targetLearners) {
+    console.log(`\nProcessing: ${learner.name} (${learner.id})`)
     const facilitatorId = normalizeFacilitatorId(learner)
     if (!facilitatorId) {
       results.push({
@@ -289,6 +323,9 @@ async function runBackfill({ dryRun, learners, tz, source }) {
 async function main() {
   loadEnvFiles()
   const args = parseArgs(process.argv)
+
+  console.log(`Mode: ${args.dryRun ? 'DRY RUN (no writes)' : 'WRITE'}`)
+  console.log(`Source: ${args.source} | TZ: ${args.tz}`)
 
   const result = await runBackfill(args)
   console.log(JSON.stringify(result, null, 2))

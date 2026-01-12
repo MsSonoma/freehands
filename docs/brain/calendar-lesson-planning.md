@@ -1,6 +1,6 @@
 # Calendar Lesson Planning System - Ms. Sonoma Brain File
 
-**Last Updated**: 2026-01-12T20:39:55Z  
+**Last Updated**: 2026-01-12T22:05:00Z  
 **Status**: Canonical
 
 ## How It Works
@@ -210,7 +210,11 @@ If you have existing recorded completions but no corresponding `lesson_schedule`
 
 **Default source of truth:**
 - Uses `lesson_session_events` rows where `event_type = 'completed'`.
-- (Legacy) `lesson_history` can be used only when explicitly requested via `--source lesson_history`.
+- (Legacy) `--source lesson_history` is supported by the script, but the `lesson_history` table may not exist in the current schema; expect it to fail unless you have that table.
+
+**Performance rule (important):**
+- When `--learner` is provided, the script queries ONLY those learner rows (case-insensitive exact match) instead of paging every learner.
+- This keeps targeted backfills fast (e.g., `--learner Emma,Test`).
 
 **Dedupe rule:**
 - Inserts are idempotent because `lesson_schedule` has `UNIQUE(learner_id, lesson_key, scheduled_date)` and the script upserts on the same conflict key.
@@ -222,6 +226,9 @@ If you have existing recorded completions but no corresponding `lesson_schedule`
 
 **Date conversion:**
 - The script defaults to local date extraction from `occurred_at` (use `--tz utc` only if you want UTC date grouping).
+
+**Progress logging:**
+- The script prints matched learners and per-learner processing so long runs don't look stuck.
 
 ### Recovering Missing Completion Events From Transcript Ledgers
 
@@ -248,6 +255,41 @@ If a lesson was truly completed but there is **no** `lesson_session_events(event
 **Safe usage (recommended):**
 - Dry-run first: `node scripts/backfill-completions-from-transcripts.mjs --dry-run --learner Emma --from 2026-01-07 --to 2026-01-08`
 - Then run real insert: `node scripts/backfill-completions-from-transcripts.mjs --write --learner Emma --from 2026-01-07 --to 2026-01-08`
+
+### Recovering Missing Completion Events From Medals
+
+In some legacy data states, lesson completions exist as **medals** (scores) but are missing `lesson_session_events(event_type='completed')` rows.
+
+This creates a confusing mismatch:
+- Learn/Lessons can show a long historical timeline (because it can render medal-earned dates).
+- The Calendar history view can look empty (because it depends on completed session events).
+
+If you need Calendar history to reflect the same historical record, backfill completion events from medals.
+
+**Script:** `scripts/backfill-completions-from-medals.mjs`
+
+**Source of truth:**
+- Reads `learner_medals` rows and uses `learner_medals.updated_at` as the completion timestamp.
+- Uses `learner_medals.lesson_key` as the lesson id (lesson id canonicalization in the Calendar handles mixed formats).
+
+**What it writes (when not dry-run):**
+- Inserts a `lesson_sessions` row.
+- Inserts a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `occurred_at = learner_medals.updated_at`
+  - `metadata.source = 'medals-backfill'`
+
+**Dedupe rule:**
+- Idempotent per learner by `(canonical lesson id + YYYY-MM-DD)`.
+
+**Safe usage (recommended):**
+- Dry-run first: `node scripts/backfill-completions-from-medals.mjs --dry-run --learner Emma --from 2025-09-01 --to 2025-10-31`
+- Then write: `node scripts/backfill-completions-from-medals.mjs --write --learner Emma --from 2025-09-01 --to 2025-10-31`
+
+**Important follow-up step (required for Calendar visibility):**
+- After backfilling completion events, run the schedule backfill so the Calendar has dated `lesson_schedule` rows:
+  - Dry-run: `node scripts/backfill-schedule-from-history.mjs --dry-run --learner Emma`
+  - Write: `node scripts/backfill-schedule-from-history.mjs --learner Emma`
 
 ### Manual Completion + Medal Backfill (When You Know the Lesson Keys)
 

@@ -1,3 +1,5 @@
+2026-01-12T22:05:00Z | Copilot | Backfill missing completed events from medals so Calendar history matches Learn/Lessons timeline [#calendar-lesson-planning: medals-API, lesson_session_events, backfill]
+2026-01-12T21:06:45Z | Copilot | Backfill schedule script: speed up --learner filtering + add progress logs [#calendar-lesson-planning: backfill, scheduled-lessons, lesson-history-integration]
 2026-01-12T20:39:55Z | Copilot | Calendar: split Visual Aids vs Add Images; Add Images now uploads worksheet/test scans for portfolio [#calendar-lesson-planning: visual-aids, manual-scheduling, lesson-history-integration]
 2026-01-12T20:27:20Z | Copilot | Add script to verify scheduled lessons have matching completed events + medals in a date window [#calendar-lesson-planning: lesson-history-integration, medals-API, manual-scheduling]
 2026-01-12T18:36:06Z | Copilot | Add script to backfill completed session events from transcript ledgers (recovery for missing Calendar history) [#calendar-lesson-planning: transcripts, lesson_session_events, backfill]

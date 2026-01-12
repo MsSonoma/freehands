@@ -278,7 +278,9 @@ export default function CalendarPage() {
           // IMPORTANT: Do not query lesson_session_events directly from the client.
           // In some environments, RLS causes the query to return an empty array without an error,
           // which hides all past schedule history. Use the admin-backed API endpoint instead.
-          const historyRes = await fetch(`/api/learner/lesson-history?learner_id=${selectedLearnerId}`)
+          const historyRes = await fetch(
+            `/api/learner/lesson-history?learner_id=${selectedLearnerId}&from=${encodeURIComponent(minPastDate)}&to=${encodeURIComponent(todayStr)}`
+          )
           const historyJson = await historyRes.json().catch(() => null)
 
           if (!historyRes.ok) {

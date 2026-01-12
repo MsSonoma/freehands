@@ -6,6 +6,35 @@ export const runtime = 'nodejs'
 
 const STALE_MINUTES = 60
 
+function isYyyyMmDd(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+}
+
+function addDays(dateStr, days) {
+  if (!isYyyyMmDd(dateStr)) return null
+  const [y, m, d] = dateStr.split('-').map(n => Number(n))
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  if (Number.isNaN(dt.getTime())) return null
+  dt.setUTCDate(dt.getUTCDate() + Number(days || 0))
+  const yy = dt.getUTCFullYear()
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(dt.getUTCDate()).padStart(2, '0')
+  return `${yy}-${mm}-${dd}`
+}
+
+async function fetchAllRows(queryFactory, { pageSize = 1000, maxRows = 5000 } = {}) {
+  const rows = []
+  for (let offset = 0; offset < maxRows; offset += pageSize) {
+    const upper = Math.min(offset + pageSize - 1, maxRows - 1)
+    const { data, error } = await queryFactory().range(offset, upper)
+    if (error) throw error
+    const page = Array.isArray(data) ? data : []
+    rows.push(...page)
+    if (page.length < pageSize) break
+  }
+  return rows
+}
+
 function parseLimit(value) {
   const parsed = Number.parseInt(value, 10)
   if (Number.isFinite(parsed) && parsed > 0) {
@@ -71,10 +100,28 @@ export async function GET(request) {
 
     const limit = parseLimit(searchParams.get('limit'))
 
-    const { data: sessionRows, error: sessionError } = await supabase
+    const from = searchParams.get('from')
+    const to = searchParams.get('to')
+    const fromDate = isYyyyMmDd(from) ? from : null
+    const toDate = isYyyyMmDd(to) ? to : null
+    const fromIso = fromDate ? `${fromDate}T00:00:00.000Z` : null
+    // Use an exclusive upper bound so callers can pass local YYYY-MM-DD safely.
+    const toExclusiveDate = toDate ? addDays(toDate, 1) : null
+    const toExclusiveIso = toExclusiveDate ? `${toExclusiveDate}T00:00:00.000Z` : null
+
+    let sessionsQuery = supabase
       .from('lesson_sessions')
       .select('id, learner_id, lesson_id, started_at, ended_at')
       .eq('learner_id', learnerId)
+
+    if (fromIso) {
+      sessionsQuery = sessionsQuery.gte('started_at', fromIso)
+    }
+    if (toExclusiveIso) {
+      sessionsQuery = sessionsQuery.lt('started_at', toExclusiveIso)
+    }
+
+    const { data: sessionRows, error: sessionError } = await sessionsQuery
       .order('started_at', { ascending: false })
       .limit(limit)
 
@@ -107,18 +154,30 @@ export async function GET(request) {
 
     let events = []
     try {
-      const { data: eventRows, error: eventsError } = await supabase
-        .from('lesson_session_events')
-        .select('id, session_id, lesson_id, event_type, occurred_at, metadata')
-        .eq('learner_id', learnerId)
-        .order('occurred_at', { ascending: false })
-        .limit(500)
+      let eventsQueryBase = () => {
+        let q = supabase
+          .from('lesson_session_events')
+          .select('id, session_id, lesson_id, event_type, occurred_at, metadata')
+          .eq('learner_id', learnerId)
 
-      if (eventsError) {
-        if (eventsError?.code !== '42P01') {
-          // Silent warning - table may not exist yet
+        if (fromIso) q = q.gte('occurred_at', fromIso)
+        if (toExclusiveIso) q = q.lt('occurred_at', toExclusiveIso)
+
+        return q.order('occurred_at', { ascending: false })
+      }
+
+      // Without a window, keep the old behavior (small bounded fetch).
+      if (!fromIso && !toExclusiveIso) {
+        const { data: eventRows, error: eventsError } = await eventsQueryBase().limit(500)
+        if (eventsError) {
+          if (eventsError?.code !== '42P01') {
+            // Silent warning - table may not exist yet
+          }
+        } else if (Array.isArray(eventRows)) {
+          events = eventRows
         }
-      } else if (Array.isArray(eventRows)) {
+      } else {
+        const eventRows = await fetchAllRows(eventsQueryBase, { pageSize: 1000, maxRows: 5000 })
         events = eventRows
       }
     } catch (eventsFetchError) {
