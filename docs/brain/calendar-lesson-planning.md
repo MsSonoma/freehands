@@ -1,6 +1,6 @@
 # Calendar Lesson Planning System - Ms. Sonoma Brain File
 
-**Last Updated**: 2026-01-10T23:50:00Z  
+**Last Updated**: 2026-01-12T13:04:42Z  
 **Status**: Canonical
 
 ## How It Works
@@ -156,6 +156,10 @@ The Calendar schedule view supports showing scheduled lessons on past dates, but
 - Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
 - Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
 - The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
+
+**Calendar month focus rule (history discoverability):**
+- When a learner is selected on the Schedule tab, the calendar grid should auto-focus to the month containing the most recent scheduled date (preferably a past/completed date when available).
+- This prevents the calendar from looking "empty" on the current month when the learner's completed history is in earlier months.
 
 **UI rule (Schedule tab only):**
 - For past (completed) scheduled lessons, actions change to:

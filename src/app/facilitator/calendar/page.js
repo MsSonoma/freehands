@@ -254,24 +254,18 @@ export default function CalendarPage() {
         const minPastDate = pastSchedule.reduce((min, s) => (min && min < s.scheduled_date ? min : s.scheduled_date), null)
 
         if (pastSchedule.length > 0 && minPastDate) {
-          const startIso = `${minPastDate}T00:00:00.000Z`
-          const endIso = `${todayStr}T23:59:59.999Z`
+          // IMPORTANT: Do not query lesson_session_events directly from the client.
+          // In some environments, RLS causes the query to return an empty array without an error,
+          // which hides all past schedule history. Use the admin-backed API endpoint instead.
+          const historyRes = await fetch(`/api/learner/lesson-history?learner_id=${selectedLearnerId}`)
+          const historyJson = await historyRes.json().catch(() => null)
 
-          // IMPORTANT: Do not filter by lesson_id via `.in(...)` here.
-          // lesson_session_events.lesson_id historically varies in format (basename vs subject/path),
-          // and strict filtering can cause us to miss legitimate completions.
-          const { data: historyRows, error: historyErr } = await supabase
-            .from('lesson_session_events')
-            .select('lesson_id, occurred_at')
-            .eq('learner_id', selectedLearnerId)
-            .eq('event_type', 'completed')
-            .gte('occurred_at', startIso)
-            .lte('occurred_at', endIso)
-
-          if (historyErr) {
+          if (!historyRes.ok) {
             completionLookupFailed = true
           } else {
-            for (const row of historyRows || []) {
+            const events = Array.isArray(historyJson?.events) ? historyJson.events : []
+            for (const row of events) {
+              if (row?.event_type && row.event_type !== 'completed') continue
               const completedDate = toLocalDateStr(row?.occurred_at)
               const key = canonicalLessonId(row?.lesson_id)
               if (completedDate && key) completedKeySet.add(`${key}|${completedDate}`)

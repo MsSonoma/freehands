@@ -139,21 +139,15 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
         const minPastDate = pastSchedule.reduce((min, r) => (min && min < r.scheduled_date ? min : r.scheduled_date), null)
 
         if (pastSchedule.length > 0 && minPastDate) {
-          const startIso = `${minPastDate}T00:00:00.000Z`
-          const endIso = `${todayStr}T23:59:59.999Z`
+          const historyRes = await fetch(`/api/learner/lesson-history?learner_id=${targetLearnerId}`)
+          const historyJson = await historyRes.json().catch(() => null)
 
-          const { data: historyRows, error: historyErr } = await supabase
-            .from('lesson_session_events')
-            .select('lesson_id, occurred_at')
-            .eq('learner_id', targetLearnerId)
-            .eq('event_type', 'completed')
-            .gte('occurred_at', startIso)
-            .lte('occurred_at', endIso)
-
-          if (historyErr) {
+          if (!historyRes.ok) {
             completionLookupFailed = true
           } else {
-            for (const row of historyRows || []) {
+            const events = Array.isArray(historyJson?.events) ? historyJson.events : []
+            for (const row of events) {
+              if (row?.event_type && row.event_type !== 'completed') continue
               const completedDate = toLocalDateStr(row?.occurred_at)
               const key = canonicalLessonId(row?.lesson_id)
               if (completedDate && key) completedKeySet.add(`${key}|${completedDate}`)

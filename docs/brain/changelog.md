@@ -1,3 +1,5 @@
+2026-01-12T13:08:32Z | Copilot | Platform Jumper: increase jump height slightly again (JUMP_STRENGTH -9 -> -10). Files: src/app/session/components/games/PlatformJumper.jsx
+2026-01-12T13:04:42Z | Copilot | Calendar grid auto-focuses to most recent scheduled month so completed history dots are immediately visible [#calendar-lesson-planning: history-autofocus, completion-markers, scheduled-lessons]
 2026-01-10T23:50:00Z | Copilot | Fix past schedule visibility: canonicalize lesson ids for completion matching (lesson_session_events.lesson_id vs lesson_schedule.lesson_key) [#calendar-lesson-planning: completion-matching, canonical-lesson-id, scheduled-lessons]
 2026-01-10T23:38:00Z | Copilot | Fix missing past calendar markers: use local YYYY-MM-DD keys (avoid toISOString UTC shift) in Calendar grid + Mr. Mentor overlay [#calendar-lesson-planning: timezone, date-keys, scheduled-lessons]
 2026-01-10T23:14:22Z | Copilot | Calendar history backfill: add script to insert lesson_schedule rows from completed session events (Emma/Test populated) [#calendar-lesson-planning: backfill, lesson_session_events, scheduled-lessons]

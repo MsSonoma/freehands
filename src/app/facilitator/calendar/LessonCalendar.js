@@ -1,10 +1,12 @@
 // Calendar component for lesson scheduling
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 export default function LessonCalendar({ learnerId, onDateSelect, scheduledLessons = {}, noSchoolDates = {}, learners = [], selectedLearnerId, onLearnerChange, isPlannedView = false }) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
+
+  const autoFocusedLearnerRef = useRef(null)
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December']
@@ -89,6 +91,30 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
   const day = String(now.getDate()).padStart(2, '0')
   const today = `${year}-${month}-${day}`
   const calendarDays = generateCalendarDays()
+
+  // Auto-focus the month to the most recent scheduled date for the selected learner.
+  // This makes retroactive completed lessons visible immediately (e.g., Dec 2025) instead
+  // of defaulting to the current month which may have no history markers.
+  useEffect(() => {
+    if (!selectedLearnerId) return
+    if (isPlannedView) return
+    if (autoFocusedLearnerRef.current === selectedLearnerId) return
+
+    const keys = Object.keys(scheduledLessons || {})
+    if (keys.length === 0) return
+
+    const pastKeys = keys.filter((k) => k && k <= today).sort()
+    const target = (pastKeys.length ? pastKeys[pastKeys.length - 1] : keys.sort()[keys.length - 1])
+    if (!target) return
+
+    const [y, m] = String(target).split('-')
+    const yearNum = Number.parseInt(y, 10)
+    const monthNum = Number.parseInt(m, 10)
+    if (!Number.isFinite(yearNum) || !Number.isFinite(monthNum)) return
+
+    setCurrentMonth(new Date(yearNum, monthNum - 1, 1))
+    autoFocusedLearnerRef.current = selectedLearnerId
+  }, [selectedLearnerId, isPlannedView, scheduledLessons, today])
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-500 overflow-hidden">

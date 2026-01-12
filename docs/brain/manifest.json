@@ -282,13 +282,14 @@
       "curriculum-context",
       "medals-API",
       "lesson-history-integration",
+      "history-autofocus",
       "date-specific-overwrite",
       "adaptive-difficulty-progression",
       "manual-scheduling",
       "owned-lessons",
       "LessonPicker"
     ],
-    "last_updated": "2026-01-10T23:38:00Z",
+    "last_updated": "2026-01-12T13:04:42Z",
     "status": "canonical"
   },
   "tts-prefetching": {
