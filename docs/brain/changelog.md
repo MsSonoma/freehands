@@ -4,6 +4,7 @@
 2026-01-12T20:27:20Z | Copilot | Add script to verify scheduled lessons have matching completed events + medals in a date window [#calendar-lesson-planning: lesson-history-integration, medals-API, manual-scheduling]
 2026-01-12T18:36:06Z | Copilot | Add script to backfill completed session events from transcript ledgers (recovery for missing Calendar history) [#calendar-lesson-planning: transcripts, lesson_session_events, backfill]
 2026-01-12T18:24:58Z | Copilot | Calendar: treat completions within 7 days after scheduled as completed; Session V2 now writes completed events [#calendar-lesson-planning: completion-matching, scheduled-lessons, lesson_history] [#snapshot-persistence: complete-lesson-cleanup, session-events, atomic-snapshot]
+2026-01-12T23:45:12Z | Copilot | Platform Jumper: Level 37 move added trampoline right+higher (x 250->320, y 430->340) [#platform-jumper: level-37, trampoline, layout]
 2026-01-12T23:28:38Z | Copilot | Platform Jumper: Level 37 add third trampoline to bridge left->right trampoline gap [#platform-jumper: level-37, trampoline, beatability]
 2026-01-12T21:53:45Z | Copilot | Platform Jumper: make Level 37 beatable by moving right trampoline left 20% and up 15% (x 550->390, y 465->390) [#platform-jumper: level-layout, trampoline, beatability]
 2026-01-12T15:25:45Z | Copilot | Platform Jumper: increase trampoline bounce (TRAMPOLINE_BOUNCE -16 -> -20); document physics knobs [#platform-jumper: trampoline-bounce, jump-strength, game-physics]
