@@ -471,6 +471,7 @@ function SessionPageV2Inner() {
   const timelineJumpForceFreshPhaseRef = useRef(null); // timeline jumps should show opening actions, not resume mid-phase
   const timelineJumpInProgressRef = useRef(false); // Debounce timeline jumps
   const pendingTimerStateRef = useRef(null);
+  const lastTimerPersistAtRef = useRef(0);
   const startSessionRef = useRef(null);
   const resumePhaseRef = useRef(null);
   const deferClosingStartUntilAudioEndRef = useRef(false);
@@ -2184,6 +2185,56 @@ function SessionPageV2Inner() {
       console.warn('[SessionPageV2] Timer snapshot persist failed:', err);
     }
   }, []);
+
+  // Persist timer state during active sessions so refresh resumes near-current elapsed time.
+  // Throttled to avoid spamming Supabase.
+  useEffect(() => {
+    const eventBus = eventBusRef.current;
+    if (!eventBus || !lessonKey) return;
+
+    const minIntervalMs = 10_000;
+    const maybePersist = (trigger) => {
+      const now = Date.now();
+      if (now - lastTimerPersistAtRef.current < minIntervalMs) return;
+      lastTimerPersistAtRef.current = now;
+      persistTimerStateNow(trigger);
+    };
+
+    const unsubPlayStart = eventBus.on('playTimerStart', () => persistTimerStateNow('timer-start-play'));
+    const unsubWorkStart = eventBus.on('workPhaseTimerStart', () => persistTimerStateNow('timer-start-work'));
+    const unsubPlayExpired = eventBus.on('playTimerExpired', () => persistTimerStateNow('timer-expired-play'));
+
+    const unsubPlayTick = eventBus.on('playTimerTick', () => maybePersist('timer-tick-play'));
+    const unsubWorkTick = eventBus.on('workPhaseTimerTick', () => maybePersist('timer-tick-work'));
+
+    const onVisibilityChange = () => {
+      try {
+        if (document.hidden) {
+          // Try to flush the most recent timer state when the tab is backgrounded.
+          persistTimerStateNow('visibility-hidden');
+        }
+      } catch {}
+    };
+
+    const onBeforeUnload = () => {
+      try {
+        persistTimerStateNow('beforeunload');
+      } catch {}
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('beforeunload', onBeforeUnload);
+
+    return () => {
+      try { unsubPlayStart?.(); } catch {}
+      try { unsubWorkStart?.(); } catch {}
+      try { unsubPlayExpired?.(); } catch {}
+      try { unsubPlayTick?.(); } catch {}
+      try { unsubWorkTick?.(); } catch {}
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, [lessonKey, persistTimerStateNow]);
 
   const handleApplyGoldenKeyForLesson = useCallback(async () => {
     if (goldenKeysEnabledRef.current === false) return;

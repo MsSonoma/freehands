@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2026-01-12T14:52:29Z  
+**Last updated**: 2026-01-12T15:00:19Z  
 **Status**: Canonical
 
 ## How It Works
@@ -97,6 +97,14 @@
 ### Timer State Persistence
 
 **Authoritative source (V2):** `TimerService` state is the source of truth and is persisted/restored via SnapshotService (`snapshot.timerState`).
+
+**Timer state must be saved continuously (V2):**
+- Relying only on "one-off" snapshot saves (e.g., on Go, or on overlay actions) causes timers to reset to the full limit on refresh.
+- Session V2 must persist `timerState` on a cadence while timers are running so refresh resumes from near-current elapsed time.
+- Implementation: SessionPageV2 subscribes to TimerService events and snapshot-saves `timerState`:
+  - On `playTimerStart`, `workPhaseTimerStart`, and `playTimerExpired` (immediate)
+  - On `playTimerTick` and `workPhaseTimerTick` (throttled; currently ~10s)
+  - On `visibilitychange` when the tab is hidden, and on `beforeunload`
 
 **SessionStorage is a mirror (not authoritative):**
 - Key pattern: `session_timer_state:{lessonKey}:{phase}:{mode}`
