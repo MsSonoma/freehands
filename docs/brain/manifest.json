@@ -494,6 +494,20 @@
     "last_updated": "2026-01-08T16:32:27Z",
     "status": "canonical"
   },
+  "platform-jumper": {
+    "file": "platform-jumper.md",
+    "systems": [
+      "Platform Jumper",
+      "game physics",
+      "JUMP_STRENGTH",
+      "TRAMPOLINE_BOUNCE",
+      "gravity",
+      "keyboard controls",
+      "touch controls"
+    ],
+    "last_updated": "2026-01-12T15:25:45Z",
+    "status": "canonical"
+  },
   "beta-program": {
     "file": "beta-program.md",
     "systems": [
