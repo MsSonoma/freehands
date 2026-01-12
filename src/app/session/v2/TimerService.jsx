@@ -105,6 +105,145 @@ export class TimerService {
   setPlayTimerLimits(limits) {
     if (!limits || typeof limits !== 'object') return;
     this.playTimerLimits = { ...this.playTimerLimits, ...limits };
+
+    // If a play timer is already running, update its limit so bonus changes
+    // (e.g., Golden Key) apply immediately to the active countdown.
+    try {
+      for (const [phase, nextLimit] of Object.entries(limits)) {
+        const timer = this.playTimers.get(phase);
+        if (!timer) continue;
+        const parsed = Number(nextLimit);
+        if (!Number.isFinite(parsed) || parsed <= 0) continue;
+        timer.timeLimit = parsed;
+
+        // Keep the overlay/sessionStorage totalMinutes aligned.
+        if (this.lessonKey) {
+          const storageKey = `session_timer_state:${this.lessonKey}:${phase}:play`;
+          try {
+            sessionStorage.setItem(storageKey, JSON.stringify({
+              elapsedSeconds: timer.elapsed,
+              startTime: timer.startTime,
+              totalMinutes: Math.ceil(timer.timeLimit / 60),
+              pausedAt: null
+            }));
+          } catch {}
+        }
+      }
+    } catch {}
+  }
+
+  /**
+   * Authoritatively set a phase timer's elapsed seconds.
+   *
+   * This is used by the facilitator TimerControlOverlay. The timer engine,
+   * not the overlay UI, is the source of truth for transitions.
+   *
+   * Note: elapsedSeconds may be negative to represent "time added".
+   */
+  setPhaseElapsedSeconds(phase, mode, elapsedSeconds) {
+    const asNumber = Number(elapsedSeconds);
+    if (!Number.isFinite(asNumber)) return;
+    if (!phase || typeof phase !== 'string') return;
+
+    const now = Date.now();
+    const startTime = now - (asNumber * 1000);
+
+    if (mode === 'play') {
+      // Discussion has no play timer.
+      if (phase === 'discussion') return;
+
+      const validPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
+      if (!validPhases.includes(phase)) return;
+
+      const existing = this.playTimers.get(phase);
+      const timeLimit = existing?.timeLimit ?? this.playTimerLimits?.[phase];
+      if (!timeLimit) return;
+
+      const timer = {
+        startTime,
+        elapsed: asNumber,
+        timeLimit,
+        expired: false
+      };
+
+      this.playTimers.set(phase, timer);
+      this.currentPlayPhase = phase;
+      this.mode = 'play';
+
+      if (!this.playTimerInterval) {
+        this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
+      }
+
+      // Mirror to sessionStorage for SessionTimer/overlay display.
+      if (this.lessonKey) {
+        const storageKey = `session_timer_state:${this.lessonKey}:${phase}:play`;
+        try {
+          sessionStorage.setItem(storageKey, JSON.stringify({
+            elapsedSeconds: timer.elapsed,
+            startTime: timer.startTime,
+            totalMinutes: Math.ceil(timer.timeLimit / 60),
+            pausedAt: null
+          }));
+        } catch {}
+      }
+
+      const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
+      this.eventBus.emit('playTimerTick', {
+        phase,
+        elapsed: timer.elapsed,
+        remaining,
+        formatted: this.#formatTime(timer.elapsed),
+        remainingFormatted: this.#formatTime(remaining)
+      });
+      return;
+    }
+
+    if (mode === 'work') {
+      const validPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+      if (!validPhases.includes(phase)) return;
+
+      const existing = this.workPhaseTimers.get(phase);
+      const timeLimit = existing?.timeLimit ?? this.workPhaseTimeLimits?.[phase] ?? 600;
+
+      const timer = {
+        startTime,
+        elapsed: asNumber,
+        timeLimit,
+        completed: false,
+        onTime: asNumber <= timeLimit
+      };
+
+      this.workPhaseTimers.set(phase, timer);
+      this.currentWorkPhase = phase;
+      this.mode = 'work';
+
+      if (!this.workPhaseInterval) {
+        this.workPhaseInterval = setInterval(this.#tickWorkPhaseTimers.bind(this), 1000);
+      }
+
+      if (this.lessonKey) {
+        const storageKey = `session_timer_state:${this.lessonKey}:${phase}:work`;
+        try {
+          sessionStorage.setItem(storageKey, JSON.stringify({
+            elapsedSeconds: timer.elapsed,
+            startTime: timer.startTime,
+            totalMinutes: Math.ceil(timer.timeLimit / 60),
+            pausedAt: null
+          }));
+        } catch {}
+      }
+
+      const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
+      this.eventBus.emit('workPhaseTimerTick', {
+        phase,
+        elapsed: timer.elapsed,
+        remaining,
+        timeLimit: timer.timeLimit,
+        onTime: timer.onTime,
+        formatted: this.#formatTime(timer.elapsed),
+        remainingFormatted: this.#formatTime(remaining)
+      });
+    }
   }
 
   #timerOverlayKeyPrefix() {

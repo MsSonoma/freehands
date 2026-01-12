@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2026-01-08T13:26:26Z  
+**Last updated**: 2026-01-12T14:37:14Z  
 **Status**: Canonical
 
 ## How It Works
@@ -101,6 +101,14 @@ Timer state mirrors to sessionStorage for TimerControlOverlay compatibility:
 - Keys are written on each tick by TimerService.
 - Keys must be cleared for the whole lesson on reset/start-over to avoid stale timers (especially discussion work timers) reappearing after restart.
 
+**Important (authoritative edits):** SessionStorage is a *mirror*, not the source of truth.
+- TimerControlOverlay must not mutate `session_timer_state:*` directly because TimerService overwrites these keys every second.
+- Authoritative edits (add/subtract time) must go through TimerService so phase transitions and the UI stay in sync.
+
+**Authoritative API (V2):**
+- `TimerService.setPhaseElapsedSeconds(phase, mode, elapsedSeconds)` updates the live engine timer (play or work), mirrors to sessionStorage, and emits a tick event immediately.
+- SessionPageV2 is responsible for calling this when facilitator adjusts time via TimerControlOverlay.
+
 **Important (V2 lifecycle):** The TimerService instance must remain stable for the duration of a session and must not be recreated on every phase transition. Recreating it will lose timer Maps and can leave stale sessionStorage keys behind.
 
 ### Games Overlay Timer Parity (V2)
@@ -188,6 +196,18 @@ When `golden_keys_enabled` is `false`, Golden Keys are treated as fully disabled
 - Golden Key awarding/persistence is skipped.
 - Golden Key UI is hidden (Learn/Lessons counter/selector and the TimerControlOverlay Golden Key section).
 - Facilitator Test review keeps showing the work timer remaining grid, but Golden Key-specific messaging is hidden.
+
+### Golden Key Application (Per Lesson)
+
+Golden Key usage is **per-lesson**, stored on the learner record:
+- Field: `learners.active_golden_keys` (JSON map `{ [lessonKey]: true }`)
+- When a facilitator applies a Golden Key for the current lesson, Session V2 must persist:
+  - Set `active_golden_keys[lessonKey] = true`
+  - Decrement `learners.golden_keys` inventory by 1
+
+Once applied:
+- The Golden Key bonus minutes are added to **all play timers** (phases 2-5) for that session.
+- Suspending the Golden Key sets the play bonus to 0 (bonus is removed immediately from running timers).
 
 **Immediate updates (no local fallback):**
 - Pages subscribe to the Learner Settings Bus so facilitator-side toggles react immediately in already-open sessions/tabs.

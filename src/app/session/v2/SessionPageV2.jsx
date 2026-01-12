@@ -22,7 +22,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
 import { createBrowserClient } from '@supabase/ssr';
 import { getSupabaseClient } from '@/app/lib/supabaseClient';
-import { getLearner } from '@/app/facilitator/learners/clientApi';
+import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi';
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus';
 import { loadPhaseTimersForLearner } from '../utils/phaseTimerDefaults';
 import SessionTimer from '../components/SessionTimer';
@@ -642,6 +642,8 @@ function SessionPageV2Inner() {
   });
   const [timerRefreshKey, setTimerRefreshKey] = useState(0);
   const [goldenKeyBonus, setGoldenKeyBonus] = useState(0);
+  const [hasGoldenKey, setHasGoldenKey] = useState(false);
+  const [isGoldenKeySuspended, setIsGoldenKeySuspended] = useState(false);
   const goldenKeyBonusRef = useRef(0);
   const [timerPaused, setTimerPaused] = useState(false);
 
@@ -1049,7 +1051,13 @@ function SessionPageV2Inner() {
         }
         const activeKeys = learner.active_golden_keys || {};
         if (learner.golden_keys_enabled && activeKeys[lessonKey]) {
+          setHasGoldenKey(true);
+          setIsGoldenKeySuspended(false);
           setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
+        } else {
+          setHasGoldenKey(false);
+          setIsGoldenKeySuspended(false);
+          setGoldenKeyBonus(0);
         }
         
         addEvent(`ðŸ‘¤ Loaded learner: ${learner.name}`);
@@ -1083,6 +1091,9 @@ function SessionPageV2Inner() {
         try { timerServiceRef.current?.setGoldenKeysEnabled?.(next); } catch {}
         if (!next) {
           setGoldenKeyEligible(false);
+          setHasGoldenKey(false);
+          setIsGoldenKeySuspended(false);
+          setGoldenKeyBonus(0);
         }
       }
 
@@ -2160,6 +2171,88 @@ function SessionPageV2Inner() {
 
     setTimerPaused(prev => !prev);
   }, []);
+
+  const persistTimerStateNow = useCallback((trigger) => {
+    try {
+      const svc = snapshotServiceRef.current;
+      const timerSvc = timerServiceRef.current;
+      if (!svc || !timerSvc) return;
+      svc.saveProgress(trigger || 'timer-overlay', {
+        timerState: timerSvc.getState()
+      });
+    } catch (err) {
+      console.warn('[SessionPageV2] Timer snapshot persist failed:', err);
+    }
+  }, []);
+
+  const handleApplyGoldenKeyForLesson = useCallback(async () => {
+    if (goldenKeysEnabledRef.current === false) return;
+    if (!lessonKey) return;
+
+    const learnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
+    if (!learnerId || learnerId === 'demo') return;
+
+    // If already applied locally, don't reapply.
+    if (hasGoldenKey) return;
+
+    try {
+      const learner = await getLearner(learnerId);
+      if (!learner) return;
+
+      const activeKeys = { ...(learner.active_golden_keys || {}) };
+      if (activeKeys[lessonKey]) {
+        setHasGoldenKey(true);
+        setIsGoldenKeySuspended(false);
+        const timers = loadPhaseTimersForLearner(learner);
+        setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
+        setTimerRefreshKey(k => k + 1);
+        persistTimerStateNow('golden-key-applied');
+        return;
+      }
+
+      const available = Number(learner.golden_keys || 0);
+      if (!Number.isFinite(available) || available <= 0) {
+        return;
+      }
+
+      activeKeys[lessonKey] = true;
+      const updated = await updateLearner(learnerId, {
+        golden_keys: available - 1,
+        active_golden_keys: activeKeys
+      });
+
+      // Reflect in local session state.
+      setLearnerProfile(updated || learner);
+      setHasGoldenKey(true);
+      setIsGoldenKeySuspended(false);
+      const timers = loadPhaseTimersForLearner(updated || learner);
+      setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
+      setTimerRefreshKey(k => k + 1);
+      persistTimerStateNow('golden-key-applied');
+    } catch (err) {
+      console.warn('[SessionPageV2] Failed to apply golden key:', err);
+    }
+  }, [hasGoldenKey, lessonKey, learnerProfile, persistTimerStateNow]);
+
+  const handleSuspendGoldenKey = useCallback(() => {
+    if (goldenKeysEnabledRef.current === false) return;
+    if (!hasGoldenKey) return;
+    setIsGoldenKeySuspended(true);
+    setGoldenKeyBonus(0);
+    setTimerRefreshKey(k => k + 1);
+    persistTimerStateNow('golden-key-suspended');
+  }, [hasGoldenKey, persistTimerStateNow]);
+
+  const handleUnsuspendGoldenKey = useCallback(() => {
+    if (goldenKeysEnabledRef.current === false) return;
+    if (!hasGoldenKey) return;
+    setIsGoldenKeySuspended(false);
+    if (phaseTimers) {
+      setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
+    }
+    setTimerRefreshKey(k => k + 1);
+    persistTimerStateNow('golden-key-unsuspended');
+  }, [hasGoldenKey, phaseTimers, persistTimerStateNow]);
   
   // Start play timer for a phase (called when phase begins)
   const startPhasePlayTimer = useCallback((phaseName) => {
@@ -6350,29 +6443,23 @@ function SessionPageV2Inner() {
           goldenKeyBonus={goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
           isPaused={timerPaused}
           onUpdateTime={(seconds) => {
-            // Force timer refresh to pick up new elapsed time from storage
+            const phaseName = getCurrentPhaseName();
+            const mode = phaseName ? (currentTimerMode[phaseName] || 'work') : 'work';
+            try {
+              timerServiceRef.current?.setPhaseElapsedSeconds?.(phaseName, mode, seconds);
+            } catch (err) {
+              console.warn('[SessionPageV2] Timer adjust failed:', err);
+            }
+            // Force timer refresh to pick up new elapsed time from the engine
             setTimerRefreshKey(k => k + 1);
+            persistTimerStateNow('timer-adjust');
           }}
           onTogglePause={() => setTimerPaused(prev => !prev)}
-          hasGoldenKey={goldenKeysEnabledRef.current !== false && goldenKeyBonus > 0}
-          isGoldenKeySuspended={false}
-          onApplyGoldenKey={() => {
-            if (goldenKeysEnabledRef.current === false) return;
-            // Apply golden key bonus
-            if (phaseTimers) {
-              setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
-            }
-          }}
-          onSuspendGoldenKey={() => {
-            if (goldenKeysEnabledRef.current === false) return;
-            setGoldenKeyBonus(0);
-          }}
-          onUnsuspendGoldenKey={() => {
-            if (goldenKeysEnabledRef.current === false) return;
-            if (phaseTimers) {
-              setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
-            }
-          }}
+          hasGoldenKey={goldenKeysEnabledRef.current !== false && hasGoldenKey}
+          isGoldenKeySuspended={isGoldenKeySuspended}
+          onApplyGoldenKey={handleApplyGoldenKeyForLesson}
+          onSuspendGoldenKey={handleSuspendGoldenKey}
+          onUnsuspendGoldenKey={handleUnsuspendGoldenKey}
         />
       )}
     </>
