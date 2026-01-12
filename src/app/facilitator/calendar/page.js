@@ -58,6 +58,22 @@ export default function CalendarPage() {
     return `${year}-${month}-${day}`
   }
 
+  const addDaysToDateStr = (dateStr, days) => {
+    try {
+      const [y, m, d] = String(dateStr || '').split('-').map(n => Number(n))
+      if (!y || !m || !d) return null
+      const dt = new Date(y, m - 1, d)
+      if (Number.isNaN(dt.getTime())) return null
+      dt.setDate(dt.getDate() + Number(days || 0))
+      const yy = dt.getFullYear()
+      const mm = String(dt.getMonth() + 1).padStart(2, '0')
+      const dd = String(dt.getDate()).padStart(2, '0')
+      return `${yy}-${mm}-${dd}`
+    } catch {
+      return null
+    }
+  }
+
   // Canonical lesson id used for matching completion events to scheduled lessons.
   // Completion rows often store a filename-ish id, while schedule stores subject/prefix paths.
   // Canonicalize both to the same basename-without-extension.
@@ -245,9 +261,12 @@ export default function CalendarPage() {
 
       const todayStr = getLocalTodayStr()
 
-      // Build a completion lookup keyed by "canonicalLessonId|YYYY-MM-DD" from lesson_session_events.
+      // Build a completion lookup from lesson_session_events.
       // Past scheduled dates will show only completed lessons.
+      // NOTE: Lessons may be completed after their scheduled date (make-up work).
+      // We treat a scheduled lesson as completed if it is completed on the same date OR within a short window after.
       let completedKeySet = new Set()
+      let completedDatesByLesson = new Map()
       let completionLookupFailed = false
       try {
         const pastSchedule = (schedule || []).filter(s => s?.scheduled_date && s.scheduled_date < todayStr)
@@ -268,13 +287,24 @@ export default function CalendarPage() {
               if (row?.event_type && row.event_type !== 'completed') continue
               const completedDate = toLocalDateStr(row?.occurred_at)
               const key = canonicalLessonId(row?.lesson_id)
-              if (completedDate && key) completedKeySet.add(`${key}|${completedDate}`)
+              if (!completedDate || !key) continue
+              completedKeySet.add(`${key}|${completedDate}`)
+              const prev = completedDatesByLesson.get(key) || []
+              prev.push(completedDate)
+              completedDatesByLesson.set(key, prev)
+            }
+
+            // De-dup + sort dates per lesson for stable comparisons.
+            for (const [k, dates] of completedDatesByLesson.entries()) {
+              const uniq = Array.from(new Set((dates || []).filter(Boolean))).sort()
+              completedDatesByLesson.set(k, uniq)
             }
           }
         }
       } catch {
         // If completion lookup fails, fall back to showing schedule as-is.
         completedKeySet = new Set()
+        completedDatesByLesson = new Map()
         completionLookupFailed = true
       }
 
@@ -285,7 +315,15 @@ export default function CalendarPage() {
         if (!dateStr || !lessonKey) return
 
         const isPast = dateStr < todayStr
-        const completed = completedKeySet.has(`${canonicalLessonId(lessonKey)}|${dateStr}`)
+        const canonical = canonicalLessonId(lessonKey)
+        const direct = canonical ? completedKeySet.has(`${canonical}|${dateStr}`) : false
+        const windowEnd = addDaysToDateStr(dateStr, 7)
+        const makeup = (() => {
+          if (!canonical || !windowEnd) return false
+          const dates = completedDatesByLesson.get(canonical) || []
+          return dates.some(d => d > dateStr && d <= windowEnd)
+        })()
+        const completed = direct || makeup
 
         // Past dates: show only completed lessons.
         if (isPast && !completed && !completionLookupFailed) return

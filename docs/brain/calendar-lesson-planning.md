@@ -1,6 +1,6 @@
 # Calendar Lesson Planning System - Ms. Sonoma Brain File
 
-**Last Updated**: 2026-01-12T13:04:42Z  
+**Last Updated**: 2026-01-12T20:27:20Z  
 **Status**: Canonical
 
 ## How It Works
@@ -136,10 +136,16 @@ The Calendar schedule view supports showing scheduled lessons on past dates, but
 - For dates before "today" (local YYYY-MM-DD), scheduled lessons are included only if there is a matching completion event in `lesson_session_events`.
 
 **Completion matching rule:**
-- A scheduled lesson is considered completed for a date when there is a `lesson_session_events` row with:
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
   - `event_type = 'completed'`
   - `lesson_id` matching the scheduled `lesson_key` after canonicalization
-  - `occurred_at` (converted to local YYYY-MM-DD) matching the `lesson_schedule.scheduled_date`
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
+
+**Make-up window rule (7 days):**
+- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
+- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
 
 **Lesson key canonicalization (required for completion matching):**
 - `lesson_schedule.lesson_key` is typically a path like `math/Foo.json` or `generated/Foo.json`.
@@ -192,6 +198,73 @@ If you have existing recorded completions but no corresponding `lesson_schedule`
 
 **Date conversion:**
 - The script defaults to local date extraction from `occurred_at` (use `--tz utc` only if you want UTC date grouping).
+
+### Recovering Missing Completion Events From Transcript Ledgers
+
+If a lesson was truly completed but there is **no** `lesson_session_events(event_type='completed')` row (so Calendar history stays empty), you can attempt recovery from transcript ledgers.
+
+**Script:** `scripts/backfill-completions-from-transcripts.mjs`
+
+**Source of truth (required):**
+- Transcript `ledger.json` segments with a valid `completedAt` timestamp.
+- The script scans both:
+  - `v1/<ownerId>/<learnerId>/<lessonId>/ledger.json`
+  - `v1/<ownerId>/<learnerId>/<lessonId>/sessions/<sessionId>/ledger.json`
+
+**What it writes (when not dry-run):**
+- Inserts a `lesson_sessions` row (with `started_at` + `ended_at`).
+- Inserts a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `occurred_at = completedAt`
+  - `metadata.source = 'transcripts-backfill'`
+
+**Limitations (important):**
+- If there is no `ledger.json` (or it has no `completedAt`) for the target date range, this recovery cannot fabricate a completion.
+
+**Safe usage (recommended):**
+- Dry-run first: `node scripts/backfill-completions-from-transcripts.mjs --dry-run --learner Emma --from 2026-01-07 --to 2026-01-08`
+- Then run real insert: `node scripts/backfill-completions-from-transcripts.mjs --write --learner Emma --from 2026-01-07 --to 2026-01-08`
+
+### Manual Completion + Medal Backfill (When You Know the Lesson Keys)
+
+If there is no reliable completion source (no `lesson_session_events` rows and no transcript `completedAt` in storage), but you know which lessons were completed and on what dates, you can insert completion signals and medals directly.
+
+**Script:** `scripts/backfill-manual-completions.mjs`
+
+**Config file format:**
+- `learnerName`: learner lookup string (case-insensitive)
+- `defaultPercent`: used only when an item omits `percent`
+- `items[]`: each entry includes:
+  - `lesson_key`: the scheduled lesson key (usually `generated/<filename>.json`)
+  - `completed_date`: local `YYYY-MM-DD`
+  - optional `percent` (0-100)
+  - optional `note` (stored in event metadata)
+
+**What it writes:**
+- `lesson_sessions`: creates a minimal session row with `started_at == ended_at` (date-only backfill; uses local noon ISO)
+- `lesson_session_events`: inserts `started` + `completed` events for the session
+- `learner_medals`: upserts `best_percent` and `medal_tier` keyed by `(user_id, learner_id, lesson_key)` where `lesson_key` is the canonical id (basename without `.json`)
+
+**Dedupe rule:**
+- Skips if a `completed` event already exists for the same canonical lesson id on the same local date.
+
+**Safe usage (recommended):**
+- Dry-run: `node scripts/backfill-manual-completions.mjs --dry-run --file scripts/<your-config>.json`
+- Write: `node scripts/backfill-manual-completions.mjs --write --file scripts/<your-config>.json`
+
+### Verifying Backfill Results (Events + Medals)
+
+To confirm the DB state matches what the Calendar (history) and Medals UI expect, use:
+
+**Script:** `scripts/check-completions-for-keys.mjs`
+
+**What it checks:**
+- `lesson_schedule` rows in a date window
+- matching `lesson_session_events(event_type='completed')` rows for those scheduled lessons
+- `learner_medals` rows for those lessons
+
+**Usage:**
+- `node scripts/check-completions-for-keys.mjs --learner Emma --from 2026-01-05 --to 2026-01-08`
 
 ### Scheduled Lessons Overlay: Built-in Lesson Editor
 

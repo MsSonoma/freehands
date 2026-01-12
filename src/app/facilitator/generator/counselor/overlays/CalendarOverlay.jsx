@@ -31,6 +31,22 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
     return `${year}-${month}-${day}`
   }
 
+  const addDaysToDateStr = (dateStr, days) => {
+    try {
+      const [y, m, d] = String(dateStr || '').split('-').map(n => Number(n))
+      if (!y || !m || !d) return null
+      const dt = new Date(y, m - 1, d)
+      if (Number.isNaN(dt.getTime())) return null
+      dt.setDate(dt.getDate() + Number(days || 0))
+      const yy = dt.getFullYear()
+      const mm = String(dt.getMonth() + 1).padStart(2, '0')
+      const dd = String(dt.getDate()).padStart(2, '0')
+      return `${yy}-${mm}-${dd}`
+    } catch {
+      return null
+    }
+  }
+
   const canonicalLessonId = (raw) => {
     if (!raw) return null
     const normalized = normalizeLessonKey(String(raw)) || String(raw)
@@ -130,9 +146,11 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
 
       const todayStr = getLocalTodayStr()
 
-      // Build a completion lookup keyed by "canonicalLessonId|YYYY-MM-DD".
+      // Build a completion lookup.
       // Past scheduled dates will show only completed lessons.
+      // NOTE: Lessons may be completed after their scheduled date (make-up work).
       let completedKeySet = new Set()
+      let completedDatesByLesson = new Map()
       let completionLookupFailed = false
       try {
         const pastSchedule = (data || []).filter(row => row?.scheduled_date && row.scheduled_date < todayStr)
@@ -150,12 +168,22 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
               if (row?.event_type && row.event_type !== 'completed') continue
               const completedDate = toLocalDateStr(row?.occurred_at)
               const key = canonicalLessonId(row?.lesson_id)
-              if (completedDate && key) completedKeySet.add(`${key}|${completedDate}`)
+              if (!completedDate || !key) continue
+              completedKeySet.add(`${key}|${completedDate}`)
+              const prev = completedDatesByLesson.get(key) || []
+              prev.push(completedDate)
+              completedDatesByLesson.set(key, prev)
+            }
+
+            for (const [k, dates] of completedDatesByLesson.entries()) {
+              const uniq = Array.from(new Set((dates || []).filter(Boolean))).sort()
+              completedDatesByLesson.set(k, uniq)
             }
           }
         }
       } catch {
         completedKeySet = new Set()
+        completedDatesByLesson = new Map()
         completionLookupFailed = true
       }
 
@@ -166,7 +194,15 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
         if (!dateStr || !lessonKey) return
 
         const isPast = dateStr < todayStr
-        const completed = completedKeySet.has(`${canonicalLessonId(lessonKey)}|${dateStr}`)
+        const canonical = canonicalLessonId(lessonKey)
+        const direct = canonical ? completedKeySet.has(`${canonical}|${dateStr}`) : false
+        const windowEnd = addDaysToDateStr(dateStr, 7)
+        const makeup = (() => {
+          if (!canonical || !windowEnd) return false
+          const dates = completedDatesByLesson.get(canonical) || []
+          return dates.some(d => d > dateStr && d <= windowEnd)
+        })()
+        const completed = direct || makeup
 
         if (isPast && !completed && !completionLookupFailed) return
 

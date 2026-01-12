@@ -1,0 +1,30 @@
+{
+  "learnerName": "Emma",
+  "defaultPercent": 90,
+  "items": [
+    {
+      "lesson_key": "generated/4th_Exploring_Measurement_Understanding_Length_and_Perimeter_intermediate.json",
+      "completed_date": "2026-01-07",
+      "percent": 90,
+      "note": "User reported 90-100%"
+    },
+    {
+      "lesson_key": "generated/3rd_Understanding_Regional_Cultures_Around_the_World_intermediate.json",
+      "completed_date": "2026-01-07",
+      "percent": 90,
+      "note": "User reported 90-100%"
+    },
+    {
+      "lesson_key": "generated/4th_Exploring_Simple_Machines_Levers_and_Pulleys_intermediate.json",
+      "completed_date": "2026-01-08",
+      "percent": 90,
+      "note": "User reported 90-100%"
+    },
+    {
+      "lesson_key": "generated/3rd_Exploring_Dialogue_and_Conversation_in_Stories_intermediate.json",
+      "completed_date": "2026-01-08",
+      "percent": 90,
+      "note": "User reported 90-100%"
+    }
+  ]
+}

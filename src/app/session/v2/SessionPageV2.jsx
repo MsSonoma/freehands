@@ -52,6 +52,8 @@ import { appendTranscriptSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
 import CaptionPanel from '../components/CaptionPanel';
 import SessionVisualAidsCarousel from '../components/SessionVisualAidsCarousel';
+import { useSessionTracking } from '@/app/hooks/useSessionTracking';
+import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
 
 // Test Review UI Component (matches V1)
 function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview }) {
@@ -631,6 +633,24 @@ function SessionPageV2Inner() {
   const [learnerProfile, setLearnerProfile] = useState(null);
   const [learnerLoading, setLearnerLoading] = useState(true);
   const [learnerError, setLearnerError] = useState(null);
+
+  // Session tracking (lesson_sessions + lesson_session_events)
+  const [showTakeoverDialog, setShowTakeoverDialog] = useState(false);
+  const [conflictingSession, setConflictingSession] = useState(null);
+  const {
+    startSession: startTrackedSession,
+    endSession: endTrackedSession,
+    startPolling: startSessionPolling,
+    stopPolling: stopSessionPolling,
+  } = useSessionTracking(
+    learnerProfile?.id || null,
+    lessonKey || null,
+    false,
+    (session) => {
+      setConflictingSession(session);
+      setShowTakeoverDialog(true);
+    }
+  );
   
   // Phase timer state (loaded from learner profile)
   const [phaseTimers, setPhaseTimers] = useState(null);
@@ -3442,6 +3462,15 @@ function SessionPageV2Inner() {
           sessionStorage.setItem('just_earned_golden_key', 'true');
         } catch {}
       }
+
+      // End tracked session (so Calendar history can detect this completion).
+      try { stopSessionPolling?.(); } catch {}
+      try {
+        await endTrackedSession('completed', {
+          source: 'session-v2',
+          test_percentage: testGrade?.percentage ?? null,
+        });
+      } catch {}
       
       // Navigate to lessons page
       console.log('[SessionPageV2] Attempting navigation to lessons page');
@@ -4688,6 +4717,25 @@ function SessionPageV2Inner() {
       // Ignore - browsers may block resume/play outside strict gesture contexts.
     }
 
+    // Start (or conflict-check) session tracking before the orchestrator begins.
+    // This is required for Calendar history to detect completions reliably.
+    try {
+      const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
+      const trackingLessonId = lessonKey || null;
+      if (trackingLearnerId && trackingLearnerId !== 'demo' && trackingLessonId && browserSessionId) {
+        const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+        const sessionResult = await startTrackedSession(browserSessionId, deviceName);
+        if (sessionResult?.conflict) {
+          setConflictingSession(sessionResult.existingSession);
+          setShowTakeoverDialog(true);
+          return;
+        }
+        try { startSessionPolling?.(); } catch {}
+      }
+    } catch {
+      // Tracking failures should not block the lesson.
+    }
+
     if (options?.ignoreResume) {
       resetTranscriptState();
     }
@@ -4756,6 +4804,82 @@ function SessionPageV2Inner() {
       setStartSessionLoading(false);
     }
   }, [startSession]);
+
+  const handleSessionTakeover = useCallback(async (pinCode) => {
+    const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
+    const trackingLessonId = lessonKey || null;
+
+    if (!trackingLearnerId || !trackingLessonId || !browserSessionId) {
+      throw new Error('Session not initialized');
+    }
+
+    const supabase = getSupabaseClient();
+    const { data: sessionResult } = await supabase?.auth.getSession() || {};
+    const token = sessionResult?.session?.access_token;
+    if (!token) {
+      throw new Error('Not logged in');
+    }
+
+    const res = await fetch('/api/facilitator/pin/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ pin: pinCode })
+    });
+
+    const result = await res.json().catch(() => null);
+    if (!res.ok || !result?.ok) {
+      throw new Error('Invalid PIN');
+    }
+
+    if (conflictingSession?.id) {
+      try {
+        const { endLessonSession } = await import('@/app/lib/sessionTracking');
+        await endLessonSession(conflictingSession.id, {
+          reason: 'taken_over',
+          metadata: {
+            taken_over_by_session_id: browserSessionId,
+            taken_over_at: new Date().toISOString(),
+          },
+          learnerId: trackingLearnerId,
+          lessonId: trackingLessonId,
+        });
+      } catch {}
+    }
+
+    try {
+      const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+      const takeoverStart = await startTrackedSession(browserSessionId, deviceName);
+      if (takeoverStart?.conflict) {
+        throw new Error('Lesson is still active on another device');
+      }
+      try { startSessionPolling?.(); } catch {}
+    } catch (err) {
+      throw err;
+    }
+
+    // Clear local snapshot so reload pulls the latest remote snapshot.
+    try {
+      localStorage.removeItem(`atomic_snapshot:${trackingLearnerId}:${trackingLessonId}`);
+    } catch {}
+
+    setShowTakeoverDialog(false);
+    setConflictingSession(null);
+
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  }, [browserSessionId, conflictingSession, learnerProfile?.id, lessonKey, startTrackedSession, startSessionPolling]);
+
+  const handleCancelTakeover = useCallback(() => {
+    setShowTakeoverDialog(false);
+    setConflictingSession(null);
+    if (typeof window !== 'undefined') {
+      window.location.href = '/learn/lessons';
+    }
+  }, []);
 
   // Allow early-declared callbacks to invoke startSession without TDZ issues.
   startSessionRef.current = startSession;
@@ -6511,6 +6635,14 @@ function SessionPageV2Inner() {
           onApplyGoldenKey={handleApplyGoldenKeyForLesson}
           onSuspendGoldenKey={handleSuspendGoldenKey}
           onUnsuspendGoldenKey={handleUnsuspendGoldenKey}
+        />
+      )}
+
+      {showTakeoverDialog && (
+        <SessionTakeoverDialog
+          existingSession={conflictingSession}
+          onTakeover={handleSessionTakeover}
+          onCancel={handleCancelTakeover}
         />
       )}
     </>

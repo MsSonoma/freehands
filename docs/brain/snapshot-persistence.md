@@ -19,8 +19,9 @@ When user clicks "Complete Lesson" button:
 3. **Clear snapshots** - `clearSnapshot()` removes resume state from localStorage and database using all possible key variations
 4. **Clear timer state** - Remove phase-based timer states from sessionStorage
 5. **Clear golden key** - Remove active golden key for this lesson if used
-6. **Save transcript** - Persist final transcript segment to Supabase Storage
-7. **Navigate away** - Redirect to /learn/lessons
+6. **End tracked session** - Close `lesson_sessions` and write a `lesson_session_events` row (`event_type='completed'`) so Calendar history can detect completion
+7. **Save transcript** - Persist final transcript segment to Supabase Storage
+8. **Navigate away** - Redirect to /learn/lessons
 
 The prevention flag ensures no snapshot saves occur between clicking Complete Lesson and finishing cleanup. This prevents the lesson from showing "Continue" instead of "Start Lesson" on next visit.
 

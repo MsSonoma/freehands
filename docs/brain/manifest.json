@@ -289,7 +289,7 @@
       "owned-lessons",
       "LessonPicker"
     ],
-    "last_updated": "2026-01-12T13:04:42Z",
+    "last_updated": "2026-01-12T20:27:20Z",
     "status": "canonical"
   },
   "tts-prefetching": {
@@ -342,7 +342,7 @@
       "transcript persistence",
       "caption panel"
     ],
-    "last_updated": "2026-01-07T03:34:00Z",
+    "last_updated": "2026-01-12T18:24:58Z",
     "status": "canonical"
   },
   "timer-system": {
