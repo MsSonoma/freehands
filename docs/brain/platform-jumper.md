@@ -24,6 +24,7 @@ Level layouts:
 - Reference size: `GAME_WIDTH = 800`, `GAME_HEIGHT = 500`.
 - A movement like "raise 15%" means subtract `0.15 * GAME_HEIGHT` from `y`.
 - A movement like "move left 20%" means subtract `0.20 * GAME_WIDTH` from `x`.
+- For beatability gaps between trampolines, prefer adding a single intermediate trampoline before changing global physics (example: Level 37 bridge).
 
 Input:
 
