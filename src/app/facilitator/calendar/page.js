@@ -13,6 +13,7 @@ import LessonPlanner from './LessonPlanner'
 import DayViewOverlay from './DayViewOverlay'
 import LessonNotesModal from './LessonNotesModal'
 import VisualAidsManagerModal from './VisualAidsManagerModal'
+import PortfolioScansModal from './PortfolioScansModal'
 import TypedRemoveConfirmModal from './TypedRemoveConfirmModal'
 import { InlineExplainer, PageHeader } from '@/components/FacilitatorHelp'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
@@ -39,6 +40,7 @@ export default function CalendarPage() {
 
   const [notesItem, setNotesItem] = useState(null)
   const [visualAidsItem, setVisualAidsItem] = useState(null)
+  const [portfolioScansItem, setPortfolioScansItem] = useState(null)
   const [removeConfirmItem, setRemoveConfirmItem] = useState(null)
 
   const getLocalTodayStr = () => {
@@ -839,7 +841,25 @@ export default function CalendarPage() {
                                     onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
                                     onMouseLeave={(e) => e.currentTarget.style.background = '#eff6ff'}
                                   >
-                                    Add Image
+                                    Visual Aids
+                                  </button>
+                                  <button
+                                    onClick={() => setPortfolioScansItem({ ...item, lessonTitle: lessonName })}
+                                    style={{
+                                      padding: '3px 10px',
+                                      fontSize: '11px',
+                                      fontWeight: '600',
+                                      borderRadius: '4px',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      background: '#f5f3ff',
+                                      color: '#5b21b6',
+                                      transition: 'background 0.15s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#ede9fe'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = '#f5f3ff'}
+                                  >
+                                    Add Images
                                   </button>
                                   <button
                                     onClick={() => setRemoveConfirmItem({ ...item, lessonTitle: lessonName })}
@@ -1042,6 +1062,15 @@ export default function CalendarPage() {
               learnerId={selectedLearnerId}
               lessonKey={visualAidsItem?.lesson_key}
               lessonTitle={visualAidsItem?.lessonTitle || 'Visual Aids'}
+              authToken={authToken}
+            />
+
+            <PortfolioScansModal
+              open={!!portfolioScansItem}
+              onClose={() => setPortfolioScansItem(null)}
+              learnerId={selectedLearnerId}
+              lessonKey={portfolioScansItem?.lesson_key}
+              lessonTitle={portfolioScansItem?.lessonTitle || 'Lesson'}
               authToken={authToken}
             />
 

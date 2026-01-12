@@ -8,6 +8,7 @@ import LessonPlanner from '@/app/facilitator/calendar/LessonPlanner'
 import LessonEditor from '@/components/LessonEditor'
 import LessonNotesModal from '@/app/facilitator/calendar/LessonNotesModal'
 import VisualAidsManagerModal from '@/app/facilitator/calendar/VisualAidsManagerModal'
+import PortfolioScansModal from '@/app/facilitator/calendar/PortfolioScansModal'
 import TypedRemoveConfirmModal from '@/app/facilitator/calendar/TypedRemoveConfirmModal'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
 
@@ -77,6 +78,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
 
   const [notesLesson, setNotesLesson] = useState(null)
   const [visualAidsLesson, setVisualAidsLesson] = useState(null)
+  const [portfolioScansLesson, setPortfolioScansLesson] = useState(null)
   const [removeConfirmLesson, setRemoveConfirmLesson] = useState(null)
 
   const [editingLesson, setEditingLesson] = useState(null)
@@ -1117,7 +1119,22 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
                             color: '#1e40af'
                           }}
                         >
-                          Add Image
+                          Visual Aids
+                        </button>
+                        <button
+                          onClick={() => setPortfolioScansLesson({ lessonKey: lesson.lesson_key, lessonTitle: lesson.lesson_title })}
+                          style={{
+                            padding: '2px 6px',
+                            fontSize: 10,
+                            fontWeight: 600,
+                            borderRadius: 4,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: '#f5f3ff',
+                            color: '#5b21b6'
+                          }}
+                        >
+                          Add Images
                         </button>
                         <button
                           onClick={() => setRemoveConfirmLesson({ scheduleId: lesson.id, lessonTitle: lesson.lesson_title })}
@@ -1359,6 +1376,17 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
         learnerId={learnerId}
         lessonKey={visualAidsLesson?.lessonKey}
         lessonTitle={visualAidsLesson?.lessonTitle || 'Visual Aids'}
+        authToken={authToken}
+        portal
+        zIndex={OVERLAY_Z_INDEX}
+      />
+
+      <PortfolioScansModal
+        open={!!portfolioScansLesson}
+        onClose={() => setPortfolioScansLesson(null)}
+        learnerId={learnerId}
+        lessonKey={portfolioScansLesson?.lessonKey}
+        lessonTitle={portfolioScansLesson?.lessonTitle || 'Lesson'}
         authToken={authToken}
         portal
         zIndex={OVERLAY_Z_INDEX}

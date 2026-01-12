@@ -7,6 +7,7 @@ import VisualAidsCarousel from '@/components/VisualAidsCarousel'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import LessonNotesModal from './LessonNotesModal'
 import VisualAidsManagerModal from './VisualAidsManagerModal'
+import PortfolioScansModal from './PortfolioScansModal'
 import TypedRemoveConfirmModal from './TypedRemoveConfirmModal'
 
 export default function DayViewOverlay({ 
@@ -52,6 +53,7 @@ export default function DayViewOverlay({
   const [authToken, setAuthToken] = useState('')
   const [notesLesson, setNotesLesson] = useState(null)
   const [visualAidsLesson, setVisualAidsLesson] = useState(null)
+  const [portfolioScansLesson, setPortfolioScansLesson] = useState(null)
   const [removeConfirmLesson, setRemoveConfirmLesson] = useState(null)
 
   const MAX_GENERATIONS = 4
@@ -885,7 +887,30 @@ export default function DayViewOverlay({
                             whiteSpace: 'nowrap'
                           }}
                         >
-                          Add Image
+                          Visual Aids
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await getAuthTokenOrThrow()
+                            } catch {
+                              return
+                            }
+                            setPortfolioScansLesson({ lessonKey: lesson.lesson_key, lessonTitle: lessonName })
+                          }}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            background: '#fff',
+                            color: '#5b21b6',
+                            border: '1px solid #ddd6fe',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Add Images
                         </button>
                         <button
                           onClick={() => setRemoveConfirmLesson({ scheduleId: lesson.id, lessonTitle: lessonName })}
@@ -1059,6 +1084,16 @@ export default function DayViewOverlay({
         lessonTitle={visualAidsLesson?.lessonTitle || 'Visual Aids'}
         authToken={authToken}
         zIndex={10025}
+      />
+
+      <PortfolioScansModal
+        open={!!portfolioScansLesson}
+        onClose={() => setPortfolioScansLesson(null)}
+        learnerId={learnerId}
+        lessonKey={portfolioScansLesson?.lessonKey}
+        lessonTitle={portfolioScansLesson?.lessonTitle || 'Lesson'}
+        authToken={authToken}
+        zIndex={10027}
       />
 
       <TypedRemoveConfirmModal

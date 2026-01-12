@@ -1,6 +1,6 @@
 # Calendar Lesson Planning System - Ms. Sonoma Brain File
 
-**Last Updated**: 2026-01-12T20:27:20Z  
+**Last Updated**: 2026-01-12T20:39:55Z  
 **Status**: Canonical
 
 ## How It Works
@@ -170,13 +170,37 @@ The Calendar schedule view supports showing scheduled lessons on past dates, but
 **UI rule (Schedule tab only):**
 - For past (completed) scheduled lessons, actions change to:
   - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Add Image**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
+  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
+  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
   - **Remove**: requires typing `remove` and warns it cannot be undone.
 
 These actions are implemented on:
 - The main Calendar page schedule list
 - The Calendar Day View overlay schedule list
 - The Mr. Mentor Calendar overlay schedule list
+
+### Portfolio Scan Uploads (Worksheet/Test Images)
+
+The Calendar “Add Images” action is for uploading **new** images (e.g., worksheet/test scans) to attach to a completed scheduled lesson for portfolio purposes.
+
+This is separate from Visual Aids:
+- **Visual Aids** are lesson-level aids (generated or curated) used during instruction.
+- **Portfolio scans** are learner work artifacts (uploaded images/PDFs).
+
+**Storage:**
+- Bucket: `transcripts`
+- Path prefix:
+  - `v1/<facilitatorUserId>/<learnerId>/<lessonKey>/portfolio-scans/<kind>/...`
+- `kind` is one of: `worksheet`, `test`, `other`
+
+**API:**
+- `GET /api/portfolio-scans/load?learnerId=...&lessonKey=...&kind=worksheet|test|other`
+- `POST /api/portfolio-scans/upload` (multipart form-data: `learnerId`, `lessonKey`, `kind`, `files[]`)
+- `POST /api/portfolio-scans/delete` (JSON body: `{ learnerId, path }`)
+
+**Auth + ownership rule:**
+- All endpoints require `Authorization: Bearer <access_token>`.
+- Endpoints fail closed if the learner is not owned by the authenticated facilitator.
 
 ### Backfilling Calendar Schedule From Completion History
 
