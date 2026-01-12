@@ -1,3 +1,4 @@
+2026-01-12T15:18:52Z | Copilot | Platform Jumper: increase jump height again (JUMP_STRENGTH -11 -> -12). Files: src/app/session/components/games/PlatformJumper.jsx
 2026-01-12T15:11:19Z | Copilot | Platform Jumper: increase jump height slightly again (JUMP_STRENGTH -10 -> -11). Files: src/app/session/components/games/PlatformJumper.jsx
 2026-01-12T15:00:19Z | Copilot | Session V2: persist timerState during ticks/start/hide so refresh resumes timers (no more reset-to-top) [#timer-system: snapshot persistence, refresh resume, timer ticks]
 2026-01-12T14:52:29Z | Copilot | Session V2: refresh resume keeps phases at Go gate during play (Worksheet/Test too); prevents work Q&A starting early [#timer-system: snapshot resume, timerMode, play gate]
