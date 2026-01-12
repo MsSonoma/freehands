@@ -664,7 +664,7 @@ export default function PlatformJumper({ onBack }) {
         { x: 0, y: 470, width: 55, height: 20 },
         { x: 100, y: 465, width: 45, height: 20, trampoline: true },
         { x: 350, y: 50, width: 100, height: 20 },
-        { x: 550, y: 465, width: 45, height: 20, trampoline: true },
+        { x: 390, y: 390, width: 45, height: 20, trampoline: true },
         { x: 700, y: 80, width: 100, height: 20 },
       ],
       startPos: { x: 22, y: 420 },

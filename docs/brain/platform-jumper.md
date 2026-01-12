@@ -16,6 +16,15 @@ Jump types:
 - Normal jump uses `JUMP_STRENGTH` (negative y velocity).
 - Trampoline jump uses `TRAMPOLINE_BOUNCE` when the current platform has `trampoline: true`.
 
+Level layouts:
+
+- Levels are declared in the `levels` object; keys are level numbers.
+- Each level has a `platforms` array (rectangles) plus `startPos` and `goalArea`.
+- Coordinates use game space: `x` increases to the right, `y` increases downward.
+- Reference size: `GAME_WIDTH = 800`, `GAME_HEIGHT = 500`.
+- A movement like "raise 15%" means subtract `0.15 * GAME_HEIGHT` from `y`.
+- A movement like "move left 20%" means subtract `0.20 * GAME_WIDTH` from `x`.
+
 Input:
 
 - Keyboard: arrow keys move; Space jumps.
@@ -31,6 +40,7 @@ Scaling:
 - Do not change jump logic separately for touch vs keyboard; both must call the same jump function.
 - Do not make trampoline behavior implicit; trampoline boost must be controlled by the `trampoline` flag on platforms.
 - Avoid large physics changes (gravity, speed, jump) without validating level beatability.
+- Avoid editing multiple level elements at once when fixing a single-beatability issue; move one platform, then re-check.
 
 ## Key Files
 
