@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2026-01-12T14:37:14Z  
+**Last updated**: 2026-01-12T14:52:29Z  
 **Status**: Canonical
 
 ## How It Works
@@ -96,18 +96,33 @@
 
 ### Timer State Persistence
 
-Timer state mirrors to sessionStorage for TimerControlOverlay compatibility:
+**Authoritative source (V2):** `TimerService` state is the source of truth and is persisted/restored via SnapshotService (`snapshot.timerState`).
+
+**SessionStorage is a mirror (not authoritative):**
 - Key pattern: `session_timer_state:{lessonKey}:{phase}:{mode}`
 - Keys are written on each tick by TimerService.
 - Keys must be cleared for the whole lesson on reset/start-over to avoid stale timers (especially discussion work timers) reappearing after restart.
 
-**Important (authoritative edits):** SessionStorage is a *mirror*, not the source of truth.
+**Authoritative edits (facilitator overlay):**
 - TimerControlOverlay must not mutate `session_timer_state:*` directly because TimerService overwrites these keys every second.
-- Authoritative edits (add/subtract time) must go through TimerService so phase transitions and the UI stay in sync.
+- Authoritative add/subtract time must go through TimerService so phase transitions and the UI stay in sync.
 
 **Authoritative API (V2):**
 - `TimerService.setPhaseElapsedSeconds(phase, mode, elapsedSeconds)` updates the live engine timer (play or work), mirrors to sessionStorage, and emits a tick event immediately.
 - SessionPageV2 is responsible for calling this when facilitator adjusts time via TimerControlOverlay.
+
+**Refresh/resume rule (critical):**
+- If a phase is in **play** (`timerMode === 'play'`), the phase controller must resume at the **Go gate** (`state = 'awaiting-go'`) and must **not** auto-play/auto-start Q&A.
+- If `timerMode` is missing in resumeState (older snapshots), infer it:
+  - Treat as **work** only when there is evidence of work progress (answers exist, nextQuestionIndex > 0, score > 0, or reviewIndex set for Test).
+  - Otherwise treat as **play**.
+- On resume, do **not** call `timerService.startPlayTimer(...)` or `timerService.transitionToWork(...)` unless the resume request explicitly sets `skipPlayPortion`. TimerService is already restored from `snapshot.timerState` and should not be reset by phase controllers.
+
+**Phase files implementing this rule (V2):**
+- `src/app/session/v2/ComprehensionPhase.jsx`
+- `src/app/session/v2/ExercisePhase.jsx`
+- `src/app/session/v2/WorksheetPhase.jsx`
+- `src/app/session/v2/TestPhase.jsx`
 
 **Important (V2 lifecycle):** The TimerService instance must remain stable for the duration of a session and must not be recreated on every phase transition. Recreating it will lose timer Maps and can leave stale sessionStorage keys behind.
 

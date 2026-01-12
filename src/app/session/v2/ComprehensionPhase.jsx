@@ -149,7 +149,8 @@ export class ComprehensionPhase {
   // Public API: Start phase
   async start(options = {}) {
     const skipPlayPortion = options?.skipPlayPortion === true;
-    // Resume path: skip intro/go and jump to the stored question.
+    // Resume path: restore either play gate (awaiting-go) or work Q&A (awaiting-answer)
+    // depending on the stored timerMode.
     if (this.#resumeState) {
       if (Array.isArray(this.#resumeState.questions) && this.#resumeState.questions.length) {
         this.#questions = this.#resumeState.questions;
@@ -157,17 +158,31 @@ export class ComprehensionPhase {
 
       this.#score = Number(this.#resumeState.score || 0);
       this.#answers = Array.isArray(this.#resumeState.answers) ? this.#resumeState.answers : [];
-      this.#timerMode = this.#resumeState.timerMode || 'work';
-      if (skipPlayPortion) {
-        this.#timerMode = 'work';
+      const explicitMode = this.#resumeState.timerMode;
+      const hasWorkProgress = (this.#answers && this.#answers.length > 0)
+        || Number(this.#resumeState.nextQuestionIndex ?? 0) > 0
+        || Number(this.#resumeState.score || 0) > 0;
+
+      // Back-compat inference:
+      // - If timerMode is present, trust it.
+      // - If missing, infer work only if there is clear work progress.
+      const inferredMode = (explicitMode === 'play' || explicitMode === 'work')
+        ? explicitMode
+        : (hasWorkProgress ? 'work' : 'play');
+
+      this.#timerMode = skipPlayPortion ? 'work' : inferredMode;
+
+      // Important: do not restart/reset TimerService timers on refresh resume.
+      // TimerService is restored separately from snapshot timerState.
+      // Only force work mode when play portion is explicitly skipped.
+      if (skipPlayPortion && this.#timerService) {
+        this.#timerService.transitionToWork('comprehension');
       }
 
-      if (this.#timerService) {
-        if (this.#timerMode === 'work') {
-          this.#timerService.transitionToWork('comprehension');
-        } else {
-          this.#timerService.startPlayTimer('comprehension');
-        }
+      if (this.#timerMode === 'play') {
+        this.#state = 'awaiting-go';
+        this.#emit('stateChange', { state: 'awaiting-go', timerMode: this.#timerMode });
+        return;
       }
 
       const nextIndex = Math.min(

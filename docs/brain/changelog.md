@@ -1,3 +1,4 @@
+2026-01-12T14:52:29Z | Copilot | Session V2: refresh resume keeps phases at Go gate during play (Worksheet/Test too); prevents work Q&A starting early [#timer-system: snapshot resume, timerMode, play gate]
 2026-01-12T14:37:14Z | Copilot | Session V2: TimerControlOverlay now updates authoritative TimerService time; Golden Key apply persists to learner active_golden_keys [#timer-system: timer state persistence, TimerService, golden key timer bonus]
 2026-01-12T13:08:32Z | Copilot | Platform Jumper: increase jump height slightly again (JUMP_STRENGTH -9 -> -10). Files: src/app/session/components/games/PlatformJumper.jsx
 2026-01-12T13:04:42Z | Copilot | Calendar grid auto-focuses to most recent scheduled month so completed history dots are immediately visible [#calendar-lesson-planning: history-autofocus, completion-markers, scheduled-lessons]

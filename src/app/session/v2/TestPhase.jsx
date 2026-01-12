@@ -144,7 +144,8 @@ export class TestPhase {
   // Public API: Start phase
   async start(options = {}) {
     const skipPlayPortion = options?.skipPlayPortion === true;
-    // Resume path: skip intro/go and jump directly to the stored question/review index.
+    // Resume path: restore either play gate (awaiting-go) or work Q&A/review
+    // depending on the stored timerMode.
     if (this.#resumeState) {
       if (Array.isArray(this.#resumeState.questions) && this.#resumeState.questions.length) {
         this.#questions = this.#resumeState.questions;
@@ -152,25 +153,34 @@ export class TestPhase {
 
       this.#score = Number(this.#resumeState.score || 0);
       this.#answers = Array.isArray(this.#resumeState.answers) ? this.#resumeState.answers : [];
-      this.#timerMode = this.#resumeState.timerMode || 'work';
-      if (skipPlayPortion) {
-        this.#timerMode = 'work';
-      }
-
-      if (this.#timerService) {
-        if (this.#timerMode === 'work') {
-          this.#timerService.transitionToWork('test');
-        } else {
-          this.#timerService.startPlayTimer('test');
-        }
-      }
-
       const nextIndex = Math.min(
         Math.max(this.#resumeState.nextQuestionIndex ?? 0, 0),
         this.#questions.length
       );
-
       this.#currentQuestionIndex = nextIndex;
+
+      const explicitMode = this.#resumeState.timerMode;
+      const hasWorkProgress = (this.#answers && this.#answers.length > 0)
+        || nextIndex > 0
+        || Number(this.#resumeState.score || 0) > 0
+        || (this.#resumeState.reviewIndex ?? null) !== null;
+
+      const inferredMode = (explicitMode === 'play' || explicitMode === 'work')
+        ? explicitMode
+        : (hasWorkProgress ? 'work' : 'play');
+
+      this.#timerMode = skipPlayPortion ? 'work' : inferredMode;
+
+      // Avoid resetting TimerService timers on refresh resume.
+      if (skipPlayPortion && this.#timerService) {
+        this.#timerService.transitionToWork('test');
+      }
+
+      if (this.#timerMode === 'play') {
+        this.#state = 'awaiting-go';
+        this.#emit('stateChange', { state: 'awaiting-go', timerMode: this.#timerMode });
+        return;
+      }
 
       // If questions already finished, restore review position.
       if (this.#currentQuestionIndex >= this.#questions.length) {

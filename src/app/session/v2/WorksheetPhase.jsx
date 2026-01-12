@@ -141,7 +141,8 @@ export class WorksheetPhase {
   // Public API: Start phase
   async start(options = {}) {
     const skipPlayPortion = options?.skipPlayPortion === true;
-    // Resume path: skip intro/go and jump straight to the stored question.
+    // Resume path: restore either play gate (awaiting-go) or work Q&A (awaiting-answer)
+    // depending on the stored timerMode.
     if (this.#resumeState) {
       if (Array.isArray(this.#resumeState.questions) && this.#resumeState.questions.length) {
         this.#questions = this.#resumeState.questions;
@@ -149,17 +150,26 @@ export class WorksheetPhase {
 
       this.#score = Number(this.#resumeState.score || 0);
       this.#answers = Array.isArray(this.#resumeState.answers) ? this.#resumeState.answers : [];
-      this.#timerMode = this.#resumeState.timerMode || 'work';
-      if (skipPlayPortion) {
-        this.#timerMode = 'work';
+      const explicitMode = this.#resumeState.timerMode;
+      const hasWorkProgress = (this.#answers && this.#answers.length > 0)
+        || Number(this.#resumeState.nextQuestionIndex ?? 0) > 0
+        || Number(this.#resumeState.score || 0) > 0;
+
+      const inferredMode = (explicitMode === 'play' || explicitMode === 'work')
+        ? explicitMode
+        : (hasWorkProgress ? 'work' : 'play');
+
+      this.#timerMode = skipPlayPortion ? 'work' : inferredMode;
+
+      // Avoid resetting TimerService timers on refresh resume.
+      if (skipPlayPortion && this.#timerService) {
+        this.#timerService.transitionToWork('worksheet');
       }
 
-      if (this.#timerService) {
-        if (this.#timerMode === 'work') {
-          this.#timerService.transitionToWork('worksheet');
-        } else {
-          this.#timerService.startPlayTimer('worksheet');
-        }
+      if (this.#timerMode === 'play') {
+        this.#state = 'awaiting-go';
+        this.#emit('stateChange', { state: 'awaiting-go', timerMode: this.#timerMode });
+        return;
       }
 
       const nextIndex = Math.min(
