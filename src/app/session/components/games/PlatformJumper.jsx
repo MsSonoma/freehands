@@ -773,12 +773,13 @@ export default function PlatformJumper({ onBack }) {
       platforms: [
         { x: 0, y: 465, width: 50, height: 20 },
         { x: 90, y: 460, width: 40, height: 20, trampoline: true },
-        { x: 400, y: 150, width: 60, height: 20 },
+        { x: 260, y: 420, width: 140, height: 20 },
+        { x: 470, y: 420, width: 140, height: 20 },
         { x: 670, y: 460, width: 40, height: 20, trampoline: true },
-        { x: 760, y: 160, width: 40, height: 20 },
+        { x: 730, y: 160, width: 70, height: 20 },
       ],
       startPos: { x: 20, y: 415 },
-      goalArea: { x: 760, y: 110, width: 40, height: 50 }
+      goalArea: { x: 730, y: 110, width: 70, height: 50 }
     },
     44: {
       name: 'Weave Bounce',
