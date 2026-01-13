@@ -478,12 +478,21 @@ expect(engine.isPlaying).toBe(true);
 
 **Zero-Latency Prefetch Strategy:**
 - `prefetchAll()` triggered on Begin click (deferred to next tick so it does not block the UI)
-- Starts ALL GPT calls in parallel (definitions, examples, both gate prompts)
+- Prefetch is **single-flight** (subsequent calls are ignored)
+- GPT calls are **staggered** to reduce 429 risk:
+  - Start definitions first
+  - Start examples only after definitions resolves (or fails)
+  - Gate prompts start after their parent stage begins
 - GPT calls run in background during discussion greeting (~3-5 seconds)
-- When teaching starts, prefetched data is awaited (usually already complete)
+- When teaching starts, prefetched data is awaited (often already complete)
 - TTS prefetched for first 3 sentences of each stage + gate prompt text
 - **No loading states** - UI never shows "loading" for teaching content
 - Prefetch chain: GPT completes → automatically prefetches TTS for sentences
+
+**Rate Limit Handling (429):**
+- If GPT returns 429, TeachingController enters a short cooldown and produces a deterministic "wait then press Next" sentence
+- Next/Repeat/Restart must not spam GPT requests during cooldown
+- Public methods called without `await` (Repeat/Skip/Restart) must not generate unhandled promise rejections
 
 **Gate Prompt Flow (uses prefetched content):**
 1. Speak "Do you have any questions?" (TTS prefetched)

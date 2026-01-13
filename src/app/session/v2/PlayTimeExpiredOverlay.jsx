@@ -153,7 +153,8 @@ export default function PlayTimeExpiredOverlay({
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 10005,
+        // Must render above GamesOverlay (which uses zIndex: 20000)
+        zIndex: 2147483647,
         background: 'rgba(17, 24, 39, 0.95)',
         display: 'flex',
         flexDirection: 'column',

@@ -47,6 +47,13 @@ export class TeachingController {
   #definitionsGatePromptPromise = null;
   #examplesGatePromptPromise = null;
 
+  // Rate-limit / spam guards
+  #prefetchStarted = false;
+  #definitionsCooldownUntilMs = 0;
+  #examplesCooldownUntilMs = 0;
+  #definitionsRateLimited = false;
+  #examplesRateLimited = false;
+
   #gatePromptActive = false;
   #gatePromptStage = null;
   #gatePromptSkipped = false;
@@ -64,33 +71,135 @@ export class TeachingController {
       throw new Error('TeachingController requires audioEngine');
     }
   }
+
+  #getNowMs() {
+    return Date.now();
+  }
+
+  #getRetryAfterMs(response) {
+    try {
+      const raw = response?.headers?.get?.('retry-after') || response?.headers?.get?.('Retry-After') || '';
+      const seconds = parseInt(String(raw || '').trim(), 10);
+      if (Number.isFinite(seconds) && seconds > 0) return seconds * 1000;
+    } catch {}
+    // Conservative default: avoid immediate retry loops.
+    return 15000;
+  }
+
+  #buildRateLimitSentence(ms) {
+    const secs = Math.max(1, Math.ceil((ms || 0) / 1000));
+    return `Too many requests right now. Please wait ${secs} seconds, then press Next.`;
+  }
+
+  async #maybeRetryRateLimited(stage) {
+    const now = this.#getNowMs();
+
+    if (stage === 'definitions' && this.#definitionsRateLimited) {
+      if (now < this.#definitionsCooldownUntilMs) {
+        this.#currentSentenceIndex = 0;
+        this.#awaitingFirstPlay = false;
+        await this.#playCurrentDefinition();
+        return true;
+      }
+
+      // Cooldown passed: retry fetch.
+      this.#definitionsRateLimited = false;
+      this.#definitionsCooldownUntilMs = 0;
+      this.#vocabSentences = [];
+      this.#definitionsGptPromise = null;
+
+      this.#stage = 'loading-definitions';
+      this.#emit('loading', { stage: 'definitions' });
+      await this.#ensureDefinitionsLoaded();
+
+      this.#stage = 'definitions';
+      this.#currentSentenceIndex = 0;
+      this.#awaitingFirstPlay = false;
+      this.#emit('stageChange', { stage: 'definitions', totalSentences: this.#vocabSentences.length });
+      await this.#playCurrentDefinition();
+      return true;
+    }
+
+    if (stage === 'examples' && this.#examplesRateLimited) {
+      if (now < this.#examplesCooldownUntilMs) {
+        this.#currentSentenceIndex = 0;
+        this.#awaitingFirstPlay = false;
+        await this.#playCurrentExample();
+        return true;
+      }
+
+      // Cooldown passed: retry fetch.
+      this.#examplesRateLimited = false;
+      this.#examplesCooldownUntilMs = 0;
+      this.#exampleSentences = [];
+      this.#examplesGptPromise = null;
+
+      this.#stage = 'loading-examples';
+      this.#emit('loading', { stage: 'examples' });
+      await this.#ensureExamplesLoaded();
+
+      this.#stage = 'examples';
+      this.#currentSentenceIndex = 0;
+      this.#awaitingFirstPlay = false;
+      this.#emit('stageChange', { stage: 'examples', totalSentences: this.#exampleSentences.length });
+      await this.#playCurrentExample();
+      return true;
+    }
+
+    return false;
+  }
   
   // Public API: Start all prefetches in background (call on Begin click)
   prefetchAll() {
     console.log('[TeachingController] Starting background prefetch of all GPT content');
+
+    if (this.#prefetchStarted) {
+      console.log('[TeachingController] Prefetch already started - skipping');
+      return;
+    }
+    this.#prefetchStarted = true;
     
-    // Start definitions GPT (don't await) - then prefetch TTS for first few sentences
-    this.#definitionsGptPromise = this.#fetchDefinitionsFromGPT().then(sentences => {
-      // Prefetch TTS for first 3 definition sentences
-      sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
-      return sentences;
-    });
+    // Start definitions GPT (don't await) - then prefetch TTS for first few sentences.
+    // IMPORTANT: Stagger downstream GPT calls to reduce 429 risk.
+    // Prefetch promises should never produce unhandled rejections.
+    this.#definitionsGptPromise = this.#fetchDefinitionsFromGPT()
+      .then(sentences => {
+        // Prefetch TTS for first 3 definition sentences
+        sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
+        return sentences;
+      })
+      .catch(err => {
+        console.error('[TeachingController] Definitions prefetch error:', err);
+        return [];
+      });
     
-    // Start examples GPT (don't await) - then prefetch TTS for first few sentences
-    this.#examplesGptPromise = this.#fetchExamplesFromGPT().then(sentences => {
-      // Prefetch TTS for first 3 example sentences
-      sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
-      return sentences;
-    });
+    // Start examples GPT after definitions completes (reduces parallel GPT fanout).
+    this.#examplesGptPromise = this.#definitionsGptPromise
+      .catch(() => [])
+      .then(() => this.#fetchExamplesFromGPT())
+      .then(sentences => {
+        // Prefetch TTS for first 3 example sentences
+        sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
+        return sentences;
+      })
+      .catch(err => {
+        console.error('[TeachingController] Examples prefetch error:', err);
+        return [];
+      });
     
-    // Start gate prompt GPT for definitions (don't await) - then prefetch TTS
-    this.#definitionsGatePromptPromise = this.#fetchGatePromptFromGPT('definitions').then(text => {
+    // Gate prompts are nice-to-have; fetch them after their parent content starts.
+    this.#definitionsGatePromptPromise = this.#definitionsGptPromise
+      .catch(() => [])
+      .then(() => this.#fetchGatePromptFromGPT('definitions'))
+      .then(text => {
       if (text) ttsCache.prefetch(text);
       return text;
     });
     
-    // Start gate prompt GPT for examples (don't await) - then prefetch TTS
-    this.#examplesGatePromptPromise = this.#fetchGatePromptFromGPT('examples').then(text => {
+    this.#examplesGatePromptPromise = this.#examplesGptPromise
+      .catch(() => [])
+      .then(() => this.#fetchGatePromptFromGPT('examples'))
+      .then(text => {
       if (text) ttsCache.prefetch(text);
       return text;
     });
@@ -165,6 +274,15 @@ export class TeachingController {
   
   // Public API: Sentence navigation
   async nextSentence() {
+    if (this.#stage === 'definitions') {
+      const handled = await this.#maybeRetryRateLimited('definitions');
+      if (handled) return;
+    }
+    if (this.#stage === 'examples') {
+      const handled = await this.#maybeRetryRateLimited('examples');
+      if (handled) return;
+    }
+
     // If in loading stage, stop current audio, await content, then play first sentence
     if (this.#stage === 'loading-definitions') {
       console.log('[TeachingController] nextSentence during loading-definitions - awaiting content');
@@ -215,66 +333,99 @@ export class TeachingController {
   }
   
   async repeatSentence() {
-    // If in loading stage, stop current audio, await content, then play first sentence
-    if (this.#stage === 'loading-definitions') {
-      this.#audioEngine.stop();
-      await this.#ensureDefinitionsLoaded();
-      if (this.#vocabSentences.length > 0) {
-        this.#stage = 'definitions';
-        this.#currentSentenceIndex = 0;
-        this.#awaitingFirstPlay = false;
-        this.#emit('stageChange', { stage: 'definitions', totalSentences: this.#vocabSentences.length });
-        this.#playCurrentDefinition();
+    try {
+      if (this.#stage === 'definitions') {
+        const handled = await this.#maybeRetryRateLimited('definitions');
+        if (handled) return;
       }
-      return;
-    }
-    if (this.#stage === 'loading-examples') {
-      this.#audioEngine.stop();
-      await this.#ensureExamplesLoaded();
-      if (this.#exampleSentences.length > 0) {
-        this.#stage = 'examples';
-        this.#currentSentenceIndex = 0;
+      if (this.#stage === 'examples') {
+        const handled = await this.#maybeRetryRateLimited('examples');
+        if (handled) return;
+      }
+
+      // If in loading stage, stop current audio, await content, then play first sentence
+      if (this.#stage === 'loading-definitions') {
+        this.#audioEngine.stop();
+        await this.#ensureDefinitionsLoaded();
+        if (this.#vocabSentences.length > 0) {
+          this.#stage = 'definitions';
+          this.#currentSentenceIndex = 0;
+          this.#awaitingFirstPlay = false;
+          this.#emit('stageChange', { stage: 'definitions', totalSentences: this.#vocabSentences.length });
+          this.#playCurrentDefinition();
+        }
+        return;
+      }
+      if (this.#stage === 'loading-examples') {
+        this.#audioEngine.stop();
+        await this.#ensureExamplesLoaded();
+        if (this.#exampleSentences.length > 0) {
+          this.#stage = 'examples';
+          this.#currentSentenceIndex = 0;
+          this.#awaitingFirstPlay = false;
+          this.#emit('stageChange', { stage: 'examples', totalSentences: this.#exampleSentences.length });
+          this.#playCurrentExample();
+        }
+        return;
+      }
+
+      if (this.#stage === 'idle' || this.#stage === 'complete') {
+        return;
+      }
+
+      if (this.#stage === 'definitions' && this.#awaitingFirstPlay) {
         this.#awaitingFirstPlay = false;
-        this.#emit('stageChange', { stage: 'examples', totalSentences: this.#exampleSentences.length });
+        this.#playCurrentDefinition();
+        return;
+      }
+      if (this.#stage === 'examples' && this.#awaitingFirstPlay) {
+        this.#awaitingFirstPlay = false;
+        this.#playCurrentExample();
+        return;
+      }
+      if (this.#stage === 'definitions') {
+        this.#playCurrentDefinition();
+      } else if (this.#stage === 'examples') {
         this.#playCurrentExample();
       }
-      return;
-    }
-    
-    if (this.#stage === 'idle' || this.#stage === 'complete') {
-      return;
-    }
-    
-    if (this.#stage === 'definitions' && this.#awaitingFirstPlay) {
-      this.#awaitingFirstPlay = false;
-      this.#playCurrentDefinition();
-      return;
-    }
-    if (this.#stage === 'examples' && this.#awaitingFirstPlay) {
-      this.#awaitingFirstPlay = false;
-      this.#playCurrentExample();
-      return;
-    }
-    if (this.#stage === 'definitions') {
-      this.#playCurrentDefinition();
-    } else if (this.#stage === 'examples') {
-      this.#playCurrentExample();
+    } catch (err) {
+      console.error('[TeachingController] repeatSentence error:', err);
+      this.#emit('error', { type: 'teaching', action: 'repeatSentence', error: String(err?.message || err) });
     }
   }
   
   async skipToExamples() {
-    if (this.#stage === 'definitions' || this.#stage === 'loading-definitions') {
-      await this.#startExamples();
+    try {
+      if (this.#stage === 'definitions' || this.#stage === 'loading-definitions') {
+        await this.#startExamples();
+      }
+    } catch (err) {
+      console.error('[TeachingController] skipToExamples error:', err);
+      this.#emit('error', { type: 'teaching', action: 'skipToExamples', error: String(err?.message || err) });
     }
   }
   
   restartStage() {
     if (this.#stage === 'definitions') {
+      if (this.#definitionsRateLimited) {
+        void this.#maybeRetryRateLimited('definitions').catch(err => {
+          console.error('[TeachingController] restartStage retry (definitions) error:', err);
+          this.#emit('error', { type: 'teaching', action: 'restartStage', stage: 'definitions', error: String(err?.message || err) });
+        });
+        return;
+      }
       this.#currentSentenceIndex = 0;
       this.#isInSentenceMode = true;
       this.#awaitingFirstPlay = false;
       this.#playCurrentDefinition();
     } else if (this.#stage === 'examples') {
+      if (this.#examplesRateLimited) {
+        void this.#maybeRetryRateLimited('examples').catch(err => {
+          console.error('[TeachingController] restartStage retry (examples) error:', err);
+          this.#emit('error', { type: 'teaching', action: 'restartStage', stage: 'examples', error: String(err?.message || err) });
+        });
+        return;
+      }
       this.#currentSentenceIndex = 0;
       this.#isInSentenceMode = true;
       this.#awaitingFirstPlay = false;
@@ -354,6 +505,15 @@ export class TeachingController {
   
   // Private: Call GPT for definitions
   async #fetchDefinitionsFromGPT() {
+    const now = this.#getNowMs();
+    if (now < this.#definitionsCooldownUntilMs) {
+      this.#definitionsRateLimited = true;
+      const remainingMs = this.#definitionsCooldownUntilMs - now;
+      const msg = this.#buildRateLimitSentence(remainingMs);
+      this.#emit('error', { type: 'gpt', stage: 'definitions', status: 429, retryAfterMs: remainingMs });
+      return [msg];
+    }
+
     console.log('[TeachingController] fetchDefinitionsFromGPT called');
     console.log('[TeachingController] lessonData.vocab:', this.#lessonData?.vocab?.length, 'items');
     const terms = this.#getVocabTerms();
@@ -409,7 +569,18 @@ export class TeachingController {
       });
       
       if (!response.ok) {
-        throw new Error(`GPT request failed: ${response.status}`);
+        const status = response.status;
+        if (status === 429) {
+          const retryAfterMs = this.#getRetryAfterMs(response);
+          this.#definitionsCooldownUntilMs = this.#getNowMs() + retryAfterMs;
+          this.#definitionsRateLimited = true;
+          this.#emit('error', { type: 'gpt', stage: 'definitions', status, retryAfterMs });
+          return [this.#buildRateLimitSentence(retryAfterMs)];
+        }
+
+        this.#definitionsRateLimited = false;
+        this.#emit('error', { type: 'gpt', stage: 'definitions', status });
+        return ['We had trouble loading the definitions. Please press Next again.'];
       }
       
       const data = await response.json();
@@ -422,16 +593,28 @@ export class TeachingController {
       
       const sentences = this.#splitIntoSentences(text);
       console.log('[TeachingController] GPT definitions split into', sentences.length, 'sentences');
+
+      this.#definitionsRateLimited = false;
       return sentences;
       
     } catch (err) {
       console.error('[TeachingController] GPT definitions error:', err);
-      return [];
+      this.#definitionsRateLimited = false;
+      return ['We had trouble loading the definitions. Please press Next again.'];
     }
   }
   
   // Private: Call GPT for examples
   async #fetchExamplesFromGPT() {
+    const now = this.#getNowMs();
+    if (now < this.#examplesCooldownUntilMs) {
+      this.#examplesRateLimited = true;
+      const remainingMs = this.#examplesCooldownUntilMs - now;
+      const msg = this.#buildRateLimitSentence(remainingMs);
+      this.#emit('error', { type: 'gpt', stage: 'examples', status: 429, retryAfterMs: remainingMs });
+      return [msg];
+    }
+
     const terms = this.#getVocabTerms();
     const lessonTitle = this.#lessonData?.title || 'this lesson';
     const grade = this.#lessonData?.grade || '';
@@ -475,7 +658,18 @@ export class TeachingController {
       });
       
       if (!response.ok) {
-        throw new Error(`GPT request failed: ${response.status}`);
+        const status = response.status;
+        if (status === 429) {
+          const retryAfterMs = this.#getRetryAfterMs(response);
+          this.#examplesCooldownUntilMs = this.#getNowMs() + retryAfterMs;
+          this.#examplesRateLimited = true;
+          this.#emit('error', { type: 'gpt', stage: 'examples', status, retryAfterMs });
+          return [this.#buildRateLimitSentence(retryAfterMs)];
+        }
+
+        this.#examplesRateLimited = false;
+        this.#emit('error', { type: 'gpt', stage: 'examples', status });
+        return ['We had trouble loading the examples. Please press Next again.'];
       }
       
       const data = await response.json();
@@ -488,11 +682,14 @@ export class TeachingController {
       
       const sentences = this.#splitIntoSentences(text);
       console.log('[TeachingController] GPT examples split into', sentences.length, 'sentences');
+
+      this.#examplesRateLimited = false;
       return sentences;
       
     } catch (err) {
       console.error('[TeachingController] GPT examples error:', err);
-      return [];
+      this.#examplesRateLimited = false;
+      return ['We had trouble loading the examples. Please press Next again.'];
     }
   }
   
@@ -903,9 +1100,13 @@ export class TeachingController {
     if (this.#definitionsGptPromise) {
       console.log('[TeachingController] Awaiting pending definitions GPT promise');
       this.#emit('loading', { stage: 'definitions' });
-      this.#vocabSentences = await this.#definitionsGptPromise;
-      this.#definitionsGptPromise = null;
-      console.log('[TeachingController] Definitions loaded:', this.#vocabSentences.length, 'sentences');
+      try {
+        this.#vocabSentences = await this.#definitionsGptPromise;
+        console.log('[TeachingController] Definitions loaded:', this.#vocabSentences.length, 'sentences');
+      } finally {
+        // Clear promise even on error so a later user action can retry.
+        this.#definitionsGptPromise = null;
+      }
     } else {
       // No promise pending and no content - fetch now
       console.log('[TeachingController] No pending promise, fetching definitions now');
@@ -922,9 +1123,13 @@ export class TeachingController {
     if (this.#examplesGptPromise) {
       console.log('[TeachingController] Awaiting pending examples GPT promise');
       this.#emit('loading', { stage: 'examples' });
-      this.#exampleSentences = await this.#examplesGptPromise;
-      this.#examplesGptPromise = null;
-      console.log('[TeachingController] Examples loaded:', this.#exampleSentences.length, 'sentences');
+      try {
+        this.#exampleSentences = await this.#examplesGptPromise;
+        console.log('[TeachingController] Examples loaded:', this.#exampleSentences.length, 'sentences');
+      } finally {
+        // Clear promise even on error so a later user action can retry.
+        this.#examplesGptPromise = null;
+      }
     } else {
       // No promise pending and no content - fetch now
       console.log('[TeachingController] No pending promise, fetching examples now');

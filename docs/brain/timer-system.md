@@ -148,6 +148,9 @@ Games and Visual Aids overlays must render above the timeline and timer overlays
 - Timeline must not use an extremely high `zIndex`.
 - Full-screen overlays should use a higher `zIndex` than the on-video timer.
 
+**PlayTimeExpiredOverlay must be above GamesOverlay:**
+- `PlayTimeExpiredOverlay` is a full-screen, blocking overlay. It must have a higher `zIndex` than `GamesOverlay` so the 30-second countdown cannot appear behind a running game.
+
 ### PIN Gating (V2)
 
 Timer controls that can change session pacing are PIN-gated:
