@@ -4603,33 +4603,29 @@ function SessionPageV2Inner() {
     });
     
     // Auto-start closing phase (no Begin button needed for farewell)
-    // If we just played the "Complete Lesson" congrats message, do not cut it off.
+    // If we just played the "Complete Lesson" congrats message, wait for it to finish.
     if (deferClosingStartUntilAudioEndRef.current && audioEngineRef.current) {
       const engine = audioEngineRef.current;
-      const state = engine.state;
-
-      // If congrats already finished (or never started), start immediately.
-      if (state !== 'playing' && state !== 'paused') {
-        deferClosingStartUntilAudioEndRef.current = false;
-        phase.start();
-        return;
-      }
-
+      
       let started = false;
-      const onEnd = () => {
-        if (started) return;
+      const onEnd = (data) => {
+        // Only start farewell when congrats audio actually completes
+        if (started || !data.completed) return;
         started = true;
         try { engine.off?.('end', onEnd); } catch {}
         deferClosingStartUntilAudioEndRef.current = false;
-        try { phase.start(); } catch {}
+        // Small delay to ensure clean transition
+        setTimeout(() => {
+          try { phase.start(); } catch {}
+        }, 100);
       };
 
       try {
         engine.on?.('end', onEnd);
       } catch {
-        // If we cannot subscribe, fall back to immediate start.
+        // If we cannot subscribe, fall back to delayed start.
         deferClosingStartUntilAudioEndRef.current = false;
-        phase.start();
+        setTimeout(() => phase.start(), 500);
       }
       return;
     }
