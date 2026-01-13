@@ -47,6 +47,9 @@ Session surfaces that mutate session state should gate with `ensurePinAllowed(ac
 - Timeline jumps call `ensurePinAllowed('timeline')` before switching phases.
 - Timer controls call `ensurePinAllowed('timer')` before opening the timer control overlay and before pause/resume toggles.
 
+**Games (example: Platform Jumper):**
+- Facilitator-only game shortcuts (like skipping to a level) must call `ensurePinAllowed('skip')` before opening any level picker.
+
 ### Facilitator Section Flag
 
 **Purpose**: Prevent double PIN prompts when navigating between facilitator pages

@@ -324,7 +324,7 @@
       "navigation PIN checks",
       "double PIN prevention"
     ],
-    "last_updated": "2026-01-08T13:26:26Z",
+    "last_updated": "2026-01-12T23:57:07Z",
     "status": "canonical"
   },
   "snapshot-persistence": {
@@ -503,9 +503,12 @@
       "TRAMPOLINE_BOUNCE",
       "gravity",
       "keyboard controls",
-      "touch controls"
+      "touch controls",
+      "level-skip",
+      "level-picker",
+      "settings-gear"
     ],
-    "last_updated": "2026-01-12T23:45:12Z",
+    "last_updated": "2026-01-12T23:57:07Z",
     "status": "canonical"
   },
   "beta-program": {

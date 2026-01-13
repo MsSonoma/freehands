@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { ensurePinAllowed } from '@/app/lib/pinGate';
 
 /**
  * PlatformJumper - Jump across platforms to reach the goal
@@ -15,6 +16,9 @@ export default function PlatformJumper({ onBack }) {
   const [gameWon, setGameWon] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameLost, setGameLost] = useState(false);
+
+  const [skipLevelOpen, setSkipLevelOpen] = useState(false);
+  const [skipLevelValue, setSkipLevelValue] = useState('1');
 
   // Detect orientation - must be declared early to avoid hook order issues
   const [isLandscape, setIsLandscape] = useState(typeof window !== 'undefined' ? window.innerWidth > window.innerHeight : false);
@@ -986,6 +990,51 @@ export default function PlatformJumper({ onBack }) {
     setGameLost(false);
   };
 
+  const openSkipLevel = async () => {
+    // PIN gate: treat as a skip/timeline-type action
+    const ok = await ensurePinAllowed('skip');
+    if (!ok) return;
+    setSkipLevelValue(String(level));
+    setSkipLevelOpen(true);
+  };
+
+  const closeSkipLevel = () => {
+    setSkipLevelOpen(false);
+  };
+
+  const applySkipLevel = () => {
+    const target = Number(skipLevelValue);
+    if (!Number.isFinite(target)) return;
+    const max = Object.keys(levels).length;
+    const next = Math.max(1, Math.min(max, Math.trunc(target)));
+
+    keysPressed.current = {}; // Clear all pressed keys
+    setLevel(next);
+    setGameWon(false);
+    setGameLost(false);
+    setGameStarted(false);
+    setPlayerPos(levels[next].startPos);
+    setPlayerVelocity({ x: 0, y: 0 });
+    setIsJumping(false);
+    isJumpingRef.current = false;
+    setOnGround(false);
+    onGroundRef.current = false;
+    currentPlatformRef.current = null;
+    setSkipLevelOpen(false);
+  };
+
+  useEffect(() => {
+    if (!skipLevelOpen) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeSkipLevel();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [skipLevelOpen]);
+
   // Shared jump function for both keyboard and touch
   const performJump = useCallback(() => {
     // Simple check: only jump if on ground
@@ -1353,6 +1402,101 @@ export default function PlatformJumper({ onBack }) {
       gap: isLandscape ? '5px' : '10px',
       overflow: 'hidden'
     }}>
+      {/* PIN-gated skip-level dialog */}
+      {skipLevelOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Platform Jumper Settings"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 2147483646,
+            background: 'rgba(0,0,0,0.35)',
+            display: 'grid',
+            placeItems: 'center',
+            padding: '16px'
+          }}
+          onMouseDown={(e) => {
+            // Click outside to close
+            if (e.target === e.currentTarget) closeSkipLevel();
+          }}
+        >
+          <div
+            style={{
+              width: 'min(480px, 92vw)',
+              background: 'white',
+              borderRadius: '12px',
+              border: '1px solid rgba(0,0,0,0.12)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+              padding: '16px'
+            }}
+          >
+            <div style={{ fontSize: '18px', fontWeight: 800, color: '#111827' }}>
+              Settings
+            </div>
+            <div style={{ marginTop: '6px', fontSize: '14px', color: '#6b7280' }}>
+              Skip to a specific level.
+            </div>
+
+            <div style={{ marginTop: '14px', display: 'grid', gap: '8px' }}>
+              <label style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>
+                Level
+              </label>
+              <select
+                value={skipLevelValue}
+                onChange={(e) => setSkipLevelValue(e.target.value)}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(0,0,0,0.2)',
+                  fontSize: '14px'
+                }}
+              >
+                {Array.from({ length: Object.keys(levels).length }, (_, i) => {
+                  const n = i + 1;
+                  return (
+                    <option key={n} value={String(n)}>
+                      Level {n}: {levels[n].name}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <button
+                onClick={closeSkipLevel}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(0,0,0,0.2)',
+                  background: 'white',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={applySkipLevel}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: '#111827',
+                  color: 'white',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}
+              >
+                Go
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Left controls (landscape only) */}
       {isLandscape && gameStarted && !gameWon && !gameLost && <TouchControls />}
 
@@ -1488,6 +1632,26 @@ export default function PlatformJumper({ onBack }) {
               onMouseLeave={(e) => e.target.style.background = '#10b981'}
             >
               Start Level
+            </button>
+
+            <button
+              type="button"
+              onClick={openSkipLevel}
+              aria-label="Settings"
+              title="Settings"
+              style={{
+                marginTop: '-6px',
+                padding: '8px 10px',
+                borderRadius: '10px',
+                border: '1px solid rgba(0,0,0,0.12)',
+                background: 'white',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+                fontSize: '18px',
+                lineHeight: 1
+              }}
+            >
+              ⚙️
             </button>
           </div>
         )}

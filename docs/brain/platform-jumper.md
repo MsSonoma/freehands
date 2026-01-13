@@ -35,6 +35,13 @@ Scaling:
 
 - The game scales to fit available viewport space using a calculated `scale` based on `GAME_WIDTH`/`GAME_HEIGHT`.
 
+PIN-gated settings:
+
+- On the start screen (under the "Start Level" button) there is a settings (gear) button.
+- Clicking the gear calls `ensurePinAllowed('skip')`.
+- If allowed, the game shows a small dialog that lets the facilitator pick a level to jump to.
+- Skipping resets gameplay state (`gameStarted`, `gameWon`, `gameLost`, velocity/grounding) and sets `playerPos` to the target level's `startPos`.
+
 ## What NOT To Do
 
 - Do not add compatibility fallbacks for missing state; keep physics/state explicit.
