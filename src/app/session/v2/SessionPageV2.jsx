@@ -5074,9 +5074,16 @@ function SessionPageV2Inner() {
   // Loading state: both lesson AND learner must be loaded
   if (loading || learnerLoading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ fontSize: '1.125rem', color: '#1f2937' }}>
           {loading ? 'Loading lesson...' : 'Loading learner profile...'}
+        </div>
+        {/* Debug info to help diagnose mobile loading issues */}
+        <div style={{ fontSize: '0.75rem', color: '#6b7280', textAlign: 'center', maxWidth: 400 }}>
+          <div>Lesson loading: {loading ? 'yes' : 'no'}</div>
+          <div>Learner loading: {learnerLoading ? 'yes' : 'no'}</div>
+          <div>Lesson ID: {lessonId || 'none'}</div>
+          <div>Subject: {subjectParam || 'none'}</div>
         </div>
       </div>
     );

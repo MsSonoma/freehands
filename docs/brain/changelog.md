@@ -1,3 +1,4 @@
+2026-01-13T09:30:00Z | Copilot | Remove localhost fallback from counselor API resolveBaseUrl() - was breaking remote device access (phone/iPad would get http://localhost:3001) [#api-routes: /api/counselor, resolveBaseUrl, localhost-fallback]
 2026-01-13T09:10:00Z | Copilot | TeachingController: re-enable prefetch with staggering (real issue was insufficient_quota not rate limits) [#v2-architecture: TeachingController, prefetch, insufficient-quota]
 2026-01-13T09:05:00Z | Copilot | TeachingController: disable prefetch entirely to avoid OpenAI rate limits; GPT content fetched on-demand when needed (slower but reliable) [#v2-architecture: TeachingController, prefetch-disabled, rate-limit-mitigation]
 2026-01-13T09:00:00Z | Copilot | TeachingController: add 2-4s delays between prefetch GPT calls to avoid OpenAI rate limits (definitions -> gate +2s -> examples +4s -> gate +2s) [#v2-architecture: TeachingController, prefetch, rate-limit-mitigation]
