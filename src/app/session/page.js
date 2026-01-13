@@ -7535,6 +7535,7 @@ function SessionPageInner() {
             maxHeight: 'var(--msSideBySideH)',
             position: 'relative',
             '--msSideBySideH': (videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')),
+            paddingBottom: showScrollable ? 80 : 0,
           };
         }
         if (stackedCaptionHeight) {
@@ -7545,6 +7546,7 @@ function SessionPageInner() {
             marginTop: 8,
             paddingLeft: '4%',
             paddingRight: '4%',
+            paddingBottom: showScrollable ? 80 : 0,
           };
         }
         return { paddingLeft: '4%', paddingRight: '4%', position: 'relative' };
@@ -7772,9 +7774,9 @@ function SessionPageInner() {
               if (isShortHeight) return null; // submit appears in the relocated controls for short-height
           
               const disabled = !!isSpeaking;
-              const btnStyle = { background:'#c7442e', color:'#fff', borderRadius:10, padding:'10px 18px', fontWeight:800, fontSize:'clamp(1rem, 2.2vw, 1.125rem)', border:'none', boxShadow:'0 2px 12px rgba(199,68,46,0.28)', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 };
+              const btnStyle = { background:'#c7442e', color:'#fff', borderRadius:10, padding:'12px 20px', fontWeight:800, fontSize:'clamp(1.05rem, 2.4vw, 1.25rem)', border:'none', boxShadow:'0 4px 16px rgba(199,68,46,0.35)', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 };
               return (
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, padding:'6px 12px' }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, padding:'10px 12px 8px' }}>
                   <button type="button" aria-label="Submit" title="Submit" disabled={disabled} style={btnStyle} onClick={disabled ? undefined : finalizeReview}>Submit</button>
                 </div>
               );
@@ -7792,20 +7794,20 @@ function SessionPageInner() {
               background: completingLesson ? '#999' : '#c7442e', 
               color:'#fff', 
               borderRadius:10, 
-              padding:'10px 18px', 
+              padding:'12px 20px', 
               fontWeight:800, 
-              fontSize:'clamp(1rem, 2.2vw, 1.125rem)', 
+              fontSize:'clamp(1.05rem, 2.4vw, 1.25rem)', 
               border:'none', 
-              boxShadow: completingLesson ? 'none' : '0 2px 12px rgba(199,68,46,0.28)', 
+              boxShadow: completingLesson ? 'none' : '0 4px 16px rgba(199,68,46,0.35)', 
               cursor: completingLesson ? 'not-allowed' : 'pointer',
               opacity: completingLesson ? 0.6 : 1
             };
             return (
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, padding:'6px 12px' }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, padding:'10px 12px 8px' }}>
                 <button type="button" style={btnStyle} disabled={completingLesson} onClick={() => {
                   try { onCompleteLesson && onCompleteLesson(); } catch {}
                 }}>{completingLesson ? 'Completing...' : 'Complete Lesson'}</button>
-                <div aria-label="Medal" style={{ fontSize:'clamp(1.2rem, 2.4vw, 1.5rem)' }}>{medal}</div>
+                <div aria-label="Medal" style={{ fontSize:'clamp(1.3rem, 2.6vw, 1.65rem)' }}>{medal}</div>
               </div>
             );
           })()}

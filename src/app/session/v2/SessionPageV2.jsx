@@ -217,28 +217,7 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
         })}
       </div>
       
-      <div style={{ ...card, textAlign: 'center', padding: 20 }}>
-        <button 
-          type="button" 
-          style={{
-            padding: '12px 24px',
-            borderRadius: 8,
-            border: 'none',
-            background: '#10b981',
-            color: '#ffffff',
-            fontWeight: 700,
-            fontSize: 16,
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            boxShadow: '0 2px 8px rgba(16,185,129,0.3)'
-          }}
-          onClick={onCompleteReview}
-        >
-          Complete Lesson
-        </button>
-      </div>
-      
-      <div style={{ height: 8 }} />
+      <div style={{ height: 80 }} />
     </div>
   );
 }
@@ -6142,6 +6121,35 @@ function SessionPageV2Inner() {
 
             return null;
           })()}
+          
+          {/* Complete Lesson button during test review */}
+          {currentPhase === 'test' && testState === 'reviewing' && testGrade && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 14,
+              padding: '10px 12px 8px'
+            }}>
+              <button
+                type="button"
+                onClick={skipTestReview}
+                style={{
+                  background: '#10b981',
+                  color: '#fff',
+                  borderRadius: 10,
+                  padding: '12px 20px',
+                  fontWeight: 800,
+                  fontSize: 'clamp(1.05rem, 2.4vw, 1.25rem)',
+                  border: 'none',
+                  boxShadow: '0 4px 16px rgba(16,185,129,0.35)',
+                  cursor: 'pointer'
+                }}
+              >
+                Complete Lesson
+              </button>
+            </div>
+          )}
           
           {/* Phase-specific Begin buttons */}
           {(() => {
