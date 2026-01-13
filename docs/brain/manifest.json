@@ -491,7 +491,20 @@
       "Games overlay",
       "opening actions play time"
     ],
-    "last_updated": "2026-01-08T16:32:27Z",
+    "last_updated": "2026-01-13T00:51:34Z",
+    "status": "canonical"
+  },
+  "games-overlay": {
+    "file": "games-overlay.md",
+    "systems": [
+      "GamesOverlay",
+      "Games overlay",
+      "play timer badge",
+      "grade selector",
+      "grade-driven difficulty",
+      "opening actions play time"
+    ],
+    "last_updated": "2026-01-13T00:51:34Z",
     "status": "canonical"
   },
   "platform-jumper": {
