@@ -1,3 +1,4 @@
+2026-01-13T00:14:52Z | Copilot | Platform Jumper: Level 37 move added trampoline to the right of both trampolines (x 320->500, y 340->320) [#platform-jumper: level-37, trampoline, layout]
 2026-01-12T23:57:07Z | Copilot | Platform Jumper: add PIN-gated settings gear under Start Level to skip to any level [#platform-jumper: level-skip, settings-gear, level-picker] [#pin-protection: ensurePinAllowed, skipTimeline, PIN protection]
 2026-01-12T23:45:12Z | Copilot | Platform Jumper: Level 37 move added trampoline right+higher (x 250->320, y 430->340) [#platform-jumper: level-37, trampoline, layout]
 2026-01-12T23:28:38Z | Copilot | Platform Jumper: Level 37 add third trampoline to bridge left->right trampoline gap [#platform-jumper: level-37, trampoline, beatability]
