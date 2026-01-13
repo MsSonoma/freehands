@@ -35,8 +35,6 @@ const MENTOR_AUDIO_CONFIG = {
   speakingRate: 0.88
 }
 
-const FALLBACK_LOCAL_BASE_URL = 'http://localhost:3001'
-
 function resolveBaseUrl(request) {
   const envBase = (process.env.NEXT_PUBLIC_BASE_URL || '').trim()
   if (envBase) {
@@ -58,7 +56,7 @@ function resolveBaseUrl(request) {
     return `${protocol}://${host}`.replace(/\/+$/, '')
   }
 
-  return FALLBACK_LOCAL_BASE_URL
+  throw new Error('Cannot resolve base URL: no environment variable, request URL, or host header available')
 }
 
 // Mr. Mentor's core therapeutic system prompt
