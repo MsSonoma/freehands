@@ -16,6 +16,10 @@ Jump types:
 - Normal jump uses `JUMP_STRENGTH` (negative y velocity).
 - Trampoline jump uses `TRAMPOLINE_BOUNCE` when the current platform has `trampoline: true`.
 
+Practical beatability note:
+
+- With the current physics, trampoline bounce height is finite; avoid placing required landing platforms too close to the top of the screen unless there is an intermediate trampoline/platform.
+
 Level layouts:
 
 - Levels are declared in the `levels` object; keys are level numbers.
