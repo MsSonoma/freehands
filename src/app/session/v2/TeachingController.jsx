@@ -173,9 +173,10 @@ export class TeachingController {
         return [];
       });
     
-    // Start examples GPT after definitions completes (reduces parallel GPT fanout).
+    // Start examples GPT after definitions completes + 4 second delay (rate limit safety).
     this.#examplesGptPromise = this.#definitionsGptPromise
       .catch(() => [])
+      .then(() => new Promise(resolve => setTimeout(resolve, 4000)))
       .then(() => this.#fetchExamplesFromGPT())
       .then(sentences => {
         // Prefetch TTS for first 3 example sentences
@@ -187,9 +188,10 @@ export class TeachingController {
         return [];
       });
     
-    // Gate prompts are nice-to-have; fetch them after their parent content starts.
+    // Gate prompts are nice-to-have; fetch them after their parent content + 2s delay each.
     this.#definitionsGatePromptPromise = this.#definitionsGptPromise
       .catch(() => [])
+      .then(() => new Promise(resolve => setTimeout(resolve, 2000)))
       .then(() => this.#fetchGatePromptFromGPT('definitions'))
       .then(text => {
       if (text) ttsCache.prefetch(text);
@@ -198,6 +200,7 @@ export class TeachingController {
     
     this.#examplesGatePromptPromise = this.#examplesGptPromise
       .catch(() => [])
+      .then(() => new Promise(resolve => setTimeout(resolve, 2000)))
       .then(() => this.#fetchGatePromptFromGPT('examples'))
       .then(text => {
       if (text) ttsCache.prefetch(text);
@@ -578,9 +581,12 @@ export class TeachingController {
           return [this.#buildRateLimitSentence(retryAfterMs)];
         }
 
+        console.error(`[TeachingController] Definitions request failed with status ${status}`);
         this.#definitionsRateLimited = false;
         this.#emit('error', { type: 'gpt', stage: 'definitions', status });
-        return ['We had trouble loading the definitions. Please press Next again.'];
+        return status >= 500 
+          ? ['The server is having trouble right now. Please wait a moment and press Next again.']
+          : ['We had trouble loading the definitions. Please press Next again.'];
       }
       
       const data = await response.json();
@@ -667,9 +673,12 @@ export class TeachingController {
           return [this.#buildRateLimitSentence(retryAfterMs)];
         }
 
+        console.error(`[TeachingController] Examples request failed with status ${status}`);
         this.#examplesRateLimited = false;
         this.#emit('error', { type: 'gpt', stage: 'examples', status });
-        return ['We had trouble loading the examples. Please press Next again.'];
+        return status >= 500
+          ? ['The server is having trouble right now. Please wait a moment and press Next again.']
+          : ['We had trouble loading the examples. Please press Next again.'];
       }
       
       const data = await response.json();

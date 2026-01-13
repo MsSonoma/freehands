@@ -491,8 +491,15 @@ expect(engine.isPlaying).toBe(true);
 
 **Rate Limit Handling (429):**
 - If GPT returns 429, TeachingController enters a short cooldown and produces a deterministic "wait then press Next" sentence
+- If GPT returns 500+, TeachingController shows a generic server error message (not rate limit) so non-429 failures don't blame OpenAI
 - Next/Repeat/Restart must not spam GPT requests during cooldown
 - Public methods called without `await` (Repeat/Skip/Restart) must not generate unhandled promise rejections
+
+**Environment Variable Requirements:**
+- At least one LLM provider key must be configured: `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
+- Google TTS requires: `GOOGLE_APPLICATION_CREDENTIALS` (path to JSON file) or `GOOGLE_TTS_CREDENTIALS` (inline JSON or base64)
+- Dev server must be restarted after adding/changing `.env.local` to load new environment variables
+- Missing keys cause 500 errors (not 429s); TeachingController now distinguishes these in user-facing messages
 
 **Gate Prompt Flow (uses prefetched content):**
 1. Speak "Do you have any questions?" (TTS prefetched)

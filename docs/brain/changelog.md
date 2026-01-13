@@ -1,3 +1,8 @@
+2026-01-13T09:10:00Z | Copilot | TeachingController: re-enable prefetch with staggering (real issue was insufficient_quota not rate limits) [#v2-architecture: TeachingController, prefetch, insufficient-quota]
+2026-01-13T09:05:00Z | Copilot | TeachingController: disable prefetch entirely to avoid OpenAI rate limits; GPT content fetched on-demand when needed (slower but reliable) [#v2-architecture: TeachingController, prefetch-disabled, rate-limit-mitigation]
+2026-01-13T09:00:00Z | Copilot | TeachingController: add 2-4s delays between prefetch GPT calls to avoid OpenAI rate limits (definitions -> gate +2s -> examples +4s -> gate +2s) [#v2-architecture: TeachingController, prefetch, rate-limit-mitigation]
+2026-01-13T08:30:00Z | Copilot | TeachingController: distinguish 429 (rate limit) vs 500 (server error) messages; stop blaming rate limits for config failures [#v2-architecture: TeachingController, error-handling, 429-vs-500]
+2026-01-13T08:28:00Z | Copilot | Add GOOGLE_APPLICATION_CREDENTIALS to .env.local so TTS works; dev server must restart to load new env vars [#api-routes: /api/sonoma, Google TTS, GOOGLE_APPLICATION_CREDENTIALS]
 2026-01-13T03:43:43Z | Copilot | PlayTimeExpiredOverlay: raise z-index above GamesOverlay so 30s countdown is never hidden [#timer-system: PlayTimeExpiredOverlay, games-overlay, z-index]
 2026-01-13T03:35:15Z | Copilot | Flood Climb: shift rock wall palette cooler (gray-blue) while staying flat (no vertical shading) [#flood-climb-spelling: visuals, rock wall, svg]
 2026-01-13T03:33:06Z | Copilot | Flood Climb: make rock wall less light (darker SVG base/facets; flat; cache-bust) [#flood-climb-spelling: visuals, rock wall, svg]

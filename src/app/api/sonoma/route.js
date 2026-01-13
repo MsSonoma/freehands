@@ -473,7 +473,8 @@ async function callOpenAI(userMessages, apiKey, modelOverride, logPrefix) {
     let parsedBody
     try { parsedBody = JSON.parse(rawBody) } catch { parsedBody = rawBody }
     if (!response.ok) {
-      // OpenAI request failed
+      console.error(`${logTag} OpenAI request failed - Status: ${response.status}`);
+      console.error(`${logTag} OpenAI error body:`, JSON.stringify(parsedBody, null, 2));
       return { reply: '', errorStatus: response.status, raw: parsedBody }
     }
     const reply = parsedBody?.choices?.[0]?.message?.content?.trim() ?? ''
