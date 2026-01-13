@@ -1,7 +1,7 @@
 # Games Overlay (#games-overlay)
 
 **Status**: Canonical  
-**Last Updated**: 2026-01-13T00:51:34Z
+**Last Updated**: 2026-01-13T00:59:23Z
 
 ## How It Works
 
@@ -13,31 +13,23 @@ Games are launched from the in-session **Games overlay**.
   - A full-screen active-game view
 - A play timer badge (rendered by `SessionTimer`) is optionally passed in and displayed at the top-left.
 
-### Grade Level (Difficulty Source)
+### Difficulty and Grade
 
-Games use a **grade level** selection as the single user-facing difficulty knob.
+The Games overlay does **not** own a global difficulty setting.
 
-- `GamesOverlay` owns `gradeLevel` state.
-- The overlay shows a grade selector on the game picker menu.
-- The overlay can be initialized with `initialGrade` from the current learner profile.
-- The current `gradeLevel` is passed down to each game component as `gradeLevel`.
-
-Design intent:
-- Existing games may ignore `gradeLevel` until they become grade-aware.
-- New grade-aware games should map `gradeLevel` to their own internal parameters (speed, word length, time pressure, etc.).
+- If a specific game needs grade-driven difficulty, that game should present its own grade selector (or other difficulty control) inside the game UI.
+- Games may optionally initialize their own difficulty from the currently selected learner profile (when the game is launched), but that choice must remain scoped to the game.
 
 ### Props
 
 `GamesOverlay` accepts:
 - `onClose`: closes the overlay
 - `playTimer`: a React node (typically `SessionTimer`) rendered as a badge
-- `initialGrade`: string, used to seed `gradeLevel` (e.g., `K`, `3`, `7`)
 
 ## What NOT To Do
 
-- Do not hardcode a silent default grade inside games when `gradeLevel` is empty.
-- Do not store or persist the Games grade selector to localStorage as a fallback.
-- Do not let game difficulty drift between games; grade should remain the shared knob.
+- Do not add an overlay-wide difficulty selector unless explicitly requested.
+- Do not store or persist Games settings to localStorage as a fallback.
 - Do not couple Games overlay state to Ms. Sonoma prompt/state; games are independent UI.
 
 ## Key Files

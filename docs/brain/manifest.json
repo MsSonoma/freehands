@@ -491,7 +491,7 @@
       "Games overlay",
       "opening actions play time"
     ],
-    "last_updated": "2026-01-13T00:51:34Z",
+    "last_updated": "2026-01-13T00:59:23Z",
     "status": "canonical"
   },
   "games-overlay": {
@@ -504,7 +504,20 @@
       "grade-driven difficulty",
       "opening actions play time"
     ],
-    "last_updated": "2026-01-13T00:51:34Z",
+    "last_updated": "2026-01-13T00:59:23Z",
+    "status": "canonical"
+  },
+  "flood-climb-spelling": {
+    "file": "flood-climb-spelling.md",
+    "systems": [
+      "Flood Climb",
+      "flood-climb",
+      "spelling game",
+      "emoji prompts",
+      "grade-driven difficulty",
+      "per-game difficulty"
+    ],
+    "last_updated": "2026-01-13T01:32:57Z",
     "status": "canonical"
   },
   "platform-jumper": {

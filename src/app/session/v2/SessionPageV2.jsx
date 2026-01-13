@@ -6589,7 +6589,6 @@ function SessionPageV2Inner() {
         return (
           <GamesOverlay
             onClose={() => setShowGames(false)}
-            initialGrade={(learnerProfile?.grade || lessonData?.grade || '').toString()}
             playTimer={timerNode}
           />
         );

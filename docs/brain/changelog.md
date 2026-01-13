@@ -1,3 +1,6 @@
+2026-01-13T01:32:57Z | Copilot | Flood Climb: clamp water rise to prevent negative water top values [#flood-climb-spelling: water level, game loop, safety]
+2026-01-13T01:31:55Z | Copilot | Add Flood Climb spelling game (emoji prompts + in-game grade difficulty) [#flood-climb-spelling: spelling game, emoji prompts, grade-driven difficulty] [#games-overlay: game list, per-game difficulty, play timer badge]
+2026-01-13T00:59:23Z | Copilot | Games overlay: revert global grade selector; grade difficulty will be implemented inside the new spelling game only [#games-overlay: scope correction, per-game difficulty, play timer badge]
 2026-01-13T00:51:34Z | Copilot | Games overlay: add grade selector (grade drives game difficulty) + pass learner grade into overlay [#games-overlay: grade selector, grade-driven difficulty, play timer badge] [#ms-sonoma-teaching-system: games-overlay, opening actions play time]
 2026-01-13T00:26:40Z | Copilot | Platform Jumper: rework Level 43 layout (add bridge platforms; widen/move goal platform) so mid/end are reachable [#platform-jumper: level-43, beatability, layout]
 2026-01-13T00:20:13Z | Copilot | Platform Jumper: make Level 43 beatable by lowering upper platforms/goal (y 40->150, 60->160; goal y 10->110) [#platform-jumper: level-43, beatability, layout]

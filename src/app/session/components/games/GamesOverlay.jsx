@@ -6,12 +6,10 @@ import CatchCollect from './CatchCollect';
 import MazeRunner from './MazeRunner';
 import WhackAMole from './WhackAMole';
 import PlatformJumper from './PlatformJumper';
+import FloodClimbSpelling from './FloodClimbSpelling';
 
-const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-
-export default function GamesOverlay({ onClose, playTimer, initialGrade = '' }) {
+export default function GamesOverlay({ onClose, playTimer }) {
   const [selectedGame, setSelectedGame] = useState(null);
-  const [gradeLevel, setGradeLevel] = useState((initialGrade || '').toString());
 
   const gamesList = [
     {
@@ -55,6 +53,13 @@ export default function GamesOverlay({ onClose, playTimer, initialGrade = '' }) 
       description: 'Jump across platforms to reach the trophy!',
       icon: '🏆',
       color: '#ec4899',
+    },
+    {
+      id: 'flood-climb',
+      name: 'Flood Climb',
+      description: 'Spell the emoji word to climb to safety!',
+      icon: '🌊',
+      color: '#3b82f6',
     },
     // Future games will go here
   ];
@@ -159,61 +164,6 @@ export default function GamesOverlay({ onClose, playTimer, initialGrade = '' }) 
             >
               Pick a game to play as your reward!
             </p>
-
-            {/* Grade selector (difficulty source-of-truth for games) */}
-            <div
-              style={{
-                marginTop: 14,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 10,
-                flexWrap: 'wrap',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: '#374151',
-                }}
-              >
-                Grade Level
-              </div>
-              <select
-                value={gradeLevel}
-                onChange={(e) => setGradeLevel(e.target.value)}
-                style={{
-                  height: 36,
-                  borderRadius: 10,
-                  border: '2px solid #e5e7eb',
-                  padding: '0 10px',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: '#111827',
-                  background: '#fff',
-                  cursor: 'pointer',
-                  outline: 'none',
-                }}
-                aria-label="Grade level"
-              >
-                <option value="">Select</option>
-                {GRADES.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: '#6b7280',
-                  lineHeight: 1.2,
-                }}
-              >
-                Used to choose game difficulty.
-              </div>
-            </div>
           </div>
 
           {/* Games list */}
@@ -323,45 +273,27 @@ export default function GamesOverlay({ onClose, playTimer, initialGrade = '' }) 
         </div>
       )}
 
-      {/* Grade badge (informational) */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 16,
-          right: 16,
-          zIndex: 10001,
-          background: '#111827',
-          color: '#fff',
-          borderRadius: 999,
-          padding: '8px 12px',
-          fontSize: 13,
-          fontWeight: 800,
-          letterSpacing: 0.2,
-          boxShadow: '0 6px 18px rgba(0,0,0,0.2)',
-        }}
-        title="Grade level controls difficulty"
-      >
-        Grade: {gradeLevel || 'Select'}
-      </div>
-
       {/* Render the selected game */}
       {selectedGame === 'memory-match' && (
-        <MemoryMatch onExit={() => setSelectedGame(null)} gradeLevel={gradeLevel} />
+        <MemoryMatch onExit={() => setSelectedGame(null)} />
       )}
       {selectedGame === 'snake' && (
-        <Snake onExit={() => setSelectedGame(null)} gradeLevel={gradeLevel} />
+        <Snake onExit={() => setSelectedGame(null)} />
       )}
       {selectedGame === 'catch-collect' && (
-        <CatchCollect onBack={() => setSelectedGame(null)} gradeLevel={gradeLevel} />
+        <CatchCollect onBack={() => setSelectedGame(null)} />
       )}
       {selectedGame === 'maze-runner' && (
-        <MazeRunner onBack={() => setSelectedGame(null)} gradeLevel={gradeLevel} />
+        <MazeRunner onBack={() => setSelectedGame(null)} />
       )}
       {selectedGame === 'whack-a-mole' && (
-        <WhackAMole onBack={() => setSelectedGame(null)} gradeLevel={gradeLevel} />
+        <WhackAMole onBack={() => setSelectedGame(null)} />
       )}
       {selectedGame === 'platform-jumper' && (
-        <PlatformJumper onBack={() => setSelectedGame(null)} gradeLevel={gradeLevel} />
+        <PlatformJumper onBack={() => setSelectedGame(null)} />
+      )}
+      {selectedGame === 'flood-climb' && (
+        <FloodClimbSpelling onBack={() => setSelectedGame(null)} />
       )}
     </div>
   );

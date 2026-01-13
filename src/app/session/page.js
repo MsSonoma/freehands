@@ -8244,7 +8244,6 @@ function SessionPageInner() {
     {showGames && (
       <GamesOverlay
         onClose={() => setShowGames(false)}
-        initialGrade={learnerGrade || ''}
         playTimer={phaseTimers && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] === 'play' ? (
           <SessionTimer
             phase={getCurrentPhaseName()}
