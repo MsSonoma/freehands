@@ -722,7 +722,7 @@ export default function HeaderBar() {
 									<button
 										type="button"
 										aria-label="Print menu"
-										onClick={() => setPrintMenuOpen((v) => !v)}
+										onClick={(e) => { e.stopPropagation(); setPrintMenuOpen((v) => !v); }}
 										style={{
 											background:'#1f2937', color:'#fff', border:'none', width:36, height:36,
 											display:'inline-flex', alignItems:'center', justifyContent:'center', borderRadius:8, cursor:'pointer',

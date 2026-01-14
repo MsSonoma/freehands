@@ -1,4 +1,4 @@
-2026-01-14T16:54:09Z | Copilot | Fix desktop header print dropdown auto-closing: set HeaderBar buttons to type="button" [#header-navigation: HeaderBar, print-menu, hamburger]
+2026-01-14T17:08:15Z | Copilot | Fix desktop print dropdown auto-closing: stopPropagation on button click to prevent immediate outside-click trigger [#header-navigation: HeaderBar, print-menu, event-propagation]
 2026-01-14T00:00:00Z | Copilot | Fix mobile Begin stuck on Loading: coalesced AudioEngine.initialize + timeouts/finally for session tracking + Begin CTA error surface [#v2-architecture: video-priming, autoplay-unlock, iOS] [#session-takeover: learner lesson sessions, device conflict detection, lesson_sessions]
 2026-01-13T09:30:00Z | Copilot | Remove localhost fallback from counselor API resolveBaseUrl() - was breaking remote device access (phone/iPad would get http://localhost:3001) [#api-routes: /api/counselor, resolveBaseUrl, localhost-fallback]
 2026-01-13T09:10:00Z | Copilot | TeachingController: re-enable prefetch with staggering (real issue was insufficient_quota not rate limits) [#v2-architecture: TeachingController, prefetch, insufficient-quota]

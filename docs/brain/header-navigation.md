@@ -22,6 +22,8 @@ On narrow layouts, these same actions live inside the hamburger menu under a nes
 
 Important: header buttons (including the print icon) must explicitly set `type="button"` so they never behave like submit buttons when a page happens to include a form.
 
+Also: header dropdown trigger buttons must call `e.stopPropagation()` in their onClick handlers to prevent the opening click from bubbling to document and immediately triggering the outside-click-close listener.
+
 ### Facilitator Dropdown
 
 On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
