@@ -25,6 +25,9 @@ export class AudioEngine {
   #gainNode = null;
   #sourceNode = null;
   #audioBuffer = null;
+
+  #initialized = false;
+  #initializePromise = null;
   
   #isPlaying = false;
   #isMuted = false;
@@ -89,35 +92,65 @@ export class AudioEngine {
   
   // Public API: Initialize (iOS audio unlock)
   async initialize() {
-    // iOS audio unlock - create AudioContext during user gesture
-    if (!this.#audioContext || this.#audioContext.state === 'closed') {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (AudioContext) {
-        this.#audioContext = new AudioContext();
-        this.#gainNode = this.#audioContext.createGain();
-        this.#gainNode.gain.value = this.#isMuted ? 0 : 1;
-        this.#gainNode.connect(this.#audioContext.destination);
-      }
-    }
-    
-    if (this.#audioContext && this.#audioContext.state === 'suspended') {
-      await this.#audioContext.resume();
-    }
-    
-    // Play silent audio to unlock HTMLAudio on iOS
-    const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
-    silentAudio.muted = true;
-    silentAudio.volume = 0;
-    try {
-      await silentAudio.play();
-    } catch {
-      // Ignore errors from silent audio
-    }
+    if (this.#initialized) return;
+    if (this.#initializePromise) return this.#initializePromise;
 
-    // Video unlock (must happen inside user gesture; pause can happen later).
-    // IMPORTANT: Do NOT play-and-immediately-pause in the same tick; on some browsers
-    // (notably iOS Safari) that can prevent the play() call from "unlocking" future playback.
-    this.#requestVideoUnlock();
+    const withTimeout = async (promise, ms, label) => {
+      let timeoutId;
+      const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+      });
+      try {
+        return await Promise.race([promise, timeout]);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    };
+
+    this.#initializePromise = (async () => {
+      // iOS audio unlock - create AudioContext during user gesture
+      if (!this.#audioContext || this.#audioContext.state === 'closed') {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          this.#audioContext = new AudioContext();
+          this.#gainNode = this.#audioContext.createGain();
+          this.#gainNode.gain.value = this.#isMuted ? 0 : 1;
+          this.#gainNode.connect(this.#audioContext.destination);
+        }
+      }
+
+      // Resume AudioContext, but never let this hang indefinitely on mobile browsers.
+      if (this.#audioContext && this.#audioContext.state === 'suspended') {
+        try {
+          await withTimeout(this.#audioContext.resume(), 1000, 'AudioContext.resume');
+        } catch {
+          // Ignore - some browsers will reject/resume later; initialization should not deadlock.
+        }
+      }
+
+      // Play silent audio to unlock HTMLAudio on iOS.
+      // IMPORTANT: do not await play(); on iOS/Safari it can remain pending and deadlock UI.
+      try {
+        const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+        silentAudio.muted = true;
+        silentAudio.volume = 0;
+        const p = silentAudio.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch {
+        // Ignore errors from silent audio
+      }
+
+      // Video unlock (must happen inside user gesture; pause can happen later).
+      // IMPORTANT: Do NOT play-and-immediately-pause in the same tick; on some browsers
+      // (notably iOS Safari) that can prevent the play() call from "unlocking" future playback.
+      this.#requestVideoUnlock();
+
+      this.#initialized = true;
+    })().finally(() => {
+      this.#initializePromise = null;
+    });
+
+    return this.#initializePromise;
   }
 
   #requestVideoUnlock() {

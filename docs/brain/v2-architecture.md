@@ -31,11 +31,18 @@ After first round of fixes, second comprehensive audit found 6 additional critic
 - iOS Safari can fail to unlock if the app calls `play()` and then immediately `pause()` in the same tick. The reliable approach is: call `video.play()` inside the gesture, then `pause()` when the `playing` event fires.
 - The video must still end in a paused state after priming/unlock.
 - Audio unlock must be performed during the Begin click by calling `AudioEngine.initialize()`; relying only on a document-level "first interaction" listener is not sufficient because React `onClick` can run before the listener fires.
+- `AudioEngine.initialize()` must be retry-safe and iOS-safe:
+  - It must be idempotent and coalesce concurrent calls (auto unlock listener + Begin click can both call it).
+  - It must time-box `AudioContext.resume()` so a suspended context cannot deadlock the Begin CTA.
+  - It must NOT await the `HTMLAudioElement.play()` promise for the silent unlock clip. On iOS Safari that promise can remain pending; the unlock should be best-effort.
 - AudioEngine remains the sole owner of video play/pause during TTS (`#startVideo` on start, `#cleanup` pause on end).
 
 **Idle Begin CTA loading feedback (2026-01-07)**
 - When the learner clicks the initial "Begin" (idle phase) or "Resume", the CTA must immediately flip to "Loading..." and disable until `startSession()` returns.
-- This prevents the first open from looking stalled while audio unlock + orchestrator start completes.
+- The Begin CTA must never hang indefinitely.
+  - Any awaited Begin-start steps must be time-boxed.
+  - On timeout/failure, the CTA must re-enable and show a user-facing error so the learner can retry.
+- When the CTA is disabled because prerequisites are still initializing (e.g., snapshot load), the label must not misleadingly show "Loading..." without context.
 
 **Complete Lesson farewell sequencing (2026-01-07)**
 - The Test review "Complete Lesson" click plays a short congrats line to hide end-of-lesson load.
@@ -46,8 +53,8 @@ After first round of fixes, second comprehensive audit found 6 additional critic
 **1. AudioEngine.initialize() Method Added** ✅
 - Added missing initialize() method with iOS audio unlock
 - Creates AudioContext during user gesture
-- Plays silent audio to unlock HTMLAudio on iOS
-- Resumes suspended AudioContext
+- Plays silent audio to unlock HTMLAudio on iOS (best-effort; do not await `play()`)
+- Resumes suspended AudioContext (time-boxed)
 
 **2. AudioEngine captionChange Data Format Fixed** ✅
 - Changed emission from numeric index to object with { index, text }

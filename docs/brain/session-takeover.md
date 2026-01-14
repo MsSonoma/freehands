@@ -263,13 +263,19 @@ const payload = {
 - `src/app/session/page.js` - PIN validation, takeover handler, session_id initialization
 - `src/app/session/components/SessionTakeoverDialog.jsx` - Takeover UI (already exists)
 
-## What Was Removed
+**V2 key files:**
+- `src/app/session/v2/SessionPageV2.jsx` - Starts tracked session at Begin (conflict check), surfaces takeover dialog
+- `src/app/hooks/useSessionTracking.js` - Starts session + optional takeover polling helper
 
-### Polling Infrastructure Deleted
-- `useSessionTracking` hook's `startPolling` and `stopPolling` methods
-- `checkSessionStatus` polling interval (8 seconds)
-- Commented line 4213 in `page.js` (`startSessionPolling()` call)
-- Performance overhead from 8-second polling loop
+## Current Architecture
+
+### Conflict Detection (Gate)
+- A conflict check happens at Begin (session start) via `startLessonSession()`.
+- Snapshot saves also perform conflict detection (same `learner_id` + `lesson_id` single-owner rule).
+
+### Optional Polling (Low Frequency)
+- The app may also run a low-frequency polling loop (8 seconds) to detect when another device has ended the session.
+- Polling is read-only (status checks) and is used only while a session is active.
 
 ### What Remains (Beta Analytics)
 - `startLessonSession()` - Creates session row, logs start event
@@ -278,6 +284,10 @@ const payload = {
 - `addFacilitatorNote()` - Timestamped facilitator notes
 - `addTranscriptLine()` - Timestamped transcript lines
 - Session duration and event tracking for Beta program reporting
+
+**Retry-safety rules:**
+- `startLessonSession()` must be idempotent for the same `(learner_id, lesson_id, session_id)` so retries do not create duplicate active sessions.
+- Client-side session start must always clear "loading" state even if Supabase hangs or errors (timeouts + `finally`).
 
 ## What NOT To Do
 
@@ -292,24 +302,15 @@ const payload = {
 - Timer state in localStorage independent of snapshots
 - Race condition checks between timer updates and snapshot saves
 
-## Why Gates Not Polling
+## Why We Use Gates (and Sometimes Polling)
 
-**Gates are event-driven:**
-- Conflict detected exactly when user takes action (click Next, answer question)
-- No wasted CPU cycles checking status when user is idle
-- Natural checkpoint alignment with snapshot saves (single database write)
+**Gates are the primary mechanism:**
+- Conflict is detected exactly at meaningful checkpoints (Begin and snapshot saves).
+- This aligns with persistence writes and avoids background chatter.
 
-**Polling problems:**
-- 8-second interval = 450 checks per hour even when user inactive
-- Race conditions between poll detecting conflict and user mid-action
-- Performance overhead accumulates with multiple tabs/learners
-- Network latency adds 100-300ms per poll
-
-**Gate advantages:**
-- Zero overhead when idle
-- Single database operation per user action (snapshot save + conflict check)
-- Immediate feedback at moment of conflict (user sees dialog before content loads)
-- Timer state automatically included in same snapshot write
+**Polling is secondary and optional:**
+- Polling can improve UX by discovering a takeover/end even when the learner is idle.
+- Keep it low-frequency and read-only, and only while a session is active.
 
 ## Device Switch Flow Example
 

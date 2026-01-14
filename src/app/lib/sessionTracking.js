@@ -107,6 +107,23 @@ export async function startLessonSession(learnerId, lessonId, browserSessionId =
       };
     }
 
+    // If an active session already exists for this learner+lesson and it belongs to this browserSessionId,
+    // treat this as idempotent (retry-safe) and reuse the existing session instead of creating a new one.
+    if (existingActive && browserSessionId && existingActive.session_id === browserSessionId) {
+      try {
+        await supabase
+          .from('lesson_sessions')
+          .update({
+            last_activity_at: nowIso,
+            device_name: deviceName || existingActive.device_name || null
+          })
+          .eq('id', existingActive.id);
+      } catch {
+        // Best-effort
+      }
+      return { id: existingActive.id };
+    }
+
     // Close any existing active sessions for this learner+lesson (safety cleanup)
     const { data: existingSessions, error: existingError } = await supabase
       .from('lesson_sessions')

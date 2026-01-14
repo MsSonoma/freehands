@@ -717,6 +717,7 @@ function SessionPageV2Inner() {
   // Idle "Begin" / "Resume" CTA loading state
   const [startSessionLoading, setStartSessionLoading] = useState(false);
   const startSessionLoadingRef = useRef(false);
+  const [startSessionError, setStartSessionError] = useState('');
   useEffect(() => {
     startSessionLoadingRef.current = startSessionLoading;
   }, [startSessionLoading]);
@@ -4684,10 +4685,22 @@ function SessionPageV2Inner() {
       return;
     }
 
+    const withTimeout = async (promise, ms, label) => {
+      let timeoutId;
+      const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+      });
+      try {
+        return await Promise.race([promise, timeout]);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    };
+
     // Ensure audio is unlocked during this user gesture (V1 parity).
     // The auto "first interaction" listener can fire after React onClick.
     try {
-      await audioEngineRef.current.initialize();
+      await withTimeout(audioEngineRef.current.initialize(), 2500, 'Audio unlock');
     } catch {
       // Ignore - browsers may block resume/play outside strict gesture contexts.
     }
@@ -4699,7 +4712,11 @@ function SessionPageV2Inner() {
       const trackingLessonId = lessonKey || null;
       if (trackingLearnerId && trackingLearnerId !== 'demo' && trackingLessonId && browserSessionId) {
         const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
-        const sessionResult = await startTrackedSession(browserSessionId, deviceName);
+        const sessionResult = await withTimeout(
+          startTrackedSession(browserSessionId, deviceName),
+          12000,
+          'Session tracking'
+        );
         if (sessionResult?.conflict) {
           setConflictingSession(sessionResult.existingSession);
           setShowTakeoverDialog(true);
@@ -4771,9 +4788,13 @@ function SessionPageV2Inner() {
   const handleStartSessionClick = useCallback(async (options = {}) => {
     if (startSessionLoadingRef.current) return;
     startSessionLoadingRef.current = true;
+    setStartSessionError('');
     setStartSessionLoading(true);
     try {
       await startSession(options);
+    } catch (err) {
+      const msg = (err && typeof err === 'object' && 'message' in err) ? String(err.message || '') : '';
+      setStartSessionError(msg || 'Unable to start. Please try again.');
     } finally {
       startSessionLoadingRef.current = false;
       setStartSessionLoading(false);
@@ -5074,16 +5095,9 @@ function SessionPageV2Inner() {
   // Loading state: both lesson AND learner must be loaded
   if (loading || learnerLoading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontSize: '1.125rem', color: '#1f2937' }}>
           {loading ? 'Loading lesson...' : 'Loading learner profile...'}
-        </div>
-        {/* Debug info to help diagnose mobile loading issues */}
-        <div style={{ fontSize: '0.75rem', color: '#6b7280', textAlign: 'center', maxWidth: 400 }}>
-          <div>Lesson loading: {loading ? 'yes' : 'no'}</div>
-          <div>Learner loading: {learnerLoading ? 'yes' : 'no'}</div>
-          <div>Lesson ID: {lessonId || 'none'}</div>
-          <div>Subject: {subjectParam || 'none'}</div>
         </div>
       </div>
     );
@@ -6240,11 +6254,30 @@ function SessionPageV2Inner() {
                     >
                       {(audioReady && snapshotLoaded)
                         ? (startSessionLoading ? 'Loading...' : 'Begin')
-                        : 'Loading...'
+                        : (!snapshotLoaded ? 'Loading session...' : 'Preparing audio...')
                       }
                     </button>
                   )
                 )}
+                {needBeginDiscussion && currentPhase === 'idle' && startSessionError ? (
+                  <div style={{
+                    width: '100%',
+                    maxWidth: 520,
+                    marginTop: 10,
+                    marginLeft: 'auto',
+                    marginRight: 'auto',
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(239,68,68,0.35)',
+                    background: 'rgba(239,68,68,0.10)',
+                    color: '#7f1d1d',
+                    fontSize: 13,
+                    fontWeight: 650,
+                    textAlign: 'center'
+                  }}>
+                    {startSessionError}
+                  </div>
+                ) : null}
                 {needBeginComp && (
                   <button type="button" style={ctaStyle} onClick={() => handleBeginPhase('comprehension')}>
                     Begin Comprehension

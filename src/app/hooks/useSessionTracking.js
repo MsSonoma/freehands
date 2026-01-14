@@ -41,26 +41,46 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
       return { id: sessionIdRef.current };
     }
 
+    const withTimeout = async (promise, ms, label) => {
+      let timeoutId;
+      const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+      });
+      try {
+        return await Promise.race([promise, timeout]);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    };
+
     setTracking(true);
-    const result = await startLessonSession(learnerId, lessonId, browserSessionId, deviceName);
-    
-    // Check for conflict
-    if (result?.conflict) {
-      setTracking(false);
-      setConflictingSession(result.existingSession);
-      return result; // Return conflict to caller
-    }
-    
-    if (result?.id) {
-      sessionIdRef.current = result.id;
-      setSessionId(result.id);
-      sessionMetaRef.current = { learnerId, lessonId };
-      setTracking(false);
-      console.log('[SESSION] sessionIdRef.current set to:', result.id);
-      return result;
-    } else {
-      setTracking(false);
+    try {
+      const result = await withTimeout(
+        startLessonSession(learnerId, lessonId, browserSessionId, deviceName),
+        10000,
+        'startLessonSession'
+      );
+      
+      // Check for conflict
+      if (result?.conflict) {
+        setConflictingSession(result.existingSession);
+        return result; // Return conflict to caller
+      }
+      
+      if (result?.id) {
+        sessionIdRef.current = result.id;
+        setSessionId(result.id);
+        sessionMetaRef.current = { learnerId, lessonId };
+        console.log('[SESSION] sessionIdRef.current set to:', result.id);
+        return result;
+      }
+
       return null;
+    } catch (err) {
+      console.error('[SESSION] startSession failed:', err);
+      return null;
+    } finally {
+      setTracking(false);
     }
   };
 
