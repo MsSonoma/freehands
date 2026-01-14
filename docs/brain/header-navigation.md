@@ -9,6 +9,19 @@ The global header (HeaderBar) is rendered across pages and provides:
 - Top-level navigation links (About, Learn, Facilitator)
 - Session-specific print menu actions
 
+### Session Print Menu
+
+On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions:
+
+- Worksheet
+- Test
+- Facilitator Key
+- Refresh
+
+On narrow layouts, these same actions live inside the hamburger menu under a nested "Print" section.
+
+Important: header buttons (including the print icon) must explicitly set `type="button"` so they never behave like submit buttons when a page happens to include a form.
+
 ### Facilitator Dropdown
 
 On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
@@ -31,6 +44,7 @@ When triggered from an active Session page, these links must route through the s
 - Do not navigate from `/session/*` to `/facilitator/*` without `goWithPin()`.
 - Do not add billing as a top-level header link; billing lives under Account.
 - Do not create multiple overlapping header overlays; keep menus mutually non-blocking.
+- Do not rely on default `<button>` behavior in the header; always set `type="button"`.
 
 ## Key Files
 

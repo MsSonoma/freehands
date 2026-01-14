@@ -533,6 +533,7 @@ export default function HeaderBar() {
 								<div style={{ position:'absolute', left:0, right:0, top:'50%', transform:'translateY(-50%)', display:'flex', justifyContent:'center', alignItems:'center', padding:'0 4px' }}>
 									<div style={{ display:'inline-flex', alignItems:'center', gap:6, maxWidth:'100%' }}>
 										<button
+											type="button"
 											onClick={handleBack}
 											aria-label="Go back"
 											style={{ background:'transparent', color:'#111', border:'1px solid #e5e7eb', padding:'6px 10px', borderRadius:999, cursor:'pointer' }}
@@ -550,6 +551,7 @@ export default function HeaderBar() {
 									<div style={{ position:'absolute', left:0, right:0, top:'50%', transform:'translateY(-50%)', display:'flex', justifyContent:'center', alignItems:'center' }}>
 										<div style={{ display:'inline-flex', alignItems:'center', gap:6, maxWidth:'100%' }}>
 											<button
+												type="button"
 												onClick={handleBack}
 												aria-label="Go back"
 												style={{ background:'transparent', color:'#111', border:'1px solid #e5e7eb', padding:'6px 10px', borderRadius:999, cursor:'pointer' }}
@@ -565,6 +567,7 @@ export default function HeaderBar() {
 						)
 					) : backHref && (
 						<button
+							type="button"
 							onClick={handleBack}
 							aria-label="Go back"
 							style={fancyButtonStyle}
@@ -585,6 +588,7 @@ export default function HeaderBar() {
 						<>
 							<button
 								ref={navToggleRef}
+								type="button"
 								aria-label={navOpen ? 'Close menu' : 'Open menu'}
 								aria-expanded={navOpen}
 								aria-controls="mobile-nav-menu"
@@ -716,6 +720,7 @@ export default function HeaderBar() {
 							{pathname.startsWith('/session') && (
 								<div ref={printMenuRef} style={{ position:'relative', display:'flex', alignItems:'center', gap:8 }}>
 									<button
+										type="button"
 										aria-label="Print menu"
 										onClick={() => setPrintMenuOpen((v) => !v)}
 										style={{

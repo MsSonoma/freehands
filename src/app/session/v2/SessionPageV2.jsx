@@ -416,6 +416,7 @@ function SessionPageV2Inner() {
   const lessonId = searchParams?.get('lesson') || '';
   const subjectParam = searchParams?.get('subject') || 'math'; // Subject folder for lesson lookup
   const regenerateParam = searchParams?.get('regenerate'); // Support generated lessons
+  const goldenKeyFromUrl = searchParams?.get('goldenKey') === 'true';
 
   // Stable session id (persists across refreshes in this tab; V1 parity)
   const [browserSessionId] = useState(() => {
@@ -463,6 +464,13 @@ function SessionPageV2Inner() {
 
   // Canonical per-lesson persistence key (lesson == session identity)
   const lessonKey = useMemo(() => deriveCanonicalLessonKey({ lessonData, lessonId }), [lessonData, lessonId]);
+
+  // Golden Key lookup/persistence key MUST match V1 + /learn/lessons convention.
+  // V1 stored golden keys under `${subject}/${lesson}` (including .json when present).
+  const goldenKeyLessonKey = useMemo(() => {
+    if (!subjectParam || !lessonId) return '';
+    return `${subjectParam}/${lessonId}`;
+  }, [subjectParam, lessonId]);
 
   // Normalized key for visual aids (strips folder prefixes so the same lesson shares visual aids)
   const visualAidsLessonKey = useMemo(() => {
@@ -645,11 +653,21 @@ function SessionPageV2Inner() {
   const [hasGoldenKey, setHasGoldenKey] = useState(false);
   const [isGoldenKeySuspended, setIsGoldenKeySuspended] = useState(false);
   const goldenKeyBonusRef = useRef(0);
+  const hasGoldenKeyRef = useRef(false);
+  const goldenKeyLessonKeyRef = useRef('');
   const [timerPaused, setTimerPaused] = useState(false);
 
   useEffect(() => {
     goldenKeyBonusRef.current = Number(goldenKeyBonus || 0);
   }, [goldenKeyBonus]);
+
+  useEffect(() => {
+    hasGoldenKeyRef.current = !!hasGoldenKey;
+  }, [hasGoldenKey]);
+
+  useEffect(() => {
+    goldenKeyLessonKeyRef.current = String(goldenKeyLessonKey || '');
+  }, [goldenKeyLessonKey]);
 
   useEffect(() => {
     if (typeof goldenKeysEnabled === 'boolean') {
@@ -1047,14 +1065,31 @@ function SessionPageV2Inner() {
         });
         
         // Check for active golden key on this lesson (only affects play timers when Golden Keys are enabled)
-        if (!lessonKey) {
-          throw new Error('Missing canonical lesson key for golden key lookup.');
+        // Key format must match V1 + /learn/lessons: `${subject}/${lesson}`.
+        if (!goldenKeyLessonKey) {
+          throw new Error('Missing lesson key for golden key lookup.');
         }
         const activeKeys = learner.active_golden_keys || {};
-        if (learner.golden_keys_enabled && activeKeys[lessonKey]) {
+        if (learner.golden_keys_enabled && activeKeys[goldenKeyLessonKey]) {
           setHasGoldenKey(true);
           setIsGoldenKeySuspended(false);
           setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
+        } else if (learner.golden_keys_enabled && goldenKeyFromUrl) {
+          // Golden key consumed on /learn/lessons; session must persist the per-lesson flag.
+          setHasGoldenKey(true);
+          setIsGoldenKeySuspended(false);
+          setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
+          try {
+            const { updateLearner } = await import('@/app/facilitator/learners/clientApi');
+            await updateLearner(learner.id, {
+              active_golden_keys: {
+                ...(activeKeys || {}),
+                [goldenKeyLessonKey]: true,
+              },
+            });
+          } catch (err) {
+            console.warn('[SessionPageV2] Failed to persist golden key from URL:', err);
+          }
         } else {
           setHasGoldenKey(false);
           setIsGoldenKeySuspended(false);
@@ -1071,7 +1106,7 @@ function SessionPageV2Inner() {
     }
     
     loadLearnerProfile();
-  }, [lessonData, lessonId, lessonKey, subjectParam]);
+  }, [lessonData, lessonId, lessonKey, subjectParam, goldenKeyFromUrl, goldenKeyLessonKey]);
 
   // Live-update learner settings (no localStorage persistence)
   useEffect(() => {
@@ -2250,8 +2285,10 @@ function SessionPageV2Inner() {
       const learner = await getLearner(learnerId);
       if (!learner) return;
 
+      if (!goldenKeyLessonKey) return;
+
       const activeKeys = { ...(learner.active_golden_keys || {}) };
-      if (activeKeys[lessonKey]) {
+      if (activeKeys[goldenKeyLessonKey]) {
         setHasGoldenKey(true);
         setIsGoldenKeySuspended(false);
         const timers = loadPhaseTimersForLearner(learner);
@@ -2266,7 +2303,7 @@ function SessionPageV2Inner() {
         return;
       }
 
-      activeKeys[lessonKey] = true;
+      activeKeys[goldenKeyLessonKey] = true;
       const updated = await updateLearner(learnerId, {
         golden_keys: available - 1,
         active_golden_keys: activeKeys
@@ -2283,7 +2320,7 @@ function SessionPageV2Inner() {
     } catch (err) {
       console.warn('[SessionPageV2] Failed to apply golden key:', err);
     }
-  }, [hasGoldenKey, lessonKey, learnerProfile, persistTimerStateNow]);
+  }, [hasGoldenKey, lessonKey, goldenKeyLessonKey, learnerProfile, persistTimerStateNow]);
 
   const handleSuspendGoldenKey = useCallback(() => {
     if (goldenKeysEnabledRef.current === false) return;
@@ -3441,6 +3478,28 @@ function SessionPageV2Inner() {
         try {
           sessionStorage.setItem('just_earned_golden_key', 'true');
         } catch {}
+      }
+
+      // Clear active golden key for this lesson when the lesson is completed (V1 parity).
+      // This ensures the key persists across exits/resumes until completion, but does not stick forever after completion.
+      if (goldenKeysEnabledRef.current !== false && hasGoldenKeyRef.current) {
+        const appliedKey = goldenKeyLessonKeyRef.current;
+        const clearLearnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
+        if (appliedKey && clearLearnerId && clearLearnerId !== 'demo') {
+          try {
+            const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
+            const learner = await getLearner(clearLearnerId);
+            if (learner) {
+              const activeKeys = { ...(learner.active_golden_keys || {}) };
+              if (activeKeys[appliedKey]) {
+                delete activeKeys[appliedKey];
+                await updateLearner(clearLearnerId, { active_golden_keys: activeKeys });
+              }
+            }
+          } catch (err) {
+            console.warn('[SessionPageV2] Failed to clear active golden key on completion:', err);
+          }
+        }
       }
 
       // End tracked session (so Calendar history can detect this completion).
