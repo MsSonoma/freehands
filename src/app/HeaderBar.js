@@ -37,6 +37,7 @@ export default function HeaderBar() {
 	const printMenuRef = useRef(null);
 	const [facilitatorMenuOpen, setFacilitatorMenuOpen] = useState(false);
 	const facilitatorMenuCloseTimerRef = useRef(null);
+	const printMenuCloseTimerRef = useRef(null);
 	// Mobile menu (hamburger) state and refs
 	const [navOpen, setNavOpen] = useState(false);
 	const [isNarrow, setIsNarrow] = useState(false);
@@ -154,38 +155,12 @@ export default function HeaderBar() {
 		return () => window.removeEventListener('ms:session:title', onTitle);
 	}, [pathname]);
 
-	// Close the print menu on outside click or Escape
+	// Close the print menu on Escape key
 	useEffect(() => {
 		if (!printMenuOpen) return;
-		// Add a small delay before attaching listeners to prevent immediate close on touch
-		const timeoutId = setTimeout(() => {
-			const onDocDown = (e) => {
-				try {
-					if (!printMenuRef.current) return;
-					if (!printMenuRef.current.contains(e.target)) setPrintMenuOpen(false);
-				} catch {}
-			};
-			const onKey = (e) => { if (e.key === 'Escape') setPrintMenuOpen(false); };
-			// Use both mousedown and touchstart for mobile compatibility
-			document.addEventListener('mousedown', onDocDown);
-			document.addEventListener('touchstart', onDocDown);
-			document.addEventListener('keydown', onKey);
-			
-			// Store cleanup in a way we can access it
-			printMenuRef.current._cleanup = () => {
-				document.removeEventListener('mousedown', onDocDown);
-				document.removeEventListener('touchstart', onDocDown);
-				document.removeEventListener('keydown', onKey);
-			};
-		}, 100);
-		
-		return () => {
-			clearTimeout(timeoutId);
-			if (printMenuRef.current?._cleanup) {
-				printMenuRef.current._cleanup();
-				printMenuRef.current._cleanup = null;
-			}
-		};
+		const onKey = (e) => { if (e.key === 'Escape') setPrintMenuOpen(false); };
+		document.addEventListener('keydown', onKey);
+		return () => document.removeEventListener('keydown', onKey);
 	}, [printMenuOpen]);
 
 	// Close the nav menu on outside click or Escape
@@ -212,10 +187,15 @@ export default function HeaderBar() {
 	useEffect(() => { setNavOpen(false); }, [pathname]);
 	useEffect(() => {
 		setFacilitatorMenuOpen(false);
+		setPrintMenuOpen(false);
 		try {
 			if (facilitatorMenuCloseTimerRef.current) {
 				clearTimeout(facilitatorMenuCloseTimerRef.current);
 				facilitatorMenuCloseTimerRef.current = null;
+			}
+			if (printMenuCloseTimerRef.current) {
+				clearTimeout(printMenuCloseTimerRef.current);
+				printMenuCloseTimerRef.current = null;
 			}
 		} catch {}
 	}, [pathname]);
@@ -246,12 +226,42 @@ export default function HeaderBar() {
 		}
 	}, [cancelFacilitatorMenuClose]);
 
+	const cancelPrintMenuClose = useCallback(() => {
+		try {
+			if (printMenuCloseTimerRef.current) {
+				clearTimeout(printMenuCloseTimerRef.current);
+				printMenuCloseTimerRef.current = null;
+			}
+		} catch {}
+	}, []);
+
+	const openPrintMenu = useCallback(() => {
+		cancelPrintMenuClose();
+		setPrintMenuOpen(true);
+	}, [cancelPrintMenuClose]);
+
+	const closePrintMenuSoon = useCallback(() => {
+		cancelPrintMenuClose();
+		try {
+			printMenuCloseTimerRef.current = setTimeout(() => {
+				setPrintMenuOpen(false);
+				printMenuCloseTimerRef.current = null;
+			}, 220);
+		} catch {
+			setPrintMenuOpen(false);
+		}
+	}, [cancelPrintMenuClose]);
+
 	useEffect(() => {
 		return () => {
 			try {
 				if (facilitatorMenuCloseTimerRef.current) {
 					clearTimeout(facilitatorMenuCloseTimerRef.current);
 					facilitatorMenuCloseTimerRef.current = null;
+				}
+				if (printMenuCloseTimerRef.current) {
+					clearTimeout(printMenuCloseTimerRef.current);
+					printMenuCloseTimerRef.current = null;
 				}
 			} catch {}
 		};
@@ -718,11 +728,17 @@ export default function HeaderBar() {
 						<>
 							{/* Session-only print dropdown to the left of Learn */}
 							{pathname.startsWith('/session') && (
-								<div ref={printMenuRef} style={{ position:'relative', display:'flex', alignItems:'center', gap:8 }}>
+								<div
+									ref={printMenuRef}
+									style={{ position:'relative', display:'flex', alignItems:'center', gap:8 }}
+									onMouseEnter={openPrintMenu}
+									onMouseLeave={closePrintMenuSoon}
+								>
 									<button
 										type="button"
 										aria-label="Print menu"
-										onClick={(e) => { e.stopPropagation(); setPrintMenuOpen((v) => !v); }}
+										onMouseEnter={openPrintMenu}
+										onFocus={openPrintMenu}
 										style={{
 											background:'#1f2937', color:'#fff', border:'none', width:36, height:36,
 											display:'inline-flex', alignItems:'center', justifyContent:'center', borderRadius:8, cursor:'pointer',
@@ -738,7 +754,11 @@ export default function HeaderBar() {
 										</svg>
 									</button>
 									{printMenuOpen && (
-										<div style={{ position:'absolute', right:0, top:44, background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', minWidth:160, overflow:'hidden', zIndex:1200 }}>
+										<div
+											onMouseEnter={cancelPrintMenuClose}
+											onMouseLeave={closePrintMenuSoon}
+											style={{ position:'absolute', right:0, top:44, background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', minWidth:160, overflow:'hidden', zIndex:1200 }}
+										>
 											<button
 												type="button"
 												style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', background:'transparent', border:'none', cursor:'pointer', fontWeight:600, color:'#111' }}
