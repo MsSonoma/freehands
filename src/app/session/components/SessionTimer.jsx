@@ -6,10 +6,16 @@ import { TIMER_TYPE_EMOJI } from '../utils/phaseTimerDefaults';
 /**
  * SessionTimer - Phase-aware countdown timer with play/work modes
  * 
+ * Can operate in two modes:
+ * 1. Pure display mode (V2): Pass elapsedSeconds/remainingSeconds props - no internal timing logic
+ * 2. Self-timing mode (V1): Don't pass elapsed/remaining - component manages its own interval
+ * 
  * @param {number} totalMinutes - Total time allocated (1-60 minutes)
  * @param {number} lessonProgress - Percentage of lesson work completed (0-100)
  * @param {boolean} isPaused - Whether the timer is paused
- * @param {function} onTimeUp - Callback when timer reaches zero
+ * @param {number} elapsedSeconds - (Optional) Elapsed seconds from external timer (pure display mode)
+ * @param {number} remainingSeconds - (Optional) Remaining seconds from external timer (pure display mode)
+ * @param {function} onTimeUp - Callback when timer reaches zero (self-timing mode only)
  * @param {string} lessonKey - Unique identifier for the lesson
  * @param {string} phase - Current phase (discussion/comprehension/exercise/worksheet/test)
  * @param {string} timerType - 'play' or 'work'
@@ -21,6 +27,8 @@ export default function SessionTimer({
   totalMinutes = 5, 
   lessonProgress = 0, 
   isPaused = false,
+  elapsedSeconds: externalElapsed = null,
+  remainingSeconds: externalRemaining = null,
   onTimeUp,
   lessonKey = null,
   phase = 'discussion',
@@ -30,12 +38,20 @@ export default function SessionTimer({
   onTimeRemaining,
   className = ''
 }) {
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  // Pure display mode: use external elapsed/remaining
+  const isPureDisplayMode = externalElapsed !== null && externalRemaining !== null;
+  
+  const [elapsedSeconds, setElapsedSeconds] = useState(externalElapsed || 0);
   const [startTime, setStartTime] = useState(Date.now()); // Initialize immediately, not in useEffect
   const [pausedAt, setPausedAt] = useState(null);
   const [hasInitialized, setHasInitialized] = useState(false);
-  const intervalRef = useRef(null);
-
+  const intervalRef = useRef(null);  
+  // Update elapsed when external prop changes (pure display mode)
+  useEffect(() => {
+    if (isPureDisplayMode && externalElapsed !== null) {
+      setElapsedSeconds(externalElapsed);
+    }
+  }, [isPureDisplayMode, externalElapsed]);
   // Calculate effective total (add golden key bonus to play timers)
   // Also check for adjusted totalMinutes from timer adjustments
   const [adjustedTotalMinutes, setAdjustedTotalMinutes] = useState(null);
@@ -99,8 +115,11 @@ export default function SessionTimer({
     }
   }, [elapsedSeconds, startTime, pausedAt, storageKey, effectiveTotalMinutes, hasInitialized]);
 
-  // Update elapsed time
+  // Update elapsed time (self-timing mode only)
   useEffect(() => {
+    // Skip internal timing in pure display mode
+    if (isPureDisplayMode) return;
+    
     if (isPaused) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -111,24 +130,44 @@ export default function SessionTimer({
     }
 
     // Resume: adjust startTime to account for paused duration
+    let adjustedStartTime = startTime;
     if (pausedAt !== null) {
       const pauseDuration = Date.now() - pausedAt;
-      setStartTime(prev => prev + pauseDuration);
+      adjustedStartTime = startTime + pauseDuration;
+      setStartTime(adjustedStartTime);
       setPausedAt(null);
     }
 
+    // Don't start interval if already expired (use adjusted startTime)
+    const currentElapsed = Math.floor((Date.now() - adjustedStartTime) / 1000);
+    const totalSeconds = effectiveTotalMinutes * 60;
+    if (currentElapsed >= totalSeconds) {
+      // Already expired - don't start interval, just call onTimeUp once
+      if (onTimeUp) {
+        onTimeUp();
+      }
+      return;
+    }
+
     intervalRef.current = setInterval(() => {
-      if (startTime) {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        
-        // Debug logging for SessionTimer
-        setElapsedSeconds(elapsed);
-        
-        const totalSeconds = effectiveTotalMinutes * 60;
-        if (elapsed >= totalSeconds) {
-          clearInterval(intervalRef.current);
-          onTimeUp?.();
+      // Read elapsed seconds from sessionStorage (authoritative source in V2)
+      // This ensures display matches TimerService exactly
+      let storedElapsed = null;
+      try {
+        const stored = sessionStorage.getItem(storageKey);
+        if (stored) {
+          const data = JSON.parse(stored);
+          storedElapsed = data.elapsedSeconds;
         }
+      } catch {}
+      
+      if (storedElapsed !== null) {
+        // Use TimerService's authoritative elapsed time
+        setElapsedSeconds(storedElapsed);
+      } else if (startTime) {
+        // Fallback to calculated time if no storage (V1 compatibility)
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        setElapsedSeconds(elapsed);
       }
     }, 1000);
 
@@ -141,7 +180,9 @@ export default function SessionTimer({
 
   // Calculate remaining time
   const totalSeconds = effectiveTotalMinutes * 60;
-  const remainingSeconds = totalSeconds - elapsedSeconds;
+  const remainingSeconds = isPureDisplayMode && externalRemaining !== null 
+    ? externalRemaining 
+    : totalSeconds - elapsedSeconds;
   
   // remainingSeconds can now exceed totalSeconds when elapsedSeconds is negative (time added)
   const minutes = Math.floor(Math.max(0, remainingSeconds) / 60);

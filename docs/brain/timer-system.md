@@ -13,6 +13,22 @@
 
 **Rationale**: Removing play timer from discussion phase eliminates infinite play timer exploit (learner could refresh during discussion to reset play timer indefinitely without starting teaching).
 
+**Discussion work timer startup**: The work timer for discussion is started when the greeting begins playing (greetingPlaying event). This is an exception - all other work timers start when the awaiting-go gate appears.
+
+**Timeline jump timer startup**: When facilitator uses timeline to jump to a phase, the appropriate timer starts immediately:
+- Discussion: Work timer starts immediately (exception to normal greetingPlaying rule)
+- Other phases: Play timer starts immediately (not when Begin clicked)
+
+Timeline jumps explicitly stop any existing timers for the target phase before starting new ones, ensuring a clean reset.
+
+**Timer restart prevention**: Removed in favor of explicit stop/start pattern on timeline jumps. Timers can now be legitimately restarted when needed.
+
+**Work timer startup for phases 2-5**: Work timers start immediately when the awaiting-go gate appears, whether in play mode or work mode:
+- **Play mode flow**: Play timer starts when awaiting-go appears → user clicks Go → play timer transitions to work timer (already running)
+- **Work mode flow (skipPlayPortion)**: Work timer starts when awaiting-go appears → user clicks Go → questions begin (timer already running)
+
+This ensures timers tick down from the moment the Go button is visible, not when it's clicked.
+
 **Work timer spans discussion + teaching**: The discussion work timer starts when the discussion phase begins and runs through the entire teaching phase. It is completed when teaching finishes, so the countdown must **not** be stopped at `discussionComplete`. Completing it early will freeze the visible timer as soon as the teaching controls appear.
 
 **Timer Modes:**
@@ -51,7 +67,16 @@
   - Stops play timer
   - Sets mode to 'work'
   - Starts work phase timer
+- `pause()`: Pauses all running timers
+  - Stores current elapsed time for play/work timers
+  - Clears tick intervals to stop time progression
+  - Sets `isPaused` flag to true
+- `resume()`: Resumes paused timers
+  - Adjusts startTime to account for paused duration
+  - Restarts tick intervals
+  - Sets `isPaused` flag to false
 - `#tickPlayTimers()`: Private tick method (1-second interval)
+  - Guards against running when paused (`isPaused` check)
   - Updates elapsed time
   - Emits `playTimerTick` event
   - Checks for expiration (remaining === 0)
@@ -359,7 +384,60 @@ Defined in `src/app/session/utils/phaseTimerDefaults.js`:
   - Golden key bonus time constant
 
 ### Phase Handlers
+
+### Timer Pause/Resume
+
+**Feature:** Facilitators can pause/resume timers via PIN-gated controls in the timer overlay.
+
+**Implementation (V2):**
+- SessionPageV2 maintains `timerPaused` state (boolean)
+- When toggled, calls `timerService.pause()` or `timerService.resume()`
+- TimerService tracks pause state and paused elapsed times:
+  - `isPaused`: Boolean flag indicating if timers are currently paused
+  - `pausedPlayElapsed`: Stored play timer elapsed seconds when paused
+  - `pausedWorkElapsed`: Stored work timer elapsed seconds when paused
+
+**Pause behavior:**
+- Stops all tick intervals (play and work)
+- Stores current elapsed time for active timers
+- Tick methods guard against running when paused
+- **Critical:** Prevents `playTimerExpired` event from firing during pause
+- Timer UI shows pause icon but displays frozen elapsed time
+
+**Resume behavior:**
+- Adjusts `startTime` to account for paused duration
+- Restarts tick intervals
+- Timers continue from where they left off
+- No time is lost or gained during pause
+
+**Event-Driven Display (V2):**
+- `SessionPageV2` maintains separate display state for play and work timers:
+  - `playTimerDisplayElapsed` / `playTimerDisplayRemaining`
+  - `workTimerDisplayElapsed` / `workTimerDisplayRemaining`
+- Event subscriptions update display state:
+  - `playTimerTick` / `workPhaseTimerTick` - continuous updates while running
+  - `playTimerStart` / `workPhaseTimerStart` - initialize display when timer starts
+- `SessionTimer` receives `elapsedSeconds`/`remainingSeconds` as props based on current timer mode
+- This prevents play and work timers from sharing/overwriting countdown values
+
+**Phase Transitions:**
+- `playTimerExpired` event handler calls `handlePhaseTimerTimeUp()` to trigger state changes
+- Without this call, timer expiry would show overlay but not advance phases or update timer modes
+- Phase state machine depends on `handlePhaseTimerTimeUp` for 'play' → 'work' transitions
+
+**Key files:**
+- `src/app/session/v2/TimerService.jsx` - `pause()`, `resume()`, pause guards in tick methods
+- `src/app/session/v2/SessionPageV2.jsx` - `handleTimerPauseToggle`, `timerPaused` state, event subscriptions, separate play/work display state
+
 ## Recent Changes
+
+**2026-01-14**: Fixed timer phase transitions and countdown sharing: `playTimerExpired` now calls `handlePhaseTimerTimeUp` to trigger state changes (phases weren't advancing on expiry). Split timer display state into separate play/work variables (`playTimerDisplay*` vs `workTimerDisplay*`) to prevent countdowns from overwriting each other when both timers active.
+
+**2026-01-14**: MAJOR refactor - SessionTimer now pure display component in V2. Receives elapsed/remaining from TimerService events via SessionPageV2 subscriptions. No internal timing logic. Single source of truth architecture eliminates duplicate timer tracking and pause race conditions.
+
+**2026-01-14**: Fixed timer pause issue (second pass): Prevented TimerService from writing to sessionStorage when paused, and prevented SessionTimer from triggering onTimeUp when paused or when resuming from a paused state past expiration time.
+
+**2026-01-14**: Fixed timer pause issue where pausing stopped cosmetic timer display but authoritative timer kept running and could trigger playTimerExpired/stage transitions. Added pause()/resume() methods to TimerService that stop/restart intervals and adjust startTime to preserve elapsed time. Tick methods now guard against running when paused.
 
 **2025-12-28**: Entering Test review now calls `markWorkPhaseComplete('test')`, clears the test timer, and records remaining work time immediately. Grading/review can no longer show an active or timed-out test after all questions are answered.
 

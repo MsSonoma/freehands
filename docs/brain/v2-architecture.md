@@ -449,21 +449,32 @@ expect(engine.isPlaying).toBe(true);
    - If play fails, uses fallback: `play().then(pause()).then(play())` to unlock Chrome autoplay
 4. After unlock, video loops continuously (has `loop` attribute)
 5. Video continues looping throughout entire session - provides brand immersion
+6. **iOS-safe playback:** AudioEngine uses `playVideoWithRetry()` utility for robust mobile playback:
+   - Waits for video `readyState >= 2` (HAVE_CURRENT_DATA)
+   - Handles `ended` state by resetting `currentTime` to 0
+   - Implements exponential backoff with 3 retry attempts
+   - Listens for `loadeddata`/`canplay` events with timeout fallback
+   - Prevents session breakage if video fails to play
 
 **Why This Pattern:**
 - Chrome autoplay policy requires user gesture before video/audio can play
 - V2 matches V1's exact behavior: preload → user gesture unlock → continuous loop
 - Preloading during page load ensures smooth playback start
 - Fallback pattern (play→pause→play) handles edge cases where first play() is blocked
+- **iOS Safari is finicky with video.play()** - requires readyState checks, event listeners, and retries
+- V1's `playVideoWithRetry()` function proven reliable across iOS/Chrome/Safari
 
 **Key Files:**
 - `SessionPageV2.jsx` lines 1304-1340: `startSession()` function with video unlock
 - `SessionPageV2.jsx` lines 1495-1507: Video element with preload settings and onLoadedMetadata handler
+- `AudioEngine.jsx` lines 617-626: `#startVideo()` method using `playVideoWithRetry()`
+- `utils/audioUtils.js` lines 10-68: `playVideoWithRetry()` utility with iOS edge case handling
 
 **What NOT To Do:**
 - ❌ Don't add `autoPlay` prop - violates Chrome policy and defeats unlock pattern
 - ❌ Don't pause video when audio stops - video loops continuously (brand immersion)
 - ❌ Don't try to sync video play/pause with isSpeaking state - video always loops once unlocked
+- ❌ Don't use simple `video.play()` without retry logic - breaks on iOS Safari
 
 ### TeachingController Component
 **Owns:**

@@ -14,6 +14,7 @@
  * - isOpen: boolean - Whether overlay is visible (parent controls this)
  * - phase: string - Current phase name for display
  * - lessonKey: string - Unique lesson identifier for storage key
+ * - isPaused: boolean - Whether timer is paused (stops countdown)
  * - onComplete: function - Called when countdown reaches 0
  * - onStartNow: function - Called when user clicks "Start Now" button
  * 
@@ -32,10 +33,12 @@ export default function PlayTimeExpiredOverlay({
   isOpen,
   phase = 'lesson',
   lessonKey = 'default',
+  isPaused = false,
   onComplete,
   onStartNow
 }) {
   const [countdown, setCountdown] = useState(WARNING_DURATION);
+  const [pausedAt, setPausedAt] = useState(null);
   const intervalRef = useRef(null);
   const hasCalledCompleteRef = useRef(false);
   
@@ -84,6 +87,37 @@ export default function PlayTimeExpiredOverlay({
     if (!isOpen) {
       // Reset the completion flag when closed
       hasCalledCompleteRef.current = false;
+      setPausedAt(null);
+      return;
+    }
+    
+    // If paused, stop the interval and store pause time
+    // But first, update countdown to current value so display doesn't freeze
+    if (isPaused) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (pausedAt === null) {
+        // Get current timestamp from storage to calculate frozen countdown value
+        let currentStartTimestamp = null;
+        try {
+          const stored = sessionStorage.getItem(storageKey);
+          if (stored) {
+            const data = JSON.parse(stored);
+            currentStartTimestamp = data.startTimestamp;
+          }
+        } catch {}
+        
+        if (currentStartTimestamp) {
+          const elapsedMs = Date.now() - currentStartTimestamp;
+          const elapsedSeconds = Math.floor(elapsedMs / 1000);
+          const remaining = Math.max(0, WARNING_DURATION - elapsedSeconds);
+          setCountdown(remaining);
+        }
+        
+        setPausedAt(Date.now());
+      }
       return;
     }
     
@@ -96,6 +130,21 @@ export default function PlayTimeExpiredOverlay({
         startTimestamp = data.startTimestamp;
       }
     } catch {}
+    
+    // If resuming from pause, adjust startTimestamp
+    if (pausedAt !== null) {
+      const pauseDuration = Date.now() - pausedAt;
+      startTimestamp = (startTimestamp || Date.now()) + pauseDuration;
+      setPausedAt(null);
+      
+      // Update storage with adjusted timestamp
+      try {
+        sessionStorage.setItem(storageKey, JSON.stringify({
+          startTimestamp,
+          phase
+        }));
+      } catch {}
+    }
     
     // If no stored timestamp, this is a fresh start - save current time
     if (!startTimestamp) {
@@ -142,7 +191,7 @@ export default function PlayTimeExpiredOverlay({
         intervalRef.current = null;
       }
     };
-  }, [isOpen, storageKey, phase, handleComplete]);
+  }, [isOpen, isPaused, pausedAt, storageKey, phase, handleComplete]);
 
   if (!isOpen) return null;
 

@@ -197,6 +197,16 @@ export class WorksheetPhase {
       return;
     }
 
+    // Skip intro + play timer and jump straight into work mode.
+    if (skipPlayPortion) {
+      this.#state = 'awaiting-go';
+      this.#timerMode = 'work';
+      // Work timer already started by SessionPageV2 handleBeginPhase
+      this.#emit('stateChange', { state: 'awaiting-go', timerMode: 'work' });
+      // Don't auto-call go() - wait for user to click Go button
+      return;
+    }
+
     // Play intro TTS (V1 pacing pattern)
     const intro = INTRO_PHRASES[Math.floor(Math.random() * INTRO_PHRASES.length)];
     this.#state = 'playing-intro';
@@ -228,11 +238,11 @@ export class WorksheetPhase {
       return;
     }
     
-    // Transition to work mode
-    this.#timerMode = 'work';
-    if (this.#timerService) {
+    // Transition to work mode (timer already running if skipPlayPortion)
+    if (this.#timerMode === 'play' && this.#timerService) {
       this.#timerService.transitionToWork('worksheet');
     }
+    this.#timerMode = 'work';
     this.#emit('stateChange', { state: 'working', timerMode: 'work' });
     
     this.#currentQuestionIndex = 0;

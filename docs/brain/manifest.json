@@ -183,6 +183,8 @@
       "migration sequence",
       "V1 vs V2 separation",
       "video playback coordination",
+      "iOS video playback",
+      "playVideoWithRetry",
       "user gesture unlock",
       "async-nextSentence",
       "ensureDefinitionsLoaded",
@@ -229,7 +231,7 @@
       "facilitator-lessons",
       "supabase-lesson-load"
     ],
-    "last_updated": "2026-01-13T02:19:26Z",
+    "last_updated": "2026-01-15T01:00:00Z",
     "status": "active-development"
   },
   "mr-mentor-conversation-flows": {
@@ -369,13 +371,25 @@
       "stopPlayTimer",
       "transitionToWork",
       "tickPlayTimers",
+      "pause",
+      "resume",
       "PlayTimeExpiredOverlay",
       "playTimerStart event",
       "playTimerTick event",
       "playTimerExpired event",
-      "V2 parent-controlled overlay"
+      "V2 parent-controlled overlay",
+      "handlePhaseTimerTimeUp",
+      "phase transitions",
+      "timer display state",
+      "event-driven display",
+      "separate play/work display",
+      "timeline-jump",
+      "immediate-timer-start",
+      "timer-reset",
+      "stopPlayTimer",
+      "stopWorkPhaseTimer"
     ],
-    "last_updated": "2026-01-13T03:43:43Z",
+    "last_updated": "2026-01-15T00:20:00Z",
     "status": "canonical"
   },
   "learner-settings-bus": {
@@ -423,9 +437,12 @@
       "snapshot restore sequencing",
       "timer state persistence",
       "cross-device session transfer",
-      "learner lesson sessions"
+      "learner lesson sessions",
+      "sessionConflictChecked",
+      "settlement order",
+      "transcript splits prevention"
     ],
-    "last_updated": "2026-01-14T00:00:00Z",
+    "last_updated": "2026-01-15T02:00:00Z",
     "status": "canonical"
   },
   "MentorInterceptor": {

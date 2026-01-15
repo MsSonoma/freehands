@@ -17,6 +17,8 @@
  *   await engine.playAudio(base64, sentences);
  */
 
+import { playVideoWithRetry } from '../utils/audioUtils';
+
 export class AudioEngine {
   // Private state
   #audioElement = null;
@@ -619,20 +621,10 @@ export class AudioEngine {
   #startVideo() {
     if (!this.#videoElement) return;
     
-    try {
-      const playPromise = this.#videoElement.play();
-      
-      if (playPromise && playPromise.catch) {
-        playPromise.catch(err => {
-          // Retry once after 100ms (Chrome autoplay quirk)
-          setTimeout(() => {
-            try {
-              this.#videoElement?.play()?.catch(() => {});
-            } catch {}
-          }, 100);
-        });
-      }
-    } catch {}
+    // Use robust retry mechanism from audioUtils (handles iOS edge cases)
+    playVideoWithRetry(this.#videoElement, 3, 100).catch(() => {
+      // Log silently if all retries fail to avoid breaking session
+    });
   }
   
   // Private: Cleanup

@@ -451,6 +451,7 @@ function SessionPageV2Inner() {
   const sessionLearnerIdRef = useRef(null); // pinned learner id for this session
   const pendingPlayTimersRef = useRef({}); // track phases waiting to start play timer after init
   const timelineJumpForceFreshPhaseRef = useRef(null); // timeline jumps should show opening actions, not resume mid-phase
+  const timelineJumpTimerStartedRef = useRef(null); // track which phase had timer started by timeline jump (prevent double-start)
   const timelineJumpInProgressRef = useRef(false); // Debounce timeline jumps
   const pendingTimerStateRef = useRef(null);
   const lastTimerPersistAtRef = useRef(0);
@@ -656,6 +657,12 @@ function SessionPageV2Inner() {
   const hasGoldenKeyRef = useRef(false);
   const goldenKeyLessonKeyRef = useRef('');
   const [timerPaused, setTimerPaused] = useState(false);
+  
+  // Timer display state (fed by TimerService events) - separate for play and work
+  const [playTimerDisplayElapsed, setPlayTimerDisplayElapsed] = useState(0);
+  const [playTimerDisplayRemaining, setPlayTimerDisplayRemaining] = useState(0);
+  const [workTimerDisplayElapsed, setWorkTimerDisplayElapsed] = useState(0);
+  const [workTimerDisplayRemaining, setWorkTimerDisplayRemaining] = useState(0);
 
   useEffect(() => {
     goldenKeyBonusRef.current = Number(goldenKeyBonus || 0);
@@ -1369,6 +1376,30 @@ function SessionPageV2Inner() {
     const unsubPlayExpired = eventBus.on('playTimerExpired', (data) => {
       setPlayExpiredPhase(data.phase || null);
       setShowPlayTimeExpired(true);
+      // Trigger phase transition logic
+      handlePhaseTimerTimeUp();
+    });
+    
+    // Subscribe to timer tick events for display - separate handlers for play and work
+    const unsubPlayTick = eventBus.on('playTimerTick', (data) => {
+      setPlayTimerDisplayElapsed(data.elapsed || 0);
+      setPlayTimerDisplayRemaining(data.remaining || 0);
+    });
+    
+    const unsubWorkTick2 = eventBus.on('workPhaseTimerTick', (data) => {
+      setWorkTimerDisplayElapsed(data.elapsed || 0);
+      setWorkTimerDisplayRemaining(data.remaining || 0);
+    });
+    
+    // Initialize display on timer start - separate for play and work
+    const unsubPlayStart = eventBus.on('playTimerStart', (data) => {
+      setPlayTimerDisplayElapsed(0);
+      setPlayTimerDisplayRemaining(data.timeLimit || 0);
+    });
+    
+    const unsubWorkStart = eventBus.on('workPhaseTimerStart', (data) => {
+      setWorkTimerDisplayElapsed(0);
+      setWorkTimerDisplayRemaining(data.timeLimit || 0);
     });
 
     const timer = new TimerService(eventBus, {
@@ -1391,6 +1422,10 @@ function SessionPageV2Inner() {
       try { unsubWorkComplete?.(); } catch {}
       try { unsubGoldenKey?.(); } catch {}
       try { unsubPlayExpired?.(); } catch {}
+      try { unsubPlayTick?.(); } catch {}
+      try { unsubWorkTick2?.(); } catch {}
+      try { unsubPlayStart?.(); } catch {}
+      try { unsubWorkStart?.(); } catch {}
       timer.destroy();
       timerServiceRef.current = null;
     };
@@ -2068,12 +2103,18 @@ function SessionPageV2Inner() {
       } catch (err) {
         console.error('[SessionPageV2] Failed to prefetch greeting:', err);
       }
+      
+      // Discussion work timer starts when Begin is clicked, not here
     }
     
     const ref = getPhaseRef(phaseName);
     if (ref?.current?.start) {
       if (skipPlayPortion) {
         transitionToWorkTimer(phaseName);
+        // Start work timer immediately when skipping play portion (unless timeline jump already started it)
+        if (timerServiceRef.current && timelineJumpTimerStartedRef.current !== phaseName) {
+          timerServiceRef.current.startWorkPhaseTimer(phaseName);
+        }
         await ref.current.start({ skipPlayPortion: true });
       } else {
         await ref.current.start();
@@ -2081,6 +2122,12 @@ function SessionPageV2Inner() {
     } else {
       addEvent(`⚠️ Unable to start ${phaseName} (not initialized yet)`);
     }
+    
+    // Clear the timeline jump timer flag after phase starts
+    if (timelineJumpTimerStartedRef.current === phaseName) {
+      timelineJumpTimerStartedRef.current = null;
+    }
+    
     if (pendingPlayTimersRef.current?.[phaseName]) {
       if (!skipPlayPortion) {
         startPhasePlayTimer(phaseName);
@@ -2154,7 +2201,7 @@ function SessionPageV2Inner() {
   }, [currentPhase, comprehensionTotalQuestions, exerciseTotalQuestions, worksheetTotalQuestions, testTotalQuestions]);
   
   // Handle timer time-up callback
-  const handlePhaseTimerTimeUp = useCallback(() => {
+  const handlePhaseTimerTimeUp = useCallback(() => {    
     const phaseName = getCurrentPhaseName();
     if (!phaseName) return;
     
@@ -2205,7 +2252,21 @@ function SessionPageV2Inner() {
     }
     if (!allowed) return;
 
-    setTimerPaused(prev => !prev);
+    setTimerPaused(prev => {
+      const nextPaused = !prev;
+      
+      // Control the authoritative timer in TimerService
+      const timerSvc = timerServiceRef.current;
+      if (timerSvc) {
+        if (nextPaused) {
+          timerSvc.pause();
+        } else {
+          timerSvc.resume();
+        }
+      }
+      
+      return nextPaused;
+    });
   }, []);
 
   const persistTimerStateNow = useCallback((trigger) => {
@@ -2375,32 +2436,34 @@ function SessionPageV2Inner() {
   
   // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode) - V1 parity
   const handlePlayExpiredComplete = useCallback(async () => {
+    console.log('[SessionPageV2] PlayTimeExpired countdown complete, transitioning to work');
     setShowPlayTimeExpired(false);
     const phaseToStart = playExpiredPhase;
     setPlayExpiredPhase(null);
     
     if (phaseToStart) {
+      console.log('[SessionPageV2] Calling go() for phase:', phaseToStart);
       transitionToWorkTimer(phaseToStart);
       
-      // Automatically start the lesson based on the current phase
+      // Call go() on the phase controller to start work mode
       try {
-        if (phaseToStart === 'discussion' || currentPhase === 'discussion' || currentPhase === 'teaching') {
-          // Start teaching/discussion
-            startSessionRef.current?.({ ignoreResume: true });
-        } else if (phaseToStart === 'comprehension' || currentPhase === 'comprehension') {
+        if (phaseToStart === 'discussion') {
+          // Discussion starts teaching immediately (no play time)
+          startSessionRef.current?.({ ignoreResume: true });
+        } else if (phaseToStart === 'comprehension') {
           comprehensionPhaseRef.current?.go();
-        } else if (phaseToStart === 'exercise' || currentPhase === 'exercise') {
+        } else if (phaseToStart === 'exercise') {
           exercisePhaseRef.current?.go();
-        } else if (phaseToStart === 'worksheet' || currentPhase === 'worksheet') {
+        } else if (phaseToStart === 'worksheet') {
           worksheetPhaseRef.current?.go();
-        } else if (phaseToStart === 'test' || currentPhase === 'test') {
+        } else if (phaseToStart === 'test') {
           testPhaseRef.current?.go();
         }
       } catch (e) {
-        console.warn('[SessionPageV2] Auto-start failed:', e);
+        console.error('[SessionPageV2] Failed to call go() on phase:', e);
       }
     }
-  }, [playExpiredPhase, currentPhase, transitionToWorkTimer]);
+  }, [playExpiredPhase, transitionToWorkTimer]);
   
   // Handle manual "Start Now" from PlayTimeExpiredOverlay - V1 parity
   const handlePlayExpiredStartNow = useCallback(async () => {
@@ -2561,7 +2624,13 @@ function SessionPageV2Inner() {
     // which triggers startComprehensionPhase/startExercisePhase/etc.
     orchestratorRef.current.skipToPhase(targetPhase);
     
-    // Reset timer for the new phase
+    // Reset timer for the new phase and START IT IMMEDIATELY (timeline jumps start timers right away)
+    // First, stop any existing timers for this phase to ensure clean restart
+    if (timerServiceRef.current) {
+      timerServiceRef.current.stopPlayTimer(targetPhase);
+      timerServiceRef.current.stopWorkPhaseTimer(targetPhase);
+    }
+    
     // Discussion has no play timer - goes directly to work mode
     // All other phases start in play mode
     const timerMode = targetPhase === 'discussion' ? 'work' : 'play';
@@ -2570,6 +2639,19 @@ function SessionPageV2Inner() {
       [targetPhase]: timerMode
     }));
     setTimerRefreshKey(k => k + 1);
+    
+    // Start the appropriate timer immediately (don't wait for Begin button)
+    if (timerServiceRef.current) {
+      if (targetPhase === 'discussion') {
+        // Discussion starts work timer when greeting plays, but for timeline jump start it now
+        timerServiceRef.current.startWorkPhaseTimer(targetPhase);
+        timelineJumpTimerStartedRef.current = targetPhase; // Mark that we started the timer
+      } else {
+        // Other phases start play timer immediately
+        timerServiceRef.current.startPlayTimer(targetPhase);
+        timelineJumpTimerStartedRef.current = targetPhase; // Mark that we started the timer
+      }
+    }
     
     // Clear jump in progress flag after a short delay to allow phase to initialize
     setTimeout(() => {
@@ -3646,6 +3728,11 @@ function SessionPageV2Inner() {
     const unsubGreetingPlaying = eventBusRef.current.on('greetingPlaying', (data) => {
       addEvent(`ðŸ‘‹ Playing greeting: "${data.greetingText}"`);
       setDiscussionState('playing-greeting');
+      
+      // Start discussion work timer when greeting begins (discussion has no play timer)
+      if (timerServiceRef.current) {
+        timerServiceRef.current.startWorkPhaseTimer('discussion');
+      }
     });
     
     const unsubGreetingComplete = eventBusRef.current.on('greetingComplete', (data) => {
@@ -5291,7 +5378,8 @@ function SessionPageV2Inner() {
                 goldenKeyBonus={currentTimerMode[getCurrentPhaseName()] === 'play' && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
                 lessonProgress={calculateLessonProgress()}
                 isPaused={timerPaused}
-                onTimeUp={handlePhaseTimerTimeUp}
+                elapsedSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayElapsed : workTimerDisplayElapsed}
+                remainingSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayRemaining : workTimerDisplayRemaining}
                 onPauseToggle={handleTimerPauseToggle}
                 lessonKey={lessonKey}
                 onTimerClick={handleTimerClick}
@@ -6703,6 +6791,7 @@ function SessionPageV2Inner() {
           isOpen={showPlayTimeExpired}
           phase={playExpiredPhase}
           lessonKey={lessonKey}
+          isPaused={timerPaused}
           onComplete={handlePlayExpiredComplete}
           onStartNow={handlePlayExpiredStartNow}
         />
@@ -6732,7 +6821,7 @@ function SessionPageV2Inner() {
             setTimerRefreshKey(k => k + 1);
             persistTimerStateNow('timer-adjust');
           }}
-          onTogglePause={() => setTimerPaused(prev => !prev)}
+          onTogglePause={handleTimerPauseToggle}
           hasGoldenKey={goldenKeysEnabledRef.current !== false && hasGoldenKey}
           isGoldenKeySuspended={isGoldenKeySuspended}
           onApplyGoldenKey={handleApplyGoldenKeyForLesson}

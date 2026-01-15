@@ -16,17 +16,18 @@ When Device B attempts to access the same lesson that Device A is using, conflic
 
 ### Conflict Detection Strategy: Check Before Snapshot Restore
 
-**CRITICAL FIX (2025-12-15)**: Conflict check now runs BEFORE snapshot restore to prevent double-snapshot handling.
+**CRITICAL FIX (2026-01-14)**: `sessionConflictChecked` flag now remains false when conflict is detected, blocking snapshot restore until takeover is resolved. This prevents transcript splits and duplicate sessions caused by snapshot restore running before takeover settlement.
 
 **When new device loads lesson page:**
 1. Page generates `browserSessionId` (UUID stored in sessionStorage)
 2. Once `trackingLearnerId`, `normalizedLessonKey`, and `browserSessionId` are available, page calls `startTrackedSession()`
 3. Database detects conflict (different `session_id` already owns this learner+lesson)
 4. `startTrackedSession()` returns `{conflict: true, existingSession: {...}}`
-5. UI immediately shows `SessionTakeoverDialog` **BEFORE snapshot restore runs**
-6. Snapshot restore logic waits for `sessionConflictChecked` flag before proceeding, and the flag flips **only after** the ownership check returns (success or conflict) so restore cannot run while the takeover dialog is pending
-7. User enters 4-digit PIN to validate ownership transfer
-8. On PIN success:
+5. UI immediately shows `SessionTakeoverDialog`
+6. **CRITICAL**: `sessionConflictChecked` remains FALSE when conflict detected, blocking snapshot restore
+7. Snapshot restore logic waits for `sessionConflictChecked` flag before proceeding
+8. User enters 4-digit PIN to validate ownership transfer
+9. On PIN success:
    - Old session deactivated (`ended_at` set, event logged)
    - New session created with current `session_id`
    - Page reloads to restore snapshot from database (most recent for this learner+lesson)
@@ -34,8 +35,14 @@ When Device B attempts to access the same lesson that Device A is using, conflic
    - Lesson resumes from checkpoint
 
 **Why this sequencing matters:**
-- OLD BUG: Snapshot restored → User sees lesson content → Conflict detected → Dialog appears → PIN entered → Reload → Snapshot restored AGAIN
-- NEW FIX: Conflict detected → Dialog appears → PIN entered → Reload → Snapshot restored ONCE
+- OLD BUG (pre 2026-01-14): `sessionConflictChecked` set true in finally block → Snapshot restored WHILE takeover dialog showing → Creates duplicate session/transcript splits
+- NEW FIX (2026-01-14): `sessionConflictChecked` stays false on conflict → Takeover resolved first (via reload) → Snapshot restored cleanly ONCE
+
+**Settlement order enforcement:**
+- NO conflict: `sessionConflictChecked = true` immediately, snapshot restore proceeds
+- CONFLICT detected: `sessionConflictChecked` stays false, snapshot restore blocked
+- Takeover resolved: page reloads, fresh conflict check passes, snapshot restores once
+- Error during check: `sessionConflictChecked = true` (fail-safe to allow snapshot restore)
 
 **Old device behavior:**
 - No active notification (no polling)

@@ -75,6 +75,11 @@ export class TimerService {
     // Per-learner feature gate: when disabled, golden key eligibility is not tracked/emitted.
     this.goldenKeysEnabled = options.goldenKeysEnabled !== false;
     
+    // Pause state
+    this.isPaused = false;
+    this.pausedPlayElapsed = null; // Stores elapsed time when play timer paused
+    this.pausedWorkElapsed = null; // Stores elapsed time when work timer paused
+    
     // SessionStorage cache for refresh recovery (not used - use explicit restoreState instead)
     this.lessonKey = options.lessonKey || null;
     this.phase = options.phase || null;
@@ -95,6 +100,8 @@ export class TimerService {
     this.reset = this.reset.bind(this);
     this.setGoldenKeysEnabled = this.setGoldenKeysEnabled.bind(this);
     this.setPlayTimerLimits = this.setPlayTimerLimits.bind(this);
+    this.pause = this.pause.bind(this);
+    this.resume = this.resume.bind(this);
     // Private methods are automatically bound
   }
 
@@ -170,8 +177,14 @@ export class TimerService {
       this.currentPlayPhase = phase;
       this.mode = 'play';
 
-      if (!this.playTimerInterval) {
+      // Only start interval if not paused
+      if (!this.isPaused && !this.playTimerInterval) {
         this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
+      }
+      
+      // If paused, update the paused elapsed time
+      if (this.isPaused) {
+        this.pausedPlayElapsed = asNumber;
       }
 
       // Mirror to sessionStorage for SessionTimer/overlay display.
@@ -217,8 +230,14 @@ export class TimerService {
       this.currentWorkPhase = phase;
       this.mode = 'work';
 
-      if (!this.workPhaseInterval) {
+      // Only start interval if not paused
+      if (!this.isPaused && !this.workPhaseInterval) {
         this.workPhaseInterval = setInterval(this.#tickWorkPhaseTimers.bind(this), 1000);
+      }
+      
+      // If paused, update the paused elapsed time
+      if (this.isPaused) {
+        this.pausedWorkElapsed = asNumber;
       }
 
       if (this.lessonKey) {
@@ -344,6 +363,13 @@ export class TimerService {
       return;
     }
     
+    // Check if timer is already running for this phase (e.g., from timeline jump)
+    const existing = this.playTimers.get(phase);
+    if (existing && !existing.expired) {
+      console.log(`[TimerService] Play timer already running for ${phase}, skipping restart`);
+      return;
+    }
+    
     const limit = timeLimit !== null ? timeLimit : this.playTimerLimits[phase];
     if (!limit) {
       console.warn(`[TimerService] No time limit configured for phase "${phase}"`);
@@ -417,8 +443,10 @@ export class TimerService {
       return;
     }
     
-    if (this.workPhaseTimers.has(phase)) {
-      console.warn('[TimerService] Work phase timer already exists:', phase);
+    // Check if timer is already running for this phase (e.g., from timeline jump or skipPlayPortion)
+    const existing = this.workPhaseTimers.get(phase);
+    if (existing && !existing.completed) {
+      console.log(`[TimerService] Work timer already running for ${phase}, skipping restart`);
       return;
     }
     
@@ -530,6 +558,88 @@ export class TimerService {
   }
 
   /**
+   * Pause all running timers
+   */
+  pause() {
+    if (this.isPaused) return;
+    
+    this.isPaused = true;
+    
+    // Pause play timer if running
+    if (this.currentPlayPhase) {
+      const timer = this.playTimers.get(this.currentPlayPhase);
+      if (timer && !timer.expired) {
+        const now = Date.now();
+        timer.elapsed = Math.floor((now - timer.startTime) / 1000);
+        this.pausedPlayElapsed = timer.elapsed;
+        
+        // Stop the interval
+        if (this.playTimerInterval) {
+          clearInterval(this.playTimerInterval);
+          this.playTimerInterval = null;
+        }
+      }
+    }
+    
+    // Pause work timer if running
+    if (this.currentWorkPhase) {
+      const timer = this.workPhaseTimers.get(this.currentWorkPhase);
+      if (timer && !timer.completed) {
+        const now = Date.now();
+        timer.elapsed = Math.floor((now - timer.startTime) / 1000);
+        this.pausedWorkElapsed = timer.elapsed;
+        
+        // Stop the interval
+        if (this.workPhaseInterval) {
+          clearInterval(this.workPhaseInterval);
+          this.workPhaseInterval = null;
+        }
+      }
+    }
+  }
+  
+  /**
+   * Resume all paused timers
+   */
+  resume() {
+    if (!this.isPaused) return;
+    
+    this.isPaused = false;
+    
+    // Resume play timer if it was paused
+    if (this.currentPlayPhase && this.pausedPlayElapsed !== null) {
+      const timer = this.playTimers.get(this.currentPlayPhase);
+      if (timer && !timer.expired) {
+        // Adjust startTime to account for paused duration
+        timer.startTime = Date.now() - (this.pausedPlayElapsed * 1000);
+        timer.elapsed = this.pausedPlayElapsed;
+        this.pausedPlayElapsed = null;
+        
+        // Restart the interval
+        if (!this.playTimerInterval) {
+          this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
+        }
+      }
+    }
+    
+    // Resume work timer if it was paused
+    if (this.currentWorkPhase && this.pausedWorkElapsed !== null) {
+      const timer = this.workPhaseTimers.get(this.currentWorkPhase);
+      if (timer && !timer.completed) {
+        // Adjust startTime to account for paused duration
+        timer.startTime = Date.now() - (this.pausedWorkElapsed * 1000);
+        timer.elapsed = this.pausedWorkElapsed;
+        this.pausedWorkElapsed = null;
+        
+        // Restart the interval
+        if (!this.workPhaseInterval) {
+          this.workPhaseInterval = setInterval(this.#tickWorkPhaseTimers.bind(this), 1000);
+        }
+      }
+    }
+  }
+
+  /**
    * Reset all timers and clear per-phase sessionStorage mirrors.
    * Use for "Start Over" and lesson restarts without a full page refresh.
    */
@@ -559,6 +669,10 @@ export class TimerService {
     this.onTimeCompletions = 0;
     this.goldenKeyAwarded = false;
     this.mode = 'play';
+    
+    this.isPaused = false;
+    this.pausedPlayElapsed = null;
+    this.pausedWorkElapsed = null;
 
     this.#clearAllTimerOverlayKeysForLesson();
   }
@@ -723,6 +837,7 @@ export class TimerService {
    * @private
    */
   #tickPlayTimers() {
+    if (this.isPaused) return;
     if (!this.currentPlayPhase) return;
     
     const timer = this.playTimers.get(this.currentPlayPhase);
@@ -732,8 +847,8 @@ export class TimerService {
     timer.elapsed = Math.floor((now - timer.startTime) / 1000);
     const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
     
-    // Write to sessionStorage for TimerControlOverlay compatibility
-    if (this.lessonKey && this.currentPlayPhase) {
+    // Write to sessionStorage for TimerControlOverlay compatibility (skip when paused)
+    if (!this.isPaused && this.lessonKey && this.currentPlayPhase) {
       const storageKey = `session_timer_state:${this.lessonKey}:${this.currentPlayPhase}:play`;
       try {
         sessionStorage.setItem(storageKey, JSON.stringify({
@@ -771,6 +886,7 @@ export class TimerService {
    * @private
    */
   #tickWorkPhaseTimers() {
+    if (this.isPaused) return;
     if (!this.currentWorkPhase) return;
     
     const timer = this.workPhaseTimers.get(this.currentWorkPhase);
@@ -782,8 +898,8 @@ export class TimerService {
     const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
     const onTime = timer.elapsed <= timer.timeLimit;
     
-    // Write to sessionStorage for TimerControlOverlay compatibility
-    if (this.lessonKey && this.currentWorkPhase) {
+    // Write to sessionStorage for TimerControlOverlay compatibility (skip when paused)
+    if (!this.isPaused && this.lessonKey && this.currentWorkPhase) {
       const storageKey = `session_timer_state:${this.lessonKey}:${this.currentWorkPhase}:work`;
       try {
         sessionStorage.setItem(storageKey, JSON.stringify({

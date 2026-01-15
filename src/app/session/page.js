@@ -302,15 +302,16 @@ function SessionPageInner() {
           console.log('[SESSION CONFLICT CHECK] Conflict detected, showing takeover dialog:', sessionResult.existingSession);
           setConflictingSession(sessionResult.existingSession);
           setShowTakeoverDialog(true);
+          // Do NOT set sessionConflictChecked=true here - keep snapshot restore blocked until takeover resolved
         } else {
           console.log('[SESSION CONFLICT CHECK] No conflict, session started:', sessionResult?.id);
           // Gate-based detection handles future conflicts through snapshot saves
           // No polling needed - conflicts detected when Device A tries to save next snapshot
+          setSessionConflictChecked(true);
         }
       } catch (err) {
         console.error('[SESSION CONFLICT CHECK] Error during early conflict check:', err);
         // On error, mark as checked so snapshot restore can proceed
-      } finally {
         setSessionConflictChecked(true);
       }
     };
