@@ -229,6 +229,9 @@ export default function LessonPlanner({
     setGenerating(true)
     const lessons = {}
 
+    // Track what we generate during this run so later prompts can avoid repeats
+    const generatedSoFar = []
+
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -325,6 +328,18 @@ export default function LessonPlanner({
         })
       }
 
+        // Review policy thresholds (tuned for "repeat low scores, skip high scores")
+        const LOW_SCORE_REVIEW_THRESHOLD = 70
+        const HIGH_SCORE_AVOID_REPEAT_THRESHOLD = 85
+
+        const lowScoreCompleted = lessonContext
+          .filter((l) => l.status === 'completed' && l.score !== null && l.score <= LOW_SCORE_REVIEW_THRESHOLD)
+          .slice(-20)
+
+        const highScoreCompleted = lessonContext
+          .filter((l) => l.status === 'completed' && l.score !== null && l.score >= HIGH_SCORE_AVOID_REPEAT_THRESHOLD)
+          .slice(-30)
+
       // Add curriculum preferences (only non-empty fields)
       if (curriculumPrefs.focus_concepts) {
         contextText += `\n\nFocus Concepts: ${curriculumPrefs.focus_concepts}`
@@ -382,16 +397,66 @@ export default function LessonPlanner({
       }
 
       if (contextText) {
-        contextText += '\n\n=== CRITICAL: AVOID ALL REPETITION ==='
-        contextText += '\nThe lessons listed above have ALREADY been completed, scheduled, or planned.'
-        contextText += '\nYou MUST create entirely NEW lessons on DIFFERENT topics.'
-        contextText += '\nIf a topic like "Addition" was already covered, do NOT create "Addition Practice" or "More Addition".'
-        contextText += '\nInstead, progress to the NEXT concept in the subject (e.g., Subtraction, Place Value, etc.).'
+        contextText += '\n\n=== PLANNING RULES: NEW TOPICS vs REVIEW ==='
+          contextText += `\nPrefer NEW topics most of the time, but schedule REVIEW lessons for low scores (<= ${LOW_SCORE_REVIEW_THRESHOLD}%).`
+          contextText += `\nAvoid repeating lessons that scored well (>= ${HIGH_SCORE_AVOID_REPEAT_THRESHOLD}%).`
+
+          if (lowScoreCompleted.length > 0) {
+            contextText += `\n\nLow-score completed lessons that are eligible for REVIEW (<= ${LOW_SCORE_REVIEW_THRESHOLD}%):\n`
+            lowScoreCompleted.forEach((l) => {
+              contextText += `- ${l.name} (score: ${l.score}%)\n`
+            })
+          }
+
+          if (highScoreCompleted.length > 0) {
+            contextText += `\n\nHigh-score completed lessons to AVOID repeating (>= ${HIGH_SCORE_AVOID_REPEAT_THRESHOLD}%):\n`
+            highScoreCompleted.forEach((l) => {
+              contextText += `- ${l.name} (score: ${l.score}%)\n`
+            })
+          }
+
+          contextText += '\n\nWhen you choose a REVIEW lesson:'
+          contextText += '\n- It can revisit the underlying concept of a low-score lesson'
+          contextText += '\n- It MUST be rephrased with different examples and practice (not a near-duplicate)'
+          contextText += "\n- The title MUST start with 'Review:'"
+
+          contextText += '\n\nAlso: you are generating a multi-week plan.'
+          contextText += '\nFor weekly recurring subjects, each week MUST progress naturally.'
+          contextText += "\nDo not repeat last week's topic unless it is explicitly a 'Review:' for a low-score concept."
+
+          contextText += '\n\nCurriculum Evolution Guidelines:'
+          contextText += '\n- Mix new instruction with occasional review based on scores'
+          contextText += '\n- Build sequentially (e.g., after "Fractions Intro" → "Comparing Fractions" → "Adding Fractions")'
+          contextText += '\n- Reference prior concepts but teach something genuinely new'
+          contextText += `\n- Target difficulty: ${recommendedDifficulty} (maintain for 3-4 lessons before advancing)`
+
+        contextText += '\n\nAlso: you are generating a multi-week plan.'
+        contextText += '\nFor weekly recurring subjects, each week MUST be a new topic that progresses naturally.'
+        contextText += '\nDo NOT repeat a topic one week later with different wording.'
         contextText += '\n\nCurriculum Evolution Guidelines:'
         contextText += '\n- Each new lesson must advance to a NEW topic not yet covered'
         contextText += '\n- Build sequentially (e.g., after "Fractions Intro" → "Comparing Fractions" → "Adding Fractions")'
         contextText += '\n- Reference prior concepts but teach something genuinely new'
         contextText += `\n- Target difficulty: ${recommendedDifficulty} (maintain for 3-4 lessons before advancing)`
+      }
+
+      const buildGenerationSoFarText = (subject) => {
+        if (generatedSoFar.length === 0) return ''
+
+        const sameSubject = generatedSoFar.filter((l) => l.subject === subject)
+        const lines = []
+
+        lines.push('\n\nPlanned lessons generated earlier in THIS SAME plan run (do not repeat these topics):')
+          lines.push('\n\nPlanned lessons generated earlier in THIS SAME plan run (avoid repeating these exact topics unless explicitly planning a Review):')
+        sameSubject.slice(-12).forEach((l) => {
+          lines.push(`- ${l.date} (${l.subject}): ${l.title}`)
+        })
+
+        if (sameSubject.length === 0) {
+          lines.push('- (none yet for this subject)')
+        }
+
+        return `\n${lines.join('\n')}`
       }
 
       // Start from the exact date provided (no Monday adjustment)
@@ -411,6 +476,8 @@ export default function LessonPlanner({
           for (const subjectInfo of daySubjects) {
             // Generate outline for each subject on this day
             try {
+              const dynamicContextText = `${contextText}${buildGenerationSoFarText(subjectInfo.subject)}`
+
               const response = await fetch('/api/generate-lesson-outline', {
                 method: 'POST',
                 headers: {
@@ -422,7 +489,7 @@ export default function LessonPlanner({
                   grade: learnerGrade || '3rd',
                   difficulty: recommendedDifficulty,
                   learnerId,
-                  context: contextText  // Include lesson history and preferences
+                  context: dynamicContextText  // Include lesson history, preferences, and generation-so-far
                 })
               })
 
@@ -438,6 +505,12 @@ export default function LessonPlanner({
                   ...outline,
                   id: `${dateStr}-${subjectInfo.subject}`,
                   subject: subjectInfo.subject
+                })
+
+                generatedSoFar.push({
+                  date: dateStr,
+                  subject: subjectInfo.subject,
+                  title: outline?.title || ''
                 })
               }
             } catch (err) {

@@ -90,6 +90,22 @@ SONOMA_LOG_PREVIEW_MAX=full
 - **Auth**: Bearer token required; learner ownership verified server-side
 - **Body**: `{ learnerId, lessonKey, assigned }`
 
+### `/api/generate-lesson-outline`
+**Purpose**: Generate a lightweight lesson outline (title + description) for planning/redo  
+**Status**: Operational
+
+- **Location**: `src/app/api/generate-lesson-outline/route.js`
+- **Method**: POST
+- **Auth**: Bearer token required
+- **Body**: `{ subject, grade, difficulty, learnerId?, context?, promptUpdate? }`
+  - `context`: planner-provided history/scheduled/planned context to prevent repeats
+  - `promptUpdate`: facilitator-provided steering text (used by Redo on planned lessons)
+
+**Response**:
+- Returns `{ outline: { kind, title, description, subject, grade, difficulty } }`
+- `kind` is `new` or `review`
+- When `kind=review`, the title is prefixed with `Review:` for clarity
+
 ### `/api/generate-lesson`
 **Purpose**: Generate new lesson content via LLM  
 **Status**: Legacy route, may be superseded by facilitator lesson editor

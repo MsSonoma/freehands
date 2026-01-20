@@ -49,6 +49,7 @@ export default function DayViewOverlay({
   const [showNoSchoolInput, setShowNoSchoolInput] = useState(false)
   const [noSchoolInputValue, setNoSchoolInputValue] = useState(noSchoolReason || '')
   const [redoingLesson, setRedoingLesson] = useState(null)
+  const [redoPromptDrafts, setRedoPromptDrafts] = useState({})
 
   const [authToken, setAuthToken] = useState('')
   const [notesLesson, setNotesLesson] = useState(null)
@@ -57,6 +58,20 @@ export default function DayViewOverlay({
   const [removeConfirmLesson, setRemoveConfirmLesson] = useState(null)
 
   const MAX_GENERATIONS = 4
+
+  useEffect(() => {
+    // Initialize drafts from saved planned lesson data (do not overwrite in-progress typing)
+    setRedoPromptDrafts((prev) => {
+      const next = { ...prev }
+      ;(plannedLessons || []).forEach((l) => {
+        if (!l?.id) return
+        if (next[l.id] === undefined && l.promptUpdate) {
+          next[l.id] = String(l.promptUpdate)
+        }
+      })
+      return next
+    })
+  }, [plannedLessons])
 
   const computeNormalizedLessonKey = (raw) => {
     const normalized = String(raw || '')
@@ -487,6 +502,99 @@ export default function DayViewOverlay({
         throw new Error('Not authenticated')
       }
 
+      const promptUpdate = String(
+        (redoPromptDrafts && plannedLesson?.id && redoPromptDrafts[plannedLesson.id] !== undefined)
+          ? redoPromptDrafts[plannedLesson.id]
+          : (plannedLesson?.promptUpdate || '')
+      ).trim()
+
+      const [historyRes, medalsRes, scheduledRes, plannedRes] = await Promise.all([
+        fetch(`/api/learner/lesson-history?learner_id=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`/api/medals?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`/api/lesson-schedule?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`/api/planned-lessons?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } })
+      ])
+
+      let contextText = ''
+
+      let medals = {}
+      if (medalsRes.ok) {
+        medals = (await medalsRes.json().catch(() => ({}))) || {}
+      }
+
+      const LOW_SCORE_REVIEW_THRESHOLD = 70
+      const HIGH_SCORE_AVOID_REPEAT_THRESHOLD = 85
+
+      const lowScoreNames = new Set()
+      const highScoreNames = new Set()
+
+      if (historyRes.ok) {
+        const history = await historyRes.json()
+        const sessions = Array.isArray(history?.sessions) ? history.sessions : []
+        if (sessions.length > 0) {
+          contextText += '\n\nLearner lesson history (scores guide Review vs new topics):\n'
+          sessions
+            .slice()
+            .sort((a, b) => new Date(a.started_at || a.ended_at || 0) - new Date(b.started_at || b.ended_at || 0))
+            .slice(-60)
+            .forEach((s) => {
+              const status = s.status || 'unknown'
+              const name = s.lesson_id || 'unknown'
+              const bestPercent = status === 'completed' ? medals?.[name]?.bestPercent : null
+              if (status === 'completed' && Number.isFinite(bestPercent)) {
+                if (bestPercent <= LOW_SCORE_REVIEW_THRESHOLD) lowScoreNames.add(name)
+                if (bestPercent >= HIGH_SCORE_AVOID_REPEAT_THRESHOLD) highScoreNames.add(name)
+                contextText += `- ${name} (${status}, score: ${bestPercent}%)\n`
+              } else {
+                contextText += `- ${name} (${status})\n`
+              }
+            })
+        }
+      }
+
+      if (scheduledRes.ok) {
+        const scheduledData = await scheduledRes.json()
+        const schedule = Array.isArray(scheduledData?.schedule) ? scheduledData.schedule : []
+        if (schedule.length > 0) {
+          contextText += '\n\nScheduled lessons (do NOT reuse these topics):\n'
+          schedule
+            .slice()
+            .sort((a, b) => String(a.scheduled_date || '').localeCompare(String(b.scheduled_date || '')))
+            .slice(-60)
+            .forEach((s) => {
+              contextText += `- ${s.scheduled_date}: ${s.lesson_key}\n`
+            })
+        }
+      }
+
+      if (plannedRes.ok) {
+        const plannedData = await plannedRes.json()
+        const allPlanned = plannedData?.plannedLessons || {}
+        const flattened = []
+        Object.entries(allPlanned).forEach(([date, arr]) => {
+          ;(Array.isArray(arr) ? arr : []).forEach((l) => {
+            flattened.push({ date, subject: l.subject, title: l.title, description: l.description })
+          })
+        })
+        if (flattened.length > 0) {
+          contextText += '\n\nPlanned lessons already in the calendar plan (do NOT repeat these topics):\n'
+          flattened
+            .slice()
+            .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+            .slice(-80)
+            .forEach((l) => {
+              contextText += `- ${l.date} (${l.subject || 'general'}): ${l.title || l.description || 'planned lesson'}\n`
+            })
+        }
+      }
+
+      contextText += '\n\n=== REDO RULES: SAME AS PLANNER GENERATION ==='
+      contextText += '\nYou are regenerating a planned lesson outline.'
+      contextText += `\nPrefer NEW topics most of the time, but you MAY plan a rephrased Review for low scores (<= ${LOW_SCORE_REVIEW_THRESHOLD}%).`
+      contextText += `\nAvoid repeating high-score topics (>= ${HIGH_SCORE_AVOID_REPEAT_THRESHOLD}%) unless the facilitator explicitly requests it.`
+      contextText += "\nIf you choose a Review lesson, the title MUST start with 'Review:' and it must use different examples."
+      contextText += '\nDo NOT produce an exact duplicate of any scheduled/planned lesson above.'
+
       const response = await fetch('/api/generate-lesson-outline', {
         method: 'POST',
         headers: { 
@@ -497,7 +605,9 @@ export default function DayViewOverlay({
           subject: plannedLesson.subject,
           grade: learnerGrade || plannedLesson.grade || '3rd',
           difficulty: plannedLesson.difficulty || 'intermediate',
-          learnerId
+          learnerId,
+          context: contextText,
+          promptUpdate
         })
       })
 
@@ -505,12 +615,13 @@ export default function DayViewOverlay({
       
       const result = await response.json()
       const newOutline = result.outline
-      
+
       // Keep the same id and subject, but update title and description
       const updatedLesson = {
         ...plannedLesson,
         title: newOutline.title,
-        description: newOutline.description
+        description: newOutline.description,
+        promptUpdate
       }
       
       onPlannedLessonUpdate(selectedDate, plannedLesson.id, updatedLesson)
@@ -987,6 +1098,53 @@ export default function DayViewOverlay({
                     </div>
                     <div style={{ fontSize: 11, color: '#9ca3af' }}>
                       {lesson.subject}  {lesson.grade}  {lesson.difficulty}
+                    </div>
+
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#1e40af', marginBottom: 4 }}>
+                        Redo prompt update (optional)
+                      </div>
+                      <textarea
+                        value={
+                          redoPromptDrafts[lesson.id] !== undefined
+                            ? redoPromptDrafts[lesson.id]
+                            : (lesson.promptUpdate || '')
+                        }
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setRedoPromptDrafts((prev) => ({ ...prev, [lesson.id]: value }))
+                        }}
+                        onBlur={() => {
+                          if (!onPlannedLessonUpdate) return
+                          const value = String(
+                            redoPromptDrafts[lesson.id] !== undefined
+                              ? redoPromptDrafts[lesson.id]
+                              : (lesson.promptUpdate || '')
+                          )
+
+                          // Persist only when it actually changes
+                          if (String(lesson.promptUpdate || '') !== value) {
+                            onPlannedLessonUpdate(selectedDate, lesson.id, {
+                              ...lesson,
+                              promptUpdate: value
+                            })
+                          }
+                        }}
+                        placeholder="Example: Different topic than fractions; focus on measurement."
+                        rows={2}
+                        style={{
+                          width: '100%',
+                          resize: 'vertical',
+                          fontSize: 12,
+                          padding: 8,
+                          border: '1px solid #93c5fd',
+                          borderRadius: 6,
+                          outline: 'none'
+                        }}
+                      />
+                      <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>
+                        This text is added to the GPT prompt when you click Redo.
+                      </div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

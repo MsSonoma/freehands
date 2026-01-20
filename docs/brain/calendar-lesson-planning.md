@@ -1,6 +1,6 @@
 # Calendar Lesson Planning System - Ms. Sonoma Brain File
 
-**Last Updated**: 2026-01-12T22:05:00Z  
+**Last Updated**: 2026-01-20T00:40:00Z  
 **Status**: Canonical
 
 ## How It Works
@@ -24,6 +24,36 @@ The Calendar page includes an automated lesson planner that generates lesson out
 - Retrieves curriculum preferences (focus/banned concepts/topics/words)
 - Combines into context string sent to GPT for smarter lesson planning
 - Prevents repetition of already-completed topics
+- Prevents repetition within the same generation run by adding "generated so far" lessons into later GPT calls
+
+**Within-run anti-repeat rule (important):**
+- The planner generates one outline per day/subject slot.
+- If the context sent to GPT does not include outlines generated earlier in the same batch, GPT can repeat topics week-to-week because it cannot "see" what it already created.
+- The planner must include a short list of already-generated outlines (especially for the same subject) in the context for subsequent outline requests.
+
+**Score-aware repeat policy (important):**
+- The planner should prefer new topics, but it is allowed to repeat a concept as a **Review** when prior scores are low.
+- Low-score completed lessons are eligible for review; high-score lessons should generally not be repeated soon.
+- Review lessons must be rephrased (new framing/examples) and the title should start with `Review:`.
+- Outlines may include `kind: "review" | "new"`, and review outlines are title-prefixed for visibility.
+
+### Redo for Planned Lessons (Pre-Scheduling)
+
+Planned lessons (outlines) shown in the day view have a **Redo** action that regenerates the outline before scheduling.
+
+**Redo prompt update:**
+- Each planned lesson can optionally store a `promptUpdate` string.
+- The UI exposes a "Redo prompt update" field.
+- When Redo is clicked, this text is appended to the GPT prompt so the facilitator can steer what changes (e.g., "different topic", "more reading comprehension", "avoid fractions").
+
+**Redo context rule:**
+- Redo must include learner history (with scores when available) + current scheduled lessons + planned lessons in the prompt context.
+- This prevents Redo from returning the same two outlines repeatedly.
+
+**Redo rule (matches planner):**
+- Redo should follow the same score-aware repeat policy as planner generation (new topics preferred; review allowed for low scores; avoid repeating high-score topics).
+- Redo additionally supports `promptUpdate` to let the facilitator steer the regeneration.
+- Redo should not force every regeneration to be a review; instead, only label as `Review:` when a review is actually chosen.
 
 **Grade source of truth:**
 - Planned-lesson outlines must use the selected learner's grade as the default `grade` sent to `/api/generate-lesson-outline`.
@@ -78,6 +108,8 @@ plannedLessons = {
 **`/api/lesson-schedule`** - scheduled lessons (returns `{schedule: [...]}`)  
 **`/api/curriculum-preferences`** - focus/banned content  
 **`/api/generate-lesson-outline`** - GPT outline generation per subject/date
+  - Supports `context` (planner-built history/schedule/plan context)
+  - Supports `promptUpdate` (facilitator-provided steering text, used heavily by Redo)
 
 ### Error Handling
 

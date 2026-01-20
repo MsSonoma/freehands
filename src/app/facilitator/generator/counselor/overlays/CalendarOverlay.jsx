@@ -73,6 +73,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
   const [showGenerator, setShowGenerator] = useState(false)
   const [generatorData, setGeneratorData] = useState(null)
   const [redoingLesson, setRedoingLesson] = useState(null)
+  const [redoPromptDrafts, setRedoPromptDrafts] = useState({})
 
   const [showPlannerOverlay, setShowPlannerOverlay] = useState(false)
 
@@ -454,6 +455,100 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
       const token = session?.access_token
       if (!token) throw new Error('Not authenticated')
 
+      const promptUpdate = String(
+        (redoPromptDrafts && plannedLesson?.id && redoPromptDrafts[plannedLesson.id] !== undefined)
+          ? redoPromptDrafts[plannedLesson.id]
+          : (plannedLesson?.promptUpdate || '')
+      ).trim()
+
+      // Build a context string so Redo doesn't loop the same topics.
+      let contextText = ''
+
+      const LOW_SCORE_REVIEW_THRESHOLD = 70
+      const HIGH_SCORE_AVOID_REPEAT_THRESHOLD = 85
+
+      const lowScoreNames = new Set()
+      const highScoreNames = new Set()
+
+      const [historyRes, medalsRes] = await Promise.all([
+        fetch(`/api/learner/lesson-history?learner_id=${learnerId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`/api/medals?learnerId=${learnerId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ])
+
+      let medals = {}
+      if (medalsRes.ok) {
+        medals = (await medalsRes.json().catch(() => ({}))) || {}
+      }
+
+      if (historyRes.ok) {
+        const history = await historyRes.json()
+        const sessions = Array.isArray(history?.sessions) ? history.sessions : []
+        if (sessions.length > 0) {
+          contextText += '\n\nLearner lesson history (scores guide Review vs new topics):\n'
+          sessions
+            .slice()
+            .sort((a, b) => new Date(a.started_at || a.ended_at || 0) - new Date(b.started_at || b.ended_at || 0))
+            .slice(-60)
+            .forEach((s) => {
+              const status = s.status || 'unknown'
+              const name = s.lesson_id || 'unknown'
+              const bestPercent = status === 'completed' ? medals?.[name]?.bestPercent : null
+              if (status === 'completed' && Number.isFinite(bestPercent)) {
+                if (bestPercent <= LOW_SCORE_REVIEW_THRESHOLD) lowScoreNames.add(name)
+                if (bestPercent >= HIGH_SCORE_AVOID_REPEAT_THRESHOLD) highScoreNames.add(name)
+                contextText += `- ${name} (${status}, score: ${bestPercent}%)\n`
+              } else {
+                contextText += `- ${name} (${status})\n`
+              }
+            })
+        }
+      }
+
+      const scheduledFlat = []
+      Object.entries(scheduledLessons || {}).forEach(([date, arr]) => {
+        ;(Array.isArray(arr) ? arr : []).forEach((l) => {
+          scheduledFlat.push({ date, key: l.lesson_key })
+        })
+      })
+      if (scheduledFlat.length > 0) {
+        contextText += '\n\nScheduled lessons (do NOT reuse these topics):\n'
+        scheduledFlat
+          .slice()
+          .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+          .slice(-60)
+          .forEach((l) => {
+            contextText += `- ${l.date}: ${l.key}\n`
+          })
+      }
+
+      const plannedFlat = []
+      Object.entries(plannedLessons || {}).forEach(([date, arr]) => {
+        ;(Array.isArray(arr) ? arr : []).forEach((l) => {
+          plannedFlat.push({ date, subject: l.subject, title: l.title, description: l.description })
+        })
+      })
+      if (plannedFlat.length > 0) {
+        contextText += '\n\nPlanned lessons already in the calendar plan (do NOT repeat these topics):\n'
+        plannedFlat
+          .slice()
+          .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+          .slice(-80)
+          .forEach((l) => {
+            contextText += `- ${l.date} (${l.subject || 'general'}): ${l.title || l.description || 'planned lesson'}\n`
+          })
+      }
+
+      contextText += '\n\n=== REDO RULES: SAME AS PLANNER GENERATION ==='
+      contextText += '\nYou are regenerating a planned lesson outline.'
+      contextText += `\nPrefer NEW topics most of the time, but you MAY plan a rephrased Review for low scores (<= ${LOW_SCORE_REVIEW_THRESHOLD}%).`
+      contextText += `\nAvoid repeating high-score topics (>= ${HIGH_SCORE_AVOID_REPEAT_THRESHOLD}%) unless the facilitator explicitly requests it.`
+      contextText += "\nIf you choose a Review lesson, the title MUST start with 'Review:' and it must use different examples."
+      contextText += '\nDo NOT produce an exact duplicate of any scheduled/planned lesson above.'
+
       const response = await fetch('/api/generate-lesson-outline', {
         method: 'POST',
         headers: {
@@ -464,7 +559,9 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
           subject: plannedLesson.subject,
           grade: learnerGrade || plannedLesson.grade || '3rd',
           difficulty: plannedLesson.difficulty || 'intermediate',
-          learnerId
+          learnerId,
+          context: contextText,
+          promptUpdate
         })
       })
 
@@ -475,7 +572,8 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
       const updatedLesson = {
         ...plannedLesson,
         title: newOutline?.title || plannedLesson.title,
-        description: newOutline?.description || plannedLesson.description
+        description: newOutline?.description || plannedLesson.description,
+        promptUpdate
       }
 
       const current = Array.isArray(plannedLessons[selectedDate]) ? plannedLessons[selectedDate] : []
@@ -637,6 +735,19 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
       setPlannedForSelectedDate([])
     }
   }, [selectedDate, plannedLessons])
+
+  useEffect(() => {
+    setRedoPromptDrafts((prev) => {
+      const next = { ...prev }
+      plannedForSelectedDate.forEach((l) => {
+        if (!l?.id) return
+        if (next[l.id] === undefined && l.promptUpdate) {
+          next[l.id] = String(l.promptUpdate)
+        }
+      })
+      return next
+    })
+  }, [plannedForSelectedDate])
 
   const daysInMonth = (date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
@@ -1299,6 +1410,48 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
                       )}
                       <div style={{ fontSize: 10, color: '#9ca3af' }}>
                         {lesson.subject || 'general'}{lesson.grade ? ` • ${lesson.grade}` : ''}{lesson.difficulty ? ` • ${lesson.difficulty}` : ''}
+                      </div>
+
+                      <div style={{ marginTop: 8 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#1e40af', marginBottom: 4 }}>
+                          Redo prompt update (optional)
+                        </div>
+                        <textarea
+                          value={
+                            redoPromptDrafts[lesson.id] !== undefined
+                              ? redoPromptDrafts[lesson.id]
+                              : (lesson.promptUpdate || '')
+                          }
+                          onChange={(e) => {
+                            const value = e.target.value
+                            setRedoPromptDrafts((prev) => ({ ...prev, [lesson.id]: value }))
+                          }}
+                          onBlur={async () => {
+                            if (!selectedDate) return
+                            const value = String(
+                              redoPromptDrafts[lesson.id] !== undefined
+                                ? redoPromptDrafts[lesson.id]
+                                : (lesson.promptUpdate || '')
+                            )
+                            if (String(lesson.promptUpdate || '') === value) return
+
+                            const current = Array.isArray(plannedLessons[selectedDate]) ? plannedLessons[selectedDate] : []
+                            const next = current.map((l) => (l.id === lesson.id ? { ...l, promptUpdate: value } : l))
+                            const ok = await persistPlannedForDate(selectedDate, next)
+                            if (!ok) return
+                            setPlannedLessons((prev) => ({ ...prev, [selectedDate]: next }))
+                          }}
+                          placeholder="Example: Different topic; focus on map skills."
+                          rows={2}
+                          style={{
+                            width: '100%',
+                            resize: 'vertical',
+                            fontSize: 11,
+                            padding: 6,
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 6
+                          }}
+                        />
                       </div>
                     </div>
                   ))}

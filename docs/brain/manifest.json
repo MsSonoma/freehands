@@ -152,6 +152,7 @@
       "/api/counselor",
       "/api/lesson-schedule",
       "/api/lesson-assign",
+      "/api/generate-lesson-outline",
       "instructions-field",
       "innertext-field",
       "session-field",
@@ -163,7 +164,7 @@
       "/api/visual-aids",
       "/api/content-safety"
     ],
-    "last_updated": "2026-01-10T20:31:01Z",
+    "last_updated": "2026-01-20T00:40:00Z",
     "status": "canonical"
   },
   "v2-architecture": {
@@ -291,7 +292,7 @@
       "owned-lessons",
       "LessonPicker"
     ],
-    "last_updated": "2026-01-12T22:05:00Z",
+    "last_updated": "2026-01-20T00:40:00Z",
     "status": "canonical"
   },
   "tts-prefetching": {
