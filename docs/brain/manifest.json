@@ -164,7 +164,7 @@
       "/api/visual-aids",
       "/api/content-safety"
     ],
-    "last_updated": "2026-01-20T00:40:00Z",
+    "last_updated": "2026-01-20T16:13:47Z",
     "status": "canonical"
   },
   "v2-architecture": {
@@ -390,7 +390,7 @@
       "stopPlayTimer",
       "stopWorkPhaseTimer"
     ],
-    "last_updated": "2026-01-15T00:20:00Z",
+    "last_updated": "2026-01-20T16:22:20Z",
     "status": "canonical"
   },
   "learner-settings-bus": {

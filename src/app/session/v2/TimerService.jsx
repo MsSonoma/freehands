@@ -102,7 +102,45 @@ export class TimerService {
     this.setPlayTimerLimits = this.setPlayTimerLimits.bind(this);
     this.pause = this.pause.bind(this);
     this.resume = this.resume.bind(this);
+    this.resync = this.resync.bind(this);
     // Private methods are automatically bound
+  }
+
+  /**
+   * Best-effort recovery hook for browsers that may suspend JS timers (notably iOS Safari).
+   *
+   * This does NOT change timer semantics; it simply ensures intervals are armed and emits
+   * an immediate tick so UI can catch up after visibility/focus changes.
+   */
+  resync(reason = 'manual') {
+    try {
+      if (!this.isPaused) {
+        if (this.sessionStartTime && !this.sessionInterval) {
+          this.sessionInterval = setInterval(this.#tickSessionTimer.bind(this), 1000);
+        }
+
+        if (this.currentPlayPhase) {
+          const t = this.playTimers.get(this.currentPlayPhase);
+          if (t && !t.expired && !this.playTimerInterval) {
+            this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
+          }
+        }
+
+        if (this.currentWorkPhase) {
+          const t = this.workPhaseTimers.get(this.currentWorkPhase);
+          if (t && !t.completed && !this.workPhaseInterval) {
+            this.workPhaseInterval = setInterval(this.#tickWorkPhaseTimers.bind(this), 1000);
+          }
+        }
+      }
+
+      // Emit a catch-up tick immediately.
+      this.#tickSessionTimer();
+      this.#tickPlayTimers();
+      this.#tickWorkPhaseTimers();
+    } catch (err) {
+      console.warn('[TimerService] resync failed:', reason, err);
+    }
   }
 
   setGoldenKeysEnabled(enabled) {

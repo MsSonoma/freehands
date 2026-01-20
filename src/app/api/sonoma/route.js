@@ -176,6 +176,7 @@ export async function POST(req) {
     // Be resilient to non-JSON payloads (text/plain, form-data) to avoid 500s during dev/smoke tests
   let instructions = ''
   let innertext = ''
+  let skipAudio = false
 
     const contentType = (req.headers?.get?.('content-type') || '').toLowerCase()
     try {
@@ -186,6 +187,7 @@ export async function POST(req) {
           const body = JSON.parse(raw)
           const instruction = body.instruction || ''
           innertext = body.innertext || ''
+          skipAudio = Boolean(body.skipAudio)
           // Got structured body
           instructions = instruction
         } catch {
@@ -197,6 +199,7 @@ export async function POST(req) {
         const form = await req.formData()
         instructions = form.get('instruction')?.toString() || form.get('instructions')?.toString() || ''
         innertext = form.get('innertext')?.toString() ?? ''
+        skipAudio = String(form.get('skipAudio') ?? '').toLowerCase() === 'true'
         // Received URL-encoded form payload
       } else {
         // Fallback: treat entire body as text instructions
@@ -237,7 +240,7 @@ export async function POST(req) {
       // OPENAI_API_KEY not configured
       // Dev fallback: allow local testing without LLM while still providing TTS when available
       if (process.env.NODE_ENV !== 'production') {
-        const { stub, audio } = await buildDevStubWithOptionalTts(trimmedInstructions, trimmedInnertext)
+        const { stub, audio } = await buildDevStubWithOptionalTts(trimmedInstructions, trimmedInnertext, skipAudio)
         providerUsed = 'dev-stub'
         // Dev stub reply
         return NextResponse.json({ reply: stub, audio }, { status: 200 })
@@ -249,7 +252,7 @@ export async function POST(req) {
       if (openaiKey) {
         // Falling back to OpenAI provider
       } else if (process.env.NODE_ENV !== 'production') {
-        const { stub, audio } = await buildDevStubWithOptionalTts(trimmedInstructions, trimmedInnertext)
+        const { stub, audio } = await buildDevStubWithOptionalTts(trimmedInstructions, trimmedInnertext, skipAudio)
         providerUsed = 'dev-stub'
         // Dev stub reply
         return NextResponse.json({ reply: stub, audio }, { status: 200 })
@@ -350,8 +353,8 @@ export async function POST(req) {
       }
     }
 
-    let audioContent = undefined
-    if (msSonomaReply) {
+    let audioContent = skipAudio ? null : undefined
+    if (!skipAudio && msSonomaReply) {
       // Check TTS cache first
       if (ttsCache.has(msSonomaReply)) {
         audioContent = ttsCache.get(msSonomaReply)
@@ -515,9 +518,11 @@ function isRetryableStatus(status) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 // Dev stub + optional TTS synthesis
-async function buildDevStubWithOptionalTts(trimmedInstructions, trimmedInnertext) {
+async function buildDevStubWithOptionalTts(trimmedInstructions, trimmedInnertext, skipAudio = false) {
   const stub = buildStubReply(trimmedInstructions, trimmedInnertext)
-  let audio
+  let audio = skipAudio ? null : undefined
+
+  if (skipAudio) return { stub, audio }
   try {
     // Serve from cache when possible
     if (ttsCache.has(stub)) {

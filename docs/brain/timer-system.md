@@ -159,6 +159,13 @@ This ensures timers tick down from the moment the Go button is visible, not when
 
 **Important (V2 lifecycle):** The TimerService instance must remain stable for the duration of a session and must not be recreated on every phase transition. Recreating it will lose timer Maps and can leave stale sessionStorage keys behind.
 
+**iOS/Safari timer recovery (critical):**
+
+iOS Safari can suspend or delay JavaScript intervals during backgrounding, BFCache restores, or focus changes. To prevent the on-video timer display from appearing frozen after returning to the tab:
+
+- `SessionPageV2` calls `timerService.resync(...)` on `visibilitychange` (when becoming visible), `focus`, and `pageshow`.
+- `TimerService.resync()` is best-effort: it re-arms missing intervals (when not paused) and emits an immediate catch-up tick so the UI updates to the correct remaining time.
+
 ### Games Overlay Timer Parity (V2)
 
 The Games overlay displays the play timer badge, and it must show the same time as the in-session timer.

@@ -2308,7 +2308,24 @@ function SessionPageV2Inner() {
         if (document.hidden) {
           // Try to flush the most recent timer state when the tab is backgrounded.
           persistTimerStateNow('visibility-hidden');
+        } else {
+          // iOS/Safari can suspend intervals while hidden; force a catch-up tick on return.
+          try {
+            timerServiceRef.current?.resync?.('visibility-visible');
+          } catch {}
         }
+      } catch {}
+    };
+
+    const onFocus = () => {
+      try {
+        timerServiceRef.current?.resync?.('focus');
+      } catch {}
+    };
+
+    const onPageShow = () => {
+      try {
+        timerServiceRef.current?.resync?.('pageshow');
       } catch {}
     };
 
@@ -2320,6 +2337,8 @@ function SessionPageV2Inner() {
 
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('pageshow', onPageShow);
 
     return () => {
       try { unsubPlayStart?.(); } catch {}
@@ -2329,6 +2348,8 @@ function SessionPageV2Inner() {
       try { unsubWorkTick?.(); } catch {}
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('pageshow', onPageShow);
     };
   }, [lessonKey, persistTimerStateNow]);
 

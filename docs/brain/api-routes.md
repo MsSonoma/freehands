@@ -1,6 +1,6 @@
 # API Routes
 
-## `/api/sonoma` - Core Teaching Endpoint
+## `/api/sonoma` - Core Ms. Sonoma Endpoint
 
 ### Request Format
 
@@ -9,59 +9,54 @@
 
 ```json
 {
-  "instructions": "<string>",
+  "instruction": "<string>",
   "innertext": "<string>",
-  "session": { /* session state object */ }
+  "skipAudio": true
 }
 ```
 
 **Fields**:
-- `instructions`: Phase-specific instruction string telling Ms. Sonoma what to do (e.g., "Say learner's name and a hello phrase then name the lesson")
-- `innertext`: User input or contextual text for this turn
-- `session`: Current session state object (phase data, lesson metadata, etc.)
+- `instruction`: The per-turn instruction string (server hardens it for safety).
+- `innertext`: Optional learner input for this turn.
+- `skipAudio`: Optional boolean; when `true`, the API will skip Google TTS and return `audio: null`.
+
+**Why `skipAudio` exists**:
+- Some callers (especially teaching definitions/examples generation) need text only.
+- Returning base64 audio for large responses can be slow on mobile devices.
 
 ### Response Format
 
 ```json
 {
-  "reply": "<Ms. Sonoma's response>"
+  "reply": "<string>",
+  "audio": "<base64 mp3>" 
 }
 ```
 
 **Fields**:
-- `reply`: Generated response text from Ms. Sonoma (via LLM)
+- `reply`: Ms. Sonoma response text from the configured LLM provider.
+- `audio`: Base64-encoded MP3 when TTS is enabled and available; `null` when `skipAudio=true` (or when TTS is not configured).
 
 ### Implementation
 
 - **Location**: `src/app/api/sonoma/route.js`
-- **Backend**: Composes prompt from instructions + innertext + session, sends to configured LLM provider (OpenAI/Anthropic)
-- **Frontend usage**: All session phases send requests to this endpoint
-- **No hardcoded personality**: All Ms. Sonoma responses come from LLM, not JavaScript logic
+- **Providers**: OpenAI or Anthropic depending on env configuration
+- **Runtime**: Node.js (Google SDKs require Node, not Edge)
+- **Stateless**: Each call is independent; no DB writes from this endpoint
+
+### Health Check
+
+**Method**: GET
+
+Returns `200` with `{ ok: true, route: 'sonoma', runtime }`.
 
 ### Logging Controls
 
-The route logs incoming `instructions`, `innertext`, composed prompt, and system prompt. Log truncation is controlled via environment variable:
+Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 
-**`SONOMA_LOG_PREVIEW_MAX`**:
-- `full`, `off`, `none`, or `0` — No truncation (logs full content)
+- `full`, `off`, `none`, or `0` — No truncation
 - Positive integer (e.g., `2000`) — Truncate after N characters
-- **Default**: Unlimited in development; 600 chars in production
-
-**PowerShell examples**:
-```powershell
-# Full logging
-$env:SONOMA_LOG_PREVIEW_MAX = 'full'; npm run dev
-
-# Custom limit
-$env:SONOMA_LOG_PREVIEW_MAX = '2000'; npm run build
-```
-
-**`.env.local` example**:
-```
-SONOMA_LOG_PREVIEW_MAX=full
-```
-
-**Note**: Very large logs can be noisy; prefer numeric limits over `full` when possible.
+- Default: Unlimited in development; 600 chars in production
 
 ---
 

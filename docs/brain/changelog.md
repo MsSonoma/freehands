@@ -1,3 +1,5 @@
+2026-01-20T16:22:20Z | Copilot | V2 timer now resyncs on visibility/focus/pageshow to avoid iOS Safari interval suspension making the countdown appear frozen [#timer-system: iOS, resync, visibilitychange, TimerService]
+2026-01-20T16:13:47Z | Copilot | /api/sonoma now honors skipAudio (audio: null) to prevent slow/mobile stalls when definitions/examples fetch text-only [#api-routes: /api/sonoma, skipAudio, mobile]
 2026-01-20T00:40:00Z | Copilot | Outline generator now returns kind (new|review) and enforces Review: prefix when kind=review, so planner review lessons are clearly labeled [#calendar-lesson-planning: review, outline-kind, labeling] [#api-routes: generate-lesson-outline, kind]
 2026-01-20T00:30:00Z | Copilot | Correct Redo behavior: uses same score-aware planner rules + promptUpdate, but does not default every redo to Review or auto-prefix titles [#calendar-lesson-planning: redo, review-policy, promptUpdate]
 2026-01-20T00:20:00Z | Copilot | Planner/Redo now treat low scores as eligible for rephrased Review repeats; high-score topics avoided; Redo titles auto-prefixed with Review: [#calendar-lesson-planning: review, low-scores, medals-API, redo]
