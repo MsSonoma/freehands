@@ -177,15 +177,20 @@ iOS Safari can suspend or delay JavaScript intervals during backgrounding, BFCac
 
 The Games overlay displays the play timer badge, and it must show the same time as the in-session timer.
 
-**Rule:** Only one `SessionTimer` instance should be mounted at a time for a given `{lessonKey, phase, mode}`.
-- Mounting two `SessionTimer` components simultaneously can show brief 1-second drift because each instance runs its own `setInterval` tick.
+**Rule (single instance):** Only one `SessionTimer` instance should be mounted at a time for a given `{lessonKey, phase, mode}`.
+- Mounting two `SessionTimer` components simultaneously can show brief 1-second drift when `SessionTimer` is in self-timing mode.
 - In Session V2, when the Games overlay is open, the on-video timer is not rendered; the Games overlay renders the timer instead.
+
+**Rule (click parity):** Clicking the timer badge in the Games overlay must behave the same as clicking the timer during the rest of the session: it opens `TimerControlOverlay` (PIN-gated).
+- The timer badge must be a `SessionTimer` with `onTimerClick` wired to the same handler used by the main session timer.
 
 ### Overlay Stacking (V2)
 
 Games and Visual Aids overlays must render above the timeline and timer overlays.
 - Timeline must not use an extremely high `zIndex`.
 - Full-screen overlays should use a higher `zIndex` than the on-video timer.
+
+**TimerControlOverlay vs GamesOverlay:** If the facilitator opens `TimerControlOverlay` while the Games overlay is open, `TimerControlOverlay` must render above `GamesOverlay` so it is visible and usable.
 
 **PlayTimeExpiredOverlay must be above GamesOverlay:**
 - `PlayTimeExpiredOverlay` is a full-screen, blocking overlay. It must have a higher `zIndex` than `GamesOverlay` so the 30-second countdown cannot appear behind a running game.

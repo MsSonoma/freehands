@@ -402,7 +402,7 @@
       "stopPlayTimer",
       "stopWorkPhaseTimer"
     ],
-    "last_updated": "2026-01-26T21:13:21Z",
+    "last_updated": "2026-01-26T22:18:09Z",
     "status": "canonical"
   },
   "learner-settings-bus": {
@@ -534,7 +534,7 @@
       "grade-driven difficulty",
       "opening actions play time"
     ],
-    "last_updated": "2026-01-13T00:59:23Z",
+    "last_updated": "2026-01-26T22:18:09Z",
     "status": "canonical"
   },
   "flood-climb-spelling": {

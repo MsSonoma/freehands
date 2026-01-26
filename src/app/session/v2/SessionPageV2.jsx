@@ -6940,6 +6940,7 @@ function SessionPageV2Inner() {
             isPaused={timerPaused}
             lessonKey={lessonKey}
             lessonProgress={calculateLessonProgress()}
+            onTimerClick={handleTimerClick}
           />
         ) : null;
 

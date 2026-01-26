@@ -13,6 +13,8 @@ Games are launched from the in-session **Games overlay**.
   - A full-screen active-game view
 - A play timer badge (rendered by `SessionTimer`) is optionally passed in and displayed at the top-left.
 
+**Click parity:** If the timer badge is present, it should remain interactive (cursor + click) so the facilitator can open `TimerControlOverlay` from within the Games overlay (PIN-gated), matching the rest of the session.
+
 ### Difficulty and Grade
 
 The Games overlay does **not** own a global difficulty setting.

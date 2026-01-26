@@ -1,3 +1,4 @@
+2026-01-26T22:18:09Z | Copilot | Games overlay timer badge now opens Timer Controls; TimerControlOverlay renders above GamesOverlay [#timer-system: GamesOverlay, TimerControlOverlay, PIN] [#games-overlay: play timer badge, SessionTimer, click]
 2026-01-26T21:13:21Z | Copilot | Fix PlayTimeExpiredOverlay crash: pass session mute state (isMuted) instead of undefined muted var [#timer-system: PlayTimeExpiredOverlay, alarm, mute]
 2026-01-26T20:50:16Z | Copilot | Fix discussion work timer: do not complete at greeting end; complete when teaching finishes so it keeps ticking [#timer-system: discussion, work timer, teaching]
 2026-01-26T20:21:25Z | Copilot | Start Q&A play timers at Begin gate (all phases 2-5); stop Test auto-start on phase entry [#timer-system: play timer, startPlayTimer, timeline-jump] [#v2-architecture: PhaseOrchestrator, timeline-jump, no-premature-actions]

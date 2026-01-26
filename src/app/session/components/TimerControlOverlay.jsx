@@ -188,7 +188,9 @@ export default function TimerControlOverlay({
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 10002,
+        // Must render above GamesOverlay (which uses zIndex: 20000)
+        // Keep just under PlayTimeExpiredOverlay (which uses zIndex: 2147483647)
+        zIndex: 2147483646,
         background: 'rgba(0, 0, 0, 0.6)',
         display: 'flex',
         alignItems: 'center',
