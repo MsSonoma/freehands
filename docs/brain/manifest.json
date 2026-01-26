@@ -167,6 +167,18 @@
     "last_updated": "2026-01-20T16:13:47Z",
     "status": "canonical"
   },
+  "sound-effects": {
+    "file": "sound-effects.md",
+    "systems": [
+      "SFX",
+      "Howler",
+      "public/sfx",
+      "playSfx",
+      "preloadSfx"
+    ],
+    "last_updated": "2026-01-22T20:43:54Z",
+    "status": "active-development"
+  },
   "v2-architecture": {
     "file": "v2-architecture.md",
     "systems": [
@@ -390,7 +402,7 @@
       "stopPlayTimer",
       "stopWorkPhaseTimer"
     ],
-    "last_updated": "2026-01-20T16:22:20Z",
+    "last_updated": "2026-01-23T01:13:24Z",
     "status": "canonical"
   },
   "learner-settings-bus": {
@@ -508,7 +520,7 @@
       "Fill-in-Fun",
       "Games overlay",
       "opening actions play time"
-    "last_updated": "2026-01-14T00:00:00Z",
+    "last_updated": "2026-01-21T22:13:29Z",
     "last_updated": "2026-01-13T00:59:23Z",
     "status": "canonical"
   },

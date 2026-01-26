@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2026-01-12T15:00:19Z  
+**Last updated**: 2026-01-23T01:13:24Z  
 **Status**: Canonical
 
 ## How It Works
@@ -93,6 +93,7 @@ This ensures timers tick down from the moment the Go button is visible, not when
 - 30-second countdown (green → amber at 5 seconds)
 - "Time to Get Back to Work!" message
 - "Go Now" button to skip countdown
+- Plays `public/sfx/Alarm.mp3` once when the overlay opens (respects mute)
 - Auto-advances to work mode when countdown reaches 0
 - In V2, the parent handler first updates UI timer mode (play -> work) and then calls the phase controller `go()`, which performs the authoritative `timerService.transitionToWork(phase)` internally.
 
@@ -101,6 +102,7 @@ This ensures timers tick down from the moment the Go button is visible, not when
 - Rendered outside main container (position: fixed, inset: 0, zIndex: 10005)
 - Props: `isOpen`, `phase`, `onComplete`, `onStartNow`
 - Full-screen backdrop blur overlay
+- Alarm SFX: overlay plays `/sfx/Alarm.mp3` once on open
 
 **V2 Implementation (SessionPageV2.jsx):**
 - Parent-controlled via `showPlayTimeExpired` and `playExpiredPhase` state
@@ -108,10 +110,12 @@ This ensures timers tick down from the moment the Go button is visible, not when
 - Rendered outside main container at end of component (position: fixed, inset: 0, zIndex: 10005)
 - Props: `isOpen`, `phase`, `onComplete` (handlePlayExpiredComplete), `onStartNow` (handlePlayExpiredStartNow)
 - Full-screen backdrop blur overlay matching V1 styling exactly
+- Alarm SFX: overlay plays `/sfx/Alarm.mp3` once on open
 
 **V2 Key Files:**
 - `src/app/session/v2/PlayTimeExpiredOverlay.jsx` - Overlay component (V1 parity)
 - `src/app/session/v2/SessionPageV2.jsx` - State, event listeners, handlers, render
+- `src/app/session/utils/sfx.js` - Client-safe SFX playback (Howler wrapper)
 
 **Persistence:**
 - `serialize()` includes playTimers state (phase, elapsed, timeLimit, expired)

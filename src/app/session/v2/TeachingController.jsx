@@ -53,6 +53,8 @@ export class TeachingController {
   #examplesCooldownUntilMs = 0;
   #definitionsRateLimited = false;
   #examplesRateLimited = false;
+  #definitionsRetryPending = false;
+  #examplesRetryPending = false;
 
   #gatePromptActive = false;
   #gatePromptStage = null;
@@ -94,7 +96,7 @@ export class TeachingController {
   async #maybeRetryRateLimited(stage) {
     const now = this.#getNowMs();
 
-    if (stage === 'definitions' && this.#definitionsRateLimited) {
+    if (stage === 'definitions' && (this.#definitionsRateLimited || this.#definitionsRetryPending)) {
       if (now < this.#definitionsCooldownUntilMs) {
         this.#currentSentenceIndex = 0;
         this.#awaitingFirstPlay = false;
@@ -104,6 +106,7 @@ export class TeachingController {
 
       // Cooldown passed: retry fetch.
       this.#definitionsRateLimited = false;
+      this.#definitionsRetryPending = false;
       this.#definitionsCooldownUntilMs = 0;
       this.#vocabSentences = [];
       this.#definitionsGptPromise = null;
@@ -120,7 +123,7 @@ export class TeachingController {
       return true;
     }
 
-    if (stage === 'examples' && this.#examplesRateLimited) {
+    if (stage === 'examples' && (this.#examplesRateLimited || this.#examplesRetryPending)) {
       if (now < this.#examplesCooldownUntilMs) {
         this.#currentSentenceIndex = 0;
         this.#awaitingFirstPlay = false;
@@ -130,6 +133,7 @@ export class TeachingController {
 
       // Cooldown passed: retry fetch.
       this.#examplesRateLimited = false;
+      this.#examplesRetryPending = false;
       this.#examplesCooldownUntilMs = 0;
       this.#exampleSentences = [];
       this.#examplesGptPromise = null;
@@ -410,7 +414,7 @@ export class TeachingController {
   
   restartStage() {
     if (this.#stage === 'definitions') {
-      if (this.#definitionsRateLimited) {
+      if (this.#definitionsRateLimited || this.#definitionsRetryPending) {
         void this.#maybeRetryRateLimited('definitions').catch(err => {
           console.error('[TeachingController] restartStage retry (definitions) error:', err);
           this.#emit('error', { type: 'teaching', action: 'restartStage', stage: 'definitions', error: String(err?.message || err) });
@@ -422,7 +426,7 @@ export class TeachingController {
       this.#awaitingFirstPlay = false;
       this.#playCurrentDefinition();
     } else if (this.#stage === 'examples') {
-      if (this.#examplesRateLimited) {
+      if (this.#examplesRateLimited || this.#examplesRetryPending) {
         void this.#maybeRetryRateLimited('examples').catch(err => {
           console.error('[TeachingController] restartStage retry (examples) error:', err);
           this.#emit('error', { type: 'teaching', action: 'restartStage', stage: 'examples', error: String(err?.message || err) });
@@ -511,6 +515,7 @@ export class TeachingController {
     const now = this.#getNowMs();
     if (now < this.#definitionsCooldownUntilMs) {
       this.#definitionsRateLimited = true;
+      this.#definitionsRetryPending = false;
       const remainingMs = this.#definitionsCooldownUntilMs - now;
       const msg = this.#buildRateLimitSentence(remainingMs);
       this.#emit('error', { type: 'gpt', stage: 'definitions', status: 429, retryAfterMs: remainingMs });
@@ -577,12 +582,14 @@ export class TeachingController {
           const retryAfterMs = this.#getRetryAfterMs(response);
           this.#definitionsCooldownUntilMs = this.#getNowMs() + retryAfterMs;
           this.#definitionsRateLimited = true;
+          this.#definitionsRetryPending = false;
           this.#emit('error', { type: 'gpt', stage: 'definitions', status, retryAfterMs });
           return [this.#buildRateLimitSentence(retryAfterMs)];
         }
 
         console.error(`[TeachingController] Definitions request failed with status ${status}`);
         this.#definitionsRateLimited = false;
+        this.#definitionsRetryPending = true;
         this.#emit('error', { type: 'gpt', stage: 'definitions', status });
         return status >= 500 
           ? ['The server is having trouble right now. Please wait a moment and press Next again.']
@@ -601,11 +608,13 @@ export class TeachingController {
       console.log('[TeachingController] GPT definitions split into', sentences.length, 'sentences');
 
       this.#definitionsRateLimited = false;
+      this.#definitionsRetryPending = false;
       return sentences;
       
     } catch (err) {
       console.error('[TeachingController] GPT definitions error:', err);
       this.#definitionsRateLimited = false;
+      this.#definitionsRetryPending = true;
       return ['We had trouble loading the definitions. Please press Next again.'];
     }
   }
@@ -615,6 +624,7 @@ export class TeachingController {
     const now = this.#getNowMs();
     if (now < this.#examplesCooldownUntilMs) {
       this.#examplesRateLimited = true;
+      this.#examplesRetryPending = false;
       const remainingMs = this.#examplesCooldownUntilMs - now;
       const msg = this.#buildRateLimitSentence(remainingMs);
       this.#emit('error', { type: 'gpt', stage: 'examples', status: 429, retryAfterMs: remainingMs });
@@ -669,12 +679,14 @@ export class TeachingController {
           const retryAfterMs = this.#getRetryAfterMs(response);
           this.#examplesCooldownUntilMs = this.#getNowMs() + retryAfterMs;
           this.#examplesRateLimited = true;
+          this.#examplesRetryPending = false;
           this.#emit('error', { type: 'gpt', stage: 'examples', status, retryAfterMs });
           return [this.#buildRateLimitSentence(retryAfterMs)];
         }
 
         console.error(`[TeachingController] Examples request failed with status ${status}`);
         this.#examplesRateLimited = false;
+        this.#examplesRetryPending = true;
         this.#emit('error', { type: 'gpt', stage: 'examples', status });
         return status >= 500
           ? ['The server is having trouble right now. Please wait a moment and press Next again.']
@@ -693,11 +705,13 @@ export class TeachingController {
       console.log('[TeachingController] GPT examples split into', sentences.length, 'sentences');
 
       this.#examplesRateLimited = false;
+      this.#examplesRetryPending = false;
       return sentences;
       
     } catch (err) {
       console.error('[TeachingController] GPT examples error:', err);
       this.#examplesRateLimited = false;
+      this.#examplesRetryPending = true;
       return ['We had trouble loading the examples. Please press Next again.'];
     }
   }

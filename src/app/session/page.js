@@ -8278,6 +8278,7 @@ function SessionPageInner() {
       <PlayTimeExpiredOverlay
         isOpen={showPlayTimeExpired}
         phase={playExpiredPhase}
+        muted={muted}
         onComplete={handlePlayExpiredComplete}
         onStartNow={handlePlayExpiredStartNow}
       />

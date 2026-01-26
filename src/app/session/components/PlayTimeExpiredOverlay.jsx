@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { playSfx } from '../utils/sfx';
 
 /**
  * PlayTimeExpiredOverlay - 30-second countdown when play timer expires
@@ -16,14 +17,20 @@ import { useState, useEffect, useRef } from 'react';
 export default function PlayTimeExpiredOverlay({
   isOpen,
   phase = 'lesson',
+  muted = false,
   onComplete,
   onStartNow
 }) {
   const [countdown, setCountdown] = useState(30);
   const intervalRef = useRef(null);
+  const hasPlayedAlarmRef = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
+      if (!hasPlayedAlarmRef.current) {
+        hasPlayedAlarmRef.current = true;
+        playSfx('/sfx/Alarm.mp3', { volume: 0.6, muted });
+      }
       setCountdown(30);
       
       intervalRef.current = setInterval(() => {
@@ -50,6 +57,9 @@ export default function PlayTimeExpiredOverlay({
         }
       };
     }
+
+    // Reset for the next open.
+    hasPlayedAlarmRef.current = false;
   }, [isOpen, onComplete]);
 
   if (!isOpen) return null;

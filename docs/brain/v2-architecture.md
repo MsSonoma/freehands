@@ -507,9 +507,10 @@ expect(engine.isPlaying).toBe(true);
 - **No loading states** - UI never shows "loading" for teaching content
 - Prefetch chain: GPT completes → automatically prefetches TTS for sentences
 
-**Rate Limit Handling (429):**
-- If GPT returns 429, TeachingController enters a short cooldown and produces a deterministic "wait then press Next" sentence
-- If GPT returns 500+, TeachingController shows a generic server error message (not rate limit) so non-429 failures don't blame OpenAI
+**Retry + Rate Limit Handling:**
+- If GPT returns 429, TeachingController enters a cooldown and produces a deterministic "wait then press Next" sentence
+- If GPT returns 500+ (or the fetch throws), TeachingController shows a generic server error message (not rate limit)
+- When a non-429 error message is shown, the next Next/Repeat/Restart action triggers an actual retry fetch (instead of advancing past the error sentence and effectively skipping the stage)
 - Next/Repeat/Restart must not spam GPT requests during cooldown
 - Public methods called without `await` (Repeat/Skip/Restart) must not generate unhandled promise rejections
 

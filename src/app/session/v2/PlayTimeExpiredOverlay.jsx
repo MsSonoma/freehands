@@ -26,6 +26,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { playSfx } from '../utils/sfx';
 
 const WARNING_DURATION = 30; // 30 seconds
 
@@ -34,6 +35,7 @@ export default function PlayTimeExpiredOverlay({
   phase = 'lesson',
   lessonKey = 'default',
   isPaused = false,
+  muted = false,
   onComplete,
   onStartNow
 }) {
@@ -41,6 +43,7 @@ export default function PlayTimeExpiredOverlay({
   const [pausedAt, setPausedAt] = useState(null);
   const intervalRef = useRef(null);
   const hasCalledCompleteRef = useRef(false);
+  const hasPlayedAlarmRef = useRef(false);
   
   // Storage key for this phase's warning timer
   const storageKey = `play_expired_warning:${lessonKey}:${phase}`;
@@ -87,6 +90,7 @@ export default function PlayTimeExpiredOverlay({
     if (!isOpen) {
       // Reset the completion flag when closed
       hasCalledCompleteRef.current = false;
+      hasPlayedAlarmRef.current = false;
       setPausedAt(null);
       return;
     }
@@ -192,6 +196,16 @@ export default function PlayTimeExpiredOverlay({
       }
     };
   }, [isOpen, isPaused, pausedAt, storageKey, phase, handleComplete]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (hasPlayedAlarmRef.current) return;
+    hasPlayedAlarmRef.current = true;
+
+    // Play alarm once when the overlay appears.
+    // Use the exact filename casing present in public/sfx.
+    playSfx('/sfx/Alarm.mp3', { volume: 0.6, muted });
+  }, [isOpen, muted]);
 
   if (!isOpen) return null;
 

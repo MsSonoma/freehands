@@ -6813,6 +6813,7 @@ function SessionPageV2Inner() {
           phase={playExpiredPhase}
           lessonKey={lessonKey}
           isPaused={timerPaused}
+          muted={muted}
           onComplete={handlePlayExpiredComplete}
           onStartNow={handlePlayExpiredStartNow}
         />

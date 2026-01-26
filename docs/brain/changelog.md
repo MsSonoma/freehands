@@ -1,3 +1,6 @@
+2026-01-23T01:13:24Z | Copilot | PlayTimeExpiredOverlay now plays /sfx/Alarm.mp3 once when the 30s warning overlay opens (respects mute) [#timer-system: PlayTimeExpiredOverlay, alarm, countdown] [#sound-effects: Alarm.mp3, howler, playSfx]
+2026-01-22T20:43:54Z | Copilot | Add Howler-based SFX helper (client-safe) + public/sfx convention for easy sound effects [#sound-effects: howler, sfx, public-sfx]
+2026-01-21T22:13:29Z | Copilot | TeachingController now retries non-429 GPT fetch failures on Next/Repeat/Restart, preventing stages from being skipped after transient mobile errors [#v2-architecture: TeachingController, retry, examples, definitions]
 2026-01-20T16:22:20Z | Copilot | V2 timer now resyncs on visibility/focus/pageshow to avoid iOS Safari interval suspension making the countdown appear frozen [#timer-system: iOS, resync, visibilitychange, TimerService]
 2026-01-20T16:13:47Z | Copilot | /api/sonoma now honors skipAudio (audio: null) to prevent slow/mobile stalls when definitions/examples fetch text-only [#api-routes: /api/sonoma, skipAudio, mobile]
 2026-01-20T00:40:00Z | Copilot | Outline generator now returns kind (new|review) and enforces Review: prefix when kind=review, so planner review lessons are clearly labeled [#calendar-lesson-planning: review, outline-kind, labeling] [#api-routes: generate-lesson-outline, kind]
