@@ -40,6 +40,7 @@ import { TimerService } from './TimerService';
 import { KeyboardService } from './KeyboardService';
 import { OpeningActionsController } from './OpeningActionsController';
 import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
+import FullscreenPlayTimerOverlay from './FullscreenPlayTimerOverlay';
 import TimerControlOverlay from '../components/TimerControlOverlay';
 import GamesOverlay from '../components/games/GamesOverlay';
 import EventBus from './EventBus';
@@ -585,7 +586,9 @@ function SessionPageV2Inner() {
   const [openingActionBusy, setOpeningActionBusy] = useState(false);
   const openingActionBusyRef = useRef(false);
   const [openingActionError, setOpeningActionError] = useState('');
+  const [showPlayWithSonomaMenu, setShowPlayWithSonomaMenu] = useState(false);
   const [showGames, setShowGames] = useState(false);
+  const [showFullscreenPlayTimer, setShowFullscreenPlayTimer] = useState(false);
   const [visualAidsData, setVisualAidsData] = useState(null);
   const [showVisualAids, setShowVisualAids] = useState(false);
 
@@ -2226,6 +2229,8 @@ function SessionPageV2Inner() {
       setPlayExpiredPhase(phaseName);
       setShowPlayTimeExpired(true);
       setShowGames(false);
+      setShowFullscreenPlayTimer(false);
+      setShowPlayWithSonomaMenu(false);
     } else if (mode === 'work') {
       // Work time exceeded - track for golden key
       addEvent(`â±ï¸ Work time exceeded for ${phaseName}`);
@@ -2241,6 +2246,34 @@ function SessionPageV2Inner() {
       setShowGames(false);
     }
   }, [showGames, getCurrentPhaseName, currentTimerMode]);
+
+  // Close fullscreen play timer whenever we leave play time (or overlays take over)
+  useEffect(() => {
+    if (!showFullscreenPlayTimer) return;
+    if (showPlayTimeExpired) {
+      setShowFullscreenPlayTimer(false);
+      return;
+    }
+    const phaseName = getCurrentPhaseName();
+    const timerMode = phaseName ? currentTimerMode[phaseName] : null;
+    if (timerMode !== 'play') {
+      setShowFullscreenPlayTimer(false);
+    }
+  }, [showFullscreenPlayTimer, showPlayTimeExpired, getCurrentPhaseName, currentTimerMode]);
+
+  // If an opening action starts, collapse the Play-with-Sonoma menu
+  useEffect(() => {
+    if (openingActionActive) {
+      setShowPlayWithSonomaMenu(false);
+    }
+  }, [openingActionActive]);
+
+  // If games opens, close fullscreen timer to avoid overlay stacking
+  useEffect(() => {
+    if (showGames && showFullscreenPlayTimer) {
+      setShowFullscreenPlayTimer(false);
+    }
+  }, [showGames, showFullscreenPlayTimer]);
 
   // Handle timer click (for facilitator controls)
   const handleTimerClick = useCallback(async () => {
@@ -2596,7 +2629,9 @@ function SessionPageV2Inner() {
     setOpeningActionInput('');
     setOpeningActionError('');
     setOpeningActionBusy(false);
+    setShowPlayWithSonomaMenu(false);
     setShowGames(false);
+    setShowFullscreenPlayTimer(false);
 
     // Timeline jumps should enter the destination phase fresh (Begin -> Opening Actions -> Go)
     // even if snapshot phaseData exists. Mark the target so phase init ignores resumeState.
@@ -5866,6 +5901,10 @@ function SessionPageV2Inner() {
 
             if (!awaitingGo || openingActionActive) return null;
 
+            const phaseName = getCurrentPhaseName();
+            const timerMode = phaseName ? currentTimerMode[phaseName] : null;
+            const canShowFullscreenTimer = timerMode === 'play';
+
             return (
               <div style={{
                 display: 'flex',
@@ -5875,128 +5914,186 @@ function SessionPageV2Inner() {
                 marginBottom: 8,
                 padding: '0 12px'
               }}>
-                <button
-                  onClick={() => {
-                    if (currentPhase === 'comprehension') {
-                      transitionToWorkTimer('comprehension');
-                      comprehensionPhaseRef.current?.go();
-                    } else if (currentPhase === 'exercise') {
-                      transitionToWorkTimer('exercise');
-                      exercisePhaseRef.current?.go();
-                    } else if (currentPhase === 'worksheet') {
-                      transitionToWorkTimer('worksheet');
-                      worksheetPhaseRef.current?.go();
-                    } else if (currentPhase === 'test') {
-                      transitionToWorkTimer('test');
-                      testPhaseRef.current?.go();
-                    }
-                  }}
-                  style={{
-                    padding: '10px 20px',
-                    fontSize: 'clamp(1rem, 2vw, 1.125rem)',
-                    background: '#c7442e',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    fontWeight: 700,
-                    boxShadow: '0 2px 8px rgba(199,68,46,0.4)'
-                  }}
-                >
-                  GO!
-                </button>
-                <button
-                  onClick={() => openingActionsControllerRef.current?.startJoke?.()}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                    background: '#111827',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    fontWeight: 600
-                  }}
-                >
-                  Joke
-                </button>
-                <button
-                  onClick={() => openingActionsControllerRef.current?.startRiddle()}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                    background: '#8b5cf6',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    fontWeight: 600
-                  }}
-                >
-                  Riddle
-                </button>
-                <button
-                  onClick={() => openingActionsControllerRef.current?.startPoem()}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                    background: '#ec4899',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    fontWeight: 600
-                  }}
-                >
-                  Poem
-                </button>
-                <button
-                  onClick={() => openingActionsControllerRef.current?.startStory()}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                    background: '#f59e0b',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    fontWeight: 600
-                  }}
-                >
-                  Story
-                </button>
-                <button
-                  onClick={handleOpeningFillInFunStart}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                    background: '#10b981',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    cursor: openingActionBusy ? 'not-allowed' : 'pointer',
-                    fontWeight: 600,
-                    opacity: openingActionBusy ? 0.6 : 1
-                  }}
-                  disabled={openingActionBusy}
-                >
-                  Fill-in-Fun
-                </button>
-                <button
-                  onClick={() => setShowGames(true)}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                    background: '#0ea5e9',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    fontWeight: 600
-                  }}
-                >
-                  Games
-                </button>
+                {!showPlayWithSonomaMenu ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (currentPhase === 'comprehension') {
+                          transitionToWorkTimer('comprehension');
+                          comprehensionPhaseRef.current?.go();
+                        } else if (currentPhase === 'exercise') {
+                          transitionToWorkTimer('exercise');
+                          exercisePhaseRef.current?.go();
+                        } else if (currentPhase === 'worksheet') {
+                          transitionToWorkTimer('worksheet');
+                          worksheetPhaseRef.current?.go();
+                        } else if (currentPhase === 'test') {
+                          transitionToWorkTimer('test');
+                          testPhaseRef.current?.go();
+                        }
+                      }}
+                      style={{
+                        padding: '10px 20px',
+                        fontSize: 'clamp(1rem, 2vw, 1.125rem)',
+                        background: '#c7442e',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 700,
+                        boxShadow: '0 2px 8px rgba(199,68,46,0.4)'
+                      }}
+                    >
+                      GO!
+                    </button>
+
+                    <button
+                      onClick={() => setShowPlayWithSonomaMenu(true)}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        background: '#111827',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 800
+                      }}
+                    >
+                      Play with Ms. Sonoma
+                    </button>
+
+                    <button
+                      onClick={() => setShowGames(true)}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        background: '#0ea5e9',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 600
+                      }}
+                    >
+                      Games
+                    </button>
+
+                    {canShowFullscreenTimer && (
+                      <button
+                        onClick={() => setShowFullscreenPlayTimer(true)}
+                        style={{
+                          padding: '8px 16px',
+                          fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                          background: '#10b981',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          fontWeight: 800
+                        }}
+                      >
+                        Fullscreen Timer
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setShowPlayWithSonomaMenu(false)}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        background: '#374151',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 800
+                      }}
+                    >
+                      Back
+                    </button>
+
+                    <button
+                      onClick={() => openingActionsControllerRef.current?.startJoke?.()}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        background: '#111827',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 600
+                      }}
+                    >
+                      Joke
+                    </button>
+                    <button
+                      onClick={() => openingActionsControllerRef.current?.startRiddle()}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        background: '#8b5cf6',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 600
+                      }}
+                    >
+                      Riddle
+                    </button>
+                    <button
+                      onClick={() => openingActionsControllerRef.current?.startPoem()}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        background: '#ec4899',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 600
+                      }}
+                    >
+                      Poem
+                    </button>
+                    <button
+                      onClick={() => openingActionsControllerRef.current?.startStory()}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        background: '#f59e0b',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 600
+                      }}
+                    >
+                      Story
+                    </button>
+                    <button
+                      onClick={handleOpeningFillInFunStart}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        background: '#10b981',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: openingActionBusy ? 'not-allowed' : 'pointer',
+                        fontWeight: 600,
+                        opacity: openingActionBusy ? 0.6 : 1
+                      }}
+                      disabled={openingActionBusy}
+                    >
+                      Fill-in-Fun
+                    </button>
+                  </>
+                )}
               </div>
             );
           })()}
@@ -6853,6 +6950,16 @@ function SessionPageV2Inner() {
           />
         );
       })()}
+
+      {/* Fullscreen Play Timer - mirrors play timer display only (does not control timers) */}
+      {showFullscreenPlayTimer && (
+        <FullscreenPlayTimerOverlay
+          isOpen={showFullscreenPlayTimer}
+          secondsRemaining={playTimerDisplayRemaining}
+          isPaused={timerPaused}
+          onClose={() => setShowFullscreenPlayTimer(false)}
+        />
+      )}
       
       {/* Play Time Expired Overlay - V1 parity: full-screen overlay outside main container */}
       {showPlayTimeExpired && playExpiredPhase && (
