@@ -97,6 +97,9 @@ This ensures timers tick down from the moment the relevant gate is visible (Begi
 - Auto-advances to work mode when countdown reaches 0
 - In V2, the parent handler first updates UI timer mode (play -> work) and then calls the phase controller `go()`, which performs the authoritative `timerService.transitionToWork(phase)` internally.
 
+**Mute handling:**
+- Overlay SFX uses the session mute state (AudioEngine mute) passed down as `muted`.
+
 **V1 Implementation (page.js):**
 - Parent-controlled via `showPlayTimeExpired` and `playExpiredPhase` state
 - Rendered outside main container (position: fixed, inset: 0, zIndex: 10005)
