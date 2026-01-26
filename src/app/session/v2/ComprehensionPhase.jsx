@@ -214,27 +214,15 @@ export class ComprehensionPhase {
       return;
     }
 
-    // Play intro TTS (V1 pacing pattern)
-    const intro = INTRO_PHRASES[Math.floor(Math.random() * INTRO_PHRASES.length)];
-    this.#state = 'playing-intro';
-    this.#emit('stateChange', { state: 'playing-intro' });
-    
-    try {
-      const introAudio = await fetchTTS(intro);
-      await this.#audioEngine.playAudio(introAudio || '', [intro]);
-    } catch (err) {
-      console.error('[ComprehensionPhase] Intro TTS failed:', err);
-    }
-    
-    // Show Go button gate (V1 pacing pattern)
+    // Begin gate reached: show Go + Opening Actions. Phase intro is spoken after Go.
     this.#state = 'awaiting-go';
     this.#timerMode = 'play';
-    
-    // Start play timer (3 minutes exploration time for opening actions)
+
+    // Start play timer (exploration time for opening actions)
     if (this.#timerService) {
       this.#timerService.startPlayTimer('comprehension');
     }
-    
+
     this.#emit('stateChange', { state: 'awaiting-go', timerMode: 'play' });
   }
   
@@ -254,8 +242,30 @@ export class ComprehensionPhase {
     this.#currentQuestionIndex = 0;
     this.#answers = [];
     this.#score = 0;
-    
-    await this.#playCurrentQuestion();
+
+    // Speak the phase intro AFTER Go and BEFORE the first question.
+    const intro = INTRO_PHRASES[Math.floor(Math.random() * INTRO_PHRASES.length)];
+    this.#state = 'playing-intro';
+    this.#emit('stateChange', { state: 'playing-intro', timerMode: this.#timerMode });
+
+    const finishIntro = () => {
+      if (this.#state !== 'playing-intro') return;
+      this.#playCurrentQuestion();
+    };
+
+    // Advance to the first question when the intro completes OR is skipped.
+    this.#setupAudioEndListener(finishIntro);
+
+    try {
+      const introAudio = await fetchTTS(intro);
+      this.#audioEngine.playAudio(introAudio || '', [intro]).catch((err) => {
+        console.error('[ComprehensionPhase] Intro playback error:', err);
+        finishIntro();
+      });
+    } catch (err) {
+      console.error('[ComprehensionPhase] Intro TTS failed:', err);
+      finishIntro();
+    }
   }
   
   // Public API: Submit answer
@@ -385,24 +395,21 @@ export class ComprehensionPhase {
   
   // Public API: Skip question
   skip() {
+    // Special case: skipping the post-Go intro.
+    // Set state BEFORE stopping audio so the intro end listener does not double-start.
+    if (this.#state === 'playing-intro') {
+      this.#state = 'awaiting-answer';
+      this.#timerMode = 'work';
+      this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
+      try { this.#audioEngine.stop(); } catch {}
+      this.#playCurrentQuestion();
+      return;
+    }
+
     // Stop any current audio
     try {
       this.#audioEngine.stop();
     } catch {}
-    
-    // Handle skip based on current state
-    if (this.#state === 'playing-intro') {
-      // Skip intro and go to awaiting-go
-      this.#state = 'awaiting-go';
-      this.#timerMode = 'play';
-      
-      if (this.#timerService) {
-        this.#timerService.startPlayTimer('comprehension');
-      }
-      
-      this.#emit('stateChange', { state: 'awaiting-go', timerMode: 'play' });
-      return;
-    }
     
     if (this.#state === 'awaiting-go') {
       // Treat as clicking GO button

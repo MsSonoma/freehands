@@ -206,31 +206,49 @@ export class TestPhase {
       return;
     }
 
-    // Play intro TTS (V1 pacing pattern)
+    // Begin gate reached: show Go + Opening Actions. Phase intro is spoken after Go.
+    this.#state = 'awaiting-go';
+    this.#timerMode = 'play';
+
+    // Start play timer (exploration time)
+    if (this.#timerService) {
+      this.#timerService.startPlayTimer('test');
+    }
+
+    this.#emit('stateChange', { state: 'awaiting-go', timerMode: 'play' });
+  }
+  
+  // Public API: User clicked Go button
+  async go() {
+    if (this.#state !== 'awaiting-go') {
+      console.warn('[TestPhase] Cannot go in state:', this.#state);
+      return;
+    }
+
+    // Transition to work mode (timer already running if skipPlayPortion)
+    if (this.#timerMode === 'play' && this.#timerService) {
+      this.#timerService.transitionToWork('test');
+    }
+    this.#timerMode = 'work';
+    
+    this.#currentQuestionIndex = 0;
+    this.#answers = [];
+    this.#score = 0;
+
+    // Speak the phase intro AFTER Go and BEFORE the first question.
     // IMPORTANT: Do not await AudioEngine.playAudio() here. If the user presses
     // Skip (AudioEngine.stop), AudioEngine intentionally removes HTMLAudio/WebAudio
     // handlers, which can leave the underlying playback promise unresolved.
-    // We must advance the UI gate on the AudioEngine 'end' event (completed OR skipped).
+    // We must advance on the AudioEngine 'end' event (completed OR skipped).
     const intro = INTRO_PHRASES[Math.floor(Math.random() * INTRO_PHRASES.length)];
     this.#state = 'playing-intro';
-    this.#emit('stateChange', { state: 'playing-intro' });
+    this.#emit('stateChange', { state: 'playing-intro', timerMode: this.#timerMode });
 
     const finishIntro = () => {
       if (this.#state !== 'playing-intro') return;
-
-      // Show Go button gate (V1 pacing pattern)
-      this.#state = 'awaiting-go';
-      this.#timerMode = 'play';
-
-      // Start play timer (3 minutes exploration time)
-      if (this.#timerService) {
-        this.#timerService.startPlayTimer('test');
-      }
-
-      this.#emit('stateChange', { state: 'awaiting-go', timerMode: 'play' });
+      this.#playCurrentQuestion();
     };
 
-    // Set up audio end listener for intro - advance on both completed and skipped
     if (this.#audioEndListener) {
       this.#audioEngine.off('end', this.#audioEndListener);
     }
@@ -251,27 +269,6 @@ export class TestPhase {
       console.error('[TestPhase] Intro TTS failed:', err);
       finishIntro();
     }
-  }
-  
-  // Public API: User clicked Go button
-  async go() {
-    if (this.#state !== 'awaiting-go') {
-      console.warn('[TestPhase] Cannot go in state:', this.#state);
-      return;
-    }
-
-    // Transition to work mode (timer already running if skipPlayPortion)
-    if (this.#timerMode === 'play' && this.#timerService) {
-      this.#timerService.transitionToWork('test');
-    }
-    this.#timerMode = 'work';
-    this.#emit('stateChange', { state: 'working', timerMode: 'work' });
-    
-    this.#currentQuestionIndex = 0;
-    this.#answers = [];
-    this.#score = 0;
-    
-    await this.#playCurrentQuestion();
   }
   
   // Public API: Submit answer

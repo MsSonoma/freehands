@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2026-01-23T01:13:24Z  
+**Last updated**: 2026-01-26T20:21:25Z  
 **Status**: Canonical
 
 ## How It Works
@@ -24,10 +24,10 @@ Timeline jumps explicitly stop any existing timers for the target phase before s
 **Timer restart prevention**: Removed in favor of explicit stop/start pattern on timeline jumps. Timers can now be legitimately restarted when needed.
 
 **Work timer startup for phases 2-5**: Work timers start immediately when the awaiting-go gate appears, whether in play mode or work mode:
-- **Play mode flow**: Play timer starts when awaiting-go appears → user clicks Go → play timer transitions to work timer (already running)
-- **Work mode flow (skipPlayPortion)**: Work timer starts when awaiting-go appears → user clicks Go → questions begin (timer already running)
+- **Play mode flow**: Play timer starts when the **Begin gate** appears (phase entry) → user clicks Begin → Opening Actions + Go gate appear (play timer already running) → user clicks Go → play timer transitions to work timer
+- **Work mode flow (skipPlayPortion)**: Work timer starts when the awaiting-go gate appears → user clicks Go → questions begin (timer already running)
 
-This ensures timers tick down from the moment the Go button is visible, not when it's clicked.
+This ensures timers tick down from the moment the relevant gate is visible (Begin for play; Go for work), not when it's clicked.
 
 **Work timer spans discussion + teaching**: The discussion work timer starts when the discussion phase begins and runs through the entire teaching phase. It is completed when teaching finishes, so the countdown must **not** be stopped at `discussionComplete`. Completing it early will freeze the visible timer as soon as the teaching controls appear.
 

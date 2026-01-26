@@ -1,3 +1,5 @@
+2026-01-26T20:21:25Z | Copilot | Start Q&A play timers at Begin gate (all phases 2-5); stop Test auto-start on phase entry [#timer-system: play timer, startPlayTimer, timeline-jump] [#v2-architecture: PhaseOrchestrator, timeline-jump, no-premature-actions]
+2026-01-26T20:05:10Z | Copilot | Move Q&A phase intro speech to after Go; Begin now says play-timer instruction line [#v2-architecture: await-audio, no-premature-actions, timeline-jump]
 2026-01-23T01:13:24Z | Copilot | PlayTimeExpiredOverlay now plays /sfx/Alarm.mp3 once when the 30s warning overlay opens (respects mute) [#timer-system: PlayTimeExpiredOverlay, alarm, countdown] [#sound-effects: Alarm.mp3, howler, playSfx]
 2026-01-22T20:43:54Z | Copilot | Add Howler-based SFX helper (client-safe) + public/sfx convention for easy sound effects [#sound-effects: howler, sfx, public-sfx]
 2026-01-21T22:13:29Z | Copilot | TeachingController now retries non-429 GPT fetch failures on Next/Repeat/Restart, preventing stages from being skipped after transient mobile errors [#v2-architecture: TeachingController, retry, examples, definitions]

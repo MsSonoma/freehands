@@ -2119,6 +2119,20 @@ function SessionPageV2Inner() {
       } else {
         await ref.current.start();
       }
+
+      // Q&A phases with play timers: after Begin, tell the learner they can play.
+      // (Exclude discussion; skipPlayPortion phases should not say this.)
+      if (!skipPlayPortion && ['comprehension', 'exercise', 'worksheet', 'test'].includes(phaseName)) {
+        const playLine = 'Now you can play until the play timer runs out.';
+        try {
+          const playAudio = await fetchTTS(playLine);
+          if (audioEngineRef.current) {
+            await audioEngineRef.current.playAudio(playAudio || '', [playLine]);
+          }
+        } catch (err) {
+          console.warn('[SessionPageV2] Failed to speak play timer line:', err);
+        }
+      }
     } else {
       addEvent(`⚠️ Unable to start ${phaseName} (not initialized yet)`);
     }
@@ -3444,16 +3458,6 @@ function SessionPageV2Inner() {
           if (playPortionsEnabledRef.current?.test !== false) {
             startPhasePlayTimer('test');
           }
-          // If timeline jump, keep testState as 'idle' to show Begin button
-          // Don't auto-start the phase
-          if (!isTimelineJump && testPhaseRef.current) {
-            if (playPortionsEnabledRef.current?.test !== false) {
-              testPhaseRef.current.start();
-            } else {
-              transitionToWorkTimer('test');
-              testPhaseRef.current.start({ skipPlayPortion: true });
-            }
-          }
         } else {
           if (playPortionsEnabledRef.current?.test !== false) {
             pendingPlayTimersRef.current.test = true;
@@ -4028,10 +4032,21 @@ function SessionPageV2Inner() {
         snapshotServiceRef.current.saveProgress(data.trigger, data.data);
       }
     });
-    
-    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
+
+    // Start play timer at the Begin gate (before Begin is clicked) for play-enabled Q&A phases.
+    // Do NOT do this on resume auto-start, and do NOT double-start after timeline jumps.
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'comprehension';
     const shouldAutoStart = resumeMatch || !!savedComp;
+    const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.comprehension !== false;
+    if (
+      shouldStartPlayAtBeginGate
+      && timerServiceRef.current
+      && timelineJumpTimerStartedRef.current !== 'comprehension'
+    ) {
+      timerServiceRef.current.startPlayTimer('comprehension');
+    }
+    
+    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
     if (shouldAutoStart && phase.start) {
       if (playPortionsEnabledRef.current?.comprehension === false) {
         transitionToWorkTimer('comprehension');
@@ -4227,10 +4242,21 @@ function SessionPageV2Inner() {
         snapshotServiceRef.current.saveProgress(data.trigger, data.data);
       }
     });
-    
-    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
+
+    // Start play timer at the Begin gate (before Begin is clicked) for play-enabled Q&A phases.
+    // Do NOT do this on resume auto-start, and do NOT double-start after timeline jumps.
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'exercise';
     const shouldAutoStart = resumeMatch || !!savedExercise;
+    const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.exercise !== false;
+    if (
+      shouldStartPlayAtBeginGate
+      && timerServiceRef.current
+      && timelineJumpTimerStartedRef.current !== 'exercise'
+    ) {
+      timerServiceRef.current.startPlayTimer('exercise');
+    }
+    
+    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
     if (shouldAutoStart && phase.start) {
       if (playPortionsEnabledRef.current?.exercise === false) {
         transitionToWorkTimer('exercise');
@@ -4421,10 +4447,21 @@ function SessionPageV2Inner() {
         snapshotServiceRef.current.saveProgress(data.trigger, data.data);
       }
     });
-    
-    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
+
+    // Start play timer at the Begin gate (before Begin is clicked) for play-enabled Q&A phases.
+    // Do NOT do this on resume auto-start, and do NOT double-start after timeline jumps.
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'worksheet';
     const shouldAutoStart = resumeMatch || !!savedWorksheet;
+    const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.worksheet !== false;
+    if (
+      shouldStartPlayAtBeginGate
+      && timerServiceRef.current
+      && timelineJumpTimerStartedRef.current !== 'worksheet'
+    ) {
+      timerServiceRef.current.startPlayTimer('worksheet');
+    }
+    
+    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
     if (shouldAutoStart && phase.start) {
       if (playPortionsEnabledRef.current?.worksheet === false) {
         transitionToWorkTimer('worksheet');
@@ -4680,11 +4717,22 @@ function SessionPageV2Inner() {
         snapshotServiceRef.current.saveProgress(data.trigger, data.data);
       }
     });
+
+    // Start play timer at the Begin gate (before Begin is clicked) for play-enabled Q&A phases.
+    // Do NOT do this on resume auto-start, and do NOT double-start after timeline jumps.
+    const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'test';
+    const shouldAutoStart = !isTimelineJump && (resumeMatch || !!savedTest);
+    const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.test !== false;
+    if (
+      shouldStartPlayAtBeginGate
+      && timerServiceRef.current
+      && timelineJumpTimerStartedRef.current !== 'test'
+    ) {
+      timerServiceRef.current.startPlayTimer('test');
+    }
     
     // Auto-start only when resuming into this phase so refreshes do not surface the Begin button.
     // Timeline jumps should ALWAYS show the Begin button first, even if savedTest exists.
-    const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'test';
-    const shouldAutoStart = !isTimelineJump && (resumeMatch || !!savedTest);
     if (shouldAutoStart && phase.start) {
       if (playPortionsEnabledRef.current?.test === false) {
         transitionToWorkTimer('test');

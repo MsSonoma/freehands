@@ -2,7 +2,7 @@
 
 **Status:** Production-ready - All critical issues from second audit fixed  
 **Created:** 2025-12-30  
-**Updated:** 2026-01-10  
+**Updated:** 2026-01-26  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
 ---
@@ -131,6 +131,11 @@ V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical 
 - The Begin gate state must be **reset on every phase transition**.
 - Phase entry must **never** auto-complete a Q&A phase or depend on question array contents. Phase entry must always reach the Begin gate.
 - Timeline phase navigation (clicking a phase tile) is allowed, but must be **PIN-gated**.
+- For phases 2-5 when the play portion is enabled: the play timer begins as soon as the Begin gate is visible (phase entry), not after Begin is clicked.
+- **Speech timing rule (2026-01-26):**
+  - For phases 2-5 when the play portion is enabled: after the learner clicks **Begin**, Ms. Sonoma speaks: "Now you can play until the play timer runs out."
+  - The per-phase intro line(s) that used to play after **Begin** now play after **Go** (or PlayTimeExpiredOverlay autostart), immediately **before** the first Q&A question is asked.
+  - Discussion is excluded (no play timer; no Opening Actions in V2).
 
 **Why:** If a prior phase leaves the "opening actions shown" gate enabled, the next phase's Begin CTA can be hidden, leaving the session stuck with the timeline highlighting the new phase but no visible way to start it.
 
@@ -147,7 +152,7 @@ V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical 
 - Worksheet and Test initialization must follow the same rule as Comprehension: if the orchestrator enters the phase before learner load completes, initialization must be retried after learner load.
 - Any helper that reads learner targets must not rely on a stale closure captured before learner load. Use a ref-backed lookup (read the latest learner profile) so phaseChange handlers created early can still access targets later.
 - Learner identity must be **pinned at load** (sessionLearnerId). Target overrides must key off the pinned id, not `localStorage.learner_id`, to avoid mid-session drift. Phase init must bail until `learnerProfile` is loaded instead of calling target helpers on null.
-- If a Q&A phase is entered before learnerProfile is available, **defer init and retry** after learner load. Begin buttons must call the initializer if the phase ref is null, then start the phase. Play timers must only start after the phase is initialized; if init is deferred, mark the timer pending and start it when init completes.
+- If a Q&A phase is entered before learnerProfile is available, **defer init and retry** after learner load. Begin buttons must call the initializer if the phase ref is null, then start the phase. Play timers must start immediately after the phase is initialized (at the Begin gate); if init is deferred, mark the timer pending and start it when init completes.
 - End-of-comprehension is **not** end-of-lesson. When Comprehension completes, the app speaks a short transition line and advances the orchestrator to Exercise. The Exercise phase must then show its own Begin gate ("Begin Exercise") before Opening Actions/Go.
 - For Q&A phases that select questions from pools, do not compute/slice the question array during phase entry. Do it on **Go** so Begin and Opening Actions are always reachable.
 - If required data is missing (e.g., learner targets), fail loudly (blocking error) rather than silently skipping the phase.
