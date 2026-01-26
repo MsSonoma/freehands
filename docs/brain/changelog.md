@@ -1,3 +1,4 @@
+2026-01-26T20:50:16Z | Copilot | Fix discussion work timer: do not complete at greeting end; complete when teaching finishes so it keeps ticking [#timer-system: discussion, work timer, teaching]
 2026-01-26T20:21:25Z | Copilot | Start Q&A play timers at Begin gate (all phases 2-5); stop Test auto-start on phase entry [#timer-system: play timer, startPlayTimer, timeline-jump] [#v2-architecture: PhaseOrchestrator, timeline-jump, no-premature-actions]
 2026-01-26T20:05:10Z | Copilot | Move Q&A phase intro speech to after Go; Begin now says play-timer instruction line [#v2-architecture: await-audio, no-premature-actions, timeline-jump]
 2026-01-23T01:13:24Z | Copilot | PlayTimeExpiredOverlay now plays /sfx/Alarm.mp3 once when the 30s warning overlay opens (respects mute) [#timer-system: PlayTimeExpiredOverlay, alarm, countdown] [#sound-effects: Alarm.mp3, howler, playSfx]

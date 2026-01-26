@@ -29,7 +29,7 @@ Timeline jumps explicitly stop any existing timers for the target phase before s
 
 This ensures timers tick down from the moment the relevant gate is visible (Begin for play; Go for work), not when it's clicked.
 
-**Work timer spans discussion + teaching**: The discussion work timer starts when the discussion phase begins and runs through the entire teaching phase. It is completed when teaching finishes, so the countdown must **not** be stopped at `discussionComplete`. Completing it early will freeze the visible timer as soon as the teaching controls appear.
+**Work timer spans discussion + teaching**: The discussion work timer starts when the discussion greeting begins playing and runs through the entire teaching phase. It is completed when teaching finishes, so the countdown must **not** be stopped at `greetingComplete` or `discussionComplete`. Completing it early will freeze the visible timer as soon as the teaching controls appear.
 
 **Timer Modes:**
 1. **Play Timer** (green) - Expected to use full time; learner can interact with Ask, Riddle, Poem, Story, Fill-in-Fun opening actions

@@ -3772,22 +3772,6 @@ function SessionPageV2Inner() {
       addEvent('ðŸŽ‰ Discussion complete - proceeding to teaching');
       setDiscussionState('complete');
 
-      // Complete work phase timer
-      if (timerServiceRef.current) {
-        timerServiceRef.current.completeWorkPhaseTimer('discussion');
-        const time = timerServiceRef.current.getWorkPhaseTime('discussion');
-        if (time) {
-          setWorkPhaseCompletions(prev => ({
-            ...prev,
-            discussion: time.onTime
-          }));
-          setWorkTimeRemaining(prev => ({
-            ...prev,
-            discussion: time.remaining / 60
-          }));
-        }
-      }
-
       // Cleanup FIRST to remove discussion audio end listener.
       try { unsubGreetingPlaying?.(); } catch {}
       try { unsubGreetingComplete?.(); } catch {}
@@ -3844,6 +3828,22 @@ function SessionPageV2Inner() {
     const handleTeachingComplete = (data) => {
       addEvent(`ðŸŽ‰ Teaching complete! (${data.vocabCount} vocab, ${data.exampleCount} examples)`);
       setTeachingStage('complete');
+
+      // Discussion work timer spans discussion + teaching (complete it when teaching finishes).
+      if (timerServiceRef.current) {
+        timerServiceRef.current.completeWorkPhaseTimer('discussion');
+        const time = timerServiceRef.current.getWorkPhaseTime('discussion');
+        if (time) {
+          setWorkPhaseCompletions(prev => ({
+            ...prev,
+            discussion: time.onTime
+          }));
+          setWorkTimeRemaining(prev => ({
+            ...prev,
+            discussion: time.remaining / 60
+          }));
+        }
+      }
       
       // Save snapshot
       if (snapshotServiceRef.current) {
