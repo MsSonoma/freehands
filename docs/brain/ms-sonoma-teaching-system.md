@@ -1,7 +1,7 @@
 # Ms. Sonoma Teaching System
 
 **Status**: Canonical  
-**Last Updated**: 2026-01-13T00:59:23Z
+**Last Updated**: 2026-01-27T13:25:11Z
 
 ## How It Works
 
@@ -250,6 +250,7 @@ Before shipping to Ms. Sonoma, verify:
 - Buttons (Joke, Riddle, Poem, Story, Fill-in-Fun, Games) show in the play-time awaiting-go bar for Q&A phases; Go/work transitions, play-time expiry, or timeline jumps clear inputs/errors/busy flags and hide the Games overlay. Ask Ms. Sonoma lives only as a circular video overlay button (raised-hand icon) on the bottom-left of the video, paired with the Visual Aids button. Skip/Repeat is treated as a single-slot toggle and lives on the bottom-right with Mute.
 - Ask is hidden during the Test phase.
 - Ask replies carry the learner question plus the on-screen Q&A prompt (if one is active) and the lesson vocab terms/definitions so answers stay on-topic and use the correct meaning for multi-sense words.
+- Ask includes a quick action button, "What's the answer?", that submits a canned Ask prompt to get the answer for the currently displayed learner question.
 - Active panels bind to controller events: Ask textarea submits via Enter/button and Done calls completeAsk; Joke shows current joke with Done calling completeJoke; Riddle uses Hint/Reveal plus Done; Poem waits for playback then Done triggers completePoem; Story logs transcript with Continue and Finish; Fill-in-Fun collects words via addFillInFunWord and Done/Cancel via completeFillInFun.
 - Ask is single-flight: while an Ask question is generating/playing, the Ask input and Send button disable and Enter/Send presses are ignored until the response completes.
 - Fill-in-Fun is intro-first and prefetches: clicking Fill-in-Fun immediately speaks a hardwired intro line, starts GPT template generation in the background, then begins word collection only after blanks are ready (input disabled until ready).

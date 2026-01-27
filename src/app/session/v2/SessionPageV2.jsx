@@ -2864,6 +2864,28 @@ function SessionPageV2Inner() {
     }
   }, [openingActionInput, syncOpeningActionState, buildAskContext]);
 
+  const handleOpeningAskWhatsTheAnswer = useCallback(async () => {
+    const controller = openingActionsControllerRef.current;
+    if (!controller) return;
+    if (openingActionBusyRef.current) return;
+
+    openingActionBusyRef.current = true;
+    setOpeningActionBusy(true);
+    setOpeningActionError('');
+
+    try {
+      const askContext = buildAskContext();
+      await controller.submitAskQuestion("What's the answer?", askContext);
+      syncOpeningActionState();
+    } catch (err) {
+      console.error('[SessionPageV2] Ask answer shortcut error:', err);
+      setOpeningActionError('Could not ask for the answer. Try again.');
+    } finally {
+      openingActionBusyRef.current = false;
+      setOpeningActionBusy(false);
+    }
+  }, [syncOpeningActionState, buildAskContext]);
+
   const handleOpeningAskDone = useCallback(() => {
     const controller = openingActionsControllerRef.current;
     // Stop any playing audio before completing
@@ -6154,6 +6176,13 @@ function SessionPageV2Inner() {
             if (!action) return null;
 
             if (action === 'ask') {
+              const phaseAlias = normalizePhaseAlias(currentPhase);
+              const hasActiveQuestion = (
+                (phaseAlias === 'comprehension' && !!currentComprehensionQuestion) ||
+                (phaseAlias === 'exercise' && !!currentExerciseQuestion) ||
+                (phaseAlias === 'worksheet' && !!currentWorksheetQuestion)
+              );
+
               return (
                 <div style={{ padding: '0 12px' }}>
                   <div style={{ ...cardStyle, padding: '8px 12px' }}>
@@ -6182,6 +6211,24 @@ function SessionPageV2Inner() {
                       >
                         Send
                       </button>
+                      {hasActiveQuestion && (
+                        <button
+                          type="button"
+                          style={{
+                            ...baseBtn,
+                            background: '#2563eb',
+                            color: '#fff',
+                            padding: '8px 12px',
+                            opacity: openingActionBusy ? 0.6 : 1,
+                            cursor: openingActionBusy ? 'not-allowed' : 'pointer'
+                          }}
+                          onClick={handleOpeningAskWhatsTheAnswer}
+                          disabled={openingActionBusy}
+                          title="Ask for the answer to the current question"
+                        >
+                          What's the answer?
+                        </button>
+                      )}
                       <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningAskDone}>
                         Done
                       </button>
