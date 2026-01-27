@@ -232,6 +232,7 @@
       "work-timer-grid",
       "facilitator-override",
       "transcript-column-placement",
+      "landscape timeline spacing",
       "no-video-overlays",
       "caption-panel",
       "iOS transcript autoscroll",
@@ -245,7 +246,7 @@
       "facilitator-lessons",
       "supabase-lesson-load"
     ],
-    "last_updated": "2026-01-27T14:11:38Z",
+    "last_updated": "2026-01-27T14:25:53Z",
     "status": "active-development"
   },
   "mr-mentor-conversation-flows": {

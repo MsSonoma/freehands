@@ -25,6 +25,10 @@ After first round of fixes, second comprehensive audit found 6 additional critic
 - SnapshotService now automatically falls back to localStorage when Supabase snapshot persistence is unavailable (e.g., missing `snapshots` table / schema cache issues), so phase completion saves do not break the session flow.
 - Video now plays continuously during TTS playback: removed `#cleanup()` video pause and `onpause` handler that was stopping video between sentences.
 
+**Timeline layout (landscape overlap rule) (2026-01-27)**
+- In mobile landscape, the phase timeline is positioned absolutely to preserve vertical space.
+- The main landscape layout must reserve vertical space for the timeline (via top padding or an explicit spacer). Otherwise the timeline will overlap the video and transcript columns.
+
 **Video priming + audio unlock (2026-01-07)**
 - V2 must not start the looping video as an "autoplay unlock" step.
 - On the Begin click (`startSession`), V2 must preload/seek the video AND request a video unlock during the trusted user gesture.

@@ -5540,9 +5540,14 @@ function SessionPageV2Inner() {
   // Layout wrapper style: side-by-side in landscape, stacked in portrait
   const videoEffectiveHeight = (videoMaxHeight && Number.isFinite(videoMaxHeight)) ? videoMaxHeight : null;
   const msSideBySideH = videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto');
+
+  // In mobile landscape, the phase timeline is absolutely positioned. Reserve vertical space so it never overlaps
+  // the video/transcript columns.
+  const timelineLandscapeTop = 'clamp(52px, 8vh, 72px)';
+  const timelineLandscapeHeight = 'clamp(40px, 6vh, 56px)';
   
   const mainLayoutStyle = isMobileLandscape
-    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, paddingTop: 'clamp(32px, 7vh, 52px)', '--msSideBySideH': msSideBySideH }
+    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, paddingTop: `calc(${timelineLandscapeTop} + ${timelineLandscapeHeight})`, '--msSideBySideH': msSideBySideH }
     : { display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh', background: '#ffffff' };
   
   const videoWrapperStyle = isMobileLandscape
@@ -5563,12 +5568,12 @@ function SessionPageV2Inner() {
   return (
     <>
       {/* Content wrapper - add horizontal gutters in landscape */}
-      <div style={isMobileLandscape ? { width: '100%', paddingLeft: 8, paddingRight: 8, boxSizing: 'border-box' } : { width: '100%' }}>
+      <div style={isMobileLandscape ? { width: '100%', paddingLeft: 8, paddingRight: 8, boxSizing: 'border-box', position: 'relative' } : { width: '100%' }}>
         
       {/* Phase Timeline - absolutely positioned in landscape to not add to page height */}
       <div style={{
         position: isMobileLandscape ? 'absolute' : 'relative',
-        top: isMobileLandscape ? 'clamp(52px, 8vh, 72px)' : 'auto',
+        top: isMobileLandscape ? timelineLandscapeTop : 'auto',
         left: isMobileLandscape ? 0 : 'auto',
         right: isMobileLandscape ? 0 : 'auto',
         zIndex: 50,

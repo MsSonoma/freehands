@@ -1,3 +1,4 @@
+2026-01-27T14:25:53Z | Copilot | V2 mobile landscape: reserve vertical space for the absolute timeline so it never overlaps video/transcript [#v2-architecture: landscape timeline spacing, transcript-column-placement, no-video-overlays]
 2026-01-27T14:11:38Z | Copilot | Transcript auto-scroll now uses end-sentinel scrollIntoView + multi-tick retry for iOS Safari reliability [#v2-architecture: caption-panel, iOS transcript autoscroll, transcript-persistence]
 2026-01-27T14:02:24Z | Copilot | V2 Ask: "What's the answer?" is single-shot and shows "Loading..." while awaiting the response [#ms-sonoma-teaching-system: Ask Ms. Sonoma, answer-shortcut, loading]
 2026-01-27T13:55:48Z | Copilot | V2 Ask UI: mobile portrait now wraps action buttons below input so Cancel never overflows off-screen [#ms-sonoma-teaching-system: Ask Ms. Sonoma, mobile, responsive-layout]
