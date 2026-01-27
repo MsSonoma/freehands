@@ -234,6 +234,7 @@
       "transcript-column-placement",
       "no-video-overlays",
       "caption-panel",
+      "iOS transcript autoscroll",
       "transcript-persistence",
       "timeline-jump",
       "test-skip-robustness",
@@ -244,7 +245,7 @@
       "facilitator-lessons",
       "supabase-lesson-load"
     ],
-    "last_updated": "2026-01-26T20:21:25Z",
+    "last_updated": "2026-01-27T14:11:38Z",
     "status": "active-development"
   },
   "mr-mentor-conversation-flows": {

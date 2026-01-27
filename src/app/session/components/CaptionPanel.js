@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { enforceNbspAfterMcLabels } from "../utils/textProcessing.js";
 
 function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [] }) {
   const [canScroll, setCanScroll] = useState(false);
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
+  const endRef = useRef(null);
   // Normalize incoming sentences (strings or { text, role }) to a consistent shape
   const items = useMemo(() => {
     if (!Array.isArray(sentences)) return [];
@@ -27,10 +28,32 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
   useEffect(() => {
     if (!boxRef?.current) return;
     const el = boxRef.current;
-    requestAnimationFrame(() => {
+    const endEl = endRef.current;
+
+    const doScroll = () => {
+      try {
+        // iOS Safari can ignore direct scrollTop writes during layout.
+        // scrollIntoView tends to be more reliable in overflow containers.
+        endEl?.scrollIntoView?.({ block: 'end' });
+      } catch {}
       el.scrollTop = el.scrollHeight;
       recomputeScrollState();
+    };
+
+    let raf2 = null;
+    const raf1 = requestAnimationFrame(() => {
+      doScroll();
+      raf2 = requestAnimationFrame(doScroll);
     });
+    const t1 = setTimeout(doScroll, 60);
+
+    return () => {
+      try { cancelAnimationFrame(raf1); } catch {}
+      if (raf2) {
+        try { cancelAnimationFrame(raf2); } catch {}
+      }
+      clearTimeout(t1);
+    };
   }, [items.length, boxRef, recomputeScrollState]);
 
   useEffect(() => {
@@ -89,6 +112,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
     flex: '1 1 auto',
     height: '100%',
     overflowY: 'auto',
+    WebkitOverflowScrolling: 'touch',
     paddingTop: compact ? 6 : 12,
     paddingRight: 12,
     paddingBottom: compact ? 6 : 12,
@@ -234,12 +258,14 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
           })}
           {/* Dynamic tail spacer to keep one blank line at the bottom without altering the transcript */}
           <div aria-hidden data-ms-caption-tail-spacer style={{ height: '1.5em' }} />
+          <div ref={endRef} aria-hidden data-ms-caption-end style={{ height: 1 }} />
           </>
         ) : (
           <>
             <div style={{ color: '#6b7280' }}>No captions yet.</div>
             {/* Keep consistent tail spacing even when empty */}
             <div aria-hidden data-ms-caption-tail-spacer style={{ height: '1.5em' }} />
+            <div ref={endRef} aria-hidden data-ms-caption-end style={{ height: 1 }} />
           </>
         )}
       </div>

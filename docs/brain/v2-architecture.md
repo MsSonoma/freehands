@@ -2,7 +2,7 @@
 
 **Status:** Production-ready - All critical issues from second audit fixed  
 **Created:** 2025-12-30  
-**Updated:** 2026-01-26  
+**Updated:** 2026-01-27  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
 ---
@@ -48,7 +48,7 @@ After first round of fixes, second comprehensive audit found 6 additional critic
 - The Test review "Complete Lesson" click plays a short congrats line to hide end-of-lesson load.
 - The Closing phase farewell must NOT interrupt that congrats line.
 - If congrats audio is playing when Closing begins, defer `ClosingPhase.start()` until the AudioEngine emits `end`.
-- Transcript now uses V1's `CaptionPanel` (assistant/user styling, MC stack, vocab highlighting) and saves `{ lines:[{text,role}], activeIndex }` into snapshots. Caption changes and learner submissions append lines with duplicate detection; active caption highlights are restored on load for cross-device continuity. The caption panel auto-scrolls to the newest line, and transcript state resets when Start Over ignores resume so captions do not accumulate across restarts. In portrait mode, the caption panel height is set to 35vh.
+- Transcript now uses V1's `CaptionPanel` (assistant/user styling, MC stack, vocab highlighting) and saves `{ lines:[{text,role}], activeIndex }` into snapshots. Caption changes and learner submissions append lines with duplicate detection; active caption highlights are restored on load for cross-device continuity. The caption panel auto-scrolls to the newest line; on iOS Safari this must use an end-of-list sentinel + `scrollIntoView` with multi-tick retries (direct `scrollTop` writes can be ignored during layout). Transcript state resets when Start Over ignores resume so captions do not accumulate across restarts. In portrait mode, the caption panel height is set to 35vh.
 
 **1. AudioEngine.initialize() Method Added** ✅
 - Added missing initialize() method with iOS audio unlock
