@@ -444,6 +444,7 @@ function SessionPageV2Inner() {
   const answerInputRef = useRef(null);
   const openingActionsControllerRef = useRef(null);
   const askReturnQuestionRef = useRef('');
+  const askExitSpeechLockRef = useRef(false);
   const comprehensionPhaseRef = useRef(null);
   const discussionPhaseRef = useRef(null);
   const exercisePhaseRef = useRef(null);
@@ -1001,14 +1002,21 @@ function SessionPageV2Inner() {
     };
   }, [visualAidsLessonKey]);
 
+  const stopAudioSafe = useCallback((options = {}) => {
+    const force = options?.force === true;
+    if (!audioEngineRef.current) return;
+    if (askExitSpeechLockRef.current && !force) return;
+    try {
+      audioEngineRef.current.stop();
+    } catch {}
+  }, []);
+
   const handleExplainVisualAid = useCallback(async (aid) => {
     const text = String(aid?.description || '').trim();
     if (!text) return;
     if (!audioEngineRef.current) return;
 
-    try {
-      audioEngineRef.current.stop();
-    } catch {}
+    stopAudioSafe();
 
     const audioBase64 = await fetchTTS(text);
     try {
@@ -1016,7 +1024,7 @@ function SessionPageV2Inner() {
     } catch (err) {
       console.warn('[SessionPageV2] Visual aid explain failed:', err);
     }
-  }, []);
+  }, [stopAudioSafe]);
   
   // Load learner profile (REQUIRED - no defaults or fallback)
   useEffect(() => {
@@ -2567,6 +2575,11 @@ function SessionPageV2Inner() {
     console.log('[SessionPageV2] handleTimelineJump called with:', targetPhase);
     console.log('[SessionPageV2] timelineJumpInProgressRef:', timelineJumpInProgressRef);
     console.log('[SessionPageV2] timelineJumpInProgressRef.current:', timelineJumpInProgressRef.current);
+
+    if (askExitSpeechLockRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked while Ask exit reminder is speaking');
+      return;
+    }
     
     // Debounce: Block rapid successive clicks
     if (timelineJumpInProgressRef.current) {
@@ -2615,13 +2628,7 @@ function SessionPageV2Inner() {
     console.log('[SessionPageV2] Timeline jump proceeding to:', targetPhase);
     
     // Stop any playing audio first
-    try {
-      if (audioEngineRef.current) {
-        audioEngineRef.current.stop();
-      }
-    } catch (e) {
-      console.warn('[SessionPageV2] Error stopping audio:', e);
-    }
+    stopAudioSafe({ force: true });
     
     // Reset opening actions state to prevent zombie UI
     setOpeningActionActive(false);
@@ -2733,14 +2740,14 @@ function SessionPageV2Inner() {
   // Opening actions helpers
   const speakSystemLine = useCallback(async (text) => {
     const spoken = String(text ?? '').trim();
-    if (!spoken) return;
-    if (!audioEngineRef.current) return;
+    if (!spoken) return false;
+    if (!audioEngineRef.current) return false;
 
     // Prefer AudioEngine.speak when available (OpeningActionsController provides a shim)
     if (typeof audioEngineRef.current.speak === 'function') {
       try {
         await audioEngineRef.current.speak(spoken);
-        return;
+        return true;
       } catch (err) {
         console.warn('[SessionPageV2] speakSystemLine via speak() failed:', err);
       }
@@ -2749,10 +2756,28 @@ function SessionPageV2Inner() {
     try {
       const audioBase64 = await fetchTTS(spoken);
       await audioEngineRef.current.playAudio(audioBase64, [spoken]);
+      return true;
     } catch (err) {
       console.warn('[SessionPageV2] speakSystemLine playback failed:', err);
+      return false;
     }
   }, []);
+
+  const speakSystemLineHardened = useCallback(async (text) => {
+    const spoken = String(text ?? '').trim();
+    if (!spoken) return false;
+
+    // Try twice to handle race conditions right after a stop.
+    const ok1 = await speakSystemLine(spoken);
+    if (ok1) return true;
+
+    await new Promise((r) => setTimeout(r, 80));
+    const ok2 = await speakSystemLine(spoken);
+    if (!ok2) {
+      console.warn('[SessionPageV2] speakSystemLineHardened failed to speak:', spoken);
+    }
+    return ok2;
+  }, [speakSystemLine]);
 
   const getActiveFlowQuestionText = useCallback(() => {
     const formatProblem = (item) => {
@@ -2795,9 +2820,7 @@ function SessionPageV2Inner() {
     const askReminder = actionType === 'ask' ? askReturnQuestionRef.current : '';
 
     const controller = openingActionsControllerRef.current;
-    if (audioEngineRef.current) {
-      audioEngineRef.current.stop();
-    }
+    stopAudioSafe({ force: true });
     if (controller?.cancelCurrent) {
       controller.cancelCurrent();
     }
@@ -2809,10 +2832,15 @@ function SessionPageV2Inner() {
     setOpeningActionBusy(false);
 
     if (askReminder) {
-      await speakSystemLine(askReminder);
+      askExitSpeechLockRef.current = true;
+      try {
+        await speakSystemLineHardened(askReminder);
+      } finally {
+        askExitSpeechLockRef.current = false;
+      }
     }
     askReturnQuestionRef.current = '';
-  }, [openingActionState?.action, openingActionType, speakSystemLine]);
+  }, [openingActionState?.action, openingActionType, stopAudioSafe, speakSystemLineHardened]);
 
   const buildAskContext = useCallback(() => {
     const lessonTitle = (lessonData?.title || lessonKey || lessonId || 'this lesson').toString();
@@ -2951,16 +2979,19 @@ function SessionPageV2Inner() {
     const controller = openingActionsControllerRef.current;
     const askReminder = askReturnQuestionRef.current;
     // Stop any playing audio before completing
-    if (audioEngineRef.current) {
-      audioEngineRef.current.stop();
-    }
+    stopAudioSafe({ force: true });
     controller?.completeAsk?.();
 
     if (askReminder) {
-      await speakSystemLine(askReminder);
+      askExitSpeechLockRef.current = true;
+      try {
+        await speakSystemLineHardened(askReminder);
+      } finally {
+        askExitSpeechLockRef.current = false;
+      }
     }
     askReturnQuestionRef.current = '';
-  }, [speakSystemLine]);
+  }, [stopAudioSafe, speakSystemLineHardened]);
 
   const handleOpeningRiddleHint = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -4616,6 +4647,11 @@ function SessionPageV2Inner() {
       console.log('[SessionPageV2] startTestPhase - guard failed, returning early');
       return false;
     }
+
+    if (askExitSpeechLockRef.current) {
+      console.warn('[SessionPageV2] startTestPhase blocked while Ask exit reminder is speaking');
+      return false;
+    }
     if (testPhaseRef.current) {
       try {
         testPhaseRef.current.destroy();
@@ -4624,9 +4660,8 @@ function SessionPageV2Inner() {
       }
       testPhaseRef.current = null;
     }
-    try {
-      audioEngineRef.current.stop();
-    } catch {}
+
+    stopAudioSafe({ force: true });
     if (!learnerProfile) {
       addEvent('⏸️ Learner not loaded yet - delaying test init');
       return false;
@@ -5253,7 +5288,7 @@ function SessionPageV2Inner() {
   
   const stopAudio = () => {
     if (!audioEngineRef.current) return;
-    audioEngineRef.current.stop();
+    stopAudioSafe();
   };
   
   const pauseAudio = () => {
@@ -5276,7 +5311,8 @@ function SessionPageV2Inner() {
   // Skip current TTS playback
   const skipTTS = () => {
     if (!audioEngineRef.current) return;
-    audioEngineRef.current.stop();
+    if (askExitSpeechLockRef.current) return;
+    stopAudioSafe();
     
     // If we're in a phase with a skip handler, call it to transition state properly
     const phaseName = getCurrentPhaseName();
@@ -5294,7 +5330,8 @@ function SessionPageV2Inner() {
   // Skip sentence (hotkey handler for teaching phase)
   const skipSentence = () => {
     if (!audioEngineRef.current) return;
-    audioEngineRef.current.stop();
+    if (askExitSpeechLockRef.current) return;
+    stopAudioSafe();
   };
   
   // Replay current sentence

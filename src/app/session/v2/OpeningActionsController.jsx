@@ -39,6 +39,8 @@ export class OpeningActionsController {
   #learnerGrade;
   #difficulty;
 
+  #actionNonce = 0;
+
   #fillInFunTemplatePromise = null;
   
   // Current action state
@@ -77,6 +79,7 @@ export class OpeningActionsController {
    * Start Ask Ms. Sonoma action
    */
   async startAsk() {
+    this.#actionNonce += 1;
     this.#currentAction = 'ask';
     this.#actionState = {
       stage: 'awaiting-input', // 'awaiting-input' | 'confirming' | 'generating' | 'complete'
@@ -104,6 +107,8 @@ export class OpeningActionsController {
     if (this.#currentAction !== 'ask') {
       return { success: false, error: 'Ask action not active' };
     }
+
+    const nonce = this.#actionNonce;
     
     this.#actionState.question = question;
     this.#actionState.stage = 'generating';
@@ -153,11 +158,26 @@ export class OpeningActionsController {
       
       this.#actionState.answer = answer;
       this.#actionState.stage = 'complete';
+
+      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') {
+        return { success: false, cancelled: true };
+      }
       
-      await this.#audioEngine.speak(answer);
+      try {
+        await this.#audioEngine.speak(answer);
+      } catch (err) {
+        // If playback is interrupted (skip/stop), do not fail the flow.
+      }
 
       // Ask follow-up after answering (requested parity: always invite more questions)
-      await this.#audioEngine.speak('Do you have any more questions?');
+      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') {
+        return { success: false, cancelled: true };
+      }
+      try {
+        await this.#audioEngine.speak('Do you have any more questions?');
+      } catch (err) {
+        // Ignore interruptions
+      }
       
       return { success: true, answer };
     } catch (err) {
@@ -166,11 +186,26 @@ export class OpeningActionsController {
       const fallback = 'That\'s a great question! Keep thinking about it.';
       this.#actionState.answer = fallback;
       this.#actionState.stage = 'complete';
+
+      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') {
+        return { success: false, cancelled: true };
+      }
       
-      await this.#audioEngine.speak(fallback);
+      try {
+        await this.#audioEngine.speak(fallback);
+      } catch (err) {
+        // Ignore interruptions
+      }
 
       // Ask follow-up after fallback as well
-      await this.#audioEngine.speak('Do you have any more questions?');
+      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') {
+        return { success: false, cancelled: true };
+      }
+      try {
+        await this.#audioEngine.speak('Do you have any more questions?');
+      } catch (err) {
+        // Ignore interruptions
+      }
       
       return { success: true, answer: fallback };
     }
@@ -181,6 +216,9 @@ export class OpeningActionsController {
    */
   cancelAsk() {
     if (this.#currentAction !== 'ask') return;
+
+    // Invalidate any in-flight ask work/speech.
+    this.#actionNonce += 1;
     
     this.#eventBus.emit('openingActionCancel', {
       action: 'ask',
@@ -197,6 +235,9 @@ export class OpeningActionsController {
    */
   completeAsk() {
     if (this.#currentAction !== 'ask') return;
+
+    // Invalidate any in-flight ask work/speech.
+    this.#actionNonce += 1;
     
     this.#eventBus.emit('openingActionComplete', {
       action: 'ask',
@@ -883,6 +924,7 @@ export class OpeningActionsController {
    * Clean up controller
    */
   destroy() {
+    this.#actionNonce += 1;
     this.#currentAction = null;
     this.#actionState = {};
   }
@@ -892,6 +934,9 @@ export class OpeningActionsController {
    */
   cancelCurrent() {
     if (!this.#currentAction) return;
+
+    // Invalidate any in-flight action work/speech.
+    this.#actionNonce += 1;
     this.#eventBus.emit('openingActionCancel', {
       action: this.#currentAction,
       type: this.#currentAction,
