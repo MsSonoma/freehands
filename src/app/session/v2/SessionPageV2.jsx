@@ -5541,13 +5541,15 @@ function SessionPageV2Inner() {
   const videoEffectiveHeight = (videoMaxHeight && Number.isFinite(videoMaxHeight)) ? videoMaxHeight : null;
   const msSideBySideH = videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto');
 
-  // In mobile landscape, the phase timeline is absolutely positioned. Reserve vertical space so it never overlaps
-  // the video/transcript columns.
-  const timelineLandscapeTop = 'clamp(52px, 8vh, 72px)';
+  // In mobile landscape, the phase timeline is absolutely positioned so it does not add to page height.
+  // IMPORTANT: The fixed HeaderBar already reserves its own space in the document flow, so the timeline
+  // should sit at the top of the content area (no extra top offset). We reserve vertical space by padding
+  // the content BELOW the timeline (not by pushing the timeline down).
+  const timelineLandscapeTop = '0px';
   const timelineLandscapeHeight = 'clamp(40px, 6vh, 56px)';
   
   const mainLayoutStyle = isMobileLandscape
-    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, paddingTop: `calc(${timelineLandscapeTop} + ${timelineLandscapeHeight})`, '--msSideBySideH': msSideBySideH }
+    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, paddingTop: `calc(${timelineLandscapeHeight} + 4px)`, '--msSideBySideH': msSideBySideH }
     : { display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh', background: '#ffffff' };
   
   const videoWrapperStyle = isMobileLandscape

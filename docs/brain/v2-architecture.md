@@ -28,6 +28,7 @@ After first round of fixes, second comprehensive audit found 6 additional critic
 **Timeline layout (landscape overlap rule) (2026-01-27)**
 - In mobile landscape, the phase timeline is positioned absolutely to preserve vertical space.
 - The main landscape layout must reserve vertical space for the timeline (via top padding or an explicit spacer). Otherwise the timeline will overlap the video and transcript columns.
+- Reserve space by pushing the content BELOW the timeline down; do not push the timeline down (HeaderBar already reserves its own height in the document flow).
 
 **Video priming + audio unlock (2026-01-07)**
 - V2 must not start the looping video as an "autoplay unlock" step.
