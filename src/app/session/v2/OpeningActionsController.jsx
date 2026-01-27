@@ -155,6 +155,9 @@ export class OpeningActionsController {
       this.#actionState.stage = 'complete';
       
       await this.#audioEngine.speak(answer);
+
+      // Ask follow-up after answering (requested parity: always invite more questions)
+      await this.#audioEngine.speak('Do you have any more questions?');
       
       return { success: true, answer };
     } catch (err) {
@@ -165,6 +168,9 @@ export class OpeningActionsController {
       this.#actionState.stage = 'complete';
       
       await this.#audioEngine.speak(fallback);
+
+      // Ask follow-up after fallback as well
+      await this.#audioEngine.speak('Do you have any more questions?');
       
       return { success: true, answer: fallback };
     }

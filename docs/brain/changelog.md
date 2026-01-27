@@ -1,3 +1,4 @@
+2026-01-27T13:31:31Z | Copilot | V2 Ask: after replies ask "any more questions"; Done/Cancel repeats pre-Ask in-flow question [#ms-sonoma-teaching-system: Ask Ms. Sonoma, followup, flow-anchor]
 2026-01-27T13:25:11Z | Copilot | V2 Ask Ms. Sonoma: add "What's the answer?" button to submit answer request using current problem context [#ms-sonoma-teaching-system: Ask Ms. Sonoma, opening-actions, answer-shortcut]
 2026-01-26T22:18:09Z | Copilot | Games overlay timer badge now opens Timer Controls; TimerControlOverlay renders above GamesOverlay [#timer-system: GamesOverlay, TimerControlOverlay, PIN] [#games-overlay: play timer badge, SessionTimer, click]
 2026-01-26T21:13:21Z | Copilot | Fix PlayTimeExpiredOverlay crash: pass session mute state (isMuted) instead of undefined muted var [#timer-system: PlayTimeExpiredOverlay, alarm, mute]

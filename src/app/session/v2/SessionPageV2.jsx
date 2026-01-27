@@ -443,6 +443,7 @@ function SessionPageV2Inner() {
   const teachingControllerRef = useRef(null);
   const answerInputRef = useRef(null);
   const openingActionsControllerRef = useRef(null);
+  const askReturnQuestionRef = useRef('');
   const comprehensionPhaseRef = useRef(null);
   const discussionPhaseRef = useRef(null);
   const exercisePhaseRef = useRef(null);
@@ -2730,6 +2731,58 @@ function SessionPageV2Inner() {
   }, [lessonKey]);
 
   // Opening actions helpers
+  const speakSystemLine = useCallback(async (text) => {
+    const spoken = String(text ?? '').trim();
+    if (!spoken) return;
+    if (!audioEngineRef.current) return;
+
+    // Prefer AudioEngine.speak when available (OpeningActionsController provides a shim)
+    if (typeof audioEngineRef.current.speak === 'function') {
+      try {
+        await audioEngineRef.current.speak(spoken);
+        return;
+      } catch (err) {
+        console.warn('[SessionPageV2] speakSystemLine via speak() failed:', err);
+      }
+    }
+
+    try {
+      const audioBase64 = await fetchTTS(spoken);
+      await audioEngineRef.current.playAudio(audioBase64, [spoken]);
+    } catch (err) {
+      console.warn('[SessionPageV2] speakSystemLine playback failed:', err);
+    }
+  }, []);
+
+  const getActiveFlowQuestionText = useCallback(() => {
+    const formatProblem = (item) => {
+      if (!item) return '';
+      try {
+        const formatted = ensureQuestionMark(formatQuestionForSpeech(item, { layout: 'multiline' }));
+        const cleaned = formatted.replace(/\s+/g, ' ').trim();
+        if (!cleaned) return '';
+        return cleaned.length > 400 ? `${cleaned.slice(0, 400)}...` : cleaned;
+      } catch {
+        return '';
+      }
+    };
+
+    if (currentPhase === 'comprehension' && currentComprehensionQuestion) {
+      return formatProblem(currentComprehensionQuestion);
+    }
+    if (currentPhase === 'exercise' && currentExerciseQuestion) {
+      return formatProblem(currentExerciseQuestion);
+    }
+    if (currentPhase === 'worksheet' && currentWorksheetQuestion) {
+      return formatProblem(currentWorksheetQuestion);
+    }
+    if (currentPhase === 'test' && currentTestQuestion) {
+      return formatProblem(currentTestQuestion);
+    }
+
+    return '';
+  }, [currentPhase, currentComprehensionQuestion, currentExerciseQuestion, currentWorksheetQuestion, currentTestQuestion]);
+
   const syncOpeningActionState = useCallback(() => {
     const controller = openingActionsControllerRef.current;
     const next = controller?.getState?.() || {};
@@ -2737,14 +2790,16 @@ function SessionPageV2Inner() {
     return next;
   }, []);
 
-  const handleOpeningActionCancel = useCallback(() => {
+  const handleOpeningActionCancel = useCallback(async () => {
+    const actionType = openingActionState?.action || openingActionType;
+    const askReminder = actionType === 'ask' ? askReturnQuestionRef.current : '';
+
     const controller = openingActionsControllerRef.current;
-    if (controller?.cancelCurrent) {
-      controller.cancelCurrent();
-    }
-    // Stop any playing audio
     if (audioEngineRef.current) {
       audioEngineRef.current.stop();
+    }
+    if (controller?.cancelCurrent) {
+      controller.cancelCurrent();
     }
     setOpeningActionActive(false);
     setOpeningActionType(null);
@@ -2752,7 +2807,12 @@ function SessionPageV2Inner() {
     setOpeningActionInput('');
     setOpeningActionError('');
     setOpeningActionBusy(false);
-  }, []);
+
+    if (askReminder) {
+      await speakSystemLine(askReminder);
+    }
+    askReturnQuestionRef.current = '';
+  }, [openingActionState?.action, openingActionType, speakSystemLine]);
 
   const buildAskContext = useCallback(() => {
     const lessonTitle = (lessonData?.title || lessonKey || lessonId || 'this lesson').toString();
@@ -2826,6 +2886,7 @@ function SessionPageV2Inner() {
   const handleOpeningAskStart = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
     if (!controller || openingActionBusy) return;
+    askReturnQuestionRef.current = getActiveFlowQuestionText();
     setOpeningActionError('');
     setOpeningActionBusy(true);
     try {
@@ -2836,7 +2897,7 @@ function SessionPageV2Inner() {
     } finally {
       setOpeningActionBusy(false);
     }
-  }, [openingActionBusy]);
+  }, [openingActionBusy, getActiveFlowQuestionText]);
 
   const handleOpeningAskSubmit = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -2886,14 +2947,20 @@ function SessionPageV2Inner() {
     }
   }, [syncOpeningActionState, buildAskContext]);
 
-  const handleOpeningAskDone = useCallback(() => {
+  const handleOpeningAskDone = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
+    const askReminder = askReturnQuestionRef.current;
     // Stop any playing audio before completing
     if (audioEngineRef.current) {
       audioEngineRef.current.stop();
     }
     controller?.completeAsk?.();
-  }, []);
+
+    if (askReminder) {
+      await speakSystemLine(askReminder);
+    }
+    askReturnQuestionRef.current = '';
+  }, [speakSystemLine]);
 
   const handleOpeningRiddleHint = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
