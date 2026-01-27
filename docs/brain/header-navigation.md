@@ -11,7 +11,13 @@ The global header (HeaderBar) is rendered across pages and provides:
 
 ### Session Print Menu
 
-On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions:
+On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions.
+
+**Trigger behavior (desktop):** Open on hover (mouseenter) with a short grace period on mouseleave so it does not flicker closed while moving from the icon into the menu.
+
+**Trigger behavior (touch / fallback):** The icon should also toggle the dropdown on click.
+
+The dropdown includes print actions:
 
 - Worksheet
 - Test

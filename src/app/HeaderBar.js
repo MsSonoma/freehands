@@ -737,6 +737,14 @@ export default function HeaderBar() {
 									<button
 										type="button"
 										aria-label="Print menu"
+										aria-haspopup="menu"
+										aria-expanded={printMenuOpen}
+										onClick={(e) => {
+											try { e.stopPropagation(); } catch {}
+											try { e.preventDefault(); } catch {}
+											cancelPrintMenuClose();
+											setPrintMenuOpen((v) => !v);
+										}}
 										onMouseEnter={openPrintMenu}
 										onFocus={openPrintMenu}
 										style={{
