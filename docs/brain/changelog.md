@@ -1,3 +1,4 @@
+2026-01-27T14:02:24Z | Copilot | V2 Ask: "What's the answer?" is single-shot and shows "Loading..." while awaiting the response [#ms-sonoma-teaching-system: Ask Ms. Sonoma, answer-shortcut, loading]
 2026-01-27T13:55:48Z | Copilot | V2 Ask UI: mobile portrait now wraps action buttons below input so Cancel never overflows off-screen [#ms-sonoma-teaching-system: Ask Ms. Sonoma, mobile, responsive-layout]
 2026-01-27T13:49:30Z | Copilot | V2 Ask exit reminder hardened: speech-lock blocks skip/timeline/test start; retry after stop; stopAudioSafe everywhere [#ms-sonoma-teaching-system: Ask Ms. Sonoma, speech-lock, re-anchor]
 2026-01-27T13:31:31Z | Copilot | V2 Ask: after replies ask "any more questions"; Done/Cancel repeats pre-Ask in-flow question [#ms-sonoma-teaching-system: Ask Ms. Sonoma, followup, flow-anchor]

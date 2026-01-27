@@ -1,7 +1,7 @@
 # Ms. Sonoma Teaching System
 
 **Status**: Canonical  
-**Last Updated**: 2026-01-27T13:55:48Z
+**Last Updated**: 2026-01-27T14:02:24Z
 
 ## How It Works
 
@@ -250,7 +250,7 @@ Before shipping to Ms. Sonoma, verify:
 - Buttons (Joke, Riddle, Poem, Story, Fill-in-Fun, Games) show in the play-time awaiting-go bar for Q&A phases; Go/work transitions, play-time expiry, or timeline jumps clear inputs/errors/busy flags and hide the Games overlay. Ask Ms. Sonoma lives only as a circular video overlay button (raised-hand icon) on the bottom-left of the video, paired with the Visual Aids button. Skip/Repeat is treated as a single-slot toggle and lives on the bottom-right with Mute.
 - Ask is hidden during the Test phase.
 - Ask replies carry the learner question plus the on-screen Q&A prompt (if one is active) and the lesson vocab terms/definitions so answers stay on-topic and use the correct meaning for multi-sense words.
-- Ask includes a quick action button, "What's the answer?", that submits a canned Ask prompt to get the answer for the currently displayed learner question.
+- Ask includes a quick action button, "What's the answer?", that submits a canned Ask prompt to get the answer for the currently displayed learner question. It is single-shot while loading: the button becomes disabled, reads "Loading...", and ignores re-press until the response completes.
 - After any Ask response (including the answer shortcut), Ms. Sonoma always follows up with: "Do you have any more questions?"
 - Ask exit re-anchor is hardened: Done/Cancel force-stops current audio, cancels the current opening action, then speaks the captured in-flow question under an "Ask exit speech lock" so Skip/Stop cannot interrupt it. Disruptive navigation actions (timeline jump, test start) are blocked while this lock is active.
 - The re-anchor line uses a two-attempt speak helper to reduce post-stop race conditions.

@@ -587,6 +587,8 @@ function SessionPageV2Inner() {
   const [openingActionInput, setOpeningActionInput] = useState('');
   const [openingActionBusy, setOpeningActionBusy] = useState(false);
   const openingActionBusyRef = useRef(false);
+  const [askAnswerShortcutLoading, setAskAnswerShortcutLoading] = useState(false);
+  const askAnswerShortcutLoadingRef = useRef(false);
   const [openingActionError, setOpeningActionError] = useState('');
   const [showPlayWithSonomaMenu, setShowPlayWithSonomaMenu] = useState(false);
   const [showGames, setShowGames] = useState(false);
@@ -597,6 +599,14 @@ function SessionPageV2Inner() {
   useEffect(() => {
     openingActionBusyRef.current = openingActionBusy;
   }, [openingActionBusy]);
+
+  useEffect(() => {
+    // If the Ask panel is dismissed mid-flight, ensure the shortcut can be used again next time.
+    if (openingActionType !== 'ask' && askAnswerShortcutLoadingRef.current) {
+      askAnswerShortcutLoadingRef.current = false;
+      setAskAnswerShortcutLoading(false);
+    }
+  }, [openingActionType]);
 
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
@@ -2830,6 +2840,8 @@ function SessionPageV2Inner() {
     setOpeningActionInput('');
     setOpeningActionError('');
     setOpeningActionBusy(false);
+    askAnswerShortcutLoadingRef.current = false;
+    setAskAnswerShortcutLoading(false);
 
     if (askReminder) {
       askExitSpeechLockRef.current = true;
@@ -2957,6 +2969,10 @@ function SessionPageV2Inner() {
     const controller = openingActionsControllerRef.current;
     if (!controller) return;
     if (openingActionBusyRef.current) return;
+    if (askAnswerShortcutLoadingRef.current) return;
+
+    askAnswerShortcutLoadingRef.current = true;
+    setAskAnswerShortcutLoading(true);
 
     openingActionBusyRef.current = true;
     setOpeningActionBusy(true);
@@ -2972,6 +2988,8 @@ function SessionPageV2Inner() {
     } finally {
       openingActionBusyRef.current = false;
       setOpeningActionBusy(false);
+      askAnswerShortcutLoadingRef.current = false;
+      setAskAnswerShortcutLoading(false);
     }
   }, [syncOpeningActionState, buildAskContext]);
 
@@ -2981,6 +2999,9 @@ function SessionPageV2Inner() {
     // Stop any playing audio before completing
     stopAudioSafe({ force: true });
     controller?.completeAsk?.();
+
+    askAnswerShortcutLoadingRef.current = false;
+    setAskAnswerShortcutLoading(false);
 
     if (askReminder) {
       askExitSpeechLockRef.current = true;
@@ -6328,14 +6349,14 @@ function SessionPageV2Inner() {
                               background: '#2563eb',
                               color: '#fff',
                               padding: '8px 12px',
-                              opacity: openingActionBusy ? 0.6 : 1,
-                              cursor: openingActionBusy ? 'not-allowed' : 'pointer'
+                              opacity: openingActionBusy || askAnswerShortcutLoading ? 0.6 : 1,
+                              cursor: openingActionBusy || askAnswerShortcutLoading ? 'not-allowed' : 'pointer'
                             }}
                             onClick={handleOpeningAskWhatsTheAnswer}
-                            disabled={openingActionBusy}
+                            disabled={openingActionBusy || askAnswerShortcutLoading}
                             title="Ask for the answer to the current question"
                           >
-                            What's the answer?
+                            {askAnswerShortcutLoading ? 'Loading...' : "What's the answer?"}
                           </button>
                         )}
                         <button type="button" style={{ ...baseBtn, whiteSpace: 'nowrap', background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningAskDone}>
