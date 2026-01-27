@@ -151,6 +151,7 @@ V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical 
 - Timeline click-to-skip must stop active TTS before jumping (only when speech is currently playing) and then call `PhaseOrchestrator.skipToPhase(targetPhase)`.
 - Timeline click-to-skip must not bypass Begin gating; after a jump, the destination phase should still present its Begin CTA (then Opening Actions, then Go).
 - Timeline click-to-skip must not resume mid-phase (no resumeState). A timeline jump forces a fresh entry so Opening Actions are always available.
+- Q&A phases must emit a post-Go snapshot checkpoint (`<phase>-go`) that sets `timerMode:'work'` with `nextQuestionIndex:0`. Without this, a refresh after pressing Go (but before answering Q1) can incorrectly resume back at Opening Actions (timerMode still 'play' from `<phase>-init`).
 - Use the app alias when importing the PIN gate utility from V2 files: `@/app/lib/pinGate` (relative `../lib/pinGate` is one level short inside `session/v2` and will fail at build time).
 - Comprehension initialization must **wait for learnerProfile** to be loaded. If the orchestrator enters Comprehension before learner load completes, the app retries comprehension initialization once `learnerLoading` is false and `learnerProfile` is present.
 - Worksheet and Test initialization must follow the same rule as Comprehension: if the orchestrator enters the phase before learner load completes, initialization must be retried after learner load.

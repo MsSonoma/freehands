@@ -237,6 +237,19 @@ export class WorksheetPhase {
     this.#answers = [];
     this.#score = 0;
 
+    // Snapshot gate: Go has been pressed (work mode) but no answers yet.
+    this.#emit('requestSnapshotSave', {
+      trigger: 'worksheet-go',
+      data: {
+        nextQuestionIndex: 0,
+        score: this.#score,
+        totalQuestions: this.#questions.length,
+        questions: this.#questions,
+        answers: [...this.#answers],
+        timerMode: this.#timerMode
+      }
+    });
+
     // Speak the phase intro AFTER Go and BEFORE the first question.
     const intro = INTRO_PHRASES[Math.floor(Math.random() * INTRO_PHRASES.length)];
     this.#state = 'playing-intro';

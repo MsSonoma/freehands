@@ -120,7 +120,8 @@ Without step 2, granular saves would use `idle` as currentPhase and store under 
 - **Discussion entry**: `begin-discussion` (no opening actions in V2).
 - **Teaching**: `begin-teaching-definitions`, `vocab-sentence-1/N` (before each TTS), `begin-teaching-examples`, `example-sentence-1/N` (before each TTS).
 - **Q&A seeding** (deterministic resume): `comprehension-init`, `exercise-init`, `worksheet-init`, `test-init` fire on phase start and persist question arrays + `nextQuestionIndex` + `score` + `answers` + `timerMode` (with `phaseOverride`).
-- **Q&A granular**: `comprehension-active`, `exercise-answer`, `exercise-skip`, `worksheet-answer`, `worksheet-skip`, `test-answer`, `test-skip` after each submission/skip (payload includes questions, answers, next index, timerMode; Test also includes reviewIndex).
+- **Q&A post-Go (work-mode checkpoint)**: `comprehension-go`, `exercise-go`, `worksheet-go`, `test-go` fire immediately when the learner presses **Go**. These writes set `timerMode:'work'` with `nextQuestionIndex:0` so a refresh before answering Q1 resumes on the first question (not back to Opening Actions).
+- **Q&A granular**: `comprehension-answer`, `comprehension-skip`, `exercise-answer`, `exercise-skip`, `worksheet-answer`, `worksheet-skip`, `test-answer`, `test-skip` after each submission/skip (payload includes questions, answers, next index, timerMode; Test also includes reviewIndex).
 - **Navigation**: `skip-forward`, `skip-back` (timeline jumps).
 
 ## Related Brain Files

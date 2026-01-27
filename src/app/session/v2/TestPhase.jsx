@@ -234,6 +234,21 @@ export class TestPhase {
     this.#currentQuestionIndex = 0;
     this.#answers = [];
     this.#score = 0;
+    this.#reviewIndex = 0;
+
+    // Snapshot gate: Go has been pressed (work mode) but no answers yet.
+    this.#emit('requestSnapshotSave', {
+      trigger: 'test-go',
+      data: {
+        nextQuestionIndex: 0,
+        score: this.#score,
+        totalQuestions: this.#questions.length,
+        questions: this.#questions,
+        answers: [...this.#answers],
+        timerMode: this.#timerMode,
+        reviewIndex: this.#reviewIndex
+      }
+    });
 
     // Speak the phase intro AFTER Go and BEFORE the first question.
     // IMPORTANT: Do not await AudioEngine.playAudio() here. If the user presses

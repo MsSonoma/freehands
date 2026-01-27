@@ -233,6 +233,7 @@
       "facilitator-override",
       "transcript-column-placement",
       "landscape timeline spacing",
+      "post-go snapshot gate",
       "no-video-overlays",
       "caption-panel",
       "iOS transcript autoscroll",
@@ -246,7 +247,7 @@
       "facilitator-lessons",
       "supabase-lesson-load"
     ],
-    "last_updated": "2026-01-27T14:25:53Z",
+    "last_updated": "2026-01-27T14:42:45Z",
     "status": "active-development"
   },
   "mr-mentor-conversation-flows": {
@@ -351,6 +352,7 @@
       "localStorage",
       "database persistence",
       "atomic gates",
+      "post-go snapshot gate",
       "checkpoint gates",
       "cross-device sync",
       "snapshot restore",
@@ -359,7 +361,7 @@
       "transcript persistence",
       "caption panel"
     ],
-    "last_updated": "2026-01-12T18:24:58Z",
+    "last_updated": "2026-01-27T14:42:45Z",
     "status": "canonical"
   },
   "timer-system": {

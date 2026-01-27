@@ -1,3 +1,4 @@
+2026-01-27T14:42:45Z | Copilot | Q&A phases now save a post-Go work-mode snapshot so refresh before answering Q1 resumes on the first question (not Opening Actions) [#snapshot-persistence: post-go snapshot gate, checkpoint gates, atomic gates] [#v2-architecture: post-go snapshot gate, awaiting-go, resume]
 2026-01-27T14:25:53Z | Copilot | V2 mobile landscape: reserve vertical space for the absolute timeline so it never overlaps video/transcript [#v2-architecture: landscape timeline spacing, transcript-column-placement, no-video-overlays]
 2026-01-27T14:11:38Z | Copilot | Transcript auto-scroll now uses end-sentinel scrollIntoView + multi-tick retry for iOS Safari reliability [#v2-architecture: caption-panel, iOS transcript autoscroll, transcript-persistence]
 2026-01-27T14:02:24Z | Copilot | V2 Ask: "What's the answer?" is single-shot and shows "Loading..." while awaiting the response [#ms-sonoma-teaching-system: Ask Ms. Sonoma, answer-shortcut, loading]
