@@ -6290,55 +6290,61 @@ function SessionPageV2Inner() {
               return (
                 <div style={{ padding: '0 12px' }}>
                   <div style={{ ...cardStyle, padding: '8px 12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <input
-                        type="text"
-                        value={openingActionInput}
-                        onChange={(e) => setOpeningActionInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            if (openingActionBusy) return;
-                            handleOpeningAskSubmit();
-                          }
-                        }}
-                        placeholder="Ask Ms. Sonoma..."
-                        style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: '0.9rem' }}
-                        autoFocus
-                        disabled={openingActionBusy}
-                      />
-                      <button
-                        type="button"
-                        style={{ ...baseBtn, background: '#111827', color: '#fff', padding: '8px 12px', opacity: openingActionBusy ? 0.6 : 1, cursor: openingActionBusy ? 'not-allowed' : 'pointer' }}
-                        onClick={handleOpeningAskSubmit}
-                        disabled={openingActionBusy}
-                      >
-                        Send
-                      </button>
-                      {hasActiveQuestion && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: '1 1 220px', minWidth: 0 }}>
+                        <input
+                          type="text"
+                          value={openingActionInput}
+                          onChange={(e) => setOpeningActionInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (openingActionBusy) return;
+                              handleOpeningAskSubmit();
+                            }
+                          }}
+                          placeholder="Ask Ms. Sonoma..."
+                          style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: '0.9rem' }}
+                          autoFocus
+                          disabled={openingActionBusy}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end', maxWidth: '100%' }}>
                         <button
                           type="button"
-                          style={{
-                            ...baseBtn,
-                            background: '#2563eb',
-                            color: '#fff',
-                            padding: '8px 12px',
-                            opacity: openingActionBusy ? 0.6 : 1,
-                            cursor: openingActionBusy ? 'not-allowed' : 'pointer'
-                          }}
-                          onClick={handleOpeningAskWhatsTheAnswer}
+                          style={{ ...baseBtn, whiteSpace: 'nowrap', background: '#111827', color: '#fff', padding: '8px 12px', opacity: openingActionBusy ? 0.6 : 1, cursor: openingActionBusy ? 'not-allowed' : 'pointer' }}
+                          onClick={handleOpeningAskSubmit}
                           disabled={openingActionBusy}
-                          title="Ask for the answer to the current question"
                         >
-                          What's the answer?
+                          Send
                         </button>
-                      )}
-                      <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningAskDone}>
-                        Done
-                      </button>
-                      <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningActionCancel}>
-                        Cancel
-                      </button>
+                        {hasActiveQuestion && (
+                          <button
+                            type="button"
+                            style={{
+                              ...baseBtn,
+                              whiteSpace: 'nowrap',
+                              background: '#2563eb',
+                              color: '#fff',
+                              padding: '8px 12px',
+                              opacity: openingActionBusy ? 0.6 : 1,
+                              cursor: openingActionBusy ? 'not-allowed' : 'pointer'
+                            }}
+                            onClick={handleOpeningAskWhatsTheAnswer}
+                            disabled={openingActionBusy}
+                            title="Ask for the answer to the current question"
+                          >
+                            What's the answer?
+                          </button>
+                        )}
+                        <button type="button" style={{ ...baseBtn, whiteSpace: 'nowrap', background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningAskDone}>
+                          Done
+                        </button>
+                        <button type="button" style={{ ...baseBtn, whiteSpace: 'nowrap', background: '#ef4444', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningActionCancel}>
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                     {data.answer ? (
                       <div style={{ marginTop: 6, fontSize: '0.85rem', fontWeight: 600 }}>

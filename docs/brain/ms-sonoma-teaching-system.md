@@ -1,7 +1,7 @@
 # Ms. Sonoma Teaching System
 
 **Status**: Canonical  
-**Last Updated**: 2026-01-27T13:49:30Z
+**Last Updated**: 2026-01-27T13:55:48Z
 
 ## How It Works
 
@@ -254,6 +254,7 @@ Before shipping to Ms. Sonoma, verify:
 - After any Ask response (including the answer shortcut), Ms. Sonoma always follows up with: "Do you have any more questions?"
 - Ask exit re-anchor is hardened: Done/Cancel force-stops current audio, cancels the current opening action, then speaks the captured in-flow question under an "Ask exit speech lock" so Skip/Stop cannot interrupt it. Disruptive navigation actions (timeline jump, test start) are blocked while this lock is active.
 - The re-anchor line uses a two-attempt speak helper to reduce post-stop race conditions.
+- Ask input + buttons are responsive on mobile: the button cluster (Send / What's the answer? / Done / Cancel) wraps beneath the input instead of overflowing off-screen.
 - Active panels bind to controller events: Ask textarea submits via Enter/button and Done calls completeAsk; Joke shows current joke with Done calling completeJoke; Riddle uses Hint/Reveal plus Done; Poem waits for playback then Done triggers completePoem; Story logs transcript with Continue and Finish; Fill-in-Fun collects words via addFillInFunWord and Done/Cancel via completeFillInFun.
 - Ask is single-flight: while an Ask question is generating/playing, the Ask input and Send button disable and Enter/Send presses are ignored until the response completes.
 - Fill-in-Fun is intro-first and prefetches: clicking Fill-in-Fun immediately speaks a hardwired intro line, starts GPT template generation in the background, then begins word collection only after blanks are ready (input disabled until ready).
