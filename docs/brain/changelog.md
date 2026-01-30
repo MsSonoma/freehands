@@ -1,3 +1,4 @@
+2026-01-30T14:21:42Z | Copilot | Lesson Calendar: add Generate portfolio modal + public no-login portfolio builder [#portfolio-generation: Generate portfolio, portfolios bucket, public no-login links]
 2026-01-27T19:27:45Z | Copilot | Header print icon now opens print menu on hover (and toggles on click) [#header-navigation: print-menu, HeaderBar, top-nav-links]
 2026-01-27T15:11:55Z | Copilot | Mobile landscape: increase padding below timeline (timeline position unchanged) [#v2-architecture: landscape timeline spacing, transcript-column-placement, no-video-overlays]
 2026-01-27T14:54:44Z | Copilot | Mobile landscape timeline spacing: keep timeline position; only pad content below it [#v2-architecture: landscape timeline spacing, transcript-column-placement, no-video-overlays]

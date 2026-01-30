@@ -167,6 +167,19 @@
     "last_updated": "2026-01-20T16:13:47Z",
     "status": "canonical"
   },
+  "portfolio-generation": {
+    "file": "portfolio-generation.md",
+    "systems": [
+      "Generate portfolio",
+      "/api/portfolio/generate",
+      "portfolios bucket",
+      "public no-login links",
+      "portfolio scans copy",
+      "lesson recap"
+    ],
+    "last_updated": "2026-01-30T14:21:42Z",
+    "status": "canonical"
+  },
   "sound-effects": {
     "file": "sound-effects.md",
     "systems": [

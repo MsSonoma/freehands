@@ -15,6 +15,7 @@ import LessonNotesModal from './LessonNotesModal'
 import VisualAidsManagerModal from './VisualAidsManagerModal'
 import PortfolioScansModal from './PortfolioScansModal'
 import TypedRemoveConfirmModal from './TypedRemoveConfirmModal'
+import GeneratePortfolioModal from './GeneratePortfolioModal'
 import { InlineExplainer, PageHeader } from '@/components/FacilitatorHelp'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
 
@@ -42,6 +43,7 @@ export default function CalendarPage() {
   const [visualAidsItem, setVisualAidsItem] = useState(null)
   const [portfolioScansItem, setPortfolioScansItem] = useState(null)
   const [removeConfirmItem, setRemoveConfirmItem] = useState(null)
+  const [showGeneratePortfolio, setShowGeneratePortfolio] = useState(false)
 
   const getLocalTodayStr = () => {
     const now = new Date()
@@ -693,6 +695,27 @@ export default function CalendarPage() {
                   title="Lesson Calendar"
                   subtitle="Organize your teaching schedule with manual scheduling or automated planning"
                   dense
+                  actions={
+                    <button
+                      type="button"
+                      onClick={() => setShowGeneratePortfolio(true)}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: 10,
+                        border: '1px solid #c7d2fe',
+                        background: '#eef2ff',
+                        color: '#1e40af',
+                        fontWeight: 900,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = '#e0e7ff' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = '#eef2ff' }}
+                    >
+                      Generate portfolio
+                    </button>
+                  }
                 />
                 
                 {/* Tab Headers */}
@@ -1087,6 +1110,15 @@ export default function CalendarPage() {
                 if (!removeConfirmItem) return
                 await handleRemoveScheduledLesson(removeConfirmItem, { skipConfirm: true })
               }}
+            />
+
+            <GeneratePortfolioModal
+              open={showGeneratePortfolio}
+              onClose={() => setShowGeneratePortfolio(false)}
+              learnerId={selectedLearnerId}
+              learnerName={learners.find(l => l.id === selectedLearnerId)?.name || ''}
+              authToken={authToken}
+              portal
             />
 
             {/* Day View Overlay */}
