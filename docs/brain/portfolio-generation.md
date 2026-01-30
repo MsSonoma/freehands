@@ -1,6 +1,6 @@
 # Portfolio Generation System
 
-**Last Updated**: 2026-01-30T14:21:42Z
+**Last Updated**: 2026-01-30T15:25:06Z
 **Status**: Canonical
 
 ## How It Works
@@ -17,6 +17,7 @@ The Lesson Calendar page provides a **Generate portfolio** button that builds a 
    - Include checkboxes: Visual aids, Notes, Images
 4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
 5. UI shows a public link to open the portfolio plus a manifest download link.
+6. UI also lists previously generated portfolios so they can be re-opened or deleted.
 
 ### What Gets Included
 
@@ -50,6 +51,18 @@ Portfolios are stored as static files in Supabase Storage so reviewers do not ne
 
 Portfolio scans originally live in the `transcripts` bucket and are private/signed-url only. For no-login review, the generator copies scan files into the public `portfolios` bucket and links them from the portfolio HTML.
 
+### Persistence + Management
+
+Each generated portfolio is also saved in the database so it can be revisited and deleted.
+
+- Table: `public.portfolio_exports`
+  - Stores: facilitator_id, learner_id, portfolio_id, date range, include flags, and Storage paths.
+- API endpoints:
+  - `GET /api/portfolio/list?learnerId=<uuid>`: returns the latest saved portfolios for that learner.
+  - `POST /api/portfolio/delete`: deletes the portfolio's Storage folder first (breaking the public link), then deletes the DB row.
+
+This management layer is required because reviewers may keep the public link, and facilitators need a way to revoke access later.
+
 ## What NOT To Do
 
 - Do not embed images as base64 in the HTML. Always link out to stored objects.
@@ -66,7 +79,12 @@ Portfolio scans originally live in the `transcripts` bucket and are private/sign
 
 - API
   - `src/app/api/portfolio/generate/route.js` (portfolio builder)
+  - `src/app/api/portfolio/list/route.js` (list saved portfolios)
+  - `src/app/api/portfolio/delete/route.js` (delete saved portfolios + files)
   - `src/app/api/portfolio/lib.js` (HTML builder + helpers)
+
+- Persistence
+  - `supabase/migrations/20260130152043_add_portfolio_exports_table.sql` (creates `public.portfolio_exports` + RLS)
 
 - Related systems
   - `src/app/api/portfolio-scans/*` (uploads scans to `transcripts` bucket)

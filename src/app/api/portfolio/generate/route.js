@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
 import {
   PORTFOLIOS_BUCKET,
@@ -328,6 +327,24 @@ export async function POST(req) {
       content: JSON.stringify(manifest, null, 2),
       contentType: 'application/json; charset=utf-8'
     })
+
+    const { error: saveErr } = await svc.from('portfolio_exports').insert({
+      facilitator_id: user.id,
+      learner_id: learnerId,
+      portfolio_id: portfolioId,
+      start_date: startDate,
+      end_date: endDate,
+      include_visual_aids: includeVisualAids,
+      include_notes: includeNotes,
+      include_images: includeImages,
+      index_path: indexPath,
+      manifest_path: manifestPath
+    })
+
+    if (saveErr) {
+      // Generation must be persistently saved so it can be revisited and deleted.
+      throw new Error(saveErr.message)
+    }
 
     const indexUrl = publicObjectUrl({ supabaseUrl, bucket: PORTFOLIOS_BUCKET, path: indexPath })
     const manifestUrl = publicObjectUrl({ supabaseUrl, bucket: PORTFOLIOS_BUCKET, path: manifestPath })

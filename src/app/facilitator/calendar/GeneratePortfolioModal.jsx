@@ -53,6 +53,10 @@ export default function GeneratePortfolioModal({
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
 
+  const [savedLoading, setSavedLoading] = useState(false)
+  const [savedError, setSavedError] = useState(null)
+  const [savedItems, setSavedItems] = useState([])
+
   useEffect(() => {
     setIsMounted(true)
   }, [])
@@ -68,6 +72,67 @@ export default function GeneratePortfolioModal({
     setStartDate((prev) => (isYyyyMmDd(prev) ? prev : defaultStart))
     setEndDate((prev) => (isYyyyMmDd(prev) ? prev : today))
   }, [open])
+
+  async function loadSavedPortfolios() {
+    if (!learnerId || !authToken) return
+
+    setSavedLoading(true)
+    setSavedError(null)
+
+    try {
+      const res = await fetch(`/api/portfolio/list?learnerId=${encodeURIComponent(learnerId)}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        }
+      })
+
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error || 'Failed to load saved portfolios')
+
+      setSavedItems(Array.isArray(data?.items) ? data.items : [])
+    } catch (e) {
+      setSavedError(e?.message || String(e))
+      setSavedItems([])
+    } finally {
+      setSavedLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!open) return
+    loadSavedPortfolios()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, learnerId, authToken])
+
+  async function handleDeleteSaved(portfolioId) {
+    if (!learnerId || !authToken || !portfolioId) return
+    const ok = typeof window !== 'undefined' ? window.confirm('Delete this saved portfolio? This will break the public link.') : false
+    if (!ok) return
+
+    setSavedLoading(true)
+    setSavedError(null)
+
+    try {
+      const res = await fetch('/api/portfolio/delete', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ learnerId, portfolioId })
+      })
+
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error || 'Failed to delete portfolio')
+
+      await loadSavedPortfolios()
+    } catch (e) {
+      setSavedError(e?.message || String(e))
+    } finally {
+      setSavedLoading(false)
+    }
+  }
 
   const title = useMemo(() => {
     const name = learnerName ? ` — ${learnerName}` : ''
@@ -114,6 +179,7 @@ export default function GeneratePortfolioModal({
       }
 
       setResult(data)
+      await loadSavedPortfolios()
     } catch (e) {
       setError(e?.message || String(e))
     } finally {
@@ -355,6 +421,141 @@ export default function GeneratePortfolioModal({
               </div>
             </div>
           )}
+
+          <div style={{ padding: 12, borderRadius: 10, background: '#fff', border: '1px solid #e5e7eb' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 900, color: '#111827' }}>Saved portfolios</div>
+                <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+                  Re-open, copy links, or delete previously generated portfolios.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={loadSavedPortfolios}
+                disabled={!authToken || savedLoading}
+                style={{
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: '1px solid #d1d5db',
+                  background: '#fff',
+                  color: '#374151',
+                  fontSize: 12,
+                  fontWeight: 900,
+                  cursor: !authToken || savedLoading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {savedLoading ? 'Refreshing…' : 'Refresh'}
+              </button>
+            </div>
+
+            {savedError && (
+              <div style={{ marginTop: 10, padding: 10, borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', fontWeight: 700, fontSize: 12 }}>
+                {savedError}
+              </div>
+            )}
+
+            {!savedLoading && !savedError && savedItems.length === 0 && (
+              <div style={{ marginTop: 10, fontSize: 12, color: '#6b7280' }}>(none yet)</div>
+            )}
+
+            <div style={{ marginTop: 10, display: 'grid', gap: 10 }}>
+              {savedItems.map((item) => (
+                <div key={item.id} style={{ padding: 10, borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff' }}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 12, fontWeight: 900, color: '#111827' }}>{item.startDate} → {item.endDate}</div>
+                    {item.createdAt && <div style={{ fontSize: 12, color: '#6b7280' }}>Created {new Date(item.createdAt).toLocaleString()}</div>}
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 12, color: '#6b7280' }}>
+                    Includes: {item.include?.visualAids ? 'Visual aids' : ''}{item.include?.notes ? `${item.include?.visualAids ? ', ' : ''}Notes` : ''}{item.include?.images ? `${item.include?.visualAids || item.include?.notes ? ', ' : ''}Images` : ''}
+                  </div>
+
+                  <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <a
+                      href={item.indexUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: '1px solid #dbeafe',
+                        background: '#eff6ff',
+                        color: '#1d4ed8',
+                        fontSize: 12,
+                        fontWeight: 900,
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      Open
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(item.indexUrl)
+                        } catch {}
+                      }}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: '1px solid #d1d5db',
+                        background: '#fff',
+                        color: '#374151',
+                        fontSize: 12,
+                        fontWeight: 900,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Copy link
+                    </button>
+
+                    {item.manifestUrl && (
+                      <a
+                        href={item.manifestUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          padding: '8px 10px',
+                          borderRadius: 8,
+                          border: '1px solid #d1d5db',
+                          background: '#fff',
+                          color: '#374151',
+                          fontSize: 12,
+                          fontWeight: 900,
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }}
+                      >
+                        Manifest
+                      </a>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSaved(item.portfolioId)}
+                      disabled={savedLoading}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: '1px solid #fecaca',
+                        background: '#fff',
+                        color: '#991b1b',
+                        fontSize: 12,
+                        fontWeight: 900,
+                        cursor: savedLoading ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
