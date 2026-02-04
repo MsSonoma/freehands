@@ -321,7 +321,7 @@
       "owned-lessons",
       "LessonPicker"
     ],
-    "last_updated": "2026-02-04T19:31:04Z",
+    "last_updated": "2026-02-04T21:15:00Z",
     "status": "canonical"
   },
   "tts-prefetching": {
@@ -814,7 +814,7 @@
       "upgrade-flow-integration",
       "universal-gating"
     ],
-    "last_updated": "2026-02-04T19:31:04Z",
+    "last_updated": "2026-02-04T21:15:00Z",
     "status": "canonical"
   }
 }

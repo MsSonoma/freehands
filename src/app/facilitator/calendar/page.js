@@ -32,7 +32,7 @@ export default function CalendarPage() {
   const [plannedLessons, setPlannedLessons] = useState({}) // Format: { 'YYYY-MM-DD': [{...}] }
   const [loading, setLoading] = useState(true)
   const [tier, setTier] = useState('free')
-  const [hasAccess, setHasAccess] = useState(false)
+  const [canPlan, setCanPlan] = useState(false)
   const [tableExists, setTableExists] = useState(true)
   const [rescheduling, setRescheduling] = useState(null) // Track which lesson is being rescheduled
   const [activeTab, setActiveTab] = useState('scheduler') // 'scheduler' or 'planner'
@@ -125,10 +125,10 @@ export default function CalendarPage() {
   }, [])
 
   useEffect(() => {
-    if (hasAccess) {
-      loadLearners()
-    }
-  }, [hasAccess])
+    if (!pinChecked) return
+    if (!isAuthenticated) return
+    loadLearners()
+  }, [pinChecked, isAuthenticated])
 
   useEffect(() => {
     if (selectedLearnerId) {
@@ -165,7 +165,7 @@ export default function CalendarPage() {
       
       // Don't redirect - let the overlay handle it
       if (!session?.user) {
-        setHasAccess(false)
+        setCanPlan(false)
         setLoading(false)
         return
       }
@@ -180,12 +180,22 @@ export default function CalendarPage() {
       setTier(effectiveTier)
       
       const ent = featuresForTier(effectiveTier)
-      setHasAccess(ent.lessonPlanner)
+      setCanPlan(Boolean(ent.lessonPlanner))
       setLoading(false)
     } catch (err) {
-      setHasAccess(false)
+      setCanPlan(false)
       setLoading(false)
     }
+  }
+
+  const showViewOnlyNotice = () => {
+    alert('View-only: upgrade to Pro to schedule, plan, reschedule, or remove lessons.')
+  }
+
+  const requirePlannerAccess = () => {
+    if (canPlan) return true
+    showViewOnlyNotice()
+    return false
   }
 
   const loadLearners = async () => {
@@ -412,6 +422,7 @@ export default function CalendarPage() {
   }
 
   const savePlannedLessons = async (lessons) => {
+    if (!requirePlannerAccess()) return
     setPlannedLessons(lessons)
     
     if (!selectedLearnerId) return
@@ -439,6 +450,7 @@ export default function CalendarPage() {
   }
 
   const handlePlannedLessonUpdate = (date, lessonId, updatedLesson) => {
+    if (!requirePlannerAccess()) return
     const updated = { ...plannedLessons }
     if (updated[date]) {
       const index = updated[date].findIndex(l => l.id === lessonId)
@@ -450,6 +462,7 @@ export default function CalendarPage() {
   }
 
   const handlePlannedLessonRemove = (date, lessonId) => {
+    if (!requirePlannerAccess()) return
     const updated = { ...plannedLessons }
     if (updated[date]) {
       updated[date] = updated[date].filter(l => l.id !== lessonId)
@@ -461,6 +474,7 @@ export default function CalendarPage() {
   }
 
   const handleScheduleLesson = async (lessonKey, date) => {
+    if (!requirePlannerAccess()) return
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -495,6 +509,7 @@ export default function CalendarPage() {
   }
 
   const handleRemoveScheduledLesson = async (item, opts = {}) => {
+    if (!requirePlannerAccess()) return
     if (!opts?.skipConfirm) {
       if (!confirm('Remove this lesson from the schedule?')) return
     }
@@ -524,6 +539,7 @@ export default function CalendarPage() {
   }
 
   const handleRescheduleLesson = async (item, newDate) => {
+    if (!requirePlannerAccess()) return
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -567,6 +583,7 @@ export default function CalendarPage() {
   }
 
   const handleNoSchoolSet = async (date, reason) => {
+    if (!requirePlannerAccess()) return
     try {
       const supabase = getSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -717,6 +734,23 @@ export default function CalendarPage() {
                     </button>
                   }
                 />
+
+                {isAuthenticated && !canPlan && (
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="text-sm text-indigo-900">
+                        <strong>View-only mode.</strong> You can view your calendar, but Pro is required to schedule or plan lessons.
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => router.push('/facilitator/account/plan')}
+                        className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-indigo-700"
+                      >
+                        Upgrade
+                      </button>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Tab Headers */}
                 <div style={{
@@ -887,18 +921,22 @@ export default function CalendarPage() {
                                     Add Images
                                   </button>
                                   <button
-                                    onClick={() => setRemoveConfirmItem({ ...item, lessonTitle: lessonName })}
+                                    onClick={() => {
+                                      if (!requirePlannerAccess()) return
+                                      setRemoveConfirmItem({ ...item, lessonTitle: lessonName })
+                                    }}
                                     style={{
                                       padding: '3px 10px',
                                       fontSize: '11px',
                                       fontWeight: '600',
                                       borderRadius: '4px',
                                       border: 'none',
-                                      cursor: 'pointer',
+                                      cursor: canPlan ? 'pointer' : 'not-allowed',
                                       background: '#fee2e2',
                                       color: '#991b1b',
                                       transition: 'background 0.15s'
                                     }}
+                                    disabled={!canPlan}
                                     onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
                                     onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
                                   >
@@ -908,18 +946,22 @@ export default function CalendarPage() {
                               ) : (
                                 <>
                                   <button
-                                    onClick={() => setRescheduling(item.id)}
+                                    onClick={() => {
+                                      if (!requirePlannerAccess()) return
+                                      setRescheduling(item.id)
+                                    }}
                                     style={{
                                       padding: '3px 10px',
                                       fontSize: '11px',
                                       fontWeight: '600',
                                       borderRadius: '4px',
                                       border: 'none',
-                                      cursor: 'pointer',
+                                      cursor: canPlan ? 'pointer' : 'not-allowed',
                                       background: '#eff6ff',
                                       color: '#1e40af',
                                       transition: 'background 0.15s'
                                     }}
+                                    disabled={!canPlan}
                                     onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
                                     onMouseLeave={(e) => e.currentTarget.style.background = '#eff6ff'}
                                   >
@@ -933,11 +975,12 @@ export default function CalendarPage() {
                                       fontWeight: '600',
                                       borderRadius: '4px',
                                       border: 'none',
-                                      cursor: 'pointer',
+                                      cursor: canPlan ? 'pointer' : 'not-allowed',
                                       background: '#fee2e2',
                                       color: '#991b1b',
                                       transition: 'background 0.15s'
                                     }}
+                                    disabled={!canPlan}
                                     onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
                                     onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
                                   >
@@ -966,6 +1009,7 @@ export default function CalendarPage() {
                     learnerId={selectedLearnerId}
                     learnerGrade={learners.find(l => l.id === selectedLearnerId)?.grade || '3rd'}
                     tier={tier}
+                    canPlan={canPlan}
                     selectedDate={selectedDate}
                     plannedLessons={plannedLessons}
                     onPlannedLessonsChange={savePlannedLessons}
@@ -1169,24 +1213,6 @@ export default function CalendarPage() {
         'Set up recurring lesson schedules'
       ]}
     />
-    
-    {isAuthenticated && !hasAccess && (
-      <GatedOverlay
-        show={true}
-        gateType="tier"
-        feature="Lesson Calendar"
-        emoji="📅"
-        description="The Lesson Calendar is available on the Pro plan. Upgrade to access scheduling and tracking features."
-        benefits={[
-          'Schedule lessons in advance for each learner',
-          'View all scheduled lessons in a monthly calendar',
-          'Track lesson completion and attendance',
-          'Set up recurring lesson schedules'
-        ]}
-        currentTier={tier}
-        requiredTier="pro"
-      />
-    )}
     </>
   )
 }

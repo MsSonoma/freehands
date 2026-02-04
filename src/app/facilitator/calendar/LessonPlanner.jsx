@@ -13,6 +13,7 @@ export default function LessonPlanner({
   learnerId, 
   learnerGrade,
   tier,
+  canPlan,
   selectedDate,
   plannedLessons = {},
   onPlannedLessonsChange,
@@ -37,6 +38,12 @@ export default function LessonPlanner({
   const [templateId, setTemplateId] = useState(null)
   const [planStartDate, setPlanStartDate] = useState('')
   const [planDuration, setPlanDuration] = useState(1)
+
+  const requirePlannerAccess = () => {
+    if (canPlan) return true
+    alert('View-only: upgrade to Pro to use the Lesson Planner.')
+    return false
+  }
 
   useEffect(() => {
     loadCustomSubjects()
@@ -94,6 +101,7 @@ export default function LessonPlanner({
   }
 
   const handleAddCustomSubject = async () => {
+    if (!requirePlannerAccess()) return
     if (!newSubjectName.trim()) return
 
     try {
@@ -128,6 +136,7 @@ export default function LessonPlanner({
   }
 
   const handleDeleteCustomSubject = async (subjectId) => {
+    if (!requirePlannerAccess()) return
     if (!confirm('Delete this custom subject?')) return
 
     try {
@@ -168,6 +177,7 @@ export default function LessonPlanner({
   }
 
   const saveWeeklyPattern = async () => {
+    if (!requirePlannerAccess()) return
     if (!learnerId) {
       alert('Please select a learner first')
       return
@@ -215,6 +225,7 @@ export default function LessonPlanner({
   }
 
   const generatePlannedLessons = async (startDate, weeks = 4) => {
+    if (!requirePlannerAccess()) return
     if (!learnerId) {
       alert('Please select a learner first')
       return
@@ -532,6 +543,7 @@ export default function LessonPlanner({
   }
 
   const handleLessonClick = (lesson, date) => {
+    if (!requirePlannerAccess()) return
     setGeneratorData({
       title: lesson.title,
       description: lesson.description,
@@ -737,7 +749,10 @@ export default function LessonPlanner({
             }}>
               Duration
             </label>
-            <select
+                    onClick={() => {
+                      if (!requirePlannerAccess()) return
+                      setShowPreferences(true)
+                    }}
               value={planDuration}
               onChange={(e) => setPlanDuration(Number(e.target.value))}
               style={{

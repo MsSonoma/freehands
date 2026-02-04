@@ -34,10 +34,18 @@ Reusable overlay component that shows appropriate messaging based on gate type:
 **Tier model (current)**
 
 - `free` - signed in, no paid features
-- `trial` - limited (lifetime) generations; can view gated surfaces but cannot use Calendar, Mr. Mentor, Golden Keys, Visual Aids, or Games
+- `trial` - limited (lifetime) generations; can view all surfaces; write actions for Calendar/Mr. Mentor/Golden Keys/Visual Aids/Games remain gated
 - `standard` - paid
 - `pro` - paid; includes Mr. Mentor and planner/curriculum prefs
 - `lifetime` - legacy tier (treated as fully entitled)
+
+**Tier normalization (legacy compatibility)**
+
+Some older accounts may still have legacy tier ids stored in `profiles.plan_tier`.
+Entitlement checks must normalize these values before lookup:
+
+- `premium` / `premium-plus` -> `pro`
+- `plus` / `basic` -> `standard`
 
 **Important:** `requiredTier` is display/CTA text. Logic should be driven by `requiredFeature` entitlements.
 
@@ -157,4 +165,5 @@ export default function PremiumFeaturePage() {
 ## Notes
 
 - For in-session buttons (e.g., Games / Visual Aids), prefer keeping the buttons visible and blocking only the action with a short, in-context notice.
+- For the Facilitator Calendar, do not use a tier `GatedOverlay` that blocks scrolling/clicking. Keep the page viewable and gate only write actions (view-only banner + guarded handlers).
 - Server routes must enforce the same entitlements (UI gating is not sufficient).

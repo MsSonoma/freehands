@@ -1,6 +1,6 @@
 # Calendar Lesson Planning System - Ms. Sonoma Brain File
 
-**Last Updated**: 2026-01-20T00:40:00Z  
+**Last Updated**: 2026-02-04T21:15:00Z  
 **Status**: Canonical
 
 ## How It Works
@@ -128,19 +128,23 @@ plannedLessons = {
 
 **Calendar Page Mount:**
 1. Check PIN protection
-2. Check tier access (lessonPlanner required)
-3. Load learners list
+2. Resolve effective tier and entitlements (sets `canPlan` for write actions)
+3. Load learners list (always, once authenticated)
 4. Select first learner (if available)
 5. **Load scheduled lessons** (useEffect on selectedLearnerId)
 6. **Load planned lessons** (useEffect on selectedLearnerId)
 7. Load no-school dates
+
+**View-only rule (no hard locks):**
+- The calendar must remain viewable for authenticated users on all tiers.
+- When `canPlan` is false, scheduling/planning/no-school writes are blocked (view-only banner + action guards), but read data still loads.
 
 **Learner Change:**
 - Triggers reload of scheduled lessons, planned lessons, and no-school dates
 
 **After Generation:**
 - `generatePlannedLessons()` completes → calls `onPlannedLessonsChange(lessons)`
-- `savePlannedLessons(lessons)` updates state AND saves to database
+- `savePlannedLessons(lessons)` saves to database only when `canPlan` is true
 - Success message shows, lessons appear on calendar immediately
 
 ### Manual Scheduling: "Add Lessons" Picker

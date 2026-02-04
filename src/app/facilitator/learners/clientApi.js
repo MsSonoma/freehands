@@ -1,7 +1,7 @@
 "use client";
 
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
-import { featuresForTier } from '@/app/lib/entitlements';
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 
 const LS_KEY = 'facilitator_learners';
 
@@ -586,12 +586,11 @@ async function getPlanTier(supabase, uid) {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('plan_tier')
+      .select('subscription_tier, plan_tier')
       .eq('id', uid)
       .maybeSingle();
     if (error) return 'free';
-    const tier = (data?.plan_tier || 'free').toLowerCase();
-    return tier;
+    return resolveEffectiveTier(data?.subscription_tier, data?.plan_tier);
   } catch {
     return 'free';
   }

@@ -82,8 +82,23 @@ export const ENTITLEMENTS = {
   }
 };
 
+function normalizeTierId(rawTier) {
+  const tier = String(rawTier || 'free').trim().toLowerCase();
+  if (!tier) return 'free';
+
+  // Legacy paid tiers (pre-Standard/Pro)
+  if (tier === 'premium' || tier === 'premium-plus') return 'pro';
+  if (tier === 'plus') return 'standard';
+  if (tier === 'basic') return 'standard';
+
+  // Legacy/alternate labels
+  if (tier === 'starter') return 'free';
+
+  return tier;
+}
+
 export function featuresForTier(tier) {
-  const key = (tier || 'free').toLowerCase();
+  const key = normalizeTierId(tier);
   return ENTITLEMENTS[key] || ENTITLEMENTS.free;
 }
 
@@ -102,7 +117,7 @@ export function resolveEffectiveTier(subscriptionTier, paidTier) {
   }
   
   // Otherwise use their paid tier (or default to free)
-  return (paidTier || 'free').toLowerCase();
+  return normalizeTierId(paidTier || 'free');
 }
 
 const entitlementsApi = { ENTITLEMENTS, featuresForTier, resolveEffectiveTier };
