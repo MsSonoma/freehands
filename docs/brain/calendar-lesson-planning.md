@@ -128,7 +128,7 @@ plannedLessons = {
 
 **Calendar Page Mount:**
 1. Check PIN protection
-2. Check tier access (facilitatorTools required)
+2. Check tier access (lessonPlanner required)
 3. Load learners list
 4. Select first learner (if available)
 5. **Load scheduled lessons** (useEffect on selectedLearnerId)

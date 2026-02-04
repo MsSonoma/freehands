@@ -1,7 +1,7 @@
 # Ms. Sonoma Teaching System
 
 **Status**: Canonical  
-**Last Updated**: 2026-01-27T14:02:24Z
+**Last Updated**: 2026-02-04T00:10:00Z
 
 ## How It Works
 
@@ -15,6 +15,13 @@ Ms. Sonoma operates as a **stateless, instruction-only system**:
 - Behavior derives entirely from inline prompt text
 - No references to files, variables, tools, APIs, or network in payloads
 - ASCII-only punctuation, no emojis, no repeated punctuation
+
+### Session V1 Status (Discontinued)
+
+- "V1" refers to the legacy Session V1 architecture (the old `/session` implementation).
+- Session V1 is legacy-only and should not be extended.
+- The legacy Session V1 teaching hook is explicitly named `useTeachingFlow_LEGACY_SESSION_V1_DISCONTINUED` to reduce drift edits.
+- All active teaching changes should target Session V2 (`TeachingController`).
 
 ### Role Separation
 
@@ -49,7 +56,10 @@ Ms. Sonoma operates as a **stateless, instruction-only system**:
    - End with [VERBATIM]: "Do you have any questions? You could ask questions like..." + 2-3 example questions
 
 3. **Teaching Examples** (second stage)
-   - 2-3 tiny worked examples using vocab terms
+   - Inputs: the examples prompt receives the full lesson JSON (including all generated questions used for assessment)
+   - Goal: reverse-engineer the assessment questions back into the teaching examples
+   - Coverage requirement (CRITICAL): examples must teach all knowledge needed to answer every lesson question (comprehension, exercise, worksheet, test), even when multiple questions overlap
+   - Output shape: 2-3 tiny worked examples by default; may use up to 5 tiny examples when needed to cover all question content
    - End with [VERBATIM]: "Do you have any questions? You could ask questions like..." + 2-3 example questions
 
 4. **Repeat** (when Repeat Vocab clicked)

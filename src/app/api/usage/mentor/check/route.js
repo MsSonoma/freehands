@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { ENTITLEMENTS } from '../../../../lib/entitlements';
+import { ENTITLEMENTS, resolveEffectiveTier } from '../../../../lib/entitlements';
 
 export async function GET(request) {
   try {
@@ -24,7 +24,7 @@ export async function GET(request) {
     // Get profile with usage data
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('plan_tier, mentor_sessions_used, mentor_addon_active, mentor_current_session_tokens, mentor_session_started_at')
+      .select('subscription_tier, plan_tier, mentor_sessions_used, mentor_addon_active, mentor_current_session_tokens, mentor_session_started_at')
       .eq('id', user.id)
       .single();
 
@@ -32,23 +32,23 @@ export async function GET(request) {
       return Response.json({ allowed: false, reason: 'Profile not found' }, { status: 404 });
     }
 
-    const tier = profile.plan_tier || 'free';
+    const tier = resolveEffectiveTier(profile.subscription_tier, profile.plan_tier);
     const entitlement = ENTITLEMENTS[tier] || ENTITLEMENTS.free;
     
     const sessionLimit = entitlement.mentorSessions;
     const hasAddon = profile.mentor_addon_active || false;
 
     // No Mr. Mentor access
-    if (sessionLimit === 0) {
+    if (!sessionLimit || sessionLimit === 0) {
       return Response.json({ 
         allowed: false, 
-        reason: 'Upgrade to Premium for Mr. Mentor access',
+        reason: 'Upgrade to Pro for Mr. Mentor access',
         tier 
       });
     }
 
-    // Unlimited with addon
-    if (sessionLimit === -1 || hasAddon) {
+    // Unlimited with Pro/Lifetime or addon
+    if (sessionLimit === Infinity || hasAddon) {
       return Response.json({ 
         allowed: true,
         unlimited: true,
@@ -61,7 +61,7 @@ export async function GET(request) {
     if (sessionsUsed >= sessionLimit) {
       return Response.json({ 
         allowed: false,
-        reason: 'Session limit reached. Add Premium+ for unlimited access.',
+        reason: 'Session limit reached. Upgrade to Pro for unlimited access.',
         used: sessionsUsed,
         limit: sessionLimit,
         needsAddon: true,

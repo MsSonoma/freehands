@@ -198,6 +198,7 @@
       "parallel implementation strategy",
       "feature flag system",
       "architectural boundaries",
+      "legacy session v1 discontinued",
       "event-driven communication",
       "AudioEngine component",
       "TeachingController component",
@@ -260,7 +261,7 @@
       "facilitator-lessons",
       "supabase-lesson-load"
     ],
-    "last_updated": "2026-01-27T15:11:55Z",
+    "last_updated": "2026-02-04T00:10:00Z",
     "status": "active-development"
   },
   "mr-mentor-conversation-flows": {
@@ -320,7 +321,7 @@
       "owned-lessons",
       "LessonPicker"
     ],
-    "last_updated": "2026-01-20T00:40:00Z",
+    "last_updated": "2026-02-04T19:31:04Z",
     "status": "canonical"
   },
   "tts-prefetching": {
@@ -419,7 +420,7 @@
       "stopPlayTimer",
       "stopWorkPhaseTimer"
     ],
-    "last_updated": "2026-01-26T22:18:09Z",
+    "last_updated": "2026-02-04T01:05:00Z",
     "status": "canonical"
   },
   "learner-settings-bus": {
@@ -517,6 +518,9 @@
       "phase transitions",
       "content safety",
       "prompt engineering",
+      "question-linked examples",
+      "assessment coverage",
+      "full lesson json in examples",
       "leniency modes",
       "brand signal anchors",
       "normalization",
@@ -538,7 +542,7 @@
       "Games overlay",
       "opening actions play time"
     ],
-    "last_updated": "2026-01-27T14:02:24Z",
+    "last_updated": "2026-02-04T00:10:00Z",
     "status": "canonical"
   },
   "games-overlay": {
@@ -674,6 +678,19 @@
     "last_updated": "2025-12-09T20:00:00Z",
     "status": "canonical"
   },
+  "account-provisioning": {
+    "file": "account-provisioning.md",
+    "systems": [
+      "account provisioning",
+      "Supabase admin createUser",
+      "email_confirm",
+      "profiles.plan_tier",
+      "pro",
+      "DEMO login alias"
+    ],
+    "last_updated": "2026-02-04T19:31:04Z",
+    "status": "canonical"
+  },
   "content-safety": {
     "file": "content-safety.md",
     "systems": [
@@ -753,7 +770,7 @@
       "lease-extension",
       "concurrent-device-limiting"
     ],
-    "last_updated": "2025-12-31T16:00:00Z",
+    "last_updated": "2026-02-04T01:05:00Z",
     "status": "canonical"
   },
   "lesson-quota": {
@@ -767,7 +784,7 @@
       "quota enforcement API",
       "server-side validation"
     ],
-    "last_updated": "2026-01-10T19:42:04Z",
+    "last_updated": "2026-02-04T01:05:00Z",
     "status": "canonical"
   },
   "story-feature": {
@@ -797,7 +814,7 @@
       "upgrade-flow-integration",
       "universal-gating"
     ],
-    "last_updated": "2025-12-31T16:00:00Z",
+    "last_updated": "2026-02-04T19:31:04Z",
     "status": "canonical"
   }
 }

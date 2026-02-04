@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -18,17 +19,17 @@ async function readUserAndTier(request){
     const admin = svc ? createClient(url, svc, { auth: { persistSession:false } }) : null
     let plan = 'free'
     if (admin) {
-      const { data } = await admin.from('profiles').select('plan_tier').eq('id', user.id).maybeSingle()
-      plan = (data?.plan_tier || 'free').toLowerCase()
+      const { data } = await admin.from('profiles').select('subscription_tier, plan_tier').eq('id', user.id).maybeSingle()
+      plan = resolveEffectiveTier(data?.subscription_tier, data?.plan_tier)
     } else {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('plan_tier')
+          .select('subscription_tier, plan_tier')
           .eq('id', user.id)
           .maybeSingle()
-        if (!error && data?.plan_tier) {
-          plan = data.plan_tier.toLowerCase()
+        if (!error) {
+          plan = resolveEffectiveTier(data?.subscription_tier, data?.plan_tier)
         }
       } catch {
         // ignore
@@ -44,7 +45,7 @@ export async function POST(request){
   const startTime = Date.now()
   const { user, plan_tier, supabase } = await readUserAndTier(request)
   if (!user) return NextResponse.json({ error:'Unauthorized' }, { status: 401 })
-  if (plan_tier !== 'premium') return NextResponse.json({ error:'Premium plan required' }, { status: 403 })
+  if (!featuresForTier(plan_tier).lessonGenerator) return NextResponse.json({ error:'Lesson Generator plan required' }, { status: 403 })
   if (!supabase) return NextResponse.json({ error:'Storage not configured' }, { status: 500 })
   
   let body

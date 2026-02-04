@@ -29,8 +29,8 @@
         "paid plan",
         "features included"
       ],
-      "description": "Subscription Tiers determine which features you have access to. The Free tier includes basic lessons with Ms. Sonoma. Paid tiers unlock Mr. Mentor, lesson generation, calendar scheduling, multiple learners, and advanced features. Beta users get special early access.",
-      "howToUse": "View your current tier in account settings. To upgrade, click 'Upgrade Plan' and choose the tier that fits your needs. Beta users have access to all features during the beta period.",
+      "description": "Subscription tiers determine which features you can use. Free includes limited access. Free Trial includes up to 5 lifetime AI lesson generations. Standard and Pro unlock paid features (and higher learner limits). Beta users map to Pro entitlements.",
+      "howToUse": "View your current plan in account settings. To upgrade, click 'Upgrade Plan' and choose Standard or Pro. If you are on Free Trial, you can still browse gated pages, but some actions are disabled until upgrade.",
       "relatedFeatures": ["account-settings"]
     },
     {

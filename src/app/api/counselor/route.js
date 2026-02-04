@@ -501,7 +501,7 @@ function getCapabilitiesInfo(args) {
         notes: 'Optional. Additional guidance for lesson creation'
       },
       returns: 'Success confirmation with lesson file name and title. Lesson is saved to facilitator\'s library.',
-      notes: 'Takes 30-60 seconds. Requires premium tier. ALWAYS search first before generating.',
+      notes: 'Takes 30-60 seconds. Requires a paid plan (Standard/Pro). ALWAYS search first before generating.',
       example: 'Generate 5th grade science: {title: "Water Cycle", subject: "science", grade: "5th", difficulty: "Intermediate", description: "Learn about evaporation, condensation, and precipitation"}'
     },
     

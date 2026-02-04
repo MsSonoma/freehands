@@ -33,6 +33,7 @@ export default function TimerControlOverlay({
   phase,
   timerType = 'play',
   totalMinutes = 5,
+  goldenKeysEntitled = true,
   goldenKeysEnabled = true,
   goldenKeyBonus = 0,
   isPaused = false,
@@ -372,12 +373,27 @@ export default function TimerControlOverlay({
         </div>
 
         {/* Golden Key Controls */}
-        {goldenKeysEnabled ? (
+        {goldenKeysEntitled ? (
           <div style={{
             borderTop: '1px solid #e5e7eb',
             paddingTop: 20
           }}>
             <h3 style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 600, color: '#111' }}>🔑 Golden Key</h3>
+
+            {!goldenKeysEnabled && (
+              <div style={{
+                border: '1px solid #e5e7eb',
+                background: '#f9fafb',
+                color: '#6b7280',
+                padding: 12,
+                borderRadius: 10,
+                fontSize: 13,
+                lineHeight: 1.5,
+                marginBottom: 12
+              }}>
+                Golden Keys are turned off for this learner.
+              </div>
+            )}
             
             <div style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
@@ -385,7 +401,25 @@ export default function TimerControlOverlay({
               </div>
             </div>
 
-            {!hasGoldenKey ? (
+            {!goldenKeysEnabled ? (
+              <button
+                disabled={true}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: 'none',
+                  borderRadius: 8,
+                  background: '#d1d5db',
+                  color: '#374151',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  cursor: 'not-allowed',
+                  boxShadow: 'none'
+                }}
+              >
+                Apply Golden Key to This Lesson
+              </button>
+            ) : !hasGoldenKey ? (
               <button
                 onClick={handleApplyGoldenKey}
                 disabled={saving}
@@ -432,7 +466,25 @@ export default function TimerControlOverlay({
                   : 'Applying a golden key will add bonus time to play timers for this lesson.'}
             </div>
           </div>
-        ) : null}
+        ) : (
+          <div style={{
+            borderTop: '1px solid #e5e7eb',
+            paddingTop: 20
+          }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 600, color: '#111' }}>🔑 Golden Key</h3>
+            <div style={{
+              border: '1px solid #fcd34d',
+              background: '#fef3c7',
+              color: '#92400e',
+              padding: 12,
+              borderRadius: 10,
+              fontSize: 13,
+              lineHeight: 1.5
+            }}>
+              Golden Keys are available on Standard and Pro plans.
+            </div>
+          </div>
+        )}
 
         {/* Close Button */}
         <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 20, marginTop: 20 }}>

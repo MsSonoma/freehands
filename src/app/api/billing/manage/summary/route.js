@@ -7,9 +7,8 @@ function getEnv() {
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const prices = {
-    basic: process.env.STRIPE_PRICE_BASIC,
-    plus: process.env.STRIPE_PRICE_PLUS,
-    premium: process.env.STRIPE_PRICE_PREMIUM,
+    standard: process.env.STRIPE_PRICE_STANDARD,
+    pro: process.env.STRIPE_PRICE_PRO,
   };
   return { url, anon, service, prices };
 }
@@ -23,9 +22,8 @@ function canonTier(input) {
     .replace(/annual|yearly|monthly|month|year|yr|mo/g, '')
     .replace(/[-_\s]+/g, ' ')
     .trim();
-  if (/(premium|pro|ultimate|max|advanced)\b/.test(cleaned)) return 'premium';
-  if (/(plus|standard|growth|team)\b/.test(cleaned)) return 'plus';
-  if (/(basic|starter|core|lite)\b/.test(cleaned)) return 'basic';
+  if (/\bpro\b/.test(cleaned)) return 'pro';
+  if (/\bstandard\b/.test(cleaned)) return 'standard';
   return raw;
 }
 
@@ -90,7 +88,7 @@ export async function GET(req) {
 
     // Derive current tier from all subscription items
     const items = sub?.items?.data || [];
-    const planRank = { basic: 1, plus: 2, premium: 3 };
+    const planRank = { standard: 1, pro: 2 };
     let best = { tier: null, rank: -1, priceId: null };
     for (const it of items) {
       const price = it?.price || null;
@@ -122,9 +120,8 @@ export async function GET(req) {
         if (!tier) {
           const nameSource = (productObj?.name || price?.nickname || '').toString();
           const lc = nameSource.toLowerCase();
-          if (/(premium|pro|ultimate)/.test(lc)) tier = 'premium';
-          else if (/(plus|standard)/.test(lc)) tier = 'plus';
-          else if (/(basic|starter)/.test(lc)) tier = 'basic';
+          if (/\bpro\b/.test(lc)) tier = 'pro';
+          else if (/\bstandard\b/.test(lc)) tier = 'standard';
         }
       }
       if (tier) {
@@ -145,8 +142,8 @@ export async function GET(req) {
         const top = recurring.sort((a,b)=> (b.unit_amount||0) - (a.unit_amount||0))[0];
         priceId = priceId || top.id;
         const amt = top.unit_amount || 0; // cents
-        // Heuristic thresholds (USD): 3500+ premium, 1500+ plus, else basic
-        current_tier = amt >= 3000 ? 'premium' : (amt >= 1500 ? 'plus' : 'basic');
+        // Heuristic thresholds (USD): 6900+ pro, otherwise standard
+        current_tier = amt >= 6500 ? 'pro' : 'standard';
       }
     }
 

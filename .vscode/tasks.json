@@ -825,6 +825,202 @@
 			"isBackground": true,
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "Admin: Grant Pro demo",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/grantPlan.mjs",
+				"demo@mssonoma.com",
+				"pro"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Admin: Debug grant pro demo",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"node -v; node scripts/grantPlan.mjs demo@mssonoma.com pro; \"exitcode=$LASTEXITCODE\""
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Meta: UTC timestamp",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"[DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Meta: UTC timestamp (node)",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"-e",
+				"console.log(new Date().toISOString())"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Meta: UTC timestamp (node) 2",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"-e",
+				"console.log(new Date().toISOString())"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "lint",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"lint"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "lint-cmd",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/c",
+				"npm run lint"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "task-echo",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Write-Output hi"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "npm-version",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"npm --version"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "lint-ps",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"npm run lint 2>&1 | Out-String"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "lint-ps2",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"npm run lint"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "lint-version",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"npm run lint -- --version"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "lint-changed",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"npm run lint -- src/app/session/v2/TeachingController.jsx src/app/session/hooks/useTeachingFlow.js"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "lint-v1-touch",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"npm run lint -- src/app/session/page.js src/app/session/hooks/useTeachingFlow.js"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "utc-now",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"node -e \"console.log(new Date().toISOString())\""
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "lint-session-v1-symbols",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"npm run lint -- src/app/session/page.js src/app/session/hooks/useTeachingFlow.js"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }

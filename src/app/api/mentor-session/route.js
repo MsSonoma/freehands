@@ -3,6 +3,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { scryptSync, timingSafeEqual } from 'node:crypto'
+import { featuresForTier, resolveEffectiveTier } from '../../lib/entitlements'
 
 export const runtime = 'nodejs'
 
@@ -109,6 +110,19 @@ function verifyPinHash(pin, stored) {
   }
 }
 
+async function requireMrMentorAccess(userId) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_tier, plan_tier')
+    .eq('id', userId)
+    .maybeSingle()
+
+  const effectiveTier = resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier)
+  const ent = featuresForTier(effectiveTier)
+  const allowed = ent?.mentorSessions === Infinity || (Number.isFinite(ent?.mentorSessions) && ent.mentorSessions > 0)
+  return { allowed, tier: effectiveTier }
+}
+
 async function verifyPin(userId, pinCode) {
   // Try to get facilitator_pin_hash first (modern schema)
   const { data: profile, error } = await supabase
@@ -150,16 +164,9 @@ export async function GET(request) {
       return Response.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // Check for Premium tier
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('plan_tier')
-      .eq('id', user.id)
-      .maybeSingle()
-    
-    const planTier = (profile?.plan_tier || 'free').toLowerCase()
-    if (planTier !== 'premium' && planTier !== 'premium-plus' && planTier !== 'lifetime') {
-      return Response.json({ error: 'Premium plan required' }, { status: 403 })
+    const access = await requireMrMentorAccess(user.id)
+    if (!access.allowed) {
+      return Response.json({ error: 'Pro plan required' }, { status: 403 })
     }
 
     const now = new Date()
@@ -228,16 +235,9 @@ export async function POST(request) {
       return Response.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // Check for Premium tier
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('plan_tier')
-      .eq('id', user.id)
-      .maybeSingle()
-    
-    const planTier = (profile?.plan_tier || 'free').toLowerCase()
-    if (planTier !== 'premium' && planTier !== 'premium-plus' && planTier !== 'lifetime') {
-      return Response.json({ error: 'Premium plan required' }, { status: 403 })
+    const access = await requireMrMentorAccess(user.id)
+    if (!access.allowed) {
+      return Response.json({ error: 'Pro plan required' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -486,16 +486,9 @@ export async function PATCH(request) {
       return Response.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // Check for Premium tier
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('plan_tier')
-      .eq('id', user.id)
-      .maybeSingle()
-    
-    const planTier = (profile?.plan_tier || 'free').toLowerCase()
-    if (planTier !== 'premium' && planTier !== 'premium-plus' && planTier !== 'lifetime') {
-      return Response.json({ error: 'Premium plan required' }, { status: 403 })
+    const access = await requireMrMentorAccess(user.id)
+    if (!access.allowed) {
+      return Response.json({ error: 'Pro plan required' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -592,16 +585,9 @@ export async function DELETE(request) {
       return Response.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // Check for Premium tier
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('plan_tier')
-      .eq('id', user.id)
-      .maybeSingle()
-    
-    const planTier = (profile?.plan_tier || 'free').toLowerCase()
-    if (planTier !== 'premium' && planTier !== 'premium-plus' && planTier !== 'lifetime') {
-      return Response.json({ error: 'Premium plan required' }, { status: 403 })
+    const access = await requireMrMentorAccess(user.id)
+    if (!access.allowed) {
+      return Response.json({ error: 'Pro plan required' }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)

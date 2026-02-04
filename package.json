@@ -10,7 +10,7 @@
     "dev:3001": "cross-env PORT=3001 next dev -H 0.0.0.0",
     "start:3001": "cross-env PORT=3001 next start -H 0.0.0.0",
     "dev:lan": "cross-env PORT=3001 next dev -p 3001 -H 0.0.0.0",
-    "grant:premium": "node scripts/grantPlan.mjs outreach.mssonoma@gmail.com premium",
+    "grant:pro": "node scripts/grantPlan.mjs outreach.mssonoma@gmail.com pro",
     "lessons:balance-mc": "node scripts/balance-mc-answers.mjs",
     "clean": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true});require('fs').rmSync('.next-dev',{recursive:true,force:true});require('fs').rmSync('.turbo',{recursive:true,force:true});console.log('Cleaned build dirs')}catch(e){process.exit(0)}\"",
     "clean:dev": "npm run clean && npm run dev",
@@ -18,7 +18,8 @@
     "kill:3001": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\kill-port-3001.ps1",
     "restart:dev:3001": "npm run kill:3001 && npm run dev:3001",
     "doctor": "node scripts/doctor.mjs",
-    "mentor:cleanup-sessions": "node scripts/cleanup-stale-mentor-sessions.mjs"
+    "mentor:cleanup-sessions": "node scripts/cleanup-stale-mentor-sessions.mjs",
+    "provision:plan": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\provision-premium.ps1"
   },
   "dependencies": {
     "@google-cloud/speech": "^6.7.1",

@@ -28,7 +28,7 @@ export default function GatedOverlay({
   description,
   benefits = [],
   currentTier = 'free',
-  requiredTier = 'premium'
+  requiredTier = 'standard'
 }) {
   const router = useRouter()
 

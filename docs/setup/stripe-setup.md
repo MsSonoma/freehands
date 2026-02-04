@@ -1,16 +1,16 @@
 Stripe Billing Setup
 
 Overview
-- We use Stripe Billing for subscriptions with three tiers: Basic, Plus, Premium.
+- We use Stripe Billing for subscriptions with two paid tiers: Standard and Pro.
+- Free and Free Trial do not require Stripe checkout.
 - Server routes: /api/billing/checkout, /api/billing/portal, /api/billing/webhook
 - Supabase holds plan state in profiles.plan_tier and optional subscriptions table.
 
 1) Create Products and Prices
-- In Stripe Dashboard, create Products: Basic ($5/mo), Plus ($20/mo), Premium ($35/mo)
+- In Stripe Dashboard, create Products: Standard ($49/mo), Pro ($69/mo)
 - Copy the monthly Price IDs and set them as env vars:
-  - STRIPE_PRICE_BASIC=price_xxx
-  - STRIPE_PRICE_PLUS=price_xxx
-  - STRIPE_PRICE_PREMIUM=price_xxx
+  - STRIPE_PRICE_STANDARD=price_xxx
+  - STRIPE_PRICE_PRO=price_xxx
 
 2) Environment Variables (.env.local)
 - STRIPE_SECRET_KEY=sk_live_or_test_...
@@ -25,7 +25,7 @@ Run in Supabase SQL editor:
 
 -- profiles additions
 alter table profiles add column if not exists stripe_customer_id text;
-alter table profiles add column if not exists plan_tier text not null default 'free' check (plan_tier in ('free','basic','plus','premium'));
+alter table profiles add column if not exists plan_tier text not null default 'free' check (plan_tier in ('free','trial','standard','pro','lifetime'));
 
 -- optional subscriptions table
 create table if not exists subscriptions (
@@ -53,7 +53,7 @@ end $$;
 
 5) Test Flow
 - Sign up and log in
-- Go to Facilitator > Plan and choose Basic/Plus/Premium
+- Go to Facilitator > Plan and choose Standard/Pro
 - Complete checkout; webhook updates profiles.plan_tier
 - Use Manage subscription to access billing portal.
 

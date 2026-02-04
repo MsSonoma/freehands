@@ -55,6 +55,7 @@ import CaptionPanel from '../components/CaptionPanel';
 import SessionVisualAidsCarousel from '../components/SessionVisualAidsCarousel';
 import { useSessionTracking } from '@/app/hooks/useSessionTracking';
 import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 
 // Test Review UI Component (matches V1)
 function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview }) {
@@ -596,6 +597,70 @@ function SessionPageV2Inner() {
   const [visualAidsData, setVisualAidsData] = useState(null);
   const [showVisualAids, setShowVisualAids] = useState(false);
 
+  // Plan entitlements (used for view-only gating inside the session).
+  const [planTier, setPlanTier] = useState('free');
+  const planEnt = useMemo(() => featuresForTier(planTier), [planTier]);
+  const [featureGateNotice, setFeatureGateNotice] = useState('');
+  const featureGateNoticeTimerRef = useRef(null);
+
+  const showFeatureGateNotice = useCallback((text) => {
+    const msg = String(text || '').trim();
+    if (!msg) return;
+    try {
+      if (featureGateNoticeTimerRef.current) {
+        clearTimeout(featureGateNoticeTimerRef.current);
+        featureGateNoticeTimerRef.current = null;
+      }
+    } catch {}
+    setFeatureGateNotice(msg);
+    try {
+      featureGateNoticeTimerRef.current = setTimeout(() => {
+        setFeatureGateNotice('');
+        featureGateNoticeTimerRef.current = null;
+      }, 4500);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = getSupabaseClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
+        if (!uid) {
+          if (!cancelled) setPlanTier('free');
+          return;
+        }
+        const { data } = await supabase
+          .from('profiles')
+          .select('subscription_tier, plan_tier')
+          .eq('id', uid)
+          .maybeSingle();
+        const effective = resolveEffectiveTier(data?.subscription_tier, data?.plan_tier);
+        if (!cancelled) setPlanTier(effective);
+      } catch {
+        if (!cancelled) setPlanTier('free');
+      }
+    })();
+    return () => {
+      cancelled = true;
+      try {
+        if (featureGateNoticeTimerRef.current) {
+          clearTimeout(featureGateNoticeTimerRef.current);
+          featureGateNoticeTimerRef.current = null;
+        }
+      } catch {}
+    };
+  }, []);
+
+  // Trial: force-disable Golden Keys even if learner setting is enabled.
+  useEffect(() => {
+    if (!planEnt?.goldenKeyFeatures) {
+      setGoldenKeysEnabled(false);
+    }
+  }, [planEnt?.goldenKeyFeatures]);
+
   useEffect(() => {
     openingActionBusyRef.current = openingActionBusy;
   }, [openingActionBusy]);
@@ -1062,8 +1127,9 @@ function SessionPageV2Inner() {
         if (typeof learner.golden_keys_enabled !== 'boolean') {
           throw new Error('Learner profile missing golden_keys_enabled flag. Please run migrations.');
         }
-        setGoldenKeysEnabled(learner.golden_keys_enabled);
-        goldenKeysEnabledRef.current = learner.golden_keys_enabled;
+        const nextGoldenKeysEnabled = planEnt?.goldenKeyFeatures ? learner.golden_keys_enabled : false;
+        setGoldenKeysEnabled(nextGoldenKeysEnabled);
+        goldenKeysEnabledRef.current = nextGoldenKeysEnabled;
 
         // Play portion flags (required - no defaults or fallback)
         const playFlags = {
@@ -1135,7 +1201,7 @@ function SessionPageV2Inner() {
     }
     
     loadLearnerProfile();
-  }, [lessonData, lessonId, lessonKey, subjectParam, goldenKeyFromUrl, goldenKeyLessonKey]);
+  }, [lessonData, lessonId, lessonKey, subjectParam, goldenKeyFromUrl, goldenKeyLessonKey, planEnt?.goldenKeyFeatures]);
 
   // Live-update learner settings (no localStorage persistence)
   useEffect(() => {
@@ -1151,10 +1217,11 @@ function SessionPageV2Inner() {
       if ('golden_keys_enabled' in patch) {
         const next = patch.golden_keys_enabled;
         if (typeof next !== 'boolean') return;
-        setGoldenKeysEnabled(next);
-        goldenKeysEnabledRef.current = next;
-        try { timerServiceRef.current?.setGoldenKeysEnabled?.(next); } catch {}
-        if (!next) {
+        const coerced = planEnt?.goldenKeyFeatures ? next : false;
+        setGoldenKeysEnabled(coerced);
+        goldenKeysEnabledRef.current = coerced;
+        try { timerServiceRef.current?.setGoldenKeysEnabled?.(coerced); } catch {}
+        if (!coerced) {
           setGoldenKeyEligible(false);
           setHasGoldenKey(false);
           setIsGoldenKeySuspended(false);
@@ -1215,7 +1282,7 @@ function SessionPageV2Inner() {
     return () => {
       try { unsubscribe?.(); } catch {}
     };
-  }, [learnerProfile?.id]);
+  }, [learnerProfile?.id, planEnt?.goldenKeyFeatures]);
 
   // Load persisted worksheet/test sets for printing (local+Supabase)
   useEffect(() => {
@@ -5780,11 +5847,17 @@ function SessionPageV2Inner() {
             {Array.isArray(visualAidsData) && visualAidsData.length > 0 && (
               <button
                 type="button"
-                onClick={() => setShowVisualAids(true)}
+                onClick={() => {
+                  if (!planEnt?.visualAids) {
+                    showFeatureGateNotice('Visual Aids are disabled on Trial. Upgrade to Standard or Pro to use them.');
+                    return;
+                  }
+                  setShowVisualAids(true);
+                }}
                 aria-label="Visual Aids"
                 title="Visual Aids"
                 style={{
-                  background: '#1f2937',
+                  background: planEnt?.visualAids ? '#1f2937' : '#6b7280',
                   color: '#fff',
                   border: 'none',
                   width: 'clamp(34px, 6.2vw, 52px)',
@@ -5793,7 +5866,8 @@ function SessionPageV2Inner() {
                   placeItems: 'center',
                   borderRadius: '50%',
                   cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                  opacity: planEnt?.visualAids ? 1 : 0.7
                 }}
               >
                 <span style={{ fontSize: 'clamp(16px, 3.3vw, 22px)', lineHeight: 1 }}>🖼️</span>
@@ -6118,11 +6192,17 @@ function SessionPageV2Inner() {
                     </button>
 
                     <button
-                      onClick={() => setShowGames(true)}
+                      onClick={() => {
+                        if (!planEnt?.games) {
+                          showFeatureGateNotice('Games are disabled on Trial. Upgrade to Standard or Pro to use them.');
+                          return;
+                        }
+                        setShowGames(true);
+                      }}
                       style={{
                         padding: '8px 16px',
                         fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
-                        background: '#0ea5e9',
+                        background: planEnt?.games ? '#0ea5e9' : '#6b7280',
                         color: '#fff',
                         border: 'none',
                         borderRadius: 8,
@@ -7102,7 +7182,7 @@ function SessionPageV2Inner() {
         </div>
       </div>
 
-      {showVisualAids && Array.isArray(visualAidsData) && visualAidsData.length > 0 && (
+      {showVisualAids && planEnt?.visualAids && Array.isArray(visualAidsData) && visualAidsData.length > 0 && (
         <SessionVisualAidsCarousel
           visualAids={visualAidsData}
           onClose={() => setShowVisualAids(false)}
@@ -7112,7 +7192,7 @@ function SessionPageV2Inner() {
         />
       )}
       
-      {showGames && (() => {
+      {showGames && planEnt?.games && (() => {
         const phaseName = getCurrentPhaseName();
         const timerType = phaseName ? currentTimerMode[phaseName] : null;
         const timerNode = (phaseTimers && phaseName && timerType === 'play') ? (
@@ -7169,8 +7249,9 @@ function SessionPageV2Inner() {
           phase={getCurrentPhaseName()}
           timerType={currentTimerMode[getCurrentPhaseName()] || 'work'}
           totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()] || 'work')}
-          goldenKeysEnabled={goldenKeysEnabledRef.current !== false}
-          goldenKeyBonus={goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
+          goldenKeysEntitled={!!planEnt?.goldenKeyFeatures}
+          goldenKeysEnabled={!!planEnt?.goldenKeyFeatures && goldenKeysEnabledRef.current !== false}
+          goldenKeyBonus={!!planEnt?.goldenKeyFeatures && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
           isPaused={timerPaused}
           onUpdateTime={(seconds) => {
             const phaseName = getCurrentPhaseName();
@@ -7192,6 +7273,30 @@ function SessionPageV2Inner() {
           onUnsuspendGoldenKey={handleUnsuspendGoldenKey}
         />
       )}
+
+      {featureGateNotice ? (
+        <div
+          style={{
+            position: 'fixed',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            bottom: 88,
+            zIndex: 30000,
+            background: 'rgba(17,24,39,0.92)',
+            color: '#fff',
+            padding: '10px 14px',
+            borderRadius: 12,
+            maxWidth: 520,
+            width: 'calc(100vw - 32px)',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+            fontSize: 14,
+            fontWeight: 700,
+            textAlign: 'center'
+          }}
+        >
+          {featureGateNotice}
+        </div>
+      ) : null}
 
       {showTakeoverDialog && (
         <SessionTakeoverDialog

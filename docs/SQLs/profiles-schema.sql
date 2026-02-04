@@ -6,7 +6,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   full_name text,
-  plan_tier text not null default 'free' check (plan_tier in ('free','basic','plus','premium')),
+  plan_tier text not null default 'free' check (plan_tier in ('free','trial','standard','pro','lifetime')),
   stripe_customer_id text,
   timezone text,
   -- Store a hashed facilitator PIN (bcrypt). Do NOT store plaintext.

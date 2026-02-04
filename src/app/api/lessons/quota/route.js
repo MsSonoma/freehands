@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { resolveEffectiveTier } from '../../../lib/entitlements';
+import { featuresForTier, resolveEffectiveTier } from '../../../lib/entitlements';
 
 function getEnv() {
   return {
@@ -85,9 +85,8 @@ async function readPlanTierAndCountInTz(svc, userId, tzParam) {
 }
 
 function lessonsPerDay(tier) {
-  const map = { free: 1, basic: 5, plus: 20, premium: Infinity };
-  const k = (tier || 'free').toLowerCase();
-  return map[k] ?? 1;
+  const ent = featuresForTier(tier);
+  return Number.isFinite(ent?.lessonsPerDay) || ent?.lessonsPerDay === Infinity ? ent.lessonsPerDay : 1;
 }
 
 export async function GET(req) {

@@ -5,6 +5,13 @@
 **Updated:** 2026-01-27  
 **Purpose:** Complete architectural rewrite of session page to eliminate coupling, race conditions, and state explosion
 
+## Session V1 (Discontinued)
+
+- Session V2 is the active architecture.
+- Session V1 exists only as a legacy fallback for debugging, and must not be extended.
+- The force-V1 toggle key is still supported for legacy access: `localStorage.setItem('session_architecture_v1', 'true')`.
+- Legacy Session V1 symbols are intentionally named with `LEGACY_SESSION_V1_DISCONTINUED` to reduce drift edits.
+
 ---
 
 ## Second Audit Critical Fixes (2025-12-31 - Final Pass)

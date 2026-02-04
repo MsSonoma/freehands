@@ -42,10 +42,10 @@ lessons/
 
 Create these policies for the `lessons` bucket:
 
-#### 1. Allow Premium Users to Upload/Update Their Own Lessons
+#### 1. Allow Lesson Generator Plan Users to Upload/Update Their Own Lessons
 ```sql
--- Allow premium/lifetime users to upload to their facilitator folder
-CREATE POLICY "Premium users can upload facilitator lessons"
+-- Allow trial/standard/pro/lifetime users to upload to their facilitator folder
+CREATE POLICY "Lesson Generator plan users can upload facilitator lessons"
 ON storage.objects FOR INSERT
 WITH CHECK (
   bucket_id = 'lessons' AND
@@ -55,12 +55,12 @@ WITH CHECK (
   EXISTS (
     SELECT 1 FROM profiles 
     WHERE id = auth.uid() 
-    AND plan_tier IN ('premium', 'lifetime')
+    AND plan_tier IN ('trial', 'standard', 'pro', 'lifetime')
   )
 );
 
--- Allow premium/lifetime users to update their own lessons
-CREATE POLICY "Premium users can update facilitator lessons"
+-- Allow trial/standard/pro/lifetime users to update their own lessons
+CREATE POLICY "Lesson Generator plan users can update facilitator lessons"
 ON storage.objects FOR UPDATE
 USING (
   bucket_id = 'lessons' AND
@@ -70,12 +70,12 @@ USING (
   EXISTS (
     SELECT 1 FROM profiles 
     WHERE id = auth.uid() 
-    AND plan_tier IN ('premium', 'lifetime')
+    AND plan_tier IN ('trial', 'standard', 'pro', 'lifetime')
   )
 );
 
--- Allow premium/lifetime users to delete their own lessons
-CREATE POLICY "Premium users can delete facilitator lessons"
+-- Allow trial/standard/pro/lifetime users to delete their own lessons
+CREATE POLICY "Lesson Generator plan users can delete facilitator lessons"
 ON storage.objects FOR DELETE
 USING (
   bucket_id = 'lessons' AND
@@ -85,15 +85,15 @@ USING (
   EXISTS (
     SELECT 1 FROM profiles 
     WHERE id = auth.uid() 
-    AND plan_tier IN ('premium', 'lifetime')
+    AND plan_tier IN ('trial', 'standard', 'pro', 'lifetime')
   )
 );
 ```
 
-#### 2. Allow Premium Users to Approve Lessons (Move to Subject Folders)
+#### 2. Optional: Allow Paid Users to Write to Subject Folders
 ```sql
--- Allow premium/lifetime users to upload approved lessons to subject folders
-CREATE POLICY "Premium users can approve lessons"
+-- Allow trial/standard/pro/lifetime users to upload approved lessons to subject folders
+CREATE POLICY "Lesson Generator plan users can write subject lessons"
 ON storage.objects FOR INSERT
 WITH CHECK (
   bucket_id = 'lessons' AND
@@ -102,12 +102,12 @@ WITH CHECK (
   EXISTS (
     SELECT 1 FROM profiles 
     WHERE id = auth.uid() 
-    AND plan_tier IN ('premium', 'lifetime')
+    AND plan_tier IN ('trial', 'standard', 'pro', 'lifetime')
   )
 );
 
 -- Allow updates to approved lessons
-CREATE POLICY "Premium users can update approved lessons"
+CREATE POLICY "Lesson Generator plan users can update subject lessons"
 ON storage.objects FOR UPDATE
 USING (
   bucket_id = 'lessons' AND
@@ -116,7 +116,7 @@ USING (
   EXISTS (
     SELECT 1 FROM profiles 
     WHERE id = auth.uid() 
-    AND plan_tier IN ('premium', 'lifetime')
+    AND plan_tier IN ('trial', 'standard', 'pro', 'lifetime')
   )
 );
 ```

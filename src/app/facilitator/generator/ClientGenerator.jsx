@@ -60,7 +60,7 @@ export default function ClientGenerator(){
   }
 
   const ent = featuresForTier(tier)
-  const hasAccess = ent.facilitatorTools
+  const hasAccess = ent.lessonGenerator
 
   const formatPlanLabel = (value) => value.split(/[-_]/).map(part => part ? part[0].toUpperCase() + part.slice(1) : part).join(' ')
   const lifetimeLimit = ent.lifetimeGenerations
@@ -123,7 +123,7 @@ export default function ClientGenerator(){
                 <h3 style={{ marginTop:0, marginBottom: 0, color: '#92400e' }}>Preview Mode - Upgrade to Use</h3>
               </div>
               <p style={{ color:'#78350f', marginBottom: 12 }}>
-                You're viewing the Lesson Generator. Upgrade to Premium to unlock lesson generation and more.
+                You're viewing the Lesson Generator. Upgrade to Standard or Pro to unlock lesson generation and more.
               </p>
               <Link 
                 href="/facilitator/account/plan" 
@@ -138,7 +138,7 @@ export default function ClientGenerator(){
                   boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
                 }}
               >
-                Upgrade to Premium
+                Upgrade Plan
               </Link>
             </div>
           )}
@@ -166,7 +166,7 @@ export default function ClientGenerator(){
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px'
                 }}>
-                  Premium
+                  Paid
                 </div>
               )}
               <h3 style={{ marginTop:0 }}>Lesson Generator</h3>
@@ -210,7 +210,7 @@ export default function ClientGenerator(){
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px'
                 }}>
-                  Premium
+                  Paid
                 </div>
               )}
               <h3 style={{ marginTop:0 }}>Generated Lessons</h3>

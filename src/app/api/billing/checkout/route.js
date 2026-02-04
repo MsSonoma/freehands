@@ -8,9 +8,8 @@ function getEnv() {
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const appUrl = process.env.APP_URL;
   const prices = {
-    basic: process.env.STRIPE_PRICE_BASIC,
-    plus: process.env.STRIPE_PRICE_PLUS,
-    premium: process.env.STRIPE_PRICE_PREMIUM,
+    standard: process.env.STRIPE_PRICE_STANDARD,
+    pro: process.env.STRIPE_PRICE_PRO,
   };
   return { url, anon, service, appUrl, prices };
 }
@@ -65,7 +64,7 @@ export async function POST(req) {
   const { appUrl, prices } = getEnv();
     const url = new URL(req.url);
     const tier = (url.searchParams.get('tier') || '').toLowerCase();
-    if (!['basic','plus','premium'].includes(tier)) {
+    if (!['standard','pro'].includes(tier)) {
       return NextResponse.json({ error: 'Invalid tier' }, { status: 400 });
     }
     const price = prices[tier];

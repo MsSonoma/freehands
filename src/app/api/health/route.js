@@ -26,9 +26,8 @@ export async function GET(req) {
     // Stripe
     'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
     'STRIPE_SECRET_KEY',
-    'STRIPE_PRICE_BASIC',
-    'STRIPE_PRICE_PLUS',
-    'STRIPE_PRICE_PREMIUM',
+    'STRIPE_PRICE_STANDARD',
+    'STRIPE_PRICE_PRO',
     'STRIPE_WEBHOOK_SECRET',
     // App
     'APP_URL',

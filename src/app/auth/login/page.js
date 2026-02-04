@@ -47,7 +47,11 @@ export default function LoginPage() {
 				return;
 			}
 			const supabase = getSupabaseClient();
-						const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+			const rawEmail = (email || '').trim();
+			const signInEmail = (/^demo$/i.test(rawEmail))
+				? String(process.env.NEXT_PUBLIC_DEMO_LOGIN_EMAIL || 'demo@mssonoma.com').trim().toLowerCase()
+				: rawEmail;
+					const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email: signInEmail, password });
 						if (signInError) {
 							// MFA required flow
 							const factors = signInData?.mfa?.factors || [];
@@ -71,9 +75,9 @@ export default function LoginPage() {
 						const msg = signInError.message || '';
 						if (/confirm/i.test(msg) || /email not confirmed/i.test(msg)) {
 							// Automatically resend confirmation once per submit attempt
-							if (!autoResent && email) {
+							if (!autoResent && signInEmail) {
 								try {
-									await supabase.auth.resend({ type: 'signup', email });
+									await supabase.auth.resend({ type: 'signup', email: signInEmail });
 									setAutoResent(true);
 									throw new Error('Your email is not confirmed yet. We just sent another confirmation email. Please check your inbox and try again after confirming.');
 								} catch (resendErr) {
@@ -104,10 +108,14 @@ export default function LoginPage() {
 					setInfo('');
 					setResendLoading(true);
 					const supabase = getSupabaseClient();
+					const rawEmail = (email || '').trim();
+					const resendEmail = (/^demo$/i.test(rawEmail))
+						? String(process.env.NEXT_PUBLIC_DEMO_LOGIN_EMAIL || 'demo@mssonoma.com').trim().toLowerCase()
+						: rawEmail;
 					// Prefer a configured public site URL for redirects to work on LAN or via tunnels
 					const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : undefined);
 					const emailRedirectTo = siteUrl ? `${siteUrl}/auth/callback` : undefined;
-					const { error } = await supabase.auth.resend({ type: 'signup', email, options: emailRedirectTo ? { emailRedirectTo } : undefined });
+					const { error } = await supabase.auth.resend({ type: 'signup', email: resendEmail, options: emailRedirectTo ? { emailRedirectTo } : undefined });
 					if (error) throw new Error(error.message || 'Could not resend confirmation');
 					setInfo('Confirmation email resent. Please check your inbox and spam folder.');
 				} catch (err) {
@@ -122,8 +130,8 @@ export default function LoginPage() {
 			<h1 style={{ marginTop: 0 }}>Login</h1>
 						<form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
 				<label style={{ display: 'grid', gap: 6 }}>
-					<span>Email</span>
-					<input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="you@example.com" required style={{ padding:'10px 12px', border:'1px solid #ddd', borderRadius: 8 }} />
+					<span>Email (or DEMO)</span>
+					<input type="text" inputMode="email" autoComplete="email" value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="you@example.com" required style={{ padding:'10px 12px', border:'1px solid #ddd', borderRadius: 8 }} />
 				</label>
 				{hasSupabaseEnv() && (
 					<div style={{ display:'flex', justifyContent:'flex-start' }}>

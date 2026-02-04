@@ -8,8 +8,8 @@ import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
  * 
  * @param {Object} options
  * @param {string} options.requiredAuth - 'none' | 'any' | 'required' (default: 'none')
- * @param {string} options.requiredFeature - Feature key from entitlements (e.g., 'facilitatorTools')
- * @param {string} options.minimumTier - Minimum tier required (e.g., 'premium')
+ * @param {string} options.requiredFeature - Feature key from entitlements (e.g., 'lessonGenerator', 'lessonPlanner')
+ * @param {string} options.minimumTier - Minimum tier required (e.g., 'standard')
  * @returns {Object} { loading, isAuthenticated, tier, hasAccess, gateType }
  */
 export function useAccessControl({
@@ -56,7 +56,7 @@ export function useAccessControl({
               setGateType(featureAccess ? null : 'tier')
             }
           } else if (minimumTier) {
-            const tierRank = { free: 0, basic: 1, plus: 2, premium: 3, lifetime: 4 }
+            const tierRank = { free: 0, trial: 1, standard: 2, pro: 3, lifetime: 4 }
             const userRank = tierRank[userTier] || 0
             const minRank = tierRank[minimumTier] || 0
             const tierAccess = userRank >= minRank

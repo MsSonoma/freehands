@@ -7,11 +7,30 @@ import GatedOverlay from '@/app/components/GatedOverlay';
 // BillingStatusDev removed per request
 
 const plans = [
-  { name: 'Free', priceLabel: 'Free', priceSub: '', features: ['Access to 1 lesson per day', 'Beginner Lessons', '1 Learner'], highlight: false },
-  { name: 'Basic', priceLabel: '$5', priceSub: 'per month', features: ['5 Lessons per day', 'Extended Lessons', '1 Learner'], highlight: false },
-  { name: 'Plus', priceLabel: '$20', priceSub: 'per month', features: ['20 lessons per day', 'All Lessons', 'Up to 10 Learners', 'One device at a time'], highlight: true },
-  { name: 'Premium', priceLabel: '$35', priceSub: 'per month', features: ['Unlimited lessons', 'All Lessons', 'Up to 10 Learners', '2 Devices at a time', 'Premium Facilitator Tools'], highlight: false },
+  { name: 'Free', priceLabel: 'Free', priceSub: '', features: ['Access to 1 lesson per day', '1 Learner'], highlight: false },
+  { name: 'Trial', priceLabel: 'Free trial', priceSub: '', features: ['Generate up to 5 lessons (lifetime)', 'No Lesson Planner', 'No Mr. Mentor', 'No Golden Keys, Visual Aids, or Games'], highlight: true },
+  { name: 'Standard', priceLabel: '$49', priceSub: 'per month', features: ['Unlimited lessons', 'Lesson Maker', '2 Learners', 'Golden Keys + Visual Aids + Games'], highlight: false },
+  { name: 'Pro', priceLabel: '$69', priceSub: 'per month', features: ['Everything in Standard', '5 Learners', 'Mr. Mentor', 'Lesson Planner + Curriculum Preferences'], highlight: false },
 ];
+
+async function startTrial(setLoadingTier, setCurrentTier) {
+  try {
+    setLoadingTier('trial');
+    const token = await getAccessToken();
+    if (!token) throw new Error('Please sign in to start your trial');
+    const res = await fetch('/api/billing/start-trial', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json?.error || 'Unable to start trial');
+    setCurrentTier('trial');
+  } catch (e) {
+    if (typeof window !== 'undefined') alert(e?.message || 'Unable to start trial');
+  } finally {
+    setLoadingTier(null);
+  }
+}
 
 async function startCheckout(tier, setLoadingTier) {
   try {
@@ -245,7 +264,11 @@ export default function FacilitatorPlanPage() {
                 <button
                   type="button"
                   aria-label={isCurrent ? `${plan.name} is current plan` : `Choose ${plan.name} plan`}
-                  onClick={() => { if (!isCurrent) startCheckout(tierId, setLoadingTier); }}
+                  onClick={() => {
+                    if (isCurrent) return;
+                    if (tierId === 'trial') return startTrial(setLoadingTier, setCurrentTier);
+                    return startCheckout(tierId, setLoadingTier);
+                  }}
                   disabled={isCurrent || Boolean(loadingTier) || portalLoading}
                   aria-busy={loadingTier === tierId}
                   style={{
@@ -308,7 +331,7 @@ export default function FacilitatorPlanPage() {
       emoji="💳"
       description="Sign in to view and manage your subscription plan."
       benefits={[
-        'Compare and select from Free, Basic, Plus, or Premium plans',
+        'Compare Free, Trial, Standard, and Pro',
         'Manage your subscription and billing details',
         'View your current plan and usage',
         'Cancel or upgrade anytime'

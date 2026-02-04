@@ -37,13 +37,13 @@ async function main(){
   }
 
   const email = String(process.argv[2] || '').trim().toLowerCase()
-  const plan = String(process.argv[3] || 'premium').trim().toLowerCase()
+  const plan = String(process.argv[3] || 'pro').trim().toLowerCase()
   if (!email) {
     console.error('Usage: node scripts/grantPlan.mjs <email> [plan]')
     process.exit(1)
   }
-  if (!['free','basic','plus','premium'].includes(plan)) {
-    console.error('Plan must be one of: free|basic|plus|premium')
+  if (!['free','trial','standard','pro','lifetime'].includes(plan)) {
+    console.error('Plan must be one of: free|trial|standard|pro|lifetime')
     process.exit(1)
   }
 

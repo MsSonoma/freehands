@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -31,22 +32,23 @@ export async function PUT(req) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check premium status using service role key for direct access
+    // Check plan entitlements using service role key for direct access
     const admin = svc ? createClient(url, svc, { auth: { persistSession: false } }) : null
-    let tier = 'free'
+    let effectiveTier = 'free'
     
     if (admin) {
       const { data: profile } = await admin
         .from('profiles')
-        .select('plan_tier')
+        .select('subscription_tier, plan_tier')
         .eq('id', user.id)
         .maybeSingle()
-      
-      tier = (profile?.plan_tier || 'free').toLowerCase()
+
+      effectiveTier = resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier)
     }
-    
-    if (tier !== 'premium' && tier !== 'lifetime') {
-      return NextResponse.json({ error: 'Premium required' }, { status: 403 })
+
+    const ent = featuresForTier(effectiveTier)
+    if (!ent.lessonGenerator) {
+      return NextResponse.json({ error: 'Lesson Generator plan required' }, { status: 403 })
     }
 
     // Use admin client for storage operations

@@ -1,5 +1,5 @@
 // Plan entitlements mapping. Use plan_tier from profiles to gate features.
-// Tiers: 'free' | 'basic' | 'plus' | 'premium'
+// Tiers: 'free' | 'trial' | 'standard' | 'pro' (plus optional legacy tiers like 'lifetime')
 
 export const ENTITLEMENTS = {
   free: {
@@ -7,61 +7,62 @@ export const ENTITLEMENTS = {
     allLessons: true, // Can see all lessons, just limited per day
     learnersMax: 1,
     devices: 1,
-    facilitatorTools: false,
-    askFeature: false, // Ask question requires Basic+
-    goldenKeyFeatures: false, // No golden keys on free tier
+    lessonGenerator: false,
+    lessonPlanner: false,
+    askFeature: false, // Ask question requires Standard+
+    goldenKeyFeatures: false,
+    visualAids: true, // visible in session; usage may be gated elsewhere
+    games: true, // visible in session; usage may be gated elsewhere
     lifetimeGenerations: 0,
     weeklyGenerations: 0,
     mentorSessions: 0,
   },
-  basic: {
-    lessonsPerDay: 2,
+  trial: {
+    lessonsPerDay: 1,
     allLessons: true,
     learnersMax: 1,
     devices: 1,
-    facilitatorTools: false,
-    askFeature: true, // Ask allowed on Basic+
-    goldenKeyFeatures: true, // Can use golden keys
-    lifetimeGenerations: 1, // 1 lifetime generation
+    // Trial allows lesson generation, but blocks planner + Mr. Mentor.
+    // Quota enforcement uses lifetime/weekly generation limits.
+    lessonGenerator: true,
+    lessonPlanner: false,
+    askFeature: false,
+    goldenKeyFeatures: false,
+    visualAids: false,
+    games: false,
+    lifetimeGenerations: 5,
     weeklyGenerations: 0,
     mentorSessions: 0,
   },
-  plus: {
+  standard: {
     lessonsPerDay: Infinity,
     allLessons: true,
     learnersMax: 2,
     devices: 1,
-    facilitatorTools: true, // Calendar and other facilitator tools enabled
+    lessonGenerator: true,
+    lessonPlanner: false,
     askFeature: true,
     goldenKeyFeatures: true,
-    lifetimeGenerations: 5, // 5 lifetime generations
-    weeklyGenerations: 1, // 1 per week in addition to lifetime
+    visualAids: true,
+    games: true,
+    lifetimeGenerations: Infinity,
+    weeklyGenerations: Infinity,
     mentorSessions: 0,
   },
-  premium: {
+  pro: {
     lessonsPerDay: Infinity,
     allLessons: true,
-    learnersMax: 10,
+    learnersMax: 5,
     devices: 2,
-    facilitatorTools: true, // Unlimited tools including Mr. Mentor
+    lessonGenerator: true,
+    lessonPlanner: true,
     askFeature: true,
     goldenKeyFeatures: true,
+    visualAids: true,
+    games: true,
     lifetimeGenerations: Infinity,
     weeklyGenerations: Infinity,
-    mentorSessions: Infinity, // Mr. Mentor included in Premium
-  },
-  'premium-plus': {
-    // Premium with Mr. Mentor addon ($20/month)
-    lessonsPerDay: Infinity,
-    allLessons: true,
-    learnersMax: 10,
-    devices: 2,
-    facilitatorTools: true,
-    askFeature: true,
-    goldenKeyFeatures: true,
-    lifetimeGenerations: Infinity,
-    weeklyGenerations: Infinity,
-    mentorSessions: Infinity, // Unlimited with addon
+    mentorSessions: Infinity,
   },
   lifetime: {
     // Legacy lifetime tier
@@ -69,9 +70,12 @@ export const ENTITLEMENTS = {
     allLessons: true,
     learnersMax: 10,
     devices: 2,
-    facilitatorTools: true,
+    lessonGenerator: true,
+    lessonPlanner: true,
     askFeature: true,
     goldenKeyFeatures: true,
+    visualAids: true,
+    games: true,
     lifetimeGenerations: Infinity,
     weeklyGenerations: Infinity,
     mentorSessions: Infinity, // Mr. Mentor included
@@ -85,16 +89,16 @@ export function featuresForTier(tier) {
 
 /**
  * Resolve the effective tier for entitlement checks.
- * Beta users get Plus-level features automatically.
+ * Beta users get Pro-level features automatically.
  * 
  * @param {string|null} subscriptionTier - Value from profiles.subscription_tier
  * @param {string|null} paidTier - Value from profiles.stripe_subscription_tier or plan_tier
  * @returns {string} The effective tier to use for entitlement lookups
  */
 export function resolveEffectiveTier(subscriptionTier, paidTier) {
-  // Beta users automatically get Plus-level features
+  // Beta users map to Pro-level features
   if (subscriptionTier?.toLowerCase() === 'beta') {
-    return 'plus';
+    return 'pro';
   }
   
   // Otherwise use their paid tier (or default to free)

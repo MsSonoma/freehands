@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { featuresForTier, resolveEffectiveTier } from '../../../lib/entitlements';
 
 function getEnv() {
   return {
@@ -27,13 +28,6 @@ async function getUserFromAuthHeader(req) {
   return data?.user || null;
 }
 
-function featuresForTier(tier) {
-  const ENTITLEMENTS = { free: 1, basic: 1, plus: 1, premium: 2 };
-  const key = (tier || 'free').toLowerCase();
-  const devices = ENTITLEMENTS[key] ?? 1;
-  return { devices };
-}
-
 export async function GET(req) {
   try {
     const user = await getUserFromAuthHeader(req);
@@ -42,12 +36,12 @@ export async function GET(req) {
     // Plan tier
     const { data: prof, error: pErr } = await svc
       .from('profiles')
-      .select('plan_tier')
+      .select('subscription_tier, plan_tier')
       .eq('id', user.id)
       .single();
     if (pErr) throw new Error(pErr.message || 'Failed to read profile');
-    const plan_tier = (prof?.plan_tier || 'free').toLowerCase();
-    const cap = featuresForTier(plan_tier).devices;
+    const effectiveTier = resolveEffectiveTier(prof?.subscription_tier, prof?.plan_tier);
+    const cap = featuresForTier(effectiveTier).devices;
 
     // Active leases count
     const now = new Date().toISOString();
@@ -59,7 +53,7 @@ export async function GET(req) {
       .gt('expires_at', now);
     if (cErr) throw new Error(cErr.message || 'Failed to count leases');
 
-    return NextResponse.json({ plan_tier, devicesCap: cap, active: count || 0 });
+    return NextResponse.json({ plan_tier: effectiveTier, devicesCap: cap, active: count || 0 });
   } catch (e) {
     const msg = (e?.message || '').toLowerCase();
     const hint = msg.includes('relation "device_leases" does not exist')

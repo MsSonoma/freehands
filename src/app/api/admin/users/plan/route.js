@@ -27,8 +27,8 @@ export async function POST(req) {
     if (!normalizedEmail) {
       return NextResponse.json({ error: 'Missing email' }, { status: 400 });
     }
-    if (!['free','basic','plus','premium'].includes(normalizedPlan)) {
-      return NextResponse.json({ error: 'Invalid plan; use free|basic|plus|premium' }, { status: 400 });
+    if (!['free','trial','standard','pro','lifetime'].includes(normalizedPlan)) {
+      return NextResponse.json({ error: 'Invalid plan; use free|trial|standard|pro|lifetime' }, { status: 400 });
     }
 
     const supabase = createClient(url, serviceKey, { auth: { persistSession: false } });

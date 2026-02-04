@@ -49,7 +49,7 @@ export async function GET(request) {
       });
     }
 
-    // Premium/Lifetime tiers have unlimited generations
+    // Standard/Pro/Lifetime tiers have unlimited generations
     if (lifetimeLimit === Infinity) {
       return Response.json({ 
         allowed: true,

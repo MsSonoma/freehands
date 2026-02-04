@@ -9,10 +9,11 @@ export default function Page() {
       <p>Accounts must be created by adults. Learner accounts are managed by a parent or facilitator; children (as young as 4) do not sign up directly.</p>
       <h2>Plans and Limits</h2>
       <ul>
-        <li>Free: 1 learner, 5 lessons/day, 1 device</li>
-        <li>Basic ($5/mo): 1 learner, 10 lessons/day, 1 device</li>
-        <li>Plus ($20/mo): 5 learners, 25 lessons/day, 1 device</li>
-        <li>Premium ($35/mo): 10 learners, 100 lessons/day, 2 devices</li>
+        <li>Free: limited usage; 1 learner; 1 device</li>
+        <li>Free Trial: limited; includes up to 5 lifetime AI lesson generations</li>
+        <li>Standard ($49/mo): up to 2 learners; lesson generation; advanced in-session features</li>
+        <li>Pro ($69/mo): up to 5 learners; includes Mr. Mentor and Lesson Planner features</li>
+        <li>Lifetime (legacy): grandfathered plan for existing customers (if applicable)</li>
       </ul>
       <h2>Billing and Cancellation</h2>
       <p>Monthly billing via Stripe. Upgrades are instant and cannot be canceled until the next period. Cancellations take effect at period end; no proration on cancel.</p>

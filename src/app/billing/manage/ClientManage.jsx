@@ -23,7 +23,7 @@ export default function ClientManage() {
 
   // Friendly labels for plan tiers and subscription statuses
   function formatTierLabel(t) {
-    const map = { basic: 'Basic', plus: 'Plus', premium: 'Premium', free: 'Free' };
+    const map = { trial: 'Trial', standard: 'Standard', pro: 'Pro', free: 'Free' };
     const key = (t || '').toString().toLowerCase();
     if (map[key]) return map[key];
     if (!key) return 'Free';
@@ -62,7 +62,7 @@ export default function ClientManage() {
     setSummary(json);
     const currentTier = (json?.effective_tier || json?.subscription?.tier || json?.plan_tier || 'free')?.toLowerCase();
     setTier(currentTier);
-    setSelectedTier(currentTier);
+    setSelectedTier(['standard','pro'].includes(currentTier) ? currentTier : 'standard');
       } catch (e) {
         setErr(e?.message || 'Unexpected error');
       } finally {
@@ -180,6 +180,9 @@ export default function ClientManage() {
     if (!selectedTier || selectedTier === tier) return;
     setMessage(''); setErr(''); setSaveBusy(true);
     try {
+      if (!summary?.subscription?.id) {
+        throw new Error('No active subscription to update. Please choose a plan to subscribe.');
+      }
       const token = await getAccessToken();
       if (!token) throw new Error('Please log in');
       const res = await fetch('/api/billing/manage/update', { method: 'POST', headers: { 'Content-Type':'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ tier: selectedTier }) });
@@ -193,6 +196,7 @@ export default function ClientManage() {
         setSummary(sumJs);
         const current = (sumJs?.effective_tier || sumJs?.subscription?.tier || sumJs?.plan_tier || 'free')?.toLowerCase();
         setTier(current);
+        setSelectedTier(['standard','pro'].includes(current) ? current : 'standard');
       }
     } catch (e) {
       setErr(e?.message || 'Unexpected error');
@@ -247,25 +251,18 @@ export default function ClientManage() {
 
   const plans = [
     {
-      id: 'basic',
-      label: 'Basic',
-      priceLabel: '$5',
+      id: 'standard',
+      label: 'Standard',
+      priceLabel: '$49',
       priceSub: 'per month',
-      features: ['5 Lessons per day', 'Extended Lessons', '1 Learner']
+      features: ['Unlimited lessons', 'Lesson Maker', '2 Learners', 'Golden Keys + Visual Aids + Games']
     },
     {
-      id: 'plus',
-      label: 'Plus',
-      priceLabel: '$20',
+      id: 'pro',
+      label: 'Pro',
+      priceLabel: '$69',
       priceSub: 'per month',
-      features: ['20 lessons per day', 'All Lessons', 'Up to 10 Learners', 'One device at a time']
-    },
-    {
-      id: 'premium',
-      label: 'Premium',
-      priceLabel: '$35',
-      priceSub: 'per month',
-      features: ['Unlimited lessons', 'All Lessons', 'Up to 10 Learners', '2 Devices at a time', 'Premium Facilitator Tools']
+      features: ['Everything in Standard', '5 Learners', 'Mr. Mentor', 'Lesson Planner + Curriculum Preferences']
     },
   ];
 
@@ -287,7 +284,7 @@ export default function ClientManage() {
       {/* Mini plan comparison with Save */}
       <div style={{ marginTop:16 }}>
         <div style={{ marginBottom:8, color:'#666' }}>Plan</div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3, minmax(0, 1fr))', gap:12, position:'relative', zIndex:20 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12, position:'relative', zIndex:20 }}>
           {plans.map(p => {
             const isSelected = p.id === selectedTier;
             const isActive = activeTooltip === p.id;

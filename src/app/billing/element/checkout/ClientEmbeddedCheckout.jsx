@@ -8,7 +8,7 @@ export default function ClientEmbeddedCheckout() {
   const sp = useSearchParams();
   const router = useRouter();
   const initialTier = (sp?.get('tier') || '').toLowerCase();
-  const [selectedTier, setSelectedTier] = useState(initialTier);
+  const [selectedTier, setSelectedTier] = useState(initialTier || 'standard');
   const [clientSecret, setClientSecret] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -28,25 +28,18 @@ export default function ClientEmbeddedCheckout() {
 
   const plans = useMemo(() => ([
     {
-      id: 'basic',
-      label: 'Basic',
-      priceLabel: '$5',
+      id: 'standard',
+      label: 'Standard',
+      priceLabel: '$49',
       priceSub: 'per month',
-      features: ['5 Lessons per day', 'Extended Lessons', '1 Learner']
+      features: ['Unlimited lessons', 'Lesson Maker', '2 Learners', 'Golden Keys + Visual Aids + Games']
     },
     {
-      id: 'plus',
-      label: 'Plus',
-      priceLabel: '$20',
+      id: 'pro',
+      label: 'Pro',
+      priceLabel: '$69',
       priceSub: 'per month',
-      features: ['20 lessons per day', 'All Lessons', 'Up to 10 Learners', 'One device at a time']
-    },
-    {
-      id: 'premium',
-      label: 'Premium',
-      priceLabel: '$35',
-      priceSub: 'per month',
-      features: ['Unlimited lessons', 'All Lessons', 'Up to 10 Learners', '2 Devices at a time', 'Premium Facilitator Tools']
+      features: ['Everything in Standard', '5 Learners', 'Mr. Mentor', 'Lesson Planner + Curriculum Preferences']
     },
   ]), []);
 
@@ -193,7 +186,7 @@ export default function ClientEmbeddedCheckout() {
   {/* Removed informational subtitle per request */}
 
         {/* Micro plan comparison */}
-  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginBottom: 16, position: 'relative', zIndex: 20 }}>
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12, marginBottom: 16, position: 'relative', zIndex: 20 }}>
           {plans.map(p => {
             const isSelected = p.id === selectedTier;
             const isActive = activeTooltip === p.id;

@@ -1,6 +1,6 @@
 # Timer System Architecture
 
-**Last updated**: 2026-01-26T20:21:25Z  
+**Last updated**: 2026-02-04T01:00:00Z  
 **Status**: Canonical
 
 ## How It Works
@@ -253,19 +253,23 @@ When the work timer expires or the phase is completed (including when Test hands
 - `workTimeRemaining` records minutes left on each work timer when the phase ends (0 on timeout) and is surfaced in facilitator review for transparency; entering Test review now captures and freezes the remaining test work time so review/grading cannot keep an active timer running
 - Golden key detection uses the live `workPhaseCompletionsRef` so a just-marked phase (e.g., Test on review entry) counts immediately without waiting for React state flush
 
-### Golden Keys Enabled Flag (Per Learner)
+### Golden Keys Gating (Plan + Per Learner)
 
-Golden Key behavior is gated by a per-learner Supabase-backed flag:
+Golden Keys have two independent gates:
 
+1) **Plan entitlement (account level)**
+- Source: `profiles.plan_tier` + `profiles.subscription_tier` resolved through `resolveEffectiveTier()` + `featuresForTier()`.
+- If `featuresForTier(effectiveTier).goldenKeyFeatures === false` (e.g., `trial`), Golden Keys are not usable in-session.
+- In Session V2, the plan entitlement is enforced even if the learner setting is on (learner setting is coerced off).
+
+2) **Per-learner setting (learner level)**
 - Column: `public.learners.golden_keys_enabled` (boolean, default true)
+- Only applies when the plan is entitled.
 
-When `golden_keys_enabled` is `false`, Golden Keys are treated as fully disabled for that learner:
-
-- No Golden Key bonus time is applied to play timers.
-- Golden Key eligibility is not tracked and is not emitted.
-- Golden Key awarding/persistence is skipped.
-- Golden Key UI is hidden (Learn/Lessons counter/selector and the TimerControlOverlay Golden Key section).
-- Facilitator Test review keeps showing the work timer remaining grid, but Golden Key-specific messaging is hidden.
+**UI behavior (TimerControlOverlay):**
+- Not entitled by plan: show the Golden Key section with an upgrade note; do not allow applying/suspending/earning keys.
+- Entitled by plan, learner setting off: keep controls visible but disable actions with explanatory copy.
+- Entitled by plan, learner setting on: full Golden Key behavior enabled.
 
 ### Golden Key Application (Per Lesson)
 

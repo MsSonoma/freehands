@@ -9,7 +9,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { ttsCache } from '../utils/ttsCache';
 
-export function useTeachingFlow({
+export function useTeachingFlow_LEGACY_SESSION_V1_DISCONTINUED({
   // State setters
   setCanSend,
   setSubPhase,
@@ -136,10 +136,18 @@ export function useTeachingFlow({
     const lessonTitle = getCleanLessonTitle();
     const notes = getTeachingNotes() || '';
     
-    // Get vocab list to provide context for examples
+    // Get full lesson data (includes the questions used later for assessment)
     const loaded = await ensureLessonDataReady();
     const vocabList = getAvailableVocab(loaded || undefined);
     const hasAnyVocab = Array.isArray(vocabList) && vocabList.length > 0;
+
+    const fullLessonJson = (() => {
+      try {
+        return JSON.stringify(loaded || {});
+      } catch {
+        return '';
+      }
+    })();
     
     // Extract vocab terms for context
     const terms = hasAnyVocab
@@ -160,8 +168,15 @@ export function useTeachingFlow({
       '',
       `Teaching notes (for your internal guidance; integrate naturally—do not read verbatim): ${notes}`,
       '',
+      'Full lesson JSON (internal; do not read aloud). This includes the questions used for assessment:',
+      fullLessonJson ? fullLessonJson : '(missing lesson json)',
+      '',
+      'Assessment linkage (CRITICAL): The learner will be assessed using the questions in the lesson JSON (comprehension, exercise, worksheet, and test).',
+      'Reverse-engineer those questions into your examples so the learner is prepared to answer every question.',
+      'Internal self-check (do not output): mentally map every lesson question to at least one example. If any question is not covered, revise the examples until it is.',
+      '',
       'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
-      `Examples: Show 2–3 tiny worked examples appropriate for this lesson. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations beyond what is needed to show the steps. Do not do an introduction or a wrap; give only the examples.`,
+      `Examples: Show 2–3 tiny worked examples appropriate for this lesson. If needed to cover all question content, you may show up to 5 tiny examples. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations beyond what is needed to show the steps. Do not do an introduction or a wrap; give only the examples.`,
       '',
       'CRITICAL ACCURACY: All examples and facts must be scientifically and academically correct. Never demonstrate incorrect procedures, state false information, or contradict established knowledge. Verify accuracy before presenting. OVERRIDE: If teaching notes below specify particular examples or methods, base your examples on that guidance - paraphrase naturally in your own style, but preserve the meaning and facts exactly as given. Do not correct, contradict, or add different information.',
       '',
@@ -506,10 +521,18 @@ export function useTeachingFlow({
       const lessonTitle = getCleanLessonTitle();
       const notes = getTeachingNotes() || '';
       
-      // Get vocab list to provide context for examples
+      // Get full lesson data (includes the questions used later for assessment)
       const loaded = await ensureLessonDataReady();
       const vocabList = getAvailableVocab(loaded || undefined);
       const hasAnyVocab = Array.isArray(vocabList) && vocabList.length > 0;
+
+      const fullLessonJson = (() => {
+        try {
+          return JSON.stringify(loaded || {});
+        } catch {
+          return '';
+        }
+      })();
       
       // Extract vocab terms for context
       const terms = hasAnyVocab
@@ -530,8 +553,15 @@ export function useTeachingFlow({
         '',
         `Teaching notes (for your internal guidance; integrate naturally—do not read verbatim): ${notes}`,
         '',
+        'Full lesson JSON (internal; do not read aloud). This includes the questions used for assessment:',
+        fullLessonJson ? fullLessonJson : '(missing lesson json)',
+        '',
+        'Assessment linkage (CRITICAL): The learner will be assessed using the questions in the lesson JSON (comprehension, exercise, worksheet, and test).',
+        'Reverse-engineer those questions into your examples so the learner is prepared to answer every question.',
+        'Internal self-check (do not output): mentally map every lesson question to at least one example. If any question is not covered, revise the examples until it is.',
+        '',
         'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
-        `Examples: Show 2–3 tiny worked examples appropriate for this lesson. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations beyond what is needed to show the steps. Do not do an introduction or a wrap; give only the examples.`,
+        `Examples: Show 2–3 tiny worked examples appropriate for this lesson. If needed to cover all question content, you may show up to 5 tiny examples. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations beyond what is needed to show the steps. Do not do an introduction or a wrap; give only the examples.`,
         '',
         'CRITICAL ACCURACY: All examples and facts must be scientifically and academically correct. Never demonstrate incorrect procedures, state false information, or contradict established knowledge. Verify accuracy before presenting. OVERRIDE: If teaching notes below specify particular examples or methods, base your examples on that guidance - paraphrase naturally in your own style, but preserve the meaning and facts exactly as given. Do not correct, contradict, or add different information.',
         '',

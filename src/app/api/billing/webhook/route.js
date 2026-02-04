@@ -8,9 +8,8 @@ export const dynamic = 'force-dynamic';
 function tierFromPriceId(priceId) {
   if (!priceId) return 'free';
   const map = {
-    [process.env.STRIPE_PRICE_BASIC]: 'basic',
-    [process.env.STRIPE_PRICE_PLUS]: 'plus',
-    [process.env.STRIPE_PRICE_PREMIUM]: 'premium',
+    [process.env.STRIPE_PRICE_STANDARD]: 'standard',
+    [process.env.STRIPE_PRICE_PRO]: 'pro',
   };
   return map[priceId] || 'free';
 }

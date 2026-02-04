@@ -2,7 +2,7 @@
 
 ## How It Works
 
-Allows users to browse all pages to see what features look like, but shows overlays when they need to sign in or upgrade to actually use them.
+Users can browse pages and see what features look like, but gated actions are blocked with a consistent overlay/CTA. Gating is driven by entitlements (not hardcoded tier strings).
 
 ### GatedOverlay Component
 
@@ -31,6 +31,16 @@ Reusable overlay component that shows appropriate messaging based on gate type:
 - `currentTier` (string): User's current tier (for tier gates)
 - `requiredTier` (string): Required tier (for tier gates)
 
+**Tier model (current)**
+
+- `free` - signed in, no paid features
+- `trial` - limited (lifetime) generations; can view gated surfaces but cannot use Calendar, Mr. Mentor, Golden Keys, Visual Aids, or Games
+- `standard` - paid
+- `pro` - paid; includes Mr. Mentor and planner/curriculum prefs
+- `lifetime` - legacy tier (treated as fully entitled)
+
+**Important:** `requiredTier` is display/CTA text. Logic should be driven by `requiredFeature` entitlements.
+
 ### useAccessControl Hook
 
 Location: `src/app/hooks/useAccessControl.js`
@@ -39,7 +49,7 @@ Hook for checking authentication and tier access.
 
 **Options:**
 - `requiredAuth`: 'none' | 'any' | 'required'
-- `requiredFeature`: Feature key from entitlements (e.g., 'facilitatorTools')
+- `requiredFeature`: Feature key from entitlements (e.g., 'lessonGenerator', 'lessonPlanner', 'mentorSessions')
 - `minimumTier`: Minimum tier required
 
 **Returns:**
@@ -95,7 +105,7 @@ import { useAccessControl } from '@/app/hooks/useAccessControl'
 export default function PremiumFeaturePage() {
   const { loading, hasAccess, gateType, isAuthenticated, tier } = useAccessControl({
     requiredAuth: 'required',
-    requiredFeature: 'facilitatorTools' // from entitlements
+    requiredFeature: 'lessonGenerator' // from entitlements
   })
 
   if (loading) return <div>Loading...</div>
@@ -111,13 +121,13 @@ export default function PremiumFeaturePage() {
         gateType={gateType}
         feature="Feature Name"
         emoji="🎓"
-        description="Premium feature description"
+        description="Paid feature description"
         benefits={[
           'Feature benefit 1',
           'Feature benefit 2'
         ]}
         currentTier={tier}
-        requiredTier="premium"
+        requiredTier="standard"
       />
     </>
   )
@@ -143,3 +153,8 @@ export default function PremiumFeaturePage() {
 - Never skip loading state (prevents flash of wrong UI)
 - Never hardcode tier requirements (use entitlements config)
 - Never forget to pass currentTier and requiredTier for tier gates
+
+## Notes
+
+- For in-session buttons (e.g., Games / Visual Aids), prefer keeping the buttons visible and blocking only the action with a short, in-context notice.
+- Server routes must enforce the same entitlements (UI gating is not sufficient).

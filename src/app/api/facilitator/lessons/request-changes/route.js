@@ -94,10 +94,10 @@ export async function POST(request){
   const { user, tier, supabase } = await readUserAndTier(request)
   if (!user) return NextResponse.json({ error:'Unauthorized' }, { status: 401 })
   
-  // Check if user has facilitatorTools feature (available on Plus and above, including Beta)
+  // Check if user has lessonGenerator entitlement
   const features = featuresForTier(tier)
-  if (!features.facilitatorTools) {
-    return NextResponse.json({ error:'Premium plan required' }, { status: 403 })
+  if (!features.lessonGenerator) {
+    return NextResponse.json({ error:'Upgrade required' }, { status: 403 })
   }
   
   if (!supabase) return NextResponse.json({ error:'Storage not configured' }, { status: 500 })

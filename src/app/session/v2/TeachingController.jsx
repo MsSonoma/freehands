@@ -635,6 +635,14 @@ export class TeachingController {
     const lessonTitle = this.#lessonData?.title || 'this lesson';
     const grade = this.#lessonData?.grade || '';
     const teachingNotes = this.#lessonData?.teachingNotes || '';
+
+    const fullLessonJson = (() => {
+      try {
+        return JSON.stringify(this.#lessonData || {});
+      } catch {
+        return '';
+      }
+    })();
     
     const vocabContext = terms.length > 0 
       ? `Use these vocabulary words naturally in your examples: ${terms.join(', ')}.`
@@ -645,9 +653,16 @@ export class TeachingController {
       `Lesson (do not read aloud): "${lessonTitle}"`,
       '',
       'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
-      `Examples: Show 2-3 tiny worked examples appropriate for this lesson. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations. Give only the examples.`,
+      `Examples: Show 2-3 tiny worked examples appropriate for this lesson. If needed to cover all question content, you may show up to 5 tiny examples. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations. Give only the examples.`,
       '',
       teachingNotes ? `Teaching notes: ${teachingNotes}` : '',
+      '',
+      'Full lesson JSON (internal; do not read aloud). This includes the questions used for assessment:',
+      fullLessonJson ? fullLessonJson : '(missing lesson json)',
+      '',
+      'Assessment linkage (CRITICAL): The learner will be assessed using the questions in the lesson JSON (comprehension, exercise, worksheet, and test).',
+      'Reverse-engineer those questions into your examples so the learner is prepared to answer every question.',
+      'Internal self-check (do not output): mentally map every lesson question to at least one example. If any question is not covered, revise the examples until it is.',
       '',
       'CRITICAL ACCURACY: All examples must be correct. Verify accuracy before presenting.',
       '',

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { featuresForTier, resolveEffectiveTier } from '../../../lib/entitlements';
 
 function getEnv() {
   return {
@@ -27,13 +28,6 @@ async function getUserFromAuthHeader(req) {
   return data?.user || null;
 }
 
-function featuresForTier(tier) {
-  const ENTITLEMENTS = { free: 1, basic: 1, plus: 1, premium: 2 };
-  const key = (tier || 'free').toLowerCase();
-  const devices = ENTITLEMENTS[key] ?? 1;
-  return { devices };
-}
-
 export async function POST(req) {
   try {
     const user = await getUserFromAuthHeader(req);
@@ -47,12 +41,12 @@ export async function POST(req) {
     // Plan tier and cap
     const { data: prof, error: pErr } = await svc
       .from('profiles')
-      .select('plan_tier')
+      .select('subscription_tier, plan_tier')
       .eq('id', user.id)
       .single();
     if (pErr) throw new Error(pErr.message || 'Failed to read profile');
-    const plan_tier = (prof?.plan_tier || 'free').toLowerCase();
-    const cap = featuresForTier(plan_tier).devices;
+    const effectiveTier = resolveEffectiveTier(prof?.subscription_tier, prof?.plan_tier);
+    const cap = featuresForTier(effectiveTier).devices;
 
     const now = new Date();
     const nowIso = now.toISOString();
@@ -75,7 +69,7 @@ export async function POST(req) {
         .update({ expires_at })
         .eq('id', existing.id);
       if (upErr) throw new Error(upErr.message || 'Failed to extend lease');
-      return NextResponse.json({ plan_tier, devicesCap: cap, leased: true, extended: true, expires_at });
+      return NextResponse.json({ plan_tier: effectiveTier, devicesCap: cap, leased: true, extended: true, expires_at });
     }
 
     // Count active leases
@@ -88,7 +82,7 @@ export async function POST(req) {
     if (cErr) throw new Error(cErr.message || 'Failed to count leases');
 
     if (Number.isFinite(cap) && (count || 0) >= cap) {
-      return NextResponse.json({ error: 'Device limit reached', plan_tier, devicesCap: cap, active: count || 0 }, { status: 409 });
+      return NextResponse.json({ error: 'Device limit reached', plan_tier: effectiveTier, devicesCap: cap, active: count || 0 }, { status: 409 });
     }
 
     // Insert lease
@@ -97,7 +91,7 @@ export async function POST(req) {
       .insert({ user_id: user.id, device_id, acquired_at: nowIso, expires_at, released_at: null });
     if (insErr) throw new Error(insErr.message || 'Failed to create lease');
 
-    return NextResponse.json({ plan_tier, devicesCap: cap, leased: true, expires_at });
+    return NextResponse.json({ plan_tier: effectiveTier, devicesCap: cap, leased: true, expires_at });
   } catch (e) {
     const msg = (e?.message || '').toLowerCase();
     const hint = msg.includes('relation "device_leases" does not exist')

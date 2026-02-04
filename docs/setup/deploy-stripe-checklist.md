@@ -11,9 +11,8 @@ Set for each environment you use (Production; optionally Preview):
 - SUPABASE_SERVICE_ROLE_KEY
 - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (match mode: pk_live_ for prod)
 - STRIPE_SECRET_KEY (match mode: sk_live_ for prod)
-- STRIPE_PRICE_BASIC (price_… from the same mode)
-- STRIPE_PRICE_PLUS (price_…)
-- STRIPE_PRICE_PREMIUM (price_…)
+- STRIPE_PRICE_STANDARD (price_… from the same mode)
+- STRIPE_PRICE_PRO (price_…)
 - STRIPE_WEBHOOK_SECRET (from Dashboard webhook endpoint for that environment)
 - APP_URL = https://YOUR_DOMAIN
 
@@ -35,7 +34,7 @@ In Stripe Dashboard → Developers → Webhooks:
 ## 4) Post-Deploy Smoke Test
 
 1. Sign in to your app
-2. Visit `/billing/element/checkout?tier=premium`
+2. Visit `/billing/element/checkout?tier=pro`
 3. Complete a payment (test card in Preview, real in Production)
 4. In Stripe Dashboard → Events, confirm a 200 delivery to `/api/billing/webhook`
 5. In Supabase, confirm `profiles.plan_tier` or subscription records updated

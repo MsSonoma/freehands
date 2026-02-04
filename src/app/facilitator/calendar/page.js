@@ -180,7 +180,7 @@ export default function CalendarPage() {
       setTier(effectiveTier)
       
       const ent = featuresForTier(effectiveTier)
-      setHasAccess(ent.facilitatorTools)
+      setHasAccess(ent.lessonPlanner)
       setLoading(false)
     } catch (err) {
       setHasAccess(false)
@@ -1176,7 +1176,7 @@ export default function CalendarPage() {
         gateType="tier"
         feature="Lesson Calendar"
         emoji="📅"
-        description="The Lesson Calendar is a premium facilitator tool. Upgrade your plan to access scheduling and tracking features."
+        description="The Lesson Calendar is available on the Pro plan. Upgrade to access scheduling and tracking features."
         benefits={[
           'Schedule lessons in advance for each learner',
           'View all scheduled lessons in a monthly calendar',
@@ -1184,7 +1184,7 @@ export default function CalendarPage() {
           'Set up recurring lesson schedules'
         ]}
         currentTier={tier}
-        requiredTier="premium"
+        requiredTier="pro"
       />
     )}
     </>

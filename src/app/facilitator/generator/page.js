@@ -18,7 +18,7 @@ export default function LessonMakerPage(){
   const router = useRouter()
   const { loading, hasAccess, gateType, tier, isAuthenticated } = useAccessControl({
     requiredAuth: 'required',
-    requiredFeature: 'facilitatorTools'
+     requiredFeature: 'lessonGenerator'
   })
   const { subjectsWithoutGenerated: subjects } = useFacilitatorSubjects()
   const [pinChecked, setPinChecked] = useState(false)
@@ -228,7 +228,10 @@ export default function LessonMakerPage(){
 
   async function handleGenerate(e){
     e.preventDefault()
-    if (!ent.facilitatorTools) { router.push('/facilitator/plan'); return }
+     if (!ent.lessonGenerator) {
+       setMessage('Upgrade required to generate lessons.')
+       return
+     }
     
     // Check quota before generating
     if (quotaInfo && !quotaInfo.allowed) {
@@ -302,33 +305,22 @@ export default function LessonMakerPage(){
     }
   }
 
-  const showGate = (!loading && (!hasAccess || !ent.facilitatorTools))
+  const showGate = (!loading && (!hasAccess || !ent.lessonGenerator))
 
   const canGenerate = useMemo(() => {
     if (busy) return false
+    if (!hasAccess || !ent.lessonGenerator) return false
     if (!form.grade || !form.title || !form.subject || !form.difficulty) return false
     if (quotaInfo && !quotaInfo.allowed) return false
     return true
-  }, [busy, form, quotaInfo])
+  }, [busy, form, quotaInfo, hasAccess, ent.lessonGenerator])
 
   if (loading || !pinChecked) {
     return <main style={{ padding: 24 }}><p>Loading...</p></main>
   }
 
-  if (showGate) {
-    return (
-      <GatedOverlay
-        gateType={gateType}
-        requiredTier="Starter"
-        currentTier={tier}
-        feature="Lesson Generator"
-        benefits={["Generate custom lessons instantly","Edit and assign lessons", "Build a full curriculum over time"]}
-        emoji="✨"
-      />
-    )
-  }
-
   return (
+    <>
     <main style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 240 }}>
@@ -521,5 +513,16 @@ export default function LessonMakerPage(){
         )}
       </form>
     </main>
+
+    <GatedOverlay
+      show={showGate}
+      gateType={gateType}
+      requiredTier="standard"
+      currentTier={tier}
+      feature="Lesson Generator"
+      benefits={["Generate custom lessons instantly","Edit and assign lessons", "Build a full curriculum over time"]}
+      emoji="✨"
+    />
+    </>
   )
 }

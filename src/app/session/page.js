@@ -43,7 +43,7 @@ import { useDiscussionHandlers } from './hooks/useDiscussionHandlers';
 import { useAudioPlayback } from './hooks/useAudioPlayback';
 import { usePhaseHandlers } from './hooks/usePhaseHandlers';
 import { useAssessmentGeneration } from './hooks/useAssessmentGeneration';
-import { useTeachingFlow } from './hooks/useTeachingFlow';
+import { useTeachingFlow_LEGACY_SESSION_V1_DISCONTINUED } from './hooks/useTeachingFlow';
 import { useAssessmentDownloads } from './hooks/useAssessmentDownloads';
 import { useSessionTracking } from '../hooks/useSessionTracking';
 import { useSnapshotPersistence } from './hooks/useSnapshotPersistence';
@@ -60,13 +60,13 @@ import { loadPhaseTimersForLearner, TIMER_TYPES } from './utils/phaseTimerDefaul
 
 export default function SessionPage(){
   // V2 is now the default architecture (clean event-driven implementation)
-  // To revert to V1, set localStorage.setItem('session_architecture_v1', 'true')
+  // LEGACY_SESSION_V1_DISCONTINUED: to force Session V1, set localStorage.setItem('session_architecture_v1', 'true')
   // V2 documentation: docs/brain/v2-architecture.md
   if (typeof window !== 'undefined' && localStorage.getItem('session_architecture_v1') === 'true') {
     // V1 fallback - legacy implementation
     return (
       <Suspense fallback={null}>
-        <SessionPageInner />
+        <SessionPageInner_LEGACY_SESSION_V1_DISCONTINUED />
       </Suspense>
     );
   }
@@ -182,7 +182,7 @@ async function ensureRuntimeTargets(forceReload = false) {
   }
 }
   
-function SessionPageInner() {
+function SessionPageInner_LEGACY_SESSION_V1_DISCONTINUED() {
   // Generate or retrieve browser session ID (persists across refreshes in this tab)
   // Used for session ownership and conflict detection
   const [browserSessionId] = useState(() => {
@@ -4867,7 +4867,7 @@ function SessionPageInner() {
     vocabSentenceIndex,
     exampleSentences,
     exampleSentenceIndex,
-  } = useTeachingFlow({
+  } = useTeachingFlow_LEGACY_SESSION_V1_DISCONTINUED({
     // State setters
     setCanSend,
     setSubPhase,
@@ -8206,11 +8206,10 @@ function SessionPageInner() {
         emoji="📚"
         description={`You've used ${quotaGateInfo.limit} of ${quotaGateInfo.limit} lessons today on your ${quotaGateInfo.tier} plan.`}
         benefits={[
-          'Upgrade to Basic for 5 lessons per day',
-          'Upgrade to Plus for unlimited lessons',
-          'Upgrade to Premium for unlimited lessons + 10 learners'
+          'Upgrade to Standard for unlimited lessons per day',
+          'Upgrade to Pro for unlimited lessons + Mr. Mentor + 5 learners'
         ]}
-        requiredTier="basic"
+        requiredTier="standard"
       />
     )}
     
@@ -8226,9 +8225,9 @@ function SessionPageInner() {
         benefits={[
           'Ask questions during any lesson',
           'Get instant answers from Ms. Sonoma',
-          'Available on Basic plan and higher'
+          'Available on Standard plan and higher'
         ]}
-        requiredTier="basic"
+        requiredTier="standard"
       />
     )}
 

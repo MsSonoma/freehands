@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import { featuresForTier } from '@/app/lib/entitlements'
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { fetchLearnerTranscript } from '@/app/lib/learnerTranscript'
 import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/lessonValidation'
 import ClipboardOverlay from './ClipboardOverlay'
@@ -168,7 +168,7 @@ export default function CounselorClient() {
 
   // (startSessionPolling defined later, after session setup hooks)
 
-  // Check premium tier
+  // Check Mr. Mentor access (Pro-only) but allow window-shopping.
   useEffect(() => {
     if (!pinChecked) return
     let cancelled = false
@@ -180,12 +180,16 @@ export default function CounselorClient() {
           if (!cancelled) setAccessToken(session?.access_token || null)
           const uid = session?.user?.id
           if (uid) {
-            const { data } = await supabase.from('profiles').select('plan_tier').eq('id', uid).maybeSingle()
-            const planTier = (data?.plan_tier || 'free').toLowerCase()
-            const ent = featuresForTier(planTier)
+            const { data } = await supabase
+              .from('profiles')
+              .select('subscription_tier, plan_tier')
+              .eq('id', uid)
+              .maybeSingle()
+            const effectiveTier = resolveEffectiveTier(data?.subscription_tier, data?.plan_tier)
+            const ent = featuresForTier(effectiveTier)
             if (!cancelled) {
-              setTier(planTier)
-              setHasAccess(ent.facilitatorTools)
+              setTier(effectiveTier)
+              setHasAccess(ent.mentorSessions === Infinity || (Number.isFinite(ent.mentorSessions) && ent.mentorSessions > 0))
               setTierChecked(true)
             }
           } else {
@@ -2257,7 +2261,7 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
       fontSize: 14,
       lineHeight: 1.5
     }}>
-      Mr. Mentor is a Premium feature. Upgrade to Premium for unlimited access.
+      Mr. Mentor is available on the Pro plan. Upgrade to Pro for access.
     </div>
   ) : null
 
@@ -3012,7 +3016,7 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={!hasAccess ? "Premium required to use Mr. Mentor..." : "Type your message and press Enter to send..."}
+              placeholder={!hasAccess ? "Pro required to use Mr. Mentor..." : "Type your message and press Enter to send..."}
               disabled={!hasAccess || loading || isSpeaking}
               style={{
                 flex: 1,
@@ -3095,7 +3099,7 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
               marginBottom: 24
             }}>
               Get personalized counseling and curriculum planning support with Mr. Mentor. 
-              Available exclusively to Premium subscribers.
+              Available exclusively on the Pro plan.
             </p>
             
             <div style={{ 
@@ -3140,7 +3144,7 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
               >
-                Upgrade to Premium
+                Upgrade to Pro
               </a>
               <button
                 onClick={() => router.back()}

@@ -41,13 +41,16 @@ RLS enabled with policy "user can read own" using auth.uid() = user_id.
 
 ### Quota Limits by Tier
 
-Limits based on plan_tier from profiles table:
-- free: Limited daily lessons
-- basic: More daily lessons
-- plus: More daily lessons
-- premium: Maximum daily lessons
+Limits are driven by `featuresForTier(effectiveTier).lessonsPerDay` (see `src/app/lib/entitlements.js`).
 
-(Exact limits configured in API route)
+Current intent:
+- `free`: 1 per day
+- `trial`: 1 per day (separate lifetime generation quota enforced elsewhere)
+- `standard`: unlimited (`Infinity`)
+- `pro`: unlimited (`Infinity`)
+- `lifetime`: unlimited (`Infinity`)
+
+Note: Trial's **5 lifetime lesson generations** is enforced by usage/quota routes using `lifetimeGenerations`, not by this daily unique-start table.
 
 ### Notes
 

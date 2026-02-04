@@ -42,13 +42,14 @@ All endpoints require Authorization Bearer token (Supabase session access token)
 
 ### Enforcement
 
-Device cap based on plan_tier from profiles table:
-- free: 1 device
-- basic: 1 device
-- plus: 1 device
-- premium: 2 devices
+Device cap is driven by `featuresForTier(effectiveTier).devices` (see `src/app/lib/entitlements.js`).
 
-Mapping duplicated in route files (can centralize to `src/app/lib/entitlements.js` if needed).
+Current intent:
+- `free`: 1 device
+- `trial`: 1 device
+- `standard`: 1 device
+- `pro`: 2 devices
+- `lifetime`: 2 devices
 
 ### Lease Management
 
