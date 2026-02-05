@@ -749,10 +749,7 @@ export default function LessonPlanner({
             }}>
               Duration
             </label>
-                    onClick={() => {
-                      if (!requirePlannerAccess()) return
-                      setShowPreferences(true)
-                    }}
+            <select
               value={planDuration}
               onChange={(e) => setPlanDuration(Number(e.target.value))}
               style={{
