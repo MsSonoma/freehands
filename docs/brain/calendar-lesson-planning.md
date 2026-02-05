@@ -1,6 +1,6 @@
 # Calendar Lesson Planning System - Ms. Sonoma Brain File
 
-**Last Updated**: 2026-02-04T21:15:00Z  
+**Last Updated**: 2026-02-05T03:28:35Z  
 **Status**: Canonical
 
 ## How It Works
@@ -400,6 +400,13 @@ This editor matches the regular lesson editor for Visual Aids (button + carousel
 - If the Calendar overlay calls `/api/visual-aids/*` without the bearer token, those endpoints also return `401 {"error":"Unauthorized"}`.
 
 ## What NOT To Do
+
+### ❌ DON'T: Break JSX tags during gating edits
+**Why**: A malformed JSX tag (for example, accidentally deleting a `<select` opening tag while moving click-guards) will compile in dev only until the file is imported, then fail the production build with parser errors like "Unexpected token" near a bare `>`.
+
+**Rule**:
+- Only add access guards on interactive handlers (e.g., `onClick`, submit handlers), or in the called function (e.g., `generatePlannedLessons()` already calls `requirePlannerAccess()`).
+- Do not splice guard blocks into JSX without confirming the opening tag still exists.
 
 ### ❌ DON'T: Store planned lessons only in component state
 **Why**: Component state clears on refresh, logout, or navigation. User loses entire generated plan. Creates terrible UX where plans disappear unpredictably.
