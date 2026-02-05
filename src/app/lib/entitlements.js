@@ -111,13 +111,25 @@ export function featuresForTier(tier) {
  * @returns {string} The effective tier to use for entitlement lookups
  */
 export function resolveEffectiveTier(subscriptionTier, paidTier) {
+  const normalizedSubscription = normalizeTierId(subscriptionTier || '');
+  const normalizedPaid = normalizeTierId(paidTier || '');
+
   // Beta users map to Pro-level features
-  if (subscriptionTier?.toLowerCase() === 'beta') {
+  if (normalizedSubscription === 'beta') {
     return 'pro';
   }
-  
-  // Otherwise use their paid tier (or default to free)
-  return normalizeTierId(paidTier || 'free');
+
+  // Pick the most-entitled tier across both columns.
+  // Some legacy accounts store the paid tier in subscription_tier, others in plan_tier.
+  const tierRank = { free: 0, trial: 1, standard: 2, pro: 3, lifetime: 4 };
+  const paidRank = tierRank[normalizedPaid] ?? 0;
+  const subscriptionRank = tierRank[normalizedSubscription] ?? 0;
+
+  if (paidRank >= subscriptionRank) {
+    return normalizedPaid || 'free';
+  }
+
+  return normalizedSubscription || 'free';
 }
 
 const entitlementsApi = { ENTITLEMENTS, featuresForTier, resolveEffectiveTier };

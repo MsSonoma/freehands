@@ -41,8 +41,8 @@ Reusable overlay component that shows appropriate messaging based on gate type:
 
 **Tier normalization (legacy compatibility)**
 
-Some older accounts may still have legacy tier ids stored in `profiles.plan_tier`.
-Entitlement checks must normalize these values before lookup:
+Some older accounts may still have legacy tier ids stored in `profiles.plan_tier` **or** `profiles.subscription_tier`.
+Entitlement checks must normalize these values before lookup, and resolve the effective tier using the most-entitled value across both columns:
 
 - `premium` / `premium-plus` -> `pro`
 - `plus` / `basic` -> `standard`
