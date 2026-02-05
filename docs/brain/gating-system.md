@@ -164,6 +164,8 @@ export default function PremiumFeaturePage() {
 
 ## Notes
 
-- For in-session buttons (e.g., Games / Visual Aids), prefer keeping the buttons visible and blocking only the action with a short, in-context notice.
-- For the Facilitator Calendar, do not use a tier `GatedOverlay` that blocks scrolling/clicking. Keep the page viewable and gate only write actions (view-only banner + guarded handlers).
+- For in-session buttons (e.g., Games / Visual Aids), keep the UI visible and block only the action with a short, in-context notice.
+- For the Facilitator Calendar, do not use a tier overlay that blocks scrolling/clicking. Keep the page viewable and gate only write actions (view-only banner + guarded handlers).
+- For Mr. Mentor, keep the page viewable when signed in (no full-screen lock overlay). Load read-only context (e.g., learners, transcripts, notes) without requiring the paid entitlement.
+- For Mr. Mentor, gate write paths behind entitlements: sending messages, session initialization/persistence, and any mutations triggered from the Mr. Mentor surface.
 - Server routes must enforce the same entitlements (UI gating is not sufficient).

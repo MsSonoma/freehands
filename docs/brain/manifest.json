@@ -138,11 +138,12 @@
       "session takeover with PIN",
       "mentor_sessions table",
       "cross-device conversation persistence",
-      "session polling (8 seconds)",
+      "realtime conflict detection",
+      "heartbeat polling (3 seconds)",
       "SessionTakeoverDialog component",
       "automatic stale session cleanup"
     ],
-    "last_updated": "2025-12-31T12:30:00Z",
+    "last_updated": "2026-02-05T00:23:41Z",
     "status": "canonical"
   },
   "api-routes": {
@@ -814,7 +815,7 @@
       "upgrade-flow-integration",
       "universal-gating"
     ],
-    "last_updated": "2026-02-04T21:15:00Z",
+    "last_updated": "2026-02-05T00:23:41Z",
     "status": "canonical"
   }
 }

@@ -219,7 +219,7 @@ export default function CounselorClient() {
 
   // Load learners list
   useEffect(() => {
-    if (!hasAccess || !tierChecked) return
+    if (!tierChecked || !accessToken) return
     let cancelled = false
     ;(async () => {
       try {
@@ -235,7 +235,7 @@ export default function CounselorClient() {
       }
     })()
     return () => { cancelled = true }
-  }, [hasAccess, tierChecked])
+  }, [accessToken, tierChecked])
 
   // Load learner transcript when selection changes
   useEffect(() => {
@@ -265,7 +265,7 @@ export default function CounselorClient() {
 
   // Load goals notes when selection changes
   useEffect(() => {
-    if (!hasAccess || !tierChecked || !accessToken) return
+    if (!tierChecked || !accessToken) return
     
     let cancelled = false
     ;(async () => {
@@ -291,11 +291,11 @@ export default function CounselorClient() {
       }
     })()
     return () => { cancelled = true }
-  }, [accessToken, hasAccess, tierChecked, selectedLearnerId])
+  }, [accessToken, tierChecked, selectedLearnerId])
 
   // Load existing draft summary on mount and when learner changes
   useEffect(() => {
-    if (!hasAccess || !tierChecked) return
+    if (!tierChecked || !accessToken) return
     
     let cancelled = false
     ;(async () => {
@@ -303,15 +303,11 @@ export default function CounselorClient() {
         const supabase = getSupabaseClient()
         if (!supabase) return
         
-        const { data: { session } } = await supabase.auth.getSession()
-        const token = session?.access_token
-        if (!token) return
-
         const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
         
         const response = await fetch(`/api/conversation-drafts?learner_id=${learnerId || ''}`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${accessToken}`
           }
         })
 
@@ -327,11 +323,11 @@ export default function CounselorClient() {
     })()
     
     return () => { cancelled = true }
-  }, [hasAccess, tierChecked, selectedLearnerId])
+  }, [accessToken, tierChecked, selectedLearnerId])
 
   // Preload overlay data in background after page is ready
   useEffect(() => {
-    if (!hasAccess || !tierChecked) return
+    if (!tierChecked || !accessToken) return
     
     // Delay preload to let visible content load first
     const preloadTimer = setTimeout(() => {
@@ -342,7 +338,7 @@ export default function CounselorClient() {
     }, 1000) // 1 second delay after page load
     
     return () => clearTimeout(preloadTimer)
-  }, [hasAccess, tierChecked, selectedLearnerId])
+  }, [accessToken, tierChecked, selectedLearnerId])
 
   // Dispatch title to header (like session page)
   useEffect(() => {
@@ -2261,7 +2257,28 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
       fontSize: 14,
       lineHeight: 1.5
     }}>
-      Mr. Mentor is available on the Pro plan. Upgrade to Pro for access.
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div>
+          <strong>View-only:</strong> Mr. Mentor is available on the Pro plan.
+          <div>Sending and saving are disabled on your current plan.</div>
+        </div>
+        <a
+          href="/facilitator/account/plan"
+          style={{
+            display: 'inline-block',
+            padding: '8px 12px',
+            background: '#2563eb',
+            color: '#fff',
+            borderRadius: 8,
+            fontWeight: 600,
+            fontSize: 14,
+            textDecoration: 'none',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          Upgrade to Pro
+        </a>
+      </div>
     </div>
   ) : null
 
@@ -2940,7 +2957,8 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
                     </button>
                     <button
                       onClick={() => setActiveScreen('lessons')}
-                      title="Lessons"
+                      title={!hasAccess ? 'Pro required to use Lessons overlay' : 'Lessons'}
+                      disabled={!hasAccess}
                       style={{
                         width: 40,
                         height: 40,
@@ -2948,7 +2966,7 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
                         borderColor: activeScreen === 'lessons' ? '#3b82f6' : '#d1d5db',
                         borderRadius: 6,
                         background: activeScreen === 'lessons' ? '#dbeafe' : '#fff',
-                        cursor: 'pointer',
+                        cursor: !hasAccess ? 'not-allowed' : 'pointer',
                         fontSize: 20,
                         display: 'flex',
                         alignItems: 'center',
@@ -2960,7 +2978,8 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
                     </button>
                     <button
                       onClick={() => setActiveScreen('maker')}
-                      title="Lesson Generator"
+                      title={!hasAccess ? 'Pro required to use Lesson Generator overlay' : 'Lesson Generator'}
+                      disabled={!hasAccess}
                       style={{
                         width: 40,
                         height: 40,
@@ -2968,7 +2987,7 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
                         borderColor: activeScreen === 'maker' ? '#3b82f6' : '#d1d5db',
                         borderRadius: 6,
                         background: activeScreen === 'maker' ? '#dbeafe' : '#fff',
-                        cursor: 'pointer',
+                        cursor: !hasAccess ? 'not-allowed' : 'pointer',
                         fontSize: 20,
                         display: 'flex',
                         alignItems: 'center',
@@ -2980,7 +2999,8 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
                     </button>
                     <button
                       onClick={() => setActiveScreen('calendar')}
-                      title="Calendar"
+                      title={!hasAccess ? 'Pro required to use Calendar overlay' : 'Calendar'}
+                      disabled={!hasAccess}
                       style={{
                         width: 40,
                         height: 40,
@@ -2988,7 +3008,7 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
                         borderColor: activeScreen === 'calendar' ? '#3b82f6' : '#d1d5db',
                         borderRadius: 6,
                         background: activeScreen === 'calendar' ? '#dbeafe' : '#fff',
-                        cursor: 'pointer',
+                        cursor: !hasAccess ? 'not-allowed' : 'pointer',
                         fontSize: 20,
                         display: 'flex',
                         alignItems: 'center',
@@ -3058,113 +3078,6 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
         </div>
       </div>
 
-      {/* Upgrade Overlay - Window Shopping Experience */}
-      {!hasAccess && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: 20
-        }}>
-          <div style={{
-            background: '#fff',
-            borderRadius: 16,
-            padding: '32px 24px',
-            maxWidth: 500,
-            width: '100%',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🎓</div>
-            <h2 style={{ 
-              margin: '0 0 16px 0', 
-              fontSize: 24, 
-              fontWeight: 700,
-              color: '#111'
-            }}>
-              Unlock Mr. Mentor
-            </h2>
-            <p style={{ 
-              color: '#555', 
-              fontSize: 16, 
-              lineHeight: 1.6,
-              marginBottom: 24
-            }}>
-              Get personalized counseling and curriculum planning support with Mr. Mentor. 
-              Available exclusively on the Pro plan.
-            </p>
-            
-            <div style={{ 
-              background: '#f9fafb', 
-              border: '1px solid #e5e7eb',
-              borderRadius: 12,
-              padding: 20,
-              marginBottom: 24,
-              textAlign: 'left'
-            }}>
-              <p style={{ fontWeight: 600, marginBottom: 12, color: '#111' }}>What You Get:</p>
-              <ul style={{ 
-                margin: 0, 
-                paddingLeft: 20, 
-                fontSize: 14,
-                lineHeight: 2,
-                color: '#374151'
-              }}>
-                <li>AI-powered counseling for teaching challenges</li>
-                <li>Search, review, and generate custom lessons</li>
-                <li>Schedule lessons directly to learner calendars</li>
-                <li>Data-informed guidance based on learner progress</li>
-                <li>Curriculum planning and goal-setting support</li>
-              </ul>
-            </div>
-
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <a
-                href="/facilitator/account/plan"
-                style={{
-                  display: 'inline-block',
-                  padding: '12px 32px',
-                  background: '#2563eb',
-                  color: '#fff',
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  fontSize: 16,
-                  textDecoration: 'none',
-                  boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
-                  transition: 'transform 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                Upgrade to Pro
-              </a>
-              <button
-                onClick={() => router.back()}
-                style={{
-                  padding: '12px 24px',
-                  background: 'transparent',
-                  color: '#6b7280',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  fontSize: 16,
-                  cursor: 'pointer'
-                }}
-              >
-                Go Back
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

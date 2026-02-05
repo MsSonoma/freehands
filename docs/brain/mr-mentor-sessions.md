@@ -99,21 +99,28 @@ Called when user clicks "New Conversation". Deactivates session, returns `{ succ
 
 ## Client Flow
 
-**Initialization** (`src/app/counselor/CounselorClient.jsx`):
-1. Generate unique `sessionId` (UUIDv4), store in sessionStorage
+**Entitlement gating (view-only vs active session)**
+
+- If the facilitator does not have the `mentorSessions` entitlement, the Mr. Mentor surface is still viewable, but the client must not initialize or persist a `mentor_sessions` row (no POST/PATCH/DELETE to `/api/mentor-session`).
+- When entitled, the normal session lifecycle below applies.
+
+**Initialization** (`src/app/facilitator/generator/counselor/CounselorClient.jsx`):
+1. Generate/reuse a unique `sessionId`, persist it to sessionStorage/localStorage
 2. Wait for accessToken and tier validation
 3. `GET /api/mentor-session?sessionId={id}`
-4. If `status === 'taken'` → Show `SessionTakeoverDialog`
-5. If `status === 'none'` or `isOwner === true` → `POST /api/mentor-session` to create/resume
-6. Load `conversation_history` from database
-7. Start polling (every 8 seconds) to detect takeovers
+4. If another device owns the active session → show `SessionTakeoverDialog`
+5. If no active session exists → `POST /api/mentor-session` with `action: 'initialize'`
+6. Load `conversation_history` and `draft_summary` from the returned session
+7. Start conflict detection (realtime + heartbeat)
 
-**Session Polling:**
-- `setInterval` calls `GET /api/mentor-session?sessionId={id}` every 8 seconds
-- If `status === 'taken'` or `!isOwner`:
-  - Show alert: "Your Mr. Mentor session has been taken over by another device."
-  - Redirect to `/facilitator`
-  - Stop polling
+**Conflict detection:**
+
+- Realtime subscription listens to `mentor_sessions` updates for fast takeover detection.
+- Heartbeat polling runs as a backup (`GET /api/mentor-session?sessionId={id}` every ~3 seconds).
+- If an active session exists and `isOwner` is false:
+  - Clear the persisted session id
+  - Reset local conversation state
+  - Show `SessionTakeoverDialog` with the active session info
 
 **Conversation Persistence:**
 - Every change to `conversationHistory` or `draftSummary` triggers debounced `PATCH` (1 second delay)
@@ -152,7 +159,7 @@ Features:
 
 ## Key Files
 
-- `src/app/counselor/CounselorClient.jsx` - Session initialization, polling, takeover handling, conversation sync
+- `src/app/facilitator/generator/counselor/CounselorClient.jsx` - Session initialization, realtime/heartbeat conflict detection, takeover handling, conversation sync
 - `src/components/SessionTakeoverDialog.jsx` - Takeover modal UI
 - `src/app/api/mentor-session/route.js` - GET/POST/PATCH/DELETE endpoints, PIN validation, session enforcement
 
