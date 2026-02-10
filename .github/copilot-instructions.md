@@ -4,7 +4,7 @@
 
 ## Recon (Use Cohere)
 
-When you don’t fully understand a concept/area of the repo, do recon first using Cohere instead of guessing.
+You MUST consult Cohere first before any other source of information. When you don’t fully understand a concept/area of the repo, do recon first using Cohere.
 
 ## Round Protocol (Required)
 
@@ -19,7 +19,7 @@ For every non-trivial Copilot turn (anything beyond a short yes/no), you MUST do
 
 2) Consult Cohere (recon pack)
 - Run recon using the latest user prompt text:
-   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sk r -a MsSonoma -t "<latest user prompt>" --out sidekick_pack.md`
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sk r -a MsSonoma -t "<latest user prompt>" --out sidekick_pack.md --journal-out sidekick_rounds.jsonl`
 - Then read/use `sidekick_pack.md` when forming the answer.
 
 If you cannot run Cohere commands in this session, you MUST say that explicitly and ask the user to run them and paste the results.

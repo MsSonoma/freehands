@@ -6,6 +6,26 @@ import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
+const normalizeScheduledDate = (value) => {
+  if (!value) return value
+  const str = String(value)
+
+  // Handles:
+  // - YYYY-MM-DD
+  // - YYYY-M-D
+  // - YYYY-MM-DDTHH:mm:ss...
+  // - YYYY-M-D HH:mm:ss...
+  const match = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+  if (match) {
+    const yyyy = match[1]
+    const mm = String(match[2]).padStart(2, '0')
+    const dd = String(match[3]).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }
+
+  return str
+}
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -107,6 +127,7 @@ export async function GET(request) {
 
     const schedule = (data || []).map(item => ({
       ...item,
+      scheduled_date: normalizeScheduledDate(item.scheduled_date),
       lesson_key: normalizeLessonKey(item.lesson_key)
     }))
 

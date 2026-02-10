@@ -17,6 +17,7 @@ import SessionTakeoverDialog from './SessionTakeoverDialog'
 import MentorInterceptor from './MentorInterceptor'
 
 export default function CounselorClient() {
+  const LAST_SELECTED_LEARNER_KEY = 'MrMentor.v1.selectedLearnerId'
   const router = useRouter()
   const [pinChecked, setPinChecked] = useState(false)
   const [tierChecked, setTierChecked] = useState(false)
@@ -227,10 +228,16 @@ export default function CounselorClient() {
       try {
         const supabase = getSupabaseClient()
         if (supabase) {
-          const { data } = await supabase.from('learners').select('*').order('created_at', { ascending: false })
-          if (!cancelled && data) {
-            setLearners(data)
-          }
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) return
+
+          const { data } = await supabase
+            .from('learners')
+            .select('*')
+            .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
+            .order('created_at', { ascending: false })
+
+          if (!cancelled && data) setLearners(data)
         }
       } catch (err) {
         // Silent error handling
@@ -239,12 +246,33 @@ export default function CounselorClient() {
     return () => { cancelled = true }
   }, [accessToken, tierChecked])
 
+  // Persist last selected learner (helps survive Fast Refresh/state resets)
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return
+      if (!selectedLearnerId || selectedLearnerId === 'none') return
+      window.localStorage?.setItem?.(LAST_SELECTED_LEARNER_KEY, selectedLearnerId)
+    } catch {
+      // Ignore persistence errors (privacy mode / blocked storage)
+    }
+  }, [selectedLearnerId])
+
   // Default to the newest learner once the list loads (avoid 'none' stalling overlays)
   useEffect(() => {
     if (!learners?.length) return
     const selectedIsValid = selectedLearnerId !== 'none' && learners.some(l => l.id === selectedLearnerId)
     if (!selectedIsValid) {
-      setSelectedLearnerId(learners[0].id)
+      let nextLearnerId = null
+      try {
+        if (typeof window !== 'undefined') {
+          const saved = window.localStorage?.getItem?.(LAST_SELECTED_LEARNER_KEY)
+          if (saved && learners.some(l => l.id === saved)) {
+            nextLearnerId = saved
+          }
+        }
+      } catch {}
+
+      setSelectedLearnerId(nextLearnerId || learners[0].id)
     }
   }, [learners, selectedLearnerId])
 

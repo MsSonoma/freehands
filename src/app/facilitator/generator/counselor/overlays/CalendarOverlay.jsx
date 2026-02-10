@@ -81,6 +81,70 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
     return withoutExt || null
   }
 
+  const normalizeDateKey = (value) => {
+    if (!value) return null
+    const str = String(value)
+    const match = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+    if (match) {
+      const yyyy = match[1]
+      const mm = String(match[2]).padStart(2, '0')
+      const dd = String(match[3]).padStart(2, '0')
+      return `${yyyy}-${mm}-${dd}`
+    }
+    return str
+  }
+
+  const readSessionCache = (kind, cacheLearnerId) => {
+    try {
+      if (typeof window === 'undefined') return null
+      if (!cacheLearnerId || cacheLearnerId === 'none') return null
+
+      const parseRaw = (raw) => {
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        const data = parsed && typeof parsed === 'object' && parsed.data && typeof parsed.data === 'object'
+          ? parsed.data
+          : (parsed && typeof parsed === 'object' ? parsed : null)
+        return (data && typeof data === 'object') ? data : null
+      }
+
+      const key = `CalendarOverlay.v1.${String(kind)}.${String(cacheLearnerId)}`
+      const raw = window.sessionStorage?.getItem?.(key)
+      const sessionData = parseRaw(raw)
+      const sessionCount = (sessionData && typeof sessionData === 'object') ? Object.keys(sessionData || {}).length : 0
+      if (sessionCount > 0) return sessionData
+
+      // Fallback: if sessionStorage is missing/empty (can happen after hot reloads or transient empty writes),
+      // restore from a durable last-known-good cache.
+      const lastGoodKey = `CalendarOverlay.v1.${String(kind)}.lastGood.${String(cacheLearnerId)}`
+      const rawLastGood = window.localStorage?.getItem?.(lastGoodKey)
+      const lastGoodData = parseRaw(rawLastGood)
+      const lastGoodCount = (lastGoodData && typeof lastGoodData === 'object') ? Object.keys(lastGoodData || {}).length : 0
+      return lastGoodCount > 0 ? lastGoodData : (sessionData || null)
+    } catch {
+      return null
+    }
+  }
+
+  const writeSessionCache = (kind, cacheLearnerId, data) => {
+    try {
+      if (typeof window === 'undefined') return
+      if (!cacheLearnerId || cacheLearnerId === 'none') return
+      if (!data || typeof data !== 'object') return
+
+      // Never persist empty maps; empties are often transient and can wipe a good calendar.
+      const count = Object.keys(data || {}).length
+      if (count === 0) return
+
+      const key = `CalendarOverlay.v1.${String(kind)}.${String(cacheLearnerId)}`
+      window.sessionStorage?.setItem?.(key, JSON.stringify({ v: 1, savedAt: Date.now(), data }))
+
+      // Durable last-known-good fallback (survives full page reloads).
+      const lastGoodKey = `CalendarOverlay.v1.${String(kind)}.lastGood.${String(cacheLearnerId)}`
+      window.localStorage?.setItem?.(lastGoodKey, JSON.stringify({ v: 1, savedAt: Date.now(), data }))
+    } catch {}
+  }
+
   const [isMounted, setIsMounted] = useState(false)
 
   const [authToken, setAuthToken] = useState('')
@@ -138,6 +202,9 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
   const plannedLoadInFlightRef = useRef(false)
   const scheduleInFlightLearnerRef = useRef(null)
   const plannedInFlightLearnerRef = useRef(null)
+
+  const scheduleCacheByLearnerRef = useRef({})
+  const plannedCacheByLearnerRef = useRef({})
   const scheduleAbortRef = useRef(null)
   const plannedAbortRef = useRef(null)
   const scheduleRequestIdRef = useRef(0)
@@ -147,6 +214,10 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
   const autoSelectedDateRef = useRef(false)
   const userSelectedTabRef = useRef(false)
   const MIN_REFRESH_INTERVAL_MS = 15 * 1000
+
+  const activeLearnerIdRef = useRef(null)
+  // Keep in sync during render so first-load requests don't see a stale/null value.
+  activeLearnerIdRef.current = learnerId || null
 
   const abortInFlightLoad = (abortRef, inFlightLearnerRef, label) => {
     try {
@@ -168,8 +239,42 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
     setRescheduling(null)
     setListTab('scheduled')
     userSelectedTabRef.current = false
-    setScheduledLessons({})
-    setPlannedLessons({})
+
+    const inMemorySchedule = learnerId ? scheduleCacheByLearnerRef.current?.[learnerId] : null
+    const inMemoryPlanned = learnerId ? plannedCacheByLearnerRef.current?.[learnerId] : null
+    const sessionSchedule = learnerId ? readSessionCache('schedule', learnerId) : null
+    const sessionPlanned = learnerId ? readSessionCache('planned', learnerId) : null
+    const cachedSchedule = (inMemorySchedule && typeof inMemorySchedule === 'object')
+      ? inMemorySchedule
+      : ((sessionSchedule && typeof sessionSchedule === 'object') ? sessionSchedule : null)
+    const cachedPlanned = (inMemoryPlanned && typeof inMemoryPlanned === 'object')
+      ? inMemoryPlanned
+      : ((sessionPlanned && typeof sessionPlanned === 'object') ? sessionPlanned : null)
+
+    if (cachedSchedule && learnerId) {
+      try {
+        scheduleCacheByLearnerRef.current = {
+          ...(scheduleCacheByLearnerRef.current || {}),
+          [learnerId]: cachedSchedule
+        }
+      } catch {}
+    }
+    if (cachedPlanned && learnerId) {
+      try {
+        plannedCacheByLearnerRef.current = {
+          ...(plannedCacheByLearnerRef.current || {}),
+          [learnerId]: cachedPlanned
+        }
+      } catch {}
+    }
+
+    setScheduledLessons((cachedSchedule && typeof cachedSchedule === 'object') ? cachedSchedule : {})
+    setPlannedLessons((cachedPlanned && typeof cachedPlanned === 'object') ? cachedPlanned : {})
+    try {
+      const scheduleDates = cachedSchedule ? Object.keys(cachedSchedule || {}).length : 0
+      const plannedDates = cachedPlanned ? Object.keys(cachedPlanned || {}).length : 0
+      devWarn(`cache: restore learner=${String(learnerId)} scheduledDates=${String(scheduleDates)} plannedDates=${String(plannedDates)}`)
+    } catch {}
 
     // Abort any in-flight loads from the previous learner so they don't race.
     try { scheduleAbortRef.current?.abort() } catch {}
@@ -211,6 +316,8 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
       scheduleLoadedAtRef.current = 0
       return
     }
+
+    const shouldApplyToState = () => activeLearnerIdRef.current === targetLearnerId
 
     const force = !!opts?.force
     if (scheduleLoadInFlightRef.current) {
@@ -258,12 +365,36 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
       // Get all scheduled lessons for this learner
       let response
       try {
-        response = await fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}&includeAll=1`, {
-          headers: {
-            'authorization': `Bearer ${token}`
-          },
-          signal: controller.signal
-        })
+        // Match the main facilitator calendar page:
+        // - Primary fetch (facilitator-scoped + safe legacy null facilitator_id rows)
+        // - Secondary includeAll=1 fetch to pick up older/legacy rows that may live under other facilitator namespaces
+        const [primaryRes, allRes] = await Promise.all([
+          fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}`, {
+            headers: {
+              'authorization': `Bearer ${token}`
+            },
+            cache: 'no-store',
+            signal: controller.signal
+          }),
+          fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}&includeAll=1`, {
+            headers: {
+              'authorization': `Bearer ${token}`
+            },
+            cache: 'no-store',
+            signal: controller.signal
+          })
+        ])
+
+        const primaryOk = !!primaryRes?.ok
+        const allOk = !!allRes?.ok
+        // Prefer the primary response for status/ok handling, but still allow a merge if only one succeeded.
+        response = primaryOk ? primaryRes : allRes
+
+        // Attach parsed bodies for the merge step below.
+        response.__calendarOverlayPrimaryRes = primaryRes
+        response.__calendarOverlayAllRes = allRes
+        response.__calendarOverlayPrimaryOk = primaryOk
+        response.__calendarOverlayAllOk = allOk
       } finally {
         // scheduleTimeoutId cleared in finally
       }
@@ -276,9 +407,56 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
         return
       }
 
-      const result = await response.json()
-      devWarn(`schedule: parsed json ms=${Date.now() - startedAtMs}`)
-      const data = result.schedule || []
+      // Parse + merge the schedule payloads.
+      // We prefer primary (calendar page behavior) and append any extra legacy rows from includeAll.
+      const primaryRes = response?.__calendarOverlayPrimaryRes
+      const allRes = response?.__calendarOverlayAllRes
+      const primaryOk = !!response?.__calendarOverlayPrimaryOk
+      const allOk = !!response?.__calendarOverlayAllOk
+
+      const [primaryJson, allJson] = await Promise.all([
+        (primaryRes && primaryOk) ? primaryRes.json().catch(() => null) : Promise.resolve(null),
+        (allRes && allOk) ? allRes.json().catch(() => null) : Promise.resolve(null),
+      ])
+      devWarn(`schedule: parsed json ms=${Date.now() - startedAtMs} primaryOk=${String(primaryOk)} allOk=${String(allOk)}`)
+
+      const primaryRows = Array.isArray(primaryJson?.schedule) ? primaryJson.schedule : []
+      const allRows = Array.isArray(allJson?.schedule) ? allJson.schedule : []
+      const merged = []
+      const seen = new Set()
+      const makeKey = (row) => {
+        const d = normalizeDateKey(row?.scheduled_date)
+        const k = String(row?.lesson_key || '')
+        return `${String(d || '')}|${k}`
+      }
+      for (const row of primaryRows) {
+        const key = makeKey(row)
+        if (!key || key === '|') continue
+        if (seen.has(key)) continue
+        seen.add(key)
+        merged.push(row)
+      }
+      for (const row of allRows) {
+        const key = makeKey(row)
+        if (!key || key === '|') continue
+        if (seen.has(key)) continue
+        seen.add(key)
+        merged.push(row)
+      }
+
+      const data = merged
+
+      try {
+        const dateKeys = (data || [])
+          .map((r) => normalizeDateKey(r?.scheduled_date))
+          .filter(Boolean)
+          .sort((a, b) => String(a).localeCompare(String(b)))
+        if (dateKeys.length > 0) {
+          devWarn(`schedule: payload date range ${dateKeys[0]}..${dateKeys[dateKeys.length - 1]} rows=${(data || []).length}`)
+        } else {
+          devWarn(`schedule: payload has no date keys rows=${(data || []).length}`)
+        }
+      } catch {}
 
       const todayStr = getLocalTodayStr()
 
@@ -287,7 +465,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
       try {
         const immediate = {}
         for (const item of (data || [])) {
-          const dateStr = item?.scheduled_date
+          const dateStr = normalizeDateKey(item?.scheduled_date)
           const lessonKey = item?.lesson_key
           if (!dateStr || !lessonKey) continue
 
@@ -304,16 +482,31 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
         }
 
         if (requestId >= (scheduleLastAppliedRequestIdRef.current || 0)) {
-          scheduleLastAppliedRequestIdRef.current = requestId
-          setScheduledLessons((prev) => {
-            const base = (prev && typeof prev === 'object') ? prev : {}
-            const next = { ...base }
-            for (const [k, v] of Object.entries(immediate || {})) {
-              next[k] = v
+          if (shouldApplyToState()) {
+            scheduleLastAppliedRequestIdRef.current = requestId
+            setScheduledLessons((prev) => {
+              const base = (prev && typeof prev === 'object') ? prev : {}
+              const next = { ...base }
+              for (const [k, v] of Object.entries(immediate || {})) {
+                next[k] = v
+              }
+              return next
+            })
+          }
+          try {
+            const prevCache = scheduleCacheByLearnerRef.current?.[targetLearnerId]
+            const base = (prevCache && typeof prevCache === 'object') ? prevCache : {}
+            const merged = { ...base, ...(immediate || {}) }
+            scheduleCacheByLearnerRef.current = {
+              ...(scheduleCacheByLearnerRef.current || {}),
+              [targetLearnerId]: merged
             }
-            return next
-          })
+            try { writeSessionCache('schedule', targetLearnerId, merged) } catch {}
+          } catch {}
           devWarn(`schedule: immediate loaded dates=${Object.keys(immediate || {}).length}`)
+          if (!shouldApplyToState()) {
+            devWarn('schedule: immediate cached for inactive learner; skipping state apply', { targetLearnerId })
+          }
         } else {
           devWarn('schedule: older immediate result ignored')
         }
@@ -324,72 +517,170 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
       // NOTE: Lessons may be completed after their scheduled date (make-up work).
       let completedKeySet = new Set()
       let completedDatesByLesson = new Map()
+      let completedEventsByDate = new Map()
       let completionLookupFailed = false
       try {
-        const pastSchedule = (data || []).filter(row => row?.scheduled_date && row.scheduled_date < todayStr)
-        const minPastDate = pastSchedule.reduce((min, r) => (min && min < r.scheduled_date ? min : r.scheduled_date), null)
+        const pastSchedule = (data || [])
+          .map((row) => normalizeDateKey(row?.scheduled_date))
+          .filter((d) => d && d < todayStr)
+        const minPastDate = pastSchedule.reduce((min, d) => (min && min < d ? min : d), null)
 
-        if (pastSchedule.length > 0 && minPastDate) {
-          devWarn(`schedule: history lookup start from=${minPastDate} to=${todayStr}`)
+        const fallbackFrom = addDaysToDateStr(todayStr, -365)
+        const historyFrom = minPastDate || fallbackFrom
+
+        if (historyFrom) {
+          devWarn(`schedule: history lookup start from=${historyFrom} to=${todayStr}`)
           const historyController = new AbortController()
           const historyTimeoutId = setTimeout(() => {
             try { historyController.abort() } catch {}
-          }, 15000)
-          let historyRes
-          try {
-            if (controller.signal?.aborted) {
-              throw Object.assign(new Error('Aborted'), { name: 'AbortError' })
-            }
-            const onAbort = () => {
-              try { historyController.abort() } catch {}
-            }
-            try {
-              controller.signal?.addEventListener?.('abort', onAbort, { once: true })
-            } catch {}
-            historyRes = await fetch(
-              `/api/learner/lesson-history?learner_id=${targetLearnerId}&from=${encodeURIComponent(minPastDate)}&to=${encodeURIComponent(todayStr)}`,
-              {
-                headers: { 'authorization': `Bearer ${token}` },
-                signal: historyController.signal
-              }
-            )
-          } finally {
-            clearTimeout(historyTimeoutId)
+          }, 45000)
+
+          const fetchHistoryJson = async (url) => {
+            const res = await fetch(url, {
+              headers: { 'authorization': `Bearer ${token}` },
+              cache: 'no-store',
+              signal: historyController.signal,
+            })
+            const json = await res.json().catch(() => null)
+            return { res, json }
           }
 
-          devWarn(`schedule: history response ms=${Date.now() - startedAtMs} status=${String(historyRes?.status)} ok=${String(historyRes?.ok)}`)
-          const historyJson = await historyRes.json().catch(() => null)
+          let historyRes
+          let historyJson
+          let historyAttempt = 'full'
+          try {
+            ;({ res: historyRes, json: historyJson } = await fetchHistoryJson(
+              `/api/learner/lesson-history?learner_id=${targetLearnerId}&from=${encodeURIComponent(historyFrom)}&to=${encodeURIComponent(todayStr)}`
+            ))
+          } catch (err) {
+            // If the full-window fetch is slow/aborted, retry with a smaller window.
+            if (String(err?.name || '') === 'AbortError') throw err
+            historyRes = null
+            historyJson = null
+          }
+
+          const okFull = !!(historyRes && historyRes.ok)
+          if (!okFull) {
+            try {
+              const smallerFrom = addDaysToDateStr(todayStr, -180) || historyFrom
+              historyAttempt = 'recent'
+              devWarn(`schedule: history retry attempt=${historyAttempt} from=${smallerFrom} to=${todayStr}`)
+              ;({ res: historyRes, json: historyJson } = await fetchHistoryJson(
+                `/api/learner/lesson-history?learner_id=${targetLearnerId}&from=${encodeURIComponent(smallerFrom)}&to=${encodeURIComponent(todayStr)}`
+              ))
+            } catch (err) {
+              if (String(err?.name || '') === 'AbortError') throw err
+            }
+          }
+
+          const okRecent = !!(historyRes && historyRes.ok)
+          if (!okRecent) {
+            try {
+              // Last resort: unwindowed fetch is bounded by the API (fast) and often enough to catch recent 2026 activity.
+              historyAttempt = 'bounded'
+              devWarn(`schedule: history retry attempt=${historyAttempt} (no window)`)
+              ;({ res: historyRes, json: historyJson } = await fetchHistoryJson(
+                `/api/learner/lesson-history?learner_id=${targetLearnerId}`
+              ))
+            } catch (err) {
+              if (String(err?.name || '') === 'AbortError') throw err
+            }
+          }
+        
+          devWarn(
+            `schedule: history response ms=${Date.now() - startedAtMs} attempt=${historyAttempt} ` +
+            `status=${String(historyRes?.status)} ok=${String(historyRes?.ok)}`
+          )
+          clearTimeout(historyTimeoutId)
 
           if (!historyRes.ok) {
+            devWarn('schedule: history fetch failed', { status: historyRes?.status, error: historyJson?.error })
             completionLookupFailed = true
           } else {
             const events = Array.isArray(historyJson?.events) ? historyJson.events : []
+            const sessions = Array.isArray(historyJson?.sessions) ? historyJson.sessions : []
+            const completionDates = []
+            let completedFromEvents = 0
+            let completedFromSessions = 0
             for (const row of events) {
               if (row?.event_type && row.event_type !== 'completed') continue
               const completedDate = toLocalDateStr(row?.occurred_at)
               const key = canonicalLessonId(row?.lesson_id)
               if (!completedDate || !key) continue
+              completionDates.push(completedDate)
+              completedFromEvents += 1
               completedKeySet.add(`${key}|${completedDate}`)
               const prev = completedDatesByLesson.get(key) || []
               prev.push(completedDate)
               completedDatesByLesson.set(key, prev)
+
+              try {
+                const normalizedKey = normalizeLessonKey(String(row?.lesson_id || '')) || String(row?.lesson_id || '')
+                const list = completedEventsByDate.get(completedDate) || []
+                list.push({ lesson_key: normalizedKey || String(row?.lesson_id || ''), completed: true })
+                completedEventsByDate.set(completedDate, list)
+              } catch {}
+            }
+
+            // Some learners may not have explicit "completed" events, but will have completed sessions.
+            for (const session of sessions) {
+              const endedAt = session?.ended_at || null
+              const startedAt = session?.started_at || null
+              const status = session?.status || (endedAt ? 'completed' : null)
+              if (status !== 'completed' || (!endedAt && !startedAt)) continue
+
+              const completedDate = toLocalDateStr(endedAt || startedAt)
+              const key = canonicalLessonId(session?.lesson_id)
+              if (!completedDate || !key) continue
+              completionDates.push(completedDate)
+              completedFromSessions += 1
+              completedKeySet.add(`${key}|${completedDate}`)
+              const prev = completedDatesByLesson.get(key) || []
+              prev.push(completedDate)
+              completedDatesByLesson.set(key, prev)
+
+              try {
+                const normalizedKey = normalizeLessonKey(String(session?.lesson_id || '')) || String(session?.lesson_id || '')
+                const list = completedEventsByDate.get(completedDate) || []
+                list.push({ lesson_key: normalizedKey || String(session?.lesson_id || ''), completed: true })
+                completedEventsByDate.set(completedDate, list)
+              } catch {}
             }
 
             for (const [k, dates] of completedDatesByLesson.entries()) {
               const uniq = Array.from(new Set((dates || []).filter(Boolean))).sort()
               completedDatesByLesson.set(k, uniq)
             }
+
+            try {
+              const uniqDates = Array.from(new Set((completionDates || []).filter(Boolean)))
+                .sort((a, b) => String(a).localeCompare(String(b)))
+              if (uniqDates.length > 0) {
+                devWarn(
+                  `schedule: history completions date range ${uniqDates[0]}..${uniqDates[uniqDates.length - 1]} ` +
+                  `events=${String(completedFromEvents)} sessions=${String(completedFromSessions)} total=${String(completionDates.length)}`
+                )
+              } else {
+                devWarn('schedule: history completions empty')
+              }
+            } catch {}
           }
         }
-      } catch {
+      } catch (err) {
         completedKeySet = new Set()
         completedDatesByLesson = new Map()
+        completedEventsByDate = new Map()
         completionLookupFailed = true
+        if (String(err?.name || '') === 'AbortError') {
+          devWarn('schedule: history lookup aborted', err)
+        } else {
+          devWarn('schedule: history lookup failed', err)
+        }
       }
 
       const grouped = {}
       data.forEach(item => {
-        const dateStr = item.scheduled_date
+        const dateStr = normalizeDateKey(item?.scheduled_date)
         const lessonKey = item.lesson_key
         if (!dateStr || !lessonKey) return
 
@@ -404,8 +695,9 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
         })()
         const completed = direct || makeup
 
-        // In this overlay, keep past scheduled lessons visible as history.
-        // Completion is still computed (for labeling), but should not hide schedule rows.
+        // Match the main facilitator calendar behavior:
+        // past dates show only completed lessons (unless completion lookup failed).
+        if (isPast && !completed && !completionLookupFailed) return
 
         if (!grouped[dateStr]) grouped[dateStr] = []
         grouped[dateStr].push({
@@ -418,13 +710,55 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
           completed
         })
       })
+
+      // Note: Unlike earlier overlay iterations, we intentionally do NOT synthesize
+      // history-only dates here. The goal is parity with the main facilitator calendar page.
       if (requestId >= (scheduleLastAppliedRequestIdRef.current || 0)) {
-        scheduleLastAppliedRequestIdRef.current = requestId
-        setScheduledLessons(grouped)
+        const groupedDatesCount = Object.keys(grouped || {}).length
+        const existingCache = scheduleCacheByLearnerRef.current?.[targetLearnerId]
+        const existingCountInMemory = existingCache && typeof existingCache === 'object'
+          ? Object.keys(existingCache || {}).length
+          : 0
+        const existingCountInSession = (() => {
+          try {
+            const sessionCache = readSessionCache('schedule', targetLearnerId)
+            return (sessionCache && typeof sessionCache === 'object')
+              ? Object.keys(sessionCache || {}).length
+              : 0
+          } catch {
+            return 0
+          }
+        })()
+        const existingCount = Math.max(existingCountInMemory, existingCountInSession)
+        // Force refreshes can transiently return empty (race/auth/StrictMode);
+        // never overwrite a non-empty calendar with an empty payload in that case.
+        if (force && groupedDatesCount === 0 && existingCount > 0) {
+          devWarn(`schedule: empty payload on force; preserving cached dates=${String(existingCount)}`)
+          return
+        }
+        if (!force && groupedDatesCount === 0 && existingCount > 0) {
+          devWarn(`schedule: empty payload; preserving cached dates=${String(existingCount)}`)
+          return
+        }
+        if (shouldApplyToState()) {
+          scheduleLastAppliedRequestIdRef.current = requestId
+          setScheduledLessons(grouped)
+        }
+        try {
+          scheduleCacheByLearnerRef.current = {
+            ...(scheduleCacheByLearnerRef.current || {}),
+            [targetLearnerId]: grouped
+          }
+        } catch {}
+        try { writeSessionCache('schedule', targetLearnerId, grouped) } catch {}
         devWarn(`schedule: loaded dates=${Object.keys(grouped || {}).length} rows=${(data || []).length}`)
-        setTableExists(true)
-        scheduleLoadedForLearnerRef.current = targetLearnerId
-        scheduleLoadedAtRef.current = Date.now()
+        if (shouldApplyToState()) {
+          setTableExists(true)
+          scheduleLoadedForLearnerRef.current = targetLearnerId
+          scheduleLoadedAtRef.current = Date.now()
+        } else {
+          devWarn('schedule: result cached for inactive learner; skipping state apply', { targetLearnerId })
+        }
       } else {
         devWarn('schedule: older result ignored')
       }
@@ -434,9 +768,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
         // Do not clear state on timeout; a newer request may have succeeded.
       } else {
         devWarn('schedule: unexpected error', err)
-        if (requestId === scheduleRequestIdRef.current) {
-          setScheduledLessons({})
-        }
+        // Preserve last-known schedule on unexpected errors.
       }
     } finally {
       clearTimeout(scheduleTimeoutId)
@@ -511,6 +843,8 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
       return
     }
 
+    const shouldApplyToState = () => activeLearnerIdRef.current === targetLearnerId
+
     const force = !!opts?.force
     if (plannedLoadInFlightRef.current) {
       const inFlightLearner = plannedInFlightLearnerRef.current
@@ -548,41 +882,171 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
 
       if (!token) {
         devWarn('planned: missing auth token')
-        setPlannedLessons({})
         return
       }
 
-      let response
-      try {
-        response = await fetch(`/api/planned-lessons?learnerId=${targetLearnerId}`, {
-          headers: {
-            'authorization': `Bearer ${token}`
-          },
+      const parsePlannedResult = (rawResult) => {
+        const rawPlanned = rawResult?.plannedLessons || {}
+        try {
+          const out = {}
+          for (const [k, v] of Object.entries(rawPlanned || {})) {
+            const key = normalizeDateKey(k)
+            if (!key) continue
+            const list = Array.isArray(v) ? v : []
+            if (!out[key]) out[key] = []
+            out[key].push(...list)
+          }
+          return out
+        } catch {
+          return rawPlanned || {}
+        }
+      }
+
+      const plannedLessonUniq = (lesson) => {
+        try {
+          const rawKey =
+            lesson?.lessonKey ||
+            lesson?.lesson_key ||
+            lesson?.lessonId ||
+            lesson?.lesson_id ||
+            lesson?.id ||
+            lesson?.key ||
+            lesson?.file ||
+            lesson?.path
+
+          const canon = canonicalLessonId(rawKey)
+          if (canon) return `k:${canon}`
+          try {
+            return `j:${JSON.stringify(lesson)}`
+          } catch {
+            const title = lesson?.title ? String(lesson.title) : ''
+            return `s:${String(rawKey || '')}:${title}`
+          }
+        } catch {
+          return `j:${String(Math.random())}`
+        }
+      }
+
+      const mergePlannedMaps = (primaryMap, secondaryMap) => {
+        const merged = { ...(primaryMap && typeof primaryMap === 'object' ? primaryMap : {}) }
+        const secondaryEntries = Object.entries(secondaryMap && typeof secondaryMap === 'object' ? secondaryMap : {})
+        for (const [dateKey, lessons] of secondaryEntries) {
+          const normDate = normalizeDateKey(dateKey)
+          if (!normDate) continue
+          const list = Array.isArray(lessons) ? lessons : []
+          if (!merged[normDate]) merged[normDate] = []
+          const existing = Array.isArray(merged[normDate]) ? merged[normDate] : []
+          const seen = new Set(existing.map(plannedLessonUniq))
+          for (const lesson of list) {
+            const sig = plannedLessonUniq(lesson)
+            if (seen.has(sig)) continue
+            seen.add(sig)
+            existing.push(lesson)
+          }
+          merged[normDate] = existing
+        }
+        return merged
+      }
+
+      const primaryUrl = `/api/planned-lessons?learnerId=${targetLearnerId}`
+      const allUrl = `/api/planned-lessons?learnerId=${targetLearnerId}&includeAll=1`
+
+      const [primarySettled, allSettled] = await Promise.allSettled([
+        fetch(primaryUrl, {
+          headers: { 'authorization': `Bearer ${token}` },
+          cache: 'no-store',
+          signal: controller.signal
+        }),
+        fetch(allUrl, {
+          headers: { 'authorization': `Bearer ${token}` },
+          cache: 'no-store',
           signal: controller.signal
         })
-      } finally {
-        // plannedTimeoutId cleared in finally
+      ])
+
+      const primaryRes = primarySettled.status === 'fulfilled' ? primarySettled.value : null
+      const allRes = allSettled.status === 'fulfilled' ? allSettled.value : null
+
+      devWarn(
+        `planned: responses ms=${Date.now() - startedAtMs}`,
+        {
+          primary: { status: primaryRes?.status, ok: primaryRes?.ok },
+          includeAll: { status: allRes?.status, ok: allRes?.ok },
+        }
+      )
+
+      const readJsonOrNull = async (res) => {
+        try {
+          if (!res || !res.ok) return null
+          return await res.json()
+        } catch {
+          return null
+        }
       }
 
-      devWarn(`planned: response ms=${Date.now() - startedAtMs} status=${String(response?.status)} ok=${String(response?.ok)}`)
-
-      if (!response.ok) {
-        const bodyText = await response.text().catch(() => '')
-        devWarn('planned: fetch failed', { status: response.status, body: bodyText })
-        setPlannedLessons({})
+      if (!primaryRes?.ok && !allRes?.ok) {
+        const primaryBody = primaryRes ? await primaryRes.text().catch(() => '') : ''
+        const allBody = allRes ? await allRes.text().catch(() => '') : ''
+        devWarn('planned: fetch failed (both)', {
+          primary: { status: primaryRes?.status, body: primaryBody },
+          includeAll: { status: allRes?.status, body: allBody }
+        })
         return
       }
 
-      const result = await response.json()
-      const nextPlanned = result.plannedLessons || {}
+      const primaryJson = await readJsonOrNull(primaryRes)
+      const allJson = await readJsonOrNull(allRes)
+
+      const primaryPlanned = parsePlannedResult(primaryJson)
+      const allPlanned = parsePlannedResult(allJson)
+      const nextPlanned = mergePlannedMaps(primaryPlanned, allPlanned)
       if (requestId >= (plannedLastAppliedRequestIdRef.current || 0)) {
-        plannedLastAppliedRequestIdRef.current = requestId
-        setPlannedLessons(nextPlanned)
+        const nextDatesCount = Object.keys(nextPlanned || {}).length
+        const existingCache = plannedCacheByLearnerRef.current?.[targetLearnerId]
+        const existingCountInMemory = existingCache && typeof existingCache === 'object'
+          ? Object.keys(existingCache || {}).length
+          : 0
+        const existingCountInSession = (() => {
+          try {
+            const sessionCache = readSessionCache('planned', targetLearnerId)
+            return (sessionCache && typeof sessionCache === 'object')
+              ? Object.keys(sessionCache || {}).length
+              : 0
+          } catch {
+            return 0
+          }
+        })()
+        const existingCount = Math.max(existingCountInMemory, existingCountInSession)
+        if (force && nextDatesCount === 0 && existingCount > 0) {
+          devWarn(`planned: empty payload on force; preserving cached dates=${String(existingCount)}`)
+          return
+        }
+        if (!force && nextDatesCount === 0 && existingCount > 0) {
+          devWarn(`planned: empty payload; preserving cached dates=${String(existingCount)}`)
+          return
+        }
+        if (shouldApplyToState()) {
+          plannedLastAppliedRequestIdRef.current = requestId
+          setPlannedLessons(nextPlanned)
+        }
+        try {
+          plannedCacheByLearnerRef.current = {
+            ...(plannedCacheByLearnerRef.current || {}),
+            [targetLearnerId]: nextPlanned
+          }
+        } catch {}
+        try { writeSessionCache('planned', targetLearnerId, nextPlanned) } catch {}
         const dateKeys = Object.keys(nextPlanned || {})
         const totalLessons = dateKeys.reduce((sum, k) => sum + (Array.isArray(nextPlanned?.[k]) ? nextPlanned[k].length : 0), 0)
-        devWarn(`planned: loaded dates=${dateKeys.length} lessons=${totalLessons}`)
-        plannedLoadedForLearnerRef.current = targetLearnerId
-        plannedLoadedAtRef.current = Date.now()
+        const primaryDates = Object.keys(primaryPlanned || {}).length
+        const allDates = Object.keys(allPlanned || {}).length
+        devWarn(`planned: loaded dates=${dateKeys.length} lessons=${totalLessons} (primaryDates=${primaryDates} includeAllDates=${allDates})`)
+        if (shouldApplyToState()) {
+          plannedLoadedForLearnerRef.current = targetLearnerId
+          plannedLoadedAtRef.current = Date.now()
+        } else {
+          devWarn('planned: result cached for inactive learner; skipping state apply', { targetLearnerId })
+        }
       } else {
         devWarn('planned: older result ignored')
       }
@@ -593,9 +1057,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
       } else {
         const msg = 'planned: unexpected error'
         devWarn(msg, err)
-        if (requestId === plannedRequestIdRef.current) {
-          setPlannedLessons({})
-        }
+        // Preserve last-known planned lessons on unexpected errors.
       }
     } finally {
       clearTimeout(plannedTimeoutId)
@@ -641,8 +1103,6 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
       )
 
       if (!deleteResponse.ok) throw new Error('Failed to remove lesson')
-
-      setScheduledLessons({})
       await loadSchedule()
     } catch (err) {
       alert('Failed to remove lesson')
@@ -705,7 +1165,6 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
       if (!scheduleResponse.ok) throw new Error('Failed to reschedule lesson')
 
       setRescheduling(null)
-      setScheduledLessons({})
       await loadSchedule()
     } catch (err) {
       alert('Failed to reschedule lesson')
@@ -964,7 +1423,6 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
     
     const handleLessonScheduled = () => {
       // Clear cache and reload
-      setScheduledLessons({})
       scheduleLoadedForLearnerRef.current = null
       scheduleLoadedAtRef.current = 0
       loadSchedule({ force: true })
@@ -1104,7 +1562,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
   // Preference order:
   // 1) nearest date >= today with lessons in current tab
   // 2) nearest date >= today with lessons in either tab
-  // 3) earliest date with lessons
+  // 3) most recent past date with lessons
   // 4) today
   useEffect(() => {
     if (!learnerId || learnerId === 'none') return
@@ -1119,7 +1577,10 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
       if (!dates || dates.length === 0) return null
       const sorted = dates.slice().sort((a, b) => String(a).localeCompare(String(b)))
       const upcoming = sorted.filter((d) => d >= todayStr)
-      return (upcoming[0] || sorted[0]) || null
+      if (upcoming.length > 0) return upcoming[0]
+      const past = sorted.filter((d) => d < todayStr)
+      if (past.length > 0) return past[past.length - 1]
+      return sorted[0] || null
     }
 
     // Initial auto-select if none chosen.
@@ -1182,8 +1643,8 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
         onGenerated={async () => {
           setShowGenerator(false)
           // Ensure scheduled markers refresh
-          setScheduledLessons({})
           scheduleLoadedForLearnerRef.current = null
+          scheduleLoadedAtRef.current = 0
           await loadSchedule()
         }}
       />
@@ -1325,8 +1786,8 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
               autoGeneratePlan={!!plannerInit?.autoGenerate}
               onPlannedLessonsChange={savePlannedLessons}
               onLessonGenerated={async () => {
-                setScheduledLessons({})
                 scheduleLoadedForLearnerRef.current = null
+                scheduleLoadedAtRef.current = 0
                 await loadSchedule()
               }}
             />
