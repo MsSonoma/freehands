@@ -133,6 +133,8 @@ export default function CounselorClient() {
   const [activeToolThought, setActiveToolThought] = useState(null)
   const [loadingThought, setLoadingThought] = useState(null)
 
+  const canPlan = Boolean(featuresForTier(tier)?.lessonPlanner)
+
   const generateSessionIdentifier = useCallback(() => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       return crypto.randomUUID()
@@ -236,6 +238,15 @@ export default function CounselorClient() {
     })()
     return () => { cancelled = true }
   }, [accessToken, tierChecked])
+
+  // Default to the newest learner once the list loads (avoid 'none' stalling overlays)
+  useEffect(() => {
+    if (!learners?.length) return
+    const selectedIsValid = selectedLearnerId !== 'none' && learners.some(l => l.id === selectedLearnerId)
+    if (!selectedIsValid) {
+      setSelectedLearnerId(learners[0].id)
+    }
+  }, [learners, selectedLearnerId])
 
   // Load learner transcript when selection changes
   useEffect(() => {
@@ -1669,6 +1680,173 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
             // Trigger lesson editor
             setActiveScreen('lessons')
             // Could pass edit instructions as context
+          } else if (action.type === 'save_curriculum_preferences') {
+            setLoadingThought('Saving curriculum preferences...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token || !selectedLearnerId) {
+              interceptResult.response = 'Please select a learner first.'
+            } else {
+              try {
+                const res = await fetch('/api/curriculum-preferences', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({
+                    learnerId: selectedLearnerId,
+                    focusTopics: action.focusTopics || [],
+                    bannedTopics: action.bannedTopics || []
+                  })
+                })
+
+                const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.error
+                    ? `I couldn't save curriculum preferences: ${js.error}`
+                    : "I couldn't save curriculum preferences. Please try again."
+                } else {
+                  interceptResult.response = `Saved curriculum preferences for ${learnerName || 'this learner'}.`
+                }
+              } catch {
+                interceptResult.response = "I couldn't save curriculum preferences. Please try again."
+              }
+            }
+          } else if (action.type === 'save_weekly_pattern') {
+            setLoadingThought('Saving weekly pattern...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token || !selectedLearnerId) {
+              interceptResult.response = 'Please select a learner first.'
+            } else {
+              try {
+                const getRes = await fetch(`/api/schedule-templates?learnerId=${selectedLearnerId}`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+                const getJs = await getRes.json().catch(() => null)
+                const templates = Array.isArray(getJs?.templates) ? getJs.templates : []
+                const activeTemplate = templates.find(t => t?.active) || templates[0] || null
+
+                const method = activeTemplate?.id ? 'PUT' : 'POST'
+                const body = activeTemplate?.id
+                  ? { id: activeTemplate.id, pattern: action.pattern }
+                  : { learnerId: selectedLearnerId, name: 'Weekly Schedule', pattern: action.pattern, active: true }
+
+                const saveRes = await fetch('/api/schedule-templates', {
+                  method,
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(body)
+                })
+
+                const saveJs = await saveRes.json().catch(() => null)
+                if (!saveRes.ok) {
+                  interceptResult.response = saveJs?.error
+                    ? `I couldn't save the weekly pattern: ${saveJs.error}`
+                    : "I couldn't save the weekly pattern. Please try again."
+                } else {
+                  interceptResult.response = `Weekly pattern saved for ${learnerName || 'this learner'}.`
+                }
+              } catch {
+                interceptResult.response = "I couldn't save the weekly pattern. Please try again."
+              }
+            }
+          } else if (action.type === 'add_custom_subject') {
+            setLoadingThought('Adding custom subject...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token) {
+              interceptResult.response = 'Please sign in first.'
+            } else {
+              try {
+                const res = await fetch('/api/custom-subjects', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ name: action.name })
+                })
+                const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.error
+                    ? `I couldn't add that subject: ${js.error}`
+                    : "I couldn't add that subject. Please try again."
+                } else {
+                  interceptResult.response = `Added custom subject: ${js?.subject?.name || action.name}.`
+                }
+              } catch {
+                interceptResult.response = "I couldn't add that subject. Please try again."
+              }
+            }
+          } else if (action.type === 'delete_custom_subject') {
+            setLoadingThought('Deleting custom subject...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token) {
+              interceptResult.response = 'Please sign in first.'
+            } else {
+              try {
+                const listRes = await fetch('/api/custom-subjects', {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+                const listJs = await listRes.json().catch(() => null)
+                const subjects = Array.isArray(listJs?.subjects) ? listJs.subjects : []
+                const target = subjects.find(s => String(s?.name || '').toLowerCase() === String(action.name || '').trim().toLowerCase())
+
+                if (!target?.id) {
+                  interceptResult.response = `I couldn't find a custom subject named "${action.name}".`
+                } else {
+                  const delRes = await fetch(`/api/custom-subjects?id=${encodeURIComponent(target.id)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  })
+                  const delJs = await delRes.json().catch(() => null)
+                  if (!delRes.ok) {
+                    interceptResult.response = delJs?.error
+                      ? `I couldn't delete that subject: ${delJs.error}`
+                      : "I couldn't delete that subject. Please try again."
+                  } else {
+                    interceptResult.response = `Deleted custom subject: ${target.name}.`
+                  }
+                }
+              } catch {
+                interceptResult.response = "I couldn't delete that subject. Please try again."
+              }
+            }
+          } else if (action.type === 'generate_lesson_plan') {
+            setLoadingThought('Opening Lesson Planner...')
+
+            // Ensure the calendar overlay is mounted to receive the event.
+            setActiveScreen('calendar')
+
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('mr-mentor:open-lesson-planner', {
+                detail: {
+                  learnerId: action.learnerId || selectedLearnerId,
+                  startDate: action.startDate,
+                  durationMonths: action.durationMonths,
+                  autoGenerate: true
+                }
+              }))
+            }
+
+            interceptResult.response = `Ok. I\'m opening the Lesson Planner and generating a ${action.durationMonths}-month plan starting ${action.startDate}.`
           }
         }
         
@@ -2527,7 +2705,9 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
               <CalendarOverlay 
                 learnerId={selectedLearnerId}
                 learnerGrade={learners.find(l => l.id === selectedLearnerId)?.grade}
+                accessToken={accessToken}
                 tier={tier}
+                canPlan={canPlan}
               />
             </div>
             <div style={{ display: activeScreen === 'lessons' ? 'block' : 'none', height: '100%' }}>

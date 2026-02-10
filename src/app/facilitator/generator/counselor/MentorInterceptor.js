@@ -124,6 +124,35 @@ const INTENT_PATTERNS = {
       return INTENT_PATTERNS.faq.keywords.some(kw => normalized.includes(kw)) ? 0.9 : 0
     }
   }
+
+  ,
+
+  lesson_plan: {
+    keywords: [
+      'lesson plan',
+      'lesson planner',
+      'planned lessons',
+      'curriculum preferences',
+      'curriculum',
+      'weekly pattern',
+      'schedule template',
+      'start date',
+      'duration',
+      'generate lesson plan',
+      'schedule a lesson plan'
+    ],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+
+      // FAQ-style questions about the planner should defer to FAQ intent.
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0
+      }
+
+      return INTENT_PATTERNS.lesson_plan.keywords.some(kw => normalized.includes(kw)) ? 0.85 : 0
+    }
+  }
 }
 
 // Confirmation detection (yes/no)
@@ -558,12 +587,155 @@ export class MentorInterceptor {
       
       case 'faq':
         return await this.handleFaq(userMessage, context)
+
+      case 'lesson_plan':
+        return await this.handleLessonPlan(userMessage, context)
       
       default:
         return {
           handled: false,
           apiForward: { message: userMessage }
         }
+    }
+  }
+
+  parseListFromText(text) {
+    if (!text) return []
+    const raw = String(text)
+      .split(/[\n;,]+/g)
+      .flatMap((s) => s.split(','))
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => s.replace(/^and\s+/i, '').trim())
+      .filter(Boolean)
+
+    // de-dupe while preserving order
+    const seen = new Set()
+    const out = []
+    for (const item of raw) {
+      const key = item.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push(item)
+    }
+    return out
+  }
+
+  isEscapeMessage(userMessage) {
+    const normalized = normalizeText(userMessage)
+    return (
+      normalized.includes('cancel') ||
+      normalized.includes('stop') ||
+      normalized.includes('nevermind') ||
+      normalized.includes('never mind') ||
+      normalized.includes('different issue') ||
+      normalized.includes('something else')
+    )
+  }
+
+  async handleLessonPlan(userMessage, context) {
+    const { selectedLearnerId, learnerName } = context
+    const normalized = normalizeText(userMessage)
+
+    if (!selectedLearnerId) {
+      return {
+        handled: true,
+        response: 'Please select a learner from the dropdown first, then I can help you set curriculum preferences, weekly patterns, and schedule a lesson plan.'
+      }
+    }
+
+    const wantsCurriculum = normalized.includes('curriculum') || normalized.includes('preference') || normalized.includes('banned') || normalized.includes('avoid')
+    const wantsPattern = normalized.includes('weekly pattern') || (normalized.includes('pattern') && normalized.includes('week')) || normalized.includes('schedule template')
+    const wantsCustomSubjectAdd = (normalized.includes('add') || normalized.includes('create') || normalized.includes('new')) && normalized.includes('subject')
+    const wantsCustomSubjectDelete = (normalized.includes('delete') || normalized.includes('remove')) && normalized.includes('subject')
+    const wantsPlan = (normalized.includes('lesson plan') || normalized.includes('lesson planner') || normalized.includes('planned lessons')) &&
+      (normalized.includes('schedule') || normalized.includes('generate') || normalized.includes('make') || normalized.includes('start') || normalized.includes('duration'))
+
+    if (wantsCustomSubjectAdd) {
+      this.state.flow = 'custom_subject_add'
+
+      // Attempt to extract name after "subject"
+      const match = userMessage.match(/subject\s+(.+)$/i)
+      const maybeName = match?.[1] ? String(match[1]).trim() : ''
+      if (maybeName && maybeName.length <= 60) {
+        this.state.context.subjectName = maybeName
+        this.state.awaitingConfirmation = true
+        this.state.awaitingInput = null
+        return {
+          handled: true,
+          response: `Should I add a custom subject named "${maybeName}"?`
+        }
+      }
+
+      this.state.awaitingInput = 'custom_subject_name'
+      return {
+        handled: true,
+        response: 'What custom subject would you like me to add?'
+      }
+    }
+
+    if (wantsCustomSubjectDelete) {
+      this.state.flow = 'custom_subject_delete'
+
+      const match = userMessage.match(/subject\s+(.+)$/i)
+      const maybeName = match?.[1] ? String(match[1]).trim() : ''
+      if (maybeName && maybeName.length <= 60) {
+        this.state.context.subjectName = maybeName
+        this.state.awaitingConfirmation = true
+        this.state.awaitingInput = null
+        return {
+          handled: true,
+          response: `Should I delete the custom subject "${maybeName}"?`
+        }
+      }
+
+      this.state.awaitingInput = 'custom_subject_delete_name'
+      return {
+        handled: true,
+        response: 'Which custom subject would you like me to delete?'
+      }
+    }
+
+    if (wantsCurriculum) {
+      this.state.flow = 'curriculum_prefs'
+      this.state.context = { learnerId: selectedLearnerId, curriculum: {} }
+      this.state.awaitingInput = 'curriculum_prefs_focus_and_avoid'
+      return {
+        handled: true,
+        response: `Tell me what you want ${learnerName || 'this learner'} to focus on, and what you want to avoid. You can reply like: "Focus: fractions, reading comprehension. Avoid: scary war topics."`
+      }
+    }
+
+    if (wantsPattern) {
+      this.state.flow = 'weekly_pattern'
+      this.state.context = {
+        learnerId: selectedLearnerId,
+        weeklyPatternDraft: this.state.context.weeklyPatternDraft || {
+          sunday: [], monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: []
+        }
+      }
+      this.state.awaitingInput = 'pattern_day'
+      return {
+        handled: true,
+        response: `Which day would you like to update in the weekly pattern for ${learnerName || 'this learner'}? (Sunday through Saturday)`
+      }
+    }
+
+    if (wantsPlan) {
+      this.state.flow = 'lesson_plan_generate'
+      this.state.context = { learnerId: selectedLearnerId }
+      this.state.awaitingInput = 'plan_start_date'
+      return {
+        handled: true,
+        response: `When should the lesson plan start for ${learnerName || 'this learner'}? You can say a date like 2026-02-10 or something like "next Monday".`
+      }
+    }
+
+    this.state.flow = 'lesson_plan'
+    this.state.awaitingInput = 'lesson_plan_choice'
+    return {
+      handled: true,
+      response: 'I can help with curriculum preferences, your weekly pattern, custom subjects, or scheduling a lesson plan. What would you like to do?'
     }
   }
   
@@ -652,6 +824,261 @@ export class MentorInterceptor {
    */
   async handleParameterInput(userMessage, context) {
     const { allLessons, selectedLearnerId, learnerName } = context
+
+    // Escape hatch for any structured flow.
+    if (this.state.flow && this.state.awaitingInput && this.isEscapeMessage(userMessage)) {
+      const normalized = normalizeText(userMessage)
+
+      if (normalized.includes('different issue') || normalized.includes('something else')) {
+        this.reset()
+        return {
+          handled: false,
+          apiForward: { message: userMessage, bypassInterceptor: true }
+        }
+      }
+
+      this.reset()
+      return {
+        handled: true,
+        response: 'No problem. What would you like to do instead?'
+      }
+    }
+
+    // Lesson plan chooser (routes into subflows)
+    if (this.state.awaitingInput === 'lesson_plan_choice') {
+      const normalized = normalizeText(userMessage)
+      if (normalized.includes('curriculum') || normalized.includes('preference') || normalized.includes('avoid')) {
+        return await this.handleLessonPlan('curriculum preferences', context)
+      }
+      if (normalized.includes('pattern') || normalized.includes('weekly')) {
+        return await this.handleLessonPlan('weekly pattern', context)
+      }
+      if (normalized.includes('subject')) {
+        // Ask clarifier for add vs delete.
+        this.state.awaitingInput = 'lesson_plan_subject_action'
+        return {
+          handled: true,
+          response: 'Do you want to add a new custom subject, or delete an existing one?'
+        }
+      }
+      if (normalized.includes('schedule') || normalized.includes('generate') || normalized.includes('plan')) {
+        return await this.handleLessonPlan('schedule a lesson plan', context)
+      }
+
+      return {
+        handled: true,
+        response: 'Would you like to work on curriculum preferences, weekly pattern, custom subjects, or scheduling a lesson plan?'
+      }
+    }
+
+    if (this.state.awaitingInput === 'lesson_plan_subject_action') {
+      const normalized = normalizeText(userMessage)
+      if (normalized.includes('add') || normalized.includes('create') || normalized.includes('new')) {
+        return await this.handleLessonPlan('add custom subject', context)
+      }
+      if (normalized.includes('delete') || normalized.includes('remove')) {
+        return await this.handleLessonPlan('delete custom subject', context)
+      }
+      return {
+        handled: true,
+        response: 'Please say "add" to create a new custom subject, or "delete" to remove one.'
+      }
+    }
+
+    // Curriculum preferences (single-shot preferred)
+    if (this.state.awaitingInput === 'curriculum_prefs_focus_and_avoid') {
+      const text = String(userMessage || '').trim()
+      const lower = text.toLowerCase()
+
+      const focusMatch = text.match(/\bfocus\s*:\s*([^\n;]+)(?:[;\n]|$)/i)
+      const avoidMatch = text.match(/\bavoid\s*:\s*([^\n;]+)(?:[;\n]|$)/i)
+
+      const focusRaw = focusMatch?.[1] || ''
+      const avoidRaw = avoidMatch?.[1] || ''
+
+      if (focusRaw) {
+        this.state.context.curriculum.focusTopics = this.parseListFromText(focusRaw)
+      }
+      if (avoidRaw) {
+        this.state.context.curriculum.bannedTopics = this.parseListFromText(avoidRaw)
+      }
+
+      // If they didn't use Focus/Avoid labels, treat their message as focus and ask for avoid.
+      if (!focusRaw && !avoidRaw) {
+        if (lower === 'skip') {
+          this.state.context.curriculum.focusTopics = []
+        } else {
+          this.state.context.curriculum.focusTopics = this.parseListFromText(text)
+        }
+      }
+
+      if (!this.state.context.curriculum.bannedTopics) {
+        this.state.awaitingInput = 'curriculum_prefs_avoid'
+        return {
+          handled: true,
+          response: `What topics should we avoid for ${learnerName || 'this learner'}? (comma-separated, or say "skip")`
+        }
+      }
+
+      this.state.awaitingConfirmation = true
+      this.state.awaitingInput = null
+      return {
+        handled: true,
+        response: `Should I save these curriculum preferences for ${learnerName || 'this learner'}?\n\nFocus: ${(this.state.context.curriculum.focusTopics || []).join(', ') || '(none)'}\nAvoid: ${(this.state.context.curriculum.bannedTopics || []).join(', ') || '(none)'}`
+      }
+    }
+
+    if (this.state.awaitingInput === 'curriculum_prefs_avoid') {
+      const text = String(userMessage || '').trim()
+      this.state.context.curriculum.bannedTopics = text.toLowerCase() === 'skip' ? [] : this.parseListFromText(text)
+      this.state.awaitingConfirmation = true
+      this.state.awaitingInput = null
+      return {
+        handled: true,
+        response: `Should I save these curriculum preferences for ${learnerName || 'this learner'}?\n\nFocus: ${(this.state.context.curriculum.focusTopics || []).join(', ') || '(none)'}\nAvoid: ${(this.state.context.curriculum.bannedTopics || []).join(', ') || '(none)'}`
+      }
+    }
+
+    // Weekly pattern editing
+    if (this.state.awaitingInput === 'pattern_day') {
+      const normalized = normalizeText(userMessage)
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      const day = dayNames.find((d) => normalized.includes(d))
+      if (!day) {
+        return {
+          handled: true,
+          response: 'Which day should we update? Please say Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, or Saturday.'
+        }
+      }
+      this.state.context.patternDay = day
+      this.state.awaitingInput = 'pattern_subjects'
+      return {
+        handled: true,
+        response: `What subjects should be on ${day.charAt(0).toUpperCase() + day.slice(1)}? (comma-separated). Say "none" to clear that day.`
+      }
+    }
+
+    if (this.state.awaitingInput === 'pattern_subjects') {
+      const day = this.state.context.patternDay
+      if (!day) {
+        this.state.awaitingInput = 'pattern_day'
+        return {
+          handled: true,
+          response: 'Which day would you like to update first?'
+        }
+      }
+
+      const normalized = normalizeText(userMessage)
+      const shouldClear = normalized.includes('none') || normalized.includes('clear') || normalized.includes('remove all')
+      const subjects = shouldClear ? [] : this.parseListFromText(userMessage)
+
+      const draft = this.state.context.weeklyPatternDraft || {
+        sunday: [], monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: []
+      }
+
+      draft[day] = subjects.map((s) => ({ subject: s.toLowerCase() }))
+      this.state.context.weeklyPatternDraft = draft
+
+      this.state.awaitingInput = 'pattern_next'
+      return {
+        handled: true,
+        response: 'Would you like to update another day, or should I save this weekly pattern?'
+      }
+    }
+
+    if (this.state.awaitingInput === 'pattern_next') {
+      const normalized = normalizeText(userMessage)
+      if (normalized.includes('another') || normalized.includes('more') || normalized.includes('next day')) {
+        this.state.awaitingInput = 'pattern_day'
+        return {
+          handled: true,
+          response: 'Which day would you like to update next?'
+        }
+      }
+
+      if (normalized.includes('save') || normalized.includes('yes') || normalized.includes('done')) {
+        this.state.flow = 'weekly_pattern'
+        this.state.awaitingConfirmation = true
+        this.state.awaitingInput = null
+        return {
+          handled: true,
+          response: `Should I save this weekly pattern for ${learnerName || 'this learner'}?`
+        }
+      }
+
+      return {
+        handled: true,
+        response: 'Please say "another day" to keep editing, or "save" to save the weekly pattern.'
+      }
+    }
+
+    // Custom subject add/delete
+    if (this.state.awaitingInput === 'custom_subject_name') {
+      const name = String(userMessage || '').trim()
+      if (!name) {
+        return { handled: true, response: 'What custom subject name should I add?' }
+      }
+      this.state.flow = 'custom_subject_add'
+      this.state.context.subjectName = name
+      this.state.awaitingConfirmation = true
+      this.state.awaitingInput = null
+      return {
+        handled: true,
+        response: `Should I add a custom subject named "${name}"?`
+      }
+    }
+
+    if (this.state.awaitingInput === 'custom_subject_delete_name') {
+      const name = String(userMessage || '').trim()
+      if (!name) {
+        return { handled: true, response: 'Which custom subject should I delete?' }
+      }
+      this.state.flow = 'custom_subject_delete'
+      this.state.context.subjectName = name
+      this.state.awaitingConfirmation = true
+      this.state.awaitingInput = null
+      return {
+        handled: true,
+        response: `Should I delete the custom subject "${name}"?`
+      }
+    }
+
+    // Lesson plan generation (start date + duration)
+    if (this.state.awaitingInput === 'plan_start_date') {
+      const date = extractDate(userMessage)
+      if (!date) {
+        return {
+          handled: true,
+          response: 'I could not understand that start date. Please try a date like 2026-02-10 or a day like "next Monday".'
+        }
+      }
+      this.state.context.planStartDate = date
+      this.state.awaitingInput = 'plan_duration_months'
+      return {
+        handled: true,
+        response: 'How long should the plan be? Please choose 1, 2, 3, or 4 months.'
+      }
+    }
+
+    if (this.state.awaitingInput === 'plan_duration_months') {
+      const normalized = normalizeText(userMessage)
+      const match = normalized.match(/\b(1|2|3|4)\b/)
+      const months = match ? Number(match[1]) : null
+      if (!months || months < 1 || months > 4) {
+        return {
+          handled: true,
+          response: 'Please choose a duration of 1, 2, 3, or 4 months.'
+        }
+      }
+      this.state.context.planDurationMonths = months
+      this.state.flow = 'lesson_plan_generate'
+      this.state.awaitingConfirmation = true
+      this.state.awaitingInput = null
+      return {
+        handled: true,
+        response: 'Would you like to schedule a Lesson Plan?'
+      }
+    }
     
     // Handle FAQ feature confirmation
     if (this.state.awaitingInput === 'faq_feature_confirm') {
@@ -1644,6 +2071,82 @@ export class MentorInterceptor {
           editInstructions: ctx.editInstructions
         },
         response: `I'm editing ${lesson.title} now...`
+      }
+    }
+
+    if (flow === 'curriculum_prefs') {
+      const curriculum = ctx.curriculum || {}
+      const focusTopics = Array.isArray(curriculum.focusTopics) ? curriculum.focusTopics : []
+      const bannedTopics = Array.isArray(curriculum.bannedTopics) ? curriculum.bannedTopics : []
+
+      this.reset()
+      return {
+        handled: true,
+        action: {
+          type: 'save_curriculum_preferences',
+          learnerId: ctx.learnerId,
+          focusTopics,
+          bannedTopics
+        },
+        response: 'Saving curriculum preferences...'
+      }
+    }
+
+    if (flow === 'weekly_pattern') {
+      const pattern = ctx.weeklyPatternDraft
+      this.reset()
+      return {
+        handled: true,
+        action: {
+          type: 'save_weekly_pattern',
+          learnerId: ctx.learnerId,
+          pattern
+        },
+        response: 'Saving weekly pattern...'
+      }
+    }
+
+    if (flow === 'custom_subject_add') {
+      const name = String(ctx.subjectName || '').trim()
+      this.reset()
+      return {
+        handled: true,
+        action: {
+          type: 'add_custom_subject',
+          name
+        },
+        response: `Adding custom subject "${name}"...`
+      }
+    }
+
+    if (flow === 'custom_subject_delete') {
+      const name = String(ctx.subjectName || '').trim()
+      this.reset()
+      return {
+        handled: true,
+        action: {
+          type: 'delete_custom_subject',
+          name
+        },
+        response: `Deleting custom subject "${name}"...`
+      }
+    }
+
+    if (flow === 'lesson_plan_generate') {
+      const startDate = ctx.planStartDate
+      const durationMonths = ctx.planDurationMonths
+      const learnerId = ctx.learnerId
+
+      this.reset()
+      return {
+        handled: true,
+        action: {
+          type: 'generate_lesson_plan',
+          learnerId,
+          startDate,
+          durationMonths
+        },
+        response: 'Scheduling lesson plan... This can take a minute.'
       }
     }
     

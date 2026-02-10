@@ -33,16 +33,61 @@ export async function GET(request) {
       return NextResponse.json({ error: 'learnerId required' }, { status: 400 })
     }
 
-    // Fetch all planned lessons for this learner
-    const { data, error } = await adminSupabase
+    // Verify the learner belongs to this facilitator/owner.
+    // Planned lessons are treated as per-learner data (not per-facilitator), but still require authorization.
+    const { data: learner, error: learnerError } = await adminSupabase
+      .from('learners')
+      .select('id')
+      .eq('id', learnerId)
+      .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle()
+
+    if (learnerError || !learner) {
+      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
+    }
+
+    // Fetch planned lessons for this learner.
+    // Primary: scoped to this facilitator.
+    // Fallback: if there are legacy rows under a single different facilitator_id, return them (read compatibility).
+    let data = null
+    let error = null
+
+    const primary = await adminSupabase
       .from('planned_lessons')
       .select('*')
       .eq('learner_id', learnerId)
       .eq('facilitator_id', user.id)
       .order('scheduled_date', { ascending: true })
 
+    data = primary.data
+    error = primary.error
+
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    if (!Array.isArray(data) || data.length === 0) {
+      const fallback = await adminSupabase
+        .from('planned_lessons')
+        .select('*')
+        .eq('learner_id', learnerId)
+        .order('scheduled_date', { ascending: true })
+
+      if (fallback.error) {
+        return NextResponse.json({ error: fallback.error.message }, { status: 500 })
+      }
+
+      const allRows = Array.isArray(fallback.data) ? fallback.data : []
+      const distinctFacilitators = Array.from(
+        new Set(allRows.map(r => r?.facilitator_id).filter(Boolean))
+      )
+
+      // Only return fallback rows if they're clearly a single legacy owner/facilitator namespace.
+      if (distinctFacilitators.length === 1) {
+        data = allRows
+      } else {
+        data = []
+      }
     }
 
     // Transform to the format expected by the calendar: { 'YYYY-MM-DD': [{...}] }
@@ -87,6 +132,18 @@ export async function POST(request) {
 
     if (!learnerId || !plannedLessons) {
       return NextResponse.json({ error: 'learnerId and plannedLessons required' }, { status: 400 })
+    }
+
+    // Verify the learner belongs to this facilitator/owner
+    const { data: learner, error: learnerError } = await adminSupabase
+      .from('learners')
+      .select('id')
+      .eq('id', learnerId)
+      .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle()
+
+    if (learnerError || !learner) {
+      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
     }
 
     // Get all dates in the new plan
@@ -158,6 +215,18 @@ export async function DELETE(request) {
 
     if (!learnerId) {
       return NextResponse.json({ error: 'learnerId required' }, { status: 400 })
+    }
+
+    // Verify the learner belongs to this facilitator/owner
+    const { data: learner, error: learnerError } = await adminSupabase
+      .from('learners')
+      .select('id')
+      .eq('id', learnerId)
+      .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle()
+
+    if (learnerError || !learner) {
+      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
     }
 
     // Delete all planned lessons for this learner

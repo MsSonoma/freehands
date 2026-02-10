@@ -12,8 +12,33 @@ import PortfolioScansModal from '@/app/facilitator/calendar/PortfolioScansModal'
 import TypedRemoveConfirmModal from '@/app/facilitator/calendar/TypedRemoveConfirmModal'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
 
-export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
+export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan, accessToken }) {
   const OVERLAY_Z_INDEX = 2147483647
+
+  const devStringify = (value) => {
+    try {
+      if (value instanceof Error) {
+        return JSON.stringify({ name: value.name, message: value.message, stack: value.stack })
+      }
+      return JSON.stringify(value)
+    } catch {
+      try {
+        return String(value)
+      } catch {
+        return '[unstringifiable]'
+      }
+    }
+  }
+
+  const devWarn = (...args) => {
+    try {
+      if (process.env.NODE_ENV !== 'production') {
+        const formatted = (args || []).map((a) => (typeof a === 'string' ? a : devStringify(a)))
+        // eslint-disable-next-line no-console
+        console.log('[CalendarOverlay]', ...formatted)
+      }
+    } catch {}
+  }
 
   const getLocalTodayStr = () => {
     const now = new Date()
@@ -60,6 +85,23 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
 
   const [authToken, setAuthToken] = useState('')
 
+  const tokenFallbackRef = useRef('')
+  useEffect(() => {
+    tokenFallbackRef.current = accessToken || authToken || ''
+  }, [accessToken, authToken])
+
+  const getBearerToken = useCallback(async () => {
+    const fallback = tokenFallbackRef.current || ''
+    if (fallback) return fallback
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      return session?.access_token || tokenFallbackRef.current || ''
+    } catch {
+      return tokenFallbackRef.current || ''
+    }
+  }, [])
+
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
   const [scheduledLessons, setScheduledLessons] = useState({})
@@ -76,6 +118,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
   const [redoPromptDrafts, setRedoPromptDrafts] = useState({})
 
   const [showPlannerOverlay, setShowPlannerOverlay] = useState(false)
+  const [plannerInit, setPlannerInit] = useState(null)
 
   const [notesLesson, setNotesLesson] = useState(null)
   const [visualAidsLesson, setVisualAidsLesson] = useState(null)
@@ -89,10 +132,62 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
 
   const scheduleLoadedForLearnerRef = useRef(null)
   const plannedLoadedForLearnerRef = useRef(null)
+  const scheduleLoadedAtRef = useRef(0)
+  const plannedLoadedAtRef = useRef(0)
+  const scheduleLoadInFlightRef = useRef(false)
+  const plannedLoadInFlightRef = useRef(false)
+  const scheduleInFlightLearnerRef = useRef(null)
+  const plannedInFlightLearnerRef = useRef(null)
+  const scheduleAbortRef = useRef(null)
+  const plannedAbortRef = useRef(null)
+  const scheduleRequestIdRef = useRef(0)
+  const plannedRequestIdRef = useRef(0)
+  const scheduleLastAppliedRequestIdRef = useRef(0)
+  const plannedLastAppliedRequestIdRef = useRef(0)
+  const autoSelectedDateRef = useRef(false)
+  const userSelectedTabRef = useRef(false)
+  const MIN_REFRESH_INTERVAL_MS = 15 * 1000
+
+  const abortInFlightLoad = (abortRef, inFlightLearnerRef, label) => {
+    try {
+      const inFlight = inFlightLearnerRef?.current
+      devWarn(`${label}: aborting in-flight load`, { inFlight })
+      abortRef?.current?.abort()
+    } catch {}
+  }
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  // Reset UI + cancel any prior-learner loads when the learner changes.
+  // IMPORTANT: keep this effect above the effects that trigger new loads;
+  // otherwise it can abort the freshly-started fetches.
+  useEffect(() => {
+    setSelectedDate(null)
+    setRescheduling(null)
+    setListTab('scheduled')
+    userSelectedTabRef.current = false
+    setScheduledLessons({})
+    setPlannedLessons({})
+
+    // Abort any in-flight loads from the previous learner so they don't race.
+    try { scheduleAbortRef.current?.abort() } catch {}
+    try { plannedAbortRef.current?.abort() } catch {}
+    scheduleAbortRef.current = null
+    plannedAbortRef.current = null
+    scheduleInFlightLearnerRef.current = null
+    plannedInFlightLearnerRef.current = null
+    scheduleLoadInFlightRef.current = false
+    plannedLoadInFlightRef.current = false
+
+    scheduleLoadedForLearnerRef.current = null
+    plannedLoadedForLearnerRef.current = null
+    scheduleLoadedAtRef.current = 0
+    plannedLoadedAtRef.current = 0
+    scheduleLastAppliedRequestIdRef.current = 0
+    plannedLastAppliedRequestIdRef.current = 0
+  }, [learnerId])
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December']
@@ -108,46 +203,121 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
     setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
   }
   
-  const loadScheduleForLearner = useCallback(async (targetLearnerId) => {
+  const loadScheduleForLearner = useCallback(async (targetLearnerId, opts = {}) => {
     if (!targetLearnerId || targetLearnerId === 'none') {
+      devWarn('schedule: no learner selected', { targetLearnerId })
       setScheduledLessons({})
       scheduleLoadedForLearnerRef.current = null
+      scheduleLoadedAtRef.current = 0
       return
     }
 
-    // Skip reload if schedule already loaded for this learner
-    if (scheduleLoadedForLearnerRef.current === targetLearnerId && Object.keys(scheduledLessons).length > 0) return
+    const force = !!opts?.force
+    if (scheduleLoadInFlightRef.current) {
+      const inFlightLearner = scheduleInFlightLearnerRef.current
+      if (inFlightLearner && inFlightLearner !== targetLearnerId) {
+        abortInFlightLoad(scheduleAbortRef, scheduleInFlightLearnerRef, 'schedule')
+      } else {
+        devWarn('schedule: in-flight, skipping', { inFlightLearner })
+        return
+      }
+    }
+    if (!force
+      && scheduleLoadedForLearnerRef.current === targetLearnerId
+      && (Date.now() - (scheduleLoadedAtRef.current || 0)) < MIN_REFRESH_INTERVAL_MS
+    ) {
+      devWarn('schedule: throttled, skipping', { targetLearnerId })
+      return
+    }
+
+    devWarn(`schedule: start learner=${targetLearnerId} force=${String(force)} hasTokenFallback=${String(Boolean(tokenFallbackRef.current))}`)
+
+    const controller = new AbortController()
+    scheduleAbortRef.current = controller
+    scheduleInFlightLearnerRef.current = targetLearnerId
+    scheduleLoadInFlightRef.current = true
+    const requestId = ++scheduleRequestIdRef.current
+    const startedAtMs = Date.now()
+    const scheduleTimeoutId = setTimeout(() => {
+      try { controller.abort() } catch {}
+    }, 45000)
     
     try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      const token = await getBearerToken()
+      devWarn(`schedule: got token ms=${Date.now() - startedAtMs} hasToken=${String(Boolean(token))}`)
 
       if (token) {
         setAuthToken((prev) => (prev === token ? prev : token))
       }
 
       if (!token) {
-        setScheduledLessons({})
+        devWarn('schedule: missing auth token')
         return
       }
 
       // Get all scheduled lessons for this learner
-      const response = await fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      let response
+      try {
+        response = await fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}&includeAll=1`, {
+          headers: {
+            'authorization': `Bearer ${token}`
+          },
+          signal: controller.signal
+        })
+      } finally {
+        // scheduleTimeoutId cleared in finally
+      }
+
+      devWarn(`schedule: response ms=${Date.now() - startedAtMs} status=${String(response?.status)} ok=${String(response?.ok)}`)
 
       if (!response.ok) {
-        setScheduledLessons({})
+        const bodyText = await response.text().catch(() => '')
+        devWarn('schedule: fetch failed', { status: response.status, body: bodyText })
         return
       }
 
       const result = await response.json()
+      devWarn(`schedule: parsed json ms=${Date.now() - startedAtMs}`)
       const data = result.schedule || []
 
       const todayStr = getLocalTodayStr()
+
+      // Fast-path: render scheduled lessons immediately.
+      // Completion history lookup can be slow; it should not block schedule visibility.
+      try {
+        const immediate = {}
+        for (const item of (data || [])) {
+          const dateStr = item?.scheduled_date
+          const lessonKey = item?.lesson_key
+          if (!dateStr || !lessonKey) continue
+
+          if (!immediate[dateStr]) immediate[dateStr] = []
+          immediate[dateStr].push({
+            id: item.id,
+            facilitator_id: item.facilitator_id,
+            lesson_title: item.lesson_key?.split('/')[1]?.replace('.json', '').replace(/_/g, ' ') || 'Lesson',
+            subject: item.lesson_key?.split('/')[0] || 'Unknown',
+            grade: 'Various',
+            lesson_key: item.lesson_key,
+            completed: false
+          })
+        }
+
+        if (requestId >= (scheduleLastAppliedRequestIdRef.current || 0)) {
+          scheduleLastAppliedRequestIdRef.current = requestId
+          setScheduledLessons((prev) => {
+            const base = (prev && typeof prev === 'object') ? prev : {}
+            const next = { ...base }
+            for (const [k, v] of Object.entries(immediate || {})) {
+              next[k] = v
+            }
+            return next
+          })
+          devWarn(`schedule: immediate loaded dates=${Object.keys(immediate || {}).length}`)
+        } else {
+          devWarn('schedule: older immediate result ignored')
+        }
+      } catch {}
 
       // Build a completion lookup.
       // Past scheduled dates will show only completed lessons.
@@ -160,9 +330,34 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
         const minPastDate = pastSchedule.reduce((min, r) => (min && min < r.scheduled_date ? min : r.scheduled_date), null)
 
         if (pastSchedule.length > 0 && minPastDate) {
-          const historyRes = await fetch(
-            `/api/learner/lesson-history?learner_id=${targetLearnerId}&from=${encodeURIComponent(minPastDate)}&to=${encodeURIComponent(todayStr)}`
-          )
+          devWarn(`schedule: history lookup start from=${minPastDate} to=${todayStr}`)
+          const historyController = new AbortController()
+          const historyTimeoutId = setTimeout(() => {
+            try { historyController.abort() } catch {}
+          }, 15000)
+          let historyRes
+          try {
+            if (controller.signal?.aborted) {
+              throw Object.assign(new Error('Aborted'), { name: 'AbortError' })
+            }
+            const onAbort = () => {
+              try { historyController.abort() } catch {}
+            }
+            try {
+              controller.signal?.addEventListener?.('abort', onAbort, { once: true })
+            } catch {}
+            historyRes = await fetch(
+              `/api/learner/lesson-history?learner_id=${targetLearnerId}&from=${encodeURIComponent(minPastDate)}&to=${encodeURIComponent(todayStr)}`,
+              {
+                headers: { 'authorization': `Bearer ${token}` },
+                signal: historyController.signal
+              }
+            )
+          } finally {
+            clearTimeout(historyTimeoutId)
+          }
+
+          devWarn(`schedule: history response ms=${Date.now() - startedAtMs} status=${String(historyRes?.status)} ok=${String(historyRes?.ok)}`)
           const historyJson = await historyRes.json().catch(() => null)
 
           if (!historyRes.ok) {
@@ -209,7 +404,8 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
         })()
         const completed = direct || makeup
 
-        if (isPast && !completed && !completionLookupFailed) return
+        // In this overlay, keep past scheduled lessons visible as history.
+        // Completion is still computed (for labeling), but should not hide schedule rows.
 
         if (!grouped[dateStr]) grouped[dateStr] = []
         grouped[dateStr].push({
@@ -222,28 +418,49 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
           completed
         })
       })
-      setScheduledLessons(grouped)
-      setTableExists(true)
-      scheduleLoadedForLearnerRef.current = targetLearnerId
+      if (requestId >= (scheduleLastAppliedRequestIdRef.current || 0)) {
+        scheduleLastAppliedRequestIdRef.current = requestId
+        setScheduledLessons(grouped)
+        devWarn(`schedule: loaded dates=${Object.keys(grouped || {}).length} rows=${(data || []).length}`)
+        setTableExists(true)
+        scheduleLoadedForLearnerRef.current = targetLearnerId
+        scheduleLoadedAtRef.current = Date.now()
+      } else {
+        devWarn('schedule: older result ignored')
+      }
     } catch (err) {
-      setScheduledLessons({})
+      if (String(err?.name || '') === 'AbortError') {
+        devWarn('schedule: timeout/abort', err)
+        // Do not clear state on timeout; a newer request may have succeeded.
+      } else {
+        devWarn('schedule: unexpected error', err)
+        if (requestId === scheduleRequestIdRef.current) {
+          setScheduledLessons({})
+        }
+      }
+    } finally {
+      clearTimeout(scheduleTimeoutId)
+      if (scheduleAbortRef.current === controller) {
+        scheduleAbortRef.current = null
+        scheduleInFlightLearnerRef.current = null
+        scheduleLoadInFlightRef.current = false
+      }
+      devWarn(`schedule: done ms=${Date.now() - startedAtMs}`)
     }
-  }, [scheduledLessons])
+  }, [])
 
   const persistPlannedForDate = async (dateStr, lessonsForDate) => {
     if (!learnerId || learnerId === 'none') return false
 
     try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      const token = await getBearerToken()
       if (!token) throw new Error('Not authenticated')
 
       const response = await fetch('/api/planned-lessons', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           learnerId,
@@ -266,15 +483,13 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
     if (!learnerId || learnerId === 'none') return
 
     try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      const token = await getBearerToken()
       if (!token) return
 
       await fetch('/api/planned-lessons', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -287,55 +502,122 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
     }
   }
 
-  const loadPlannedForLearner = useCallback(async (targetLearnerId) => {
+  const loadPlannedForLearner = useCallback(async (targetLearnerId, opts = {}) => {
     if (!targetLearnerId || targetLearnerId === 'none') {
+      devWarn('planned: no learner selected', { targetLearnerId })
       setPlannedLessons({})
       plannedLoadedForLearnerRef.current = null
+      plannedLoadedAtRef.current = 0
       return
     }
 
-    // Skip reload if planned lessons already loaded for this learner
-    if (plannedLoadedForLearnerRef.current === targetLearnerId && Object.keys(plannedLessons).length > 0) return
+    const force = !!opts?.force
+    if (plannedLoadInFlightRef.current) {
+      const inFlightLearner = plannedInFlightLearnerRef.current
+      if (inFlightLearner && inFlightLearner !== targetLearnerId) {
+        abortInFlightLoad(plannedAbortRef, plannedInFlightLearnerRef, 'planned')
+      } else {
+        devWarn('planned: in-flight, skipping', { inFlightLearner })
+        return
+      }
+    }
+    if (!force
+      && plannedLoadedForLearnerRef.current === targetLearnerId
+      && (Date.now() - (plannedLoadedAtRef.current || 0)) < MIN_REFRESH_INTERVAL_MS
+    ) {
+      devWarn('planned: throttled, skipping', { targetLearnerId })
+      return
+    }
+
+    devWarn(`planned: start learner=${targetLearnerId} force=${String(force)} hasTokenFallback=${String(Boolean(tokenFallbackRef.current))}`)
+    const startedAtMs = Date.now()
+
+    const controller = new AbortController()
+    plannedAbortRef.current = controller
+    plannedInFlightLearnerRef.current = targetLearnerId
+    plannedLoadInFlightRef.current = true
+    const requestId = ++plannedRequestIdRef.current
+    const plannedTimeoutId = setTimeout(() => {
+      try { controller.abort() } catch {}
+    }, 45000)
 
     try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      const token = await getBearerToken()
+
+      devWarn(`planned: got token ms=${Date.now() - startedAtMs} hasToken=${String(Boolean(token))}`)
 
       if (!token) {
+        devWarn('planned: missing auth token')
         setPlannedLessons({})
         return
       }
 
-      const response = await fetch(`/api/planned-lessons?learnerId=${targetLearnerId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      let response
+      try {
+        response = await fetch(`/api/planned-lessons?learnerId=${targetLearnerId}`, {
+          headers: {
+            'authorization': `Bearer ${token}`
+          },
+          signal: controller.signal
+        })
+      } finally {
+        // plannedTimeoutId cleared in finally
+      }
+
+      devWarn(`planned: response ms=${Date.now() - startedAtMs} status=${String(response?.status)} ok=${String(response?.ok)}`)
 
       if (!response.ok) {
+        const bodyText = await response.text().catch(() => '')
+        devWarn('planned: fetch failed', { status: response.status, body: bodyText })
         setPlannedLessons({})
         return
       }
 
       const result = await response.json()
-      setPlannedLessons(result.plannedLessons || {})
-      plannedLoadedForLearnerRef.current = targetLearnerId
+      const nextPlanned = result.plannedLessons || {}
+      if (requestId >= (plannedLastAppliedRequestIdRef.current || 0)) {
+        plannedLastAppliedRequestIdRef.current = requestId
+        setPlannedLessons(nextPlanned)
+        const dateKeys = Object.keys(nextPlanned || {})
+        const totalLessons = dateKeys.reduce((sum, k) => sum + (Array.isArray(nextPlanned?.[k]) ? nextPlanned[k].length : 0), 0)
+        devWarn(`planned: loaded dates=${dateKeys.length} lessons=${totalLessons}`)
+        plannedLoadedForLearnerRef.current = targetLearnerId
+        plannedLoadedAtRef.current = Date.now()
+      } else {
+        devWarn('planned: older result ignored')
+      }
     } catch (err) {
-      setPlannedLessons({})
+      if (String(err?.name || '') === 'AbortError') {
+        devWarn('planned: timeout/abort', err)
+        // Do not clear state on timeout; a newer request may have succeeded.
+      } else {
+        const msg = 'planned: unexpected error'
+        devWarn(msg, err)
+        if (requestId === plannedRequestIdRef.current) {
+          setPlannedLessons({})
+        }
+      }
+    } finally {
+      clearTimeout(plannedTimeoutId)
+      if (plannedAbortRef.current === controller) {
+        plannedAbortRef.current = null
+        plannedInFlightLearnerRef.current = null
+        plannedLoadInFlightRef.current = false
+      }
+      devWarn(`planned: done ms=${Date.now() - startedAtMs}`)
     }
-  }, [plannedLessons])
+  }, [])
 
-  const loadSchedule = useCallback(async () => {
-    return loadScheduleForLearner(learnerId)
+  const loadSchedule = useCallback(async (opts = {}) => {
+    return loadScheduleForLearner(learnerId, opts)
   }, [learnerId, loadScheduleForLearner])
 
-  const loadPlanned = useCallback(async () => {
-    return loadPlannedForLearner(learnerId)
+  const loadPlanned = useCallback(async (opts = {}) => {
+    return loadPlannedForLearner(learnerId, opts)
   }, [learnerId, loadPlannedForLearner])
 
-  const loadCalendarData = useCallback(async () => {
-    await Promise.all([loadSchedule(), loadPlanned()])
+  const loadCalendarData = useCallback(async (opts = {}) => {
+    await Promise.all([loadSchedule(opts), loadPlanned(opts)])
   }, [loadPlanned, loadSchedule])
 
   const handleRemoveScheduledLessonById = async (scheduleId, opts = {}) => {
@@ -345,16 +627,14 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
     }
 
     try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      const token = await getBearerToken()
       if (!token) return
       const deleteResponse = await fetch(
         `/api/lesson-schedule?id=${scheduleId}`,
         {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }
@@ -381,7 +661,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
         `/api/lesson-schedule?learnerId=${learnerId}&startDate=${oldDate}&endDate=${oldDate}`,
         {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'authorization': `Bearer ${token}`
           }
         }
       )
@@ -400,7 +680,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
         {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }
@@ -412,7 +692,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
       const scheduleResponse = await fetch('/api/lesson-schedule', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -472,10 +752,10 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
 
       const [historyRes, medalsRes] = await Promise.all([
         fetch(`/api/learner/lesson-history?learner_id=${learnerId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'authorization': `Bearer ${token}` }
         }),
         fetch(`/api/medals?learnerId=${learnerId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'authorization': `Bearer ${token}` }
         })
       ])
 
@@ -553,7 +833,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           subject: plannedLesson.subject,
@@ -620,7 +900,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
       const params = new URLSearchParams({ file: scheduledLesson.lesson_key })
       const response = await fetch(`/api/facilitator/lessons/get?${params}`, {
         cache: 'no-store',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { authorization: `Bearer ${token}` }
       })
 
       if (!response.ok) {
@@ -656,7 +936,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ file, lesson: updatedLesson })
       })
@@ -678,7 +958,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
   useEffect(() => {
     const handlePreload = () => {
       if (learnerId && learnerId !== 'none') {
-        loadCalendarData()
+        loadCalendarData({ force: true })
       }
     }
     
@@ -686,24 +966,41 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
       // Clear cache and reload
       setScheduledLessons({})
       scheduleLoadedForLearnerRef.current = null
-      loadSchedule()
+      scheduleLoadedAtRef.current = 0
+      loadSchedule({ force: true })
     }
     
     window.addEventListener('preload-overlays', handlePreload)
     window.addEventListener('mr-mentor:lesson-scheduled', handleLessonScheduled)
+
+    const handleOpenPlanner = (evt) => {
+      const detail = evt?.detail || {}
+      const targetLearnerId = detail?.learnerId
+      if (targetLearnerId && learnerId && targetLearnerId !== learnerId) return
+
+      setPlannerInit({
+        startDate: detail?.startDate || null,
+        durationMonths: detail?.durationMonths || null,
+        autoGenerate: !!detail?.autoGenerate
+      })
+      setShowPlannerOverlay(true)
+    }
+
+    window.addEventListener('mr-mentor:open-lesson-planner', handleOpenPlanner)
     return () => {
       window.removeEventListener('preload-overlays', handlePreload)
       window.removeEventListener('mr-mentor:lesson-scheduled', handleLessonScheduled)
+      window.removeEventListener('mr-mentor:open-lesson-planner', handleOpenPlanner)
     }
   }, [learnerId, loadCalendarData, loadSchedule])
   
   useEffect(() => {
     if (learnerId && learnerId !== 'none') {
-      loadCalendarData()
+      loadCalendarData({ force: true })
       
       // Poll for updates every 2 minutes
       const pollInterval = setInterval(() => {
-        loadCalendarData()
+        loadCalendarData({ force: true })
       }, 2 * 60 * 1000)
       
       return () => clearInterval(pollInterval)
@@ -711,14 +1008,36 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
   }, [learnerId, loadCalendarData])
 
   useEffect(() => {
-    setSelectedDate(null)
-    setRescheduling(null)
-    setListTab('scheduled')
-    setScheduledLessons({})
-    setPlannedLessons({})
-    scheduleLoadedForLearnerRef.current = null
-    plannedLoadedForLearnerRef.current = null
-  }, [learnerId])
+    if (!learnerId || learnerId === 'none') return
+    if (!accessToken) return
+    loadCalendarData({ force: true })
+  }, [accessToken, learnerId, loadCalendarData])
+
+  // If the current tab has no lessons but the other does, auto-switch tabs.
+  // This prevents the overlay from looking "empty" when (for example) only planned lessons exist.
+  useEffect(() => {
+    if (!learnerId || learnerId === 'none') return
+    if (userSelectedTabRef.current) return
+
+    const todayStr = getLocalTodayStr()
+    const scheduledDates = Object.keys(scheduledLessons || {}).filter((d) => (scheduledLessons?.[d]?.length || 0) > 0)
+    const plannedDates = Object.keys(plannedLessons || {}).filter((d) => (plannedLessons?.[d]?.length || 0) > 0)
+
+    const scheduledUpcoming = scheduledDates.filter((d) => d >= todayStr)
+    const plannedUpcoming = plannedDates.filter((d) => d >= todayStr)
+
+    // Prefer showing the tab that has UPCOMING lessons. A single old completed scheduled item
+    // shouldn't prevent the overlay from auto-switching to a planned week in the future.
+    if (listTab === 'scheduled' && scheduledUpcoming.length === 0 && plannedUpcoming.length > 0) {
+      setListTab('planned')
+    } else if (listTab === 'planned' && plannedUpcoming.length === 0 && scheduledUpcoming.length > 0) {
+      setListTab('scheduled')
+    } else if (listTab === 'scheduled' && scheduledDates.length === 0 && plannedDates.length > 0) {
+      setListTab('planned')
+    } else if (listTab === 'planned' && plannedDates.length === 0 && scheduledDates.length > 0) {
+      setListTab('scheduled')
+    }
+  }, [learnerId, listTab, scheduledLessons, plannedLessons])
 
   useEffect(() => {
     if (selectedDate && scheduledLessons[selectedDate]) {
@@ -777,8 +1096,66 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
 
   const handleDateClick = (dateStr) => {
     if (!dateStr) return
+    autoSelectedDateRef.current = false
     setSelectedDate(dateStr)
   }
+
+  // Auto-select a date/month so the overlay doesn't appear "empty" until a click.
+  // Preference order:
+  // 1) nearest date >= today with lessons in current tab
+  // 2) nearest date >= today with lessons in either tab
+  // 3) earliest date with lessons
+  // 4) today
+  useEffect(() => {
+    if (!learnerId || learnerId === 'none') return
+
+    const todayStr = getLocalTodayStr()
+    const scheduledDates = Object.keys(scheduledLessons || {}).filter((d) => (scheduledLessons?.[d]?.length || 0) > 0)
+    const plannedDates = Object.keys(plannedLessons || {}).filter((d) => (plannedLessons?.[d]?.length || 0) > 0)
+    const tabDates = (listTab === 'planned' ? plannedDates : scheduledDates)
+    const anyDates = Array.from(new Set([...(scheduledDates || []), ...(plannedDates || [])]))
+
+    const pick = (dates) => {
+      if (!dates || dates.length === 0) return null
+      const sorted = dates.slice().sort((a, b) => String(a).localeCompare(String(b)))
+      const upcoming = sorted.filter((d) => d >= todayStr)
+      return (upcoming[0] || sorted[0]) || null
+    }
+
+    // Initial auto-select if none chosen.
+    if (!selectedDate) {
+      const tabPick = pick(tabDates)
+      const anyPick = pick(anyDates)
+      // If the current tab only has past history but the other tab has something upcoming,
+      // prefer the upcoming date so we don't drop the user into an old month by default.
+      const best = (tabPick && tabPick >= todayStr)
+        ? tabPick
+        : (anyPick || tabPick || todayStr)
+      autoSelectedDateRef.current = true
+      setSelectedDate(best)
+      try {
+        setCurrentMonth(new Date(`${best}T00:00:00`))
+      } catch {}
+      return
+    }
+
+    // If we previously auto-selected a date with no lessons, upgrade to a date with lessons once data arrives.
+    if (autoSelectedDateRef.current) {
+      const selectedHasScheduled = (scheduledLessons?.[selectedDate]?.length || 0) > 0
+      const selectedHasPlanned = (plannedLessons?.[selectedDate]?.length || 0) > 0
+      const selectedHasTabLessons = listTab === 'planned' ? selectedHasPlanned : selectedHasScheduled
+
+      if (!selectedHasTabLessons) {
+        const best = pick(tabDates) || pick(anyDates)
+        if (best && best !== selectedDate) {
+          setSelectedDate(best)
+          try {
+            setCurrentMonth(new Date(`${best}T00:00:00`))
+          } catch {}
+        }
+      }
+    }
+  }, [learnerId, selectedDate, scheduledLessons, plannedLessons, listTab])
 
   const today = getLocalTodayStr()
   const calendarDays = generateCalendarDays()
@@ -940,8 +1317,12 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
               learnerId={learnerId}
               learnerGrade={learnerGrade}
               tier={tier}
+              canPlan={canPlan}
               selectedDate={selectedDate}
               plannedLessons={plannedLessons}
+              initialPlanStartDate={plannerInit?.startDate || undefined}
+              initialPlanDuration={plannerInit?.durationMonths || undefined}
+              autoGeneratePlan={!!plannerInit?.autoGenerate}
               onPlannedLessonsChange={savePlannedLessons}
               onLessonGenerated={async () => {
                 setScheduledLessons({})
@@ -1144,7 +1525,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
           <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
             <button
               type="button"
-              onClick={() => setListTab('scheduled')}
+              onClick={() => { userSelectedTabRef.current = true; setListTab('scheduled') }}
               style={{
                 flex: 1,
                 padding: '6px 8px',
@@ -1161,7 +1542,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier }) {
             </button>
             <button
               type="button"
-              onClick={() => setListTab('planned')}
+              onClick={() => { userSelectedTabRef.current = true; setListTab('planned') }}
               style={{
                 flex: 1,
                 padding: '6px 8px',

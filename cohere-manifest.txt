@@ -1,0 +1,135 @@
+# Cohere Manifest
+
+**Project**: freehands
+**Project ID**: 1
+**Created**: 2026-02-07T21:04:09.711Z
+
+## Roots
+
+- C:\Users\atari\freehands
+
+## Database Stats
+
+- logical_paths (project files): 66
+- blobs (all projects): 79
+- extracted_text (all projects): 77
+- chunks (all projects): 563
+
+## Heads (Current View)
+
+- .github/Signals/MsSonoma_Homepage_Copy_Framework.pdf | head=61 | versions=1 | last_ingest=2026-02-07T21:07:55.312Z | head_updated=2026-02-07T21:07:55.312Z
+- .github/Signals/MsSonoma_Launch_Deck_The_Calm_Revolution.pdf | head=62 | versions=1 | last_ingest=2026-02-07T21:07:55.458Z | head_updated=2026-02-07T21:07:55.458Z
+- .github/Signals/MsSonoma_Messaging_Matrix_Text.pdf | head=63 | versions=1 | last_ingest=2026-02-07T21:07:55.478Z | head_updated=2026-02-07T21:07:55.478Z
+- .github/Signals/MsSonoma_OnePage_Brand_Story.pdf | head=64 | versions=1 | last_ingest=2026-02-07T21:07:55.501Z | head_updated=2026-02-07T21:07:55.501Z
+- .github/Signals/MsSonoma_SignalFlow_Full_Report.pdf | head=65 | versions=1 | last_ingest=2026-02-07T21:07:55.523Z | head_updated=2026-02-07T21:07:55.523Z
+- .github/Signals/MsSonoma_Voice_and_Vocabulary_Guide.pdf | head=66 | versions=1 | last_ingest=2026-02-07T21:07:55.568Z | head_updated=2026-02-07T21:07:55.568Z
+- .github/copilot-instructions.md | head=50 | versions=1 | last_ingest=2026-02-07T21:07:55.138Z | head_updated=2026-02-07T21:07:55.138Z
+- .github/instructions/copilot-instructions.20251007-180459Z.md | head=51 | versions=1 | last_ingest=2026-02-07T21:07:55.143Z | head_updated=2026-02-07T21:07:55.144Z
+- .github/instructions/copilot-instructions.20251022-235943Z.md | head=52 | versions=1 | last_ingest=2026-02-07T21:07:55.159Z | head_updated=2026-02-07T21:07:55.159Z
+- .github/instructions/copilot-instructions.20251023-195403Z.md | head=53 | versions=1 | last_ingest=2026-02-07T21:07:55.175Z | head_updated=2026-02-07T21:07:55.175Z
+- .github/instructions/copilot-instructions.20251023-200846Z.md | head=54 | versions=1 | last_ingest=2026-02-07T21:07:55.190Z | head_updated=2026-02-07T21:07:55.190Z
+- .github/instructions/copilot-instructions.20251104-210000Z.md | head=55 | versions=1 | last_ingest=2026-02-07T21:07:55.207Z | head_updated=2026-02-07T21:07:55.207Z
+- .github/instructions/copilot-instructions.20251105-201016Z.md | head=56 | versions=1 | last_ingest=2026-02-07T21:07:55.223Z | head_updated=2026-02-07T21:07:55.223Z
+- .github/instructions/copilot-instructions.20251105-201413Z.md | head=57 | versions=1 | last_ingest=2026-02-07T21:07:55.240Z | head_updated=2026-02-07T21:07:55.240Z
+- .github/instructions/copilot-instructions.20251125-222923Z.md | head=58 | versions=1 | last_ingest=2026-02-07T21:07:55.258Z | head_updated=2026-02-07T21:07:55.258Z
+- .github/instructions/copilot-instructions.20251218-020500Z.md | head=59 | versions=1 | last_ingest=2026-02-07T21:07:55.279Z | head_updated=2026-02-07T21:07:55.279Z
+- .github/instructions/copilot-instructions.20260102-131332Z.md | head=60 | versions=1 | last_ingest=2026-02-07T21:07:55.283Z | head_updated=2026-02-07T21:07:55.283Z
+- docs/brain/MentorInterceptor_Architecture.md | head=68 | versions=2 | last_ingest=2026-02-07T21:43:19.737Z | head_updated=2026-02-07T21:43:19.737Z
+- docs/brain/README.md | head=39 | versions=1 | last_ingest=2026-02-07T21:04:42.428Z | head_updated=2026-02-07T21:04:42.428Z
+- docs/brain/ZOMBIE-CODE-PREVENTION.md | head=49 | versions=1 | last_ingest=2026-02-07T21:04:42.545Z | head_updated=2026-02-07T21:04:42.545Z
+- docs/brain/account-provisioning.md | head=1 | versions=1 | last_ingest=2026-02-07T21:04:42.121Z | head_updated=2026-02-07T21:04:42.122Z
+- docs/brain/ai-rewrite-system.md | head=2 | versions=1 | last_ingest=2026-02-07T21:04:42.124Z | head_updated=2026-02-07T21:04:42.124Z
+- docs/brain/api-routes.md | head=3 | versions=1 | last_ingest=2026-02-07T21:04:42.126Z | head_updated=2026-02-07T21:04:42.126Z
+- docs/brain/auth-session-isolation.md | head=4 | versions=1 | last_ingest=2026-02-07T21:04:42.129Z | head_updated=2026-02-07T21:04:42.129Z
+- docs/brain/auto-advance-phases.md | head=5 | versions=1 | last_ingest=2026-02-07T21:04:42.144Z | head_updated=2026-02-07T21:04:42.144Z
+- docs/brain/beta-program.md | head=6 | versions=1 | last_ingest=2026-02-07T21:04:42.158Z | head_updated=2026-02-07T21:04:42.158Z
+- docs/brain/calendar-lesson-planning.md | head=7 | versions=1 | last_ingest=2026-02-07T21:04:42.172Z | head_updated=2026-02-07T21:04:42.172Z
+- docs/brain/changelog.md | head=85 | versions=6 | last_ingest=2026-02-08T02:28:54.163Z | head_updated=2026-02-08T02:28:54.163Z
+- docs/brain/content-safety.md | head=9 | versions=1 | last_ingest=2026-02-07T21:04:42.212Z | head_updated=2026-02-07T21:04:42.212Z
+- docs/brain/custom-subjects.md | head=10 | versions=1 | last_ingest=2026-02-07T21:04:42.222Z | head_updated=2026-02-07T21:04:42.223Z
+- docs/brain/dev-server-and-chunks.md | head=11 | versions=1 | last_ingest=2026-02-07T21:04:42.225Z | head_updated=2026-02-07T21:04:42.225Z
+- docs/brain/device-leases.md | head=12 | versions=1 | last_ingest=2026-02-07T21:04:42.228Z | head_updated=2026-02-07T21:04:42.228Z
+- docs/brain/facilitator-help-system.md | head=13 | versions=1 | last_ingest=2026-02-07T21:04:42.232Z | head_updated=2026-02-07T21:04:42.232Z
+- docs/brain/facilitator-hub.md | head=14 | versions=1 | last_ingest=2026-02-07T21:04:42.246Z | head_updated=2026-02-07T21:04:42.246Z
+- docs/brain/flood-climb-spelling.md | head=15 | versions=1 | last_ingest=2026-02-07T21:04:42.248Z | head_updated=2026-02-07T21:04:42.248Z
+- docs/brain/games-overlay.md | head=16 | versions=1 | last_ingest=2026-02-07T21:04:42.250Z | head_updated=2026-02-07T21:04:42.250Z
+- docs/brain/gating-system.md | head=17 | versions=1 | last_ingest=2026-02-07T21:04:42.259Z | head_updated=2026-02-07T21:04:42.259Z
+- docs/brain/goals-clipboard.md | head=18 | versions=1 | last_ingest=2026-02-07T21:04:42.262Z | head_updated=2026-02-07T21:04:42.262Z
+- docs/brain/header-navigation.md | head=19 | versions=1 | last_ingest=2026-02-07T21:04:42.270Z | head_updated=2026-02-07T21:04:42.270Z
+- docs/brain/homepage.md | head=20 | versions=1 | last_ingest=2026-02-07T21:04:42.273Z | head_updated=2026-02-07T21:04:42.273Z
+- docs/brain/learner-settings-bus.md | head=21 | versions=1 | last_ingest=2026-02-07T21:04:42.275Z | head_updated=2026-02-07T21:04:42.275Z
+- docs/brain/lesson-assessment-architecture.md | head=22 | versions=1 | last_ingest=2026-02-07T21:04:42.292Z | head_updated=2026-02-07T21:04:42.292Z
+- docs/brain/lesson-editor.md | head=23 | versions=1 | last_ingest=2026-02-07T21:04:42.305Z | head_updated=2026-02-07T21:04:42.305Z
+- docs/brain/lesson-library-downloads.md | head=24 | versions=1 | last_ingest=2026-02-07T21:04:42.308Z | head_updated=2026-02-07T21:04:42.308Z
+- docs/brain/lesson-notes.md | head=25 | versions=1 | last_ingest=2026-02-07T21:04:42.310Z | head_updated=2026-02-07T21:04:42.310Z
+- docs/brain/lesson-quota.md | head=26 | versions=1 | last_ingest=2026-02-07T21:04:42.313Z | head_updated=2026-02-07T21:04:42.313Z
+- docs/brain/lesson-validation.md | head=27 | versions=1 | last_ingest=2026-02-07T21:04:42.315Z | head_updated=2026-02-07T21:04:42.315Z
+- docs/brain/manifest.json | head=28 | versions=1 | last_ingest=2026-02-07T21:04:42.318Z | head_updated=2026-02-07T21:04:42.318Z
+- docs/brain/mr-mentor-conversation-flows.md | head=30 | versions=1 | last_ingest=2026-02-07T21:04:42.355Z | head_updated=2026-02-07T21:04:42.355Z
+- docs/brain/mr-mentor-memory.md | head=31 | versions=1 | last_ingest=2026-02-07T21:04:42.370Z | head_updated=2026-02-07T21:04:42.371Z
+- docs/brain/mr-mentor-session-persistence.md | head=32 | versions=1 | last_ingest=2026-02-07T21:04:42.373Z | head_updated=2026-02-07T21:04:42.373Z
+- docs/brain/mr-mentor-sessions.md | head=33 | versions=1 | last_ingest=2026-02-07T21:04:42.376Z | head_updated=2026-02-07T21:04:42.376Z
+- docs/brain/ms-sonoma-teaching-system.md | head=34 | versions=1 | last_ingest=2026-02-07T21:04:42.379Z | head_updated=2026-02-07T21:04:42.379Z
+- docs/brain/notifications-system.md | head=35 | versions=1 | last_ingest=2026-02-07T21:04:42.396Z | head_updated=2026-02-07T21:04:42.396Z
+- docs/brain/pin-protection.md | head=36 | versions=1 | last_ingest=2026-02-07T21:04:42.398Z | head_updated=2026-02-07T21:04:42.398Z
+- docs/brain/platform-jumper.md | head=37 | versions=1 | last_ingest=2026-02-07T21:04:42.401Z | head_updated=2026-02-07T21:04:42.401Z
+- docs/brain/portfolio-generation.md | head=38 | versions=1 | last_ingest=2026-02-07T21:04:42.415Z | head_updated=2026-02-07T21:04:42.415Z
+- docs/brain/riddle-system.md | head=40 | versions=1 | last_ingest=2026-02-07T21:04:42.437Z | head_updated=2026-02-07T21:04:42.438Z
+- docs/brain/session-takeover.md | head=41 | versions=1 | last_ingest=2026-02-07T21:04:42.450Z | head_updated=2026-02-07T21:04:42.450Z
+- docs/brain/snapshot-persistence.md | head=42 | versions=1 | last_ingest=2026-02-07T21:04:42.468Z | head_updated=2026-02-07T21:04:42.468Z
+- docs/brain/sound-effects.md | head=43 | versions=1 | last_ingest=2026-02-07T21:04:42.484Z | head_updated=2026-02-07T21:04:42.484Z
+- docs/brain/story-feature.md | head=44 | versions=1 | last_ingest=2026-02-07T21:04:42.486Z | head_updated=2026-02-07T21:04:42.486Z
+- docs/brain/timer-system.md | head=45 | versions=1 | last_ingest=2026-02-07T21:04:42.488Z | head_updated=2026-02-07T21:04:42.488Z
+- docs/brain/tts-prefetching.md | head=46 | versions=1 | last_ingest=2026-02-07T21:04:42.502Z | head_updated=2026-02-07T21:04:42.503Z
+- docs/brain/v2-architecture.md | head=47 | versions=1 | last_ingest=2026-02-07T21:04:42.519Z | head_updated=2026-02-07T21:04:42.519Z
+- docs/brain/visual-aids.md | head=48 | versions=1 | last_ingest=2026-02-07T21:04:42.535Z | head_updated=2026-02-07T21:04:42.535Z
+
+## Recent Changes
+
+- 2026-02-08T02:59:31.478Z | Rollback change_id=13: paigr: provenance test (append marker)
+- 2026-02-08T02:59:30.785Z | paigr: provenance test (append marker)
+- 2026-02-08T02:28:54.169Z | Rollback change_id=11: freehands: provenance test (append marker)
+- 2026-02-08T02:28:36.961Z | freehands: provenance test (append marker)
+- 2026-02-08T02:24:17.790Z | sandbox: delete binary via change new
+- 2026-02-08T02:18:17.889Z | Rollback change_id=8: sandbox: edit hello
+- 2026-02-08T02:18:03.660Z | sandbox: edit hello
+- 2026-02-08T02:15:29.579Z | sandbox: edit hello
+- 2026-02-08T01:59:54.338Z | Sync heads: tombstoned=0 reingested=1
+- 2026-02-08T01:56:12.849Z | Rollback change_id=1: sandbox: create a file
+- 2026-02-08T01:54:52.027Z | Rollback change_id=1: sandbox: create a file
+- 2026-02-08T01:54:51.780Z | Rollback change_id=2: sandbox: delete newfile.txt
+- 2026-02-08T01:54:51.211Z | sandbox: delete newfile.txt
+- 2026-02-08T01:54:50.835Z | sandbox: create a file
+
+## Brain Coverage (Heuristic)
+
+- docs/brain/* indexed: 49
+- .github/Signals/* indexed: 6
+
+## Top Entities (Optional)
+
+- api (9)
+- tts (5)
+- zeros.json (5)
+- counselorclient (4)
+- math/4th-multiplying-with-zeros.json (4)
+- /api/facilitator/lessons/schedule (2)
+- /app/lib/supabaseclient (2)
+- /generate/edit (2)
+- fix (2)
+- fractions.json (2)
+- interceptor.process (2)
+- lessonplanner (2)
+- mentorinterceptor (2)
+- post (2)
+- window.dispatchevent (2)
+- /api/counselor (1)
+- /api/generate-lesson-outline (1)
+- /api/planned-lessons (1)
+- /api/text-to-speech (1)
+- /app/facilitator/calendar/dayviewoverlay (1)
+- /brain/auth-session-isolation (1)
+- /lib/supabase (1)
+- /no/unclear (1)
+- /plus/basic (1)
+- /plus/premium (1)

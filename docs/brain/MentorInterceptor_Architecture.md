@@ -37,6 +37,9 @@ Front-end conversation handler for Mr. Mentor that intercepts user messages to:
   - Compact, side-by-side calendar UI used inside Mr. Mentor
   - Shows scheduled lessons for the selected learner
   - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
   - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
   - Tabs under the calendar toggle BOTH:
     - The selected-date list: Scheduled vs Planned

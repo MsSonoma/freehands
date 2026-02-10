@@ -1,6 +1,6 @@
 // Lesson Planner component for automated weekly scheduling
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import CurriculumPreferencesOverlay from './CurriculumPreferencesOverlay'
 import LessonGeneratorOverlay from './LessonGeneratorOverlay'
@@ -17,7 +17,10 @@ export default function LessonPlanner({
   selectedDate,
   plannedLessons = {},
   onPlannedLessonsChange,
-  onLessonGenerated 
+  onLessonGenerated,
+  initialPlanStartDate,
+  initialPlanDuration,
+  autoGeneratePlan
 }) {
   const [customSubjects, setCustomSubjects] = useState([])
   const [weeklyPattern, setWeeklyPattern] = useState({
@@ -39,6 +42,9 @@ export default function LessonPlanner({
   const [planStartDate, setPlanStartDate] = useState('')
   const [planDuration, setPlanDuration] = useState(1)
 
+  const weeklyPatternLoadedRef = useRef(false)
+  const autoGenerateKeyRef = useRef(null)
+
   const requirePlannerAccess = () => {
     if (canPlan) return true
     alert('View-only: upgrade to Pro to use the Lesson Planner.')
@@ -49,6 +55,21 @@ export default function LessonPlanner({
     loadCustomSubjects()
     loadWeeklyPattern()
   }, [learnerId])
+
+  useEffect(() => {
+    if (typeof initialPlanStartDate === 'string' && initialPlanStartDate.trim()) {
+      setPlanStartDate(initialPlanStartDate.trim())
+    }
+  }, [initialPlanStartDate])
+
+  useEffect(() => {
+    if (initialPlanDuration !== undefined && initialPlanDuration !== null) {
+      const asNum = Number(initialPlanDuration)
+      if (Number.isFinite(asNum) && asNum >= 1 && asNum <= 4) {
+        setPlanDuration(asNum)
+      }
+    }
+  }, [initialPlanDuration])
 
   const loadCustomSubjects = async () => {
     try {
@@ -97,6 +118,8 @@ export default function LessonPlanner({
       }
     } catch (err) {
       console.error('Error loading weekly pattern:', err)
+    } finally {
+      weeklyPatternLoadedRef.current = true
     }
   }
 
@@ -541,6 +564,24 @@ export default function LessonPlanner({
       setGenerating(false)
     }
   }
+
+  useEffect(() => {
+    if (!autoGeneratePlan) return
+    if (!learnerId) return
+    if (!planStartDate) return
+    if (!weeklyPatternLoadedRef.current) return
+    if (generating) return
+
+    const key = `${learnerId}|${planStartDate}|${planDuration}`
+    if (autoGenerateKeyRef.current === key) return
+
+    const hasAnySubjects = DAYS.some(day => weeklyPattern[day]?.length > 0)
+    if (!hasAnySubjects) return
+
+    autoGenerateKeyRef.current = key
+    const weeksToGenerate = Number(planDuration) * 4
+    generatePlannedLessons(planStartDate, weeksToGenerate)
+  }, [autoGeneratePlan, learnerId, planStartDate, planDuration, weeklyPattern, generating])
 
   const handleLessonClick = (lesson, date) => {
     if (!requirePlannerAccess()) return

@@ -13,6 +13,7 @@ export async function GET(request) {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     const action = searchParams.get('action') // 'active' to get today's active lessons
+    const includeAll = searchParams.get('includeAll') === '1'
 
     const authHeader = request.headers.get('authorization')
     if (!authHeader) {
@@ -69,12 +70,30 @@ export async function GET(request) {
       return NextResponse.json({ error: 'learnerId required' }, { status: 400 })
     }
 
+    // Verify the learner belongs to this facilitator.
+    // (GET previously relied only on facilitator_id filtering, which can hide legacy schedule rows.)
+    const { data: learner, error: learnerError } = await adminSupabase
+      .from('learners')
+      .select('id')
+      .eq('id', learnerId)
+      .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle()
+
+    if (learnerError || !learner) {
+      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
+    }
+
     let query = adminSupabase
       .from('lesson_schedule')
       .select('*')
       .eq('learner_id', learnerId)
-      .eq('facilitator_id', user.id)
       .order('scheduled_date', { ascending: true })
+
+    // Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
+    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
+    if (!includeAll) {
+      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
+    }
 
     if (startDate && endDate) {
       query = query.gte('scheduled_date', startDate).lte('scheduled_date', endDate)
