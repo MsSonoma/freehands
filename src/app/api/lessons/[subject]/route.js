@@ -15,12 +15,19 @@ export const runtime = 'nodejs';
 // For other subjects, read from public/lessons/{subject} directory.
 // Returns minimal metadata for listing without loading entire question arrays.
 export async function GET(request) {
+  const debug = process.env.DEBUG_LESSONS === '1'
+  const startedAt = Date.now()
   try {
     // Derive the subject segment from the URL
     const url = new URL(request.url);
     const parts = url.pathname.split('/');
     const subject = decodeURIComponent(parts[parts.length - 1] || '').toLowerCase();
     if (!subject) return NextResponse.json({ error: 'Subject required' }, { status: 400 });
+
+    if (debug) {
+      // eslint-disable-next-line no-console
+      console.log('[api/lessons]', 'GET', { subject })
+    }
     
     // If subject is "generated", fetch ALL generated lessons from the current user's folder
     if (subject === 'generated') {
@@ -145,8 +152,16 @@ export async function GET(request) {
         // skip unreadable file
       }
     }
+    if (debug) {
+      // eslint-disable-next-line no-console
+      console.log('[api/lessons]', 'OK', { subject, count: results.length, ms: Date.now() - startedAt })
+    }
     return NextResponse.json(results);
   } catch (e) {
+    if (debug) {
+      // eslint-disable-next-line no-console
+      console.log('[api/lessons]', 'ERR', { ms: Date.now() - startedAt, message: e?.message || String(e) })
+    }
     return NextResponse.json({ error: 'Failed to enumerate lessons', detail: e?.message || String(e) }, { status: 500 });
   }
 }

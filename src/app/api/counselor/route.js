@@ -6,12 +6,29 @@ import fs from 'node:fs'
 import path from 'node:path'
 import textToSpeech from '@google-cloud/text-to-speech'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
+import {
+  cohereGetUserAndClient,
+  cohereEnsureThread,
+  cohereAppendEvent,
+  cohereGateSuggest,
+  cohereBuildPack,
+  formatPackForSystemMessage
+} from '@/app/lib/cohereStyleMentor'
 
 const { TextToSpeechClient } = textToSpeech
 
 // OpenAI configuration
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = 'gpt-4o'
+
+function fetchJsonWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  const nextOptions = { ...options, signal: controller.signal }
+
+  return fetch(url, nextOptions)
+    .finally(() => clearTimeout(timeoutId))
+}
 
 let ttsClientPromise
 const ttsCache = new Map()
@@ -21,6 +38,9 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const maxDuration = 60 // Extended timeout for OpenAI + tool execution
+
+// Keep below maxDuration; leave room for local tool execution.
+const OPENAI_TIMEOUT_MS = 45000
 
 // Mr. Mentor's voice - warm, caring American male
 const MENTOR_VOICE = {
@@ -1438,12 +1458,16 @@ export async function POST(req) {
   
   try {
     // Parse request body
-  let userMessage = ''
-  let conversationHistory = []
-  let followup = null
-  let requireGenerationConfirmation = false
-  let generationConfirmed = false
-  let disableTools = []
+    let userMessage = ''
+    let conversationHistory = []
+    let followup = null
+    let requireGenerationConfirmation = false
+    let generationConfirmed = false
+    let disableTools = []
+    let subjectKey = null
+    let useCohereChronograph = false
+    let cohereSector = 'both'
+    let cohereMode = 'standard'
     
     const contentType = (req.headers?.get?.('content-type') || '').toLowerCase()
     let learnerTranscript = null
@@ -1459,6 +1483,22 @@ export async function POST(req) {
         requireGenerationConfirmation = !!body.require_generation_confirmation
         generationConfirmed = !!body.generation_confirmed
         disableTools = Array.isArray(body.disableTools) ? body.disableTools.filter(Boolean) : []
+        subjectKey = typeof body.subject_key === 'string' ? body.subject_key.trim() : null
+
+        // ThoughtHub (chronograph + deterministic packs) request flags.
+        // Keep legacy field names for compatibility.
+        const useThoughtHub = (typeof body.use_thought_hub === 'boolean')
+          ? body.use_thought_hub
+          : !!body.use_cohere_chronograph
+        useCohereChronograph = !!useThoughtHub
+
+        cohereSector = typeof body.thought_hub_sector === 'string'
+          ? body.thought_hub_sector
+          : (typeof body.cohere_sector === 'string' ? body.cohere_sector : 'both')
+
+        cohereMode = typeof body.thought_hub_mode === 'string'
+          ? body.thought_hub_mode
+          : (typeof body.cohere_mode === 'string' ? body.cohere_mode : 'standard')
       } else {
         const textBody = await req.text()
         userMessage = textBody.trim()
@@ -1491,7 +1531,8 @@ export async function POST(req) {
     }
 
     // Load conversation memory for continuity (only if this is the first message in the conversation)
-    if (conversationHistory.length === 0) {
+    // NOTE: In ThoughtHub mode, we rely on deterministic packs instead of this memory endpoint.
+    if (!useCohereChronograph && conversationHistory.length === 0) {
       try {
         const authHeader = req.headers.get('authorization')
         if (authHeader) {
@@ -1519,10 +1560,137 @@ export async function POST(req) {
       }
     }
 
+    // Optional: Cohere-style chronograph + deterministic pack context.
+    // When enabled, we:
+    // - Append the user message as an immutable event
+    // - Run FAQ gate (auto-reply / clarify / pass)
+    // - Build a deterministic pack and include it in the system prompt
+    // - Keep the on-wire history minimal (token savings)
+    let cohereContextSystemMessage = ''
+    let cohereMeta = null
+    if (useCohereChronograph && subjectKey) {
+      try {
+        const auth = await cohereGetUserAndClient(req)
+        if (auth?.error) {
+          return NextResponse.json({ error: auth.error }, { status: auth.status })
+        }
+
+        const { supabase } = auth
+        const { tenantId, threadId } = await cohereEnsureThread({
+          supabase,
+          sector: cohereSector,
+          subjectKey
+        })
+
+        cohereMeta = { tenantId, threadId, sector: cohereSector, subjectKey, mode: cohereMode }
+
+        if (!isFollowup && userMessage) {
+          await cohereAppendEvent({
+            supabase,
+            tenantId,
+            threadId,
+            role: 'user',
+            text: userMessage,
+            meta: { call_id: callId }
+          })
+        }
+
+        if (!isFollowup && userMessage) {
+          const gate = await cohereGateSuggest({
+            supabase,
+            tenantId,
+            sector: cohereSector,
+            question: userMessage
+          })
+
+          // Conservative deterministic thresholds (can be tuned later).
+          const AUTO_THRESHOLD = 0.45
+          const CLARIFY_THRESHOLD = 0.20
+          const MARGIN_THRESHOLD = 0.10
+
+          const candidates = Array.isArray(gate?.candidates) ? gate.candidates : []
+          const top1 = candidates[0] || null
+          const top2 = candidates[1] || null
+          const top1Score = typeof top1?.score === 'number' ? top1.score : 0
+          const top2Score = typeof top2?.score === 'number' ? top2.score : 0
+          const margin = top1Score - top2Score
+
+          const topText = (top1?.robot_text || top1?.answer_text || '').trim()
+
+          if (topText && top1Score >= AUTO_THRESHOLD && margin >= MARGIN_THRESHOLD) {
+            // Auto-reply without GPT call.
+            const reply = topText
+
+            await cohereAppendEvent({
+              supabase,
+              tenantId,
+              threadId,
+              role: 'assistant',
+              text: reply,
+              meta: { auto_reply: true, intent_id: top1.intent_id, call_id: callId }
+            })
+
+            // Keep output shape consistent with the normal handler.
+            const audio = await synthesizeAudio(reply, logPrefix).catch(() => null)
+            return NextResponse.json({ reply, audio, gate: { action: 'auto_reply', candidates }, cohere: cohereMeta })
+          }
+
+          if (candidates.length > 0 && top1Score >= CLARIFY_THRESHOLD && margin < MARGIN_THRESHOLD) {
+            const labels = candidates.slice(0, 3).map(c => c?.label).filter(Boolean)
+            const clarify = labels.length > 0
+              ? `Before I answer, which of these are you asking about: ${labels.join(' / ')}?`
+              : `Before I answer, can you clarify what you mean?`
+
+            await cohereAppendEvent({
+              supabase,
+              tenantId,
+              threadId,
+              role: 'assistant',
+              text: clarify,
+              meta: { clarify: true, call_id: callId }
+            })
+
+            const audio = await synthesizeAudio(clarify, logPrefix).catch(() => null)
+            return NextResponse.json({ reply: clarify, audio, gate: { action: 'clarify', candidates }, cohere: cohereMeta })
+          }
+        }
+
+        // Build deterministic pack for GPT context.
+        const pack = await cohereBuildPack({
+          supabase,
+          tenantId: cohereMeta.tenantId,
+          threadId: cohereMeta.threadId,
+          sector: cohereSector,
+          question: userMessage,
+          mode: cohereMode
+        })
+
+        const packMessage = formatPackForSystemMessage(pack)
+        if (packMessage) {
+          cohereContextSystemMessage = `\n\n${packMessage}`
+        }
+      } catch (err) {
+        // If Cohere-style pack infra isn't deployed yet, fall back to the legacy history flow.
+        // Keep this silent to avoid breaking production when DB functions are missing.
+        cohereContextSystemMessage = ''
+        cohereMeta = { error: err?.message || String(err) }
+      }
+    }
+
+    const coherePackActive = !!cohereContextSystemMessage
+    if (coherePackActive) {
+      systemPrompt += cohereContextSystemMessage
+    }
+
     // Build conversation messages
+    // In cohere-chronograph mode, keep the on-wire history small for normal turns
+    // (pack already contains recent verbatim events). For follow-ups, preserve history.
+    const effectiveHistory = (useCohereChronograph && subjectKey && !isFollowup && coherePackActive)
+      ? []
+      : conversationHistory
     const baseMessages = [
       { role: 'system', content: systemPrompt },
-      ...conversationHistory
+      ...effectiveHistory
     ]
 
     const messages = (!isFollowup || userMessage)
@@ -1823,22 +1991,31 @@ export async function POST(req) {
         })
       }
 
-      const followUpResponse = await fetch(OPENAI_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: OPENAI_MODEL,
-          messages: followUpMessages,
-          max_tokens: 1500,
-          temperature: 0.8
-        })
-      })
+      let followUpResponse
+      try {
+        followUpResponse = await fetchJsonWithTimeout(OPENAI_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: OPENAI_MODEL,
+            messages: followUpMessages,
+            max_tokens: 1500,
+            temperature: 0.8
+          })
+        }, OPENAI_TIMEOUT_MS)
+      } catch (err) {
+        const isAbort = err?.name === 'AbortError'
+        return NextResponse.json(
+          { error: isAbort ? 'Mr. Mentor timed out contacting OpenAI.' : 'Mr. Mentor failed contacting OpenAI.' },
+          { status: isAbort ? 504 : 502 }
+        )
+      }
 
       if (!followUpResponse.ok) {
-        const errorBody = await followUpResponse.text()
+        await followUpResponse.text().catch(() => '')
         return NextResponse.json({ error: 'Failed to complete Mr. Mentor follow-up.' }, { status: followUpResponse.status })
       }
 
@@ -1847,6 +2024,22 @@ export async function POST(req) {
 
       if (!mentorReply) {
         return NextResponse.json({ error: 'Mr. Mentor had no response.' }, { status: 500 })
+      }
+
+      if (useCohereChronograph && subjectKey && cohereMeta?.tenantId && cohereMeta?.threadId) {
+        try {
+          const auth = await cohereGetUserAndClient(req)
+          if (!auth?.error) {
+            await cohereAppendEvent({
+              supabase: auth.supabase,
+              tenantId: cohereMeta.tenantId,
+              threadId: cohereMeta.threadId,
+              role: 'assistant',
+              text: mentorReply,
+              meta: { call_id: callId, followup: true }
+            })
+          }
+        } catch {}
       }
 
       const audioContent = await synthesizeAudio(mentorReply, logPrefix)
@@ -1869,14 +2062,23 @@ export async function POST(req) {
       tool_choice: 'auto'
     }
     
-    const response = await fetch(OPENAI_URL, {
+    let response
+    try {
+      response = await fetchJsonWithTimeout(OPENAI_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify(requestBody)
-    })
+      }, OPENAI_TIMEOUT_MS)
+    } catch (err) {
+      const isAbort = err?.name === 'AbortError'
+      return NextResponse.json(
+        { error: isAbort ? 'Mr. Mentor timed out contacting OpenAI.' : 'Mr. Mentor failed contacting OpenAI.' },
+        { status: isAbort ? 504 : 502 }
+      )
+    }
 
     const rawBody = await response.text()
     let parsedBody
@@ -1901,6 +2103,22 @@ export async function POST(req) {
       if (requireGenerationConfirmation && !generationConfirmed && hasGenerateCall) {
         const mentorReply = 'Would you like me to generate a custom lesson?'
         const audioContent = await synthesizeAudio(mentorReply, logPrefix)
+
+        if (useCohereChronograph && subjectKey && cohereMeta?.tenantId && cohereMeta?.threadId) {
+          try {
+            const auth = await cohereGetUserAndClient(req)
+            if (!auth?.error) {
+              await cohereAppendEvent({
+                supabase: auth.supabase,
+                tenantId: cohereMeta.tenantId,
+                threadId: cohereMeta.threadId,
+                role: 'assistant',
+                text: mentorReply,
+                meta: { call_id: callId, needs_confirmation: true }
+              })
+            }
+          } catch {}
+        }
 
         return NextResponse.json({
           reply: mentorReply,
@@ -2001,7 +2219,9 @@ export async function POST(req) {
         ...functionResults
       ]
       
-      const followUpResponse = await fetch(OPENAI_URL, {
+      let followUpResponse
+      try {
+        followUpResponse = await fetchJsonWithTimeout(OPENAI_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2013,7 +2233,14 @@ export async function POST(req) {
           max_tokens: 1500,
           temperature: 0.8
         })
-      })
+        }, OPENAI_TIMEOUT_MS)
+      } catch (err) {
+        const isAbort = err?.name === 'AbortError'
+        return NextResponse.json(
+          { error: isAbort ? 'Mr. Mentor timed out contacting OpenAI.' : 'Mr. Mentor failed contacting OpenAI.' },
+          { status: isAbort ? 504 : 502 }
+        )
+      }
       
       if (!followUpResponse.ok) {
         const errorBody = await followUpResponse.text()
@@ -2025,6 +2252,22 @@ export async function POST(req) {
       
       if (!mentorReply) {
         return NextResponse.json({ error: 'Mr. Mentor had no response.' }, { status: 500 })
+      }
+
+      if (useCohereChronograph && subjectKey && cohereMeta?.tenantId && cohereMeta?.threadId) {
+        try {
+          const auth = await cohereGetUserAndClient(req)
+          if (!auth?.error) {
+            await cohereAppendEvent({
+              supabase: auth.supabase,
+              tenantId: cohereMeta.tenantId,
+              threadId: cohereMeta.threadId,
+              role: 'assistant',
+              text: mentorReply,
+              meta: { call_id: callId, tool_followup: true }
+            })
+          }
+        } catch {}
       }
       
       // Generate audio for tool-calling responses
@@ -2043,6 +2286,22 @@ export async function POST(req) {
     
     if (!mentorReply) {
       return NextResponse.json({ error: 'Mr. Mentor had no response.' }, { status: 500 })
+    }
+
+    if (useCohereChronograph && subjectKey && cohereMeta?.tenantId && cohereMeta?.threadId) {
+      try {
+        const auth = await cohereGetUserAndClient(req)
+        if (!auth?.error) {
+          await cohereAppendEvent({
+            supabase: auth.supabase,
+            tenantId: cohereMeta.tenantId,
+            threadId: cohereMeta.threadId,
+            role: 'assistant',
+            text: mentorReply,
+            meta: { call_id: callId }
+          })
+        }
+      } catch {}
     }
 
     // Synthesize audio

@@ -19,6 +19,7 @@
     "restart:dev:3001": "npm run kill:3001 && npm run dev:3001",
     "doctor": "node scripts/doctor.mjs",
     "mentor:cleanup-sessions": "node scripts/cleanup-stale-mentor-sessions.mjs",
+    "smoke:thought-hub": "node scripts/smoke-thought-hub.mjs",
     "provision:plan": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\provision-premium.ps1"
   },
   "dependencies": {

@@ -169,9 +169,11 @@ export default function SessionVisualAidsCarousel({
                 <video
                   ref={miniVideoRef}
                   src="/media/ms-sonoma-3.mp4"
+                  autoPlay
                   muted
                   loop
                   playsInline
+                  webkit-playsinline="true"
                   preload="auto"
                   style={{
                     position: 'absolute',

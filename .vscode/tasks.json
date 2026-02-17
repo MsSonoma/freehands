@@ -90,6 +90,17 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "Smoke: ThoughtHub",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"if (-not $env:THOUGHTHUB_TOKEN) { Write-Error 'Set THOUGHTHUB_TOKEN (Supabase access token) before running.'; exit 2 }; npm run -s smoke:thought-hub"
+			],
+			"problemMatcher": []
+		},
+		{
 			"label": "Build Next.js for validation (ad-hoc)",
 			"type": "shell",
 			"command": "npm",

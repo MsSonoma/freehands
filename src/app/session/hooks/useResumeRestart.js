@@ -133,24 +133,44 @@ export function useResumeRestart({
       return null;
     }
 
-    const buildKey = (type) => (
-      lessonKey
-        ? `session_timer_state:${lessonKey}:${phaseName}:${type}`
-        : `session_timer_state:${phaseName}:${type}`
-    );
-
-    const readState = (type) => {
-      try {
-        const raw = sessionStorage.getItem(buildKey(type));
-        if (!raw) return null;
-        return JSON.parse(raw);
-      } catch {
-        return null;
+    const buildKeys = (type) => {
+      const keys = [];
+      // Prefer lesson-scoped keys when available, but also probe the unscoped
+      // variant for robustness (older sessions / early-boot timers).
+      if (lessonKey) {
+        keys.push(`session_timer_state:${lessonKey}:${phaseName}:${type}`);
       }
+      keys.push(`session_timer_state:${phaseName}:${type}`);
+      return keys;
     };
 
-    const workState = readState('work');
-    const playState = readState('play');
+    const readBestState = (type) => {
+      const keys = buildKeys(type);
+      const candidates = [];
+      for (const key of keys) {
+        try {
+          const raw = sessionStorage.getItem(key);
+          if (!raw) continue;
+          const parsed = JSON.parse(raw);
+          candidates.push({ key, parsed });
+        } catch {
+          // ignore
+        }
+      }
+      if (!candidates.length) return null;
+      if (candidates.length === 1) return candidates[0].parsed;
+
+      // If both lesson-scoped + unscoped exist, pick the most recently-started.
+      candidates.sort((a, b) => {
+        const as = Number(a.parsed?.startTime) || 0;
+        const bs = Number(b.parsed?.startTime) || 0;
+        return bs - as;
+      });
+      return candidates[0].parsed;
+    };
+
+    const workState = readBestState('work');
+    const playState = readBestState('play');
 
     if (workState && !playState) return 'work';
     if (!workState && playState) return 'play';
@@ -221,6 +241,27 @@ export function useResumeRestart({
       const existingMode = currentTimerMode?.[timerPhaseName];
       if (existingMode !== 'play' && existingMode !== 'work') {
         let inferredMode = inferTimerModeFromStorage(timerPhaseName);
+        if (!inferredMode) {
+          // Prefer deterministic subPhase-based inference over QA flags.
+          // This prevents refresh+resume from incorrectly defaulting to play
+          // when a work timer was already running.
+          if (timerPhaseName === 'discussion') {
+            inferredMode = (phase === 'teaching') ? 'work' : 'play';
+          } else if (timerPhaseName === 'comprehension') {
+            if (subPhase === 'comprehension-active') inferredMode = 'work';
+            else if (subPhase === 'comprehension-start') inferredMode = 'play';
+          } else if (timerPhaseName === 'exercise') {
+            if (subPhase === 'exercise-start' || subPhase === 'exercise-active') inferredMode = 'work';
+            else if (subPhase === 'exercise-awaiting-begin') inferredMode = 'play';
+          } else if (timerPhaseName === 'worksheet') {
+            if (subPhase === 'worksheet-active') inferredMode = 'work';
+            else if (subPhase === 'worksheet-awaiting-begin') inferredMode = 'play';
+          } else if (timerPhaseName === 'test') {
+            if (subPhase === 'test-active') inferredMode = 'work';
+            else if (subPhase === 'test-awaiting-begin') inferredMode = 'play';
+            else if (typeof subPhase === 'string' && subPhase.startsWith('review')) inferredMode = 'work';
+          }
+        }
         if (!inferredMode) {
           if (timerPhaseName === 'discussion') {
             inferredMode = phase === 'discussion' ? 'play' : 'work';

@@ -2,7 +2,7 @@
 // Handles session creation, takeover, sync, and deactivation
 
 import { createClient } from '@supabase/supabase-js'
-import { scryptSync, timingSafeEqual } from 'node:crypto'
+import { randomUUID, scryptSync, timingSafeEqual } from 'node:crypto'
 import { featuresForTier, resolveEffectiveTier } from '../../lib/entitlements'
 
 export const runtime = 'nodejs'
@@ -23,6 +23,60 @@ const SESSION_TIMEOUT_MINUTES = Math.max(
   Number.parseInt(process.env.MENTOR_SESSION_TIMEOUT_MINUTES ?? '15', 10)
 )
 const SESSION_TIMEOUT_MS = SESSION_TIMEOUT_MINUTES * 60 * 1000
+
+const DEVICE_COOKIE_NAME = 'mr_mentor_device_id'
+const DEVICE_COOKIE_MAX_AGE_S = 60 * 60 * 24 * 365
+
+function parseCookieHeader(cookieHeader) {
+  if (!cookieHeader) return {}
+  const pairs = cookieHeader.split(';')
+  const out = {}
+  for (const pair of pairs) {
+    const idx = pair.indexOf('=')
+    if (idx === -1) continue
+    const key = pair.slice(0, idx).trim()
+    const val = pair.slice(idx + 1).trim()
+    if (!key) continue
+    out[key] = val
+  }
+  return out
+}
+
+function getDeviceIdFromRequest(request) {
+  try {
+    const direct = request?.cookies?.get?.(DEVICE_COOKIE_NAME)?.value
+    if (direct) return direct
+  } catch {}
+
+  const cookieHeader = request.headers.get('cookie')
+  const cookies = parseCookieHeader(cookieHeader)
+  const raw = cookies[DEVICE_COOKIE_NAME]
+  if (!raw) return null
+  try {
+    return decodeURIComponent(raw)
+  } catch {
+    return raw
+  }
+}
+
+function buildDeviceCookieHeader(deviceId) {
+  const parts = [
+    `${DEVICE_COOKIE_NAME}=${encodeURIComponent(deviceId)}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    `Max-Age=${DEVICE_COOKIE_MAX_AGE_S}`
+  ]
+  if (process.env.NODE_ENV === 'production') {
+    parts.push('Secure')
+  }
+  return parts.join('; ')
+}
+
+function jsonWithDeviceCookie({ body, status = 200, deviceCookieHeader }) {
+  const headers = deviceCookieHeader ? { 'Set-Cookie': deviceCookieHeader } : undefined
+  return Response.json(body, { status, headers })
+}
 
 function getSessionActivityTimestamp(session) {
   if (!session) return 0
@@ -152,21 +206,25 @@ export const maxDuration = 60
 // GET: Check session status and retrieve active session
 export async function GET(request) {
   try {
+    const existingDeviceId = getDeviceIdFromRequest(request)
+    const deviceId = existingDeviceId || randomUUID()
+    const deviceCookieHeader = existingDeviceId ? null : buildDeviceCookieHeader(deviceId)
+
     const authHeader = request.headers.get('authorization')
     if (!authHeader?.startsWith('Bearer ')) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+      return jsonWithDeviceCookie({ body: { error: 'Unauthorized' }, status: 401, deviceCookieHeader })
     }
 
     const token = authHeader.substring(7)
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     
     if (authError || !user) {
-      return Response.json({ error: 'Invalid token' }, { status: 401 })
+      return jsonWithDeviceCookie({ body: { error: 'Invalid token' }, status: 401, deviceCookieHeader })
     }
 
     const access = await requireMrMentorAccess(user.id)
     if (!access.allowed) {
-      return Response.json({ error: 'Pro plan required' }, { status: 403 })
+      return jsonWithDeviceCookie({ body: { error: 'Pro plan required' }, status: 403, deviceCookieHeader })
     }
 
     const now = new Date()
@@ -174,6 +232,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('sessionId')
+    const subjectKey = searchParams.get('subjectKey') || 'facilitator'
 
     // Get active session for this facilitator
     const { data: sessions, error } = await supabase
@@ -185,67 +244,97 @@ export async function GET(request) {
       .limit(1)
 
     if (error) {
-      return Response.json({ error: 'Database error' }, { status: 500 })
+      return jsonWithDeviceCookie({ body: { error: 'Database error' }, status: 500, deviceCookieHeader })
     }
 
     const activeSession = sessions?.[0] || null
 
     // If no active session, return null
     if (!activeSession) {
-      return Response.json({ 
-        session: null,
-        status: 'none'
+      return jsonWithDeviceCookie({
+        body: {
+          session: null,
+          status: 'none'
+        },
+        status: 200,
+        deviceCookieHeader
       })
     }
 
     // Conversation history is stored in mentor_sessions.conversation_history
     // Don't merge from conversation_drafts - that's for a different purpose
-    const sessionWithConversation = {
-      ...activeSession,
-      conversation_history: activeSession.conversation_history || [],
-      draft_summary: activeSession.draft_summary || ''
+    const isOwner = (activeSession.device_id && activeSession.device_id === deviceId) ||
+      (!activeSession.device_id && sessionId && activeSession.session_id === sessionId)
+
+    let conversationThread = null
+
+    if (isOwner) {
+      const { data: thread, error: threadError } = await supabase
+        .from('mentor_conversation_threads')
+        .select('*')
+        .eq('facilitator_id', user.id)
+        .eq('subject_key', subjectKey)
+        .maybeSingle()
+
+      if (!threadError) {
+        conversationThread = thread
+      }
     }
 
-    // Check if this device owns the active session by comparing session IDs
-    const isOwner = activeSession.session_id === sessionId
+    const sessionWithConversation = {
+      ...activeSession,
+      conversation_history: Array.isArray(conversationThread?.conversation_history)
+        ? conversationThread.conversation_history
+        : [],
+      draft_summary: conversationThread?.draft_summary || '',
+      token_count: conversationThread?.token_count ?? 0,
+      last_local_update_at: conversationThread?.last_local_update_at || activeSession.last_local_update_at || null
+    }
 
-    return Response.json({
-      session: sessionWithConversation,
-      status: isOwner ? 'active' : 'taken',
-      isOwner
+    return jsonWithDeviceCookie({
+      body: {
+        session: sessionWithConversation,
+        status: isOwner ? 'active' : 'taken',
+        isOwner
+      },
+      status: 200,
+      deviceCookieHeader
     })
 
   } catch (err) {
-    return Response.json({ error: 'Internal error' }, { status: 500 })
+    const existingDeviceId = getDeviceIdFromRequest(request)
+    const deviceId = existingDeviceId || randomUUID()
+    const deviceCookieHeader = existingDeviceId ? null : buildDeviceCookieHeader(deviceId)
+    return jsonWithDeviceCookie({ body: { error: 'Internal error' }, status: 500, deviceCookieHeader })
   }
 }
 
 // POST: Create or take over session
 export async function POST(request) {
   try {
+    const existingDeviceId = getDeviceIdFromRequest(request)
+    const deviceId = existingDeviceId || randomUUID()
+    const deviceCookieHeader = existingDeviceId ? null : buildDeviceCookieHeader(deviceId)
+
     const authHeader = request.headers.get('authorization')
     if (!authHeader?.startsWith('Bearer ')) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+      return jsonWithDeviceCookie({ body: { error: 'Unauthorized' }, status: 401, deviceCookieHeader })
     }
 
     const token = authHeader.substring(7)
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     
     if (authError || !user) {
-      return Response.json({ error: 'Invalid token' }, { status: 401 })
+      return jsonWithDeviceCookie({ body: { error: 'Invalid token' }, status: 401, deviceCookieHeader })
     }
 
     const access = await requireMrMentorAccess(user.id)
     if (!access.allowed) {
-      return Response.json({ error: 'Pro plan required' }, { status: 403 })
+      return jsonWithDeviceCookie({ body: { error: 'Pro plan required' }, status: 403, deviceCookieHeader })
     }
 
     const body = await request.json()
-    const { sessionId, deviceName, pinCode, action, targetSessionId } = body
-
-    if (!sessionId) {
-      return Response.json({ error: 'Session ID required' }, { status: 400 })
-    }
+    const { deviceName, pinCode, action, targetSessionId, subjectKey } = body || {}
 
     const now = new Date()
 
@@ -261,7 +350,7 @@ export async function POST(request) {
       .limit(1)
 
     if (fetchError) {
-      return Response.json({ error: 'Database error' }, { status: 500 })
+      return jsonWithDeviceCookie({ body: { error: 'Database error' }, status: 500, deviceCookieHeader })
     }
 
     let existingSession = existingSessions?.[0] || null
@@ -273,27 +362,32 @@ export async function POST(request) {
 
     if (action === 'force_end') {
       if (!pinCode) {
-        return Response.json({
+        return jsonWithDeviceCookie({
+          body: {
           error: 'PIN required to force end session',
           requiresPin: true
-        }, { status: 403 })
+          },
+          status: 403,
+          deviceCookieHeader
+        })
       }
 
       try {
         const pinValid = await verifyPin(user.id, pinCode)
         if (!pinValid) {
-          return Response.json({
-            error: 'Invalid PIN code',
-            requiresPin: true
-          }, { status: 403 })
+          return jsonWithDeviceCookie({
+            body: { error: 'Invalid PIN code', requiresPin: true },
+            status: 403,
+            deviceCookieHeader
+          })
         }
       } catch (pinErr) {
-        return Response.json({ error: 'Failed to verify PIN' }, { status: 500 })
+        return jsonWithDeviceCookie({ body: { error: 'Failed to verify PIN' }, status: 500, deviceCookieHeader })
       }
 
       const targetId = targetSessionId || existingSession?.session_id
       if (!targetId) {
-        return Response.json({ error: 'No target session available to force end' }, { status: 400 })
+        return jsonWithDeviceCookie({ body: { error: 'No target session available to force end' }, status: 400, deviceCookieHeader })
       }
 
       const { data: targetSessions, error: targetFetchError } = await supabase
@@ -306,79 +400,72 @@ export async function POST(request) {
         .limit(1)
 
       if (targetFetchError) {
-        return Response.json({ error: 'Database error' }, { status: 500 })
+        return jsonWithDeviceCookie({ body: { error: 'Database error' }, status: 500, deviceCookieHeader })
       }
 
       const targetSession = targetSessions?.[0]
       if (!targetSession) {
-        return Response.json({ status: 'already_inactive' })
+        return jsonWithDeviceCookie({ body: { status: 'already_inactive' }, status: 200, deviceCookieHeader })
       }
 
       const success = await deactivateSessionById(targetSession.id)
       if (!success) {
-        return Response.json({ error: 'Failed to end session' }, { status: 500 })
+        return jsonWithDeviceCookie({ body: { error: 'Failed to end session' }, status: 500, deviceCookieHeader })
       }
 
-      return Response.json({
-        status: 'force_ended',
-        clearedSessionId: targetSession.session_id
+      return jsonWithDeviceCookie({
+        body: { status: 'force_ended', clearedSessionId: targetSession.session_id },
+        status: 200,
+        deviceCookieHeader
       })
     }
 
     // If taking over from another device, verify PIN
-    if (existingSession && existingSession.session_id !== sessionId && action === 'takeover') {
+    // If device_id is missing (legacy rows), we conservatively require PIN for takeover.
+    if (existingSession && existingSession.device_id !== deviceId && action === 'takeover') {
       // Verify PIN code
       if (!pinCode) {
-        return Response.json({ 
-          error: 'PIN required to take over session',
-          requiresPin: true
-        }, { status: 403 })
+        return jsonWithDeviceCookie({
+          body: { error: 'PIN required to take over session', requiresPin: true },
+          status: 403,
+          deviceCookieHeader
+        })
       }
 
       try {
         const pinValid = await verifyPin(user.id, pinCode)
         if (!pinValid) {
-          return Response.json({
-            error: 'Invalid PIN code',
-            requiresPin: true
-          }, { status: 403 })
+          return jsonWithDeviceCookie({
+            body: { error: 'Invalid PIN code', requiresPin: true },
+            status: 403,
+            deviceCookieHeader
+          })
         }
       } catch (pinErr) {
-        return Response.json({ 
-          error: 'Failed to verify PIN', 
-          details: pinErr.message 
-        }, { status: 500 })
+        return jsonWithDeviceCookie({
+          body: { error: 'Failed to verify PIN', details: pinErr.message },
+          status: 500,
+          deviceCookieHeader
+        })
       }
-
-      // PIN validated, copy conversation from existing session
-      const conversationToCopy = existingSession.conversation_history || []
-      const draftSummaryToCopy = existingSession.draft_summary || ''
-
-      console.log('[Takeover API] Copying conversation:', {
-        oldSessionId: existingSession.session_id,
-        oldDeviceName: existingSession.device_name,
-        conversationLength: conversationToCopy.length,
-        hasDraft: !!draftSummaryToCopy,
-        newSessionId: sessionId,
-        newDeviceName: deviceName
-      })
 
       // Deactivate old session
       const deactivated = await deactivateSessionById(existingSession.id)
 
       if (!deactivated) {
-        return Response.json({ error: 'Failed to deactivate previous session' }, { status: 500 })
+        return jsonWithDeviceCookie({ body: { error: 'Failed to deactivate previous session' }, status: 500, deviceCookieHeader })
       }
 
-      // Create new session with conversation copied from old session
+      const newSessionId = randomUUID()
+
+      // Create new active owner session (conversation lives in mentor_conversation_threads)
       const { data: newSession, error: createError } = await supabase
         .from('mentor_sessions')
         .insert({
           facilitator_id: user.id,
-          session_id: sessionId,
+          session_id: newSessionId,
+          device_id: deviceId,
           device_name: deviceName || 'Unknown device',
-          conversation_history: conversationToCopy,
-          draft_summary: draftSummaryToCopy,
           is_active: true,
           last_activity_at: now.toISOString()
         })
@@ -386,11 +473,11 @@ export async function POST(request) {
         .single()
 
       if (createError) {
-        return Response.json({ 
-          error: 'Failed to create session', 
-          details: createError.message,
-          code: createError.code
-        }, { status: 500 })
+        return jsonWithDeviceCookie({
+          body: { error: 'Failed to create session', details: createError.message, code: createError.code },
+          status: 500,
+          deviceCookieHeader
+        })
       }
 
       console.log('[Takeover API] New session created:', {
@@ -399,21 +486,41 @@ export async function POST(request) {
         isActive: newSession.is_active
       })
 
-      return Response.json({
-        session: newSession,
-        status: 'taken_over',
-        message: 'Session taken over successfully'
+      let thread = null
+      if (subjectKey) {
+        const { data: threadData, error: threadError } = await supabase
+          .from('mentor_conversation_threads')
+          .select('*')
+          .eq('facilitator_id', user.id)
+          .eq('subject_key', subjectKey)
+          .maybeSingle()
+        if (!threadError) thread = threadData
+      }
+
+      const sessionWithConversation = {
+        ...newSession,
+        conversation_history: Array.isArray(thread?.conversation_history) ? thread.conversation_history : [],
+        draft_summary: thread?.draft_summary || '',
+        token_count: thread?.token_count ?? 0,
+        last_local_update_at: thread?.last_local_update_at || null
+      }
+
+      return jsonWithDeviceCookie({
+        body: { session: sessionWithConversation, status: 'taken_over', message: 'Session taken over successfully' },
+        status: 200,
+        deviceCookieHeader
       })
     }
 
     // If same session is reconnecting or no existing session, create/update
-    if (!existingSession || existingSession.session_id === sessionId) {
-      if (existingSession && existingSession.session_id === sessionId) {
-        // Same session reconnecting - just update activity timestamp
+    if (!existingSession || (existingSession.device_id && existingSession.device_id === deviceId)) {
+      if (existingSession && existingSession.device_id && existingSession.device_id === deviceId) {
+        // Same device reconnecting - just update activity timestamp
         const { data: session, error: updateError } = await supabase
           .from('mentor_sessions')
           .update({
             device_name: deviceName || 'Unknown device',
+            device_id: deviceId,
             last_activity_at: now.toISOString()
           })
           .eq('id', existingSession.id)
@@ -421,24 +528,45 @@ export async function POST(request) {
           .single()
 
         if (updateError) {
-          return Response.json({ error: 'Failed to update session' }, { status: 500 })
+          return jsonWithDeviceCookie({ body: { error: 'Failed to update session' }, status: 500, deviceCookieHeader })
         }
 
-        return Response.json({
-          session: session,
-          status: 'active'
+        let thread = null
+        if (subjectKey) {
+          const { data: threadData, error: threadError } = await supabase
+            .from('mentor_conversation_threads')
+            .select('*')
+            .eq('facilitator_id', user.id)
+            .eq('subject_key', subjectKey)
+            .maybeSingle()
+          if (!threadError) thread = threadData
+        }
+
+        const sessionWithConversation = {
+          ...session,
+          conversation_history: Array.isArray(thread?.conversation_history) ? thread.conversation_history : [],
+          draft_summary: thread?.draft_summary || '',
+          token_count: thread?.token_count ?? 0,
+          last_local_update_at: thread?.last_local_update_at || null
+        }
+
+        return jsonWithDeviceCookie({
+          body: { session: sessionWithConversation, status: 'active' },
+          status: 200,
+          deviceCookieHeader
         })
       }
+
+      const newSessionId = randomUUID()
 
       // No existing session - create new one
       const { data: session, error: createError } = await supabase
         .from('mentor_sessions')
         .insert({
           facilitator_id: user.id,
-          session_id: sessionId,
+          session_id: newSessionId,
+          device_id: deviceId,
           device_name: deviceName || 'Unknown device',
-          conversation_history: [],
-          draft_summary: '',
           is_active: true,
           last_activity_at: now.toISOString()
         })
@@ -446,53 +574,84 @@ export async function POST(request) {
         .single()
 
       if (createError) {
-        return Response.json({ error: 'Failed to create session' }, { status: 500 })
+        return jsonWithDeviceCookie({ body: { error: 'Failed to create session' }, status: 500, deviceCookieHeader })
       }
 
-      return Response.json({
-        session: session,
-        status: 'active'
+      let thread = null
+      if (subjectKey) {
+        const { data: threadData, error: threadError } = await supabase
+          .from('mentor_conversation_threads')
+          .select('*')
+          .eq('facilitator_id', user.id)
+          .eq('subject_key', subjectKey)
+          .maybeSingle()
+        if (!threadError) thread = threadData
+      }
+
+      const sessionWithConversation = {
+        ...session,
+        conversation_history: Array.isArray(thread?.conversation_history) ? thread.conversation_history : [],
+        draft_summary: thread?.draft_summary || '',
+        token_count: thread?.token_count ?? 0,
+        last_local_update_at: thread?.last_local_update_at || null
+      }
+
+      return jsonWithDeviceCookie({
+        body: { session: sessionWithConversation, status: 'active' },
+        status: 200,
+        deviceCookieHeader
       })
     }
 
     // Another device has active session - require takeover
-    return Response.json({
-      error: 'Another device has an active session',
-      requiresPin: true,
-      existingSession: {
-        session_id: existingSession.session_id,
-        device_name: existingSession.device_name,
-        last_activity_at: existingSession.last_activity_at
-      }
-    }, { status: 409 })
+    return jsonWithDeviceCookie({
+      body: {
+        error: 'Another device has an active session',
+        requiresPin: true,
+        existingSession: {
+          session_id: existingSession.session_id,
+          device_name: existingSession.device_name,
+          last_activity_at: existingSession.last_activity_at
+        }
+      },
+      status: 409,
+      deviceCookieHeader
+    })
 
   } catch (err) {
-    return Response.json({ error: 'Internal error' }, { status: 500 })
+    const existingDeviceId = getDeviceIdFromRequest(request)
+    const deviceId = existingDeviceId || randomUUID()
+    const deviceCookieHeader = existingDeviceId ? null : buildDeviceCookieHeader(deviceId)
+    return jsonWithDeviceCookie({ body: { error: 'Internal error' }, status: 500, deviceCookieHeader })
   }
 }
 
 // PATCH: Update session (conversation history, draft summary, last activity)
 export async function PATCH(request) {
   try {
+    const existingDeviceId = getDeviceIdFromRequest(request)
+    const deviceId = existingDeviceId || randomUUID()
+    const deviceCookieHeader = existingDeviceId ? null : buildDeviceCookieHeader(deviceId)
+
     const authHeader = request.headers.get('authorization')
     if (!authHeader?.startsWith('Bearer ')) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+      return jsonWithDeviceCookie({ body: { error: 'Unauthorized' }, status: 401, deviceCookieHeader })
     }
 
     const token = authHeader.substring(7)
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     
     if (authError || !user) {
-      return Response.json({ error: 'Invalid token' }, { status: 401 })
+      return jsonWithDeviceCookie({ body: { error: 'Invalid token' }, status: 401, deviceCookieHeader })
     }
 
     const access = await requireMrMentorAccess(user.id)
     if (!access.allowed) {
-      return Response.json({ error: 'Pro plan required' }, { status: 403 })
+      return jsonWithDeviceCookie({ body: { error: 'Pro plan required' }, status: 403, deviceCookieHeader })
     }
 
     const body = await request.json()
-    const { sessionId, conversationHistory, draftSummary, tokenCount, lastLocalUpdateAt } = body
+    const { conversationHistory, draftSummary, tokenCount, lastLocalUpdateAt, subjectKey } = body || {}
 
     console.log('[PATCH] Received update:', { 
       sessionId, 
@@ -502,101 +661,151 @@ export async function PATCH(request) {
       timestamp: lastLocalUpdateAt
     })
 
-    if (!sessionId) {
-      return Response.json({ error: 'Session ID required' }, { status: 400 })
+    if (!subjectKey) {
+      return jsonWithDeviceCookie({ body: { error: 'subjectKey required' }, status: 400, deviceCookieHeader })
     }
 
-    console.log('[PATCH] Looking for session:', { userId: user.id, sessionId })
-
-    // Verify this is the active session
-    const { data: session, error: sessionError } = await supabase
+    // Verify there is an active session for this facilitator.
+    const { data: sessions, error: activeError } = await supabase
       .from('mentor_sessions')
       .select('*')
       .eq('facilitator_id', user.id)
-      .eq('session_id', sessionId)
       .eq('is_active', true)
-      .single()
+      .order('created_at', { ascending: false })
+      .limit(1)
 
-    console.log('[PATCH] Session query result:', { found: !!session, error: sessionError })
-
-    if (!session) {
-      return Response.json({ 
-        error: 'Session not active or not found',
-        status: 'inactive'
-      }, { status: 410 })
+    if (activeError) {
+      return jsonWithDeviceCookie({ body: { error: 'Database error' }, status: 500, deviceCookieHeader })
     }
 
-    // Update session
-    const updates = {
-      last_activity_at: new Date().toISOString()
+    const activeSession = sessions?.[0] || null
+    if (!activeSession) {
+      return jsonWithDeviceCookie({ body: { error: 'Session not active', status: 'inactive' }, status: 410, deviceCookieHeader })
+    }
+
+    const isOwner = activeSession.device_id ? activeSession.device_id === deviceId : false
+    if (!isOwner) {
+      return jsonWithDeviceCookie({ body: { error: 'PIN required', requiresPin: true }, status: 403, deviceCookieHeader })
+    }
+
+    const now = new Date()
+
+    // Update session activity timestamp (ownership heartbeat)
+    await supabase
+      .from('mentor_sessions')
+      .update({ last_activity_at: now.toISOString() })
+      .eq('id', activeSession.id)
+
+    // Upsert conversation thread for this subject
+    const threadUpdates = {
+      facilitator_id: user.id,
+      subject_key: subjectKey,
+      last_activity_at: now.toISOString()
     }
 
     if (conversationHistory !== undefined) {
-      updates.conversation_history = conversationHistory
+      threadUpdates.conversation_history = Array.isArray(conversationHistory) ? conversationHistory : []
     }
-
     if (draftSummary !== undefined) {
-      updates.draft_summary = draftSummary
+      threadUpdates.draft_summary = draftSummary
     }
-
     if (tokenCount !== undefined) {
-      updates.token_count = tokenCount
+      threadUpdates.token_count = tokenCount
     }
-
     if (lastLocalUpdateAt) {
-      updates.last_local_update_at = lastLocalUpdateAt
+      threadUpdates.last_local_update_at = lastLocalUpdateAt
     }
 
-    const { error: updateError } = await supabase
-      .from('mentor_sessions')
-      .update(updates)
-      .eq('id', session.id)
+    const { error: threadError } = await supabase
+      .from('mentor_conversation_threads')
+      .upsert(threadUpdates, { onConflict: 'facilitator_id,subject_key' })
 
-    console.log('[PATCH] Update result:', { error: updateError, updates })
-
-    if (updateError) {
-      return Response.json({ 
-        error: 'Failed to update session', 
-        supabaseError: updateError.message || updateError,
-        code: updateError.code
-      }, { status: 500 })
+    if (threadError) {
+      return jsonWithDeviceCookie({
+        body: { error: 'Failed to update conversation', supabaseError: threadError.message || threadError, code: threadError.code },
+        status: 500,
+        deviceCookieHeader
+      })
     }
 
-    return Response.json({ success: true })
+    return jsonWithDeviceCookie({ body: { success: true }, status: 200, deviceCookieHeader })
 
   } catch (err) {
     console.error('[PATCH] Error:', err)
-    return Response.json({ error: 'Internal error', details: err.message }, { status: 500 })
+    const existingDeviceId = getDeviceIdFromRequest(request)
+    const deviceId = existingDeviceId || randomUUID()
+    const deviceCookieHeader = existingDeviceId ? null : buildDeviceCookieHeader(deviceId)
+    return jsonWithDeviceCookie({ body: { error: 'Internal error', details: err.message }, status: 500, deviceCookieHeader })
   }
 }
 
 // DELETE: End session (manual end conversation)
 export async function DELETE(request) {
   try {
+    const existingDeviceId = getDeviceIdFromRequest(request)
+    const deviceId = existingDeviceId || randomUUID()
+    const deviceCookieHeader = existingDeviceId ? null : buildDeviceCookieHeader(deviceId)
+
     const authHeader = request.headers.get('authorization')
     if (!authHeader?.startsWith('Bearer ')) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+      return jsonWithDeviceCookie({ body: { error: 'Unauthorized' }, status: 401, deviceCookieHeader })
     }
 
     const token = authHeader.substring(7)
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     
     if (authError || !user) {
-      return Response.json({ error: 'Invalid token' }, { status: 401 })
+      return jsonWithDeviceCookie({ body: { error: 'Invalid token' }, status: 401, deviceCookieHeader })
     }
 
     const access = await requireMrMentorAccess(user.id)
     if (!access.allowed) {
-      return Response.json({ error: 'Pro plan required' }, { status: 403 })
+      return jsonWithDeviceCookie({ body: { error: 'Pro plan required' }, status: 403, deviceCookieHeader })
     }
 
     const { searchParams } = new URL(request.url)
-    const sessionId = searchParams.get('sessionId')
+    const subjectKey = searchParams.get('subjectKey')
+    const action = searchParams.get('action')
 
-    console.log('[DELETE] Deleting active session for user:', user.id, 'sessionId:', sessionId)
+    // If a subjectKey is provided, clear ONLY that conversation thread.
+    // This matches the old behavior where deleting the single session cleared the (single) conversation.
+    if (subjectKey && (!action || action === 'clear_thread')) {
+      const { data: sessions, error: sessionError } = await supabase
+        .from('mentor_sessions')
+        .select('*')
+        .eq('facilitator_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
 
-    // Delete only active sessions (is_active = true)
-    // Saved conversations (is_active = false) are preserved
+      if (sessionError) {
+        return jsonWithDeviceCookie({ body: { error: 'Database error' }, status: 500, deviceCookieHeader })
+      }
+
+      const activeSession = sessions?.[0] || null
+      const isOwner = activeSession?.device_id ? activeSession.device_id === deviceId : false
+      if (!activeSession) {
+        return jsonWithDeviceCookie({ body: { success: true, deletedCount: 0 }, status: 200, deviceCookieHeader })
+      }
+      if (!isOwner) {
+        return jsonWithDeviceCookie({ body: { error: 'PIN required', requiresPin: true }, status: 403, deviceCookieHeader })
+      }
+
+      const { data: deletedRows, error: deleteError } = await supabase
+        .from('mentor_conversation_threads')
+        .delete()
+        .eq('facilitator_id', user.id)
+        .eq('subject_key', subjectKey)
+        .select()
+
+      if (deleteError) {
+        return jsonWithDeviceCookie({ body: { error: 'Failed to delete conversation', details: deleteError.message }, status: 500, deviceCookieHeader })
+      }
+
+      return jsonWithDeviceCookie({ body: { success: true, deletedCount: deletedRows?.length || 0 }, status: 200, deviceCookieHeader })
+    }
+
+    // Otherwise, end the active owner session (lock) for this facilitator.
     const { data: deletedRows, error } = await supabase
       .from('mentor_sessions')
       .delete()
@@ -604,16 +813,16 @@ export async function DELETE(request) {
       .eq('is_active', true)
       .select()
 
-    console.log('[DELETE] Deleted active rows:', deletedRows?.length || 0, 'Rows:', deletedRows)
-
     if (error) {
-      console.error('[DELETE] Error:', error)
-      return Response.json({ error: 'Failed to delete session', details: error.message }, { status: 500 })
+      return jsonWithDeviceCookie({ body: { error: 'Failed to delete session', details: error.message }, status: 500, deviceCookieHeader })
     }
 
-    return Response.json({ success: true, deletedCount: deletedRows?.length || 0 })
+    return jsonWithDeviceCookie({ body: { success: true, deletedCount: deletedRows?.length || 0 }, status: 200, deviceCookieHeader })
 
   } catch (err) {
-    return Response.json({ error: 'Internal error' }, { status: 500 })
+    const existingDeviceId = getDeviceIdFromRequest(request)
+    const deviceId = existingDeviceId || randomUUID()
+    const deviceCookieHeader = existingDeviceId ? null : buildDeviceCookieHeader(deviceId)
+    return jsonWithDeviceCookie({ body: { error: 'Internal error' }, status: 500, deviceCookieHeader })
   }
 }

@@ -770,6 +770,8 @@ export class TimerService {
   serialize() {
     return {
       sessionElapsed: this.sessionElapsed,
+      currentPlayPhase: this.currentPlayPhase || null,
+      currentWorkPhase: this.currentWorkPhase || null,
       playTimers: Array.from(this.playTimers.entries()).map(([phase, timer]) => ({
         phase,
         elapsed: timer.elapsed,
@@ -828,21 +830,45 @@ export class TimerService {
           }
         }
       });
+
+      // Prefer explicit currentPlayPhase if provided.
+      if (data.currentPlayPhase && this.playTimers.has(data.currentPlayPhase)) {
+        this.currentPlayPhase = data.currentPlayPhase;
+      }
     }
     
     // Restore work phase timers
     if (data.workPhaseTimers) {
       this.workPhaseTimers.clear();
       
+      let inferredActiveWorkPhase = null;
       data.workPhaseTimers.forEach(timer => {
         this.workPhaseTimers.set(timer.phase, {
-          startTime: null, // Don't resume timing
+          startTime: null,
           elapsed: timer.elapsed,
           timeLimit: timer.timeLimit,
-          completed: timer.completed,
-          onTime: timer.onTime
+          completed: !!timer.completed,
+          onTime: typeof timer.onTime === 'boolean' ? timer.onTime : (timer.elapsed <= timer.timeLimit)
         });
+        // Heuristic: the most recently inserted incomplete timer is likely the active one.
+        if (!timer.completed) {
+          inferredActiveWorkPhase = timer.phase;
+        }
       });
+
+      // Prefer explicit currentWorkPhase if provided.
+      const explicitWork = data.currentWorkPhase;
+      const candidateWork = (explicitWork && this.workPhaseTimers.has(explicitWork)) ? explicitWork : inferredActiveWorkPhase;
+      if (this.mode === 'work' && candidateWork) {
+        const t = this.workPhaseTimers.get(candidateWork);
+        if (t && !t.completed) {
+          t.startTime = Date.now() - ((Number(t.elapsed) || 0) * 1000);
+          this.currentWorkPhase = candidateWork;
+          if (!this.isPaused && !this.workPhaseInterval) {
+            this.workPhaseInterval = setInterval(this.#tickWorkPhaseTimers.bind(this), 1000);
+          }
+        }
+      }
     }
   }
   

@@ -16,6 +16,23 @@ import MentorThoughtBubble from './MentorThoughtBubble'
 import SessionTakeoverDialog from './SessionTakeoverDialog'
 import MentorInterceptor from './MentorInterceptor'
 
+function fetchWithTimeout(url, options, timeoutMs = 15000) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  const nextOptions = { ...options, signal: controller.signal }
+  return fetch(url, nextOptions).finally(() => clearTimeout(timeoutId))
+}
+
+function shouldPrefetchLessonsForMessage(message) {
+  const normalized = String(message || '').toLowerCase()
+  if (!normalized.trim()) return false
+
+  // Only prefetch lesson lists when the message likely triggers a lesson-related flow.
+  // This prevents "Processing your request..." from stalling on heavy/fragile prefetch for simple chat.
+  return /\b(lesson|lessons|schedule|calendar|assign|available|approve|generate|create|make|edit|modify|update|find|search|show me|curriculum|weekly pattern|lesson plan|planner)\b/i.test(normalized)
+}
+
 export default function CounselorClient() {
   const LAST_SELECTED_LEARNER_KEY = 'MrMentor.v1.selectedLearnerId'
   const router = useRouter()
@@ -35,6 +52,14 @@ export default function CounselorClient() {
   const sessionPollInterval = useRef(null)
   const isMountedRef = useRef(true)
   const initializedSessionIdRef = useRef(null)
+  const initInFlightSubjectRef = useRef(null)
+  const initAttemptIdRef = useRef(0)
+
+  useEffect(() => {
+    try {
+      console.log('[Mr. Mentor] Browser origin', { origin: window.location.origin })
+    } catch {}
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -69,6 +94,17 @@ export default function CounselorClient() {
   const [selectedLearnerId, setSelectedLearnerId] = useState('none')
   const [learnerTranscript, setLearnerTranscript] = useState('')
   const [goalsNotes, setGoalsNotes] = useState('')
+
+  const subjectKey = selectedLearnerId === 'none' ? 'facilitator' : `learner:${selectedLearnerId}`
+
+  // Switch Mr. Mentor chat persistence/context to Supabase chronograph + deterministic packs.
+  // Legacy mentor_conversation_threads JSON persistence is disabled when this is true.
+  const useCohereChronograph = true
+
+  // Only disable legacy persistence once we confirm the chronograph endpoint works.
+  const [chronographReady, setChronographReady] = useState(false)
+
+  const cohereChronographEnabled = useCohereChronograph && chronographReady
   
   // Conversation state
   const [conversationHistory, setConversationHistory] = useState([])
@@ -144,30 +180,18 @@ export default function CounselorClient() {
   }, [])
 
   const persistSessionIdentifier = useCallback((id) => {
-    if (typeof window === 'undefined' || !id) return
-    try {
-      sessionStorage.setItem('mr_mentor_session_id', id)
-    } catch {}
-    try {
-      localStorage.setItem('mr_mentor_active_session_id', id)
-    } catch {}
+    // Intentionally no-op: ownership is now server-backed (device cookie), not localStorage.
+    void id
   }, [])
 
   const clearPersistedSessionIdentifier = useCallback(() => {
-    if (typeof window === 'undefined') return
-    try {
-      sessionStorage.removeItem('mr_mentor_session_id')
-    } catch {}
-    try {
-      localStorage.removeItem('mr_mentor_active_session_id')
-    } catch {}
+    // Intentionally no-op: ownership is now server-backed (device cookie), not localStorage.
   }, [])
 
   const assignSessionIdentifier = useCallback((id) => {
     if (!id) return
-    persistSessionIdentifier(id)
     setSessionId(id)
-  }, [persistSessionIdentifier])
+  }, [])
 
   // (startSessionPolling defined later, after session setup hooks)
 
@@ -257,10 +281,13 @@ export default function CounselorClient() {
     }
   }, [selectedLearnerId])
 
-  // Default to the newest learner once the list loads (avoid 'none' stalling overlays)
+  // Default to the newest learner once the list loads.
+  // IMPORTANT: Allow explicitly selecting "none" (general discussion).
   useEffect(() => {
     if (!learners?.length) return
-    const selectedIsValid = selectedLearnerId !== 'none' && learners.some(l => l.id === selectedLearnerId)
+    if (selectedLearnerId === 'none') return
+
+    const selectedIsValid = learners.some(l => l.id === selectedLearnerId)
     if (!selectedIsValid) {
       let nextLearnerId = null
       try {
@@ -275,6 +302,23 @@ export default function CounselorClient() {
       setSelectedLearnerId(nextLearnerId || learners[0].id)
     }
   }, [learners, selectedLearnerId])
+
+  // Switching the dropdown changes the active conversation thread.
+  useEffect(() => {
+    initializedSessionIdRef.current = null
+    setConversationHistory([])
+    setDraftSummary('')
+    setCurrentSessionTokens(0)
+    setSessionStarted(false)
+    setError('')
+    setPendingConfirmationTool(null)
+    setCaptionText('')
+    setCaptionSentences([])
+    setCaptionIndex(0)
+    setSessionLoading(true)
+    setConflictingSession(null)
+    setShowTakeoverDialog(false)
+  }, [subjectKey])
 
   // Load learner transcript when selection changes
   useEffect(() => {
@@ -367,10 +411,22 @@ export default function CounselorClient() {
   // Preload overlay data in background after page is ready
   useEffect(() => {
     if (!tierChecked || !accessToken) return
+
+    const debugPrefetch = (() => {
+      try {
+        return process.env.NEXT_PUBLIC_DEBUG_LESSONS_OVERLAY === '1'
+      } catch {
+        return false
+      }
+    })()
     
     // Delay preload to let visible content load first
     const preloadTimer = setTimeout(() => {
       // Trigger loads by dispatching events to overlays
+      if (debugPrefetch) {
+        // eslint-disable-next-line no-console
+        console.log('[CounselorClient] dispatch preload-overlays', { learnerId: selectedLearnerId })
+      }
       window.dispatchEvent(new CustomEvent('preload-overlays', { 
         detail: { learnerId: selectedLearnerId } 
       }))
@@ -392,36 +448,16 @@ export default function CounselorClient() {
     }
   }, [])
 
-  // Generate and persist unique session ID on mount
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    let resolvedId = null
-
-    try {
-      resolvedId = localStorage.getItem('mr_mentor_active_session_id')
-    } catch (err) {
-      // Silent error handling
-    }
-
-    if (!resolvedId) {
-      try {
-        resolvedId = sessionStorage.getItem('mr_mentor_session_id')
-      } catch {}
-    }
-
-    if (!resolvedId) {
-      resolvedId = generateSessionIdentifier()
-    }
-
-    assignSessionIdentifier(resolvedId)
-  }, [assignSessionIdentifier, generateSessionIdentifier])
+  // Ownership is server-backed (device cookie). The active session_id is loaded from /api/mentor-session.
+  // Do not persist any ownership tokens in localStorage/sessionStorage.
+  useEffect(() => {}, [])
 
   // (initializeMentorSession defined later, after realtime subscription helper)
 
   // Replace polling with realtime subscription for instant conflict detection
-  const startRealtimeSubscription = useCallback(async () => {
-    if (!sessionId || !accessToken || !hasAccess) return
+  const startRealtimeSubscription = useCallback(async (sessionIdOverride) => {
+    const mySessionId = sessionIdOverride || sessionId
+    if (!mySessionId || !accessToken || !hasAccess) return
     
     // Clean up existing subscription
     if (realtimeChannelRef.current) {
@@ -439,7 +475,7 @@ export default function CounselorClient() {
       return
     }
 
-    console.log('[Realtime] Starting subscription for session:', sessionId, 'user:', user.id)
+    console.log('[Realtime] Starting subscription for session:', mySessionId, 'user:', user.id)
 
     // Subscribe to mentor_sessions changes for this facilitator
     // Note: Can't filter by session_id in postgres_changes, so we filter in the callback
@@ -476,7 +512,7 @@ export default function CounselorClient() {
 
         console.log('[Realtime] Session update detected:', { 
           updatedSessionId: updatedSession.session_id, 
-          mySessionId: sessionId,
+          mySessionId,
           isActive: updatedSession.is_active,
           wasActive: oldSession.is_active,
           facilitatorId: updatedSession.facilitator_id,
@@ -484,11 +520,9 @@ export default function CounselorClient() {
         })
 
         // Check if THIS session was deactivated (taken over)
-        if (updatedSession.session_id === sessionId && oldSession.is_active && !updatedSession.is_active) {
+        if (updatedSession.session_id === mySessionId && oldSession.is_active && !updatedSession.is_active) {
           console.log('[Realtime] THIS SESSION taken over - showing PIN overlay')
           
-          // Clear persisted session ID so next load generates a new one
-          clearPersistedSessionIdentifier()
           initializedSessionIdRef.current = null
           
           // Clear conversation state
@@ -501,7 +535,7 @@ export default function CounselorClient() {
           // Fetch the active session to show in takeover dialog
           ;(async () => {
             try {
-              const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
+              const checkRes = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
               })
               if (checkRes.ok) {
@@ -518,7 +552,7 @@ export default function CounselorClient() {
           setShowTakeoverDialog(true)
         } else {
           console.log('[Realtime] Update is for different session or not a takeover:', {
-            isSameSession: updatedSession.session_id === sessionId,
+            isSameSession: updatedSession.session_id === mySessionId,
             wasActive: oldSession.is_active,
             isActive: updatedSession.is_active
           })
@@ -529,7 +563,7 @@ export default function CounselorClient() {
       })
 
     realtimeChannelRef.current = channel
-  }, [sessionId, accessToken, hasAccess])
+  }, [sessionId, accessToken, hasAccess, subjectKey])
 
   // Clean up realtime subscription on unmount
   useEffect(() => {
@@ -567,19 +601,32 @@ export default function CounselorClient() {
   }, [conversationHistory.length])
 
   const initializeMentorSession = useCallback(async () => {
-    if (!sessionId || !accessToken || !hasAccess || !tierChecked) {
+    if (!accessToken || !hasAccess || !tierChecked) return
+
+    if (initInFlightSubjectRef.current === subjectKey) {
       return
     }
 
-    console.log('[Mr. Mentor] Initializing session:', sessionId)
+    initAttemptIdRef.current += 1
+    const attemptId = initAttemptIdRef.current
+    initInFlightSubjectRef.current = subjectKey
+
+    // Subject changed => re-probe ThoughtHub readiness for this subject.
+    setChronographReady(false)
+
+    console.log('[Mr. Mentor] Initializing subject:', subjectKey)
     setSessionLoading(true)
 
     try {
-      const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
+      const checkRes = await fetchWithTimeout(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`
         }
-      })
+      }, 15000)
+
+      if (attemptId !== initAttemptIdRef.current) {
+        return
+      }
 
       if (!isMountedRef.current) {
         setSessionLoading(false)
@@ -592,7 +639,7 @@ export default function CounselorClient() {
       }
 
       const payload = await checkRes.json()
-      console.log('[Mr. Mentor] GET response:', { status: payload.status, isOwner: payload.isOwner, hasConversation: !!payload.session?.conversation_history, conversationLength: payload.session?.conversation_history?.length, requestedSessionId: sessionId, activeSessionId: payload.session?.session_id })
+  console.log('[Mr. Mentor] GET response:', { status: payload.status, isOwner: payload.isOwner, subjectKey, hasConversation: !!payload.session?.conversation_history, conversationLength: payload.session?.conversation_history?.length, activeSessionId: payload.session?.session_id })
 
       if (!isMountedRef.current) {
         return
@@ -609,18 +656,18 @@ export default function CounselorClient() {
 
       if (!activeSession || status === 'none') {
         const deviceName = `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`
-        const createRes = await fetch('/api/mentor-session', {
+        const createRes = await fetchWithTimeout('/api/mentor-session', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`
           },
           body: JSON.stringify({
-            sessionId,
             deviceName,
-            action: 'initialize'
+            action: 'initialize',
+            subjectKey
           })
-        })
+        }, 15000)
 
         const createData = await createRes.json().catch(() => ({}))
 
@@ -637,13 +684,38 @@ export default function CounselorClient() {
         }
 
         if (createdSession?.session_id && createdSession.session_id !== sessionId) {
-          setSessionLoading(false)
           assignSessionIdentifier(createdSession.session_id)
-          return
         }
 
-        // Load active conversation from database (will be cleared after save/delete)
-        const convHistory = Array.isArray(createdSession?.conversation_history) ? createdSession.conversation_history : []
+        // Load conversation from chronograph (deterministic recent events)
+        let convHistory = []
+        if (useCohereChronograph && accessToken) {
+          try {
+            let chronRes = await fetchWithTimeout(`/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`, {
+              headers: { 'Authorization': `Bearer ${accessToken}` },
+              cache: 'no-store'
+            }, 15000)
+
+            if (!chronRes.ok) {
+              chronRes = await fetchWithTimeout(`/api/mentor-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+                cache: 'no-store'
+              }, 15000)
+            }
+
+            if (chronRes.ok) {
+              setChronographReady(true)
+              const chron = await chronRes.json().catch(() => null)
+              if (Array.isArray(chron?.history)) convHistory = chron.history
+            }
+          } catch {}
+        }
+
+        // Fallback to legacy stored JSON if chronograph isn't available yet
+        if (convHistory.length === 0) {
+          convHistory = Array.isArray(createdSession?.conversation_history) ? createdSession.conversation_history : []
+        }
+
         console.log('[Mr. Mentor] Loading conversation from NEW session:', convHistory.length, 'messages')
         setConversationHistory(convHistory)
         setDraftSummary(createdSession?.draft_summary || '')
@@ -654,9 +726,10 @@ export default function CounselorClient() {
         }
         setSessionStarted(true)
         setSessionLoading(false)
+        initializedSessionIdRef.current = subjectKey
         setConflictingSession(null)
         setShowTakeoverDialog(false)
-        startRealtimeSubscription()
+        startRealtimeSubscription(createdSession?.session_id)
         return
       }
 
@@ -676,13 +749,38 @@ export default function CounselorClient() {
       }
 
       if (activeSession?.session_id && activeSession.session_id !== sessionId) {
-        setSessionLoading(false)
         assignSessionIdentifier(activeSession.session_id)
-        return
       }
 
-      // Load active conversation from database (will be cleared after save/delete)
-      const convHistory = Array.isArray(activeSession?.conversation_history) ? activeSession.conversation_history : []
+      // Load conversation from chronograph (deterministic recent events)
+      let convHistory = []
+      if (useCohereChronograph && accessToken) {
+        try {
+          let chronRes = await fetchWithTimeout(`/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+            cache: 'no-store'
+          }, 15000)
+
+          if (!chronRes.ok) {
+            chronRes = await fetchWithTimeout(`/api/mentor-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`, {
+              headers: { 'Authorization': `Bearer ${accessToken}` },
+              cache: 'no-store'
+            }, 15000)
+          }
+
+          if (chronRes.ok) {
+            setChronographReady(true)
+            const chron = await chronRes.json().catch(() => null)
+            if (Array.isArray(chron?.history)) convHistory = chron.history
+          }
+        } catch {}
+      }
+
+      // Fallback to legacy stored JSON if chronograph isn't available yet
+      if (convHistory.length === 0) {
+        convHistory = Array.isArray(activeSession?.conversation_history) ? activeSession.conversation_history : []
+      }
+
       console.log('[Mr. Mentor] Loading conversation from EXISTING session:', convHistory.length, 'messages')
       setConversationHistory(convHistory)
       setDraftSummary(activeSession?.draft_summary || '')
@@ -694,23 +792,36 @@ export default function CounselorClient() {
       }
       setSessionStarted(true)
       setSessionLoading(false)
+      initializedSessionIdRef.current = subjectKey
       setConflictingSession(null)
       setShowTakeoverDialog(false)
-      startRealtimeSubscription()
+      startRealtimeSubscription(activeSession?.session_id)
     } catch (err) {
       if (!isMountedRef.current) {
         return
       }
 
+      // If a newer init attempt started, don't clobber its loading state.
+      if (attemptId !== initAttemptIdRef.current) {
+        return
+      }
+
       // Silent error handling
       setSessionLoading(false)
+      if (initializedSessionIdRef.current === subjectKey) {
+        initializedSessionIdRef.current = null
+      }
+    } finally {
+      if (initInFlightSubjectRef.current === subjectKey) {
+        initInFlightSubjectRef.current = null
+      }
     }
-  }, [sessionId, accessToken, hasAccess, tierChecked, assignSessionIdentifier, startRealtimeSubscription])
+  }, [sessionId, accessToken, hasAccess, tierChecked, subjectKey, assignSessionIdentifier, startRealtimeSubscription])
 
   // Initialize session when all dependencies are ready
   useEffect(() => {
     // Only attempt initialization when all required dependencies are ready
-    if (!sessionId || !accessToken || !hasAccess || !tierChecked) {
+    if (!accessToken || !hasAccess || !tierChecked) {
       // If we're still waiting for dependencies, keep loading state true only if we haven't checked yet
       if (tierChecked && (!hasAccess || !accessToken)) {
         // Dependencies are checked but we don't have access - stop loading
@@ -719,32 +830,36 @@ export default function CounselorClient() {
       return
     }
     
-    // Don't re-initialize if we've already initialized this session ID
-    if (initializedSessionIdRef.current === sessionId) {
+    // Don't re-initialize if we've already initialized this subject
+    if (initializedSessionIdRef.current === subjectKey) {
       return
     }
-    
-    // Mark this session ID as initialized
-    initializedSessionIdRef.current = sessionId
+
+    // Avoid duplicate in-flight init for the same subject
+    if (initInFlightSubjectRef.current === subjectKey) {
+      return
+    }
     
     // All dependencies ready - initialize
     initializeMentorSession()
     
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, accessToken, hasAccess, tierChecked])
+  }, [accessToken, hasAccess, tierChecked, subjectKey, initializeMentorSession])
 
   // Save conversation to database whenever it changes
   useEffect(() => {
+    if (cohereChronographEnabled) return
     console.log('[Mr. Mentor] Save effect triggered:', { 
       sessionId: !!sessionId, 
       accessToken: !!accessToken, 
       hasAccess, 
       sessionLoading, 
       conversationLength: conversationHistory.length,
-      willSave: sessionId && accessToken && hasAccess && !sessionLoading && conversationHistory.length > 0
+      subjectKey,
+      willSave: accessToken && hasAccess && !sessionLoading && sessionStarted && conversationHistory.length > 0
     })
     
-    if (!sessionId || !accessToken || !hasAccess || sessionLoading || conversationHistory.length === 0) return
+    if (!accessToken || !hasAccess || sessionLoading || !sessionStarted || conversationHistory.length === 0) return
     
     // Debounce database writes
     const saveTimer = setTimeout(async () => {
@@ -754,7 +869,7 @@ export default function CounselorClient() {
         console.log('[Mr. Mentor] Saving conversation to DB:', conversationHistory.length, 'messages')
         
         const payload = {
-          sessionId,
+          subjectKey,
           conversationHistory,
           draftSummary,
           tokenCount: currentSessionTokens,
@@ -762,7 +877,7 @@ export default function CounselorClient() {
         }
         
         console.log('[Mr. Mentor] PATCH payload:', { 
-          sessionId: payload.sessionId, 
+          subjectKey: payload.subjectKey,
           conversationLength: payload.conversationHistory?.length,
           hasDraft: !!payload.draftSummary,
           tokenCount: payload.tokenCount,
@@ -781,12 +896,10 @@ export default function CounselorClient() {
         const result = await response.json().catch(() => ({}))
         console.log('[Mr. Mentor] PATCH response:', { ok: response.ok, status: response.status, result })
         
-        // Handle 410 Gone - session was taken over by another device
-        if (response.status === 410) {
+        // Handle lockout - session was taken over by another device
+        if (response.status === 410 || response.status === 403) {
           console.log('[Mr. Mentor] Session taken over (410) - showing PIN overlay')
           
-          // Clear persisted session ID so next load generates a new one
-          clearPersistedSessionIdentifier()
           initializedSessionIdRef.current = null
           
           // Clear conversation state
@@ -799,7 +912,7 @@ export default function CounselorClient() {
           // Fetch the active session to show in takeover dialog
           ;(async () => {
             try {
-              const checkRes = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
+              const checkRes = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
               })
               if (checkRes.ok) {
@@ -821,15 +934,15 @@ export default function CounselorClient() {
     }, 1000) // Save 1 second after last change
     
     return () => clearTimeout(saveTimer)
-  }, [conversationHistory, draftSummary, currentSessionTokens, sessionId, accessToken, hasAccess, sessionLoading])
+  }, [conversationHistory, draftSummary, currentSessionTokens, accessToken, hasAccess, sessionLoading, sessionStarted, subjectKey, sessionId, cohereChronographEnabled])
 
   // Periodic heartbeat to detect if session was taken over (backup to realtime)
   useEffect(() => {
-    if (!sessionId || !accessToken || !hasAccess || sessionLoading) return
+    if (!accessToken || !hasAccess || sessionLoading) return
 
     const checkSessionStatus = async () => {
       try {
-        const res = await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
+        const res = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}`, {
           headers: { 'Authorization': `Bearer ${accessToken}` }
         })
         
@@ -850,7 +963,6 @@ export default function CounselorClient() {
         if (data.session && !data.isOwner) {
           console.log('[Heartbeat] Not owner - showing PIN overlay')
           
-          clearPersistedSessionIdentifier()
           initializedSessionIdRef.current = null
           
           setConversationHistory([])
@@ -875,7 +987,7 @@ export default function CounselorClient() {
     checkSessionStatus()
     
     return () => clearInterval(interval)
-  }, [sessionId, accessToken, hasAccess, sessionLoading, sessionStarted, clearPersistedSessionIdentifier])
+  }, [sessionId, accessToken, hasAccess, sessionLoading, sessionStarted, subjectKey])
 
   // Stop polling on unmount
   useEffect(() => {
@@ -889,14 +1001,14 @@ export default function CounselorClient() {
 
   // Handle session takeover
   const handleSessionTakeover = async (pinCode) => {
-    if (!sessionId || !accessToken) {
+    if (!accessToken) {
       throw new Error('Session not initialized')
     }
     
     try {
       const deviceName = `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`
       
-      console.log('[Takeover Client] Requesting takeover for session:', sessionId)
+      console.log('[Takeover Client] Requesting takeover for subject:', subjectKey)
       
       const res = await fetch('/api/mentor-session', {
         method: 'POST',
@@ -905,10 +1017,10 @@ export default function CounselorClient() {
           'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
-          sessionId,
           deviceName,
           pinCode,
-          action: 'takeover'
+          action: 'takeover',
+          subjectKey
         })
       })
       
@@ -923,6 +1035,10 @@ export default function CounselorClient() {
       
       if (!res.ok) {
         throw new Error(data.error || 'Failed to take over session')
+      }
+
+      if (data.session?.session_id) {
+        setSessionId(data.session.session_id)
       }
       
       // ATOMIC GATE: Only load conversation if database is newer than local
@@ -967,7 +1083,7 @@ export default function CounselorClient() {
       setSessionLoading(false)
       
       // Start realtime subscription
-      startRealtimeSubscription()
+      startRealtimeSubscription(data.session?.session_id)
       
     } catch (err) {
       throw err
@@ -1115,14 +1231,14 @@ export default function CounselorClient() {
       // Start video if available
       if (videoRef.current) {
         try {
-          await videoRef.current.play()
+          videoRef.current.play().catch(() => {})
         } catch {}
       }
       
       // Start button video if available
       if (buttonVideoRef.current) {
         try {
-          await buttonVideoRef.current.play()
+          buttonVideoRef.current.play().catch(() => {})
         } catch {}
       }
     } catch (err) {
@@ -1302,6 +1418,11 @@ export default function CounselorClient() {
 
     const body = {
       history,
+      use_cohere_chronograph: cohereChronographEnabled,
+      use_thought_hub: cohereChronographEnabled,
+      subject_key: subjectKey,
+      cohere_mode: 'standard',
+      thought_hub_mode: 'standard',
       followup: {
         assistantMessage: followUpPayload.assistantMessage,
         functionResults: followUpPayload.functionResults,
@@ -1333,12 +1454,15 @@ export default function CounselorClient() {
     }
 
     return response.json()
-  }, [learnerTranscript, goalsNotes])
+  }, [learnerTranscript, goalsNotes, subjectKey, cohereChronographEnabled])
   
   // Load all lessons for interceptor
   const loadAllLessons = useCallback(async () => {
     const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general']
     const results = {}
+
+    const startedAt = Date.now()
+    console.log('[Mr. Mentor] loadAllLessons: start')
     
     for (const subject of SUBJECTS) {
       try {
@@ -1388,6 +1512,8 @@ export default function CounselorClient() {
         // Silent error
       }
     }
+
+    console.log('[Mr. Mentor] loadAllLessons: done', { ms: Date.now() - startedAt })
     
     return results
   }, [])
@@ -1481,13 +1607,6 @@ export default function CounselorClient() {
       setPendingConfirmationTool(null)
     }
 
-    // If no session ID exists (e.g., after delete), generate a new one
-    if (!sessionId) {
-      const newSessionIdentifier = generateSessionIdentifier()
-      assignSessionIdentifier(newSessionIdentifier)
-      // Session will be initialized on next render cycle via useEffect
-    }
-
     setLoading(true)
     setLoadingThought("Processing your request...")
     setError('')
@@ -1498,7 +1617,12 @@ export default function CounselorClient() {
       const selectedLearner = learners.find(l => l.id === selectedLearnerId)
       const learnerName = selectedLearner?.name
       const learnerGrade = selectedLearner?.grade
-      const allLessons = await loadAllLessons()
+
+      let allLessons = {}
+      if (shouldPrefetchLessonsForMessage(message)) {
+        setLoadingThought('Loading lessons...')
+        allLessons = await loadAllLessons()
+      }
       
       setLoadingThought(getLoadingThought(
         interceptorRef.current.state.flow,
@@ -1903,7 +2027,8 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
           if (ttsResponse.ok) {
             const ttsData = await ttsResponse.json()
             if (ttsData.audio) {
-              await playAudio(ttsData.audio)
+              // Never block the UI on audio playback.
+              void playAudio(ttsData.audio)
             }
           }
         } catch (err) {
@@ -1967,8 +2092,13 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
         headers: headers,
         body: JSON.stringify({
           message: finalForwardMessage,
-          // Send previous conversation history (API will append current message to build full context)
-          history: conversationHistory,
+          // ThoughtHub: chronograph + deterministic packs provide context; omit on-wire history to save tokens.
+          history: cohereChronographEnabled ? conversationHistory.slice(-8) : conversationHistory,
+          use_cohere_chronograph: cohereChronographEnabled,
+          use_thought_hub: cohereChronographEnabled,
+          subject_key: subjectKey,
+          cohere_mode: 'standard',
+          thought_hub_mode: 'standard',
           // Include learner context if a learner is selected
           learner_transcript: learnerTranscript || null,
           // Include persistent goals notes
@@ -1980,6 +2110,8 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
           disableTools
         })
       })
+
+      console.log('[Mr. Mentor] sendMessage: /api/counselor response', { ok: response.ok, status: response.status })
 
       if (!response.ok) {
         let errorMessage = `Request failed with status ${response.status}`
@@ -2077,7 +2209,8 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
 
       // Play audio if available
       if (responseData.audio) {
-        await playAudio(responseData.audio)
+        // Never block the UI on audio playback.
+        void playAudio(responseData.audio)
       }
 
       // Track token usage for this exchange
@@ -2265,10 +2398,10 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
 
   // Helper: Actually clear conversation state after save/delete
   const clearConversationAfterSave = async () => {
-    // End current session in database
-    if (sessionId && accessToken) {
+    // Clear current subject conversation in database
+    if (accessToken) {
       try {
-        await fetch(`/api/mentor-session?sessionId=${sessionId}`, {
+        await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${accessToken}`

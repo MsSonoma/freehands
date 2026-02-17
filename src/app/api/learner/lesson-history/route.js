@@ -1,10 +1,83 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import fs from 'node:fs'
+import path from 'node:path'
+import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 const STALE_MINUTES = 60
+
+let publicLessonsFilenameIndex = null
+
+function getPublicLessonsFilenameIndex() {
+  if (publicLessonsFilenameIndex) return publicLessonsFilenameIndex
+
+  const index = new Map()
+  try {
+    const root = path.join(process.cwd(), 'public', 'lessons')
+    if (!fs.existsSync(root)) {
+      publicLessonsFilenameIndex = index
+      return index
+    }
+
+    const subjectDirs = fs.readdirSync(root, { withFileTypes: true })
+    for (const subjectDir of subjectDirs) {
+      if (!subjectDir?.isDirectory?.()) continue
+      const subjectName = subjectDir.name
+      const subjectPath = path.join(root, subjectName)
+      let entries = []
+      try {
+        entries = fs.readdirSync(subjectPath, { withFileTypes: true })
+      } catch {
+        entries = []
+      }
+      for (const entry of entries) {
+        if (!entry?.isFile?.()) continue
+        const filename = entry.name
+        if (!/\.json$/i.test(filename)) continue
+        const canonicalKey = normalizeLessonKey(`${subjectName}/${filename}`)
+        const list = index.get(filename) || []
+        list.push(canonicalKey)
+        index.set(filename, list)
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  publicLessonsFilenameIndex = index
+  return index
+}
+
+function canonicalizeLessonId(raw, medalsLessonKeySet) {
+  if (!raw) return raw
+
+  let key = String(raw || '').trim()
+  if (!key) return key
+  key = normalizeLessonKey(key)
+
+  // If it already looks like a canonical lesson key, keep it.
+  if (key.includes('/')) {
+    return key
+  }
+
+  const base = key.replace(/\.json$/i, '')
+  const generatedVariant = normalizeLessonKey(`generated/${base}.json`)
+  if (medalsLessonKeySet && medalsLessonKeySet.has(generatedVariant)) {
+    return generatedVariant
+  }
+
+  const filename = `${base}.json`
+  const index = getPublicLessonsFilenameIndex()
+  const candidates = index.get(filename) || []
+  if (candidates.length === 1) {
+    return candidates[0]
+  }
+
+  return key
+}
 
 function isYyyyMmDd(value) {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -152,6 +225,27 @@ export async function GET(request) {
         })
       : []
 
+    // Pull medals keys so we can map legacy bare lesson_ids to canonical keys when possible.
+    let medalsLessonKeySet = null
+    try {
+      const { data: medalRows, error: medalsError } = await supabase
+        .from('learner_medals')
+        .select('lesson_key')
+        .eq('learner_id', learnerId)
+        .limit(2000)
+      if (!medalsError && Array.isArray(medalRows)) {
+        medalsLessonKeySet = new Set(medalRows.map((r) => normalizeLessonKey(String(r?.lesson_key || ''))).filter(Boolean))
+      }
+    } catch {
+      medalsLessonKeySet = null
+    }
+
+    // Canonicalize lesson_id values for consistency across Calendar, Completed Lessons, and Awards.
+    for (const session of sessions) {
+      if (!session) continue
+      session.lesson_id = canonicalizeLessonId(session.lesson_id, medalsLessonKeySet)
+    }
+
     let events = []
     try {
       let eventsQueryBase = () => {
@@ -190,6 +284,9 @@ export async function GET(request) {
       if (!sessionId) continue
       if (!eventsBySession.has(sessionId)) {
         eventsBySession.set(sessionId, [])
+      }
+      if (event?.lesson_id) {
+        event.lesson_id = canonicalizeLessonId(event.lesson_id, medalsLessonKeySet)
       }
       eventsBySession.get(sessionId).push(event)
     }

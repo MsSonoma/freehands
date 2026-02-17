@@ -1925,6 +1925,8 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
             const hasScheduled = scheduledCount > 0
             const hasPlanned = plannedCount > 0
             const tabHasLessons = listTab === 'planned' ? hasPlanned : hasScheduled
+            const scheduledForDay = item.date ? (scheduledLessons[item.date] || []) : []
+            const allScheduledCompleted = hasScheduled && scheduledForDay.length > 0 && scheduledForDay.every((l) => l?.completed === true)
             
             return (
               <button
@@ -1933,16 +1935,14 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
                 disabled={!item.day}
                 style={{
                   aspectRatio: '1',
-                  border: '1px solid',
-                  borderColor: isSelected ? '#3b82f6' : isToday ? '#10b981' : '#e5e7eb',
+                  border: isSelected ? '2px solid' : '1px solid',
+                  borderColor: isSelected ? '#1f2937' : isToday ? '#10b981' : '#e5e7eb',
                   borderRadius: 6,
-                  background: isSelected
-                    ? '#dbeafe'
-                    : isToday
-                      ? '#d1fae5'
-                      : tabHasLessons
-                        ? (listTab === 'planned' ? '#dbeafe' : '#fef3c7')
-                        : '#fff',
+                  background: isToday
+                    ? '#d1fae5'
+                    : tabHasLessons
+                      ? (listTab === 'planned' ? '#dbeafe' : (allScheduledCompleted ? '#f3f4f6' : '#fef3c7'))
+                      : '#fff',
                   cursor: item.day ? 'pointer' : 'default',
                   fontSize: 11,
                   fontWeight: tabHasLessons ? 700 : 400,
@@ -1973,7 +1973,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
                     width: 4,
                     height: 4,
                     borderRadius: '50%',
-                    background: listTab === 'planned' ? '#3b82f6' : '#f59e0b'
+                    background: listTab === 'planned' ? '#3b82f6' : (allScheduledCompleted ? '#9ca3af' : '#f59e0b')
                   }} />
                 )}
               </button>

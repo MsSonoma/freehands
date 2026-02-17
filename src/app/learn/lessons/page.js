@@ -290,13 +290,16 @@ function LessonsPageInner(){
   useEffect(() => {
     (async () => {
       try {
-        if (!learnerId) { setMedals({}); return; }
-        const data = await getMedalsForLearner(learnerId);
-        setMedals(data || {});
+        if (!learnerId) {
+          setMedals({})
+          return
+        }
+        const data = await getMedalsForLearner(learnerId)
+        setMedals(data || {})
       } catch {
-        setMedals({});
+        setMedals({})
       }
-    })();
+    })()
   }, [learnerId])
 
   useEffect(() => {
@@ -908,7 +911,7 @@ function LessonsPageInner(){
                         </div>
                       </div>
                       <h3 style={{ margin:'0 0 6px' }}>
-                        {l.title} {medal}
+                            {l.title} {medal}
                       </h3>
                       <p style={{ margin:0, color:'#4b5563', fontSize:14 }}>{l.blurb || ' '}</p>
                       {(l.grade || l.difficulty) && (
@@ -1092,7 +1095,6 @@ function LessonsPageInner(){
         onClose={() => setShowHistoryModal(false)}
         sessions={lessonHistorySessions}
         events={lessonHistoryEvents}
-        medals={medals}
         loading={lessonHistoryLoading}
         error={lessonHistoryError}
         onRefresh={refreshLessonHistory}

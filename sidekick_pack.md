@@ -6,14 +6,13 @@ Mode: standard
 
 Prompt (original):
 ```text
-Add includeAll=1 to GET /api/planned-lessons (authorized learner) and update CalendarOverlay to fetch planned lessons with includeAll=1 and merge results without overwriting non-empty cache with empty payloads.
+Ask feature breaks and says generic response. Trace V2 OpeningActionsController submitAskQuestion -> /api/sonoma route -> error handling; identify why it returns non-OK and triggers fallback. Also check V1 callMsSonoma /api/sonoma.
 ```
 
 Filter terms used:
 ```text
-/api/planned-lessons
-GET
-CalendarOverlay
+/api/sonoma
+OpeningActionsController
 ```
 # Context Pack
 
@@ -27,7 +26,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-/api/planned-lessons GET CalendarOverlay
+/api/sonoma OpeningActionsController
 
 ## Forced Context
 
@@ -35,115 +34,373 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Ranked Evidence
 
-### 1. sidekick_pack_planned_all.md (b6c5acc516c7d5288cd0923e63578ce9526d930ff4bc4955a5ec6a35dfc19f5a)
-- bm25: -6.9139 | entity_overlap_w: 2.30 | adjusted: -7.4889 | relevance: 1.0000
+### 1. sidekick_pack_restore_medal_emojis.md (5e467436a8fc850de89f10d14e4d764c87e3e493586289a6f6742212ebb0f9f0)
+- bm25: -7.8413 | entity_overlap_w: 1.00 | adjusted: -8.0913 | relevance: 1.0000
 
-### 33. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (d639b071230e9ed65fd771bbe6b7820ca2615d4a1f72283584fb2cd6d8b20640)
-- bm25: -4.9818 | relevance: 1.0000
+// Initialize OpeningActionsController once audio is ready and lesson is loaded
+  useEffect(() => {
+    if (!lessonData || !audioReady || !audioEngineRef.current || !eventBusRef.current) return;
 
-const response = await fetch('/api/facilitator/lessons/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ file, lesson: updatedLesson })
-      })
+### 2. sidekick_pack_restore_medal_emojis.md (b5356f7e8b1b72636df1d94e261c379426d65bc97353acd826aac0f99be8d422)
+- bm25: -7.8413 | entity_overlap_w: 1.00 | adjusted: -8.0913 | relevance: 1.0000
 
-### 34. src/app/api/planned-lessons/route.js (42127223aa1a5eb61a4fad6c882c523914f98e95c7e9e7d6b8000420836b7753)
-- bm25: -4.9714 | relevance: 1.0000
+// Initialize OpeningActionsController once audio is ready and lesson is loaded
+  useEffect(() => {
+    if (!lessonData || !audioReady || !audioEngineRef.current || !eventBusRef.current) return;
 
-// API endpoint for planned lessons management
-import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
+### 3. sidekick_pack_restore_medal_emojis.md (351b89b1d26add69f904016b51303b1af4f7b8543f2291ee9365f736c68a09b1)
+- bm25: -7.7575 | entity_overlap_w: 1.00 | adjusted: -8.0075 | relevance: 1.0000
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const openingController = new OpeningActionsController(
+      eventBusRef.current,
+      audioEngineRef.current,
+      {
+        phase: currentPhase,
+        subject: lessonData.subject || 'math',
+        learnerGrade: lessonData.grade || '',
+        difficulty: lessonData.difficulty || 'moderate'
+      }
+    );
 
-const normalizeScheduledDate = (value) => {
-  if (!value) return value
-  const str = String(value)
-  const match = str.match(/^(\d{4}-\d{2}-\d{2})/)
-  return match ? match[1] : str
-}
+### 4. sidekick_pack.md (62cba6f499ec5721c393f64820dd3a72f3683faf7664c7fb191f106588f07f56)
+- bm25: -6.8307 | entity_overlap_w: 4.50 | adjusted: -7.9557 | relevance: 1.0000
 
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const learnerId = searchParams.get('learnerId')
+# Cohere Pack (Sidekick Recon) - MsSonoma
 
-const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
+Project: freehands
+Profile: MsSonoma
+Mode: standard
+
+Prompt (original):
+```text
+Ask Ms. Sonoma feature: UI label 'Ask', askState, and route '/api/sonoma' or '/api/ask'. Find where Ask request is sent, where failures are caught, and where a generic fallback answer string is returned.
+```
+
+Filter terms used:
+```text
+/api/ask
+/api/sonoma
+```
+# Context Pack
+
+**Project**: freehands
+**Profile**: MsSonoma
+**Mode**: standard
+
+## Pack Contract
+
+This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
+
+## Question
+
+/api/ask /api/sonoma
+
+## Forced Context
+
+(none)
+
+## Ranked Evidence
+
+### 1. src/app/session/v2/SessionPageV2.jsx (efc0329e2f85d6b17d0b7ee7e155b5d6c77ac07573690feb4eed11d199c6cfbc)
+- bm25: -9.0989 | relevance: 1.0000
+
+if (!action) return null;
+
+if (action === 'ask') {
+              const phaseAlias = normalizePhaseAlias(currentPhase);
+              const hasActiveQuestion = (
+                (phaseAlias === 'comprehension' && !!currentComprehensionQuestion) ||
+                (phaseAlias === 'exercise' && !!currentExerciseQuestion) ||
+                (phaseAlias === 'worksheet' && !!currentWorksheetQuestion)
+              );
+
+### 5. src/app/session/v2/SessionPageV2.jsx (b4571a43828d791b7d7ec7f305119d4beb102d5b0dcbd0fcdae772a9558fa324)
+- bm25: -6.6554 | entity_overlap_w: 2.00 | adjusted: -7.1554 | relevance: 1.0000
+
+import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import jsPDF from 'jspdf';
+import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseClient } from '@/app/lib/supabaseClient';
+import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi';
+import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus';
+import { loadPhaseTimersForLearner } from '../utils/phaseTimerDefaults';
+import SessionTimer from '../components/SessionTimer';
+import { AudioEngine } from './AudioEngine';
+import { TeachingController } from './TeachingController';
+import { ComprehensionPhase } from './ComprehensionPhase';
+import { ExercisePhase } from './ExercisePhase';
+import { WorksheetPhase } from './WorksheetPhase';
+import { TestPhase } from './TestPhase';
+import { ClosingPhase } from './ClosingPhase';
+import { DiscussionPhase } from './DiscussionPhase';
+import { PhaseOrchestrator } from './PhaseOrchestrator';
+import { SnapshotService } from './SnapshotService';
+import { TimerService } from './TimerService';
+import { KeyboardService } from './KeyboardService';
+import { OpeningActionsController } from './OpeningActionsController';
+import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
+import FullscreenPlayTimerOverlay from './FullscreenPlayTimerOverlay';
+import TimerControlOverlay from '../components/TimerControlOverlay';
+import GamesOverlay from '../components/games/GamesOverlay';
+import EventBus from './EventBus';
+import { loadLesson, fetchTTS } from './services';
+import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech, ensureQuestionMark } from '../utils/questionFormatting';
+import { getSnapshotStorageKey } from '../utils
+
+### 6. src/app/session/v2/SessionPageV2.jsx (07ad42162efda0bdf14eaf0d58adc03d97e50b852d98d4c1c8c14c86f72fb7c7)
+- bm25: -6.5800 | entity_overlap_w: 2.00 | adjusted: -7.0800 | relevance: 1.0000
+
+// End tracked session (so Calendar history can detect this completion).
+      try { stopSessionPolling?.(); } catch {}
+      try {
+        await endTrackedSession('completed', {
+          source: 'session-v2',
+          test_percentage: testGrade?.percentage ?? null,
+        });
+      } catch {}
+      
+      // Navigate to lessons page
+      console.log('[SessionPageV2] Attempting navigation to lessons page');
+      console.log('[SessionPageV2] router:', router);
+      console.log('[SessionPageV2] router.push type:', typeof router?.push);
+      try {
+        if (router && typeof router.push === 'function') {
+          console.log('[SessionPageV2] Using router.push');
+          router.push('/learn/lessons');
+        } else if (typeof window !== 'undefined') {
+          console.log('[SessionPageV2] Using window.location.href');
+          window.location.href = '/learn/lessons';
+        }
+      } catch (err) {
+        console.error('[SessionPageV2] Navigation error:', err);
+        if (typeof window !== 'undefined') {
+          try { window.location.href = '/learn/lessons'; } catch {}
+        }
+      }
+    });
+    
+    return () => {
+      orchestrator.destroy();
+      orchestratorRef.current = null;
+    };
+  }, [lessonData]);
+
+// Initialize OpeningActionsController once audio is ready and lesson is loaded
+  useEffect(() => {
+    if (!lessonData || !audioReady || !audioEngineRef.current || !eventBusRef.current) return;
+
+const openingController = new OpeningActionsController(
+      eventBusRef.current,
+      audioEngineRef.current,
+      {
+        phase: currentPhase,
+        subject: lessonData.subject || 'math',
+        learnerGrade: lessonData.grade || '',
+        difficulty: lessonData.difficulty || 'moderate'
+      }
+    );
+
+### 7. sidekick_pack.md (3db9d93cf97448826f5760a99fa44792b7c648ffd7e4215ecee227454f2dfd87)
+- bm25: -5.8879 | relevance: 1.0000
+
+When making code/doc changes “for real”:
+1. Ensure head is current for touched files (pick one):
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere ingest <file-or-folder> --project freehands [--recursive]`
+   - or `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sync --project freehands` if the working tree may have drifted
+2. Prefer generating and applying a change pack linked to evidence:
+   - edit file(s) in working tree
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere change new --project freehands --file <relpath> --pack pack.md --out change.json --summary "..."`
+   - restore the base file(s) to match DB head (clean base), then:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere apply --project freehands change.json`
+3. If anything goes wrong, rollback by change id:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere rollback --project freehands --change-id <id>`
+4. Run integrity checks after non-trivial work:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere doctor --project freehands`
+
+### 8. sidekick_pack.md (8012a83541b70abece362659818fad1353c952f08d764fe8ef9842ae2c0b9c2c)
+- bm25: -5.8879 | relevance: 1.0000
+
+When making code/doc changes “for real”:
+1. Ensure head is current for touched files (pick one):
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere ingest <file-or-folder> --project freehands [--recursive]`
+   - or `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sync --project freehands` if the working tree may have drifted
+2. Prefer generating and applying a change pack linked to evidence:
+   - edit file(s) in working tree
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere change new --project freehands --file <relpath> --pack pack.md --out change.json --summary "..."`
+   - restore the base file(s) to match DB head (clean base), then:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere apply --project freehands change.json`
+3. If anything goes wrong, rollback by change id:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere rollback --project freehands --change-id <id>`
+4. Run integrity checks after non-trivial work:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere doctor --project freehands`
+
+### 9. .github/copilot-instructions.md (5881b38a2bf6f0706d17a2c60153172fdd6bb3f02d202b178ebc202c9e440520)
+- bm25: -5.8818 | relevance: 1.0000
+
+When making code/doc changes “for real”:
+1. Ensure head is current for touched files (pick one):
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere ingest <file-or-folder> --project freehands [--recursive]`
+   - or `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sync --project freehands` if the working tree may have drifted
+2. Prefer generating and applying a change pack linked to evidence:
+   - edit file(s) in working tree
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere change new --project freehands --file <relpath> --pack pack.md --out change.json --summary "..."`
+   - restore the base file(s) to match DB head (clean base), then:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere apply --project freehands change.json`
+3. If anything goes wrong, rollback by change id:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere rollback --project freehands --change-id <id>`
+4. Run integrity checks after non-trivial work:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere doctor --project freehands`
+
+### 10. sidekick_pack.md (afc8763c488e753d7c07b37f89c1d9e11ffe28a79b3592bea4c9cd0b16a8bcd2)
+- bm25: -5.5042 | entity_overlap_w: 1.50 | adjusted: -5.8792 | relevance: 1.0000
+
+Treat Cohere as a local CLI + local DB (under `%USERPROFILE%\.coherence_apps\ms_sonoma\` for this workspace), not a networked service.
+- If the user asks whether Cohere is "online", interpret it as: "can we run the local `py -m cohere ...` commands here?"
+- Do not claim any network connectivity to external services.
+
+### 21. sidekick_pack_lessons_prefetch.md (acdde77a2d3b5ec1a0af546e25a2c87a2064ebc08b2186858c8afbfd447eb4c2)
+- bm25: -5.0017 | relevance: 1.0000
+
+When answering architecture questions or planning changes:
+1. Build an evidence pack first:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere pack "<question>" --project freehands --profile MsSonoma --out pack.md`
+2. Use the pack’s chunk IDs as evidence anchors (the IDs are the provenance tokens).
+
+### 22. src/app/learn/lessons/page.js (d5beeb52789ee4491df2fa817b4e72a78686e5be0df840fd9c851365b185ecd6)
+- bm25: -4.5604 | entity_overlap_w: 1.50 | adjusted: -4.9354 | relevance: 1.0000
+
+useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await fetch('/api/sonoma', { method: 'GET', headers: { 'Accept': 'application/json' } })
+      } catch {}
+    })()
+    return () => { mounted = false }
+  }, [])
+
+### 11. sidekick_pack_restore_medal_emojis.md (111a7a436303fda544c51432b8f742ed74566b8a33c1bcc166b2669609742d5c)
+- bm25: -5.6248 | entity_overlap_w: 1.00 | adjusted: -5.8748 | relevance: 1.0000
+
+const openingController = new OpeningActionsController(
+      eventBusRef.current,
+      audioEngineRef.current,
+      {
+        phase: currentPhase,
+        subject: lessonData.subject || 'math',
+        learnerGrade: lessonData.grade || '',
+        difficulty: lessonData.difficulty || 'moderate'
+      }
+    );
+
+### 2. src/app/session/v2/SessionPageV2.jsx (52f9de32315ef936bfe4cec88c67ac9dd7bc5afb09c7dce74279bab6de4cafb9)
+- bm25: -7.6672 | entity_overlap_w: 1.50 | adjusted: -8.0422 | relevance: 1.0000
+
+const handleCancelTakeover = useCallback(() => {
+    setShowTakeoverDialog(false);
+    setConflictingSession(null);
+    if (typeof window !== 'undefined') {
+      window.location.href = '/learn/lessons';
     }
+  }, []);
 
-### 2. sidekick_pack_planned_all.md (6674f39b1a48416b009443ca2cf88e758108c2e528bc2acccb1cd9fa3f4d0107)
-- bm25: -4.9713 | entity_overlap_w: 7.50 | adjusted: -6.8463 | relevance: 1.0000
+### 3. src/app/learn/awards/page.js (4d8cce309e0f536106072dd471d5d29bbc535b069533182488b0980b7295cb15)
+- bm25: -7.5123 | relevance: 1.0000
 
-# Cohere Pack (Sidekick Recon) - MsSonoma
+### 15. sidekick_pack.md (5520022241346e08d00cabde2f7310e6f40cb0b9857c7b6369925665dc906bbd)
+- bm25: -4.5854 | entity_overlap_w: 3.00 | adjusted: -5.3354 | relevance: 1.0000
 
-Project: freehands
-Profile: MsSonoma
-Mode: standard
+### 12. src/app/session/page.js (78de9349e84daae9468d8a363f3e5898f0db5accdada63da46f61e57ebb275fc)
+- bm25: -5.0123 | entity_overlap_w: 3.00 | adjusted: -5.7623 | relevance: 1.0000
 
-Prompt (original):
-```text
-Implement includeAll=1 for /api/planned-lessons similar to /api/lesson-schedule and update CalendarOverlay to fetch planned lessons with includeAll to surface legacy 2026 planned data without wiping 2025.
-```
+// Always include innertext when provided so the backend can log/use it
+  let { res, data } = await attempt({ instruction: userContent, innertext });
 
-Filter terms used:
-```text
-/api/lesson-schedule
-/api/planned-lessons
-CalendarOverlay
-```
-# Context Pack
+// Dev-only: sometimes the route compiles on first touch and returns 404 briefly.
+      // If that happens, pre-warm the route, wait a beat, and retry (forcing full system registration).
+      if (res && res.status === 404) {
+        // Pre-warm the route (GET) to trigger compilation/registration in dev
+        try { await fetch('/api/sonoma', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(()=>{}) } catch {}
+        await new Promise(r => setTimeout(r, 900));
+  ({ res, data } = await attempt({ instruction: userContent, innertext }));
+        // If still 404, wait a bit longer and try one more time
+        if (res && res.status === 404) {
+          try { await fetch('/api/sonoma', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(()=>{}) } catch {}
+          await new Promise(r => setTimeout(r, 1200));
+          ({ res, data } = await attempt({ instruction: userContent, innertext }));
+        }
+      }
 
-**Project**: freehands
-**Profile**: MsSonoma
-**Mode**: standard
+// Stateless call: server receives only the instruction text
 
-## Pack Contract
+if (!res.ok) {
+        throw new Error(`Request failed with ${res.status}`);
+      }
 
-This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
+### 13. sidekick_pack.md (92af34da0fc35394ace70c7fc1cf41334a0b0b123a906363a3e2fc9d20e25a18)
+- bm25: -4.9018 | entity_overlap_w: 3.00 | adjusted: -5.6518 | relevance: 1.0000
 
-## Question
+// Always include innertext when provided so the backend can log/use it
+  let { res, data } = await attempt({ instruction: userContent, innertext });
 
-/api/lesson-schedule /api/planned-lessons CalendarOverlay
+// Dev-only: sometimes the route compiles on first touch and returns 404 briefly.
+      // If that happens, pre-warm the route, wait a beat, and retry (forcing full system registration).
+      if (res && res.status === 404) {
+        // Pre-warm the route (GET) to trigger compilation/registration in dev
+        try { await fetch('/api/sonoma', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(()=>{}) } catch {}
+        await new Promise(r => setTimeout(r, 900));
+  ({ res, data } = await attempt({ instruction: userContent, innertext }));
+        // If still 404, wait a bit longer and try one more time
+        if (res && res.status === 404) {
+          try { await fetch('/api/sonoma', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(()=>{}) } catch {}
+          await new Promise(r => setTimeout(r, 1200));
+          ({ res, data } = await attempt({ instruction: userContent, innertext }));
+        }
+      }
 
-## Forced Context
+// Stateless call: server receives only the instruction text
 
-(none)
+if (!res.ok) {
+        throw new Error(`Request failed with ${res.status}`);
+      }
 
-## Ranked Evidence
+### 6. .github/copilot-instructions.md (5881b38a2bf6f0706d17a2c60153172fdd6bb3f02d202b178ebc202c9e440520)
+- bm25: -6.7265 | relevance: 1.0000
 
-### 1. sidekick_pack_calendar.md (e1260b37624b2715be0d2aa874920875ac6bf0e06f93fe12ab2bcb2346976220)
-- bm25: -8.3892 | relevance: 1.0000
+### 14. sidekick_pack_lessons_prefetch.md (44ce5c2663d9e1d524aded1bd7f88fcf4f33b05e9623c281df9df6b0c20e17f3)
+- bm25: -5.5742 | relevance: 1.0000
 
-# Cohere Pack (Sidekick Recon) - MsSonoma
+### 39. .github/copilot-instructions.md (5881b38a2bf6f0706d17a2c60153172fdd6bb3f02d202b178ebc202c9e440520)
+- bm25: -12.6819 | relevance: 1.0000
 
-Project: freehands
-Profile: MsSonoma
-Mode: standard
+When making code/doc changes “for real”:
+1. Ensure head is current for touched files (pick one):
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere ingest <file-or-folder> --project freehands [--recursive]`
+   - or `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sync --project freehands` if the working tree may have drifted
+2. Prefer generating and applying a change pack linked to evidence:
+   - edit file(s) in working tree
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere change new --project freehands --file <relpath> --pack pack.md --out change.json --summary "..."`
+   - restore the base file(s) to match DB head (clean base), then:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere apply --project freehands change.json`
+3. If anything goes wrong, rollback by change id:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere rollback --project freehands --change-id <id>`
+4. Run integrity checks after non-trivial work:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere doctor --project freehands`
 
-Prompt (original):
-```text
-Facilitator calendar page: for learner Emma, where do 2026 scheduled and planned lessons come from? Identify the APIs/tables used (lesson_schedule vs lesson_schedule_keys vs planned_lessons or others) and how the UI merges/backfills 2025/2026. Provide entrypoints and key functions.
-```
+### 40. sidekick_pack_mentor_schema.md (7b9e34a5f9903cdaa3183773337bc2ab39af5dc019f6678858d9220d46e15e9b)
+- bm25: -12.6688 | relevance: 1.0000
 
-Filter terms used:
-```text
-lesson_schedule
-lesson_schedule_keys
-planned_lessons
-```
-# Context Pack
+let events = []
+    try {
+      let eventsQueryBase = () => {
+        let q = supabase
+          .from('lesson_session_events')
+          .select('id, session_id, lesson_id, event_type, occurred_at, metadata')
+          .eq('learner_id', learnerId)
 
-**Project**: freehands
-**Profile**: MsSonoma
-**Mode**: standard
-
-## Pack Contract
+### 15. sidekick_pack_lessons_prefetch.md (ad20abe9e3d1b949488a8586540eecc8eee24eb2e8302e04d7e4360a6f6e4d13)
+- bm25: -5.4229 | relevance: 1.0000
 
 This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
 
@@ -157,802 +414,8 @@ lesson_schedule lesson_schedule_keys planned_lessons
 
 ## Ranked Evidence
 
-### 3. sidekick_pack_planned_all.md (39f3510b1ceb8c2919ae1bacccf9ee18331d403e12030c6952a1d5dc46408cc2)
-- bm25: -5.6201 | entity_overlap_w: 1.50 | adjusted: -5.9951 | relevance: 1.0000
-
-if (rows.length > 0) {
-      const { error: insertError } = await adminSupabase
-        .from('planned_lessons')
-        .insert(rows)
-
-if (insertError) {
-        return NextResponse.json({ error: insertError.message }, { status: 500 })
-      }
-    }
-
-return NextResponse.json({ success: true })
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function DELETE(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const learnerId = searchParams.get('learnerId')
-
-const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
-    }
-
-### 6. sidekick_pack_calendar.md (dfcc40071b5fb2d53102fb19ed027d8a41f883bcdb5edd06002fe638d5f372ea)
-- bm25: -6.5927 | entity_overlap_w: 1.50 | adjusted: -6.9677 | relevance: 1.0000
-
-await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          learnerId: selectedLearnerId,
-          plannedLessons: lessons
-        })
-      })
-    } catch (err) {
-      console.error('Error saving planned lessons:', err)
-    }
-  }
-
-### 7. src/app/facilitator/calendar/LessonPlanner.jsx (6b168bfbed05e5a77c41e13237992b2579bfb9cb2101795ff35d795651c6016e)
-- bm25: -6.2972 | entity_overlap_w: 1.50 | adjusted: -6.6722 | relevance: 1.0000
-
-if (!token) {
-        setGenerating(false)
-        return
-      }
-
-### 4. src/app/api/planned-lessons/route.js (42127223aa1a5eb61a4fad6c882c523914f98e95c7e9e7d6b8000420836b7753)
-- bm25: -5.5100 | entity_overlap_w: 1.30 | adjusted: -5.8350 | relevance: 1.0000
-
-// API endpoint for planned lessons management
-import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-const normalizeScheduledDate = (value) => {
-  if (!value) return value
-  const str = String(value)
-  const match = str.match(/^(\d{4}-\d{2}-\d{2})/)
-  return match ? match[1] : str
-}
-
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const learnerId = searchParams.get('learnerId')
-
-const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
-    }
-
-const token = authHeader.replace('Bearer ', '').trim()
-    if (!token) {
-      return NextResponse.json({ error: 'Invalid authorization token' }, { status: 401 })
-    }
-    
-    const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false }
-    })
-    
-    const { data: { user }, error: userError } = await adminSupabase.auth.getUser(token)
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-if (!learnerId) {
-      return NextResponse.json({ error: 'learnerId required' }, { status: 400 })
-    }
-
-// Verify the learner belongs to this facilitator/owner.
-    // Planned lessons are treated as per-learner data (not per-facilitator), but still require authorization.
-    const { data: learner, error: learnerError } = await adminSupabase
-      .from('learners')
-      .select('id')
-      .eq('id', learnerId)
-      .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
-      .maybeSingle()
-
-### 5. sidekick_pack_calendar.md (c9724a6488ce742416aba0ad09a8db8b7ab8f07ded8511ae49cd7dec9f4bde73)
-- bm25: -5.6845 | relevance: 1.0000
-
-let query = adminSupabase
-      .from('lesson_schedule')
-      .select('*')
-      .eq('learner_id', learnerId)
-      .order('scheduled_date', { ascending: true })
-
-### 8. src/app/api/planned-lessons/route.js (fae5d8e8b9782672af1af9db6f3d3856e36ac64d40a8a683ceae396338a9a040)
-- bm25: -3.7919 | relevance: 1.0000
-
-return NextResponse.json({ plannedLessons })
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-### 9. src/app/api/planned-lessons/route.js (492eab0ea579c45b09245ffe7fe8046aba5f174397100e6adca1fe9c36f1e6d8)
-- bm25: -3.5123 | entity_overlap_w: 1.00 | adjusted: -3.7623 | relevance: 1.0000
-
-// Insert all the planned lessons
-    const rows = []
-    for (const [dateStr, lessons] of Object.entries(plannedLessons)) {
-      const normalizedDate = normalizeScheduledDate(dateStr)
-      for (const lesson of lessons) {
-        rows.push({
-          facilitator_id: user.id,
-          learner_id: learnerId,
-          scheduled_date: normalizedDate,
-          lesson_data: lesson
-        })
-      }
-    }
-
-if (rows.length > 0) {
-      const { error: insertError } = await adminSupabase
-        .from('planned_lessons')
-        .insert(rows)
-
-if (insertError) {
-        return NextResponse.json({ error: insertError.message }, { status: 500 })
-      }
-    }
-
-return NextResponse.json({ success: true })
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function DELETE(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const learnerId = searchParams.get('learnerId')
-
-const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
-    }
-
-### 6. sidekick_pack_calendar.md (3fb65e640cb1ee413c932022c5ef134a374d288490dd0ff49a1fe9a0d27c60da)
-- bm25: -5.2607 | entity_overlap_w: 1.30 | adjusted: -5.5857 | relevance: 1.0000
-
-// Verify the learner belongs to this facilitator/owner
-    const { data: learner, error: learnerError } = await adminSupabase
-      .from('learners')
-      .select('id')
-      .eq('id', learnerId)
-      .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
-      .maybeSingle()
-
-### 16. src/app/api/planned-lessons/route.js (42127223aa1a5eb61a4fad6c882c523914f98e95c7e9e7d6b8000420836b7753)
-- bm25: -3.3066 | relevance: 1.0000
-
-// API endpoint for planned lessons management
-import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-const normalizeScheduledDate = (value) => {
-  if (!value) return value
-  const str = String(value)
-  const match = str.match(/^(\d{4}-\d{2}-\d{2})/)
-  return match ? match[1] : str
-}
-
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const learnerId = searchParams.get('learnerId')
-
-const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
-    }
-
-const token = authHeader.replace('Bearer ', '').trim()
-    if (!token) {
-      return NextResponse.json({ error: 'Invalid authorization token' }, { status: 401 })
-    }
-    
-    const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false }
-    })
-    
-    const { data: { user }, error: userError } = await adminSupabase.auth.getUser(token)
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-### 7. sidekick_pack_planned_all.md (222f12cf61f748251a3c55b61f04a417bbf6d36b0a671960c3bb15c0e3ce026d)
-- bm25: -5.1503 | entity_overlap_w: 1.50 | adjusted: -5.5253 | relevance: 1.0000
-
-await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          learnerId,
-          plannedLessons: lessons
-        })
-      })
-    } catch (err) {
-      alert('Failed to save planned lessons')
-    }
-  }
-
-const loadPlannedForLearner = useCallback(async (targetLearnerId, opts = {}) => {
-    if (!targetLearnerId || targetLearnerId === 'none') {
-      devWarn('planned: no learner selected', { targetLearnerId })
-      setPlannedLessons({})
-      plannedLoadedForLearnerRef.current = null
-      plannedLoadedAtRef.current = 0
-      return
-    }
-
-const shouldApplyToState = () => activeLearnerIdRef.current === targetLearnerId
-
-### 4. sidekick_pack_calendar.md (e4850ca724432dcd515d17e688953f4328c7d15cbaa7795617e091d25879d8e8)
-- bm25: -6.4466 | entity_overlap_w: 2.50 | adjusted: -7.0716 | relevance: 1.0000
-
-if (token) {
-        setAuthToken((prev) => (prev === token ? prev : token))
-      }
-
-if (!token) {
-        devWarn('schedule: missing auth token')
-        return
-      }
-
-// Get all scheduled lessons for this learner
-      let response
-      try {
-        response = await fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}&includeAll=1`, {
-          headers: {
-            'authorization': `Bearer ${token}`
-          },
-          cache: 'no-store',
-          signal: controller.signal
-        })
-      } finally {
-        // scheduleTimeoutId cleared in finally
-      }
-
-devWarn(`schedule: response ms=${Date.now() - startedAtMs} status=${String(response?.status)} ok=${String(response?.ok)}`)
-
-### 8. src/app/api/planned-lessons/route.js (492eab0ea579c45b09245ffe7fe8046aba5f174397100e6adca1fe9c36f1e6d8)
-- bm25: -5.3976 | relevance: 1.0000
-
-// Insert all the planned lessons
-    const rows = []
-    for (const [dateStr, lessons] of Object.entries(plannedLessons)) {
-      const normalizedDate = normalizeScheduledDate(dateStr)
-      for (const lesson of lessons) {
-        rows.push({
-          facilitator_id: user.id,
-          learner_id: learnerId,
-          scheduled_date: normalizedDate,
-          lesson_data: lesson
-        })
-      }
-    }
-
-if (rows.length > 0) {
-      const { error: insertError } = await adminSupabase
-        .from('planned_lessons')
-        .insert(rows)
-
-if (insertError) {
-        return NextResponse.json({ error: insertError.message }, { status: 500 })
-      }
-    }
-
-return NextResponse.json({ success: true })
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function DELETE(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const learnerId = searchParams.get('learnerId')
-
-const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
-    }
-
-const token = authHeader.replace('Bearer ', '').trim()
-    if (!token) {
-      return NextResponse.json({ error: 'Invalid authorization token' }, { status: 401 })
-    }
-    
-    const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false }
-    })
-    
-    const { data: { user }, error: userError } = await adminSupabase.auth.getUser(token)
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-if (!learnerId) {
-      return NextResponse.json({ error: 'learnerId required' }, { status: 400 })
-    }
-
-### 9. sidekick_pack_calendar.md (678a099578ce7dfb438cb5f5fdf33a5ee0a1659724364fe1bd4e3d78e5de8141)
-- bm25: -4.3868 | entity_overlap_w: 4.00 | adjusted: -5.3868 | relevance: 1.0000
-
-### 4. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (78704a7836d4dd1067eb47baa5b1f38c321b2794cfd9945f1afc04804cd08e34)
-- bm25: -4.1971 | relevance: 1.0000
-
-const persistPlannedForDate = async (dateStr, lessonsForDate) => {
-    if (!learnerId || learnerId === 'none') return false
-
-try {
-      const token = await getBearerToken()
-      if (!token) throw new Error('Not authenticated')
-
-const response = await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          learnerId,
-          plannedLessons: { [dateStr]: lessonsForDate }
-        })
-      })
-
-const js = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(js?.error || 'Failed to save planned lessons')
-      return true
-    } catch (err) {
-      alert('Failed to save planned lessons')
-      return false
-    }
-  }
-
-const savePlannedLessons = async (lessons) => {
-    setPlannedLessons(lessons)
-
-if (!learnerId || learnerId === 'none') return
-
-try {
-      const token = await getBearerToken()
-      if (!token) return
-
-await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          learnerId,
-          plannedLessons: lessons
-        })
-      })
-    } catch (err) {
-      alert('Failed to save planned lessons')
-    }
-  }
-
-### 10. src/app/api/lesson-schedule/route.js (b89acc0fde5033863fadb63ea3f2943978cd555f4c47181c1e5d95945acef434)
-- bm25: -5.0500 | entity_overlap_w: 1.30 | adjusted: -5.3750 | relevance: 1.0000
-
-// API endpoint for lesson schedule management
-import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
-import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-const normalizeScheduledDate = (value) => {
-  if (!value) return value
-  const str = String(value)
-
-// Handles:
-  // - YYYY-MM-DD
-  // - YYYY-M-D
-  // - YYYY-MM-DDTHH:mm:ss...
-  // - YYYY-M-D HH:mm:ss...
-  const match = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
-  if (match) {
-    const yyyy = match[1]
-    const mm = String(match[2]).padStart(2, '0')
-    const dd = String(match[3]).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd}`
-  }
-
-return str
-}
-
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const learnerId = searchParams.get('learnerId')
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
-    const action = searchParams.get('action') // 'active' to get today's active lessons
-    const includeAll = searchParams.get('includeAll') === '1'
-
-const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
-    }
-
-### 11. sidekick_pack_planned_all.md (0d7f194b83ef5bdc5e78a390cba7723066ef7cf64d03931e27377d8eb2f980e5)
-- bm25: -4.3666 | entity_overlap_w: 4.00 | adjusted: -5.3666 | relevance: 1.0000
-
-const savePlannedLessons = async (lessons) => {
-    setPlannedLessons(lessons)
-
-if (!learnerId || learnerId === 'none') return
-
-try {
-      const token = await getBearerToken()
-      if (!token) return
-
-await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          learnerId,
-          plannedLessons: lessons
-        })
-      })
-    } catch (err) {
-      alert('Failed to save planned lessons')
-    }
-  }
-
-### 3. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (9f29236ecc74aa48ec884981627a104c1498126b3b9e9493d8af7ef3de53abad)
-- bm25: -6.9638 | entity_overlap_w: 3.00 | adjusted: -7.7138 | relevance: 1.0000
-
-const persistPlannedForDate = async (dateStr, lessonsForDate) => {
-    if (!learnerId || learnerId === 'none') return false
-
-try {
-      const token = await getBearerToken()
-      if (!token) throw new Error('Not authenticated')
-
-const response = await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          learnerId,
-          plannedLessons: { [dateStr]: lessonsForDate }
-        })
-      })
-
-const js = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(js?.error || 'Failed to save planned lessons')
-      return true
-    } catch (err) {
-      alert('Failed to save planned lessons')
-      return false
-    }
-  }
-
-const savePlannedLessons = async (lessons) => {
-    setPlannedLessons(lessons)
-
-if (!learnerId || learnerId === 'none') return
-
-### 12. sidekick_pack_calendar.md (132361974aedaf3b3f7a3f3e8fea1d6a937d1b672541bd5b645de3302307cbf3)
-- bm25: -4.9692 | entity_overlap_w: 1.30 | adjusted: -5.2942 | relevance: 1.0000
-
-// API endpoint for lesson schedule management
-import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
-import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-const normalizeScheduledDate = (value) => {
-  if (!value) return value
-  const str = String(value)
-
-// Handles:
-  // - YYYY-MM-DD
-  // - YYYY-M-D
-  // - YYYY-MM-DDTHH:mm:ss...
-  // - YYYY-M-D HH:mm:ss...
-  const match = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
-  if (match) {
-    const yyyy = match[1]
-    const mm = String(match[2]).padStart(2, '0')
-    const dd = String(match[3]).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd}`
-  }
-
-return str
-}
-
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const learnerId = searchParams.get('learnerId')
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
-    const action = searchParams.get('action') // 'active' to get today's active lessons
-    const includeAll = searchParams.get('includeAll') === '1'
-
-const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
-    }
-
-### 28. src/app/api/lesson-schedule/route.js (4e9a18239af15ff105fe40d106e9f7344be874ac858258992abe3bd7cc9ddb7b)
-- bm25: -2.7998 | relevance: 1.0000
-
-### 13. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (9f29236ecc74aa48ec884981627a104c1498126b3b9e9493d8af7ef3de53abad)
-- bm25: -4.3298 | entity_overlap_w: 3.00 | adjusted: -5.0798 | relevance: 1.0000
-
-const persistPlannedForDate = async (dateStr, lessonsForDate) => {
-    if (!learnerId || learnerId === 'none') return false
-
-try {
-      const token = await getBearerToken()
-      if (!token) throw new Error('Not authenticated')
-
-const response = await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          learnerId,
-          plannedLessons: { [dateStr]: lessonsForDate }
-        })
-      })
-
-const js = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(js?.error || 'Failed to save planned lessons')
-      return true
-    } catch (err) {
-      alert('Failed to save planned lessons')
-      return false
-    }
-  }
-
-const savePlannedLessons = async (lessons) => {
-    setPlannedLessons(lessons)
-
-if (!learnerId || learnerId === 'none') return
-
-try {
-      const token = await getBearerToken()
-      if (!token) return
-
-await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          learnerId,
-          plannedLessons: lessons
-        })
-      })
-    } catch (err) {
-      alert('Failed to save planned lessons')
-    }
-  }
-
-const loadPlannedForLearner = useCallback(async (targetLearnerId, opts = {}) => {
-    if (!targetLearnerId || targetLearnerId === 'none') {
-      devWarn('planned: no learner selected', { targetLearnerId })
-      setPlannedLessons({})
-      plannedLoadedForLearnerRef.current = null
-      plannedLoadedAtRef.current = 0
-      return
-    }
-
-const shouldApplyToState = () => activeLearnerIdRef.current === targetLearnerId
-
-### 14. sidekick_pack_planned_all.md (f68a0251f9ab67ce11f7b25b5827df78d806ab6f217c4519fb652c1f1d61c955)
-- bm25: -4.8911 | relevance: 1.0000
-
-// Insert all the planned lessons
-    const rows = []
-    for (const [dateStr, lessons] of Object.entries(plannedLessons)) {
-      const normalizedDate = normalizeScheduledDate(dateStr)
-      for (const lesson of lessons) {
-        rows.push({
-          facilitator_id: user.id,
-          learner_id: learnerId,
-          scheduled_date: normalizedDate,
-          lesson_data: lesson
-        })
-      }
-    }
-
-if (rows.length > 0) {
-      const { error: insertError } = await adminSupabase
-        .from('planned_lessons')
-        .insert(rows)
-
-if (insertError) {
-        return NextResponse.json({ error: insertError.message }, { status: 500 })
-      }
-    }
-
-return NextResponse.json({ success: true })
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function DELETE(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const learnerId = searchParams.get('learnerId')
-
-const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
-    }
-
-const token = authHeader.replace('Bearer ', '').trim()
-    if (!token) {
-      return NextResponse.json({ error: 'Invalid authorization token' }, { status: 401 })
-    }
-    
-    const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false }
-    })
-    
-    const { data: { user }, error: userError } = await adminSupabase.auth.getUser(token)
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-if (!learnerId) {
-      return NextResponse.json({ error: 'learnerId required' }, { status: 400 })
-    }
-
-### 15. sidekick_pack_planned_all.md (ccfc16941934d1c73cb9b713bc34b9edbbc5377b8a728c9ebde39fbc6cd06222)
-- bm25: -4.7739 | relevance: 1.0000
-
-let lessonContext = []
-      let curriculumPrefs = {}
-
-// Build chronological lesson history with scores
-      if (historyRes.ok) {
-        const history = await historyRes.json()
-        let medals = {}
-        
-        // Get medals if available
-        if (medalsRes.ok) {
-          medals = await medalsRes.json()
-        }
-        
-        // Completed lessons with scores
-        const completed = (history.sessions || [])
-          .filter(s => s.status === 'completed')
-          .map(s => ({
-            name: s.lesson_id,
-            date: s.ended_at,
-            status: 'completed',
-            score: medals[s.lesson_id]?.bestPercent || null
-          }))
-
-// Incomplete lessons
-        const incomplete = (history.sessions || [])
-          .filter(s => s.status === 'incomplete')
-          .map(s => ({
-            name: s.lesson_id,
-            date: s.started_at,
-            status: 'incomplete'
-          }))
-
-lessonContext = [...completed, ...incomplete]
-      }
-
-### 8. src/app/api/planned-lessons/route.js (13ab95e2c88ec5cc604a496e80fd74f45cb5f1a254133d4b8bd7639cc043e74b)
-- bm25: -6.5669 | relevance: 1.0000
-
-// Delete existing planned lessons ONLY for dates in the new plan
-    // This allows multiple non-overlapping plans to coexist
-    if (newPlanDates.length > 0) {
-      await adminSupabase
-        .from('planned_lessons')
-        .delete()
-        .eq('learner_id', learnerId)
-        .eq('facilitator_id', user.id)
-        .in('scheduled_date', newPlanDates)
-    }
-
-### 9. sidekick_pack_calendar.md (2a3e86ef656681a0f342082ad621f01e89dfc9483227c5d812966dc60315f5b5)
-- bm25: -6.1697 | entity_overlap_w: 1.50 | adjusted: -6.5447 | relevance: 1.0000
-
-### 16. sidekick_pack_calendar.md (e4850ca724432dcd515d17e688953f4328c7d15cbaa7795617e091d25879d8e8)
-- bm25: -4.5044 | entity_overlap_w: 1.00 | adjusted: -4.7544 | relevance: 1.0000
-
-if (token) {
-        setAuthToken((prev) => (prev === token ? prev : token))
-      }
-
-if (!token) {
-        devWarn('schedule: missing auth token')
-        return
-      }
-
-// Get all scheduled lessons for this learner
-      let response
-      try {
-        response = await fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}&includeAll=1`, {
-          headers: {
-            'authorization': `Bearer ${token}`
-          },
-          cache: 'no-store',
-          signal: controller.signal
-        })
-      } finally {
-        // scheduleTimeoutId cleared in finally
-      }
-
-devWarn(`schedule: response ms=${Date.now() - startedAtMs} status=${String(response?.status)} ok=${String(response?.ok)}`)
-
-if (!response.ok) {
-        const bodyText = await response.text().catch(() => '')
-        devWarn('schedule: fetch failed', { status: response.status, body: bodyText })
-        return
-      }
-
-const result = await response.json()
-      devWarn(`schedule: parsed json ms=${Date.now() - startedAtMs}`)
-      const data = result.schedule || []
-
-### 39. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (38b221cf4f22b44a10dbd08b38788bc4d817a9dcdb503288348e7a0c64cd1a31)
-- bm25: -1.9462 | relevance: 1.0000
-
-useEffect(() => {
-    if (!learnerId || learnerId === 'none') return
-    if (!accessToken) return
-    loadCalendarData({ force: true })
-  }, [accessToken, learnerId, loadCalendarData])
-
-// If the current tab has no lessons but the other does, auto-switch tabs.
-  // This prevents the overlay from looking "empty" when (for example) only planned lessons exist.
-  useEffect(() => {
-    if (!learnerId || learnerId === 'none') return
-    if (userSelectedTabRef.current) return
-
-### 17. sidekick_pack_planned_all.md (d32ec42280065bf36096853714387cbf112aaf8b2e2e135ab2e0095a3bcb82f9)
-- bm25: -4.0115 | entity_overlap_w: 2.50 | adjusted: -4.6365 | relevance: 1.0000
+### 1. src/app/api/planned-lessons/route.js (13ab95e2c88ec5cc604a496e80fd74f45cb5f1a254133d4b8bd7639cc043e74b)
+- bm25: -4.5542 | entity_overlap_w: 1.00 | adjusted: -4.8042 | relevance: 1.0000
 
 // Delete existing planned lessons ONLY for dates in the new plan
     // This allows multiple non-overlapping plans to coexist
@@ -972,805 +435,68 @@ if (learnerError || !learner) {
       return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
     }
 
-### 2. sidekick_pack_calendar.md (678a099578ce7dfb438cb5f5fdf33a5ee0a1659724364fe1bd4e3d78e5de8141)
-- bm25: -7.0414 | entity_overlap_w: 4.00 | adjusted: -8.0414 | relevance: 1.0000
+### 4. .github/copilot-instructions.md (e52caea170745fc1683b39903882c41423525bdca8f3020661944d316c296134)
+- bm25: -23.7089 | relevance: 1.0000
 
-### 4. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (78704a7836d4dd1067eb47baa5b1f38c321b2794cfd9945f1afc04804cd08e34)
-- bm25: -4.1971 | relevance: 1.0000
+Local health-check sequence:
+- `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere --help`
+- `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere project list`
+- `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere doctor --project freehands`
 
-const persistPlannedForDate = async (dateStr, lessonsForDate) => {
-    if (!learnerId || learnerId === 'none') return false
+### 16. sidekick_pack.md (0b4bcdb3fb1454d9cdb6c11859b73491bb19c8976e6ea3279400e040e0354501)
+- bm25: -5.3232 | relevance: 1.0000
 
-try {
-      const token = await getBearerToken()
-      if (!token) throw new Error('Not authenticated')
+### 2. .github/copilot-instructions.md (e52caea170745fc1683b39903882c41423525bdca8f3020661944d316c296134)
+- bm25: -8.4272 | relevance: 1.0000
 
-const response = await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          learnerId,
-          plannedLessons: { [dateStr]: lessonsForDate }
-        })
-      })
+Local health-check sequence:
+- `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere --help`
+- `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere project list`
+- `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere doctor --project freehands`
 
-### 18. src/app/api/lesson-schedule/route.js (a4a66f7a325a73d6a8b19846f515a5433ea46cb37ffe423379030e0dd63353c6)
-- bm25: -4.2552 | entity_overlap_w: 1.30 | adjusted: -4.5802 | relevance: 1.0000
+When answering architecture questions or planning changes:
+1. Build an evidence pack first:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere pack "<question>" --project freehands --profile MsSonoma --out pack.md`
+2. Use the pack’s chunk IDs as evidence anchors (the IDs are the provenance tokens).
 
-// Get active lessons for today (used by learner view)
-    if (action === 'active' && learnerId) {
-      // Use local date, not UTC
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      const day = String(now.getDate()).padStart(2, '0')
-      const today = `${year}-${month}-${day}`
-      
-      const { data, error } = await adminSupabase
-        .from('lesson_schedule')
-        .select('lesson_key')
-        .eq('learner_id', learnerId)
-        .eq('scheduled_date', today)
+### Asking Good Pack Questions (REQUIRED)
 
-if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
-      }
+Do not ask abstract questions first. Anchor pack questions on one of:
+- Exact error text / log line
+- Route/path (e.g., `/session/discussion`, `/api/...`)
+- File name / folder name
+- Env var name
+- UI label text
+- Function/class identifier
 
-const lessons = (data || []).map(item => ({
-        ...item,
-        lesson_key: normalizeLessonKey(item.lesson_key)
-      }))
+Use these templates (copy/paste and fill in anchors):
+- "Where is `<feature>` implemented end-to-end? List entrypoints, key files, and data flow."
+- "Where is route `<route>` defined and what calls it? Include middleware and handlers."
+- "Search for the exact string `<error or label>` and show the controlling code path."
+- "What reads/writes `<data file or table>` and under what conditions?"
+- "What configuration keys/env vars control `<system>` and where are they read?"
+- "Given file `<path>`, what other modules depend on it (imports/calls) and why?"
 
-return NextResponse.json({ lessons })
-    }
+### 17. sidekick_pack.md (7936ee6e6bfaff5c1908910ce65222c1388b4421c04db68e466d160cac1cfaff)
+- bm25: -5.3220 | relevance: 1.0000
 
-// Get schedule for date range
-    if (!learnerId) {
-      return NextResponse.json({ error: 'learnerId required' }, { status: 400 })
-    }
+### 7. sidekick_pack_lessons_prefetch.md (ad20abe9e3d1b949488a8586540eecc8eee24eb2e8302e04d7e4360a6f6e4d13)
+- bm25: -6.6545 | relevance: 1.0000
 
-// Verify the learner belongs to this facilitator.
-    // (GET previously relied only on facilitator_id filtering, which can hide legacy schedule rows.)
-    const { data: learner, error: learnerError } = await adminSupabase
-      .from('learners')
-      .select('id')
-      .eq('id', learnerId)
-      .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
-      .maybeSingle()
+This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
 
-if (learnerError || !learner) {
-      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
-    }
+## Question
 
-let query = adminSupabase
-      .from('lesson_schedule')
-      .select('*')
-      .eq('learner_id', learnerId)
-      .order('scheduled_date', { ascending: true })
+lesson_schedule lesson_schedule_keys planned_lessons
 
-### 19. sidekick_pack_planned_all.md (7e6f9e099ed0bba77cc78887bd83ba39f37066930a72a67bd840f9de1f9e3b5a)
-- bm25: -4.5781 | relevance: 1.0000
+## Forced Context
 
-if (!token) {
-        setGenerating(false)
-        return
-      }
+(none)
 
-// Fetch lesson history (completed, scheduled, planned)
-      const [historyRes, medalsRes, scheduledRes, preferencesRes] = await Promise.all([
-        fetch(`/api/learner/lesson-history?learner_id=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/medals?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/lesson-schedule?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/curriculum-preferences?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } })
-      ])
+## Ranked Evidence
 
-let lessonContext = []
-      let curriculumPrefs = {}
-
-// Build chronological lesson history with scores
-      if (historyRes.ok) {
-        const history = await historyRes.json()
-        let medals = {}
-        
-        // Get medals if available
-        if (medalsRes.ok) {
-          medals = await medalsRes.json()
-        }
-        
-        // Completed lessons with scores
-        const completed = (history.sessions || [])
-          .filter(s => s.status === 'completed')
-          .map(s => ({
-            name: s.lesson_id,
-            date: s.ended_at,
-            status: 'completed',
-            score: medals[s.lesson_id]?.bestPercent || null
-          }))
-
-// Incomplete lessons
-        const incomplete = (history.sessions || [])
-          .filter(s => s.status === 'incomplete')
-          .map(s => ({
-            name: s.lesson_id,
-            date: s.started_at,
-            status: 'incomplete'
-          }))
-
-### 10. sidekick_pack_calendar.md (0265ef4f1639cb46a8abe3529dd0c20c6f5a521386f8bce166be11efa580ae7a)
-- bm25: -6.1819 | relevance: 1.0000
-
-### 20. sidekick_pack_calendar.md (77e98038566ccd4e39dcfd3877c56142ece89b144f9a0a270ec9dde83578367e)
-- bm25: -4.2235 | entity_overlap_w: 1.30 | adjusted: -4.5485 | relevance: 1.0000
-
-if (learnerError || !learner) {
-      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
-    }
-
-### 7. src/app/api/lesson-schedule/route.js (a4a66f7a325a73d6a8b19846f515a5433ea46cb37ffe423379030e0dd63353c6)
-- bm25: -3.2999 | entity_overlap_w: 2.00 | adjusted: -3.7999 | relevance: 1.0000
-
-// Get active lessons for today (used by learner view)
-    if (action === 'active' && learnerId) {
-      // Use local date, not UTC
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      const day = String(now.getDate()).padStart(2, '0')
-      const today = `${year}-${month}-${day}`
-      
-      const { data, error } = await adminSupabase
-        .from('lesson_schedule')
-        .select('lesson_key')
-        .eq('learner_id', learnerId)
-        .eq('scheduled_date', today)
-
-if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
-      }
-
-const lessons = (data || []).map(item => ({
-        ...item,
-        lesson_key: normalizeLessonKey(item.lesson_key)
-      }))
-
-return NextResponse.json({ lessons })
-    }
-
-// Get schedule for date range
-    if (!learnerId) {
-      return NextResponse.json({ error: 'learnerId required' }, { status: 400 })
-    }
-
-// Verify the learner belongs to this facilitator.
-    // (GET previously relied only on facilitator_id filtering, which can hide legacy schedule rows.)
-    const { data: learner, error: learnerError } = await adminSupabase
-      .from('learners')
-      .select('id')
-      .eq('id', learnerId)
-      .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
-      .maybeSingle()
-
-### 21. sidekick_pack_calendar.md (daec363789d11d6f4fd8250b18eeb4bd64a6be6f6507df08d3872e18ee5521f8)
-- bm25: -4.4398 | relevance: 1.0000
-
-export async function DELETE(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-  const scheduleId = searchParams.get('id')
-  const learnerId = searchParams.get('learnerId')
-  const lessonKey = searchParams.get('lessonKey')
-    const scheduledDate = searchParams.get('scheduledDate')
-
-const authHeader = request.headers.get('authorization')
-    
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
-    }
-
-const token = authHeader.replace('Bearer ', '')
-    const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { persistSession: false, autoRefreshToken: false } }
-    )
-
-### 20. src/app/api/lesson-schedule/route.js (4e331f192a6c56a4cab8c5f7afbe0982981f3bd236880d62edeea56744dbb7e2)
-- bm25: -3.1363 | relevance: 1.0000
-
-// Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
-    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
-    if (!includeAll) {
-      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
-    }
-
-### 21. src/app/facilitator/calendar/page.js (7150390142ddd564e9dea3eae18d3c134f9f08597abc11de6462147a72dbfda5)
-- bm25: -3.1164 | relevance: 1.0000
-
-// Past dates: show only completed lessons.
-        if (isPast && !completed && !completionLookupFailed) return
-
-if (!grouped[dateStr]) grouped[dateStr] = []
-        grouped[dateStr].push({ ...item, completed })
-      })
-
-setScheduledLessons(grouped)
-    } catch (err) {
-      setScheduledLessons({})
-    }
-  }
-
-### 22. sidekick_pack_planned_all.md (5acb38228042b70ca3ad3485aaa5e7beeb19bce38edd39d3fe4800585e78493e)
-- bm25: -3.7199 | entity_overlap_w: 2.50 | adjusted: -4.3449 | relevance: 1.0000
-
-try {
-      const token = await getBearerToken()
-
-devWarn(`planned: got token ms=${Date.now() - startedAtMs} hasToken=${String(Boolean(token))}`)
-
-if (!token) {
-        devWarn('planned: missing auth token')
-        return
-      }
-
-let response
-      try {
-        response = await fetch(`/api/planned-lessons?learnerId=${targetLearnerId}`, {
-          headers: {
-            'authorization': `Bearer ${token}`
-          },
-          cache: 'no-store',
-          signal: controller.signal
-        })
-      } finally {
-        // plannedTimeoutId cleared in finally
-      }
-
-devWarn(`planned: response ms=${Date.now() - startedAtMs} status=${String(response?.status)} ok=${String(response?.ok)}`)
-
-if (!response.ok) {
-        const bodyText = await response.text().catch(() => '')
-        devWarn('planned: fetch failed', { status: response.status, body: bodyText })
-        return
-      }
-
-### 31. src/app/facilitator/calendar/page.js (36f6a926f8e360bba6f24fca8d7b7d8f84d510afd1ea41fbb8571aa71b562ecb)
-- bm25: -2.2635 | relevance: 1.0000
-
-if (!deleteResponse.ok) throw new Error('Failed to remove old schedule')
-
-### 17. src/app/api/planned-lessons/route.js (fae5d8e8b9782672af1af9db6f3d3856e36ac64d40a8a683ceae396338a9a040)
-- bm25: -6.0718 | relevance: 1.0000
-
-return NextResponse.json({ plannedLessons })
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-### 18. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (e6f6e2710584ed3300e0c4e0a1adbdd2d0fa8ec3051689f930f88e1a884dca05)
-- bm25: -5.2574 | entity_overlap_w: 3.00 | adjusted: -6.0074 | relevance: 1.0000
-
-devWarn(`schedule: start learner=${targetLearnerId} force=${String(force)} hasTokenFallback=${String(Boolean(tokenFallbackRef.current))}`)
-
-### 23. src/app/facilitator/calendar/LessonPlanner.jsx (6b168bfbed05e5a77c41e13237992b2579bfb9cb2101795ff35d795651c6016e)
-- bm25: -4.3412 | relevance: 1.0000
-
-if (!token) {
-        setGenerating(false)
-        return
-      }
-
-// Fetch lesson history (completed, scheduled, planned)
-      const [historyRes, medalsRes, scheduledRes, preferencesRes] = await Promise.all([
-        fetch(`/api/learner/lesson-history?learner_id=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/medals?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/lesson-schedule?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/curriculum-preferences?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } })
-      ])
-
-let lessonContext = []
-      let curriculumPrefs = {}
-
-// Build chronological lesson history with scores
-      if (historyRes.ok) {
-        const history = await historyRes.json()
-        let medals = {}
-        
-        // Get medals if available
-        if (medalsRes.ok) {
-          medals = await medalsRes.json()
-        }
-        
-        // Completed lessons with scores
-        const completed = (history.sessions || [])
-          .filter(s => s.status === 'completed')
-          .map(s => ({
-            name: s.lesson_id,
-            date: s.ended_at,
-            status: 'completed',
-            score: medals[s.lesson_id]?.bestPercent || null
-          }))
-
-// Incomplete lessons
-        const incomplete = (history.sessions || [])
-          .filter(s => s.status === 'incomplete')
-          .map(s => ({
-            name: s.lesson_id,
-            date: s.started_at,
-            status: 'incomplete'
-          }))
-
-lessonContext = [...completed, ...incomplete]
-      }
-
-### 24. sidekick_pack_planned_all.md (2f3bbd7006e39ccf8561aca154fbff6356c161aff0b80f876ec1fdde2b7ae452)
-- bm25: -3.6674 | entity_overlap_w: 2.50 | adjusted: -4.2924 | relevance: 1.0000
-
-await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          learnerId: selectedLearnerId,
-          plannedLessons: lessons
-        })
-      })
-    } catch (err) {
-      console.error('Error saving planned lessons:', err)
-    }
-  }
-
-const handlePlannedLessonUpdate = (date, lessonId, updatedLesson) => {
-    if (!requirePlannerAccess()) return
-    const updated = { ...plannedLessons }
-    if (updated[date]) {
-      const index = updated[date].findIndex(l => l.id === lessonId)
-      if (index !== -1) {
-        updated[date][index] = updatedLesson
-        savePlannedLessons(updated)
-      }
-    }
-  }
-
-const handlePlannedLessonRemove = (date, lessonId) => {
-    if (!requirePlannerAccess()) return
-    const updated = { ...plannedLessons }
-    if (updated[date]) {
-      updated[date] = updated[date].filter(l => l.id !== lessonId)
-      if (updated[date].length === 0) {
-        delete updated[date]
-      }
-      savePlannedLessons(updated)
-    }
-  }
-
-### 25. sidekick_pack_calendar.md (b24065620cf68f8b0af1560ce925a5741112ee97a7d701cadbebbba6af03eb8f)
-- bm25: -5.1193 | entity_overlap_w: 1.00 | adjusted: -5.3693 | relevance: 1.0000
-
-const shouldApplyToState = () => activeLearnerIdRef.current === targetLearnerId
-
-### 5. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (1318af73d2a40e715a4831f4e89125d0289ba34962bf8c994c55428a0c15bcef)
-- bm25: -4.0116 | relevance: 1.0000
-
-### 25. src/app/api/planned-lessons/route.js (669f59ed11e30a0d8781e7c15939a84b6684017e4f4bf05eec7efec4e3226256)
-- bm25: -4.2465 | relevance: 1.0000
-
-export async function POST(request) {
-  try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
-    }
-
-const token = authHeader.replace('Bearer ', '').trim()
-    if (!token) {
-      return NextResponse.json({ error: 'Invalid authorization token' }, { status: 401 })
-    }
-    
-    const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false }
-    })
-    
-    const { data: { user }, error: userError } = await adminSupabase.auth.getUser(token)
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-const body = await request.json()
-    const { learnerId, plannedLessons } = body
-
-if (!learnerId || !plannedLessons) {
-      return NextResponse.json({ error: 'learnerId and plannedLessons required' }, { status: 400 })
-    }
-
-// Verify the learner belongs to this facilitator/owner
-    const { data: learner, error: learnerError } = await adminSupabase
-      .from('learners')
-      .select('id')
-      .eq('id', learnerId)
-      .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
-      .maybeSingle()
-
-if (learnerError || !learner) {
-      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
-    }
-
-// Get all dates in the new plan (normalized to YYYY-MM-DD)
-    const newPlanDates = Object.keys(plannedLessons).map(normalizeScheduledDate)
-
-### 26. sidekick_pack_calendar.md (2a3e86ef656681a0f342082ad621f01e89dfc9483227c5d812966dc60315f5b5)
-- bm25: -4.2362 | relevance: 1.0000
-
-### 34. src/app/facilitator/calendar/LessonPlanner.jsx (6b168bfbed05e5a77c41e13237992b2579bfb9cb2101795ff35d795651c6016e)
-- bm25: -2.0760 | relevance: 1.0000
-
-if (!token) {
-        setGenerating(false)
-        return
-      }
-
-// Fetch lesson history (completed, scheduled, planned)
-      const [historyRes, medalsRes, scheduledRes, preferencesRes] = await Promise.all([
-        fetch(`/api/learner/lesson-history?learner_id=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/medals?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/lesson-schedule?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/curriculum-preferences?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } })
-      ])
-
-let lessonContext = []
-      let curriculumPrefs = {}
-
-// Build chronological lesson history with scores
-      if (historyRes.ok) {
-        const history = await historyRes.json()
-        let medals = {}
-        
-        // Get medals if available
-        if (medalsRes.ok) {
-          medals = await medalsRes.json()
-        }
-        
-        // Completed lessons with scores
-        const completed = (history.sessions || [])
-          .filter(s => s.status === 'completed')
-          .map(s => ({
-            name: s.lesson_id,
-            date: s.ended_at,
-            status: 'completed',
-            score: medals[s.lesson_id]?.bestPercent || null
-          }))
-
-// Incomplete lessons
-        const incomplete = (history.sessions || [])
-          .filter(s => s.status === 'incomplete')
-          .map(s => ({
-            name: s.lesson_id,
-            date: s.started_at,
-            status: 'incomplete'
-          }))
-
-### 27. sidekick_pack_calendar.md (dfcc40071b5fb2d53102fb19ed027d8a41f883bcdb5edd06002fe638d5f372ea)
-- bm25: -3.7734 | entity_overlap_w: 1.50 | adjusted: -4.1484 | relevance: 1.0000
-
-await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          learnerId: selectedLearnerId,
-          plannedLessons: lessons
-        })
-      })
-    } catch (err) {
-      console.error('Error saving planned lessons:', err)
-    }
-  }
-
-### 28. sidekick_pack_planned_all.md (15fb0f43838f19cafa56c75ddfaf84d4379649e6197e0bf821cf807dfed35892)
-- bm25: -3.8851 | entity_overlap_w: 1.00 | adjusted: -4.1351 | relevance: 1.0000
-
-const result = await response.json()
-      devWarn(`schedule: parsed json ms=${Date.now() - startedAtMs}`)
-      const data = result.schedule || []
-
-### 39. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (38b221cf4f22b44a10dbd08b38788bc4d817a9dcdb503288348e7a0c64cd1a31)
-- bm25: -1.9462 | relevance: 1.0000
-
-useEffect(() => {
-    if (!learnerId || learnerId === 'none') return
-    if (!accessToken) return
-    loadCalendarData({ force: true })
-  }, [accessToken, learnerId, loadCalendarData])
-
-// If the current tab has no lessons but the other does, auto-switch tabs.
-  // This prevents the overlay from looking "empty" when (for example) only planned lessons exist.
-  useEffect(() => {
-    if (!learnerId || learnerId === 'none') return
-    if (userSelectedTabRef.current) return
-
-### 5. sidekick_pack_calendar.md (c9724a6488ce742416aba0ad09a8db8b7ab8f07ded8511ae49cd7dec9f4bde73)
-- bm25: -7.0473 | relevance: 1.0000
-
-let query = adminSupabase
-      .from('lesson_schedule')
-      .select('*')
-      .eq('learner_id', learnerId)
-      .order('scheduled_date', { ascending: true })
-
-### 8. src/app/api/planned-lessons/route.js (fae5d8e8b9782672af1af9db6f3d3856e36ac64d40a8a683ceae396338a9a040)
-- bm25: -3.7919 | relevance: 1.0000
-
-return NextResponse.json({ plannedLessons })
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-### 9. src/app/api/planned-lessons/route.js (492eab0ea579c45b09245ffe7fe8046aba5f174397100e6adca1fe9c36f1e6d8)
-- bm25: -3.5123 | entity_overlap_w: 1.00 | adjusted: -3.7623 | relevance: 1.0000
-
-### 29. sidekick_pack_planned_all.md (20b1ecbe2d8aede35d69d0fc7b8c69ee6d260fe72a83f9545a6e4831fa3d8f80)
-- bm25: -4.0115 | relevance: 1.0000
-
-if (token) {
-        setAuthToken((prev) => (prev === token ? prev : token))
-      }
-
-if (!token) {
-        devWarn('schedule: missing auth token')
-        return
-      }
-
-// Get all scheduled lessons for this learner
-      let response
-      try {
-        // Match the main facilitator calendar page:
-        // - Primary fetch (facilitator-scoped + safe legacy null facilitator_id rows)
-        // - Secondary includeAll=1 fetch to pick up older/legacy rows that may live under other facilitator namespaces
-        const [primaryRes, allRes] = await Promise.all([
-          fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}`, {
-            headers: {
-              'authorization': `Bearer ${token}`
-            },
-            cache: 'no-store',
-            signal: controller.signal
-          }),
-          fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}&includeAll=1`, {
-            headers: {
-              'authorization': `Bearer ${token}`
-            },
-            cache: 'no-store',
-            signal: controller.signal
-          })
-        ])
-
-### 19. src/app/facilitator/calendar/page.js (45a3f960320e40cd0f5d44fbd1557244327369796a5b24116ee137e4fc1a97a6)
-- bm25: -5.2523 | entity_overlap_w: 1.50 | adjusted: -5.6273 | relevance: 1.0000
-
-// Load the full schedule history for this learner.
-      // This enables retroactive backfills (from lesson_history) to show up on older months.
-      // We still filter past dates to only completed lessons after loading.
-      const response = await fetch(
-        `/api/lesson-schedule?learnerId=${selectedLearnerId}`,
-        {
-          headers: {
-            'authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-
-### 30. src/app/api/learner/lesson-history/route.js (9fa11bb439cfe3914be24723e9e7d44533aad95e4f86c10cb388b536d5f666c9)
-- bm25: -3.6758 | entity_overlap_w: 1.30 | adjusted: -4.0008 | relevance: 1.0000
-
-if (Array.isArray(sessions)) {
-    for (const session of sessions) {
-      const lessonId = session?.lesson_id
-      if (!lessonId) continue
-      if (!session?.ended_at && session?.started_at) {
-        const existing = inProgress[lessonId]
-        if (!existing || new Date(session.started_at) > new Date(existing)) {
-          inProgress[lessonId] = session.started_at
-        }
-      }
-    }
-  }
-
-return { lastCompleted, inProgress }
-}
-
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const learnerId = searchParams.get('learner_id')
-    if (!learnerId) {
-      return NextResponse.json({ error: 'learner_id required' }, { status: 400 })
-    }
-
-const supabase = await getSupabaseAdmin()
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
-    }
-
-const limit = parseLimit(searchParams.get('limit'))
-
-const from = searchParams.get('from')
-    const to = searchParams.get('to')
-    const fromDate = isYyyyMmDd(from) ? from : null
-    const toDate = isYyyyMmDd(to) ? to : null
-    const fromIso = fromDate ? `${fromDate}T00:00:00.000Z` : null
-    // Use an exclusive upper bound so callers can pass local YYYY-MM-DD safely.
-    const toExclusiveDate = toDate ? addDays(toDate, 1) : null
-    const toExclusiveIso = toExclusiveDate ? `${toExclusiveDate}T00:00:00.000Z` : null
-
-let sessionsQuery = supabase
-      .from('lesson_sessions')
-      .select('id, learner_id, lesson_id, started_at, ended_at')
-      .eq('learner_id', learnerId)
-
-if (fromIso) {
-      sessionsQuery = sessionsQuery.gte('started_at', fromIso)
-    }
-    if (toExclusiveIso) {
-      sessionsQuery = sessionsQuery.lt('started_at', toExclusiveIso)
-    }
-
-### 31. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (52e282fa4ffc9866a7f19bd8b94a60ffa2323086d14e0c8dd012970244b8da14)
-- bm25: -3.5095 | entity_overlap_w: 1.50 | adjusted: -3.8845 | relevance: 1.0000
-
-devWarn(`planned: start learner=${targetLearnerId} force=${String(force)} hasTokenFallback=${String(Boolean(tokenFallbackRef.current))}`)
-    const startedAtMs = Date.now()
-
-const controller = new AbortController()
-    plannedAbortRef.current = controller
-    plannedInFlightLearnerRef.current = targetLearnerId
-    plannedLoadInFlightRef.current = true
-    const requestId = ++plannedRequestIdRef.current
-    const plannedTimeoutId = setTimeout(() => {
-      try { controller.abort() } catch {}
-    }, 45000)
-
-try {
-      const token = await getBearerToken()
-
-devWarn(`planned: got token ms=${Date.now() - startedAtMs} hasToken=${String(Boolean(token))}`)
-
-if (!token) {
-        devWarn('planned: missing auth token')
-        return
-      }
-
-let response
-      try {
-        response = await fetch(`/api/planned-lessons?learnerId=${targetLearnerId}`, {
-          headers: {
-            'authorization': `Bearer ${token}`
-          },
-          cache: 'no-store',
-          signal: controller.signal
-        })
-      } finally {
-        // plannedTimeoutId cleared in finally
-      }
-
-devWarn(`planned: response ms=${Date.now() - startedAtMs} status=${String(response?.status)} ok=${String(response?.ok)}`)
-
-if (!response.ok) {
-        const bodyText = await response.text().catch(() => '')
-        devWarn('planned: fetch failed', { status: response.status, body: bodyText })
-        return
-      }
-
-### 32. sidekick_pack_planned_all.md (79af748cc863cfa32eda062671f812e41cf02adf095a46eb36bd42871ec402a0)
-- bm25: -3.8378 | relevance: 1.0000
-
-### 11. sidekick_pack_calendar.md (acf9ce08465f001f4925abe0b71ac34df61a9dc795d33bdd8bbeb9368f36447d)
-- bm25: -6.1819 | relevance: 1.0000
-
-### 36. src/app/api/planned-lessons/route.js (669f59ed11e30a0d8781e7c15939a84b6684017e4f4bf05eec7efec4e3226256)
-- bm25: -2.0327 | relevance: 1.0000
-
-### 12. sidekick_pack_calendar.md (c66d0eceedc8044113d18d3f20d1fcad9d89003c88db6ca34a5052754108ac85)
-- bm25: -6.1819 | relevance: 1.0000
-
-### 6. src/app/api/planned-lessons/route.js (715e20f8c79adf81a24d6bba0df47ad7f44fc6912f0e3f031bde78b0436fec4e)
-- bm25: -3.8146 | relevance: 1.0000
-
-### 13. src/app/api/planned-lessons/route.js (db1a9cc005c7ceee5fb09554e6f8802d9c3c6b43eda28afc6d987b8be33f1c49)
-- bm25: -6.1458 | relevance: 1.0000
-
-if (learnerError || !learner) {
-      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
-    }
-
-// Delete all planned lessons for this learner
-    const { error } = await adminSupabase
-      .from('planned_lessons')
-      .delete()
-      .eq('learner_id', learnerId)
-      .eq('facilitator_id', user.id)
-
-if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-return NextResponse.json({ success: true })
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-### 14. src/app/api/planned-lessons/route.js (715e20f8c79adf81a24d6bba0df47ad7f44fc6912f0e3f031bde78b0436fec4e)
-- bm25: -6.1081 | relevance: 1.0000
-
-if (learnerError || !learner) {
-      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
-    }
-
-### 33. src/app/api/lesson-schedule/route.js (a83063ae5d85edeb01513175e78de0ebdeac54f8a0fc02607cf3b638f24cc566)
-- bm25: -3.8365 | relevance: 1.0000
-
-if (learnerError || !learner) {
-      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
-    }
-
-// Insert or update schedule entry
-    const { data, error } = await adminSupabase
-      .from('lesson_schedule')
-      .upsert({
-        facilitator_id: user.id,
-        learner_id: learnerId,
-        lesson_key: normalizedLessonKey,
-        scheduled_date: scheduledDate
-      }, {
-        onConflict: 'learner_id,lesson_key,scheduled_date'
-      })
-      .select()
-      .single()
-
-if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-const normalizedData = data ? { ...data, lesson_key: normalizeLessonKey(data.lesson_key) } : null
-
-return NextResponse.json({ success: true, data: normalizedData })
-  } catch (error) {
-    // General POST error
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function DELETE(request) {
-  try {
-    const { searchParams } = new URL(request.url)
-  const scheduleId = searchParams.get('id')
-  const learnerId = searchParams.get('learnerId')
-  const lessonKey = searchParams.get('lessonKey')
-    const scheduledDate = searchParams.get('scheduledDate')
-
-const authHeader = request.headers.get('authorization')
-    
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
-    }
-
-const token = authHeader.replace('Bearer ', '')
-    const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { persistSession: false, autoRefreshToken: false } }
-    )
-
-### 34. src/app/api/planned-lessons/route.js (13ab95e2c88ec5cc604a496e80fd74f45cb5f1a254133d4b8bd7639cc043e74b)
-- bm25: -3.7649 | relevance: 1.0000
+### 1. src/app/api/planned-lessons/route.js (13ab95e2c88ec5cc604a496e80fd74f45cb5f1a254133d4b8bd7639cc043e74b)
+- bm25: -4.5542 | entity_overlap_w: 1.00 | adjusted: -4.8042 | relevance: 1.0000
 
 // Delete existing planned lessons ONLY for dates in the new plan
     // This allows multiple non-overlapping plans to coexist
@@ -1783,143 +509,910 @@ const token = authHeader.replace('Bearer ', '')
         .in('scheduled_date', newPlanDates)
     }
 
-### 35. sidekick_pack_planned_all.md (9622963c37aaa5711ff45aabe744c1f2a16602e01f2531b632b91ea6354046d7)
-- bm25: -3.4771 | entity_overlap_w: 1.00 | adjusted: -3.7271 | relevance: 1.0000
+### 2. src/app/api/planned-lessons/route.js (db1a9cc005c7ceee5fb09554e6f8802d9c3c6b43eda28afc6d987b8be33f1c49)
+- bm25: -4.3282 | entity_overlap_w: 1.00 | adjusted: -4.5782 | relevance: 1.0000
 
-### 26. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (a76e50eff48663fb478af13164670296a2b51753ccbd35ab0e5bfebf1e5c23cd)
-- bm25: -5.3279 | relevance: 1.0000
+if (learnerError || !learner) {
+      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
+    }
 
-<div style={{ marginTop: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowPlannerOverlay(true)}
-                    disabled={!learnerId || learnerId === 'none'}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      fontSize: 12,
-                      fontWeight: 800,
-                      borderRadius: 8,
-                      border: '1px solid #d1d5db',
-                      background: (!learnerId || learnerId === 'none') ? '#f3f4f6' : '#111827',
-                      color: (!learnerId || learnerId === 'none') ? '#9ca3af' : '#fff',
-                      cursor: (!learnerId || learnerId === 'none') ? 'not-allowed' : 'pointer'
-                    }}
-                    title={(!learnerId || learnerId === 'none') ? 'Select a learner first' : 'Open the full Lesson Planner'}
-                  >
-                    Create a Lesson Plan
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ fontSize: 12, color: '#9ca3af', fontStyle: 'italic' }}>
-                  {(!learnerId || learnerId === 'none')
-                    ? 'Select a learner to view planned lessons'
-                    : (selectedDate ? 'No planned lessons' : 'Select a date to view planned lessons')}
-                </div>
+### 4. .github/copilot-instructions.md (e52caea170745fc1683b39903882c41423525bdca8f3020661944d316c296134)
+- bm25: -23.7089 | relevance: 1.0000
 
-### 36. sidekick_pack_planned_all.md (16041ca7de300de595905f2fec46f55328e4f031e3c5f8b67bf25594ee15e753)
-- bm25: -3.6668 | relevance: 1.0000
+Local health-check sequence:
+- `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere --help`
+- `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere project list`
+- `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere doctor --project freehands`
 
-### 15. src/app/api/planned-lessons/route.js (ea768dab2e653da4a9ef74d6f595ab2f466d7eb0babb59320a48f5ff72b9b4a0)
-- bm25: -3.3197 | relevance: 1.0000
+### 18. .github/copilot-instructions.md (14c858f58463489bcd7ea81f70721b0de92bf7105c73a2fab6f1ec0a5a4356d0)
+- bm25: -5.2529 | relevance: 1.0000
 
-### 37. sidekick_pack_planned_all.md (95e979cc2384fa902319f2c63dca591f8c4a428e5964450cf20e47d370844327)
-- bm25: -3.6668 | relevance: 1.0000
+# GitHub Copilot Instructions for Ms. Sonoma Project (freehands directory only)
 
-### 22. src/app/api/planned-lessons/route.js (492eab0ea579c45b09245ffe7fe8046aba5f174397100e6adca1fe9c36f1e6d8)
-- bm25: -5.4556 | relevance: 1.0000
+## COHERE WORKFLOW (REQUIRED)
 
-### 38. sidekick_pack_planned_all.md (e3cfc4b1f41d25afb42ed51a8a29a2779f3ff34d2b3d2496cf6c647100e2793a)
-- bm25: -3.6668 | relevance: 1.0000
+## Recon (Use Cohere)
 
-### 28. src/app/api/planned-lessons/route.js (ea768dab2e653da4a9ef74d6f595ab2f466d7eb0babb59320a48f5ff72b9b4a0)
-- bm25: -5.3150 | relevance: 1.0000
+You MUST consult Cohere first before any other source of information. When you don’t fully understand a concept/area of the repo, do recon first using Cohere.
 
-### 39. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (1fa09c91ba97280b70cdecf8e118deca279f6b0b18196775c8928934efb6eb13)
-- bm25: -3.6540 | relevance: 1.0000
+## Round Protocol (Required)
+
+For every non-trivial Copilot turn (anything beyond a short yes/no), you MUST do the following BEFORE answering:
+
+1) Update Cohere (keep DB current)
+- Ensure a watcher is running for this repo (preferred):
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere project add freehands C:\Users\atari\freehands | Out-Null`
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sk watch -a MsSonoma -p freehands`
+- If you cannot keep a watcher running, then you MUST at least ingest the file(s) you are about to discuss/change before generating packs:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere ingest <path> --project freehands [--recursive]`
+
+2) Consult Cohere (recon pack)
+- Run recon using the latest user prompt text:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sk r -a MsSonoma -t "<latest user prompt>" --out sidekick_pack.md --journal-out sidekick_rounds.jsonl`
+- Then read/use `sidekick_pack.md` when forming the answer.
+
+If you cannot run Cohere commands in this session, you MUST say that explicitly and ask the user to run them and paste the results.
+
+### 19. sidekick_pack.md (e1ef0694955283f1d1bc66b51eb871672b603d72faf23366fc466904d1c04469)
+- bm25: -5.1893 | relevance: 1.0000
+
+### 3. .github/copilot-instructions.md (14c858f58463489bcd7ea81f70721b0de92bf7105c73a2fab6f1ec0a5a4356d0)
+- bm25: -8.4174 | relevance: 1.0000
+
+# GitHub Copilot Instructions for Ms. Sonoma Project (freehands directory only)
+
+## COHERE WORKFLOW (REQUIRED)
+
+## Recon (Use Cohere)
+
+You MUST consult Cohere first before any other source of information. When you don’t fully understand a concept/area of the repo, do recon first using Cohere.
+
+## Round Protocol (Required)
+
+For every non-trivial Copilot turn (anything beyond a short yes/no), you MUST do the following BEFORE answering:
+
+1) Update Cohere (keep DB current)
+- Ensure a watcher is running for this repo (preferred):
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere project add freehands C:\Users\atari\freehands | Out-Null`
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sk watch -a MsSonoma -p freehands`
+- If you cannot keep a watcher running, then you MUST at least ingest the file(s) you are about to discuss/change before generating packs:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere ingest <path> --project freehands [--recursive]`
+
+2) Consult Cohere (recon pack)
+- Run recon using the latest user prompt text:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sk r -a MsSonoma -t "<latest user prompt>" --out sidekick_pack.md --journal-out sidekick_rounds.jsonl`
+- Then read/use `sidekick_pack.md` when forming the answer.
+
+If you cannot run Cohere commands in this session, you MUST say that explicitly and ask the user to run them and paste the results.
+
+### 20. .github/copilot-instructions.md (e52caea170745fc1683b39903882c41423525bdca8f3020661944d316c296134)
+- bm25: -5.1440 | relevance: 1.0000
+
+Local health-check sequence:
+- `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere --help`
+- `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere project list`
+- `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere doctor --project freehands`
+
+When answering architecture questions or planning changes:
+1. Build an evidence pack first:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere pack "<question>" --project freehands --profile MsSonoma --out pack.md`
+2. Use the pack’s chunk IDs as evidence anchors (the IDs are the provenance tokens).
+
+### Asking Good Pack Questions (REQUIRED)
+
+Do not ask abstract questions first. Anchor pack questions on one of:
+- Exact error text / log line
+- Route/path (e.g., `/session/discussion`, `/api/...`)
+- File name / folder name
+- Env var name
+- UI label text
+- Function/class identifier
+
+Use these templates (copy/paste and fill in anchors):
+- "Where is `<feature>` implemented end-to-end? List entrypoints, key files, and data flow."
+- "Where is route `<route>` defined and what calls it? Include middleware and handlers."
+- "Search for the exact string `<error or label>` and show the controlling code path."
+- "What reads/writes `<data file or table>` and under what conditions?"
+- "What configuration keys/env vars control `<system>` and where are they read?"
+- "Given file `<path>`, what other modules depend on it (imports/calls) and why?"
+
+If pack #1 doesn't contain the entrypoint you need:
+1. Re-pack with a tighter anchor (prefer an exact string, route, or filename).
+2. If still missing, ingest/sync the relevant subtree, then re-pack.
+
+### 21. src/app/session/v2/SessionPageV2.jsx (762b3f4fff72e8f7116b8b26971018abd044c3e578205eefd2abb17c543695bd)
+- bm25: -5.1387 | relevance: 1.0000
+
+// If an opening action starts, collapse the Play-with-Sonoma menu
+  useEffect(() => {
+    if (openingActionActive) {
+      setShowPlayWithSonomaMenu(false);
+    }
+  }, [openingActionActive]);
+
+### 22. sidekick_pack.md (0a6e8c84351805e045504a02f9fcd5b27580f778ad4c25a4d66d920124e2d7ed)
+- bm25: -4.6564 | entity_overlap_w: 1.50 | adjusted: -5.0314 | relevance: 1.0000
+
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Next.js dev server",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"dev"
+			],
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Build Next.js for sanity",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Kill port 3001",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force } catch {} }"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Restart dev on 3001",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force } catch {} }; npm run -s dev"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Smoke: POST /api/sonoma",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}\\scripts\\smoke-post-sonoma.ps1"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Clean .next cache",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"try { Remove-Item -Path .next -Recurse -Force -ErrorAction SilentlyContinue } catch {}; try { Remove-Item -Path .next-dev -Recurse -Force -ErrorAction SilentlyContinue } catch {}; try { Remove-Item -Path .turbo -Recurs
+
+### 23. .vscode/tasks.json (7f0a4943c72a7afe52a5f1a79083df4f3163eec7ae4ee33693cf108694530eff)
+- bm25: -4.6564 | entity_overlap_w: 1.50 | adjusted: -5.0314 | relevance: 1.0000
+
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Next.js dev server",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"dev"
+			],
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Build Next.js for sanity",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"build"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Kill port 3001",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force } catch {} }"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Restart dev on 3001",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force } catch {} }; npm run -s dev"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Smoke: POST /api/sonoma",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}\\scripts\\smoke-post-sonoma.ps1"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Clean .next cache",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"try { Remove-Item -Path .next -Recurse -Force -ErrorAction SilentlyContinue } catch {}; try { Remove-Item -Path .next-dev -Recurse -Force -ErrorAction SilentlyContinue } catch {}; try { Remove-Item -Path .turbo -Recurs
+
+### 24. src/app/session/v2/SessionPageV2.jsx (3dee58ae6ebc8100a09fdea266cbb57f18d006016648f6bcb95a93442a6c9af6)
+- bm25: -4.7744 | entity_overlap_w: 1.00 | adjusted: -5.0244 | relevance: 1.0000
+
+// Opening actions helpers
+  const speakSystemLine = useCallback(async (text) => {
+    const spoken = String(text ?? '').trim();
+    if (!spoken) return false;
+    if (!audioEngineRef.current) return false;
+
+// Prefer AudioEngine.speak when available (OpeningActionsController provides a shim)
+    if (typeof audioEngineRef.current.speak === 'function') {
+      try {
+        await audioEngineRef.current.speak(spoken);
+        return true;
+      } catch (err) {
+        console.warn('[SessionPageV2] speakSystemLine via speak() failed:', err);
+      }
+    }
 
 try {
-                const normalizedKey = normalizeLessonKey(String(row?.lesson_id || '')) || String(row?.lesson_id || '')
-                const list = completedEventsByDate.get(completedDate) || []
-                list.push({ lesson_key: normalizedKey || String(row?.lesson_id || ''), completed: true })
-                completedEventsByDate.set(completedDate, list)
-              } catch {}
-            }
+      const audioBase64 = await fetchTTS(spoken);
+      await audioEngineRef.current.playAudio(audioBase64, [spoken]);
+      return true;
+    } catch (err) {
+      console.warn('[SessionPageV2] speakSystemLine playback failed:', err);
+      return false;
+    }
+  }, []);
 
-// Some learners may not have explicit "completed" events, but will have completed sessions.
-            for (const session of sessions) {
-              const endedAt = session?.ended_at || null
-              const startedAt = session?.started_at || null
-              const status = session?.status || (endedAt ? 'completed' : null)
-              if (status !== 'completed' || (!endedAt && !startedAt)) continue
+const speakSystemLineHardened = useCallback(async (text) => {
+    const spoken = String(text ?? '').trim();
+    if (!spoken) return false;
 
-const completedDate = toLocalDateStr(endedAt || startedAt)
-              const key = canonicalLessonId(session?.lesson_id)
-              if (!completedDate || !key) continue
-              completionDates.push(completedDate)
-              completedFromSessions += 1
-              completedKeySet.add(`${key}|${completedDate}`)
-              const prev = completedDatesByLesson.get(key) || []
-              prev.push(completedDate)
-              completedDatesByLesson.set(key, prev)
+// Try twice to handle race conditions right after a stop.
+    const ok1 = await speakSystemLine(spoken);
+    if (ok1) return true;
 
-try {
-                const normalizedKey = normalizeLessonKey(String(session?.lesson_id || '')) || String(session?.lesson_id || '')
-                const list = completedEventsByDate.get(completedDate) || []
-                list.push({ lesson_key: normalizedKey || String(session?.lesson_id || ''), completed: true })
-                completedEventsByDate.set(completedDate, list)
-              } catch {}
-            }
+await new Promise((r) => setTimeout(r, 80));
+    const ok2 = await speakSystemLine(spoken);
+    if (!ok2) {
+      console.warn('[SessionPageV2] speakSystemLineHardened failed to speak:', spoken);
+    }
+    return ok2;
+  }, [speakSystemLine]);
 
-### 40. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (e6f6e2710584ed3300e0c4e0a1adbdd2d0fa8ec3051689f930f88e1a884dca05)
-- bm25: -3.6395 | relevance: 1.0000
+### 25. sidekick_pack_restore_medal_emojis.md (4c32327dcf8b92c5ef6dac596e9677360c9dc6172a079021e0d2487234b9ca46)
+- bm25: -4.5501 | entity_overlap_w: 1.00 | adjusted: -4.8001 | relevance: 1.0000
 
-devWarn(`schedule: start learner=${targetLearnerId} force=${String(force)} hasTokenFallback=${String(Boolean(tokenFallbackRef.current))}`)
+### 4. src/app/session/v2/SessionPageV2.jsx (2bc8e681bbd1556f75d0ce083dec1df5ac8c48a7151fbf63b711d25f84060648)
+- bm25: -5.8071 | entity_overlap_w: 4.50 | adjusted: -6.9321 | relevance: 1.0000
 
-const controller = new AbortController()
-    scheduleAbortRef.current = controller
-    scheduleInFlightLearnerRef.current = targetLearnerId
-    scheduleLoadInFlightRef.current = true
-    const requestId = ++scheduleRequestIdRef.current
-    const startedAtMs = Date.now()
-    const scheduleTimeoutId = setTimeout(() => {
-      try { controller.abort() } catch {}
-    }, 45000)
+// End tracked session (so Calendar history can detect this completion).
+      try { stopSessionPolling?.(); } catch {}
+      try {
+        await endTrackedSession('completed', {
+          source: 'session-v2',
+          test_percentage: testGrade?.percentage ?? null,
+        });
+      } catch {}
+      
+      // Navigate to lessons page
+      console.log('[SessionPageV2] Attempting navigation to lessons page');
+      console.log('[SessionPageV2] router:', router);
+      console.log('[SessionPageV2] router.push type:', typeof router?.push);
+      try {
+        if (router && typeof router.push === 'function') {
+          console.log('[SessionPageV2] Using router.push');
+          router.push('/learn/lessons');
+        } else if (typeof window !== 'undefined') {
+          console.log('[SessionPageV2] Using window.location.href');
+          window.location.href = '/learn/lessons';
+        }
+      } catch (err) {
+        console.error('[SessionPageV2] Navigation error:', err);
+        if (typeof window !== 'undefined') {
+          try { window.location.href = '/learn/lessons'; } catch {}
+        }
+      }
+    });
+    
+    return () => {
+      orchestrator.destroy();
+      orchestratorRef.current = null;
+    };
+  }, [lessonData]);
+
+// Initialize OpeningActionsController once audio is ready and lesson is loaded
+  useEffect(() => {
+    if (!lessonData || !audioReady || !audioEngineRef.current || !eventBusRef.current) return;
+
+### 26. .github/copilot-instructions.md (6222a75becd01f34b6617370f90eb3104c3e8baa04ace7c4f70dd386ab814478)
+- bm25: -4.3748 | relevance: 1.0000
+
+Treat Cohere as a local CLI + local DB (under `%USERPROFILE%\.coherence_apps\ms_sonoma\` for this workspace), not a networked service.
+- If the user asks whether Cohere is "online", interpret it as: "can we run the local `py -m cohere ...` commands here?"
+- Do not claim any network connectivity to external services.
+
+### 27. sidekick_pack_lessons_prefetch.md (acdde77a2d3b5ec1a0af546e25a2c87a2064ebc08b2186858c8afbfd447eb4c2)
+- bm25: -4.3748 | relevance: 1.0000
+
+When answering architecture questions or planning changes:
+1. Build an evidence pack first:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere pack "<question>" --project freehands --profile MsSonoma --out pack.md`
+2. Use the pack’s chunk IDs as evidence anchors (the IDs are the provenance tokens).
+
+### 28. src/app/session/page.js (0bcf0878b21326c1e51a3876323b5497c30f90797aa9f92573360880d9666a4b)
+- bm25: -4.2950 | relevance: 1.0000
+
+// ------------------------------
+  // Automatic Test Review Sequence
+  // When the test target is reached and Ms. Sonoma has finished speaking, enter review.
+  const enterTestReview = useCallback((options = {}) => {
+    const disableSending = options?.disableSending;
+    if (typeof subPhase === 'string' && subPhase.startsWith('review')) return;
+    if (disableSending) {
+      try { setCanSend(false); } catch {}
+    }
+    markWorkPhaseComplete('test');
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      test: null
+    }));
+    try { setSubPhase('review-start'); } catch {}
+  }, [subPhase, markWorkPhaseComplete]);
+
+### 29. sidekick_pack.md (3efc33e9291c6dca75db1abfd84cdcc4048781f8348f31436219fa45a4a5cd3e)
+- bm25: -4.2178 | relevance: 1.0000
+
+// Mark guard as sent for this phase only after a successful reply
+  setPhaseGuardSent((prev) => (prev[phaseKey] ? prev : { ...prev, [phaseKey]: true }));
+  // Expose the sanitized reply text so callers (e.g., riddle judge/hint) can use it directly
+  return { success: true, data, text: replyText };
+    } catch (err) {
+      // Some runtimes surface aborts with name 'AbortError', others pass through the reason (e.g., 'skip')
+      const isAbort = err?.name === 'AbortError' || err === 'skip' || err?.message === 'skip' || err?.cause === 'skip';
+      if (isAbort) {
+        setLoading(false);
+        return { success: false, aborted: true };
+      }
+      setTranscript("Ms. Sonoma is unavailable.");
+      setError("We could not reach Ms. Sonoma.");
+      // Keep previous caption on screen to avoid a blank stall
+      return { success: false, error: err };
+    } finally {
+      // Loading already cleared earlier once reply text was prepared
+      // For fastReturn flows, do NOT tear down audio here; let the audio lifecycle manage isSpeaking/video.
+      if (!opts.fastReturn) {
+        try { setIsSpeaking(false); } catch {}
+        if (audioRef.current) {
+          try { audioRef.current.pause(); } catch {}
+          audioRef.current = null;
+        }
+      }
+      // Clear controller
+      if (sonomaAbortRef.current) sonomaAbortRef.current = null;
+    }
+  };
+
+### 30. src/app/session/page.js (70927510c154bcbcaeabd2938e68a02853cdd647a3ee06529c7c7499acdf2ff5)
+- bm25: -4.1990 | relevance: 1.0000
+
+// Mark guard as sent for this phase only after a successful reply
+  setPhaseGuardSent((prev) => (prev[phaseKey] ? prev : { ...prev, [phaseKey]: true }));
+  // Expose the sanitized reply text so callers (e.g., riddle judge/hint) can use it directly
+  return { success: true, data, text: replyText };
+    } catch (err) {
+      // Some runtimes surface aborts with name 'AbortError', others pass through the reason (e.g., 'skip')
+      const isAbort = err?.name === 'AbortError' || err === 'skip' || err?.message === 'skip' || err?.cause === 'skip';
+      if (isAbort) {
+        setLoading(false);
+        return { success: false, aborted: true };
+      }
+      setTranscript("Ms. Sonoma is unavailable.");
+      setError("We could not reach Ms. Sonoma.");
+      // Keep previous caption on screen to avoid a blank stall
+      return { success: false, error: err };
+    } finally {
+      // Loading already cleared earlier once reply text was prepared
+      // For fastReturn flows, do NOT tear down audio here; let the audio lifecycle manage isSpeaking/video.
+      if (!opts.fastReturn) {
+        try { setIsSpeaking(false); } catch {}
+        if (audioRef.current) {
+          try { audioRef.current.pause(); } catch {}
+          audioRef.current = null;
+        }
+      }
+      // Clear controller
+      if (sonomaAbortRef.current) sonomaAbortRef.current = null;
+    }
+  };
+
+### 31. sidekick_pack.md (1b776805293bcd08702e5e1fdb90d35a52f7ab1070aecf5e9126937dce4ffd45)
+- bm25: -4.0678 | relevance: 1.0000
+
+### 34. src/app/session/v2/SessionPageV2.jsx (2de59be96aa49dc5ad4c1caf8c83a59d39f4996a9987150ee618644bfc888b8f)
+- bm25: -4.3350 | relevance: 1.0000
+
+<button
+                      onClick={() => setShowPlayWithSonomaMenu(true)}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        background: '#111827',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 800
+                      }}
+                    >
+                      Play with Ms. Sonoma
+                    </button>
+
+<button
+                      onClick={() => {
+                        if (!planEnt?.games) {
+                          showFeatureGateNotice('Games are disabled on Trial. Upgrade to Standard or Pro to use them.');
+                          return;
+                        }
+                        setShowGames(true);
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        background: planEnt?.games ? '#0ea5e9' : '#6b7280',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 600
+                      }}
+                    >
+                      Games
+                    </button>
+
+### 35. src/app/api/counselor/route.js (f720a6009787bc62743e7f63e0b51742f9c90a8657a55a12ad32b58bf8b8eee4)
+- bm25: -4.1937 | relevance: 1.0000
+
+### 32. src/app/learn/lessons/page.js (d5beeb52789ee4491df2fa817b4e72a78686e5be0df840fd9c851365b185ecd6)
+- bm25: -3.6775 | entity_overlap_w: 1.50 | adjusted: -4.0525 | relevance: 1.0000
+
+useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await fetch('/api/sonoma', { method: 'GET', headers: { 'Accept': 'application/json' } })
+      } catch {}
+    })()
+    return () => { mounted = false }
+  }, [])
+
+useEffect(() => {
+    try {
+      const id = localStorage.getItem('learner_id')
+      const n = localStorage.getItem('learner_name')
+      if (n) setLearnerName(n)
+      if (id) setLearnerId(id)
+    } catch {}
+    ;(async () => {
+      try {
+        const supabase = getSupabaseClient()
+        if (supabase) {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user) {
+            const { data } = await supabase.from('profiles').select('plan_tier').eq('id', session.user.id).maybeSingle()
+            if (data?.plan_tier) setPlanTier(data.plan_tier)
+          }
+        }
+      } catch {}
+      try {
+        const dateKey = new Date().toISOString().slice(0,10)
+        const key = `lesson_unique:${dateKey}`
+        const raw = localStorage.getItem(key)
+        if (raw) {
+          const set = new Set(JSON.parse(raw))
+          setTodaysCount(set.size)
+        } else {
+          setTodaysCount(0)
+        }
+      } catch {}
+    })()
+  }, [])
+
+useEffect(() => {
+    let cancelled = false
+
+if (!learnerId || learnerId === 'demo') {
+      setSessionGateReady(true)
+      return () => { cancelled = true }
+    }
+
+setSessionGateReady(false)
+
+### 33. sidekick_pack.md (8c41fd77adf06b3317885c02ea3865c7b889e8138f681128c71a738d6f5b2cfb)
+- bm25: -3.9359 | relevance: 1.0000
+
+return (
+                <div style={{ padding: '0 12px' }}>
+                  <div style={{ ...cardStyle, padding: '8px 12px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: '1 1 220px', minWidth: 0 }}>
+                        <input
+                          type="text"
+                          value={openingActionInput}
+                          onChange={(e) => setOpeningActionInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (openingActionBusy) return;
+                              handleOpeningAskSubmit();
+                            }
+                          }}
+                          placeholder="Ask Ms. Sonoma..."
+                          style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: '0.9rem' }}
+                          autoFocus
+                          disabled={openingActionBusy}
+                        />
+                      </div>
+
+### 34. src/app/session/v2/SessionPageV2.jsx (2de59be96aa49dc5ad4c1caf8c83a59d39f4996a9987150ee618644bfc888b8f)
+- bm25: -3.7932 | relevance: 1.0000
+
+<button
+                      onClick={() => setShowPlayWithSonomaMenu(true)}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        background: '#111827',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 800
+                      }}
+                    >
+                      Play with Ms. Sonoma
+                    </button>
+
+<button
+                      onClick={() => {
+                        if (!planEnt?.games) {
+                          showFeatureGateNotice('Games are disabled on Trial. Upgrade to Standard or Pro to use them.');
+                          return;
+                        }
+                        setShowGames(true);
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        background: planEnt?.games ? '#0ea5e9' : '#6b7280',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 600
+                      }}
+                    >
+                      Games
+                    </button>
+
+### 35. sidekick_pack.md (2105a3762ad9d08c8b941e06d9eaf096b91e8261ed62bb1ea70397e13398585a)
+- bm25: -3.2959 | entity_overlap_w: 1.50 | adjusted: -3.6709 | relevance: 1.0000
+
+const callMsSonoma = async (instructions, innertext, session, opts = {}) => {
+    // If we're in the exercise awaiting-begin lock window, avoid issuing a new call that might
+    // change subPhase out from under the Begin overlay due to late replies.
+    try {
+      if (exerciseAwaitingLockRef.current && session && session.phase === 'exercise') {
+        return { success: false, skippedDueToAwaitingLock: true };
+      }
+      if (comprehensionAwaitingLockRef.current && session && session.phase === 'comprehension') {
+        return { success: false, skippedDueToAwaitingLock: true };
+      }
+    } catch {}
+    // Keep existing caption text on screen until new text is ready
+    clearCaptionTimers();
+    setLoading(true);
+    try {
+  const rawPhaseKey = (session?.phase || 'unknown').toString().toLowerCase();
+  // Bucket 'teaching' and 'comprehension' with 'discussion' so we have exactly four server sessions.
+  const phaseKey = (rawPhaseKey === 'teaching' || rawPhaseKey === 'comprehension') ? 'discussion' : rawPhaseKey;
+      // Send only the provided instructions (no system message)
+      const userContent = `${instructions}`;
+      // Create AbortController so we can cancel on skip
+      const ctrl = new AbortController();
+      sonomaAbortRef.current = ctrl;
+      // Prefer cached systemId; fall back to sending full system once
+      const attempt = async (payload) => {
+        const res = await fetch("/api/sonoma", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: ctrl.signal,
+        });
+        const data = await res.json().catch(() => ({}));
+        return { res, data };
+      };
+
+### 36. src/app/session/page.js (7d1fabfa510c016954552dc575e2d55822aeba6b66f816f24e76ce346c4cab26)
+- bm25: -3.2764 | entity_overlap_w: 1.50 | adjusted: -3.6514 | relevance: 1.0000
+
+const callMsSonoma = async (instructions, innertext, session, opts = {}) => {
+    // If we're in the exercise awaiting-begin lock window, avoid issuing a new call that might
+    // change subPhase out from under the Begin overlay due to late replies.
+    try {
+      if (exerciseAwaitingLockRef.current && session && session.phase === 'exercise') {
+        return { success: false, skippedDueToAwaitingLock: true };
+      }
+      if (comprehensionAwaitingLockRef.current && session && session.phase === 'comprehension') {
+        return { success: false, skippedDueToAwaitingLock: true };
+      }
+    } catch {}
+    // Keep existing caption text on screen until new text is ready
+    clearCaptionTimers();
+    setLoading(true);
+    try {
+  const rawPhaseKey = (session?.phase || 'unknown').toString().toLowerCase();
+  // Bucket 'teaching' and 'comprehension' with 'discussion' so we have exactly four server sessions.
+  const phaseKey = (rawPhaseKey === 'teaching' || rawPhaseKey === 'comprehension') ? 'discussion' : rawPhaseKey;
+      // Send only the provided instructions (no system message)
+      const userContent = `${instructions}`;
+      // Create AbortController so we can cancel on skip
+      const ctrl = new AbortController();
+      sonomaAbortRef.current = ctrl;
+      // Prefer cached systemId; fall back to sending full system once
+      const attempt = async (payload) => {
+        const res = await fetch("/api/sonoma", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: ctrl.signal,
+        });
+        const data = await res.json().catch(() => ({}));
+        return { res, data };
+      };
+
+### 37. sidekick_pack.md (fd827a019c83e0dd37e571d556b930549bddae9be34b1f960743c8bcfbb4a426)
+- bm25: -3.5913 | relevance: 1.0000
+
+### 14. src/app/session/v2/SessionPageV2.jsx (762b3f4fff72e8f7116b8b26971018abd044c3e578205eefd2abb17c543695bd)
+- bm25: -5.8783 | relevance: 1.0000
+
+// If an opening action starts, collapse the Play-with-Sonoma menu
+  useEffect(() => {
+    if (openingActionActive) {
+      setShowPlayWithSonomaMenu(false);
+    }
+  }, [openingActionActive]);
+
+### 15. sidekick_pack.md (708a7b41fd633ffb8361ef3b6b56d27ef818fdd5ff7f0ee32cd3b981e9aed75f)
+- bm25: -5.7984 | relevance: 1.0000
+
+# Cohere Pack (Sidekick Recon) - MsSonoma
+
+Project: freehands
+Profile: MsSonoma
+Mode: standard
+
+Prompt (original):
+```text
+Ask feature breaks and shows a generic response. Find Ask UI handler, API route it calls, and where generic fallback text is produced. Identify why real answer fails and propose minimal fix.
+```
+
+Filter terms used:
+```text
+API
+```
+# Context Pack
+
+**Project**: freehands
+**Profile**: MsSonoma
+**Mode**: standard
+
+## Pack Contract
+
+This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
+
+## Question
+
+API
+
+## Forced Context
+
+(none)
+
+## Ranked Evidence
+
+### 1. sidekick_pack_completions_mismatch.md (4d70ffb6cf5bf342adef7c9b1b576c15f6b660105427e60170e67a2b73029e01)
+- bm25: -1.1167 | entity_overlap_w: 7.80 | adjusted: -3.0667 | relevance: 1.0000
+
+# Cohere Pack (Sidekick Recon) - MsSonoma
+
+Project: freehands
+Profile: MsSonoma
+Mode: standard
+
+Prompt (original):
+```text
+V2 completed lessons mismatch: Calendar vs Completed Lessons page vs Awards (medals). Find where lesson completion is recorded in V2 (session/teaching flow), where each screen pulls data (lesson history API, medals API, lesson schedule API), and identify why completions are missing (Emma).
+```
+
+Filter terms used:
+```text
+API
+```
+# Context Pack
+
+### 38. src/app/session/v2/SessionPageV2.jsx (efc0329e2f85d6b17d0b7ee7e155b5d6c77ac07573690feb4eed11d199c6cfbc)
+- bm25: -3.5636 | relevance: 1.0000
+
+if (!action) return null;
+
+if (action === 'ask') {
+              const phaseAlias = normalizePhaseAlias(currentPhase);
+              const hasActiveQuestion = (
+                (phaseAlias === 'comprehension' && !!currentComprehensionQuestion) ||
+                (phaseAlias === 'exercise' && !!currentExerciseQuestion) ||
+                (phaseAlias === 'worksheet' && !!currentWorksheetQuestion)
+              );
+
+return (
+                <div style={{ padding: '0 12px' }}>
+                  <div style={{ ...cardStyle, padding: '8px 12px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: '1 1 220px', minWidth: 0 }}>
+                        <input
+                          type="text"
+                          value={openingActionInput}
+                          onChange={(e) => setOpeningActionInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (openingActionBusy) return;
+                              handleOpeningAskSubmit();
+                            }
+                          }}
+                          placeholder="Ask Ms. Sonoma..."
+                          style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: '0.9rem' }}
+                          autoFocus
+                          disabled={openingActionBusy}
+                        />
+                      </div>
+
+### 39. sidekick_pack.md (0563885a5bff03f18bcb53e17679d271203933dda1521de9ad81e52d6c9c728e)
+- bm25: -3.4716 | relevance: 1.0000
+
+// Repeat speech: replay the last TTS audio without updating captions
+  const handleRepeatSpeech = useCallback(async () => {
+    // Check if we have audio to replay
+    if (!lastAudioBase64Ref.current) {
+      return;
+    }
+    
+    // Hide repeat button while playing
+    setShowRepeatButton(false);
+    
+    // Set speaking state
+    setIsSpeaking(true);
     
     try {
-      const token = await getBearerToken()
-      devWarn(`schedule: got token ms=${Date.now() - startedAtMs} hasToken=${String(Boolean(token))}`)
-
-if (token) {
-        setAuthToken((prev) => (prev === token ? prev : token))
+      // Replay audio without updating captions (pass empty array for sentences)
+      await playAudioFromBase64(lastAudioBase64Ref.current, [], 0);
+    } catch (err) {
+      setIsSpeaking(false);
+      // Show repeat button again since replay failed
+      if (lastAudioBase64Ref.current) {
+        setShowRepeatButton(true);
       }
+    }
+  }, [playAudioFromBase64]);
 
-if (!token) {
-        devWarn('schedule: missing auth token')
-        return
+// Show visual aids carousel
+  const handleShowVisualAids = useCallback(() => {
+    setShowVisualAidsCarousel(true);
+  }, []);
+
+// Explain visual aid via Ms. Sonoma
+  const handleExplainVisualAid = useCallback(async (visualAid) => {
+    if (!visualAid || !visualAid.description) {
+      return;
+    }
+
+// Read the pre-generated description (created during image generation)
+    await speakFrontendImpl(visualAid.description, {});
+  }, []);
+
+### 40. src/app/session/page.js (5ebfc03af0ee8e5b408f25599d22b5cc33578df677f5614a757547f3ec5f5c1d)
+- bm25: -3.4462 | relevance: 1.0000
+
+// Repeat speech: replay the last TTS audio without updating captions
+  const handleRepeatSpeech = useCallback(async () => {
+    // Check if we have audio to replay
+    if (!lastAudioBase64Ref.current) {
+      return;
+    }
+    
+    // Hide repeat button while playing
+    setShowRepeatButton(false);
+    
+    // Set speaking state
+    setIsSpeaking(true);
+    
+    try {
+      // Replay audio without updating captions (pass empty array for sentences)
+      await playAudioFromBase64(lastAudioBase64Ref.current, [], 0);
+    } catch (err) {
+      setIsSpeaking(false);
+      // Show repeat button again since replay failed
+      if (lastAudioBase64Ref.current) {
+        setShowRepeatButton(true);
       }
+    }
+  }, [playAudioFromBase64]);
 
-// Get all scheduled lessons for this learner
-      let response
-      try {
-        // Match the main facilitator calendar page:
-        // - Primary fetch (facilitator-scoped + safe legacy null facilitator_id rows)
-        // - Secondary includeAll=1 fetch to pick up older/legacy rows that may live under other facilitator namespaces
-        const [primaryRes, allRes] = await Promise.all([
-          fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}`, {
-            headers: {
-              'authorization': `Bearer ${token}`
-            },
-            cache: 'no-store',
-            signal: controller.signal
-          }),
-          fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}&includeAll=1`, {
-            headers: {
-              'authorization': `Bearer ${token}`
-            },
-            cache: 'no-store',
-            signal: controller.signal
-          })
-        ])
+// Show visual aids carousel
+  const handleShowVisualAids = useCallback(() => {
+    setShowVisualAidsCarousel(true);
+  }, []);
+
+// Explain visual aid via Ms. Sonoma
+  const handleExplainVisualAid = useCallback(async (visualAid) => {
+    if (!visualAid || !visualAid.description) {
+      return;
+    }
+
+// Read the pre-generated description (created during image generation)
+    await speakFrontendImpl(visualAid.description, {});
+  }, []);

@@ -712,7 +712,7 @@ function SessionPageV2Inner() {
     stopPolling: stopSessionPolling,
   } = useSessionTracking(
     learnerProfile?.id || null,
-    lessonKey || null,
+    goldenKeyLessonKey || null,
     false,
     (session) => {
       setConflictingSession(session);
@@ -1150,13 +1150,18 @@ function SessionPageV2Inner() {
         const timers = loadPhaseTimersForLearner(learner);
         setPhaseTimers(timers);
         
-        // Initialize currentTimerMode (null = not started yet)
-        setCurrentTimerMode({
-          discussion: null,
-          comprehension: null,
-          exercise: null,
-          worksheet: null,
-          test: null
+        // Initialize currentTimerMode (null = not started yet), but do not clobber
+        // any existing restore/resume-derived modes.
+        setCurrentTimerMode((prev) => {
+          const hasExistingMode = prev && Object.values(prev).some((mode) => mode === 'play' || mode === 'work');
+          if (hasExistingMode) return prev;
+          return {
+            discussion: null,
+            comprehension: null,
+            exercise: null,
+            worksheet: null,
+            test: null
+          };
         });
         
         // Check for active golden key on this lesson (only affects play timers when Golden Keys are enabled)
@@ -2573,11 +2578,14 @@ function SessionPageV2Inner() {
     if (!phaseName) return;
     
     // Clear the play timer storage so work timer starts fresh
-    const playTimerKey = lessonKey ? `session_timer_state:${lessonKey}:${phaseName}:play` : null;
     try {
-      if (playTimerKey) {
-        sessionStorage.removeItem(playTimerKey);
-      }
+      const playTimerKeys = [
+        lessonKey ? `session_timer_state:${lessonKey}:${phaseName}:play` : null,
+        `session_timer_state:${phaseName}:play`,
+      ].filter(Boolean);
+      playTimerKeys.forEach((k) => {
+        try { sessionStorage.removeItem(k); } catch {}
+      });
     } catch {}
     
     setCurrentTimerMode(prev => ({
@@ -3762,7 +3770,7 @@ function SessionPageV2Inner() {
       // Save medal if test was completed
       if (testGrade?.percentage != null && learnerId && lessonKey) {
         try {
-          await upsertMedal(learnerId, lessonKey, testGrade.percentage);
+          await upsertMedal(learnerId, goldenKeyLessonKey || lessonKey, testGrade.percentage);
           addEvent(`🏅 Medal saved: ${testGrade.percentage}%`);
         } catch (err) {
           console.error('[SessionPageV2] Failed to save medal:', err);
@@ -5672,9 +5680,11 @@ function SessionPageV2Inner() {
           <video
             ref={videoRef}
             src="/media/ms-sonoma-3.mp4"
+            autoPlay
             muted
             loop
             playsInline
+            webkit-playsinline="true"
             preload="auto"
             onLoadedMetadata={() => {
               try {

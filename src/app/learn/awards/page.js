@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
+import { CORE_SUBJECTS, sortSubjectsForDropdown } from '@/app/lib/subjects'
 
 export default function AwardsPage() {
   const router = useRouter()
@@ -11,8 +12,27 @@ export default function AwardsPage() {
   const [allLessons, setAllLessons] = useState({})
   const [medalsLoading, setMedalsLoading] = useState(true)
   const [lessonsLoading, setLessonsLoading] = useState(true)
+  const [customSubjects, setCustomSubjects] = useState([])
+  const [customSubjectsLoading, setCustomSubjectsLoading] = useState(true)
 
-  const subjects = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
+  const normalizeSubjectKey = (value) => {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+  }
+
+  const customSubjectNames = (customSubjects || [])
+    .map((s) => s?.name)
+    .filter(Boolean)
+
+  // Fetch subjects includes generated so we can infer subject buckets for facilitator-created lessons.
+  // Include custom subjects so Awards can resolve titles/blurbs where available.
+  const subjectsToFetch = [
+    ...CORE_SUBJECTS,
+    ...customSubjectNames,
+    'generated',
+  ]
 
   useEffect(() => {
     try {
@@ -43,6 +63,44 @@ export default function AwardsPage() {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
+      setCustomSubjectsLoading(true)
+      try {
+        const { getSupabaseClient } = await import('@/app/lib/supabaseClient')
+        const supabase = getSupabaseClient()
+        if (!supabase) {
+          if (!cancelled) setCustomSubjects([])
+          return
+        }
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token) {
+          if (!cancelled) setCustomSubjects([])
+          return
+        }
+
+        const res = await fetch('/api/custom-subjects', {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store'
+        })
+        if (!res.ok) {
+          if (!cancelled) setCustomSubjects([])
+          return
+        }
+        const data = await res.json().catch(() => null)
+        const subjects = Array.isArray(data?.subjects) ? data.subjects : []
+        if (!cancelled) setCustomSubjects(subjects)
+      } catch {
+        if (!cancelled) setCustomSubjects([])
+      } finally {
+        if (!cancelled) setCustomSubjectsLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
       // Get auth token for facilitator lessons
       let token = null
       try {
@@ -55,8 +113,9 @@ export default function AwardsPage() {
       } catch {}
 
       const lessonsMap = {}
-      for (const subject of subjects) {
+      for (const subject of subjectsToFetch) {
         try {
+          const subjectKey = normalizeSubjectKey(subject)
           const headers = subject === 'generated' && token 
             ? { 'Authorization': `Bearer ${token}` }
             : {}
@@ -65,9 +124,9 @@ export default function AwardsPage() {
             headers
           })
           const list = res.ok ? await res.json() : []
-          lessonsMap[subject] = Array.isArray(list) ? list : []
+          lessonsMap[subjectKey] = Array.isArray(list) ? list : []
         } catch {
-          lessonsMap[subject] = []
+          lessonsMap[normalizeSubjectKey(subject)] = []
         }
       }
       if (!cancelled) {
@@ -76,31 +135,85 @@ export default function AwardsPage() {
       }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [customSubjectNames.join('|')])
 
   const medalsBySubject = () => {
+    const normalizeSubject = (raw) => {
+      const s = String(raw || '').trim().toLowerCase()
+      if (!s) return null
+      if (s === 'language-arts' || s === 'language arts') return 'language arts'
+      if (s === 'social-studies' || s === 'social studies') return 'social studies'
+      if (s === 'facilitator' || s === 'facilitator-lessons' || s === 'facilitator lessons') return 'generated'
+      return s.replace(/\s+/g, ' ')
+    }
+
+    const ensureJsonFile = (file) => {
+      const f = String(file || '').trim()
+      if (!f) return f
+      return f.toLowerCase().endsWith('.json') ? f : `${f}.json`
+    }
+
+    const coreSubjects = CORE_SUBJECTS
+
     const grouped = {}
     
     Object.entries(medals).forEach(([lessonKey, medalData]) => {
       if (!medalData.medalTier) return // Only show lessons with medals
       
-      const [subject, file] = lessonKey.split('/')
-      if (!subject || !file) return
+      const parts = String(lessonKey || '').split('/')
+      const subjectRaw = parts[0]
+      const fileRaw = parts.slice(1).join('/')
+      if (!subjectRaw || !fileRaw) return
+
+      const file = ensureJsonFile(fileRaw)
+      const subjectKey = normalizeSubject(subjectRaw)
+
+      // Determine which subject bucket this medal belongs to.
+      // For facilitator-generated lessons, infer from the generated lesson's metadata subject.
+      let bucket = subjectKey
+
+      const generatedList = allLessons.generated || []
+      const generatedLesson = generatedList.find(l => (ensureJsonFile(l?.file) === file)) || null
+      const generatedSubject = normalizeSubject(generatedLesson?.subject)
+
+      if (!bucket || bucket === 'generated') {
+        // Allow generated lessons to bucket into core OR custom subjects.
+        if (generatedSubject) {
+          bucket = generatedSubject
+        }
+      }
+
+      if (!bucket || bucket === 'generated') {
+        // If the lesson exists in any known subject folder, prefer that.
+        const knownSubjects = Object.keys(allLessons || {})
+        const foundInKnown = knownSubjects.find((s) => {
+          const list = allLessons[s] || []
+          return list.some((l) => ensureJsonFile(l?.file) === file)
+        })
+        if (foundInKnown) bucket = foundInKnown
+      }
+
+      if (!bucket || bucket === 'generated') {
+        // Last resort: keep under general (never show "Facilitator" as a subject).
+        bucket = 'general'
+      }
       
-      const subjectLessons = allLessons[subject] || []
-      const lesson = subjectLessons.find(l => l.file === file)
+      // Find best lesson metadata to display.
+      const bucketLessons = allLessons[bucket] || []
+      const bucketLesson = bucketLessons.find(l => ensureJsonFile(l?.file) === file) || null
+      const lesson = bucketLesson || generatedLesson || null
 
       const fallbackLesson = {
         title: (file || '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() || file || 'Lesson',
         blurb: '',
         grade: null,
         difficulty: null,
-        subject,
+        subject: bucket,
         file
       }
 
-      if (!grouped[subject]) grouped[subject] = []
-      grouped[subject].push({
+      if (!grouped[bucket]) grouped[bucket] = []
+      grouped[bucket].push({
         ...(lesson || fallbackLesson),
         medalTier: medalData.medalTier,
         bestPercent: medalData.bestPercent ?? 0,
@@ -123,7 +236,32 @@ export default function AwardsPage() {
 
   const loading = medalsLoading || lessonsLoading
   const groupedMedals = medalsBySubject()
-  const subjectsToRender = Array.from(new Set([...subjects, ...Object.keys(groupedMedals)]))
+
+  const customDisplayOrder = (customSubjects || [])
+    .map((s) => ({
+      key: normalizeSubjectKey(s?.name),
+      name: String(s?.name || '').trim(),
+      order: Number(s?.display_order ?? 999),
+    }))
+    .filter((s) => s.key && s.name)
+    .sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+
+  const customKeyToName = new Map(customDisplayOrder.map((s) => [s.key, s.name]))
+
+  const subjectOrder = CORE_SUBJECTS
+  const customOrderedKeys = customDisplayOrder.map((s) => s.key)
+
+  const baseOrdered = [
+    ...subjectOrder,
+    ...customOrderedKeys,
+  ]
+
+  const subjectsToRender = [
+    ...baseOrdered.filter((s) => Array.isArray(groupedMedals[s]) && groupedMedals[s].length > 0),
+    ...Object.keys(groupedMedals)
+      .filter((s) => !baseOrdered.includes(s))
+      .sort((a, b) => String(a).localeCompare(String(b), undefined, { sensitivity: 'base' }))
+  ]
   const hasMedals = Object.keys(groupedMedals).length > 0
   const totalMedals = Object.values(groupedMedals).reduce((sum, arr) => sum + arr.length, 0)
 
@@ -229,9 +367,8 @@ export default function AwardsPage() {
             const lessons = groupedMedals[subject]
             if (!lessons || lessons.length === 0) return null
 
-            const displaySubject = subject === 'generated' 
-              ? 'Facilitator Lessons' 
-              : subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+            const displaySubject = customKeyToName.get(subject)
+              || subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
             return (
               <div key={subject}>

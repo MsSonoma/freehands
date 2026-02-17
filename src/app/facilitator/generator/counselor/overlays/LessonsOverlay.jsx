@@ -1,6 +1,6 @@
 // Compact lessons list view for Mr. Mentor overlay
 'use client'
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
@@ -49,6 +49,26 @@ export default function LessonsOverlay({ learnerId }) {
   const router = useRouter()
   const { coreSubjects, subjectNames } = useFacilitatorSubjects({ includeGenerated: true })
   const [allLessons, setAllLessons] = useState({})
+  const hasPrefetchedLessonsRef = useRef(false)
+  const debugEnabled = useMemo(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      if (process.env.NEXT_PUBLIC_DEBUG_LESSONS_OVERLAY === '1') return true
+    } catch {}
+    try {
+      return window.localStorage?.getItem('debug_lessons_overlay') === '1'
+    } catch {
+      return false
+    }
+  }, [])
+  const debugLog = useCallback(
+    (...args) => {
+      if (!debugEnabled) return
+      // eslint-disable-next-line no-console
+      console.log('[LessonsOverlay]', ...args)
+    },
+    [debugEnabled]
+  )
   const [approvedLessons, setApprovedLessons] = useState({})
   const [lessonNotes, setLessonNotes] = useState({})
   const [scheduledLessons, setScheduledLessons] = useState({})
@@ -139,21 +159,58 @@ export default function LessonsOverlay({ learnerId }) {
   )
 
   const loadLessons = useCallback(async (force = false) => {
+    if (!force && hasPrefetchedLessonsRef.current) {
+      debugLog('loadLessons: skip (already prefetched)')
+      return
+    }
+
+    const FALLBACK_SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general']
+    const subjectsToFetch = Array.isArray(coreSubjects) && coreSubjects.length > 0 ? coreSubjects : FALLBACK_SUBJECTS
+
+    debugLog('loadLessons: start', {
+      force,
+      hasPrefetched: hasPrefetchedLessonsRef.current,
+      coreSubjects,
+      subjectsToFetch,
+      learnerId,
+    })
+    const startedAt = Date.now()
+
+    const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), timeoutMs)
+      try {
+        return await fetch(url, { ...options, signal: controller.signal })
+      } finally {
+        clearTimeout(timer)
+      }
+    }
+
     setLoading(true)
     setLoadError(false)
     try {
       const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      let token = null
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        token = session?.access_token || null
+      } catch {
+        token = null
+      }
+
+      debugLog('loadLessons: session token?', Boolean(token))
 
       const results = {}
-      const subjectsToFetch = coreSubjects
 
       for (const subject of subjectsToFetch) {
         try {
-          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, {
-            cache: 'no-store'
-          })
+          const oneStartedAt = Date.now()
+          const res = await fetchWithTimeout(
+            `/api/lessons/${encodeURIComponent(subject)}`,
+            { cache: 'no-store' },
+            15000
+          )
+          debugLog('core fetch', subject, res.status, `${Date.now() - oneStartedAt}ms`)
           if (!res.ok) {
             if (res.status === 401) {
               results[subject] = []
@@ -165,53 +222,83 @@ export default function LessonsOverlay({ learnerId }) {
           const list = await res.json()
           results[subject] = Array.isArray(list) ? list : []
         } catch (err) {
+          debugLog('core fetch error', subject, err?.name || 'error', err?.message || String(err))
           results[subject] = []
         }
       }
 
-      if (token) {
-        try {
-          const res = await fetch('/api/facilitator/lessons/list', {
-            cache: 'no-store',
-            headers: { Authorization: `Bearer ${token}` }
-          })
-          if (res.ok) {
-            const generatedList = await res.json()
-            const sortedGeneratedList = generatedList.sort((a, b) => {
-              const timeA = new Date(a.created_at || 0).getTime()
-              const timeB = new Date(b.created_at || 0).getTime()
-              return timeB - timeA
-            })
-
-            if (!results['generated']) results['generated'] = []
-
-            for (const lesson of sortedGeneratedList) {
-              const subject = lesson.subject || 'math'
-              const generatedLesson = {
-                ...lesson,
-                isGenerated: true
-              }
-
-              if (!results[subject]) results[subject] = []
-              results[subject].unshift(generatedLesson)
-              results['generated'].push(generatedLesson)
-            }
-          }
-        } catch (err) {
-          // Silent error handling
-        }
-      }
-
+      // Show core lessons immediately. Generated lessons are best-effort and should not block UI.
       setAllLessons(results)
+      hasPrefetchedLessonsRef.current = true
       setLoadError(false)
       setRetryCount(0)
+      setLoading(false)
+
+      debugLog(
+        'loadLessons: core done',
+        {
+          subjects: subjectsToFetch,
+          counts: Object.fromEntries(
+            Object.entries(results).map(([s, list]) => [s, Array.isArray(list) ? list.length : 0])
+          ),
+        },
+        `${Date.now() - startedAt}ms`
+      )
+
+      if (!token) return
+
+      ;(async () => {
+        try {
+          const genStartedAt = Date.now()
+          const res = await fetchWithTimeout(
+            '/api/facilitator/lessons/list',
+            { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } },
+            20000
+          )
+          debugLog('generated fetch', res.status, `${Date.now() - genStartedAt}ms`)
+          if (!res.ok) return
+
+          const generatedList = await res.json()
+          if (!Array.isArray(generatedList)) return
+
+          debugLog('generated count', generatedList.length)
+
+          const sortedGeneratedList = generatedList.sort((a, b) => {
+            const timeA = new Date(a.created_at || 0).getTime()
+            const timeB = new Date(b.created_at || 0).getTime()
+            return timeB - timeA
+          })
+
+          setAllLessons((prev) => {
+            const next = { ...(prev || {}) }
+            if (!next['generated']) next['generated'] = []
+
+            const generatedBucket = []
+            for (const lesson of sortedGeneratedList) {
+              const subject = (lesson.subject || 'math').toString().toLowerCase()
+              const generatedLesson = { ...lesson, isGenerated: true }
+              if (!next[subject]) next[subject] = []
+              next[subject] = [generatedLesson, ...(Array.isArray(next[subject]) ? next[subject] : [])]
+              generatedBucket.push(generatedLesson)
+            }
+
+            next['generated'] = generatedBucket
+            return next
+          })
+        } catch {
+          // Best-effort only
+          debugLog('generated fetch error')
+        }
+      })()
     } catch (err) {
       console.error('[LessonsOverlay] Failed to load lessons:', err)
       setLoadError(true)
     } finally {
+      // loadLessons may setLoading(false) early; keep this as a safety net.
       setLoading(false)
+      debugLog('loadLessons: end', `${Date.now() - startedAt}ms`)
     }
-  }, [])
+  }, [coreSubjects, debugLog, learnerId])
 
   // Auto-retry on error with exponential backoff
   useEffect(() => {
@@ -326,18 +413,17 @@ export default function LessonsOverlay({ learnerId }) {
     }
   }, [learnerId, selectedGrade])
 
-  // Initial load on mount
+  // Prefetch lessons once coreSubjects are ready (so first overlay open feels instant).
   useEffect(() => {
-    loadLessons()
-    if (learnerId && learnerId !== 'none') {
-      loadLearnerData()
-    }
-  }, []) // Only run once on mount
+    debugLog('effect: initial prefetch')
+    loadLessons(false)
+  }, [debugLog, loadLessons])
 
   // Listen for preload event to trigger initial load
   useEffect(() => {
     const handlePreload = () => {
-      loadLessons(true) // Force reload on preload event
+      debugLog('event: preload-overlays')
+      loadLessons(false) // Warm cache; don't thrash network if already loaded
       if (learnerId && learnerId !== 'none') {
         loadLearnerData()
       }
@@ -357,7 +443,7 @@ export default function LessonsOverlay({ learnerId }) {
       window.removeEventListener('preload-overlays', handlePreload)
       window.removeEventListener('mr-mentor:lesson-generated', handleLessonGenerated)
     }
-  }, [learnerId, loadLessons, loadLearnerData])
+  }, [debugLog, learnerId, loadLessons, loadLearnerData])
 
   // Load learner data when learner changes
   useEffect(() => {

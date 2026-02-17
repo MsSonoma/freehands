@@ -73,16 +73,17 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
         <video
           ref={videoRef}
           src="/media/ms-sonoma-3.mp4"
-          muted={muted}
+          autoPlay
+          muted
           loop
           playsInline
+          webkit-playsinline="true"
           preload="auto"
           onLoadedMetadata={() => {
             try {
-              // Ensure the first frame is visible on load without auto-playing
-              if (videoRef.current) {
+              // Seek to first frame without pausing to keep video ready for immediate playback
+              if (videoRef.current && videoRef.current.paused) {
                 try { videoRef.current.currentTime = 0; } catch {}
-                try { videoRef.current.pause(); } catch {}
               }
             } catch {}
           }}

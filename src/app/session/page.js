@@ -270,7 +270,7 @@ function SessionPageInner_LEGACY_SESSION_V1_DISCONTINUED() {
     endSession: endTrackedSession,
   } = useSessionTracking(
     trackingLearnerId,
-    normalizedLessonKey,
+    lessonKey,
     false, // autoStart
     (session) => {
       // Session taken over callback (unused - gate-based detection handles this)
@@ -916,11 +916,14 @@ function SessionPageInner_LEGACY_SESSION_V1_DISCONTINUED() {
   // Transition from play to work timer (called when "Go" button is clicked during play mode)
   const transitionToWorkTimer = useCallback((phaseName) => {
     // Clear the play timer storage so work timer starts fresh
-    const playTimerKey = lessonKey 
-      ? `session_timer_state:${lessonKey}:${phaseName}:play`
-      : `session_timer_state:${phaseName}:play`;
+    const playTimerKeys = [
+      lessonKey ? `session_timer_state:${lessonKey}:${phaseName}:play` : null,
+      `session_timer_state:${phaseName}:play`,
+    ].filter(Boolean);
     try {
-      sessionStorage.removeItem(playTimerKey);
+      playTimerKeys.forEach((k) => {
+        try { sessionStorage.removeItem(k); } catch {}
+      });
     } catch {}
     
     setCurrentTimerMode(prev => ({
@@ -8655,9 +8658,11 @@ function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef
         <video
           ref={videoRef}
           src="/media/ms-sonoma-3.mp4"
+          autoPlay
           muted
           loop
           playsInline
+          webkit-playsinline="true"
           preload="auto"
           onLoadedMetadata={() => {
             try {
