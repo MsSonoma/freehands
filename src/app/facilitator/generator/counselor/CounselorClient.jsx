@@ -1868,6 +1868,103 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
                 interceptResult.response = "I couldn't save curriculum preferences. Please try again."
               }
             }
+          } else if (action.type === 'report_curriculum_preferences') {
+            setLoadingThought('Loading curriculum preferences...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token || !selectedLearnerId) {
+              interceptResult.response = 'Please select a learner first.'
+            } else {
+              try {
+                const res = await fetch(`/api/curriculum-preferences?learnerId=${selectedLearnerId}`, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                })
+
+                const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.error
+                    ? `I couldn't load curriculum preferences: ${js.error}`
+                    : "I couldn't load curriculum preferences. Please try again."
+                } else {
+                  const prefs = js?.preferences || null
+                  if (!prefs) {
+                    interceptResult.response = `No curriculum preferences are saved yet for ${learnerName || 'this learner'}. If you'd like, tell me focus topics and avoid topics and I can save them.`
+                  } else {
+                    const focusTopics = Array.isArray(prefs.focus_topics)
+                      ? prefs.focus_topics
+                      : Array.isArray(prefs.focusTopics)
+                        ? prefs.focusTopics
+                        : []
+                    const bannedTopics = Array.isArray(prefs.banned_topics)
+                      ? prefs.banned_topics
+                      : Array.isArray(prefs.bannedTopics)
+                        ? prefs.bannedTopics
+                        : []
+
+                    const focusText = focusTopics.length ? focusTopics.join(', ') : '(none)'
+                    const avoidText = bannedTopics.length ? bannedTopics.join(', ') : '(none)'
+
+                    interceptResult.response = `Curriculum preferences for ${learnerName || 'this learner'}:\n\nFocus: ${focusText}\nAvoid: ${avoidText}`
+                  }
+                }
+              } catch {
+                interceptResult.response = "I couldn't load curriculum preferences. Please try again."
+              }
+            }
+          } else if (action.type === 'report_weekly_pattern') {
+            setLoadingThought('Loading weekly pattern...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token || !selectedLearnerId) {
+              interceptResult.response = 'Please select a learner first.'
+            } else {
+              try {
+                const res = await fetch(`/api/schedule-templates?learnerId=${selectedLearnerId}`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+
+                const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.error
+                    ? `I couldn't load the weekly pattern: ${js.error}`
+                    : "I couldn't load the weekly pattern. Please try again."
+                } else {
+                  const templates = Array.isArray(js?.templates) ? js.templates : []
+                  const active = templates.find(t => t?.active) || templates[0] || null
+                  const pattern = active?.pattern && typeof active.pattern === 'object' ? active.pattern : null
+
+                  if (!active || !pattern) {
+                    interceptResult.response = `No weekly pattern is saved yet for ${learnerName || 'this learner'}. If you tell me subjects by day, I can help you set one up.`
+                  } else {
+                    const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+                    const dayLabel = (d) => d.charAt(0).toUpperCase() + d.slice(1)
+                    const dayLines = dayOrder.map((day) => {
+                      const raw = pattern?.[day]
+                      const subjects = Array.isArray(raw)
+                        ? raw
+                          .map((x) => (typeof x === 'string' ? x : (x?.subject || x?.name || '')))
+                          .map((s) => String(s || '').trim())
+                          .filter(Boolean)
+                        : []
+                      const text = subjects.length ? subjects.join(', ') : '(none)'
+                      return `${dayLabel(day)}: ${text}`
+                    })
+
+                    interceptResult.response = `Weekly pattern for ${learnerName || 'this learner'}:\n\n${dayLines.join('\n')}`
+                  }
+                }
+              } catch {
+                interceptResult.response = "I couldn't load the weekly pattern. Please try again."
+              }
+            }
           } else if (action.type === 'save_weekly_pattern') {
             setLoadingThought('Saving weekly pattern...')
 

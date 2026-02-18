@@ -14,7 +14,12 @@
  * - Complex queries that need LLM reasoning
  */
 
-import { searchFeatures, getFeatureById } from '@/lib/faq/faqLoader'
+import {
+  searchMentorFeatures,
+  getMentorFeatureById,
+  shouldTreatAsReportQuery,
+  isLikelyAppFeatureQuery
+} from '@/lib/mentor/featureRegistry'
 
 // Fuzzy string matching for normalization
 function normalizeText(text) {
@@ -1083,7 +1088,7 @@ export class MentorInterceptor {
     // Handle FAQ feature confirmation
     if (this.state.awaitingInput === 'faq_feature_confirm') {
       const featureId = this.state.context.selectedFeatureId
-      const feature = getFeatureById(featureId)
+      const feature = getMentorFeatureById(featureId)
       
       if (!feature) {
         this.reset()
@@ -1106,7 +1111,7 @@ export class MentorInterceptor {
         
         if (feature.relatedFeatures && feature.relatedFeatures.length > 0) {
           response += `\n\nThis is related to: ${feature.relatedFeatures.map(id => {
-            const related = getFeatureById(id)
+            const related = getMentorFeatureById(id)
             return related ? related.title : id
           }).join(', ')}.`
         }
@@ -1144,7 +1149,7 @@ export class MentorInterceptor {
           this.state.context.selectedFeatureId = featureId
           this.state.awaitingInput = 'faq_feature_confirm'
           
-          const feature = getFeatureById(featureId)
+          const feature = getMentorFeatureById(featureId)
           return {
             handled: true,
             response: `You selected ${feature.title}. Is that correct?`
@@ -1155,7 +1160,7 @@ export class MentorInterceptor {
       // Try to match by feature name
       const normalizedInput = normalizeText(userMessage)
       for (const featureId of candidates) {
-        const feature = getFeatureById(featureId)
+        const feature = getMentorFeatureById(featureId)
         if (feature && normalizeText(feature.title).includes(normalizedInput)) {
           this.state.context.selectedFeatureId = featureId
           this.state.awaitingInput = 'faq_feature_confirm'
@@ -1979,27 +1984,63 @@ export class MentorInterceptor {
    * Handle FAQ and feature explanation requests
    */
   async handleFaq(userMessage, context) {
-    // Search for matching features
-    const matches = searchFeatures(userMessage)
+    // Search for matching features (FAQ + report-capable registry entries)
+    const matches = searchMentorFeatures(userMessage)
     
     if (matches.length === 0) {
-      // No matches - forward to API
+      // No matches.
+      // Only log blindspot when the question looks like an app/feature query.
+      // Otherwise (personal advice phrased as "what is/how do I") we should just converse.
+      const shouldLogBlindspot = isLikelyAppFeatureQuery(userMessage)
+
       return {
         handled: false,
-        apiForward: { message: userMessage }
+        apiForward: shouldLogBlindspot
+          ? {
+              message: userMessage,
+              context: {
+                mentor_blindspot: {
+                  kind: 'feature_registry',
+                  query: String(userMessage || ''),
+                  created_at: new Date().toISOString()
+                }
+              }
+            }
+          : { message: userMessage }
       }
     }
     
     if (matches.length === 1) {
       // Single match - ask for confirmation before explaining
       const match = matches[0]
+      const feature = match.feature
+
+      // If the feature supports reporting and the user seems to want current state, do that.
+      if (feature?.report?.actionType && shouldTreatAsReportQuery(userMessage, context)) {
+        if (feature.report.requiresLearner && !context?.selectedLearnerId) {
+          return {
+            handled: true,
+            response: 'Please select a learner first, then I can show the current settings.'
+          }
+        }
+
+        return {
+          handled: true,
+          action: {
+            type: feature.report.actionType,
+            learnerId: context?.selectedLearnerId || null
+          },
+          response: `Checking ${feature.title.toLowerCase()} for ${context?.learnerName || 'this learner'}...`
+        }
+      }
+
       this.state.flow = 'faq'
       this.state.awaitingInput = 'faq_feature_confirm'
-      this.state.context.selectedFeatureId = match.feature.id
+      this.state.context.selectedFeatureId = feature.id
       
       return {
         handled: true,
-        response: `It looks like you're asking about ${match.feature.title}. Is that correct?`
+        response: `It looks like you're asking about ${feature.title}. Is that correct?`
       }
     }
     

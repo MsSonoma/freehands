@@ -1585,13 +1585,19 @@ export async function POST(req) {
         cohereMeta = { tenantId, threadId, sector: cohereSector, subjectKey, mode: cohereMode }
 
         if (!isFollowup && userMessage) {
+          const blindspot = body?.interceptor_context?.mentor_blindspot
+          const meta = {
+            call_id: callId,
+            ...(blindspot && typeof blindspot === 'object' ? { mentor_blindspot: blindspot } : {})
+          }
+
           await cohereAppendEvent({
             supabase,
             tenantId,
             threadId,
             role: 'user',
             text: userMessage,
-            meta: { call_id: callId }
+            meta
           })
         }
 

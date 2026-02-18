@@ -22,6 +22,22 @@ For every non-trivial Copilot turn (anything beyond a short yes/no), you MUST do
    - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sk r -a MsSonoma -t "<latest user prompt>" --out sidekick_pack.md --journal-out sidekick_rounds.jsonl`
 - Then read/use `sidekick_pack.md` when forming the answer.
 
+## End-of-Turn Closeout (Required for Edits)
+
+If (and only if) you created/edited/deleted any repo files in the turn, you MUST do the following BEFORE ending your response:
+
+1) Ingest the touched files (preferred) OR sync the project
+- Preferred (precise):
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere ingest <file-or-folder> --project freehands [--recursive]`
+- Alternative (broader, slower; use if many files changed):
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sync --project freehands`
+
+2) Append an investigation entry to `cohere-changelog.md`
+- Required when you ran recon to answer the question OR made non-trivial edits.
+- Keep entries short and searchable; include the exact recon prompt string so it can be re-run.
+
+Note: This changelog is NOT `docs/brain/*` and does not violate the Brain-folder documentation policy.
+
 If you cannot run Cohere commands in this session, you MUST say that explicitly and ask the user to run them and paste the results.
 
 - Default behavior (automatic recon): before answering any non-trivial user prompt, generate a fresh pack from the latest prompt text and use it as context.
@@ -120,3 +136,9 @@ For this workspace, Cohere packs + Cohere change packs are the canonical record 
 - Do NOT update `docs/brain/*`, `docs/brain/manifest.json`, or `docs/brain/changelog.md` automatically after code changes.
 - Do NOT add changelog entries automatically.
 - Only edit `docs/brain/*` when the user explicitly asks for documentation updates.
+
+## Repo Changelog (Cohere Investigations)
+
+Use `cohere-changelog.md` as an append-only log of investigations and fixes to prevent drift and to provide “access windows” into recent recon prompts.
+- Do not paste full packs.
+- Prefer linking to `sidekick_pack.md` (latest) and/or referencing the corresponding line(s) in `sidekick_rounds.jsonl`.

@@ -6,14 +6,16 @@ Mode: standard
 
 Prompt (original):
 ```text
-Where does SessionPageV2 handle restart/restart-from-resume, and does it call TimerService.reset() or otherwise clear timerState/workPhaseResults?
+Mr. Mentor/ThoughtHub: how do we decide a user message is a feature/FAQ question vs general conversation? Where is FAQ intent detection implemented (MentorInterceptor INTENT_PATTERNS)? Where is mentor_blindspot meta attached, and how to avoid logging blindspots for personal advice / non-app questions?
 ```
 
 Filter terms used:
 ```text
-TimerService.reset
-SessionPageV2
-TimerService
+FAQ
+INTENT_PATTERNS
+mentor_blindspot
+MentorInterceptor
+ThoughtHub
 ```
 # Context Pack
 
@@ -27,7 +29,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-TimerService.reset SessionPageV2 TimerService
+FAQ INTENT_PATTERNS mentor_blindspot MentorInterceptor ThoughtHub
 
 ## Forced Context
 
@@ -35,1478 +37,1606 @@ TimerService.reset SessionPageV2 TimerService
 
 ## Ranked Evidence
 
-### 1. sidekick_pack.md (2125ec80e822259d4bfef07205d1884da84129c9b399a7f643693f080bae9197)
-- bm25: -15.7035 | entity_overlap_w: 6.00 | adjusted: -17.2035 | relevance: 1.0000
+### 1. src/app/facilitator/generator/counselor/MentorInterceptor.js (5b4398f51f1e7cc4d21d4a02d6d084e77028c59f0784b3eb2dd6b1c717f80fcf)
+- bm25: -19.4638 | entity_overlap_w: 9.10 | adjusted: -21.7388 | relevance: 1.0000
 
-// PIN gate: timeline jumps are facilitator-only
-    let allowed = false;
-    try {
-      allowed = await ensurePinAllowed('timeline');
-    } catch (e) {
-      console.warn('[SessionPageV2] Timeline PIN gate error:', e);
+return INTENT_PATTERNS.assign.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
     }
-    if (!allowed) {
-      timelineJumpInProgressRef.current = false;
-      return;
-    }
-    
-    console.log('[SessionPageV2] Timeline jump proceeding to:', targetPhase);
-    
-    // Stop any playing audio first
-    stopAudioSafe({ force: true });
-    
-    // Reset opening actions state to prevent zombie UI
-    setOpeningActionActive(false);
-    setOpeningActionType(null);
-    setOpeningActionState({});
-    setOpeningActionInput('');
-    setOpeningActionError('');
-    setOpeningActionBusy(false);
-    setShowPlayWithSonomaMenu(false);
-    setShowGames(false);
-    setShowFullscreenPlayTimer(false);
-
-### 7. src/app/session/v2/SessionPageV2.jsx (b97cd740f6c7c99c06b14c225b7e2f5740459943a832450262784f42f8ed89b2)
-- bm25: -7.1805 | relevance: 1.0000
-
-### 23. sidekick_pack.md (2168af49fc874c26c8923fe18c01acab19e0f9a7bc8d95336ba2c47386ee062a)
-- bm25: -5.9274 | entity_overlap_w: 1.00 | adjusted: -6.1774 | relevance: 1.0000
-
-### 18. src/app/session/v2/TimerService.jsx (a2d7e76cb211127d6407ec85e28abf4078ebc4470e2462f8084afc06651e070b)
-- bm25: -5.4024 | relevance: 1.0000
-
-### 24. src/app/session/v2/TimerService.jsx (16208a27764d4b1276874b5a9ea4b75d305609b19be6adc032ed5205aac08ce5)
-- bm25: -6.1715 | relevance: 1.0000
-
-this.#removeTimerOverlayKey(phase, 'work');
-
-### 25. src/app/session/v2/SessionPageV2.jsx (88fe0015b32a8bc8371a6dda9aec70e55687fc9656f465d7fc93a864d040fd16)
-- bm25: -6.1680 | relevance: 1.0000
-
-### 2. src/app/session/v2/TimerService.jsx (8a0a047ca96c0a7bd623f5ae75ff99b71bcc3928b95a1f7cf7d1b7013986acb8)
-- bm25: -13.4758 | relevance: 1.0000
-
-/**
-   * Reset all timers and clear per-phase sessionStorage mirrors.
-   * Use for "Start Over" and lesson restarts without a full page refresh.
-   */
-  reset() {
-    if (this.sessionInterval) {
-      clearInterval(this.sessionInterval);
-      this.sessionInterval = null;
-    }
-    if (this.playTimerInterval) {
-      clearInterval(this.playTimerInterval);
-      this.playTimerInterval = null;
-    }
-    if (this.workPhaseInterval) {
-      clearInterval(this.workPhaseInterval);
-      this.workPhaseInterval = null;
-    }
-
-this.sessionStartTime = null;
-    this.sessionElapsed = 0;
-
-this.playTimers.clear();
-    this.currentPlayPhase = null;
-
-this.workPhaseTimers.clear();
-    this.currentWorkPhase = null;
-
-this.workPhaseResults.clear();
-
-this.onTimeCompletions = 0;
-    this.goldenKeyAwarded = false;
-    this.mode = 'play';
-    
-    this.isPaused = false;
-    this.pausedPlayElapsed = null;
-    this.pausedWorkElapsed = null;
-
-### 3. sidekick_pack.md (5a3d3e0c845314c08f34e366fb3f52fdc04f4978668dd7d89f0826b62f69c151)
-- bm25: -12.3339 | entity_overlap_w: 4.00 | adjusted: -13.3339 | relevance: 1.0000
-
-### 28. src/app/session/v2/TimerService.jsx (50c86fe95bbe058e184d6066028a47bb16cc366c5597e74956565455e458af49)
-- bm25: -5.9274 | relevance: 1.0000
-
-const validPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
-      if (!validPhases.includes(phase)) return;
-
-### 29. src/app/session/v2/TimerService.jsx (9c98c5270cb757bf7f2f0409e031c8524ebf47d71737482c0b33133e4a59f387)
-- bm25: -5.9274 | relevance: 1.0000
-
-const timer = {
-        startTime,
-        elapsed: asNumber,
-        timeLimit,
-        completed: false,
-        onTime: asNumber <= timeLimit
-      };
-
-### 30. src/app/session/v2/TimerService.jsx (6e47a360484dbfce63e9b04c56c1b502a733a0369653f678f7f6162e6b60329c)
-- bm25: -5.8612 | relevance: 1.0000
-
-#clearAllTimerOverlayKeysForLesson() {
-    if (typeof window === 'undefined') return;
-    const prefix = this.#timerOverlayKeyPrefix();
-    if (!prefix) return;
-
-### 31. src/app/session/v2/TimerService.jsx (bf017c256fc06870bbde627ee9aa37b55c6db8bd27fb4b246887cb3b6a1e379d)
-- bm25: -5.4918 | entity_overlap_w: 1.00 | adjusted: -5.7418 | relevance: 1.0000
-
-### 4. src/app/session/v2/TimerService.jsx (acaa43b46c9a31add888fd04939ae9b9fb4d12b3c5f56d8935151446d6325c20)
-- bm25: -11.7503 | entity_overlap_w: 4.00 | adjusted: -12.7503 | relevance: 1.0000
-
-try {
-      const toRemove = [];
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const k = sessionStorage.key(i);
-        if (k && k.startsWith(prefix)) {
-          toRemove.push(k);
-        }
+  },
+  
+  edit: {
+    keywords: ['edit', 'change', 'modify', 'update', 'fix', 'correct'],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+      
+      // Check if it's an FAQ-style question about editing (how to)
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0 // Defer to FAQ intent
       }
-      for (const k of toRemove) {
-        try { sessionStorage.removeItem(k); } catch {}
+      
+      return INTENT_PATTERNS.edit.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
+    }
+  },
+  
+  recall: {
+    keywords: ['remember', 'recall', 'last time', 'previously', 'earlier', 'before'],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+      return INTENT_PATTERNS.recall.keywords.some(kw => normalized.includes(kw)) ? 0.7 : 0
+    }
+  },
+  
+  faq: {
+    keywords: ['what is', 'what are', 'how do i', 'how does', 'how can i', 'explain', 'tell me about', 'help with', 'how to', 'show me', 'where is', 'what does', 'can you explain'],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+      // Higher confidence (0.9) to prioritize FAQ over action intents when patterns match
+      return INTENT_PATTERNS.faq.keywords.some(kw => normalized.includes(kw)) ? 0.9 : 0
+    }
+  }
+
+### 2. src/app/facilitator/generator/counselor/MentorInterceptor.js (24ac67662964885aac65cedd56f3da447055623649bd5f05e428ecedc9d4435a)
+- bm25: -18.8308 | entity_overlap_w: 10.40 | adjusted: -21.4308 | relevance: 1.0000
+
+// Intent detection patterns
+const INTENT_PATTERNS = {
+  search: {
+    keywords: ['find', 'search', 'look for', 'show me', 'do you have', 'what lessons'],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+      return INTENT_PATTERNS.search.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
+    }
+  },
+  
+  generate: {
+    keywords: ['generate', 'create', 'make', 'build', 'new lesson'],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+      
+      // Check if it's an FAQ-style question about generation (how to)
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0 // Defer to FAQ intent
       }
-    } catch {}
-  }
-  
-  /**
-   * Start session timer
-   */
-  startSessionTimer() {
-    console.log('[TimerService] startSessionTimer called');
-    if (this.sessionInterval) {
-      console.warn('[TimerService] Session timer already running');
-      return;
+      
+      return INTENT_PATTERNS.generate.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
     }
-    
-    this.sessionStartTime = Date.now();
-    this.sessionElapsed = 0;
-    
-    console.log('[TimerService] Emitting sessionTimerStart');
-    this.eventBus.emit('sessionTimerStart', {
-      timestamp: this.sessionStartTime
-    });
-    
-    // Tick every second
-    this.sessionInterval = setInterval(this.#tickSessionTimer.bind(this), 1000);
-    console.log('[TimerService] Timer interval started');
-  }
+  },
   
-  /**
-   * Stop session timer
-   */
-  stopSessionTimer() {
-    if (!this.sessionInterval) {
-      return;
-    }
-    
-    clearInterval(this.sessionInterval);
-    this.sessionInterval = null;
-    
-    const elapsed = this.sessionElapsed;
-    const formatted = this.#formatTime(elapsed);
-    
-    this.eventBus.emit('sessionTimerStop', {
-      elapsed,
-      formatted
-    });
-  }
-  
-  /**
-   * Starts the play timer for a phase (phases 2-5 only).
-   * Play timers allow exploration/opening actions with a time limit.
-   * When expired, transitions to work mode via PlayTimeExpiredOverlay.
-   * 
-   * @param {string} phase - Phase name ('comprehension', 'exercise', 'worksheet', 'test')
-   * @param {number} [timeLimit] - Optional time limit override (seconds)
-   */
-  startPlayTimer(phase, timeLimit = null) {
-
-### 5. src/app/session/v2/SessionPageV2.jsx (817ac2974ad1c2e813ca40f00ffb2ed5049dca7551758bd16280356f0c49dfca)
-- bm25: -12.1878 | relevance: 1.0000
-
-const onTimeCount = (() => {
-    try {
-      if (!timerService?.getWorkPhaseTime) {
-        return Object.values(workPhaseCompletions || {}).filter(Boolean).length;
+  schedule: {
+    keywords: ['schedule', 'add to calendar', 'put on', 'assign for', 'plan for'],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+      
+      // Check if it's an FAQ-style question about scheduling (how to)
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0 // Defer to FAQ intent
       }
-      return workPhases.reduce((acc, phaseKey) => {
-        const t = getPhaseTime(phaseKey);
-        return acc + (t?.completed && t.onTime ? 1 : 0);
-      }, 0);
-    } catch {
-      return Object.values(workPhaseCompletions || {}).filter(Boolean).length;
+      
+      return INTENT_PATTERNS.schedule.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
     }
-  })();
+  },
 
-### 6. src/app/session/v2/TimerService.jsx (a8bc5ccda2768699ae9282d9616a4aa9f536b5091ec3a65c6887e11c83883e5d)
-- bm25: -12.1224 | relevance: 1.0000
+### 3. sidekick_pack.md (5944f1671766855b78134272fc7d38f8f01da09572349fedcedd78b21ff5a9b9)
+- bm25: -18.3585 | entity_overlap_w: 7.90 | adjusted: -20.3335 | relevance: 1.0000
 
-// Sticky completion records for Golden Key + end-of-test reporting.
-    // Once a phase has been completed on time, it retains credit until explicit reset.
-    // Map: phase -> { completed, onTime, elapsed, timeLimit, remaining, finishedAt }
-    this.workPhaseResults = new Map();
-    
-    // Work phase time limits (seconds) - all phases have work timers
-    this.workPhaseTimeLimits = options.workPhaseTimeLimits || {
-      discussion: 300,    // 5 minutes
-      comprehension: 180, // 3 minutes
-      exercise: 180,      // 3 minutes
-      worksheet: 300,     // 5 minutes
-      test: 600           // 10 minutes
-    };
-    
-    // Golden key tracking (only counts comprehension, exercise, worksheet, test)
-    this.onTimeCompletions = 0;
-    this.goldenKeyAwarded = false;
+Recon prompt (exact string):
+Implement a feature registry for Mr. Mentor: a machine-readable catalog of user-facing features that supports (1) deterministic describe responses, (2) deterministic report responses by calling existing app APIs (learner-scoped when needed), and (3) a hook to log blindspots to ThoughtHub. Identify existing FAQ loader data sources and interceptor entrypoints.
 
-### 7. sidekick_pack.md (db3f80c5f51f924b7c0cbc65fd0f8300a1311275abc4bf4f5b59917f3cd6a335)
-- bm25: -11.0886 | entity_overlap_w: 4.00 | adjusted: -12.0886 | relevance: 1.0000
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
 
-try {
-      const toRemove = [];
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const k = sessionStorage.key(i);
-        if (k && k.startsWith(prefix)) {
-          toRemove.push(k);
-        }
+Result:
+- Decision: Create a registry that merges existing FAQ JSON features with report-capable feature entries; route FAQ intent through the registry; log no-match queries via `interceptor_context.mentor_blindspot` and persist into ThoughtHub event meta.
+- Files changed: src/lib/mentor/featureRegistry.js, src/app/facilitator/generator/counselor/MentorInterceptor.js, src/app/facilitator/generator/counselor/CounselorClient.jsx, src/app/api/counselor/route.js, cohere-changelog.md
+
+Follow-ups:
+- Add more report-capable entries (custom subjects, goals notes, lesson schedule summaries).
+
+### 3. src/app/lib/cohereStyleMentor.js (ac1c944b0684a86f77c2cd0bf08d7cfa2eddb0a8454d10f831419d35dae31b1e)
+- bm25: -17.9246 | relevance: 1.0000
+
+### 4. cohere-changelog.md (92f6be3a685dbc3e8059959117bb08dcc3b1bd1ba37e346951990d0635662bbd)
+- bm25: -17.5900 | entity_overlap_w: 9.90 | adjusted: -20.0650 | relevance: 1.0000
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Special-case curriculum preferences in `handleFaq` to answer “describe” locally and route “report” to a new interceptor action that fetches preferences via existing API.
+- Files changed: src/app/facilitator/generator/counselor/MentorInterceptor.js, src/app/facilitator/generator/counselor/CounselorClient.jsx, cohere-changelog.md
+
+Follow-ups:
+- Consider adding similar report handlers for weekly pattern and custom subjects.
+
+---
+
+Date (UTC): 2026-02-18T15:28:05.4203857Z
+
+Topic: Feature registry (describe+report) + ThoughtHub blindspot hook
+
+Recon prompt (exact string):
+Implement a feature registry for Mr. Mentor: a machine-readable catalog of user-facing features that supports (1) deterministic describe responses, (2) deterministic report responses by calling existing app APIs (learner-scoped when needed), and (3) a hook to log blindspots to ThoughtHub. Identify existing FAQ loader data sources and interceptor entrypoints.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Create a registry that merges existing FAQ JSON features with report-capable feature entries; route FAQ intent through the registry; log no-match queries via `interceptor_context.mentor_blindspot` and persist into ThoughtHub event meta.
+- Files changed: src/lib/mentor/featureRegistry.js, src/app/facilitator/generator/counselor/MentorInterceptor.js, src/app/facilitator/generator/counselor/CounselorClient.jsx, src/app/api/counselor/route.js, cohere-changelog.md
+
+Follow-ups:
+- Add more report-capable entries (custom subjects, goals notes, lesson schedule summaries).
+
+---
+
+### 5. sidekick_pack.md (e0e823ccde6499c4ac1b38c597a4143b1e4105fce2dec0afee91f07f24f49578)
+- bm25: -15.2796 | entity_overlap_w: 11.00 | adjusted: -18.0296 | relevance: 1.0000
+
+# Cohere Pack (Sidekick Recon) - MsSonoma
+
+Project: freehands
+Profile: MsSonoma
+Mode: standard
+
+Prompt (original):
+```text
+Implement ThoughtHub blindspot harvester + feature proposal storage: where are ThoughtHub events stored and how can an API route list events with meta.mentor_blindspot? What auth patterns exist (cohereGetUserAndClient/cohereEnsureThread)? Propose minimal endpoints to (1) list grouped blindspots for a subjectKey/thread and (2) append a proposal event with meta.mentor_feature_proposal.
+```
+
+Filter terms used:
+```text
+ThoughtHub
+API
+meta.mentor_blindspot
+meta.mentor_feature_proposal
+mentor_blindspot
+mentor_feature_proposal
+```
+# Context Pack
+
+**Project**: freehands
+**Profile**: MsSonoma
+**Mode**: standard
+
+## Pack Contract
+
+This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
+
+## Question
+
+ThoughtHub API meta.mentor_blindspot meta.mentor_feature_proposal mentor_blindspot mentor_feature_proposal
+
+## Forced Context
+
+(none)
+
+## Ranked Evidence
+
+### 1. src/app/api/counselor/route.js (dbb6c7952958cdba6484727c986c29bfc517a4e2bcd52c7bc8fe856416fb46ff)
+- bm25: -29.1981 | entity_overlap_w: 2.00 | adjusted: -29.6981 | relevance: 1.0000
+
+const { supabase } = auth
+        const { tenantId, threadId } = await cohereEnsureThread({
+          supabase,
+          sector: cohereSector,
+          subjectKey
+        })
+
+cohereMeta = { tenantId, threadId, sector: cohereSector, subjectKey, mode: cohereMode }
+
+if (!isFollowup && userMessage) {
+          const blindspot = body?.interceptor_context?.mentor_blindspot
+          const meta = {
+            call_id: callId,
+            ...(blindspot && typeof blindspot === 'object' ? { mentor_blindspot: blindspot } : {})
+          }
+
+### 6. sidekick_pack.md (8f7aebda2555fa9e7d1ed045b2df91dc395f6eb040b6e1c9b2f9a6145a434cc0)
+- bm25: -12.7026 | entity_overlap_w: 11.50 | adjusted: -15.5776 | relevance: 1.0000
+
+### 17. sidekick_pack.md (78ddf92b14bef8442245e65ef182964c12e01a1b624fee5f7f3c909ce3ac8623)
+- bm25: -6.3907 | entity_overlap_w: 6.00 | adjusted: -7.8907 | relevance: 1.0000
+
+# Cohere Pack (Sidekick Recon) - MsSonoma
+
+Project: freehands
+Profile: MsSonoma
+Mode: standard
+
+Prompt (original):
+```text
+Implement a feature registry for Mr. Mentor: a machine-readable catalog of user-facing features that supports (1) deterministic describe responses, (2) deterministic report responses by calling existing app APIs (learner-scoped when needed), and (3) a hook to log blindspots to ThoughtHub. Identify existing FAQ loader data sources and interceptor entrypoints.
+```
+
+Filter terms used:
+```text
+FAQ
+ThoughtHub
+```
+# Context Pack
+
+**Project**: freehands
+**Profile**: MsSonoma
+**Mode**: standard
+
+## Pack Contract
+
+This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
+
+## Question
+
+FAQ ThoughtHub
+
+## Forced Context
+
+(none)
+
+## Ranked Evidence
+
+### 1. sidekick_pack.md (549f8196dba1aba87a122204d6a751e157f043c570a5807c07bb66a7f5849b28)
+- bm25: -12.7641 | entity_overlap_w: 7.90 | adjusted: -14.7391 | relevance: 1.0000
+
+# Cohere Pack (Sidekick Recon) - MsSonoma
+
+Project: freehands
+Profile: MsSonoma
+Mode: standard
+
+Prompt (original):
+```text
+Does ThoughtHub currently have an ingest that automatically creates both 'report' and 'describe' responses per FAQ/feature? If not, what ingest/storage exists today (chronograph/events/packs), and what would need to be built to support auto-generated report/describe handlers?
+```
+
+Filter terms used:
+```text
+/events/packs
+FAQ
+ThoughtHub
+```
+# Context Pack
+
+**Project**: freehands
+**Profile**: MsSonoma
+**Mode**: standard
+
+## Pack Contract
+
+### 7. src/app/facilitator/generator/counselor/MentorInterceptor.js (c29a44eabd7afe73952f1dbb23c4effbb93a04ac39760864748290463070333f)
+- bm25: -14.1445 | entity_overlap_w: 3.90 | adjusted: -15.1195 | relevance: 1.0000
+
+,
+
+lesson_plan: {
+    keywords: [
+      'lesson plan',
+      'lesson planner',
+      'planned lessons',
+      'curriculum preferences',
+      'curriculum',
+      'weekly pattern',
+      'schedule template',
+      'start date',
+      'duration',
+      'generate lesson plan',
+      'schedule a lesson plan'
+    ],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+
+// FAQ-style questions about the planner should defer to FAQ intent.
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0
       }
-      for (const k of toRemove) {
-        try { sessionStorage.removeItem(k); } catch {}
+
+return INTENT_PATTERNS.lesson_plan.keywords.some(kw => normalized.includes(kw)) ? 0.85 : 0
+    }
+  }
+}
+
+// Confirmation detection (yes/no)
+function detectConfirmation(text) {
+  const normalized = normalizeText(text)
+  
+  const yesPatterns = ['yes', 'yep', 'yeah', 'sure', 'ok', 'okay', 'correct', 'right', 'confirm', 'go ahead', 'do it']
+  const noPatterns = ['no', 'nope', 'nah', 'cancel', 'stop', 'nevermind', 'never mind', 'dont', 'not']
+  
+  if (yesPatterns.some(p => normalized.includes(p))) return 'yes'
+  if (noPatterns.some(p => normalized.includes(p))) return 'no'
+  
+  return null
+}
+
+### 8. cohere-changelog.md (55781d77e281f9987c4f9702b5927487590b2d5ae3b4a5966a86982bc027fd9a)
+- bm25: -12.6779 | entity_overlap_w: 6.00 | adjusted: -14.1779 | relevance: 1.0000
+
+Topic: ThoughtHub blindspot harvester + proposal storage APIs
+
+Recon prompt (exact string):
+Implement ThoughtHub blindspot harvester + feature proposal storage: where are ThoughtHub events stored and how can an API route list events with meta.mentor_blindspot? What auth patterns exist (cohereGetUserAndClient/cohereEnsureThread)? Propose minimal endpoints to (1) list grouped blindspots for a subjectKey/thread and (2) append a proposal event with meta.mentor_feature_proposal.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Add two authenticated API routes backed by ThoughtHub events: one groups `meta.mentor_blindspot` by normalized query; one lists/appends `meta.mentor_feature_proposal` as an append-only event for later promotion into the registry.
+- Files changed: src/app/api/mentor-blindspots/route.js, src/app/api/mentor-feature-proposals/route.js, cohere-changelog.md
+
+Follow-ups:
+- Add a tiny internal script or admin panel step to promote stored proposals into src/lib/mentor/featureRegistry.js.
+
+### 9. sidekick_pack.md (d116b66b35976916a4cf1718ea7438e8457cf867b9987b6706f2745121039579)
+- bm25: -11.6125 | entity_overlap_w: 8.90 | adjusted: -13.8375 | relevance: 1.0000
+
+## Question
+
+/events/packs FAQ ThoughtHub
+
+## Forced Context
+
+(none)
+
+## Ranked Evidence
+
+### 18. sidekick_pack.md (7f58f56990222d076ef0e7f2f0d44364a8368c45205af03979b38f7db0efbdd1)
+- bm25: -6.8125 | entity_overlap_w: 4.00 | adjusted: -7.8125 | relevance: 1.0000
+
+// Check if it's an FAQ-style question about assigning (how to)
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0 // Defer to FAQ intent
       }
-    } catch {}
-  }
-  
-  /**
-   * Start session timer
-   */
-  startSessionTimer() {
-    console.log('[TimerService] startSessionTimer called');
-    if (this.sessionInterval) {
-      console.warn('[TimerService] Session timer already running');
-      return;
-    }
-    
-    this.sessionStartTime = Date.now();
-    this.sessionElapsed = 0;
-    
-    console.log('[TimerService] Emitting sessionTimerStart');
-    this.eventBus.emit('sessionTimerStart', {
-      timestamp: this.sessionStartTime
-    });
-    
-    // Tick every second
-    this.sessionInterval = setInterval(this.#tickSessionTimer.bind(this), 1000);
-    console.log('[TimerService] Timer interval started');
-  }
-  
-  /**
-   * Stop session timer
-   */
-  stopSessionTimer() {
-    if (!this.sessionInterval) {
-      return;
-    }
-    
-    clearInterval(this.sessionInterval);
-    this.sessionInterval = null;
-    
-    const elapsed = this.sessionElapsed;
-    const formatted = this.#formatTime(elapsed);
-    
-    this.eventBus.emit('sessionTimerStop', {
-      elapsed,
-      formatted
-    });
-  }
-  
-  /**
-   * Starts the play timer for a phase (phases 2-5 only).
-   * Play timers allow exploration/opening actions with a time limit.
-   * When expired, transitions to work mode via PlayTimeExpiredOverlay.
-   * 
-   * @param {string} phase - Phase name ('comprehension', 'exercise', 'worksheet', 'test')
-   * @param {number} [timeLimit] - Optional time limit override (seconds)
-   */
-  startPlayTimer(phase, timeLimit = null) {
 
-### 8. src/app/session/v2/SessionPageV2.jsx (b3c9e3cac82f9ab3de84ee4873b0949f9769dd099daebb93abf12c9f43d65571)
-- bm25: -11.3304 | entity_overlap_w: 2.00 | adjusted: -11.8304 | relevance: 1.0000
+### 10. sidekick_pack.md (cee146ecc7200c1657d5a1db91176ff7bb22610b69837538b38a805f3075706d)
+- bm25: -6.7264 | entity_overlap_w: 2.00 | adjusted: -7.2264 | relevance: 1.0000
 
-const timer = new TimerService(eventBus, {
-      lessonKey,
-      playTimerLimits,
-      workPhaseTimeLimits,
-      goldenKeysEnabled: goldenKeysEnabledRef.current
-    });
-
-timerServiceRef.current = timer;
-
-// Apply any snapshot-restored timer state once timer exists
-    if (pendingTimerStateRef.current) {
+// ThoughtHub backfill bridge:
+    // If legacy conversation history exists (mentor_conversation_threads via /api/mentor-session),
+    // ingest it into ThoughtHub events and then clear the legacy JSON.
+    if (ingestFallback && authHeader) {
       try {
-        const pending = pendingTimerStateRef.current;
-        applyRestoredTimerStateToUi(pending, 'pending-timerstate');
-        timer.restoreState(pending);
-        timer.resync?.('pending-restore');
-        hydrateWorkTimerSummaryFromTimerService('pending-restore');
-      } catch {}
-      pendingTimerStateRef.current = null;
-    }
+        const origin = new URL(req.url).origin
+        const legacyUrl = new URL('/api/mentor-session', origin)
+        legacyUrl.searchParams.set('subjectKey', subjectKey)
 
-return () => {
-      try { unsubWorkTick?.(); } catch {}
-      try { unsubWorkComplete?.(); } catch {}
-      try { unsubGoldenKey?.(); } catch {}
-      try { unsubPlayExpired?.(); } catch {}
-      try { unsubPlayTick?.(); } catch {}
-      try { unsubWorkTick2?.(); } catch {}
-      try { unsubPlayStart?.(); } catch {}
-      try { unsubWorkStart?.(); } catch {}
-      timer.destroy();
-      timerServiceRef.current = null;
-    };
-  }, [lessonKey, phaseTimers, applyRestoredTimerStateToUi]);
+### 11. src/app/api/mentor-chronograph/route.js (2aae66fb6c5c96365d1358746cde2447d95400953c9d0214a4fded4a5b1d62ea)
+- bm25: -6.6479 | entity_overlap_w: 2.00 | adjusted: -7.1479 | relevance: 1.0000
 
-// Update play timer limits when bonus/enabled state changes (do not recreate TimerService).
-  useEffect(() => {
-    if (!timerServiceRef.current || !phaseTimers) return;
+// ThoughtHub backfill bridge:
+    // If legacy conversation history exists (mentor_conversation_threads via /api/mentor-session),
+    // ingest it into ThoughtHub events and then clear the legacy JSON.
+    if (ingestFallback && authHeader) {
+      try {
+        const origin = new URL(req.url).origin
+        const legacyUrl = new URL('/api/mentor-session', origin)
+        legacyUrl.searchParams.set('subjectKey', subjectKey)
 
-const playBonusSec = goldenKeysEnabledRef.current
-      ? Math.max(0, Number(goldenKeyBonusRef.current || 0)) * 60
-      : 0;
-    const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+### 10. src/app/facilitator/generator/counselor/MentorInterceptor.js (c33b558bf8b0935f2a550fb05c87176e0aa68684daf01b79abcc09c5d0ffe303)
+- bm25: -10.9023 | entity_overlap_w: 2.60 | adjusted: -11.5523 | relevance: 1.0000
 
-### 9. src/app/session/v2/TimerService.jsx (16208a27764d4b1276874b5a9ea4b75d305609b19be6adc032ed5205aac08ce5)
-- bm25: -11.4471 | relevance: 1.0000
+assign: {
+    keywords: ['assign', 'make available', 'make it available', 'show this lesson', 'show the lesson', 'available lessons', 'approve for learner'],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
 
-this.#removeTimerOverlayKey(phase, 'work');
+// Check if it's an FAQ-style question about assigning (how to)
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0 // Defer to FAQ intent
+      }
 
-### 10. src/app/session/v2/SessionPageV2.jsx (b493dd38d78155aefa759fa6ee29dee61f6c548fa2e0120f98a7508b5086922d)
-- bm25: -10.6941 | entity_overlap_w: 2.00 | adjusted: -11.1941 | relevance: 1.0000
+### 11. sidekick_pack.md (7751aefa5e543c1c1cfed96386ff1b81b58fa786e529d33f48b671704d322749)
+- bm25: -10.2757 | entity_overlap_w: 4.60 | adjusted: -11.4257 | relevance: 1.0000
 
-import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import jsPDF from 'jspdf';
-import { createBrowserClient } from '@supabase/ssr';
-import { getSupabaseClient } from '@/app/lib/supabaseClient';
-import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi';
-import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus';
-import { loadPhaseTimersForLearner } from '../utils/phaseTimerDefaults';
-import SessionTimer from '../components/SessionTimer';
-import { AudioEngine } from './AudioEngine';
-import { TeachingController } from './TeachingController';
-import { ComprehensionPhase } from './ComprehensionPhase';
-import { ExercisePhase } from './ExercisePhase';
-import { WorksheetPhase } from './WorksheetPhase';
-import { TestPhase } from './TestPhase';
-import { ClosingPhase } from './ClosingPhase';
-import { DiscussionPhase } from './DiscussionPhase';
-import { PhaseOrchestrator } from './PhaseOrchestrator';
-import { SnapshotService } from './SnapshotService';
-import { TimerService } from './TimerService';
-import { KeyboardService } from './KeyboardService';
-import { OpeningActionsController } from './OpeningActionsController';
-import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
-import FullscreenPlayTimerOverlay from './FullscreenPlayTimerOverlay';
-import TimerControlOverlay from '../components/TimerControlOverlay';
-import GamesOverlay from '../components/games/GamesOverlay';
-import EventBus from './EventBus';
-import { loadLesson, fetchTTS } from './services';
-import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech, ensureQuestionMark } from '../utils/questionFormatting';
-import { getSnapshotStorageKey } from '../utils
+### 32. sidekick_pack.md (b0265988ea474708e35ff9d3860e72dad6905b71dcc80e3fec369890e5fe7058)
+- bm25: -5.1580 | entity_overlap_w: 2.00 | adjusted: -5.6580 | relevance: 1.0000
 
-### 11. sidekick_pack.md (2debe79c08906a7c10cc55b55018e78a784e4077dadbbb6eec0ea763acbd629f)
-- bm25: -10.4148 | entity_overlap_w: 3.00 | adjusted: -11.1648 | relevance: 1.0000
+// ThoughtHub (chronograph + deterministic packs) request flags.
+        // Keep legacy field names for compatibility.
+        const useThoughtHub = (typeof body.use_thought_hub === 'boolean')
+          ? body.use_thought_hub
+          : !!body.use_cohere_chronograph
+        useCohereChronograph = !!useThoughtHub
 
-if (subPhase && subPhase !== 'greeting') return true
+### 2. src/app/api/mentor-chronograph/route.js (2aae66fb6c5c96365d1358746cde2447d95400953c9d0214a4fded4a5b1d62ea)
+- bm25: -11.2957 | entity_overlap_w: 2.00 | adjusted: -11.7957 | relevance: 1.0000
 
-if (typeof snapshot.currentCompIndex === 'number' && snapshot.currentCompIndex > 0) return true
-  if (typeof snapshot.currentExIndex === 'number' && snapshot.currentExIndex > 0) return true
-  if (typeof snapshot.currentWorksheetIndex === 'number' && snapshot.currentWorksheetIndex > 0) return true
-  if (typeof snapshot.testActiveIndex === 'number' && snapshot.testActiveIndex > 0) return true
-  if (snapshot.currentCompProblem) return true
-  if (snapshot.currentExerciseProblem) return true
+### 2. sidekick_pack.md (c9d01443b4bae09e680a9cc7e9dd30b1e6e9b6f1171319045cd3e9886289cf0d)
+- bm25: -8.2943 | entity_overlap_w: 3.60 | adjusted: -9.1943 | relevance: 1.0000
 
-if (Array.isArray(snapshot.testUserAnswers) && snapshot.testUserAnswers.some(v => v != null && String(v).trim().length > 0)) return true
-  if (Array.isArray(snapshot.storyTranscript) && snapshot.storyTranscript.length > 0) return true
+### 9. src/app/facilitator/generator/counselor/MentorInterceptor.js (0f47889e0251950c99d2bc5ce8dae42c87f3b73293a3b8009708e2ea644e6443)
+- bm25: -7.9323 | entity_overlap_w: 2.60 | adjusted: -8.5823 | relevance: 1.0000
 
-return false
+assign: {
+    keywords: ['assign', 'make available', 'make it available', 'show this lesson', 'show the lesson', 'available lessons', 'approve for learner'],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+
+// Check if it's an FAQ-style question about assigning (how to)
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0 // Defer to FAQ intent
+      }
+
+### 10. src/app/api/mentor-chronograph/route.js (3fca549c6224426e659b0536c858479578b9f6bd4d70ac7722ddaab6740b26f5)
+- bm25: -8.2700 | entity_overlap_w: 1.00 | adjusted: -8.5200 | relevance: 1.0000
+
+### 12. sidekick_pack.md (bd3e6076f575e77a2a9669ea0829f212f67ad174e64de22f2d37b70c628b7e62)
+- bm25: -9.8951 | entity_overlap_w: 3.30 | adjusted: -10.7201 | relevance: 1.0000
+
+### 32. scripts/backfill-thought-hub-from-mentor-conversation-threads.sql (8890a3700524e47369b92c84920f168805bf485686ce4a3c5a3cbde4db5fd6d0)
+- bm25: -4.3560 | entity_overlap_w: 1.00 | adjusted: -4.6060 | relevance: 1.0000
+
+### 35. sidekick_pack.md (02239f951cc63e52371c1ea18aae43904b95244fba3426747c03ed56215db261)
+- bm25: -3.7000 | entity_overlap_w: 3.60 | adjusted: -4.6000 | relevance: 1.0000
+
+console.log('ThoughtHub smoke OK')
 }
 
-function LessonsPageInner(){
-  const router = useRouter()
-
-### 34. src/app/session/v2/TimerService.jsx (9917cbb68d40a7265930863b430bb508a9c1f0b3f4a2b78894a94e2ce38d9deb)
-- bm25: -5.6711 | relevance: 1.0000
-
-const timer = this.workPhaseTimers.get(phase);
-    if (!timer) return null;
-
-const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
-
-### 35. src/app/session/v2/SessionPageV2.jsx (d5ef179774ea3dbc18175f74a8fcb95f56b0791dac6a41e4c69f062996d6c1cf)
-- bm25: -5.1168 | entity_overlap_w: 2.00 | adjusted: -5.6168 | relevance: 1.0000
-
-const timer = new TimerService(eventBus, {
-      lessonKey,
-      playTimerLimits,
-      workPhaseTimeLimits,
-      goldenKeysEnabled: goldenKeysEnabledRef.current
-    });
-
-timerServiceRef.current = timer;
-
-### 12. src/app/session/v2/SessionPageV2.jsx (e2298da1b4c9813bf5ec151a81b9b5eaf71e87a15c014382dd911333d2dc9659)
-- bm25: -9.5791 | entity_overlap_w: 6.00 | adjusted: -11.0791 | relevance: 1.0000
-
-if (askExitSpeechLockRef.current) {
-      console.warn('[SessionPageV2] Timeline jump blocked while Ask exit reminder is speaking');
-      return;
-    }
-    
-    // Debounce: Block rapid successive clicks
-    if (timelineJumpInProgressRef.current) {
-      console.warn('[SessionPageV2] Timeline jump BLOCKED - jump already in progress for:', targetPhase);
-      return;
-    }
-    
-    // Set jump in progress flag IMMEDIATELY (before any async operations)
-    timelineJumpInProgressRef.current = true;
-    console.log('[SessionPageV2] Flag NOW set to true, value:', timelineJumpInProgressRef.current, 'for:', targetPhase);
-    
-    // Only allow jumping to valid phases
-    const validPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
-    if (!validPhases.includes(targetPhase)) {
-      console.warn('[SessionPageV2] Invalid timeline jump target:', targetPhase);
-      timelineJumpInProgressRef.current = false; // Reset flag on early return
-      return;
-    }
-    
-    // Guard: Need orchestrator
-    if (!orchestratorRef.current) {
-      console.warn('[SessionPageV2] Timeline jump blocked - no orchestrator');
-      timelineJumpInProgressRef.current = false; // Reset flag on early return
-      return;
-    }
-    
-    // Guard: Need audio engine
-    if (!audioEngineRef.current) {
-      console.warn('[SessionPageV2] Timeline jump blocked - no audio engine');
-      timelineJumpInProgressRef.current = false; // Reset flag on early return
-      return;
-    }
-
-### 13. sidekick_pack.md (6fbbec22ad86ee343818f9e06e45079c9ed78ce5cd9be20f5bfe1766c9399bbb)
-- bm25: -9.7903 | entity_overlap_w: 5.00 | adjusted: -11.0403 | relevance: 1.0000
-
-### 19. src/app/session/v2/SessionPageV2.jsx (c771fdbd89ebe42c0a5b28258f25e1661778dd8eec1b633b78d4f6bda1038719)
-- bm25: -6.1859 | entity_overlap_w: 1.00 | adjusted: -6.4359 | relevance: 1.0000
-
-// If games opens, close fullscreen timer to avoid overlay stacking
-  useEffect(() => {
-    if (showGames && showFullscreenPlayTimer) {
-      setShowFullscreenPlayTimer(false);
-    }
-  }, [showGames, showFullscreenPlayTimer]);
-
-// Handle timer click (for facilitator controls)
-  const handleTimerClick = useCallback(async () => {
-    let allowed = false;
-    try {
-      allowed = await ensurePinAllowed('timer');
-    } catch (e) {
-      console.warn('[SessionPageV2] Timer PIN gate error:', e);
-    }
-    if (!allowed) return;
-
-console.log('[SessionPageV2] Timer clicked - showing timer control overlay');
-    setShowTimerControl(true);
-  }, []);
-  
-  // Handle timer pause toggle
-  const handleTimerPauseToggle = useCallback(async () => {
-    let allowed = false;
-    try {
-      allowed = await ensurePinAllowed('timer');
-    } catch (e) {
-      console.warn('[SessionPageV2] Timer PIN gate error:', e);
-    }
-    if (!allowed) return;
-
-setTimerPaused(prev => {
-      const nextPaused = !prev;
-      
-      // Control the authoritative timer in TimerService
-      const timerSvc = timerServiceRef.current;
-      if (timerSvc) {
-        if (nextPaused) {
-          timerSvc.pause();
-        } else {
-          timerSvc.resume();
-        }
-      }
-      
-      return nextPaused;
-    });
-  }, []);
-
-### 14. sidekick_pack.md (8b23046b8e828f4eac9f9224c1b0406b3539955d592fdd7fa1137a31435f5827)
-- bm25: -9.2799 | entity_overlap_w: 7.00 | adjusted: -11.0299 | relevance: 1.0000
-
-### 27. sidekick_pack.md (5fb852380d76291149d9a2bdad5665eae6f15ab47bb221e178c453fa7c12c46c)
-- bm25: -5.9818 | relevance: 1.0000
-
-### 8. src/app/session/v2/SessionPageV2.jsx (88fe0015b32a8bc8371a6dda9aec70e55687fc9656f465d7fc93a864d040fd16)
-- bm25: -6.9242 | relevance: 1.0000
-
-if (askExitSpeechLockRef.current) {
-      console.warn('[SessionPageV2] Timeline jump blocked while Ask exit reminder is speaking');
-      return;
-    }
-    
-    // Debounce: Block rapid successive clicks
-    if (timelineJumpInProgressRef.current) {
-      console.warn('[SessionPageV2] Timeline jump BLOCKED - jump already in progress for:', targetPhase);
-      return;
-    }
-    
-    // Set jump in progress flag IMMEDIATELY (before any async operations)
-    timelineJumpInProgressRef.current = true;
-    console.log('[SessionPageV2] Flag NOW set to true, value:', timelineJumpInProgressRef.current, 'for:', targetPhase);
-    
-    // Only allow jumping to valid phases
-    const validPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
-    if (!validPhases.includes(targetPhase)) {
-      console.warn('[SessionPageV2] Invalid timeline jump target:', targetPhase);
-      timelineJumpInProgressRef.current = false; // Reset flag on early return
-      return;
-    }
-    
-    // Guard: Need orchestrator
-    if (!orchestratorRef.current) {
-      console.warn('[SessionPageV2] Timeline jump blocked - no orchestrator');
-      timelineJumpInProgressRef.current = false; // Reset flag on early return
-      return;
-    }
-    
-    // Guard: Need audio engine
-    if (!audioEngineRef.current) {
-      console.warn('[SessionPageV2] Timeline jump blocked - no audio engine');
-      timelineJumpInProgressRef.current = false; // Reset flag on early return
-      return;
-    }
-
-### 15. sidekick_pack.md (076e2e81b419ce7ed23da68abaf9c21b037831760720378812c032cc29ffd5b9)
-- bm25: -9.5161 | entity_overlap_w: 6.00 | adjusted: -11.0161 | relevance: 1.0000
-
-if (askExitSpeechLockRef.current) {
-      console.warn('[SessionPageV2] Timeline jump blocked while Ask exit reminder is speaking');
-      return;
-    }
-    
-    // Debounce: Block rapid successive clicks
-    if (timelineJumpInProgressRef.current) {
-      console.warn('[SessionPageV2] Timeline jump BLOCKED - jump already in progress for:', targetPhase);
-      return;
-    }
-    
-    // Set jump in progress flag IMMEDIATELY (before any async operations)
-    timelineJumpInProgressRef.current = true;
-    console.log('[SessionPageV2] Flag NOW set to true, value:', timelineJumpInProgressRef.current, 'for:', targetPhase);
-    
-    // Only allow jumping to valid phases
-    const validPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
-    if (!validPhases.includes(targetPhase)) {
-      console.warn('[SessionPageV2] Invalid timeline jump target:', targetPhase);
-      timelineJumpInProgressRef.current = false; // Reset flag on early return
-      return;
-    }
-    
-    // Guard: Need orchestrator
-    if (!orchestratorRef.current) {
-      console.warn('[SessionPageV2] Timeline jump blocked - no orchestrator');
-      timelineJumpInProgressRef.current = false; // Reset flag on early return
-      return;
-    }
-    
-    // Guard: Need audio engine
-    if (!audioEngineRef.current) {
-      console.warn('[SessionPageV2] Timeline jump blocked - no audio engine');
-      timelineJumpInProgressRef.current = false; // Reset flag on early return
-      return;
-    }
-
-### 16. src/app/session/v2/TimerService.jsx (50c86fe95bbe058e184d6066028a47bb16cc366c5597e74956565455e458af49)
-- bm25: -10.9952 | relevance: 1.0000
-
-const validPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
-      if (!validPhases.includes(phase)) return;
-
-### 17. src/app/session/v2/TimerService.jsx (9c98c5270cb757bf7f2f0409e031c8524ebf47d71737482c0b33133e4a59f387)
-- bm25: -10.9952 | relevance: 1.0000
-
-const timer = {
-        startTime,
-        elapsed: asNumber,
-        timeLimit,
-        completed: false,
-        onTime: asNumber <= timeLimit
-      };
-
-### 18. src/app/session/v2/TimerService.jsx (6e47a360484dbfce63e9b04c56c1b502a733a0369653f678f7f6162e6b60329c)
-- bm25: -10.8725 | relevance: 1.0000
-
-#clearAllTimerOverlayKeysForLesson() {
-    if (typeof window === 'undefined') return;
-    const prefix = this.#timerOverlayKeyPrefix();
-    if (!prefix) return;
-
-### 19. src/app/session/v2/SessionPageV2.jsx (4ea6d8a5823264ee61423b7119aaef85c047803f86c088cdef135d1b40d9cebc)
-- bm25: -9.5771 | entity_overlap_w: 5.00 | adjusted: -10.8271 | relevance: 1.0000
-
-// If games opens, close fullscreen timer to avoid overlay stacking
-  useEffect(() => {
-    if (showGames && showFullscreenPlayTimer) {
-      setShowFullscreenPlayTimer(false);
-    }
-  }, [showGames, showFullscreenPlayTimer]);
-
-// Handle timer click (for facilitator controls)
-  const handleTimerClick = useCallback(async () => {
-    let allowed = false;
-    try {
-      allowed = await ensurePinAllowed('timer');
-    } catch (e) {
-      console.warn('[SessionPageV2] Timer PIN gate error:', e);
-    }
-    if (!allowed) return;
-
-console.log('[SessionPageV2] Timer clicked - showing timer control overlay');
-    setShowTimerControl(true);
-  }, []);
-  
-  // Handle timer pause toggle
-  const handleTimerPauseToggle = useCallback(async () => {
-    let allowed = false;
-    try {
-      allowed = await ensurePinAllowed('timer');
-    } catch (e) {
-      console.warn('[SessionPageV2] Timer PIN gate error:', e);
-    }
-    if (!allowed) return;
-
-setTimerPaused(prev => {
-      const nextPaused = !prev;
-      
-      // Control the authoritative timer in TimerService
-      const timerSvc = timerServiceRef.current;
-      if (timerSvc) {
-        if (nextPaused) {
-          timerSvc.pause();
-        } else {
-          timerSvc.resume();
-        }
-      }
-      
-      return nextPaused;
-    });
-  }, []);
-
-const persistTimerStateNow = useCallback((trigger) => {
-    try {
-      const svc = snapshotServiceRef.current;
-      const timerSvc = timerServiceRef.current;
-      if (!svc || !timerSvc) return;
-      svc.saveProgress(trigger || 'timer-overlay', {
-        timerState: timerSvc.getState()
-      });
-    } catch (err) {
-      console.warn('[SessionPageV2] Timer snapshot persist failed:', err);
-    }
-  }, []);
-
-### 20. src/app/session/v2/SessionPageV2.jsx (024944439b180c29691dd528e1c88ba6c801156ba8df8298bf547d6a6e78b49f)
-- bm25: -9.8910 | entity_overlap_w: 3.00 | adjusted: -10.6410 | relevance: 1.0000
-
-if (snapshot.timerState) {
-            // Keep UI timer mode aligned with the restored timer engine state.
-            applyRestoredTimerStateToUi(snapshot.timerState, 'snapshot-load');
-            if (timerServiceRef.current) {
-              try {
-                timerServiceRef.current.restoreState(snapshot.timerState);
-                timerServiceRef.current.resync?.('snapshot-restore');
-                hydrateWorkTimerSummaryFromTimerService('snapshot-restore');
-              } catch {}
-            } else {
-              pendingTimerStateRef.current = snapshot.timerState;
-            }
-          }
-        } else {
-          resetTranscriptState();
-          addEvent('💾 No snapshot found - Starting fresh');
-        }
-      }).catch(err => {
-        if (cancelled) return;
-        console.error('[SessionPageV2] Snapshot init error:', err);
-        setError('Unable to load saved progress for this lesson.');
-      }).finally(() => {
-        if (!cancelled) {
-          setSnapshotLoaded(true);
-        }
-      });
-    } catch (err) {
-      console.error('[SessionPageV2] Snapshot service construction failed:', err);
-      setError('Unable to initialize persistence for this lesson.');
-      setSnapshotLoaded(true);
-    }
-
-return () => {
-      cancelled = true;
-      snapshotServiceRef.current = null;
-    };
-  }, [lessonData, learnerProfile, browserSessionId, lessonKey, resetTranscriptState, applyRestoredTimerStateToUi]);
-  
-  // Initialize TimerService
-  useEffect(() => {
-    if (!eventBusRef.current || !lessonKey || !phaseTimers) return;
-
-const eventBus = eventBusRef.current;
-
-### 21. src/app/session/v2/TimerService.jsx (9917cbb68d40a7265930863b430bb508a9c1f0b3f4a2b78894a94e2ce38d9deb)
-- bm25: -10.5205 | relevance: 1.0000
-
-const timer = this.workPhaseTimers.get(phase);
-    if (!timer) return null;
-
-const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
-
-### 22. src/app/session/v2/TimerService.jsx (bf017c256fc06870bbde627ee9aa37b55c6db8bd27fb4b246887cb3b6a1e379d)
-- bm25: -10.1903 | entity_overlap_w: 1.00 | adjusted: -10.4403 | relevance: 1.0000
-
-export class TimerService {
-  constructor(eventBus, options = {}) {
-    this.eventBus = eventBus;
-    
-    // Session timer
-    this.sessionStartTime = null;
-    this.sessionElapsed = 0; // seconds
-    this.sessionInterval = null;
-    
-    // Play timers (phases 2-5: comprehension, exercise, worksheet, test)
-    this.playTimers = new Map(); // phase -> { startTime, elapsed, timeLimit, expired }
-    this.playTimerInterval = null;
-    this.currentPlayPhase = null;
-    
-    // Play timer time limits (seconds) - default 3 minutes per phase
-    this.playTimerLimits = options.playTimerLimits || {
-      comprehension: 180, // 3 minutes
-      exercise: 180,      // 3 minutes  
-      worksheet: 180,     // 3 minutes
-      test: 180           // 3 minutes
-    };
-    
-    // Work phase timers
-    this.workPhaseTimers = new Map(); // phase -> { startTime, elapsed, timeLimit, completed }
-    this.workPhaseInterval = null;
-    this.currentWorkPhase = null;
-
-### 23. sidekick_pack.md (2e770511dde5c8f3b1ce0ccf2725d10b51727ee6965ceca6117e57caa58fa2c9)
-- bm25: -10.1375 | entity_overlap_w: 1.00 | adjusted: -10.3875 | relevance: 1.0000
-
-if (forceFresh) {
-      timelineJumpForceFreshPhaseRef.current = null;
-    }
-    return true;
-  };
-
-### 6. src/app/session/v2/TimerService.jsx (acaa43b46c9a31add888fd04939ae9b9fb4d12b3c5f56d8935151446d6325c20)
-- bm25: -6.3331 | entity_overlap_w: 4.00 | adjusted: -7.3331 | relevance: 1.0000
-
-### 24. src/app/session/v2/TimerService.jsx (0206152c1c7b524e70e26134e7acf24c985931f28c9547f5df05df5ce2ccca48)
-- bm25: -10.2441 | relevance: 1.0000
-
-// Do not delete completed timers/results; completion credit must persist.
-    if (!timer.completed) {
-      this.workPhaseTimers.delete(phase);
-    }
-    if (this.currentWorkPhase === phase) {
-      this.currentWorkPhase = null;
-    }
-  }
-
-### 25. src/app/session/v2/TimerService.jsx (99e4956be1412065a8a0ad88b662ddcbb1fcfd25f4ad5660be28a29c525d30e5)
-- bm25: -10.1716 | relevance: 1.0000
-
-// Per-learner feature gate: when disabled, golden key eligibility is not tracked/emitted.
-    this.goldenKeysEnabled = options.goldenKeysEnabled !== false;
-    
-    // Pause state
-    this.isPaused = false;
-    this.pausedPlayElapsed = null; // Stores elapsed time when play timer paused
-    this.pausedWorkElapsed = null; // Stores elapsed time when work timer paused
-    
-    // SessionStorage cache for refresh recovery (not used - use explicit restoreState instead)
-    this.lessonKey = options.lessonKey || null;
-    this.phase = options.phase || null;
-    this.mode = 'play'; // play or work
-    
-    // Don't auto-restore from sessionStorage - only restore explicitly via restoreState()
-    // this prevents stale timer data from previous lessons leaking into new sessions
-    
-    // Bind public methods
-    this.startSessionTimer = this.startSessionTimer.bind(this);
-    this.stopSessionTimer = this.stopSessionTimer.bind(this);
-    this.startPlayTimer = this.startPlayTimer.bind(this);
-    this.stopPlayTimer = this.stopPlayTimer.bind(this);
-    this.transitionToWork = this.transitionToWork.bind(this);
-    this.startWorkPhaseTimer = this.startWorkPhaseTimer.bind(this);
-    this.completeWorkPhaseTimer = this.completeWorkPhaseTimer.bind(this);
-    this.stopWorkPhaseTimer = this.stopWorkPhaseTimer.bind(this);
-    this.reset = this.reset.bind(this);
-    this.setGoldenKeysEnabled = this.setGoldenKeysEnabled.bind(this);
-    this.setPlayTimerLimits = this.setPlayTimerLimits.bind(this);
-    this.pause = this.pause.bind(this);
-    this.resume = this.resume.bind(this);
-    this.resync = this.resync.bind(this);
-    // Private methods are automatically bound
-  }
-
-### 26. sidekick_pack.md (4a8bb706c4d26c4030ba65d6206b5fcfe1a9c4e16e52f0cd410ed59b9a7528ca)
-- bm25: -9.3736 | entity_overlap_w: 3.00 | adjusted: -10.1236 | relevance: 1.0000
-
-# Cohere Pack (Sidekick Recon) - MsSonoma
-
-Project: freehands
-Profile: MsSonoma
-Mode: standard
-
-Prompt (original):
-```text
-Golden Key: per-phase on-time credit must be sticky across refresh/resume/timeline jumps; end-of-test report should hydrate from TimerService restored state; 3/5 phases (discussion, comprehension, exercise, worksheet, test)
-```
-
-Filter terms used:
-```text
-/resume/timeline
-TimerService
-```
-# Context Pack
-
-**Project**: freehands
-**Profile**: MsSonoma
-**Mode**: standard
-
-## Pack Contract
-
-This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
-
-## Question
-
-/resume/timeline TimerService
-
-## Forced Context
-
-(none)
-
-## Ranked Evidence
-
-### 1. sidekick_pack.md (8a62d0b86e6aea78e2b5fbd9d71be53460d65ae364f332c3e3add7667f367a37)
-- bm25: -10.7321 | entity_overlap_w: 4.50 | adjusted: -11.8571 | relevance: 1.0000
-
-# Cohere Pack (Sidekick Recon) - MsSonoma
-
-Project: freehands
-Profile: MsSonoma
-Mode: standard
-
-Prompt (original):
-```text
-Golden Key completion tracking breaks after refresh/resume/timeline jumps. Need per-phase work-timer completion credit (onTime) to be sticky: once a phase is completed on time, keep credit regardless of later navigation, restart, timer pauses, facilitator time changes. Report at end of test should only show incomplete when phase truly not completed.
-```
-
-Filter terms used:
-```text
-/resume/timeline
-```
-# Context Pack
-
-**Project**: freehands
-**Profile**: MsSonoma
-**Mode**: standard
-
-## Pack Contract
-
-This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
-
-## Question
-
-/resume/timeline
-
-## Forced Context
-
-(none)
-
-## Ranked Evidence
-
-### 27. sidekick_pack.md (4c756d0246c87201f7c73d67ec5d9757efb48786ac8078e3bfcff511a0021798)
-- bm25: -9.4493 | entity_overlap_w: 2.00 | adjusted: -9.9493 | relevance: 1.0000
-
-### 2. sidekick_pack.md (38d60350d5ac24351b7e799d9dfcf539b9be2999447aba30e8d789d62056883d)
-- bm25: -8.8762 | entity_overlap_w: 1.00 | adjusted: -9.1262 | relevance: 1.0000
-
-const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
-
-function normalizeApprovedLessonKeys(map = {}) {
-  const normalized = {}
-  let changed = false
-  Object.entries(map || {}).forEach(([key, value]) => {
-    if (typeof key === 'string' && key.startsWith('Facilitator Lessons/')) {
-      const suffix = key.slice('Facilitator Lessons/'.length)
-      normalized[`general/${suffix}`] = value
-      changed = true
-    } else if (key) {
-      normalized[key] = value
-    }
-  })
-  return { normalized, changed }
-}
-
-function snapshotHasMeaningfulProgress(snapshot) {
-  if (!snapshot || typeof snapshot !== 'object') return false
-
-const phase = snapshot.phase || 'discussion'
-  const subPhase = snapshot.subPhase || 'greeting'
-  const resume = snapshot.resume || null
-
-### 29. src/app/session/v2/TimerService.jsx (ec57a83cf0e04550a623e4d9e105aabc4abc2b970c06655cbb9940b2ba5e6cf6)
-- bm25: -4.4231 | relevance: 1.0000
-
-### 3. src/app/session/v2/TimerService.jsx (2138714f2799a4ec7f9a38d215801a4d155f4495dd79411cb99a813197b9d07d)
-- bm25: -7.7893 | relevance: 1.0000
-
-### 28. src/app/session/v2/SessionPageV2.jsx (503a0c7043977bac664a3b5186a99b618813487e8e4a677a79117b5dc3a4a07f)
-- bm25: -9.7449 | relevance: 1.0000
-
-// Test Review UI Component (matches V1)
-function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview }) {
-  const { score, totalQuestions, percentage, grade: letterGrade, answers } = testGrade;
-  
-  const tierForPercent = (pct) => {
-    if (pct >= 90) return 'gold';
-    if (pct >= 80) return 'silver';
-    if (pct >= 70) return 'bronze';
-    return null;
-  };
-  
-  const emojiForTier = (tier) => {
-    if (tier === 'gold') return '🥇';
-    if (tier === 'silver') return '🥈';
-    if (tier === 'bronze') return '🥉';
-    return '';
-  };
-  
-  const tier = tierForPercent(percentage);
-  const medal = emojiForTier(tier);
-  
-  const card = { 
-    background: '#ffffff', 
-    border: '1px solid #e5e7eb', 
-    borderRadius: 12, 
-    padding: 16, 
-    boxShadow: '0 2px 10px rgba(0,0,0,0.04)'
-  };
-  
-  const badge = (ok) => ({
-    display: 'inline-block',
-    padding: '2px 8px',
-    borderRadius: 999,
-    fontWeight: 800,
-    fontSize: 12,
-    background: ok ? 'rgba(16,185,129,0.14)' : 'rgba(239,68,68,0.14)',
-    color: ok ? '#065f46' : '#7f1d1d',
-    border: `1px solid ${ok ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)'}`
-  });
-  
-  const btn = {
-    padding: '8px 14px',
-    borderRadius: 8,
-    border: '1px solid #d1d5db',
-    background: '#f9fafb',
-    color: '#374151',
-    fontWeight: 600,
-    fontSize: 14,
-    cursor: 'pointer',
-    transition: 'all 0.15s ease'
-  };
-  
-  const workPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
-
-const getPhaseTime = (phaseKey) => {
-    try {
-      return timerService?.getWorkPhaseTime?.(phaseKey) || null;
-    } catch {
-      return null;
-    }
-  };
-
-### 29. sidekick_pack.md (527ec600fa5816b55afa53bf70c1c586b310b7d1c7e5462a1796bcfff7dc9a96)
-- bm25: -9.0543 | entity_overlap_w: 2.00 | adjusted: -9.5543 | relevance: 1.0000
-
-### 7. src/app/session/v2/TimerService.jsx (d73babe9a6b142fd32dc452825b90d6019ffaf89d1d0625f93adb58cacdbfbc0)
-- bm25: -6.9318 | relevance: 1.0000
-
-// Restore sticky completion results first.
-    try {
-      this.workPhaseResults.clear();
-      const rows = Array.isArray(data.workPhaseResults) ? data.workPhaseResults : [];
-      for (const row of rows) {
-        const phase = row?.phase;
-        if (!phase) continue;
-        this.workPhaseResults.set(phase, {
-          completed: row?.completed === true,
-          onTime: row?.onTime === true,
-          elapsed: Number(row?.elapsed) || 0,
-          timeLimit: Number(row?.timeLimit) || 0,
-          remaining: Number(row?.remaining) || 0,
-          finishedAt: Number(row?.finishedAt) || null
-        });
-      }
-    } catch {}
-    
-    // Restore play timers
-    if (data.playTimers) {
-      this.playTimers.clear();
-      
-      data.playTimers.forEach(timer => {
-        this.playTimers.set(timer.phase, {
-          startTime: Date.now() - (timer.elapsed * 1000), // Resume from elapsed
-          elapsed: timer.elapsed,
-          timeLimit: timer.timeLimit,
-          expired: timer.expired
-        });
-        
-        if (!timer.expired) {
-          this.currentPlayPhase = timer.phase;
-          if (!this.playTimerInterval) {
-            this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
-          }
-        }
-      });
-
-### 8. src/app/session/v2/TimerService.jsx (99e4956be1412065a8a0ad88b662ddcbb1fcfd25f4ad5660be28a29c525d30e5)
-- bm25: -6.8095 | relevance: 1.0000
-
-### 30. src/app/session/v2/TimerService.jsx (fadd0031a629b6e2bc8180312947ff4517d9d188b582880d35b92b4a87ebfa5b)
-- bm25: -8.9095 | entity_overlap_w: 1.00 | adjusted: -9.1595 | relevance: 1.0000
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})
+
+### 25. sidekick_pack.md (e51448725c4139030ca437a0788578aa9ac6dc7f5bf5342ce8334c296bb0c693)
+- bm25: -5.5477 | entity_overlap_w: 1.30 | adjusted: -5.8727 | relevance: 1.0000
 
 /**
-   * Best-effort recovery hook for browsers that may suspend JS timers (notably iOS Safari).
-   *
-   * This does NOT change timer semantics; it simply ensures intervals are armed and emits
-   * an immediate tick so UI can catch up after visibility/focus changes.
-   */
-  resync(reason = 'manual') {
-    try {
-      if (!this.isPaused) {
-        if (this.sessionStartTime && !this.sessionInterval) {
-          this.sessionInterval = setInterval(this.#tickSessionTimer.bind(this), 1000);
-        }
-
-if (this.currentPlayPhase) {
-          const t = this.playTimers.get(this.currentPlayPhase);
-          if (t && !t.expired && !this.playTimerInterval) {
-            this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
-          }
-        }
-
-if (this.currentWorkPhase) {
-          const t = this.workPhaseTimers.get(this.currentWorkPhase);
-          if (t && !t.completed && !this.workPhaseInterval) {
-            this.workPhaseInterval = setInterval(this.#tickWorkPhaseTimers.bind(this), 1000);
-          }
-        }
-      }
-
-// Emit a catch-up tick immediately.
-      this.#tickSessionTimer();
-      this.#tickPlayTimers();
-      this.#tickWorkPhaseTimers();
-    } catch (err) {
-      console.warn('[TimerService] resync failed:', reason, err);
-    }
-  }
-
-setGoldenKeysEnabled(enabled) {
-    this.goldenKeysEnabled = enabled !== false;
-  }
-
-setPlayTimerLimits(limits) {
-    if (!limits || typeof limits !== 'object') return;
-    this.playTimerLimits = { ...this.playTimerLimits, ...limits };
-
-### 31. src/app/session/v2/TimerService.jsx (ddc4e55265936d9dbe720cbc3b0ebb92d247e4507a3b0639ba613b8ab0e01bad)
-- bm25: -8.8090 | relevance: 1.0000
-
-// If a play timer is already running, update its limit so bonus changes
-    // (e.g., Golden Key) apply immediately to the active countdown.
-    try {
-      for (const [phase, nextLimit] of Object.entries(limits)) {
-        const timer = this.playTimers.get(phase);
-        if (!timer) continue;
-        const parsed = Number(nextLimit);
-        if (!Number.isFinite(parsed) || parsed <= 0) continue;
-        timer.timeLimit = parsed;
-
-### 32. sidekick_pack.md (bda1681c2bf9b31eb19e0de79b851786d88cd8a81d84a1b850545866820a48cf)
-- bm25: -7.7005 | entity_overlap_w: 4.00 | adjusted: -8.7005 | relevance: 1.0000
-
-### 17. src/app/session/v2/SessionPageV2.jsx (216a4f7c3f291b2134a6bbc8bb87947264d2a1bb81d08e69efdfb1cc5eff1d16)
-- bm25: -6.5493 | relevance: 1.0000
-
-// PIN gate: timeline jumps are facilitator-only
-    let allowed = false;
-    try {
-      allowed = await ensurePinAllowed('timeline');
-    } catch (e) {
-      console.warn('[SessionPageV2] Timeline PIN gate error:', e);
-    }
-    if (!allowed) {
-      timelineJumpInProgressRef.current = false;
-      return;
-    }
-    
-    console.log('[SessionPageV2] Timeline jump proceeding to:', targetPhase);
-    
-    // Stop any playing audio first
-    stopAudioSafe({ force: true });
-    
-    // Reset opening actions state to prevent zombie UI
-    setOpeningActionActive(false);
-    setOpeningActionType(null);
-    setOpeningActionState({});
-    setOpeningActionInput('');
-    setOpeningActionError('');
-    setOpeningActionBusy(false);
-    setShowPlayWithSonomaMenu(false);
-    setShowGames(false);
-    setShowFullscreenPlayTimer(false);
-
-### 18. src/app/session/v2/SessionPageV2.jsx (3674c9e66775e69ac803a45cffcc968ea484787adf57f6d4a7cee0abd6517c1b)
-- bm25: -6.4942 | relevance: 1.0000
-
-### 33. src/app/session/v2/TimerService.jsx (6aa82d2e35207384d50fe8167b08484c2832b6359a72e1f116c48f838181fccf)
-- bm25: -8.5765 | relevance: 1.0000
-
-// Prefer explicit currentPlayPhase if provided.
-      if (data.currentPlayPhase && this.playTimers.has(data.currentPlayPhase)) {
-        this.currentPlayPhase = data.currentPlayPhase;
-      }
-    }
-    
-    // Restore work phase timers
-    if (data.workPhaseTimers) {
-      this.workPhaseTimers.clear();
-      
-      let inferredActiveWorkPhase = null;
-      data.workPhaseTimers.forEach(timer => {
-        this.workPhaseTimers.set(timer.phase, {
-          startTime: null,
-          elapsed: timer.elapsed,
-          timeLimit: timer.timeLimit,
-          completed: !!timer.completed,
-          onTime: typeof timer.onTime === 'boolean' ? timer.onTime : (timer.elapsed <= timer.timeLimit)
-        });
-
-### 34. src/app/session/v2/SessionPageV2.jsx (6901b2515231f2d99a20bcde46d49e7c0e9b5be2b3bd802881ae99d1f766e5e8)
-- bm25: -8.0757 | entity_overlap_w: 2.00 | adjusted: -8.5757 | relevance: 1.0000
-
-// PIN gate: timeline jumps are facilitator-only
-    let allowed = false;
-    try {
-      allowed = await ensurePinAllowed('timeline');
-    } catch (e) {
-      console.warn('[SessionPageV2] Timeline PIN gate error:', e);
-    }
-    if (!allowed) {
-      timelineJumpInProgressRef.current = false;
-      return;
-    }
-    
-    console.log('[SessionPageV2] Timeline jump proceeding to:', targetPhase);
-    
-    // Stop any playing audio first
-    stopAudioSafe({ force: true });
-    
-    // Reset opening actions state to prevent zombie UI
-    setOpeningActionActive(false);
-    setOpeningActionType(null);
-    setOpeningActionState({});
-    setOpeningActionInput('');
-    setOpeningActionError('');
-    setOpeningActionBusy(false);
-    setShowPlayWithSonomaMenu(false);
-    setShowGames(false);
-    setShowFullscreenPlayTimer(false);
-
-### 35. src/app/session/v2/TimerService.jsx (c366ffd95c213031782db363c3a2ba3af35515665534c9d34e73a8e41492b13b)
-- bm25: -8.2847 | entity_overlap_w: 1.00 | adjusted: -8.5347 | relevance: 1.0000
-
-/**
- * TimerService.jsx
- * Manages session, play, and work phase timers
+ * MentorInterceptor - Front-end conversation handler for Mr. Mentor
  * 
- * Timers:
- * - Session timer: Tracks total session duration from start to complete
- * - Play timers: Green timer for exploration/opening actions (phases 2-5: Comprehension, Exercise, Worksheet, Test)
- * - Work phase timers: Amber/red timer for focused work (for golden key)
+ * Intercepts user messages and handles common tasks without API calls:
+ * - Lesson search and selection
+ * - Parameter gathering for generation/scheduling/editing
+ * - Confirmation flows
+ * - Conversation memory search
+ * - FAQ and feature explanations
  * 
- * Timer Modes:
- * - Phase 1 (Discussion): No play timer, no opening actions (eliminates play timer exploit)
- * - Phases 2-5 (Comprehension, Exercise, Worksheet, Test): Play timer → opening actions → work timer
- * 
- * Golden Key Requirements:
- * - Need 3 work phases completed within time limit
- * - Work phases: exercise, worksheet, test
- * - Time limits defined per grade/subject
- * 
- * Events emitted:
- * - sessionTimerStart: { timestamp } - Session timer started
- * - sessionTimerTick: { elapsed, formatted } - Every second while running
- * - sessionTimerStop: { elapsed, formatted } - Session timer stopped
- * - playTimerStart: { phase, timestamp, timeLimit } - Play timer started
- * - playTimerTick: { phase, elapsed, remaining, formatted } - Every second during play time
- * - playTimerExpired: { phase } - Play timer reached 0:00
- * - workPhaseTimerStart: { phase, timestamp } - Work phase timer started
- * - workPhaseTimerTick: { phase, elapsed, remaining, onTime } - Every second during work time
- * - workPhaseTimerComplete: { phase, elapsed, onTime } - Work phase completed
- * - workPhaseTimerStop: { phase, elapsed } - Work phase stopped
- * - goldenKeyEligible: { completedPhases } - 3 on-time work phases achieved
+ * Only forwards to API when:
+ * - User explicitly bypasses ("Different issue")
+ * - Free-form discussion after lesson selected
+ * - Complex queries that need LLM reasoning
  */
 
-'use client';
+### 26. sidekick_pack.md (0d73346139b943b1c4e1619081cfab92979301269d0840376eaff84b8175254f)
+- bm25: -5.2873 | entity_overlap_w: 1.30 | adjusted: -5.6123 | relevance: 1.0000
 
-### 36. src/app/session/v2/SessionPageV2.jsx (414493db530c7c207ea573d6381d6d0d332b04efffd785fb1451b61c0bb91536)
-- bm25: -8.4732 | relevance: 1.0000
+### 13. sidekick_pack.md (84af1bbae3b09b5aee70556fcea89ba8459728b3ee24d3e4e22b1bde0908a49e)
+- bm25: -9.5095 | entity_overlap_w: 4.00 | adjusted: -10.5095 | relevance: 1.0000
 
-if (snapshotServiceRef.current) {
-      snapshotServiceRef.current.saveProgress('exercise-init', {
-        phaseOverride: 'exercise',
-        questions,
-        nextQuestionIndex: forceFresh ? 0 : (savedExercise?.nextQuestionIndex ?? savedExercise?.questionIndex ?? 0),
-        score: forceFresh ? 0 : (savedExercise?.score || 0),
-        answers: forceFresh ? [] : (savedExercise?.answers || []),
-        timerMode: forceFresh ? 'play' : (savedExercise?.timerMode || 'play')
-      });
-    }
-    if (!savedExerciseQuestions && !storedExerciseQuestions) {
-      setGeneratedExercise(questions);
-      persistAssessments(generatedWorksheet, generatedTest, generatedComprehension, questions);
-    }
-    
-    const phase = new ExercisePhase({
-      audioEngine: audioEngineRef.current,
-      eventBus: eventBusRef.current,
-      timerService: timerServiceRef.current,
-      questions: questions,
-      resumeState: (!forceFresh && savedExercise) ? {
-        questions,
-        nextQuestionIndex: savedExercise.nextQuestionIndex ?? savedExercise.questionIndex ?? 0,
-        score: savedExercise.score || 0,
-        answers: savedExercise.answers || [],
-        timerMode: savedExercise.timerMode || 'work'
-      } : null
-    });
-    
-    exercisePhaseRef.current = phase;
-    
-    // Subscribe to state changes
-    phase.on('stateChange', (data) => {
-      setExerciseState(data.state);
-      if (data.timerMode) {
-        setExerciseTimerMode(data.timerMode);
-        if (data.timerMode === 'play' || data.timerMode === 'work') {
-          const prevMode = currentTimerModeRef.current?.exercise ?? null;
-          if (prevMode !== data.timerMode) {
-            setCurrentTimerMode((prev) => ({ ...prev, exercise: data.timerMode }));
-            setTimerRefreshKey((k) => k + 1);
-          }
-        }
+import { searchFeatures, getFeatureById } from '@/lib/faq/faqLoader'
 
-### 37. src/app/session/v2/SessionPageV2.jsx (e3459e38441acf56cdb5073987f2197a332c23ca97a16990fd29d9f8985ed995)
-- bm25: -8.0897 | entity_overlap_w: 1.00 | adjusted: -8.3397 | relevance: 1.0000
+### 19. sidekick_pack.md (db0ac8da8e2d919ef1a29559748d5fe3097d5ed6a5e45dfcfb9df485fffc8fef)
+- bm25: -7.0624 | entity_overlap_w: 2.00 | adjusted: -7.5624 | relevance: 1.0000
 
-// Session tracking (lesson_sessions + lesson_session_events)
-  const [showTakeoverDialog, setShowTakeoverDialog] = useState(false);
-  const [conflictingSession, setConflictingSession] = useState(null);
-  const {
-    startSession: startTrackedSession,
-    endSession: endTrackedSession,
-    startPolling: startSessionPolling,
-    stopPolling: stopSessionPolling,
-  } = useSessionTracking(
-    learnerProfile?.id || null,
-    goldenKeyLessonKey || null,
-    false,
-    (session) => {
-      setConflictingSession(session);
-      setShowTakeoverDialog(true);
-    }
-  );
+// 2) ThoughtHub-enabled counselor POST
+  {
+    const message = `ThoughtHub smoke ping @ ${new Date().toISOString()}`
+    const url = `${baseUrl}/api/counselor`
+    const { res, json } = await httpJson(url, {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message,
+        history: [],
+        use_thought_hub: true,
+        thought_hub_mode: 'minimal',
+        subject_key: subjectKey,
+        require_generation_confirmation: false,
+        generation_confirmed: true,
+        disableTools: []
+      })
+    })
+
+### 20. scripts/smoke-thought-hub.mjs (807156cb364b56d9a5cf1b5c2b08e4f395768f2a8bdf6fd6c588113ee62a1c20)
+- bm25: -7.0190 | entity_overlap_w: 2.00 | adjusted: -7.5190 | relevance: 1.0000
+
+// 2) ThoughtHub-enabled counselor POST
+  {
+    const message = `ThoughtHub smoke ping @ ${new Date().toISOString()}`
+    const url = `${baseUrl}/api/counselor`
+    const { res, json } = await httpJson(url, {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message,
+        history: [],
+        use_thought_hub: true,
+        thought_hub_mode: 'minimal',
+        subject_key: subjectKey,
+        require_generation_confirmation: false,
+        generation_confirmed: true,
+        disableTools: []
+      })
+    })
+
+### 14. sidekick_pack.md (40c2dab55149f6c4395e96e30de8b23b8c2f50dc4887939a683389ba0b854e39)
+- bm25: -8.6472 | entity_overlap_w: 4.00 | adjusted: -9.6472 | relevance: 1.0000
+
+insert into public.tenant_memberships (tenant_id, user_id, role)
+      values (tid, u.user_id, 'owner');
+    end if;
+  end loop;
+end $$;
+
+### 31. sidekick_pack.md (3b828358ac75a21f74ba702f191e661430b86fe9c387fc9d539790c5b3d5ac63)
+- bm25: -5.5188 | entity_overlap_w: 2.00 | adjusted: -6.0188 | relevance: 1.0000
+
+### 12. scripts/smoke-thought-hub.mjs (807156cb364b56d9a5cf1b5c2b08e4f395768f2a8bdf6fd6c588113ee62a1c20)
+- bm25: -7.5909 | entity_overlap_w: 2.00 | adjusted: -8.0909 | relevance: 1.0000
+
+// 2) ThoughtHub-enabled counselor POST
+  {
+    const message = `ThoughtHub smoke ping @ ${new Date().toISOString()}`
+    const url = `${baseUrl}/api/counselor`
+    const { res, json } = await httpJson(url, {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message,
+        history: [],
+        use_thought_hub: true,
+        thought_hub_mode: 'minimal',
+        subject_key: subjectKey,
+        require_generation_confirmation: false,
+        generation_confirmed: true,
+        disableTools: []
+      })
+    })
+
+### 13. src/app/facilitator/generator/counselor/MentorInterceptor.js (460a755df01044542f40ae329e8c75e93421e6b8900bfd176649db2374a47aa0)
+- bm25: -7.6538 | relevance: 1.0000
+
+### 19. src/app/facilitator/generator/counselor/MentorInterceptor.js (c071ec4e7f468aec19a779825f89b3fe07f980207f8fa69330f8b7f0c363dd47)
+- bm25: -5.7304 | entity_overlap_w: 2.60 | adjusted: -6.3804 | relevance: 1.0000
+
+,
+
+### 15. src/app/facilitator/generator/counselor/MentorInterceptor.js (c48800581dadd37767e987fa9461a2f6e4e14e66bf5a01955d1b5884486e3cc2)
+- bm25: -8.8499 | entity_overlap_w: 2.30 | adjusted: -9.4249 | relevance: 1.0000
+
+/**
+ * MentorInterceptor - Front-end conversation handler for Mr. Mentor
+ * 
+ * Intercepts user messages and handles common tasks without API calls:
+ * - Lesson search and selection
+ * - Parameter gathering for generation/scheduling/editing
+ * - Confirmation flows
+ * - Conversation memory search
+ * - FAQ and feature explanations
+ * 
+ * Only forwards to API when:
+ * - User explicitly bypasses ("Different issue")
+ * - Free-form discussion after lesson selected
+ * - Complex queries that need LLM reasoning
+ */
+
+import {
+  searchMentorFeatures,
+  getMentorFeatureById,
+  shouldTreatAsReportQuery
+} from '@/lib/mentor/featureRegistry'
+
+// Fuzzy string matching for normalization
+function normalizeText(text) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s]/g, '') // Remove punctuation
+    .replace(/\s+/g, ' ')
+}
+
+function fuzzyMatch(input, targets, threshold = 0.6) {
+  const normalized = normalizeText(input)
   
-  // Phase timer state (loaded from learner profile)
-  const [phaseTimers, setPhaseTimers] = useState(null);
-  const [currentTimerMode, setCurrentTimerMode] = useState({
-    discussion: null,
-    comprehension: null,
-    exercise: null,
-    worksheet: null,
-    test: null
-  });
-  const currentTimerModeRef = useRef({
-    discussion: null,
-    comprehension: null,
-    exercise: null,
-    worksheet: null,
-    test: null
-  });
-  const [timerRefreshKey, setTimerRefreshKey] = useState(0);
-  const [goldenKeyBonus, setGoldenKeyBonus] = useState(0);
-  const [hasGoldenKey, setHasGoldenKey] = useState(false);
-  const [isGoldenKeySuspended, setIsGoldenKeySuspended] = useState(false);
-  const goldenKeyBonusRef = useRef(0);
-  const hasGoldenKeyRef = useRef(false);
-  const goldenKeyLessonKeyRef = useRef('');
-  const [timerPaused, setTimerPaused] = useState(false);
+  for (const target of targets) {
+    const normalizedTarget = normalizeText(target)
+    if (normalized.includes(normalizedTarget) || normalizedTarget.includes(normalized)) {
+      return true
+    }
+  }
   
-  // Timer display state (fed by TimerService events) - separate for play and work
-  const [playTimerDisplayElapsed, setPlayTimerDisplayElapsed] = useState(0);
-  const [playTimerDisplayRemaining, setPlayTimerDisplayRemaining] = useState(0);
-  const [workTimerDisplayElapsed, setWorkTimerDisplayElapsed] = useState(0);
-  const [workTimerDisplayRemaining, setWorkTime
+  return false
+}
 
-### 38. src/app/session/v2/SessionPageV2.jsx (b320cc73b9de32c02f2ed764bc67d0ff721f297b2f9eecad46a4a76448c869bd)
-- bm25: -8.3045 | relevance: 1.0000
+### 16. src/app/facilitator/generator/counselor/MentorInterceptor.js (68c343999016cb9eafca4305eba6310d387549054cab4f65b5f748cbc4b2a782)
+- bm25: -9.2678 | relevance: 1.0000
 
-if (snapshotServiceRef.current) {
-      snapshotServiceRef.current.saveProgress('worksheet-init', {
-        phaseOverride: 'worksheet',
-        questions,
-        nextQuestionIndex: forceFresh ? 0 : (savedWorksheet?.nextQuestionIndex ?? savedWorksheet?.questionIndex ?? 0),
-        score: forceFresh ? 0 : (savedWorksheet?.score || 0),
-        answers: forceFresh ? [] : (savedWorksheet?.answers || []),
-        timerMode: forceFresh ? 'play' : (savedWorksheet?.timerMode || 'play')
-      });
+this.state.flow = 'faq'
+      this.state.awaitingInput = 'faq_feature_confirm'
+      this.state.context.selectedFeatureId = feature.id
+      
+      return {
+        handled: true,
+        response: `It looks like you're asking about ${feature.title}. Is that correct?`
+      }
     }
     
-    const phase = new WorksheetPhase({
-      audioEngine: audioEngineRef.current,
-      eventBus: eventBusRef.current,
-      timerService: timerServiceRef.current,
-      questions: questions,
-      resumeState: (!forceFresh && savedWorksheet) ? {
-        questions,
-        nextQuestionIndex: savedWorksheet.nextQuestionIndex ?? savedWorksheet.questionIndex ?? 0,
-        score: savedWorksheet.score || 0,
-        answers: savedWorksheet.answers || [],
-        timerMode: savedWorksheet.timerMode || 'work'
-      } : null
-    });
+    // Multiple matches - list candidates
+    this.state.flow = 'faq'
+    this.state.awaitingInput = 'faq_feature_select'
     
-    worksheetPhaseRef.current = phase;
+    const topMatches = matches.slice(0, 5)
+    const featureList = topMatches.map((m, idx) => `${idx + 1}. ${m.feature.title}`).join('\n')
     
-    // Subscribe to state changes
-    phase.on('stateChange', (data) => {
-      setWorksheetState(data.state);
-      if (data.timerMode) {
-        setWorksheetTimerMode(data.timerMode);
-        if (data.timerMode === 'play' || data.timerMode === 'work') {
-          const prevMode = currentTimerModeRef.current?.worksheet ?? null;
-          if (prevMode !== data.timerMode) {
-            setCurrentTimerMode((prev) => ({ ...prev, worksheet: data.timerMode }));
-            setTimerRefreshKey((k) => k + 1);
-          }
+    // Store all match IDs for selection
+    this.state.context.faqCandidates = topMatches.map(m => m.feature.id)
+    
+    let response = `I found several features that might match what you're asking about:\n\n${featureList}\n\n`
+    response += `Which one would you like to learn about? You can say the name or number.`
+    
+    return {
+      handled: true,
+      response
+    }
+  }
+  
+  /**
+   * Execute confirmed action
+   */
+  async executeAction() {
+    const flow = this.state.flow
+    const ctx = this.state.context
+    
+    if (flow === 'schedule') {
+      const lesson = this.state.selectedLesson
+      
+      return {
+        handled: true,
+        action: {
+          type: 'schedule',
+          lessonKey: ctx.lessonKey,
+          scheduledDate: ctx.scheduledDate
+        },
+        response: `I've scheduled ${lesson.title} for ${new Date(ctx.scheduledDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.`
+      }
+    }
+    
+    if (flow === 'generate') {
+      return {
+        handled: true,
+        action: {
+          type: 'generate',
+          title: ctx.title,
+          subject: ctx.subject,
+          grade: ctx.grade,
+          difficulty: ctx.difficulty,
+          description: ctx
+
+### 17. sidekick_pack.md (bccac4ee7ee7e12ff43ebc821a1d8c91188fde5a46ec13a650f27528434ebb50)
+- bm25: -7.6175 | entity_overlap_w: 3.00 | adjusted: -8.3675 | relevance: 1.0000
+
+if (!token) {
+  console.error('Missing THOUGHTHUB_TOKEN env var (Supabase access token).')
+  process.exit(2)
+}
+
+async function httpJson(url, init = {}) {
+  const res = await fetch(url, init)
+  const text = await res.text()
+  let json = null
+  try {
+    json = text ? JSON.parse(text) : null
+  } catch {
+    json = { _nonJson: text }
+  }
+  return { res, json }
+}
+
+async function main() {
+  const headers = { Authorization: `Bearer ${token}` }
+
+// 1) ThoughtHub chronograph
+  {
+    const url = `${baseUrl}/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`
+    const { res, json } = await httpJson(url, { headers, cache: 'no-store' })
+    console.log('GET /api/thought-hub-chronograph:', res.status)
+    if (!res.ok) {
+      console.log(json)
+      process.exit(1)
+    }
+    console.log('  history_len:', Array.isArray(json?.history) ? json.history.length : null)
+    console.log('  has_pack:', !!json?.pack)
+  }
+
+### 8. src/app/facilitator/generator/counselor/MentorInterceptor.js (bd41e219b8972f75f422523dc21486842a7959a44caa139884851642c64cec51)
+- bm25: -7.9104 | entity_overlap_w: 5.20 | adjusted: -9.2104 | relevance: 1.0000
+
+### 9. src/app/facilitator/generator/counselor/MentorInterceptor.js (0f47889e0251950c99d2bc5ce8dae42c87f3b73293a3b8009708e2ea644e6443)
+- bm25: -6.9130 | entity_overlap_w: 2.60 | adjusted: -7.5630 | relevance: 1.0000
+
+### 23. scripts/add-cohere-style-chronograph.sql (7ba3db81adbef61246040e9c8ae4fd6aaea0d89936820bee1e84914868b5986d)
+- bm25: -6.9476 | relevance: 1.0000
+
+create index if not exists threads_tenant_user_created_idx
+  on public.threads (tenant_id, user_id, created_at desc);
+
+create index if not exists threads_scope_idx
+  on public.threads (tenant_id, user_id, sector, subject_key);
+
+### 18. src/app/api/mentor-blindspots/route.js (af49c6784fe32c6f3f90a637644979ba8ac3a41ca6bfb5f023b7903f11eef62d)
+- bm25: -7.5303 | entity_overlap_w: 3.00 | adjusted: -8.2803 | relevance: 1.0000
+
+import { NextResponse } from 'next/server'
+import {
+  cohereGetUserAndClient,
+  cohereEnsureThread
+} from '@/app/lib/cohereStyleMentor'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+function normalizeText(text) {
+  return String(text || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+}
+
+function clampInt(value, { min, max, fallback }) {
+  const n = Number.parseInt(String(value || ''), 10)
+  if (!Number.isFinite(n)) return fallback
+  return Math.max(min, Math.min(max, n))
+}
+
+export async function GET(req) {
+  try {
+    const auth = await cohereGetUserAndClient(req)
+    if (auth?.error) return NextResponse.json({ error: auth.error }, { status: auth.status })
+
+const { supabase } = auth
+
+const { searchParams } = new URL(req.url)
+    const subjectKey = (searchParams.get('subjectKey') || 'facilitator').trim()
+    const sector = (searchParams.get('sector') || 'both').trim()
+    const limit = clampInt(searchParams.get('limit'), { min: 50, max: 2000, fallback: 500 })
+
+const { tenantId, threadId } = await cohereEnsureThread({ supabase, sector, subjectKey })
+
+const { data, error } = await supabase
+      .from('events')
+      .select('id, role, text, meta, created_at')
+      .eq('tenant_id', tenantId)
+      .eq('thread_id', threadId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+const events = Array.isArray(data) ? data : []
+
+const blindspotEvents = events
+      .map((e) => {
+        const meta = e?.meta && typeof e.meta === 'object' ? e.meta : null
+        const blindspot = meta?.mentor_blindspot && typeof meta.mentor_blindspot === 'object'
+          ? meta.mentor_blindspot
+          : null
+
+### 19. src/app/facilitator/generator/counselor/MentorInterceptor.js (801fe76dcf75d9975bdf75c178124f170b4085989db3386c3b315e927f73b1a6)
+- bm25: -7.8580 | entity_overlap_w: 1.30 | adjusted: -8.1830 | relevance: 1.0000
+
+if (this.state.awaitingInput === 'plan_duration_months') {
+      const normalized = normalizeText(userMessage)
+      const match = normalized.match(/\b(1|2|3|4)\b/)
+      const months = match ? Number(match[1]) : null
+      if (!months || months < 1 || months > 4) {
+        return {
+          handled: true,
+          response: 'Please choose a duration of 1, 2, 3, or 4 months.'
         }
       }
-    });
-    
-    // Subscribe to question events
-    phase.on('questionStart', (data) => {
-      addEvent(`ðŸ“ Worksheet ${data.questionIndex + 1}/${data.totalQuestions}`);
-
-### 39. src/app/session/v2/SessionPageV2.jsx (d128641d1834b8bb45206abcbbdae7fd035e6ed9a09759daa0b2a339b057b575)
-- bm25: -8.3045 | relevance: 1.0000
-
-// Persist question order immediately so mid-phase resume has deterministic pools.
-    if (snapshotServiceRef.current) {
-      snapshotServiceRef.current.saveProgress('comprehension-init', {
-        phaseOverride: 'comprehension',
-        questions,
-        nextQuestionIndex: forceFresh ? 0 : (savedComp?.nextQuestionIndex || 0),
-        score: forceFresh ? 0 : (savedComp?.score || 0),
-        answers: forceFresh ? [] : (savedComp?.answers || []),
-        timerMode: forceFresh ? 'play' : (savedComp?.timerMode || 'play')
-      });
-    }
-    if (!savedCompQuestions && !storedCompQuestions) {
-      setGeneratedComprehension(questions);
-      persistAssessments(generatedWorksheet, generatedTest, questions, generatedExercise);
+      this.state.context.planDurationMonths = months
+      this.state.flow = 'lesson_plan_generate'
+      this.state.awaitingConfirmation = true
+      this.state.awaitingInput = null
+      return {
+        handled: true,
+        response: 'Would you like to schedule a Lesson Plan?'
+      }
     }
     
-    const phase = new ComprehensionPhase({
-      audioEngine: audioEngineRef.current,
-      eventBus: eventBusRef.current,
-      timerService: timerServiceRef.current,
-      questions: questions,
-      resumeState: (!forceFresh && savedComp) ? {
-        questions,
-        nextQuestionIndex: savedComp.nextQuestionIndex ?? savedComp.questionIndex ?? 0,
-        score: savedComp.score || 0,
-        answers: savedComp.answers || [],
-        timerMode: savedComp.timerMode || 'work'
-      } : null
-    });
+    // Handle FAQ feature confirmation
+    if (this.state.awaitingInput === 'faq_feature_confirm') {
+      const featureId = this.state.context.selectedFeatureId
+      const feature = getMentorFeatureById(featureId)
+      
+      if (!feature) {
+        this.reset()
+        return {
+          handled: true,
+          response: "I couldn't find that feature. What else can I help you with?"
+        }
+      }
+      
+      // Check if user confirmed by saying the feature name
+      const normalized = normalizeText(userMessage)
+      const normalizedTitle = normalizeText(feature.title)
+      
+      if (normalized.includes(normalizedTitle) || normalizedTitle.includes(normalized) || detectConfirmation(userMessage) === 'yes') {
+        // User confirmed - provide explanation
+        this.reset()
+        
+        let response = `${feature.title}: ${feature.description}\n\n`
+        response += `${feature.howToUse}`
+        
+        if (feature.relatedFeatures && feature.relatedFeatures.length > 0) {
+          response += `\n\nThis is related to: ${feature.relatedFeatures.map(id => {
+
+### 20. src/app/facilitator/generator/counselor/MentorInterceptor.js (89e181b5e65010c48db87b06c36e83809156e0da9602839dfe84d88f51014107)
+- bm25: -7.5451 | entity_overlap_w: 1.30 | adjusted: -7.8701 | relevance: 1.0000
+
+return {
+        handled: true,
+        response: `Would you like me to schedule this lesson, or assign it to ${learnerName || 'this learner'}?`
+      }
+    }
     
-    comprehensionPhaseRef.current = phase;
-    
-    // Subscribe to state changes
-    phase.on('stateChange', (data) => {
-      setComprehensionState(data.state);
-      if (data.timerMode) {
-        setComprehensionTimerMode(data.timerMode);
-        if (data.timerMode === 'play' || data.timerMode === 'work') {
-          const prevMode = currentTimerModeRef.current?.comprehension ?? null;
-          if (prevMode !== data.timerMode) {
-            setCurrentTimerMode((prev) => ({ ...prev, comprehension: data.timerMode }));
-            setTimerRefr
+    // Handle lesson selection from search results
+    if (this.state.awaitingInput === 'lesson_selection') {
+      const results = this.state.context.searchResults || []
+      
+      // Check if user wants to abandon selection and do something else
+      const normalized = normalizeText(userMessage)
+      const isRejection = normalized.includes('none') || 
+                         normalized.includes('neither') || 
+                         normalized.includes('not those') ||
+                         normalized.includes('different') ||
+                         detectConfirmation(userMessage) === 'no'
+      
+      if (isRejection) {
+        // User doesn't want any of the search results
+        // Reset state and check if they're making a new request
+        this.reset()
+        
+        // Check if message contains a new intent (generate, schedule, edit, etc.)
+        const intents = {}
+        for (const [intentName, pattern] of Object.entries(INTENT_PATTERNS)) {
+          intents[intentName] = pattern.confidence(userMessage)
+        }
+        
+        const topIntent = Object.entries(intents)
+          .filter(([_, score]) => score > 0)
+          .sort((a, b) => b[1] - a[1])[0]
+        
+        if (topIntent) {
+          const [intent] = topIntent
+          
+          // Route to the new intent handler
+          switch (intent) {
+            case 'generate':
+              return await this.handleGenerate(userMessage, context)
+            case 'schedule':
+              return await this.handleSchedule(userMessage, context)
+            case 'assign':
+              return await this.handleAssign(userMessage, c
 
-### 40. sidekick_pack.md (61149be66caff7a6cb2aa7897dd961b1c01896dfefed3b76a7792a8ff26b642d)
-- bm25: -7.8196 | entity_overlap_w: 1.00 | adjusted: -8.0696 | relevance: 1.0000
+### 21. src/lib/mentor/featureRegistry.js (9fca1dd259eddc4c824d9617a8239a04df80368002146eda02d0336ae6f6e33a)
+- bm25: -6.9990 | entity_overlap_w: 2.60 | adjusted: -7.6490 | relevance: 1.0000
 
-return () => {
-      try { unsubWorkTick?.(); } catch {}
-      try { unsubWorkComplete?.(); } catch {}
-      try { unsubGoldenKey?.(); } catch {}
-      try { unsubPlayExpired?.(); } catch {}
-      try { unsubPlayTick?.(); } catch {}
-      try { unsubWorkTick2?.(); } catch {}
-      try { unsubPlayStart?.(); } catch {}
-      try { unsubWorkStart?.(); } catch {}
-      timer.destroy();
-      timerServiceRef.current = null;
-    };
-  }, [lessonKey, phaseTimers, applyRestoredTimerStateToUi]);
+/**
+ * Mentor Feature Registry
+ *
+ * Purpose:
+ * - Provide a single searchable catalog of user-facing features.
+ * - Support deterministic "describe" responses (FAQ-style explanations).
+ * - Support deterministic "report" actions for user-specific state.
+ *
+ * Notes:
+ * - Base FAQ data comes from src/lib/faq/*.json via faqLoader.
+ * - Report-capable features are layered on top (same shape + a `report` descriptor).
+ */
 
-// Update play timer limits when bonus/enabled state changes (do not recreate TimerService).
-  useEffect(() => {
-    if (!timerServiceRef.current || !phaseTimers) return;
+import { getAllFeatures as getAllFaqFeatures } from '@/lib/faq/faqLoader'
 
-const playBonusSec = goldenKeysEnabledRef.current
-      ? Math.max(0, Number(goldenKeyBonusRef.current || 0)) * 60
-      : 0;
-    const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+function normalizeText(text) {
+  if (!text) return ''
+  return String(text)
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+}
 
-### 36. sidekick_pack.md (249d14a61d0c4086fe9efad0dea5881bdba2339821c508c2b888543c2f6cd3e9)
-- bm25: -5.5816 | relevance: 1.0000
+function scoreFeatureMatch(userInput, feature) {
+  const normalized = normalizeText(userInput)
+  if (!normalized) return { score: 0, matchedKeywords: [] }
+
+let score = 0
+  const matchedKeywords = []
+
+const keywords = Array.isArray(feature?.keywords) ? feature.keywords : []
+  for (const keyword of keywords) {
+    const normalizedKeyword = normalizeText(keyword)
+    if (!normalizedKeyword) continue
+
+if (normalized === normalizedKeyword) {
+      score += 100
+      matchedKeywords.push(keyword)
+    } else if (normalized.includes(normalizedKeyword)) {
+      score += 50
+      matchedKeywords.push(keyword)
+    } else if (normalizedKeyword.includes(normalized) && normalized.length >= 4) {
+      score += 30
+      matchedKeywords.push(keyword)
+    } else {
+      const keywordWords = normalizedKeyword.split(' ')
+      const inputWords = normalized.split(' ')
+      const matchedWords = keywordWords.filter((kw) =>
+        inputWords.some((iw) => iw.includes(kw) || kw.includes(iw))
+      )
+
+### 22. src/app/api/counselor/route.js (dbb6c7952958cdba6484727c986c29bfc517a4e2bcd52c7bc8fe856416fb46ff)
+- bm25: -7.0254 | entity_overlap_w: 2.00 | adjusted: -7.5254 | relevance: 1.0000
+
+const { supabase } = auth
+        const { tenantId, threadId } = await cohereEnsureThread({
+          supabase,
+          sector: cohereSector,
+          subjectKey
+        })
+
+cohereMeta = { tenantId, threadId, sector: cohereSector, subjectKey, mode: cohereMode }
+
+if (!isFollowup && userMessage) {
+          const blindspot = body?.interceptor_context?.mentor_blindspot
+          const meta = {
+            call_id: callId,
+            ...(blindspot && typeof blindspot === 'object' ? { mentor_blindspot: blindspot } : {})
+          }
+
+await cohereAppendEvent({
+            supabase,
+            tenantId,
+            threadId,
+            role: 'user',
+            text: userMessage,
+            meta
+          })
+        }
+
+if (!isFollowup && userMessage) {
+          const gate = await cohereGateSuggest({
+            supabase,
+            tenantId,
+            sector: cohereSector,
+            question: userMessage
+          })
+
+// Conservative deterministic thresholds (can be tuned later).
+          const AUTO_THRESHOLD = 0.45
+          const CLARIFY_THRESHOLD = 0.20
+          const MARGIN_THRESHOLD = 0.10
+
+const candidates = Array.isArray(gate?.candidates) ? gate.candidates : []
+          const top1 = candidates[0] || null
+          const top2 = candidates[1] || null
+          const top1Score = typeof top1?.score === 'number' ? top1.score : 0
+          const top2Score = typeof top2?.score === 'number' ? top2.score : 0
+          const margin = top1Score - top2Score
+
+const topText = (top1?.robot_text || top1?.answer_text || '').trim()
+
+if (topText && top1Score >= AUTO_THRESHOLD && margin >= MARGIN_THRESHOLD) {
+            // Auto-reply without GPT call.
+            const reply = topText
+
+### 23. scripts/smoke-thought-hub.mjs (fda12dae045c82c70b323d3a2b43d4dac1643ca5b2b0899d69ff90750b1fa3a1)
+- bm25: -6.5791 | entity_overlap_w: 2.00 | adjusted: -7.0791 | relevance: 1.0000
+
+// ThoughtHub smoke test
+//
+// Usage:
+//   THOUGHTHUB_TOKEN="<supabase access token>" node scripts/smoke-thought-hub.mjs
+// Optional:
+//   THOUGHTHUB_BASE_URL="http://localhost:3001" (default)
+//   THOUGHTHUB_SUBJECT_KEY="facilitator" (default)
+//
+// Notes:
+// - This validates the HTTP surface. It does not validate cookie-based ownership for /api/mentor-session.
+
+const baseUrl = (process.env.THOUGHTHUB_BASE_URL || 'http://localhost:3001').replace(/\/+$/, '')
+const token = (process.env.THOUGHTHUB_TOKEN || '').trim()
+const subjectKey = (process.env.THOUGHTHUB_SUBJECT_KEY || 'facilitator').trim()
+
+if (!token) {
+  console.error('Missing THOUGHTHUB_TOKEN env var (Supabase access token).')
+  process.exit(2)
+}
+
+async function httpJson(url, init = {}) {
+  const res = await fetch(url, init)
+  const text = await res.text()
+  let json = null
+  try {
+    json = text ? JSON.parse(text) : null
+  } catch {
+    json = { _nonJson: text }
+  }
+  return { res, json }
+}
+
+async function main() {
+  const headers = { Authorization: `Bearer ${token}` }
+
+// 1) ThoughtHub chronograph
+  {
+    const url = `${baseUrl}/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`
+    const { res, json } = await httpJson(url, { headers, cache: 'no-store' })
+    console.log('GET /api/thought-hub-chronograph:', res.status)
+    if (!res.ok) {
+      console.log(json)
+      process.exit(1)
+    }
+    console.log('  history_len:', Array.isArray(json?.history) ? json.history.length : null)
+    console.log('  has_pack:', !!json?.pack)
+  }
+
+### 24. sidekick_pack.md (5c970bea367b5224c2ab71851b325c52f55e5f37f17e22b8e1c51fff70313111)
+- bm25: -6.7769 | entity_overlap_w: 1.00 | adjusted: -7.0269 | relevance: 1.0000
+
+// ThoughtHub smoke test
+//
+// Usage:
+//   THOUGHTHUB_TOKEN="<supabase access token>" node scripts/smoke-thought-hub.mjs
+// Optional:
+//   THOUGHTHUB_BASE_URL="http://localhost:3001" (default)
+//   THOUGHTHUB_SUBJECT_KEY="facilitator" (default)
+//
+// Notes:
+// - This validates the HTTP surface. It does not validate cookie-based ownership for /api/mentor-session.
+
+### 25. src/app/facilitator/generator/counselor/MentorInterceptor.js (ddb1d75d287dae3996a8bc52fe060e61d5d1fab1795e241d90d7c3ab3aeee7d2)
+- bm25: -6.7649 | relevance: 1.0000
+
+case 'assign':
+        return await this.handleAssign(userMessage, context)
+      
+      case 'edit':
+        return await this.handleEdit(userMessage, context)
+      
+      case 'recall':
+        return await this.handleRecall(userMessage, context)
+      
+      case 'faq':
+        return await this.handleFaq(userMessage, context)
+
+case 'lesson_plan':
+        return await this.handleLessonPlan(userMessage, context)
+      
+      default:
+        return {
+          handled: false,
+          apiForward: { message: userMessage }
+        }
+    }
+  }
+
+parseListFromText(text) {
+    if (!text) return []
+    const raw = String(text)
+      .split(/[\n;,]+/g)
+      .flatMap((s) => s.split(','))
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => s.replace(/^and\s+/i, '').trim())
+      .filter(Boolean)
+
+// de-dupe while preserving order
+    const seen = new Set()
+    const out = []
+    for (const item of raw) {
+      const key = item.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push(item)
+    }
+    return out
+  }
+
+isEscapeMessage(userMessage) {
+    const normalized = normalizeText(userMessage)
+    return (
+      normalized.includes('cancel') ||
+      normalized.includes('stop') ||
+      normalized.includes('nevermind') ||
+      normalized.includes('never mind') ||
+      normalized.includes('different issue') ||
+      normalized.includes('something else')
+    )
+  }
+
+async handleLessonPlan(userMessage, context) {
+    const { selectedLearnerId, learnerName } = context
+    const normalized = normalizeText(userMessage)
+
+### 26. src/lib/mentor/featureRegistry.js (2ffafc0a8bade3ff655d67a0e05232f46fbf1b10543e9fb1e1f3e81e3204a9b1)
+- bm25: -6.4393 | entity_overlap_w: 1.30 | adjusted: -6.7643 | relevance: 1.0000
+
+export function getAllMentorFeatures() {
+  const faq = getAllFaqFeatures()
+  const reportable = getReportableFeatures()
+
+// Prefer reportable definitions when an FAQ feature uses the same id.
+  const byId = new Map()
+  for (const feature of faq) {
+    if (!feature?.id) continue
+    byId.set(feature.id, feature)
+  }
+  for (const feature of reportable) {
+    if (!feature?.id) continue
+    byId.set(feature.id, feature)
+  }
+
+return Array.from(byId.values())
+}
+
+export function getMentorFeatureById(featureId) {
+  const id = String(featureId || '').trim()
+  if (!id) return null
+
+const features = getAllMentorFeatures()
+  return features.find((f) => f?.id === id) || null
+}
+
+export function searchMentorFeatures(userInput) {
+  const features = getAllMentorFeatures()
+  const matches = []
+
+for (const feature of features) {
+    const { score, matchedKeywords } = scoreFeatureMatch(userInput, feature)
+    if (score <= 0) continue
+
+matches.push({ feature, score, matchedKeywords })
+  }
+
+matches.sort((a, b) => b.score - a.score)
+  return matches
+}
+
+export function shouldTreatAsReportQuery(userInput, context) {
+  const normalized = normalizeText(userInput)
+  const learnerName = context?.learnerName ? normalizeText(context.learnerName) : ''
+
+return (
+    /\bmy\b/.test(normalized) ||
+    normalized.includes('current') ||
+    normalized.includes('right now') ||
+    normalized.includes('show me') ||
+    normalized.includes('list') ||
+    normalized.includes('what are my') ||
+    (learnerName && normalized.includes(learnerName))
+  )
+}
+
+### 27. sidekick_pack.md (d346b52817a510fe327cf0753535fa2b653b6922ec1550b3d60d528159062bab)
+- bm25: -5.5083 | entity_overlap_w: 5.00 | adjusted: -6.7583 | relevance: 1.0000
+
+console.log('ThoughtHub smoke OK')
+}
+
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})
+
+### 29. sidekick_pack.md (2993a3c983281b6bd8f70ed9f4c8d6aa61d254f14af7ce89421c7a81f070d609)
+- bm25: -5.5315 | entity_overlap_w: 4.00 | adjusted: -6.5315 | relevance: 1.0000
+
+### 3. scripts/backfill-thought-hub-from-mentor-conversation-threads.sql (ba6a9f7d8cb6a57e0fe76b16a00901274c1f3716fadec03d2b5f6b8fe15d1e64)
+- bm25: -10.6890 | entity_overlap_w: 4.00 | adjusted: -11.6890 | relevance: 1.0000
+
+-- ThoughtHub one-time backfill
+--
+-- Migrates legacy Mr. Mentor history stored in public.mentor_conversation_threads.conversation_history
+-- into ThoughtHub (public.events) as append-only events, then clears the legacy JSON once ingestion
+-- is verified.
+--
+-- Prereqs (run first):
+-- - scripts/add-cohere-style-chronograph.sql
+-- - scripts/add-cohere-style-rls-and-rpcs.sql
+-- - scripts/add-thought-hub-dedupe-key.sql (or equivalent dedupe_key + unique index)
+--
+-- Notes:
+-- - Creates a tenant + owner membership for any facilitator lacking one.
+-- - Creates ThoughtHub threads at sector='both' for each (facilitator_id, subject_key).
+-- - Inserts events with a stable per-message timestamp order.
+-- - Uses dedupe_key = legacy:<subject_key>:<index> so reruns are safe.
+
+begin;
+
+-- 1) Ensure every facilitator in mentor_conversation_threads has a ThoughtHub tenant + membership.
+do $$
+declare
+  u record;
+  tid uuid;
+begin
+  for u in (
+    select distinct facilitator_id as user_id
+    from public.mentor_conversation_threads
+    where facilitator_id is not null
+  ) loop
+    select m.tenant_id into tid
+    from public.tenant_memberships m
+    where m.user_id = u.user_id
+    order by m.created_at asc
+    limit 1;
+
+### 28. sidekick_pack.md (188f61df40141975853654d862d1870579a45d02b34d8ca08172e9d71f9ee252)
+- bm25: -6.7257 | relevance: 1.0000
+
+const baseUrl = (process.env.THOUGHTHUB_BASE_URL || 'http://localhost:3001').replace(/\/+$/, '')
+const token = (process.env.THOUGHTHUB_TOKEN || '').trim()
+const subjectKey = (process.env.THOUGHTHUB_SUBJECT_KEY || 'facilitator').trim()
+
+### 29. sidekick_pack.md (6c8582d48389e0bcfed1a2706a7ea264034d8c1802ec999c8e46989c8a3d31b0)
+- bm25: -6.7257 | relevance: 1.0000
+
+const baseUrl = (process.env.THOUGHTHUB_BASE_URL || 'http://localhost:3001').replace(/\/+$/, '')
+const token = (process.env.THOUGHTHUB_TOKEN || '').trim()
+const subjectKey = (process.env.THOUGHTHUB_SUBJECT_KEY || 'facilitator').trim()
+
+### 30. src/app/facilitator/generator/counselor/MentorInterceptor.js (feb293664ac259a8d36174396915de0bfb2de690457245473abf8e988ec409a0)
+- bm25: -6.3020 | entity_overlap_w: 1.00 | adjusted: -6.5520 | relevance: 1.0000
+
+export default MentorInterceptor
+
+### 31. sidekick_pack.md (aebb21e37fcbc484100342f527fc64c7dbeb020cc5820caed83abfcdd01ad28d)
+- bm25: -6.0047 | entity_overlap_w: 2.00 | adjusted: -6.5047 | relevance: 1.0000
+
+if (!token) {
+  console.error('Missing THOUGHTHUB_TOKEN env var (Supabase access token).')
+  process.exit(2)
+}
+
+async function httpJson(url, init = {}) {
+  const res = await fetch(url, init)
+  const text = await res.text()
+  let json = null
+  try {
+    json = text ? JSON.parse(text) : null
+  } catch {
+    json = { _nonJson: text }
+  }
+  return { res, json }
+}
+
+async function main() {
+  const headers = { Authorization: `Bearer ${token}` }
+
+// 1) ThoughtHub chronograph
+  {
+    const url = `${baseUrl}/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`
+    const { res, json } = await httpJson(url, { headers, cache: 'no-store' })
+    console.log('GET /api/thought-hub-chronograph:', res.status)
+    if (!res.ok) {
+      console.log(json)
+      process.exit(1)
+    }
+    console.log('  history_len:', Array.isArray(json?.history) ? json.history.length : null)
+    console.log('  has_pack:', !!json?.pack)
+  }
+
+### 14. sidekick_pack.md (2fc33f3c2b19e779d2b44a498e2aea5c391e1a6cd15b59cde254eeb1702fb209)
+- bm25: -8.2527 | entity_overlap_w: 1.00 | adjusted: -8.5027 | relevance: 1.0000
+
+// ThoughtHub smoke test
+//
+// Usage:
+//   THOUGHTHUB_TOKEN="<supabase access token>" node scripts/smoke-thought-hub.mjs
+// Optional:
+//   THOUGHTHUB_BASE_URL="http://localhost:3001" (default)
+//   THOUGHTHUB_SUBJECT_KEY="facilitator" (default)
+//
+// Notes:
+// - This validates the HTTP surface. It does not validate cookie-based ownership for /api/mentor-session.
+
+### 15. sidekick_pack.md (641e09f31b7b68a4390eacc6e8149773080f9f0ca7eb126a7029c329edb1f514)
+- bm25: -7.9597 | entity_overlap_w: 2.00 | adjusted: -8.4597 | relevance: 1.0000
+
+### 32. sidekick_pack.md (2d0a753d731a447d6c1786f49ad3a3e1151865c8c175cd95fe56f49264ee0331)
+- bm25: -5.8241 | entity_overlap_w: 2.00 | adjusted: -6.3241 | relevance: 1.0000
+
+// ThoughtHub backfill bridge:
+    // If legacy conversation history exists (mentor_conversation_threads via /api/mentor-session),
+    // ingest it into ThoughtHub events and then clear the legacy JSON.
+    if (ingestFallback && authHeader) {
+      try {
+        const origin = new URL(req.url).origin
+        const legacyUrl = new URL('/api/mentor-session', origin)
+        legacyUrl.searchParams.set('subjectKey', subjectKey)
+
+### 33. src/app/api/mentor-chronograph/route.js (2aae66fb6c5c96365d1358746cde2447d95400953c9d0214a4fded4a5b1d62ea)
+- bm25: -5.7562 | entity_overlap_w: 2.00 | adjusted: -6.2562 | relevance: 1.0000
+
+// ThoughtHub backfill bridge:
+    // If legacy conversation history exists (mentor_conversation_threads via /api/mentor-session),
+    // ingest it into ThoughtHub events and then clear the legacy JSON.
+    if (ingestFallback && authHeader) {
+      try {
+        const origin = new URL(req.url).origin
+        const legacyUrl = new URL('/api/mentor-session', origin)
+        legacyUrl.searchParams.set('subjectKey', subjectKey)
+
+### 34. sidekick_pack.md (918fc11c19f5300c7b82e4e1d49eacb39a7cf92c712691ee95b7295b755e9da3)
+- bm25: -5.2112 | entity_overlap_w: 4.00 | adjusted: -6.2112 | relevance: 1.0000
+
+// 3) Confirm the message made it into the chronograph
+  {
+    const url = `${baseUrl}/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`
+    const { res, json } = await httpJson(url, { headers, cache: 'no-store' })
+    console.log('GET /api/thought-hub-chronograph (after):', res.status)
+    if (!res.ok) {
+      console.log(json)
+      process.exit(1)
+    }
+    const last = Array.isArray(json?.history) ? json.history[json.history.length - 1] : null
+    console.log('  last_role:', last?.role)
+    console.log('  last_has_content:', typeof last?.content === 'string' && last.content.length > 0)
+  }
+
+console.log('ThoughtHub smoke OK')
+}
+
+### 25. scripts/backfill-thought-hub-from-mentor-conversation-threads.sql (ba6a9f7d8cb6a57e0fe76b16a00901274c1f3716fadec03d2b5f6b8fe15d1e64)
+- bm25: -5.6702 | entity_overlap_w: 4.00 | adjusted: -6.6702 | relevance: 1.0000
+
+-- ThoughtHub one-time backfill
+--
+-- Migrates legacy Mr. Mentor history stored in public.mentor_conversation_threads.conversation_history
+-- into ThoughtHub (public.events) as append-only events, then clears the legacy JSON once ingestion
+-- is verified.
+--
+-- Prereqs (run first):
+-- - scripts/add-cohere-style-chronograph.sql
+-- - scripts/add-cohere-style-rls-and-rpcs.sql
+-- - scripts/add-thought-hub-dedupe-key.sql (or equivalent dedupe_key + unique index)
+--
+-- Notes:
+-- - Creates a tenant + owner membership for any facilitator lacking one.
+-- - Creates ThoughtHub threads at sector='both' for each (facilitator_id, subject_key).
+-- - Inserts events with a stable per-message timestamp order.
+-- - Uses dedupe_key = legacy:<subject_key>:<index> so reruns are safe.
+
+begin;
+
+### 35. scripts/backfill-thought-hub-from-mentor-conversation-threads.sql (ba6a9f7d8cb6a57e0fe76b16a00901274c1f3716fadec03d2b5f6b8fe15d1e64)
+- bm25: -5.2112 | entity_overlap_w: 4.00 | adjusted: -6.2112 | relevance: 1.0000
+
+-- ThoughtHub one-time backfill
+--
+-- Migrates legacy Mr. Mentor history stored in public.mentor_conversation_threads.conversation_history
+-- into ThoughtHub (public.events) as append-only events, then clears the legacy JSON once ingestion
+-- is verified.
+--
+-- Prereqs (run first):
+-- - scripts/add-cohere-style-chronograph.sql
+-- - scripts/add-cohere-style-rls-and-rpcs.sql
+-- - scripts/add-thought-hub-dedupe-key.sql (or equivalent dedupe_key + unique index)
+--
+-- Notes:
+-- - Creates a tenant + owner membership for any facilitator lacking one.
+-- - Creates ThoughtHub threads at sector='both' for each (facilitator_id, subject_key).
+-- - Inserts events with a stable per-message timestamp order.
+-- - Uses dedupe_key = legacy:<subject_key>:<index> so reruns are safe.
+
+begin;
+
+-- 1) Ensure every facilitator in mentor_conversation_threads has a ThoughtHub tenant + membership.
+do $$
+declare
+  u record;
+  tid uuid;
+begin
+  for u in (
+    select distinct facilitator_id as user_id
+    from public.mentor_conversation_threads
+    where facilitator_id is not null
+  ) loop
+    select m.tenant_id into tid
+    from public.tenant_memberships m
+    where m.user_id = u.user_id
+    order by m.created_at asc
+    limit 1;
+
+if tid is null then
+      insert into public.tenants (name)
+      values ('Household')
+      returning tenant_id into tid;
+
+insert into public.tenant_memberships (tenant_id, user_id, role)
+      values (tid, u.user_id, 'owner');
+    end if;
+  end loop;
+end $$;
+
+### 36. scripts/smoke-thought-hub.mjs (807156cb364b56d9a5cf1b5c2b08e4f395768f2a8bdf6fd6c588113ee62a1c20)
+- bm25: -5.6898 | entity_overlap_w: 2.00 | adjusted: -6.1898 | relevance: 1.0000
+
+// 2) ThoughtHub-enabled counselor POST
+  {
+    const message = `ThoughtHub smoke ping @ ${new Date().toISOString()}`
+    const url = `${baseUrl}/api/counselor`
+    const { res, json } = await httpJson(url, {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message,
+        history: [],
+        use_thought_hub: true,
+        thought_hub_mode: 'minimal',
+        subject_key: subjectKey,
+        require_generation_confirmation: false,
+        generation_confirmed: true,
+        disableTools: []
+      })
+    })
+
+### 37. sidekick_pack.md (680381e0ec227bdd892271915b0d2b25161b5ba7187209199710deec88a5e349)
+- bm25: -5.0706 | entity_overlap_w: 4.00 | adjusted: -6.0706 | relevance: 1.0000
+
+insert into public.tenant_memberships (tenant_id, user_id, role)
+      values (tid, u.user_id, 'owner');
+    end if;
+  end loop;
+end $$;
+
+### 30. sidekick_pack.md (cd018f77fda16a1b15393d794560e812933b9c66f1f054d18722c1f89cfecff5)
+- bm25: -5.5315 | entity_overlap_w: 4.00 | adjusted: -6.5315 | relevance: 1.0000
+
+### 14. scripts/backfill-thought-hub-from-mentor-conversation-threads.sql (ba6a9f7d8cb6a57e0fe76b16a00901274c1f3716fadec03d2b5f6b8fe15d1e64)
+- bm25: -6.0177 | entity_overlap_w: 4.00 | adjusted: -7.0177 | relevance: 1.0000
+
+-- ThoughtHub one-time backfill
+--
+-- Migrates legacy Mr. Mentor history stored in public.mentor_conversation_threads.conversation_history
+-- into ThoughtHub (public.events) as append-only events, then clears the legacy JSON once ingestion
+-- is verified.
+--
+-- Prereqs (run first):
+-- - scripts/add-cohere-style-chronograph.sql
+-- - scripts/add-cohere-style-rls-and-rpcs.sql
+-- - scripts/add-thought-hub-dedupe-key.sql (or equivalent dedupe_key + unique index)
+--
+-- Notes:
+-- - Creates a tenant + owner membership for any facilitator lacking one.
+-- - Creates ThoughtHub threads at sector='both' for each (facilitator_id, subject_key).
+-- - Inserts events with a stable per-message timestamp order.
+-- - Uses dedupe_key = legacy:<subject_key>:<index> so reruns are safe.
+
+begin;
+
+-- 1) Ensure every facilitator in mentor_conversation_threads has a ThoughtHub tenant + membership.
+do $$
+declare
+  u record;
+  tid uuid;
+begin
+  for u in (
+    select distinct facilitator_id as user_id
+    from public.mentor_conversation_threads
+    where facilitator_id is not null
+  ) loop
+    select m.tenant_id into tid
+    from public.tenant_memberships m
+    where m.user_id = u.user_id
+    order by m.created_at asc
+    limit 1;
+
+### 38. sidekick_pack.md (274394da52d2244ccf24f731f86edbe887de167e82e52601f1f33a950f725d54)
+- bm25: -5.8202 | entity_overlap_w: 1.00 | adjusted: -6.0702 | relevance: 1.0000
+
+const baseUrl = (process.env.THOUGHTHUB_BASE_URL || 'http://localhost:3001').replace(/\/+$/, '')
+const token = (process.env.THOUGHTHUB_TOKEN || '').trim()
+const subjectKey = (process.env.THOUGHTHUB_SUBJECT_KEY || 'facilitator').trim()
+
+if (!token) {
+  console.error('Missing THOUGHTHUB_TOKEN env var (Supabase access token).')
+  process.exit(2)
+}
+
+async function httpJson(url, init = {}) {
+  const res = await fetch(url, init)
+  const text = await res.text()
+  let json = null
+  try {
+    json = text ? JSON.parse(text) : null
+  } catch {
+    json = { _nonJson: text }
+  }
+  return { res, json }
+}
+
+async function main() {
+  const headers = { Authorization: `Bearer ${token}` }
+
+// 1) ThoughtHub chronograph
+  {
+    const url = `${baseUrl}/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`
+    const { res, json } = await httpJson(url, { headers, cache: 'no-store' })
+    console.log('GET /api/thought-hub-chronograph:', res.status)
+    if (!res.ok) {
+      console.log(json)
+      process.exit(1)
+    }
+    console.log('  history_len:', Array.isArray(json?.history) ? json.history.length : null)
+    console.log('  has_pack:', !!json?.pack)
+  }
+
+### 8. sidekick_pack.md (0614b1ac77bdefb112d207537d2be76ce62b4494fd3b2981620f1a98e7c3b382)
+- bm25: -7.4821 | entity_overlap_w: 2.00 | adjusted: -7.9821 | relevance: 1.0000
+
+### 16. src/app/api/mentor-chronograph/route.js (2aae66fb6c5c96365d1358746cde2447d95400953c9d0214a4fded4a5b1d62ea)
+- bm25: -7.4468 | entity_overlap_w: 2.00 | adjusted: -7.9468 | relevance: 1.0000
+
+### 39. sidekick_pack.md (2eb2784742c3ce929f72c52c66d9edfbde16f20da5e77c9733a6f9ee29ef2212)
+- bm25: -5.7180 | entity_overlap_w: 1.00 | adjusted: -5.9680 | relevance: 1.0000
+
+Topic: Feature registry (describe+report) + ThoughtHub blindspot hook
+
+### 40. sidekick_pack.md (f9acc3ceb40b6aae8724cf911a3dbd4ba05d286941de06ac8a2727ba554ba25b)
+- bm25: -5.5638 | entity_overlap_w: 1.00 | adjusted: -5.8138 | relevance: 1.0000
+
+if (candidates.length > 0 && top1Score >= CLARIFY_THRESHOLD && margin < MARGIN_THRESHOLD) {
+            const labels = candidates.slice(0, 3).map(c => c?.label).filter(Boolean)
+            const clarify = labels.length > 0
+              ? `Before I answer, which of these are you asking about: ${labels.join(' / ')}?`
+              : `Before I answer, can you clarify what you mean?`
+
+await cohereAppendEvent({
+              supabase,
+              tenantId,
+              threadId,
+              role: 'assistant',
+              text: clarify,
+              meta: { clarify: true, call_id: callId }
+            })
+
+const audio = await synthesizeAudio(clarify, logPrefix).catch(() => null)
+            return NextResponse.json({ reply: clarify, audio, gate: { action: 'clarify', candidates }, cohere: cohereMeta })
+          }
+        }
+
+// Build deterministic pack for GPT context.
+        const pack = await cohereBuildPack({
+          supabase,
+          tenantId: cohereMeta.tenantId,
+          threadId: cohereMeta.threadId,
+          sector: cohereSector,
+          question: userMessage,
+          mode: cohereMode
+        })
+
+### 13. scripts/smoke-thought-hub.mjs (fda12dae045c82c70b323d3a2b43d4dac1643ca5b2b0899d69ff90750b1fa3a1)
+- bm25: -8.0737 | entity_overlap_w: 2.00 | adjusted: -8.5737 | relevance: 1.0000
+
+// ThoughtHub smoke test
+//
+// Usage:
+//   THOUGHTHUB_TOKEN="<supabase access token>" node scripts/smoke-thought-hub.mjs
+// Optional:
+//   THOUGHTHUB_BASE_URL="http://localhost:3001" (default)
+//   THOUGHTHUB_SUBJECT_KEY="facilitator" (default)
+//
+// Notes:
+// - This validates the HTTP surface. It does not validate cookie-based ownership for /api/mentor-session.
