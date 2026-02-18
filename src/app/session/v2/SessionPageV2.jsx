@@ -854,22 +854,62 @@ function SessionPageV2Inner() {
   const [generatedWorksheet, setGeneratedWorksheet] = useState(null);
   const [generatedTest, setGeneratedTest] = useState(null);
 
-  const persistTranscriptState = useCallback((lines, activeIdx) => {
+  // Persisting the full transcript via SnapshotService serializes a large object and writes
+  // to localStorage; doing that on every caption update can cause noticeable jank over time.
+  // Debounce transcript persistence so we batch rapid updates.
+  const transcriptPersistTimerRef = useRef(null);
+  const transcriptPersistLatestRef = useRef({ lines: [], activeIdx: -1 });
+
+  useEffect(() => {
+    return () => {
+      if (transcriptPersistTimerRef.current) {
+        try { clearTimeout(transcriptPersistTimerRef.current); } catch {}
+        transcriptPersistTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const persistTranscriptState = useCallback((lines, activeIdx, { immediate = false } = {}) => {
     if (!snapshotServiceRef.current) return;
-    try {
-      const safeLines = Array.isArray(lines)
-        ? lines.map((l) => ({ text: String(l?.text || ''), role: l?.role === 'user' ? 'user' : 'assistant' }))
-        : [];
-      const safeIdx = Number.isFinite(activeIdx) ? activeIdx : -1;
-      snapshotServiceRef.current.saveProgress('transcript', {
-        transcript: {
-          lines: safeLines,
-          activeIndex: safeIdx
-        }
-      });
-    } catch (err) {
-      console.error('[SessionPageV2] Persist transcript error:', err);
+
+    transcriptPersistLatestRef.current = {
+      lines: Array.isArray(lines) ? lines : [],
+      activeIdx: Number.isFinite(activeIdx) ? activeIdx : -1
+    };
+
+    const flush = () => {
+      if (!snapshotServiceRef.current) return;
+      const latest = transcriptPersistLatestRef.current;
+      try {
+        const safeLines = Array.isArray(latest?.lines)
+          ? latest.lines.map((l) => ({ text: String(l?.text || ''), role: l?.role === 'user' ? 'user' : 'assistant' }))
+          : [];
+        const safeIdx = Number.isFinite(latest?.activeIdx) ? latest.activeIdx : -1;
+        snapshotServiceRef.current.saveProgress('transcript', {
+          transcript: {
+            lines: safeLines,
+            activeIndex: safeIdx
+          }
+        });
+      } catch (err) {
+        console.error('[SessionPageV2] Persist transcript error:', err);
+      }
+    };
+
+    if (immediate) {
+      if (transcriptPersistTimerRef.current) {
+        try { clearTimeout(transcriptPersistTimerRef.current); } catch {}
+        transcriptPersistTimerRef.current = null;
+      }
+      flush();
+      return;
     }
+
+    if (transcriptPersistTimerRef.current) return;
+    transcriptPersistTimerRef.current = setTimeout(() => {
+      transcriptPersistTimerRef.current = null;
+      flush();
+    }, 500);
   }, []);
 
   const appendTranscriptLine = useCallback((line, { updateActive = false } = {}) => {
@@ -900,7 +940,7 @@ function SessionPageV2Inner() {
     setActiveCaptionIndex(-1);
     setCurrentCaption('');
     if (persist) {
-      persistTranscriptState([], -1);
+      persistTranscriptState([], -1, { immediate: true });
     }
   }, [persistTranscriptState]);
 
@@ -1711,12 +1751,26 @@ function SessionPageV2Inner() {
     if (!key) return;
     const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
     try {
-      saveAssessments(key, {
-        worksheet: Array.isArray(worksheetSet) ? worksheetSet : (Array.isArray(generatedWorksheet) ? generatedWorksheet : []),
-        test: Array.isArray(testSet) ? testSet : (Array.isArray(generatedTest) ? generatedTest : []),
-        comprehension: Array.isArray(comprehensionSet) ? comprehensionSet : (Array.isArray(generatedComprehension) ? generatedComprehension : []),
-        exercise: Array.isArray(exerciseSet) ? exerciseSet : (Array.isArray(generatedExercise) ? generatedExercise : [])
-      }, { learnerId });
+      const payload = {};
+
+      const pick = (explicit, fallback) => {
+        if (Array.isArray(explicit) && explicit.length) return explicit;
+        if (Array.isArray(fallback) && fallback.length) return fallback;
+        return undefined;
+      };
+
+      const ws = pick(worksheetSet, generatedWorksheet);
+      const ts = pick(testSet, generatedTest);
+      const comp = pick(comprehensionSet, generatedComprehension);
+      const ex = pick(exerciseSet, generatedExercise);
+
+      if (ws) payload.worksheet = ws;
+      if (ts) payload.test = ts;
+      if (comp) payload.comprehension = comp;
+      if (ex) payload.exercise = ex;
+
+      if (!Object.keys(payload).length) return;
+      saveAssessments(key, payload, { learnerId });
     } catch {
       /* noop */
     }
@@ -2034,7 +2088,7 @@ function SessionPageV2Inner() {
       source = buildWorksheetSet();
       if (source.length) {
         setGeneratedWorksheet(source);
-        persistAssessments(source, generatedTest || []);
+        persistAssessments(source, generatedTest);
       }
     }
 
@@ -2057,7 +2111,7 @@ function SessionPageV2Inner() {
       source = buildTestSet();
       if (source.length) {
         setGeneratedTest(source);
-        persistAssessments(generatedWorksheet || [], source);
+        persistAssessments(generatedWorksheet, source);
       }
     }
 
@@ -2087,7 +2141,7 @@ function SessionPageV2Inner() {
     }
 
     if ((ws && ws.length) || (ts && ts.length)) {
-      persistAssessments(ws || generatedWorksheet || [], ts || generatedTest || []);
+      persistAssessments(ws || generatedWorksheet, ts || generatedTest);
     }
 
     if ((!ws || !ws.length) && (!ts || !ts.length)) {
@@ -3834,16 +3888,9 @@ function SessionPageV2Inner() {
         });
       }
 
-      // Clear persisted assessment sets so next session rebuilds from scratch
-      const key = getAssessmentStorageKey();
       const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
-      if (key) {
-        try { await clearAssessments(key, { learnerId }); } catch {}
-      }
-      setGeneratedComprehension(null);
-      setGeneratedExercise(null);
-      setGeneratedWorksheet(null);
-      setGeneratedTest(null);
+      // Do NOT clear persisted assessment pools here.
+      // Requirement: pools reset only via Print -> Refresh or lesson completion + explicit restart.
       
       // Save medal if test was completed
       if (testGrade?.percentage != null && learnerId && lessonKey) {
@@ -4258,7 +4305,7 @@ function SessionPageV2Inner() {
     }
     if (!savedCompQuestions && !storedCompQuestions) {
       setGeneratedComprehension(questions);
-      persistAssessments(generatedWorksheet || [], generatedTest || [], questions, generatedExercise || []);
+      persistAssessments(generatedWorksheet, generatedTest, questions, generatedExercise);
     }
     
     const phase = new ComprehensionPhase({
@@ -4487,7 +4534,7 @@ function SessionPageV2Inner() {
     }
     if (!savedExerciseQuestions && !storedExerciseQuestions) {
       setGeneratedExercise(questions);
-      persistAssessments(generatedWorksheet || [], generatedTest || [], generatedComprehension || [], questions);
+      persistAssessments(generatedWorksheet, generatedTest, generatedComprehension, questions);
     }
     
     const phase = new ExercisePhase({
@@ -4658,7 +4705,7 @@ function SessionPageV2Inner() {
       questions = buildWorksheetSet();
       if (questions.length) {
         setGeneratedWorksheet(questions);
-        persistAssessments(questions, generatedTest || [], generatedComprehension || [], generatedExercise || []);
+        persistAssessments(questions, generatedTest, generatedComprehension, generatedExercise);
       }
     }
 
@@ -4890,7 +4937,7 @@ function SessionPageV2Inner() {
       questions = buildTestSet();
       if (questions.length) {
         setGeneratedTest(questions);
-        persistAssessments(generatedWorksheet || [], questions, generatedComprehension || [], generatedExercise || []);
+        persistAssessments(generatedWorksheet, questions, generatedComprehension, generatedExercise);
       }
     }
 
