@@ -93,6 +93,35 @@ export class TeachingController {
     return `Too many requests right now. Please wait ${secs} seconds, then press Next.`;
   }
 
+  #sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+  }
+
+  #buildLocalDefinitionFallbackSentences() {
+    try {
+      const items = Array.isArray(this.#lessonData?.vocab) ? this.#lessonData.vocab : [];
+      const cleaned = items
+        .filter(v => v && typeof v.term === 'string' && v.term.trim() && typeof v.definition === 'string' && v.definition.trim())
+        .map(v => ({ term: v.term.trim(), definition: v.definition.trim() }));
+      if (!cleaned.length) return [];
+      return cleaned.map(v => `${v.term} means ${v.definition}.`);
+    } catch {
+      return [];
+    }
+  }
+
+  #buildLocalExamplesFallbackSentences() {
+    // Keep this short and harmless: if GPT is temporarily unavailable,
+    // we can still proceed without asking the learner to press Next again.
+    const lessonTitle = this.#lessonData?.title || 'this lesson';
+    const terms = this.#getVocabTerms();
+    const vocabHint = terms.length ? `We will use words like ${terms.slice(0, 4).join(', ')}.` : '';
+    return [
+      `Okay. Let\'s do a couple quick examples for ${lessonTitle}.`,
+      vocabHint
+    ].filter(Boolean);
+  }
+
   async #maybeRetryRateLimited(stage) {
     const now = this.#getNowMs();
 
@@ -559,8 +588,8 @@ export class TeachingController {
       'Always respond with natural spoken text only. No emojis, decorative characters, or symbols.'
     ].filter(Boolean).join('\n');
     
-    try {
-      const response = await fetch('/api/sonoma', {
+    const attemptFetch = async () => {
+      return fetch('/api/sonoma', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -575,48 +604,69 @@ export class TeachingController {
           skipAudio: true
         })
       });
-      
-      if (!response.ok) {
-        const status = response.status;
-        if (status === 429) {
-          const retryAfterMs = this.#getRetryAfterMs(response);
-          this.#definitionsCooldownUntilMs = this.#getNowMs() + retryAfterMs;
-          this.#definitionsRateLimited = true;
-          this.#definitionsRetryPending = false;
-          this.#emit('error', { type: 'gpt', stage: 'definitions', status, retryAfterMs });
-          return [this.#buildRateLimitSentence(retryAfterMs)];
+    };
+
+    // Transient hardening: first call after landing/refresh can fail.
+    // Retry with backoff so the learner doesn't need to press Next twice.
+    const delays = [0, 500, 1200];
+    for (let i = 0; i < delays.length; i += 1) {
+      if (delays[i]) await this.#sleep(delays[i]);
+      try {
+        const response = await attemptFetch();
+        if (!response.ok) {
+          const status = response.status;
+          if (status === 429) {
+            const retryAfterMs = this.#getRetryAfterMs(response);
+            this.#definitionsCooldownUntilMs = this.#getNowMs() + retryAfterMs;
+            this.#definitionsRateLimited = true;
+            this.#definitionsRetryPending = false;
+            this.#emit('error', { type: 'gpt', stage: 'definitions', status, retryAfterMs });
+            return [this.#buildRateLimitSentence(retryAfterMs)];
+          }
+
+          // Retry on 5xx; on 4xx, don't spin.
+          if (status >= 500 && i < delays.length - 1) {
+            continue;
+          }
+
+          console.error(`[TeachingController] Definitions request failed with status ${status}`);
+          this.#definitionsRateLimited = false;
+          this.#definitionsRetryPending = true;
+          this.#emit('error', { type: 'gpt', stage: 'definitions', status });
+          break;
         }
 
-        console.error(`[TeachingController] Definitions request failed with status ${status}`);
+        const data = await response.json().catch(() => null);
+        const text = (data && (data.reply || data.text)) ? String(data.reply || data.text) : '';
+        if (!text) {
+          console.warn('[TeachingController] Empty GPT response for definitions');
+          break;
+        }
+
+        const sentences = this.#splitIntoSentences(text);
+        console.log('[TeachingController] GPT definitions split into', sentences.length, 'sentences');
+
+        this.#definitionsRateLimited = false;
+        this.#definitionsRetryPending = false;
+        return sentences;
+      } catch (err) {
+        // Retry fetch/network errors.
+        if (i < delays.length - 1) continue;
+        console.error('[TeachingController] GPT definitions error:', err);
         this.#definitionsRateLimited = false;
         this.#definitionsRetryPending = true;
-        this.#emit('error', { type: 'gpt', stage: 'definitions', status });
-        return status >= 500 
-          ? ['The server is having trouble right now. Please wait a moment and press Next again.']
-          : ['We had trouble loading the definitions. Please press Next again.'];
       }
-      
-      const data = await response.json();
-      const text = data.reply || data.text || '';
-      
-      if (!text) {
-        console.warn('[TeachingController] Empty GPT response for definitions');
-        return [];
-      }
-      
-      const sentences = this.#splitIntoSentences(text);
-      console.log('[TeachingController] GPT definitions split into', sentences.length, 'sentences');
+    }
 
+    // Last-resort fallback: use lesson JSON vocab definitions so teaching always proceeds.
+    const local = this.#buildLocalDefinitionFallbackSentences();
+    if (local.length) {
       this.#definitionsRateLimited = false;
       this.#definitionsRetryPending = false;
-      return sentences;
-      
-    } catch (err) {
-      console.error('[TeachingController] GPT definitions error:', err);
-      this.#definitionsRateLimited = false;
-      this.#definitionsRetryPending = true;
-      return ['We had trouble loading the definitions. Please press Next again.'];
+      return local;
     }
+
+    return ['I had trouble loading the definitions.'];
   }
   
   // Private: Call GPT for examples
@@ -671,8 +721,8 @@ export class TeachingController {
       'Always respond with natural spoken text only. No emojis, decorative characters, or symbols.'
     ].filter(Boolean).join('\n');
     
-    try {
-      const response = await fetch('/api/sonoma', {
+    const attemptFetch = async () => {
+      return fetch('/api/sonoma', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -687,48 +737,65 @@ export class TeachingController {
           skipAudio: true
         })
       });
-      
-      if (!response.ok) {
-        const status = response.status;
-        if (status === 429) {
-          const retryAfterMs = this.#getRetryAfterMs(response);
-          this.#examplesCooldownUntilMs = this.#getNowMs() + retryAfterMs;
-          this.#examplesRateLimited = true;
-          this.#examplesRetryPending = false;
-          this.#emit('error', { type: 'gpt', stage: 'examples', status, retryAfterMs });
-          return [this.#buildRateLimitSentence(retryAfterMs)];
+    };
+
+    const delays = [0, 700, 1500];
+    for (let i = 0; i < delays.length; i += 1) {
+      if (delays[i]) await this.#sleep(delays[i]);
+      try {
+        const response = await attemptFetch();
+        if (!response.ok) {
+          const status = response.status;
+          if (status === 429) {
+            const retryAfterMs = this.#getRetryAfterMs(response);
+            this.#examplesCooldownUntilMs = this.#getNowMs() + retryAfterMs;
+            this.#examplesRateLimited = true;
+            this.#examplesRetryPending = false;
+            this.#emit('error', { type: 'gpt', stage: 'examples', status, retryAfterMs });
+            return [this.#buildRateLimitSentence(retryAfterMs)];
+          }
+
+          if (status >= 500 && i < delays.length - 1) {
+            continue;
+          }
+
+          console.error(`[TeachingController] Examples request failed with status ${status}`);
+          this.#examplesRateLimited = false;
+          this.#examplesRetryPending = true;
+          this.#emit('error', { type: 'gpt', stage: 'examples', status });
+          break;
         }
 
-        console.error(`[TeachingController] Examples request failed with status ${status}`);
+        const data = await response.json().catch(() => null);
+        const text = (data && (data.reply || data.text)) ? String(data.reply || data.text) : '';
+        if (!text) {
+          console.warn('[TeachingController] Empty GPT response for examples');
+          break;
+        }
+
+        const sentences = this.#splitIntoSentences(text);
+        console.log('[TeachingController] GPT examples split into', sentences.length, 'sentences');
+
+        this.#examplesRateLimited = false;
+        this.#examplesRetryPending = false;
+        return sentences;
+      } catch (err) {
+        if (i < delays.length - 1) continue;
+        console.error('[TeachingController] GPT examples error:', err);
         this.#examplesRateLimited = false;
         this.#examplesRetryPending = true;
-        this.#emit('error', { type: 'gpt', stage: 'examples', status });
-        return status >= 500
-          ? ['The server is having trouble right now. Please wait a moment and press Next again.']
-          : ['We had trouble loading the examples. Please press Next again.'];
       }
-      
-      const data = await response.json();
-      const text = data.reply || data.text || '';
-      
-      if (!text) {
-        console.warn('[TeachingController] Empty GPT response for examples');
-        return [];
-      }
-      
-      const sentences = this.#splitIntoSentences(text);
-      console.log('[TeachingController] GPT examples split into', sentences.length, 'sentences');
+    }
 
+    // Last-resort fallback: short local examples so the learner can continue.
+    const local = this.#buildLocalExamplesFallbackSentences();
+    if (local.length) {
       this.#examplesRateLimited = false;
       this.#examplesRetryPending = false;
-      return sentences;
-      
-    } catch (err) {
-      console.error('[TeachingController] GPT examples error:', err);
-      this.#examplesRateLimited = false;
-      this.#examplesRetryPending = true;
-      return ['We had trouble loading the examples. Please press Next again.'];
+      return local;
     }
+
+    return ['I had trouble loading the examples.'];
   }
   
   // Private: Fetch gate prompt sample questions from GPT
