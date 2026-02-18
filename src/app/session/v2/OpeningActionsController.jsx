@@ -146,15 +146,17 @@ export class OpeningActionsController {
       const response = await fetch('/api/sonoma', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instruction, innertext: question })
+        // Ask uses the frontend audio engine for speech; skip server-side TTS to
+        // avoid large base64 payloads and reduce failure risk.
+        body: JSON.stringify({ instruction, innertext: question, skipAudio: true })
       });
       
       if (!response.ok) {
-        throw new Error('Sonoma API request failed');
+        throw new Error(`Sonoma API request failed (status ${response.status})`);
       }
       
       const data = await response.json();
-      const answer = data.reply || 'That\'s an interesting question! Let me think about that.';
+      const answer = data.reply || data.text || 'That\'s an interesting question! Let me think about that.';
       
       this.#actionState.answer = answer;
       this.#actionState.stage = 'complete';
