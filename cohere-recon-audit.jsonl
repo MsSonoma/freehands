@@ -1,0 +1,16 @@
+﻿{"ts_utc":"2026-02-18T17:37:49.043Z","profile":"MsSonoma","out":"sidekick_pack.md","journal":"sidekick_rounds.jsonl","prompt":"Explain /facilitator/calendar and src/app/facilitator/calendar.","anchors":["/facilitator/calendar","src/app/facilitator/calendar."],"anchorHits":2,"hitAnchors":["/facilitator/calendar","src/app/facilitator/calendar."],"suspicious":false,"autoIngest":false,"ingested":[],"autoGapNote":false,"gapNotePath":null}
+
+{"ts_utc":"2026-02-18T17:38:16.132Z","profile":"MsSonoma","out":"sidekick_pack.md","journal":"sidekick_rounds.jsonl","prompt":"Explain /doesnotexist/xyz and src/not-real/file.js","anchors":["/doesnotexist/xyz","src/not-real/file.js"],"anchorHits":2,"hitAnchors":["/doesnotexist/xyz","src/not-real/file.js"],"suspicious":false,"autoIngest":false,"ingested":[],"autoGapNote":false,"gapNotePath":null}
+
+{"ts_utc":"2026-02-18T17:38:39.894Z","profile":"MsSonoma","out":"sidekick_pack.md","journal":"sidekick_rounds.jsonl","prompt":"Explain /doesnotexist/xyz and src/not-real/file.js","anchors":["/doesnotexist/xyz","src/not-real/file.js"],"anchorHits":2,"hitAnchors":["/doesnotexist/xyz","src/not-real/file.js"],"suspicious":false,"autoIngest":false,"ingested":[],"autoGapNote":false,"gapNotePath":null}
+
+{"ts_utc":"2026-02-18T17:39:20.476Z","profile":"MsSonoma","out":"sidekick_pack.md","journal":"sidekick_rounds.jsonl","prompt":"Explain /doesnotexist/xyz and src/not-real/file.js","anchors":["/doesnotexist/xyz","src/not-real/file.js"],"anchorHits":2,"hitAnchors":["/doesnotexist/xyz","src/not-real/file.js"],"suspicious":false,"autoIngest":false,"ingested":[],"autoGapNote":false,"gapNotePath":null}
+
+{"ts_utc":"2026-02-18T17:40:13.415Z","profile":"MsSonoma","out":"sidekick_pack.md","journal":"sidekick_rounds.jsonl","prompt":"Explain /doesnotexist/xyz and src/not-real/file.js","anchors":["/doesnotexist/xyz","src/not-real/file.js"],"anchorHits":0,"hitAnchors":[],"suspicious":true,"autoIngest":false,"ingested":[],"autoGapNote":false,"gapNotePath":null}
+
+{"ts_utc":"2026-02-18T17:41:52.630Z","profile":"MsSonoma","out":"sidekick_pack.md","journal":"sidekick_rounds.jsonl","prompt":"Explain /doesnotexist/xyz and src/not-real/file.js","anchors":["/doesnotexist/xyz","src/not-real/file.js"],"anchorHits":0,"hitAnchors":[],"suspicious":true,"autoIngest":false,"ingested":[],"autoGapNote":true,"gapNotePath":null}
+
+{"ts_utc":"2026-02-18T17:42:08.422Z","profile":"MsSonoma","out":"sidekick_pack.md","journal":"sidekick_rounds.jsonl","prompt":"Explain /doesnotexist/xyz and src/not-real/file.js","anchors":["/doesnotexist/xyz","src/not-real/file.js"],"anchorHits":0,"hitAnchors":[],"suspicious":true,"autoIngest":false,"ingested":[],"autoGapNote":true,"gapNotePath":"docs\\reference\\cohere\\gaps\\20260218_174208Z_recon-gap-doesnotexist-xyz.md"}
+
+{"ts_utc":"2026-02-18T17:43:08.490Z","profile":"MsSonoma","out":"sidekick_pack.md","journal":"sidekick_rounds.jsonl","prompt":"Where is /facilitator/doesnotexist implemented?","anchors":["/facilitator/doesnotexist"],"anchorHits":0,"hitAnchors":[],"suspicious":true,"autoIngest":true,"ingested":["src/app/facilitator"],"autoGapNote":false,"gapNotePath":null}
+

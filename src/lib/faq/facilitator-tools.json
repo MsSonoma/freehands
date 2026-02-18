@@ -1,0 +1,142 @@
+{
+  "category": "Facilitator Settings & Tools",
+  "features": [
+    {
+      "id": "facilitator-dashboard",
+      "title": "Facilitator Dashboard",
+      "keywords": [
+        "facilitator dashboard",
+        "dashboard",
+        "facilitator tools",
+        "adult tools",
+        "teacher tools"
+      ],
+      "description": "The Facilitator Dashboard is where you manage learners, lessons, scheduling, and account-level facilitator tools.",
+      "howToUse": "Open the facilitator area and use the Learners and Lessons sections to manage your work. Mr. Mentor can also open key overlays for you.",
+      "relatedFeatures": ["learner-profiles", "lesson-library", "mr-mentor"]
+    },
+    {
+      "id": "goals-clipboard",
+      "title": "Goals Clipboard",
+      "keywords": [
+        "goals clipboard",
+        "goals button",
+        "notes clipboard",
+        "open goals"
+      ],
+      "description": "The Goals clipboard is the UI where you view and edit Goals and Notes for the selected learner (or facilitator).",
+      "howToUse": "Click the 'Goals' button to open it. Mr. Mentor can also help you review what’s saved (report) or suggest what to write (describe/advice).",
+      "relatedFeatures": ["goals-notes"]
+    },
+    {
+      "id": "lessons-overlay",
+      "title": "Lessons Overlay",
+      "keywords": [
+        "lessons overlay",
+        "lessons button",
+        "open lessons",
+        "show my lessons",
+        "lesson list"
+      ],
+      "description": "The Lessons overlay is a quick way to browse, search, and act on lessons (schedule, assign/approve, edit, or review).",
+      "howToUse": "Click the 'Lessons' button, or ask Mr. Mentor to show lessons and help you find the one you want.",
+      "relatedFeatures": ["lesson-library", "lesson-scheduling", "lesson-editing"]
+    },
+    {
+      "id": "calendar-overlay",
+      "title": "Calendar Overlay",
+      "keywords": [
+        "calendar overlay",
+        "open calendar",
+        "calendar button",
+        "show calendar"
+      ],
+      "description": "The Calendar overlay shows scheduled items on a calendar and supports planning and review.",
+      "howToUse": "Click the 'Calendar' button. You can also ask Mr. Mentor to show upcoming scheduled lessons.",
+      "relatedFeatures": ["calendar-view", "lesson-schedule", "planned-lessons"]
+    },
+    {
+      "id": "lesson-planner",
+      "title": "Lesson Planner",
+      "keywords": [
+        "lesson planner",
+        "planner",
+        "planned lessons",
+        "generate lesson plan",
+        "long-term plan"
+      ],
+      "description": "The Lesson Planner helps you generate a longer-term plan (often weeks or months) for a learner.",
+      "howToUse": "Ask Mr. Mentor to open the lesson planner and generate a plan starting on a given date for a duration.",
+      "relatedFeatures": ["planned-lessons", "weekly-pattern", "curriculum-preferences", "no-school-dates"]
+    },
+    {
+      "id": "curriculum-preferences",
+      "title": "Curriculum Preferences",
+      "keywords": [
+        "curriculum preferences",
+        "focus topics",
+        "avoid topics",
+        "banned topics",
+        "learning preferences"
+      ],
+      "description": "Curriculum preferences are learner-specific guardrails used during planning and lesson generation (topics to focus on and topics to avoid).",
+      "howToUse": "Ask 'show my curriculum preferences' to see what’s saved for the selected learner. Tell Mr. Mentor focus/avoid topics to update them.",
+      "relatedFeatures": ["lesson-generation", "lesson-planner"]
+    },
+    {
+      "id": "weekly-pattern",
+      "title": "Weekly Pattern",
+      "keywords": [
+        "weekly pattern",
+        "weekly schedule",
+        "schedule template",
+        "schedule templates"
+      ],
+      "description": "Weekly pattern is a reusable weekly subject template for a learner (e.g., Math on Mon/Wed/Fri).",
+      "howToUse": "Ask 'show my weekly pattern' to report what’s saved for the selected learner. Tell Mr. Mentor subjects by day to update it.",
+      "relatedFeatures": ["lesson-planner", "custom-subjects"]
+    },
+    {
+      "id": "custom-subjects",
+      "title": "Custom Subjects",
+      "keywords": [
+        "custom subjects",
+        "custom subject",
+        "add subject",
+        "delete subject"
+      ],
+      "description": "Custom subjects let you add your own subject names for planning and scheduling.",
+      "howToUse": "Ask 'show my custom subjects' to list them, or say 'add custom subject <name>'.",
+      "relatedFeatures": ["weekly-pattern"]
+    },
+    {
+      "id": "no-school-dates",
+      "title": "No-School Dates",
+      "keywords": [
+        "no-school dates",
+        "no school",
+        "days off",
+        "holidays",
+        "skip dates"
+      ],
+      "description": "No-school dates mark days the learner won’t do school so planning can avoid them.",
+      "howToUse": "Ask 'show no-school dates' to report what’s saved for the selected learner.",
+      "relatedFeatures": ["lesson-planner", "calendar-view"]
+    },
+    {
+      "id": "medals",
+      "title": "Medals",
+      "keywords": [
+        "medals",
+        "scores",
+        "best score",
+        "gold",
+        "silver",
+        "bronze"
+      ],
+      "description": "Medals summarize a learner’s best performance on lessons.",
+      "howToUse": "Ask 'show medals' for the selected learner.",
+      "relatedFeatures": ["assessments", "learner-transcript"]
+    }
+  ]
+}

@@ -1,0 +1,308 @@
+{
+  "category": "Facilitator Pages",
+  "features": [
+    {
+      "id": "facilitator-page-hub",
+      "title": "Facilitator Hub (/facilitator)",
+      "keywords": [
+        "facilitator hub",
+        "facilitator home",
+        "facilitator dashboard page",
+        "/facilitator",
+        "account learners lessons calendar",
+        "talk to mr mentor"
+      ],
+      "description": "The Facilitator Hub is the entry point to adult tools. It shows quick links to Account, Learners, Lessons, Calendar, and Mr. Mentor.",
+      "howToUse": "Use the cards to open a section (Account/Learners/Lessons/Calendar). Use the Mr. Mentor button to open the facilitator chat experience.",
+      "relatedFeatures": ["facilitator-dashboard", "mr-mentor", "pin-security"]
+    },
+    {
+      "id": "facilitator-page-account",
+      "title": "Account (/facilitator/account)",
+      "keywords": [
+        "facilitator account",
+        "account page",
+        "profile",
+        "security",
+        "2fa",
+        "connected accounts",
+        "timezone",
+        "marketing emails",
+        "policies",
+        "danger zone",
+        "/facilitator/account"
+      ],
+      "description": "The Account page is the central place to manage facilitator profile and security settings, connections, hotkeys, timezone, and billing links.",
+      "howToUse": "Open a card to edit: Your Name; Email and Password; Two-Factor Auth; Facilitator PIN; Connected Accounts; Hotkeys; Timezone; Marketing Emails; Policies; Plan; Danger Zone. Notifications is also linked from here.",
+      "relatedFeatures": ["pin-security", "subscription-tiers"]
+    },
+    {
+      "id": "facilitator-page-account-settings-redirect",
+      "title": "Account Settings (Redirect) (/facilitator/account/settings)",
+      "keywords": [
+        "account settings",
+        "settings page",
+        "redirecting settings",
+        "/facilitator/account/settings"
+      ],
+      "description": "This route redirects to the unified Account page.",
+      "howToUse": "If you land here, you’ll be sent to /facilitator/account automatically.",
+      "relatedFeatures": ["facilitator-page-account"]
+    },
+    {
+      "id": "facilitator-page-account-plan",
+      "title": "Plan & Billing (/facilitator/account/plan)",
+      "keywords": [
+        "plan",
+        "billing",
+        "upgrade",
+        "pricing",
+        "trial",
+        "standard",
+        "pro",
+        "manage subscription",
+        "/facilitator/account/plan"
+      ],
+      "description": "The Plan page compares tiers and lets you start a trial, start checkout for a paid tier, or open subscription management.",
+      "howToUse": "Pick a column and select a plan. Use “Manage subscription” to open the in-app billing management flow.",
+      "relatedFeatures": ["subscription-tiers"]
+    },
+    {
+      "id": "facilitator-page-calendar",
+      "title": "Lesson Calendar (/facilitator/calendar)",
+      "keywords": [
+        "facilitator calendar",
+        "lesson calendar",
+        "schedule",
+        "reschedule",
+        "planner tab",
+        "day view",
+        "no-school dates",
+        "/facilitator/calendar"
+      ],
+      "description": "The Lesson Calendar is the main scheduling interface. You select a learner, view scheduled lessons by date, and (if your plan allows) schedule, reschedule, remove, and plan lessons.",
+      "howToUse": "Select a learner first. Use the calendar to pick a date and review scheduled items. Use scheduling/rescheduling controls to move lessons. Use the Planner tab (when available) to generate longer-term plans. You can also open per-lesson tools like notes, visual aids, and portfolio-related modals from calendar actions.",
+      "relatedFeatures": ["calendar-view", "lesson-scheduling", "lesson-planner", "no-school-dates"]
+    },
+    {
+      "id": "facilitator-page-learners",
+      "title": "Learners (/facilitator/learners)",
+      "keywords": [
+        "learners page",
+        "manage learners",
+        "student list",
+        "edit learner",
+        "targets",
+        "timers",
+        "ai features",
+        "learner limit",
+        "/facilitator/learners"
+      ],
+      "description": "The Learners page lists all learners under your account and lets you select the active learner and edit learner-specific settings.",
+      "howToUse": "Select a learner to set the current learner context (mirrors the Learn side). Use edit actions/overlays to update basic info (name/grade), learning targets, AI-related toggles, and timer settings. Use delete to remove a learner. Use Add Learner to create a new learner, and Transcripts to view a learner’s transcript PDFs.",
+      "relatedFeatures": ["learner-profiles", "learner-dropdown"]
+    },
+    {
+      "id": "facilitator-page-learners-add",
+      "title": "Add Learner (/facilitator/learners/add)",
+      "keywords": [
+        "add learner",
+        "create learner",
+        "new learner",
+        "learner grade",
+        "humor level",
+        "targets",
+        "/facilitator/learners/add"
+      ],
+      "description": "This page creates a new learner profile with name, grade, humor level, and per-phase targets.",
+      "howToUse": "Fill out Name and choose Grade. Optionally adjust Humor Level and the Comprehension/Exercise/Worksheet/Test targets. Save to create the learner, or Cancel to return.",
+      "relatedFeatures": ["learner-profiles"]
+    },
+    {
+      "id": "facilitator-page-learner-transcripts",
+      "title": "Learner Transcripts (/facilitator/learners/[id]/transcripts)",
+      "keywords": [
+        "learner transcripts",
+        "transcripts",
+        "pdf",
+        "download transcript",
+        "open transcript",
+        "/facilitator/learners/[id]/transcripts"
+      ],
+      "description": "This page lists transcript PDFs for a specific learner and provides Open/Download actions.",
+      "howToUse": "Open a transcript to view it in a new tab, or Download to save it locally. Use Back to Learners to return.",
+      "relatedFeatures": ["learner-transcript"]
+    },
+    {
+      "id": "facilitator-page-lessons",
+      "title": "Lesson Library (/facilitator/lessons)",
+      "keywords": [
+        "lesson library page",
+        "approve lessons",
+        "available lessons",
+        "schedule lesson",
+        "owned lessons",
+        "downloadable lessons",
+        "filters",
+        "search lessons",
+        "/facilitator/lessons"
+      ],
+      "description": "The Lesson Library is where facilitators browse lessons, make them available to a learner, and optionally schedule them for specific dates.",
+      "howToUse": "Select a learner, then use Search + Subject/Grade filters and the Owned/Downloadable/All scope. Click Load Lessons to fetch the list. Mark lessons Available to show them to the learner, and use scheduling controls to assign lessons to a calendar date. Use New Lesson to create from scratch or Generate Lesson to open Lesson Maker.",
+      "relatedFeatures": ["lesson-library", "lesson-scheduling", "lesson-generation", "lesson-editing"]
+    },
+    {
+      "id": "facilitator-page-lessons-edit",
+      "title": "Lesson Editor (/facilitator/lessons/edit)",
+      "keywords": [
+        "lesson editor page",
+        "edit lesson",
+        "create lesson",
+        "visual aids carousel",
+        "generate visual aids",
+        "assign lesson",
+        "schedule from editor",
+        "lesson notes",
+        "delete lesson",
+        "/facilitator/lessons/edit"
+      ],
+      "description": "The Lesson Editor lets you create a new lesson or edit an existing one, including content, questions, and visual aids. It also includes facilitator actions like notes, assigning, scheduling, and delete.",
+      "howToUse": "Open with `new=1` to create a blank lesson, or pass a `key` to edit an existing lesson. Use Save to persist and return to Lessons. Use the Visual Aids tools to load/generate and manage images. Use the Notes/Schedule/Assign flows to apply learner-specific actions.",
+      "relatedFeatures": ["lesson-editing", "visual-aids", "lesson-scheduling"]
+    },
+    {
+      "id": "facilitator-page-generator",
+      "title": "Lesson Maker (/facilitator/generator)",
+      "keywords": [
+        "lesson maker",
+        "generate lesson page",
+        "ai rewrite",
+        "quota",
+        "difficulty",
+        "vocabulary",
+        "teaching notes",
+        "/facilitator/generator"
+      ],
+      "description": "Lesson Maker generates a new lesson from a structured form (grade, difficulty, subject, title, description, notes, vocabulary) and then links you into the Lesson Editor.",
+      "howToUse": "Fill in Grade/Subject/Difficulty and a Title, then optionally add Description/Teaching Notes/Vocabulary. Use AI Rewrite buttons to rewrite individual fields. Click Generate Lesson, then use Edit This Lesson to open the Lesson Editor, or go Back to Lessons.",
+      "relatedFeatures": ["lesson-generation", "lesson-editing"]
+    },
+    {
+      "id": "facilitator-page-generator-counselor-redirect",
+      "title": "Counselor (Redirect) (/facilitator/generator/counselor)",
+      "keywords": [
+        "counselor page",
+        "mentor redirect",
+        "/facilitator/generator/counselor"
+      ],
+      "description": "This route redirects to the Mr. Mentor page.",
+      "howToUse": "If you navigate here, you’ll be redirected to /facilitator/mr-mentor.",
+      "relatedFeatures": ["mr-mentor", "facilitator-page-mr-mentor"]
+    },
+    {
+      "id": "facilitator-page-generator-lesson-maker-redirect",
+      "title": "Lesson Maker (Redirect) (/facilitator/generator/lesson-maker)",
+      "keywords": [
+        "lesson maker redirect",
+        "generator redirect",
+        "/facilitator/generator/lesson-maker"
+      ],
+      "description": "This route redirects to the main Lesson Maker page.",
+      "howToUse": "If you land here, you’ll be sent to /facilitator/generator.",
+      "relatedFeatures": ["facilitator-page-generator"]
+    },
+    {
+      "id": "facilitator-page-generator-generated-redirect",
+      "title": "Generated Lessons (Redirect) (/facilitator/generator/generated)",
+      "keywords": [
+        "generated lessons",
+        "redirect generated",
+        "/facilitator/generator/generated"
+      ],
+      "description": "This route redirects to the Lessons page (generated lessons are shown in the Lesson Library).",
+      "howToUse": "If you land here, you’ll be sent to /facilitator/lessons.",
+      "relatedFeatures": ["facilitator-page-lessons"]
+    },
+    {
+      "id": "facilitator-page-mr-mentor",
+      "title": "Mr. Mentor (/facilitator/mr-mentor)",
+      "keywords": [
+        "mr mentor page",
+        "mentor chat",
+        "counselor",
+        "facilitator assistant",
+        "/facilitator/mr-mentor"
+      ],
+      "description": "Mr. Mentor is the facilitator-facing assistant experience. It opens the counselor client UI used for chat, actions, and deterministic describe/report behaviors.",
+      "howToUse": "Ask questions about facilitator tools, learner planning, and lessons. Use ‘what is …’ for explanations and ‘show my …’ for report-style readouts when supported.",
+      "relatedFeatures": ["mr-mentor", "report-vs-describe"]
+    },
+    {
+      "id": "facilitator-page-notifications",
+      "title": "Notifications (/facilitator/notifications)",
+      "keywords": [
+        "notifications",
+        "alerts",
+        "unread",
+        "mark read",
+        "notification settings",
+        "/facilitator/notifications"
+      ],
+      "description": "Notifications shows facilitator alerts and lets you configure what types of notifications are enabled.",
+      "howToUse": "Use Refresh to reload. Click the settings button to open Notification Settings and toggle global enable/disable plus specific types. Use the read/unread control on each item to mark it read or unread.",
+      "relatedFeatures": ["facilitator-page-account"]
+    },
+    {
+      "id": "facilitator-page-hotkeys",
+      "title": "Hotkeys (/facilitator/hotkeys)",
+      "keywords": [
+        "hotkeys",
+        "keyboard shortcuts",
+        "shortcuts",
+        "/facilitator/hotkeys"
+      ],
+      "description": "Hotkeys lets you customize keyboard shortcuts used in facilitator workflows. Settings save locally and (when possible) to your account.",
+      "howToUse": "Use the Hotkeys Manager UI to edit shortcut mappings and save changes.",
+      "relatedFeatures": []
+    },
+    {
+      "id": "facilitator-page-onboarding-video",
+      "title": "Onboarding Video Gate (/facilitator/onboarding/video)",
+      "keywords": [
+        "onboarding video",
+        "signup video",
+        "beta gate",
+        "/facilitator/onboarding/video"
+      ],
+      "description": "This onboarding step shows a required signup video gate for facilitators.",
+      "howToUse": "Follow the on-screen instructions to complete the video gate.",
+      "relatedFeatures": []
+    },
+    {
+      "id": "facilitator-page-onboarding-tutorial",
+      "title": "Onboarding Tutorial (/facilitator/onboarding/tutorial)",
+      "keywords": [
+        "onboarding tutorial",
+        "facilitator tutorial",
+        "walkthrough",
+        "/facilitator/onboarding/tutorial"
+      ],
+      "description": "This onboarding step runs the interactive facilitator tutorial/walkthrough.",
+      "howToUse": "Follow the tutorial prompts to learn the facilitator workflow.",
+      "relatedFeatures": []
+    },
+    {
+      "id": "facilitator-page-survey",
+      "title": "Post-Lesson Survey (/facilitator/survey)",
+      "keywords": [
+        "survey",
+        "post lesson survey",
+        "feedback",
+        "/facilitator/survey"
+      ],
+      "description": "This page displays the post-lesson survey UI.",
+      "howToUse": "Fill out the survey after a lesson to provide feedback.",
+      "relatedFeatures": []
+    }
+  ]
+}

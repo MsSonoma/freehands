@@ -1965,6 +1965,353 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
                 interceptResult.response = "I couldn't load the weekly pattern. Please try again."
               }
             }
+          } else if (action.type === 'report_goals_notes') {
+            setLoadingThought('Loading goals and notes...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token) {
+              interceptResult.response = 'Please sign in first.'
+            } else {
+              try {
+                const params = new URLSearchParams()
+                const hasLearner = selectedLearnerId && selectedLearnerId !== 'none'
+                if (hasLearner) params.set('learner_id', selectedLearnerId)
+
+                const res = await fetch(`/api/goals-notes?${params.toString()}`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+
+                const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.error
+                    ? `I couldn't load goals and notes: ${js.error}`
+                    : "I couldn't load goals and notes. Please try again."
+                } else {
+                  const text = String(js?.goals_notes || '').trim()
+                  if (!text) {
+                    interceptResult.response = hasLearner
+                      ? `No goals/notes are saved yet for ${learnerName || 'this learner'}.`
+                      : 'No facilitator goals/notes are saved yet.'
+                  } else {
+                    interceptResult.response = hasLearner
+                      ? `Goals and notes for ${learnerName || 'this learner'}:\n\n${text}`
+                      : `Your facilitator goals and notes:\n\n${text}`
+                  }
+                }
+              } catch {
+                interceptResult.response = "I couldn't load goals and notes. Please try again."
+              }
+            }
+          } else if (action.type === 'report_custom_subjects') {
+            setLoadingThought('Loading custom subjects...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token) {
+              interceptResult.response = 'Please sign in first.'
+            } else {
+              try {
+                const res = await fetch('/api/custom-subjects', {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+
+                const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.error
+                    ? `I couldn't load custom subjects: ${js.error}`
+                    : "I couldn't load custom subjects. Please try again."
+                } else {
+                  const subjects = Array.isArray(js?.subjects) ? js.subjects : []
+                  const names = subjects
+                    .map((s) => String(s?.name || '').trim())
+                    .filter(Boolean)
+
+                  if (!names.length) {
+                    interceptResult.response = 'No custom subjects are saved yet.'
+                  } else {
+                    interceptResult.response = `Custom subjects (${names.length}):\n\n${names.map((n) => `- ${n}`).join('\n')}`
+                  }
+                }
+              } catch {
+                interceptResult.response = "I couldn't load custom subjects. Please try again."
+              }
+            }
+          } else if (action.type === 'report_planned_lessons') {
+            setLoadingThought('Loading planned lessons...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token || !selectedLearnerId || selectedLearnerId === 'none') {
+              interceptResult.response = 'Please select a learner first.'
+            } else {
+              try {
+                const res = await fetch(`/api/planned-lessons?learnerId=${selectedLearnerId}`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+
+                const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.error
+                    ? `I couldn't load planned lessons: ${js.error}`
+                    : "I couldn't load planned lessons. Please try again."
+                } else {
+                  const planned = js?.plannedLessons && typeof js.plannedLessons === 'object'
+                    ? js.plannedLessons
+                    : {}
+
+                  const dates = Object.keys(planned).sort()
+                  if (!dates.length) {
+                    interceptResult.response = `No planned lessons are saved yet for ${learnerName || 'this learner'}.`
+                  } else {
+                    const nextDates = dates.slice(0, 10)
+                    const lines = nextDates.map((d) => {
+                      const lessons = Array.isArray(planned?.[d]) ? planned[d] : []
+                      const titles = lessons
+                        .map((l) => String(l?.title || '').trim())
+                        .filter(Boolean)
+                        .slice(0, 2)
+                      const titleText = titles.length ? ` — ${titles.join(' | ')}${lessons.length > titles.length ? ' | …' : ''}` : ''
+                      return `${d}: ${lessons.length} lesson(s)${titleText}`
+                    })
+
+                    interceptResult.response = `Planned lessons for ${learnerName || 'this learner'} (showing ${nextDates.length} of ${dates.length} dates):\n\n${lines.join('\n')}`
+                  }
+                }
+              } catch {
+                interceptResult.response = "I couldn't load planned lessons. Please try again."
+              }
+            }
+          } else if (action.type === 'report_lesson_schedule') {
+            setLoadingThought('Loading scheduled lessons...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token || !selectedLearnerId || selectedLearnerId === 'none') {
+              interceptResult.response = 'Please select a learner first.'
+            } else {
+              try {
+                const toDateOnly = (d) => {
+                  const yyyy = d.getFullYear()
+                  const mm = String(d.getMonth() + 1).padStart(2, '0')
+                  const dd = String(d.getDate()).padStart(2, '0')
+                  return `${yyyy}-${mm}-${dd}`
+                }
+
+                const now = new Date()
+                const end = new Date(now)
+                end.setDate(end.getDate() + 14)
+
+                const startDate = toDateOnly(now)
+                const endDate = toDateOnly(end)
+
+                const url = `/api/lesson-schedule?learnerId=${selectedLearnerId}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
+                const res = await fetch(url, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+
+                const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.error
+                    ? `I couldn't load the lesson schedule: ${js.error}`
+                    : "I couldn't load the lesson schedule. Please try again."
+                } else {
+                  const schedule = Array.isArray(js?.schedule) ? js.schedule : []
+                  if (!schedule.length) {
+                    interceptResult.response = `No scheduled lessons found for ${learnerName || 'this learner'} in the next 14 days.`
+                  } else {
+                    const byDate = new Map()
+                    for (const row of schedule) {
+                      const date = String(row?.scheduled_date || '').slice(0, 10)
+                      if (!date) continue
+                      byDate.set(date, (byDate.get(date) || 0) + 1)
+                    }
+
+                    const lines = Array.from(byDate.entries())
+                      .sort((a, b) => a[0].localeCompare(b[0]))
+                      .slice(0, 12)
+                      .map(([d, count]) => `${d}: ${count} lesson(s)`) 
+
+                    interceptResult.response = `Scheduled lessons for ${learnerName || 'this learner'} (next 14 days):\n\n${lines.join('\n')}`
+                  }
+                }
+              } catch {
+                interceptResult.response = "I couldn't load the lesson schedule. Please try again."
+              }
+            }
+          } else if (action.type === 'report_no_school_dates') {
+            setLoadingThought('Loading no-school dates...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token || !selectedLearnerId || selectedLearnerId === 'none') {
+              interceptResult.response = 'Please select a learner first.'
+            } else {
+              try {
+                const res = await fetch(`/api/no-school-dates?learnerId=${selectedLearnerId}`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+                const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.error
+                    ? `I couldn't load no-school dates: ${js.error}`
+                    : "I couldn't load no-school dates. Please try again."
+                } else {
+                  const dates = Array.isArray(js?.dates) ? js.dates : []
+                  if (!dates.length) {
+                    interceptResult.response = `No no-school dates are saved yet for ${learnerName || 'this learner'}.`
+                  } else {
+                    const lines = dates
+                      .map((d) => {
+                        const date = String(d?.date || '').slice(0, 10)
+                        const reason = String(d?.reason || '').trim()
+                        return reason ? `${date}: ${reason}` : date
+                      })
+                      .filter(Boolean)
+                      .sort()
+                      .slice(0, 20)
+
+                    interceptResult.response = `No-school dates for ${learnerName || 'this learner'} (showing ${Math.min(lines.length, 20)}):\n\n${lines.join('\n')}`
+                  }
+                }
+              } catch {
+                interceptResult.response = "I couldn't load no-school dates. Please try again."
+              }
+            }
+          } else if (action.type === 'report_medals') {
+            setLoadingThought('Loading medals...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token || !selectedLearnerId || selectedLearnerId === 'none') {
+              interceptResult.response = 'Please select a learner first.'
+            } else {
+              try {
+                const res = await fetch(`/api/medals?learnerId=${selectedLearnerId}`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+                const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.error
+                    ? `I couldn't load medals: ${js.error}`
+                    : "I couldn't load medals. Please try again."
+                } else {
+                  const medals = js?.medals && typeof js.medals === 'object' ? js.medals : {}
+                  const entries = Object.values(medals)
+                  const tierCounts = { gold: 0, silver: 0, bronze: 0, none: 0 }
+                  for (const m of entries) {
+                    const tier = String(m?.medalTier || '').toLowerCase()
+                    if (tier === 'gold' || tier === 'silver' || tier === 'bronze') tierCounts[tier] += 1
+                    else tierCounts.none += 1
+                  }
+
+                  const total = entries.length
+                  if (!total) {
+                    interceptResult.response = `No medals are recorded yet for ${learnerName || 'this learner'}.`
+                  } else {
+                    interceptResult.response = `Medals for ${learnerName || 'this learner'}:\n\nTotal lessons with medals: ${total}\nGold: ${tierCounts.gold}\nSilver: ${tierCounts.silver}\nBronze: ${tierCounts.bronze}`
+                  }
+                }
+              } catch {
+                interceptResult.response = "I couldn't load medals. Please try again."
+              }
+            }
+          } else if (action.type === 'report_account_timezone') {
+            setLoadingThought('Loading account timezone...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token) {
+              interceptResult.response = 'Please sign in first.'
+            } else {
+              try {
+                const res = await fetch('/api/profile/timezone', {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+                const js = await res.json().catch(() => null)
+                const tz = js?.timezone && typeof js.timezone === 'string' ? js.timezone : null
+                interceptResult.response = tz
+                  ? `Your account timezone is set to: ${tz}`
+                  : 'No account timezone is saved yet (or it is not configured on the server).'
+              } catch {
+                interceptResult.response = "I couldn't load your account timezone. Please try again."
+              }
+            }
+          } else if (action.type === 'report_device_limits') {
+            setLoadingThought('Loading device status...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token) {
+              interceptResult.response = 'Please sign in first.'
+            } else {
+              try {
+                const res = await fetch('/api/devices/status', {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+                const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.error
+                    ? `I couldn't load device status: ${js.error}`
+                    : "I couldn't load device status. Please try again."
+                } else {
+                  const cap = js?.devicesCap
+                  const active = js?.active
+                  const tier = js?.plan_tier
+                  interceptResult.response = `Device status:\n\nPlan tier: ${tier || '(unknown)'}\nActive devices: ${Number(active) || 0}\nDevice cap: ${Number.isFinite(Number(cap)) ? cap : String(cap || '(unknown)')}`
+                }
+              } catch {
+                interceptResult.response = "I couldn't load device status. Please try again."
+              }
+            }
+          } else if (action.type === 'report_daily_lesson_quota') {
+            setLoadingThought('Checking daily lesson quota...')
+
+            const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token) {
+              interceptResult.response = 'Please sign in first.'
+            } else {
+              try {
+                const res = await fetch('/api/usage/check-lesson-quota', {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+                const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.reason
+                    ? `I couldn't check quota: ${js.reason}`
+                    : "I couldn't check quota. Please try again."
+                } else {
+                  const remaining = js?.remaining
+                  const used = js?.used
+                  const limit = js?.limit
+                  const tier = js?.tier
+                  const remainingText = remaining === -1 ? 'Unlimited' : String(remaining)
+
+                  interceptResult.response = `Daily lesson quota:\n\nTier: ${tier || '(unknown)'}\nRemaining today: ${remainingText}\nUsed today: ${Number(used) || 0}\nDaily limit: ${Number.isFinite(Number(limit)) ? limit : String(limit || '(unknown)')}`
+                }
+              } catch {
+                interceptResult.response = "I couldn't check quota. Please try again."
+              }
+            }
           } else if (action.type === 'save_weekly_pattern') {
             setLoadingThought('Saving weekly pattern...')
 

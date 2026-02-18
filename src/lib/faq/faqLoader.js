@@ -8,6 +8,9 @@ import learnersData from './learners.json'
 import sessionData from './session.json'
 import facilitatorData from './facilitator.json'
 import accountData from './account.json'
+import facilitatorToolsData from './facilitator-tools.json'
+import facilitatorPagesData from './facilitator-pages.json'
+import safetyData from './safety.json'
 
 // Combine all FAQ data
 const allFaqData = [
@@ -15,7 +18,10 @@ const allFaqData = [
   learnersData,
   sessionData,
   facilitatorData,
-  accountData
+  accountData,
+  facilitatorToolsData,
+  facilitatorPagesData,
+  safetyData
 ]
 
 // Build a flat array of all features with their keywords

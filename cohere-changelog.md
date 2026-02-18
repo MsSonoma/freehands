@@ -123,3 +123,120 @@ Key evidence:
 Result:
 - Decision: Add an app-domain heuristic guard so no-match FAQ queries only emit `mentor_blindspot` when they look like app/UI questions.
 - Files changed: src/lib/mentor/featureRegistry.js, src/app/facilitator/generator/counselor/MentorInterceptor.js, cohere-changelog.md
+
+---
+
+Date (UTC): 2026-02-18T16:07:58.5279157Z
+
+Topic: Expand feature registry coverage + add more deterministic report actions
+
+Recon prompt (exact string):
+Fill in all user-facing app features for Mr. Mentor feature registry so it can describe them all, and add deterministic report actions for features with variables/state. Identify existing FAQ features, missing user-facing features, and existing API routes that can power report actions.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Keep “describe” sourced from FAQ + registry entries, and add deterministic “report” actions only when there are already authoritative APIs (goals/notes, custom subjects, planned lessons, scheduled lessons, no-school dates, medals, timezone, device status, quota).
+- Files changed: src/lib/mentor/featureRegistry.js, src/app/facilitator/generator/counselor/MentorInterceptor.js, src/app/facilitator/generator/counselor/CounselorClient.jsx, cohere-changelog.md
+
+Follow-ups:
+- Add more report-capable features (e.g., learner transcript summary, lesson library filters) only where there is an existing stable endpoint.
+
+---
+
+Date (UTC): 2026-02-18T16:16:16.4741284Z
+
+Topic: Add AI safety + facilitator tools to FAQ registry
+
+Recon prompt (exact string):
+Ms. Sonoma / Mr. Mentor: enumerate all user-facing facilitator features and settings (UI routes, overlays, tools) and identify where to document/explain them (FAQ JSON + mentor feature registry). Also locate existing AI safety guardrails/policies in code (deterministic report vs describe, blindspot logging gates, ThoughtHub event storage, proposal workflow) so we can add an accurate 'AI safety' explanation feature.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Add new FAQ categories (AI Safety & Trust, Facilitator Settings & Tools) and load them via faqLoader. Update mentor feature registry merge so report capability layers onto FAQ text rather than replacing it.
+- Files changed: src/lib/faq/faqLoader.js, src/lib/faq/safety.json, src/lib/faq/facilitator-tools.json, src/lib/mentor/featureRegistry.js, cohere-changelog.md
+
+---
+
+Date (UTC): 2026-02-18T17:04:01.722Z
+
+Topic: Deterministic descriptions for all facilitator child pages
+
+Recon prompt (exact string):
+Explain everything on each of the pages that are children of the facilitator page (/src/app/facilitator/**/page.js). List routes, purpose, and user-facing controls/sections for each.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Add a route-level FAQ category (one entry per facilitator page under `/facilitator/**`) so Mr. Mentor can describe each page deterministically without guessing UI details.
+- Files changed: src/lib/faq/facilitator-pages.json, src/lib/faq/faqLoader.js, cohere-changelog.md
+
+Follow-ups:
+- If you want deeper per-page explainers (exact button labels/flows), we can tighten entries by scanning each page’s render tree for visible strings and modal names.
+
+---
+
+Date (UTC): 2026-02-18T17:06:43.820Z
+
+Topic: Improve recon by retroactive knowledge ingestion + gap notes
+
+Recon prompt (exact string):
+Explain everything on each of the pages that are children of the facilitator page (/src/app/facilitator/**/page.js). List routes, purpose, and user-facing controls/sections for each.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Ingest `docs/brain/**` so recon can use historical system knowledge, and add a lightweight gap-note workflow (template + helper script) to capture highly-anchored facts when recon still fails.
+- Files changed: docs/reference/cohere/recon-gap-workflow.md, docs/reference/cohere/recon-gap-note-template.md, scripts/cohere-gap-note.ps1, cohere-changelog.md
+
+Follow-ups:
+- When recon misses a feature, write a short note under `docs/reference/cohere/gaps/` with routes + exact UI labels as anchors, ingest it, then re-run recon.
+
+---
+
+Date (UTC): 2026-02-18T17:10:50.499Z
+
+Topic: Auto-catch suspicious recon packs
+
+Recon prompt (exact string):
+Cohere recon reliability: how can we detect when a sidekick pack is likely missing evidence for a prompt, and auto-remediate via ingest + a gap-note workflow? Anchor on sidekick_pack.md, sidekick_rounds.jsonl, ingest, and scripts tooling.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Add a wrapper script that runs Sidekick recon, checks for prompt anchors in the pack, and if suspicious can auto-ingest likely targets and emit a gap-note stub + audit log.
+- Files changed: scripts/cohere-recon.ps1, docs/reference/cohere/recon-gap-workflow.md, cohere-changelog.md
+
+---
+
+Date (UTC): 2026-02-18T17:44:15.770Z
+
+Topic: Fix recon auto-catch scripts (PowerShell 5.1 + meaningful anchor checks)
+
+Recon prompt (exact string):
+Fix scripts/cohere-recon.ps1 to run on Windows PowerShell 5.1 (no PS7-only syntax), implement auto-catch recon failure via anchor scoring, auto-ingest, optional gap note, and audit log.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Fix PowerShell parsing issues caused by backticks in double-quoted regex strings; make anchor scoring meaningful by ignoring prompt/filter/question metadata (and pack self-citations) so “suspicious” can actually trigger; make gap-note helper PS5.1 compatible.
+- Files changed: scripts/cohere-recon.ps1, scripts/cohere-gap-note.ps1, cohere-changelog.md
+
+Follow-ups:
+- If we want stronger detection, add an optional manual `-Expect` list (high-value anchors) and require a minimum hit-rate (e.g., >= 30%).
+
+Follow-ups:
+- If we want stronger detection, add optional `-Expect` anchors to the wrapper (manual list) for high-value prompts.

@@ -1,0 +1,82 @@
+{
+  "category": "AI Safety & Trust",
+  "features": [
+    {
+      "id": "ai-safety",
+      "title": "AI Safety & Trust (Overview)",
+      "keywords": [
+        "ai safety",
+        "safety",
+        "trust",
+        "privacy",
+        "data",
+        "hallucination",
+        "accuracy",
+        "guardrails",
+        "how does this work"
+      ],
+      "description": "Ms. Sonoma and Mr. Mentor are designed to be helpful while minimizing mistakes and surprises. When possible, Mr. Mentor uses deterministic app logic (not just free-form generation) to answer questions about your saved settings and learner data.",
+      "howToUse": "If you want a factual readout of saved settings, ask in a 'report' way (e.g., 'show my weekly pattern', 'what are my curriculum preferences'). If you want help understanding a feature, ask in a 'describe' way (e.g., 'what is weekly pattern?').",
+      "relatedFeatures": ["mr-mentor", "thought-hub", "feature-registry", "report-vs-describe"]
+    },
+    {
+      "id": "report-vs-describe",
+      "title": "Report vs Describe",
+      "keywords": [
+        "report",
+        "describe",
+        "show my",
+        "what are my",
+        "current settings",
+        "explain feature"
+      ],
+      "description": "Some questions are asking for an explanation (describe) and some are asking for current saved state (report). Mr. Mentor tries to handle 'report' questions by calling existing app APIs so it can answer using authoritative data.",
+      "howToUse": "Use phrasing like 'show my …' or 'what are my …' when you want a readout of saved state. Use 'what is …' or 'how do I …' when you want an explanation.",
+      "relatedFeatures": ["feature-registry"]
+    },
+    {
+      "id": "feature-registry",
+      "title": "Feature Registry (Deterministic Explanations)",
+      "keywords": [
+        "feature registry",
+        "what features do you have",
+        "capabilities",
+        "what can you do",
+        "help",
+        "faq"
+      ],
+      "description": "Mr. Mentor uses a searchable feature registry (built from the app’s FAQ knowledge base plus a small layer of report-capable entries) to answer user-facing questions about Ms. Sonoma and facilitator tools.",
+      "howToUse": "Ask 'what is …' about any feature name (Calendar View, Lesson Planner, Goals and Notes, etc.). If you ask about something not covered, Mr. Mentor may treat it as a 'blindspot' and flag it for later review.",
+      "relatedFeatures": ["blindspots"]
+    },
+    {
+      "id": "thought-hub",
+      "title": "ThoughtHub (Conversation Storage)",
+      "keywords": [
+        "thought hub",
+        "thoughthub",
+        "conversation history",
+        "chronograph",
+        "packs",
+        "memory"
+      ],
+      "description": "Mr. Mentor conversations can be stored as events so your session can resume and stay consistent. This makes it easier to continue work over time, and supports deterministic summaries and retrieval.",
+      "howToUse": "If you want to avoid storing something, don’t include sensitive details. Focus on learner learning needs and teaching context.",
+      "relatedFeatures": ["ai-safety"]
+    },
+    {
+      "id": "blindspots",
+      "title": "Blindspots (Missing Feature Coverage)",
+      "keywords": [
+        "blindspot",
+        "missing feature",
+        "not in the registry",
+        "doesn't know",
+        "add to registry"
+      ],
+      "description": "When you ask a question that looks like an app-feature question but doesn’t match any known feature entry, the system can tag it as a registry blindspot so it can be reviewed and added later. Personal advice questions should not be tagged as blindspots.",
+      "howToUse": "If Mr. Mentor can’t find a matching feature, try rephrasing with the UI name (e.g., 'Lesson Planner', 'Calendar', 'Goals and Notes').",
+      "relatedFeatures": ["feature-registry"]
+    }
+  ]
+}

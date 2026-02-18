@@ -6,16 +6,12 @@ Mode: standard
 
 Prompt (original):
 ```text
-Mr. Mentor/ThoughtHub: how do we decide a user message is a feature/FAQ question vs general conversation? Where is FAQ intent detection implemented (MentorInterceptor INTENT_PATTERNS)? Where is mentor_blindspot meta attached, and how to avoid logging blindspots for personal advice / non-app questions?
+Where is /facilitator/doesnotexist implemented?
 ```
 
 Filter terms used:
 ```text
-FAQ
-INTENT_PATTERNS
-mentor_blindspot
-MentorInterceptor
-ThoughtHub
+/facilitator/doesnotexist
 ```
 # Context Pack
 
@@ -29,7 +25,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-FAQ INTENT_PATTERNS mentor_blindspot MentorInterceptor ThoughtHub
+/facilitator/doesnotexist
 
 ## Forced Context
 
@@ -37,146 +33,39 @@ FAQ INTENT_PATTERNS mentor_blindspot MentorInterceptor ThoughtHub
 
 ## Ranked Evidence
 
-### 1. src/app/facilitator/generator/counselor/MentorInterceptor.js (5b4398f51f1e7cc4d21d4a02d6d084e77028c59f0784b3eb2dd6b1c717f80fcf)
-- bm25: -19.4638 | entity_overlap_w: 9.10 | adjusted: -21.7388 | relevance: 1.0000
+### 1. docs/reference/cohere/gaps/20260218_174208Z_recon-gap-doesnotexist-xyz.md (d4536ceab2512614191e12df06a4384b0da22bd8282cf25c77d3749a88fc3ba9)
+- bm25: -10.6085 | relevance: 1.0000
 
-return INTENT_PATTERNS.assign.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
-    }
-  },
-  
-  edit: {
-    keywords: ['edit', 'change', 'modify', 'update', 'fix', 'correct'],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
-      
-      // Check if it's an FAQ-style question about editing (how to)
-      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
-      if (faqPatterns.some(p => normalized.includes(p))) {
-        return 0 // Defer to FAQ intent
-      }
-      
-      return INTENT_PATTERNS.edit.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
-    }
-  },
-  
-  recall: {
-    keywords: ['remember', 'recall', 'last time', 'previously', 'earlier', 'before'],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
-      return INTENT_PATTERNS.recall.keywords.some(kw => normalized.includes(kw)) ? 0.7 : 0
-    }
-  },
-  
-  faq: {
-    keywords: ['what is', 'what are', 'how do i', 'how does', 'how can i', 'explain', 'tell me about', 'help with', 'how to', 'show me', 'where is', 'what does', 'can you explain'],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
-      // Higher confidence (0.9) to prioritize FAQ over action intents when patterns match
-      return INTENT_PATTERNS.faq.keywords.some(kw => normalized.includes(kw)) ? 0.9 : 0
-    }
-  }
+﻿# Recon Gap Note: Recon gap: /doesnotexist/xyz
 
-### 2. src/app/facilitator/generator/counselor/MentorInterceptor.js (24ac67662964885aac65cedd56f3da447055623649bd5f05e428ecedc9d4435a)
-- bm25: -18.8308 | entity_overlap_w: 10.40 | adjusted: -21.4308 | relevance: 1.0000
+Date (UTC): 2026-02-18T17:42:08Z
 
-// Intent detection patterns
-const INTENT_PATTERNS = {
-  search: {
-    keywords: ['find', 'search', 'look for', 'show me', 'do you have', 'what lessons'],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
-      return INTENT_PATTERNS.search.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
-    }
-  },
-  
-  generate: {
-    keywords: ['generate', 'create', 'make', 'build', 'new lesson'],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
-      
-      // Check if it's an FAQ-style question about generation (how to)
-      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
-      if (faqPatterns.some(p => normalized.includes(p))) {
-        return 0 // Defer to FAQ intent
-      }
-      
-      return INTENT_PATTERNS.generate.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
-    }
-  },
-  
-  schedule: {
-    keywords: ['schedule', 'add to calendar', 'put on', 'assign for', 'plan for'],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
-      
-      // Check if it's an FAQ-style question about scheduling (how to)
-      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
-      if (faqPatterns.some(p => normalized.includes(p))) {
-        return 0 // Defer to FAQ intent
-      }
-      
-      return INTENT_PATTERNS.schedule.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
-    }
-  },
+## Recon prompt (exact)
 
-### 3. sidekick_pack.md (5944f1671766855b78134272fc7d38f8f01da09572349fedcedd78b21ff5a9b9)
-- bm25: -18.3585 | entity_overlap_w: 7.90 | adjusted: -20.3335 | relevance: 1.0000
+Explain /doesnotexist/xyz and src/not-real/file.js
 
-Recon prompt (exact string):
-Implement a feature registry for Mr. Mentor: a machine-readable catalog of user-facing features that supports (1) deterministic describe responses, (2) deterministic report responses by calling existing app APIs (learner-scoped when needed), and (3) a hook to log blindspots to ThoughtHub. Identify existing FAQ loader data sources and interceptor entrypoints.
+## Anchors
 
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
+- /doesnotexist/xyz
 
-Result:
-- Decision: Create a registry that merges existing FAQ JSON features with report-capable feature entries; route FAQ intent through the registry; log no-match queries via `interceptor_context.mentor_blindspot` and persist into ThoughtHub event meta.
-- Files changed: src/lib/mentor/featureRegistry.js, src/app/facilitator/generator/counselor/MentorInterceptor.js, src/app/facilitator/generator/counselor/CounselorClient.jsx, src/app/api/counselor/route.js, cohere-changelog.md
+## What the user sees / can do
 
-Follow-ups:
-- Add more report-capable entries (custom subjects, goals notes, lesson schedule summaries).
+-
 
-### 3. src/app/lib/cohereStyleMentor.js (ac1c944b0684a86f77c2cd0bf08d7cfa2eddb0a8454d10f831419d35dae31b1e)
-- bm25: -17.9246 | relevance: 1.0000
+## Key files / entrypoints
 
-### 4. cohere-changelog.md (92f6be3a685dbc3e8059959117bb08dcc3b1bd1ba37e346951990d0635662bbd)
-- bm25: -17.5900 | entity_overlap_w: 9.90 | adjusted: -20.0650 | relevance: 1.0000
+- src/not-real/file.js
 
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
+## Notes
 
-Result:
-- Decision: Special-case curriculum preferences in `handleFaq` to answer “describe” locally and route “report” to a new interceptor action that fetches preferences via existing API.
-- Files changed: src/app/facilitator/generator/counselor/MentorInterceptor.js, src/app/facilitator/generator/counselor/CounselorClient.jsx, cohere-changelog.md
+-
 
-Follow-ups:
-- Consider adding similar report handlers for weekly pattern and custom subjects.
+## Suggested next recon prompt
 
----
+Where is <route/feature> implemented? Include the user-visible controls and the API/storage it reads/writes.
 
-Date (UTC): 2026-02-18T15:28:05.4203857Z
-
-Topic: Feature registry (describe+report) + ThoughtHub blindspot hook
-
-Recon prompt (exact string):
-Implement a feature registry for Mr. Mentor: a machine-readable catalog of user-facing features that supports (1) deterministic describe responses, (2) deterministic report responses by calling existing app APIs (learner-scoped when needed), and (3) a hook to log blindspots to ThoughtHub. Identify existing FAQ loader data sources and interceptor entrypoints.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
-
-Result:
-- Decision: Create a registry that merges existing FAQ JSON features with report-capable feature entries; route FAQ intent through the registry; log no-match queries via `interceptor_context.mentor_blindspot` and persist into ThoughtHub event meta.
-- Files changed: src/lib/mentor/featureRegistry.js, src/app/facilitator/generator/counselor/MentorInterceptor.js, src/app/facilitator/generator/counselor/CounselorClient.jsx, src/app/api/counselor/route.js, cohere-changelog.md
-
-Follow-ups:
-- Add more report-capable entries (custom subjects, goals notes, lesson schedule summaries).
-
----
-
-### 5. sidekick_pack.md (e0e823ccde6499c4ac1b38c597a4143b1e4105fce2dec0afee91f07f24f49578)
-- bm25: -15.2796 | entity_overlap_w: 11.00 | adjusted: -18.0296 | relevance: 1.0000
+### 2. sidekick_pack.md (38163e6913f67b7277ca8371364da42c96c99f1ba6363df1f919869bf604a1e8)
+- bm25: -10.0263 | relevance: 1.0000
 
 # Cohere Pack (Sidekick Recon) - MsSonoma
 
@@ -186,17 +75,15 @@ Mode: standard
 
 Prompt (original):
 ```text
-Implement ThoughtHub blindspot harvester + feature proposal storage: where are ThoughtHub events stored and how can an API route list events with meta.mentor_blindspot? What auth patterns exist (cohereGetUserAndClient/cohereEnsureThread)? Propose minimal endpoints to (1) list grouped blindspots for a subjectKey/thread and (2) append a proposal event with meta.mentor_feature_proposal.
+Explain /doesnotexist/xyz and src/not-real/file.js
 ```
 
 Filter terms used:
 ```text
-ThoughtHub
-API
-meta.mentor_blindspot
-meta.mentor_feature_proposal
-mentor_blindspot
-mentor_feature_proposal
+src/not-real/file.js
+/doesnotexist/xyz
+/not-real/file
+file.js
 ```
 # Context Pack
 
@@ -210,7 +97,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-ThoughtHub API meta.mentor_blindspot meta.mentor_feature_proposal mentor_blindspot mentor_feature_proposal
+src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
 
 ## Forced Context
 
@@ -218,30 +105,8 @@ ThoughtHub API meta.mentor_blindspot meta.mentor_feature_proposal mentor_blindsp
 
 ## Ranked Evidence
 
-### 1. src/app/api/counselor/route.js (dbb6c7952958cdba6484727c986c29bfc517a4e2bcd52c7bc8fe856416fb46ff)
-- bm25: -29.1981 | entity_overlap_w: 2.00 | adjusted: -29.6981 | relevance: 1.0000
-
-const { supabase } = auth
-        const { tenantId, threadId } = await cohereEnsureThread({
-          supabase,
-          sector: cohereSector,
-          subjectKey
-        })
-
-cohereMeta = { tenantId, threadId, sector: cohereSector, subjectKey, mode: cohereMode }
-
-if (!isFollowup && userMessage) {
-          const blindspot = body?.interceptor_context?.mentor_blindspot
-          const meta = {
-            call_id: callId,
-            ...(blindspot && typeof blindspot === 'object' ? { mentor_blindspot: blindspot } : {})
-          }
-
-### 6. sidekick_pack.md (8f7aebda2555fa9e7d1ed045b2df91dc395f6eb040b6e1c9b2f9a6145a434cc0)
-- bm25: -12.7026 | entity_overlap_w: 11.50 | adjusted: -15.5776 | relevance: 1.0000
-
-### 17. sidekick_pack.md (78ddf92b14bef8442245e65ef182964c12e01a1b624fee5f7f3c909ce3ac8623)
-- bm25: -6.3907 | entity_overlap_w: 6.00 | adjusted: -7.8907 | relevance: 1.0000
+### 1. sidekick_pack.md (d67c20cbf1eb1419cc41f989f98dcc7e1ff93c9ba2860e1ff0edaef84c4a8f35)
+- bm25: -58.6123 | entity_overlap_w: 53.10 | adjusted: -71.8873 | relevance: 1.0000
 
 # Cohere Pack (Sidekick Recon) - MsSonoma
 
@@ -251,13 +116,15 @@ Mode: standard
 
 Prompt (original):
 ```text
-Implement a feature registry for Mr. Mentor: a machine-readable catalog of user-facing features that supports (1) deterministic describe responses, (2) deterministic report responses by calling existing app APIs (learner-scoped when needed), and (3) a hook to log blindspots to ThoughtHub. Identify existing FAQ loader data sources and interceptor entrypoints.
+Explain /doesnotexist/xyz and src/not-real/file.js
 ```
 
 Filter terms used:
 ```text
-FAQ
-ThoughtHub
+src/not-real/file.js
+/doesnotexist/xyz
+/not-real/file
+file.js
 ```
 # Context Pack
 
@@ -271,7 +138,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-FAQ ThoughtHub
+src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
 
 ## Forced Context
 
@@ -279,8 +146,8 @@ FAQ ThoughtHub
 
 ## Ranked Evidence
 
-### 1. sidekick_pack.md (549f8196dba1aba87a122204d6a751e157f043c570a5807c07bb66a7f5849b28)
-- bm25: -12.7641 | entity_overlap_w: 7.90 | adjusted: -14.7391 | relevance: 1.0000
+### 1. sidekick_pack.md (bde1b82f978876de27e4ad60ee44083372eb2abdba78021cb83ba36b4b05b71e)
+- bm25: -60.4824 | entity_overlap_w: 53.10 | adjusted: -73.7574 | relevance: 1.0000
 
 # Cohere Pack (Sidekick Recon) - MsSonoma
 
@@ -290,16 +157,28 @@ Mode: standard
 
 Prompt (original):
 ```text
-Does ThoughtHub currently have an ingest that automatically creates both 'report' and 'describe' responses per FAQ/feature? If not, what ingest/storage exists today (chronograph/events/packs), and what would need to be built to support auto-generated report/describe handlers?
+Explain /doesnotexist/xyz and src/not-real/file.js
 ```
+
+### 3. sidekick_pack.md (a7920f3892594e7f92e89473f0c79468e265c54abf33ecd346ec9ba2fcf74ca4)
+- bm25: -9.1477 | relevance: 1.0000
+
+src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
+
+### 4. sidekick_pack.md (0354d942092e4b7a723f8b49061a99b0093db14b459f5146aa6c16041e06a949)
+- bm25: -8.8625 | relevance: 1.0000
 
 Filter terms used:
 ```text
-/events/packs
-FAQ
-ThoughtHub
+src/not-real/file.js
+/doesnotexist/xyz
+/not-real/file
+file.js
 ```
 # Context Pack
+
+### 5. sidekick_pack.md (84c0364bea2ebfba4d249e58ce743a6d1797ceae82528b49750309a6cb641025)
+- bm25: -8.7228 | relevance: 1.0000
 
 **Project**: freehands
 **Profile**: MsSonoma
@@ -307,77 +186,1086 @@ ThoughtHub
 
 ## Pack Contract
 
-### 7. src/app/facilitator/generator/counselor/MentorInterceptor.js (c29a44eabd7afe73952f1dbb23c4effbb93a04ac39760864748290463070333f)
-- bm25: -14.1445 | entity_overlap_w: 3.90 | adjusted: -15.1195 | relevance: 1.0000
+This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
 
-,
+## Question
 
-lesson_plan: {
-    keywords: [
-      'lesson plan',
-      'lesson planner',
-      'planned lessons',
-      'curriculum preferences',
-      'curriculum',
-      'weekly pattern',
-      'schedule template',
-      'start date',
-      'duration',
-      'generate lesson plan',
-      'schedule a lesson plan'
+src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
+
+## Forced Context
+
+(none)
+
+## Ranked Evidence
+
+### 1. sidekick_pack.md (7bfbbf4dd2839680af1039c4da36a491dac4b46d67796f9ce66f64cd6f11e440)
+- bm25: -60.4252 | entity_overlap_w: 53.10 | adjusted: -73.7002 | relevance: 1.0000
+
+# Cohere Pack (Sidekick Recon) - MsSonoma
+
+Project: freehands
+Profile: MsSonoma
+Mode: standard
+
+Prompt (original):
+```text
+Explain /doesnotexist/xyz and src/not-real/file.js
+```
+
+### 2. sidekick_pack.md (bea2df7e718afbad194cf0281d7e0936513a96d0d1bf240dd15d58f528ed531a)
+- bm25: -52.6864 | entity_overlap_w: 29.60 | adjusted: -60.0864 | relevance: 1.0000
+
+**Project**: freehands
+**Profile**: MsSonoma
+**Mode**: standard
+
+## Pack Contract
+
+This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
+
+## Question
+
+src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
+
+## Forced Context
+
+(none)
+
+## Ranked Evidence
+
+### 1. sidekick_pack.md (33a357132ac7ea2324fbe9010d0053075a23930ca59d2c0600329c8b403d5ebc)
+- bm25: -63.6541 | entity_overlap_w: 47.00 | adjusted: -75.4041 | relevance: 1.0000
+
+# Cohere Pack (Sidekick Recon) - MsSonoma
+
+Project: freehands
+Profile: MsSonoma
+Mode: standard
+
+Prompt (original):
+```text
+Explain /doesnotexist/xyz and src/not-real/file.js
+```
+
+### 2. sidekick_pack.md (29a1c65d8aaa67342a1580079f30a5590af4752852bd3ffd3a206c7def44569a)
+- bm25: -55.5219 | entity_overlap_w: 32.20 | adjusted: -63.5719 | relevance: 1.0000
+
+**Project**: freehands
+**Profile**: MsSonoma
+**Mode**: standard
+
+## Pack Contract
+
+### 6. sidekick_pack.md (bfb0e99ffa802cbd0ea32d256c56a6269f5c47349a1400bf3fc5ae6bfc52287a)
+- bm25: -8.6895 | relevance: 1.0000
+
+## Question
+
+src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
+
+## Forced Context
+
+(none)
+
+## Ranked Evidence
+
+### 1. sidekick_pack.md (0af7fa18f2c7167198a5e3c31b0e53e9b35f1df4168ed796b609ab9d1199fec9)
+- bm25: -55.4926 | entity_overlap_w: 23.50 | adjusted: -61.3676 | relevance: 1.0000
+
+# Cohere Pack (Sidekick Recon) - MsSonoma
+
+Project: freehands
+Profile: MsSonoma
+Mode: standard
+
+Prompt (original):
+```text
+Explain /doesnotexist/xyz and src/not-real/file.js
+```
+
+### 2. sidekick_pack.md (8ad127cdea10b819be86c1ceec6a58bd186b5dc252e46125b7beca482e831554)
+- bm25: -56.7722 | entity_overlap_w: 8.70 | adjusted: -58.9472 | relevance: 1.0000
+
+### 3. sidekick_pack.md (0eda1e4d717ab1496e3f04b3a2ce00ee2d1029e57cfef8b47daefd4d1368335f)
+- bm25: -55.1330 | entity_overlap_w: 8.70 | adjusted: -57.3080 | relevance: 1.0000
+
+Filter terms used:
+```text
+src/not-real/file.js
+/doesnotexist/xyz
+/not-real/file
+file.js
+```
+# Context Pack
+
+### 4. sidekick_pack.md (ad5191d04a54a80bc6ad27bda13aeb9bb2bfbcfe10427c88fdc335d190da6ba3)
+- bm25: -55.1330 | entity_overlap_w: 8.70 | adjusted: -57.3080 | relevance: 1.0000
+
+Filter terms used:
+```text
+src/not-real/file.js
+/doesnotexist/xyz
+/not-real/file
+file.js
+```
+# Context Pack
+
+### 5. sidekick_pack.md (f72e06b22c783214295568cf3d9940410799f3229307609caececc5c3bf03d47)
+- bm25: -50.2386 | entity_overlap_w: 17.40 | adjusted: -54.5886 | relevance: 1.0000
+
+### 3. sidekick_pack.md (4641b4bfa2044efb4481a2766112887a91163adc2a956185dbf21f225c4781d8)
+- bm25: -38.9504 | entity_overlap_w: 8.70 | adjusted: -41.1254 | relevance: 1.0000
+
+**Project**: freehands
+**Profile**: MsSonoma
+**Mode**: standard
+
+## Pack Contract
+
+This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
+
+## Question
+
+### 7. sidekick_pack.md (0d8204f10332b1099c44949afe952677325e940af0c9e73100cd69a96fb50b10)
+- bm25: -5.0289 | relevance: 1.0000
+
+## Forced Context
+
+(none)
+
+## Ranked Evidence
+
+### 1. docs/brain/lesson-library-downloads.md (ea6c987f912e08a4811e52893de3701d5c14ec17ac6ba2a12fed4b2d9135d9b9)
+- bm25: -21.9787 | relevance: 1.0000
+
+### API
+
+### 2. sidekick_pack.md (2a831846fc56b602bc1cd6410dcb756d64b712656f3c6a6e0f7011b83ff69382)
+- bm25: -24.3380 | relevance: 1.0000
+
+### 3. sidekick_pack.md (a01c34d2be1553531903f0c65461fa8971c6e9d596f107e6521339f77b81910e)
+- bm25: -56.8256 | entity_overlap_w: 8.70 | adjusted: -59.0006 | relevance: 1.0000
+
+Filter terms used:
+```text
+src/not-real/file.js
+/doesnotexist/xyz
+/not-real/file
+file.js
+```
+# Context Pack
+
+### 4. sidekick_pack.md (5c51c7e9da7a42b25a2cc69017a35f48ce9bdb75e6e85a4c7c71921bc354f9d6)
+- bm25: -23.0352 | relevance: 1.0000
+
+### 6. sidekick_pack.md (283b64935c499dff1e604382dbb63a0809c83edc17a2b0405b384f7f86adf721)
+- bm25: -25.1690 | relevance: 1.0000
+
+### 18. docs/brain/account-provisioning.md (47da22602f3389633ba6dddba4339d7e7cd957c89f47fbea9033fe52e1b8249e)
+- bm25: -16.1047 | relevance: 1.0000
+
+### 4. sidekick_pack.md (96a3a510a22410499cf66014cdc1acd337523bd21a42c0b9d013f860226e7bc6)
+- bm25: -26.7873 | relevance: 1.0000
+
+This allows an operator to share a simple login instruction ("Email: DEMO") while still using a real Supabase Auth user.
+
+## What NOT To Do
+
+### 3. docs/brain/lesson-library-downloads.md (ea6c987f912e08a4811e52893de3701d5c14ec17ac6ba2a12fed4b2d9135d9b9)
+- bm25: -20.4937 | relevance: 1.0000
+
+### API
+
+- `POST /api/facilitator/lessons/download`
+  - Auth: requires `Authorization: Bearer <access_token>`.
+  - Input: `{ subject, file }`.
+  - Server reads the built-in file from `public/lessons/<subjectFolder>/<file>.json`.
+  - Server uploads to Supabase Storage path `facilitator-lessons/<userId>/<file>.json` with `upsert: true`.
+
+### 8. src/lib/faq/facilitator-pages.json (4b848d3bcb8fd074168f4bfd8805c4c4143f1f27948661b54e4fbba3e5eaf7e3)
+- bm25: -0.6755 | relevance: 1.0000
+
+{
+  "category": "Facilitator Pages",
+  "features": [
+    {
+      "id": "facilitator-page-hub",
+      "title": "Facilitator Hub (/facilitator)",
+      "keywords": [
+        "facilitator hub",
+        "facilitator home",
+        "facilitator dashboard page",
+        "/facilitator",
+        "account learners lessons calendar",
+        "talk to mr mentor"
+      ],
+      "description": "The Facilitator Hub is the entry point to adult tools. It shows quick links to Account, Learners, Lessons, Calendar, and Mr. Mentor.",
+      "howToUse": "Use the cards to open a section (Account/Learners/Lessons/Calendar). Use the Mr. Mentor button to open the facilitator chat experience.",
+      "relatedFeatures": ["facilitator-dashboard", "mr-mentor", "pin-security"]
+    },
+    {
+      "id": "facilitator-page-account",
+      "title": "Account (/facilitator/account)",
+      "keywords": [
+        "facilitator account",
+        "account page",
+        "profile",
+        "security",
+        "2fa",
+        "connected accounts",
+        "timezone",
+        "marketing emails",
+        "policies",
+        "danger zone",
+        "/facilitator/account"
+      ],
+      "description": "The Account page is the central place to manage facilitator profile and security settings, connections, hotkeys, timezone, and billing links.",
+      "howToUse": "Open a card to edit: Your Name; Email and Password; Two-Factor Auth; Facilitator PIN; Connected Accounts; Hotkeys; Timezone; Marketing Emails; Policies; Plan; Danger Zone. Notifications is also linked from here.",
+      "relatedFeatures": ["pin-security", "subscription-tiers"]
+    },
+    {
+      "id": "facilitator-page-account-settings-redirect",
+      "title": "Account Settings (Redirect) (/facilitator/account/settings)",
+      "keywords": [
+        "account se
+
+### 9. docs/brain/pin-protection.md (771d09bf70621a2a47da98e3ac52455b98299582fe3c7fc3744c6d3234d5db17)
+- bm25: -0.6676 | relevance: 1.0000
+
+**Facilitator Pages** (all check PIN on mount):
+- `src/app/facilitator/page.js` - Main facilitator hub
+- `src/app/facilitator/learners/page.js` - Learner management
+- `src/app/facilitator/lessons/page.js` - Lesson management
+- `src/app/facilitator/generator/*/page.js` - Content generators
+- `src/app/facilitator/account/*/page.js` - Account pages
+
+### 10. docs/brain/pin-protection.md (099075fb976b0dc884d23cec569d3b693ff409180962ef058793b7f53217859f)
+- bm25: -0.6515 | relevance: 1.0000
+
+Session surfaces that mutate session state should gate with `ensurePinAllowed(action)` before performing the action.
+
+**Session V2 (timeline + timer controls):**
+- Timeline jumps call `ensurePinAllowed('timeline')` before switching phases.
+- Timer controls call `ensurePinAllowed('timer')` before opening the timer control overlay and before pause/resume toggles.
+
+**Games (example: Platform Jumper):**
+- Facilitator-only game shortcuts (like skipping to a level) must call `ensurePinAllowed('skip')` before opening any level picker.
+
+### Facilitator Section Flag
+
+**Purpose**: Prevent double PIN prompts when navigating between facilitator pages
+
+**How it works**:
+1. Flag is stored in `sessionStorage` (cleared when browser tab closes)
+2. When `ensurePinAllowed('facilitator-page')` succeeds, it sets the flag
+3. Subsequent `facilitator-page` checks skip PIN if flag is already set
+4. Flag is cleared when user navigates away from `/facilitator/*` routes
+
+### Navigation Flow (Session → Facilitator)
+
+**Before Fix (Double PIN Prompt)**:
+1. User clicks Facilitator link from session page
+2. HeaderBar calls `ensurePinAllowed('session-exit')` → prompts for PIN
+3. Navigation to `/facilitator` happens
+4. Facilitator page calls `ensurePinAllowed('facilitator-page')` → prompts for PIN AGAIN (flag not set)
+
+**After Fix (Single PIN Prompt)**:
+1. User clicks Facilitator link from session page
+2. HeaderBar calls `ensurePinAllowed('session-exit')` → prompts for PIN
+3. HeaderBar detects destination is facilitator route → calls `setInFacilitatorSection(true)`
+4. Navigation to `/facilitator` happens
+5. Facilitator page calls `ensurePinAllowed('facilitator-page')` → SKIPS PIN (flag already set)
+
+### Server Verification
+
+### 11. docs/brain/facilitator-hub.md (da9aec6fdfc1ea2738cb90fb2977c145f037ea8248bca3683693f7940f7ecae9)
+- bm25: -0.6480 | relevance: 1.0000
+
+# Facilitator Hub
+
+## How It Works
+
+The Facilitator hub is the main entry point for facilitator workflows at `/facilitator`.
+
+- It shows a small grid of primary sections (cards) that route to key areas.
+- It displays the current subscription tier as informational status.
+- Billing is treated as part of **Account** (plan + billing lives under `/facilitator/account/*`).
+
+## What NOT To Do
+
+- Do not add a separate "Billing" section on the hub. Billing navigation belongs under **Account**.
+- Do not duplicate billing management UIs on the hub. Use the account plan/billing pages.
+
+## Key Files
+
+- `src/app/facilitator/page.js` - Facilitator hub cards and subscription status display
+- `src/app/facilitator/account/page.js` - Account hub (settings overlays)
+- `src/app/facilitator/account/plan/page.js` - Plans & billing entry point
+- `src/app/billing/manage/*` - Billing portal UI
+
+### 12. docs/brain/pin-protection.md (a572b2eaa4ac61bc5c6c926b97a5f45498691130f5af49873ea35f306e9ecc36)
+- bm25: -0.6402 | relevance: 1.0000
+
+# PIN Protection System
+
+## Overview
+
+PIN protection gates access to facilitator features and controls session exits. The system prevents learners from accessing facilitator tools, downloads, or modifying session state without adult supervision.
+
+## How It Works
+
+### Core Components
+
+**pinGate.js** (`src/app/lib/pinGate.js`)
+- Central PIN validation utility
+- Manages facilitator section tracking
+- Provides `ensurePinAllowed(action)` function for gating actions
+- Stores PIN preferences in localStorage and server
+
+**FacilitatorSectionTracker.jsx** (`src/components/FacilitatorSectionTracker.jsx`)
+- Tracks when user enters/leaves facilitator section
+- Clears facilitator section flag when navigating away from `/facilitator/*`
+- Mounted in root layout to track all navigation
+
+**HeaderBar.js** (`src/app/HeaderBar.js`)
+- Implements navigation PIN checks
+- Sets facilitator section flag when navigating from session to facilitator
+- Prevents double PIN prompts
+
+### PIN Actions
+
+Each action type maps to a preference key that controls whether PIN is required:
+
+| Action | Preference Key | When Triggered | Sets Facilitator Flag? |
+|--------|---------------|----------------|----------------------|
+| `facilitator-page` | `facilitatorPage` | Entering any `/facilitator/*` page | YES |
+| `session-exit` | `activeSession` | Leaving active lesson session | NO (but sets flag if destination is facilitator) |
+| `download` | `downloads` | Worksheet/test downloads | NO |
+| `facilitator-key` | `facilitatorKey` | Combined answer key | NO |
+| `skip` / `timeline` | `skipTimeline` | Timeline jumps, skip buttons | NO |
+| `change-learner` | `changeLearner` | Switching learners | NO |
+| `refresh` | `refresh` | Re-generate worksheet/test | NO |
+| `timer` | `timer` | Pause/resume timer | NO |
+
+### 13. docs/brain/notifications-system.md (2d68facb9ef84811553c594d04831c5bab53537f01c38d56acdc06752047caaf)
+- bm25: -0.6373 | relevance: 1.0000
+
+# Notifications System
+
+**Last updated**: 2026-01-08T13:36:08Z  
+**Status**: Canonical
+
+## How It Works
+
+The Notifications system provides facilitator-facing alerts that persist across devices.
+
+### Data Model (Supabase)
+
+Notifications are stored per facilitator in Supabase (Postgres) under RLS.
+
+**Tables**:
+- `public.facilitator_notifications`
+  - Per-notification rows (title/body/type/category)
+  - `read_at` marks a notification as read
+  - `facilitator_id` is the owner and must equal `auth.uid()` under RLS
+
+- `public.facilitator_notification_prefs`
+  - Per-facilitator preferences that control which categories are enabled
+  - Includes a master `enabled` toggle
+
+### Current UI
+
+**Notifications page**: `/facilitator/notifications`
+- Shows a list of notifications
+- Each row can be marked read/unread via a checkmark button
+- A gear button opens a settings overlay to control notification preferences
+
+**Account page launcher**: `/facilitator/account`
+- Shows a Notifications card matching existing Account card styling
+- Clicking navigates to `/facilitator/notifications`
+
+**Header quick-link**:
+- The Facilitator hover dropdown includes a Notifications item that navigates to `/facilitator/notifications`
+
+### Placeholder Behavior
+
+The UI currently seeds a small set of demo notifications for a facilitator if they have zero notifications. This is intentionally temporary and exists only to make the manager usable before event producers are wired.
+
+## What NOT To Do
+
+### 14. docs/brain/ingests/pack-mentor-intercepts.md (ee64f00174c13b58457962dbc2cdb20aa52435a52a1fa39ebeca6ea8bf379fe2)
+- bm25: -0.6303 | relevance: 1.0000
+
+- `src/app/facilitator/page.js` - Facilitator hub cards and subscription status display
+- `src/app/facilitator/account/page.js` - Account hub (settings overlays)
+- `src/app/facilitator/account/plan/page.js` - Plans & billing entry point
+- `src/app/billing/manage/*` - Billing portal UI
+
+### 15. sidekick_pack_lessons_prefetch.md (c2cf5bf3ad627a5e90407d82ebdbcdb0ecc148498a13c5ab029ef56071e17508)
+- bm25: -0.6263 | relevance: 1.0000
+
+// Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
+    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
+    if (!includeAll) {
+      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
+    }
+
+### 16. scripts/add-mentor-conversation-threads.sql (2298cd617a823bf44e0fc7409f5473e4aca9ec2ba50162da04ef527049f206d7)
+- bm25: -0.6253 | relevance: 1.0000
+
+DROP POLICY IF EXISTS "Users can manage their own mentor conversation threads" ON public.mentor_conversation_threads;
+CREATE POLICY "Users can manage their own mentor conversation threads"
+  ON public.mentor_conversation_threads
+  FOR ALL
+  USING (auth.uid() = facilitator_id)
+  WITH CHECK (auth.uid() = facilitator_id);
+
+GRANT ALL ON public.mentor_conversation_threads TO authenticated;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+
+COMMENT ON TABLE public.mentor_conversation_threads IS 'Per-subject Mr. Mentor conversations (facilitator + each learner), independent of device ownership.';
+COMMENT ON COLUMN public.mentor_conversation_threads.subject_key IS 'Conversation scope key, e.g. facilitator or learner:<uuid>.';
+
+-- 4) Optional: backfill existing single conversation into facilitator thread (best-effort)
+-- Inserts a facilitator thread for facilitators that have any mentor_sessions row.
+INSERT INTO public.mentor_conversation_threads (facilitator_id, subject_key, conversation_history, draft_summary, token_count, last_local_update_at, last_activity_at)
+SELECT
+  ms.facilitator_id,
+  'facilitator' AS subject_key,
+  COALESCE(ms.conversation_history, '[]'::jsonb) AS conversation_history,
+  ms.draft_summary,
+  ms.token_count,
+  ms.last_local_update_at,
+  COALESCE(ms.last_activity_at, NOW()) AS last_activity_at
+FROM public.mentor_sessions ms
+WHERE ms.facilitator_id IS NOT NULL
+ON CONFLICT (facilitator_id, subject_key) DO NOTHING;
+
+### 17. docs/brain/custom-subjects.md (fd8a5ead4d8a64f78e034e3ca6a8d9b6dea9dbbdcd408f13f17042a7b16d3e24)
+- bm25: -0.6253 | relevance: 1.0000
+
+# Custom Subjects (Per Facilitator)
+
+## How It Works
+
+- Custom subjects are stored in the Supabase table `custom_subjects` and are scoped to a single facilitator via `facilitator_id`.
+- The canonical API surface is `GET/POST/DELETE /api/custom-subjects`.
+  - `GET` returns `{ subjects: [...] }` ordered by `display_order` then `name`.
+  - `POST` creates a subject for the authenticated facilitator.
+  - `DELETE` deletes a subject only if it belongs to the authenticated facilitator.
+- Client surfaces that need subject dropdown options should treat subjects as:
+  - Core subjects (universal): `math`, `science`, `language arts`, `social studies`, `general`.
+  - Custom subjects (per facilitator): fetched from `/api/custom-subjects` using the facilitator session token.
+  - Special subject `generated` is a UI bucket used in some facilitator/Mr. Mentor views (not a custom subject). In the Mr. Mentor lessons overlay, `generated` is intentionally not shown as a subject dropdown option.
+- Shared client hook:
+  - `useFacilitatorSubjects()` fetches custom subjects for the signed-in facilitator and returns merged dropdown-ready lists.
+
+## What NOT To Do
+
+- Do not make custom subjects global. They must remain per-facilitator (`custom_subjects.facilitator_id`).
+- Do not fetch public lesson lists for custom subjects. Only core subjects have public lesson endpoints (`/api/lessons/[subject]`).
+- Do not store custom subjects in browser storage as the source of truth.
+
+## Key Files
+
+### 18. sidekick_pack_api_mentor_session.md (6a4e308d5326bc08dc43d55d77a917dca49981ecbaa22e641c0c8d8df1915c92)
+- bm25: -0.6252 | relevance: 1.0000
+
+// Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
+    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
+    if (!includeAll) {
+      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
+    }
+
+### 19. docs/brain/notifications-system.md (93a5534adce123be1e4b6b6cd12e7ac6547924ea1b7068e72452c88c60c31470)
+- bm25: -0.6252 | relevance: 1.0000
+
+## Key Files
+
+- `src/app/facilitator/notifications/page.js` - Notifications manager page UI
+- `src/app/facilitator/account/page.js` - Account launcher card
+- `src/app/HeaderBar.js` - Facilitator dropdown link
+- `src/app/lib/facilitatorNotificationsClient.js` - Supabase read/write helpers
+- `supabase/migrations/20260108133500_add_facilitator_notifications.sql` - Tables + RLS policies
+
+### 20. src/app/api/lesson-schedule/route.js (4e331f192a6c56a4cab8c5f7afbe0982981f3bd236880d62edeea56744dbb7e2)
+- bm25: -0.6242 | relevance: 1.0000
+
+// Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
+    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
+    if (!includeAll) {
+      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
+    }
+
+### 21. docs/brain/mr-mentor-sessions.md (c1a7c3b42cd39d87f3ed7193003f236259b5d2994608f67e50930fa3e357246e)
+- bm25: -0.6227 | relevance: 1.0000
+
+-- Unique constraint: Only one active session per facilitator
+CREATE UNIQUE INDEX idx_mentor_sessions_active_facilitator 
+ON mentor_sessions (facilitator_id) 
+WHERE is_active = true;
+```
+
+### 22. docs/brain/manifest.json (c84e253717b47212b1719debc33ac92047bd5a6c13afe3f7e47485e845256ff6)
+- bm25: -0.6214 | relevance: 1.0000
+
+{
+  "facilitator-hub": {
+    "file": "facilitator-hub.md",
+    "systems": [
+      "/facilitator",
+      "hub-cards",
+      "account",
+      "billing-placement",
+      "subscription-status"
     ],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
+    "last_updated": "2026-01-08T02:06:48Z",
+    "status": "canonical"
+  },
+  "header-navigation": {
+    "file": "header-navigation.md",
+    "systems": [
+      "HeaderBar",
+      "top-nav-links",
+      "facilitator-dropdown",
+      "session-exit-pin-gate",
+      "print-menu"
+    ],
+    "last_updated": "2026-01-27T19:27:45Z",
+    "status": "canonical"
+  },
+  "homepage": {
+    "file": "homepage.md",
+    "systems": [
+      "/",
+      "home hero",
+      "mssonoma.com",
+      "external link",
+      "learn-more copy"
+    ],
+    "last_updated": "2026-01-10T19:44:15Z",
+    "status": "canonical"
+  },
+  "custom-subjects": {
+    "file": "custom-subjects.md",
+    "systems": [
+      "custom_subjects",
+      "/api/custom-subjects",
+      "per-facilitator subjects",
+      "subject dropdowns",
+      "Mr. Mentor subjects"
+    ],
+    "last_updated": "2026-01-10T20:06:44Z",
+    "status": "canonical"
+  },
+  "notifications-system": {
+    "file": "notifications-system.md",
+    "systems": [
+      "facilitator notifications",
+      "/facilitator/notifications",
+      "facilitator_notifications",
+      "facilitator_notification_prefs",
+      "read_at",
+      "notification settings",
+      "no-localStorage"
+    ],
+    "last_updated": "2026-01-08T13:36:08Z",
+    "status": "canonical"
+  },
+  "dev-server-and-chunks": {
+    "file": "dev-server-and-chunks.md",
+    "systems": [
+      "next-dev",
+      "chunk-404",
+      "_next-static-chunks",
+      "distDir",
+      "next-config",
+      "cache-clean",
+      "restart-dev-3001"
+    ],
+    "last_updated": "2026-01-01T05:20:00Z",
+    "status": "canonical"
+  },
+  "g
 
-// FAQ-style questions about the planner should defer to FAQ intent.
-      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
-      if (faqPatterns.some(p => normalized.includes(p))) {
-        return 0
-      }
+### 23. docs/brain/lesson-validation.md (6bd47820aa3da6e19dc9b0a9c78ca88859dc4dd6752d036fea1a2fe4318d515b)
+- bm25: -0.6212 | relevance: 1.0000
 
-return INTENT_PATTERNS.lesson_plan.keywords.some(kw => normalized.includes(kw)) ? 0.85 : 0
-    }
-  }
-}
+**Lesson Maker** (`/facilitator/generator`, implemented in `src/app/facilitator/generator/page.js`):
+1. User fills form and clicks "Generate Lesson"
+2. Toast: "Generating lesson..."
+3. Call `/api/facilitator/lessons/generate`
+4. Validate with `lessonValidation.validateLesson()`
+5. If issues: Toast "Improving quality...", call `/api/facilitator/lessons/request-changes`
+6. Toast: "Lesson ready!"
 
-// Confirmation detection (yes/no)
-function detectConfirmation(text) {
-  const normalized = normalizeText(text)
-  
-  const yesPatterns = ['yes', 'yep', 'yeah', 'sure', 'ok', 'okay', 'correct', 'right', 'confirm', 'go ahead', 'do it']
-  const noPatterns = ['no', 'nope', 'nah', 'cancel', 'stop', 'nevermind', 'never mind', 'dont', 'not']
-  
-  if (yesPatterns.some(p => normalized.includes(p))) return 'yes'
-  if (noPatterns.some(p => normalized.includes(p))) return 'no'
-  
-  return null
-}
+### 24. docs/brain/ingests/pack.md (26cbfbfdc932653f646c2218ebaec8fa3fb19e5d960bc7766502c497351f374a)
+- bm25: -0.6210 | relevance: 1.0000
 
-### 8. cohere-changelog.md (55781d77e281f9987c4f9702b5927487590b2d5ae3b4a5966a86982bc027fd9a)
-- bm25: -12.6779 | entity_overlap_w: 6.00 | adjusted: -14.1779 | relevance: 1.0000
+{
+  "facilitator-hub": {
+    "file": "facilitator-hub.md",
+    "systems": [
+      "/facilitator",
+      "hub-cards",
+      "account",
+      "billing-placement",
+      "subscription-status"
+    ],
+    "last_updated": "2026-01-08T02:06:48Z",
+    "status": "canonical"
+  },
+  "header-navigation": {
+    "file": "header-navigation.md",
+    "systems": [
+      "HeaderBar",
+      "top-nav-links",
+      "facilitator-dropdown",
+      "session-exit-pin-gate",
+      "print-menu"
+    ],
+    "last_updated": "2026-01-27T19:27:45Z",
+    "status": "canonical"
+  },
+  "homepage": {
+    "file": "homepage.md",
+    "systems": [
+      "/",
+      "home hero",
+      "mssonoma.com",
+      "external link",
+      "learn-more copy"
+    ],
+    "last_updated": "2026-01-10T19:44:15Z",
+    "status": "canonical"
+  },
+  "custom-subjects": {
+    "file": "custom-subjects.md",
+    "systems": [
+      "custom_subjects",
+      "/api/custom-subjects",
+      "per-facilitator subjects",
+      "subject dropdowns",
+      "Mr. Mentor subjects"
+    ],
+    "last_updated": "2026-01-10T20:06:44Z",
+    "status": "canonical"
+  },
+  "notifications-system": {
+    "file": "notifications-system.md",
+    "systems": [
+      "facilitator notifications",
+      "/facilitator/notifications",
+      "facilitator_notifications",
+      "facilitator_notification_prefs",
+      "read_at",
+      "notification settings",
+      "no-localStorage"
+    ],
+    "last_updated": "2026-01-08T13:36:08Z",
+    "status": "canonical"
+  },
+  "dev-server-and-chunks": {
+    "file": "dev-server-and-chunks.md",
+    "systems": [
+      "next-dev",
+      "chunk-404",
+      "_next-static-chunks",
+      "distDir",
+      "next-config",
+      "cache-clean",
+      "restart-dev-3001"
+    ],
+    "last_updated": "2026-01-01T05:20:00Z",
+    "status": "canonical"
+  },
+  "g
 
-Topic: ThoughtHub blindspot harvester + proposal storage APIs
+### 25. docs/brain/ingests/pack-mentor-intercepts.md (4dae7caeca0c56aeb7dad284f26e1f8a3bdc63e4132ae7b1ea978d78896eea4f)
+- bm25: -0.6201 | relevance: 1.0000
 
-Recon prompt (exact string):
-Implement ThoughtHub blindspot harvester + feature proposal storage: where are ThoughtHub events stored and how can an API route list events with meta.mentor_blindspot? What auth patterns exist (cohereGetUserAndClient/cohereEnsureThread)? Propose minimal endpoints to (1) list grouped blindspots for a subjectKey/thread and (2) append a proposal event with meta.mentor_feature_proposal.
+{
+  "facilitator-hub": {
+    "file": "facilitator-hub.md",
+    "systems": [
+      "/facilitator",
+      "hub-cards",
+      "account",
+      "billing-placement",
+      "subscription-status"
+    ],
+    "last_updated": "2026-01-08T02:06:48Z",
+    "status": "canonical"
+  },
+  "header-navigation": {
+    "file": "header-navigation.md",
+    "systems": [
+      "HeaderBar",
+      "top-nav-links",
+      "facilitator-dropdown",
+      "session-exit-pin-gate",
+      "print-menu"
+    ],
+    "last_updated": "2026-01-27T19:27:45Z",
+    "status": "canonical"
+  },
+  "homepage": {
+    "file": "homepage.md",
+    "systems": [
+      "/",
+      "home hero",
+      "mssonoma.com",
+      "external link",
+      "learn-more copy"
+    ],
+    "last_updated": "2026-01-10T19:44:15Z",
+    "status": "canonical"
+  },
+  "custom-subjects": {
+    "file": "custom-subjects.md",
+    "systems": [
+      "custom_subjects",
+      "/api/custom-subjects",
+      "per-facilitator subjects",
+      "subject dropdowns",
+      "Mr. Mentor subjects"
+    ],
+    "last_updated": "2026-01-10T20:06:44Z",
+    "status": "canonical"
+  },
+  "notifications-system": {
+    "file": "notifications-system.md",
+    "systems": [
+      "facilitator notifications",
+      "/facilitator/notifications",
+      "facilitator_notifications",
+      "facilitator_notification_prefs",
+      "read_at",
+      "notification settings",
+      "no-localStorage"
+    ],
+    "last_updated": "2026-01-08T13:36:08Z",
+    "status": "canonical"
+  },
+  "dev-server-and-chunks": {
+    "file": "dev-server-and-chunks.md",
+    "systems": [
+      "next-dev",
+      "chunk-404",
+      "_next-static-chunks",
+      "distDir",
+      "next-config",
+      "cache-clean",
+      "restart-dev-3001"
+    ],
+    "last_updated": "2026-01-01T05:20:00Z",
+    "status": "canonical"
+  },
+  "g
 
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
+### 26. docs/brain/ingests/pack.lesson-schedule-debug.md (ff4a86926b331453f8f6a8fcb311c4367895cc33f5c1b641faf366e3ba113121)
+- bm25: -0.6197 | relevance: 1.0000
 
-Result:
-- Decision: Add two authenticated API routes backed by ThoughtHub events: one groups `meta.mentor_blindspot` by normalized query; one lists/appends `meta.mentor_feature_proposal` as an append-only event for later promotion into the registry.
-- Files changed: src/app/api/mentor-blindspots/route.js, src/app/api/mentor-feature-proposals/route.js, cohere-changelog.md
+{
+  "facilitator-hub": {
+    "file": "facilitator-hub.md",
+    "systems": [
+      "/facilitator",
+      "hub-cards",
+      "account",
+      "billing-placement",
+      "subscription-status"
+    ],
+    "last_updated": "2026-01-08T02:06:48Z",
+    "status": "canonical"
+  },
+  "header-navigation": {
+    "file": "header-navigation.md",
+    "systems": [
+      "HeaderBar",
+      "top-nav-links",
+      "facilitator-dropdown",
+      "session-exit-pin-gate",
+      "print-menu"
+    ],
+    "last_updated": "2026-01-27T19:27:45Z",
+    "status": "canonical"
+  },
+  "homepage": {
+    "file": "homepage.md",
+    "systems": [
+      "/",
+      "home hero",
+      "mssonoma.com",
+      "external link",
+      "learn-more copy"
+    ],
+    "last_updated": "2026-01-10T19:44:15Z",
+    "status": "canonical"
+  },
+  "custom-subjects": {
+    "file": "custom-subjects.md",
+    "systems": [
+      "custom_subjects",
+      "/api/custom-subjects",
+      "per-facilitator subjects",
+      "subject dropdowns",
+      "Mr. Mentor subjects"
+    ],
+    "last_updated": "2026-01-10T20:06:44Z",
+    "status": "canonical"
+  },
+  "notifications-system": {
+    "file": "notifications-system.md",
+    "systems": [
+      "facilitator notifications",
+      "/facilitator/notifications",
+      "facilitator_notifications",
+      "facilitator_notification_prefs",
+      "read_at",
+      "notification settings",
+      "no-localStorage"
+    ],
+    "last_updated": "2026-01-08T13:36:08Z",
+    "status": "canonical"
+  },
+  "dev-server-and-chunks": {
+    "file": "dev-server-and-chunks.md",
+    "systems": [
+      "next-dev",
+      "chunk-404",
+      "_next-static-chunks",
+      "distDir",
+      "next-config",
+      "cache-clean",
+      "restart-dev-3001"
+    ],
+    "last_updated": "2026-01-01T05:20:00Z",
+    "status": "canonical"
+  },
+  "g
 
-Follow-ups:
-- Add a tiny internal script or admin panel step to promote stored proposals into src/lib/mentor/featureRegistry.js.
+### 27. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (d05d5d221a529b823920ad988a0fbf12f29278fe69a0c72a1bd1dd95072154f8)
+- bm25: -0.6197 | relevance: 1.0000
 
-### 9. sidekick_pack.md (d116b66b35976916a4cf1718ea7438e8457cf867b9987b6706f2745121039579)
-- bm25: -11.6125 | entity_overlap_w: 8.90 | adjusted: -13.8375 | relevance: 1.0000
+{
+  "facilitator-hub": {
+    "file": "facilitator-hub.md",
+    "systems": [
+      "/facilitator",
+      "hub-cards",
+      "account",
+      "billing-placement",
+      "subscription-status"
+    ],
+    "last_updated": "2026-01-08T02:06:48Z",
+    "status": "canonical"
+  },
+  "header-navigation": {
+    "file": "header-navigation.md",
+    "systems": [
+      "HeaderBar",
+      "top-nav-links",
+      "facilitator-dropdown",
+      "session-exit-pin-gate",
+      "print-menu"
+    ],
+    "last_updated": "2026-01-27T19:27:45Z",
+    "status": "canonical"
+  },
+  "homepage": {
+    "file": "homepage.md",
+    "systems": [
+      "/",
+      "home hero",
+      "mssonoma.com",
+      "external link",
+      "learn-more copy"
+    ],
+    "last_updated": "2026-01-10T19:44:15Z",
+    "status": "canonical"
+  },
+  "custom-subjects": {
+    "file": "custom-subjects.md",
+    "systems": [
+      "custom_subjects",
+      "/api/custom-subjects",
+      "per-facilitator subjects",
+      "subject dropdowns",
+      "Mr. Mentor subjects"
+    ],
+    "last_updated": "2026-01-10T20:06:44Z",
+    "status": "canonical"
+  },
+  "notifications-system": {
+    "file": "notifications-system.md",
+    "systems": [
+      "facilitator notifications",
+      "/facilitator/notifications",
+      "facilitator_notifications",
+      "facilitator_notification_prefs",
+      "read_at",
+      "notification settings",
+      "no-localStorage"
+    ],
+    "last_updated": "2026-01-08T13:36:08Z",
+    "status": "canonical"
+  },
+  "dev-server-and-chunks": {
+    "file": "dev-server-and-chunks.md",
+    "systems": [
+      "next-dev",
+      "chunk-404",
+      "_next-static-chunks",
+      "distDir",
+      "next-config",
+      "cache-clean",
+      "restart-dev-3001"
+    ],
+    "last_updated": "2026-01-01T05:20:00Z",
+    "status": "canonical"
+  },
+  "g
+
+### 28. docs/brain/ingests/pack.planned-lessons-flow.md (196db63f29d528f16d0db6be45aadd46555525c550797b39a0c85f30162b04c4)
+- bm25: -0.6197 | relevance: 1.0000
+
+{
+  "facilitator-hub": {
+    "file": "facilitator-hub.md",
+    "systems": [
+      "/facilitator",
+      "hub-cards",
+      "account",
+      "billing-placement",
+      "subscription-status"
+    ],
+    "last_updated": "2026-01-08T02:06:48Z",
+    "status": "canonical"
+  },
+  "header-navigation": {
+    "file": "header-navigation.md",
+    "systems": [
+      "HeaderBar",
+      "top-nav-links",
+      "facilitator-dropdown",
+      "session-exit-pin-gate",
+      "print-menu"
+    ],
+    "last_updated": "2026-01-27T19:27:45Z",
+    "status": "canonical"
+  },
+  "homepage": {
+    "file": "homepage.md",
+    "systems": [
+      "/",
+      "home hero",
+      "mssonoma.com",
+      "external link",
+      "learn-more copy"
+    ],
+    "last_updated": "2026-01-10T19:44:15Z",
+    "status": "canonical"
+  },
+  "custom-subjects": {
+    "file": "custom-subjects.md",
+    "systems": [
+      "custom_subjects",
+      "/api/custom-subjects",
+      "per-facilitator subjects",
+      "subject dropdowns",
+      "Mr. Mentor subjects"
+    ],
+    "last_updated": "2026-01-10T20:06:44Z",
+    "status": "canonical"
+  },
+  "notifications-system": {
+    "file": "notifications-system.md",
+    "systems": [
+      "facilitator notifications",
+      "/facilitator/notifications",
+      "facilitator_notifications",
+      "facilitator_notification_prefs",
+      "read_at",
+      "notification settings",
+      "no-localStorage"
+    ],
+    "last_updated": "2026-01-08T13:36:08Z",
+    "status": "canonical"
+  },
+  "dev-server-and-chunks": {
+    "file": "dev-server-and-chunks.md",
+    "systems": [
+      "next-dev",
+      "chunk-404",
+      "_next-static-chunks",
+      "distDir",
+      "next-config",
+      "cache-clean",
+      "restart-dev-3001"
+    ],
+    "last_updated": "2026-01-01T05:20:00Z",
+    "status": "canonical"
+  },
+  "g
+
+### 29. src/lib/faq/facilitator-tools.json (01d1775600d96190823d9a009a124babf1c8c002bd0016694f7f2e5a685b8241)
+- bm25: -0.6186 | relevance: 1.0000
+
+{
+  "category": "Facilitator Settings & Tools",
+  "features": [
+    {
+      "id": "facilitator-dashboard",
+      "title": "Facilitator Dashboard",
+      "keywords": [
+        "facilitator dashboard",
+        "dashboard",
+        "facilitator tools",
+        "adult tools",
+        "teacher tools"
+      ],
+      "description": "The Facilitator Dashboard is where you manage learners, lessons, scheduling, and account-level facilitator tools.",
+      "howToUse": "Open the facilitator area and use the Learners and Lessons sections to manage your work. Mr. Mentor can also open key overlays for you.",
+      "relatedFeatures": ["learner-profiles", "lesson-library", "mr-mentor"]
+    },
+    {
+      "id": "goals-clipboard",
+      "title": "Goals Clipboard",
+      "keywords": [
+        "goals clipboard",
+        "goals button",
+        "notes clipboard",
+        "open goals"
+      ],
+      "description": "The Goals clipboard is the UI where you view and edit Goals and Notes for the selected learner (or facilitator).",
+      "howToUse": "Click the 'Goals' button to open it. Mr. Mentor can also help you review what’s saved (report) or suggest what to write (describe/advice).",
+      "relatedFeatures": ["goals-notes"]
+    },
+    {
+      "id": "lessons-overlay",
+      "title": "Lessons Overlay",
+      "keywords": [
+        "lessons overlay",
+        "lessons button",
+        "open lessons",
+        "show my lessons",
+        "lesson list"
+      ],
+      "description": "The Lessons overlay is a quick way to browse, search, and act on lessons (schedule, assign/approve, edit, or review).",
+      "howToUse": "Click the 'Lessons' button, or ask Mr. Mentor to show lessons and help you find the one you want.",
+      "relatedFeatures": ["lesson-library", "lesson-scheduling", "lesson-editing"]
+
+### 30. sidekick_pack_lessons_prefetch.md (4f71a9873f3be2859f269bbc874e89cf26a453dc1352b707820cd5eadf96f1d8)
+- bm25: -0.6174 | relevance: 1.0000
+
+## Pack Contract
+
+This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
 
 ## Question
 
-/events/packs FAQ ThoughtHub
+/api/mentor-session facilitator_id is_active SessionTakeoverDialog
 
 ## Forced Context
 
@@ -385,1258 +1273,343 @@ Follow-ups:
 
 ## Ranked Evidence
 
-### 18. sidekick_pack.md (7f58f56990222d076ef0e7f2f0d44364a8368c45205af03979b38f7db0efbdd1)
-- bm25: -6.8125 | entity_overlap_w: 4.00 | adjusted: -7.8125 | relevance: 1.0000
+### 7. sidekick_pack_api_mentor_session.md (6a4e308d5326bc08dc43d55d77a917dca49981ecbaa22e641c0c8d8df1915c92)
+- bm25: -20.7168 | relevance: 1.0000
 
-// Check if it's an FAQ-style question about assigning (how to)
-      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
-      if (faqPatterns.some(p => normalized.includes(p))) {
-        return 0 // Defer to FAQ intent
+// Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
+    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
+    if (!includeAll) {
+      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
+    }
+
+### 8. src/app/api/lesson-schedule/route.js (4e331f192a6c56a4cab8c5f7afbe0982981f3bd236880d62edeea56744dbb7e2)
+- bm25: -20.6258 | relevance: 1.0000
+
+// Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
+    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
+    if (!includeAll) {
+      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
+    }
+
+### 9. sidekick_pack_mentor_sessions_schema.md (455339344562db47239e8d791c805dc4f86ca4acf57144996acddf4d5af3842f)
+- bm25: -19.9648 | relevance: 1.0000
+
+SELECT 
+  indexname,
+  indexdef
+FROM pg_indexes
+WHERE tablename = 'mentor_sessions'
+  AND indexname = 'unique_active_session_per_facilitator';
+
+### 2. scripts/setup-mentor-sessions.sql (76419572d186bb374af9dfdf9f1b40251b639abdcfebe257c03215b4b394bc31)
+- bm25: -35.6047 | entity_overlap_w: 1.00 | adjusted: -35.8547 | relevance: 1.0000
+
+### 31. docs/brain/pin-protection.md (3aa2a8e5f407ed24098e9d06429a29a96012af85911782bdf9d220a708346647)
+- bm25: -0.6159 | relevance: 1.0000
+
+### Preferences
+
+PIN preferences are stored in:
+- Server: `profiles.pin_prefs` (JSON column)
+- Client: `localStorage.facilitator_pin_prefs` (cached copy)
+
+Default preferences (when PIN exists but prefs not set):
+```javascript
+{
+  downloads: true,
+  facilitatorKey: true,
+  skipTimeline: true,
+  changeLearner: true,
+  refresh: true,
+  timer: true,
+  facilitatorPage: true,
+  activeSession: true
+}
+```
+
+## What NOT To Do
+
+**❌ DON'T** set facilitator section flag for non-facilitator actions
+- Only `facilitator-page` action and session-exit-to-facilitator navigation should set the flag
+- Setting it for other actions would allow bypassing PIN on facilitator pages
+
+**❌ DON'T** store PIN in localStorage
+- PIN verification is server-only for security
+- Never cache PIN validation results beyond sessionStorage flag
+
+**❌ DON'T** create multiple PIN prompts simultaneously
+- `ensurePinAllowed` uses global lock (`activePinPrompt`) to prevent concurrent prompts
+- If another prompt is active, wait for its result
+
+**❌ DON'T** forget to clear facilitator section flag when leaving facilitator routes
+- FacilitatorSectionTracker handles this automatically
+- Manual flag clearing should match its logic
+
+**❌ DON'T** use `ensurePinAllowed` for non-gated features
+- Only call it when you genuinely need to gate an action
+- Unnecessary calls degrade user experience
+
+## Key Files
+
+**Core Logic**:
+- `src/app/lib/pinGate.js` - PIN validation, section tracking, preferences
+- `src/app/api/facilitator/pin/route.js` - Get PIN state, preferences
+- `src/app/api/facilitator/pin/verify/route.js` - Server PIN verification
+
+**Navigation Integration**:
+- `src/app/HeaderBar.js` - Navigation PIN checks, facilitator flag setting
+- `src/components/FacilitatorSectionTracker.jsx` - Section flag lifecycle
+
+### 32. docs/brain/calendar-lesson-planning.md (1d396766db2440144971a1350400b34ef2799dc2339e2896f9d8c5a4a2c58fe0)
+- bm25: -0.6135 | relevance: 1.0000
+
+- `src/app/facilitator/calendar/LessonPicker.js`
+  - Manual scheduling UI ("Add Lessons")
+  - Loads ONLY facilitator-owned lessons via `/api/facilitator/lessons/list`
+  - Produces `generated/<filename>` keys for scheduling and for `/api/lesson-file`
+
+### 33. docs/brain/ingests/pack.planned-lessons-flow.md (0f7166c8532c44d946f304b21783d627e9b974887552cfc762d34feacecf6e85)
+- bm25: -0.6109 | relevance: 1.0000
+
+- `src/app/facilitator/calendar/LessonPicker.js`
+  - Manual scheduling UI ("Add Lessons")
+  - Loads ONLY facilitator-owned lessons via `/api/facilitator/lessons/list`
+  - Produces `generated/<filename>` keys for scheduling and for `/api/lesson-file`
+
+### 34. scripts/setup-mentor-sessions.sql (31afb0263b5558a382a0dcdba3cc50120e5e453cb20ca5d11f24299e8b7d64eb)
+- bm25: -0.6046 | relevance: 1.0000
+
+-- Mr. Mentor Session Management
+-- Single-device enforcement and conversation persistence
+
+-- Create mentor_sessions table
+CREATE TABLE IF NOT EXISTS public.mentor_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  facilitator_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  session_id TEXT NOT NULL, -- Browser-generated unique session ID
+  device_name TEXT, -- Optional device identifier
+  conversation_history JSONB NOT NULL DEFAULT '[]'::jsonb,
+  draft_summary TEXT,
+  last_activity_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  
+  -- Only one active session per facilitator
+  CONSTRAINT unique_active_session_per_facilitator UNIQUE (facilitator_id, is_active)
+);
+
+-- Create index for quick lookups
+CREATE INDEX IF NOT EXISTS idx_mentor_sessions_facilitator ON public.mentor_sessions(facilitator_id);
+CREATE INDEX IF NOT EXISTS idx_mentor_sessions_session_id ON public.mentor_sessions(session_id);
+CREATE INDEX IF NOT EXISTS idx_mentor_sessions_active ON public.mentor_sessions(facilitator_id, is_active) WHERE is_active = TRUE;
+
+-- RLS policies
+ALTER TABLE public.mentor_sessions ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can only access their own sessions
+CREATE POLICY "Users can manage their own mentor sessions"
+  ON public.mentor_sessions
+  FOR ALL
+  USING (auth.uid() = facilitator_id)
+  WITH CHECK (auth.uid() = facilitator_id);
+
+### 35. docs/brain/ingests/pack.md (84a96ac150f2135d31aa9bfe9cd8ac1e61d8f40743bcb440da0563dd1f1c1bb2)
+- bm25: -0.6035 | relevance: 1.0000
+
+### 13. docs/brain/header-navigation.md (17596087776b8a8510ebd6fdda83503d40ccdb8376bc76c97583cafb2888e681)
+- bm25: -23.7972 | relevance: 1.0000
+
+# Header Navigation
+
+## How It Works
+
+The global header (HeaderBar) is rendered across pages and provides:
+
+- Brand link to home
+- Back button on pages that define a back chain
+- Top-level navigation links (About, Learn, Facilitator)
+- Session-specific print menu actions
+
+### Session Print Menu
+
+On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions.
+
+**Trigger behavior (desktop):** Open on hover (mouseenter) with a short grace period on mouseleave so it does not flicker closed while moving from the icon into the menu.
+
+**Trigger behavior (touch / fallback):** The icon should also toggle the dropdown on click.
+
+The dropdown includes print actions:
+
+- Worksheet
+- Test
+- Facilitator Key
+- Refresh
+
+On narrow layouts, these same actions live inside the hamburger menu under a nested "Print" section.
+
+Important: header buttons (including the print icon) must explicitly set `type="button"` so they never behave like submit buttons when a page happens to include a form.
+
+Also: header dropdown trigger buttons must call `e.stopPropagation()` in their onClick handlers to prevent the opening click from bubbling to document and immediately triggering the outside-click-close listener.
+
+### Facilitator Dropdown
+
+On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
+
+- ⚙️ Account -> `/facilitator/account`
+- 🔔 Notifications -> `/facilitator/notifications`
+- 👥 Learners -> `/facilitator/learners`
+- 📚 Lessons -> `/facilitator/lessons`
+- 📅 Calendar -> `/facilitator/calendar`
+- 🧠 Mr. Mentor -> `/facilitator/mr-mentor`
+
+### 36. docs/brain/custom-subjects.md (7e58ee1ca5dc34b720347edc91b697304897f6b53937497421004d738d51df62)
+- bm25: -0.6019 | relevance: 1.0000
+
+- API
+  - `src/app/api/custom-subjects/route.js`
+- Shared subject utilities
+  - `src/app/hooks/useFacilitatorSubjects.js`
+  - `src/app/lib/subjects.js`
+- UI surfaces that must reflect custom subjects
+  - `src/app/facilitator/calendar/LessonPicker.js` (scheduler subject filter)
+  - `src/app/facilitator/lessons/page.js` (lesson library subject filter)
+  - `src/components/LessonEditor.jsx` (lesson subject field)
+  - `src/app/facilitator/generator/page.js` (Lesson Maker)
+  - `src/app/facilitator/generator/counselor/overlays/*` (Mr. Mentor overlays)
+
+### 37. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (75fb65f571a3dd5e38e700ab50147f3123152abd0c56b60134cd27c4296ea3ed)
+- bm25: -0.6001 | relevance: 1.0000
+
+// Compact calendar view for Mr. Mentor overlay
+'use client'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
+import { getSupabaseClient } from '@/app/lib/supabaseClient'
+import LessonGeneratorOverlay from '@/app/facilitator/calendar/LessonGeneratorOverlay'
+import LessonPlanner from '@/app/facilitator/calendar/LessonPlanner'
+import LessonEditor from '@/components/LessonEditor'
+import LessonNotesModal from '@/app/facilitator/calendar/LessonNotesModal'
+import VisualAidsManagerModal from '@/app/facilitator/calendar/VisualAidsManagerModal'
+import PortfolioScansModal from '@/app/facilitator/calendar/PortfolioScansModal'
+import TypedRemoveConfirmModal from '@/app/facilitator/calendar/TypedRemoveConfirmModal'
+import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
+
+export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan, accessToken }) {
+  const OVERLAY_Z_INDEX = 2147483647
+
+const devStringify = (value) => {
+    try {
+      if (value instanceof Error) {
+        return JSON.stringify({ name: value.name, message: value.message, stack: value.stack })
       }
-
-### 10. sidekick_pack.md (cee146ecc7200c1657d5a1db91176ff7bb22610b69837538b38a805f3075706d)
-- bm25: -6.7264 | entity_overlap_w: 2.00 | adjusted: -7.2264 | relevance: 1.0000
-
-// ThoughtHub backfill bridge:
-    // If legacy conversation history exists (mentor_conversation_threads via /api/mentor-session),
-    // ingest it into ThoughtHub events and then clear the legacy JSON.
-    if (ingestFallback && authHeader) {
+      return JSON.stringify(value)
+    } catch {
       try {
-        const origin = new URL(req.url).origin
-        const legacyUrl = new URL('/api/mentor-session', origin)
-        legacyUrl.searchParams.set('subjectKey', subjectKey)
-
-### 11. src/app/api/mentor-chronograph/route.js (2aae66fb6c5c96365d1358746cde2447d95400953c9d0214a4fded4a5b1d62ea)
-- bm25: -6.6479 | entity_overlap_w: 2.00 | adjusted: -7.1479 | relevance: 1.0000
-
-// ThoughtHub backfill bridge:
-    // If legacy conversation history exists (mentor_conversation_threads via /api/mentor-session),
-    // ingest it into ThoughtHub events and then clear the legacy JSON.
-    if (ingestFallback && authHeader) {
-      try {
-        const origin = new URL(req.url).origin
-        const legacyUrl = new URL('/api/mentor-session', origin)
-        legacyUrl.searchParams.set('subjectKey', subjectKey)
-
-### 10. src/app/facilitator/generator/counselor/MentorInterceptor.js (c33b558bf8b0935f2a550fb05c87176e0aa68684daf01b79abcc09c5d0ffe303)
-- bm25: -10.9023 | entity_overlap_w: 2.60 | adjusted: -11.5523 | relevance: 1.0000
-
-assign: {
-    keywords: ['assign', 'make available', 'make it available', 'show this lesson', 'show the lesson', 'available lessons', 'approve for learner'],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
-
-// Check if it's an FAQ-style question about assigning (how to)
-      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
-      if (faqPatterns.some(p => normalized.includes(p))) {
-        return 0 // Defer to FAQ intent
-      }
-
-### 11. sidekick_pack.md (7751aefa5e543c1c1cfed96386ff1b81b58fa786e529d33f48b671704d322749)
-- bm25: -10.2757 | entity_overlap_w: 4.60 | adjusted: -11.4257 | relevance: 1.0000
-
-### 32. sidekick_pack.md (b0265988ea474708e35ff9d3860e72dad6905b71dcc80e3fec369890e5fe7058)
-- bm25: -5.1580 | entity_overlap_w: 2.00 | adjusted: -5.6580 | relevance: 1.0000
-
-// ThoughtHub (chronograph + deterministic packs) request flags.
-        // Keep legacy field names for compatibility.
-        const useThoughtHub = (typeof body.use_thought_hub === 'boolean')
-          ? body.use_thought_hub
-          : !!body.use_cohere_chronograph
-        useCohereChronograph = !!useThoughtHub
-
-### 2. src/app/api/mentor-chronograph/route.js (2aae66fb6c5c96365d1358746cde2447d95400953c9d0214a4fded4a5b1d62ea)
-- bm25: -11.2957 | entity_overlap_w: 2.00 | adjusted: -11.7957 | relevance: 1.0000
-
-### 2. sidekick_pack.md (c9d01443b4bae09e680a9cc7e9dd30b1e6e9b6f1171319045cd3e9886289cf0d)
-- bm25: -8.2943 | entity_overlap_w: 3.60 | adjusted: -9.1943 | relevance: 1.0000
-
-### 9. src/app/facilitator/generator/counselor/MentorInterceptor.js (0f47889e0251950c99d2bc5ce8dae42c87f3b73293a3b8009708e2ea644e6443)
-- bm25: -7.9323 | entity_overlap_w: 2.60 | adjusted: -8.5823 | relevance: 1.0000
-
-assign: {
-    keywords: ['assign', 'make available', 'make it available', 'show this lesson', 'show the lesson', 'available lessons', 'approve for learner'],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
-
-// Check if it's an FAQ-style question about assigning (how to)
-      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
-      if (faqPatterns.some(p => normalized.includes(p))) {
-        return 0 // Defer to FAQ intent
-      }
-
-### 10. src/app/api/mentor-chronograph/route.js (3fca549c6224426e659b0536c858479578b9f6bd4d70ac7722ddaab6740b26f5)
-- bm25: -8.2700 | entity_overlap_w: 1.00 | adjusted: -8.5200 | relevance: 1.0000
-
-### 12. sidekick_pack.md (bd3e6076f575e77a2a9669ea0829f212f67ad174e64de22f2d37b70c628b7e62)
-- bm25: -9.8951 | entity_overlap_w: 3.30 | adjusted: -10.7201 | relevance: 1.0000
-
-### 32. scripts/backfill-thought-hub-from-mentor-conversation-threads.sql (8890a3700524e47369b92c84920f168805bf485686ce4a3c5a3cbde4db5fd6d0)
-- bm25: -4.3560 | entity_overlap_w: 1.00 | adjusted: -4.6060 | relevance: 1.0000
-
-### 35. sidekick_pack.md (02239f951cc63e52371c1ea18aae43904b95244fba3426747c03ed56215db261)
-- bm25: -3.7000 | entity_overlap_w: 3.60 | adjusted: -4.6000 | relevance: 1.0000
-
-console.log('ThoughtHub smoke OK')
-}
-
-main().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
-
-### 25. sidekick_pack.md (e51448725c4139030ca437a0788578aa9ac6dc7f5bf5342ce8334c296bb0c693)
-- bm25: -5.5477 | entity_overlap_w: 1.30 | adjusted: -5.8727 | relevance: 1.0000
-
-/**
- * MentorInterceptor - Front-end conversation handler for Mr. Mentor
- * 
- * Intercepts user messages and handles common tasks without API calls:
- * - Lesson search and selection
- * - Parameter gathering for generation/scheduling/editing
- * - Confirmation flows
- * - Conversation memory search
- * - FAQ and feature explanations
- * 
- * Only forwards to API when:
- * - User explicitly bypasses ("Different issue")
- * - Free-form discussion after lesson selected
- * - Complex queries that need LLM reasoning
- */
-
-### 26. sidekick_pack.md (0d73346139b943b1c4e1619081cfab92979301269d0840376eaff84b8175254f)
-- bm25: -5.2873 | entity_overlap_w: 1.30 | adjusted: -5.6123 | relevance: 1.0000
-
-### 13. sidekick_pack.md (84af1bbae3b09b5aee70556fcea89ba8459728b3ee24d3e4e22b1bde0908a49e)
-- bm25: -9.5095 | entity_overlap_w: 4.00 | adjusted: -10.5095 | relevance: 1.0000
-
-import { searchFeatures, getFeatureById } from '@/lib/faq/faqLoader'
-
-### 19. sidekick_pack.md (db0ac8da8e2d919ef1a29559748d5fe3097d5ed6a5e45dfcfb9df485fffc8fef)
-- bm25: -7.0624 | entity_overlap_w: 2.00 | adjusted: -7.5624 | relevance: 1.0000
-
-// 2) ThoughtHub-enabled counselor POST
-  {
-    const message = `ThoughtHub smoke ping @ ${new Date().toISOString()}`
-    const url = `${baseUrl}/api/counselor`
-    const { res, json } = await httpJson(url, {
-      method: 'POST',
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message,
-        history: [],
-        use_thought_hub: true,
-        thought_hub_mode: 'minimal',
-        subject_key: subjectKey,
-        require_generation_confirmation: false,
-        generation_confirmed: true,
-        disableTools: []
-      })
-    })
-
-### 20. scripts/smoke-thought-hub.mjs (807156cb364b56d9a5cf1b5c2b08e4f395768f2a8bdf6fd6c588113ee62a1c20)
-- bm25: -7.0190 | entity_overlap_w: 2.00 | adjusted: -7.5190 | relevance: 1.0000
-
-// 2) ThoughtHub-enabled counselor POST
-  {
-    const message = `ThoughtHub smoke ping @ ${new Date().toISOString()}`
-    const url = `${baseUrl}/api/counselor`
-    const { res, json } = await httpJson(url, {
-      method: 'POST',
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message,
-        history: [],
-        use_thought_hub: true,
-        thought_hub_mode: 'minimal',
-        subject_key: subjectKey,
-        require_generation_confirmation: false,
-        generation_confirmed: true,
-        disableTools: []
-      })
-    })
-
-### 14. sidekick_pack.md (40c2dab55149f6c4395e96e30de8b23b8c2f50dc4887939a683389ba0b854e39)
-- bm25: -8.6472 | entity_overlap_w: 4.00 | adjusted: -9.6472 | relevance: 1.0000
-
-insert into public.tenant_memberships (tenant_id, user_id, role)
-      values (tid, u.user_id, 'owner');
-    end if;
-  end loop;
-end $$;
-
-### 31. sidekick_pack.md (3b828358ac75a21f74ba702f191e661430b86fe9c387fc9d539790c5b3d5ac63)
-- bm25: -5.5188 | entity_overlap_w: 2.00 | adjusted: -6.0188 | relevance: 1.0000
-
-### 12. scripts/smoke-thought-hub.mjs (807156cb364b56d9a5cf1b5c2b08e4f395768f2a8bdf6fd6c588113ee62a1c20)
-- bm25: -7.5909 | entity_overlap_w: 2.00 | adjusted: -8.0909 | relevance: 1.0000
-
-// 2) ThoughtHub-enabled counselor POST
-  {
-    const message = `ThoughtHub smoke ping @ ${new Date().toISOString()}`
-    const url = `${baseUrl}/api/counselor`
-    const { res, json } = await httpJson(url, {
-      method: 'POST',
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message,
-        history: [],
-        use_thought_hub: true,
-        thought_hub_mode: 'minimal',
-        subject_key: subjectKey,
-        require_generation_confirmation: false,
-        generation_confirmed: true,
-        disableTools: []
-      })
-    })
-
-### 13. src/app/facilitator/generator/counselor/MentorInterceptor.js (460a755df01044542f40ae329e8c75e93421e6b8900bfd176649db2374a47aa0)
-- bm25: -7.6538 | relevance: 1.0000
-
-### 19. src/app/facilitator/generator/counselor/MentorInterceptor.js (c071ec4e7f468aec19a779825f89b3fe07f980207f8fa69330f8b7f0c363dd47)
-- bm25: -5.7304 | entity_overlap_w: 2.60 | adjusted: -6.3804 | relevance: 1.0000
-
-,
-
-### 15. src/app/facilitator/generator/counselor/MentorInterceptor.js (c48800581dadd37767e987fa9461a2f6e4e14e66bf5a01955d1b5884486e3cc2)
-- bm25: -8.8499 | entity_overlap_w: 2.30 | adjusted: -9.4249 | relevance: 1.0000
-
-/**
- * MentorInterceptor - Front-end conversation handler for Mr. Mentor
- * 
- * Intercepts user messages and handles common tasks without API calls:
- * - Lesson search and selection
- * - Parameter gathering for generation/scheduling/editing
- * - Confirmation flows
- * - Conversation memory search
- * - FAQ and feature explanations
- * 
- * Only forwards to API when:
- * - User explicitly bypasses ("Different issue")
- * - Free-form discussion after lesson selected
- * - Complex queries that need LLM reasoning
- */
-
-import {
-  searchMentorFeatures,
-  getMentorFeatureById,
-  shouldTreatAsReportQuery
-} from '@/lib/mentor/featureRegistry'
-
-// Fuzzy string matching for normalization
-function normalizeText(text) {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s]/g, '') // Remove punctuation
-    .replace(/\s+/g, ' ')
-}
-
-function fuzzyMatch(input, targets, threshold = 0.6) {
-  const normalized = normalizeText(input)
-  
-  for (const target of targets) {
-    const normalizedTarget = normalizeText(target)
-    if (normalized.includes(normalizedTarget) || normalizedTarget.includes(normalized)) {
-      return true
-    }
-  }
-  
-  return false
-}
-
-### 16. src/app/facilitator/generator/counselor/MentorInterceptor.js (68c343999016cb9eafca4305eba6310d387549054cab4f65b5f748cbc4b2a782)
-- bm25: -9.2678 | relevance: 1.0000
-
-this.state.flow = 'faq'
-      this.state.awaitingInput = 'faq_feature_confirm'
-      this.state.context.selectedFeatureId = feature.id
-      
-      return {
-        handled: true,
-        response: `It looks like you're asking about ${feature.title}. Is that correct?`
+        return String(value)
+      } catch {
+        return '[unstringifiable]'
       }
     }
-    
-    // Multiple matches - list candidates
-    this.state.flow = 'faq'
-    this.state.awaitingInput = 'faq_feature_select'
-    
-    const topMatches = matches.slice(0, 5)
-    const featureList = topMatches.map((m, idx) => `${idx + 1}. ${m.feature.title}`).join('\n')
-    
-    // Store all match IDs for selection
-    this.state.context.faqCandidates = topMatches.map(m => m.feature.id)
-    
-    let response = `I found several features that might match what you're asking about:\n\n${featureList}\n\n`
-    response += `Which one would you like to learn about? You can say the name or number.`
-    
-    return {
-      handled: true,
-      response
-    }
   }
-  
-  /**
-   * Execute confirmed action
-   */
-  async executeAction() {
-    const flow = this.state.flow
-    const ctx = this.state.context
-    
-    if (flow === 'schedule') {
-      const lesson = this.state.selectedLesson
-      
-      return {
-        handled: true,
-        action: {
-          type: 'schedule',
-          lessonKey: ctx.lessonKey,
-          scheduledDate: ctx.scheduledDate
-        },
-        response: `I've scheduled ${lesson.title} for ${new Date(ctx.scheduledDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.`
+
+const devWarn = (...args) => {
+    try {
+      if (process.env.NODE_ENV !== 'production') {
+        const formatted = (args || []).map((a) => (typeof a === 'string' ? a : devStringify(a)))
+        // eslint-disable-next-line no-console
+        console.log('[CalendarOverlay]', ...formatted)
       }
-    }
-    
-    if (flow === 'generate') {
-      return {
-        handled: true,
-        action: {
-          type: 'generate',
-          title: ctx.title,
-          subject: ctx.subject,
-          grade: ctx.grade,
-          difficulty: ctx.difficulty,
-          description: ctx
-
-### 17. sidekick_pack.md (bccac4ee7ee7e12ff43ebc821a1d8c91188fde5a46ec13a650f27528434ebb50)
-- bm25: -7.6175 | entity_overlap_w: 3.00 | adjusted: -8.3675 | relevance: 1.0000
-
-if (!token) {
-  console.error('Missing THOUGHTHUB_TOKEN env var (Supabase access token).')
-  process.exit(2)
-}
-
-async function httpJson(url, init = {}) {
-  const res = await fetch(url, init)
-  const text = await res.text()
-  let json = null
-  try {
-    json = text ? JSON.parse(text) : null
-  } catch {
-    json = { _nonJson: text }
-  }
-  return { res, json }
-}
-
-async function main() {
-  const headers = { Authorization: `Bearer ${token}` }
-
-// 1) ThoughtHub chronograph
-  {
-    const url = `${baseUrl}/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`
-    const { res, json } = await httpJson(url, { headers, cache: 'no-store' })
-    console.log('GET /api/thought-hub-chronograph:', res.status)
-    if (!res.ok) {
-      console.log(json)
-      process.exit(1)
-    }
-    console.log('  history_len:', Array.isArray(json?.history) ? json.history.length : null)
-    console.log('  has_pack:', !!json?.pack)
+    } catch {}
   }
 
-### 8. src/app/facilitator/generator/counselor/MentorInterceptor.js (bd41e219b8972f75f422523dc21486842a7959a44caa139884851642c64cec51)
-- bm25: -7.9104 | entity_overlap_w: 5.20 | adjusted: -9.2104 | relevance: 1.0000
+### 38. docs/brain/ingests/pack-mentor-intercepts.md (4165868b5790029e01f7c01d44458476250e5d36cdd1cc5c43972b949e391bb5)
+- bm25: -0.6000 | relevance: 1.0000
 
-### 9. src/app/facilitator/generator/counselor/MentorInterceptor.js (0f47889e0251950c99d2bc5ce8dae42c87f3b73293a3b8009708e2ea644e6443)
-- bm25: -6.9130 | entity_overlap_w: 2.60 | adjusted: -7.5630 | relevance: 1.0000
+- API
+  - `src/app/api/custom-subjects/route.js`
+- Shared subject utilities
+  - `src/app/hooks/useFacilitatorSubjects.js`
+  - `src/app/lib/subjects.js`
+- UI surfaces that must reflect custom subjects
+  - `src/app/facilitator/calendar/LessonPicker.js` (scheduler subject filter)
+  - `src/app/facilitator/lessons/page.js` (lesson library subject filter)
+  - `src/components/LessonEditor.jsx` (lesson subject field)
+  - `src/app/facilitator/generator/page.js` (Lesson Maker)
+  - `src/app/facilitator/generator/counselor/overlays/*` (Mr. Mentor overlays)
 
-### 23. scripts/add-cohere-style-chronograph.sql (7ba3db81adbef61246040e9c8ae4fd6aaea0d89936820bee1e84914868b5986d)
-- bm25: -6.9476 | relevance: 1.0000
+### 39. docs/brain/header-navigation.md (17596087776b8a8510ebd6fdda83503d40ccdb8376bc76c97583cafb2888e681)
+- bm25: -0.5987 | relevance: 1.0000
 
-create index if not exists threads_tenant_user_created_idx
-  on public.threads (tenant_id, user_id, created_at desc);
+# Header Navigation
 
-create index if not exists threads_scope_idx
-  on public.threads (tenant_id, user_id, sector, subject_key);
+## How It Works
 
-### 18. src/app/api/mentor-blindspots/route.js (af49c6784fe32c6f3f90a637644979ba8ac3a41ca6bfb5f023b7903f11eef62d)
-- bm25: -7.5303 | entity_overlap_w: 3.00 | adjusted: -8.2803 | relevance: 1.0000
+The global header (HeaderBar) is rendered across pages and provides:
 
-import { NextResponse } from 'next/server'
-import {
-  cohereGetUserAndClient,
-  cohereEnsureThread
-} from '@/app/lib/cohereStyleMentor'
+- Brand link to home
+- Back button on pages that define a back chain
+- Top-level navigation links (About, Learn, Facilitator)
+- Session-specific print menu actions
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+### Session Print Menu
 
-function normalizeText(text) {
-  return String(text || '')
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s]/g, '')
-    .replace(/\s+/g, ' ')
-}
+On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions.
 
-function clampInt(value, { min, max, fallback }) {
-  const n = Number.parseInt(String(value || ''), 10)
-  if (!Number.isFinite(n)) return fallback
-  return Math.max(min, Math.min(max, n))
-}
+**Trigger behavior (desktop):** Open on hover (mouseenter) with a short grace period on mouseleave so it does not flicker closed while moving from the icon into the menu.
 
-export async function GET(req) {
-  try {
-    const auth = await cohereGetUserAndClient(req)
-    if (auth?.error) return NextResponse.json({ error: auth.error }, { status: auth.status })
+**Trigger behavior (touch / fallback):** The icon should also toggle the dropdown on click.
 
-const { supabase } = auth
+The dropdown includes print actions:
 
-const { searchParams } = new URL(req.url)
-    const subjectKey = (searchParams.get('subjectKey') || 'facilitator').trim()
-    const sector = (searchParams.get('sector') || 'both').trim()
-    const limit = clampInt(searchParams.get('limit'), { min: 50, max: 2000, fallback: 500 })
+- Worksheet
+- Test
+- Facilitator Key
+- Refresh
 
-const { tenantId, threadId } = await cohereEnsureThread({ supabase, sector, subjectKey })
+On narrow layouts, these same actions live inside the hamburger menu under a nested "Print" section.
 
-const { data, error } = await supabase
-      .from('events')
-      .select('id, role, text, meta, created_at')
-      .eq('tenant_id', tenantId)
-      .eq('thread_id', threadId)
-      .order('created_at', { ascending: false })
-      .limit(limit)
+Important: header buttons (including the print icon) must explicitly set `type="button"` so they never behave like submit buttons when a page happens to include a form.
 
-if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
+Also: header dropdown trigger buttons must call `e.stopPropagation()` in their onClick handlers to prevent the opening click from bubbling to document and immediately triggering the outside-click-close listener.
 
-const events = Array.isArray(data) ? data : []
+### Facilitator Dropdown
 
-const blindspotEvents = events
-      .map((e) => {
-        const meta = e?.meta && typeof e.meta === 'object' ? e.meta : null
-        const blindspot = meta?.mentor_blindspot && typeof meta.mentor_blindspot === 'object'
-          ? meta.mentor_blindspot
-          : null
+On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
 
-### 19. src/app/facilitator/generator/counselor/MentorInterceptor.js (801fe76dcf75d9975bdf75c178124f170b4085989db3386c3b315e927f73b1a6)
-- bm25: -7.8580 | entity_overlap_w: 1.30 | adjusted: -8.1830 | relevance: 1.0000
+- ⚙️ Account -> `/facilitator/account`
+- 🔔 Notifications -> `/facilitator/notifications`
+- 👥 Learners -> `/facilitator/learners`
+- 📚 Lessons -> `/facilitator/lessons`
+- 📅 Calendar -> `/facilitator/calendar`
+- 🧠 Mr. Mentor -> `/facilitator/mr-mentor`
 
-if (this.state.awaitingInput === 'plan_duration_months') {
-      const normalized = normalizeText(userMessage)
-      const match = normalized.match(/\b(1|2|3|4)\b/)
-      const months = match ? Number(match[1]) : null
-      if (!months || months < 1 || months > 4) {
-        return {
-          handled: true,
-          response: 'Please choose a duration of 1, 2, 3, or 4 months.'
+The dropdown uses a short hover grace period on mouseleave so it does not flicker closed while moving from the header link down into the menu.
+
+### 40. src/app/facilitator/generator/counselor/CounselorClient.jsx (a21f786301f175df4d80b37fa98e1a7650a6c8ed13398fc54a8bcad8d5796bed)
+- bm25: -0.5982 | relevance: 1.0000
+
+if (!isMountedRef.current) {
+          console.log('[Realtime] Ignoring - component unmounted')
+          return
         }
-      }
-      this.state.context.planDurationMonths = months
-      this.state.flow = 'lesson_plan_generate'
-      this.state.awaitingConfirmation = true
-      this.state.awaitingInput = null
-      return {
-        handled: true,
-        response: 'Would you like to schedule a Lesson Plan?'
-      }
-    }
-    
-    // Handle FAQ feature confirmation
-    if (this.state.awaitingInput === 'faq_feature_confirm') {
-      const featureId = this.state.context.selectedFeatureId
-      const feature = getMentorFeatureById(featureId)
-      
-      if (!feature) {
-        this.reset()
-        return {
-          handled: true,
-          response: "I couldn't find that feature. What else can I help you with?"
-        }
-      }
-      
-      // Check if user confirmed by saying the feature name
-      const normalized = normalizeText(userMessage)
-      const normalizedTitle = normalizeText(feature.title)
-      
-      if (normalized.includes(normalizedTitle) || normalizedTitle.includes(normalized) || detectConfirmation(userMessage) === 'yes') {
-        // User confirmed - provide explanation
-        this.reset()
-        
-        let response = `${feature.title}: ${feature.description}\n\n`
-        response += `${feature.howToUse}`
-        
-        if (feature.relatedFeatures && feature.relatedFeatures.length > 0) {
-          response += `\n\nThis is related to: ${feature.relatedFeatures.map(id => {
 
-### 20. src/app/facilitator/generator/counselor/MentorInterceptor.js (89e181b5e65010c48db87b06c36e83809156e0da9602839dfe84d88f51014107)
-- bm25: -7.5451 | entity_overlap_w: 1.30 | adjusted: -7.8701 | relevance: 1.0000
+const updatedSession = payload.new
+        const oldSession = payload.old
 
-return {
-        handled: true,
-        response: `Would you like me to schedule this lesson, or assign it to ${learnerName || 'this learner'}?`
-      }
-    }
-    
-    // Handle lesson selection from search results
-    if (this.state.awaitingInput === 'lesson_selection') {
-      const results = this.state.context.searchResults || []
-      
-      // Check if user wants to abandon selection and do something else
-      const normalized = normalizeText(userMessage)
-      const isRejection = normalized.includes('none') || 
-                         normalized.includes('neither') || 
-                         normalized.includes('not those') ||
-                         normalized.includes('different') ||
-                         detectConfirmation(userMessage) === 'no'
-      
-      if (isRejection) {
-        // User doesn't want any of the search results
-        // Reset state and check if they're making a new request
-        this.reset()
-        
-        // Check if message contains a new intent (generate, schedule, edit, etc.)
-        const intents = {}
-        for (const [intentName, pattern] of Object.entries(INTENT_PATTERNS)) {
-          intents[intentName] = pattern.confidence(userMessage)
-        }
-        
-        const topIntent = Object.entries(intents)
-          .filter(([_, score]) => score > 0)
-          .sort((a, b) => b[1] - a[1])[0]
-        
-        if (topIntent) {
-          const [intent] = topIntent
-          
-          // Route to the new intent handler
-          switch (intent) {
-            case 'generate':
-              return await this.handleGenerate(userMessage, context)
-            case 'schedule':
-              return await this.handleSchedule(userMessage, context)
-            case 'assign':
-              return await this.handleAssign(userMessage, c
-
-### 21. src/lib/mentor/featureRegistry.js (9fca1dd259eddc4c824d9617a8239a04df80368002146eda02d0336ae6f6e33a)
-- bm25: -6.9990 | entity_overlap_w: 2.60 | adjusted: -7.6490 | relevance: 1.0000
-
-/**
- * Mentor Feature Registry
- *
- * Purpose:
- * - Provide a single searchable catalog of user-facing features.
- * - Support deterministic "describe" responses (FAQ-style explanations).
- * - Support deterministic "report" actions for user-specific state.
- *
- * Notes:
- * - Base FAQ data comes from src/lib/faq/*.json via faqLoader.
- * - Report-capable features are layered on top (same shape + a `report` descriptor).
- */
-
-import { getAllFeatures as getAllFaqFeatures } from '@/lib/faq/faqLoader'
-
-function normalizeText(text) {
-  if (!text) return ''
-  return String(text)
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s]/g, '')
-    .replace(/\s+/g, ' ')
-}
-
-function scoreFeatureMatch(userInput, feature) {
-  const normalized = normalizeText(userInput)
-  if (!normalized) return { score: 0, matchedKeywords: [] }
-
-let score = 0
-  const matchedKeywords = []
-
-const keywords = Array.isArray(feature?.keywords) ? feature.keywords : []
-  for (const keyword of keywords) {
-    const normalizedKeyword = normalizeText(keyword)
-    if (!normalizedKeyword) continue
-
-if (normalized === normalizedKeyword) {
-      score += 100
-      matchedKeywords.push(keyword)
-    } else if (normalized.includes(normalizedKeyword)) {
-      score += 50
-      matchedKeywords.push(keyword)
-    } else if (normalizedKeyword.includes(normalized) && normalized.length >= 4) {
-      score += 30
-      matchedKeywords.push(keyword)
-    } else {
-      const keywordWords = normalizedKeyword.split(' ')
-      const inputWords = normalized.split(' ')
-      const matchedWords = keywordWords.filter((kw) =>
-        inputWords.some((iw) => iw.includes(kw) || kw.includes(iw))
-      )
-
-### 22. src/app/api/counselor/route.js (dbb6c7952958cdba6484727c986c29bfc517a4e2bcd52c7bc8fe856416fb46ff)
-- bm25: -7.0254 | entity_overlap_w: 2.00 | adjusted: -7.5254 | relevance: 1.0000
-
-const { supabase } = auth
-        const { tenantId, threadId } = await cohereEnsureThread({
-          supabase,
-          sector: cohereSector,
-          subjectKey
-        })
-
-cohereMeta = { tenantId, threadId, sector: cohereSector, subjectKey, mode: cohereMode }
-
-if (!isFollowup && userMessage) {
-          const blindspot = body?.interceptor_context?.mentor_blindspot
-          const meta = {
-            call_id: callId,
-            ...(blindspot && typeof blindspot === 'object' ? { mentor_blindspot: blindspot } : {})
-          }
-
-await cohereAppendEvent({
-            supabase,
-            tenantId,
-            threadId,
-            role: 'user',
-            text: userMessage,
-            meta
+// Only process updates for this user's sessions
+        if (updatedSession.facilitator_id !== user.id) {
+          console.log('[Realtime] Ignoring - different user:', {
+            eventUserId: updatedSession.facilitator_id,
+            myUserId: user.id
           })
+          return
         }
 
-if (!isFollowup && userMessage) {
-          const gate = await cohereGateSuggest({
-            supabase,
-            tenantId,
-            sector: cohereSector,
-            question: userMessage
-          })
-
-// Conservative deterministic thresholds (can be tuned later).
-          const AUTO_THRESHOLD = 0.45
-          const CLARIFY_THRESHOLD = 0.20
-          const MARGIN_THRESHOLD = 0.10
-
-const candidates = Array.isArray(gate?.candidates) ? gate.candidates : []
-          const top1 = candidates[0] || null
-          const top2 = candidates[1] || null
-          const top1Score = typeof top1?.score === 'number' ? top1.score : 0
-          const top2Score = typeof top2?.score === 'number' ? top2.score : 0
-          const margin = top1Score - top2Score
-
-const topText = (top1?.robot_text || top1?.answer_text || '').trim()
-
-if (topText && top1Score >= AUTO_THRESHOLD && margin >= MARGIN_THRESHOLD) {
-            // Auto-reply without GPT call.
-            const reply = topText
-
-### 23. scripts/smoke-thought-hub.mjs (fda12dae045c82c70b323d3a2b43d4dac1643ca5b2b0899d69ff90750b1fa3a1)
-- bm25: -6.5791 | entity_overlap_w: 2.00 | adjusted: -7.0791 | relevance: 1.0000
-
-// ThoughtHub smoke test
-//
-// Usage:
-//   THOUGHTHUB_TOKEN="<supabase access token>" node scripts/smoke-thought-hub.mjs
-// Optional:
-//   THOUGHTHUB_BASE_URL="http://localhost:3001" (default)
-//   THOUGHTHUB_SUBJECT_KEY="facilitator" (default)
-//
-// Notes:
-// - This validates the HTTP surface. It does not validate cookie-based ownership for /api/mentor-session.
-
-const baseUrl = (process.env.THOUGHTHUB_BASE_URL || 'http://localhost:3001').replace(/\/+$/, '')
-const token = (process.env.THOUGHTHUB_TOKEN || '').trim()
-const subjectKey = (process.env.THOUGHTHUB_SUBJECT_KEY || 'facilitator').trim()
-
-if (!token) {
-  console.error('Missing THOUGHTHUB_TOKEN env var (Supabase access token).')
-  process.exit(2)
-}
-
-async function httpJson(url, init = {}) {
-  const res = await fetch(url, init)
-  const text = await res.text()
-  let json = null
-  try {
-    json = text ? JSON.parse(text) : null
-  } catch {
-    json = { _nonJson: text }
-  }
-  return { res, json }
-}
-
-async function main() {
-  const headers = { Authorization: `Bearer ${token}` }
-
-// 1) ThoughtHub chronograph
-  {
-    const url = `${baseUrl}/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`
-    const { res, json } = await httpJson(url, { headers, cache: 'no-store' })
-    console.log('GET /api/thought-hub-chronograph:', res.status)
-    if (!res.ok) {
-      console.log(json)
-      process.exit(1)
-    }
-    console.log('  history_len:', Array.isArray(json?.history) ? json.history.length : null)
-    console.log('  has_pack:', !!json?.pack)
-  }
-
-### 24. sidekick_pack.md (5c970bea367b5224c2ab71851b325c52f55e5f37f17e22b8e1c51fff70313111)
-- bm25: -6.7769 | entity_overlap_w: 1.00 | adjusted: -7.0269 | relevance: 1.0000
-
-// ThoughtHub smoke test
-//
-// Usage:
-//   THOUGHTHUB_TOKEN="<supabase access token>" node scripts/smoke-thought-hub.mjs
-// Optional:
-//   THOUGHTHUB_BASE_URL="http://localhost:3001" (default)
-//   THOUGHTHUB_SUBJECT_KEY="facilitator" (default)
-//
-// Notes:
-// - This validates the HTTP surface. It does not validate cookie-based ownership for /api/mentor-session.
-
-### 25. src/app/facilitator/generator/counselor/MentorInterceptor.js (ddb1d75d287dae3996a8bc52fe060e61d5d1fab1795e241d90d7c3ab3aeee7d2)
-- bm25: -6.7649 | relevance: 1.0000
-
-case 'assign':
-        return await this.handleAssign(userMessage, context)
-      
-      case 'edit':
-        return await this.handleEdit(userMessage, context)
-      
-      case 'recall':
-        return await this.handleRecall(userMessage, context)
-      
-      case 'faq':
-        return await this.handleFaq(userMessage, context)
-
-case 'lesson_plan':
-        return await this.handleLessonPlan(userMessage, context)
-      
-      default:
-        return {
-          handled: false,
-          apiForward: { message: userMessage }
-        }
-    }
-  }
-
-parseListFromText(text) {
-    if (!text) return []
-    const raw = String(text)
-      .split(/[\n;,]+/g)
-      .flatMap((s) => s.split(','))
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((s) => s.replace(/^and\s+/i, '').trim())
-      .filter(Boolean)
-
-// de-dupe while preserving order
-    const seen = new Set()
-    const out = []
-    for (const item of raw) {
-      const key = item.toLowerCase()
-      if (seen.has(key)) continue
-      seen.add(key)
-      out.push(item)
-    }
-    return out
-  }
-
-isEscapeMessage(userMessage) {
-    const normalized = normalizeText(userMessage)
-    return (
-      normalized.includes('cancel') ||
-      normalized.includes('stop') ||
-      normalized.includes('nevermind') ||
-      normalized.includes('never mind') ||
-      normalized.includes('different issue') ||
-      normalized.includes('something else')
-    )
-  }
-
-async handleLessonPlan(userMessage, context) {
-    const { selectedLearnerId, learnerName } = context
-    const normalized = normalizeText(userMessage)
-
-### 26. src/lib/mentor/featureRegistry.js (2ffafc0a8bade3ff655d67a0e05232f46fbf1b10543e9fb1e1f3e81e3204a9b1)
-- bm25: -6.4393 | entity_overlap_w: 1.30 | adjusted: -6.7643 | relevance: 1.0000
-
-export function getAllMentorFeatures() {
-  const faq = getAllFaqFeatures()
-  const reportable = getReportableFeatures()
-
-// Prefer reportable definitions when an FAQ feature uses the same id.
-  const byId = new Map()
-  for (const feature of faq) {
-    if (!feature?.id) continue
-    byId.set(feature.id, feature)
-  }
-  for (const feature of reportable) {
-    if (!feature?.id) continue
-    byId.set(feature.id, feature)
-  }
-
-return Array.from(byId.values())
-}
-
-export function getMentorFeatureById(featureId) {
-  const id = String(featureId || '').trim()
-  if (!id) return null
-
-const features = getAllMentorFeatures()
-  return features.find((f) => f?.id === id) || null
-}
-
-export function searchMentorFeatures(userInput) {
-  const features = getAllMentorFeatures()
-  const matches = []
-
-for (const feature of features) {
-    const { score, matchedKeywords } = scoreFeatureMatch(userInput, feature)
-    if (score <= 0) continue
-
-matches.push({ feature, score, matchedKeywords })
-  }
-
-matches.sort((a, b) => b.score - a.score)
-  return matches
-}
-
-export function shouldTreatAsReportQuery(userInput, context) {
-  const normalized = normalizeText(userInput)
-  const learnerName = context?.learnerName ? normalizeText(context.learnerName) : ''
-
-return (
-    /\bmy\b/.test(normalized) ||
-    normalized.includes('current') ||
-    normalized.includes('right now') ||
-    normalized.includes('show me') ||
-    normalized.includes('list') ||
-    normalized.includes('what are my') ||
-    (learnerName && normalized.includes(learnerName))
-  )
-}
-
-### 27. sidekick_pack.md (d346b52817a510fe327cf0753535fa2b653b6922ec1550b3d60d528159062bab)
-- bm25: -5.5083 | entity_overlap_w: 5.00 | adjusted: -6.7583 | relevance: 1.0000
-
-console.log('ThoughtHub smoke OK')
-}
-
-main().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
-
-### 29. sidekick_pack.md (2993a3c983281b6bd8f70ed9f4c8d6aa61d254f14af7ce89421c7a81f070d609)
-- bm25: -5.5315 | entity_overlap_w: 4.00 | adjusted: -6.5315 | relevance: 1.0000
-
-### 3. scripts/backfill-thought-hub-from-mentor-conversation-threads.sql (ba6a9f7d8cb6a57e0fe76b16a00901274c1f3716fadec03d2b5f6b8fe15d1e64)
-- bm25: -10.6890 | entity_overlap_w: 4.00 | adjusted: -11.6890 | relevance: 1.0000
-
--- ThoughtHub one-time backfill
---
--- Migrates legacy Mr. Mentor history stored in public.mentor_conversation_threads.conversation_history
--- into ThoughtHub (public.events) as append-only events, then clears the legacy JSON once ingestion
--- is verified.
---
--- Prereqs (run first):
--- - scripts/add-cohere-style-chronograph.sql
--- - scripts/add-cohere-style-rls-and-rpcs.sql
--- - scripts/add-thought-hub-dedupe-key.sql (or equivalent dedupe_key + unique index)
---
--- Notes:
--- - Creates a tenant + owner membership for any facilitator lacking one.
--- - Creates ThoughtHub threads at sector='both' for each (facilitator_id, subject_key).
--- - Inserts events with a stable per-message timestamp order.
--- - Uses dedupe_key = legacy:<subject_key>:<index> so reruns are safe.
-
-begin;
-
--- 1) Ensure every facilitator in mentor_conversation_threads has a ThoughtHub tenant + membership.
-do $$
-declare
-  u record;
-  tid uuid;
-begin
-  for u in (
-    select distinct facilitator_id as user_id
-    from public.mentor_conversation_threads
-    where facilitator_id is not null
-  ) loop
-    select m.tenant_id into tid
-    from public.tenant_memberships m
-    where m.user_id = u.user_id
-    order by m.created_at asc
-    limit 1;
-
-### 28. sidekick_pack.md (188f61df40141975853654d862d1870579a45d02b34d8ca08172e9d71f9ee252)
-- bm25: -6.7257 | relevance: 1.0000
-
-const baseUrl = (process.env.THOUGHTHUB_BASE_URL || 'http://localhost:3001').replace(/\/+$/, '')
-const token = (process.env.THOUGHTHUB_TOKEN || '').trim()
-const subjectKey = (process.env.THOUGHTHUB_SUBJECT_KEY || 'facilitator').trim()
-
-### 29. sidekick_pack.md (6c8582d48389e0bcfed1a2706a7ea264034d8c1802ec999c8e46989c8a3d31b0)
-- bm25: -6.7257 | relevance: 1.0000
-
-const baseUrl = (process.env.THOUGHTHUB_BASE_URL || 'http://localhost:3001').replace(/\/+$/, '')
-const token = (process.env.THOUGHTHUB_TOKEN || '').trim()
-const subjectKey = (process.env.THOUGHTHUB_SUBJECT_KEY || 'facilitator').trim()
-
-### 30. src/app/facilitator/generator/counselor/MentorInterceptor.js (feb293664ac259a8d36174396915de0bfb2de690457245473abf8e988ec409a0)
-- bm25: -6.3020 | entity_overlap_w: 1.00 | adjusted: -6.5520 | relevance: 1.0000
-
-export default MentorInterceptor
-
-### 31. sidekick_pack.md (aebb21e37fcbc484100342f527fc64c7dbeb020cc5820caed83abfcdd01ad28d)
-- bm25: -6.0047 | entity_overlap_w: 2.00 | adjusted: -6.5047 | relevance: 1.0000
-
-if (!token) {
-  console.error('Missing THOUGHTHUB_TOKEN env var (Supabase access token).')
-  process.exit(2)
-}
-
-async function httpJson(url, init = {}) {
-  const res = await fetch(url, init)
-  const text = await res.text()
-  let json = null
-  try {
-    json = text ? JSON.parse(text) : null
-  } catch {
-    json = { _nonJson: text }
-  }
-  return { res, json }
-}
-
-async function main() {
-  const headers = { Authorization: `Bearer ${token}` }
-
-// 1) ThoughtHub chronograph
-  {
-    const url = `${baseUrl}/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`
-    const { res, json } = await httpJson(url, { headers, cache: 'no-store' })
-    console.log('GET /api/thought-hub-chronograph:', res.status)
-    if (!res.ok) {
-      console.log(json)
-      process.exit(1)
-    }
-    console.log('  history_len:', Array.isArray(json?.history) ? json.history.length : null)
-    console.log('  has_pack:', !!json?.pack)
-  }
-
-### 14. sidekick_pack.md (2fc33f3c2b19e779d2b44a498e2aea5c391e1a6cd15b59cde254eeb1702fb209)
-- bm25: -8.2527 | entity_overlap_w: 1.00 | adjusted: -8.5027 | relevance: 1.0000
-
-// ThoughtHub smoke test
-//
-// Usage:
-//   THOUGHTHUB_TOKEN="<supabase access token>" node scripts/smoke-thought-hub.mjs
-// Optional:
-//   THOUGHTHUB_BASE_URL="http://localhost:3001" (default)
-//   THOUGHTHUB_SUBJECT_KEY="facilitator" (default)
-//
-// Notes:
-// - This validates the HTTP surface. It does not validate cookie-based ownership for /api/mentor-session.
-
-### 15. sidekick_pack.md (641e09f31b7b68a4390eacc6e8149773080f9f0ca7eb126a7029c329edb1f514)
-- bm25: -7.9597 | entity_overlap_w: 2.00 | adjusted: -8.4597 | relevance: 1.0000
-
-### 32. sidekick_pack.md (2d0a753d731a447d6c1786f49ad3a3e1151865c8c175cd95fe56f49264ee0331)
-- bm25: -5.8241 | entity_overlap_w: 2.00 | adjusted: -6.3241 | relevance: 1.0000
-
-// ThoughtHub backfill bridge:
-    // If legacy conversation history exists (mentor_conversation_threads via /api/mentor-session),
-    // ingest it into ThoughtHub events and then clear the legacy JSON.
-    if (ingestFallback && authHeader) {
-      try {
-        const origin = new URL(req.url).origin
-        const legacyUrl = new URL('/api/mentor-session', origin)
-        legacyUrl.searchParams.set('subjectKey', subjectKey)
-
-### 33. src/app/api/mentor-chronograph/route.js (2aae66fb6c5c96365d1358746cde2447d95400953c9d0214a4fded4a5b1d62ea)
-- bm25: -5.7562 | entity_overlap_w: 2.00 | adjusted: -6.2562 | relevance: 1.0000
-
-// ThoughtHub backfill bridge:
-    // If legacy conversation history exists (mentor_conversation_threads via /api/mentor-session),
-    // ingest it into ThoughtHub events and then clear the legacy JSON.
-    if (ingestFallback && authHeader) {
-      try {
-        const origin = new URL(req.url).origin
-        const legacyUrl = new URL('/api/mentor-session', origin)
-        legacyUrl.searchParams.set('subjectKey', subjectKey)
-
-### 34. sidekick_pack.md (918fc11c19f5300c7b82e4e1d49eacb39a7cf92c712691ee95b7295b755e9da3)
-- bm25: -5.2112 | entity_overlap_w: 4.00 | adjusted: -6.2112 | relevance: 1.0000
-
-// 3) Confirm the message made it into the chronograph
-  {
-    const url = `${baseUrl}/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`
-    const { res, json } = await httpJson(url, { headers, cache: 'no-store' })
-    console.log('GET /api/thought-hub-chronograph (after):', res.status)
-    if (!res.ok) {
-      console.log(json)
-      process.exit(1)
-    }
-    const last = Array.isArray(json?.history) ? json.history[json.history.length - 1] : null
-    console.log('  last_role:', last?.role)
-    console.log('  last_has_content:', typeof last?.content === 'string' && last.content.length > 0)
-  }
-
-console.log('ThoughtHub smoke OK')
-}
-
-### 25. scripts/backfill-thought-hub-from-mentor-conversation-threads.sql (ba6a9f7d8cb6a57e0fe76b16a00901274c1f3716fadec03d2b5f6b8fe15d1e64)
-- bm25: -5.6702 | entity_overlap_w: 4.00 | adjusted: -6.6702 | relevance: 1.0000
-
--- ThoughtHub one-time backfill
---
--- Migrates legacy Mr. Mentor history stored in public.mentor_conversation_threads.conversation_history
--- into ThoughtHub (public.events) as append-only events, then clears the legacy JSON once ingestion
--- is verified.
---
--- Prereqs (run first):
--- - scripts/add-cohere-style-chronograph.sql
--- - scripts/add-cohere-style-rls-and-rpcs.sql
--- - scripts/add-thought-hub-dedupe-key.sql (or equivalent dedupe_key + unique index)
---
--- Notes:
--- - Creates a tenant + owner membership for any facilitator lacking one.
--- - Creates ThoughtHub threads at sector='both' for each (facilitator_id, subject_key).
--- - Inserts events with a stable per-message timestamp order.
--- - Uses dedupe_key = legacy:<subject_key>:<index> so reruns are safe.
-
-begin;
-
-### 35. scripts/backfill-thought-hub-from-mentor-conversation-threads.sql (ba6a9f7d8cb6a57e0fe76b16a00901274c1f3716fadec03d2b5f6b8fe15d1e64)
-- bm25: -5.2112 | entity_overlap_w: 4.00 | adjusted: -6.2112 | relevance: 1.0000
-
--- ThoughtHub one-time backfill
---
--- Migrates legacy Mr. Mentor history stored in public.mentor_conversation_threads.conversation_history
--- into ThoughtHub (public.events) as append-only events, then clears the legacy JSON once ingestion
--- is verified.
---
--- Prereqs (run first):
--- - scripts/add-cohere-style-chronograph.sql
--- - scripts/add-cohere-style-rls-and-rpcs.sql
--- - scripts/add-thought-hub-dedupe-key.sql (or equivalent dedupe_key + unique index)
---
--- Notes:
--- - Creates a tenant + owner membership for any facilitator lacking one.
--- - Creates ThoughtHub threads at sector='both' for each (facilitator_id, subject_key).
--- - Inserts events with a stable per-message timestamp order.
--- - Uses dedupe_key = legacy:<subject_key>:<index> so reruns are safe.
-
-begin;
-
--- 1) Ensure every facilitator in mentor_conversation_threads has a ThoughtHub tenant + membership.
-do $$
-declare
-  u record;
-  tid uuid;
-begin
-  for u in (
-    select distinct facilitator_id as user_id
-    from public.mentor_conversation_threads
-    where facilitator_id is not null
-  ) loop
-    select m.tenant_id into tid
-    from public.tenant_memberships m
-    where m.user_id = u.user_id
-    order by m.created_at asc
-    limit 1;
-
-if tid is null then
-      insert into public.tenants (name)
-      values ('Household')
-      returning tenant_id into tid;
-
-insert into public.tenant_memberships (tenant_id, user_id, role)
-      values (tid, u.user_id, 'owner');
-    end if;
-  end loop;
-end $$;
-
-### 36. scripts/smoke-thought-hub.mjs (807156cb364b56d9a5cf1b5c2b08e4f395768f2a8bdf6fd6c588113ee62a1c20)
-- bm25: -5.6898 | entity_overlap_w: 2.00 | adjusted: -6.1898 | relevance: 1.0000
-
-// 2) ThoughtHub-enabled counselor POST
-  {
-    const message = `ThoughtHub smoke ping @ ${new Date().toISOString()}`
-    const url = `${baseUrl}/api/counselor`
-    const { res, json } = await httpJson(url, {
-      method: 'POST',
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message,
-        history: [],
-        use_thought_hub: true,
-        thought_hub_mode: 'minimal',
-        subject_key: subjectKey,
-        require_generation_confirmation: false,
-        generation_confirmed: true,
-        disableTools: []
-      })
-    })
-
-### 37. sidekick_pack.md (680381e0ec227bdd892271915b0d2b25161b5ba7187209199710deec88a5e349)
-- bm25: -5.0706 | entity_overlap_w: 4.00 | adjusted: -6.0706 | relevance: 1.0000
-
-insert into public.tenant_memberships (tenant_id, user_id, role)
-      values (tid, u.user_id, 'owner');
-    end if;
-  end loop;
-end $$;
-
-### 30. sidekick_pack.md (cd018f77fda16a1b15393d794560e812933b9c66f1f054d18722c1f89cfecff5)
-- bm25: -5.5315 | entity_overlap_w: 4.00 | adjusted: -6.5315 | relevance: 1.0000
-
-### 14. scripts/backfill-thought-hub-from-mentor-conversation-threads.sql (ba6a9f7d8cb6a57e0fe76b16a00901274c1f3716fadec03d2b5f6b8fe15d1e64)
-- bm25: -6.0177 | entity_overlap_w: 4.00 | adjusted: -7.0177 | relevance: 1.0000
-
--- ThoughtHub one-time backfill
---
--- Migrates legacy Mr. Mentor history stored in public.mentor_conversation_threads.conversation_history
--- into ThoughtHub (public.events) as append-only events, then clears the legacy JSON once ingestion
--- is verified.
---
--- Prereqs (run first):
--- - scripts/add-cohere-style-chronograph.sql
--- - scripts/add-cohere-style-rls-and-rpcs.sql
--- - scripts/add-thought-hub-dedupe-key.sql (or equivalent dedupe_key + unique index)
---
--- Notes:
--- - Creates a tenant + owner membership for any facilitator lacking one.
--- - Creates ThoughtHub threads at sector='both' for each (facilitator_id, subject_key).
--- - Inserts events with a stable per-message timestamp order.
--- - Uses dedupe_key = legacy:<subject_key>:<index> so reruns are safe.
-
-begin;
-
--- 1) Ensure every facilitator in mentor_conversation_threads has a ThoughtHub tenant + membership.
-do $$
-declare
-  u record;
-  tid uuid;
-begin
-  for u in (
-    select distinct facilitator_id as user_id
-    from public.mentor_conversation_threads
-    where facilitator_id is not null
-  ) loop
-    select m.tenant_id into tid
-    from public.tenant_memberships m
-    where m.user_id = u.user_id
-    order by m.created_at asc
-    limit 1;
-
-### 38. sidekick_pack.md (274394da52d2244ccf24f731f86edbe887de167e82e52601f1f33a950f725d54)
-- bm25: -5.8202 | entity_overlap_w: 1.00 | adjusted: -6.0702 | relevance: 1.0000
-
-const baseUrl = (process.env.THOUGHTHUB_BASE_URL || 'http://localhost:3001').replace(/\/+$/, '')
-const token = (process.env.THOUGHTHUB_TOKEN || '').trim()
-const subjectKey = (process.env.THOUGHTHUB_SUBJECT_KEY || 'facilitator').trim()
-
-if (!token) {
-  console.error('Missing THOUGHTHUB_TOKEN env var (Supabase access token).')
-  process.exit(2)
-}
-
-async function httpJson(url, init = {}) {
-  const res = await fetch(url, init)
-  const text = await res.text()
-  let json = null
-  try {
-    json = text ? JSON.parse(text) : null
-  } catch {
-    json = { _nonJson: text }
-  }
-  return { res, json }
-}
-
-async function main() {
-  const headers = { Authorization: `Bearer ${token}` }
-
-// 1) ThoughtHub chronograph
-  {
-    const url = `${baseUrl}/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`
-    const { res, json } = await httpJson(url, { headers, cache: 'no-store' })
-    console.log('GET /api/thought-hub-chronograph:', res.status)
-    if (!res.ok) {
-      console.log(json)
-      process.exit(1)
-    }
-    console.log('  history_len:', Array.isArray(json?.history) ? json.history.length : null)
-    console.log('  has_pack:', !!json?.pack)
-  }
-
-### 8. sidekick_pack.md (0614b1ac77bdefb112d207537d2be76ce62b4494fd3b2981620f1a98e7c3b382)
-- bm25: -7.4821 | entity_overlap_w: 2.00 | adjusted: -7.9821 | relevance: 1.0000
-
-### 16. src/app/api/mentor-chronograph/route.js (2aae66fb6c5c96365d1358746cde2447d95400953c9d0214a4fded4a5b1d62ea)
-- bm25: -7.4468 | entity_overlap_w: 2.00 | adjusted: -7.9468 | relevance: 1.0000
-
-### 39. sidekick_pack.md (2eb2784742c3ce929f72c52c66d9edfbde16f20da5e77c9733a6f9ee29ef2212)
-- bm25: -5.7180 | entity_overlap_w: 1.00 | adjusted: -5.9680 | relevance: 1.0000
-
-Topic: Feature registry (describe+report) + ThoughtHub blindspot hook
-
-### 40. sidekick_pack.md (f9acc3ceb40b6aae8724cf911a3dbd4ba05d286941de06ac8a2727ba554ba25b)
-- bm25: -5.5638 | entity_overlap_w: 1.00 | adjusted: -5.8138 | relevance: 1.0000
-
-if (candidates.length > 0 && top1Score >= CLARIFY_THRESHOLD && margin < MARGIN_THRESHOLD) {
-            const labels = candidates.slice(0, 3).map(c => c?.label).filter(Boolean)
-            const clarify = labels.length > 0
-              ? `Before I answer, which of these are you asking about: ${labels.join(' / ')}?`
-              : `Before I answer, can you clarify what you mean?`
-
-await cohereAppendEvent({
-              supabase,
-              tenantId,
-              threadId,
-              role: 'assistant',
-              text: clarify,
-              meta: { clarify: true, call_id: callId }
-            })
-
-const audio = await synthesizeAudio(clarify, logPrefix).catch(() => null)
-            return NextResponse.json({ reply: clarify, audio, gate: { action: 'clarify', candidates }, cohere: cohereMeta })
-          }
-        }
-
-// Build deterministic pack for GPT context.
-        const pack = await cohereBuildPack({
-          supabase,
-          tenantId: cohereMeta.tenantId,
-          threadId: cohereMeta.threadId,
-          sector: cohereSector,
-          question: userMessage,
-          mode: cohereMode
+console.log('[Realtime] Session update detected:', { 
+          updatedSessionId: updatedSession.session_id, 
+          mySessionId,
+          isActive: updatedSession.is_active,
+          wasActive: oldSession.is_active,
+          facilitatorId: updatedSession.facilitator_id,
+          deviceName: updatedSession.device_name
         })
-
-### 13. scripts/smoke-thought-hub.mjs (fda12dae045c82c70b323d3a2b43d4dac1643ca5b2b0899d69ff90750b1fa3a1)
-- bm25: -8.0737 | entity_overlap_w: 2.00 | adjusted: -8.5737 | relevance: 1.0000
-
-// ThoughtHub smoke test
-//
-// Usage:
-//   THOUGHTHUB_TOKEN="<supabase access token>" node scripts/smoke-thought-hub.mjs
-// Optional:
-//   THOUGHTHUB_BASE_URL="http://localhost:3001" (default)
-//   THOUGHTHUB_SUBJECT_KEY="facilitator" (default)
-//
-// Notes:
-// - This validates the HTTP surface. It does not validate cookie-based ownership for /api/mentor-session.

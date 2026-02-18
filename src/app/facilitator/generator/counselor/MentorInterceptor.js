@@ -2024,13 +2024,17 @@ export class MentorInterceptor {
           }
         }
 
+        const targetLabel = feature.report.requiresLearner
+          ? ` for ${context?.learnerName || 'this learner'}`
+          : ''
+
         return {
           handled: true,
           action: {
             type: feature.report.actionType,
             learnerId: context?.selectedLearnerId || null
           },
-          response: `Checking ${feature.title.toLowerCase()} for ${context?.learnerName || 'this learner'}...`
+          response: `Checking ${feature.title.toLowerCase()}${targetLabel}...`
         }
       }
 
