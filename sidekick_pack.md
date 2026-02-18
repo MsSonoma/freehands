@@ -6,15 +6,14 @@ Mode: standard
 
 Prompt (original):
 ```text
-Bug: Refreshing during work portion resumes play timer at 0:00; should resume work timer. Trace V2 timer restore path, SnapshotService, TimerService.restoreState, currentTimerMode initialization, sessionStorage timer keys session_timer_state:*; identify overwrite.
+Video loop first attempt plays ~0.5s then stops after landing/refresh; second attempt works. Find videoRef.current play/pause logic and how it syncs with TTS audio (AudioContext permissions, autoplay).
 ```
 
 Filter terms used:
 ```text
-TimerService.restoreState
-session_timer_state
-SnapshotService
-TimerService
+TTS
+videoRef.current
+AudioContext
 ```
 # Context Pack
 
@@ -28,7 +27,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-TimerService.restoreState session_timer_state SnapshotService TimerService
+TTS videoRef.current AudioContext
 
 ## Forced Context
 
@@ -36,1710 +35,1691 @@ TimerService.restoreState session_timer_state SnapshotService TimerService
 
 ## Ranked Evidence
 
-### 1. sidekick_pack.md (1acbfb95b03f45d82fb055d262841ca9e8d970d8894c71e130acec69c2a30df9)
-- bm25: -18.1245 | entity_overlap_w: 4.00 | adjusted: -19.1245 | relevance: 1.0000
+### 1. src/app/session/page.js (69753b375f4d2cb4fc49cc16d8e27b4821c2bc10af77bfe4da4993eada08aab9)
+- bm25: -14.5147 | entity_overlap_w: 3.70 | adjusted: -15.4397 | relevance: 1.0000
 
-import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import jsPDF from 'jspdf';
-import { createBrowserClient } from '@supabase/ssr';
-import { getSupabaseClient } from '@/app/lib/supabaseClient';
-import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi';
-import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus';
-import { loadPhaseTimersForLearner } from '../utils/phaseTimerDefaults';
-import SessionTimer from '../components/SessionTimer';
-import { AudioEngine } from './AudioEngine';
-import { TeachingController } from './TeachingController';
-import { ComprehensionPhase } from './ComprehensionPhase';
-import { ExercisePhase } from './ExercisePhase';
-import { WorksheetPhase } from './WorksheetPhase';
-import { TestPhase } from './TestPhase';
-import { ClosingPhase } from './ClosingPhase';
-import { DiscussionPhase } from './DiscussionPhase';
-import { PhaseOrchestrator } from './PhaseOrchestrator';
-import { SnapshotService } from './SnapshotService';
-import { TimerService } from './TimerService';
-import { KeyboardService } from './KeyboardService';
-import { OpeningActionsController } from './OpeningActionsController';
-import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
-import FullscreenPlayTimerOverlay from './FullscreenPlayTimerOverlay';
-import TimerControlOverlay from '../components/TimerControlOverlay';
-import GamesOverlay from '../components/games/GamesOverlay';
-import EventBus from './EventBus';
-import { loadLesson, fetchTTS } from './services';
-import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech, ensureQuestionMark } from '../utils/questionFormatting';
-import { getSnapshotStorageKey } from '../utils
-
-### 2. src/app/session/v2/SessionPageV2.jsx (b4571a43828d791b7d7ec7f305119d4beb102d5b0dcbd0fcdae772a9558fa324)
-- bm25: -18.0000 | entity_overlap_w: 4.00 | adjusted: -19.0000 | relevance: 1.0000
-
-import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import jsPDF from 'jspdf';
-import { createBrowserClient } from '@supabase/ssr';
-import { getSupabaseClient } from '@/app/lib/supabaseClient';
-import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi';
-import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus';
-import { loadPhaseTimersForLearner } from '../utils/phaseTimerDefaults';
-import SessionTimer from '../components/SessionTimer';
-import { AudioEngine } from './AudioEngine';
-import { TeachingController } from './TeachingController';
-import { ComprehensionPhase } from './ComprehensionPhase';
-import { ExercisePhase } from './ExercisePhase';
-import { WorksheetPhase } from './WorksheetPhase';
-import { TestPhase } from './TestPhase';
-import { ClosingPhase } from './ClosingPhase';
-import { DiscussionPhase } from './DiscussionPhase';
-import { PhaseOrchestrator } from './PhaseOrchestrator';
-import { SnapshotService } from './SnapshotService';
-import { TimerService } from './TimerService';
-import { KeyboardService } from './KeyboardService';
-import { OpeningActionsController } from './OpeningActionsController';
-import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
-import FullscreenPlayTimerOverlay from './FullscreenPlayTimerOverlay';
-import TimerControlOverlay from '../components/TimerControlOverlay';
-import GamesOverlay from '../components/games/GamesOverlay';
-import EventBus from './EventBus';
-import { loadLesson, fetchTTS } from './services';
-import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech, ensureQuestionMark } from '../utils/questionFormatting';
-import { getSnapshotStorageKey } from '../utils
-
-### 3. src/app/session/v2/TimerService.jsx (08ebf227d7a302865d2cf4c2db9b5cbdea54ab05b1d4c0b392bfc17aa9d843b8)
-- bm25: -17.2750 | entity_overlap_w: 2.00 | adjusted: -17.7750 | relevance: 1.0000
-
-#timerOverlayKeyPrefix() {
-    if (!this.lessonKey) return null;
-    return `session_timer_state:${this.lessonKey}:`;
-  }
-
-#removeTimerOverlayKey(phase, mode) {
-    if (typeof window === 'undefined') return;
-    if (!this.lessonKey || !phase || !mode) return;
-    const key = `session_timer_state:${this.lessonKey}:${phase}:${mode}`;
-    try { sessionStorage.removeItem(key); } catch {}
-  }
-
-#removeTimerOverlayKeysForPhase(phase) {
-    this.#removeTimerOverlayKey(phase, 'play');
-    this.#removeTimerOverlayKey(phase, 'work');
-  }
-
-#clearAllTimerOverlayKeysForLesson() {
-    if (typeof window === 'undefined') return;
-    const prefix = this.#timerOverlayKeyPrefix();
-    if (!prefix) return;
-
-### 4. src/app/session/v2/SessionPageV2.jsx (7509c74f103b8009803fa80c5e520a1927ec9bb6f4967b176918800709b4946b)
-- bm25: -17.1155 | entity_overlap_w: 2.00 | adjusted: -17.6155 | relevance: 1.0000
-
-const timer = new TimerService(eventBus, {
-      lessonKey,
-      playTimerLimits,
-      workPhaseTimeLimits,
-      goldenKeysEnabled: goldenKeysEnabledRef.current
-    });
-
-timerServiceRef.current = timer;
-
-// Apply any snapshot-restored timer state once timer exists
-    if (pendingTimerStateRef.current) {
-      try { timer.restoreState(pendingTimerStateRef.current); } catch {}
-      pendingTimerStateRef.current = null;
+const startDiscussionStep = async () => {
+    // CRITICAL: Unlock audio during user gesture (Begin click) - required for Chrome
+    try {
+      await unlockAudioPlaybackWrapped();
+    } catch (e) {
+      // Silent error handling
     }
-
-return () => {
-      try { unsubWorkTick?.(); } catch {}
-      try { unsubWorkComplete?.(); } catch {}
-      try { unsubGoldenKey?.(); } catch {}
-      try { unsubPlayExpired?.(); } catch {}
-      try { unsubPlayTick?.(); } catch {}
-      try { unsubWorkTick2?.(); } catch {}
-      try { unsubPlayStart?.(); } catch {}
-      try { unsubWorkStart?.(); } catch {}
-      timer.destroy();
-      timerServiceRef.current = null;
-    };
-  }, [lessonKey, phaseTimers]);
-
-// Update play timer limits when bonus/enabled state changes (do not recreate TimerService).
-  useEffect(() => {
-    if (!timerServiceRef.current || !phaseTimers) return;
-
-const playBonusSec = goldenKeysEnabledRef.current
-      ? Math.max(0, Number(goldenKeyBonusRef.current || 0)) * 60
-      : 0;
-    const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
-
-### 5. src/app/session/v2/TimerService.jsx (33da9448db6921a56abe4f886efd649d4a1628fbc40aaab6a94b431355a9efa9)
-- bm25: -17.2624 | entity_overlap_w: 1.00 | adjusted: -17.5124 | relevance: 1.0000
-
-// Keep the overlay/sessionStorage totalMinutes aligned.
-        if (this.lessonKey) {
-          const storageKey = `session_timer_state:${this.lessonKey}:${phase}:play`;
-          try {
-            sessionStorage.setItem(storageKey, JSON.stringify({
-              elapsedSeconds: timer.elapsed,
-              startTime: timer.startTime,
-              totalMinutes: Math.ceil(timer.timeLimit / 60),
-              pausedAt: null
-            }));
-          } catch {}
+    
+    // Ensure we are not starting in a muted state
+    try { setMuted(false); } catch {}
+    try { mutedRef.current = false; } catch {}
+    try { forceNextPlaybackRef.current = true; } catch {}
+    
+    // CRITICAL for Chrome: Preload video during user gesture but don't play yet
+    // The video will start when TTS actually begins playing
+    try {
+      if (videoRef.current) {
+        if (videoRef.current.readyState < 2) {
+          videoRef.current.load();
+          // Wait a moment for load to register
+          await new Promise(r => setTimeout(r, 100));
+        }
+        // Just seek to first frame to unlock autoplay, but don't start playing yet
+        try {
+          videoRef.current.currentTime = 0;
+        } catch (e) {
+          // Fallback: briefly play then pause to unlock autoplay
+          const playPromise = videoRef.current.play();
+          if (playPromise && playPromise.then) {
+            await playPromise.then(() => {
+              try { videoRef.current.pause(); } catch {}
+            });
+          }
         }
       }
-    } catch {}
-  }
+    } catch (e) {
+      // Silent error handling
+    }
+    
+  // Unified discussion is now generated locally: Greeting + Encouragement + next-step prompt (no joke/silly question)
+    setCanSend(false);
+    // Compose the opening text using local pools (no API/TTS for this step)
+    const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
+    const lessonTitleExact = (effectiveLessonTitle && typeof effectiveLessonTitle === 'string' && effectiveLes
 
-### 6. src/app/session/v2/TimerService.jsx (5e33b92ca4198dfabfeeb87611e8ec41d32fdb0d050cfda4c6055d1343d6aea7)
-- bm25: -17.2624 | entity_overlap_w: 1.00 | adjusted: -17.5124 | relevance: 1.0000
+### 2. src/app/facilitator/generator/counselor/CounselorClient.jsx (de21c11e882e7f1248c295cc627f3d36724db7c0cfab4b802af2b65e83bf0946)
+- bm25: -10.5725 | entity_overlap_w: 3.30 | adjusted: -11.3975 | relevance: 1.0000
 
-// Mirror to sessionStorage for SessionTimer/overlay display.
-      if (this.lessonKey) {
-        const storageKey = `session_timer_state:${this.lessonKey}:${phase}:play`;
+// Save audio for repeat functionality
+      lastAudioRef.current = base64Audio
+
+const audio = new Audio(`data:audio/mp3;base64,${base64Audio}`)
+      audio.muted = muted
+      audio.volume = muted ? 0 : 1
+      audioRef.current = audio
+
+audio.onended = () => {
+        setIsSpeaking(false)
+        if (videoRef.current) {
+          videoRef.current.pause()
+        }
+        if (buttonVideoRef.current) {
+          buttonVideoRef.current.pause()
+        }
+        audioRef.current = null
+      }
+
+audio.onerror = () => {
+        setIsSpeaking(false)
+        audioRef.current = null
+      }
+
+setIsSpeaking(true)
+      await audio.play()
+      
+      // Start video if available
+      if (videoRef.current) {
         try {
-          sessionStorage.setItem(storageKey, JSON.stringify({
-            elapsedSeconds: timer.elapsed,
-            startTime: timer.startTime,
-            totalMinutes: Math.ceil(timer.timeLimit / 60),
-            pausedAt: null
-          }));
+          videoRef.current.play().catch(() => {})
         } catch {}
       }
+      
+      // Start button video if available
+      if (buttonVideoRef.current) {
+        try {
+          buttonVideoRef.current.play().catch(() => {})
+        } catch {}
+      }
+    } catch (err) {
+      // Silent error handling
+      setIsSpeaking(false)
+    }
+  }, [muted])
 
-### 7. src/app/session/v2/TimerService.jsx (c317ca8081f1a40e57179ce3dcae6a4fdf308aac26f0d73251ca2acf93fcd019)
-- bm25: -13.4481 | entity_overlap_w: 4.00 | adjusted: -14.4481 | relevance: 1.0000
+// Skip speech: stop audio and video, jump to end of response
+  const handleSkipSpeech = useCallback(() => {
+    // Stop audio
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause()
+        audioRef.current = null
+      } catch {}
+    }
+    
+    // Pause video
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause()
+      } catch {}
+    }
+    
+    // Pause button video
+    if (buttonVideoRef.current) {
+      try {
+        buttonVideoRef.current.pause()
+      } catch {}
+    }
+    
+    // Set speaking to false
+    setIsSpeaking(false)
+  }, [])
 
-try {
-      const toRemove = [];
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const k = sessionStorage.key(i);
-        if (k && k.startsWith(prefix)) {
-          toRemove.push(k);
+### 3. src/app/session/page.js (21af47a7adae65c61aad1fd0bbaa1d40a8af4580215607352bdf3914f775e04c)
+- bm25: -10.4919 | entity_overlap_w: 1.10 | adjusted: -10.7669 | relevance: 1.0000
+
+useEffect(() => {
+    return () => {
+      clearCaptionTimers();
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+        } catch {
+          /* ignore */
         }
       }
-      for (const k of toRemove) {
-        try { sessionStorage.removeItem(k); } catch {}
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+  }, []);
+
+### 4. src/app/session/v2/SessionPageV2.jsx (f058302a65c1a731031e6e0466f5bc1e0659f4fe87cb6bf5599d0192d512dc66)
+- bm25: -10.1307 | entity_overlap_w: 1.10 | adjusted: -10.4057 | relevance: 1.0000
+
+if (options?.ignoreResume) {
+      resetTranscriptState();
+    }
+    
+    // Start teaching prefetch in the background (needs to be ready by Teaching phase).
+    // Defer off the Begin click call stack so the "Loading..." state can render immediately.
+    if (teachingControllerRef.current) {
+      setTimeout(() => {
+        try {
+          teachingControllerRef.current?.prefetchAll?.();
+          addEvent('📄 Started background prefetch of teaching content');
+        } catch {
+          // Silent
+        }
+      }, 0);
+    }
+    
+    // Prep video element (load + seek to first frame). The actual iOS autoplay unlock
+    // is handled inside AudioEngine.initialize() (play() during gesture, pause on 'playing').
+    try {
+      if (videoRef.current) {
+        try { videoRef.current.muted = true; } catch {}
+        if (videoRef.current.readyState < 2) {
+          try { videoRef.current.load(); } catch {}
+        }
+        try { videoRef.current.currentTime = 0; } catch {}
       }
     } catch {}
-  }
+    
+    const normalizeResumePhase = (phase) => {
+      // Defensive: old snapshots may contain sub-phases that aren't valid orchestrator phases.
+      if (!phase) return null;
+      if (phase === 'grading' || phase === 'congrats') return 'test';
+      if (phase === 'complete') return 'closing';
+      return phase;
+    };
+
+### 5. src/app/session/page.js (03b556b4081da922358ddd942575334dec7f4d59a50b3cb83de1ccc3f4ae0fdd)
+- bm25: -9.8393 | entity_overlap_w: 2.20 | adjusted: -10.3893 | relevance: 1.0000
+
+// Preload video on mount to avoid race condition on Begin
+  useEffect(() => {
+    try {
+      if (videoRef.current) {
+        // Trigger video load immediately
+        videoRef.current.load();
+        
+        // Track video playing state for Chrome autoplay coordination
+        const video = videoRef.current;
+        const onPlay = () => {
+          videoPlayingRef.current = true;
+        };
+        const onPause = () => {
+          videoPlayingRef.current = false;
+        };
+        const onEnded = () => {
+          videoPlayingRef.current = false;
+        };
+        
+        video.addEventListener('play', onPlay);
+        video.addEventListener('playing', onPlay);
+        video.addEventListener('pause', onPause);
+        video.addEventListener('ended', onEnded);
+        
+        return () => {
+          video.removeEventListener('play', onPlay);
+          video.removeEventListener('playing', onPlay);
+          video.removeEventListener('pause', onPause);
+          video.removeEventListener('ended', onEnded);
+        };
+      }
+    } catch (e) {
+      // Silent error handling
+    }
+  }, []);
+
+### 6. src/app/session/page.js (df9788fcf3d8a451ee6730b44593b0670d7e3844110c56f24d473caa04751eb2)
+- bm25: -8.3101 | entity_overlap_w: 5.20 | adjusted: -9.6101 | relevance: 1.0000
+
+// Helper: speak arbitrary frontend text via unified captions + TTS
+  // (defined here after playAudioFromBase64 is available, and updates the ref for early callbacks)
+  const speakFrontendImpl = useCallback(async (text, opts = {}) => {
+    try {
+      const mcLayout = opts && typeof opts === 'object' ? (opts.mcLayout || 'inline') : 'inline';
+      const noCaptions = !!(opts && typeof opts === 'object' && opts.noCaptions);
+      let sentences = splitIntoSentences(text);
+      sentences = mergeMcChoiceFragments(sentences, mcLayout).map((s) => enforceNbspAfterMcLabels(s));
+      const assistantSentences = mapToAssistantCaptionEntries(sentences);
+      // When noCaptions is set (e.g., resume after refresh), do not mutate caption state
+      // so the transcript on screen does not duplicate. Still play TTS.
+      let startIndexForBatch = 0;
+      if (!noCaptions) {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), ...assistantSentences];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+        startIndexForBatch = prevLen;
+      } else {
+        // Keep current caption index; batch will be empty so no scheduling occurs
+        try { startIndexForBatch = Number(captionIndexRef.current || 0); } catch { startIndexForBatch = 0; }
+      }
+      let dec = false;
+      try {
+        // Check cache first
+        let b64 = ttsCache.get(text);
+        
+        if (b64) {
+          console.log('[TTS CACHE HIT]', text.substring(0, 50));
+        } else {
+          console.log('[TTS CACHE MISS]', text.substring(0, 50));
+        }
+        
+        if (!b64) {
+          // Cache miss - fetch from API
+          setTtsLoadingCount((c) => c + 1
+
+### 7. src/app/session/page.js (f04141bbd72ef78879c8f3412f66a9b4f76631a4c255e1b96958ea72d90a6fbd)
+- bm25: -9.1398 | entity_overlap_w: 1.10 | adjusted: -9.4148 | relevance: 1.0000
+
+// New unified pause implementation
+  const pauseAll = useCallback(() => {
+    try { pauseSynthetic(); } catch {}
+    if (audioRef.current) {
+      try {
+        try { htmlAudioPausedAtRef.current = Number(audioRef.current.currentTime || 0); } catch {}
+        audioRef.current.pause();
+      } catch {}
+    }
+    // Record WebAudio pause offset and stop source
+    try {
+      const ctx = audioCtxRef.current;
+      if (ctx && webAudioBufferRef.current && webAudioSourceRef.current) {
+        const elapsed = Math.max(0, (ctx.currentTime || 0) - (webAudioStartedAtRef.current || 0));
+        webAudioPausedAtRef.current = elapsed;
+      }
+    } catch {}
+    try {
+      if (webAudioSourceRef.current) {
+        try { webAudioSourceRef.current.stop(); } catch {}
+        try { webAudioSourceRef.current.disconnect(); } catch {}
+        webAudioSourceRef.current = null;
+      }
+    } catch {}
+    try { if (videoRef.current) videoRef.current.pause(); } catch {}
+    try { clearCaptionTimers(); } catch {}
+    try { clearSpeechGuard(); } catch {}
+  }, []);
+
+### 8. src/app/session/page.js (3759a02343969a963fa17d4c9d201ecbd4f5b3369e9fb240662e078ee35f70c7)
+- bm25: -8.7348 | entity_overlap_w: 1.30 | adjusted: -9.0598 | relevance: 1.0000
+
+// (moved lower originally) placeholder: title dispatch effect defined after manifestInfo/effectiveLessonTitle
+  // Fixed scale factor to avoid any auto-shrinking behavior
+  const snappedScale = 1;
+  // (footer height measurement moved above stacked caption sizing effect)
+  // Media & caption refs (restored after refactor removal)
+  const videoRef = useRef(null); // controls lesson video playback synchrony with TTS
+  const videoPlayingRef = useRef(false); // track if video is currently playing to avoid duplicate play calls
+  const audioRef = useRef(null); // active Audio element for synthesized speech
+  const captionTimersRef = useRef([]); // active timers advancing captionIndex
+  const captionSentencesRef = useRef([]); // accumulated caption sentences for full transcript persistence
+  // Track re-joins: begin timestamp when the user hits Begin
+  useEffect(() => {
+    if (showBegin === false && !sessionStartRef.current) {
+      sessionStartRef.current = new Date().toISOString();
+      // Start a fresh transcript segment at the current caption length
+      try { transcriptSegmentStartIndexRef.current = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current.length : 0; } catch {}
+    }
+  }, [showBegin]);
+  // Track current caption batch boundaries for accurate resume scheduling
+  const captionBatchStartRef = useRef(0);
+  const captionBatchEndRef = useRef(0);
+  // Playback controls
+  const [muted, setMuted] = useState(false);
+  const isSpeakingRef = useRef(false);
+  useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
+  // Mirror latest mute state for async callbacks (prevents stale closures)
+  const mutedRef = useRef(false);
+  // When true, the next play attempt ignores gating (used for Opening begin)
+  const forceNextPlaybackRef = use
+
+### 9. src/app/session/page.js (59f0630a0b46dced619eee0c9612af55bfa0697b3d15f90deb1293c3b7149a64)
+- bm25: -8.7293 | entity_overlap_w: 1.30 | adjusted: -9.0543 | relevance: 1.0000
+
+// Audio playback hook - manages all TTS audio, video sync, and caption scheduling
+  const {
+    playAudioFromBase64: playAudioFromBase64Hook,
+    scheduleCaptionsForAudio: scheduleCaptionsForAudioHook,
+    scheduleCaptionsForDuration: scheduleCaptionsForDurationHook,
+    computeHeuristicDuration: computeHeuristicDurationHook,
+    toggleMute: toggleMuteHook,
+    clearSynthetic: clearSyntheticHook,
+    finishSynthetic: finishSyntheticHook,
+    pauseSynthetic: pauseSyntheticHook,
+    resumeSynthetic: resumeSyntheticHook,
+    // Refs from the hook
+    audioCtxRef,
+    webAudioGainRef,
+    webAudioSourceRef,
+    webAudioBufferRef,
+    webAudioStartedAtRef,
+    webAudioPausedAtRef,
+    syntheticRef
+  } = useAudioPlayback({
+  // State setters
+  setIsSpeaking,
+  setShowRepeatButton,
+  setShowOpeningActions,
+    setCaptionIndex,
+    setCaptionsDone,
+    setCaptionSentences,
+    setMuted,
+    setAudioUnlocked,
+    setOfferResume,
+    
+    // State values
+    muted,
+    loading,
+    captionIndex,
+    audioUnlocked,
+    phase,
+    subPhase,
+    askState,
+    riddleState,
+    poemState,
+    
+    // Refs passed to hook
+    audioRef,
+    videoRef,
+    mutedRef,
+    audioUnlockedRef,
+    captionIndexRef,
+    captionSentencesRef,
+    captionTimersRef,
+    captionBatchStartRef,
+    captionBatchEndRef,
+    lastAudioBase64Ref,
+    lastSentencesRef,
+    lastStartIndexRef,
+    preferHtmlAudioOnceRef,
+    forceNextPlaybackRef,
+    htmlAudioPausedAtRef,
+    speechGuardTimerRef,
+    lastGuardArmAtRef,
+    
+    // Utility functions from utils and inline functions
+    scheduleCaptionsForAudioUtil,
+    scheduleCaptionsForDurationUtil,
+    clearSyntheticUtil,
+    finishSyntheticUtil,
+    pauseSyntheticUtil,
+    resumeSyntheticUtil,
+    clearCaptionTimers,
+    clearSpeechGuard,
+    armSpeechGuard,
+
+### 10. src/app/session/page.js (d6d20109e37b6d839636505f837977fbf6ab49a0eecf697e8c8a03b3e7846dc8)
+- bm25: -8.7582 | entity_overlap_w: 1.10 | adjusted: -9.0332 | relevance: 1.0000
+
+const innerVideoWrapperStyle = isMobileLandscape
+    ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000', '--ctrlSize': 'clamp(34px, 6.2vw, 52px)', ...dynamicHeightStyle }
+    : { position: 'relative', overflow: 'hidden', height: `${portraitSvH}svh`, width: '92%', margin: '0 auto', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000', '--ctrlSize': 'clamp(34px, 6.2vw, 52px)' };
+  return (
+    <div style={outerWrapperStyle}>
+      <div style={innerVideoWrapperStyle}>
+        <video
+          ref={videoRef}
+          src="/media/ms-sonoma-3.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          webkit-playsinline="true"
+          preload="auto"
+          onLoadedMetadata={() => {
+            try {
+              // Seek to first frame without pausing to keep video ready for immediate playback
+              if (videoRef.current && videoRef.current.paused) {
+                try { videoRef.current.currentTime = 0; } catch {}
+              }
+            } catch {}
+          }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+        />
+        {/* Session Timer - overlay in top left */}
+        {/* Phase-based timer: Show when phaseTimers loaded and in an active phase */}
+        {phaseTimers && !showBegin && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] && (
+          <div style={{ 
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            zIndex: 10001
+          }}>
+            <SessionTimer
+              key={(() => {
+                const phaseName = getCurre
+
+### 11. src/app/session/page.js (2bd193e0789b44a479865fc597d941b6c2ebe143079c6b1e9f8d195a5eec5d0b)
+- bm25: -8.1509 | entity_overlap_w: 1.10 | adjusted: -8.4259 | relevance: 1.0000
+
+// Centralized abort/cleanup: stop audio, captions, mic/STT, and in-flight requests
+  // keepCaptions: when true, do NOT wipe captionSentences so on-screen transcript remains continuous across handoffs
+  const abortAllActivity = useCallback((keepCaptions = false) => {
+    // Abort in-flight Ms. Sonoma
+    try { if (sonomaAbortRef.current) sonomaAbortRef.current.abort('skip'); } catch {}
+    // Stop audio playback
+    if (audioRef.current) {
+      try { audioRef.current.pause(); } catch {}
+      try { audioRef.current.src = ''; } catch {}
+      audioRef.current = null;
+    }
+    // Pause video as well on abort
+    if (videoRef.current) {
+      try { videoRef.current.pause(); } catch {}
+    }
+    // Stop synthetic playback timers/state
+    try { clearSynthetic(); } catch {}
+    // Clear any deferred playback intent so it does not apply after abort
+    try { setPlaybackIntent(null); } catch {}
+    // Clear captions timers and optionally content
+    try {
+      clearCaptionTimers();
+      captionBatchStartRef.current = 0;
+      captionBatchEndRef.current = 0;
+      if (!keepCaptions) {
+        captionSentencesRef.current = [];
+        setCaptionSentences([]);
+        setCaptionIndex(0);
+      }
+    } catch {}
+    // Reset transcript, speaking state, and input
+    setTranscript('');
+    setIsSpeaking(false);
+    setLearnerInput('');
+    // Notify children (InputPanel) to stop mic and cancel STT
+    setAbortKey((k) => k + 1);
+  }, []);
+
+### 12. src/app/session/v2/SessionPageV2.jsx (bb342f1e310d51453efe399caa9a1a4e597dae8cf97834c5446a3471da2fe038)
+- bm25: -7.9965 | entity_overlap_w: 1.10 | adjusted: -8.2715 | relevance: 1.0000
+
+// Measure the fixed footer height so portrait caption sizing can reserve exact space (V1 parity)
+  useEffect(() => {
+    const el = footerRef.current;
+    if (!el) return;
+    const measure = () => {
+      try {
+        const h = Math.ceil(el.getBoundingClientRect().height);
+        if (Number.isFinite(h) && h >= 0) setFooterHeight(h);
+      } catch {}
+    };
+    measure();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => measure());
+      try { ro.observe(el); } catch {}
+    } else if (typeof window !== 'undefined') {
+      window.addEventListener('resize', measure);
+    }
+    return () => {
+      try { ro && ro.disconnect(); } catch {}
+      if (typeof window !== 'undefined') window.removeEventListener('resize', measure);
+    };
+  }, []);
+
+// Set portrait caption height to 35vh
+  useEffect(() => {
+    if (isMobileLandscape) {
+      setStackedCaptionHeight(null);
+    } else {
+      // 35vh for portrait mode
+      const vh = window.innerHeight;
+      const targetHeight = Math.floor(vh * 0.35);
+      setStackedCaptionHeight(targetHeight);
+    }
+  }, [isMobileLandscape]);
   
-  /**
-   * Start session timer
-   */
-  startSessionTimer() {
-    console.log('[TimerService] startSessionTimer called');
-    if (this.sessionInterval) {
-      console.warn('[TimerService] Session timer already running');
-      return;
+  // Initialize AudioEngine
+  useEffect(() => {
+    let cancelled = false;
+    let retryTimer = null;
+
+const tryInit = () => {
+      if (cancelled) return;
+
+const videoEl = videoRef.current;
+      if (!videoEl) {
+        // videoRef is a ref, so changes won't retrigger this effect.
+        // Retry until the video element is mounted so the Begin button
+        // doesn't get stuck in "Loading...".
+        console.log('[SessionPageV2] VideoRef not ready yet');
+        retryTimer = setTimeout(tryInit, 50);
+        return;
+      }
+
+if (audioEngineRef.current) {
+        console.log('[SessionPageV2] AudioEngine already initialized');
+        return;
+      }
+
+### 13. src/app/session/v2/SessionPageV2.jsx (87c2d954a33e025feccd5c4d34574c1a91c8043e3be00db290e40081dab1d365)
+- bm25: -8.1122 | relevance: 1.0000
+
+{showVisualAids && planEnt?.visualAids && Array.isArray(visualAidsData) && visualAidsData.length > 0 && (
+        <SessionVisualAidsCarousel
+          visualAids={visualAidsData}
+          onClose={() => setShowVisualAids(false)}
+          onExplain={handleExplainVisualAid}
+          videoRef={videoRef}
+          isSpeaking={engineState === 'playing'}
+        />
+      )}
+      
+      {showGames && planEnt?.games && (() => {
+        const phaseName = getCurrentPhaseName();
+        const timerType = phaseName ? currentTimerMode[phaseName] : null;
+        const timerNode = (phaseTimers && phaseName && timerType === 'play') ? (
+          <SessionTimer
+            key={`games-timer-${phaseName}-${timerType}-${timerRefreshKey}`}
+            phase={phaseName}
+            timerType={timerType}
+            totalMinutes={getCurrentPhaseTimerDuration(phaseName, timerType)}
+            goldenKeyBonus={timerType === 'play' && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
+            isPaused={timerPaused}
+            lessonKey={lessonKey}
+            lessonProgress={calculateLessonProgress()}
+            onTimerClick={handleTimerClick}
+          />
+        ) : null;
+
+return (
+          <GamesOverlay
+            onClose={() => setShowGames(false)}
+            playTimer={timerNode}
+          />
+        );
+      })()}
+
+### 14. src/app/session/page.js (24d0ad1fca5c4d9e137faf448d67edbdd18d815a89dd1d4902030a56f456fcba)
+- bm25: -7.0755 | entity_overlap_w: 3.90 | adjusted: -8.0505 | relevance: 1.0000
+
+// isSpeaking/phase/subPhase defined earlier; do not redeclare here
+  const [transcript, setTranscript] = useState("");
+  // Start with loading=true so the existing overlay spinner shows during initial restore
+  const [loading, setLoading] = useState(true);
+  // TTS overlay: track TTS fetch activity separately; overlay shows when either API or TTS is loading
+  const [ttsLoadingCount, setTtsLoadingCount] = useState(0);
+  const overlayLoading = loading || (ttsLoadingCount > 0);
+
+### 15. src/app/session/v2/SessionPageV2.jsx (83f260f98e1e2ff0f95333709788a05eae63a3645329eff6bfcbf89038e243dc)
+- bm25: -7.3242 | entity_overlap_w: 2.60 | adjusted: -7.9742 | relevance: 1.0000
+
+const playEnabledForPhase = (p) => {
+      if (!p) return true;
+      if (p === 'comprehension') return playPortionsEnabledRef.current?.comprehension !== false;
+      if (p === 'exercise') return playPortionsEnabledRef.current?.exercise !== false;
+      if (p === 'worksheet') return playPortionsEnabledRef.current?.worksheet !== false;
+      if (p === 'test') return playPortionsEnabledRef.current?.test !== false;
+      return true;
+    };
+    const skipPlayPortion = ['comprehension', 'exercise', 'worksheet', 'test'].includes(phaseName)
+      ? !playEnabledForPhase(phaseName)
+      : false;
+    
+    // Special handling for discussion: prefetch greeting TTS before starting
+    if (phaseName === 'discussion') {
+      setDiscussionState('loading');
+      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'friend';
+      const lessonTitle = lessonData?.title || lessonId || 'this topic';
+      const greetingText = `Hi ${learnerName}, ready to learn about ${lessonTitle}?`;
+      
+      try {
+        // Prefetch greeting TTS
+        await fetchTTS(greetingText);
+      } catch (err) {
+        console.error('[SessionPageV2] Failed to prefetch greeting:', err);
+      }
+      
+      // Discussion work timer starts when Begin is clicked, not here
     }
     
-    this.sessionStartTime = Date.now();
-    this.sessionElapsed = 0;
-    
-    console.log('[TimerService] Emitting sessionTimerStart');
-    this.eventBus.emit('sessionTimerStart', {
-      timestamp: this.sessionStartTime
-    });
-    
-    // Tick every second
-    this.sessionInterval = setInterval(this.#tickSessionTimer.bind(this), 1000);
-    console.log('[TimerService] Timer interval started');
-  }
-  
-  /**
-   * Stop session timer
-   */
-  stopSessionTimer() {
-    if (!this.sessionInterval) {
-      return;
+    const ref = getPhaseRef(phaseName);
+    if (ref?.current?.start) {
+      if (skipPlayPortion) {
+        transitionToWorkTimer(phaseName);
+        // Start work timer immediately when skipping play portion (unless timeline jump already started it)
+        if (timerServiceRef.current && timelineJumpTimerStartedRef.current !== phaseName) {
+          timerServiceRef.current.startWorkPhaseTimer(phaseName);
+        }
+        await ref.current.start({ skipPlayPortion: true });
+      }
+
+### 16. src/app/session/page.js (5081bab5884e02689acef54dcbfce6800c4856f78c451b0a67136e3e40d1fded)
+- bm25: -6.9208 | entity_overlap_w: 1.30 | adjusted: -7.2458 | relevance: 1.0000
+
+// Request TTS for the local opening and play it using the same pipeline as API replies.
+      setLoading(true);
+      setTtsLoadingCount((c) => c + 1);
+  const replyStartIndex = prevLen; // we appended opening sentences at the end
+      let res;
+      try {
+        res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
+        var data = await res.json().catch(() => ({}));
+        var audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+        // Dev warm-up: if route wasn't ready (404) or no audio returned, pre-warm and retry once
+        if ((!res.ok && res.status === 404) || !audioB64) {
+          try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
+          try { await waitForBeat(400); } catch {}
+          res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
+          data = await res.json().catch(() => ({}));
+          audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+        }
+      } finally {
+        setTtsLoadingCount((c) => Math.max(0, c - 1));
+      }
+      if (audioB64) audioB64 = normalizeBase64Audio(audioB64);
+      // Match API flow: stop showing loading before kicking off audio
+      setLoading(false);
+      if (audioB64) {
+        // Stash payload so gesture-based unlock can retry immediately if needed
+        try { lastAudioBase64Ref.current = audioB64; } catch {}
+        setIsSpeaking(true);
+        // CRITICAL: Also update the ref immediately to prevent double-playback in recovery timeout
+
+### 17. src/app/session/page.js (1ad0d1d16447dcb7806046a0c5f1693bad1f87161d396cc55ffaa04b934e6876)
+- bm25: -6.7163 | entity_overlap_w: 1.30 | adjusted: -7.0413 | relevance: 1.0000
+
+const lastAudioBase64Ref = useRef(null);
+  // Track HTMLAudio paused position so we can reconstruct/resume after long idle or GC
+  const htmlAudioPausedAtRef = useRef(0);
+  // Prefer HTMLAudio for the very first TTS playback (Opening) to satisfy stricter autoplay policies.
+  // We reset this after the first attempt so subsequent replies can use WebAudio-first as usual.
+  const preferHtmlAudioOnceRef = useRef(false);
+  // Prevent multiple recovery attempts for the Opening playback
+  const openingReattemptedRef = useRef(false);
+  // Guard: if audio stalls or never ends on mobile, auto-release the speaking lock so controls do not hang
+  const speechGuardTimerRef = useRef(null);
+  const clearSpeechGuard = useCallback(() => {
+    clearSpeechGuardUtil(speechGuardTimerRef);
+  }, []);
+  const forceStopSpeaking = useCallback((reason = 'timeout') => {
+    forceStopSpeakingUtil(
+      reason,
+      { audioRef, videoRef, speechGuardTimerRef },
+      { phase, subPhase, askState, riddleState, poemState },
+      setIsSpeaking,
+      setShowOpeningActions,
+      stopWebAudioSource
+    );
+  }, [phase, subPhase, askState, riddleState, poemState]);
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  // Track last arm time to avoid spamming guard while we get metadata/ticks
+  const lastGuardArmAtRef = useRef(0);
+  const armSpeechGuard = useCallback((seconds, label = '') => {
+    armSpeechGuardUtil(seconds, label, speechGuardTimerRef, forceStopSpeaking);
+  }, [forceStopSpeaking]);
+  const armSpeechGuardThrottled = useCallback((seconds, label = '') => {
+    armSpeechGuardThrottledUtil(seconds, label, lastGuardArmAtRef, armSpeechGuard);
+  }, [armSpeechGuard]);
+  const lastSentencesRef = useRef([]);
+  const lastStartIndexRef = useRef(0);
+  // Test phase state
+  const [testActiv
+
+### 18. src/app/api/counselor/route.js (c6e5dea03f1201bb587f695d4f32d8a7dc08671babcbe1d3cdfae68114474706)
+- bm25: -6.2980 | entity_overlap_w: 2.60 | adjusted: -6.9480 | relevance: 1.0000
+
+function loadTtsCredentials() {
+  const inline = process.env.GOOGLE_TTS_CREDENTIALS
+  const inlineCreds = decodeCredentials(inline)
+  if (inlineCreds) return inlineCreds
+
+const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(process.cwd(), 'google-tts-key.json')
+  try {
+    if (credentialPath && fs.existsSync(credentialPath)) {
+      const raw = fs.readFileSync(credentialPath, 'utf8').trim()
+      if (raw) return decodeCredentials(raw) || JSON.parse(raw)
     }
-    
-    clearInterval(this.sessionInterval);
-    this.sessionInterval = null;
-    
-    const elapsed = this.sessionElapsed;
-    const formatted = this.#formatTime(elapsed);
-    
-    this.eventBus.emit('sessionTimerStop', {
-      elapsed,
-      formatted
-    });
+  } catch (fileError) {
+    // Credentials load failed - TTS will be unavailable
   }
-  
-  /**
-   * Starts the play timer for a phase (phases 2-5 only).
-   * Play timers allow exploration/opening actions with a time limit.
-   * When expired, transitions to work mode via PlayTimeExpiredOverlay.
-   * 
-   * @param {string} phase - Phase name ('comprehension', 'exercise', 'worksheet', 'test')
-   * @param {number} [timeLimit] - Optional time limit override (seconds)
-   */
-  startPlayTimer(phase, timeLimit = null) {
+  return null
+}
 
-### 8. src/app/session/v2/TimerService.jsx (ec57a83cf0e04550a623e4d9e105aabc4abc2b970c06655cbb9940b2ba5e6cf6)
-- bm25: -13.2210 | relevance: 1.0000
+async function getTtsClient() {
+  if (ttsClientPromise) return ttsClientPromise
 
-// Per-learner feature gate: when disabled, golden key eligibility is not tracked/emitted.
-    this.goldenKeysEnabled = options.goldenKeysEnabled !== false;
-    
-    // Pause state
-    this.isPaused = false;
-    this.pausedPlayElapsed = null; // Stores elapsed time when play timer paused
-    this.pausedWorkElapsed = null; // Stores elapsed time when work timer paused
-    
-    // SessionStorage cache for refresh recovery (not used - use explicit restoreState instead)
-    this.lessonKey = options.lessonKey || null;
-    this.phase = options.phase || null;
-    this.mode = 'play'; // play or work
-    
-    // Don't auto-restore from sessionStorage - only restore explicitly via restoreState()
-    // this prevents stale timer data from previous lessons leaking into new sessions
-    
-    // Bind public methods
-    this.startSessionTimer = this.startSessionTimer.bind(this);
-    this.stopSessionTimer = this.stopSessionTimer.bind(this);
-    this.startPlayTimer = this.startPlayTimer.bind(this);
-    this.stopPlayTimer = this.stopPlayTimer.bind(this);
-    this.transitionToWork = this.transitionToWork.bind(this);
-    this.startWorkPhaseTimer = this.startWorkPhaseTimer.bind(this);
-    this.completeWorkPhaseTimer = this.completeWorkPhaseTimer.bind(this);
-    this.stopWorkPhaseTimer = this.stopWorkPhaseTimer.bind(this);
-    this.reset = this.reset.bind(this);
-    this.setGoldenKeysEnabled = this.setGoldenKeysEnabled.bind(this);
-    this.setPlayTimerLimits = this.setPlayTimerLimits.bind(this);
-    this.pause = this.pause.bind(this);
-    this.resume = this.resume.bind(this);
-    this.resync = this.resync.bind(this);
-    // Private methods are automatically bound
+const credentials = loadTtsCredentials()
+  if (!credentials) {
+    // No credentials - voice playback disabled
+    return null
   }
 
-### 9. src/app/session/v2/SessionPageV2.jsx (25e9c10b76fc1d12c063fe1dff92befa769bab57bed8423c9a79d1d88321d0dc)
-- bm25: -12.7319 | entity_overlap_w: 1.00 | adjusted: -12.9819 | relevance: 1.0000
+ttsClientPromise = (async () => {
+    try {
+      return new TextToSpeechClient({ credentials })
+    } catch (error) {
+      // TTS client init failed
+      ttsClientPromise = undefined
+      return null
+    }
+  })()
 
-if (snapshot.timerState) {
-            if (timerServiceRef.current) {
-              try { timerServiceRef.current.restoreState(snapshot.timerState); } catch {}
-            } else {
-              pendingTimerStateRef.current = snapshot.timerState;
+ttsClientPromise.catch(() => { ttsClientPromise = undefined })
+  return ttsClientPromise
+}
+
+function createCallId() {
+  const timePart = Date.now().toString(36)
+  const randomPart = Math.random().toString(36).slice(2, 8)
+  return `${timePart}-${randomPart}`
+}
+
+function pushToolLog(toolLog, entry) {
+  if (!Array.isArray(toolLog)) return
+  const message = buildToolLogMessage(entry?.name, entry?.phase, entry?.context)
+  if (!message) return
+  toolLog.push({
+    id: entry?.id || createCallId(),
+    timestamp: Date.now(),
+    name: entry?.name,
+    phase: entry?.phase,
+    message,
+    context: entry?.context || {}
+  })
+}
+
+### 19. sidekick_pack_takeover.md (376cf1a07dfa6f6120fc79857838fadc2dc9ac44fac46c335e3387cc01d643db)
+- bm25: -5.9770 | entity_overlap_w: 2.60 | adjusted: -6.6270 | relevance: 1.0000
+
+interceptResult.response = `Ok. I\'m opening the Lesson Planner and generating a ${action.durationMonths}-month plan starting ${action.startDate}.`
+          }
+        }
+        
+        // Add interceptor response to conversation
+        const finalHistory = [
+          ...updatedHistory,
+          { role: 'assistant', content: interceptResult.response }
+        ]
+        setConversationHistory(finalHistory)
+        
+        // Display interceptor response in captions
+        setCaptionText(interceptResult.response)
+        const sentences = splitIntoSentences(interceptResult.response)
+        setCaptionSentences(sentences)
+        setCaptionIndex(0)
+        
+        // Play TTS for interceptor response (Mr. Mentor's voice)
+        setLoadingThought("Preparing response...")
+        try {
+          const ttsResponse = await fetch('/api/mentor-tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: interceptResult.response })
+          })
+          
+          if (ttsResponse.ok) {
+            const ttsData = await ttsResponse.json()
+            if (ttsData.audio) {
+              await playAudio(ttsData.audio)
             }
           }
-        } else {
-          resetTranscriptState();
-          addEvent('💾 No snapshot found - Starting fresh');
+        } catch (err) {
+          // Silent TTS error - don't block UX
         }
-      }).catch(err => {
-        if (cancelled) return;
-        console.error('[SessionPageV2] Snapshot init error:', err);
-        setError('Unable to load saved progress for this lesson.');
-      }).finally(() => {
-        if (!cancelled) {
-          setSnapshotLoaded(true);
-        }
-      });
-    } catch (err) {
-      console.error('[SessionPageV2] Snapshot service construction failed:', err);
-      setError('Unable to initialize persistence for this lesson.');
-      setSnapshotLoaded(true);
-    }
-
-return () => {
-      cancelled = true;
-      snapshotServiceRef.current = null;
-    };
-  }, [lessonData, learnerProfile, browserSessionId, lessonKey, resetTranscriptState]);
-  
-  // Initialize TimerService
-  useEffect(() => {
-    if (!eventBusRef.current || !lessonKey || !phaseTimers) return;
-
-const eventBus = eventBusRef.current;
-
-// Convert minutes -> seconds; golden key bonus applies to play timers only (and only when Golden Keys are enabled).
-    const playBonusSec = goldenKeysEnabledRef.current
-      ? Math.max(0, Number(goldenKeyBonusRef.current || 0)) * 60
-      : 0;
-    const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
-
-### 10. src/app/session/v2/TimerService.jsx (5bff737b19ddcafa1fcac2d20cb0da1e95cf1c5f918fd1170e0f387b07c24021)
-- bm25: -11.4796 | entity_overlap_w: 1.00 | adjusted: -11.7296 | relevance: 1.0000
-
-const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
-      this.eventBus.emit('playTimerTick', {
-        phase,
-        elapsed: timer.elapsed,
-        remaining,
-        formatted: this.#formatTime(timer.elapsed),
-        remainingFormatted: this.#formatTime(remaining)
-      });
-      return;
-    }
-
-if (mode === 'work') {
-      const validPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
-      if (!validPhases.includes(phase)) return;
-
-const existing = this.workPhaseTimers.get(phase);
-      const timeLimit = existing?.timeLimit ?? this.workPhaseTimeLimits?.[phase] ?? 600;
-
-const timer = {
-        startTime,
-        elapsed: asNumber,
-        timeLimit,
-        completed: false,
-        onTime: asNumber <= timeLimit
-      };
-
-this.workPhaseTimers.set(phase, timer);
-      this.currentWorkPhase = phase;
-      this.mode = 'work';
-
-// Only start interval if not paused
-      if (!this.isPaused && !this.workPhaseInterval) {
-        this.workPhaseInterval = setInterval(this.#tickWorkPhaseTimers.bind(this), 1000);
+        
+        setLoading(false)
+        setLoadingThought(null)
+        return
       }
       
-      // If paused, update the paused elapsed time
-      if (this.isPaused) {
-        this.pausedWorkElapsed = asNumber;
-      }
+      // Interceptor didn't handle - forward to API
+      setLoadingThought("Consulting my knowledge base...")
+      const forwardMessage = interceptResult.apiForward?.message || message
+      const finalForwardMessage = declineNote ? `${forwardMessage}\n\n${declineNote}` : forwardMessage
+      const forwardContext = interceptResult.apiForward?.context || {}
 
-if (this.lessonKey) {
-        const storageKey = `session_timer_state:${this.lessonKey}:${phase}:work`;
-        try {
-          sessionStorage.setItem(storageKey, JSON.stringify({
-            elapsedSeconds: timer.elapsed,
-            startTime: timer.startTime,
-            totalMinutes: Math.ceil(timer.timeLimit / 60),
-            pausedAt: null
-          }));
-        } catch {}
-      }
+### 20. src/app/session/page.js (20f28cc40796da60b2e4929c581ce87da889d1e2554cd6cbe429b0db4867f718)
+- bm25: -6.2672 | entity_overlap_w: 1.30 | adjusted: -6.5922 | relevance: 1.0000
 
-### 11. src/app/session/v2/TimerService.jsx (4cf9313019f135c3a75b47bad95de212b857a0ad12f88fc0239f42a52332e9c2)
-- bm25: -11.4831 | relevance: 1.0000
-
-// Prefer explicit currentWorkPhase if provided.
-      const explicitWork = data.currentWorkPhase;
-      const candidateWork = (explicitWork && this.workPhaseTimers.has(explicitWork)) ? explicitWork : inferredActiveWorkPhase;
-      if (this.mode === 'work' && candidateWork) {
-        const t = this.workPhaseTimers.get(candidateWork);
-        if (t && !t.completed) {
-          t.startTime = Date.now() - ((Number(t.elapsed) || 0) * 1000);
-          this.currentWorkPhase = candidateWork;
-          if (!this.isPaused && !this.workPhaseInterval) {
-            this.workPhaseInterval = setInterval(this.#tickWorkPhaseTimers.bind(this), 1000);
-          }
-        }
-      }
-    }
-  }
-  
-  /**
-   * Restore state from snapshot (alias for restore)
-   * @param {Object} data - Serialized state
-   */
-  restoreState(data) {
-    this.restore(data);
-  }
-  
-  /**
-   * Tick session timer
-   * @private
-   */
-  #tickSessionTimer() {
-    if (!this.sessionStartTime) return;
-    
-    const now = Date.now();
-    this.sessionElapsed = Math.floor((now - this.sessionStartTime) / 1000);
-    
-    this.eventBus.emit('sessionTimerTick', {
-      elapsed: this.sessionElapsed,
-      formatted: this.#formatTime(this.sessionElapsed)
-    });
-  }
-  
-  /**
-   * Tick play timers
-   * @private
-   */
-  #tickPlayTimers() {
-    if (this.isPaused) return;
-    if (!this.currentPlayPhase) return;
-    
-    const timer = this.playTimers.get(this.currentPlayPhase);
-    if (!timer || timer.expired) return;
-    
-    const now = Date.now();
-    timer.elapsed = Math.floor((now - timer.startTime) / 1000);
-    const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
-    
-    // Write to sessionStorage for TimerControlOverlay compatibility (skip when paused)
-    if (!this.isPaused && this.lessonKey && this.currentPlayPhas
-
-### 12. src/app/session/v2/TimerService.jsx (573f7049f395c2d9ada63681aec8d1c2d25e5f58a4e19049d938d2728bec80b2)
-- bm25: -11.1946 | relevance: 1.0000
-
-const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
-      this.eventBus.emit('workPhaseTimerTick', {
-        phase,
-        elapsed: timer.elapsed,
-        remaining,
-        timeLimit: timer.timeLimit,
-        onTime: timer.onTime,
-        formatted: this.#formatTime(timer.elapsed),
-        remainingFormatted: this.#formatTime(remaining)
-      });
-    }
-  }
-
-### 13. src/app/session/v2/TimerService.jsx (24f23d460a79fa93d3ef523fde272d97dcb1754020e6a22c5ba07d49add970bf)
-- bm25: -10.3400 | entity_overlap_w: 1.00 | adjusted: -10.5900 | relevance: 1.0000
-
-export class TimerService {
-  constructor(eventBus, options = {}) {
-    this.eventBus = eventBus;
-    
-    // Session timer
-    this.sessionStartTime = null;
-    this.sessionElapsed = 0; // seconds
-    this.sessionInterval = null;
-    
-    // Play timers (phases 2-5: comprehension, exercise, worksheet, test)
-    this.playTimers = new Map(); // phase -> { startTime, elapsed, timeLimit, expired }
-    this.playTimerInterval = null;
-    this.currentPlayPhase = null;
-    
-    // Play timer time limits (seconds) - default 3 minutes per phase
-    this.playTimerLimits = options.playTimerLimits || {
-      comprehension: 180, // 3 minutes
-      exercise: 180,      // 3 minutes  
-      worksheet: 180,     // 3 minutes
-      test: 180           // 3 minutes
-    };
-    
-    // Work phase timers
-    this.workPhaseTimers = new Map(); // phase -> { startTime, elapsed, timeLimit, completed }
-    this.workPhaseInterval = null;
-    this.currentWorkPhase = null;
-    
-    // Work phase time limits (seconds) - all phases have work timers
-    this.workPhaseTimeLimits = options.workPhaseTimeLimits || {
-      discussion: 300,    // 5 minutes
-      comprehension: 180, // 3 minutes
-      exercise: 180,      // 3 minutes
-      worksheet: 300,     // 5 minutes
-      test: 600           // 10 minutes
-    };
-    
-    // Golden key tracking (only counts comprehension, exercise, worksheet, test)
-    this.onTimeCompletions = 0;
-    this.goldenKeyAwarded = false;
-
-### 14. src/app/session/v2/TimerService.jsx (d66ce18026cb7dc6c0b5c052d71c86a7e1616f2b34c0c0ece99430bd12337c2e)
-- bm25: -10.3161 | entity_overlap_w: 1.00 | adjusted: -10.5661 | relevance: 1.0000
-
-if (this.currentPlayPhase) {
-          const t = this.playTimers.get(this.currentPlayPhase);
-          if (t && !t.expired && !this.playTimerInterval) {
-            this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
-          }
-        }
-
-if (this.currentWorkPhase) {
-          const t = this.workPhaseTimers.get(this.currentWorkPhase);
-          if (t && !t.completed && !this.workPhaseInterval) {
-            this.workPhaseInterval = setInterval(this.#tickWorkPhaseTimers.bind(this), 1000);
-          }
-        }
-      }
-
-// Emit a catch-up tick immediately.
-      this.#tickSessionTimer();
-      this.#tickPlayTimers();
-      this.#tickWorkPhaseTimers();
-    } catch (err) {
-      console.warn('[TimerService] resync failed:', reason, err);
-    }
-  }
-
-setGoldenKeysEnabled(enabled) {
-    this.goldenKeysEnabled = enabled !== false;
-  }
-
-setPlayTimerLimits(limits) {
-    if (!limits || typeof limits !== 'object') return;
-    this.playTimerLimits = { ...this.playTimerLimits, ...limits };
-
-// If a play timer is already running, update its limit so bonus changes
-    // (e.g., Golden Key) apply immediately to the active countdown.
-    try {
-      for (const [phase, nextLimit] of Object.entries(limits)) {
-        const timer = this.playTimers.get(phase);
-        if (!timer) continue;
-        const parsed = Number(nextLimit);
-        if (!Number.isFinite(parsed) || parsed <= 0) continue;
-        timer.timeLimit = parsed;
-
-### 15. src/app/session/v2/TimerService.jsx (7a0df748471f99a2c90557a539afb09427db838e53933a396d389e12b7a8d309)
-- bm25: -9.8599 | relevance: 1.0000
-
-/**
-   * Best-effort recovery hook for browsers that may suspend JS timers (notably iOS Safari).
-   *
-   * This does NOT change timer semantics; it simply ensures intervals are armed and emits
-   * an immediate tick so UI can catch up after visibility/focus changes.
-   */
-  resync(reason = 'manual') {
-    try {
-      if (!this.isPaused) {
-        if (this.sessionStartTime && !this.sessionInterval) {
-          this.sessionInterval = setInterval(this.#tickSessionTimer.bind(this), 1000);
-        }
-
-### 16. src/app/session/v2/TimerService.jsx (969f7a14cf9f3699f5b53bc29667946197fe2d0b7b8e41098b39fc1bade48638)
-- bm25: -9.4836 | entity_overlap_w: 1.00 | adjusted: -9.7336 | relevance: 1.0000
-
-/**
- * TimerService.jsx
- * Manages session, play, and work phase timers
- * 
- * Timers:
- * - Session timer: Tracks total session duration from start to complete
- * - Play timers: Green timer for exploration/opening actions (phases 2-5: Comprehension, Exercise, Worksheet, Test)
- * - Work phase timers: Amber/red timer for focused work (for golden key)
- * 
- * Timer Modes:
- * - Phase 1 (Discussion): No play timer, no opening actions (eliminates play timer exploit)
- * - Phases 2-5 (Comprehension, Exercise, Worksheet, Test): Play timer → opening actions → work timer
- * 
- * Golden Key Requirements:
- * - Need 3 work phases completed within time limit
- * - Work phases: exercise, worksheet, test
- * - Time limits defined per grade/subject
- * 
- * Events emitted:
- * - sessionTimerStart: { timestamp } - Session timer started
- * - sessionTimerTick: { elapsed, formatted } - Every second while running
- * - sessionTimerStop: { elapsed, formatted } - Session timer stopped
- * - playTimerStart: { phase, timestamp, timeLimit } - Play timer started
- * - playTimerTick: { phase, elapsed, remaining, formatted } - Every second during play time
- * - playTimerExpired: { phase } - Play timer reached 0:00
- * - workPhaseTimerStart: { phase, timestamp } - Work phase timer started
- * - workPhaseTimerTick: { phase, elapsed, remaining, onTime } - Every second during work time
- * - workPhaseTimerComplete: { phase, elapsed, onTime } - Work phase completed
- * - workPhaseTimerStop: { phase, elapsed } - Work phase stopped
- * - goldenKeyEligible: { completedPhases } - 3 on-time work phases achieved
- */
-
-'use client';
-
-### 17. src/app/session/page.js (3da2ad087a8caa48fccd3f6eaf8fd61c2bd1e1ee23974b58d73c3537f1dd37cc)
-- bm25: -8.4191 | entity_overlap_w: 3.00 | adjusted: -9.1691 | relevance: 1.0000
-
-// Clear timer state for completed lesson
+// Inject into transcript and captions locally (isolate errors so TTS still proceeds)
+      setTranscript(replyText);
+      setError("");
+      let prevLen = 0;
+      let newSentences = [];
       try {
-        // Clean up old timer format (transitional)
-        const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
-        sessionStorage.removeItem(storageKey);
-        
-        // Clean up new phase-based timer states
-        const phases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
-        const timerTypes = ['play', 'work'];
-        phases.forEach(phase => {
-          timerTypes.forEach(timerType => {
-            const newStorageKey = `session_timer_state:${lessonKey}:${phase}:${timerType}`;
-            sessionStorage.removeItem(newStorageKey);
-          });
-        });
-      } catch {}
-
-### 18. src/app/session/v2/TimerService.jsx (e96859bf0fb88311bec25cde6b209f1abcba5383fb2bb8e43df4df3e935acaff)
-- bm25: -9.0967 | relevance: 1.0000
-
-// Prefer explicit currentPlayPhase if provided.
-      if (data.currentPlayPhase && this.playTimers.has(data.currentPlayPhase)) {
-        this.currentPlayPhase = data.currentPlayPhase;
-      }
-    }
-    
-    // Restore work phase timers
-    if (data.workPhaseTimers) {
-      this.workPhaseTimers.clear();
-      
-      let inferredActiveWorkPhase = null;
-      data.workPhaseTimers.forEach(timer => {
-        this.workPhaseTimers.set(timer.phase, {
-          startTime: null,
-          elapsed: timer.elapsed,
-          timeLimit: timer.timeLimit,
-          completed: !!timer.completed,
-          onTime: typeof timer.onTime === 'boolean' ? timer.onTime : (timer.elapsed <= timer.timeLimit)
-        });
-        // Heuristic: the most recently inserted incomplete timer is likely the active one.
-        if (!timer.completed) {
-          inferredActiveWorkPhase = timer.phase;
+        // Prepare captions from the full reply
+        newSentences = splitIntoSentences(replyText);
+        newSentences = mergeMcChoiceFragments(newSentences);
+        newSentences = newSentences.map((s) => enforceNbspAfterMcLabels(s));
+        const normalizedOriginal = replyText.replace(/\s+/g, ' ').trim();
+        const normalizedJoined = newSentences.join(' ').replace(/\s+/g, ' ').trim();
+        if (normalizedJoined.length < Math.floor(0.9 * normalizedOriginal.length)) {
+          newSentences = [normalizedOriginal];
         }
-      });
-
-### 19. src/app/session/v2/TimerService.jsx (8b6b5b40a6468f4aa6ad5e9dddfa8efe7447e7cc736a8e77292215692a341335)
-- bm25: -8.8796 | relevance: 1.0000
-
-/**
-   * Reset all timers and clear per-phase sessionStorage mirrors.
-   * Use for "Start Over" and lesson restarts without a full page refresh.
-   */
-  reset() {
-    if (this.sessionInterval) {
-      clearInterval(this.sessionInterval);
-      this.sessionInterval = null;
-    }
-    if (this.playTimerInterval) {
-      clearInterval(this.playTimerInterval);
-      this.playTimerInterval = null;
-    }
-    if (this.workPhaseInterval) {
-      clearInterval(this.workPhaseInterval);
-      this.workPhaseInterval = null;
-    }
-
-this.sessionStartTime = null;
-    this.sessionElapsed = 0;
-
-this.playTimers.clear();
-    this.currentPlayPhase = null;
-
-this.workPhaseTimers.clear();
-    this.currentWorkPhase = null;
-
-this.onTimeCompletions = 0;
-    this.goldenKeyAwarded = false;
-    this.mode = 'play';
-    
-    this.isPaused = false;
-    this.pausedPlayElapsed = null;
-    this.pausedWorkElapsed = null;
-
-### 20. src/app/session/v2/SessionPageV2.jsx (d7cdcdb017fed338f4fa2c7679c9f493400d2a56528209b2b701a376672c949c)
-- bm25: -7.9793 | entity_overlap_w: 2.00 | adjusted: -8.4793 | relevance: 1.0000
-
-loadStored();
-    return () => { cancelled = true; };
-  }, [lessonKey, learnerProfile]);
-  
-  // Initialize shared EventBus (must be first)
-  useEffect(() => {
-    eventBusRef.current = new EventBus();
-    
-    return () => {
-      if (eventBusRef.current) {
-        eventBusRef.current.clear();
-        eventBusRef.current = null;
+        const assistantSentences = mapToAssistantCaptionEntries(newSentences);
+        prevLen = captionSentencesRef.current?.length || 0;
+        let nextAll = [...(captionSentencesRef.current || [])];
+        nextAll = [...nextAll, ...assistantSentences];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+      } catch (capErr) {
+        // Keep minimal single-sentence caption
+        newSentences = [replyText];
+        const assistantSentences = mapToAssistantCaptionEntries(newSentences);
+        prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), ...assistantSentences];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
       }
-    };
-  }, []);
-  
-  // Initialize SnapshotService after lesson loads
-  useEffect(() => {
-    if (!lessonData || !learnerProfile || !browserSessionId || !lessonKey) return;
 
-let cancelled = false;
-    setSnapshotLoaded(false);
+### 21. src/app/session/page.js (efdfcbdfbc261d3a54e33f865800bfa92ec154f43e042ece0fcb411f896e8ec6)
+- bm25: -6.5593 | relevance: 1.0000
 
-const sessionId = browserSessionId;
-    const learnerId = learnerProfile.id;
+{/* Visual Aids Carousel - for displaying lesson visual aids */}
+    {showVisualAidsCarousel && visualAidsData && (
+      <SessionVisualAidsCarousel
+        visualAids={visualAidsData}
+        onClose={() => setShowVisualAidsCarousel(false)}
+        onExplain={handleExplainVisualAid}
+        videoRef={videoRef}
+        isSpeaking={isSpeaking}
+      />
+    )}
 
-const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
+{/* Games overlay - moved outside container to fix z-index stacking */}
+    {showGames && (
+      <GamesOverlay
+        onClose={() => setShowGames(false)}
+        playTimer={phaseTimers && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] === 'play' ? (
+          <SessionTimer
+            phase={getCurrentPhaseName()}
+            timerType="play"
+            totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), 'play')}
+            goldenKeyBonus={goldenKeyBonus}
+            lessonProgress={calculateLessonProgress()}
+            isPaused={timerPaused}
+            onTimeUp={handlePhaseTimerTimeUp}
+            onPauseToggle={handleTimerPauseToggle}
+            lessonKey={lessonKey}
+            onTimerClick={handleTimerClick}
+          />
+        ) : null}
+      />
+    )}
 
-try {
-      const service = new SnapshotService({
-        sessionId,
-        learnerId,
-        lessonKey,
-        supabaseClient: supabase
-      });
+{/* Session takeover dialog - outside container to avoid header/footer clipping */}
+    {showTakeoverDialog && conflictingSession && (
+      <SessionTakeoverDialog
+        existingSession={conflictingSession}
+        onTakeover={handleSessionTakeover}
+        onCancel={handleCancelTakeover}
+      />
+    )}
 
-snapshotServiceRef.current = service;
+### 22. src/app/facilitator/generator/counselor/CounselorClient.jsx (308d5449116cb51de7d8566acac623f39d47bdbdd34a35804bfe1d289da9aafd)
+- bm25: -5.8920 | entity_overlap_w: 2.60 | adjusted: -6.5420 | relevance: 1.0000
 
-service.initialize().then(snapshot => {
-        if (cancelled) return;
-        if (snapshot) {
-          const normalizedResumePhase = deriveResumePhaseFromSnapshot(snapshot);
-          const resumePhaseName = normalizedResumePhase || snapshot.currentPhase || null;
-
-if (normalizedResumePhase && snapshot.currentPhase && normalizedResumePhase !== snapshot.currentPhase) {
-            addEvent(`Loaded snapshot - resume normalized to ${normalizedResumePhase} (was ${snapshot.currentPhase})`);
-          } else {
-            addEvent(`💾 Loaded snapshot - Resume from: ${resumePhaseName || 'idle'}`);
+interceptResult.response = `Ok. I\'m opening the Lesson Planner and generating a ${action.durationMonths}-month plan starting ${action.startDate}.`
           }
-
-setResumePhase(resumePhaseName);
-          resumePhaseRef.current = resumePhaseName;
-
-const isBeginningPhase = !resumePhaseName || resumePhaseName === 'idle' || resumePhaseName === 'discussion';
-
-### 21. src/app/session/v2/SessionPageV2.jsx (0122d324a321082c0eb02d8689712c57c483b654e2f099cb64addba2b8ef6bd4)
-- bm25: -7.7675 | relevance: 1.0000
-
-// Persist question order immediately so mid-phase resume has deterministic pools.
-    if (snapshotServiceRef.current) {
-      snapshotServiceRef.current.saveProgress('comprehension-init', {
-        phaseOverride: 'comprehension',
-        questions,
-        nextQuestionIndex: forceFresh ? 0 : (savedComp?.nextQuestionIndex || 0),
-        score: forceFresh ? 0 : (savedComp?.score || 0),
-        answers: forceFresh ? [] : (savedComp?.answers || []),
-        timerMode: forceFresh ? 'play' : (savedComp?.timerMode || 'play')
-      });
-    }
-    if (!savedCompQuestions && !storedCompQuestions) {
-      setGeneratedComprehension(questions);
-      persistAssessments(generatedWorksheet || [], generatedTest || [], questions, generatedExercise || []);
-    }
-    
-    const phase = new ComprehensionPhase({
-      audioEngine: audioEngineRef.current,
-      eventBus: eventBusRef.current,
-      timerService: timerServiceRef.current,
-      questions: questions,
-      resumeState: (!forceFresh && savedComp) ? {
-        questions,
-        nextQuestionIndex: savedComp.nextQuestionIndex ?? savedComp.questionIndex ?? 0,
-        score: savedComp.score || 0,
-        answers: savedComp.answers || [],
-        timerMode: savedComp.timerMode || 'work'
-      } : null
-    });
-    
-    comprehensionPhaseRef.current = phase;
-    
-    // Subscribe to state changes
-    phase.on('stateChange', (data) => {
-      setComprehensionState(data.state);
-      if (data.timerMode) {
-        setComprehensionTimerMode(data.timerMode);
+        }
+        
+        // Add interceptor response to conversation
+        const finalHistory = [
+          ...updatedHistory,
+          { role: 'assistant', content: interceptResult.response }
+        ]
+        setConversationHistory(finalHistory)
+        
+        // Display interceptor response in captions
+        setCaptionText(interceptResult.response)
+        const sentences = splitIntoSentences(interceptResult.response)
+        setCaptionSentences(sentences)
+        setCaptionIndex(0)
+        
+        // Play TTS for interceptor response (Mr. Mentor's voice)
+        setLoadingThought("Preparing response...")
+        try {
+          const ttsResponse = await fetch('/api/mentor-tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: interceptResult.response })
+          })
+          
+          if (ttsResponse.ok) {
+            const ttsData = await ttsResponse.json()
+            if (ttsData.audio) {
+              // Never block the UI on audio playback.
+              void playAudio(ttsData.audio)
+            }
+          }
+        } catch (err) {
+          // Silent TTS error - don't block UX
+        }
+        
+        setLoading(false)
+        setLoadingThought(null)
+        return
       }
-      if (data.state === 'awaiting-answer') {
-        addEvent('â“ Waiting for answer...');
-      }
-    });
-
-### 22. src/app/session/v2/SessionPageV2.jsx (b730b1906065629b54a04b4dfd05e1327e4764d53a084a3b3b34c59b8d657826)
-- bm25: -7.4813 | entity_overlap_w: 1.00 | adjusted: -7.7313 | relevance: 1.0000
-
-// Session tracking (lesson_sessions + lesson_session_events)
-  const [showTakeoverDialog, setShowTakeoverDialog] = useState(false);
-  const [conflictingSession, setConflictingSession] = useState(null);
-  const {
-    startSession: startTrackedSession,
-    endSession: endTrackedSession,
-    startPolling: startSessionPolling,
-    stopPolling: stopSessionPolling,
-  } = useSessionTracking(
-    learnerProfile?.id || null,
-    goldenKeyLessonKey || null,
-    false,
-    (session) => {
-      setConflictingSession(session);
-      setShowTakeoverDialog(true);
-    }
-  );
-  
-  // Phase timer state (loaded from learner profile)
-  const [phaseTimers, setPhaseTimers] = useState(null);
-  const [currentTimerMode, setCurrentTimerMode] = useState({
-    discussion: null,
-    comprehension: null,
-    exercise: null,
-    worksheet: null,
-    test: null
-  });
-  const [timerRefreshKey, setTimerRefreshKey] = useState(0);
-  const [goldenKeyBonus, setGoldenKeyBonus] = useState(0);
-  const [hasGoldenKey, setHasGoldenKey] = useState(false);
-  const [isGoldenKeySuspended, setIsGoldenKeySuspended] = useState(false);
-  const goldenKeyBonusRef = useRef(0);
-  const hasGoldenKeyRef = useRef(false);
-  const goldenKeyLessonKeyRef = useRef('');
-  const [timerPaused, setTimerPaused] = useState(false);
-  
-  // Timer display state (fed by TimerService events) - separate for play and work
-  const [playTimerDisplayElapsed, setPlayTimerDisplayElapsed] = useState(0);
-  const [playTimerDisplayRemaining, setPlayTimerDisplayRemaining] = useState(0);
-  const [workTimerDisplayElapsed, setWorkTimerDisplayElapsed] = useState(0);
-  const [workTimerDisplayRemaining, setWorkTimerDisplayRemaining] = useState(0);
-
-### 23. src/app/session/v2/SessionPageV2.jsx (cfa10dfd3d233c3f359645820bac6fecf1064c1fef5de0d17ea8ffbaba7238d1)
-- bm25: -7.6087 | relevance: 1.0000
-
-if (snapshotServiceRef.current) {
-      snapshotServiceRef.current.saveProgress('exercise-init', {
-        phaseOverride: 'exercise',
-        questions,
-        nextQuestionIndex: forceFresh ? 0 : (savedExercise?.nextQuestionIndex ?? savedExercise?.questionIndex ?? 0),
-        score: forceFresh ? 0 : (savedExercise?.score || 0),
-        answers: forceFresh ? [] : (savedExercise?.answers || []),
-        timerMode: forceFresh ? 'play' : (savedExercise?.timerMode || 'play')
-      });
-    }
-    if (!savedExerciseQuestions && !storedExerciseQuestions) {
-      setGeneratedExercise(questions);
-      persistAssessments(generatedWorksheet || [], generatedTest || [], generatedComprehension || [], questions);
-    }
-    
-    const phase = new ExercisePhase({
-      audioEngine: audioEngineRef.current,
-      eventBus: eventBusRef.current,
-      timerService: timerServiceRef.current,
-      questions: questions,
-      resumeState: (!forceFresh && savedExercise) ? {
-        questions,
-        nextQuestionIndex: savedExercise.nextQuestionIndex ?? savedExercise.questionIndex ?? 0,
-        score: savedExercise.score || 0,
-        answers: savedExercise.answers || [],
-        timerMode: savedExercise.timerMode || 'work'
-      } : null
-    });
-    
-    exercisePhaseRef.current = phase;
-    
-    // Subscribe to state changes
-    phase.on('stateChange', (data) => {
-      setExerciseState(data.state);
-      if (data.timerMode) {
-        setExerciseTimerMode(data.timerMode);
-      }
-    });
-    
-    // Subscribe to question events
-    phase.on('questionStart', (data) => {
-      addEvent(`ðŸ“ Question ${data.questionIndex + 1}/${data.totalQuestions}`);
-      setCurrentExerciseQuestion(data.question);
-      setExerciseTotalQuestions(data.totalQuestions);
-    });
-    
-    phase.on('questionReady',
-
-### 24. src/app/session/v2/SessionPageV2.jsx (768d77566c8cb27fc1dbbadee041c7bbce6057d280bc293b5c9071fe3889dcf2)
-- bm25: -7.4563 | relevance: 1.0000
-
-if (snapshotServiceRef.current) {
-      snapshotServiceRef.current.saveProgress('worksheet-init', {
-        phaseOverride: 'worksheet',
-        questions,
-        nextQuestionIndex: forceFresh ? 0 : (savedWorksheet?.nextQuestionIndex ?? savedWorksheet?.questionIndex ?? 0),
-        score: forceFresh ? 0 : (savedWorksheet?.score || 0),
-        answers: forceFresh ? [] : (savedWorksheet?.answers || []),
-        timerMode: forceFresh ? 'play' : (savedWorksheet?.timerMode || 'play')
-      });
-    }
-    
-    const phase = new WorksheetPhase({
-      audioEngine: audioEngineRef.current,
-      eventBus: eventBusRef.current,
-      timerService: timerServiceRef.current,
-      questions: questions,
-      resumeState: (!forceFresh && savedWorksheet) ? {
-        questions,
-        nextQuestionIndex: savedWorksheet.nextQuestionIndex ?? savedWorksheet.questionIndex ?? 0,
-        score: savedWorksheet.score || 0,
-        answers: savedWorksheet.answers || [],
-        timerMode: savedWorksheet.timerMode || 'work'
-      } : null
-    });
-    
-    worksheetPhaseRef.current = phase;
-    
-    // Subscribe to state changes
-    phase.on('stateChange', (data) => {
-      setWorksheetState(data.state);
-      if (data.timerMode) {
-        setWorksheetTimerMode(data.timerMode);
-      }
-    });
-    
-    // Subscribe to question events
-    phase.on('questionStart', (data) => {
-      addEvent(`ðŸ“ Worksheet ${data.questionIndex + 1}/${data.totalQuestions}`);
-      setCurrentWorksheetQuestion(data.question);
-      setWorksheetTotalQuestions(data.totalQuestions);
-      setLastWorksheetFeedback(null);
-    });
-    
-    phase.on('questionReady', (data) => {
-      setWorksheetState('awaiting-answer');
-      addEvent('â“ Fill in the blank...');
-    });
-    
-    phase.on('answerSubmitted', (data) => {
-
-### 25. src/app/session/v2/TimerService.jsx (513f5ed5db5b319f6fa117acf63ff78870e686502ea6ef611cac5998ef7f2ca1)
-- bm25: -7.3580 | relevance: 1.0000
-
-// Clear TimerControlOverlay sessionStorage mirror for this phase.
-    this.#removeTimerOverlayKey(phase, 'work');
-    
-    // Track on-time completions for golden key (comprehension, exercise, worksheet, test count)
-    const goldenKeyPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
-    if (this.goldenKeysEnabled && onTime && goldenKeyPhases.includes(phase)) {
-      this.onTimeCompletions++;
       
-      // Check golden key eligibility (3 on-time work phases from comp/exercise/worksheet/test)
-      if (this.onTimeCompletions >= 3 && !this.goldenKeyAwarded) {
-        this.goldenKeyAwarded = true;
-        this.eventBus.emit('goldenKeyEligible', {
-          eligible: true,
-          completedPhases: Array.from(this.workPhaseTimers.keys())
-            .filter(p => goldenKeyPhases.includes(p) && this.workPhaseTimers.get(p).onTime)
-        });
+      // Interceptor didn't handle - forward to API
+      setLoadingThought("Consulting my knowledge base...")
+      const forwardMessage = interceptResult.apiForward?.message || message
+      const finalForwardMessage = declineNote ? `${forwardMessage}\n\n${declineNote}` : forwardMessage
+      const forwardContext = interceptResult
+
+### 23. src/app/session/page.js (99920f8f6d876fe97afeaca35410ae6d45b9d8163f6a8cd9698629b230fe2951)
+- bm25: -6.2060 | entity_overlap_w: 1.30 | adjusted: -6.5310 | relevance: 1.0000
+
+// Speak congrats summary once upon entering congrats
+  const congratsSpokenRef = useRef(false);
+  // Defer auto-review transitions while final TTS feedback is playing
+  const reviewDeferRef = useRef(false);
+  const [congratsSpeaking, setCongratsSpeaking] = useState(false);
+  useEffect(() => {
+    if (phase === 'congrats' && typeof testFinalPercent === 'number' && congratsStarted && !congratsSpokenRef.current) {
+      const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
+      const closing = generateClosing({
+        conceptLearned: 'today\'s test',
+        engagementLevel: 'focused',
+        learnerName: learnerName || null
+      });
+      const lines = [
+        `Your score is ${testFinalPercent}%.`,
+        closing
+      ].join(' ');
+      (async () => {
+        setCongratsSpeaking(true);
+        setCongratsDone(false);
+        try { await speakFrontend(lines); } catch {}
+        setCongratsSpeaking(false);
+        setCongratsDone(true);
+      })();
+      congratsSpokenRef.current = true;
+    }
+    if (phase !== 'congrats') {
+      congratsSpokenRef.current = false;
+      setCongratsStarted(false);
+      setCongratsSpeaking(false);
+      setCongratsDone(false);
+    }
+  }, [phase, testFinalPercent, congratsStarted]);
+
+### 24. src/app/session/v2/SessionPageV2.jsx (cfbddb35459087742584099746e54514ea5fc6a2a1ca1a8df7165066a9edf019)
+- bm25: -6.1688 | entity_overlap_w: 1.30 | adjusted: -6.4938 | relevance: 1.0000
+
+// Allow early-declared callbacks to invoke startSession without TDZ issues.
+  startSessionRef.current = startSession;
+  
+  const startTeaching = async (options = {}) => {
+    if (!teachingControllerRef.current) return;
+    await teachingControllerRef.current.startTeaching(options);
+  };
+  
+  const nextSentence = async () => {
+    if (!teachingControllerRef.current) return;
+    
+    // Show loading if GPT content isn't ready
+    setTeachingLoading(true);
+    try {
+      await teachingControllerRef.current.nextSentence();
+    } finally {
+      setTeachingLoading(false);
+    }
+  };
+  
+  const repeatSentence = () => {
+    if (!teachingControllerRef.current) return;
+    teachingControllerRef.current.repeatSentence();
+  };
+  
+  const skipToExamples = () => {
+    if (!teachingControllerRef.current) return;
+    teachingControllerRef.current.skipToExamples();
+  };
+  
+  const restartStage = () => {
+    if (!teachingControllerRef.current) return;
+    teachingControllerRef.current.restartStage();
+  };
+  
+  const stopAudio = () => {
+    if (!audioEngineRef.current) return;
+    stopAudioSafe();
+  };
+  
+  const pauseAudio = () => {
+    if (!audioEngineRef.current) return;
+    audioEngineRef.current.pause();
+  };
+  
+  const resumeAudio = () => {
+    if (!audioEngineRef.current) return;
+    audioEngineRef.current.resume();
+  };
+  
+  const toggleMute = () => {
+    if (!audioEngineRef.current) return;
+    const newMuted = !audioEngineRef.current.isMuted;
+    audioEngineRef.current.setMuted(newMuted);
+    setIsMuted(newMuted);
+  };
+  
+  // Skip current TTS playback
+  const skipTTS = () => {
+    if (!audioEngineRef.current) return;
+    if (askExitSpeechLockRef.current) return;
+    stopAudioSafe();
+    
+    // If we're in a phase with a skip handler, call it to transition state properly
+
+### 25. src/app/api/counselor/route.js (ae56bfb45792f94ba0e24339febbe103db9c5d2b873b9f69dcc8f6616b636b5c)
+- bm25: -5.8093 | entity_overlap_w: 2.60 | adjusted: -6.4593 | relevance: 1.0000
+
+// Helper function to synthesize audio with caching
+async function synthesizeAudio(text, logPrefix) {
+  let audioContent = undefined
+  
+  // Strip markdown formatting for TTS (keep text readable but remove syntax)
+  // Remove **bold**, *italic*, and other markdown markers
+  const cleanTextForTTS = text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')  // Remove **bold**
+    .replace(/\*([^*]+)\*/g, '$1')      // Remove *italic*
+    .replace(/_([^_]+)_/g, '$1')        // Remove _underline_
+    .replace(/`([^`]+)`/g, '$1')        // Remove `code`
+    .replace(/^#+\s+/gm, '')            // Remove # headers
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Remove [links](url)
+  
+  // Check cache first (use cleaned text as key)
+  if (ttsCache.has(cleanTextForTTS)) {
+    audioContent = ttsCache.get(cleanTextForTTS)
+  } else {
+    const ttsClient = await getTtsClient()
+    if (ttsClient) {
+      try {
+        const ssml = toSsml(cleanTextForTTS)
+        const [ttsResponse] = await ttsClient.synthesizeSpeech({
+          input: { ssml },
+          voice: MENTOR_VOICE,
+          audioConfig: MENTOR_AUDIO_CONFIG
+        })
+        
+        if (ttsResponse?.audioContent) {
+          audioContent = typeof ttsResponse.audioContent === 'string'
+            ? ttsResponse.audioContent
+            : Buffer.from(ttsResponse.audioContent).toString('base64')
+          
+          // Cache with naive LRU
+          ttsCache.set(cleanTextForTTS, audioContent)
+          if (ttsCache.size > TTS_CACHE_MAX) {
+            const firstKey = ttsCache.keys().next().value
+            ttsCache.delete(firstKey)
+          }
+        }
+      } catch (ttsError) {
+        // TTS synthesis failed - will return undefined
       }
     }
-    
-    this.currentWorkPhase = null;
   }
   
-  /**
-   * Stop work phase timer without completing
-   * @param {string} phase - Phase name
-   */
-  stopWorkPhaseTimer(phase) {
-    const timer = this.workPhaseTimers.get(phase);
-    
-    if (!timer) {
+  return audioContent
+}
+
+### 26. src/app/session/page.js (5ebfc03af0ee8e5b408f25599d22b5cc33578df677f5614a757547f3ec5f5c1d)
+- bm25: -6.0912 | entity_overlap_w: 1.30 | adjusted: -6.4162 | relevance: 1.0000
+
+// Repeat speech: replay the last TTS audio without updating captions
+  const handleRepeatSpeech = useCallback(async () => {
+    // Check if we have audio to replay
+    if (!lastAudioBase64Ref.current) {
       return;
     }
     
-    const elapsed = timer.elapsed;
+    // Hide repeat button while playing
+    setShowRepeatButton(false);
     
-    this.eventBus.emit('workPhaseTimerStop', {
-      phase,
-      elapsed,
-      formatted: this.#formatTime(elapsed)
-    });
-
-this.#removeTimerOverlayKey(phase, 'work');
-    this.workPhaseTimers.delete(phase);
-    if (this.currentWorkPhase === phase) {
-      this.currentWorkPhase = null;
-    }
-  }
-
-### 26. src/app/session/v2/SessionPageV2.jsx (c0e8f2522b1585717ae102a7aeb411bf1a36901b89e80696dc6dc479c5bd5a15)
-- bm25: -7.0557 | entity_overlap_w: 1.00 | adjusted: -7.3057 | relevance: 1.0000
-
-// If games opens, close fullscreen timer to avoid overlay stacking
-  useEffect(() => {
-    if (showGames && showFullscreenPlayTimer) {
-      setShowFullscreenPlayTimer(false);
-    }
-  }, [showGames, showFullscreenPlayTimer]);
-
-// Handle timer click (for facilitator controls)
-  const handleTimerClick = useCallback(async () => {
-    let allowed = false;
+    // Set speaking state
+    setIsSpeaking(true);
+    
     try {
-      allowed = await ensurePinAllowed('timer');
-    } catch (e) {
-      console.warn('[SessionPageV2] Timer PIN gate error:', e);
-    }
-    if (!allowed) return;
-
-console.log('[SessionPageV2] Timer clicked - showing timer control overlay');
-    setShowTimerControl(true);
-  }, []);
-  
-  // Handle timer pause toggle
-  const handleTimerPauseToggle = useCallback(async () => {
-    let allowed = false;
-    try {
-      allowed = await ensurePinAllowed('timer');
-    } catch (e) {
-      console.warn('[SessionPageV2] Timer PIN gate error:', e);
-    }
-    if (!allowed) return;
-
-setTimerPaused(prev => {
-      const nextPaused = !prev;
-      
-      // Control the authoritative timer in TimerService
-      const timerSvc = timerServiceRef.current;
-      if (timerSvc) {
-        if (nextPaused) {
-          timerSvc.pause();
-        } else {
-          timerSvc.resume();
-        }
-      }
-      
-      return nextPaused;
-    });
-  }, []);
-
-const persistTimerStateNow = useCallback((trigger) => {
-    try {
-      const svc = snapshotServiceRef.current;
-      const timerSvc = timerServiceRef.current;
-      if (!svc || !timerSvc) return;
-      svc.saveProgress(trigger || 'timer-overlay', {
-        timerState: timerSvc.getState()
-      });
+      // Replay audio without updating captions (pass empty array for sentences)
+      await playAudioFromBase64(lastAudioBase64Ref.current, [], 0);
     } catch (err) {
-      console.warn('[SessionPageV2] Timer snapshot persist failed:', err);
+      setIsSpeaking(false);
+      // Show repeat button again since replay failed
+      if (lastAudioBase64Ref.current) {
+        setShowRepeatButton(true);
+      }
     }
+  }, [playAudioFromBase64]);
+
+// Show visual aids carousel
+  const handleShowVisualAids = useCallback(() => {
+    setShowVisualAidsCarousel(true);
   }, []);
 
-### 27. src/app/session/page.js (3b449fb02287fcb5809de66130c398dc62e3d78abf5d75df31988e976b9f2794)
-- bm25: -6.7932 | entity_overlap_w: 2.00 | adjusted: -7.2932 | relevance: 1.0000
+// Explain visual aid via Ms. Sonoma
+  const handleExplainVisualAid = useCallback(async (visualAid) => {
+    if (!visualAid || !visualAid.description) {
+      return;
+    }
 
-// Compute remaining minutes for a work timer from sessionStorage
-  const getWorkTimerRemainingMinutes = useCallback((phaseName) => {
-    if (!phaseName) return null;
+// Read the pre-generated description (created during image generation)
+    await speakFrontendImpl(visualAid.description, {});
+  }, []);
+
+### 27. src/app/session/page.js (fc0201f776b61ad3a0bb0d6843c5e5a2f1665e32c2bb762a1c7006264f6cf47d)
+- bm25: -5.8365 | entity_overlap_w: 1.30 | adjusted: -6.1615 | relevance: 1.0000
+
+// Skip speech: stop TTS, video, captions and jump to end of current response turn
+  const skipJustFiredRef = useRef(false);
+
+const handleSkipSpeech = useCallback(() => {
+    // Mark that skip just fired to prevent Begin hotkey from auto-triggering
+    skipJustFiredRef.current = true;
+    setTimeout(() => { skipJustFiredRef.current = false; }, 300);
+
+// Abort everything but keep existing transcript/captions on screen
+    abortAllActivity(true);
+
+// Explicitly stop any pending WebAudio source and guard timers
     try {
-      const storageKey = lessonKey 
-        ? `session_timer_state:${lessonKey}:${phaseName}:work`
-        : `session_timer_state:${phaseName}:work`;
-      const timerState = sessionStorage.getItem(storageKey);
-      if (!timerState) return null;
-      const state = JSON.parse(timerState);
-      const elapsedSeconds = Number(state.elapsedSeconds || 0);
-      const key = `${String(phaseName).toLowerCase()}_work_min`;
-      const totalMinutesFromTimers = (phaseTimers && typeof phaseTimers[key] === 'number') ? phaseTimers[key] : null;
-      const totalMinutes = (typeof totalMinutesFromTimers === 'number' && totalMinutesFromTimers > 0)
-        ? totalMinutesFromTimers
-        : getCurrentPhaseTimerDuration(phaseName, 'work');
-      const totalSeconds = Math.max(0, totalMinutes * 60);
-      const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
-      return remainingSeconds / 60;
-    } catch {
-      return null;
-    }
-  }, [lessonKey, phaseTimers, getCurrentPhaseTimerDuration]);
-
-### 28. src/app/session/v2/SessionPageV2.jsx (0102390a91adc9d0c71bbe8548c79151ff202cb8d36f5747d329e1938eb5dbda)
-- bm25: -7.0114 | relevance: 1.0000
-
-const phase = new TestPhase({
-      audioEngine: audioEngineRef.current,
-      eventBus: eventBusRef.current,
-      timerService: timerServiceRef.current,
-      questions: questions,
-      resumeState: savedTest ? {
-        questions,
-        nextQuestionIndex: restoreNextIndex,
-        score: savedTest.score || 0,
-        answers: restoreAnswers,
-        timerMode: savedTest.timerMode || 'work',
-        reviewIndex: restoreReviewIndex
-      } : null
-    });
-    
-    testPhaseRef.current = phase;
-    
-    // Subscribe to state changes
-    phase.on('stateChange', (data) => {
-      setTestState(data.state);
-      if (data.timerMode) {
-        setTestTimerMode(data.timerMode);
+      if (webAudioSourceRef.current) {
+        try { webAudioSourceRef.current.stop(); } catch {}
+        try { webAudioSourceRef.current.disconnect(); } catch {}
+        webAudioSourceRef.current = null;
       }
-    });
-    
-    // Subscribe to test events
-    phase.on('questionStart', (data) => {
-      addEvent(`ðŸ“ Test Question ${data.questionIndex + 1}/${data.totalQuestions}`);
-      setCurrentTestQuestion(data.question);
-      setTestTotalQuestions(data.totalQuestions);
-      setTestAnswer('');
-    });
-    
-    phase.on('questionReady', (data) => {
-      setTestState('awaiting-answer');
-      addEvent('â“ Answer the test question...');
-    });
-    
-    phase.on('answerSubmitted', (data) => {
-      const result = data.isCorrect ? 'âœ… Correct!' : 'âŒ Incorrect';
-      addEvent(`${result} (Score: ${data.score}/${data.totalQuestions})`);
-      setTestScore(data.score);
-      setTestAnswer('');
-    });
-    
-    phase.on('questionSkipped', (data) => {
-      addEvent(`â­ï¸ Skipped (Score: ${data.score}/${data.totalQuestions})`);
-      setTestAnswer('');
-    });
-    
-    phase.on('testQuestionsComplete', (data) => {
-      console.log('[SessionPageV2] testQuestionsComplete event received:', data);
-      addEvent(`ðŸ“Š Test questions done! Score: ${data.score}/${data.totalQuestions} (${data.percenta
+      clearSpeechGuard();
+    } catch {}
 
-### 29. src/app/session/v2/TimerService.jsx (b6d0a5a4c8b2c8f9192600f2761b1deff6c14caf996af1773fbe1fc52c564c9f)
-- bm25: -6.9460 | relevance: 1.0000
+// Hide repeat button during the skip action
+    try { setShowRepeatButton(false); } catch {}
 
-this.#clearAllTimerOverlayKeysForLesson();
-  }
-  
-  /**
-   * Get session elapsed time
-   * @returns {{ elapsed: number, formatted: string }}
-   */
-  getSessionTime() {
-    return {
-      elapsed: this.sessionElapsed,
-      formatted: this.#formatTime(this.sessionElapsed)
-    };
-  }
-  
-  /**
-   * Get work phase timer
-   * @param {string} phase - Phase name
-   * @returns {{ elapsed: number, timeLimit: number, remaining: number, formatted: string, onTime: boolean } | null}
-   */
-  getWorkPhaseTime(phase) {
-    const timer = this.workPhaseTimers.get(phase);
-    
-    if (!timer) {
-      return null;
-    }
-    
-    const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
-    
-    return {
-      elapsed: timer.elapsed,
-      timeLimit: timer.timeLimit,
-      remaining,
-      formatted: this.#formatTime(timer.elapsed),
-      remainingFormatted: this.#formatTime(remaining),
-      onTime: timer.elapsed <= timer.timeLimit,
-      completed: timer.completed
-    };
-  }
-  
-  /**
-   * Get golden key status
-   * @returns {{ eligible: boolean, onTimeCompletions: number, required: number }}
-   */
-  getGoldenKeyStatus() {
-    return {
-      eligible: this.goldenKeysEnabled ? this.goldenKeyAwarded : false,
-      onTimeCompletions: this.onTimeCompletions,
-      required: 3
-    };
-  }
-  
-  /**
-   * Serialize state for snapshot persistence
-   * @returns {Object}
-   */
-  serialize() {
-    return {
-      sessionElapsed: this.sessionElapsed,
-      currentPlayPhase: this.currentPlayPhase || null,
-      currentWorkPhase: this.currentWorkPhase || null,
-      playTimers: Array.from(this.playTimers.entries()).map(([phase, timer]) => ({
-        phase,
-        elapsed: timer.elapsed,
-        timeLimit: timer.timeLimit,
-        expired: timer.expired
-      })),
-      workPhaseTimers: Array.from(th
+// Enable input immediately when skipping
+    try { setCanSend(true); } catch {}
 
-### 30. src/app/session/v2/TimerService.jsx (86ae160f1ce7bb4906342454e7b130ab32f451e44561c4264c31ff8b742cf788)
-- bm25: -6.9244 | relevance: 1.0000
-
-/**
-   * Authoritatively set a phase timer's elapsed seconds.
-   *
-   * This is used by the facilitator TimerControlOverlay. The timer engine,
-   * not the overlay UI, is the source of truth for transitions.
-   *
-   * Note: elapsedSeconds may be negative to represent "time added".
-   */
-  setPhaseElapsedSeconds(phase, mode, elapsedSeconds) {
-    const asNumber = Number(elapsedSeconds);
-    if (!Number.isFinite(asNumber)) return;
-    if (!phase || typeof phase !== 'string') return;
-
-const now = Date.now();
-    const startTime = now - (asNumber * 1000);
-
-if (mode === 'play') {
-      // Discussion has no play timer.
-      if (phase === 'discussion') return;
-
-const validPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
-      if (!validPhases.includes(phase)) return;
-
-const existing = this.playTimers.get(phase);
-      const timeLimit = existing?.timeLimit ?? this.playTimerLimits?.[phase];
-      if (!timeLimit) return;
-
-const timer = {
-        startTime,
-        elapsed: asNumber,
-        timeLimit,
-        expired: false
-      };
-
-this.playTimers.set(phase, timer);
-      this.currentPlayPhase = phase;
-      this.mode = 'play';
-
-// Only start interval if not paused
-      if (!this.isPaused && !this.playTimerInterval) {
-        this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
+// Scroll transcript to bottom
+    try {
+      if (captionBoxRef.current) {
+        captionBoxRef.current.scrollTop = captionBoxRef.current.scrollHeight;
       }
+    } catch {}
+
+// Show opening actions if in the right phase/state
+    try {
+      if (
+        phase === 'discussion' &&
+        subPhase === 'awaiting-learner' &&
+        askState === 'inactive' &&
+        riddleState === 'inactive' &&
+        poemState === 'inactive'
+      ) {
+        setShowOpeningActions(true);
+      }
+    } catch {}
+
+// Reset playback state refs
+    webAudioStartedAtRef.current = 0;
+    webAudioPausedAtRef.current = 0;
+    htmlAudioPausedAtRef.current = 0;
+
+// Restore repeat button so the learner can hear the last line again
+    try {
+      if (lastAudioBase64Ref.current) {
+        setShowRepeatButton(true);
+      }
+    } catch {}
+
+### 28. src/app/session/page.js (31d0fe7aac77163820e24cc78058f4c0ced354b2e2f524e4763c66f78c86a7dd)
+- bm25: -5.9398 | relevance: 1.0000
+
+{/* Video + captions: stack normally; side-by-side on mobile landscape */}
+  <div style={isMobileLandscape ? { display:'flex', alignItems:'stretch', width:'100%', paddingBottom:4, '--msSideBySideH': (videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')) } : {}}>
+    <div ref={videoColRef} style={isMobileLandscape ? { flex:`0 0 ${videoColPercent}%`, display:'flex', flexDirection:'column', minWidth:0, minHeight:0, height: 'var(--msSideBySideH)' } : {}}>
+  {/* Shared Complete Lesson handler */}
+  { /* define once; stable ref for consumers */ }
+  <VideoPanel
+        isMobileLandscape={isMobileLandscape}
+        isShortHeight={isShortHeight}
+  videoMaxHeight={videoEffectiveHeight || videoMaxHeight}
+        videoRef={videoRef}
+        showBegin={showBegin}
+        isSpeaking={isSpeaking}
+        phase={phase}
+  ticker={ticker}
+    currentWorksheetIndex={currentWorksheetIndex}
+        onBegin={beginSession}
+        onBeginComprehension={beginComprehensionPhase}
+        onBeginWorksheet={beginWorksheetPhase}
+        onBeginTest={beginTestPhase}
+        onBeginSkippedExercise={beginSkippedExercise}
+        subPhase={subPhase}
+        testCorrectCount={testCorrectCount}
+        testFinalPercent={testFinalPercent}
+        lessonParam={lessonParam}
+        lessonKey={lessonKey}
+        muted={muted}
+        onToggleMute={toggleMute}
+        onSkip={handleSkipSpeech}
+  loading={loading}
+  overlayLoading={overlayLoading}
+        exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
+        skipPendingLessonLoad={skipPendingLessonLoad}
+  currentCompProblem={currentCompProblem}
+  testActiveIndex={testActiveIndex}
+  testList={Array.isArray(generatedTest) ? generatedTest : []}
+        onCompleteLesson={onCompleteLesson}
+        sessio
+
+### 29. src/app/session/page.js (de41b4cf0f59d1cc74aaec328e8c6cee81d5ea392fcce2f705add468e116e5d2)
+- bm25: -5.5021 | entity_overlap_w: 1.30 | adjusted: -5.8271 | relevance: 1.0000
+
+const prevLen = captionSentencesRef.current?.length || 0;
+  let nextAll = [...(captionSentencesRef.current || [])];
+  // If user provided input (innertext), insert it ABOVE Ms. Sonoma's reply as its own line,
+  // adding a newline before and after so it stands on its own line.
+  // These pre-reply items are NOT included in TTS scheduling.
+  let preReplyExtra = 0;
+  try {
+    if (typeof innertext === 'string') {
+      const it = innertext.trim();
+      if (it) {
+        nextAll.push('\n'); // ensure user text starts on a new line
+        preReplyExtra += 1;
+        nextAll.push({ text: it, role: 'user' }); // styled in CaptionPanel
+        preReplyExtra += 1;
+        nextAll.push('\n'); // ensure reply starts on a new line after user text
+        preReplyExtra += 1;
+      }
+    }
+  } catch { /* non-fatal */ }
+      // Network + processing complete; stop showing loading placeholder BEFORE or while starting audio
+      setLoading(false);
       
-      // If paused, update the paused elapsed time
-      if (this.isPaused) {
-        this.pausedPlayElapsed = asNumber;
-      }
+  nextAll = [...nextAll, ...assistantSentences];
+  captionSentencesRef.current = nextAll;
+  setCaptionSentences(nextAll);
+  // Set selection to the first reply sentence (skip the inserted items before reply)
+  setCaptionIndex(prevLen + preReplyExtra);
 
-### 31. src/app/session/v2/TimerService.jsx (a2d7e76cb211127d6407ec85e28abf4078ebc4470e2462f8084afc06651e070b)
-- bm25: -6.6363 | relevance: 1.0000
+### 30. src/app/session/page.js (d4c78ce46e98d574727e4d8fdeac3e472cf0c55ca7eeec8f3145e2606d62ed8d)
+- bm25: -5.3130 | entity_overlap_w: 1.30 | adjusted: -5.6380 | relevance: 1.0000
 
-/**
-   * Pause all running timers
-   */
-  pause() {
-    if (this.isPaused) return;
-    
-    this.isPaused = true;
-    
-    // Pause play timer if running
-    if (this.currentPlayPhase) {
-      const timer = this.playTimers.get(this.currentPlayPhase);
-      if (timer && !timer.expired) {
-        const now = Date.now();
-        timer.elapsed = Math.floor((now - timer.startTime) / 1000);
-        this.pausedPlayElapsed = timer.elapsed;
-        
-        // Stop the interval
-        if (this.playTimerInterval) {
-          clearInterval(this.playTimerInterval);
-          this.playTimerInterval = null;
-        }
-      }
+// Poem: topic input ? generate poem, then await Ok
+    if (poemState === 'awaiting-topic') {
+      setCanSend(false);
+      setShowPoemSuggestions(false);
+      // Echo the user's topic to captions as user line
+      try {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), { text: trimmed, role: 'user' }];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+      } catch {}
+      // Ask backend to write a 16-line rhyming poem about the specific user topic; then read via unified TTS/captions
+      const topic = (trimmed || '').replace(/["��]/g, "'");
+      const instruction = [
+        'You are Ms. Sonoma.',
+        `Write a rhyming poem with exactly 16 lines about the topic: "${topic}".`,
+        'Use simple, warm language for kids, one short idea per line.',
+        'Keep the poem clearly about that topic throughout.',
+        'Do not add a title or extra commentary.'
+      ].join(' ');
+      const result = await callMsSonoma(instruction, '', { phase: 'discussion', subject: subjectParam, difficulty: difficultyParam, lesson: lessonParam, step: 'poem' }).catch(() => null);
+      // callMsSonoma handles audio playback internally, so no need to call speakFrontend
+      setPoemState('awaiting-ok');
+      setCanSend(false);
+      setShowOpeningActions(true);
+      return;
     }
-    
-    // Pause work timer if running
-    if (this.currentWorkPhase) {
-      const timer = this.workPhaseTimers.get(this.currentWorkPhase);
-      if (timer && !timer.completed) {
-        const now = Date.now();
-        timer.elapsed = Math.floor((now - timer.startTime) / 1000);
-        this.pausedWorkElapsed = timer.elapsed;
-        
-        // Stop the interval
-        if (this.workPhaseInterval) {
-          clearInterval(this.workPhaseInterval);
-          this.workPhaseInterval = null;
-        }
-      }
-    }
+
+### 31. src/app/facilitator/generator/counselor/CounselorClient.jsx (81e9ad76449bbdfb2603315d42fe5021e0cdab4861cd298963b24e2c04a2615d)
+- bm25: -5.4324 | relevance: 1.0000
+
+const cohereChronographEnabled = useCohereChronograph && chronographReady
+  
+  // Conversation state
+  const [conversationHistory, setConversationHistory] = useState([])
+  const [userInput, setUserInput] = useState('')
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [pendingConfirmationTool, setPendingConfirmationTool] = useState(null)
+  
+  // MentorInterceptor instance
+  const interceptorRef = useRef(null)
+  if (!interceptorRef.current) {
+    interceptorRef.current = new MentorInterceptor()
   }
   
-  /**
-   * Resume all paused timers
-   */
-  resume() {
-    if (!this.isPaused) return;
-    
-    this.isPaused = false;
-    
-    // Resume play timer if it was paused
-    if (this.currentPlayPhase && this.pausedPlayElapsed !== null) {
-      const timer = this.playTimers.get(this.currentPlayPhase);
-      if (timer && !timer.expired) {
-        // Adjust startTime to account for paused duration
-        timer.startTime = Date.now() - (this.pausedPlayElapsed * 1000);
-        timer.elapsed = this.pausedPlayElapsed;
-        this.pausedPlayElapsed = null;
-        
-        // Restart the interval
-        if (!this.playTimerInterval) {
-          this.
-
-### 32. src/app/session/v2/SessionPageV2.jsx (aa89093162239c4a4d4f2b97fb9e7c42320c6d22311dbc8a20c8762e08ce816f)
-- bm25: -5.8524 | entity_overlap_w: 2.00 | adjusted: -6.3524 | relevance: 1.0000
-
-const handleUnsuspendGoldenKey = useCallback(() => {
-    if (goldenKeysEnabledRef.current === false) return;
-    if (!hasGoldenKey) return;
-    setIsGoldenKeySuspended(false);
-    if (phaseTimers) {
-      setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
-    }
-    setTimerRefreshKey(k => k + 1);
-    persistTimerStateNow('golden-key-unsuspended');
-  }, [hasGoldenKey, phaseTimers, persistTimerStateNow]);
+  // Draft summary state
+  const [draftSummary, setDraftSummary] = useState('')
+  const [showClipboard, setShowClipboard] = useState(false)
+  const [clipboardInstructions, setClipboardInstructions] = useState(false)
+  const [clipboardForced, setClipboardForced] = useState(false)
+  const [turnWarningShown, setTurnWarningShown] = useState(false)
+  const lastLocalUpdateTimestamp = useRef(Date.now())
+  const realtimeChannelRef = useRef(null)
   
-  // Start play timer for a phase (called when phase begins)
-  const startPhasePlayTimer = useCallback((phaseName) => {
-    if (!phaseName) return;
-    setCurrentTimerMode(prev => ({
-      ...prev,
-      [phaseName]: 'play'
-    }));
-    setTimerRefreshKey(prev => prev + 1);
-    addEvent(`ðŸŽ‰ Play timer started for ${phaseName}`);
-  }, []);
+  // Goals clipboard state
+  const [showGoalsClipboard, setShowGoalsClipboard] = useState(false)
   
-  // Transition from play to work timer (called when "Go" is clicked)
-  const transitionToWorkTimer = useCallback((phaseName) => {
-    if (!phaseName) return;
-    
-    // Clear the play timer storage so work timer starts fresh
+  // Caption state (similar to session page)
+  const [captionText, setCaptionText] = useState('')
+  const [captionSentences, setCaptionSentences] = useState([])
+  const [captionIndex, setCaptionIndex] = useState(0)
+  
+  // Screen overlay state
+  const [activeScreen, setActiveScreen] = useState('mentor') // 'mentor' | 'calendar' | 'lessons' | 'maker'
+  
+  // Audio/Video refs
+  const videoRef = useRef(null)
+  const buttonVideoRef = useRef(null)
+  const audioRef = useRef(null)
+  const captionBoxRef = useRef(null)
+  const lastAudioRef = useRef(null)
+  
+  // Mute state - persisted in localStorage
+  const [muted, setMuted] = useState(() => {
+
+### 32. src/app/session/page.js (d33285c0d1ff9bf6cb3e3d620c60c0de63dd6218dd13e9350bee0a7789a4c5f7)
+- bm25: -4.7498 | entity_overlap_w: 1.30 | adjusted: -5.0748 | relevance: 1.0000
+
+useEffect(() => {
     try {
-      const playTimerKeys = [
-        lessonKey ? `session_timer_state:${lessonKey}:${phaseName}:play` : null,
-        `session_timer_state:${phaseName}:play`,
-      ].filter(Boolean);
-      playTimerKeys.forEach((k) => {
-        try { sessionStorage.removeItem(k); } catch {}
-      });
-    } catch {}
-    
-    setCurrentTimerMode(prev => ({
-      ...prev,
-      [phaseName]: 'work'
-    }));
-    setTimerRefreshKey(prev => prev + 1);
-    addEvent(`âœï¸ Work timer started for ${phaseName}`);
-  }, [lessonKey]);
-  
-  // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode) - V1 parity
-  const handlePlayExpiredComplete = useCallback(async () => {
-    console.log('[SessionPageV2] PlayTimeExpired countdown complete, transitioning to work');
-    setShowPlayTimeExpired(false
-
-### 33. src/app/session/hooks/useResumeRestart.js (42368b98c6e83360ef9a8d85563376bf82ff5ddca07ce6d5f187dab11447924d)
-- bm25: -5.8268 | entity_overlap_w: 2.00 | adjusted: -6.3268 | relevance: 1.0000
-
-const buildKeys = (type) => {
-      const keys = [];
-      // Prefer lesson-scoped keys when available, but also probe the unscoped
-      // variant for robustness (older sessions / early-boot timers).
-      if (lessonKey) {
-        keys.push(`session_timer_state:${lessonKey}:${phaseName}:${type}`);
+      // Do not retrigger if we're already in test-review or in congrats
+      if (phase === 'congrats') return;
+      if (phase === 'test' && typeof subPhase === 'string' && subPhase.startsWith('review')) return;
+      if (reviewDeferRef.current) return; // Hold while we intentionally speak final feedback
+      if (isSpeaking) return; // Wait until TTS feedback is finished
+      if (phase !== 'test') return; // Treat test as the authoritative phase
+      const list = Array.isArray(generatedTest) ? generatedTest : [];
+      const limit = Math.min((typeof TEST_TARGET === 'number' && TEST_TARGET > 0) ? TEST_TARGET : list.length, list.length);
+      const answeredCount = Array.isArray(testUserAnswers) ? testUserAnswers.filter(v => typeof v === 'string' && v.length > 0).length : 0;
+      const judgedCount = Array.isArray(testCorrectByIndex) ? testCorrectByIndex.filter(v => typeof v !== 'undefined').length : 0;
+      const idxDone = (typeof testActiveIndex === 'number' ? testActiveIndex : 0) >= limit;
+      const finished = limit > 0 && (answeredCount >= limit || judgedCount >= limit || idxDone);
+      if (finished) {
+        enterTestReview({ disableSending: true });
       }
-      keys.push(`session_timer_state:${phaseName}:${type}`);
-      return keys;
-    };
-
-const readBestState = (type) => {
-      const keys = buildKeys(type);
-      const candidates = [];
-      for (const key of keys) {
-        try {
-          const raw = sessionStorage.getItem(key);
-          if (!raw) continue;
-          const parsed = JSON.parse(raw);
-          candidates.push({ key, parsed });
-        } catch {
-          // ignore
-        }
-      }
-      if (!candidates.length) return null;
-      if (candidates.length === 1) return candidates[0].parsed;
-
-// If both lesson-scoped + unscoped exist, pick the most recently-started.
-      candidates.sort((a, b) => {
-        const as = Number(a.parsed?.startTime) || 0;
-        const bs = Number(b.parsed?.startTime) || 0;
-        return bs - as;
-      });
-      return candidates[0].parsed;
-    };
-
-const workState = readBestState('work');
-    const playState = readBestState('play');
-
-if (workState && !playState) return 'work';
-    if (!workState && playState) return 'play';
-    if (workState && playState) {
-      const workStart = Number(workState.startTime) || 0;
-      const playStart = Number(playState.startTime) || 0;
-      return workStart >= playStart ? 'work' : 'play';
-    }
-
-return null;
-  }, [lessonKey]);
-
-### 34. src/app/session/page.js (2cf08f5a7761f406520e67575a6732a7569e3c2a45f72bac41eda4f4163c94d3)
-- bm25: -5.7265 | entity_overlap_w: 2.00 | adjusted: -6.2265 | relevance: 1.0000
-
-// Phase-based timer helpers
-  
-  // Start play timer for a phase (called when "Begin [Phase]" button is clicked)
-  const startPhasePlayTimer = useCallback((phaseName) => {
-    setCurrentTimerMode(prev => ({
-      ...prev,
-      [phaseName]: 'play'
-    }));
-  }, []); // setCurrentTimerMode is stable useCallback, not needed in deps
-  
-  // Transition from play to work timer (called when "Go" button is clicked during play mode)
-  const transitionToWorkTimer = useCallback((phaseName) => {
-    // Clear the play timer storage so work timer starts fresh
-    const playTimerKeys = [
-      lessonKey ? `session_timer_state:${lessonKey}:${phaseName}:play` : null,
-      `session_timer_state:${phaseName}:play`,
-    ].filter(Boolean);
-    try {
-      playTimerKeys.forEach((k) => {
-        try { sessionStorage.removeItem(k); } catch {}
-      });
     } catch {}
-    
-    setCurrentTimerMode(prev => ({
-      ...prev,
-      [phaseName]: 'work'
-    }));
-  }, [lessonKey]); // setCurrentTimerMode is stable useCallback, not needed in deps
-  
-  // Handle play timer expiration (show 30-second countdown overlay)
-  const handlePlayTimeUp = useCallback((phaseName) => {
-    // Skip if countdown was already completed (flag set during restore or previous completion)
-    if (playExpiredCountdownCompleted) return;
-    
-    setShowPlayTimeExpired(true);
-    setPlayExpiredPhase(phaseName);
-    // Close games overlay if it's open
-    setShowGames(false);
-    
-    // Clear all opening action sequences to prevent hangover at transition to work subphase
-    setShowOpeningActions(false);
-    setAskState('inactive');
-    setRiddleState('inactive');
-    setPoemState('inactive');
-    setStoryState('inactive');
-    setFillInFunState('inactive');
-    
-    // Clear story-specific states
-    setStoryTranscript([]);
+  }, [phase, subPhase, generatedTest, testUserAnswers, testCorrectByIndex, testActiveIndex, isSpeaking, enterTestReview]);
 
-### 35. src/app/session/v2/SessionPageV2.jsx (9aecfe928f26ee8143d05d4bcc6188457e14f41fbf78cb0852f72e2f96839d95)
-- bm25: -6.1433 | relevance: 1.0000
+### 33. src/app/session/page.js (16341cbce15ef1ea0ae1e7a1ecc05557917a4f637b16a1ad0b1368065b4fd39b)
+- bm25: -4.7920 | relevance: 1.0000
 
-// Test Review UI Component (matches V1)
-function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview }) {
-  const { score, totalQuestions, percentage, grade: letterGrade, answers } = testGrade;
+// Create inline wrappers for audio utility functions using hook-provided refs
+  const ensureAudioContextWrapped = useCallback(() => {
+    return ensureAudioContext({ audioCtxRef, webAudioGainRef, mutedRef });
+  }, [audioCtxRef, webAudioGainRef, mutedRef]);
   
-  const tierForPercent = (pct) => {
-    if (pct >= 90) return 'gold';
-    if (pct >= 80) return 'silver';
-    if (pct >= 70) return 'bronze';
-    return null;
-  };
+  const playViaWebAudioWrapped = useCallback(async (b64, sentences, startIndex) => {
+    return playViaWebAudio(
+      b64,
+      sentences,
+      startIndex,
+      { audioCtxRef, webAudioGainRef, webAudioSourceRef, webAudioBufferRef, webAudioStartedAtRef, webAudioPausedAtRef, mutedRef },
+      scheduleCaptionsForDurationUtil,
+      setIsSpeaking,
+      armSpeechGuard,
+      clearSpeechGuard,
+      videoRef,
+      videoPlayingRef,
+      { captionBatchStartRef, captionBatchEndRef },
+      forceNextPlaybackRef,
+      phase,
+      subPhase,
+      askState,
+      riddleState,
+      poemState,
+      setShowOpeningActions
+    );
+  }, [audioCtxRef, webAudioGainRef, webAudioSourceRef, webAudioBufferRef, webAudioStartedAtRef, webAudioPausedAtRef, mutedRef, phase, subPhase, askState, riddleState, poemState, armSpeechGuard, clearSpeechGuard]);
   
-  const emojiForTier = (tier) => {
-    if (tier === 'gold') return '🥇';
-    if (tier === 'silver') return '🥈';
-    if (tier === 'bronze') return '🥉';
-    return '';
-  };
+  const stopWebAudioSourceWrapped = useCallback(() => {
+    return stopWebAudioSource(webAudioSourceRef);
+  }, [webAudioSourceRef]);
   
-  const tier = tierForPercent(percentage);
-  const medal = emojiForTier(tier);
-  
-  const card = { 
-    background: '#ffffff', 
-    border: '1px solid #e5e7eb', 
-    borderRadius: 12, 
-    padding: 16, 
-    boxShadow: '0 2px 10px rgba(0,0,0,0.04)'
-  };
-  
-  const badge = (ok) => ({
-    display: 'inline-block',
-    padding: '2px 8px',
-    borderRadius: 999,
-    fontWeight: 800,
-    fontSize: 12,
-    background: ok ? 'rgba(16,185,129,0.14)' : 'rgba(239,68,68,0.14)',
-    color: ok ? '#065f46' : '#7f1d1d',
-    border: `1px solid ${ok ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)'}`
-  });
-  
-  const btn = {
-    padding: '8px 14px',
-    borderRadius: 8,
-    border: '1px solid #d1d5db',
-    background: '#f9fafb',
-    color: '#374151',
-    fontWeight: 600,
-    fontSize: 14,
-    cursor: 'pointer',
-    transition: 'all 0.15s ease'
-  };
-  
-  const workPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
-  
-  const formatRemainingLabel = (phaseKey) => {
-    const minutesLeft = workTimeRemaining?.[phaseKey] ?? null;
-    if (minutesLeft == null) return '—';
-    const totalSeconds = Math.round(Math.max(0, minutesLeft * 60));
-    const
+  const unlockAudioPlaybackWrapped = useCallback(async () => {
+    return unlockAudioPlayback({ audioCtxRef, webAudioGainRef, mutedRef }, audioUnlockedRef, setAudioUnlocked);
+  }, [audioCtxRef, webAudioGainRef, mutedRef]);
 
-### 36. src/app/session/page.js (9b09f2a1772d11abcc4ead3f89548a7d498171dfba1cb148992ccdc0f175686f)
-- bm25: -5.8779 | entity_overlap_w: 1.00 | adjusted: -6.1279 | relevance: 1.0000
+### 34. src/app/session/page.js (7fa8eb8f66431b47fd4758b85a63ce5dee92fb4c4b60328e1ea1ed49bd260a01)
+- bm25: -4.2143 | entity_overlap_w: 1.30 | adjusted: -4.5393 | relevance: 1.0000
 
-// Session takeover detection (hoisted earlier)
-
-// Clear timer state only after initial loading completes and the Begin screen is actually visible
+// Direct trigger: when target is met during test (by answers or judged), enter Review after TTS completes
   useEffect(() => {
-    if (loading) return;
-    if (!showBegin || !lessonKey) return;
     try {
-      const phases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
-      const timerTypes = ['play', 'work'];
-      phases.forEach(phase => {
-        timerTypes.forEach(timerType => {
-          const storageKey = `session_timer_state:${lessonKey}:${phase}:${timerType}`;
-          sessionStorage.removeItem(storageKey);
-        });
-      });
+      if (phase !== 'test') return;
+      if (reviewDeferRef.current) return; // Hold while final feedback is speaking
+      if (isSpeaking) return; // Do not transition mid-speech
+      if (typeof subPhase === 'string' && subPhase.startsWith('review')) return; // Already in review subphase
+      const list = Array.isArray(generatedTest) ? generatedTest : [];
+      const limit = Math.min((typeof TEST_TARGET === 'number' && TEST_TARGET > 0) ? TEST_TARGET : list.length, list.length);
+      if (limit <= 0) return;
+      const answeredCount = Array.isArray(testUserAnswers) ? testUserAnswers.filter(v => typeof v === 'string' && v.length > 0).length : 0;
+      const judgedCount = Array.isArray(testCorrectByIndex) ? testCorrectByIndex.filter(v => typeof v !== 'undefined').length : 0;
+      const idxDone = (typeof testActiveIndex === 'number' ? testActiveIndex : 0) >= limit;
+      if (answeredCount >= limit || judgedCount >= limit || idxDone || (typeof ticker === 'number' && ticker >= limit)) {
+        enterTestReview({ disableSending: true });
+      }
     } catch {}
-  }, [showBegin, lessonKey, loading]);
+  }, [phase, generatedTest, testUserAnswers, testCorrectByIndex, testActiveIndex, ticker, isSpeaking, subPhase, enterTestReview]);
+  const finalizeTestAndFarewell = async ({ correctCount, total, percent } = {}) => {
+    if (!generatedTest || !generatedTest.length) return;
+    const fallbackTotal = generatedTest.length;
+    const safeTotal = total || fallbackTotal;
+    const safeCorrect = (typeof correctCount === 'number') ? correctCount : testCorrectCount;
+    const safePercent = (typeof percent === 'number') ? percent : Math.round((safeCorrect / Math.max(1, safeTotal)) * 100);
 
-### 37. src/app/session/hooks/useResumeRestart.js (a18056117e8fc973d4c371848a9190ece03ef5bb9b1b314e2fbc0585e04fc905)
-- bm25: -5.5591 | entity_overlap_w: 2.00 | adjusted: -6.0591 | relevance: 1.0000
+### 35. src/app/session/page.js (99c26b3cd8ebe716f779b277f904b0f633948a578b357f981ee03f2839d3d049)
+- bm25: -4.2137 | entity_overlap_w: 1.30 | adjusted: -4.5387 | relevance: 1.0000
 
-const handleRestartClick = useCallback(async () => {
-    // Confirm irreversible action before proceeding
-    try {
-      const ans = typeof window !== 'undefined' ? window.prompt("Restart will clear saved progress and cannot be reversed. Type 'ok' to confirm.") : null;
-      if (!ans || String(ans).trim().toLowerCase() !== 'ok') { return; }
-    } catch {}
-    
-    // Immediately hide the Resume/Restart buttons and show loading spinner
-    try { setOfferResume(false); } catch {}
-    try { setLoading(true); } catch {}
-    
-    // Reset timer state for restart
-    try {
-      if (typeof window !== 'undefined') {
-        const storageKey = lessonKey ? `session_timer_state:${lessonKey}` : 'session_timer_state';
-        sessionStorage.removeItem(storageKey);
-      }
-      if (setTimerPaused) {
-        setTimerPaused(false);
-      }
-    } catch (e) {
-      // Timer reset failed - continue
+// Also reveal Opening actions when the captions finish (even if audio is still playing)
+  useEffect(() => {
+    if (
+      captionsDone &&
+      phase === 'discussion' &&
+      subPhase === 'awaiting-learner' &&
+      askState === 'inactive' &&
+      riddleState === 'inactive' &&
+      poemState === 'inactive' &&
+      storyState === 'inactive' &&
+      fillInFunState === 'inactive'
+    ) {
+      setShowOpeningActions(true);
     }
-    
-    // Stop all activity and cut the current transcript segment so nothing is lost
-    try { abortAllActivity(); } catch {}
-    try {
-      const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
-      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
-      const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
-      const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
-      const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
-      const slice = all.slice(startIdx).filter((ln) => ln && typeof ln.text === 'string' && ln.text.trim().length > 0).map((ln) => ({ role: ln.role || 'assistant', text: ln.text }));
-      if (learnerId && learnerId !== 'demo' && slice.length > 0) {
-        await appendTranscr
+  }, [captionsDone, phase, subPhase, askState, riddleState, poemState, storyState, fillInFunState]);
 
-### 38. src/app/session/v2/SessionPageV2.jsx (71db2dc587290bfb731e3175ad69b9498370a6bccdf32b454be79aaf1381928b)
-- bm25: -4.1152 | entity_overlap_w: 1.00 | adjusted: -4.3652 | relevance: 1.0000
+// If Ask, Riddle, Poem, Story, or Fill-in-Fun becomes active, immediately hide Opening actions
+  useEffect(() => {
+    if (askState !== 'inactive' || riddleState !== 'inactive' || poemState !== 'inactive' || storyState !== 'inactive' || fillInFunState !== 'inactive') {
+      try { setShowOpeningActions(false); } catch {}
+    }
+  }, [askState, riddleState, poemState, storyState, fillInFunState]);
 
-// Timeline jumps should enter the destination phase fresh (Begin -> Opening Actions -> Go)
-    // even if snapshot phaseData exists. Mark the target so phase init ignores resumeState.
-    timelineJumpForceFreshPhaseRef.current = targetPhase;
-    
-    // Destroy any existing phase controllers to avoid conflicts
-    if (discussionPhaseRef.current) {
-      try { discussionPhaseRef.current.destroy(); } catch {}
-      discussionPhaseRef.current = null;
-    }
-    if (comprehensionPhaseRef.current) {
-      try { comprehensionPhaseRef.current.destroy(); } catch {}
-      comprehensionPhaseRef.current = null;
-    }
-    if (exercisePhaseRef.current) {
-      try { exercisePhaseRef.current.destroy(); } catch {}
-      exercisePhaseRef.current = null;
-    }
-    if (worksheetPhaseRef.current) {
-      try { worksheetPhaseRef.current.destroy(); } catch {}
-      worksheetPhaseRef.current = null;
-    }
-    if (testPhaseRef.current) {
-      try { testPhaseRef.current.destroy(); } catch {}
-      testPhaseRef.current = null;
-    }
-    if (closingPhaseRef.current) {
-      try { closingPhaseRef.current.destroy(); } catch {}
-      closingPhaseRef.current = null;
-    }
-    
-    // Reset phase-specific states
-    setDiscussionState('idle');
-    setComprehensionState('idle');
-    setExerciseState('idle');
-    setWorksheetState('idle');
-    setTestState('idle');
-    
-    // Hide PlayTimeExpiredOverlay if showing
-    setShowPlayTimeExpired(false);
-    setPlayExpiredPhase(null);
-    
-    // Clear timer storage for the target phase (fresh start)
-    try {
-      // Clear play timer storage
-      if (lessonKey) {
-        sessionStorage.removeItem(`session_timer_state:${lessonKey}:${targetPhase}:play`);
-      }
-      // Clear work timer storage
-      if (lessonKey) {
-        sessionStorage.removeItem(`se
+// Clear TTS cache on phase transitions to prevent stale audio from previous phases
+  useEffect(() => {
+    try { ttsCache.clear(); } catch {}
+  }, [phase]);
 
-### 39. src/app/session/page.js (31d804800c63e3c246516064729f97f82ee537de74dc97d12ff738904dac43f1)
-- bm25: -4.1152 | relevance: 1.0000
+### 36. src/app/session/page.js (2d82e2a5c1efa4e3fe3319e01e1cfbff9ca2d04ce4008a06e005e90552cad013)
+- bm25: -4.0058 | entity_overlap_w: 1.30 | adjusted: -4.3308 | relevance: 1.0000
 
-// Session Timer state
-  const [timerPaused, setTimerPaused] = useState(false);
-  const [sessionTimerMinutes, setSessionTimerMinutes] = useState(60); // Default 1 hour
-  
-  // Phase-based timer system (11 timers: 5 phases × 2 types + 1 golden key bonus)
-  const [phaseTimers, setPhaseTimers] = useState(null); // Loaded from learner profile
-  const [currentTimerMode, setCurrentTimerModeState] = useState({}); // { discussion: 'play'|'work', comprehension: 'play'|'work', ... }
-  const currentTimerModeRef = useRef(currentTimerMode);
-  const setCurrentTimerMode = useCallback((updater) => {
-    setCurrentTimerModeState(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : (updater || {});
-      currentTimerModeRef.current = next;
-      return next;
+// If user hits Enter or Send while recording, stop first
+  const handleSend = useCallback(() => {
+    if (isRecording) stopRecording();
+    onSend();
+  }, [isRecording, stopRecording, onSend]);
+  // Auto-focus when the field becomes actionable (enabled and allowed to send)
+  // Add a tiny retry window to avoid races right after TTS ends or layout settles
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    if (sendDisabled || !canSend) return;
+    let rafId = null;
+    let t0 = null;
+    let t1 = null;
+    const doFocus = () => {
+      try {
+        el.focus({ preventScroll: true });
+        const len = el.value.length;
+        el.setSelectionRange(len, len);
+      } catch {/* ignore focus errors */}
+    };
+    // Initial microtask/next-tick
+    t0 = setTimeout(() => {
+      if (document.activeElement !== el) doFocus();
+    }, 0);
+    // After a frame, try again if something stole focus
+    rafId = requestAnimationFrame(() => {
+      if (document.activeElement !== el) doFocus();
     });
-  }, []);
-  const [workPhaseCompletions, setWorkPhaseCompletionsState] = useState({
-    discussion: false,
-    comprehension: false,
-    exercise: false,
-    worksheet: false,
-    test: false
-  }); // Tracks which work phases completed without timing out (for golden key earning)
-  const workPhaseCompletionsRef = useRef(workPhaseCompletions);
-  const setWorkPhaseCompletions = useCallback((updater) => {
-    setWorkPhaseCompletionsState(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : (updater || {
-        discussion: false,
-        comprehension: false,
-        exercise: false,
-        worksheet: false,
-        test: false,
-      });
-      workPhaseCompletionsRef.current = next;
-      return next;
-    });
-  }, []);
-  const [workTimeRemaining, setWorkTimeRemainingState] = useState({
-    discussion: null,
-    comprehension: null,
-    exercise: null,
-    worksheet: null,
-    test: null,
-  }); // Minutes remaining when each work timer stopped (null when never started)
-  const work
+    // One last short retry
+    t1 = setTimeout(() => {
+      if (document.activeElement !== el) doFocus();
+    }, 120);
+    return () => {
+      if (t0) clearTimeout(t0);
+      if (t1) clearTimeout(t1);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [sendDisabled, canSend]);
+  const computePlaceholder = () => {
+    if (tipOverride) return tipOverride;
+    if (showBegin) return 'Press "Begin"';
+    if (phase === 'congrats') return 'Press "Complete Lesson"';
+    if (loading) return 'loading...';
+    if (isSpeaking) return 'Ms. Sonoma is talking...';
+    // During Fill-in-Fun word collection
+    if (fillInFunState === 'collecting-words') return 'Type your word and press Send';
+    // During Ask sequence: prompt for question input
+    if (askState === 'a
+
+### 37. src/app/session/page.js (7a98822e7630410bfa6bd1db4fcdd903cac2ab647fdeb6728e354c5c223f0e41)
+- bm25: -3.6676 | entity_overlap_w: 1.30 | adjusted: -3.9926 | relevance: 1.0000
+
+{/* Congrats footer row with Complete Lesson and medal (only after congrats TTS finishes) */}
+          {(() => {
+            if (phase !== 'congrats') return null;
+            if (!congratsDone) return null;
+            const percent = typeof testFinalPercent === 'number' ? testFinalPercent : null;
+            const tier = (percent != null) ? tierForPercent(percent) : null;
+            const medal = tier ? emojiForTier(tier) : '';
+            const btnStyle = { 
+              background: completingLesson ? '#999' : '#c7442e', 
+              color:'#fff', 
+              borderRadius:10, 
+              padding:'12px 20px', 
+              fontWeight:800, 
+              fontSize:'clamp(1.05rem, 2.4vw, 1.25rem)', 
+              border:'none', 
+              boxShadow: completingLesson ? 'none' : '0 4px 16px rgba(199,68,46,0.35)', 
+              cursor: completingLesson ? 'not-allowed' : 'pointer',
+              opacity: completingLesson ? 0.6 : 1
+            };
+            return (
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, padding:'10px 12px 8px' }}>
+                <button type="button" style={btnStyle} disabled={completingLesson} onClick={() => {
+                  try { onCompleteLesson && onCompleteLesson(); } catch {}
+                }}>{completingLesson ? 'Completing...' : 'Complete Lesson'}</button>
+                <div aria-label="Medal" style={{ fontSize:'clamp(1.3rem, 2.6vw, 1.65rem)' }}>{medal}</div>
+              </div>
+            );
+          })()}
+
+### 38. src/app/session/page.js (11b809efc3ba83c587f7f14b8e4579ec8c1069c0bd5f7538411a0c8e29c7d6db)
+- bm25: -3.8454 | relevance: 1.0000
+
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, lessonKey, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, handleTimerClick, phaseTimers, currentTimerMode, getCurrentPhaseName, getCurrentPhaseTimerDuration, goldenKeyBonus, showPlayTimeExpired, playExpiredPhase, handlePlayExpiredComplete, handlePhaseTimerTimeUp, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids, showGames, setShowGames, timerRefreshKey, showTakeoverDialog, conflictingSession, handleSessionTakeover, handleCancelTakeover, askState, setAskState, setAskOriginalQuestion, setShowOpeningActions, setCanSend }) {
+  // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
+  // Remove horizontal clamp: let the video occupy the full available width of its column
+  const containerMaxWidth = 'none';
+  const dynamicHeightStyle = (isMobileLandscape && videoMaxHeight) ? { maxHeight: videoMaxHeight, height: videoMaxHeight, minHeight: 0 } : {};
+  // Responsive control sizing: derive a target size from container width via CSS clamp.
+  // We'll expose a CSS variable --ctrlSize and reuse for skip + play/pause/mute for symmetry.
+  const controlClusterStyle = {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    display: 'flex',
+    gap: 12,
+    zIndex: 10,
+    // size calculation moved
+
+### 39. src/app/session/page.js (d15c891f42b4529573645b977449f51ddace3b12c5d60af1a1e79a01ef843cc2)
+- bm25: -3.4606 | entity_overlap_w: 1.30 | adjusted: -3.7856 | relevance: 1.0000
+
+// Disable sending when the UI is not ready or while Ms. Sonoma is speaking
+  const comprehensionAwaitingBegin = (phase === 'comprehension' && subPhase === 'comprehension-start');
+  // Allow answering Test items while TTS is still playing so buttons appear immediately
+  const speakingLock = (phase === 'test' && subPhase === 'test-active') ? false : !!isSpeaking;
+  // Derived gating: when Opening/Go buttons are visible, keep input inactive without mutating canSend
+  const discussionButtonsVisible = (
+    phase === 'discussion' &&
+    subPhase === 'awaiting-learner' &&
+    (!isSpeaking || captionsDone) &&
+    showOpeningActions &&
+    askState === 'inactive' &&
+    riddleState === 'inactive' &&
+    poemState === 'inactive' &&
+    fillInFunState === 'inactive'
+  );
+  const inQnAForButtons = (
+    (phase === 'comprehension' && subPhase === 'comprehension-active') ||
+    (phase === 'exercise' && (subPhase === 'exercise-start' || subPhase === 'exercise-active')) ||
+    (phase === 'worksheet' && subPhase === 'worksheet-active') ||
+    (phase === 'test' && subPhase === 'test-active')
+  );
+  const qnaButtonsVisible = (
+    inQnAForButtons && !isSpeaking && showOpeningActions &&
+    askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive' && fillInFunState === 'inactive'
+  );
+  const buttonsGating = discussionButtonsVisible || qnaButtonsVisible;
+  // Story and Fill-in-Fun input should also respect the speaking lock
+  const storyInputActive = (storyState === 'awaiting-turn' || storyState === 'awaiting-setup');
+  const fillInFunInputActive = (fillInFunState === 'collecting-words');
+  const sendDisabled = (storyInputActive || fillInFunInputActive) ? (!canSend || loading || speakingLock) : (!canSend || loading || comprehensionAwai
+
+### 40. src/app/session/page.js (ed4716fef4536f0d4576c463b479be76fdd1c69df5e19e6bc044e080dd74f070)
+- bm25: -3.4606 | entity_overlap_w: 1.30 | adjusted: -3.7856 | relevance: 1.0000
+
+// Global hotkeys for mute toggle, skip, and repeat
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      // Disable hotkeys when games overlay is active
+      if (showGames) return;
+      
+      const code = e.code || e.key;
+      const target = e.target;
+      const targetIsInput = isTextEntryTarget(target);
+      if (!hotkeys) return;
+
+const { muteToggle, skip, repeat } = { ...DEFAULT_HOTKEYS, ...hotkeys };
+
+if (muteToggle && code === muteToggle) {
+        e.preventDefault();
+        toggleMute?.();
+        return;
+      }
+
+const nextSentence = hotkeys?.nextSentence || DEFAULT_HOTKEYS.nextSentence;
+      const isNextSentenceKey = nextSentence && code === nextSentence;
+
+// Prioritize Next Sentence behavior during the teaching gate (handles custom overlaps)
+      if (
+        isNextSentenceKey &&
+        phase === 'teaching' &&
+        subPhase === 'awaiting-gate' &&
+        typeof handleGateNo === 'function'
+      ) {
+        // Only fire after TTS finishes (and loading completes) or has been skipped
+        if (isSpeaking || teachingGateLocked) return;
+        e.preventDefault();
+        handleGateNo();
+        return;
+      }
+
+if (skip && code === skip) {
+        // Always stop default PageDown behavior so inputs don't hijack the key
+        e.preventDefault();
+        // Skip speech when speaking
+        if (isSpeaking && typeof handleSkipSpeech === 'function') {
+          handleSkipSpeech();
+        }
+        return;
+      }
+
+// Next Sentence hotkey (non-teaching contexts fall back to default behavior blocker only)
+      if (isNextSentenceKey) {
+        e.preventDefault();
+        return;
+      }

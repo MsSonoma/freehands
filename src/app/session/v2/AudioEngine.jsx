@@ -47,6 +47,8 @@ export class AudioEngine {
 
   // Video unlock bookkeeping (iOS Safari requires play() during user gesture)
   #videoUnlockRequested = false;
+  #videoUnlockPlayingHandler = null;
+  #videoUnlockCleanupTimer = null;
   
   constructor(options = {}) {
     this.#videoElement = options.videoElement || null;
@@ -166,27 +168,56 @@ export class AudioEngine {
     try { video.playsInline = true; } catch {}
     try { video.preload = 'auto'; } catch {}
 
+    const clearUnlockHandler = () => {
+      try {
+        if (this.#videoUnlockCleanupTimer) {
+          clearTimeout(this.#videoUnlockCleanupTimer);
+          this.#videoUnlockCleanupTimer = null;
+        }
+      } catch {}
+      try {
+        if (this.#videoUnlockPlayingHandler) {
+          video.removeEventListener('playing', this.#videoUnlockPlayingHandler);
+          this.#videoUnlockPlayingHandler = null;
+        }
+      } catch {}
+    };
+
     // Pause as soon as playback actually starts (playing event), so we end in a paused state
     // while still getting the autoplay "unlock" side effect from play().
-    const handlePlaying = () => {
+    // IMPORTANT: If unlock playback never starts during the gesture, do not leave a stale
+    // 'playing' handler around — it can pause the first real TTS video playback later.
+    this.#videoUnlockPlayingHandler = () => {
+      // Never pause the real TTS video playback.
+      if (this.#isPlaying) {
+        clearUnlockHandler();
+        return;
+      }
       try { video.pause(); } catch {}
       try { video.currentTime = 0; } catch {}
-      try { video.removeEventListener('playing', handlePlaying); } catch {}
+      clearUnlockHandler();
     };
 
     try {
-      video.addEventListener('playing', handlePlaying);
+      video.addEventListener('playing', this.#videoUnlockPlayingHandler);
+    } catch {}
+
+    // Cleanup even if 'playing' never fires (e.g., autoplay blocked).
+    try {
+      this.#videoUnlockCleanupTimer = setTimeout(() => {
+        clearUnlockHandler();
+      }, 1500);
     } catch {}
 
     try {
       const p = video.play();
       if (p && typeof p.catch === 'function') {
         p.catch(() => {
-          try { video.removeEventListener('playing', handlePlaying); } catch {}
+          clearUnlockHandler();
         });
       }
     } catch {
-      try { video.removeEventListener('playing', handlePlaying); } catch {}
+      clearUnlockHandler();
     }
   }
   
@@ -620,6 +651,21 @@ export class AudioEngine {
   // Video is a loop that continues from current position, no seeking
   #startVideo() {
     if (!this.#videoElement) return;
+
+    // If a video-unlock handler is still attached (e.g., autoplay was blocked during
+    // initialize()), clear it so it cannot pause the first real TTS playback.
+    try {
+      if (this.#videoUnlockCleanupTimer) {
+        clearTimeout(this.#videoUnlockCleanupTimer);
+        this.#videoUnlockCleanupTimer = null;
+      }
+    } catch {}
+    try {
+      if (this.#videoUnlockPlayingHandler) {
+        this.#videoElement.removeEventListener('playing', this.#videoUnlockPlayingHandler);
+        this.#videoUnlockPlayingHandler = null;
+      }
+    } catch {}
     
     // Use robust retry mechanism from audioUtils (handles iOS edge cases)
     playVideoWithRetry(this.#videoElement, 3, 100).catch(() => {
