@@ -5803,7 +5803,6 @@ function SessionPageV2Inner() {
           <video
             ref={videoRef}
             src="/media/ms-sonoma-3.mp4"
-            autoPlay
             muted
             loop
             playsInline
