@@ -6,12 +6,14 @@ Mode: standard
 
 Prompt (original):
 ```text
-Bug: printed worksheet/test earlier, but later in-session worksheet/test questions changed. Need saved lesson sets for four Q&A phases (comprehension/exercise/worksheet/test). Find how question pools are generated, persisted (getAssessmentStorageKey / clearAssessments), and how print builds worksheet/test.
+Where does SessionPageV2 handle restart/restart-from-resume, and does it call TimerService.reset() or otherwise clear timerState/workPhaseResults?
 ```
 
 Filter terms used:
 ```text
-/exercise/worksheet/test
+TimerService.reset
+SessionPageV2
+TimerService
 ```
 # Context Pack
 
@@ -25,7 +27,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-/exercise/worksheet/test
+TimerService.reset SessionPageV2 TimerService
 
 ## Forced Context
 
@@ -33,311 +35,756 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Ranked Evidence
 
-### 1. src/app/session/v2/SessionPageV2.jsx (cff8b8f124f15d5e4039ef3dc8248cccdb1e47bf3849bde3a45dfaf191adedfb)
-- bm25: -14.8586 | relevance: 1.0000
+### 1. sidekick_pack.md (2125ec80e822259d4bfef07205d1884da84129c9b399a7f643693f080bae9197)
+- bm25: -15.7035 | entity_overlap_w: 6.00 | adjusted: -17.2035 | relevance: 1.0000
 
-const nextPlayFlags = {
-        comprehension: ('play_comprehension_enabled' in patch) ? patch.play_comprehension_enabled : undefined,
-        exercise: ('play_exercise_enabled' in patch) ? patch.play_exercise_enabled : undefined,
-        worksheet: ('play_worksheet_enabled' in patch) ? patch.play_worksheet_enabled : undefined,
-        test: ('play_test_enabled' in patch) ? patch.play_test_enabled : undefined,
-      };
-      const hasAnyPlayFlag = Object.values(nextPlayFlags).some(v => v !== undefined);
-      if (hasAnyPlayFlag) {
-        const merged = {
-          ...playPortionsEnabledRef.current,
-          ...(typeof nextPlayFlags.comprehension === 'boolean' ? { comprehension: nextPlayFlags.comprehension } : {}),
-          ...(typeof nextPlayFlags.exercise === 'boolean' ? { exercise: nextPlayFlags.exercise } : {}),
-          ...(typeof nextPlayFlags.worksheet === 'boolean' ? { worksheet: nextPlayFlags.worksheet } : {}),
-          ...(typeof nextPlayFlags.test === 'boolean' ? { test: nextPlayFlags.test } : {}),
-        };
-        setPlayPortionsEnabled(merged);
-        playPortionsEnabledRef.current = merged;
+// PIN gate: timeline jumps are facilitator-only
+    let allowed = false;
+    try {
+      allowed = await ensurePinAllowed('timeline');
+    } catch (e) {
+      console.warn('[SessionPageV2] Timeline PIN gate error:', e);
+    }
+    if (!allowed) {
+      timelineJumpInProgressRef.current = false;
+      return;
+    }
+    
+    console.log('[SessionPageV2] Timeline jump proceeding to:', targetPhase);
+    
+    // Stop any playing audio first
+    stopAudioSafe({ force: true });
+    
+    // Reset opening actions state to prevent zombie UI
+    setOpeningActionActive(false);
+    setOpeningActionType(null);
+    setOpeningActionState({});
+    setOpeningActionInput('');
+    setOpeningActionError('');
+    setOpeningActionBusy(false);
+    setShowPlayWithSonomaMenu(false);
+    setShowGames(false);
+    setShowFullscreenPlayTimer(false);
 
-### 2. src/app/session/v2/SessionPageV2.jsx (4ca09b10a5acb822a1644ff5170d3133614fdcffd2bfa81478ed155b4b3a1dd9)
-- bm25: -14.2451 | relevance: 1.0000
+### 7. src/app/session/v2/SessionPageV2.jsx (b97cd740f6c7c99c06b14c225b7e2f5740459943a832450262784f42f8ed89b2)
+- bm25: -7.1805 | relevance: 1.0000
 
-if (currentPhase === 'comprehension') {
-      const phaseRange = phaseWeights.comprehension - phaseWeights.teaching;
-      const ratio = getRatioFromSnapshot('comprehension', comprehensionTotalQuestions);
-      progress = phaseWeights.teaching + (ratio * phaseRange);
-    } else if (currentPhase === 'exercise') {
-      const phaseRange = phaseWeights.exercise - phaseWeights.comprehension;
-      const ratio = getRatioFromSnapshot('exercise', exerciseTotalQuestions);
-      progress = phaseWeights.comprehension + (ratio * phaseRange);
-    } else if (currentPhase === 'worksheet') {
-      const phaseRange = phaseWeights.worksheet - phaseWeights.exercise;
-      const ratio = getRatioFromSnapshot('worksheet', worksheetTotalQuestions);
-      progress = phaseWeights.exercise + (ratio * phaseRange);
-    } else if (currentPhase === 'test') {
-      const phaseRange = phaseWeights.test - phaseWeights.worksheet;
-      const ratio = getRatioFromSnapshot('test', testTotalQuestions);
-      progress = phaseWeights.worksheet + (ratio * phaseRange);
+### 23. sidekick_pack.md (2168af49fc874c26c8923fe18c01acab19e0f9a7bc8d95336ba2c47386ee062a)
+- bm25: -5.9274 | entity_overlap_w: 1.00 | adjusted: -6.1774 | relevance: 1.0000
+
+### 18. src/app/session/v2/TimerService.jsx (a2d7e76cb211127d6407ec85e28abf4078ebc4470e2462f8084afc06651e070b)
+- bm25: -5.4024 | relevance: 1.0000
+
+### 24. src/app/session/v2/TimerService.jsx (16208a27764d4b1276874b5a9ea4b75d305609b19be6adc032ed5205aac08ce5)
+- bm25: -6.1715 | relevance: 1.0000
+
+this.#removeTimerOverlayKey(phase, 'work');
+
+### 25. src/app/session/v2/SessionPageV2.jsx (88fe0015b32a8bc8371a6dda9aec70e55687fc9656f465d7fc93a864d040fd16)
+- bm25: -6.1680 | relevance: 1.0000
+
+### 2. src/app/session/v2/TimerService.jsx (8a0a047ca96c0a7bd623f5ae75ff99b71bcc3928b95a1f7cf7d1b7013986acb8)
+- bm25: -13.4758 | relevance: 1.0000
+
+/**
+   * Reset all timers and clear per-phase sessionStorage mirrors.
+   * Use for "Start Over" and lesson restarts without a full page refresh.
+   */
+  reset() {
+    if (this.sessionInterval) {
+      clearInterval(this.sessionInterval);
+      this.sessionInterval = null;
+    }
+    if (this.playTimerInterval) {
+      clearInterval(this.playTimerInterval);
+      this.playTimerInterval = null;
+    }
+    if (this.workPhaseInterval) {
+      clearInterval(this.workPhaseInterval);
+      this.workPhaseInterval = null;
     }
 
-### 3. src/app/session/v2/SessionPageV2.jsx (53fff589e6e725e4370f01d7ecce3ed595c788eb6f6e698da7b831d94da45fe2)
-- bm25: -13.7781 | relevance: 1.0000
+this.sessionStartTime = null;
+    this.sessionElapsed = 0;
 
-// If play portion is turned off while sitting at the Go gate, jump straight to work.
-        // (Do not attempt to interrupt intro playback states here.)
-        try {
-          const phaseNow = String(currentPhaseRef.current || '');
-          const disableNow = (
-            (phaseNow === 'comprehension' && nextPlayFlags.comprehension === false) ||
-            (phaseNow === 'exercise' && nextPlayFlags.exercise === false) ||
-            (phaseNow === 'worksheet' && nextPlayFlags.worksheet === false) ||
-            (phaseNow === 'test' && nextPlayFlags.test === false)
-          );
-          if (disableNow) {
-            const phaseStateMap = {
-              comprehension: comprehensionStateRef.current,
-              exercise: exerciseStateRef.current,
-              worksheet: worksheetStateRef.current,
-              test: testStateRef.current,
-            };
-            const refMap = {
-              comprehension: comprehensionPhaseRef,
-              exercise: exercisePhaseRef,
-              worksheet: worksheetPhaseRef,
-              test: testPhaseRef,
-            };
-            if (phaseStateMap[phaseNow] === 'awaiting-go') {
-              transitionToWorkTimer(phaseNow);
-              refMap[phaseNow]?.current?.go?.();
-            }
-          }
-        } catch {}
+this.playTimers.clear();
+    this.currentPlayPhase = null;
+
+this.workPhaseTimers.clear();
+    this.currentWorkPhase = null;
+
+this.workPhaseResults.clear();
+
+this.onTimeCompletions = 0;
+    this.goldenKeyAwarded = false;
+    this.mode = 'play';
+    
+    this.isPaused = false;
+    this.pausedPlayElapsed = null;
+    this.pausedWorkElapsed = null;
+
+### 3. sidekick_pack.md (5a3d3e0c845314c08f34e366fb3f52fdc04f4978668dd7d89f0826b62f69c151)
+- bm25: -12.3339 | entity_overlap_w: 4.00 | adjusted: -13.3339 | relevance: 1.0000
+
+### 28. src/app/session/v2/TimerService.jsx (50c86fe95bbe058e184d6066028a47bb16cc366c5597e74956565455e458af49)
+- bm25: -5.9274 | relevance: 1.0000
+
+const validPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
+      if (!validPhases.includes(phase)) return;
+
+### 29. src/app/session/v2/TimerService.jsx (9c98c5270cb757bf7f2f0409e031c8524ebf47d71737482c0b33133e4a59f387)
+- bm25: -5.9274 | relevance: 1.0000
+
+const timer = {
+        startTime,
+        elapsed: asNumber,
+        timeLimit,
+        completed: false,
+        onTime: asNumber <= timeLimit
+      };
+
+### 30. src/app/session/v2/TimerService.jsx (6e47a360484dbfce63e9b04c56c1b502a733a0369653f678f7f6162e6b60329c)
+- bm25: -5.8612 | relevance: 1.0000
+
+#clearAllTimerOverlayKeysForLesson() {
+    if (typeof window === 'undefined') return;
+    const prefix = this.#timerOverlayKeyPrefix();
+    if (!prefix) return;
+
+### 31. src/app/session/v2/TimerService.jsx (bf017c256fc06870bbde627ee9aa37b55c6db8bd27fb4b246887cb3b6a1e379d)
+- bm25: -5.4918 | entity_overlap_w: 1.00 | adjusted: -5.7418 | relevance: 1.0000
+
+### 4. src/app/session/v2/TimerService.jsx (acaa43b46c9a31add888fd04939ae9b9fb4d12b3c5f56d8935151446d6325c20)
+- bm25: -11.7503 | entity_overlap_w: 4.00 | adjusted: -12.7503 | relevance: 1.0000
+
+try {
+      const toRemove = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i);
+        if (k && k.startsWith(prefix)) {
+          toRemove.push(k);
+        }
       }
+      for (const k of toRemove) {
+        try { sessionStorage.removeItem(k); } catch {}
+      }
+    } catch {}
+  }
+  
+  /**
+   * Start session timer
+   */
+  startSessionTimer() {
+    console.log('[TimerService] startSessionTimer called');
+    if (this.sessionInterval) {
+      console.warn('[TimerService] Session timer already running');
+      return;
+    }
+    
+    this.sessionStartTime = Date.now();
+    this.sessionElapsed = 0;
+    
+    console.log('[TimerService] Emitting sessionTimerStart');
+    this.eventBus.emit('sessionTimerStart', {
+      timestamp: this.sessionStartTime
     });
+    
+    // Tick every second
+    this.sessionInterval = setInterval(this.#tickSessionTimer.bind(this), 1000);
+    console.log('[TimerService] Timer interval started');
+  }
+  
+  /**
+   * Stop session timer
+   */
+  stopSessionTimer() {
+    if (!this.sessionInterval) {
+      return;
+    }
+    
+    clearInterval(this.sessionInterval);
+    this.sessionInterval = null;
+    
+    const elapsed = this.sessionElapsed;
+    const formatted = this.#formatTime(elapsed);
+    
+    this.eventBus.emit('sessionTimerStop', {
+      elapsed,
+      formatted
+    });
+  }
+  
+  /**
+   * Starts the play timer for a phase (phases 2-5 only).
+   * Play timers allow exploration/opening actions with a time limit.
+   * When expired, transitions to work mode via PlayTimeExpiredOverlay.
+   * 
+   * @param {string} phase - Phase name ('comprehension', 'exercise', 'worksheet', 'test')
+   * @param {number} [timeLimit] - Optional time limit override (seconds)
+   */
+  startPlayTimer(phase, timeLimit = null) {
+
+### 5. src/app/session/v2/SessionPageV2.jsx (817ac2974ad1c2e813ca40f00ffb2ed5049dca7551758bd16280356f0c49dfca)
+- bm25: -12.1878 | relevance: 1.0000
+
+const onTimeCount = (() => {
+    try {
+      if (!timerService?.getWorkPhaseTime) {
+        return Object.values(workPhaseCompletions || {}).filter(Boolean).length;
+      }
+      return workPhases.reduce((acc, phaseKey) => {
+        const t = getPhaseTime(phaseKey);
+        return acc + (t?.completed && t.onTime ? 1 : 0);
+      }, 0);
+    } catch {
+      return Object.values(workPhaseCompletions || {}).filter(Boolean).length;
+    }
+  })();
+
+### 6. src/app/session/v2/TimerService.jsx (a8bc5ccda2768699ae9282d9616a4aa9f536b5091ec3a65c6887e11c83883e5d)
+- bm25: -12.1224 | relevance: 1.0000
+
+// Sticky completion records for Golden Key + end-of-test reporting.
+    // Once a phase has been completed on time, it retains credit until explicit reset.
+    // Map: phase -> { completed, onTime, elapsed, timeLimit, remaining, finishedAt }
+    this.workPhaseResults = new Map();
+    
+    // Work phase time limits (seconds) - all phases have work timers
+    this.workPhaseTimeLimits = options.workPhaseTimeLimits || {
+      discussion: 300,    // 5 minutes
+      comprehension: 180, // 3 minutes
+      exercise: 180,      // 3 minutes
+      worksheet: 300,     // 5 minutes
+      test: 600           // 10 minutes
+    };
+    
+    // Golden key tracking (only counts comprehension, exercise, worksheet, test)
+    this.onTimeCompletions = 0;
+    this.goldenKeyAwarded = false;
+
+### 7. sidekick_pack.md (db3f80c5f51f924b7c0cbc65fd0f8300a1311275abc4bf4f5b59917f3cd6a335)
+- bm25: -11.0886 | entity_overlap_w: 4.00 | adjusted: -12.0886 | relevance: 1.0000
+
+try {
+      const toRemove = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i);
+        if (k && k.startsWith(prefix)) {
+          toRemove.push(k);
+        }
+      }
+      for (const k of toRemove) {
+        try { sessionStorage.removeItem(k); } catch {}
+      }
+    } catch {}
+  }
+  
+  /**
+   * Start session timer
+   */
+  startSessionTimer() {
+    console.log('[TimerService] startSessionTimer called');
+    if (this.sessionInterval) {
+      console.warn('[TimerService] Session timer already running');
+      return;
+    }
+    
+    this.sessionStartTime = Date.now();
+    this.sessionElapsed = 0;
+    
+    console.log('[TimerService] Emitting sessionTimerStart');
+    this.eventBus.emit('sessionTimerStart', {
+      timestamp: this.sessionStartTime
+    });
+    
+    // Tick every second
+    this.sessionInterval = setInterval(this.#tickSessionTimer.bind(this), 1000);
+    console.log('[TimerService] Timer interval started');
+  }
+  
+  /**
+   * Stop session timer
+   */
+  stopSessionTimer() {
+    if (!this.sessionInterval) {
+      return;
+    }
+    
+    clearInterval(this.sessionInterval);
+    this.sessionInterval = null;
+    
+    const elapsed = this.sessionElapsed;
+    const formatted = this.#formatTime(elapsed);
+    
+    this.eventBus.emit('sessionTimerStop', {
+      elapsed,
+      formatted
+    });
+  }
+  
+  /**
+   * Starts the play timer for a phase (phases 2-5 only).
+   * Play timers allow exploration/opening actions with a time limit.
+   * When expired, transitions to work mode via PlayTimeExpiredOverlay.
+   * 
+   * @param {string} phase - Phase name ('comprehension', 'exercise', 'worksheet', 'test')
+   * @param {number} [timeLimit] - Optional time limit override (seconds)
+   */
+  startPlayTimer(phase, timeLimit = null) {
+
+### 8. src/app/session/v2/SessionPageV2.jsx (b3c9e3cac82f9ab3de84ee4873b0949f9769dd099daebb93abf12c9f43d65571)
+- bm25: -11.3304 | entity_overlap_w: 2.00 | adjusted: -11.8304 | relevance: 1.0000
+
+const timer = new TimerService(eventBus, {
+      lessonKey,
+      playTimerLimits,
+      workPhaseTimeLimits,
+      goldenKeysEnabled: goldenKeysEnabledRef.current
+    });
+
+timerServiceRef.current = timer;
+
+// Apply any snapshot-restored timer state once timer exists
+    if (pendingTimerStateRef.current) {
+      try {
+        const pending = pendingTimerStateRef.current;
+        applyRestoredTimerStateToUi(pending, 'pending-timerstate');
+        timer.restoreState(pending);
+        timer.resync?.('pending-restore');
+        hydrateWorkTimerSummaryFromTimerService('pending-restore');
+      } catch {}
+      pendingTimerStateRef.current = null;
+    }
 
 return () => {
-      try { unsubscribe?.(); } catch {}
+      try { unsubWorkTick?.(); } catch {}
+      try { unsubWorkComplete?.(); } catch {}
+      try { unsubGoldenKey?.(); } catch {}
+      try { unsubPlayExpired?.(); } catch {}
+      try { unsubPlayTick?.(); } catch {}
+      try { unsubWorkTick2?.(); } catch {}
+      try { unsubPlayStart?.(); } catch {}
+      try { unsubWorkStart?.(); } catch {}
+      timer.destroy();
+      timerServiceRef.current = null;
     };
-  }, [learnerProfile?.id, planEnt?.goldenKeyFeatures]);
+  }, [lessonKey, phaseTimers, applyRestoredTimerStateToUi]);
 
-// Load persisted worksheet/test sets for printing (local+Supabase)
+// Update play timer limits when bonus/enabled state changes (do not recreate TimerService).
   useEffect(() => {
-    if (!lessonKey) return;
-    let cancelled = false;
+    if (!timerServiceRef.current || !phaseTimers) return;
 
-### 4. src/app/session/page.js (77f8df0d47dd34caaa8829092bbf1677fa3e7dc43f3172bdc7aa3e171fcbe300)
-- bm25: -13.5421 | relevance: 1.0000
+const playBonusSec = goldenKeysEnabledRef.current
+      ? Math.max(0, Number(goldenKeyBonusRef.current || 0)) * 60
+      : 0;
+    const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
 
-if (learnerId && learnerId !== 'demo') {
-      try {
-        const learner = await getLearner(learnerId);
-        if (learner) {
-          const n = (v) => (v == null ? undefined : Number(v));
-          COMPREHENSION_TARGET = n(learner.comprehension ?? learner.targets?.comprehension) ?? COMPREHENSION_TARGET;
-          EXERCISE_TARGET = n(learner.exercise ?? learner.targets?.exercise) ?? EXERCISE_TARGET;
-          WORKSHEET_TARGET = n(learner.worksheet ?? learner.targets?.worksheet) ?? WORKSHEET_TARGET;
-          TEST_TARGET = n(learner.test ?? learner.targets?.test) ?? TEST_TARGET;
-          const humorLevel = normalizeHumorLevel(learner.humor_level);
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('learner_humor_level', humorLevel);
-              if (learnerId && learnerId !== 'demo') {
-                localStorage.setItem(`learner_humor_level_${learnerId}`, humorLevel);
-              }
-            } catch {}
+### 9. src/app/session/v2/TimerService.jsx (16208a27764d4b1276874b5a9ea4b75d305609b19be6adc032ed5205aac08ce5)
+- bm25: -11.4471 | relevance: 1.0000
+
+this.#removeTimerOverlayKey(phase, 'work');
+
+### 10. src/app/session/v2/SessionPageV2.jsx (b493dd38d78155aefa759fa6ee29dee61f6c548fa2e0120f98a7508b5086922d)
+- bm25: -10.6941 | entity_overlap_w: 2.00 | adjusted: -11.1941 | relevance: 1.0000
+
+import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import jsPDF from 'jspdf';
+import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseClient } from '@/app/lib/supabaseClient';
+import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi';
+import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus';
+import { loadPhaseTimersForLearner } from '../utils/phaseTimerDefaults';
+import SessionTimer from '../components/SessionTimer';
+import { AudioEngine } from './AudioEngine';
+import { TeachingController } from './TeachingController';
+import { ComprehensionPhase } from './ComprehensionPhase';
+import { ExercisePhase } from './ExercisePhase';
+import { WorksheetPhase } from './WorksheetPhase';
+import { TestPhase } from './TestPhase';
+import { ClosingPhase } from './ClosingPhase';
+import { DiscussionPhase } from './DiscussionPhase';
+import { PhaseOrchestrator } from './PhaseOrchestrator';
+import { SnapshotService } from './SnapshotService';
+import { TimerService } from './TimerService';
+import { KeyboardService } from './KeyboardService';
+import { OpeningActionsController } from './OpeningActionsController';
+import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
+import FullscreenPlayTimerOverlay from './FullscreenPlayTimerOverlay';
+import TimerControlOverlay from '../components/TimerControlOverlay';
+import GamesOverlay from '../components/games/GamesOverlay';
+import EventBus from './EventBus';
+import { loadLesson, fetchTTS } from './services';
+import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech, ensureQuestionMark } from '../utils/questionFormatting';
+import { getSnapshotStorageKey } from '../utils
+
+### 11. sidekick_pack.md (2debe79c08906a7c10cc55b55018e78a784e4077dadbbb6eec0ea763acbd629f)
+- bm25: -10.4148 | entity_overlap_w: 3.00 | adjusted: -11.1648 | relevance: 1.0000
+
+if (subPhase && subPhase !== 'greeting') return true
+
+if (typeof snapshot.currentCompIndex === 'number' && snapshot.currentCompIndex > 0) return true
+  if (typeof snapshot.currentExIndex === 'number' && snapshot.currentExIndex > 0) return true
+  if (typeof snapshot.currentWorksheetIndex === 'number' && snapshot.currentWorksheetIndex > 0) return true
+  if (typeof snapshot.testActiveIndex === 'number' && snapshot.testActiveIndex > 0) return true
+  if (snapshot.currentCompProblem) return true
+  if (snapshot.currentExerciseProblem) return true
+
+if (Array.isArray(snapshot.testUserAnswers) && snapshot.testUserAnswers.some(v => v != null && String(v).trim().length > 0)) return true
+  if (Array.isArray(snapshot.storyTranscript) && snapshot.storyTranscript.length > 0) return true
+
+return false
+}
+
+function LessonsPageInner(){
+  const router = useRouter()
+
+### 34. src/app/session/v2/TimerService.jsx (9917cbb68d40a7265930863b430bb508a9c1f0b3f4a2b78894a94e2ce38d9deb)
+- bm25: -5.6711 | relevance: 1.0000
+
+const timer = this.workPhaseTimers.get(phase);
+    if (!timer) return null;
+
+const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
+
+### 35. src/app/session/v2/SessionPageV2.jsx (d5ef179774ea3dbc18175f74a8fcb95f56b0791dac6a41e4c69f062996d6c1cf)
+- bm25: -5.1168 | entity_overlap_w: 2.00 | adjusted: -5.6168 | relevance: 1.0000
+
+const timer = new TimerService(eventBus, {
+      lessonKey,
+      playTimerLimits,
+      workPhaseTimeLimits,
+      goldenKeysEnabled: goldenKeysEnabledRef.current
+    });
+
+timerServiceRef.current = timer;
+
+### 12. src/app/session/v2/SessionPageV2.jsx (e2298da1b4c9813bf5ec151a81b9b5eaf71e87a15c014382dd911333d2dc9659)
+- bm25: -9.5791 | entity_overlap_w: 6.00 | adjusted: -11.0791 | relevance: 1.0000
+
+if (askExitSpeechLockRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked while Ask exit reminder is speaking');
+      return;
+    }
+    
+    // Debounce: Block rapid successive clicks
+    if (timelineJumpInProgressRef.current) {
+      console.warn('[SessionPageV2] Timeline jump BLOCKED - jump already in progress for:', targetPhase);
+      return;
+    }
+    
+    // Set jump in progress flag IMMEDIATELY (before any async operations)
+    timelineJumpInProgressRef.current = true;
+    console.log('[SessionPageV2] Flag NOW set to true, value:', timelineJumpInProgressRef.current, 'for:', targetPhase);
+    
+    // Only allow jumping to valid phases
+    const validPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+    if (!validPhases.includes(targetPhase)) {
+      console.warn('[SessionPageV2] Invalid timeline jump target:', targetPhase);
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+    
+    // Guard: Need orchestrator
+    if (!orchestratorRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked - no orchestrator');
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+    
+    // Guard: Need audio engine
+    if (!audioEngineRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked - no audio engine');
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+
+### 13. sidekick_pack.md (6fbbec22ad86ee343818f9e06e45079c9ed78ce5cd9be20f5bfe1766c9399bbb)
+- bm25: -9.7903 | entity_overlap_w: 5.00 | adjusted: -11.0403 | relevance: 1.0000
+
+### 19. src/app/session/v2/SessionPageV2.jsx (c771fdbd89ebe42c0a5b28258f25e1661778dd8eec1b633b78d4f6bda1038719)
+- bm25: -6.1859 | entity_overlap_w: 1.00 | adjusted: -6.4359 | relevance: 1.0000
+
+// If games opens, close fullscreen timer to avoid overlay stacking
+  useEffect(() => {
+    if (showGames && showFullscreenPlayTimer) {
+      setShowFullscreenPlayTimer(false);
+    }
+  }, [showGames, showFullscreenPlayTimer]);
+
+// Handle timer click (for facilitator controls)
+  const handleTimerClick = useCallback(async () => {
+    let allowed = false;
+    try {
+      allowed = await ensurePinAllowed('timer');
+    } catch (e) {
+      console.warn('[SessionPageV2] Timer PIN gate error:', e);
+    }
+    if (!allowed) return;
+
+console.log('[SessionPageV2] Timer clicked - showing timer control overlay');
+    setShowTimerControl(true);
+  }, []);
+  
+  // Handle timer pause toggle
+  const handleTimerPauseToggle = useCallback(async () => {
+    let allowed = false;
+    try {
+      allowed = await ensurePinAllowed('timer');
+    } catch (e) {
+      console.warn('[SessionPageV2] Timer PIN gate error:', e);
+    }
+    if (!allowed) return;
+
+setTimerPaused(prev => {
+      const nextPaused = !prev;
+      
+      // Control the authoritative timer in TimerService
+      const timerSvc = timerServiceRef.current;
+      if (timerSvc) {
+        if (nextPaused) {
+          timerSvc.pause();
+        } else {
+          timerSvc.resume();
+        }
+      }
+      
+      return nextPaused;
+    });
+  }, []);
+
+### 14. sidekick_pack.md (8b23046b8e828f4eac9f9224c1b0406b3539955d592fdd7fa1137a31435f5827)
+- bm25: -9.2799 | entity_overlap_w: 7.00 | adjusted: -11.0299 | relevance: 1.0000
+
+### 27. sidekick_pack.md (5fb852380d76291149d9a2bdad5665eae6f15ab47bb221e178c453fa7c12c46c)
+- bm25: -5.9818 | relevance: 1.0000
+
+### 8. src/app/session/v2/SessionPageV2.jsx (88fe0015b32a8bc8371a6dda9aec70e55687fc9656f465d7fc93a864d040fd16)
+- bm25: -6.9242 | relevance: 1.0000
+
+if (askExitSpeechLockRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked while Ask exit reminder is speaking');
+      return;
+    }
+    
+    // Debounce: Block rapid successive clicks
+    if (timelineJumpInProgressRef.current) {
+      console.warn('[SessionPageV2] Timeline jump BLOCKED - jump already in progress for:', targetPhase);
+      return;
+    }
+    
+    // Set jump in progress flag IMMEDIATELY (before any async operations)
+    timelineJumpInProgressRef.current = true;
+    console.log('[SessionPageV2] Flag NOW set to true, value:', timelineJumpInProgressRef.current, 'for:', targetPhase);
+    
+    // Only allow jumping to valid phases
+    const validPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+    if (!validPhases.includes(targetPhase)) {
+      console.warn('[SessionPageV2] Invalid timeline jump target:', targetPhase);
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+    
+    // Guard: Need orchestrator
+    if (!orchestratorRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked - no orchestrator');
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+    
+    // Guard: Need audio engine
+    if (!audioEngineRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked - no audio engine');
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+
+### 15. sidekick_pack.md (076e2e81b419ce7ed23da68abaf9c21b037831760720378812c032cc29ffd5b9)
+- bm25: -9.5161 | entity_overlap_w: 6.00 | adjusted: -11.0161 | relevance: 1.0000
+
+if (askExitSpeechLockRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked while Ask exit reminder is speaking');
+      return;
+    }
+    
+    // Debounce: Block rapid successive clicks
+    if (timelineJumpInProgressRef.current) {
+      console.warn('[SessionPageV2] Timeline jump BLOCKED - jump already in progress for:', targetPhase);
+      return;
+    }
+    
+    // Set jump in progress flag IMMEDIATELY (before any async operations)
+    timelineJumpInProgressRef.current = true;
+    console.log('[SessionPageV2] Flag NOW set to true, value:', timelineJumpInProgressRef.current, 'for:', targetPhase);
+    
+    // Only allow jumping to valid phases
+    const validPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+    if (!validPhases.includes(targetPhase)) {
+      console.warn('[SessionPageV2] Invalid timeline jump target:', targetPhase);
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+    
+    // Guard: Need orchestrator
+    if (!orchestratorRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked - no orchestrator');
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+    
+    // Guard: Need audio engine
+    if (!audioEngineRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked - no audio engine');
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+
+### 16. src/app/session/v2/TimerService.jsx (50c86fe95bbe058e184d6066028a47bb16cc366c5597e74956565455e458af49)
+- bm25: -10.9952 | relevance: 1.0000
+
+const validPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
+      if (!validPhases.includes(phase)) return;
+
+### 17. src/app/session/v2/TimerService.jsx (9c98c5270cb757bf7f2f0409e031c8524ebf47d71737482c0b33133e4a59f387)
+- bm25: -10.9952 | relevance: 1.0000
+
+const timer = {
+        startTime,
+        elapsed: asNumber,
+        timeLimit,
+        completed: false,
+        onTime: asNumber <= timeLimit
+      };
+
+### 18. src/app/session/v2/TimerService.jsx (6e47a360484dbfce63e9b04c56c1b502a733a0369653f678f7f6162e6b60329c)
+- bm25: -10.8725 | relevance: 1.0000
+
+#clearAllTimerOverlayKeysForLesson() {
+    if (typeof window === 'undefined') return;
+    const prefix = this.#timerOverlayKeyPrefix();
+    if (!prefix) return;
+
+### 19. src/app/session/v2/SessionPageV2.jsx (4ea6d8a5823264ee61423b7119aaef85c047803f86c088cdef135d1b40d9cebc)
+- bm25: -9.5771 | entity_overlap_w: 5.00 | adjusted: -10.8271 | relevance: 1.0000
+
+// If games opens, close fullscreen timer to avoid overlay stacking
+  useEffect(() => {
+    if (showGames && showFullscreenPlayTimer) {
+      setShowFullscreenPlayTimer(false);
+    }
+  }, [showGames, showFullscreenPlayTimer]);
+
+// Handle timer click (for facilitator controls)
+  const handleTimerClick = useCallback(async () => {
+    let allowed = false;
+    try {
+      allowed = await ensurePinAllowed('timer');
+    } catch (e) {
+      console.warn('[SessionPageV2] Timer PIN gate error:', e);
+    }
+    if (!allowed) return;
+
+console.log('[SessionPageV2] Timer clicked - showing timer control overlay');
+    setShowTimerControl(true);
+  }, []);
+  
+  // Handle timer pause toggle
+  const handleTimerPauseToggle = useCallback(async () => {
+    let allowed = false;
+    try {
+      allowed = await ensurePinAllowed('timer');
+    } catch (e) {
+      console.warn('[SessionPageV2] Timer PIN gate error:', e);
+    }
+    if (!allowed) return;
+
+setTimerPaused(prev => {
+      const nextPaused = !prev;
+      
+      // Control the authoritative timer in TimerService
+      const timerSvc = timerServiceRef.current;
+      if (timerSvc) {
+        if (nextPaused) {
+          timerSvc.pause();
+        } else {
+          timerSvc.resume();
+        }
+      }
+      
+      return nextPaused;
+    });
+  }, []);
+
+const persistTimerStateNow = useCallback((trigger) => {
+    try {
+      const svc = snapshotServiceRef.current;
+      const timerSvc = timerServiceRef.current;
+      if (!svc || !timerSvc) return;
+      svc.saveProgress(trigger || 'timer-overlay', {
+        timerState: timerSvc.getState()
+      });
+    } catch (err) {
+      console.warn('[SessionPageV2] Timer snapshot persist failed:', err);
+    }
+  }, []);
+
+### 20. src/app/session/v2/SessionPageV2.jsx (024944439b180c29691dd528e1c88ba6c801156ba8df8298bf547d6a6e78b49f)
+- bm25: -9.8910 | entity_overlap_w: 3.00 | adjusted: -10.6410 | relevance: 1.0000
+
+if (snapshot.timerState) {
+            // Keep UI timer mode aligned with the restored timer engine state.
+            applyRestoredTimerStateToUi(snapshot.timerState, 'snapshot-load');
+            if (timerServiceRef.current) {
+              try {
+                timerServiceRef.current.restoreState(snapshot.timerState);
+                timerServiceRef.current.resync?.('snapshot-restore');
+                hydrateWorkTimerSummaryFromTimerService('snapshot-restore');
+              } catch {}
+            } else {
+              pendingTimerStateRef.current = snapshot.timerState;
+            }
           }
+        } else {
+          resetTranscriptState();
+          addEvent('💾 No snapshot found - Starting fresh');
         }
-      } catch (e) {
-        // Silent error handling
-      }
-    } else if (learnerName && learnerName !== 'Demo Learner') {
-      try {
-        const raw = typeof window !== 'undefined' ? localStorage.getItem('facilitator_learners') : null;
-        if (raw) {
-          const list = JSON.parse(raw);
-          if (Array.isArray(list)) {
-            const match = list.find(l => l && (l.name === learnerName || l.full_name === learnerName));
-            if (match) {
-              const n = (v) => (v == null ? undefined : Number(v));
-              COMPREHENSION_TARGET = n(match.comprehension ?? match.targets?.comprehension) ?? COMPREHENSION_TARGET;
-              EXERCISE_TARGET = n(match.exercise ?? match.targets?.exercise) ?? EXERCISE_TARGET;
-              WORKSHEET_TARGET = n(match.worksheet ??
-
-### 5. src/app/session/page.js (e1975dbc9ac7256a29fdd96d883f1f1d2e6914922aaddd420b10fb3096ea241c)
-- bm25: -13.5247 | relevance: 1.0000
-
-{/* Timer Controls Overlay - facilitator can adjust timer and golden key */}
-    {showTimerControls && sessionTimerMinutes > 0 && (
-      <TimerControlOverlay
-        isOpen={showTimerControls}
-        onClose={() => setShowTimerControls(false)}
-        lessonKey={lessonKey}
-        phase={(() => {
-          // Map current phase to timer phase key
-          if (phase === 'discussion' || phase === 'teaching') return 'discussion';
-          else if (phase === 'comprehension') return 'comprehension';
-          else if (phase === 'exercise') return 'exercise';
-          else if (phase === 'worksheet') return 'worksheet';
-          else if (phase === 'test') return 'test';
-          return phase;
-        })()}
-        timerType={(() => {
-          // Get current timer mode for the phase
-          let currentPhase = null;
-          if (phase === 'discussion' || phase === 'teaching') currentPhase = 'discussion';
-          else if (phase === 'comprehension') currentPhase = 'comprehension';
-          else if (phase === 'exercise') currentPhase = 'exercise';
-          else if (phase === 'worksheet') currentPhase = 'worksheet';
-          else if (phase === 'test') currentPhase = 'test';
-          return currentPhase ? (currentTimerMode[currentPhase] || 'play') : 'play';
-        })()}
-        currentElapsedSeconds={(() => {
-          try {
-            // Map current phase to timer phase key (inline to avoid TDZ issues)
-            let currentPhase = null;
-            if (phase === 'discussion' || phase === 'teaching') currentPhase = 'discussion';
-            else if (phase === 'comprehension') currentPhase = 'comprehension';
-            else if (phase === 'exercise') currentPhase = 'exercise';
-            else if (phase === 'worksheet') currentPhase = 'worksheet';
-            else
-
-### 6. src/app/session/page.js (bfcecfab46ccacd7bd7bb9a04857568d39946fd6aa0164c85b87fbd6b738b27b)
-- bm25: -13.4452 | relevance: 1.0000
-
-// Calculate lesson progress percentage (defined after all state variables)
-  const calculateLessonProgress = useCallback(() => {
-    // Map phases to progress percentages
-    const phaseWeights = {
-      'discussion': 10,
-      'teaching': 30,
-      'comprehension': 50,
-      'exercise': 70,
-      'worksheet': 85,
-      'test': 95
-    };
-    
-    let baseProgress = phaseWeights[phase] || 0;
-    
-    // Add granular progress within each phase
-    if (phase === 'comprehension' && currentCompIndex > 0) {
-      const phaseRange = phaseWeights.comprehension - phaseWeights.teaching;
-      const withinPhase = (currentCompIndex / COMPREHENSION_TARGET) * phaseRange;
-      baseProgress = phaseWeights.teaching + Math.min(withinPhase, phaseRange);
-    } else if (phase === 'exercise' && currentExIndex > 0) {
-      const phaseRange = phaseWeights.exercise - phaseWeights.comprehension;
-      const withinPhase = (currentExIndex / EXERCISE_TARGET) * phaseRange;
-      baseProgress = phaseWeights.comprehension + Math.min(withinPhase, phaseRange);
-    } else if (phase === 'worksheet' && worksheetAnswers.length > 0) {
-      const phaseRange = phaseWeights.worksheet - phaseWeights.exercise;
-      const withinPhase = (worksheetAnswers.length / WORKSHEET_TARGET) * phaseRange;
-      baseProgress = phaseWeights.exercise + Math.min(withinPhase, phaseRange);
-    } else if (phase === 'test' && testAnswers.length > 0) {
-      const phaseRange = phaseWeights.test - phaseWeights.worksheet;
-      const withinPhase = (testAnswers.length / TEST_TARGET) * phaseRange;
-      baseProgress = phaseWeights.worksheet + Math.min(withinPhase, phaseRange);
-    }
-    
-    return Math.min(100, Math.max(0, baseProgress));
-  }, [phase, currentCompIndex, currentExIndex, worksheetAnswers, testAnswers]);
-
-### 7. src/app/session/v2/SessionPageV2.jsx (fe2365f8f42520c5d7ba94606db577ff4abe77c21cc470e5c5b079912ac337a9)
-- bm25: -13.4334 | relevance: 1.0000
-
-const loadStored = async () => {
-      try {
-        const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
-        const stored = await getStoredAssessments(lessonKey, { learnerId });
-        if (cancelled || !stored) return;
-        if (Array.isArray(stored.comprehension) && stored.comprehension.length) {
-          setGeneratedComprehension(stored.comprehension);
+      }).catch(err => {
+        if (cancelled) return;
+        console.error('[SessionPageV2] Snapshot init error:', err);
+        setError('Unable to load saved progress for this lesson.');
+      }).finally(() => {
+        if (!cancelled) {
+          setSnapshotLoaded(true);
         }
-        if (Array.isArray(stored.exercise) && stored.exercise.length) {
-          setGeneratedExercise(stored.exercise);
-        }
-        if (Array.isArray(stored.worksheet) && stored.worksheet.length) {
-          setGeneratedWorksheet(stored.worksheet);
-        }
-        if (Array.isArray(stored.test) && stored.test.length) {
-          setGeneratedTest(stored.test);
-        }
-      } catch {
-        /* noop */
-      }
-    };
-
-### 8. src/app/session/v2/SessionPageV2.jsx (9d4db2e8cbdf1394524b0a570d0d9e0ba438685b9c8d7e1fe9d95ddc48f38c9d)
-- bm25: -13.3376 | relevance: 1.0000
-
-// Ensure a phase instance exists (e.g., when learner loads after phaseChange fired).
-  const ensurePhaseInitialized = (phaseName) => {
-    const refMap = {
-      comprehension: comprehensionPhaseRef,
-      exercise: exercisePhaseRef,
-      worksheet: worksheetPhaseRef,
-      test: testPhaseRef
-    };
-    const startMap = {
-      comprehension: startComprehensionPhase,
-      exercise: startExercisePhase,
-      worksheet: startWorksheetPhase,
-      test: startTestPhase
-    };
-
-### 9. src/app/session/v2/SessionPageV2.jsx (c2bb7913b2dcbc81972f35b0a0b4fca8373052f293f545329153294164ec7da3)
-- bm25: -13.3164 | relevance: 1.0000
-
-const playTimerLimits = {
-      comprehension: m2s(phaseTimers.comprehension_play_min) + playBonusSec,
-      exercise: m2s(phaseTimers.exercise_play_min) + playBonusSec,
-      worksheet: m2s(phaseTimers.worksheet_play_min) + playBonusSec,
-      test: m2s(phaseTimers.test_play_min) + playBonusSec
-    };
-
-const workPhaseTimeLimits = {
-      discussion: m2s(phaseTimers.discussion_work_min),
-      comprehension: m2s(phaseTimers.comprehension_work_min),
-      exercise: m2s(phaseTimers.exercise_work_min),
-      worksheet: m2s(phaseTimers.worksheet_work_min),
-      test: m2s(phaseTimers.test_work_min)
-    };
-
-// Forward timer events to UI
-    const unsubWorkTick = eventBus.on('workPhaseTimerTick', (data) => {
-      setWorkPhaseTime(data.formatted);
-      setWorkPhaseRemaining(data.remainingFormatted);
-    });
-
-const unsubWorkComplete = eventBus.on('workPhaseTimerComplete', (data) => {
-      addEvent(`â±ï¸ ${data.phase} timer complete!`);
-    });
-
-const unsubGoldenKey = eventBus.on('goldenKeyEligible', (data) => {
-      if (goldenKeysEnabledRef.current === false) return;
-      const eligible = data?.eligible === true;
-      setGoldenKeyEligible(eligible);
-      if (eligible) addEvent('🔑 Golden Key earned!');
-    });
-
-### 10. src/app/session/page.js (9d488f36e25845258b90e4cce3d8001c0100ba4a45bb316cca1904019e1e5735)
-- bm25: -12.8252 | relevance: 1.0000
-
-const timelineHighlight = useMemo(() => {
-    // Group teaching with discussion; comprehension is its own segment on the timeline
-    if (["discussion", "teaching", "awaiting-learner"].includes(phase)) {
-      return "discussion";
+      });
+    } catch (err) {
+      console.error('[SessionPageV2] Snapshot service construction failed:', err);
+      setError('Unable to initialize persistence for this lesson.');
+      setSnapshotLoaded(true);
     }
-    if (phase === "comprehension") {
-      return "comprehension";
-    }
-    if (phase === "exercise") {
-      return "exercise";
-    }
-    if (phase === "worksheet") {
-      return "worksheet";
-    }
-    if (["test", "grading", "congrats"].includes(phase)) {
-      return "test";
-    }
-    return phase;
-  }, [phase]);
 
-### 11. src/app/session/v2/TimerService.jsx (24f23d460a79fa93d3ef523fde272d97dcb1754020e6a22c5ba07d49add970bf)
-- bm25: -12.8056 | relevance: 1.0000
+return () => {
+      cancelled = true;
+      snapshotServiceRef.current = null;
+    };
+  }, [lessonData, learnerProfile, browserSessionId, lessonKey, resetTranscriptState, applyRestoredTimerStateToUi]);
+  
+  // Initialize TimerService
+  useEffect(() => {
+    if (!eventBusRef.current || !lessonKey || !phaseTimers) return;
+
+const eventBus = eventBusRef.current;
+
+### 21. src/app/session/v2/TimerService.jsx (9917cbb68d40a7265930863b430bb508a9c1f0b3f4a2b78894a94e2ce38d9deb)
+- bm25: -10.5205 | relevance: 1.0000
+
+const timer = this.workPhaseTimers.get(phase);
+    if (!timer) return null;
+
+const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
+
+### 22. src/app/session/v2/TimerService.jsx (bf017c256fc06870bbde627ee9aa37b55c6db8bd27fb4b246887cb3b6a1e379d)
+- bm25: -10.1903 | entity_overlap_w: 1.00 | adjusted: -10.4403 | relevance: 1.0000
 
 export class TimerService {
   constructor(eventBus, options = {}) {
@@ -365,199 +812,70 @@ export class TimerService {
     this.workPhaseTimers = new Map(); // phase -> { startTime, elapsed, timeLimit, completed }
     this.workPhaseInterval = null;
     this.currentWorkPhase = null;
-    
-    // Work phase time limits (seconds) - all phases have work timers
-    this.workPhaseTimeLimits = options.workPhaseTimeLimits || {
-      discussion: 300,    // 5 minutes
-      comprehension: 180, // 3 minutes
-      exercise: 180,      // 3 minutes
-      worksheet: 300,     // 5 minutes
-      test: 600           // 10 minutes
-    };
-    
-    // Golden key tracking (only counts comprehension, exercise, worksheet, test)
-    this.onTimeCompletions = 0;
-    this.goldenKeyAwarded = false;
 
-### 12. src/app/session/page.js (3061c87d1b7814a63e5c4872ae7fddf6fca2a80c2e66d488663e73bc0c3f27f2)
-- bm25: -12.6932 | relevance: 1.0000
+### 23. sidekick_pack.md (2e770511dde5c8f3b1ce0ccf2725d10b51727ee6965ceca6117e57caa58fa2c9)
+- bm25: -10.1375 | entity_overlap_w: 1.00 | adjusted: -10.3875 | relevance: 1.0000
 
-// Atomic all-or-nothing restore: validate all 4 arrays match current lesson AND current targets
-            const compOk = stored && Array.isArray(stored.comprehension) && stored.comprehension.length === COMPREHENSION_TARGET;
-            const exOk = stored && Array.isArray(stored.exercise) && stored.exercise.length === EXERCISE_TARGET;
-            const wOk = stored && Array.isArray(stored.worksheet) && stored.worksheet.length === WORKSHEET_TARGET;
-            const tOk = stored && Array.isArray(stored.test) && stored.test.length === TEST_TARGET;
-            
-            if (!contentMismatch && compOk && exOk && wOk && tOk) {
-              // RESTORE all 4 arrays - student continues where they left off
-              setGeneratedComprehension(stored.comprehension);
-              setGeneratedExercise(stored.exercise);
-              setGeneratedWorksheet(stored.worksheet);
-              setGeneratedTest(stored.test);
-              setCurrentWorksheetIndex(0);
-              worksheetIndexRef.current = 0;
-            } else {
-              // REGENERATE all 4 fresh - content mismatch or incomplete data
-              setGeneratedComprehension(null);
-              setGeneratedExercise(null);
-              setGeneratedWorksheet(null);
-              setGeneratedTest(null);
-              setCurrentWorksheetIndex(0);
-              worksheetIndexRef.current = 0;
-            }
-            
-            // If regenerating, build fresh arrays now
-            if (!compOk || !exOk || !wOk || !tOk || contentMismatch) {
-              const shuffle = shuffleHook;
-              const shuffleArr = shuffleArrHook;
-              const selectMixed = selectMixedHook;
-              const blendByType = blendByTypeHook;
-              let gW = [];
-              let gT = [];
-              let gComp
+if (forceFresh) {
+      timelineJumpForceFreshPhaseRef.current = null;
+    }
+    return true;
+  };
 
-### 13. src/app/session/v2/SessionPageV2.jsx (d583c2f2081824277dcc0278ba63f53455e14a6fc7d7bfa435418cd592866f02)
-- bm25: -12.6639 | relevance: 1.0000
+### 6. src/app/session/v2/TimerService.jsx (acaa43b46c9a31add888fd04939ae9b9fb4d12b3c5f56d8935151446d6325c20)
+- bm25: -6.3331 | entity_overlap_w: 4.00 | adjusted: -7.3331 | relevance: 1.0000
 
-// Derive a canonical lesson key (filename only, no subject prefix, no .json) for per-learner persistence.
-function deriveCanonicalLessonKey({ lessonData, lessonId }) {
-  try {
-    // Prefer explicit lesson key/id, fall back to URL param.
-    const base = getSnapshotStorageKey({ lessonData, lessonParam: lessonId });
-    return base || '';
-  } catch {
-    try {
-      let key = lessonData?.key || lessonData?.id || lessonId || '';
-      if (key.includes('/')) key = key.split('/').pop();
-      return String(key || '').replace(/\.json$/i, '');
-    } catch {
-      return '';
+### 24. src/app/session/v2/TimerService.jsx (0206152c1c7b524e70e26134e7acf24c985931f28c9547f5df05df5ce2ccca48)
+- bm25: -10.2441 | relevance: 1.0000
+
+// Do not delete completed timers/results; completion credit must persist.
+    if (!timer.completed) {
+      this.workPhaseTimers.delete(phase);
+    }
+    if (this.currentWorkPhase === phase) {
+      this.currentWorkPhase = null;
     }
   }
-}
 
-// Timeline constants
-const timelinePhases = ["discussion", "comprehension", "exercise", "worksheet", "test"];
-const orderedPhases = ["discussion", "teaching", "comprehension", "exercise", "worksheet", "test", "closing"];
-const phaseLabels = {
-  discussion: "Discussion",
-  comprehension: "Comp",
-  exercise: "Exercise",
-  worksheet: "Worksheet",
-  test: "Test",
-};
+### 25. src/app/session/v2/TimerService.jsx (99e4956be1412065a8a0ad88b662ddcbb1fcfd25f4ad5660be28a29c525d30e5)
+- bm25: -10.1716 | relevance: 1.0000
 
-const normalizePhaseAlias = (phase) => {
-  if (!phase) return null;
-  if (phase === "grading" || phase === "congrats") return "test";
-  if (phase === "complete") return "closing";
-  return phase;
-};
+// Per-learner feature gate: when disabled, golden key eligibility is not tracked/emitted.
+    this.goldenKeysEnabled = options.goldenKeysEnabled !== false;
+    
+    // Pause state
+    this.isPaused = false;
+    this.pausedPlayElapsed = null; // Stores elapsed time when play timer paused
+    this.pausedWorkElapsed = null; // Stores elapsed time when work timer paused
+    
+    // SessionStorage cache for refresh recovery (not used - use explicit restoreState instead)
+    this.lessonKey = options.lessonKey || null;
+    this.phase = options.phase || null;
+    this.mode = 'play'; // play or work
+    
+    // Don't auto-restore from sessionStorage - only restore explicitly via restoreState()
+    // this prevents stale timer data from previous lessons leaking into new sessions
+    
+    // Bind public methods
+    this.startSessionTimer = this.startSessionTimer.bind(this);
+    this.stopSessionTimer = this.stopSessionTimer.bind(this);
+    this.startPlayTimer = this.startPlayTimer.bind(this);
+    this.stopPlayTimer = this.stopPlayTimer.bind(this);
+    this.transitionToWork = this.transitionToWork.bind(this);
+    this.startWorkPhaseTimer = this.startWorkPhaseTimer.bind(this);
+    this.completeWorkPhaseTimer = this.completeWorkPhaseTimer.bind(this);
+    this.stopWorkPhaseTimer = this.stopWorkPhaseTimer.bind(this);
+    this.reset = this.reset.bind(this);
+    this.setGoldenKeysEnabled = this.setGoldenKeysEnabled.bind(this);
+    this.setPlayTimerLimits = this.setPlayTimerLimits.bind(this);
+    this.pause = this.pause.bind(this);
+    this.resume = this.resume.bind(this);
+    this.resync = this.resync.bind(this);
+    // Private methods are automatically bound
+  }
 
-const deriveResumePhaseFromSnapshot = (snapshot) => {
-  if (!snapshot) return null;
-
-const rank = (phase) => {
-    const normalized = normalizePhaseAlias(phase);
-    const idx = orderedPhases.indexOf(normalized);
-    return idx === -1 ? -1 : idx;
-  };
-
-const addCandidate = (set, value) => {
-    if (!value) return;
-    const normalized = normalizePhaseAlias(value);
-    if (!normalized) return;
-    set.add(normalized);
-  };
-
-const candidates = new Set();
-  addCandidate(candidates, snapshot.currentPhase);
-
-### 14. src/app/session/v2/SessionPageV2.jsx (6089167601d8fac07cd5087a39e37c50edf9136e7a9fb823bc3bba4335bca3d7)
-- bm25: -12.6397 | relevance: 1.0000
-
-useEffect(() => {
-    const onWs = () => { try { handleDownloadWorksheet(); } catch {} };
-    const onTest = () => { try { handleDownloadTest(); } catch {} };
-    const onCombined = () => { try { handleDownloadCombined(); } catch {} };
-    const onRefresh = () => { try { handleRefreshWorksheetAndTest(); } catch {} };
-
-window.addEventListener('ms:print:worksheet', onWs);
-    window.addEventListener('ms:print:test', onTest);
-    window.addEventListener('ms:print:combined', onCombined);
-    window.addEventListener('ms:print:refresh', onRefresh);
-
-return () => {
-      window.removeEventListener('ms:print:worksheet', onWs);
-      window.removeEventListener('ms:print:test', onTest);
-      window.removeEventListener('ms:print:combined', onCombined);
-      window.removeEventListener('ms:print:refresh', onRefresh);
-    };
-  }, [handleDownloadCombined, handleDownloadTest, handleDownloadWorksheet, handleRefreshWorksheetAndTest]);
-  
-  // Helper to get the current phase name for timer key (matching V1)
-  const getCurrentPhaseName = useCallback(() => {
-    // Map phase state to phase timer key
-    // Teaching phase uses discussion timer (they're grouped together)
-    if (currentPhase === 'discussion' || currentPhase === 'teaching') return 'discussion';
-    if (currentPhase === 'comprehension') return 'comprehension';
-    if (currentPhase === 'exercise') return 'exercise';
-    if (currentPhase === 'worksheet') return 'worksheet';
-    if (currentPhase === 'test') return 'test';
-    return null;
-  }, [currentPhase]);
-
-// Resolve phase ref by name
-  const getPhaseRef = (phaseName) => {
-    const map = {
-      comprehension: comprehensionPhaseRef,
-      exercise: exercisePhaseRef,
-      worksheet: worksheetPhaseRef,
-      test: testPhaseRef
-    };
-    return map[phaseName] || null;
-  };
-
-### 15. sidekick_pack.md (74cd644836f104161924b09fee0e4dfeaa866648d6ed31cf7cfd364742e148e1)
-- bm25: -12.6378 | relevance: 1.0000
-
-### 31. src/app/session/v2/SessionPageV2.jsx (dcfd660112efbe64defa526d25f61c69d614a698e83190a05aa8a8c6090748c1)
-- bm25: -9.2274 | relevance: 1.0000
-
-const playTimerLimits = {
-      comprehension: m2s(phaseTimers.comprehension_play_min) + playBonusSec,
-      exercise: m2s(phaseTimers.exercise_play_min) + playBonusSec,
-      worksheet: m2s(phaseTimers.worksheet_play_min) + playBonusSec,
-      test: m2s(phaseTimers.test_play_min) + playBonusSec
-    };
-
-const workPhaseTimeLimits = {
-      discussion: m2s(phaseTimers.discussion_work_min),
-      comprehension: m2s(phaseTimers.comprehension_work_min),
-      exercise: m2s(phaseTimers.exercise_work_min),
-      worksheet: m2s(phaseTimers.worksheet_work_min),
-      test: m2s(phaseTimers.test_work_min)
-    };
-
-// Forward timer events to UI
-    const unsubWorkTick = eventBus.on('workPhaseTimerTick', (data) => {
-      setWorkPhaseTime(data.formatted);
-      setWorkPhaseRemaining(data.remainingFormatted);
-    });
-
-const unsubWorkComplete = eventBus.on('workPhaseTimerComplete', (data) => {
-      addEvent(`â±ï¸ ${data.phase} timer complete!`);
-    });
-
-const unsubGoldenKey = eventBus.on('goldenKeyEligible', (data) => {
-      if (goldenKeysEnabledRef.current === false) return;
-      const eligible = data?.eligible === true;
-      setGoldenKeyEligible(eligible);
-      if (eligible) addEvent('🔑 Golden Key earned!');
-    });
-
-### 32. sidekick_pack_lessons_hang.md (26ae99bb963289f4f4eb0782eae819b45a2c459d047a0126f196212dbdb636c6)
-- bm25: -9.0617 | relevance: 1.0000
+### 26. sidekick_pack.md (4a8bb706c4d26c4030ba65d6206b5fcfe1a9c4e16e52f0cd410ed59b9a7528ca)
+- bm25: -9.3736 | entity_overlap_w: 3.00 | adjusted: -10.1236 | relevance: 1.0000
 
 # Cohere Pack (Sidekick Recon) - MsSonoma
 
@@ -565,813 +883,376 @@ Project: freehands
 Profile: MsSonoma
 Mode: standard
 
-### 16. src/app/session/v2/TimerService.jsx (513f5ed5db5b319f6fa117acf63ff78870e686502ea6ef611cac5998ef7f2ca1)
-- bm25: -11.8447 | entity_overlap_w: 1.50 | adjusted: -12.2197 | relevance: 1.0000
+Prompt (original):
+```text
+Golden Key: per-phase on-time credit must be sticky across refresh/resume/timeline jumps; end-of-test report should hydrate from TimerService restored state; 3/5 phases (discussion, comprehension, exercise, worksheet, test)
+```
 
-// Clear TimerControlOverlay sessionStorage mirror for this phase.
-    this.#removeTimerOverlayKey(phase, 'work');
-    
-    // Track on-time completions for golden key (comprehension, exercise, worksheet, test count)
-    const goldenKeyPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
-    if (this.goldenKeysEnabled && onTime && goldenKeyPhases.includes(phase)) {
-      this.onTimeCompletions++;
-      
-      // Check golden key eligibility (3 on-time work phases from comp/exercise/worksheet/test)
-      if (this.onTimeCompletions >= 3 && !this.goldenKeyAwarded) {
-        this.goldenKeyAwarded = true;
-        this.eventBus.emit('goldenKeyEligible', {
-          eligible: true,
-          completedPhases: Array.from(this.workPhaseTimers.keys())
-            .filter(p => goldenKeyPhases.includes(p) && this.workPhaseTimers.get(p).onTime)
+Filter terms used:
+```text
+/resume/timeline
+TimerService
+```
+# Context Pack
+
+**Project**: freehands
+**Profile**: MsSonoma
+**Mode**: standard
+
+## Pack Contract
+
+This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
+
+## Question
+
+/resume/timeline TimerService
+
+## Forced Context
+
+(none)
+
+## Ranked Evidence
+
+### 1. sidekick_pack.md (8a62d0b86e6aea78e2b5fbd9d71be53460d65ae364f332c3e3add7667f367a37)
+- bm25: -10.7321 | entity_overlap_w: 4.50 | adjusted: -11.8571 | relevance: 1.0000
+
+# Cohere Pack (Sidekick Recon) - MsSonoma
+
+Project: freehands
+Profile: MsSonoma
+Mode: standard
+
+Prompt (original):
+```text
+Golden Key completion tracking breaks after refresh/resume/timeline jumps. Need per-phase work-timer completion credit (onTime) to be sticky: once a phase is completed on time, keep credit regardless of later navigation, restart, timer pauses, facilitator time changes. Report at end of test should only show incomplete when phase truly not completed.
+```
+
+Filter terms used:
+```text
+/resume/timeline
+```
+# Context Pack
+
+**Project**: freehands
+**Profile**: MsSonoma
+**Mode**: standard
+
+## Pack Contract
+
+This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
+
+## Question
+
+/resume/timeline
+
+## Forced Context
+
+(none)
+
+## Ranked Evidence
+
+### 27. sidekick_pack.md (4c756d0246c87201f7c73d67ec5d9757efb48786ac8078e3bfcff511a0021798)
+- bm25: -9.4493 | entity_overlap_w: 2.00 | adjusted: -9.9493 | relevance: 1.0000
+
+### 2. sidekick_pack.md (38d60350d5ac24351b7e799d9dfcf539b9be2999447aba30e8d789d62056883d)
+- bm25: -8.8762 | entity_overlap_w: 1.00 | adjusted: -9.1262 | relevance: 1.0000
+
+const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
+
+function normalizeApprovedLessonKeys(map = {}) {
+  const normalized = {}
+  let changed = false
+  Object.entries(map || {}).forEach(([key, value]) => {
+    if (typeof key === 'string' && key.startsWith('Facilitator Lessons/')) {
+      const suffix = key.slice('Facilitator Lessons/'.length)
+      normalized[`general/${suffix}`] = value
+      changed = true
+    } else if (key) {
+      normalized[key] = value
+    }
+  })
+  return { normalized, changed }
+}
+
+function snapshotHasMeaningfulProgress(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return false
+
+const phase = snapshot.phase || 'discussion'
+  const subPhase = snapshot.subPhase || 'greeting'
+  const resume = snapshot.resume || null
+
+### 29. src/app/session/v2/TimerService.jsx (ec57a83cf0e04550a623e4d9e105aabc4abc2b970c06655cbb9940b2ba5e6cf6)
+- bm25: -4.4231 | relevance: 1.0000
+
+### 3. src/app/session/v2/TimerService.jsx (2138714f2799a4ec7f9a38d215801a4d155f4495dd79411cb99a813197b9d07d)
+- bm25: -7.7893 | relevance: 1.0000
+
+### 28. src/app/session/v2/SessionPageV2.jsx (503a0c7043977bac664a3b5186a99b618813487e8e4a677a79117b5dc3a4a07f)
+- bm25: -9.7449 | relevance: 1.0000
+
+// Test Review UI Component (matches V1)
+function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview }) {
+  const { score, totalQuestions, percentage, grade: letterGrade, answers } = testGrade;
+  
+  const tierForPercent = (pct) => {
+    if (pct >= 90) return 'gold';
+    if (pct >= 80) return 'silver';
+    if (pct >= 70) return 'bronze';
+    return null;
+  };
+  
+  const emojiForTier = (tier) => {
+    if (tier === 'gold') return '🥇';
+    if (tier === 'silver') return '🥈';
+    if (tier === 'bronze') return '🥉';
+    return '';
+  };
+  
+  const tier = tierForPercent(percentage);
+  const medal = emojiForTier(tier);
+  
+  const card = { 
+    background: '#ffffff', 
+    border: '1px solid #e5e7eb', 
+    borderRadius: 12, 
+    padding: 16, 
+    boxShadow: '0 2px 10px rgba(0,0,0,0.04)'
+  };
+  
+  const badge = (ok) => ({
+    display: 'inline-block',
+    padding: '2px 8px',
+    borderRadius: 999,
+    fontWeight: 800,
+    fontSize: 12,
+    background: ok ? 'rgba(16,185,129,0.14)' : 'rgba(239,68,68,0.14)',
+    color: ok ? '#065f46' : '#7f1d1d',
+    border: `1px solid ${ok ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)'}`
+  });
+  
+  const btn = {
+    padding: '8px 14px',
+    borderRadius: 8,
+    border: '1px solid #d1d5db',
+    background: '#f9fafb',
+    color: '#374151',
+    fontWeight: 600,
+    fontSize: 14,
+    cursor: 'pointer',
+    transition: 'all 0.15s ease'
+  };
+  
+  const workPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+
+const getPhaseTime = (phaseKey) => {
+    try {
+      return timerService?.getWorkPhaseTime?.(phaseKey) || null;
+    } catch {
+      return null;
+    }
+  };
+
+### 29. sidekick_pack.md (527ec600fa5816b55afa53bf70c1c586b310b7d1c7e5462a1796bcfff7dc9a96)
+- bm25: -9.0543 | entity_overlap_w: 2.00 | adjusted: -9.5543 | relevance: 1.0000
+
+### 7. src/app/session/v2/TimerService.jsx (d73babe9a6b142fd32dc452825b90d6019ffaf89d1d0625f93adb58cacdbfbc0)
+- bm25: -6.9318 | relevance: 1.0000
+
+// Restore sticky completion results first.
+    try {
+      this.workPhaseResults.clear();
+      const rows = Array.isArray(data.workPhaseResults) ? data.workPhaseResults : [];
+      for (const row of rows) {
+        const phase = row?.phase;
+        if (!phase) continue;
+        this.workPhaseResults.set(phase, {
+          completed: row?.completed === true,
+          onTime: row?.onTime === true,
+          elapsed: Number(row?.elapsed) || 0,
+          timeLimit: Number(row?.timeLimit) || 0,
+          remaining: Number(row?.remaining) || 0,
+          finishedAt: Number(row?.finishedAt) || null
         });
       }
-    }
+    } catch {}
     
-    this.currentWorkPhase = null;
-  }
-  
-  /**
-   * Stop work phase timer without completing
-   * @param {string} phase - Phase name
+    // Restore play timers
+    if (data.playTimers) {
+      this.playTimers.clear();
+      
+      data.playTimers.forEach(timer => {
+        this.playTimers.set(timer.phase, {
+          startTime: Date.now() - (timer.elapsed * 1000), // Resume from elapsed
+          elapsed: timer.elapsed,
+          timeLimit: timer.timeLimit,
+          expired: timer.expired
+        });
+        
+        if (!timer.expired) {
+          this.currentPlayPhase = timer.phase;
+          if (!this.playTimerInterval) {
+            this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
+          }
+        }
+      });
+
+### 8. src/app/session/v2/TimerService.jsx (99e4956be1412065a8a0ad88b662ddcbb1fcfd25f4ad5660be28a29c525d30e5)
+- bm25: -6.8095 | relevance: 1.0000
+
+### 30. src/app/session/v2/TimerService.jsx (fadd0031a629b6e2bc8180312947ff4517d9d188b582880d35b92b4a87ebfa5b)
+- bm25: -8.9095 | entity_overlap_w: 1.00 | adjusted: -9.1595 | relevance: 1.0000
+
+/**
+   * Best-effort recovery hook for browsers that may suspend JS timers (notably iOS Safari).
+   *
+   * This does NOT change timer semantics; it simply ensures intervals are armed and emits
+   * an immediate tick so UI can catch up after visibility/focus changes.
    */
-  stopWorkPhaseTimer(phase) {
-    const timer = this.workPhaseTimers.get(phase);
-    
-    if (!timer) {
+  resync(reason = 'manual') {
+    try {
+      if (!this.isPaused) {
+        if (this.sessionStartTime && !this.sessionInterval) {
+          this.sessionInterval = setInterval(this.#tickSessionTimer.bind(this), 1000);
+        }
+
+if (this.currentPlayPhase) {
+          const t = this.playTimers.get(this.currentPlayPhase);
+          if (t && !t.expired && !this.playTimerInterval) {
+            this.playTimerInterval = setInterval(this.#tickPlayTimers.bind(this), 1000);
+          }
+        }
+
+if (this.currentWorkPhase) {
+          const t = this.workPhaseTimers.get(this.currentWorkPhase);
+          if (t && !t.completed && !this.workPhaseInterval) {
+            this.workPhaseInterval = setInterval(this.#tickWorkPhaseTimers.bind(this), 1000);
+          }
+        }
+      }
+
+// Emit a catch-up tick immediately.
+      this.#tickSessionTimer();
+      this.#tickPlayTimers();
+      this.#tickWorkPhaseTimers();
+    } catch (err) {
+      console.warn('[TimerService] resync failed:', reason, err);
+    }
+  }
+
+setGoldenKeysEnabled(enabled) {
+    this.goldenKeysEnabled = enabled !== false;
+  }
+
+setPlayTimerLimits(limits) {
+    if (!limits || typeof limits !== 'object') return;
+    this.playTimerLimits = { ...this.playTimerLimits, ...limits };
+
+### 31. src/app/session/v2/TimerService.jsx (ddc4e55265936d9dbe720cbc3b0ebb92d247e4507a3b0639ba613b8ab0e01bad)
+- bm25: -8.8090 | relevance: 1.0000
+
+// If a play timer is already running, update its limit so bonus changes
+    // (e.g., Golden Key) apply immediately to the active countdown.
+    try {
+      for (const [phase, nextLimit] of Object.entries(limits)) {
+        const timer = this.playTimers.get(phase);
+        if (!timer) continue;
+        const parsed = Number(nextLimit);
+        if (!Number.isFinite(parsed) || parsed <= 0) continue;
+        timer.timeLimit = parsed;
+
+### 32. sidekick_pack.md (bda1681c2bf9b31eb19e0de79b851786d88cd8a81d84a1b850545866820a48cf)
+- bm25: -7.7005 | entity_overlap_w: 4.00 | adjusted: -8.7005 | relevance: 1.0000
+
+### 17. src/app/session/v2/SessionPageV2.jsx (216a4f7c3f291b2134a6bbc8bb87947264d2a1bb81d08e69efdfb1cc5eff1d16)
+- bm25: -6.5493 | relevance: 1.0000
+
+// PIN gate: timeline jumps are facilitator-only
+    let allowed = false;
+    try {
+      allowed = await ensurePinAllowed('timeline');
+    } catch (e) {
+      console.warn('[SessionPageV2] Timeline PIN gate error:', e);
+    }
+    if (!allowed) {
+      timelineJumpInProgressRef.current = false;
       return;
     }
     
-    const elapsed = timer.elapsed;
+    console.log('[SessionPageV2] Timeline jump proceeding to:', targetPhase);
     
-    this.eventBus.emit('workPhaseTimerStop', {
-      phase,
-      elapsed,
-      formatted: this.#formatTime(elapsed)
-    });
-
-this.#removeTimerOverlayKey(phase, 'work');
-    this.workPhaseTimers.delete(phase);
-    if (this.currentWorkPhase === phase) {
-      this.currentWorkPhase = null;
-    }
-  }
-
-### 17. src/app/session/v2/SessionPageV2.jsx (ba628b13e7dba25652cfb9feed9518a8cdc6c4326a37adbacfe18f56dae271da)
-- bm25: -12.1095 | relevance: 1.0000
-
-// Reset opening action input/errors when switching action types
-  useEffect(() => {
+    // Stop any playing audio first
+    stopAudioSafe({ force: true });
+    
+    // Reset opening actions state to prevent zombie UI
+    setOpeningActionActive(false);
+    setOpeningActionType(null);
+    setOpeningActionState({});
     setOpeningActionInput('');
     setOpeningActionError('');
     setOpeningActionBusy(false);
-  }, [openingActionType]);
-  
-  // Compute timeline highlight based on current phase
-  const timelineHighlight = (() => {
-    // Group teaching with discussion; comprehension is its own segment on the timeline
-    if (["discussion", "teaching", "idle"].includes(currentPhase)) {
-      return "discussion";
-    }
-    if (currentPhase === "comprehension") {
-      return "comprehension";
-    }
-    if (currentPhase === "exercise") {
-      return "exercise";
-    }
-    if (currentPhase === "worksheet") {
-      return "worksheet";
-    }
-    if (["test", "grading", "congrats"].includes(currentPhase)) {
-      return "test";
-    }
-    return currentPhase;
-  })();
+    setShowPlayWithSonomaMenu(false);
+    setShowGames(false);
+    setShowFullscreenPlayTimer(false);
 
-### 18. src/app/session/page.js (ebfddf33a453925d07815bf84d44d5806d7c4e2e4a91139b4945352fe534d58e)
-- bm25: -11.9752 | relevance: 1.0000
+### 18. src/app/session/v2/SessionPageV2.jsx (3674c9e66775e69ac803a45cffcc968ea484787adf57f6d4a7cee0abd6517c1b)
+- bm25: -6.4942 | relevance: 1.0000
 
-export default function SessionPage(){
-  // V2 is now the default architecture (clean event-driven implementation)
-  // LEGACY_SESSION_V1_DISCONTINUED: to force Session V1, set localStorage.setItem('session_architecture_v1', 'true')
-  // V2 documentation: docs/brain/v2-architecture.md
-  if (typeof window !== 'undefined' && localStorage.getItem('session_architecture_v1') === 'true') {
-    // V1 fallback - legacy implementation
-    return (
-      <Suspense fallback={null}>
-        <SessionPageInner_LEGACY_SESSION_V1_DISCONTINUED />
-      </Suspense>
-    );
-  }
-  
-  const SessionPageV2 = require('./v2/SessionPageV2').default;
-  return <SessionPageV2 />;
-}
+### 33. src/app/session/v2/TimerService.jsx (6aa82d2e35207384d50fe8167b08484c2832b6359a72e1f116c48f838181fccf)
+- bm25: -8.5765 | relevance: 1.0000
 
-// Targets are loaded dynamically per-user.
-let COMPREHENSION_TARGET = 3;
-let EXERCISE_TARGET = 5;
-let WORKSHEET_TARGET = 15;
-let TEST_TARGET = 10;
-
-function mapToAssistantCaptionEntries(sentences) {
-  if (!Array.isArray(sentences)) return [];
-  return sentences.map((entry) => {
-    if (entry && typeof entry === 'object' && typeof entry.text === 'string') {
-      const role = entry.role === 'user' ? 'user' : 'assistant';
-      return { text: entry.text, role };
-    }
-    const text = typeof entry === 'string' ? entry : String(entry ?? '');
-    return { text, role: 'assistant' };
-  });
-}
-
-// Dynamically load per-user targets at runtime (recomputed on each call)
-async function ensureRuntimeTargets(forceReload = false) {
-  try {
-    const vars = await loadRuntimeVariables();
-    const t = vars?.targets || {};
-    COMPREHENSION_TARGET = (t.comprehension ?? t.discussion ?? COMPREHENSION_TARGET ?? 3);
-    EXERCISE_TARGET = (t.exercise ?? EXERCISE_TARGET ?? 5);
-    WORKSHEET_TARGET = (t.worksheet ?? WORKSHEET_TARGET ?? 15);
-    TEST_TARGET = (t.test ?? TEST_TARGET ?? 10);
-
-### 19. src/app/session/page.js (b5db5ec21d8d0d396bd25775e4272d89c02553afad61b78a733dad0a5e5aa4b4)
-- bm25: -11.9128 | relevance: 1.0000
-
-{/* Q&A phases Opening actions: show after phase intro ends */}
-          {(() => {
-            try {
-              const inQnA = (
-                (phase === 'comprehension' && subPhase === 'comprehension-active') ||
-                (phase === 'exercise' && (subPhase === 'exercise-start' || subPhase === 'exercise-active')) ||
-                (phase === 'worksheet' && subPhase === 'worksheet-active') ||
-                (phase === 'test' && subPhase === 'test-active')
-              );
-              const canShow = (
-                inQnA && !isSpeaking && showOpeningActions && askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive' && fillInFunState === 'inactive'
-              );
-              if (!canShow) return null;
-              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:8, padding:'6px 12px' };
-              const btn = { background:'#1f2937', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
-              const goBtn = { ...btn, background:'#c7442e', boxShadow:'0 2px 12px rgba(199,68,46,0.28)' };
-              const disabledBtn = { ...btn, opacity:0.5, cursor:'not-allowed' };
-              // Phase-specific Go: trigger the first question for the active phase
-              const actualGoAction = !lessonData ? undefined : (
-                phase === 'comprehension' ? handleGoComprehension :
-                phase === 'exercise' ? handleGoExercise :
-                phase === 'worksheet' ? handleGoWorksheet :
-                phase === 'test' ? handleGoTest :
-                handleStartLesson
-              );
-              
-              // Show confirmation
-
-### 20. src/app/session/page.js (bd08e9e0eab5928f6222baaff0a4281d07d95625f3953a37a9fc1d51a2c53499)
-- bm25: -11.6850 | relevance: 1.0000
-
-// Local overrides (per-learner first, then global)
-    const currentId = learnerId && learnerId !== 'demo' ? learnerId : null;
-    if (currentId) {
-      const lc = Number(localStorage.getItem(`target_comprehension_${currentId}`));
-      const le = Number(localStorage.getItem(`target_exercise_${currentId}`));
-      const lw = Number(localStorage.getItem(`target_worksheet_${currentId}`));
-      const lt = Number(localStorage.getItem(`target_test_${currentId}`));
-      if (!Number.isNaN(lc) && lc > 0) COMPREHENSION_TARGET = lc;
-      if (!Number.isNaN(le) && le > 0) EXERCISE_TARGET = le;
-      if (!Number.isNaN(lw) && lw > 0) WORKSHEET_TARGET = lw;
-      if (!Number.isNaN(lt) && lt > 0) TEST_TARGET = lt;
-    } else {
-      const lc = Number(localStorage.getItem('target_comprehension'));
-      const le = Number(localStorage.getItem('target_exercise'));
-      const lw = Number(localStorage.getItem('target_worksheet'));
-      const lt = Number(localStorage.getItem('target_test'));
-      if (!Number.isNaN(lc) && lc > 0) COMPREHENSION_TARGET = lc;
-      if (!Number.isNaN(le) && le > 0) EXERCISE_TARGET = le;
-      if (!Number.isNaN(lw) && lw > 0) WORKSHEET_TARGET = lw;
-      if (!Number.isNaN(lt) && lt > 0) TEST_TARGET = lt;
-    }
-  } catch (error) {
-    // Silent error handling
-  }
-}
-  
-function SessionPageInner_LEGACY_SESSION_V1_DISCONTINUED() {
-  // Generate or retrieve browser session ID (persists across refreshes in this tab)
-  // Used for session ownership and conflict detection
-  const [browserSessionId] = useState(() => {
-    if (typeof window === 'undefined') return null;
-    let sid = sessionStorage.getItem('lesson_session_id');
-    if (!sid) {
-      sid = crypto.randomUUID();
-      sessionStorage.setItem('lesson_session_id', sid);
-    }
-    return sid;
-  });
-
-### 21. src/app/session/page.js (d15c891f42b4529573645b977449f51ddace3b12c5d60af1a1e79a01ef843cc2)
-- bm25: -11.5170 | relevance: 1.0000
-
-// Disable sending when the UI is not ready or while Ms. Sonoma is speaking
-  const comprehensionAwaitingBegin = (phase === 'comprehension' && subPhase === 'comprehension-start');
-  // Allow answering Test items while TTS is still playing so buttons appear immediately
-  const speakingLock = (phase === 'test' && subPhase === 'test-active') ? false : !!isSpeaking;
-  // Derived gating: when Opening/Go buttons are visible, keep input inactive without mutating canSend
-  const discussionButtonsVisible = (
-    phase === 'discussion' &&
-    subPhase === 'awaiting-learner' &&
-    (!isSpeaking || captionsDone) &&
-    showOpeningActions &&
-    askState === 'inactive' &&
-    riddleState === 'inactive' &&
-    poemState === 'inactive' &&
-    fillInFunState === 'inactive'
-  );
-  const inQnAForButtons = (
-    (phase === 'comprehension' && subPhase === 'comprehension-active') ||
-    (phase === 'exercise' && (subPhase === 'exercise-start' || subPhase === 'exercise-active')) ||
-    (phase === 'worksheet' && subPhase === 'worksheet-active') ||
-    (phase === 'test' && subPhase === 'test-active')
-  );
-  const qnaButtonsVisible = (
-    inQnAForButtons && !isSpeaking && showOpeningActions &&
-    askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive' && fillInFunState === 'inactive'
-  );
-  const buttonsGating = discussionButtonsVisible || qnaButtonsVisible;
-  // Story and Fill-in-Fun input should also respect the speaking lock
-  const storyInputActive = (storyState === 'awaiting-turn' || storyState === 'awaiting-setup');
-  const fillInFunInputActive = (fillInFunState === 'collecting-words');
-  const sendDisabled = (storyInputActive || fillInFunInputActive) ? (!canSend || loading || speakingLock) : (!canSend || loading || comprehensionAwai
-
-### 22. src/app/session/v2/SessionPageV2.jsx (6a90e65047dfffb0b43ee42d7a54dccda2313dc283061232023ae92bf309f397)
-- bm25: -11.4998 | relevance: 1.0000
-
-return (
-              <div style={{
-                display: 'flex',
-                gap: 8,
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                marginBottom: 8,
-                padding: '0 12px'
-              }}>
-                {!showPlayWithSonomaMenu ? (
-                  <>
-                    <button
-                      onClick={() => {
-                        if (currentPhase === 'comprehension') {
-                          transitionToWorkTimer('comprehension');
-                          comprehensionPhaseRef.current?.go();
-                        } else if (currentPhase === 'exercise') {
-                          transitionToWorkTimer('exercise');
-                          exercisePhaseRef.current?.go();
-                        } else if (currentPhase === 'worksheet') {
-                          transitionToWorkTimer('worksheet');
-                          worksheetPhaseRef.current?.go();
-                        } else if (currentPhase === 'test') {
-                          transitionToWorkTimer('test');
-                          testPhaseRef.current?.go();
-                        }
-                      }}
-                      style={{
-                        padding: '10px 20px',
-                        fontSize: 'clamp(1rem, 2vw, 1.125rem)',
-                        background: '#c7442e',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 8,
-                        cursor: 'pointer',
-                        fontWeight: 700,
-                        boxShadow: '0 2px 8px rgba(199,68,46,0.4)'
-                      }}
-                    >
-                      GO!
-                    </button>
-
-### 23. src/app/session/v2/SessionPageV2.jsx (adbbae53209a16a8adbe273195392a9441ba844cbc054d9a9223982125580749)
-- bm25: -11.4998 | relevance: 1.0000
-
-timerServiceRef.current.setPlayTimerLimits({
-      comprehension: m2s(phaseTimers.comprehension_play_min) + playBonusSec,
-      exercise: m2s(phaseTimers.exercise_play_min) + playBonusSec,
-      worksheet: m2s(phaseTimers.worksheet_play_min) + playBonusSec,
-      test: m2s(phaseTimers.test_play_min) + playBonusSec
-    });
-  }, [phaseTimers, goldenKeyBonus, goldenKeysEnabled]);
-  
-  // Initialize KeyboardService
-  useEffect(() => {
-    if (!eventBusRef.current) return;
-    
-    const eventBus = eventBusRef.current;
-    
-    // Forward hotkey events
-    const unsubHotkey = eventBus.on('hotkeyPressed', (data) => {
-      handleHotkey(data);
-    });
-    
-    const keyboard = new KeyboardService(eventBus);
-    
-    keyboardServiceRef.current = keyboard;
-    keyboard.init();
-    
-    return () => {
-      keyboard.destroy();
-      keyboardServiceRef.current = null;
-    };
-  }, []);
-  
-  const addEvent = (msg) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setEvents(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 15));
-  };
-
-### 24. src/app/session/page.js (6aad4295ec84ffb905176ca24b5a1cde4fc644e3b586d76dba7bca9e206dbdb4)
-- bm25: -11.4554 | relevance: 1.0000
-
-// Ensure Begin buttons appear immediately in any awaiting-begin state
-  useEffect(() => {
-    const awaiting = (
-      (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') ||
-      (phase === 'worksheet' && subPhase === 'worksheet-awaiting-begin') ||
-      (phase === 'test' && subPhase === 'test-awaiting-begin')
-    );
-    if (awaiting) {
-      if (loading) setLoading(false);
-      if (isSpeaking) setIsSpeaking(false);
-    }
-  }, [phase, subPhase, loading, isSpeaking]);
-
-// Stabilize exercise-awaiting-begin after skip: guard against same-tick state churn
-  const awaitingGuardRef = useRef(null);
-  // After a skip forward/backward into exercise awaiting-begin, hold a short lock window
-  // that prevents any stray effects from advancing out of awaiting-begin until things settle.
-  // The lock is cleared either when Begin is clicked or after a short timeout.
-  const exerciseAwaitingLockRef = useRef(false);
-  useEffect(() => {
-    if (phase === 'exercise' && subPhase === 'exercise-awaiting-begin') {
-      try { if (awaitingGuardRef.current) clearTimeout(awaitingGuardRef.current); } catch {}
-      awaitingGuardRef.current = setTimeout(() => {
-        // If we somehow left awaiting-begin without starting, and no audio is playing, restore it
-        if (phase === 'exercise' && subPhase !== 'exercise-start' && subPhase !== 'exercise-active' && !isSpeaking) {
-          setSubPhase('exercise-awaiting-begin');
-        }
-      }, 0);
-    }
-    return () => { try { if (awaitingGuardRef.current) clearTimeout(awaitingGuardRef.current); } catch {} };
-  }, [phase, subPhase, isSpeaking]);
-
-### 25. src/app/session/page.js (31d804800c63e3c246516064729f97f82ee537de74dc97d12ff738904dac43f1)
-- bm25: -11.4288 | relevance: 1.0000
-
-// Session Timer state
-  const [timerPaused, setTimerPaused] = useState(false);
-  const [sessionTimerMinutes, setSessionTimerMinutes] = useState(60); // Default 1 hour
-  
-  // Phase-based timer system (11 timers: 5 phases × 2 types + 1 golden key bonus)
-  const [phaseTimers, setPhaseTimers] = useState(null); // Loaded from learner profile
-  const [currentTimerMode, setCurrentTimerModeState] = useState({}); // { discussion: 'play'|'work', comprehension: 'play'|'work', ... }
-  const currentTimerModeRef = useRef(currentTimerMode);
-  const setCurrentTimerMode = useCallback((updater) => {
-    setCurrentTimerModeState(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : (updater || {});
-      currentTimerModeRef.current = next;
-      return next;
-    });
-  }, []);
-  const [workPhaseCompletions, setWorkPhaseCompletionsState] = useState({
-    discussion: false,
-    comprehension: false,
-    exercise: false,
-    worksheet: false,
-    test: false
-  }); // Tracks which work phases completed without timing out (for golden key earning)
-  const workPhaseCompletionsRef = useRef(workPhaseCompletions);
-  const setWorkPhaseCompletions = useCallback((updater) => {
-    setWorkPhaseCompletionsState(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : (updater || {
-        discussion: false,
-        comprehension: false,
-        exercise: false,
-        worksheet: false,
-        test: false,
-      });
-      workPhaseCompletionsRef.current = next;
-      return next;
-    });
-  }, []);
-  const [workTimeRemaining, setWorkTimeRemainingState] = useState({
-    discussion: null,
-    comprehension: null,
-    exercise: null,
-    worksheet: null,
-    test: null,
-  }); // Minutes remaining when each work timer stopped (null when never started)
-  const work
-
-### 26. sidekick_pack.md (564a22d757a28333d179b945d14278aa2e4e687b4098484adc6b803fcedbadd3)
-- bm25: -11.3494 | relevance: 1.0000
-
-try {
-      // Check if golden key was earned (3 on-time work phases completed)
-      const earnedKey = checkGoldenKeyEarn();
-      if (earnedKey) {
-        // Increment golden key in database
-        const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
-        if (learnerId && learnerId !== 'demo') {
-          try {
-            const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
-            const learner = await getLearner(learnerId);
-            if (learner) {
-              await updateLearner(learnerId, {
-                name: learner.name,
-                grade: learner.grade,
-                targets: {
-                  comprehension: learner.comprehension,
-                  exercise: learner.exercise,
-                  worksheet: learner.worksheet,
-                  test: learner.test
-                },
-                session_timer_minutes: learner.session_timer_minutes,
-                golden_keys: (learner.golden_keys || 0) + 1
-              });
-            }
-          } catch (err) {
-            // Failed to increment key
-          }
-        }
+// Prefer explicit currentPlayPhase if provided.
+      if (data.currentPlayPhase && this.playTimers.has(data.currentPlayPhase)) {
+        this.currentPlayPhase = data.currentPlayPhase;
       }
-
-### 27. src/app/session/v2/SessionPageV2.jsx (435e154e9ff72c2ba78ece6b20aa6d0c35928af62afa04550386ff64d275cde2)
-- bm25: -11.3293 | relevance: 1.0000
-
-const playEnabledForPhase = (p) => {
-      if (!p) return true;
-      if (p === 'comprehension') return playPortionsEnabledRef.current?.comprehension !== false;
-      if (p === 'exercise') return playPortionsEnabledRef.current?.exercise !== false;
-      if (p === 'worksheet') return playPortionsEnabledRef.current?.worksheet !== false;
-      if (p === 'test') return playPortionsEnabledRef.current?.test !== false;
-      return true;
-    };
-    const skipPlayPortion = ['comprehension', 'exercise', 'worksheet', 'test'].includes(phaseName)
-      ? !playEnabledForPhase(phaseName)
-      : false;
+    }
     
-    // Special handling for discussion: prefetch greeting TTS before starting
-    if (phaseName === 'discussion') {
-      setDiscussionState('loading');
-      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'friend';
-      const lessonTitle = lessonData?.title || lessonId || 'this topic';
-      const greetingText = `Hi ${learnerName}, ready to learn about ${lessonTitle}?`;
+    // Restore work phase timers
+    if (data.workPhaseTimers) {
+      this.workPhaseTimers.clear();
       
-      try {
-        // Prefetch greeting TTS
-        await fetchTTS(greetingText);
-      } catch (err) {
-        console.error('[SessionPageV2] Failed to prefetch greeting:', err);
-      }
-      
-      // Discussion work timer starts when Begin is clicked, not here
-    }
-    
-    const ref = getPhaseRef(phaseName);
-    if (ref?.current?.start) {
-      if (skipPlayPortion) {
-        transitionToWorkTimer(phaseName);
-        // Start work timer immediately when skipping play portion (unless timeline jump already started it)
-        if (timerServiceRef.current && timelineJumpTimerStartedRef.current !== phaseName) {
-          timerServiceRef.current.startWorkPhaseTimer(phaseName);
-        }
-        await ref.current.start({ skipPlayPortion: true });
-      }
+      let inferredActiveWorkPhase = null;
+      data.workPhaseTimers.forEach(timer => {
+        this.workPhaseTimers.set(timer.phase, {
+          startTime: null,
+          elapsed: timer.elapsed,
+          timeLimit: timer.timeLimit,
+          completed: !!timer.completed,
+          onTime: typeof timer.onTime === 'boolean' ? timer.onTime : (timer.elapsed <= timer.timeLimit)
+        });
 
-### 28. src/app/session/v2/SessionPageV2.jsx (d142b1b969996bd27020dd2ca970dde9377f3eaeced7ee88e53217522615e34e)
-- bm25: -11.2914 | relevance: 1.0000
+### 34. src/app/session/v2/SessionPageV2.jsx (6901b2515231f2d99a20bcde46d49e7c0e9b5be2b3bd802881ae99d1f766e5e8)
+- bm25: -8.0757 | entity_overlap_w: 2.00 | adjusted: -8.5757 | relevance: 1.0000
 
-const setValue = (v) => {
-              if (qaPhase === 'comprehension') setComprehensionAnswer(v);
-              else if (qaPhase === 'exercise') setSelectedExerciseAnswer(v);
-              else if (qaPhase === 'worksheet') setWorksheetAnswer(v);
-              else if (qaPhase === 'test') setTestAnswer(v);
-            };
-
-### 29. src/app/session/page.js (0ed50569aba256f98b65d3e56613e01f647350910096915ced524f311b1025bf)
-- bm25: -11.2510 | relevance: 1.0000
-
-// Prefetch intro lines and first question when entering awaiting-begin states
-  // Placed after state declarations to avoid TDZ errors
-  useEffect(() => {
+// PIN gate: timeline jumps are facilitator-only
+    let allowed = false;
     try {
-      if (subPhase === 'comprehension-start') {
-        // Prefetch random intro from COMPREHENSION_INTROS
-        const intro = COMPREHENSION_INTROS[Math.floor(Math.random() * COMPREHENSION_INTROS.length)];
-        if (Array.isArray(generatedComprehension) && generatedComprehension.length > 0) {
-          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedComprehension[0], { layout: 'multiline' }));
-          ttsCache.prefetch(`${intro} ${firstQ}`);
-        }
-      } else if (subPhase === 'exercise-awaiting-begin') {
-        const intro = EXERCISE_INTROS[Math.floor(Math.random() * EXERCISE_INTROS.length)];
-        if (Array.isArray(generatedExercise) && generatedExercise.length > 0) {
-          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedExercise[0], { layout: 'multiline' }));
-          ttsCache.prefetch(`${intro} ${firstQ}`);
-        }
-      } else if (subPhase === 'worksheet-awaiting-begin') {
-        const intro = WORKSHEET_INTROS[Math.floor(Math.random() * WORKSHEET_INTROS.length)];
-        if (Array.isArray(generatedWorksheet) && generatedWorksheet.length > 0) {
-          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedWorksheet[0], { layout: 'multiline' }));
-          ttsCache.prefetch(`Question 1. ${intro} ${firstQ}`);
-        }
-      } else if (subPhase === 'test-awaiting-begin') {
-        const intro = TEST_INTROS[Math.floor(Math.random() * TEST_INTROS.length)];
-        if (Array.isArray(generatedTest) && generatedTest.length > 0) {
-          const firstQ = ensureQuestionMark(formatQuestionForSpeech(generatedTest[0], { layout: 'multiline' }
+      allowed = await ensurePinAllowed('timeline');
+    } catch (e) {
+      console.warn('[SessionPageV2] Timeline PIN gate error:', e);
+    }
+    if (!allowed) {
+      timelineJumpInProgressRef.current = false;
+      return;
+    }
+    
+    console.log('[SessionPageV2] Timeline jump proceeding to:', targetPhase);
+    
+    // Stop any playing audio first
+    stopAudioSafe({ force: true });
+    
+    // Reset opening actions state to prevent zombie UI
+    setOpeningActionActive(false);
+    setOpeningActionType(null);
+    setOpeningActionState({});
+    setOpeningActionInput('');
+    setOpeningActionError('');
+    setOpeningActionBusy(false);
+    setShowPlayWithSonomaMenu(false);
+    setShowGames(false);
+    setShowFullscreenPlayTimer(false);
 
-### 30. src/app/session/v2/SessionPageV2.jsx (c23a55fa482f90a6350d2efab8adc20ff46db5380c654c7dc6ed94c9dda0dcb8)
-- bm25: -11.2319 | relevance: 1.0000
-
-const onSubmit = () => {
-              if (qaPhase === 'comprehension') submitComprehensionAnswer();
-              else if (qaPhase === 'exercise') submitExerciseAnswer();
-              else if (qaPhase === 'worksheet') submitWorksheetAnswer();
-              else if (qaPhase === 'test') submitTestAnswer();
-            };
-
-const isSubmitting = (
-              (qaPhase === 'comprehension' && comprehensionSubmitting) ||
-              (qaPhase === 'exercise' && exerciseSubmitting) ||
-              (qaPhase === 'worksheet' && worksheetSubmitting) ||
-              (qaPhase === 'test' && testSubmitting)
-            );
-
-const canSubmit = !isSubmitting && !!String(currentValue || '').trim();
-
-const quickContainerStyle = {
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-              gap: 8,
-              paddingLeft: isMobileLandscape ? 12 : '4%',
-              paddingRight: isMobileLandscape ? 12 : '4%',
-              marginBottom: 6
-            };
-
-const quickButtonStyle = {
-              background: '#1f2937',
-              color: '#fff',
-              borderRadius: 8,
-              padding: '8px 12px',
-              minHeight: 40,
-              minWidth: 56,
-              fontWeight: 800,
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.18)'
-            };
-
-const options = getOpts();
-
-### 31. src/app/session/page.js (ef6e97ee0375ec92f630a0dba9eb41e67a3a65a3d1f99c29c4725e4b7d94570f)
-- bm25: -11.2208 | relevance: 1.0000
-
-const goDiscussion = () => {
-        setPhase('discussion');
-        setSubPhase('greeting');
-        setShowBegin(true); // initial big Begin overlay
-        setCanSend(false);
-        setTicker(0);
-      };
-
-const goComprehension = () => {
-        ensureBaseSessionSetup();
-        setPhase('comprehension');
-        setSubPhase('comprehension-start');
-        setShowBegin(false); // we use the dedicated Begin Comprehension button, not global overlay
-        setCurrentCompProblem(null);
-        setCanSend(false);
-        setTicker(0);
-        try {
-          comprehensionAwaitingLockRef.current = true;
-          setTimeout(() => { comprehensionAwaitingLockRef.current = false; }, 800);
-        } catch {}
-      };
-
-const goExercise = () => {
-        ensureBaseSessionSetup();
-        setPhase('exercise');
-        setSubPhase('exercise-awaiting-begin');
-        setShowBegin(false);
-        setExerciseSkippedAwaitBegin(true); // ensures Begin Exercise button path
-        setCurrentExerciseProblem(null);
-        setCanSend(false);
-        setTicker(0);
-        try {
-          exerciseAwaitingLockRef.current = true;
-          setTimeout(() => { exerciseAwaitingLockRef.current = false; }, 800);
-        } catch {}
-      };
-
-const goWorksheet = () => {
-        ensureBaseSessionSetup();
-        setPhase('worksheet');
-        setSubPhase('worksheet-awaiting-begin');
-        setShowBegin(false);
-        setWorksheetSkippedAwaitBegin(true);
-        setCanSend(false);
-        setTicker(0);
-      };
-
-const goTest = () => {
-        ensureBaseSessionSetup();
-        resetTestProgress();
-        setPhase('test');
-        setSubPhase('test-awaiting-begin');
-        setShowBegin(false);
-        setCanSend(false);
-        setTicker(0);
-      };
-
-### 32. src/app/session/v2/SessionPageV2.jsx (45a98a62bbf9b28a6bd4e028bee2a8b1e5afb0efd6df3c06bbd64e38d0438ddc)
-- bm25: -11.1546 | relevance: 1.0000
-
-// Play portion flags (required - no defaults or fallback)
-        const playFlags = {
-          comprehension: learner.play_comprehension_enabled,
-          exercise: learner.play_exercise_enabled,
-          worksheet: learner.play_worksheet_enabled,
-          test: learner.play_test_enabled,
-        };
-        for (const [k, v] of Object.entries(playFlags)) {
-          if (typeof v !== 'boolean') {
-            throw new Error(`Learner profile missing play_${k}_enabled flag. Please run migrations.`);
-          }
-        }
-        setPlayPortionsEnabled(playFlags);
-        playPortionsEnabledRef.current = playFlags;
-        
-        // Load phase timer settings from learner profile
-        const timers = loadPhaseTimersForLearner(learner);
-        setPhaseTimers(timers);
-        
-        // Initialize currentTimerMode (null = not started yet), but do not clobber
-        // any existing restore/resume-derived modes.
-        setCurrentTimerMode((prev) => {
-          const hasExistingMode = prev && Object.values(prev).some((mode) => mode === 'play' || mode === 'work');
-          if (hasExistingMode) return prev;
-          return {
-            discussion: null,
-            comprehension: null,
-            exercise: null,
-            worksheet: null,
-            test: null
-          };
-        });
-        
-        // Check for active golden key on this lesson (only affects play timers when Golden Keys are enabled)
-        // Key format must match V1 + /learn/lessons: `${subject}/${lesson}`.
-        if (!goldenKeyLessonKey) {
-          throw new Error('Missing lesson key for golden key lookup.');
-        }
-        const activeKeys = learner.active_golden_keys || {};
-        if (learner.golden_keys_enabled && activeKeys[goldenKeyLessonKey]) {
-          setHasGoldenKey(true);
-
-### 33. sidekick_pack_restore_medal_emojis.md (3a1cd047930f97ccb7bc8e1658a4c34b04902428f1a9bc3b685525fb56268088)
-- bm25: -11.1165 | relevance: 1.0000
-
-// Play portion flags (required - no defaults or fallback)
-        const playFlags = {
-          comprehension: learner.play_comprehension_enabled,
-          exercise: learner.play_exercise_enabled,
-          worksheet: learner.play_worksheet_enabled,
-          test: learner.play_test_enabled,
-        };
-        for (const [k, v] of Object.entries(playFlags)) {
-          if (typeof v !== 'boolean') {
-            throw new Error(`Learner profile missing play_${k}_enabled flag. Please run migrations.`);
-          }
-        }
-        setPlayPortionsEnabled(playFlags);
-        playPortionsEnabledRef.current = playFlags;
-        
-        // Load phase timer settings from learner profile
-        const timers = loadPhaseTimersForLearner(learner);
-        setPhaseTimers(timers);
-        
-        // Initialize currentTimerMode (null = not started yet)
-        setCurrentTimerMode({
-          discussion: null,
-          comprehension: null,
-          exercise: null,
-          worksheet: null,
-          test: null
-        });
-        
-        // Check for active golden key on this lesson (only affects play timers when Golden Keys are enabled)
-        // Key format must match V1 + /learn/lessons: `${subject}/${lesson}`.
-        if (!goldenKeyLessonKey) {
-          throw new Error('Missing lesson key for golden key lookup.');
-        }
-        const activeKeys = learner.active_golden_keys || {};
-        if (learner.golden_keys_enabled && activeKeys[goldenKeyLessonKey]) {
-          setHasGoldenKey(true);
-          setIsGoldenKeySuspended(false);
-          setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
-        } else if (learner.golden_keys_enabled && goldenKeyFromUrl) {
-          // Golden key consumed on /learn/lessons; session must persist the per-lesson flag.
-          setHas
-
-### 34. sidekick_pack_restore_medal_emojis.md (97bb009b3d55ba95e9daf096efef751f67493785c91183348fd5efc231aead55)
-- bm25: -11.1165 | relevance: 1.0000
-
-// Play portion flags (required - no defaults or fallback)
-        const playFlags = {
-          comprehension: learner.play_comprehension_enabled,
-          exercise: learner.play_exercise_enabled,
-          worksheet: learner.play_worksheet_enabled,
-          test: learner.play_test_enabled,
-        };
-        for (const [k, v] of Object.entries(playFlags)) {
-          if (typeof v !== 'boolean') {
-            throw new Error(`Learner profile missing play_${k}_enabled flag. Please run migrations.`);
-          }
-        }
-        setPlayPortionsEnabled(playFlags);
-        playPortionsEnabledRef.current = playFlags;
-        
-        // Load phase timer settings from learner profile
-        const timers = loadPhaseTimersForLearner(learner);
-        setPhaseTimers(timers);
-        
-        // Initialize currentTimerMode (null = not started yet)
-        setCurrentTimerMode({
-          discussion: null,
-          comprehension: null,
-          exercise: null,
-          worksheet: null,
-          test: null
-        });
-        
-        // Check for active golden key on this lesson (only affects play timers when Golden Keys are enabled)
-        // Key format must match V1 + /learn/lessons: `${subject}/${lesson}`.
-        if (!goldenKeyLessonKey) {
-          throw new Error('Missing lesson key for golden key lookup.');
-        }
-        const activeKeys = learner.active_golden_keys || {};
-        if (learner.golden_keys_enabled && activeKeys[goldenKeyLessonKey]) {
-          setHasGoldenKey(true);
-          setIsGoldenKeySuspended(false);
-          setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
-        } else if (learner.golden_keys_enabled && goldenKeyFromUrl) {
-          // Golden key consumed on /learn/lessons; session must persist the per-lesson flag.
-          setHas
-
-### 35. sidekick_pack_restore_medal_emojis.md (a49a6f6b227d8a64517cdb47195a5b6460fb41908765ad49fcfa00c7ac43a483)
-- bm25: -11.1165 | relevance: 1.0000
-
-// Play portion flags (required - no defaults or fallback)
-        const playFlags = {
-          comprehension: learner.play_comprehension_enabled,
-          exercise: learner.play_exercise_enabled,
-          worksheet: learner.play_worksheet_enabled,
-          test: learner.play_test_enabled,
-        };
-        for (const [k, v] of Object.entries(playFlags)) {
-          if (typeof v !== 'boolean') {
-            throw new Error(`Learner profile missing play_${k}_enabled flag. Please run migrations.`);
-          }
-        }
-        setPlayPortionsEnabled(playFlags);
-        playPortionsEnabledRef.current = playFlags;
-        
-        // Load phase timer settings from learner profile
-        const timers = loadPhaseTimersForLearner(learner);
-        setPhaseTimers(timers);
-        
-        // Initialize currentTimerMode (null = not started yet)
-        setCurrentTimerMode({
-          discussion: null,
-          comprehension: null,
-          exercise: null,
-          worksheet: null,
-          test: null
-        });
-        
-        // Check for active golden key on this lesson (only affects play timers when Golden Keys are enabled)
-        // Key format must match V1 + /learn/lessons: `${subject}/${lesson}`.
-        if (!goldenKeyLessonKey) {
-          throw new Error('Missing lesson key for golden key lookup.');
-        }
-        const activeKeys = learner.active_golden_keys || {};
-        if (learner.golden_keys_enabled && activeKeys[goldenKeyLessonKey]) {
-          setHasGoldenKey(true);
-          setIsGoldenKeySuspended(false);
-          setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
-        } else if (learner.golden_keys_enabled && goldenKeyFromUrl) {
-          // Golden key consumed on /learn/lessons; session must persist the per-lesson flag.
-          setHas
-
-### 36. src/app/session/v2/TimerService.jsx (969f7a14cf9f3699f5b53bc29667946197fe2d0b7b8e41098b39fc1bade48638)
-- bm25: -10.9667 | relevance: 1.0000
+### 35. src/app/session/v2/TimerService.jsx (c366ffd95c213031782db363c3a2ba3af35515665534c9d34e73a8e41492b13b)
+- bm25: -8.2847 | entity_overlap_w: 1.00 | adjusted: -8.5347 | relevance: 1.0000
 
 /**
  * TimerService.jsx
@@ -1407,173 +1288,225 @@ const goTest = () => {
 
 'use client';
 
-### 37. src/app/session/v2/SessionPageV2.jsx (1db52a0db61b35faa6ea319a03a11938c611a40e1a2fd95c7c049a32467af7b0)
-- bm25: -10.7969 | relevance: 1.0000
+### 36. src/app/session/v2/SessionPageV2.jsx (414493db530c7c207ea573d6381d6d0d332b04efffd785fb1451b61c0bb91536)
+- bm25: -8.4732 | relevance: 1.0000
 
-if (!qaPhase || !awaitingAnswer || openingActionActive) return null;
-
-const q =
-              qaPhase === 'comprehension' ? currentComprehensionQuestion :
-              qaPhase === 'exercise' ? currentExerciseQuestion :
-              qaPhase === 'worksheet' ? currentWorksheetQuestion :
-              currentTestQuestion;
-
-const isMc = isMultipleChoice(q);
-            const isTf = !isMc && isTrueFalse(q);
-            const isFill =
-              (qaPhase === 'worksheet' && !isMc && !isTf) ||
-              (qaPhase === 'test' && ((q?.type === 'fill' || q?.type === 'fib' || q?.sourceType === 'fib') || (!isMc && !isTf))) ||
-              ((qaPhase === 'comprehension' || qaPhase === 'exercise') && !isMc && !isTf);
-
-const getOpts = () => {
-              if (isTf) return ['True', 'False'];
-              const raw = Array.isArray(q?.options) ? q.options : (Array.isArray(q?.choices) ? q.choices : []);
-              const labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-              const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.:\)\-]\s*/i;
-              return raw.filter(Boolean).map((o, i) => ({
-                key: labels[i] || String(i),
-                label: labels[i] || '',
-                value: String(o ?? '').trim().replace(anyLabel, '').trim()
-              }));
-            };
-
-const currentValue =
-              qaPhase === 'comprehension' ? comprehensionAnswer :
-              qaPhase === 'exercise' ? selectedExerciseAnswer :
-              qaPhase === 'worksheet' ? worksheetAnswer :
-              testAnswer;
-
-### 38. src/app/session/page.js (3884f04007b78a84502afb91cc0f8221984f2f556ec97a9fee6748214cd6246a)
-- bm25: -10.6049 | relevance: 1.0000
-
-// Global hotkey for Go buttons (Enter key triggers Go in opening actions)
-  useEffect(() => {
-    const onKeyDown = (e) => {
-      if (showGames) return;
-      const code = e.code || e.key;
-      const target = e.target;
-      if (isTextEntryTarget(target)) return;
-      
-      const goCode = hotkeys?.goButton || DEFAULT_HOTKEYS.goButton;
-      if (!goCode || code !== goCode) return;
-      
-      // Don't trigger if loading, speaking, or games are open
-      if (loading || isSpeaking) return;
-      
-      try {
-        // Discussion phase opening actions Go button
-        if (phase === 'discussion' && subPhase === 'awaiting-learner' && showOpeningActions &&
-            askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' &&
-            storyState === 'inactive' && fillInFunState === 'inactive' && lessonData) {
-          e.preventDefault();
-          setPendingGoAction(() => handleStartLesson);
-          setShowGoConfirmation(true);
-          return;
-        }
-        
-        // Q&A phases opening actions Go button
-        const inQnA = (
-          (phase === 'comprehension' && subPhase === 'comprehension-active') ||
-          (phase === 'exercise' && (subPhase === 'exercise-start' || subPhase === 'exercise-active')) ||
-          (phase === 'worksheet' && subPhase === 'worksheet-active') ||
-          (phase === 'test' && subPhase === 'test-active')
-        );
-        
-        if (inQnA && showOpeningActions &&
-            askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' &&
-            storyState === 'inactive' && fillInFunState === 'inactive' && lessonData) {
-          e.preventDefault();
-          const actualGoAction = (
-            phase === 'comprehension' ? handleGoComprehension :
-            phase ===
-
-### 39. src/app/session/page.js (801aa7e8305d87bd3abc46308f9450de00742260d2a07b0ca1d89a817de2be4a)
-- bm25: -10.4478 | relevance: 1.0000
-
-switch (target) {
-        case 'discussion':
-          goDiscussion();
-          try { scheduleSaveSnapshot('jump-discussion'); } catch {}
-          break;
-        case 'comprehension':
-          goComprehension();
-          try { scheduleSaveSnapshot('jump-comprehension'); } catch {}
-          break;
-        case 'exercise':
-          goExercise();
-          try { scheduleSaveSnapshot('jump-exercise'); } catch {}
-          break;
-        case 'worksheet':
-          goWorksheet();
-          try { scheduleSaveSnapshot('jump-worksheet'); } catch {}
-          break;
-        case 'test':
-          goTest();
-          try { scheduleSaveSnapshot('jump-test'); } catch {}
-          break;
-        default:
-          break;
-      }
-    };
-    return (
-      <div style={{ position: 'relative', zIndex: 9999 }}>
-        {/* Timeline is constrained to a 600px max width */}
-        <div
-          style={{
-            width: isMobileLandscape ? '100%' : '92%',
-            maxWidth: 600,
-            margin: '0 auto',
-            // When page height is very short in landscape, remove timeline vertical padding entirely.
-            // Otherwise, when short-height+landscape, apply small padding (2px) to avoid clipping.
-            paddingTop: isVeryShortLandscape ? 0 : ((isShortHeight && isMobileLandscape) ? 2 : undefined),
-            paddingBottom: isVeryShortLandscape ? 0 : ((isShortHeight && isMobileLandscape) ? 2 : undefined),
-          }}
-        >
-          <Timeline
-            timelinePhases={timelinePhases}
-            timelineHighlight={timelineHighlight}
-            compact={isMobileLandscape}
-            onJumpPhase={offerResume ? null : handleJumpPhase}
-          />
-        </div>
-      </div>
-    );
-  })()}
-
-### 40. src/app/session/page.js (441c5b0468568c0ee81383d2ff1659da127f5404e6cc3571903b476a83ca65af)
-- bm25: -10.3482 | relevance: 1.0000
-
-// Decrement available golden keys and mark this lesson as having one
-      await updateLearner(learnerId, {
-        name: learner.name,
-        grade: learner.grade,
-        targets: {
-          comprehension: learner.comprehension,
-          exercise: learner.exercise,
-          worksheet: learner.worksheet,
-          test: learner.test
-        },
-        session_timer_minutes: learner.session_timer_minutes,
-        golden_keys: (learner.golden_keys || 0) - 1,
-        active_golden_keys: activeKeys
+if (snapshotServiceRef.current) {
+      snapshotServiceRef.current.saveProgress('exercise-init', {
+        phaseOverride: 'exercise',
+        questions,
+        nextQuestionIndex: forceFresh ? 0 : (savedExercise?.nextQuestionIndex ?? savedExercise?.questionIndex ?? 0),
+        score: forceFresh ? 0 : (savedExercise?.score || 0),
+        answers: forceFresh ? [] : (savedExercise?.answers || []),
+        timerMode: forceFresh ? 'play' : (savedExercise?.timerMode || 'play')
       });
-      
-      // Get the golden key bonus from the learner's settings
-      const bonusMinutes = learner.golden_key_bonus_min ?? 5; // Default to 5 if not set
-      
-      // Update local state
-      setHasGoldenKey(true);
-      setIsGoldenKeySuspended(false);
-      setGoldenKeyBonus(bonusMinutes);
-      
-      // Force timer to refresh and pick up the new golden key bonus
-      setTimerRefreshKey(prev => prev + 1);
-      
-      // Show success and close overlay
-      alert('Golden key applied! This lesson now has bonus play time.');
-      setShowTimerControls(false);
-      
-    } catch (err) {
-      alert('Failed to apply golden key. Please try again.');
     }
-  }, [hasGoldenKey, lessonKey]);
+    if (!savedExerciseQuestions && !storedExerciseQuestions) {
+      setGeneratedExercise(questions);
+      persistAssessments(generatedWorksheet, generatedTest, generatedComprehension, questions);
+    }
+    
+    const phase = new ExercisePhase({
+      audioEngine: audioEngineRef.current,
+      eventBus: eventBusRef.current,
+      timerService: timerServiceRef.current,
+      questions: questions,
+      resumeState: (!forceFresh && savedExercise) ? {
+        questions,
+        nextQuestionIndex: savedExercise.nextQuestionIndex ?? savedExercise.questionIndex ?? 0,
+        score: savedExercise.score || 0,
+        answers: savedExercise.answers || [],
+        timerMode: savedExercise.timerMode || 'work'
+      } : null
+    });
+    
+    exercisePhaseRef.current = phase;
+    
+    // Subscribe to state changes
+    phase.on('stateChange', (data) => {
+      setExerciseState(data.state);
+      if (data.timerMode) {
+        setExerciseTimerMode(data.timerMode);
+        if (data.timerMode === 'play' || data.timerMode === 'work') {
+          const prevMode = currentTimerModeRef.current?.exercise ?? null;
+          if (prevMode !== data.timerMode) {
+            setCurrentTimerMode((prev) => ({ ...prev, exercise: data.timerMode }));
+            setTimerRefreshKey((k) => k + 1);
+          }
+        }
+
+### 37. src/app/session/v2/SessionPageV2.jsx (e3459e38441acf56cdb5073987f2197a332c23ca97a16990fd29d9f8985ed995)
+- bm25: -8.0897 | entity_overlap_w: 1.00 | adjusted: -8.3397 | relevance: 1.0000
+
+// Session tracking (lesson_sessions + lesson_session_events)
+  const [showTakeoverDialog, setShowTakeoverDialog] = useState(false);
+  const [conflictingSession, setConflictingSession] = useState(null);
+  const {
+    startSession: startTrackedSession,
+    endSession: endTrackedSession,
+    startPolling: startSessionPolling,
+    stopPolling: stopSessionPolling,
+  } = useSessionTracking(
+    learnerProfile?.id || null,
+    goldenKeyLessonKey || null,
+    false,
+    (session) => {
+      setConflictingSession(session);
+      setShowTakeoverDialog(true);
+    }
+  );
+  
+  // Phase timer state (loaded from learner profile)
+  const [phaseTimers, setPhaseTimers] = useState(null);
+  const [currentTimerMode, setCurrentTimerMode] = useState({
+    discussion: null,
+    comprehension: null,
+    exercise: null,
+    worksheet: null,
+    test: null
+  });
+  const currentTimerModeRef = useRef({
+    discussion: null,
+    comprehension: null,
+    exercise: null,
+    worksheet: null,
+    test: null
+  });
+  const [timerRefreshKey, setTimerRefreshKey] = useState(0);
+  const [goldenKeyBonus, setGoldenKeyBonus] = useState(0);
+  const [hasGoldenKey, setHasGoldenKey] = useState(false);
+  const [isGoldenKeySuspended, setIsGoldenKeySuspended] = useState(false);
+  const goldenKeyBonusRef = useRef(0);
+  const hasGoldenKeyRef = useRef(false);
+  const goldenKeyLessonKeyRef = useRef('');
+  const [timerPaused, setTimerPaused] = useState(false);
+  
+  // Timer display state (fed by TimerService events) - separate for play and work
+  const [playTimerDisplayElapsed, setPlayTimerDisplayElapsed] = useState(0);
+  const [playTimerDisplayRemaining, setPlayTimerDisplayRemaining] = useState(0);
+  const [workTimerDisplayElapsed, setWorkTimerDisplayElapsed] = useState(0);
+  const [workTimerDisplayRemaining, setWorkTime
+
+### 38. src/app/session/v2/SessionPageV2.jsx (b320cc73b9de32c02f2ed764bc67d0ff721f297b2f9eecad46a4a76448c869bd)
+- bm25: -8.3045 | relevance: 1.0000
+
+if (snapshotServiceRef.current) {
+      snapshotServiceRef.current.saveProgress('worksheet-init', {
+        phaseOverride: 'worksheet',
+        questions,
+        nextQuestionIndex: forceFresh ? 0 : (savedWorksheet?.nextQuestionIndex ?? savedWorksheet?.questionIndex ?? 0),
+        score: forceFresh ? 0 : (savedWorksheet?.score || 0),
+        answers: forceFresh ? [] : (savedWorksheet?.answers || []),
+        timerMode: forceFresh ? 'play' : (savedWorksheet?.timerMode || 'play')
+      });
+    }
+    
+    const phase = new WorksheetPhase({
+      audioEngine: audioEngineRef.current,
+      eventBus: eventBusRef.current,
+      timerService: timerServiceRef.current,
+      questions: questions,
+      resumeState: (!forceFresh && savedWorksheet) ? {
+        questions,
+        nextQuestionIndex: savedWorksheet.nextQuestionIndex ?? savedWorksheet.questionIndex ?? 0,
+        score: savedWorksheet.score || 0,
+        answers: savedWorksheet.answers || [],
+        timerMode: savedWorksheet.timerMode || 'work'
+      } : null
+    });
+    
+    worksheetPhaseRef.current = phase;
+    
+    // Subscribe to state changes
+    phase.on('stateChange', (data) => {
+      setWorksheetState(data.state);
+      if (data.timerMode) {
+        setWorksheetTimerMode(data.timerMode);
+        if (data.timerMode === 'play' || data.timerMode === 'work') {
+          const prevMode = currentTimerModeRef.current?.worksheet ?? null;
+          if (prevMode !== data.timerMode) {
+            setCurrentTimerMode((prev) => ({ ...prev, worksheet: data.timerMode }));
+            setTimerRefreshKey((k) => k + 1);
+          }
+        }
+      }
+    });
+    
+    // Subscribe to question events
+    phase.on('questionStart', (data) => {
+      addEvent(`ðŸ“ Worksheet ${data.questionIndex + 1}/${data.totalQuestions}`);
+
+### 39. src/app/session/v2/SessionPageV2.jsx (d128641d1834b8bb45206abcbbdae7fd035e6ed9a09759daa0b2a339b057b575)
+- bm25: -8.3045 | relevance: 1.0000
+
+// Persist question order immediately so mid-phase resume has deterministic pools.
+    if (snapshotServiceRef.current) {
+      snapshotServiceRef.current.saveProgress('comprehension-init', {
+        phaseOverride: 'comprehension',
+        questions,
+        nextQuestionIndex: forceFresh ? 0 : (savedComp?.nextQuestionIndex || 0),
+        score: forceFresh ? 0 : (savedComp?.score || 0),
+        answers: forceFresh ? [] : (savedComp?.answers || []),
+        timerMode: forceFresh ? 'play' : (savedComp?.timerMode || 'play')
+      });
+    }
+    if (!savedCompQuestions && !storedCompQuestions) {
+      setGeneratedComprehension(questions);
+      persistAssessments(generatedWorksheet, generatedTest, questions, generatedExercise);
+    }
+    
+    const phase = new ComprehensionPhase({
+      audioEngine: audioEngineRef.current,
+      eventBus: eventBusRef.current,
+      timerService: timerServiceRef.current,
+      questions: questions,
+      resumeState: (!forceFresh && savedComp) ? {
+        questions,
+        nextQuestionIndex: savedComp.nextQuestionIndex ?? savedComp.questionIndex ?? 0,
+        score: savedComp.score || 0,
+        answers: savedComp.answers || [],
+        timerMode: savedComp.timerMode || 'work'
+      } : null
+    });
+    
+    comprehensionPhaseRef.current = phase;
+    
+    // Subscribe to state changes
+    phase.on('stateChange', (data) => {
+      setComprehensionState(data.state);
+      if (data.timerMode) {
+        setComprehensionTimerMode(data.timerMode);
+        if (data.timerMode === 'play' || data.timerMode === 'work') {
+          const prevMode = currentTimerModeRef.current?.comprehension ?? null;
+          if (prevMode !== data.timerMode) {
+            setCurrentTimerMode((prev) => ({ ...prev, comprehension: data.timerMode }));
+            setTimerRefr
+
+### 40. sidekick_pack.md (61149be66caff7a6cb2aa7897dd961b1c01896dfefed3b76a7792a8ff26b642d)
+- bm25: -7.8196 | entity_overlap_w: 1.00 | adjusted: -8.0696 | relevance: 1.0000
+
+return () => {
+      try { unsubWorkTick?.(); } catch {}
+      try { unsubWorkComplete?.(); } catch {}
+      try { unsubGoldenKey?.(); } catch {}
+      try { unsubPlayExpired?.(); } catch {}
+      try { unsubPlayTick?.(); } catch {}
+      try { unsubWorkTick2?.(); } catch {}
+      try { unsubPlayStart?.(); } catch {}
+      try { unsubWorkStart?.(); } catch {}
+      timer.destroy();
+      timerServiceRef.current = null;
+    };
+  }, [lessonKey, phaseTimers, applyRestoredTimerStateToUi]);
+
+// Update play timer limits when bonus/enabled state changes (do not recreate TimerService).
+  useEffect(() => {
+    if (!timerServiceRef.current || !phaseTimers) return;
+
+const playBonusSec = goldenKeysEnabledRef.current
+      ? Math.max(0, Number(goldenKeyBonusRef.current || 0)) * 60
+      : 0;
+    const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+
+### 36. sidekick_pack.md (249d14a61d0c4086fe9efad0dea5881bdba2339821c508c2b888543c2f6cd3e9)
+- bm25: -5.5816 | relevance: 1.0000

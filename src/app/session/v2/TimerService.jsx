@@ -58,6 +58,11 @@ export class TimerService {
     this.workPhaseTimers = new Map(); // phase -> { startTime, elapsed, timeLimit, completed }
     this.workPhaseInterval = null;
     this.currentWorkPhase = null;
+
+    // Sticky completion records for Golden Key + end-of-test reporting.
+    // Once a phase has been completed on time, it retains credit until explicit reset.
+    // Map: phase -> { completed, onTime, elapsed, timeLimit, remaining, finishedAt }
+    this.workPhaseResults = new Map();
     
     // Work phase time limits (seconds) - all phases have work timers
     this.workPhaseTimeLimits = options.workPhaseTimeLimits || {
@@ -173,6 +178,25 @@ export class TimerService {
             }));
           } catch {}
         }
+      }
+    } catch {}
+  }
+
+  #goldenKeyPhases() {
+    return ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+  }
+
+  #recomputeGoldenKey() {
+    try {
+      const phases = this.#goldenKeyPhases();
+      let onTimeCount = 0;
+      for (const phase of phases) {
+        const rec = this.workPhaseResults.get(phase);
+        if (rec?.completed && rec.onTime) onTimeCount += 1;
+      }
+      this.onTimeCompletions = onTimeCount;
+      if (this.goldenKeysEnabled && onTimeCount >= 3) {
+        this.goldenKeyAwarded = true;
       }
     } catch {}
   }
@@ -530,14 +554,34 @@ export class TimerService {
       return;
     }
     
-    // Calculate final elapsed time
-    const now = Date.now();
-    const elapsed = Math.floor((now - timer.startTime) / 1000);
-    const onTime = elapsed <= timer.timeLimit;
+    // Calculate final elapsed time.
+    // IMPORTANT: if paused, do not count wall-clock time while paused.
+    let elapsed = Number(timer.elapsed) || 0;
+    try {
+      if (!this.isPaused && timer.startTime) {
+        elapsed = Math.floor((Date.now() - timer.startTime) / 1000);
+      }
+    } catch {}
+
+    const onTimeNow = elapsed <= timer.timeLimit;
+    const remaining = Math.max(0, timer.timeLimit - elapsed);
+
+    // Sticky record: once on-time credit is earned, keep it.
+    const prev = this.workPhaseResults.get(phase);
+    const onTime = prev?.onTime === true ? true : onTimeNow;
     
     timer.elapsed = elapsed;
     timer.completed = true;
     timer.onTime = onTime;
+
+    this.workPhaseResults.set(phase, {
+      completed: true,
+      onTime,
+      elapsed,
+      timeLimit: timer.timeLimit,
+      remaining,
+      finishedAt: Date.now()
+    });
     
     this.eventBus.emit('workPhaseTimerComplete', {
       phase,
@@ -550,20 +594,17 @@ export class TimerService {
     // Clear TimerControlOverlay sessionStorage mirror for this phase.
     this.#removeTimerOverlayKey(phase, 'work');
     
-    // Track on-time completions for golden key (comprehension, exercise, worksheet, test count)
-    const goldenKeyPhases = ['comprehension', 'exercise', 'worksheet', 'test'];
-    if (this.goldenKeysEnabled && onTime && goldenKeyPhases.includes(phase)) {
-      this.onTimeCompletions++;
-      
-      // Check golden key eligibility (3 on-time work phases from comp/exercise/worksheet/test)
-      if (this.onTimeCompletions >= 3 && !this.goldenKeyAwarded) {
-        this.goldenKeyAwarded = true;
-        this.eventBus.emit('goldenKeyEligible', {
-          eligible: true,
-          completedPhases: Array.from(this.workPhaseTimers.keys())
-            .filter(p => goldenKeyPhases.includes(p) && this.workPhaseTimers.get(p).onTime)
-        });
-      }
+    // Recompute Golden Key eligibility from sticky per-phase results.
+    const prevEligible = !!this.goldenKeyAwarded;
+    this.#recomputeGoldenKey();
+    if (this.goldenKeysEnabled && this.goldenKeyAwarded && !prevEligible) {
+      this.eventBus.emit('goldenKeyEligible', {
+        eligible: true,
+        completedPhases: this.#goldenKeyPhases().filter((p) => {
+          const rec = this.workPhaseResults.get(p);
+          return rec?.completed && rec.onTime;
+        })
+      });
     }
     
     this.currentWorkPhase = null;
@@ -589,7 +630,11 @@ export class TimerService {
     });
 
     this.#removeTimerOverlayKey(phase, 'work');
-    this.workPhaseTimers.delete(phase);
+
+    // Do not delete completed timers/results; completion credit must persist.
+    if (!timer.completed) {
+      this.workPhaseTimers.delete(phase);
+    }
     if (this.currentWorkPhase === phase) {
       this.currentWorkPhase = null;
     }
@@ -704,6 +749,8 @@ export class TimerService {
     this.workPhaseTimers.clear();
     this.currentWorkPhase = null;
 
+    this.workPhaseResults.clear();
+
     this.onTimeCompletions = 0;
     this.goldenKeyAwarded = false;
     this.mode = 'play';
@@ -732,22 +779,35 @@ export class TimerService {
    * @returns {{ elapsed: number, timeLimit: number, remaining: number, formatted: string, onTime: boolean } | null}
    */
   getWorkPhaseTime(phase) {
-    const timer = this.workPhaseTimers.get(phase);
-    
-    if (!timer) {
-      return null;
+    const rec = this.workPhaseResults.get(phase);
+    if (rec && rec.completed) {
+      const remaining = Math.max(0, Number(rec.remaining) || 0);
+      const elapsed = Math.max(0, Number(rec.elapsed) || 0);
+      const timeLimit = Math.max(0, Number(rec.timeLimit) || 0);
+      return {
+        elapsed,
+        timeLimit,
+        remaining,
+        formatted: this.#formatTime(elapsed),
+        remainingFormatted: this.#formatTime(remaining),
+        onTime: rec.onTime === true,
+        completed: true
+      };
     }
-    
+
+    const timer = this.workPhaseTimers.get(phase);
+    if (!timer) return null;
+
     const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
-    
+
     return {
       elapsed: timer.elapsed,
       timeLimit: timer.timeLimit,
       remaining,
       formatted: this.#formatTime(timer.elapsed),
       remainingFormatted: this.#formatTime(remaining),
-      onTime: timer.elapsed <= timer.timeLimit,
-      completed: timer.completed
+      onTime: typeof timer.onTime === 'boolean' ? timer.onTime : (timer.elapsed <= timer.timeLimit),
+      completed: !!timer.completed
     };
   }
   
@@ -756,6 +816,7 @@ export class TimerService {
    * @returns {{ eligible: boolean, onTimeCompletions: number, required: number }}
    */
   getGoldenKeyStatus() {
+    this.#recomputeGoldenKey();
     return {
       eligible: this.goldenKeysEnabled ? this.goldenKeyAwarded : false,
       onTimeCompletions: this.onTimeCompletions,
@@ -785,6 +846,15 @@ export class TimerService {
         completed: timer.completed,
         onTime: timer.onTime
       })),
+      workPhaseResults: Array.from(this.workPhaseResults.entries()).map(([phase, rec]) => ({
+        phase,
+        completed: !!rec?.completed,
+        onTime: rec?.onTime === true,
+        elapsed: Number(rec?.elapsed) || 0,
+        timeLimit: Number(rec?.timeLimit) || 0,
+        remaining: Number(rec?.remaining) || 0,
+        finishedAt: Number(rec?.finishedAt) || null
+      })),
       onTimeCompletions: this.onTimeCompletions,
       goldenKeyAwarded: this.goldenKeyAwarded,
       mode: this.mode
@@ -810,6 +880,24 @@ export class TimerService {
     this.onTimeCompletions = data.onTimeCompletions || 0;
     this.goldenKeyAwarded = data.goldenKeyAwarded || false;
     this.mode = data.mode || 'play';
+
+    // Restore sticky completion results first.
+    try {
+      this.workPhaseResults.clear();
+      const rows = Array.isArray(data.workPhaseResults) ? data.workPhaseResults : [];
+      for (const row of rows) {
+        const phase = row?.phase;
+        if (!phase) continue;
+        this.workPhaseResults.set(phase, {
+          completed: row?.completed === true,
+          onTime: row?.onTime === true,
+          elapsed: Number(row?.elapsed) || 0,
+          timeLimit: Number(row?.timeLimit) || 0,
+          remaining: Number(row?.remaining) || 0,
+          finishedAt: Number(row?.finishedAt) || null
+        });
+      }
+    } catch {}
     
     // Restore play timers
     if (data.playTimers) {
@@ -850,6 +938,23 @@ export class TimerService {
           completed: !!timer.completed,
           onTime: typeof timer.onTime === 'boolean' ? timer.onTime : (timer.elapsed <= timer.timeLimit)
         });
+
+        // Backfill results from completed timers if results are missing.
+        try {
+          if (timer.completed && !this.workPhaseResults.has(timer.phase)) {
+            const elapsed = Number(timer.elapsed) || 0;
+            const timeLimit = Number(timer.timeLimit) || 0;
+            const remaining = Math.max(0, timeLimit - elapsed);
+            this.workPhaseResults.set(timer.phase, {
+              completed: true,
+              onTime: typeof timer.onTime === 'boolean' ? timer.onTime : (elapsed <= timeLimit),
+              elapsed,
+              timeLimit,
+              remaining,
+              finishedAt: null
+            });
+          }
+        } catch {}
         // Heuristic: the most recently inserted incomplete timer is likely the active one.
         if (!timer.completed) {
           inferredActiveWorkPhase = timer.phase;
@@ -870,6 +975,9 @@ export class TimerService {
         }
       }
     }
+
+    // Ensure derived counters match sticky results.
+    this.#recomputeGoldenKey();
   }
   
   /**

@@ -110,18 +110,39 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
   };
   
   const workPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
-  
-  const formatRemainingLabel = (phaseKey) => {
-    const minutesLeft = workTimeRemaining?.[phaseKey] ?? null;
-    if (minutesLeft == null) return '—';
-    const totalSeconds = Math.round(Math.max(0, minutesLeft * 60));
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = String(totalSeconds % 60).padStart(2, '0');
-    return `${mins}:${secs}`;
+
+  const getPhaseTime = (phaseKey) => {
+    try {
+      return timerService?.getWorkPhaseTime?.(phaseKey) || null;
+    } catch {
+      return null;
+    }
   };
-  
-  const onTimeCount = Object.values(workPhaseCompletions || {}).filter(Boolean).length;
-  const meetsGoldenKey = onTimeCount >= 3;
+
+  const onTimeCount = (() => {
+    try {
+      if (!timerService?.getWorkPhaseTime) {
+        return Object.values(workPhaseCompletions || {}).filter(Boolean).length;
+      }
+      return workPhases.reduce((acc, phaseKey) => {
+        const t = getPhaseTime(phaseKey);
+        return acc + (t?.completed && t.onTime ? 1 : 0);
+      }, 0);
+    } catch {
+      return Object.values(workPhaseCompletions || {}).filter(Boolean).length;
+    }
+  })();
+
+  const meetsGoldenKey = (() => {
+    try {
+      if (!goldenKeysEnabled) return false;
+      const status = timerService?.getGoldenKeyStatus?.();
+      if (status && typeof status.eligible === 'boolean') return status.eligible;
+      return onTimeCount >= 3;
+    } catch {
+      return onTimeCount >= 3;
+    }
+  })();
   
   const formatQuestionForDisplay = (q) => {
     if (typeof q === 'string') return q;
@@ -165,10 +186,15 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
         <div style={{ fontSize: 13, color: '#4b5563' }}>Play timers are ignored here.</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8 }}>
           {workPhases.map((p) => {
-            const onTime = !!(workPhaseCompletions && workPhaseCompletions[p]);
-            const remainingLabel = formatRemainingLabel(p);
-            const statusText = remainingLabel === '—' ? 'not started' : (onTime ? 'on time' : 'timed out / incomplete');
-            const statusColor = statusText === 'not started' ? '#374151' : (onTime ? '#065f46' : '#7f1d1d');
+            const t = getPhaseTime(p);
+            const onTime = !!(t?.completed && t.onTime);
+            const remainingLabel = t ? t.remainingFormatted : '—';
+            const statusText = !t
+              ? 'not completed'
+              : (t.completed ? (onTime ? 'on time' : 'timed out') : 'in progress');
+            const statusColor = !t
+              ? '#374151'
+              : (t.completed ? (onTime ? '#065f46' : '#7f1d1d') : '#374151');
             return (
               <div key={p} style={{ 
                 padding: 10, 
@@ -571,6 +597,49 @@ function SessionPageV2Inner() {
     worksheet: null,
     test: null
   });
+
+  const hydrateWorkTimerSummaryFromTimerService = useCallback((trigger = 'hydrate') => {
+    const timer = timerServiceRef.current;
+    if (!timer) return;
+    const phases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+
+    const nextCompletions = {};
+    const nextRemaining = {};
+
+    for (const phase of phases) {
+      const time = timer.getWorkPhaseTime(phase);
+      if (!time) continue;
+      if (time.completed) {
+        nextCompletions[phase] = !!time.onTime;
+        nextRemaining[phase] = time.remaining / 60;
+      } else {
+        // In-progress: capture remaining for the report, but do not grant credit.
+        nextRemaining[phase] = time.remaining / 60;
+      }
+    }
+
+    if (Object.keys(nextCompletions).length) {
+      setWorkPhaseCompletions((prev) => {
+        const merged = { ...prev };
+        for (const [phase, onTime] of Object.entries(nextCompletions)) {
+          merged[phase] = merged[phase] || onTime;
+        }
+        return merged;
+      });
+    }
+
+    if (Object.keys(nextRemaining).length) {
+      setWorkTimeRemaining((prev) => ({ ...prev, ...nextRemaining }));
+    }
+
+    try {
+      if (goldenKeysEnabledRef.current === false) return;
+      const status = timer.getGoldenKeyStatus?.();
+      if (status && typeof status.eligible === 'boolean') {
+        setGoldenKeyEligible(status.eligible);
+      }
+    } catch {}
+  }, []);
   
   const [closingState, setClosingState] = useState('idle');
   const [closingMessage, setClosingMessage] = useState('');
@@ -1505,6 +1574,7 @@ function SessionPageV2Inner() {
               try {
                 timerServiceRef.current.restoreState(snapshot.timerState);
                 timerServiceRef.current.resync?.('snapshot-restore');
+                hydrateWorkTimerSummaryFromTimerService('snapshot-restore');
               } catch {}
             } else {
               pendingTimerStateRef.current = snapshot.timerState;
@@ -1570,6 +1640,7 @@ function SessionPageV2Inner() {
 
     const unsubWorkComplete = eventBus.on('workPhaseTimerComplete', (data) => {
       addEvent(`â±ï¸ ${data.phase} timer complete!`);
+      hydrateWorkTimerSummaryFromTimerService('workPhaseTimerComplete');
     });
 
     const unsubGoldenKey = eventBus.on('goldenKeyEligible', (data) => {
@@ -1625,6 +1696,7 @@ function SessionPageV2Inner() {
         applyRestoredTimerStateToUi(pending, 'pending-timerstate');
         timer.restoreState(pending);
         timer.resync?.('pending-restore');
+        hydrateWorkTimerSummaryFromTimerService('pending-restore');
       } catch {}
       pendingTimerStateRef.current = null;
     }
@@ -4371,6 +4443,7 @@ function SessionPageV2Inner() {
       
       // Track work phase completion for golden key
       if (timerServiceRef.current) {
+        timerServiceRef.current.completeWorkPhaseTimer('comprehension');
         const time = timerServiceRef.current.getWorkPhaseTime('comprehension');
         if (time) {
           setWorkPhaseCompletions(prev => ({
