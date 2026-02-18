@@ -729,6 +729,13 @@ function SessionPageV2Inner() {
     worksheet: null,
     test: null
   });
+  const currentTimerModeRef = useRef({
+    discussion: null,
+    comprehension: null,
+    exercise: null,
+    worksheet: null,
+    test: null
+  });
   const [timerRefreshKey, setTimerRefreshKey] = useState(0);
   const [goldenKeyBonus, setGoldenKeyBonus] = useState(0);
   const [hasGoldenKey, setHasGoldenKey] = useState(false);
@@ -743,6 +750,67 @@ function SessionPageV2Inner() {
   const [playTimerDisplayRemaining, setPlayTimerDisplayRemaining] = useState(0);
   const [workTimerDisplayElapsed, setWorkTimerDisplayElapsed] = useState(0);
   const [workTimerDisplayRemaining, setWorkTimerDisplayRemaining] = useState(0);
+
+  useEffect(() => {
+    currentTimerModeRef.current = currentTimerMode;
+  }, [currentTimerMode]);
+
+  const applyRestoredTimerStateToUi = useCallback((timerState, source = 'snapshot') => {
+    try {
+      if (!timerState || typeof timerState !== 'object') return;
+      const mode = (timerState.mode === 'play' || timerState.mode === 'work') ? timerState.mode : null;
+      if (!mode) return;
+
+      const inferPhase = () => {
+        if (mode === 'work') {
+          const workTimers = Array.isArray(timerState.workPhaseTimers) ? timerState.workPhaseTimers : [];
+          const active = workTimers.find((t) => t && t.phase && !t.completed);
+          return active?.phase || null;
+        }
+        const playTimers = Array.isArray(timerState.playTimers) ? timerState.playTimers : [];
+        const active = playTimers.find((t) => t && t.phase && !t.expired);
+        return active?.phase || null;
+      };
+
+      const phase = (
+        mode === 'work'
+          ? (timerState.currentWorkPhase || inferPhase())
+          : (timerState.currentPlayPhase || inferPhase())
+      );
+
+      if (!phase) return;
+
+      const prevMode = currentTimerModeRef.current?.[phase] ?? null;
+      if (prevMode !== mode) {
+        setCurrentTimerMode((prev) => ({
+          ...(prev || {}),
+          [phase]: mode
+        }));
+        setTimerRefreshKey((k) => k + 1);
+      }
+
+      if (mode === 'work') {
+        const timers = Array.isArray(timerState.workPhaseTimers) ? timerState.workPhaseTimers : [];
+        const t = timers.find((x) => x && x.phase === phase);
+        if (!t) return;
+        const elapsed = Math.max(0, Number(t.elapsed) || 0);
+        const timeLimit = Math.max(0, Number(t.timeLimit) || 0);
+        setWorkTimerDisplayElapsed(elapsed);
+        setWorkTimerDisplayRemaining(Math.max(0, timeLimit - elapsed));
+        return;
+      }
+
+      const timers = Array.isArray(timerState.playTimers) ? timerState.playTimers : [];
+      const t = timers.find((x) => x && x.phase === phase);
+      if (!t) return;
+      const elapsed = Math.max(0, Number(t.elapsed) || 0);
+      const timeLimit = Math.max(0, Number(t.timeLimit) || 0);
+      setPlayTimerDisplayElapsed(elapsed);
+      setPlayTimerDisplayRemaining(Math.max(0, timeLimit - elapsed));
+    } catch (err) {
+      console.warn('[SessionPageV2] Failed to apply restored timer state to UI:', source, err);
+    }
+  }, []);
 
   useEffect(() => {
     goldenKeyBonusRef.current = Number(goldenKeyBonus || 0);
@@ -1391,8 +1459,13 @@ function SessionPageV2Inner() {
           }
 
           if (snapshot.timerState) {
+            // Keep UI timer mode aligned with the restored timer engine state.
+            applyRestoredTimerStateToUi(snapshot.timerState, 'snapshot-load');
             if (timerServiceRef.current) {
-              try { timerServiceRef.current.restoreState(snapshot.timerState); } catch {}
+              try {
+                timerServiceRef.current.restoreState(snapshot.timerState);
+                timerServiceRef.current.resync?.('snapshot-restore');
+              } catch {}
             } else {
               pendingTimerStateRef.current = snapshot.timerState;
             }
@@ -1420,7 +1493,7 @@ function SessionPageV2Inner() {
       cancelled = true;
       snapshotServiceRef.current = null;
     };
-  }, [lessonData, learnerProfile, browserSessionId, lessonKey, resetTranscriptState]);
+  }, [lessonData, learnerProfile, browserSessionId, lessonKey, resetTranscriptState, applyRestoredTimerStateToUi]);
   
   // Initialize TimerService
   useEffect(() => {
@@ -1507,7 +1580,12 @@ function SessionPageV2Inner() {
 
     // Apply any snapshot-restored timer state once timer exists
     if (pendingTimerStateRef.current) {
-      try { timer.restoreState(pendingTimerStateRef.current); } catch {}
+      try {
+        const pending = pendingTimerStateRef.current;
+        applyRestoredTimerStateToUi(pending, 'pending-timerstate');
+        timer.restoreState(pending);
+        timer.resync?.('pending-restore');
+      } catch {}
       pendingTimerStateRef.current = null;
     }
 
@@ -1523,7 +1601,7 @@ function SessionPageV2Inner() {
       timer.destroy();
       timerServiceRef.current = null;
     };
-  }, [lessonKey, phaseTimers]);
+  }, [lessonKey, phaseTimers, applyRestoredTimerStateToUi]);
 
   // Update play timer limits when bonus/enabled state changes (do not recreate TimerService).
   useEffect(() => {
@@ -4204,6 +4282,13 @@ function SessionPageV2Inner() {
       setComprehensionState(data.state);
       if (data.timerMode) {
         setComprehensionTimerMode(data.timerMode);
+        if (data.timerMode === 'play' || data.timerMode === 'work') {
+          const prevMode = currentTimerModeRef.current?.comprehension ?? null;
+          if (prevMode !== data.timerMode) {
+            setCurrentTimerMode((prev) => ({ ...prev, comprehension: data.timerMode }));
+            setTimerRefreshKey((k) => k + 1);
+          }
+        }
       }
       if (data.state === 'awaiting-answer') {
         addEvent('â“ Waiting for answer...');
@@ -4308,8 +4393,13 @@ function SessionPageV2Inner() {
       } else {
         phase.start();
         if (pendingPlayTimersRef.current?.comprehension) {
-          startPhasePlayTimer('comprehension');
-          delete pendingPlayTimersRef.current.comprehension;
+          // If resuming into work, do not overwrite the restored work timer mode.
+          if (savedComp?.timerMode === 'work') {
+            delete pendingPlayTimersRef.current.comprehension;
+          } else {
+            startPhasePlayTimer('comprehension');
+            delete pendingPlayTimersRef.current.comprehension;
+          }
         }
       }
     }
@@ -4421,6 +4511,13 @@ function SessionPageV2Inner() {
       setExerciseState(data.state);
       if (data.timerMode) {
         setExerciseTimerMode(data.timerMode);
+        if (data.timerMode === 'play' || data.timerMode === 'work') {
+          const prevMode = currentTimerModeRef.current?.exercise ?? null;
+          if (prevMode !== data.timerMode) {
+            setCurrentTimerMode((prev) => ({ ...prev, exercise: data.timerMode }));
+            setTimerRefreshKey((k) => k + 1);
+          }
+        }
       }
     });
     
@@ -4518,8 +4615,12 @@ function SessionPageV2Inner() {
       } else {
         phase.start();
         if (pendingPlayTimersRef.current?.exercise) {
-          startPhasePlayTimer('exercise');
-          delete pendingPlayTimersRef.current.exercise;
+          if (savedExercise?.timerMode === 'work') {
+            delete pendingPlayTimersRef.current.exercise;
+          } else {
+            startPhasePlayTimer('exercise');
+            delete pendingPlayTimersRef.current.exercise;
+          }
         }
       }
     }
@@ -4617,6 +4718,13 @@ function SessionPageV2Inner() {
       setWorksheetState(data.state);
       if (data.timerMode) {
         setWorksheetTimerMode(data.timerMode);
+        if (data.timerMode === 'play' || data.timerMode === 'work') {
+          const prevMode = currentTimerModeRef.current?.worksheet ?? null;
+          if (prevMode !== data.timerMode) {
+            setCurrentTimerMode((prev) => ({ ...prev, worksheet: data.timerMode }));
+            setTimerRefreshKey((k) => k + 1);
+          }
+        }
       }
     });
     
@@ -4723,8 +4831,12 @@ function SessionPageV2Inner() {
       } else {
         phase.start();
         if (pendingPlayTimersRef.current?.worksheet) {
-          startPhasePlayTimer('worksheet');
-          delete pendingPlayTimersRef.current.worksheet;
+          if (savedWorksheet?.timerMode === 'work') {
+            delete pendingPlayTimersRef.current.worksheet;
+          } else {
+            startPhasePlayTimer('worksheet');
+            delete pendingPlayTimersRef.current.worksheet;
+          }
         }
       }
     }
@@ -4853,6 +4965,13 @@ function SessionPageV2Inner() {
       setTestState(data.state);
       if (data.timerMode) {
         setTestTimerMode(data.timerMode);
+        if (data.timerMode === 'play' || data.timerMode === 'work') {
+          const prevMode = currentTimerModeRef.current?.test ?? null;
+          if (prevMode !== data.timerMode) {
+            setCurrentTimerMode((prev) => ({ ...prev, test: data.timerMode }));
+            setTimerRefreshKey((k) => k + 1);
+          }
+        }
       }
     });
     
@@ -4998,8 +5117,12 @@ function SessionPageV2Inner() {
       } else {
         phase.start();
         if (pendingPlayTimersRef.current?.test) {
-          startPhasePlayTimer('test');
-          delete pendingPlayTimersRef.current.test;
+          if (savedTest?.timerMode === 'work') {
+            delete pendingPlayTimersRef.current.test;
+          } else {
+            startPhasePlayTimer('test');
+            delete pendingPlayTimersRef.current.test;
+          }
         }
       }
     }
