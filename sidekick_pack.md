@@ -6,12 +6,35 @@ Mode: standard
 
 Prompt (original):
 ```text
-Where is /facilitator/doesnotexist implemented?
+Ms. Sonoma resume snapshot during work timer subphase shows play timer 0:00; should resume work timer countdown. Fix restore logic to keep work timer mode.
 ```
 
 Filter terms used:
 ```text
-/facilitator/doesnotexist
+Ms
+Sonoma
+resume
+snapshot
+during
+work
+timer
+subphase
+shows
+play
+timer
+00
+should
+resume
+work
+timer
+countdown
+Fix
+restore
+logic
+to
+keep
+work
+timer
 ```
 # Context Pack
 
@@ -25,7 +48,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-/facilitator/doesnotexist
+Ms Sonoma resume snapshot during work timer subphase shows play timer 00 should resume work timer countdown Fix restore logic to keep work timer
 
 ## Forced Context
 
@@ -33,39 +56,8 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Ranked Evidence
 
-### 1. docs/reference/cohere/gaps/20260218_174208Z_recon-gap-doesnotexist-xyz.md (d4536ceab2512614191e12df06a4384b0da22bd8282cf25c77d3749a88fc3ba9)
-- bm25: -10.6085 | relevance: 1.0000
-
-﻿# Recon Gap Note: Recon gap: /doesnotexist/xyz
-
-Date (UTC): 2026-02-18T17:42:08Z
-
-## Recon prompt (exact)
-
-Explain /doesnotexist/xyz and src/not-real/file.js
-
-## Anchors
-
-- /doesnotexist/xyz
-
-## What the user sees / can do
-
--
-
-## Key files / entrypoints
-
-- src/not-real/file.js
-
-## Notes
-
--
-
-## Suggested next recon prompt
-
-Where is <route/feature> implemented? Include the user-visible controls and the API/storage it reads/writes.
-
-### 2. sidekick_pack.md (38163e6913f67b7277ca8371364da42c96c99f1ba6363df1f919869bf604a1e8)
-- bm25: -10.0263 | relevance: 1.0000
+### 1. sidekick_pack.md (98da689875b01c20d6f046c5f6bab34a0aa7d5020eb603fec2454ebcf334f4ab)
+- bm25: -76.1010 | relevance: 1.0000
 
 # Cohere Pack (Sidekick Recon) - MsSonoma
 
@@ -75,15 +67,35 @@ Mode: standard
 
 Prompt (original):
 ```text
-Explain /doesnotexist/xyz and src/not-real/file.js
+Ms. Sonoma session: when resuming from snapshot during work timer subphase, progress restores correctly but the UI resumes the play timer at 0:00; it should resume the work timer countdown. Find snapshot restore code, timer mode selection (play vs work), and fix.
 ```
 
 Filter terms used:
 ```text
-src/not-real/file.js
-/doesnotexist/xyz
-/not-real/file
-file.js
+Ms
+Sonoma
+session
+when
+resuming
+from
+snapshot
+during
+work
+timer
+subphase
+progress
+restores
+correctly
+but
+the
+UI
+resumes
+the
+play
+timer
+at
+00
+it
 ```
 # Context Pack
 
@@ -97,7 +109,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
+Ms Sonoma session when resuming from snapshot during work timer subphase progress restores correctly but the UI resumes the play timer at 00 it
 
 ## Forced Context
 
@@ -105,1511 +117,1353 @@ src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
 
 ## Ranked Evidence
 
-### 1. sidekick_pack.md (d67c20cbf1eb1419cc41f989f98dcc7e1ff93c9ba2860e1ff0edaef84c4a8f35)
-- bm25: -58.6123 | entity_overlap_w: 53.10 | adjusted: -71.8873 | relevance: 1.0000
+### 1. docs/brain/session-takeover.md (8eaa1cd051d3b4acc893704b43238e49e42228f5a984ae66dc5bff2b3081b7a3)
+- bm25: -37.8172 | relevance: 1.0000
 
-# Cohere Pack (Sidekick Recon) - MsSonoma
+**Why snapshot, not sessionStorage?**
+- sessionStorage is device-local, not cross-device
+- Snapshot already saves at every gate (no extra writes)
+- Restoring from snapshot ensures timer continuity after takeover
+- sessionStorage still used as fast cache between gates on same device
 
-Project: freehands
-Profile: MsSonoma
-Mode: standard
+### Play Timer Expiration: Countdown Once
 
-Prompt (original):
-```text
-Explain /doesnotexist/xyz and src/not-real/file.js
+### 2. docs/brain/session-takeover.md (8eaa1cd051d3b4acc893704b43238e49e42228f5a984ae66dc5bff2b3081b7a3)
+- bm25: -56.0382 | relevance: 1.0000
+
+**Why snapshot, not sessionStorage?**
+- sessionStorage is device-local, not cross-device
+- Snapshot already saves at every gate (no extra writes)
+- Restoring from snapshot ensures timer continuity after takeover
+- sessionStorage still used as fast cache between gates on same device
+
+### Play Timer Expiration: Countdown Once
+
+**CRITICAL FIX (2025-12-16, adjusted 2025-12-18)**: 30-second countdown plays on live timer expiration, but is suppressed when restore detects an already-expired play timer. Restores no longer force the countdown-completed flag to true for all sessions—live sessions resumed after a restore can still show the countdown on the next play timeout.
+
+**Problem**: Timer ticks down even when page is closed (intended). Countdown should only show if timer expires while page is actively loaded and user is present. It must be skipped when returning after the play timer already expired while away.
+
+**Solution**: Restore `playExpiredCountdownCompleted` from the snapshot value, and set it to true only when restore detects an expired play timer. Countdown plays for live sessions (even after a normal resume) but is suppressed for "expired while away" restores.
+
+**Flow:**
+1. **Timer expires while page actively loaded**:
+   - `handlePlayTimeUp()` called → show countdown overlay
+   - User watches countdown or clicks "Start Now"
+   - `handlePlayExpiredComplete()` or `handlePlayExpiredStartNow()` called
+   - Set `playExpiredCountdownCompleted = true` and transition to work timer
+
+2. **Timer expires while page closed**:
+   - Timer ticks in sessionStorage, reaches target
+   - No `handlePlayTimeUp()` fires (page not loaded)
+   - User returns, snapshot restore runs
+  - Restore sets flag (because expiration detected), transitions to work mode
+   - Countdown never shows
+
+### 3. sidekick_pack.md (3fe30892a2a2ca4064bcfb72ecd140acf6e85cf7b8d43df6fabc12eb9eaeae57)
+- bm25: -55.7535 | relevance: 1.0000
+
+**Problem**: Timer ticks down even when page is closed (intended). Countdown should only show if timer expires while page is actively loaded and user is present. It must be skipped when returning after the play timer already expired while away.
+
+**Solution**: Restore `playExpiredCountdownCompleted` from the snapshot value, and set it to true only when restore detects an expired play timer. Countdown plays for live sessions (even after a normal resume) but is suppressed for "expired while away" restores.
+
+**Flow:**
+1. **Timer expires while page actively loaded**:
+   - `handlePlayTimeUp()` called → show countdown overlay
+   - User watches countdown or clicks "Start Now"
+   - `handlePlayExpiredComplete()` or `handlePlayExpiredStartNow()` called
+   - Set `playExpiredCountdownCompleted = true` and transition to work timer
+
+2. **Timer expires while page closed**:
+   - Timer ticks in sessionStorage, reaches target
+   - No `handlePlayTimeUp()` fires (page not loaded)
+   - User returns, snapshot restore runs
+  - Restore sets flag (because expiration detected), transitions to work mode
+   - Countdown never shows
+
+### 2. docs/brain/timer-system.md (31fbc062724d64b66b29543e253c240d268ae1bac63e16ef5601b969c597e0c1)
+- bm25: -35.4281 | relevance: 1.0000
+
+### 4. docs/brain/session-takeover.md (419bb18dc91f9ce3fc03b51ba4e4f46cfc91dca87668b0814d0fac003533bbcb)
+- bm25: -52.0523 | relevance: 1.0000
+
+## Related Brain Files
+
+- **[snapshot-persistence.md](snapshot-persistence.md)** - Takeover triggers snapshot restore flow
+- **[timer-system.md](timer-system.md)** - Timer state preserved during takeover (golden key progress)
+
+**Implementation:**
+
+1. **handlePlayTimeUp** (page.js ~870-900):
+   - Check flag: `if (playExpiredCountdownCompleted) return;`
+   - Show countdown overlay: `setShowPlayTimeExpired(true)`
+   - Clear opening action states
+   - Flag prevents countdown if set during restore or previous completion
+
+2. **handlePlayExpiredComplete** (page.js ~907-930):
+   - `setPlayExpiredCountdownCompleted(true)` - countdown was seen
+   - Transition to work timer
+   - Call phase handler
+
+3. **handlePlayExpiredStartNow** (page.js ~935-960):
+   - `setPlayExpiredCountdownCompleted(true)` - countdown was seen
+   - Transition to work timer
+   - Call phase handler
+
+4. **Snapshot restore** (useSnapshotPersistence.js ~500):
+```javascript
+// Restore flag from snapshot; do not force-enable on every restore
+setPlayExpiredCountdownCompleted(!!snap.playExpiredCountdownCompleted);
 ```
 
-Filter terms used:
-```text
-src/not-real/file.js
-/doesnotexist/xyz
-/not-real/file
-file.js
-```
-# Context Pack
-
-**Project**: freehands
-**Profile**: MsSonoma
-**Mode**: standard
-
-## Pack Contract
-
-This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
-
-## Question
-
-src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
-
-## Forced Context
-
-(none)
-
-## Ranked Evidence
-
-### 1. sidekick_pack.md (bde1b82f978876de27e4ad60ee44083372eb2abdba78021cb83ba36b4b05b71e)
-- bm25: -60.4824 | entity_overlap_w: 53.10 | adjusted: -73.7574 | relevance: 1.0000
-
-# Cohere Pack (Sidekick Recon) - MsSonoma
-
-Project: freehands
-Profile: MsSonoma
-Mode: standard
-
-Prompt (original):
-```text
-Explain /doesnotexist/xyz and src/not-real/file.js
+5. **Timer expiration detection** (useSnapshotPersistence.js ~620):
+```javascript
+// If play timer expired during restore, transition to work mode and trigger phase handler
+if (timerModeValue === 'play' && adjustedElapsed >= target) {
+  setPlayExpiredCountdownCompleted(true);
+  setCurrentTimerMode({ [timerPhaseName]: 'work' });
+  sessionStorage.removeItem(playTimerKey);
+  setNeedsPlayExpiredTransition(timerPhaseName); // Trigger phase handler after restore
+}
 ```
 
-### 3. sidekick_pack.md (a7920f3892594e7f92e89473f0c79468e265c54abf33ecd346ec9ba2fcf74ca4)
-- bm25: -9.1477 | relevance: 1.0000
+### 5. sidekick_pack.md (66c3bf2eb605550f6ac428e7863fe7e315070c7064e27c073a4e5b6a094e180d)
+- bm25: -51.3812 | relevance: 1.0000
 
-src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
+### 10. docs/brain/session-takeover.md (419bb18dc91f9ce3fc03b51ba4e4f46cfc91dca87668b0814d0fac003533bbcb)
+- bm25: -30.0235 | relevance: 1.0000
 
-### 4. sidekick_pack.md (0354d942092e4b7a723f8b49061a99b0093db14b459f5146aa6c16041e06a949)
-- bm25: -8.8625 | relevance: 1.0000
+## Related Brain Files
 
-Filter terms used:
-```text
-src/not-real/file.js
-/doesnotexist/xyz
-/not-real/file
-file.js
-```
-# Context Pack
+- **[snapshot-persistence.md](snapshot-persistence.md)** - Takeover triggers snapshot restore flow
+- **[timer-system.md](timer-system.md)** - Timer state preserved during takeover (golden key progress)
 
-### 5. sidekick_pack.md (84c0364bea2ebfba4d249e58ce743a6d1797ceae82528b49750309a6cb641025)
-- bm25: -8.7228 | relevance: 1.0000
+**Implementation:**
 
-**Project**: freehands
-**Profile**: MsSonoma
-**Mode**: standard
+1. **handlePlayTimeUp** (page.js ~870-900):
+   - Check flag: `if (playExpiredCountdownCompleted) return;`
+   - Show countdown overlay: `setShowPlayTimeExpired(true)`
+   - Clear opening action states
+   - Flag prevents countdown if set during restore or previous completion
 
-## Pack Contract
+2. **handlePlayExpiredComplete** (page.js ~907-930):
+   - `setPlayExpiredCountdownCompleted(true)` - countdown was seen
+   - Transition to work timer
+   - Call phase handler
 
-This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
+3. **handlePlayExpiredStartNow** (page.js ~935-960):
+   - `setPlayExpiredCountdownCompleted(true)` - countdown was seen
+   - Transition to work timer
+   - Call phase handler
 
-## Question
-
-src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
-
-## Forced Context
-
-(none)
-
-## Ranked Evidence
-
-### 1. sidekick_pack.md (7bfbbf4dd2839680af1039c4da36a491dac4b46d67796f9ce66f64cd6f11e440)
-- bm25: -60.4252 | entity_overlap_w: 53.10 | adjusted: -73.7002 | relevance: 1.0000
-
-# Cohere Pack (Sidekick Recon) - MsSonoma
-
-Project: freehands
-Profile: MsSonoma
-Mode: standard
-
-Prompt (original):
-```text
-Explain /doesnotexist/xyz and src/not-real/file.js
+4. **Snapshot restore** (useSnapshotPersistence.js ~500):
+```javascript
+// Restore flag from snapshot; do not force-enable on every restore
+setPlayExpiredCountdownCompleted(!!snap.playExpiredCountdownCompleted);
 ```
 
-### 2. sidekick_pack.md (bea2df7e718afbad194cf0281d7e0936513a96d0d1bf240dd15d58f528ed531a)
-- bm25: -52.6864 | entity_overlap_w: 29.60 | adjusted: -60.0864 | relevance: 1.0000
-
-**Project**: freehands
-**Profile**: MsSonoma
-**Mode**: standard
-
-## Pack Contract
-
-This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
-
-## Question
-
-src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
-
-## Forced Context
-
-(none)
-
-## Ranked Evidence
-
-### 1. sidekick_pack.md (33a357132ac7ea2324fbe9010d0053075a23930ca59d2c0600329c8b403d5ebc)
-- bm25: -63.6541 | entity_overlap_w: 47.00 | adjusted: -75.4041 | relevance: 1.0000
-
-# Cohere Pack (Sidekick Recon) - MsSonoma
-
-Project: freehands
-Profile: MsSonoma
-Mode: standard
-
-Prompt (original):
-```text
-Explain /doesnotexist/xyz and src/not-real/file.js
+5. **Timer expiration detection** (useSnapshotPersistence.js ~620):
+```javascript
+// If play timer expired during restore, transition to work mode and trigger phase handler
+if (timerModeValue === 'play' && adjustedElapsed >= target) {
+  setPlayExpiredCountdownCompleted(true);
+  setCurrentTimerMode({ [timerPhaseName]: 'work' });
+  sessionStorage.removeItem(playTimerKey);
+  setNeedsPlayExpiredTransition(timerPhaseName); // Trigger phase handler after restore
+}
 ```
 
-### 2. sidekick_pack.md (29a1c65d8aaa67342a1580079f30a5590af4752852bd3ffd3a206c7def44569a)
-- bm25: -55.5219 | entity_overlap_w: 32.20 | adjusted: -63.5719 | relevance: 1.0000
+### 6. sidekick_pack.md (72f0b310323bf81af5c4ce8e3d9d2518a955947ce0cbcb51d3ae7d71bbfa445a)
+- bm25: -48.4461 | relevance: 1.0000
 
-**Project**: freehands
-**Profile**: MsSonoma
-**Mode**: standard
+**Work timer spans discussion + teaching**: The discussion work timer starts when the discussion greeting begins playing and runs through the entire teaching phase. It is completed when teaching finishes, so the countdown must **not** be stopped at `greetingComplete` or `discussionComplete`. Completing it early will freeze the visible timer as soon as the teaching controls appear.
 
-## Pack Contract
+**Timer Modes:**
+1. **Play Timer** (green) - Expected to use full time; learner can interact with Ask, Riddle, Poem, Story, Fill-in-Fun opening actions
+2. **Work Timer** (amber/red) - Learner should complete phase; input focused on lesson questions
 
-### 6. sidekick_pack.md (bfb0e99ffa802cbd0ea32d256c56a6269f5c47349a1400bf3fc5ae6bfc52287a)
-- bm25: -8.6895 | relevance: 1.0000
-
-## Question
-
-src/not-real/file.js /doesnotexist/xyz /not-real/file file.js
-
-## Forced Context
-
-(none)
-
-## Ranked Evidence
-
-### 1. sidekick_pack.md (0af7fa18f2c7167198a5e3c31b0e53e9b35f1df4168ed796b609ab9d1199fec9)
-- bm25: -55.4926 | entity_overlap_w: 23.50 | adjusted: -61.3676 | relevance: 1.0000
-
-# Cohere Pack (Sidekick Recon) - MsSonoma
-
-Project: freehands
-Profile: MsSonoma
-Mode: standard
-
-Prompt (original):
-```text
-Explain /doesnotexist/xyz and src/not-real/file.js
-```
-
-### 2. sidekick_pack.md (8ad127cdea10b819be86c1ceec6a58bd186b5dc252e46125b7beca482e831554)
-- bm25: -56.7722 | entity_overlap_w: 8.70 | adjusted: -58.9472 | relevance: 1.0000
-
-### 3. sidekick_pack.md (0eda1e4d717ab1496e3f04b3a2ce00ee2d1029e57cfef8b47daefd4d1368335f)
-- bm25: -55.1330 | entity_overlap_w: 8.70 | adjusted: -57.3080 | relevance: 1.0000
-
-Filter terms used:
-```text
-src/not-real/file.js
-/doesnotexist/xyz
-/not-real/file
-file.js
-```
-# Context Pack
-
-### 4. sidekick_pack.md (ad5191d04a54a80bc6ad27bda13aeb9bb2bfbcfe10427c88fdc335d190da6ba3)
-- bm25: -55.1330 | entity_overlap_w: 8.70 | adjusted: -57.3080 | relevance: 1.0000
-
-Filter terms used:
-```text
-src/not-real/file.js
-/doesnotexist/xyz
-/not-real/file
-file.js
-```
-# Context Pack
-
-### 5. sidekick_pack.md (f72e06b22c783214295568cf3d9940410799f3229307609caececc5c3bf03d47)
-- bm25: -50.2386 | entity_overlap_w: 17.40 | adjusted: -54.5886 | relevance: 1.0000
-
-### 3. sidekick_pack.md (4641b4bfa2044efb4481a2766112887a91163adc2a956185dbf21f225c4781d8)
-- bm25: -38.9504 | entity_overlap_w: 8.70 | adjusted: -41.1254 | relevance: 1.0000
-
-**Project**: freehands
-**Profile**: MsSonoma
-**Mode**: standard
-
-## Pack Contract
-
-This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
-
-## Question
-
-### 7. sidekick_pack.md (0d8204f10332b1099c44949afe952677325e940af0c9e73100cd69a96fb50b10)
-- bm25: -5.0289 | relevance: 1.0000
-
-## Forced Context
-
-(none)
-
-## Ranked Evidence
-
-### 1. docs/brain/lesson-library-downloads.md (ea6c987f912e08a4811e52893de3701d5c14ec17ac6ba2a12fed4b2d9135d9b9)
-- bm25: -21.9787 | relevance: 1.0000
-
-### API
-
-### 2. sidekick_pack.md (2a831846fc56b602bc1cd6410dcb756d64b712656f3c6a6e0f7011b83ff69382)
-- bm25: -24.3380 | relevance: 1.0000
-
-### 3. sidekick_pack.md (a01c34d2be1553531903f0c65461fa8971c6e9d596f107e6521339f77b81910e)
-- bm25: -56.8256 | entity_overlap_w: 8.70 | adjusted: -59.0006 | relevance: 1.0000
-
-Filter terms used:
-```text
-src/not-real/file.js
-/doesnotexist/xyz
-/not-real/file
-file.js
-```
-# Context Pack
-
-### 4. sidekick_pack.md (5c51c7e9da7a42b25a2cc69017a35f48ce9bdb75e6e85a4c7c71921bc354f9d6)
-- bm25: -23.0352 | relevance: 1.0000
-
-### 6. sidekick_pack.md (283b64935c499dff1e604382dbb63a0809c83edc17a2b0405b384f7f86adf721)
-- bm25: -25.1690 | relevance: 1.0000
-
-### 18. docs/brain/account-provisioning.md (47da22602f3389633ba6dddba4339d7e7cd957c89f47fbea9033fe52e1b8249e)
-- bm25: -16.1047 | relevance: 1.0000
-
-### 4. sidekick_pack.md (96a3a510a22410499cf66014cdc1acd337523bd21a42c0b9d013f860226e7bc6)
-- bm25: -26.7873 | relevance: 1.0000
-
-This allows an operator to share a simple login instruction ("Email: DEMO") while still using a real Supabase Auth user.
-
-## What NOT To Do
-
-### 3. docs/brain/lesson-library-downloads.md (ea6c987f912e08a4811e52893de3701d5c14ec17ac6ba2a12fed4b2d9135d9b9)
-- bm25: -20.4937 | relevance: 1.0000
-
-### API
-
-- `POST /api/facilitator/lessons/download`
-  - Auth: requires `Authorization: Bearer <access_token>`.
-  - Input: `{ subject, file }`.
-  - Server reads the built-in file from `public/lessons/<subjectFolder>/<file>.json`.
-  - Server uploads to Supabase Storage path `facilitator-lessons/<userId>/<file>.json` with `upsert: true`.
-
-### 8. src/lib/faq/facilitator-pages.json (4b848d3bcb8fd074168f4bfd8805c4c4143f1f27948661b54e4fbba3e5eaf7e3)
-- bm25: -0.6755 | relevance: 1.0000
-
+**V2** Timer mode tracked only for phases 2-5:
+```javascript
 {
-  "category": "Facilitator Pages",
-  "features": [
-    {
-      "id": "facilitator-page-hub",
-      "title": "Facilitator Hub (/facilitator)",
-      "keywords": [
-        "facilitator hub",
-        "facilitator home",
-        "facilitator dashboard page",
-        "/facilitator",
-        "account learners lessons calendar",
-        "talk to mr mentor"
-      ],
-      "description": "The Facilitator Hub is the entry point to adult tools. It shows quick links to Account, Learners, Lessons, Calendar, and Mr. Mentor.",
-      "howToUse": "Use the cards to open a section (Account/Learners/Lessons/Calendar). Use the Mr. Mentor button to open the facilitator chat experience.",
-      "relatedFeatures": ["facilitator-dashboard", "mr-mentor", "pin-security"]
-    },
-    {
-      "id": "facilitator-page-account",
-      "title": "Account (/facilitator/account)",
-      "keywords": [
-        "facilitator account",
-        "account page",
-        "profile",
-        "security",
-        "2fa",
-        "connected accounts",
-        "timezone",
-        "marketing emails",
-        "policies",
-        "danger zone",
-        "/facilitator/account"
-      ],
-      "description": "The Account page is the central place to manage facilitator profile and security settings, connections, hotkeys, timezone, and billing links.",
-      "howToUse": "Open a card to edit: Your Name; Email and Password; Two-Factor Auth; Facilitator PIN; Connected Accounts; Hotkeys; Timezone; Marketing Emails; Policies; Plan; Danger Zone. Notifications is also linked from here.",
-      "relatedFeatures": ["pin-security", "subscription-tiers"]
-    },
-    {
-      "id": "facilitator-page-account-settings-redirect",
-      "title": "Account Settings (Redirect) (/facilitator/account/settings)",
-      "keywords": [
-        "account se
+  comprehension: 'play' | 'work',
+  exercise: 'play' | 'work',
+  worksheet: 'play' | 'work',
+  test: 'play' | 'work'
+}
+```
 
-### 9. docs/brain/pin-protection.md (771d09bf70621a2a47da98e3ac52455b98299582fe3c7fc3744c6d3234d5db17)
-- bm25: -0.6676 | relevance: 1.0000
+### Phase 2 Implementation (V2)
 
-**Facilitator Pages** (all check PIN on mount):
-- `src/app/facilitator/page.js` - Main facilitator hub
-- `src/app/facilitator/learners/page.js` - Learner management
-- `src/app/facilitator/lessons/page.js` - Lesson management
-- `src/app/facilitator/generator/*/page.js` - Content generators
-- `src/app/facilitator/account/*/page.js` - Account pages
+**TimerService Extensions:**
+- `playTimers` Map: phase → `{ startTime, elapsed, timeLimit, expired }`
+- `playTimerInterval`: 1-second tick interval for active play timers
+- `currentPlayPhase`: Currently active play phase (only one at a time)
+- `mode`: Current timer mode ('play' | 'work')
 
-### 10. docs/brain/pin-protection.md (099075fb976b0dc884d23cec569d3b693ff409180962ef058793b7f53217859f)
-- bm25: -0.6515 | relevance: 1.0000
+### 13. docs/brain/timer-system.md (b528b741fad7d3d86f62d013e0cc846e2e18e614028489363ed3671475b5ee8b)
+- bm25: -28.9297 | relevance: 1.0000
 
-Session surfaces that mutate session state should gate with `ensurePinAllowed(action)` before performing the action.
+**Pause behavior:**
+- Stops all tick intervals (play and work)
+- Stores current elapsed time for active timers
+- Tick methods guard against running when paused
+- **Critical:** Prevents `playTimerExpired` event from firing during pause
+- Timer UI shows pause icon but displays frozen elapsed time
 
-**Session V2 (timeline + timer controls):**
-- Timeline jumps call `ensurePinAllowed('timeline')` before switching phases.
-- Timer controls call `ensurePinAllowed('timer')` before opening the timer control overlay and before pause/resume toggles.
+**Resume behavior:**
+- Adjusts `startTime` to account for paused duration
+- Restarts tick intervals
+- Timers continue from where they left off
+- No time is lost or gained during pause
 
-**Games (example: Platform Jumper):**
-- Facilitator-only game shortcuts (like skipping to a level) must call `ensurePinAllowed('skip')` before opening any level picker.
+### 7. docs/brain/timer-system.md (b528b741fad7d3d86f62d013e0cc846e2e18e614028489363ed3671475b5ee8b)
+- bm25: -47.1421 | relevance: 1.0000
 
-### Facilitator Section Flag
+**Pause behavior:**
+- Stops all tick intervals (play and work)
+- Stores current elapsed time for active timers
+- Tick methods guard against running when paused
+- **Critical:** Prevents `playTimerExpired` event from firing during pause
+- Timer UI shows pause icon but displays frozen elapsed time
 
-**Purpose**: Prevent double PIN prompts when navigating between facilitator pages
+**Resume behavior:**
+- Adjusts `startTime` to account for paused duration
+- Restarts tick intervals
+- Timers continue from where they left off
+- No time is lost or gained during pause
 
-**How it works**:
-1. Flag is stored in `sessionStorage` (cleared when browser tab closes)
-2. When `ensurePinAllowed('facilitator-page')` succeeds, it sets the flag
-3. Subsequent `facilitator-page` checks skip PIN if flag is already set
-4. Flag is cleared when user navigates away from `/facilitator/*` routes
+**Event-Driven Display (V2):**
+- `SessionPageV2` maintains separate display state for play and work timers:
+  - `playTimerDisplayElapsed` / `playTimerDisplayRemaining`
+  - `workTimerDisplayElapsed` / `workTimerDisplayRemaining`
+- Event subscriptions update display state:
+  - `playTimerTick` / `workPhaseTimerTick` - continuous updates while running
+  - `playTimerStart` / `workPhaseTimerStart` - initialize display when timer starts
+- `SessionTimer` receives `elapsedSeconds`/`remainingSeconds` as props based on current timer mode
+- This prevents play and work timers from sharing/overwriting countdown values
 
-### Navigation Flow (Session → Facilitator)
+**Phase Transitions:**
+- `playTimerExpired` event handler calls `handlePhaseTimerTimeUp()` to trigger state changes
+- Without this call, timer expiry would show overlay but not advance phases or update timer modes
+- Phase state machine depends on `handlePhaseTimerTimeUp` for 'play' → 'work' transitions
 
-**Before Fix (Double PIN Prompt)**:
-1. User clicks Facilitator link from session page
-2. HeaderBar calls `ensurePinAllowed('session-exit')` → prompts for PIN
-3. Navigation to `/facilitator` happens
-4. Facilitator page calls `ensurePinAllowed('facilitator-page')` → prompts for PIN AGAIN (flag not set)
+**Key files:**
+- `src/app/session/v2/TimerService.jsx` - `pause()`, `resume()`, pause guards in tick methods
+- `src/app/session/v2/SessionPageV2.jsx` - `handleTimerPauseToggle`, `timerPaused` state, event subscriptions, separate play/work display state
 
-**After Fix (Single PIN Prompt)**:
-1. User clicks Facilitator link from session page
-2. HeaderBar calls `ensurePinAllowed('session-exit')` → prompts for PIN
-3. HeaderBar detects destination is facilitator route → calls `setInFacilitatorSection(true)`
-4. Navigation to `/facilitator` happens
-5. Facilitator page calls `ensurePinAllowed('facilitator-page')` → SKIPS PIN (flag already set)
+## Recent Changes
 
-### Server Verification
+### 8. docs/brain/timer-system.md (1b526c919780716e4b7fea7e45b580988afdd9dd9b8794ec5da9b3185775f50f)
+- bm25: -47.1348 | relevance: 1.0000
 
-### 11. docs/brain/facilitator-hub.md (da9aec6fdfc1ea2738cb90fb2977c145f037ea8248bca3683693f7940f7ecae9)
-- bm25: -0.6480 | relevance: 1.0000
+**2025-12-09**: FIX - Clear opening action sequences when play timer expires to prevent hangover at work transition. When play timer reaches 00:00 and countdown starts, any active opening action (ask, joke, riddle, poem, story, fill-in-fun, games) must be cleared immediately. Without this, if an opening action is running when the countdown starts, it can interfere with the automatic transition to work subphase (teaching or Q&A) after the 30-second countdown completes. Added comprehensive state clearing to `handlePlayTimeUp`: all opening action states reset to 'inactive', story and fill-in-fun data cleared, games overlay closed. This ensures a clean slate before work phase begins.
 
-# Facilitator Hub
+**2025-12-05**: CRITICAL FIX - Removed `setShowOpeningActions(false)` from `handlePlayExpiredComplete`. This was breaking all phase transitions because phase handlers already hide buttons as part of their normal flow. The premature state change created race conditions preventing Go button from working and timer from advancing phases. Each phase handler (handleGoComprehension, handleGoExercise, etc.) manages its own button visibility - timer handler should not interfere.
 
-## How It Works
+### Timer Persistence
+- **src/app/session/hooks/useSnapshot.js**:
+  - Timer state saved to sessionStorage
+  - Restored on page load/refresh
 
-The Facilitator hub is the main entry point for facilitator workflows at `/facilitator`.
+## Recent Changes
 
-- It shows a small grid of primary sections (cards) that route to key areas.
-- It displays the current subscription tier as informational status.
-- Billing is treated as part of **Account** (plan + billing lives under `/facilitator/account/*`).
+**2025-12-28**: Entering Test review now calls `markWorkPhaseComplete('test')`, clears the test timer, and records remaining work time immediately. Grading/review can no longer show an active or timed-out test after all questions are answered.
 
-## What NOT To Do
+### 9. sidekick_pack.md (006e8aaf8fab9ff4eaf916d6384fe2fa7697a8c0dbf76156e69a907b762ddc6b)
+- bm25: -46.9195 | relevance: 1.0000
 
-- Do not add a separate "Billing" section on the hub. Billing navigation belongs under **Account**.
-- Do not duplicate billing management UIs on the hub. Use the account plan/billing pages.
+**2025-12-09**: FIX - Clear opening action sequences when play timer expires to prevent hangover at work transition. When play timer reaches 00:00 and countdown starts, any active opening action (ask, joke, riddle, poem, story, fill-in-fun, games) must be cleared immediately. Without this, if an opening action is running when the countdown starts, it can interfere with the automatic transition to work subphase (teaching or Q&A) after the 30-second countdown completes. Added comprehensive state clearing to `handlePlayTimeUp`: all opening action states reset to 'inactive', story and fill-in-fun data cleared, games overlay closed. This ensures a clean slate before work phase begins.
+
+### 10. docs/brain/timer-system.md (75eb75b205360de0660d27d8b243209381277ef9ef5df63d1e5253f267fa4a8d)
+- bm25: -46.5358 | relevance: 1.0000
 
 ## Key Files
 
-- `src/app/facilitator/page.js` - Facilitator hub cards and subscription status display
-- `src/app/facilitator/account/page.js` - Account hub (settings overlays)
-- `src/app/facilitator/account/plan/page.js` - Plans & billing entry point
-- `src/app/billing/manage/*` - Billing portal UI
+### Core Timer Logic
+- **src/app/session/page.js**:
+  - `currentTimerMode` state (line ~398)
+  - `startPhasePlayTimer()` (line ~780)
+  - `transitionToWorkTimer()` (line ~788)
+  - `handlePlayTimeUp()` (line ~803)
+  - `handlePlayExpiredComplete()` (line ~810)
+  - `handleWorkTimeUp()` (line ~835)
+  - `markWorkPhaseComplete()` (line ~843)
+  - `workPhaseCompletions` state (line ~491)
 
-### 12. docs/brain/pin-protection.md (a572b2eaa4ac61bc5c6c926b97a5f45498691130f5af49873ea35f306e9ecc36)
-- bm25: -0.6402 | relevance: 1.0000
+### Timer Component
 
-# PIN Protection System
+#### Pace Coloring (Work Timers)
 
-## Overview
+`SessionTimer` colors **work** timers by comparing lesson progress ($0$-$100$) vs time elapsed ($0$-$100$):
 
-PIN protection gates access to facilitator features and controls session exits. The system prevents learners from accessing facilitator tools, downloads, or modifying session state without adult supervision.
+- `timeProgress = (elapsedSeconds / totalSeconds) * 100`
+- `progressDiff = lessonProgress - timeProgress`
+- Work timers:
+  - Yellow when `progressDiff < -5`
+  - Red when `progressDiff < -15` or at `00:00`
 
-## How It Works
+**Critical wiring rule (V2 parity):** V2 must pass a real `lessonProgress` value into every `SessionTimer` render (especially the in-video overlay timer). If omitted, `SessionTimer` defaults `lessonProgress = 0`, which causes timers to turn yellow/red almost immediately as soon as timeProgress exceeds 5%/15%.
 
-### Core Components
+**V2 implementation detail:** V2 computes `lessonProgress` using the same phase-weight mapping as V1 and derives within-phase progress from snapshot `phaseData[phase].nextQuestionIndex` vs total questions.
+- **src/app/session/components/PlayTimeExpiredOverlay.jsx**:
+  - 30-second countdown overlay
+  - Auto-fires `onComplete` callback when countdown finishes
 
-**pinGate.js** (`src/app/lib/pinGate.js`)
-- Central PIN validation utility
-- Manages facilitator section tracking
-- Provides `ensurePinAllowed(action)` function for gating actions
-- Stores PIN preferences in localStorage and server
+### Timer Defaults
+- **src/app/session/utils/phaseTimerDefaults.js**:
+  - Default minutes per phase per mode
+  - Golden key bonus time constant
 
-**FacilitatorSectionTracker.jsx** (`src/components/FacilitatorSectionTracker.jsx`)
-- Tracks when user enters/leaves facilitator section
-- Clears facilitator section flag when navigating away from `/facilitator/*`
-- Mounted in root layout to track all navigation
+### Phase Handlers
 
-**HeaderBar.js** (`src/app/HeaderBar.js`)
-- Implements navigation PIN checks
-- Sets facilitator section flag when navigating from session to facilitator
-- Prevents double PIN prompts
+### Timer Pause/Resume
 
-### PIN Actions
+**Feature:** Facilitators can pause/resume timers via PIN-gated controls in the timer overlay.
 
-Each action type maps to a preference key that controls whether PIN is required:
+### 11. sidekick_pack.md (3f0f82f2b57721c6b4ee30f8139a2925235abf1723d288f872e60ba6d165aa8d)
+- bm25: -45.9861 | relevance: 1.0000
 
-| Action | Preference Key | When Triggered | Sets Facilitator Flag? |
-|--------|---------------|----------------|----------------------|
-| `facilitator-page` | `facilitatorPage` | Entering any `/facilitator/*` page | YES |
-| `session-exit` | `activeSession` | Leaving active lesson session | NO (but sets flag if destination is facilitator) |
-| `download` | `downloads` | Worksheet/test downloads | NO |
-| `facilitator-key` | `facilitatorKey` | Combined answer key | NO |
-| `skip` / `timeline` | `skipTimeline` | Timeline jumps, skip buttons | NO |
-| `change-learner` | `changeLearner` | Switching learners | NO |
-| `refresh` | `refresh` | Re-generate worksheet/test | NO |
-| `timer` | `timer` | Pause/resume timer | NO |
+// Phase-based timer helpers
+  
+  // Start play timer for a phase (called when "Begin [Phase]" button is clicked)
+  const startPhasePlayTimer = useCallback((phaseName) => {
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'play'
+    }));
+  }, []); // setCurrentTimerMode is stable useCallback, not needed in deps
+  
+  // Transition from play to work timer (called when "Go" button is clicked during play mode)
+  const transitionToWorkTimer = useCallback((phaseName) => {
+    // Clear the play timer storage so work timer starts fresh
+    const playTimerKeys = [
+      lessonKey ? `session_timer_state:${lessonKey}:${phaseName}:play` : null,
+      `session_timer_state:${phaseName}:play`,
+    ].filter(Boolean);
+    try {
+      playTimerKeys.forEach((k) => {
+        try { sessionStorage.removeItem(k); } catch {}
+      });
+    } catch {}
+    
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'work'
+    }));
+  }, [lessonKey]); // setCurrentTimerMode is stable useCallback, not needed in deps
+  
+  // Handle play timer expiration (show 30-second countdown overlay)
+  const handlePlayTimeUp = useCallback((phaseName) => {
+    // Skip if countdown was already completed (flag set during restore or previous completion)
+    if (playExpiredCountdownCompleted) return;
+    
+    setShowPlayTimeExpired(true);
+    setPlayExpiredPhase(phaseName);
+    // Close games overlay if it's open
+    setShowGames(false);
+    
+    // Clear all opening action sequences to prevent hangover at transition to work subphase
+    setShowOpeningActions(false);
+    setAskState('inactive');
+    setRiddleState('inactive');
+    setPoemState('inactive');
+    setStoryState('inactive');
+    setFillInFunState('inactive');
+    
+    // Clear story-specific states
+    setStoryTranscript([]);
 
-### 13. docs/brain/notifications-system.md (2d68facb9ef84811553c594d04831c5bab53537f01c38d56acdc06752047caaf)
-- bm25: -0.6373 | relevance: 1.0000
+### 12. src/app/session/page.js (2cf08f5a7761f406520e67575a6732a7569e3c2a45f72bac41eda4f4163c94d3)
+- bm25: -45.8585 | relevance: 1.0000
 
-# Notifications System
+// Phase-based timer helpers
+  
+  // Start play timer for a phase (called when "Begin [Phase]" button is clicked)
+  const startPhasePlayTimer = useCallback((phaseName) => {
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'play'
+    }));
+  }, []); // setCurrentTimerMode is stable useCallback, not needed in deps
+  
+  // Transition from play to work timer (called when "Go" button is clicked during play mode)
+  const transitionToWorkTimer = useCallback((phaseName) => {
+    // Clear the play timer storage so work timer starts fresh
+    const playTimerKeys = [
+      lessonKey ? `session_timer_state:${lessonKey}:${phaseName}:play` : null,
+      `session_timer_state:${phaseName}:play`,
+    ].filter(Boolean);
+    try {
+      playTimerKeys.forEach((k) => {
+        try { sessionStorage.removeItem(k); } catch {}
+      });
+    } catch {}
+    
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'work'
+    }));
+  }, [lessonKey]); // setCurrentTimerMode is stable useCallback, not needed in deps
+  
+  // Handle play timer expiration (show 30-second countdown overlay)
+  const handlePlayTimeUp = useCallback((phaseName) => {
+    // Skip if countdown was already completed (flag set during restore or previous completion)
+    if (playExpiredCountdownCompleted) return;
+    
+    setShowPlayTimeExpired(true);
+    setPlayExpiredPhase(phaseName);
+    // Close games overlay if it's open
+    setShowGames(false);
+    
+    // Clear all opening action sequences to prevent hangover at transition to work subphase
+    setShowOpeningActions(false);
+    setAskState('inactive');
+    setRiddleState('inactive');
+    setPoemState('inactive');
+    setStoryState('inactive');
+    setFillInFunState('inactive');
+    
+    // Clear story-specific states
+    setStoryTranscript([]);
 
-**Last updated**: 2026-01-08T13:36:08Z  
+### 13. docs/brain/timer-system.md (b7aa6681ad045e85a58422ec46641d948683a8b9be9eb4e041d2b6d83bd36742)
+- bm25: -43.7910 | relevance: 1.0000
+
+2. **PlayTimeExpiredOverlay** displays:
+   - Shows "Time to Get Back to Work!" message
+   - 30-second countdown (green, turns amber at 5 seconds)
+   - Displays phase name user will return to
+   - Auto-advances when countdown reaches 0
+
+3. **handlePlayExpiredComplete** fires when countdown completes:
+   - Hides overlay (`showPlayTimeExpired = false`)
+   - Transitions to work timer for expired phase
+   - Automatically starts the work phase:
+     - Discussion/Teaching: calls `startSession()` (orchestrator start)
+     - Comprehension/Exercise/Worksheet/Test: calls the phase controller `go()` (`comprehensionPhaseRef.current.go()`, etc.)
+   - Each phase handler hides play buttons as part of its normal flow
+   - Clears `playExpiredPhase`
+  - When discussion/teaching needs to auto-start, `startSession({ ignoreResume: true })` is used so a stale snapshot resumePhase cannot skip ahead during an active lesson.
+
+### Go Button Override
+
+If user clicks Go button during the 30-second countdown:
+- Overlay is immediately dismissed
+- Work timer starts without waiting for countdown
+- All phase start handlers check and clear overlay state
+
+### Work Time Completion Tracking
+
+### 14. sidekick_pack.md (573e7a5f98d31d29331cb20a978474dceb5cbe1d72d69affb84d37656eef90f7)
+- bm25: -43.7318 | relevance: 1.0000
+
+## Key Files
+
+### 9. docs/brain/timer-system.md (75eb75b205360de0660d27d8b243209381277ef9ef5df63d1e5253f267fa4a8d)
+- bm25: -30.1082 | relevance: 1.0000
+
+## Key Files
+
+### Core Timer Logic
+- **src/app/session/page.js**:
+  - `currentTimerMode` state (line ~398)
+  - `startPhasePlayTimer()` (line ~780)
+  - `transitionToWorkTimer()` (line ~788)
+  - `handlePlayTimeUp()` (line ~803)
+  - `handlePlayExpiredComplete()` (line ~810)
+  - `handleWorkTimeUp()` (line ~835)
+  - `markWorkPhaseComplete()` (line ~843)
+  - `workPhaseCompletions` state (line ~491)
+
+### Timer Component
+
+#### Pace Coloring (Work Timers)
+
+`SessionTimer` colors **work** timers by comparing lesson progress ($0$-$100$) vs time elapsed ($0$-$100$):
+
+- `timeProgress = (elapsedSeconds / totalSeconds) * 100`
+- `progressDiff = lessonProgress - timeProgress`
+- Work timers:
+  - Yellow when `progressDiff < -5`
+  - Red when `progressDiff < -15` or at `00:00`
+
+**Critical wiring rule (V2 parity):** V2 must pass a real `lessonProgress` value into every `SessionTimer` render (especially the in-video overlay timer). If omitted, `SessionTimer` defaults `lessonProgress = 0`, which causes timers to turn yellow/red almost immediately as soon as timeProgress exceeds 5%/15%.
+
+**V2 implementation detail:** V2 computes `lessonProgress` using the same phase-weight mapping as V1 and derives within-phase progress from snapshot `phaseData[phase].nextQuestionIndex` vs total questions.
+- **src/app/session/components/PlayTimeExpiredOverlay.jsx**:
+  - 30-second countdown overlay
+  - Auto-fires `onComplete` callback when countdown finishes
+
+### Timer Defaults
+- **src/app/session/utils/phaseTimerDefaults.js**:
+  - Default minutes per phase per mode
+  - Golden key bonus time constant
+
+### Phase Handlers
+
+### Timer Pause/Resume
+
+### 15. sidekick_pack.md (2c06eb311823ac2f8b8a01f3561df513201d15773bf5ddb5b4355ca7199676c6)
+- bm25: -43.4099 | relevance: 1.0000
+
+2. **PlayTimeExpiredOverlay** displays:
+   - Shows "Time to Get Back to Work!" message
+   - 30-second countdown (green, turns amber at 5 seconds)
+   - Displays phase name user will return to
+   - Auto-advances when countdown reaches 0
+
+3. **handlePlayExpiredComplete** fires when countdown completes:
+   - Hides overlay (`showPlayTimeExpired = false`)
+   - Transitions to work timer for expired phase
+   - Automatically starts the work phase:
+     - Discussion/Teaching: calls `startSession()` (orchestrator start)
+     - Comprehension/Exercise/Worksheet/Test: calls the phase controller `go()` (`comprehensionPhaseRef.current.go()`, etc.)
+   - Each phase handler hides play buttons as part of its normal flow
+   - Clears `playExpiredPhase`
+  - When discussion/teaching needs to auto-start, `startSession({ ignoreResume: true })` is used so a stale snapshot resumePhase cannot skip ahead during an active lesson.
+
+### Go Button Override
+
+If user clicks Go button during the 30-second countdown:
+- Overlay is immediately dismissed
+- Work timer starts without waiting for countdown
+- All phase start handlers check and clear overlay state
+
+### Work Time Completion Tracking
+
+### 19. docs/brain/timer-system.md (42aa7c76a1e732a4ec83b46c76f7214efa5fa927819ed9a691f311cae452a2df)
+- bm25: -26.7530 | relevance: 1.0000
+
+**Rule (single instance):** Only one `SessionTimer` instance should be mounted at a time for a given `{lessonKey, phase, mode}`.
+- Mounting two `SessionTimer` components simultaneously can show brief 1-second drift when `SessionTimer` is in self-timing mode.
+- In Session V2, when the Games overlay is open, the on-video timer is not rendered; the Games overlay renders the timer instead.
+
+### 16. sidekick_pack.md (36e41298626e151568cf8e4bc8053aaa373fa99633554eddcaaf06ef3a731d82)
+- bm25: -42.1917 | relevance: 1.0000
+
+/**
+ * TimerService.jsx
+ * Manages session, play, and work phase timers
+ * 
+ * Timers:
+ * - Session timer: Tracks total session duration from start to complete
+ * - Play timers: Green timer for exploration/opening actions (phases 2-5: Comprehension, Exercise, Worksheet, Test)
+ * - Work phase timers: Amber/red timer for focused work (for golden key)
+ * 
+ * Timer Modes:
+ * - Phase 1 (Discussion): No play timer, no opening actions (eliminates play timer exploit)
+ * - Phases 2-5 (Comprehension, Exercise, Worksheet, Test): Play timer → opening actions → work timer
+ * 
+ * Golden Key Requirements:
+ * - Need 3 work phases completed within time limit
+ * - Work phases: exercise, worksheet, test
+ * - Time limits defined per grade/subject
+ * 
+ * Events emitted:
+ * - sessionTimerStart: { timestamp } - Session timer started
+ * - sessionTimerTick: { elapsed, formatted } - Every second while running
+ * - sessionTimerStop: { elapsed, formatted } - Session timer stopped
+ * - playTimerStart: { phase, timestamp, timeLimit } - Play timer started
+ * - playTimerTick: { phase, elapsed, remaining, formatted } - Every second during play time
+ * - playTimerExpired: { phase } - Play timer reached 0:00
+ * - workPhaseTimerStart: { phase, timestamp } - Work phase timer started
+ * - workPhaseTimerTick: { phase, elapsed, remaining, onTime } - Every second during work time
+ * - workPhaseTimerComplete: { phase, elapsed, onTime } - Work phase completed
+ * - workPhaseTimerStop: { phase, elapsed } - Work phase stopped
+ * - goldenKeyEligible: { completedPhases } - 3 on-time work phases achieved
+ */
+
+### 17. docs/brain/session-takeover.md (15220505a1b46edd3a4491aa177082deecf628df049e021e34cfda9447fbf112)
+- bm25: -42.0688 | relevance: 1.0000
+
+**Why this sequencing matters:**
+- OLD BUG (pre 2026-01-14): `sessionConflictChecked` set true in finally block → Snapshot restored WHILE takeover dialog showing → Creates duplicate session/transcript splits
+- NEW FIX (2026-01-14): `sessionConflictChecked` stays false on conflict → Takeover resolved first (via reload) → Snapshot restored cleanly ONCE
+
+**Settlement order enforcement:**
+- NO conflict: `sessionConflictChecked = true` immediately, snapshot restore proceeds
+- CONFLICT detected: `sessionConflictChecked` stays false, snapshot restore blocked
+- Takeover resolved: page reloads, fresh conflict check passes, snapshot restores once
+- Error during check: `sessionConflictChecked = true` (fail-safe to allow snapshot restore)
+
+**Old device behavior:**
+- No active notification (no polling)
+- Next gate attempt (user clicks Next, answers question, etc.) detects session ended
+- Shows takeover notification: "This lesson was continued on another device"
+- Redirects to learner dashboard
+
+### Timer State: Snapshot-Based Persistence
+
+**Source of truth**: Snapshot database (cross-device)  
+**Mechanism**: Timer state captured at every checkpoint gate
+
+Timer state in snapshot payload:
+```javascript
+{
+  currentTimerMode: 'play' | 'work',
+  workPhaseCompletions: { discussion: true, teaching: false, ... },
+  timerSnapshot: {
+    phase: 'teaching',
+    mode: 'work',
+    capturedAt: '2025-11-20T22:15:30.123Z',
+    elapsedSeconds: 45,
+    targetSeconds: 300
+  }
+}
+```
+
+### 18. src/app/session/v2/TimerService.jsx (c366ffd95c213031782db363c3a2ba3af35515665534c9d34e73a8e41492b13b)
+- bm25: -42.0130 | relevance: 1.0000
+
+/**
+ * TimerService.jsx
+ * Manages session, play, and work phase timers
+ * 
+ * Timers:
+ * - Session timer: Tracks total session duration from start to complete
+ * - Play timers: Green timer for exploration/opening actions (phases 2-5: Comprehension, Exercise, Worksheet, Test)
+ * - Work phase timers: Amber/red timer for focused work (for golden key)
+ * 
+ * Timer Modes:
+ * - Phase 1 (Discussion): No play timer, no opening actions (eliminates play timer exploit)
+ * - Phases 2-5 (Comprehension, Exercise, Worksheet, Test): Play timer → opening actions → work timer
+ * 
+ * Golden Key Requirements:
+ * - Need 3 work phases completed within time limit
+ * - Work phases: exercise, worksheet, test
+ * - Time limits defined per grade/subject
+ * 
+ * Events emitted:
+ * - sessionTimerStart: { timestamp } - Session timer started
+ * - sessionTimerTick: { elapsed, formatted } - Every second while running
+ * - sessionTimerStop: { elapsed, formatted } - Session timer stopped
+ * - playTimerStart: { phase, timestamp, timeLimit } - Play timer started
+ * - playTimerTick: { phase, elapsed, remaining, formatted } - Every second during play time
+ * - playTimerExpired: { phase } - Play timer reached 0:00
+ * - workPhaseTimerStart: { phase, timestamp } - Work phase timer started
+ * - workPhaseTimerTick: { phase, elapsed, remaining, onTime } - Every second during work time
+ * - workPhaseTimerComplete: { phase, elapsed, onTime } - Work phase completed
+ * - workPhaseTimerStop: { phase, elapsed } - Work phase stopped
+ * - goldenKeyEligible: { completedPhases } - 3 on-time work phases achieved
+ */
+
+'use client';
+
+### 19. sidekick_pack.md (f450fe051291004e002dd760a02abbc5b0718dcd37dd58ff2f42035324c06484)
+- bm25: -41.9302 | relevance: 1.0000
+
+❌ **Never allow refresh to reset play timer**
+- First interaction gate persists timer state
+- `recordFirstInteraction()` wrapper ensures snapshot save on first button click
+
+❌ **Never modify timer state without clearing sessionStorage**
+- When transitioning play → work, clear play timer key from sessionStorage
+- Prevents stale timer state on refresh
+
+❌ **Never show countdown overlay without phase context**
+- `playExpiredPhase` must be set so correct work handler fires
+- Overlay should display which phase learner will return to
+
+## Related Brain Files
+
+### 15. src/app/session/v2/TimerService.jsx (c366ffd95c213031782db363c3a2ba3af35515665534c9d34e73a8e41492b13b)
+- bm25: -27.3372 | relevance: 1.0000
+
+### 20. sidekick_pack.md (7b4b9aabd6a7a8230eceae61b25ce1299b927d0790923771310e60d0162821f1)
+- bm25: -40.9827 | relevance: 1.0000
+
+### 23. docs/brain/v2-architecture.md (7bae77a72d2662755ee6567d868690beefe0323bcc435870d09473c3d88fec22)
+- bm25: -25.9929 | relevance: 1.0000
+
+**Implementation:**
+- Discussion phase: greeting TTS + single "Begin" button → advances to teaching
+- No opening action buttons in discussion phase
+- No play timer in discussion phase (instant transition)
+- Play/work timer modes still apply to Teaching, Repeat, Transition, Comprehension, Closing phases
+- Lesson title in discussion/closing flows comes from `lessonData.title` with `lessonId` fallback; never reference undeclared locals when wiring DiscussionPhase
+- The discussion work timer **spans both discussion and teaching**. It starts on discussion entry and must be completed when teaching finishes (not on `discussionComplete`), or the visible timer will freeze as soon as the definitions CTA appears.
+- Opening action buttons (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games) appear during play time in phases 2-5
+
+### 24. docs/brain/timer-system.md (e8b4630a80a6b748beb9f24a91d99b483a671997f18b6fa863773ada69c26a7d)
+- bm25: -25.5229 | relevance: 1.0000
+
+**2025-12-18**: Restore no longer forces `playExpiredCountdownCompleted` to true. The countdown flag is restored from snapshot state and only set during restore when an expired play timer is detected. Live sessions resumed after a restore can still show the 30-second countdown on the next play timeout.
+
+### 25. docs/brain/timer-system.md (1f66fc9b2014880a4f602ba3a64aeb3037bbda3f80bafc5c833fb3aeea069133)
+- bm25: -25.0504 | relevance: 1.0000
+
+### Play Portion Enabled Flags (Per Learner)
+
+Phases 2-5 (Comprehension, Exercise, Worksheet, Test) each have a per-learner flag that can disable the "play portion" of that phase.
+
+### 21. docs/brain/session-takeover.md (67d6f1cc34af6fd217783490d4f011c8cef30e9a03ac7f4e9f0c5692245348e3)
+- bm25: -40.9501 | relevance: 1.0000
+
+## Timer Continuity Details
+
+**Timer state components:**
+- `currentTimerMode`: 'play' (Begin to Go) or 'work' (Go to next phase)
+- `workPhaseCompletions`: object tracking which phases completed work timer
+- `elapsedSeconds`: current countdown value
+- `targetSeconds`: phase-specific target (from runtime config)
+- `capturedAt`: ISO timestamp when snapshot saved
+
+**Snapshot capture (every gate):**
+```javascript
+timerSnapshot: {
+  phase: phase,
+  mode: currentTimerModeRef.current || currentTimerMode,
+  capturedAt: new Date().toISOString(),
+  elapsedSeconds: getElapsedFromSessionStorage(phase, currentTimerMode),
+  targetSeconds: getTargetForPhase(phase, currentTimerMode)
+}
+```
+
+**Restore logic:**
+```javascript
+const { timerSnapshot } = restoredSnapshot;
+if (timerSnapshot) {
+  const drift = Math.floor((Date.now() - new Date(timerSnapshot.capturedAt)) / 1000);
+  const adjustedElapsed = Math.min(
+    timerSnapshot.elapsedSeconds + drift,
+    timerSnapshot.targetSeconds
+  );
+  
+  // Write to sessionStorage (source for timer component)
+  sessionStorage.setItem(
+    `timer_${timerSnapshot.phase}_${timerSnapshot.mode}`,
+    JSON.stringify({
+      elapsedSeconds: adjustedElapsed,
+      startTimestamp: Date.now() - (adjustedElapsed * 1000)
+    })
+  );
+  
+  setCurrentTimerMode(timerSnapshot.mode);
+}
+```
+
+**Result:** Timer continues within ±2 seconds of where old device left off (gate save latency + network round-trip).
+
+## PIN Validation Security
+
+**Already implemented** in `page.js` lines 286-314:
+- Client calls `ensurePinAllowed(pinCode)` from `src/app/lib/pinAuth.js`
+- Server validates PIN hash against learner's stored scrypt hash
+- Only correct PIN allows session takeover
+- Failed PIN shows error, user can retry
+
+### 22. docs/brain/timer-system.md (afad3d67c6731ffd234f48a50bd80e7569f7b92cd4cc8bdd5bcbaad5ac994b38)
+- bm25: -40.2407 | relevance: 1.0000
+
+This ensures timers tick down from the moment the relevant gate is visible (Begin for play; Go for work), not when it's clicked.
+
+**Work timer spans discussion + teaching**: The discussion work timer starts when the discussion greeting begins playing and runs through the entire teaching phase. It is completed when teaching finishes, so the countdown must **not** be stopped at `greetingComplete` or `discussionComplete`. Completing it early will freeze the visible timer as soon as the teaching controls appear.
+
+**Timer Modes:**
+1. **Play Timer** (green) - Expected to use full time; learner can interact with Ask, Riddle, Poem, Story, Fill-in-Fun opening actions
+2. **Work Timer** (amber/red) - Learner should complete phase; input focused on lesson questions
+
+**V2** Timer mode tracked only for phases 2-5:
+```javascript
+{
+  comprehension: 'play' | 'work',
+  exercise: 'play' | 'work',
+  worksheet: 'play' | 'work',
+  test: 'play' | 'work'
+}
+```
+
+### Phase 2 Implementation (V2)
+
+**TimerService Extensions:**
+- `playTimers` Map: phase → `{ startTime, elapsed, timeLimit, expired }`
+- `playTimerInterval`: 1-second tick interval for active play timers
+- `currentPlayPhase`: Currently active play phase (only one at a time)
+- `mode`: Current timer mode ('play' | 'work')
+
+### 23. sidekick_pack.md (e06d4291f97ea403f4d1ffcd5402bfa365eb001584a444fdf45ab58ebfd91ee2)
+- bm25: -40.1068 | relevance: 1.0000
+
+'use client';
+
+### 16. docs/brain/session-takeover.md (15220505a1b46edd3a4491aa177082deecf628df049e021e34cfda9447fbf112)
+- bm25: -26.9789 | relevance: 1.0000
+
+**Why this sequencing matters:**
+- OLD BUG (pre 2026-01-14): `sessionConflictChecked` set true in finally block → Snapshot restored WHILE takeover dialog showing → Creates duplicate session/transcript splits
+- NEW FIX (2026-01-14): `sessionConflictChecked` stays false on conflict → Takeover resolved first (via reload) → Snapshot restored cleanly ONCE
+
+**Settlement order enforcement:**
+- NO conflict: `sessionConflictChecked = true` immediately, snapshot restore proceeds
+- CONFLICT detected: `sessionConflictChecked` stays false, snapshot restore blocked
+- Takeover resolved: page reloads, fresh conflict check passes, snapshot restores once
+- Error during check: `sessionConflictChecked = true` (fail-safe to allow snapshot restore)
+
+**Old device behavior:**
+- No active notification (no polling)
+- Next gate attempt (user clicks Next, answers question, etc.) detects session ended
+- Shows takeover notification: "This lesson was continued on another device"
+- Redirects to learner dashboard
+
+### Timer State: Snapshot-Based Persistence
+
+**Source of truth**: Snapshot database (cross-device)  
+**Mechanism**: Timer state captured at every checkpoint gate
+
+Timer state in snapshot payload:
+```javascript
+{
+  currentTimerMode: 'play' | 'work',
+  workPhaseCompletions: { discussion: true, teaching: false, ... },
+  timerSnapshot: {
+    phase: 'teaching',
+    mode: 'work',
+    capturedAt: '2025-11-20T22:15:30.123Z',
+    elapsedSeconds: 45,
+    targetSeconds: 300
+  }
+}
+```
+
+### 17. docs/brain/games-overlay.md (3d69f6755dd3a8792771418e6e2fe533bcaad2786166bfa293915f77a4ff8f9d)
+- bm25: -26.9626 | relevance: 1.0000
+
+### 24. docs/brain/ingests/pack-mentor-intercepts.md (08191c1e946bc63bc45a43254cb2accc0e9eef97fc1d5a13ecd50fc3089f0a45)
+- bm25: -40.0862 | relevance: 1.0000
+
+### 25. docs/brain/session-takeover.md (67d6f1cc34af6fd217783490d4f011c8cef30e9a03ac7f4e9f0c5692245348e3)
+- bm25: -13.0742 | relevance: 1.0000
+
+## Timer Continuity Details
+
+**Timer state components:**
+- `currentTimerMode`: 'play' (Begin to Go) or 'work' (Go to next phase)
+- `workPhaseCompletions`: object tracking which phases completed work timer
+- `elapsedSeconds`: current countdown value
+- `targetSeconds`: phase-specific target (from runtime config)
+- `capturedAt`: ISO timestamp when snapshot saved
+
+**Snapshot capture (every gate):**
+```javascript
+timerSnapshot: {
+  phase: phase,
+  mode: currentTimerModeRef.current || currentTimerMode,
+  capturedAt: new Date().toISOString(),
+  elapsedSeconds: getElapsedFromSessionStorage(phase, currentTimerMode),
+  targetSeconds: getTargetForPhase(phase, currentTimerMode)
+}
+```
+
+**Restore logic:**
+```javascript
+const { timerSnapshot } = restoredSnapshot;
+if (timerSnapshot) {
+  const drift = Math.floor((Date.now() - new Date(timerSnapshot.capturedAt)) / 1000);
+  const adjustedElapsed = Math.min(
+    timerSnapshot.elapsedSeconds + drift,
+    timerSnapshot.targetSeconds
+  );
+  
+  // Write to sessionStorage (source for timer component)
+  sessionStorage.setItem(
+    `timer_${timerSnapshot.phase}_${timerSnapshot.mode}`,
+    JSON.stringify({
+      elapsedSeconds: adjustedElapsed,
+      startTimestamp: Date.now() - (adjustedElapsed * 1000)
+    })
+  );
+  
+  setCurrentTimerMode(timerSnapshot.mode);
+}
+```
+
+**Result:** Timer continues within ±2 seconds of where old device left off (gate save latency + network round-trip).
+
+## PIN Validation Security
+
+### 25. docs/brain/timer-system.md (93b5f5f1e95bf4a72b420f92660d6ca4559847ff7ab32409c591f92360c08643)
+- bm25: -39.9948 | relevance: 1.0000
+
+❌ **Never use local persistence fallback for `play_*_enabled`**
+- Do not store per-learner play portion flags in localStorage.
+- Source of truth is Supabase; the bus is for immediate UI reaction only.
+
+❌ **Never add a Discussion play toggle**
+- Discussion has no play timer in V2, and this feature only targets phases 2-5.
+
+❌ **Never award or apply Golden Key bonus when disabled**
+- If `golden_keys_enabled` is false, do not apply bonus minutes and do not write golden key awards.
+
+❌ **Never hide play buttons manually in timer expiry handler**
+- Phase handlers (handleGoComprehension, etc.) already call `setShowOpeningActions(false)`
+- Setting it in handlePlayExpiredComplete creates race conditions and breaks phase transitions
+- Let each phase handler manage its own button visibility
+
+❌ **Never allow play buttons to remain visible after timer expiry**
+- Timer expiry must automatically advance to work phase
+- Play buttons will be hidden by the phase handler that starts the work
+
+❌ **Never require Go button click after timer expiry**
+- Timer expiry should bypass Go button confirmation
+- `handlePlayExpiredComplete` must auto-start the work phase
+
+❌ **Never allow refresh to reset play timer**
+- First interaction gate persists timer state
+- `recordFirstInteraction()` wrapper ensures snapshot save on first button click
+
+❌ **Never modify timer state without clearing sessionStorage**
+- When transitioning play → work, clear play timer key from sessionStorage
+- Prevents stale timer state on refresh
+
+❌ **Never show countdown overlay without phase context**
+- `playExpiredPhase` must be set so correct work handler fires
+- Overlay should display which phase learner will return to
+
+## Related Brain Files
+
+### 26. docs/brain/timer-system.md (b90b83953b55369af6b1840a6cccf28923940068aa3948b4bb4042752c4610dc)
+- bm25: -39.7697 | relevance: 1.0000
+
+# Timer System Architecture
+
+**Last updated**: 2026-02-04T01:00:00Z  
 **Status**: Canonical
 
 ## How It Works
 
-The Notifications system provides facilitator-facing alerts that persist across devices.
+### Play vs Work Timers
 
-### Data Model (Supabase)
+**V1**: Each phase (discussion, comprehension, exercise, worksheet, test) has two timer modes.
 
-Notifications are stored per facilitator in Supabase (Postgres) under RLS.
+**V2**: Discussion has **no play timer**. Phases 2-5 (Comprehension, Exercise, Worksheet, Test) use play → work mode. A **discussion work timer** still exists and spans discussion + teaching.
 
-**Tables**:
-- `public.facilitator_notifications`
-  - Per-notification rows (title/body/type/category)
-  - `read_at` marks a notification as read
-  - `facilitator_id` is the owner and must equal `auth.uid()` under RLS
+**Rationale**: Removing play timer from discussion phase eliminates infinite play timer exploit (learner could refresh during discussion to reset play timer indefinitely without starting teaching).
 
-- `public.facilitator_notification_prefs`
-  - Per-facilitator preferences that control which categories are enabled
-  - Includes a master `enabled` toggle
+**Discussion work timer startup**: The work timer for discussion is started when the greeting begins playing (greetingPlaying event). This is an exception - all other work timers start when the awaiting-go gate appears.
 
-### Current UI
+**Timeline jump timer startup**: When facilitator uses timeline to jump to a phase, the appropriate timer starts immediately:
+- Discussion: Work timer starts immediately (exception to normal greetingPlaying rule)
+- Other phases: Play timer starts immediately (not when Begin clicked)
 
-**Notifications page**: `/facilitator/notifications`
-- Shows a list of notifications
-- Each row can be marked read/unread via a checkmark button
-- A gear button opens a settings overlay to control notification preferences
+Timeline jumps explicitly stop any existing timers for the target phase before starting new ones, ensuring a clean reset.
 
-**Account page launcher**: `/facilitator/account`
-- Shows a Notifications card matching existing Account card styling
-- Clicking navigates to `/facilitator/notifications`
+**Timer restart prevention**: Removed in favor of explicit stop/start pattern on timeline jumps. Timers can now be legitimately restarted when needed.
 
-**Header quick-link**:
-- The Facilitator hover dropdown includes a Notifications item that navigates to `/facilitator/notifications`
+### 27. src/app/session/hooks/useSnapshotPersistence.js (4698b3071633f16c3763fdf8ca347c1b304fae9a54d2632505f7143c44bfb80b)
+- bm25: -39.5214 | relevance: 1.0000
 
-### Placeholder Behavior
+// Check if play timer expired while page was closed.
+              // Skip countdown by setting flag and transition to work mode.
+              if (desiredMode === 'play' && Number.isFinite(target) && adjustedElapsed >= target) {
+                if (typeof setPlayExpiredCountdownCompleted === 'function') {
+                  setPlayExpiredCountdownCompleted(true);
+                }
+                setCurrentTimerMode((prev) => ({
+                  ...(prev || {}),
+                  [timerPhaseName]: 'work',
+                }));
+                try {
+                  sessionStorage.removeItem(storageKey);
+                } catch {}
+                if (typeof setNeedsPlayExpiredTransition === 'function') {
+                  setNeedsPlayExpiredTransition(timerPhaseName);
+                }
+              }
+            }
+          }
+        } catch {}
+        
+        // Defer clearing loading until the resume reconciliation effect completes
+        try { setTtsLoadingCount(0); } catch {}
+        // DO NOT set isSpeaking=false here - let audio.onended handle it after caption replay
+        try {
+          // Minimal canSend heuristics on restore: enable only when in awaiting-begin or review or teaching stage prompts
+          const enable = (
+            (snap.phase === 'discussion' && snap.subPhase === 'awaiting-learner') ||
+            (snap.phase === 'comprehension' && snap.subPhase === 'comprehension-start') ||
+            (snap.phase === 'exercise' && snap.subPhase === 'exercise-awaiting-begin') ||
+            (snap.phase === 'worksheet' && snap.subPhase === 'worksheet-awaiting-begin') ||
+            (snap.phase === 'test' && (snap.subPhase === 'test-awaiting-begin' || snap.subPhase === 'review-start')) ||
+            (snap.phase === 'teaching' && snap.subPhase === 'tea
 
-The UI currently seeds a small set of demo notifications for a facilitator if they have zero notifications. This is intentionally temporary and exists only to make the manager usable before event producers are wired.
+### 28. docs/brain/timer-system.md (31fbc062724d64b66b29543e253c240d268ae1bac63e16ef5601b969c597e0c1)
+- bm25: -39.4918 | relevance: 1.0000
 
-## What NOT To Do
+**Refresh/resume rule (critical):**
+- If a phase is in **play** (`timerMode === 'play'`), the phase controller must resume at the **Go gate** (`state = 'awaiting-go'`) and must **not** auto-play/auto-start Q&A.
+- If `timerMode` is missing in resumeState (older snapshots), infer it:
+  - Treat as **work** only when there is evidence of work progress (answers exist, nextQuestionIndex > 0, score > 0, or reviewIndex set for Test).
+  - Otherwise treat as **play**.
+- On resume, do **not** call `timerService.startPlayTimer(...)` or `timerService.transitionToWork(...)` unless the resume request explicitly sets `skipPlayPortion`. TimerService is already restored from `snapshot.timerState` and should not be reset by phase controllers.
 
-### 14. docs/brain/ingests/pack-mentor-intercepts.md (ee64f00174c13b58457962dbc2cdb20aa52435a52a1fa39ebeca6ea8bf379fe2)
-- bm25: -0.6303 | relevance: 1.0000
+**Phase files implementing this rule (V2):**
+- `src/app/session/v2/ComprehensionPhase.jsx`
+- `src/app/session/v2/ExercisePhase.jsx`
+- `src/app/session/v2/WorksheetPhase.jsx`
+- `src/app/session/v2/TestPhase.jsx`
 
-- `src/app/facilitator/page.js` - Facilitator hub cards and subscription status display
-- `src/app/facilitator/account/page.js` - Account hub (settings overlays)
-- `src/app/facilitator/account/plan/page.js` - Plans & billing entry point
-- `src/app/billing/manage/*` - Billing portal UI
+**Important (V2 lifecycle):** The TimerService instance must remain stable for the duration of a session and must not be recreated on every phase transition. Recreating it will lose timer Maps and can leave stale sessionStorage keys behind.
 
-### 15. sidekick_pack_lessons_prefetch.md (c2cf5bf3ad627a5e90407d82ebdbcdb0ecc148498a13c5ab029ef56071e17508)
-- bm25: -0.6263 | relevance: 1.0000
+**iOS/Safari timer recovery (critical):**
 
-// Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
-    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
-    if (!includeAll) {
-      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
+iOS Safari can suspend or delay JavaScript intervals during backgrounding, BFCache restores, or focus changes. To prevent the on-video timer display from appearing frozen after returning to the tab:
+
+- `SessionPageV2` calls `timerService.resync(...)` on `visibilitychange` (when becoming visible), `focus`, and `pageshow`.
+- `TimerService.resync()` is best-effort: it re-arms missing intervals (when not paused) and emits an immediate catch-up tick so the UI updates to the correct remaining time.
+
+### Games Overlay Timer Parity (V2)
+
+### 29. docs/brain/timer-system.md (b82eb51a9bfc3c10ee8b8764c1d011316f357461e9443439a54a6b4c37d5a477)
+- bm25: -38.7270 | relevance: 1.0000
+
+**Play Timer Methods:**
+- `startPlayTimer(phase, timeLimit)`: Starts play timer for phase (phases 2-5 only)
+  - Validates phase (discussion rejected)
+  - Initializes timer state
+  - Emits `playTimerStart` event
+  - Starts tick interval if not running
+- `stopPlayTimer(phase)`: Stops play timer for phase
+  - Removes timer from Map
+  - Clears interval if no active timers
+  - Saves to sessionStorage
+- `transitionToWork(phase)`: Transitions from play to work mode
+  - Stops play timer
+  - Sets mode to 'work'
+  - Starts work phase timer
+- `pause()`: Pauses all running timers
+  - Stores current elapsed time for play/work timers
+  - Clears tick intervals to stop time progression
+  - Sets `isPaused` flag to true
+- `resume()`: Resumes paused timers
+  - Adjusts startTime to account for paused duration
+  - Restarts tick intervals
+  - Sets `isPaused` flag to false
+- `#tickPlayTimers()`: Private tick method (1-second interval)
+  - Guards against running when paused (`isPaused` check)
+  - Updates elapsed time
+  - Emits `playTimerTick` event
+  - Checks for expiration (remaining === 0)
+  - Emits `playTimerExpired` event when time up
+  - Auto-stops timer on expiration
+
+### 30. sidekick_pack.md (98f7f4c4bd58e59212de7dde4986cdaa69cc583b77150cde2a3c1649ddf0b2b4)
+- bm25: -38.5432 | relevance: 1.0000
+
+**Play Timer Methods:**
+- `startPlayTimer(phase, timeLimit)`: Starts play timer for phase (phases 2-5 only)
+  - Validates phase (discussion rejected)
+  - Initializes timer state
+  - Emits `playTimerStart` event
+  - Starts tick interval if not running
+- `stopPlayTimer(phase)`: Stops play timer for phase
+  - Removes timer from Map
+  - Clears interval if no active timers
+  - Saves to sessionStorage
+- `transitionToWork(phase)`: Transitions from play to work mode
+  - Stops play timer
+  - Sets mode to 'work'
+  - Starts work phase timer
+- `pause()`: Pauses all running timers
+  - Stores current elapsed time for play/work timers
+  - Clears tick intervals to stop time progression
+  - Sets `isPaused` flag to true
+- `resume()`: Resumes paused timers
+  - Adjusts startTime to account for paused duration
+  - Restarts tick intervals
+  - Sets `isPaused` flag to false
+- `#tickPlayTimers()`: Private tick method (1-second interval)
+  - Guards against running when paused (`isPaused` check)
+  - Updates elapsed time
+  - Emits `playTimerTick` event
+  - Checks for expiration (remaining === 0)
+  - Emits `playTimerExpired` event when time up
+  - Auto-stops timer on expiration
+
+### 31. sidekick_pack.md (55314b4920a48e80c0edb7a84a980e90a398fbff66fc9af1806a4896d4997e1e)
+- bm25: -38.5206 | relevance: 1.0000
+
+const handleUnsuspendGoldenKey = useCallback(() => {
+    if (goldenKeysEnabledRef.current === false) return;
+    if (!hasGoldenKey) return;
+    setIsGoldenKeySuspended(false);
+    if (phaseTimers) {
+      setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
     }
-
-### 16. scripts/add-mentor-conversation-threads.sql (2298cd617a823bf44e0fc7409f5473e4aca9ec2ba50162da04ef527049f206d7)
-- bm25: -0.6253 | relevance: 1.0000
-
-DROP POLICY IF EXISTS "Users can manage their own mentor conversation threads" ON public.mentor_conversation_threads;
-CREATE POLICY "Users can manage their own mentor conversation threads"
-  ON public.mentor_conversation_threads
-  FOR ALL
-  USING (auth.uid() = facilitator_id)
-  WITH CHECK (auth.uid() = facilitator_id);
-
-GRANT ALL ON public.mentor_conversation_threads TO authenticated;
-GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;
-
-COMMENT ON TABLE public.mentor_conversation_threads IS 'Per-subject Mr. Mentor conversations (facilitator + each learner), independent of device ownership.';
-COMMENT ON COLUMN public.mentor_conversation_threads.subject_key IS 'Conversation scope key, e.g. facilitator or learner:<uuid>.';
-
--- 4) Optional: backfill existing single conversation into facilitator thread (best-effort)
--- Inserts a facilitator thread for facilitators that have any mentor_sessions row.
-INSERT INTO public.mentor_conversation_threads (facilitator_id, subject_key, conversation_history, draft_summary, token_count, last_local_update_at, last_activity_at)
-SELECT
-  ms.facilitator_id,
-  'facilitator' AS subject_key,
-  COALESCE(ms.conversation_history, '[]'::jsonb) AS conversation_history,
-  ms.draft_summary,
-  ms.token_count,
-  ms.last_local_update_at,
-  COALESCE(ms.last_activity_at, NOW()) AS last_activity_at
-FROM public.mentor_sessions ms
-WHERE ms.facilitator_id IS NOT NULL
-ON CONFLICT (facilitator_id, subject_key) DO NOTHING;
-
-### 17. docs/brain/custom-subjects.md (fd8a5ead4d8a64f78e034e3ca6a8d9b6dea9dbbdcd408f13f17042a7b16d3e24)
-- bm25: -0.6253 | relevance: 1.0000
-
-# Custom Subjects (Per Facilitator)
-
-## How It Works
-
-- Custom subjects are stored in the Supabase table `custom_subjects` and are scoped to a single facilitator via `facilitator_id`.
-- The canonical API surface is `GET/POST/DELETE /api/custom-subjects`.
-  - `GET` returns `{ subjects: [...] }` ordered by `display_order` then `name`.
-  - `POST` creates a subject for the authenticated facilitator.
-  - `DELETE` deletes a subject only if it belongs to the authenticated facilitator.
-- Client surfaces that need subject dropdown options should treat subjects as:
-  - Core subjects (universal): `math`, `science`, `language arts`, `social studies`, `general`.
-  - Custom subjects (per facilitator): fetched from `/api/custom-subjects` using the facilitator session token.
-  - Special subject `generated` is a UI bucket used in some facilitator/Mr. Mentor views (not a custom subject). In the Mr. Mentor lessons overlay, `generated` is intentionally not shown as a subject dropdown option.
-- Shared client hook:
-  - `useFacilitatorSubjects()` fetches custom subjects for the signed-in facilitator and returns merged dropdown-ready lists.
-
-## What NOT To Do
-
-- Do not make custom subjects global. They must remain per-facilitator (`custom_subjects.facilitator_id`).
-- Do not fetch public lesson lists for custom subjects. Only core subjects have public lesson endpoints (`/api/lessons/[subject]`).
-- Do not store custom subjects in browser storage as the source of truth.
-
-## Key Files
-
-### 18. sidekick_pack_api_mentor_session.md (6a4e308d5326bc08dc43d55d77a917dca49981ecbaa22e641c0c8d8df1915c92)
-- bm25: -0.6252 | relevance: 1.0000
-
-// Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
-    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
-    if (!includeAll) {
-      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
-    }
-
-### 19. docs/brain/notifications-system.md (93a5534adce123be1e4b6b6cd12e7ac6547924ea1b7068e72452c88c60c31470)
-- bm25: -0.6252 | relevance: 1.0000
-
-## Key Files
-
-- `src/app/facilitator/notifications/page.js` - Notifications manager page UI
-- `src/app/facilitator/account/page.js` - Account launcher card
-- `src/app/HeaderBar.js` - Facilitator dropdown link
-- `src/app/lib/facilitatorNotificationsClient.js` - Supabase read/write helpers
-- `supabase/migrations/20260108133500_add_facilitator_notifications.sql` - Tables + RLS policies
-
-### 20. src/app/api/lesson-schedule/route.js (4e331f192a6c56a4cab8c5f7afbe0982981f3bd236880d62edeea56744dbb7e2)
-- bm25: -0.6242 | relevance: 1.0000
-
-// Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
-    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
-    if (!includeAll) {
-      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
-    }
-
-### 21. docs/brain/mr-mentor-sessions.md (c1a7c3b42cd39d87f3ed7193003f236259b5d2994608f67e50930fa3e357246e)
-- bm25: -0.6227 | relevance: 1.0000
-
--- Unique constraint: Only one active session per facilitator
-CREATE UNIQUE INDEX idx_mentor_sessions_active_facilitator 
-ON mentor_sessions (facilitator_id) 
-WHERE is_active = true;
-```
-
-### 22. docs/brain/manifest.json (c84e253717b47212b1719debc33ac92047bd5a6c13afe3f7e47485e845256ff6)
-- bm25: -0.6214 | relevance: 1.0000
-
-{
-  "facilitator-hub": {
-    "file": "facilitator-hub.md",
-    "systems": [
-      "/facilitator",
-      "hub-cards",
-      "account",
-      "billing-placement",
-      "subscription-status"
-    ],
-    "last_updated": "2026-01-08T02:06:48Z",
-    "status": "canonical"
-  },
-  "header-navigation": {
-    "file": "header-navigation.md",
-    "systems": [
-      "HeaderBar",
-      "top-nav-links",
-      "facilitator-dropdown",
-      "session-exit-pin-gate",
-      "print-menu"
-    ],
-    "last_updated": "2026-01-27T19:27:45Z",
-    "status": "canonical"
-  },
-  "homepage": {
-    "file": "homepage.md",
-    "systems": [
-      "/",
-      "home hero",
-      "mssonoma.com",
-      "external link",
-      "learn-more copy"
-    ],
-    "last_updated": "2026-01-10T19:44:15Z",
-    "status": "canonical"
-  },
-  "custom-subjects": {
-    "file": "custom-subjects.md",
-    "systems": [
-      "custom_subjects",
-      "/api/custom-subjects",
-      "per-facilitator subjects",
-      "subject dropdowns",
-      "Mr. Mentor subjects"
-    ],
-    "last_updated": "2026-01-10T20:06:44Z",
-    "status": "canonical"
-  },
-  "notifications-system": {
-    "file": "notifications-system.md",
-    "systems": [
-      "facilitator notifications",
-      "/facilitator/notifications",
-      "facilitator_notifications",
-      "facilitator_notification_prefs",
-      "read_at",
-      "notification settings",
-      "no-localStorage"
-    ],
-    "last_updated": "2026-01-08T13:36:08Z",
-    "status": "canonical"
-  },
-  "dev-server-and-chunks": {
-    "file": "dev-server-and-chunks.md",
-    "systems": [
-      "next-dev",
-      "chunk-404",
-      "_next-static-chunks",
-      "distDir",
-      "next-config",
-      "cache-clean",
-      "restart-dev-3001"
-    ],
-    "last_updated": "2026-01-01T05:20:00Z",
-    "status": "canonical"
-  },
-  "g
-
-### 23. docs/brain/lesson-validation.md (6bd47820aa3da6e19dc9b0a9c78ca88859dc4dd6752d036fea1a2fe4318d515b)
-- bm25: -0.6212 | relevance: 1.0000
-
-**Lesson Maker** (`/facilitator/generator`, implemented in `src/app/facilitator/generator/page.js`):
-1. User fills form and clicks "Generate Lesson"
-2. Toast: "Generating lesson..."
-3. Call `/api/facilitator/lessons/generate`
-4. Validate with `lessonValidation.validateLesson()`
-5. If issues: Toast "Improving quality...", call `/api/facilitator/lessons/request-changes`
-6. Toast: "Lesson ready!"
-
-### 24. docs/brain/ingests/pack.md (26cbfbfdc932653f646c2218ebaec8fa3fb19e5d960bc7766502c497351f374a)
-- bm25: -0.6210 | relevance: 1.0000
-
-{
-  "facilitator-hub": {
-    "file": "facilitator-hub.md",
-    "systems": [
-      "/facilitator",
-      "hub-cards",
-      "account",
-      "billing-placement",
-      "subscription-status"
-    ],
-    "last_updated": "2026-01-08T02:06:48Z",
-    "status": "canonical"
-  },
-  "header-navigation": {
-    "file": "header-navigation.md",
-    "systems": [
-      "HeaderBar",
-      "top-nav-links",
-      "facilitator-dropdown",
-      "session-exit-pin-gate",
-      "print-menu"
-    ],
-    "last_updated": "2026-01-27T19:27:45Z",
-    "status": "canonical"
-  },
-  "homepage": {
-    "file": "homepage.md",
-    "systems": [
-      "/",
-      "home hero",
-      "mssonoma.com",
-      "external link",
-      "learn-more copy"
-    ],
-    "last_updated": "2026-01-10T19:44:15Z",
-    "status": "canonical"
-  },
-  "custom-subjects": {
-    "file": "custom-subjects.md",
-    "systems": [
-      "custom_subjects",
-      "/api/custom-subjects",
-      "per-facilitator subjects",
-      "subject dropdowns",
-      "Mr. Mentor subjects"
-    ],
-    "last_updated": "2026-01-10T20:06:44Z",
-    "status": "canonical"
-  },
-  "notifications-system": {
-    "file": "notifications-system.md",
-    "systems": [
-      "facilitator notifications",
-      "/facilitator/notifications",
-      "facilitator_notifications",
-      "facilitator_notification_prefs",
-      "read_at",
-      "notification settings",
-      "no-localStorage"
-    ],
-    "last_updated": "2026-01-08T13:36:08Z",
-    "status": "canonical"
-  },
-  "dev-server-and-chunks": {
-    "file": "dev-server-and-chunks.md",
-    "systems": [
-      "next-dev",
-      "chunk-404",
-      "_next-static-chunks",
-      "distDir",
-      "next-config",
-      "cache-clean",
-      "restart-dev-3001"
-    ],
-    "last_updated": "2026-01-01T05:20:00Z",
-    "status": "canonical"
-  },
-  "g
-
-### 25. docs/brain/ingests/pack-mentor-intercepts.md (4dae7caeca0c56aeb7dad284f26e1f8a3bdc63e4132ae7b1ea978d78896eea4f)
-- bm25: -0.6201 | relevance: 1.0000
-
-{
-  "facilitator-hub": {
-    "file": "facilitator-hub.md",
-    "systems": [
-      "/facilitator",
-      "hub-cards",
-      "account",
-      "billing-placement",
-      "subscription-status"
-    ],
-    "last_updated": "2026-01-08T02:06:48Z",
-    "status": "canonical"
-  },
-  "header-navigation": {
-    "file": "header-navigation.md",
-    "systems": [
-      "HeaderBar",
-      "top-nav-links",
-      "facilitator-dropdown",
-      "session-exit-pin-gate",
-      "print-menu"
-    ],
-    "last_updated": "2026-01-27T19:27:45Z",
-    "status": "canonical"
-  },
-  "homepage": {
-    "file": "homepage.md",
-    "systems": [
-      "/",
-      "home hero",
-      "mssonoma.com",
-      "external link",
-      "learn-more copy"
-    ],
-    "last_updated": "2026-01-10T19:44:15Z",
-    "status": "canonical"
-  },
-  "custom-subjects": {
-    "file": "custom-subjects.md",
-    "systems": [
-      "custom_subjects",
-      "/api/custom-subjects",
-      "per-facilitator subjects",
-      "subject dropdowns",
-      "Mr. Mentor subjects"
-    ],
-    "last_updated": "2026-01-10T20:06:44Z",
-    "status": "canonical"
-  },
-  "notifications-system": {
-    "file": "notifications-system.md",
-    "systems": [
-      "facilitator notifications",
-      "/facilitator/notifications",
-      "facilitator_notifications",
-      "facilitator_notification_prefs",
-      "read_at",
-      "notification settings",
-      "no-localStorage"
-    ],
-    "last_updated": "2026-01-08T13:36:08Z",
-    "status": "canonical"
-  },
-  "dev-server-and-chunks": {
-    "file": "dev-server-and-chunks.md",
-    "systems": [
-      "next-dev",
-      "chunk-404",
-      "_next-static-chunks",
-      "distDir",
-      "next-config",
-      "cache-clean",
-      "restart-dev-3001"
-    ],
-    "last_updated": "2026-01-01T05:20:00Z",
-    "status": "canonical"
-  },
-  "g
-
-### 26. docs/brain/ingests/pack.lesson-schedule-debug.md (ff4a86926b331453f8f6a8fcb311c4367895cc33f5c1b641faf366e3ba113121)
-- bm25: -0.6197 | relevance: 1.0000
-
-{
-  "facilitator-hub": {
-    "file": "facilitator-hub.md",
-    "systems": [
-      "/facilitator",
-      "hub-cards",
-      "account",
-      "billing-placement",
-      "subscription-status"
-    ],
-    "last_updated": "2026-01-08T02:06:48Z",
-    "status": "canonical"
-  },
-  "header-navigation": {
-    "file": "header-navigation.md",
-    "systems": [
-      "HeaderBar",
-      "top-nav-links",
-      "facilitator-dropdown",
-      "session-exit-pin-gate",
-      "print-menu"
-    ],
-    "last_updated": "2026-01-27T19:27:45Z",
-    "status": "canonical"
-  },
-  "homepage": {
-    "file": "homepage.md",
-    "systems": [
-      "/",
-      "home hero",
-      "mssonoma.com",
-      "external link",
-      "learn-more copy"
-    ],
-    "last_updated": "2026-01-10T19:44:15Z",
-    "status": "canonical"
-  },
-  "custom-subjects": {
-    "file": "custom-subjects.md",
-    "systems": [
-      "custom_subjects",
-      "/api/custom-subjects",
-      "per-facilitator subjects",
-      "subject dropdowns",
-      "Mr. Mentor subjects"
-    ],
-    "last_updated": "2026-01-10T20:06:44Z",
-    "status": "canonical"
-  },
-  "notifications-system": {
-    "file": "notifications-system.md",
-    "systems": [
-      "facilitator notifications",
-      "/facilitator/notifications",
-      "facilitator_notifications",
-      "facilitator_notification_prefs",
-      "read_at",
-      "notification settings",
-      "no-localStorage"
-    ],
-    "last_updated": "2026-01-08T13:36:08Z",
-    "status": "canonical"
-  },
-  "dev-server-and-chunks": {
-    "file": "dev-server-and-chunks.md",
-    "systems": [
-      "next-dev",
-      "chunk-404",
-      "_next-static-chunks",
-      "distDir",
-      "next-config",
-      "cache-clean",
-      "restart-dev-3001"
-    ],
-    "last_updated": "2026-01-01T05:20:00Z",
-    "status": "canonical"
-  },
-  "g
-
-### 27. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (d05d5d221a529b823920ad988a0fbf12f29278fe69a0c72a1bd1dd95072154f8)
-- bm25: -0.6197 | relevance: 1.0000
-
-{
-  "facilitator-hub": {
-    "file": "facilitator-hub.md",
-    "systems": [
-      "/facilitator",
-      "hub-cards",
-      "account",
-      "billing-placement",
-      "subscription-status"
-    ],
-    "last_updated": "2026-01-08T02:06:48Z",
-    "status": "canonical"
-  },
-  "header-navigation": {
-    "file": "header-navigation.md",
-    "systems": [
-      "HeaderBar",
-      "top-nav-links",
-      "facilitator-dropdown",
-      "session-exit-pin-gate",
-      "print-menu"
-    ],
-    "last_updated": "2026-01-27T19:27:45Z",
-    "status": "canonical"
-  },
-  "homepage": {
-    "file": "homepage.md",
-    "systems": [
-      "/",
-      "home hero",
-      "mssonoma.com",
-      "external link",
-      "learn-more copy"
-    ],
-    "last_updated": "2026-01-10T19:44:15Z",
-    "status": "canonical"
-  },
-  "custom-subjects": {
-    "file": "custom-subjects.md",
-    "systems": [
-      "custom_subjects",
-      "/api/custom-subjects",
-      "per-facilitator subjects",
-      "subject dropdowns",
-      "Mr. Mentor subjects"
-    ],
-    "last_updated": "2026-01-10T20:06:44Z",
-    "status": "canonical"
-  },
-  "notifications-system": {
-    "file": "notifications-system.md",
-    "systems": [
-      "facilitator notifications",
-      "/facilitator/notifications",
-      "facilitator_notifications",
-      "facilitator_notification_prefs",
-      "read_at",
-      "notification settings",
-      "no-localStorage"
-    ],
-    "last_updated": "2026-01-08T13:36:08Z",
-    "status": "canonical"
-  },
-  "dev-server-and-chunks": {
-    "file": "dev-server-and-chunks.md",
-    "systems": [
-      "next-dev",
-      "chunk-404",
-      "_next-static-chunks",
-      "distDir",
-      "next-config",
-      "cache-clean",
-      "restart-dev-3001"
-    ],
-    "last_updated": "2026-01-01T05:20:00Z",
-    "status": "canonical"
-  },
-  "g
-
-### 28. docs/brain/ingests/pack.planned-lessons-flow.md (196db63f29d528f16d0db6be45aadd46555525c550797b39a0c85f30162b04c4)
-- bm25: -0.6197 | relevance: 1.0000
-
-{
-  "facilitator-hub": {
-    "file": "facilitator-hub.md",
-    "systems": [
-      "/facilitator",
-      "hub-cards",
-      "account",
-      "billing-placement",
-      "subscription-status"
-    ],
-    "last_updated": "2026-01-08T02:06:48Z",
-    "status": "canonical"
-  },
-  "header-navigation": {
-    "file": "header-navigation.md",
-    "systems": [
-      "HeaderBar",
-      "top-nav-links",
-      "facilitator-dropdown",
-      "session-exit-pin-gate",
-      "print-menu"
-    ],
-    "last_updated": "2026-01-27T19:27:45Z",
-    "status": "canonical"
-  },
-  "homepage": {
-    "file": "homepage.md",
-    "systems": [
-      "/",
-      "home hero",
-      "mssonoma.com",
-      "external link",
-      "learn-more copy"
-    ],
-    "last_updated": "2026-01-10T19:44:15Z",
-    "status": "canonical"
-  },
-  "custom-subjects": {
-    "file": "custom-subjects.md",
-    "systems": [
-      "custom_subjects",
-      "/api/custom-subjects",
-      "per-facilitator subjects",
-      "subject dropdowns",
-      "Mr. Mentor subjects"
-    ],
-    "last_updated": "2026-01-10T20:06:44Z",
-    "status": "canonical"
-  },
-  "notifications-system": {
-    "file": "notifications-system.md",
-    "systems": [
-      "facilitator notifications",
-      "/facilitator/notifications",
-      "facilitator_notifications",
-      "facilitator_notification_prefs",
-      "read_at",
-      "notification settings",
-      "no-localStorage"
-    ],
-    "last_updated": "2026-01-08T13:36:08Z",
-    "status": "canonical"
-  },
-  "dev-server-and-chunks": {
-    "file": "dev-server-and-chunks.md",
-    "systems": [
-      "next-dev",
-      "chunk-404",
-      "_next-static-chunks",
-      "distDir",
-      "next-config",
-      "cache-clean",
-      "restart-dev-3001"
-    ],
-    "last_updated": "2026-01-01T05:20:00Z",
-    "status": "canonical"
-  },
-  "g
-
-### 29. src/lib/faq/facilitator-tools.json (01d1775600d96190823d9a009a124babf1c8c002bd0016694f7f2e5a685b8241)
-- bm25: -0.6186 | relevance: 1.0000
-
-{
-  "category": "Facilitator Settings & Tools",
-  "features": [
-    {
-      "id": "facilitator-dashboard",
-      "title": "Facilitator Dashboard",
-      "keywords": [
-        "facilitator dashboard",
-        "dashboard",
-        "facilitator tools",
-        "adult tools",
-        "teacher tools"
-      ],
-      "description": "The Facilitator Dashboard is where you manage learners, lessons, scheduling, and account-level facilitator tools.",
-      "howToUse": "Open the facilitator area and use the Learners and Lessons sections to manage your work. Mr. Mentor can also open key overlays for you.",
-      "relatedFeatures": ["learner-profiles", "lesson-library", "mr-mentor"]
-    },
-    {
-      "id": "goals-clipboard",
-      "title": "Goals Clipboard",
-      "keywords": [
-        "goals clipboard",
-        "goals button",
-        "notes clipboard",
-        "open goals"
-      ],
-      "description": "The Goals clipboard is the UI where you view and edit Goals and Notes for the selected learner (or facilitator).",
-      "howToUse": "Click the 'Goals' button to open it. Mr. Mentor can also help you review what’s saved (report) or suggest what to write (describe/advice).",
-      "relatedFeatures": ["goals-notes"]
-    },
-    {
-      "id": "lessons-overlay",
-      "title": "Lessons Overlay",
-      "keywords": [
-        "lessons overlay",
-        "lessons button",
-        "open lessons",
-        "show my lessons",
-        "lesson list"
-      ],
-      "description": "The Lessons overlay is a quick way to browse, search, and act on lessons (schedule, assign/approve, edit, or review).",
-      "howToUse": "Click the 'Lessons' button, or ask Mr. Mentor to show lessons and help you find the one you want.",
-      "relatedFeatures": ["lesson-library", "lesson-scheduling", "lesson-editing"]
-
-### 30. sidekick_pack_lessons_prefetch.md (4f71a9873f3be2859f269bbc874e89cf26a453dc1352b707820cd5eadf96f1d8)
-- bm25: -0.6174 | relevance: 1.0000
-
-## Pack Contract
-
-This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
-
-## Question
-
-/api/mentor-session facilitator_id is_active SessionTakeoverDialog
-
-## Forced Context
-
-(none)
-
-## Ranked Evidence
-
-### 7. sidekick_pack_api_mentor_session.md (6a4e308d5326bc08dc43d55d77a917dca49981ecbaa22e641c0c8d8df1915c92)
-- bm25: -20.7168 | relevance: 1.0000
-
-// Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
-    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
-    if (!includeAll) {
-      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
-    }
-
-### 8. src/app/api/lesson-schedule/route.js (4e331f192a6c56a4cab8c5f7afbe0982981f3bd236880d62edeea56744dbb7e2)
-- bm25: -20.6258 | relevance: 1.0000
-
-// Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
-    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
-    if (!includeAll) {
-      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
-    }
-
-### 9. sidekick_pack_mentor_sessions_schema.md (455339344562db47239e8d791c805dc4f86ca4acf57144996acddf4d5af3842f)
-- bm25: -19.9648 | relevance: 1.0000
-
-SELECT 
-  indexname,
-  indexdef
-FROM pg_indexes
-WHERE tablename = 'mentor_sessions'
-  AND indexname = 'unique_active_session_per_facilitator';
-
-### 2. scripts/setup-mentor-sessions.sql (76419572d186bb374af9dfdf9f1b40251b639abdcfebe257c03215b4b394bc31)
-- bm25: -35.6047 | entity_overlap_w: 1.00 | adjusted: -35.8547 | relevance: 1.0000
-
-### 31. docs/brain/pin-protection.md (3aa2a8e5f407ed24098e9d06429a29a96012af85911782bdf9d220a708346647)
-- bm25: -0.6159 | relevance: 1.0000
-
-### Preferences
-
-PIN preferences are stored in:
-- Server: `profiles.pin_prefs` (JSON column)
-- Client: `localStorage.facilitator_pin_prefs` (cached copy)
-
-Default preferences (when PIN exists but prefs not set):
-```javascript
-{
-  downloads: true,
-  facilitatorKey: true,
-  skipTimeline: true,
-  changeLearner: true,
-  refresh: true,
-  timer: true,
-  facilitatorPage: true,
-  activeSession: true
-}
-```
-
-## What NOT To Do
-
-**❌ DON'T** set facilitator section flag for non-facilitator actions
-- Only `facilitator-page` action and session-exit-to-facilitator navigation should set the flag
-- Setting it for other actions would allow bypassing PIN on facilitator pages
-
-**❌ DON'T** store PIN in localStorage
-- PIN verification is server-only for security
-- Never cache PIN validation results beyond sessionStorage flag
-
-**❌ DON'T** create multiple PIN prompts simultaneously
-- `ensurePinAllowed` uses global lock (`activePinPrompt`) to prevent concurrent prompts
-- If another prompt is active, wait for its result
-
-**❌ DON'T** forget to clear facilitator section flag when leaving facilitator routes
-- FacilitatorSectionTracker handles this automatically
-- Manual flag clearing should match its logic
-
-**❌ DON'T** use `ensurePinAllowed` for non-gated features
-- Only call it when you genuinely need to gate an action
-- Unnecessary calls degrade user experience
-
-## Key Files
-
-**Core Logic**:
-- `src/app/lib/pinGate.js` - PIN validation, section tracking, preferences
-- `src/app/api/facilitator/pin/route.js` - Get PIN state, preferences
-- `src/app/api/facilitator/pin/verify/route.js` - Server PIN verification
-
-**Navigation Integration**:
-- `src/app/HeaderBar.js` - Navigation PIN checks, facilitator flag setting
-- `src/components/FacilitatorSectionTracker.jsx` - Section flag lifecycle
-
-### 32. docs/brain/calendar-lesson-planning.md (1d396766db2440144971a1350400b34ef2799dc2339e2896f9d8c5a4a2c58fe0)
-- bm25: -0.6135 | relevance: 1.0000
-
-- `src/app/facilitator/calendar/LessonPicker.js`
-  - Manual scheduling UI ("Add Lessons")
-  - Loads ONLY facilitator-owned lessons via `/api/facilitator/lessons/list`
-  - Produces `generated/<filename>` keys for scheduling and for `/api/lesson-file`
-
-### 33. docs/brain/ingests/pack.planned-lessons-flow.md (0f7166c8532c44d946f304b21783d627e9b974887552cfc762d34feacecf6e85)
-- bm25: -0.6109 | relevance: 1.0000
-
-- `src/app/facilitator/calendar/LessonPicker.js`
-  - Manual scheduling UI ("Add Lessons")
-  - Loads ONLY facilitator-owned lessons via `/api/facilitator/lessons/list`
-  - Produces `generated/<filename>` keys for scheduling and for `/api/lesson-file`
-
-### 34. scripts/setup-mentor-sessions.sql (31afb0263b5558a382a0dcdba3cc50120e5e453cb20ca5d11f24299e8b7d64eb)
-- bm25: -0.6046 | relevance: 1.0000
-
--- Mr. Mentor Session Management
--- Single-device enforcement and conversation persistence
-
--- Create mentor_sessions table
-CREATE TABLE IF NOT EXISTS public.mentor_sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  facilitator_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  session_id TEXT NOT NULL, -- Browser-generated unique session ID
-  device_name TEXT, -- Optional device identifier
-  conversation_history JSONB NOT NULL DEFAULT '[]'::jsonb,
-  draft_summary TEXT,
-  last_activity_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    setTimerRefreshKey(k => k + 1);
+    persistTimerStateNow('golden-key-unsuspended');
+  }, [hasGoldenKey, phaseTimers, persistTimerStateNow]);
   
-  -- Only one active session per facilitator
-  CONSTRAINT unique_active_session_per_facilitator UNIQUE (facilitator_id, is_active)
-);
+  // Start play timer for a phase (called when phase begins)
+  const startPhasePlayTimer = useCallback((phaseName) => {
+    if (!phaseName) return;
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'play'
+    }));
+    setTimerRefreshKey(prev => prev + 1);
+    addEvent(`ðŸŽ‰ Play timer started for ${phaseName}`);
+  }, []);
+  
+  // Transition from play to work timer (called when "Go" is clicked)
+  const transitionToWorkTimer = useCallback((phaseName) => {
+    if (!phaseName) return;
+    
+    // Clear the play timer storage so work timer starts fresh
+    try {
+      const playTimerKeys = [
+        lessonKey ? `session_timer_state:${lessonKey}:${phaseName}:play` : null,
+        `session_timer_state:${phaseName}:play`,
+      ].filter(Boolean);
+      playTimerKeys.forEach((k) => {
+        try { sessionStorage.removeItem(k); } catch {}
+      });
+    } catch {}
+    
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'work'
+    }));
+    setTimerRefreshKey(prev => prev + 1);
+    addEvent(`âœï¸ Work timer started for ${phaseName}`);
+  }, [lessonKey]);
+  
+  // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode) - V1 parity
+  const handlePlayExpiredComplete = useCallback(async () => {
+    console.log('[SessionPageV2] PlayTimeExpired countdown complete, transitioning to work');
+    setShowPlayTimeExpired(false
 
--- Create index for quick lookups
-CREATE INDEX IF NOT EXISTS idx_mentor_sessions_facilitator ON public.mentor_sessions(facilitator_id);
-CREATE INDEX IF NOT EXISTS idx_mentor_sessions_session_id ON public.mentor_sessions(session_id);
-CREATE INDEX IF NOT EXISTS idx_mentor_sessions_active ON public.mentor_sessions(facilitator_id, is_active) WHERE is_active = TRUE;
+### 32. src/app/session/v2/SessionPageV2.jsx (ea63b5bf1596b91dc29b49f0d4b2e7dedae00f81fdeb3a6555b667c9cf8b435a)
+- bm25: -38.4025 | relevance: 1.0000
 
--- RLS policies
-ALTER TABLE public.mentor_sessions ENABLE ROW LEVEL SECURITY;
+const handleUnsuspendGoldenKey = useCallback(() => {
+    if (goldenKeysEnabledRef.current === false) return;
+    if (!hasGoldenKey) return;
+    setIsGoldenKeySuspended(false);
+    if (phaseTimers) {
+      setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
+    }
+    setTimerRefreshKey(k => k + 1);
+    persistTimerStateNow('golden-key-unsuspended');
+  }, [hasGoldenKey, phaseTimers, persistTimerStateNow]);
+  
+  // Start play timer for a phase (called when phase begins)
+  const startPhasePlayTimer = useCallback((phaseName) => {
+    if (!phaseName) return;
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'play'
+    }));
+    setTimerRefreshKey(prev => prev + 1);
+    addEvent(`ðŸŽ‰ Play timer started for ${phaseName}`);
+  }, []);
+  
+  // Transition from play to work timer (called when "Go" is clicked)
+  const transitionToWorkTimer = useCallback((phaseName) => {
+    if (!phaseName) return;
+    
+    // Clear the play timer storage so work timer starts fresh
+    try {
+      const playTimerKeys = [
+        lessonKey ? `session_timer_state:${lessonKey}:${phaseName}:play` : null,
+        `session_timer_state:${phaseName}:play`,
+      ].filter(Boolean);
+      playTimerKeys.forEach((k) => {
+        try { sessionStorage.removeItem(k); } catch {}
+      });
+    } catch {}
+    
+    setCurrentTimerMode(prev => ({
+      ...prev,
+      [phaseName]: 'work'
+    }));
+    setTimerRefreshKey(prev => prev + 1);
+    addEvent(`âœï¸ Work timer started for ${phaseName}`);
+  }, [lessonKey]);
+  
+  // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode) - V1 parity
+  const handlePlayExpiredComplete = useCallback(async () => {
+    console.log('[SessionPageV2] PlayTimeExpired countdown complete, transitioning to work');
+    setShowPlayTimeExpired(false
 
--- Policy: Users can only access their own sessions
-CREATE POLICY "Users can manage their own mentor sessions"
-  ON public.mentor_sessions
-  FOR ALL
-  USING (auth.uid() = facilitator_id)
-  WITH CHECK (auth.uid() = facilitator_id);
+### 33. docs/brain/timer-system.md (b404039d9962462ff4e3c0434db375ab6763da6d88ccc7462dacc762647febfb)
+- bm25: -38.2727 | relevance: 1.0000
 
-### 35. docs/brain/ingests/pack.md (84a96ac150f2135d31aa9bfe9cd8ac1e61d8f40743bcb440da0563dd1f1c1bb2)
-- bm25: -0.6035 | relevance: 1.0000
+**2026-01-14**: MAJOR refactor - SessionTimer now pure display component in V2. Receives elapsed/remaining from TimerService events via SessionPageV2 subscriptions. No internal timing logic. Single source of truth architecture eliminates duplicate timer tracking and pause race conditions.
 
-### 13. docs/brain/header-navigation.md (17596087776b8a8510ebd6fdda83503d40ccdb8376bc76c97583cafb2888e681)
-- bm25: -23.7972 | relevance: 1.0000
+**2026-01-14**: Fixed timer pause issue (second pass): Prevented TimerService from writing to sessionStorage when paused, and prevented SessionTimer from triggering onTimeUp when paused or when resuming from a paused state past expiration time.
 
-# Header Navigation
+**2026-01-14**: Fixed timer pause issue where pausing stopped cosmetic timer display but authoritative timer kept running and could trigger playTimerExpired/stage transitions. Added pause()/resume() methods to TimerService that stop/restart intervals and adjust startTime to preserve elapsed time. Tick methods now guard against running when paused.
+
+**2025-12-28**: Entering Test review now calls `markWorkPhaseComplete('test')`, clears the test timer, and records remaining work time immediately. Grading/review can no longer show an active or timed-out test after all questions are answered.
+
+**2025-12-28**: Golden key detection now reads `workPhaseCompletionsRef` to include phases marked complete in the same tick (no stale state), ensuring earned keys are awarded when the third on-time work phase finishes.
+
+**2025-12-19**: Golden key eligibility now requires three on-time work timers. Facilitator test review shows remaining work time per phase based on work timers only; play timers are ignored.
+
+### 34. docs/brain/timer-system.md (db14fa9e319bed0b6ca69f83c9f47c71c1ce32cffdf83994904af06f42b372c5)
+- bm25: -38.1261 | relevance: 1.0000
+
+**2025-12-03**: Fixed bug where 30-second countdown overlay persisted through lesson restart. Added `setShowPlayTimeExpired(false)` and `setPlayExpiredPhase(null)` to `handleRestartClick` in useResumeRestart.js so overlay is properly dismissed when user restarts the lesson.
+
+**2025-12-03**: [REVERTED - see 2025-12-05] Fixed bug where play buttons (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games, Go) remained visible after play timer expired and 30-second countdown completed. Added `setShowOpeningActions(false)` to `handlePlayExpiredComplete` so buttons are hidden before auto-starting work phase. This ensures timer expiry bypasses Go button requirement as designed.
+
+**2025-11-24**: Added Go button override - clicking Go during countdown immediately dismisses overlay and starts work timer without waiting for countdown to complete.
+
+**2025-01-20**: Added first-interaction gate to prevent infinite play timer hack via refresh. Timer state now persists on first button click.
+
+### 35. docs/brain/timer-system.md (e8b4630a80a6b748beb9f24a91d99b483a671997f18b6fa863773ada69c26a7d)
+- bm25: -38.0007 | relevance: 1.0000
+
+**2025-12-18**: Restore no longer forces `playExpiredCountdownCompleted` to true. The countdown flag is restored from snapshot state and only set during restore when an expired play timer is detected. Live sessions resumed after a restore can still show the 30-second countdown on the next play timeout.
+
+### 36. sidekick_pack.md (cd4283a0780ae6c647045069035f85710f44adc6566d88722dcaad02081e01d0)
+- bm25: -37.4797 | relevance: 1.0000
+
+### 40. docs/brain/timer-system.md (db14fa9e319bed0b6ca69f83c9f47c71c1ce32cffdf83994904af06f42b372c5)
+- bm25: -21.4668 | relevance: 1.0000
+
+**2025-12-03**: Fixed bug where 30-second countdown overlay persisted through lesson restart. Added `setShowPlayTimeExpired(false)` and `setPlayExpiredPhase(null)` to `handleRestartClick` in useResumeRestart.js so overlay is properly dismissed when user restarts the lesson.
+
+**2025-12-03**: [REVERTED - see 2025-12-05] Fixed bug where play buttons (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games, Go) remained visible after play timer expired and 30-second countdown completed. Added `setShowOpeningActions(false)` to `handlePlayExpiredComplete` so buttons are hidden before auto-starting work phase. This ensures timer expiry bypasses Go button requirement as designed.
+
+**2025-11-24**: Added Go button override - clicking Go during countdown immediately dismisses overlay and starts work timer without waiting for countdown to complete.
+
+**2025-01-20**: Added first-interaction gate to prevent infinite play timer hack via refresh. Timer state now persists on first button click.
+
+### 37. docs/brain/timer-system.md (f0d739f4de2823c82ffcac0ab265588ace3248c8ad13eae9a05c51d8d7ee13a7)
+- bm25: -36.7223 | relevance: 1.0000
+
+**Implementation (V2):**
+- SessionPageV2 maintains `timerPaused` state (boolean)
+- When toggled, calls `timerService.pause()` or `timerService.resume()`
+- TimerService tracks pause state and paused elapsed times:
+  - `isPaused`: Boolean flag indicating if timers are currently paused
+  - `pausedPlayElapsed`: Stored play timer elapsed seconds when paused
+  - `pausedWorkElapsed`: Stored work timer elapsed seconds when paused
+
+### 38. sidekick_pack.md (963c56585d3c9b5453c11bdf320ad52749ec36187c4c259d06414a407c65927d)
+- bm25: -36.6186 | relevance: 1.0000
 
 ## How It Works
 
-The global header (HeaderBar) is rendered across pages and provides:
+### Play vs Work Timers
 
-- Brand link to home
-- Back button on pages that define a back chain
-- Top-level navigation links (About, Learn, Facilitator)
-- Session-specific print menu actions
+**V1**: Each phase (discussion, comprehension, exercise, worksheet, test) has two timer modes.
 
-### Session Print Menu
+**V2**: Discussion has **no play timer**. Phases 2-5 (Comprehension, Exercise, Worksheet, Test) use play → work mode. A **discussion work timer** still exists and spans discussion + teaching.
 
-On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions.
+**Rationale**: Removing play timer from discussion phase eliminates infinite play timer exploit (learner could refresh during discussion to reset play timer indefinitely without starting teaching).
 
-**Trigger behavior (desktop):** Open on hover (mouseenter) with a short grace period on mouseleave so it does not flicker closed while moving from the icon into the menu.
+**Discussion work timer startup**: The work timer for discussion is started when the greeting begins playing (greetingPlaying event). This is an exception - all other work timers start when the awaiting-go gate appears.
 
-**Trigger behavior (touch / fallback):** The icon should also toggle the dropdown on click.
+**Timeline jump timer startup**: When facilitator uses timeline to jump to a phase, the appropriate timer starts immediately:
+- Discussion: Work timer starts immediately (exception to normal greetingPlaying rule)
+- Other phases: Play timer starts immediately (not when Begin clicked)
 
-The dropdown includes print actions:
+Timeline jumps explicitly stop any existing timers for the target phase before starting new ones, ensuring a clean reset.
 
-- Worksheet
-- Test
-- Facilitator Key
-- Refresh
+**Timer restart prevention**: Removed in favor of explicit stop/start pattern on timeline jumps. Timers can now be legitimately restarted when needed.
 
-On narrow layouts, these same actions live inside the hamburger menu under a nested "Print" section.
+### 7. docs/brain/timer-system.md (1b526c919780716e4b7fea7e45b580988afdd9dd9b8794ec5da9b3185775f50f)
+- bm25: -31.0158 | relevance: 1.0000
 
-Important: header buttons (including the print icon) must explicitly set `type="button"` so they never behave like submit buttons when a page happens to include a form.
+### 39. src/app/session/v2/TimerService.jsx (2138714f2799a4ec7f9a38d215801a4d155f4495dd79411cb99a813197b9d07d)
+- bm25: -36.2965 | relevance: 1.0000
 
-Also: header dropdown trigger buttons must call `e.stopPropagation()` in their onClick handlers to prevent the opening click from bubbling to document and immediately triggering the outside-click-close listener.
-
-### Facilitator Dropdown
-
-On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
-
-- ⚙️ Account -> `/facilitator/account`
-- 🔔 Notifications -> `/facilitator/notifications`
-- 👥 Learners -> `/facilitator/learners`
-- 📚 Lessons -> `/facilitator/lessons`
-- 📅 Calendar -> `/facilitator/calendar`
-- 🧠 Mr. Mentor -> `/facilitator/mr-mentor`
-
-### 36. docs/brain/custom-subjects.md (7e58ee1ca5dc34b720347edc91b697304897f6b53937497421004d738d51df62)
-- bm25: -0.6019 | relevance: 1.0000
-
-- API
-  - `src/app/api/custom-subjects/route.js`
-- Shared subject utilities
-  - `src/app/hooks/useFacilitatorSubjects.js`
-  - `src/app/lib/subjects.js`
-- UI surfaces that must reflect custom subjects
-  - `src/app/facilitator/calendar/LessonPicker.js` (scheduler subject filter)
-  - `src/app/facilitator/lessons/page.js` (lesson library subject filter)
-  - `src/components/LessonEditor.jsx` (lesson subject field)
-  - `src/app/facilitator/generator/page.js` (Lesson Maker)
-  - `src/app/facilitator/generator/counselor/overlays/*` (Mr. Mentor overlays)
-
-### 37. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (75fb65f571a3dd5e38e700ab50147f3123152abd0c56b60134cd27c4296ea3ed)
-- bm25: -0.6001 | relevance: 1.0000
-
-// Compact calendar view for Mr. Mentor overlay
-'use client'
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { createPortal } from 'react-dom'
-import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import LessonGeneratorOverlay from '@/app/facilitator/calendar/LessonGeneratorOverlay'
-import LessonPlanner from '@/app/facilitator/calendar/LessonPlanner'
-import LessonEditor from '@/components/LessonEditor'
-import LessonNotesModal from '@/app/facilitator/calendar/LessonNotesModal'
-import VisualAidsManagerModal from '@/app/facilitator/calendar/VisualAidsManagerModal'
-import PortfolioScansModal from '@/app/facilitator/calendar/PortfolioScansModal'
-import TypedRemoveConfirmModal from '@/app/facilitator/calendar/TypedRemoveConfirmModal'
-import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
-
-export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan, accessToken }) {
-  const OVERLAY_Z_INDEX = 2147483647
-
-const devStringify = (value) => {
-    try {
-      if (value instanceof Error) {
-        return JSON.stringify({ name: value.name, message: value.message, stack: value.stack })
+/**
+   * Pause all running timers
+   */
+  pause() {
+    if (this.isPaused) return;
+    
+    this.isPaused = true;
+    
+    // Pause play timer if running
+    if (this.currentPlayPhase) {
+      const timer = this.playTimers.get(this.currentPlayPhase);
+      if (timer && !timer.expired) {
+        const now = Date.now();
+        timer.elapsed = Math.floor((now - timer.startTime) / 1000);
+        this.pausedPlayElapsed = timer.elapsed;
+        
+        // Stop the interval
+        if (this.playTimerInterval) {
+          clearInterval(this.playTimerInterval);
+          this.playTimerInterval = null;
+        }
       }
-      return JSON.stringify(value)
-    } catch {
-      try {
-        return String(value)
-      } catch {
-        return '[unstringifiable]'
+    }
+    
+    // Pause work timer if running
+    if (this.currentWorkPhase) {
+      const timer = this.workPhaseTimers.get(this.currentWorkPhase);
+      if (timer && !timer.completed) {
+        const now = Date.now();
+        timer.elapsed = Math.floor((now - timer.startTime) / 1000);
+        this.pausedWorkElapsed = timer.elapsed;
+        
+        // Stop the interval
+        if (this.workPhaseInterval) {
+          clearInterval(this.workPhaseInterval);
+          this.workPhaseInterval = null;
+        }
       }
     }
   }
+  
+  /**
+   * Resume all paused timers
+   */
+  resume() {
+    if (!this.isPaused) return;
+    
+    this.isPaused = false;
+    
+    // Resume play timer if it was paused
+    if (this.currentPlayPhase && this.pausedPlayElapsed !== null) {
+      const timer = this.playTimers.get(this.currentPlayPhase);
+      if (timer && !timer.expired) {
+        // Adjust startTime to account for paused duration
+        timer.startTime = Date.now() - (this.pausedPlayElapsed * 1000);
+        timer.elapsed = this.pausedPlayElapsed;
+        this.pausedPlayElapsed = null;
+        
+        // Restart the interval
+        if (!this.playTimerInterval) {
+          this.
 
-const devWarn = (...args) => {
-    try {
-      if (process.env.NODE_ENV !== 'production') {
-        const formatted = (args || []).map((a) => (typeof a === 'string' ? a : devStringify(a)))
-        // eslint-disable-next-line no-console
-        console.log('[CalendarOverlay]', ...formatted)
-      }
-    } catch {}
+### 40. src/app/session/v2/TimerService.jsx (99e4956be1412065a8a0ad88b662ddcbb1fcfd25f4ad5660be28a29c525d30e5)
+- bm25: -36.0156 | relevance: 1.0000
+
+// Per-learner feature gate: when disabled, golden key eligibility is not tracked/emitted.
+    this.goldenKeysEnabled = options.goldenKeysEnabled !== false;
+    
+    // Pause state
+    this.isPaused = false;
+    this.pausedPlayElapsed = null; // Stores elapsed time when play timer paused
+    this.pausedWorkElapsed = null; // Stores elapsed time when work timer paused
+    
+    // SessionStorage cache for refresh recovery (not used - use explicit restoreState instead)
+    this.lessonKey = options.lessonKey || null;
+    this.phase = options.phase || null;
+    this.mode = 'play'; // play or work
+    
+    // Don't auto-restore from sessionStorage - only restore explicitly via restoreState()
+    // this prevents stale timer data from previous lessons leaking into new sessions
+    
+    // Bind public methods
+    this.startSessionTimer = this.startSessionTimer.bind(this);
+    this.stopSessionTimer = this.stopSessionTimer.bind(this);
+    this.startPlayTimer = this.startPlayTimer.bind(this);
+    this.stopPlayTimer = this.stopPlayTimer.bind(this);
+    this.transitionToWork = this.transitionToWork.bind(this);
+    this.startWorkPhaseTimer = this.startWorkPhaseTimer.bind(this);
+    this.completeWorkPhaseTimer = this.completeWorkPhaseTimer.bind(this);
+    this.stopWorkPhaseTimer = this.stopWorkPhaseTimer.bind(this);
+    this.reset = this.reset.bind(this);
+    this.setGoldenKeysEnabled = this.setGoldenKeysEnabled.bind(this);
+    this.setPlayTimerLimits = this.setPlayTimerLimits.bind(this);
+    this.pause = this.pause.bind(this);
+    this.resume = this.resume.bind(this);
+    this.resync = this.resync.bind(this);
+    // Private methods are automatically bound
   }
-
-### 38. docs/brain/ingests/pack-mentor-intercepts.md (4165868b5790029e01f7c01d44458476250e5d36cdd1cc5c43972b949e391bb5)
-- bm25: -0.6000 | relevance: 1.0000
-
-- API
-  - `src/app/api/custom-subjects/route.js`
-- Shared subject utilities
-  - `src/app/hooks/useFacilitatorSubjects.js`
-  - `src/app/lib/subjects.js`
-- UI surfaces that must reflect custom subjects
-  - `src/app/facilitator/calendar/LessonPicker.js` (scheduler subject filter)
-  - `src/app/facilitator/lessons/page.js` (lesson library subject filter)
-  - `src/components/LessonEditor.jsx` (lesson subject field)
-  - `src/app/facilitator/generator/page.js` (Lesson Maker)
-  - `src/app/facilitator/generator/counselor/overlays/*` (Mr. Mentor overlays)
-
-### 39. docs/brain/header-navigation.md (17596087776b8a8510ebd6fdda83503d40ccdb8376bc76c97583cafb2888e681)
-- bm25: -0.5987 | relevance: 1.0000
-
-# Header Navigation
-
-## How It Works
-
-The global header (HeaderBar) is rendered across pages and provides:
-
-- Brand link to home
-- Back button on pages that define a back chain
-- Top-level navigation links (About, Learn, Facilitator)
-- Session-specific print menu actions
-
-### Session Print Menu
-
-On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions.
-
-**Trigger behavior (desktop):** Open on hover (mouseenter) with a short grace period on mouseleave so it does not flicker closed while moving from the icon into the menu.
-
-**Trigger behavior (touch / fallback):** The icon should also toggle the dropdown on click.
-
-The dropdown includes print actions:
-
-- Worksheet
-- Test
-- Facilitator Key
-- Refresh
-
-On narrow layouts, these same actions live inside the hamburger menu under a nested "Print" section.
-
-Important: header buttons (including the print icon) must explicitly set `type="button"` so they never behave like submit buttons when a page happens to include a form.
-
-Also: header dropdown trigger buttons must call `e.stopPropagation()` in their onClick handlers to prevent the opening click from bubbling to document and immediately triggering the outside-click-close listener.
-
-### Facilitator Dropdown
-
-On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
-
-- ⚙️ Account -> `/facilitator/account`
-- 🔔 Notifications -> `/facilitator/notifications`
-- 👥 Learners -> `/facilitator/learners`
-- 📚 Lessons -> `/facilitator/lessons`
-- 📅 Calendar -> `/facilitator/calendar`
-- 🧠 Mr. Mentor -> `/facilitator/mr-mentor`
-
-The dropdown uses a short hover grace period on mouseleave so it does not flicker closed while moving from the header link down into the menu.
-
-### 40. src/app/facilitator/generator/counselor/CounselorClient.jsx (a21f786301f175df4d80b37fa98e1a7650a6c8ed13398fc54a8bcad8d5796bed)
-- bm25: -0.5982 | relevance: 1.0000
-
-if (!isMountedRef.current) {
-          console.log('[Realtime] Ignoring - component unmounted')
-          return
-        }
-
-const updatedSession = payload.new
-        const oldSession = payload.old
-
-// Only process updates for this user's sessions
-        if (updatedSession.facilitator_id !== user.id) {
-          console.log('[Realtime] Ignoring - different user:', {
-            eventUserId: updatedSession.facilitator_id,
-            myUserId: user.id
-          })
-          return
-        }
-
-console.log('[Realtime] Session update detected:', { 
-          updatedSessionId: updatedSession.session_id, 
-          mySessionId,
-          isActive: updatedSession.is_active,
-          wasActive: oldSession.is_active,
-          facilitatorId: updatedSession.facilitator_id,
-          deviceName: updatedSession.device_name
-        })

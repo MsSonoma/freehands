@@ -595,15 +595,56 @@ export function useSnapshotPersistence({
               const drift = Number.isFinite(capturedMs)
                 ? Math.max(0, Math.floor((Date.now() - capturedMs) / 1000))
                 : 0;
-              const baseElapsed = Number(elapsedSeconds) || 0;
-              const target = Number(targetSeconds);
+
+              // Prefer the snapshot's persisted mode map (it reflects UI intent).
+              // This prevents a stale timerSnapshot.mode from incorrectly flipping us back to play mode.
+              const modeMap = (snap.currentTimerMode && typeof snap.currentTimerMode === 'object')
+                ? snap.currentTimerMode
+                : null;
+              const desiredMode = (modeMap && (modeMap[timerPhaseName] === 'play' || modeMap[timerPhaseName] === 'work'))
+                ? modeMap[timerPhaseName]
+                : timerModeValue;
+
+              const resolveStorageKey = (mode) => (lessonKey
+                ? `session_timer_state:${lessonKey}:${timerPhaseName}:${mode}`
+                : `session_timer_state:${timerPhaseName}:${mode}`);
+
+              const resolveBaseElapsedSeconds = (mode) => {
+                if (mode === timerModeValue) {
+                  return Number(elapsedSeconds) || 0;
+                }
+                try {
+                  const k = resolveStorageKey(mode);
+                  const raw = snap.timerStates && typeof snap.timerStates === 'object' ? snap.timerStates[k] : null;
+                  const parsed = raw && typeof raw === 'object' ? raw : null;
+                  return Number(parsed?.elapsedSeconds) || 0;
+                } catch {
+                  return 0;
+                }
+              };
+
+              const resolveTargetSeconds = (mode) => {
+                // Only trust timerSnapshot.targetSeconds when it's for the same mode.
+                if (mode === timerModeValue) {
+                  const t = Number(targetSeconds);
+                  if (Number.isFinite(t) && t > 0) return t;
+                }
+                if (typeof getCurrentPhaseTimerDuration === 'function') {
+                  const minutes = getCurrentPhaseTimerDuration(timerPhaseName, mode);
+                  if (Number.isFinite(minutes) && minutes > 0) return Math.max(0, minutes * 60);
+                }
+                return 0;
+              };
+
+              const baseElapsed = resolveBaseElapsedSeconds(desiredMode);
+              const target = resolveTargetSeconds(desiredMode);
+
               const adjustedElapsed = Math.max(0, Math.min(
                 baseElapsed + drift,
                 Number.isFinite(target) && target > 0 ? target : baseElapsed + drift
               ));
-              const storageKey = lessonKey
-                ? `session_timer_state:${lessonKey}:${timerPhaseName}:${timerModeValue}`
-                : `session_timer_state:${timerPhaseName}:${timerModeValue}`;
+
+              const storageKey = resolveStorageKey(desiredMode);
               const storedState = {
                 elapsedSeconds: adjustedElapsed,
                 startTime: Date.now() - (adjustedElapsed * 1000),
@@ -613,29 +654,25 @@ export function useSnapshotPersistence({
                 storedState.totalMinutes = target / 60;
               }
               sessionStorage.setItem(storageKey, JSON.stringify(storedState));
+
               setCurrentTimerMode((prev) => ({
                 ...(prev || {}),
-                [timerPhaseName]: timerModeValue,
+                [timerPhaseName]: desiredMode,
               }));
-              
-              // Check if play timer expired while page was closed
-              // If timer was in 'play' mode and elapsed >= target, countdown never played
-              // Skip countdown by setting flag and transition to work mode
-              if (timerModeValue === 'play' && Number.isFinite(target) && adjustedElapsed >= target) {
-                // Timer expired while page was closed - skip countdown entirely
+
+              // Check if play timer expired while page was closed.
+              // Skip countdown by setting flag and transition to work mode.
+              if (desiredMode === 'play' && Number.isFinite(target) && adjustedElapsed >= target) {
                 if (typeof setPlayExpiredCountdownCompleted === 'function') {
                   setPlayExpiredCountdownCompleted(true);
                 }
-                // Transition to work timer
                 setCurrentTimerMode((prev) => ({
                   ...(prev || {}),
                   [timerPhaseName]: 'work',
                 }));
-                // Clear play timer storage
                 try {
                   sessionStorage.removeItem(storageKey);
                 } catch {}
-                // Trigger phase transition to work phase
                 if (typeof setNeedsPlayExpiredTransition === 'function') {
                   setNeedsPlayExpiredTransition(timerPhaseName);
                 }

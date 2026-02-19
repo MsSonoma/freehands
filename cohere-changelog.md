@@ -240,3 +240,43 @@ Follow-ups:
 
 Follow-ups:
 - If we want stronger detection, add optional `-Expect` anchors to the wrapper (manual list) for high-value prompts.
+
+---
+
+Date (UTC): 2026-02-18T00:00:00Z
+
+Topic: Clean up Sidekick snapshot outputs in repo root
+
+Recon prompt (exact string):
+(none — housekeeping)
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl
+
+Result:
+- Decision: Keep only `sidekick_pack.md` and `sidekick_rounds.jsonl` as the canonical latest outputs; delete topic/snapshot variants from the repo root.
+- Files changed: (deleted) sidekick_pack_*.md, sidekick_rounds_*.jsonl; updated cohere-changelog.md
+
+Follow-ups:
+- If you want, we can add a `.gitignore` rule or wrapper script default to prevent new snapshot files from being created.
+
+---
+
+Date (UTC): 2026-02-18T18:19:10.1845844Z
+
+Topic: Resume snapshot in work timer mode (avoid play 0:00)
+
+Recon prompt (exact string):
+Ms. Sonoma resume snapshot during work timer subphase shows play timer 0:00; should resume work timer countdown. Fix restore logic to keep work timer mode.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: During restore, prefer `snap.currentTimerMode[phase]` over a potentially stale `snap.timerSnapshot.mode`, and drift-correct the correct timer state key (work vs play) so the resumed countdown uses a fresh `startTime`.
+- Files changed: src/app/session/hooks/useSnapshotPersistence.js, cohere-changelog.md
+
+Follow-ups:
+- If this still reproduces, log the restored `snap.currentTimerMode`, `snap.timerSnapshot`, and which key was drift-corrected to confirm which mode was captured at save time.
