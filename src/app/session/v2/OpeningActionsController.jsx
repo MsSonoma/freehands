@@ -423,7 +423,7 @@ export class OpeningActionsController {
       const response = await fetch('/api/sonoma', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instruction, innertext: '' })
+        body: JSON.stringify({ instruction, innertext: '', skipAudio: true })
       });
       
       if (!response.ok) {
@@ -505,7 +505,7 @@ export class OpeningActionsController {
           const res = await fetch('/api/sonoma', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instruction: summaryInstruction, innertext: '' })
+            body: JSON.stringify({ instruction: summaryInstruction, innertext: '', skipAudio: true })
           });
           if (res.ok) {
             const data = await res.json();
@@ -539,7 +539,7 @@ export class OpeningActionsController {
           const res = await fetch('/api/sonoma', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instruction: suggestionInstruction, innertext: '' })
+            body: JSON.stringify({ instruction: suggestionInstruction, innertext: '', skipAudio: true })
           });
           if (res.ok) {
             const data = await res.json();
@@ -622,7 +622,7 @@ export class OpeningActionsController {
         const res = await fetch('/api/sonoma', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ instruction, innertext: '' })
+          body: JSON.stringify({ instruction, innertext: '', skipAudio: true })
         });
         if (res.ok) {
           const data = await res.json();
@@ -684,7 +684,7 @@ export class OpeningActionsController {
       const res = await fetch('/api/sonoma', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instruction, innertext: '' })
+        body: JSON.stringify({ instruction, innertext: '', skipAudio: true })
       });
       if (res.ok) {
         const data = await res.json();
@@ -752,7 +752,7 @@ export class OpeningActionsController {
         this.#fillInFunTemplatePromise = fetch('/api/sonoma', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ instruction, innertext: '' })
+          body: JSON.stringify({ instruction, innertext: '', skipAudio: true })
         })
           .then(async (res) => {
             if (!res.ok) throw new Error('Fill-in-Fun generation failed');

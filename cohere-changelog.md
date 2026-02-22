@@ -280,3 +280,23 @@ Result:
 
 Follow-ups:
 - If this still reproduces, log the restored `snap.currentTimerMode`, `snap.timerSnapshot`, and which key was drift-corrected to confirm which mode was captured at save time.
+
+---
+
+Date (UTC): 2026-02-22T19:03:42.3423235Z
+
+Topic: App slowness from unnecessary base64 audio payloads
+
+Recon prompt (exact string):
+Performance: the entire freehands app feels extremely slow / barely works. Identify likely bottlenecks (Next.js App Router, session page, API routes like /api/sonoma), and where to instrument or optimize. Focus on critical path on initial load.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Add `skipAudio: true` to `/api/sonoma` calls that only need text (story summaries/suggestions/poems/story generation in Opening Actions), since speech is performed separately via `/api/tts` (`speakFrontend` / `audioEngine.speak`). This avoids server-side TTS + large base64 audio responses on the critical path.
+- Files changed: src/app/session/hooks/useDiscussionHandlers.js, src/app/session/v2/OpeningActionsController.jsx, cohere-changelog.md
+
+Follow-ups:
+- If the app still feels slow, instrument counts/latency of `/api/sonoma` calls per phase and consider parallelizing non-dependent prefetches.
