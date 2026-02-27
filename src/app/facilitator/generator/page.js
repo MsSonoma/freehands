@@ -40,6 +40,18 @@ export default function LessonMakerPage(){
 
   const ent = featuresForTier(tier)
 
+  const quotaAllowed = useMemo(() => {
+    if (!quotaInfo) return true
+    if (typeof quotaInfo.allowed === 'boolean') return quotaInfo.allowed
+    if (quotaInfo.remaining === Infinity) return true
+    if (typeof quotaInfo.remaining === 'number') return quotaInfo.remaining > 0
+    if (quotaInfo.limit === Infinity) return true
+    if (typeof quotaInfo.limit === 'number' && typeof quotaInfo.count === 'number') {
+      return quotaInfo.count < quotaInfo.limit
+    }
+    return true
+  }, [quotaInfo])
+
   // Check PIN requirement on mount
   useEffect(() => {
     let cancelled = false;
@@ -234,7 +246,7 @@ export default function LessonMakerPage(){
      }
     
     // Check quota before generating
-    if (quotaInfo && !quotaInfo.allowed) {
+    if (quotaInfo && !quotaAllowed) {
       setMessage('Generation limit reached. Upgrade to increase your quota.')
       return
     }
@@ -311,7 +323,7 @@ export default function LessonMakerPage(){
     if (busy) return false
     if (!hasAccess || !ent.lessonGenerator) return false
     if (!form.grade || !form.title || !form.subject || !form.difficulty) return false
-    if (quotaInfo && !quotaInfo.allowed) return false
+    if (quotaInfo && !quotaAllowed) return false
     return true
   }, [busy, form, quotaInfo, hasAccess, ent.lessonGenerator])
 
@@ -498,8 +510,8 @@ export default function LessonMakerPage(){
           {quotaLoading ? (
             <span style={{ color: '#6b7280', fontSize: 13 }}>Checking quota...</span>
           ) : quotaInfo ? (
-            <span style={{ color: quotaInfo.allowed ? '#6b7280' : '#b45309', fontSize: 13 }}>
-              {quotaInfo.allowed
+            <span style={{ color: quotaAllowed ? '#6b7280' : '#b45309', fontSize: 13 }}>
+              {quotaAllowed
                 ? `Generations remaining today: ${quotaInfo.remaining}`
                 : 'Generation limit reached for today'}
             </span>

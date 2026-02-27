@@ -1,3 +1,5 @@
+2026-02-27T17:39:00Z | Fix: quota false-positives for premium/pro. Recon prompt: "Quota hit when generating lessons (calendar + lesson generator) even though account is premium; gating other accounts may have affected entitlement." Updated `/api/lessons/quota` to return `allowed` and updated `/api/usage/check-lesson-quota` to use `plan_tier` + `lessonsPerDay`; generator now computes allowance robustly. See `sidekick_pack.md`.
+
 # Cohere Investigations Changelog
 
 Purpose: an append-only, human-readable log of *what was investigated*, the *exact recon prompt used*, and the *files/decisions* that resulted.
@@ -238,6 +240,87 @@ Result:
 Follow-ups:
 - If we want stronger detection, add an optional manual `-Expect` list (high-value anchors) and require a minimum hit-rate (e.g., >= 30%).
 
+---
+
+Date (UTC): 2026-02-23T17:13:02.2543565Z
+
+Topic: Flash Cards progress sync across devices/browsers
+
+Recon prompt (exact string):
+Flash Cards progress across all devices and browsers: locate the existing Supabase learner-scoped persistence patterns (tables, RLS, upsert/read helpers) used by sessionSnapshotStore/SnapshotService, then outline how to implement the same for flashcards progress.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Reuse the existing `/api/snapshots` + `learner_snapshots` mechanism (Supabase auth token + learner_id + lesson_key) for flashcards progress, with localStorage as an instant cache and debounced remote sync.
+- Files changed: src/app/session/components/games/FlashCards.jsx, src/app/session/components/games/flashcardsProgressStore.js, cohere-changelog.md
+
+Follow-ups:
+- None (takeover enforces a single active session per account).
+
+---
+
+Date (UTC): 2026-02-23T17:37:08.8912021Z
+
+Topic: Flash Cards visual polish (portrait card + slide animation)
+
+Recon prompt (exact string):
+Flash Cards game: make the card look like a real vertical flashcard and add a simple slide-in/slide-out animation between cards. Find existing animation/style patterns in the session UI and confirm where FlashCards is rendered.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+
+Result:
+- Updated the card UI to a tall portrait “flash card” and added a lightweight slide-out/slide-in transition when advancing cards.
+- Files changed: src/app/session/components/games/FlashCards.jsx, cohere-changelog.md
+
+---
+
+Date (UTC): 2026-02-23T18:07:12.8146173Z
+
+Topic: Flash Cards meter decay (stage-scaled time pressure)
+
+Recon prompt (exact string):
+Flash Cards game: add gradual meter degradation over time on the card screen; decay rate increases with stage. Find current meter logic in FlashCards.jsx and implement an interval/timer consistent with existing patterns.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+
+Result:
+- Added a meter decay interval while on the card screen; decay speeds up as stage increases, creating a variable time limit.
+- Smoothed meter width changes via a short CSS transition so the bar glides left.
+- Files changed: src/app/session/components/games/FlashCards.jsx, cohere-changelog.md
+
+---
+
+Date (UTC): 2026-02-23T21:02:07.7947459Z
+
+Topic: Flash Cards meter decay fix (smooth tick-down + beatable)
+
+Issue:
+- Decay felt like it “waits then clears entirely” and made stages effectively unbeatable.
+
+Fix:
+- Changed decay from whole-point steps to a smooth fractional tick every 100ms.
+- Made the meter bar width continuous (removed rounding) so it visibly drifts left.
+- Removed stale-closure stage-complete check; compute the post-answer meter value and use it directly.
+
+Files changed:
+- src/app/session/components/games/FlashCards.jsx
+- cohere-changelog.md
+
+---
+
+Date (UTC): 2026-02-23T21:05:30.6266490Z
+
+Topic: Flash Cards meter decay tuning
+
+Result:
+- Slowed the decay curve so Stage 1 feels forgiving and Stage 10 remains beatable (~25s/point → ~10s/point).
+- File changed: src/app/session/components/games/FlashCards.jsx
+
 Follow-ups:
 - If we want stronger detection, add optional `-Expect` anchors to the wrapper (manual list) for high-value prompts.
 
@@ -300,3 +383,23 @@ Result:
 
 Follow-ups:
 - If the app still feels slow, instrument counts/latency of `/api/sonoma` calls per phase and consider parallelizing non-dependent prefetches.
+
+---
+
+Date (UTC): 2026-02-23T16:53:49.2989770Z
+
+Topic: New Games overlay game — Flash Cards (math)
+
+Recon prompt (exact string):
+Build new Games overlay game 'Flash Cards': setup screen selects subject (math dropdown), topic, stage; 50 flashcards per topic per stage; 10 stages per topic; meter up/down with goal to advance; stage completion screen (Next); topic completion screen (more exciting, movement, shows next topic + Next). Persist per-learner progress across sessions.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Implement Flash Cards entirely client-side inside GamesOverlay, with deterministic per-learner math decks (50 cards per stage/topic) and localStorage persistence so progress resumes across sessions.
+- Files changed: src/app/session/components/games/GamesOverlay.jsx, src/app/session/components/games/FlashCards.jsx, src/app/session/components/games/flashcardsMathDeck.js, cohere-changelog.md
+
+Follow-ups:
+- If you want cross-device progress (not just same browser), add a Supabase-backed progress table and swap the storage adapter.

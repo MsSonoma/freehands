@@ -100,16 +100,19 @@ export async function GET(req) {
     const tzParam = url.searchParams.get('tz') || url.searchParams.get('timezone') || undefined;
     const { plan_tier, count, tz, day } = await readPlanTierAndCountInTz(svc, user.id, tzParam);
     const limit = lessonsPerDay(plan_tier);
-    return NextResponse.json({ plan_tier, count: count || 0, limit, remaining: limit === Infinity ? Infinity : Math.max(0, limit - (count || 0)), day, timezone: tz || 'UTC' });
+    const used = count || 0;
+    const remaining = limit === Infinity ? Infinity : Math.max(0, limit - used);
+    const allowed = limit === Infinity ? true : used < limit;
+    return NextResponse.json({ plan_tier, count: used, used, limit, remaining, allowed, day, timezone: tz || 'UTC' });
   } catch (e) {
     const msg = (e?.message || '').toLowerCase();
     const tableMissing = msg.includes('relation "lesson_unique_starts" does not exist') || msg.includes('lesson_unique_starts');
     if (tableMissing) {
       // Graceful fallback for local/dev when quota table is not yet created
-      return NextResponse.json({ plan_tier: 'free', count: 0, limit: 1, remaining: 1, timezone: 'UTC', hint: 'Create table lesson_unique_starts (see docs/lesson-quota.md). Defaulting to free plan.' });
+      return NextResponse.json({ plan_tier: 'free', count: 0, used: 0, limit: 1, remaining: 1, allowed: true, timezone: 'UTC', hint: 'Create table lesson_unique_starts (see docs/lesson-quota.md). Defaulting to free plan.' });
     }
     // Profile or other schema issues – default to free tier but do not block the UI
-    return NextResponse.json({ plan_tier: 'free', count: 0, limit: 1, remaining: 1, timezone: 'UTC', hint: 'Profile read failed; defaulting to free plan temporarily.' }, { status: 200 });
+    return NextResponse.json({ plan_tier: 'free', count: 0, used: 0, limit: 1, remaining: 1, allowed: true, timezone: 'UTC', hint: 'Profile read failed; defaulting to free plan temporarily.' }, { status: 200 });
   }
 }
 
@@ -137,11 +140,15 @@ export async function POST(req) {
       .eq('lesson_key', lesson_key);
     if (existErr) throw new Error(existErr.message || 'Failed to check existing');
     if ((already || 0) > 0) {
-      return NextResponse.json({ plan_tier, count: count || 0, limit, existing: true, day, timezone: tz || 'UTC' });
+      const used = count || 0;
+      const remaining = limit === Infinity ? Infinity : Math.max(0, limit - used);
+      const allowed = limit === Infinity ? true : used < limit;
+      return NextResponse.json({ plan_tier, count: used, used, limit, remaining, allowed, existing: true, day, timezone: tz || 'UTC' });
     }
 
     if (limit !== Infinity && (count || 0) >= limit) {
-      return NextResponse.json({ error: 'Daily limit reached', plan_tier, count: count || 0, limit }, { status: 429 });
+      const used = count || 0;
+      return NextResponse.json({ error: 'Daily limit reached', plan_tier, count: used, used, limit, remaining: 0, allowed: false }, { status: 429 });
     }
 
     // Upsert unique start row; PK(user_id, day, lesson_key)
@@ -158,15 +165,18 @@ export async function POST(req) {
       .eq('day', day);
     if (cntErr) throw new Error(cntErr.message || 'Failed to read count');
 
-    return NextResponse.json({ plan_tier, count: updatedCount || 0, limit, day, timezone: tz || 'UTC' });
+    const used = updatedCount || 0;
+    const remaining = limit === Infinity ? Infinity : Math.max(0, limit - used);
+    const allowed = limit === Infinity ? true : used < limit;
+    return NextResponse.json({ plan_tier, count: used, used, limit, remaining, allowed, day, timezone: tz || 'UTC' });
   } catch (e) {
     // Surface helpful hint if table likely missing; return soft-fail 200 so UI can proceed in dev
     const msg = (e?.message || '').toLowerCase();
     const missing = msg.includes('relation "lesson_unique_starts" does not exist') || msg.includes('lesson_unique_starts');
     if (missing) {
-      return NextResponse.json({ plan_tier: 'free', count: 0, limit: 1, timezone: 'UTC', hint: 'Run the SQL from docs/lesson-quota.md to create lesson_unique_starts. Proceeding without server quota in dev.' });
+      return NextResponse.json({ plan_tier: 'free', count: 0, used: 0, limit: 1, remaining: 1, allowed: true, timezone: 'UTC', hint: 'Run the SQL from docs/lesson-quota.md to create lesson_unique_starts. Proceeding without server quota in dev.' });
     }
     // Profile or other schema issues – default to free tier but do not block the UI
-    return NextResponse.json({ plan_tier: 'free', count: 0, limit: 1, timezone: 'UTC', hint: 'Profile read failed; defaulting to free plan temporarily.' }, { status: 200 });
+    return NextResponse.json({ plan_tier: 'free', count: 0, used: 0, limit: 1, remaining: 1, allowed: true, timezone: 'UTC', hint: 'Profile read failed; defaulting to free plan temporarily.' }, { status: 200 });
   }
 }

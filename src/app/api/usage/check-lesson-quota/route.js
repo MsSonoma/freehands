@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { ENTITLEMENTS, resolveEffectiveTier } from '../../../lib/entitlements';
+import { featuresForTier, resolveEffectiveTier } from '../../../lib/entitlements';
 
 export async function GET(request) {
   try {
@@ -21,10 +21,10 @@ export async function GET(request) {
       return Response.json({ allowed: false, reason: 'Invalid auth' }, { status: 401 });
     }
 
-    // Get profile with usage data - include subscription_tier for Beta check
+    // Get profile with usage data
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('subscription_tier, stripe_subscription_tier, daily_lessons_count, last_lesson_date')
+      .select('subscription_tier, plan_tier, daily_lessons_count, last_lesson_date')
       .eq('id', user.id)
       .single();
 
@@ -32,16 +32,17 @@ export async function GET(request) {
       return Response.json({ allowed: false, reason: 'Profile not found' }, { status: 404 });
     }
 
-    const tier = resolveEffectiveTier(profile.subscription_tier, profile.stripe_subscription_tier);
-    const entitlement = ENTITLEMENTS[tier] || ENTITLEMENTS.free;
-    const dailyLimit = entitlement.dailyLessons;
+    const tier = resolveEffectiveTier(profile.subscription_tier, profile.plan_tier);
+    const dailyLimit = featuresForTier(tier).lessonsPerDay;
 
     // Unlimited lessons
-    if (dailyLimit === -1) {
-      return Response.json({ 
-        allowed: true, 
-        remaining: -1,
-        tier 
+    if (dailyLimit === Infinity) {
+      return Response.json({
+        allowed: true,
+        remaining: Infinity,
+        used: 0,
+        limit: Infinity,
+        tier
       });
     }
 
@@ -50,14 +51,15 @@ export async function GET(request) {
     const lastDate = profile.last_lesson_date;
     const currentCount = (lastDate === today) ? profile.daily_lessons_count : 0;
 
-    const allowed = currentCount < dailyLimit;
-    const remaining = Math.max(0, dailyLimit - currentCount);
+    const limitNumber = Number.isFinite(Number(dailyLimit)) ? Number(dailyLimit) : 1;
+    const allowed = currentCount < limitNumber;
+    const remaining = Math.max(0, limitNumber - currentCount);
 
     return Response.json({ 
       allowed, 
       remaining,
       used: currentCount,
-      limit: dailyLimit,
+      limit: limitNumber,
       tier 
     });
 

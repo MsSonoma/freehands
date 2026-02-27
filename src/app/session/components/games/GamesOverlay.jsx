@@ -7,6 +7,7 @@ import MazeRunner from './MazeRunner';
 import WhackAMole from './WhackAMole';
 import PlatformJumper from './PlatformJumper';
 import FloodClimbSpelling from './FloodClimbSpelling';
+import FlashCards from './FlashCards';
 
 export default function GamesOverlay({ onClose, playTimer }) {
   const [selectedGame, setSelectedGame] = useState(null);
@@ -60,6 +61,13 @@ export default function GamesOverlay({ onClose, playTimer }) {
       description: 'Spell the emoji word to climb to safety!',
       icon: '🌊',
       color: '#3b82f6',
+    },
+    {
+      id: 'flash-cards',
+      name: 'Flash Cards',
+      description: 'Answer cards to level up stages',
+      icon: '🃏',
+      color: '#111827',
     },
     // Future games will go here
   ];
@@ -294,6 +302,9 @@ export default function GamesOverlay({ onClose, playTimer }) {
       )}
       {selectedGame === 'flood-climb' && (
         <FloodClimbSpelling onBack={() => setSelectedGame(null)} />
+      )}
+      {selectedGame === 'flash-cards' && (
+        <FlashCards onBack={() => setSelectedGame(null)} />
       )}
     </div>
   );
