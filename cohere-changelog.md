@@ -406,3 +406,8 @@ Result:
 
 Follow-ups:
 - If you want cross-device progress (not just same browser), add a Supabase-backed progress table and swap the storage adapter.
+
+### 2026-02-27 — Generation error: e.map is not a function
+- Recon prompt: `Generation Failed error from lesson generator API route - investigate callModel and storage upload`
+- Root cause: `buildValidationChangeRequest(validation)` passed whole `{ passed, issues, warnings }` object; function calls `.map()` directly on its argument
+- Fix: `src/app/facilitator/generator/page.js` — `buildValidationChangeRequest(validation)` ? `buildValidationChangeRequest(validation.issues)`

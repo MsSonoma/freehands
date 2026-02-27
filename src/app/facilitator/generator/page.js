@@ -286,7 +286,7 @@ export default function LessonMakerPage(){
       })
       const js = await res.json().catch(()=>null)
       if (!res.ok) { 
-        setMessage(js?.error || 'Failed to generate')
+        setMessage(`Error ${res.status}: ${js?.error || 'Failed to generate'}`)
         setToast({ message: 'Generation failed', type: 'error' })
         return
       }
@@ -305,7 +305,7 @@ export default function LessonMakerPage(){
       if (validation?.issues?.length) {
         setToast({ message: 'Improving lesson quality...', type: 'info' })
 
-        const changes = buildValidationChangeRequest(validation)
+        const changes = buildValidationChangeRequest(validation.issues)
         const fixRes = await fetch('/api/facilitator/lessons/request-changes', {
           method:'POST',
           headers:{ 'Content-Type':'application/json', ...(token ? { Authorization:`Bearer ${token}` } : {}) },
@@ -326,7 +326,7 @@ export default function LessonMakerPage(){
       setToast({ message: 'Lesson ready!', type: 'success' })
       setMessage('')
     } catch (err) {
-      setMessage(err?.message || 'Failed to generate')
+      setMessage(`Generation error: ${err?.message || String(err) || 'Unknown error'}`)
       setToast({ message: 'Generation failed', type: 'error' })
     } finally {
       setBusy(false)
