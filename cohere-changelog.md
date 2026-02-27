@@ -411,3 +411,7 @@ Follow-ups:
 - Recon prompt: `Generation Failed error from lesson generator API route - investigate callModel and storage upload`
 - Root cause: `buildValidationChangeRequest(validation)` passed whole `{ passed, issues, warnings }` object; function calls `.map()` directly on its argument
 - Fix: `src/app/facilitator/generator/page.js` — `buildValidationChangeRequest(validation)` ? `buildValidationChangeRequest(validation.issues)`
+
+### 2026-02-27 — Lesson generated with warnings / Missing file or changeRequest
+- Root cause: generator sent `changes` in POST body but `/api/facilitator/lessons/request-changes` destructures `changeRequest`  
+- Fix: `src/app/facilitator/generator/page.js` — renamed field `changes` ? `changeRequest` in request body

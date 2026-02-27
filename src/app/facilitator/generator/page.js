@@ -312,7 +312,7 @@ export default function LessonMakerPage(){
           body: JSON.stringify({
             file: generatedFile,
             userId: generatedUserId,
-            changes
+            changeRequest: changes
           })
         })
         const fixJs = await fixRes.json().catch(()=>null)
