@@ -38,7 +38,22 @@ export default function LessonMakerPage(){
   const [rewritingVocab, setRewritingVocab] = useState(false)
   const [rewritingNotes, setRewritingNotes] = useState(false)
 
-  const ent = featuresForTier(tier)
+  // The quota API uses the service role key, immune to client-side RLS issues.
+  // Use its plan_tier as the authoritative tier; fall back to useAccessControl's if higher.
+  const TIER_RANK = { free: 0, trial: 1, standard: 2, pro: 3, lifetime: 4 }
+  const effectiveTier = useMemo(() => {
+    if (quotaLoading || !quotaInfo?.plan_tier) return tier
+    const qRank = TIER_RANK[quotaInfo.plan_tier] ?? 0
+    const cRank = TIER_RANK[tier] ?? 0
+    return qRank > cRank ? quotaInfo.plan_tier : tier
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quotaLoading, quotaInfo, tier])
+
+  const ent = featuresForTier(effectiveTier)
+
+  // hasAccess may be false when the client-side profiles query is blocked by RLS.
+  // If the quota API (service role) confirms lessonGenerator entitlement, honour that.
+  const resolvedHasAccess = hasAccess || (!quotaLoading && ent.lessonGenerator)
 
   const quotaAllowed = useMemo(() => {
     if (!quotaInfo) return true
@@ -317,15 +332,15 @@ export default function LessonMakerPage(){
     }
   }
 
-  const showGate = (!loading && (!hasAccess || !ent.lessonGenerator))
+  const showGate = (!loading && !quotaLoading && (!resolvedHasAccess || !ent.lessonGenerator))
 
   const canGenerate = useMemo(() => {
     if (busy) return false
-    if (!hasAccess || !ent.lessonGenerator) return false
+    if (!resolvedHasAccess || !ent.lessonGenerator) return false
     if (!form.grade || !form.title || !form.subject || !form.difficulty) return false
     if (quotaInfo && !quotaAllowed) return false
     return true
-  }, [busy, form, quotaInfo, hasAccess, ent.lessonGenerator])
+  }, [busy, form, quotaInfo, resolvedHasAccess, ent.lessonGenerator, quotaAllowed])
 
   if (loading || !pinChecked) {
     return <main style={{ padding: 24 }}><p>Loading...</p></main>

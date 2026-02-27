@@ -170,13 +170,35 @@ export default function CalendarPage() {
         return
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('plan_tier, subscription_tier')
-        .eq('id', session.user.id)
-        .maybeSingle()
+      let effectiveTier = 'free'
 
-      const effectiveTier = resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier)
+      // Primary: direct profiles query (may be blocked by RLS)
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('plan_tier, subscription_tier')
+          .eq('id', session.user.id)
+          .maybeSingle()
+        effectiveTier = resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier)
+      } catch { /* will fall back below */ }
+
+      // Fallback: quota API uses service role key and is RLS-immune
+      if (effectiveTier === 'free' && session?.access_token) {
+        try {
+          const qRes = await fetch('/api/lessons/quota', {
+            headers: { Authorization: `Bearer ${session.access_token}` }
+          })
+          if (qRes.ok) {
+            const qData = await qRes.json()
+            const TIER_RANK = { free: 0, trial: 1, standard: 2, pro: 3, lifetime: 4 }
+            const qTier = qData?.plan_tier || 'free'
+            if ((TIER_RANK[qTier] ?? 0) > (TIER_RANK[effectiveTier] ?? 0)) {
+              effectiveTier = qTier
+            }
+          }
+        } catch { /* ignore, use what we have */ }
+      }
+
       setTier(effectiveTier)
       
       const ent = featuresForTier(effectiveTier)
