@@ -85,9 +85,11 @@ export default function LessonMakerPage(){
     return () => { cancelled = true; };
   }, [router]);
 
-  // Load quota info
+  // Load quota info — gated on auth only, NOT hasAccess.
+  // hasAccess can be false when client-side RLS blocks the profiles query;
+  // the quota API uses the service role key so it is always authoritative.
   useEffect(() => {
-    if (!isAuthenticated || !hasAccess) {
+    if (!isAuthenticated) {
       setQuotaLoading(false)
       return
     }
@@ -115,7 +117,7 @@ export default function LessonMakerPage(){
     })()
     
     return () => { cancelled = true }
-  }, [isAuthenticated, hasAccess])
+  }, [isAuthenticated])
 
   // AI Rewrite handlers
   const handleRewriteTitle = async () => {
