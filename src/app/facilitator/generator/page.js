@@ -85,39 +85,38 @@ export default function LessonMakerPage(){
     return () => { cancelled = true; };
   }, [router]);
 
-  // Load quota info — gated on auth only, NOT hasAccess.
-  // hasAccess can be false when client-side RLS blocks the profiles query;
-  // the quota API uses the service role key so it is always authoritative.
+  // Load quota info — check session directly, NOT via isAuthenticated from useAccessControl.
+  // useAccessControl resets isAuthenticated=false in its catch block (e.g. on RLS errors),
+  // which would prevent this effect from ever running. We go to Supabase directly instead.
   useEffect(() => {
-    if (!isAuthenticated) {
-      setQuotaLoading(false)
-      return
-    }
-    
     let cancelled = false;
     (async () => {
       try {
         const supabase = getSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
         const token = session?.access_token
-        
+
+        if (!token) {
+          if (!cancelled) setQuotaLoading(false)
+          return
+        }
+
         const res = await fetch('/api/lessons/quota', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
+          headers: { Authorization: `Bearer ${token}` }
         })
-        
+
         if (res.ok && !cancelled) {
           const data = await res.json()
           setQuotaInfo(data)
         }
       } catch (e) {
-        // Silent error
+        // Silent — leave quotaInfo null, quotaAllowed defaults to true
       } finally {
         if (!cancelled) setQuotaLoading(false)
       }
     })()
-    
     return () => { cancelled = true }
-  }, [isAuthenticated])
+  }, [])
 
   // AI Rewrite handlers
   const handleRewriteTitle = async () => {
