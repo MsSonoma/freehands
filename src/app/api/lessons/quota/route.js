@@ -89,6 +89,13 @@ function lessonsPerDay(tier) {
   return Number.isFinite(ent?.lessonsPerDay) || ent?.lessonsPerDay === Infinity ? ent.lessonsPerDay : 1;
 }
 
+// JSON cannot serialize Infinity — use -1 as the "unlimited" sentinel on the wire.
+function safeLimit(limit) { return limit === Infinity ? -1 : limit; }
+function safeRemaining(limit, used) {
+  if (limit === Infinity) return -1;
+  return Math.max(0, limit - used);
+}
+
 export async function GET(req) {
   try {
     const user = await getUserFromAuthHeader(req);
@@ -101,9 +108,9 @@ export async function GET(req) {
     const { plan_tier, count, tz, day } = await readPlanTierAndCountInTz(svc, user.id, tzParam);
     const limit = lessonsPerDay(plan_tier);
     const used = count || 0;
-    const remaining = limit === Infinity ? Infinity : Math.max(0, limit - used);
+    const remaining = safeRemaining(limit, used);
     const allowed = limit === Infinity ? true : used < limit;
-    return NextResponse.json({ plan_tier, count: used, used, limit, remaining, allowed, day, timezone: tz || 'UTC' });
+    return NextResponse.json({ plan_tier, count: used, used, limit: safeLimit(limit), remaining, allowed, day, timezone: tz || 'UTC' });
   } catch (e) {
     const msg = (e?.message || '').toLowerCase();
     const tableMissing = msg.includes('relation "lesson_unique_starts" does not exist') || msg.includes('lesson_unique_starts');
@@ -141,9 +148,9 @@ export async function POST(req) {
     if (existErr) throw new Error(existErr.message || 'Failed to check existing');
     if ((already || 0) > 0) {
       const used = count || 0;
-      const remaining = limit === Infinity ? Infinity : Math.max(0, limit - used);
+      const remaining = safeRemaining(limit, used);
       const allowed = limit === Infinity ? true : used < limit;
-      return NextResponse.json({ plan_tier, count: used, used, limit, remaining, allowed, existing: true, day, timezone: tz || 'UTC' });
+      return NextResponse.json({ plan_tier, count: used, used, limit: safeLimit(limit), remaining, allowed, existing: true, day, timezone: tz || 'UTC' });
     }
 
     if (limit !== Infinity && (count || 0) >= limit) {
@@ -166,9 +173,9 @@ export async function POST(req) {
     if (cntErr) throw new Error(cntErr.message || 'Failed to read count');
 
     const used = updatedCount || 0;
-    const remaining = limit === Infinity ? Infinity : Math.max(0, limit - used);
+    const remaining = safeRemaining(limit, used);
     const allowed = limit === Infinity ? true : used < limit;
-    return NextResponse.json({ plan_tier, count: used, used, limit, remaining, allowed, day, timezone: tz || 'UTC' });
+    return NextResponse.json({ plan_tier, count: used, used, limit: safeLimit(limit), remaining, allowed, day, timezone: tz || 'UTC' });
   } catch (e) {
     // Surface helpful hint if table likely missing; return soft-fail 200 so UI can proceed in dev
     const msg = (e?.message || '').toLowerCase();

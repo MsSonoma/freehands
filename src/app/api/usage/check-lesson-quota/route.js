@@ -35,13 +35,13 @@ export async function GET(request) {
     const tier = resolveEffectiveTier(profile.subscription_tier, profile.plan_tier);
     const dailyLimit = featuresForTier(tier).lessonsPerDay;
 
-    // Unlimited lessons
+    // Unlimited lessons (-1 = unlimited sentinel; Infinity cannot be JSON-serialized)
     if (dailyLimit === Infinity) {
       return Response.json({
         allowed: true,
-        remaining: Infinity,
+        remaining: -1,
         used: 0,
-        limit: Infinity,
+        limit: -1,
         tier
       });
     }

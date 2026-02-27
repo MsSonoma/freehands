@@ -1,3 +1,4 @@
+2026-02-27T18:00:00Z | Fix: Infinity serializes as null in JSON \u2014 quota routes now use -1 sentinel for unlimited; generator display handles -1 as "Unlimited generations". See sidekick_pack.md.
 2026-02-27T17:39:00Z | Fix: quota false-positives for premium/pro. Recon prompt: "Quota hit when generating lessons (calendar + lesson generator) even though account is premium; gating other accounts may have affected entitlement." Updated `/api/lessons/quota` to return `allowed` and updated `/api/usage/check-lesson-quota` to use `plan_tier` + `lessonsPerDay`; generator now computes allowance robustly. See `sidekick_pack.md`.
 
 # Cohere Investigations Changelog

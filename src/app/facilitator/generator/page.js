@@ -43,9 +43,9 @@ export default function LessonMakerPage(){
   const quotaAllowed = useMemo(() => {
     if (!quotaInfo) return true
     if (typeof quotaInfo.allowed === 'boolean') return quotaInfo.allowed
-    if (quotaInfo.remaining === Infinity) return true
+    // -1 = unlimited sentinel
+    if (quotaInfo.remaining === -1 || quotaInfo.limit === -1) return true
     if (typeof quotaInfo.remaining === 'number') return quotaInfo.remaining > 0
-    if (quotaInfo.limit === Infinity) return true
     if (typeof quotaInfo.limit === 'number' && typeof quotaInfo.count === 'number') {
       return quotaInfo.count < quotaInfo.limit
     }
@@ -512,7 +512,7 @@ export default function LessonMakerPage(){
           ) : quotaInfo ? (
             <span style={{ color: quotaAllowed ? '#6b7280' : '#b45309', fontSize: 13 }}>
               {quotaAllowed
-                ? `Generations remaining today: ${quotaInfo.remaining}`
+                ? (quotaInfo.remaining === -1 ? 'Unlimited generations' : `Generations remaining today: ${quotaInfo.remaining}`)
                 : 'Generation limit reached for today'}
             </span>
           ) : null}
