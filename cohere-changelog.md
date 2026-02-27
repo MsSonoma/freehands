@@ -415,3 +415,10 @@ Follow-ups:
 ### 2026-02-27 — Lesson generated with warnings / Missing file or changeRequest
 - Root cause: generator sent `changes` in POST body but `/api/facilitator/lessons/request-changes` destructures `changeRequest`  
 - Fix: `src/app/facilitator/generator/page.js` — renamed field `changes` ? `changeRequest` in request body
+
+### 2026-02-27 — Generated lesson not appearing in calendar after scheduling
+- Root cause (1): `loadSchedule` filtered out past-date+uncompleted lessons, hiding intentionally-scheduled entries for past/same-day dates
+- Root cause (2): `onGenerated` callback passed no data; calendar had to wait for `loadSchedule` to complete before showing the new lesson (race condition)
+- Fix (1): Removed `if (isPast && !completed && !completionLookupFailed) return` filter from `calendar/page.js`; all entries in `lesson_schedule` table now always display
+- Fix (2): `LessonGeneratorOverlay` now parses schedule POST response and passes `newEntry` to `onGenerated(newEntry)`; forwarded through `DayViewOverlay` to calendar page which immediately injects it into `scheduledLessons` state before `loadSchedule` completes
+- Files: `LessonGeneratorOverlay.jsx`, `DayViewOverlay.jsx`, `calendar/page.js`

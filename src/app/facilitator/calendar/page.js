@@ -363,9 +363,9 @@ export default function CalendarPage() {
         })()
         const completed = direct || makeup
 
-        // Past dates: show only completed lessons.
-        if (isPast && !completed && !completionLookupFailed) return
-
+        // Always include all scheduled lessons (past or future).
+        // Completion status is annotated per lesson; filtering was over-aggressive
+        // and hid intentionally-scheduled past-date lessons from the calendar.
         if (!grouped[dateStr]) grouped[dateStr] = []
         grouped[dateStr].push({ ...item, completed })
       })
@@ -1198,7 +1198,17 @@ export default function CalendarPage() {
                 tier={tier}
                 noSchoolReason={noSchoolDates[selectedDate] || null}
                 onClose={() => setShowDayView(false)}
-                onLessonGenerated={() => {
+                onLessonGenerated={(newEntry) => {
+                  // Immediately inject the new entry so it appears before loadSchedule completes.
+                  if (newEntry?.lesson_key && newEntry?.scheduled_date) {
+                    setScheduledLessons(prev => {
+                      const dateKey = newEntry.scheduled_date
+                      const existing = prev[dateKey] || []
+                      const alreadyPresent = existing.some(l => l.lesson_key === newEntry.lesson_key)
+                      if (alreadyPresent) return prev
+                      return { ...prev, [dateKey]: [...existing, { ...newEntry, completed: false }] }
+                    })
+                  }
                   loadSchedule()
                   loadNoSchoolDates()
                 }}

@@ -6,12 +6,35 @@ Mode: standard
 
 Prompt (original):
 ```text
-Generation Failed error from lesson generator API route - investigate callModel and storage upload
+Calendar day cell overlay opens generator, generates lesson, lesson appears in lessons list but not in calendar day cell or as scheduled lesson - investigate the flow from Generate on date button through to calendar state update
 ```
 
 Filter terms used:
 ```text
-API
+Calendar
+day
+cell
+overlay
+opens
+generator
+generates
+lesson
+lesson
+appears
+in
+lessons
+list
+but
+not
+in
+calendar
+day
+cell
+or
+as
+scheduled
+lesson
+investigate
 ```
 # Context Pack
 
@@ -25,7 +48,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-API
+Calendar day cell overlay opens generator generates lesson lesson appears in lessons list but not in calendar day cell or as scheduled lesson investigate
 
 ## Forced Context
 
@@ -33,394 +56,333 @@ API
 
 ## Ranked Evidence
 
-### 1. docs/brain/ingests/pack.lesson-schedule-debug.md (fa02942af206a27ad23c2e1ee23975650152df2f5e09e9374905dc45a475c12e)
-- bm25: -1.8901 | entity_overlap_w: 7.80 | adjusted: -3.8401 | relevance: 1.0000
+### 1. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
+- bm25: -37.0855 | relevance: 1.0000
+
+**Completion query rule (visibility > micro-optimization):**
+- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
+- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
+
+**Calendar date key rule (marker dots):**
+- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
+- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
+- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
+
+**Calendar month focus rule (history discoverability):**
+- When a learner is selected on the Schedule tab, the calendar grid should auto-focus to the month containing the most recent scheduled date (preferably a past/completed date when available).
+- This prevents the calendar from looking "empty" on the current month when the learner's completed history is in earlier months.
+
+**UI rule (Schedule tab only):**
+- For past (completed) scheduled lessons, actions change to:
+  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
+  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
+  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
+  - **Remove**: requires typing `remove` and warns it cannot be undone.
+
+These actions are implemented on:
+- The main Calendar page schedule list
+- The Calendar Day View overlay schedule list
+- The Mr. Mentor Calendar overlay schedule list
+
+### Portfolio Scan Uploads (Worksheet/Test Images)
+
+### 2. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (6f33983453dfbb17ba0b015de6cc76fa071dc0e7a401f52396b7093115ac315c)
+- bm25: -36.0508 | relevance: 1.0000
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 3. docs/brain/MentorInterceptor_Architecture.md (b9af78a6a85babc29ee74ec9cf6073767b7a2e84a19456e1f96ab9a407cbd74d)
+- bm25: -35.8219 | relevance: 1.0000
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 4. docs/brain/ingests/pack.planned-lessons-flow.md (88c29dc19b3f25ed0178c73764a3887f3532851fb2e1292ab2f58b31241fad00)
+- bm25: -35.7811 | relevance: 1.0000
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 5. docs/brain/ingests/pack.md (aa6ec106ec68e22bb817f61c01c25af4440948ba22e71ec40a50cad850d8b6d0)
+- bm25: -33.2332 | relevance: 1.0000
+
+### Portfolio Scan Uploads (Worksheet/Test Images)
 
-### ❌ DON'T: Require medals API to succeed for generation to continue
-**Why**: Medals API returns 404 for new learners with no completed lessons, or during database migrations. Lesson planning must continue even without score data.
+### 3. docs/brain/MentorInterceptor_Architecture.md (75fdb0fbddb1f0621d0ed4e1ec4faf69b33ecbed1888eb54a3d9f917aca04bee)
+- bm25: -34.9459 | relevance: 1.0000
 
-### ❌ DON'T: Use wrong API endpoint patterns
-**Why**: API routes follow specific conventions:
-- `/api/medals?learnerId=X` (correct)
-- `/api/learner/medals?learnerId=X` (wrong, returns 404)
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 4. docs/brain/calendar-lesson-planning.md (8fb5d6fd52eb343d38244e53af009c1d078e80740d159006615a9235e71a5585)
+- bm25: -34.0788 | relevance: 1.0000
+
+# Calendar Lesson Planning System - Ms. Sonoma Brain File
 
-Check actual route files, not assumptions.
+**Last Updated**: 2026-02-05T03:28:35Z  
+**Status**: Canonical
 
-### ❌ DON'T: Couple unrelated API responses with `&&` in conditionals
-**Why**: `if (historyRes.ok && medalsRes.ok)` blocks history processing when medals fails. Process each response independently with its own conditional.
+## How It Works
 
-### ❌ DON'T: Forget to handle API response wrapper objects
-**Why**: Some APIs return raw arrays, others return `{data: [...]}` or `{schedule: [...]}`. Always check the route to see actual response structure. Using `.map()` on a wrapper object causes "not a function" errors.
+### Automated Lesson Plan Generation
 
-### 16. src/app/facilitator/generator/counselor/MentorInterceptor.js (bb7713ee24ede35cb49f6b75db4614268ed8f95e614cb684dba03e123ad3ecf4)
-- bm25: -21.1441 | relevance: 1.0000
+### 6. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (7a42963d49cceba71f31be9d3d8d544fccccaaf4d62770d956e70416bd7e72ff)
+- bm25: -29.8352 | relevance: 1.0000
 
-### 2. docs/brain/ingests/pack.planned-lessons-flow.md (fec1a515684d5e019fff779fa3f8d5eaffc180a5b0f963e36e8bc20a447a2714)
-- bm25: -1.7961 | entity_overlap_w: 7.80 | adjusted: -3.7461 | relevance: 1.0000
+### 36. docs/brain/calendar-lesson-planning.md (de0b7e2265d9cfcb4b0c9cd0651ba3db1eb254c5334aa7a65a5b5a4fad4aba17)
+- bm25: -14.1234 | relevance: 1.0000
 
-**Rule**:
-- Only add access guards on interactive handlers (e.g., `onClick`, submit handlers), or in the called function (e.g., `generatePlannedLessons()` already calls `requirePlannerAccess()`).
-- Do not splice guard blocks into JSX without confirming the opening tag still exists.
+**Data source and key format:**
+- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
+- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
 
-### ❌ DON'T: Store planned lessons only in component state
-**Why**: Component state clears on refresh, logout, or navigation. User loses entire generated plan. Creates terrible UX where plans disappear unpredictably.
+**Filtering behavior:**
+- Subject grouping uses each lesson's `subject` metadata.
+- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
+
+### Completed Past Scheduled Lessons (History View)
+
+The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
+
+**Data rule:**
+- The schedule loader fetches the learner's schedule history.
+- For dates before "today" (local YYYY-MM-DD), scheduled lessons are included only if there is a matching completion event in `lesson_session_events`.
+
+**Completion matching rule:**
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
+
+**Make-up window rule (7 days):**
+- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
+- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
 
-### ❌ DON'T: Require medals API to succeed for generation to continue
-**Why**: Medals API returns 404 for new learners with no completed lessons, or during database migrations. Lesson planning must continue even without score data.
+### 7. docs/brain/ingests/pack.md (a838aa65e66cc882806bbd97ce6cd65ddb5dd60a2df471902da645af333bd942)
+- bm25: -29.7203 | relevance: 1.0000
 
-### ❌ DON'T: Use wrong API endpoint patterns
-**Why**: API routes follow specific conventions:
-- `/api/medals?learnerId=X` (correct)
-- `/api/learner/medals?learnerId=X` (wrong, returns 404)
+### 2. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
+- bm25: -35.1192 | relevance: 1.0000
 
-Check actual route files, not assumptions.
-
-### ❌ DON'T: Couple unrelated API responses with `&&` in conditionals
-**Why**: `if (historyRes.ok && medalsRes.ok)` blocks history processing when medals fails. Process each response independently with its own conditional.
+**Completion query rule (visibility > micro-optimization):**
+- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
+- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
 
-### ❌ DON'T: Forget to handle API response wrapper objects
-**Why**: Some APIs return raw arrays, others return `{data: [...]}` or `{schedule: [...]}`. Always check the route to see actual response structure. Using `.map()` on a wrapper object causes "not a function" errors.
-
-### 18. src/app/facilitator/calendar/LessonPlanner.jsx (bbc18a96e8e74f641a8270bf1cf9fd128312a7fadd6f6f9216546afe6ad539e8)
-- bm25: -19.2572 | relevance: 1.0000
-
-### 3. docs/brain/calendar-lesson-planning.md (ca128987408f6009b4bc0b991a9c397f7bb90b4e589d5d04580e78c782af275e)
-- bm25: -1.7480 | entity_overlap_w: 7.80 | adjusted: -3.6980 | relevance: 1.0000
-
-## What NOT To Do
-
-### ❌ DON'T: Break JSX tags during gating edits
-**Why**: A malformed JSX tag (for example, accidentally deleting a `<select` opening tag while moving click-guards) will compile in dev only until the file is imported, then fail the production build with parser errors like "Unexpected token" near a bare `>`.
-
-**Rule**:
-- Only add access guards on interactive handlers (e.g., `onClick`, submit handlers), or in the called function (e.g., `generatePlannedLessons()` already calls `requirePlannerAccess()`).
-- Do not splice guard blocks into JSX without confirming the opening tag still exists.
+**Calendar date key rule (marker dots):**
+- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
+- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
+- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
 
-### ❌ DON'T: Store planned lessons only in component state
-**Why**: Component state clears on refresh, logout, or navigation. User loses entire generated plan. Creates terrible UX where plans disappear unpredictably.
-
-### ❌ DON'T: Require medals API to succeed for generation to continue
-**Why**: Medals API returns 404 for new learners with no completed lessons, or during database migrations. Lesson planning must continue even without score data.
-
-### ❌ DON'T: Use wrong API endpoint patterns
-**Why**: API routes follow specific conventions:
-- `/api/medals?learnerId=X` (correct)
-- `/api/learner/medals?learnerId=X` (wrong, returns 404)
-
-Check actual route files, not assumptions.
-
-### ❌ DON'T: Couple unrelated API responses with `&&` in conditionals
-**Why**: `if (historyRes.ok && medalsRes.ok)` blocks history processing when medals fails. Process each response independently with its own conditional.
-
-### ❌ DON'T: Forget to handle API response wrapper objects
-**Why**: Some APIs return raw arrays, others return `{data: [...]}` or `{schedule: [...]}`. Always check the route to see actual response structure. Using `.map()` on a wrapper object causes "not a function" errors.
-
-### 4. docs/brain/ingests/pack.md (237a2deb28c985f662915aee6871b40e583791a8102c8eddfaa3f706b1726b74)
-- bm25: -1.7496 | entity_overlap_w: 6.50 | adjusted: -3.3746 | relevance: 1.0000
-
-**2025-12-14**: Fixed medals API 404 causing generation failure
-- Changed endpoint from `/api/learner/medals` to `/api/medals`
-- Decoupled medals loading from history processing
-- Added fallback to empty medals object when API fails
-- Generation now succeeds even without medal data
-
-**2025-12-14**: Fixed scheduled lessons API response structure
-- API returns `{schedule: [...]}` not raw array
-- Changed code to access `scheduledData.schedule` property
-- Prevents ".map is not a function" error during context building
-
-### 8. docs/brain/calendar-lesson-planning.md (b5fceec1ff172ff9be6e16676dfd040ac9bf511ccfa0190409ecada4fe8df328)
-- bm25: -27.5210 | relevance: 1.0000
-
-**Persistence Model:**
-- Planned lessons stored in `planned_lessons` table (facilitator_id, learner_id, scheduled_date, lesson_data JSONB)
-- Each row = one lesson outline for one date
-- Survives page refresh, long absences, logout/login
-- Tied to specific facilitator + learner combination
-- **POST uses date-specific overwrite**: only deletes/replaces dates included in new plan
-- **Multiple non-overlapping plans coexist**: schedule Jan + Mar separately, both persist
-- **Overlapping dates are replaced**: reschedule Jan 15-31 overwrites only those dates, Jan 1-14 untouched
-
-**Data Format:**
-```javascript
-// In-memory format (calendar page state)
-plannedLessons = {
-  '2025-12-15': [
-    { id: '...', title: '...', subject: 'math', grade: '3rd', difficulty: 'intermediate', ... },
-    { id: '...', title: '...', subject: 'science', ... }
-  ],
-  '2025-12-16': [ ... ]
-}
-
-// Database format (planned_lessons table)
-{
-  facilitator_id: 'uuid',
-  learner_id: 'uuid',
-  scheduled_date: '2025-12-15',
-  lesson_data: { id: '...', title: '...', subject: 'math', ... } // JSONB
-}
-```
-
-### API Endpoints
-
-### 5. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (927a36610f2e66911e7ea826ffa802962a757c0ec7b545a69c3fcf9244a1445d)
-- bm25: -1.8377 | entity_overlap_w: 5.20 | adjusted: -3.1377 | relevance: 1.0000
-
-**2025-12-15**: Added database persistence for planned lessons
-- Created `planned_lessons` table with JSONB lesson_data column
-- Created `/api/planned-lessons` route (GET/POST/DELETE)
-- Modified calendar page to load planned lessons on mount/learner change
-- Added `savePlannedLessons()` that updates state AND persists to database
-- Wired `savePlannedLessons` as callback to LessonPlanner
-- Planned lessons now survive refresh, long absence, logout/login
-- Tied to specific facilitator + learner combination via foreign keys
-
-**2025-12-14**: Fixed medals API 404 causing generation failure
-- Changed endpoint from `/api/learner/medals` to `/api/medals`
-- Decoupled medals loading from history processing
-- Added fallback to empty medals object when API fails
-- Generation now succeeds even without medal data
-
-**2025-12-14**: Fixed scheduled lessons API response structure
-- API returns `{schedule: [...]}` not raw array
-- Changed code to access `scheduledData.schedule` property
-- Prevents ".map is not a function" error during context building
-
-### 21. src/app/facilitator/generator/counselor/CounselorClient.jsx (b6e6ebc1dbed05c56ca851c80bcd9e000659d12c23c8c859a044e2daec8d0991)
-- bm25: -15.7328 | relevance: 1.0000
-
-### 6. sidekick_pack.md (30549f54be833385d5ba4ee39360ca49e40c21f5e7a28f19d502dd8a670c9c74)
-- bm25: -1.7715 | entity_overlap_w: 5.20 | adjusted: -3.0715 | relevance: 1.0000
-
-### 36. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (927a36610f2e66911e7ea826ffa802962a757c0ec7b545a69c3fcf9244a1445d)
-- bm25: -11.6021 | relevance: 1.0000
-
-**2025-12-15**: Added database persistence for planned lessons
-- Created `planned_lessons` table with JSONB lesson_data column
-- Created `/api/planned-lessons` route (GET/POST/DELETE)
-- Modified calendar page to load planned lessons on mount/learner change
-- Added `savePlannedLessons()` that updates state AND persists to database
-- Wired `savePlannedLessons` as callback to LessonPlanner
-- Planned lessons now survive refresh, long absence, logout/login
-- Tied to specific facilitator + learner combination via foreign keys
-
-**2025-12-14**: Fixed medals API 404 causing generation failure
-- Changed endpoint from `/api/learner/medals` to `/api/medals`
-- Decoupled medals loading from history processing
-- Added fallback to empty medals object when API fails
-- Generation now succeeds even without medal data
-
-**2025-12-14**: Fixed scheduled lessons API response structure
-- API returns `{schedule: [...]}` not raw array
-- Changed code to access `scheduledData.schedule` property
-- Prevents ".map is not a function" error during context building
-
-### 21. src/app/facilitator/generator/counselor/CounselorClient.jsx (b6e6ebc1dbed05c56ca851c80bcd9e000659d12c23c8c859a044e2daec8d0991)
-- bm25: -15.7328 | relevance: 1.0000
-
-### 37. docs/brain/beta-program.md (cae6df5d6046a2f57313f44becea8e960b732d9849e6bb3963232d991ff6fd57)
-- bm25: -11.5924 | relevance: 1.0000
-
-### Never Block Non-Beta Users
-- Tutorials are optional for non-Beta users
-- Gates apply only when `subscription_tier == 'Beta'`
-
-### 7. docs/brain/calendar-lesson-planning.md (5099a67314b21b85fa6a8156e8fd0f3b3e8f5c4ec53943e5cc4e0d17890d9adb)
-- bm25: -1.7686 | entity_overlap_w: 5.20 | adjusted: -3.0686 | relevance: 1.0000
-
-**2025-12-15**: Added adaptive difficulty progression
-- Analyzes last 6 completed lessons to calculate recommended difficulty
-- Moves up to advanced if avg ≥80-85% and appropriate current level
-- Moves down to beginner if avg ≤65%, or to intermediate if avg ≤70% while at advanced
-- Defaults to intermediate with <3 completed lessons
-- Enhanced GPT instructions with "Curriculum Evolution Guidelines" and anti-repetition directives
-
-**2025-12-15**: Added database persistence for planned lessons
-- Created `planned_lessons` table with JSONB lesson_data column
-- Created `/api/planned-lessons` route (GET/POST/DELETE)
-- Modified calendar page to load planned lessons on mount/learner change
-- Added `savePlannedLessons()` that updates state AND persists to database
-- Wired `savePlannedLessons` as callback to LessonPlanner
-- Planned lessons now survive refresh, long absence, logout/login
-- Tied to specific facilitator + learner combination via foreign keys
-
-**2025-12-14**: Fixed medals API 404 causing generation failure
-- Changed endpoint from `/api/learner/medals` to `/api/medals`
-- Decoupled medals loading from history processing
-- Added fallback to empty medals object when API fails
-- Generation now succeeds even without medal data
-
-**2025-12-14**: Fixed scheduled lessons API response structure
-- API returns `{schedule: [...]}` not raw array
-- Changed code to access `scheduledData.schedule` property
-- Prevents ".map is not a function" error during context building
-
-### 8. docs/brain/ingests/pack.planned-lessons-flow.md (e074ed398bef57bf4187388697ee43b3d448308b1f50fb9269c99a3bb6ab5e3c)
-- bm25: -1.7338 | entity_overlap_w: 5.20 | adjusted: -3.0338 | relevance: 1.0000
-
-### 2. docs/brain/calendar-lesson-planning.md (5099a67314b21b85fa6a8156e8fd0f3b3e8f5c4ec53943e5cc4e0d17890d9adb)
-- bm25: -33.5881 | entity_overlap_w: 3.50 | adjusted: -34.4631 | relevance: 1.0000
-
-**2025-12-15**: Added adaptive difficulty progression
-- Analyzes last 6 completed lessons to calculate recommended difficulty
-- Moves up to advanced if avg ≥80-85% and appropriate current level
-- Moves down to beginner if avg ≤65%, or to intermediate if avg ≤70% while at advanced
-- Defaults to intermediate with <3 completed lessons
-- Enhanced GPT instructions with "Curriculum Evolution Guidelines" and anti-repetition directives
-
-**2025-12-15**: Added database persistence for planned lessons
-- Created `planned_lessons` table with JSONB lesson_data column
-- Created `/api/planned-lessons` route (GET/POST/DELETE)
-- Modified calendar page to load planned lessons on mount/learner change
-- Added `savePlannedLessons()` that updates state AND persists to database
-- Wired `savePlannedLessons` as callback to LessonPlanner
-- Planned lessons now survive refresh, long absence, logout/login
-- Tied to specific facilitator + learner combination via foreign keys
-
-**2025-12-14**: Fixed medals API 404 causing generation failure
-- Changed endpoint from `/api/learner/medals` to `/api/medals`
-- Decoupled medals loading from history processing
-- Added fallback to empty medals object when API fails
-- Generation now succeeds even without medal data
-
-**2025-12-14**: Fixed scheduled lessons API response structure
-- API returns `{schedule: [...]}` not raw array
-- Changed code to access `scheduledData.schedule` property
-- Prevents ".map is not a function" error during context building
-
-### 9. docs/brain/ingests/pack.lesson-schedule-debug.md (12989ad8d07322ac9f6432c7f1b12df965613cda4dca19e643cdb09dba0e6e92)
-- bm25: -1.7155 | entity_overlap_w: 5.20 | adjusted: -3.0155 | relevance: 1.0000
-
-### Manual Scheduling: "Add Lessons" Picker
-
-The Calendar page includes an "Add Lessons" panel for manually assigning lesson files to specific dates.
-
-### 23. docs/brain/calendar-lesson-planning.md (5099a67314b21b85fa6a8156e8fd0f3b3e8f5c4ec53943e5cc4e0d17890d9adb)
-- bm25: -18.7846 | relevance: 1.0000
-
-**2025-12-15**: Added adaptive difficulty progression
-- Analyzes last 6 completed lessons to calculate recommended difficulty
-- Moves up to advanced if avg ≥80-85% and appropriate current level
-- Moves down to beginner if avg ≤65%, or to intermediate if avg ≤70% while at advanced
-- Defaults to intermediate with <3 completed lessons
-- Enhanced GPT instructions with "Curriculum Evolution Guidelines" and anti-repetition directives
-
-**2025-12-15**: Added database persistence for planned lessons
-- Created `planned_lessons` table with JSONB lesson_data column
-- Created `/api/planned-lessons` route (GET/POST/DELETE)
-- Modified calendar page to load planned lessons on mount/learner change
-- Added `savePlannedLessons()` that updates state AND persists to database
-- Wired `savePlannedLessons` as callback to LessonPlanner
-- Planned lessons now survive refresh, long absence, logout/login
-- Tied to specific facilitator + learner combination via foreign keys
-
-**2025-12-14**: Fixed medals API 404 causing generation failure
-- Changed endpoint from `/api/learner/medals` to `/api/medals`
-- Decoupled medals loading from history processing
-- Added fallback to empty medals object when API fails
-- Generation now succeeds even without medal data
-
-**2025-12-14**: Fixed scheduled lessons API response structure
-- API returns `{schedule: [...]}` not raw array
-- Changed code to access `scheduledData.schedule` property
-- Prevents ".map is not a function" error during context building
-
-### 10. docs/brain/ingests/pack.lesson-schedule-debug.md (e3dee7047737c4ade92723eaf33d7c14f4f4e7bfc10ef68d963ce7b2cb1040d8)
-- bm25: -1.7152 | entity_overlap_w: 5.20 | adjusted: -3.0152 | relevance: 1.0000
-
-**Rollback plan:**
-- Commits are waypointed
-- Can revert via: `git revert ab3fed4..6890d3b`
-- CounselorClient integration is isolated in sendMessage
-- Removing interceptor call returns to original API-only flow
-
-## Commits
-
-**6890d3b:** WIP: Create MentorInterceptor foundation with intent detection and search flow  
-**6b5f2ea:** Complete all MentorInterceptor flows: generate, schedule, edit, recall with full parameter gathering  
-**a7a5055:** Integrate MentorInterceptor with CounselorClient for front-end conversation handling  
-**ab3fed4:** Add recall 'more' handling and fix allLessons structure for interceptor
-
-## Next Steps
-
-### 31. docs/brain/MentorInterceptor_Architecture.md (60f07ef2ca6b46ccf29d388c7876adc7209f6ef132ed0c012457179a075de044)
-- bm25: -17.6460 | relevance: 1.0000
-
-### Action Execution
-
-**Schedule:**
-```javascript
-POST /api/facilitator/lessons/schedule
-window.dispatchEvent('mr-mentor:lesson-scheduled')
-```
-
-**Generate:**
-```javascript
-setActiveScreen('maker')
-// Future: populate maker fields with action data
-```
-
-**Edit:**
-```javascript
-setActiveScreen('lessons')
-// Future: open lesson editor with editInstructions
-```
-
-### TTS for Interceptor Responses
-
-```javascript
-POST /api/text-to-speech
-{ text: interceptResult.response }
-
-playAudio(ttsData.audio)
-```
-
-Same voice as Mr. Mentor API responses.
-
-### Conversation History
-
-Interceptor responses are added to conversationHistory:
-
-```javascript
-[
-  { role: 'user', content: 'find 4th grade math lessons' },
-  { role: 'assistant', content: 'I found 5 lessons. Which one...' }
-]
-```
-
-This allows:
-- Recall flow to search interceptor conversations
-- API to see interceptor context when forwarded
-- Continuity across interceptor/API boundary
-
-### Bypass Commands
-
-User can skip interceptor:
-
-### 11. docs/brain/ingests/pack-mentor-intercepts.md (25711d27c508cfb3ccfe0857cf9840f8ee4f0b6ca320336ae4655ec852460047)
-- bm25: -1.9834 | entity_overlap_w: 3.90 | adjusted: -2.9584 | relevance: 1.0000
-
-- `src/app/facilitator/generator/counselor/CounselorClient.jsx` - Main Mr. Mentor UI (2831 lines)
-- `src/app/facilitator/generator/counselor/ClipboardOverlay.jsx` - Conversation summary overlay
-- `src/app/api/mentor-session/route.js` - Session CRUD API (GET/POST/PATCH/DELETE)
-- `src/app/api/conversation-drafts/route.js` - Draft summary API
-- `src/app/api/conversation-memory/route.js` - Permanent memory API
-
-### 12. docs/brain/mr-mentor-session-persistence.md (c2eb61d278bd75ea3bdaff9b65f83fddd692989bdfe687b11402765ab944edc5)
-- bm25: -1.8539 | entity_overlap_w: 3.90 | adjusted: -2.8289 | relevance: 1.0000
-
-**When to Delete `conversation_drafts` Row:**
-1. User clicks "Delete" → Delete immediately
-2. User clicks "Save" → Delete after successful save to `conversation_updates`
-
-**Atomic Delete (New Conversation):**
-```javascript
-// Delete BOTH tables atomically
-await Promise.all([
-  fetch(`/api/mentor-session?sessionId=${sessionId}`, { method: 'DELETE' }),
-  fetch(`/api/conversation-drafts?learner_id=${learnerId}`, { method: 'DELETE' })
-])
-```
+**Calendar month focus rule (history discoverability):**
+- When a learner is selected on the Schedule tab, the calendar grid should auto-focus to the month containing the most recent scheduled date (preferably a past/completed date when available).
+- This prevents the calendar from looking "empty" on the current month when the learner's completed history is in earlier months.
+
+**UI rule (Schedule tab only):**
+- For past (completed) scheduled lessons, actions change to:
+  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
+  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
+  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
+  - **Remove**: requires typing `remove` and warns it cannot be undone.
+
+### 8. docs/brain/ingests/pack.lesson-schedule-debug.md (43275361c85baceec81d8ab6835df496d5162a8f4cd178ae0c41a5029e83ffac)
+- bm25: -29.6515 | relevance: 1.0000
+
+### 19. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
+- bm25: -20.0203 | relevance: 1.0000
+
+**Completion query rule (visibility > micro-optimization):**
+- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
+- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
+
+**Calendar date key rule (marker dots):**
+- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
+- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
+- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
+
+**Calendar month focus rule (history discoverability):**
+- When a learner is selected on the Schedule tab, the calendar grid should auto-focus to the month containing the most recent scheduled date (preferably a past/completed date when available).
+- This prevents the calendar from looking "empty" on the current month when the learner's completed history is in earlier months.
+
+**UI rule (Schedule tab only):**
+- For past (completed) scheduled lessons, actions change to:
+  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
+  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
+  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
+  - **Remove**: requires typing `remove` and warns it cannot be undone.
+
+### 9. docs/brain/calendar-lesson-planning.md (8fb5d6fd52eb343d38244e53af009c1d078e80740d159006615a9235e71a5585)
+- bm25: -29.6044 | relevance: 1.0000
+
+# Calendar Lesson Planning System - Ms. Sonoma Brain File
+
+**Last Updated**: 2026-02-05T03:28:35Z  
+**Status**: Canonical
+
+## How It Works
+
+### Automated Lesson Plan Generation
+
+The Calendar page includes an automated lesson planner that generates lesson outlines for multiple weeks based on a weekly subject pattern.
+
+**Flow:**
+1. Facilitator sets up weekly pattern (which subjects on which days)
+2. Selects start date and duration (in months)
+3. Clicks "Generate Lesson Plan" 
+4. System generates outline for each subject/day combination across specified timeframe
+5. **Planned lessons automatically save to database**
+6. Planned lessons load from database on page mount or learner change
+
+**Context Integration:**
+- Fetches learner's lesson history (completed, incomplete sessions)
+- Loads medals/scores for completed lessons
+- Gets scheduled lessons
+- Retrieves curriculum preferences (focus/banned concepts/topics/words)
+- Combines into context string sent to GPT for smarter lesson planning
+- Prevents repetition of already-completed topics
+- Prevents repetition within the same generation run by adding "generated so far" lessons into later GPT calls
+
+**Within-run anti-repeat rule (important):**
+- The planner generates one outline per day/subject slot.
+- If the context sent to GPT does not include outlines generated earlier in the same batch, GPT can repeat topics week-to-week because it cannot "see" what it already created.
+- The planner must include a short list of already-generated outlines (especially for the same subject) in the context for subsequent outline requests.
+
+### 10. docs/brain/ingests/pack.planned-lessons-flow.md (9b8bb379fb9f858bf16466497e23ae36c4229766bf0ff9306908e1c67f953e68)
+- bm25: -28.9160 | relevance: 1.0000
+
+# Calendar Lesson Planning System - Ms. Sonoma Brain File
+
+**Last Updated**: 2026-02-05T03:28:35Z  
+**Status**: Canonical
+
+## How It Works
+
+### Automated Lesson Plan Generation
+
+The Calendar page includes an automated lesson planner that generates lesson outlines for multiple weeks based on a weekly subject pattern.
+
+**Flow:**
+1. Facilitator sets up weekly pattern (which subjects on which days)
+2. Selects start date and duration (in months)
+3. Clicks "Generate Lesson Plan" 
+4. System generates outline for each subject/day combination across specified timeframe
+5. **Planned lessons automatically save to database**
+6. Planned lessons load from database on page mount or learner change
+
+**Context Integration:**
+- Fetches learner's lesson history (completed, incomplete sessions)
+- Loads medals/scores for completed lessons
+- Gets scheduled lessons
+- Retrieves curriculum preferences (focus/banned concepts/topics/words)
+- Combines into context string sent to GPT for smarter lesson planning
+- Prevents repetition of already-completed topics
+- Prevents repetition within the same generation run by adding "generated so far" lessons into later GPT calls
+
+**Within-run anti-repeat rule (important):**
+- The planner generates one outline per day/subject slot.
+- If the context sent to GPT does not include outlines generated earlier in the same batch, GPT can repeat topics week-to-week because it cannot "see" what it already created.
+- The planner must include a short list of already-generated outlines (especially for the same subject) in the context for subsequent outline requests.
+
+### 11. docs/brain/calendar-lesson-planning.md (de0b7e2265d9cfcb4b0c9cd0651ba3db1eb254c5334aa7a65a5b5a4fad4aba17)
+- bm25: -28.6058 | relevance: 1.0000
+
+**Data source and key format:**
+- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
+- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
+
+**Filtering behavior:**
+- Subject grouping uses each lesson's `subject` metadata.
+- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
+
+### Completed Past Scheduled Lessons (History View)
+
+The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
+
+**Data rule:**
+- The schedule loader fetches the learner's schedule history.
+- For dates before "today" (local YYYY-MM-DD), scheduled lessons are included only if there is a matching completion event in `lesson_session_events`.
+
+**Completion matching rule:**
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
+
+**Make-up window rule (7 days):**
+- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
+- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
+
+### 12. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (699a2ea78705303695515c7e74fd680ef055f084078e7ab40188ca6a27bef342)
+- bm25: -28.3826 | relevance: 1.0000
 
 ---
 
@@ -443,293 +405,165 @@ await Promise.all([
 - `src/app/api/conversation-drafts/route.js` - Draft summary API
 - `src/app/api/conversation-memory/route.js` - Permanent memory API
 
-### 13. docs/brain/MentorInterceptor_Architecture.md (60f07ef2ca6b46ccf29d388c7876adc7209f6ef132ed0c012457179a075de044)
-- bm25: -1.7730 | entity_overlap_w: 3.90 | adjusted: -2.7480 | relevance: 1.0000
+### 25. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
+- bm25: -15.0342 | relevance: 1.0000
+
+**Completion query rule (visibility > micro-optimization):**
+- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
+- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
+
+**Calendar date key rule (marker dots):**
+- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
+- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
+- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
+
+### 13. docs/brain/ingests/pack.md (5fd0b2319691b60c2ab2d7c6a9650ea9f00741ed6e601d04079fc31a2701cf61)
+- bm25: -28.1877 | relevance: 1.0000
+
+**Flow:**
+1. Facilitator sets up weekly pattern (which subjects on which days)
+2. Selects start date and duration (in months)
+3. Clicks "Generate Lesson Plan" 
+4. System generates outline for each subject/day combination across specified timeframe
+5. **Planned lessons automatically save to database**
+6. Planned lessons load from database on page mount or learner change
+
+**Context Integration:**
+- Fetches learner's lesson history (completed, incomplete sessions)
+- Loads medals/scores for completed lessons
+- Gets scheduled lessons
+- Retrieves curriculum preferences (focus/banned concepts/topics/words)
+- Combines into context string sent to GPT for smarter lesson planning
+- Prevents repetition of already-completed topics
+- Prevents repetition within the same generation run by adding "generated so far" lessons into later GPT calls
+
+**Within-run anti-repeat rule (important):**
+- The planner generates one outline per day/subject slot.
+- If the context sent to GPT does not include outlines generated earlier in the same batch, GPT can repeat topics week-to-week because it cannot "see" what it already created.
+- The planner must include a short list of already-generated outlines (especially for the same subject) in the context for subsequent outline requests.
 
-### Action Execution
+### 5. docs/brain/calendar-lesson-planning.md (508134b31ceac5379e6edf01fa6e367c144e9aac1f98d2a85cca866a2cb62f68)
+- bm25: -31.4009 | relevance: 1.0000
 
-**Schedule:**
-```javascript
-POST /api/facilitator/lessons/schedule
-window.dispatchEvent('mr-mentor:lesson-scheduled')
-```
+### Error Handling
 
-**Generate:**
-```javascript
-setActiveScreen('maker')
-// Future: populate maker fields with action data
-```
+**Graceful Degradation:**
+- Medals API failure → defaults to empty object, generation continues
+- History processing independent of medals availability
+- Individual outline generation failures logged but don't stop batch
+- Planned lessons load failure → defaults to empty object, page still usable
+
+### 14. docs/brain/ingests/pack.md (457324d43ea5d640d2143d6eabafb9637ff47ccee9bda121abde347baffba259)
+- bm25: -28.0365 | relevance: 1.0000
+
+**Data source and key format:**
+- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
+- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
+
+**Filtering behavior:**
+- Subject grouping uses each lesson's `subject` metadata.
+- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
 
-**Edit:**
-```javascript
-setActiveScreen('lessons')
-// Future: open lesson editor with editInstructions
-```
+### Completed Past Scheduled Lessons (History View)
 
-### TTS for Interceptor Responses
+The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
 
-```javascript
-POST /api/text-to-speech
-{ text: interceptResult.response }
+**Data rule:**
+- The schedule loader fetches the learner's schedule history.
+- For dates before "today" (local YYYY-MM-DD), scheduled lessons are included only if there is a matching completion event in `lesson_session_events`.
 
-playAudio(ttsData.audio)
-```
+**Completion matching rule:**
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
 
-Same voice as Mr. Mentor API responses.
+**Make-up window rule (7 days):**
+- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
+- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
 
-### Conversation History
+### 11. docs/brain/calendar-lesson-planning.md (edc4501d8cf5402f28f2f259c81317facde5d8c4d278692219fb856850a029d8)
+- bm25: -26.0161 | relevance: 1.0000
 
-Interceptor responses are added to conversationHistory:
+### 15. docs/brain/ingests/pack.planned-lessons-flow.md (c985a44d345e351fd61ade599be3e29e3e7386375d077fade62e6f02a4bdad24)
+- bm25: -27.9567 | relevance: 1.0000
 
-```javascript
-[
-  { role: 'user', content: 'find 4th grade math lessons' },
-  { role: 'assistant', content: 'I found 5 lessons. Which one...' }
-]
-```
+**Data source and key format:**
+- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
+- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
 
-This allows:
-- Recall flow to search interceptor conversations
-- API to see interceptor context when forwarded
-- Continuity across interceptor/API boundary
+**Filtering behavior:**
+- Subject grouping uses each lesson's `subject` metadata.
+- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
 
-### Bypass Commands
+### Completed Past Scheduled Lessons (History View)
 
-User can skip interceptor:
+The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
 
-```javascript
-['different issue', 'something else', 'nevermind', 'skip']
-```
+**Data rule:**
+- The schedule loader fetches the learner's schedule history.
+- For dates before "today" (local YYYY-MM-DD), scheduled lessons are included only if there is a matching completion event in `lesson_session_events`.
 
-Returns:
-```javascript
-{
-  handled: false,
-  apiForward: { 
-    message: userMessage, 
-    bypassInterceptor: true 
-  }
-}
-```
+**Completion matching rule:**
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
 
-## Data Structures
+**Make-up window rule (7 days):**
+- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
+- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
 
-### allLessons (from loadAllLessons)
+### 24. docs/brain/calendar-lesson-planning.md (1d396766db2440144971a1350400b34ef2799dc2339e2896f9d8c5a4a2c58fe0)
+- bm25: -16.2825 | relevance: 1.0000
 
-### 14. docs/brain/goals-clipboard.md (6c7fe83e90a7942cbfd98ef8a90715d22a772bbd4c807f6dc85c8f37d1b568ba)
-- bm25: -1.7601 | entity_overlap_w: 3.90 | adjusted: -2.7351 | relevance: 1.0000
+### 16. docs/brain/ingests/pack.lesson-schedule-debug.md (70940359c629eb7191429b557e1c30bb4e172a7c5692b740c4eda364fd8808f7)
+- bm25: -27.8640 | relevance: 1.0000
 
-**`/api/counselor` integration:**
-- Request body now includes `goals_notes` field
-- System prompt includes: `"PERSISTENT GOALS & PRIORITIES:\n{goals_notes}"`
-- Mr. Mentor sees goals in every conversation turn
+## Ranked Evidence
 
-## Key Files
+### 1. docs/brain/calendar-lesson-planning.md (de0b7e2265d9cfcb4b0c9cd0651ba3db1eb254c5334aa7a65a5b5a4fad4aba17)
+- bm25: -26.6162 | relevance: 1.0000
 
-- `src/app/counselor/CounselorClient.jsx` - Goals button, state management, auto-load on learner switch
-- `src/components/GoalsClipboardOverlay.jsx` - Overlay UI component
-- `src/app/api/goals-notes/route.js` - Load/save API endpoint
-- `src/app/api/counselor/route.js` - Receives goals_notes, includes in system prompt
+**Data source and key format:**
+- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
+- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
 
-## What NOT To Do
+**Filtering behavior:**
+- Subject grouping uses each lesson's `subject` metadata.
+- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
 
-**DON'T exceed 600 character limit** - UI enforces this but API should validate too. Longer text risks token bloat and poor UX.
+### Completed Past Scheduled Lessons (History View)
 
-**DON'T fail silently on load errors** - If goals fail to load, show user-friendly message. Missing goals can confuse facilitators who expect Mr. Mentor to remember context.
+The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
 
-**DON'T forget to clear goals on learner switch** - When learner changes, immediately load new goals. Stale goals = wrong context.
+**Data rule:**
+- The schedule loader fetches the learner's schedule history.
+- For dates before "today" (local YYYY-MM-DD), scheduled lessons are included only if there is a matching completion event in `lesson_session_events`.
 
-**DON'T make goals optional in API calls** - Always send `goals_notes` field (empty string if none) so Mr. Mentor knows explicitly whether goals exist or not.
+**Completion matching rule:**
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
 
-### 15. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (9cc323629ddd2145461939a8ea0910f1262ae81d210a78303cc32979399b4a31)
-- bm25: -1.7282 | entity_overlap_w: 3.90 | adjusted: -2.7032 | relevance: 1.0000
+**Make-up window rule (7 days):**
+- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
+- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
 
-**`/api/counselor` integration:**
-- Request body now includes `goals_notes` field
-- System prompt includes: `"PERSISTENT GOALS & PRIORITIES:\n{goals_notes}"`
-- Mr. Mentor sees goals in every conversation turn
+### 17. docs/brain/ingests/pack.planned-lessons-flow.md (043acc5f96fad3732cebeb897f3edf1f5e317250beb4b58f69e73bcccf3e4b46)
+- bm25: -26.5799 | relevance: 1.0000
 
-## Key Files
+### Data/Key Rules
 
-- `src/app/counselor/CounselorClient.jsx` - Goals button, state management, auto-load on learner switch
-- `src/components/GoalsClipboardOverlay.jsx` - Overlay UI component
-- `src/app/api/goals-notes/route.js` - Load/save API endpoint
-- `src/app/api/counselor/route.js` - Receives goals_notes, includes in system prompt
-
-## What NOT To Do
-
-**DON'T exceed 600 character limit** - UI enforces this but API should validate too. Longer text risks token bloat and poor UX.
-
-**DON'T fail silently on load errors** - If goals fail to load, show user-friendly message. Missing goals can confuse facilitators who expect Mr. Mentor to remember context.
-
-**DON'T forget to clear goals on learner switch** - When learner changes, immediately load new goals. Stale goals = wrong context.
-
-**DON'T make goals optional in API calls** - Always send `goals_notes` field (empty string if none) so Mr. Mentor knows explicitly whether goals exist or not.
-
-### 18. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (a69efca9880db84d16bcf2416cead5e30a8ee222c1531e8f6d6ad02cf39c54d3)
-- bm25: -17.0642 | relevance: 1.0000
-
-### 16. docs/brain/ingests/pack-mentor-intercepts.md (8b09eea9f3295dcc52f3f4b9bb7d9878bd71a49a32283381d433d7d6821ceb01)
-- bm25: -1.7103 | entity_overlap_w: 3.90 | adjusted: -2.6853 | relevance: 1.0000
-
-#### Response Flow
-
-### 8. docs/brain/goals-clipboard.md (6c7fe83e90a7942cbfd98ef8a90715d22a772bbd4c807f6dc85c8f37d1b568ba)
-- bm25: -23.7025 | relevance: 1.0000
-
-**`/api/counselor` integration:**
-- Request body now includes `goals_notes` field
-- System prompt includes: `"PERSISTENT GOALS & PRIORITIES:\n{goals_notes}"`
-- Mr. Mentor sees goals in every conversation turn
-
-## Key Files
-
-- `src/app/counselor/CounselorClient.jsx` - Goals button, state management, auto-load on learner switch
-- `src/components/GoalsClipboardOverlay.jsx` - Overlay UI component
-- `src/app/api/goals-notes/route.js` - Load/save API endpoint
-- `src/app/api/counselor/route.js` - Receives goals_notes, includes in system prompt
-
-## What NOT To Do
-
-**DON'T exceed 600 character limit** - UI enforces this but API should validate too. Longer text risks token bloat and poor UX.
-
-**DON'T fail silently on load errors** - If goals fail to load, show user-friendly message. Missing goals can confuse facilitators who expect Mr. Mentor to remember context.
-
-**DON'T forget to clear goals on learner switch** - When learner changes, immediately load new goals. Stale goals = wrong context.
-
-**DON'T make goals optional in API calls** - Always send `goals_notes` field (empty string if none) so Mr. Mentor knows explicitly whether goals exist or not.
-
-### 9. docs/brain/custom-subjects.md (7e58ee1ca5dc34b720347edc91b697304897f6b53937497421004d738d51df62)
-- bm25: -23.1679 | relevance: 1.0000
-
-### 17. docs/brain/api-routes.md (1a9909aa92e1849ef1e916a1eb98c4a6450cf230d4dcc814fde247b23fff87a0)
-- bm25: -1.8675 | entity_overlap_w: 2.60 | adjusted: -2.5175 | relevance: 1.0000
-
----
-
-## API Architecture Principles
-
-1. **Stateless**: Each `/api/sonoma` call is independent; session state passed in request body
-2. **Instruction-driven**: Behavior controlled by `instructions` field, not hardcoded logic
-3. **LLM-agnostic**: Provider/model configured via `SONOMA_PROVIDER` and `SONOMA_MODEL` env vars
-4. **Closed-world**: API responses are text-only; no side effects, no file access, no database writes from Ms. Sonoma
-
-### 18. docs/brain/ingests/pack-mentor-intercepts.md (e51688fc662a7cfeed539410f10ff803205d894fd46fa5cf904e66e0ab3adef1)
-- bm25: -1.8641 | entity_overlap_w: 2.60 | adjusted: -2.5141 | relevance: 1.0000
-
-- API
-  - `src/app/api/portfolio/generate/route.js` (portfolio builder)
-  - `src/app/api/portfolio/list/route.js` (list saved portfolios)
-  - `src/app/api/portfolio/delete/route.js` (delete saved portfolios + files)
-  - `src/app/api/portfolio/lib.js` (HTML builder + helpers)
-
-### 21. docs/brain/content-safety.md (8439c6a11335f126b7eb9ca7e5cceeea2313c6fa8078c00e649bedbe03efc5ad)
-- bm25: -13.9812 | relevance: 1.0000
-
-- `src/app/session/utils/profanityFilter.js` - Profanity detection, word list
-- `src/app/api/sonoma/route.js` - Moderation API integration
-- Session page instruction builders - Safety directives
-
-### 22. docs/brain/lesson-validation.md (6bd47820aa3da6e19dc9b0a9c78ca88859dc4dd6752d036fea1a2fe4318d515b)
-- bm25: -13.7593 | relevance: 1.0000
-
-**Lesson Maker** (`/facilitator/generator`, implemented in `src/app/facilitator/generator/page.js`):
-1. User fills form and clicks "Generate Lesson"
-2. Toast: "Generating lesson..."
-3. Call `/api/facilitator/lessons/generate`
-4. Validate with `lessonValidation.validateLesson()`
-5. If issues: Toast "Improving quality...", call `/api/facilitator/lessons/request-changes`
-6. Toast: "Lesson ready!"
-
-### 23. docs/brain/visual-aids.md (a5475ac1e1d52b11fba2a131961efaa39fab393b62bc29614a7cbc09580ebb03)
-- bm25: -13.7064 | relevance: 1.0000
-
-**Never skip the no-text enforcement suffix:**
-- Every DALL-E prompt must include the explicit no-text suffix
-- This is the final guardrail against text appearing in images
-- Without it, even carefully worded prompts can accidentally trigger text rendering
-
-## Related Brain Files
-
-### 19. docs/brain/ingests/pack-mentor-intercepts.md (8a7301d0500f96c08aa055fafd78dfff6d432220ac856186ec0fc23816f67eb4)
-- bm25: -1.7895 | entity_overlap_w: 2.60 | adjusted: -2.4395 | relevance: 1.0000
-
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
-
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
-
-## Recent Changes
-
-### 19. docs/brain/MentorInterceptor_Architecture.md (b30a12376305295c1ddcb75bee3d82a3ed8acd72d64038cfbc7e8c026aea67e9)
-- bm25: -14.6288 | relevance: 1.0000
-
-# MentorInterceptor Architecture
-
-**Created:** November 17, 2025  
-**Status:** Deployed and active in Mr. Mentor counselor UI  
-**Commits:** 6890d3b → ab3fed4
-
-## Purpose
-
-Front-end conversation handler for Mr. Mentor that intercepts user messages to:
-- Provide instant responses without API calls where possible
-- Gather parameters through multi-turn Q&A before executing actions
-- Create confirmation flows for all actions (schedule, generate, edit)
-- Make front-end and back-end handling indistinguishable to users
-- Reduce API costs and improve responsiveness
-
-## Architecture
-
-### File Structure
-
-### 20. docs/brain/portfolio-generation.md (e083fdfcd6e4035528697e6c1609dd20b75c22e0849fc326d799b41cbb6a114a)
-- bm25: -1.7442 | entity_overlap_w: 2.60 | adjusted: -2.3942 | relevance: 1.0000
-
-Portfolio scans originally live in the `transcripts` bucket and are private/signed-url only. For no-login review, the generator copies scan files into the public `portfolios` bucket and links them from the portfolio HTML.
-
-### Persistence + Management
-
-Each generated portfolio is also saved in the database so it can be revisited and deleted.
-
-- Table: `public.portfolio_exports`
-  - Stores: facilitator_id, learner_id, portfolio_id, date range, include flags, and Storage paths.
-- API endpoints:
-  - `GET /api/portfolio/list?learnerId=<uuid>`: returns the latest saved portfolios for that learner.
-  - `POST /api/portfolio/delete`: deletes the portfolio's Storage folder first (breaking the public link), then deletes the DB row.
-
-This management layer is required because reviewers may keep the public link, and facilitators need a way to revoke access later.
-
-## What NOT To Do
-
-- Do not embed images as base64 in the HTML. Always link out to stored objects.
-- Do not rely on short-lived signed URLs for reviewer access. Use stored public objects for portfolio artifacts.
-- Do not include future (not-yet-completed) scheduled lessons in the portfolio.
-- Do not add compatibility fallbacks for missing required inputs (dates, learnerId, include flags). Fail loudly.
-
-## Key Files
-
-- UI
-  - `src/app/facilitator/calendar/page.js` (header button + modal wiring)
-  - `src/app/facilitator/calendar/GeneratePortfolioModal.jsx` (overlay)
-  - `src/components/FacilitatorHelp/PageHeader.jsx` (adds optional `actions` slot)
-
-- API
-  - `src/app/api/portfolio/generate/route.js` (portfolio builder)
-  - `src/app/api/portfolio/list/route.js` (list saved portfolios)
-  - `src/app/api/portfolio/delete/route.js` (delete saved portfolios + files)
-  - `src/app/api/portfolio/lib.js` (HTML builder + helpers)
-
-### 21. docs/brain/MentorInterceptor_Architecture.md (ce3cd9684410622160fbad2779f03dd2313cb09bba1ed5ffcd42179724e742c6)
-- bm25: -1.7324 | entity_overlap_w: 2.60 | adjusted: -2.3824 | relevance: 1.0000
+### 31. docs/brain/MentorInterceptor_Architecture.md (ce3cd9684410622160fbad2779f03dd2313cb09bba1ed5ffcd42179724e742c6)
+- bm25: -13.9393 | relevance: 1.0000
 
 ```
 User types message
@@ -760,359 +594,123 @@ interceptor.process(message, { allLessons, selectedLearnerId, learnerName, conve
     Track tokens
 ```
 
-### 22. docs/brain/ingests/pack.md (11dd454c999b4865481c24140fda5f8f8a6ef46b4cf3d0a70ba94921e7c2655c)
-- bm25: -1.9872 | entity_overlap_w: 1.30 | adjusted: -2.3122 | relevance: 1.0000
+### 32. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
+- bm25: -13.5957 | relevance: 1.0000
 
-**API Response Structure:**
-- `/api/medals` returns object directly: `{lessonId: {bestPercent: 85}, ...}`
-- `/api/lesson-schedule` returns wrapper: `{schedule: [...]}`
-- `/api/planned-lessons` returns wrapper: `{plannedLessons: {...}}`
+**Completion query rule (visibility > micro-optimization):**
+- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
+- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
 
-### 23. docs/brain/api-routes.md (6582e7640dfac0b6e5d075e6c5e50752dfcc173c2af94759940062f99ce9fb28)
-- bm25: -1.9276 | entity_overlap_w: 1.30 | adjusted: -2.2526 | relevance: 1.0000
+**Calendar date key rule (marker dots):**
+- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
+- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
+- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
 
-### `/api/content-safety`
-**Purpose**: Content moderation via Azure Content Safety API  
-**Status**: Operational, see brain files for content safety architecture
+### 18. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (7be445ab882a8b5ec4eb6ddf2cb10f9ffe0b8ef65bcdb2d4fb2a0249ed86bb88)
+- bm25: -26.4754 | relevance: 1.0000
 
-### 24. docs/brain/ingests/pack-mentor-intercepts.md (e4bc8bd62895b9dd178bf544acd7b46d801af741c5ef2894d341124251440498)
-- bm25: -1.8879 | entity_overlap_w: 1.30 | adjusted: -2.2129 | relevance: 1.0000
+**UI rule (Schedule tab only):**
+- For past (completed) scheduled lessons, actions change to:
+  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
+  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
+  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
+  - **Remove**: requires typing `remove` and warns it cannot be undone.
 
-`src/app/counselor/CounselorClient.jsx`:
-- After each assistant response, calls `POST /api/conversation-memory` with conversation history
-- Debounced (1 second) to avoid excessive API calls during rapid exchanges
-- On learner switch, loads new memory via `GET /api/conversation-memory?learner_id={id}`
-- Search UI (planned) will call `GET /api/conversation-memory?search={keywords}`
+These actions are implemented on:
+- The main Calendar page schedule list
+- The Calendar Day View overlay schedule list
+- The Mr. Mentor Calendar overlay schedule list
 
-### 25. docs/brain/calendar-lesson-planning.md (6035959c031ffab71ffbf3f5cbacb6d3960524c07c4b172b2317d5d4ccedc1ff)
-- bm25: -1.8415 | entity_overlap_w: 1.30 | adjusted: -2.1665 | relevance: 1.0000
+### Portfolio Scan Uploads (Worksheet/Test Images)
 
-**Common failure mode:**
-- If the Calendar overlay calls `/api/facilitator/lessons/get` without the bearer token, the API returns `401 {"error":"Unauthorized"}`.
-- If the Calendar overlay calls `/api/visual-aids/*` without the bearer token, those endpoints also return `401 {"error":"Unauthorized"}`.
+### 26. src/app/facilitator/generator/counselor/CounselorClient.jsx (41e17c24a556523149db2bc643c856816b23d9b78ec8fa7c213dafcfaee30536)
+- bm25: -14.9427 | relevance: 1.0000
 
-### 26. docs/brain/lesson-library-downloads.md (ea6c987f912e08a4811e52893de3701d5c14ec17ac6ba2a12fed4b2d9135d9b9)
-- bm25: -1.8368 | entity_overlap_w: 1.30 | adjusted: -2.1618 | relevance: 1.0000
+// Handle clipboard delete (discard conversation)
+  const handleClipboardDelete = useCallback(async () => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      if (!token) return
 
-### API
+const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
 
-- `POST /api/facilitator/lessons/download`
-  - Auth: requires `Authorization: Bearer <access_token>`.
-  - Input: `{ subject, file }`.
-  - Server reads the built-in file from `public/lessons/<subjectFolder>/<file>.json`.
-  - Server uploads to Supabase Storage path `facilitator-lessons/<userId>/<file>.json` with `upsert: true`.
+// Delete the draft
+      await fetch(`/api/conversation-drafts?learner_id=${learnerId || ''}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
 
-## What NOT To Do
+// Clear conversation
+      await clearConversationAfterSave()
+      
+      setShowClipboard(false)
+      setClipboardInstructions(false)
+      
+      alert('Conversation deleted.')
+    } catch (err) {
+      // Silent error handling
+      alert('Failed to delete conversation.')
+    }
+  }, [selectedLearnerId])
 
-- Do not store lessons on the device (no localStorage/indexedDB/file downloads).
-- Do not reuse Golden Keys to mean "unlock lessons"; Golden Keys are bonus play-time semantics.
-- Do not match ownership using filename-only; subject collisions are possible.
-- Do not allow path traversal in the download endpoint (`..`, `/`, `\\`).
+### 19. docs/brain/ingests/pack.planned-lessons-flow.md (2046f8ed83efe371421b91cb16a7671c8ab761a39b24a8cf0b5c73dd86dac748)
+- bm25: -26.4300 | relevance: 1.0000
 
-## Key Files
+**UI rule (Schedule tab only):**
+- For past (completed) scheduled lessons, actions change to:
+  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
+  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
+  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
+  - **Remove**: requires typing `remove` and warns it cannot be undone.
 
-- `src/app/facilitator/lessons/page.js`
-- `src/app/api/facilitator/lessons/download/route.js`
-- `src/app/api/facilitator/lessons/list/route.js`
-- `src/app/api/lessons/[subject]/route.js`
-- `src/app/api/lesson-file/route.js`
+These actions are implemented on:
+- The main Calendar page schedule list
+- The Calendar Day View overlay schedule list
+- The Mr. Mentor Calendar overlay schedule list
 
-### 27. docs/brain/ingests/pack.md (8a535f1018b01bca63214b8dd441e8a6440e56eddd6d63a59123032e040c7111)
-- bm25: -1.8122 | entity_overlap_w: 1.30 | adjusted: -2.1372 | relevance: 1.0000
+### Portfolio Scan Uploads (Worksheet/Test Images)
 
-- `src/app/facilitator/calendar/VisualAidsManagerModal.jsx`
-  - Visual Aids manager for a lessonKey using `/api/visual-aids/load|generate|save`
-  - Uses `VisualAidsCarousel` for selection/upload/save UI
+### 33. docs/brain/portfolio-generation.md (e083fdfcd6e4035528697e6c1609dd20b75c22e0849fc326d799b41cbb6a114a)
+- bm25: -13.4685 | relevance: 1.0000
 
-- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
-  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
+Portfolio scans originally live in the `transcripts` bucket and are private/signed-url only. For no-login review, the generator copies scan files into the public `portfolios` bucket and links them from the portfolio HTML.
 
-**API Routes:**
-- `src/app/api/planned-lessons/route.js`
-  - GET: load by learner, transform DB rows to `{date: [lessons]}` format
-  - POST: date-specific overwrite - extracts dates from new plan, deletes only those dates (.in filter), inserts new rows
-  - DELETE: clear all planned lessons for learner
-  - RLS policies ensure facilitator can only access own data
+### Persistence + Management
 
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
+Each generated portfolio is also saved in the database so it can be revisited and deleted.
 
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
+- Table: `public.portfolio_exports`
+  - Stores: facilitator_id, learner_id, portfolio_id, date range, include flags, and Storage paths.
+- API endpoints:
+  - `GET /api/portfolio/list?learnerId=<uuid>`: returns the latest saved portfolios for that learner.
+  - `POST /api/portfolio/delete`: deletes the portfolio's Storage folder first (breaking the public link), then deletes the DB row.
 
-## Recent Changes
-
-### 12. docs/brain/calendar-lesson-planning.md (9173fe378f56c3786b75c00e9b12c63312fc70bdcd188229f8dd2f7466567dc9)
-- bm25: -25.6308 | relevance: 1.0000
-
-### 28. docs/brain/calendar-lesson-planning.md (edc4501d8cf5402f28f2f259c81317facde5d8c4d278692219fb856850a029d8)
-- bm25: -1.7974 | entity_overlap_w: 1.30 | adjusted: -2.1224 | relevance: 1.0000
-
-- `src/app/facilitator/calendar/LessonNotesModal.jsx`
-  - Minimal notes editor for `learners.lesson_notes[lesson_key]`
-  - Empty note deletes the key from the JSONB map
-
-- `src/app/facilitator/calendar/VisualAidsManagerModal.jsx`
-  - Visual Aids manager for a lessonKey using `/api/visual-aids/load|generate|save`
-  - Uses `VisualAidsCarousel` for selection/upload/save UI
-
-- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
-  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
-
-**API Routes:**
-- `src/app/api/planned-lessons/route.js`
-  - GET: load by learner, transform DB rows to `{date: [lessons]}` format
-  - POST: date-specific overwrite - extracts dates from new plan, deletes only those dates (.in filter), inserts new rows
-  - DELETE: clear all planned lessons for learner
-  - RLS policies ensure facilitator can only access own data
-
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
-
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
-
-## Recent Changes
-
-### 29. cohere-changelog.md (c099d43e20ff8f7901fbebd173567513a37beb2b8b5a706427a1268ddc96e551)
-- bm25: -1.7941 | entity_overlap_w: 1.30 | adjusted: -2.1191 | relevance: 1.0000
-
-Result:
-- Decision: Add two authenticated API routes backed by ThoughtHub events: one groups `meta.mentor_blindspot` by normalized query; one lists/appends `meta.mentor_feature_proposal` as an append-only event for later promotion into the registry.
-- Files changed: src/app/api/mentor-blindspots/route.js, src/app/api/mentor-feature-proposals/route.js, cohere-changelog.md
-
-### 30. docs/brain/ingests/pack.planned-lessons-flow.md (575e83b0e4a0ed1667a2690633337b3755d2e4b69162a2c3fb4af6899807233d)
-- bm25: -1.7880 | entity_overlap_w: 1.30 | adjusted: -2.1130 | relevance: 1.0000
-
-- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
-  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
-
-**API Routes:**
-- `src/app/api/planned-lessons/route.js`
-  - GET: load by learner, transform DB rows to `{date: [lessons]}` format
-  - POST: date-specific overwrite - extracts dates from new plan, deletes only those dates (.in filter), inserts new rows
-  - DELETE: clear all planned lessons for learner
-  - RLS policies ensure facilitator can only access own data
-
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
-
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
-
-## Recent Changes
-
-### 5. docs/brain/MentorInterceptor_Architecture.md (b9af78a6a85babc29ee74ec9cf6073767b7a2e84a19456e1f96ab9a407cbd74d)
-- bm25: -30.7151 | entity_overlap_w: 2.50 | adjusted: -31.3401 | relevance: 1.0000
-
-### 31. docs/brain/MentorInterceptor_Architecture.md (2585991a7684d55feb1914fcd650db4dfa0bc239c1596db3f638e5f2c2a77cde)
-- bm25: -1.7809 | entity_overlap_w: 1.30 | adjusted: -2.1059 | relevance: 1.0000
-
-**API call:**
-```javascript
-POST /api/facilitator/lessons/schedule
-{
-  learner_id: 'uuid',
-  lesson_key: 'math/4th-multiplying-with-zeros.json',
-  scheduled_date: '2025-12-18'
-}
-```
-
-### 32. docs/brain/content-safety.md (8439c6a11335f126b7eb9ca7e5cceeea2313c6fa8078c00e649bedbe03efc5ad)
-- bm25: -1.7757 | entity_overlap_w: 1.30 | adjusted: -2.1007 | relevance: 1.0000
-
-- `src/app/session/utils/profanityFilter.js` - Profanity detection, word list
-- `src/app/api/sonoma/route.js` - Moderation API integration
-- Session page instruction builders - Safety directives
-
-### 33. docs/brain/ingests/pack.lesson-schedule-debug.md (e32f19a7bc99b1fa707b42fc140ba5864a2bbf1c21cf1058c6b3a11637691a49)
-- bm25: -1.7653 | entity_overlap_w: 1.30 | adjusted: -2.0903 | relevance: 1.0000
-
-**API call:**
-```javascript
-POST /api/facilitator/lessons/schedule
-{
-  learner_id: 'uuid',
-  lesson_key: 'math/4th-multiplying-with-zeros.json',
-  scheduled_date: '2025-12-18'
-}
-```
-
-### 34. docs/brain/mr-mentor-memory.md (bcae0399964dfd446fb26c989fa31caab3e7af2aa7335a0a65f8edd22073d4a8)
-- bm25: -1.7601 | entity_overlap_w: 1.30 | adjusted: -2.0851 | relevance: 1.0000
-
-**`conversation_history_archive` table (Permanent Archive):**
-```sql
-- id: UUID primary key
-- facilitator_id: UUID
-- learner_id: UUID (nullable)
-- summary: TEXT
-- conversation_turns: JSONB (full turns at archive time)
-- turn_count: INTEGER
-- archived_at: TIMESTAMPTZ
-- search_vector: tsvector (generated for full-text search)
-```
-**Never deleted.** Archives created when conversation deleted or exceeds 50 turns.
-
-## API Endpoints
-
-**`POST /api/conversation-memory`** - Update or create memory
-
-Request:
-```json
-{
-  "learner_id": "uuid-or-null",
-  "conversation_turns": [
-    { "role": "user", "content": "..." },
-    { "role": "assistant", "content": "..." }
-  ],
-  "force_regenerate": false
-}
-```
-
-Response:
-```json
-{
-  "success": true,
-  "conversation_update": {
-    "id": "...",
-    "summary": "...",
-    "turn_count": 15,
-    "updated_at": "..."
-  }
-}
-```
-
-**`GET /api/conversation-memory`** - Retrieve memory
-
-Query params:
-- `learner_id` (optional): Get learner-specific memory
-- `search` (optional): Search with keywords
-- `include_archive` (optional): Include archived conversations
-
-Examples:
-```
-GET /api/conversation-memory
-→ Returns general facilitator memory
-
-GET /api/conversation-memory?learner_id=abc123
-→ Returns memory for specific learner
-
-GET /api/conversation-memory?search=math%20curriculum&include_archive=true
-→ Searches current + archived memories for "math curriculum"
-```
-
-Response (single memory):
-```json
-{
-  "success": true,
-  "conversation_update": {
-    "summary": "...",
-    "turn_count": 15,
-    "recent_turns": [...],
-    "updated_at": "..."
-  }
-}
-```
-
-### 35. docs/brain/ingests/pack-mentor-intercepts.md (b93a4076a94fbc8922a46757e9f5cbda4e268d5694230d2c678a0f3fca32e62b)
-- bm25: -1.7597 | entity_overlap_w: 1.30 | adjusted: -2.0847 | relevance: 1.0000
-
-### API
-
-- `POST /api/facilitator/lessons/download`
-  - Auth: requires `Authorization: Bearer <access_token>`.
-  - Input: `{ subject, file }`.
-  - Server reads the built-in file from `public/lessons/<subjectFolder>/<file>.json`.
-  - Server uploads to Supabase Storage path `facilitator-lessons/<userId>/<file>.json` with `upsert: true`.
+This management layer is required because reviewers may keep the public link, and facilitators need a way to revoke access later.
 
 ## What NOT To Do
 
-- Do not store lessons on the device (no localStorage/indexedDB/file downloads).
-- Do not reuse Golden Keys to mean "unlock lessons"; Golden Keys are bonus play-time semantics.
-- Do not match ownership using filename-only; subject collisions are possible.
-- Do not allow path traversal in the download endpoint (`..`, `/`, `\\`).
+### 20. docs/brain/ingests/pack.lesson-schedule-debug.md (28cabfb2019a8366fcd1d2186a181c4fd13fcddbffcbc50cd8fd3b3410540dba)
+- bm25: -25.5534 | relevance: 1.0000
 
-## Key Files
+These actions are implemented on:
+- The main Calendar page schedule list
+- The Calendar Day View overlay schedule list
+- The Mr. Mentor Calendar overlay schedule list
 
-- `src/app/facilitator/lessons/page.js`
-- `src/app/api/facilitator/lessons/download/route.js`
-- `src/app/api/facilitator/lessons/list/route.js`
-- `src/app/api/lessons/[subject]/route.js`
-- `src/app/api/lesson-file/route.js`
+### 21. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (db752affeea2f66a776f276697741c41922e9f65f2dad265d123b0fd6b485abd)
+- bm25: -25.3972 | relevance: 1.0000
 
-### 18. docs/brain/calendar-lesson-planning.md (edc4501d8cf5402f28f2f259c81317facde5d8c4d278692219fb856850a029d8)
-- bm25: -14.7958 | relevance: 1.0000
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
 
-- `src/app/facilitator/calendar/LessonNotesModal.jsx`
-  - Minimal notes editor for `learners.lesson_notes[lesson_key]`
-  - Empty note deletes the key from the JSONB map
-
-- `src/app/facilitator/calendar/VisualAidsManagerModal.jsx`
-  - Visual Aids manager for a lessonKey using `/api/visual-aids/load|generate|save`
-  - Uses `VisualAidsCarousel` for selection/upload/save UI
-
-- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
-  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
-
-### 36. docs/brain/ingests/pack.lesson-schedule-debug.md (dd94434cb8c303004181882c8f4228c47f194f0b2bf6e5804d6698eafdab5d02)
-- bm25: -1.7583 | entity_overlap_w: 1.30 | adjusted: -2.0833 | relevance: 1.0000
-
-- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
-  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
-
-**API Routes:**
-- `src/app/api/planned-lessons/route.js`
-  - GET: load by learner, transform DB rows to `{date: [lessons]}` format
-  - POST: date-specific overwrite - extracts dates from new plan, deletes only those dates (.in filter), inserts new rows
-  - DELETE: clear all planned lessons for learner
-  - RLS policies ensure facilitator can only access own data
-
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
-
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
-
-## Recent Changes
-
-### 7. docs/brain/calendar-lesson-planning.md (9deb51ba2dd90ddaeee2ec696cc923087de9a8728187af5d9b6f9c4fb5277d7d)
-- bm25: -22.9167 | relevance: 1.0000
-
-This is separate from Visual Aids:
-- **Visual Aids** are lesson-level aids (generated or curated) used during instruction.
-- **Portfolio scans** are learner work artifacts (uploaded images/PDFs).
-
-### 37. docs/brain/pin-protection.md (9d13ed0a83c6fafa15ecaac2fcd18ecc25090900b8af7f490f6909677b7b779f)
-- bm25: -1.7449 | entity_overlap_w: 1.30 | adjusted: -2.0699 | relevance: 1.0000
+### 22. sidekick_pack.md (f0e0466a6588f66493c88c0b00e750e7c20b3e5b9f4eedd4cfc00bcd3826f40a)
+- bm25: -24.5808 | relevance: 1.0000
 
 PIN verification is server-only (no localStorage fallback):
 - Server validates PIN against hashed value in `profiles.facilitator_pin_hash`
@@ -1121,6 +719,71 @@ PIN verification is server-only (no localStorage fallback):
 
 ### 38. docs/brain/ingests/pack.planned-lessons-flow.md (c1630e20d42e7416e0786d4762a62020e29931c3609ba5301492ca0c6c410df5)
 - bm25: -1.7211 | entity_overlap_w: 1.30 | adjusted: -2.0461 | relevance: 1.0000
+
+## What NOT To Do
+
+- Do not store lessons on the device (no localStorage/indexedDB/file downloads).
+- Do not reuse Golden Keys to mean "unlock lessons"; Golden Keys are bonus play-time semantics.
+- Do not match ownership using filename-only; subject collisions are possible.
+- Do not allow path traversal in the download endpoint (`..`, `/`, `\\`).
+
+## Key Files
+
+- `src/app/facilitator/lessons/page.js`
+- `src/app/api/facilitator/lessons/download/route.js`
+- `src/app/api/facilitator/lessons/list/route.js`
+- `src/app/api/lessons/[subject]/route.js`
+- `src/app/api/lesson-file/route.js`
+
+### 27. docs/brain/calendar-lesson-planning.md (4da551360e5a46cca2826bfe58a71289a036bb89df00313db4714021b4cc5eab)
+- bm25: -14.3879 | relevance: 1.0000
+
+**Usage:**
+- `node scripts/check-completions-for-keys.mjs --learner Emma --from 2026-01-05 --to 2026-01-08`
+
+### Scheduled Lessons Overlay: Built-in Lesson Editor
+
+The Calendar day overlay includes an inline lesson editor for scheduled lessons.
+
+This editor matches the regular lesson editor for Visual Aids (button + carousel + generation + persistence).
+
+### 23. docs/brain/ingests/pack.lesson-schedule-debug.md (e2b842c370bb0f99fc9f215cdd7f7ae8c892569b10dc1e4f04911b503e3c107c)
+- bm25: -23.9842 | relevance: 1.0000
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 24. docs/brain/ingests/pack.planned-lessons-flow.md (5562194e98eccff86674afbd40f840c9addc35ff6b8bafec10ed78d812ac1af7)
+- bm25: -23.7616 | relevance: 1.0000
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 25. docs/brain/changelog.md (734f5012565b6221ab41a07c6ed6a285bb49d94d1fedc65b70806108b10bec2c)
+- bm25: -23.7484 | relevance: 1.0000
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 26. docs/brain/ingests/pack.md (a6a5b49764bccdc0ea96a150066cafd71ebee15598c01794309a8254b535b74a)
+- bm25: -23.7087 | relevance: 1.0000
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 27. docs/brain/ingests/pack-mentor-intercepts.md (13da0bd320ddf15195177f579bcb9bd3b7d2c0a7543a07cb2df2712ac5a0bca6)
+- bm25: -23.6295 | relevance: 1.0000
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 28. docs/brain/ingests/pack.planned-lessons-flow.md (c1630e20d42e7416e0786d4762a62020e29931c3609ba5301492ca0c6c410df5)
+- bm25: -23.5145 | relevance: 1.0000
 
 ## What NOT To Do
 
@@ -1159,120 +822,453 @@ This editor matches the regular lesson editor for Visual Aids (button + carousel
 - Uses `PUT /api/facilitator/lessons/update` with JSON body `{ file, lesson }` and `Authorization: Bearer <access_token>`.
 - The server enforces that the authenticated user can only edit their own lessons.
 
-### 39. docs/brain/mr-mentor-sessions.md (0f0ef394916da8a11db2215e0273c72dba088f715c68ce104a6523679e5bfde1)
-- bm25: -1.7089 | entity_overlap_w: 1.30 | adjusted: -2.0339 | relevance: 1.0000
+### 29. docs/brain/ingests/pack.md (d3ec3059cc7def4b2517964fac42725ca1e098325a989a4b2fbb1f4eb7c9badd)
+- bm25: -23.2462 | relevance: 1.0000
 
-## API Endpoints
+These actions are implemented on:
+- The main Calendar page schedule list
+- The Calendar Day View overlay schedule list
+- The Mr. Mentor Calendar overlay schedule list
 
-**`GET /api/mentor-session?sessionId={id}`** - Check session status
+### 30. docs/brain/calendar-lesson-planning.md (4da551360e5a46cca2826bfe58a71289a036bb89df00313db4714021b4cc5eab)
+- bm25: -23.2351 | relevance: 1.0000
 
-Response:
-```json
-{
-  "status": "active" | "taken" | "none",
-  "session": {
-    "session_id": "...",
-    "device_name": "...",
-    "conversation_history": [...],
-    "draft_summary": "...",
-    "last_activity_at": "..."
-  },
-  "isOwner": true | false
-}
+**Usage:**
+- `node scripts/check-completions-for-keys.mjs --learner Emma --from 2026-01-05 --to 2026-01-08`
+
+### Scheduled Lessons Overlay: Built-in Lesson Editor
+
+The Calendar day overlay includes an inline lesson editor for scheduled lessons.
+
+This editor matches the regular lesson editor for Visual Aids (button + carousel + generation + persistence).
+
+**Lesson load:**
+- Uses `GET /api/facilitator/lessons/get?file=<lesson_key>`
+- This endpoint requires an `Authorization: Bearer <access_token>` header.
+- The API derives the facilitator user id from the bearer token and loads from `facilitator-lessons/<userId>/...`.
+- Client code must not rely on a `userId` query param for this endpoint.
+
+**Lesson save:**
+- Uses `PUT /api/facilitator/lessons/update` with JSON body `{ file, lesson }` and `Authorization: Bearer <access_token>`.
+- The server enforces that the authenticated user can only edit their own lessons.
+
+**Visual Aids (Generate / View / Save):**
+- Uses the same facilitator Visual Aids system as the regular editor:
+  - `GET /api/visual-aids/load?lessonKey=...`
+  - `POST /api/visual-aids/generate`
+  - `POST /api/visual-aids/save`
+- All Visual Aids endpoints require `Authorization: Bearer <access_token>`.
+- The inline editor computes a normalized `lessonKey` for visual aids based on the scheduled lesson key:
+  - strips the `generated/` prefix (if present)
+  - ensures a `.json` suffix
+- The Calendar editor renders `VisualAidsCarousel` above the lesson editor modal (z-index passed explicitly).
+
+### 31. docs/brain/ingests/pack.md (fe10194c52ecca73d5dd0223f7028d10267258d80bdab371d948669e51717ef0)
+- bm25: -22.7171 | relevance: 1.0000
+
+### 14. docs/brain/calendar-lesson-planning.md (4da551360e5a46cca2826bfe58a71289a036bb89df00313db4714021b4cc5eab)
+- bm25: -23.3155 | relevance: 1.0000
+
+**Usage:**
+- `node scripts/check-completions-for-keys.mjs --learner Emma --from 2026-01-05 --to 2026-01-08`
+
+### Scheduled Lessons Overlay: Built-in Lesson Editor
+
+The Calendar day overlay includes an inline lesson editor for scheduled lessons.
+
+This editor matches the regular lesson editor for Visual Aids (button + carousel + generation + persistence).
+
+**Lesson load:**
+- Uses `GET /api/facilitator/lessons/get?file=<lesson_key>`
+- This endpoint requires an `Authorization: Bearer <access_token>` header.
+- The API derives the facilitator user id from the bearer token and loads from `facilitator-lessons/<userId>/...`.
+- Client code must not rely on a `userId` query param for this endpoint.
+
+**Lesson save:**
+- Uses `PUT /api/facilitator/lessons/update` with JSON body `{ file, lesson }` and `Authorization: Bearer <access_token>`.
+- The server enforces that the authenticated user can only edit their own lessons.
+
+**Visual Aids (Generate / View / Save):**
+- Uses the same facilitator Visual Aids system as the regular editor:
+  - `GET /api/visual-aids/load?lessonKey=...`
+  - `POST /api/visual-aids/generate`
+  - `POST /api/visual-aids/save`
+- All Visual Aids endpoints require `Authorization: Bearer <access_token>`.
+- The inline editor computes a normalized `lessonKey` for visual aids based on the scheduled lesson key:
+  - strips the `generated/` prefix (if present)
+  - ensures a `.json` suffix
+- The Calendar editor renders `VisualAidsCarousel` above the lesson editor modal (z-index passed explicitly).
+
+### 32. docs/brain/mr-mentor-conversation-flows.md (ec792e77787419d1b45a207c4f316b72a0b239666251a1dadd891ad81666a1ed)
+- bm25: -22.3963 | relevance: 1.0000
+
+### Scenario 3: Recommendation After Search
+```
+User: "Do you have lessons on fractions?"
+Mr. Mentor: [searches, finds 5 lessons]
+Mr. Mentor: "I found 5 fraction lessons. Here are the top 3..."
+Expected: Offer to generate ONLY if search yields poor results
 ```
 
-**`POST /api/mentor-session`** - Create/takeover/force-end session
+---
 
-Request:
-```json
-{
-  "sessionId": "...",
-  "deviceName": "My Desktop",
-  "pinCode": "1234",
-  "action": "resume" | "takeover" | "force_end",
-  "targetSessionId": "..." // for force_end
-}
+## Multi-Screen Overlay System
+
+The Mr. Mentor interface includes a multi-screen overlay system allowing users to switch between video and different tool views without leaving the counselor page.
+
+### Screen Toggle Buttons
+Located on same row as "Discussing learner" dropdown, five buttons for switching views:
+- **👨‍🏫 Mr. Mentor**: Default video view
+- **📚 Lessons**: Facilitator lessons list (scrollable)
+- **📅 Calendar**: Lesson calendar panel
+- **✨ Generated**: Generated lessons list (scrollable)
+- **🎨 Maker**: Lesson creation form
+
+### Overlay Components
+
+All overlay components fit in video screen area, match half-screen format:
+
+**CalendarOverlay** (`overlays/CalendarOverlay.jsx`)
+- Shows only calendar panel (not scheduling panel)
+- Learner selector at top
+- Month/year navigation
+- Visual indicators for scheduled lessons
+- Shows scheduled lessons for selected date
+
+**LessonsOverlay** (`overlays/LessonsOverlay.jsx`)
+- Learner selector
+- Subject-based expandable sections
+- Grade filters per subject
+- Shows approved lessons, medals, progress
+- Fully scrollable list
+
+**GeneratedLessonsOverlay** (`overlays/GeneratedLessonsOverlay.jsx`)
+- Subject and grade filters
+- Status indicators (approved, needs update)
+- Scrollable lesson list
+- Color-coded by status
+
+**LessonMakerOverlay** (`overlays/LessonMakerOverlay.jsx`)
+- Compact lesson generation form
+- Quota display
+- All fields from full lesson maker
+- Inline success/error messages
+- Scrollable form
+
+### 33. docs/brain/portfolio-generation.md (fe1e7ac464f2afc7d7f87532c21ef1729a468f8ae05052009b691a0e808f815e)
+- bm25: -22.2966 | relevance: 1.0000
+
+# Portfolio Generation System
+
+**Last Updated**: 2026-01-30T15:25:06Z
+**Status**: Canonical
+
+## How It Works
+
+The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
+
+### UI Flow
+
+1. Facilitator opens Lesson Calendar.
+2. Clicks **Generate portfolio** (header button).
+3. Modal collects:
+   - Start date (YYYY-MM-DD)
+   - End date (YYYY-MM-DD)
+   - Include checkboxes: Visual aids, Notes, Images
+4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
+5. UI shows a public link to open the portfolio plus a manifest download link.
+6. UI also lists previously generated portfolios so they can be re-opened or deleted.
+
+### What Gets Included
+
+The generator produces one portfolio index with per-lesson recap sections.
+
+Per lesson (completed scheduled lessons only):
+- **Title**: derived from `lesson_schedule.lesson_key`.
+- **Date**: the scheduled date.
+- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
+- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
+- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
+
+### Completion Rule (Calendar parity)
+
+Portfolio generation follows the Calendar history rule:
+- A scheduled lesson counts as completed if there is a `lesson_session_events` row with `event_type = 'completed'` for the same canonical lesson id either:
+  - on the scheduled date, or
+  - within 7 days after (make-up window).
+
+Canonical lesson id is the normalized basename without `.json`.
+
+### Storage + Public Access (No Login)
+
+Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
+
+### 34. docs/brain/ingests/pack.md (6a1e61007b9ff9c99519640f860bd4eb744925fbb659b58284221644f47027e9)
+- bm25: -22.2966 | relevance: 1.0000
+
+# Portfolio Generation System
+
+**Last Updated**: 2026-01-30T15:25:06Z
+**Status**: Canonical
+
+## How It Works
+
+The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
+
+### UI Flow
+
+1. Facilitator opens Lesson Calendar.
+2. Clicks **Generate portfolio** (header button).
+3. Modal collects:
+   - Start date (YYYY-MM-DD)
+   - End date (YYYY-MM-DD)
+   - Include checkboxes: Visual aids, Notes, Images
+4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
+5. UI shows a public link to open the portfolio plus a manifest download link.
+6. UI also lists previously generated portfolios so they can be re-opened or deleted.
+
+### What Gets Included
+
+The generator produces one portfolio index with per-lesson recap sections.
+
+Per lesson (completed scheduled lessons only):
+- **Title**: derived from `lesson_schedule.lesson_key`.
+- **Date**: the scheduled date.
+- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
+- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
+- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
+
+### Completion Rule (Calendar parity)
+
+Portfolio generation follows the Calendar history rule:
+- A scheduled lesson counts as completed if there is a `lesson_session_events` row with `event_type = 'completed'` for the same canonical lesson id either:
+  - on the scheduled date, or
+  - within 7 days after (make-up window).
+
+Canonical lesson id is the normalized basename without `.json`.
+
+### Storage + Public Access (No Login)
+
+Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
+
+### 35. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.0390 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 36. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (86b60aae069b5e5cd6312d1188af36820d92ad5d50ac3acdfbcc0206a1059f7c)
+- bm25: -21.9744 | relevance: 1.0000
+
+### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.4515 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
+- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
+
+### 37. docs/brain/ingests/pack.planned-lessons-flow.md (adc19afdea7bdf534f71a846ee6f87a9d438ef3a8b85594268dd0260c3715b64)
+- bm25: -21.9219 | relevance: 1.0000
+
+if (wantsCustomSubjectDelete) {
+      this.state.flow = 'custom_subject_delete'
+
+### 29. docs/brain/mr-mentor-conversation-flows.md (ec792e77787419d1b45a207c4f316b72a0b239666251a1dadd891ad81666a1ed)
+- bm25: -14.0179 | relevance: 1.0000
+
+### Scenario 3: Recommendation After Search
+```
+User: "Do you have lessons on fractions?"
+Mr. Mentor: [searches, finds 5 lessons]
+Mr. Mentor: "I found 5 fraction lessons. Here are the top 3..."
+Expected: Offer to generate ONLY if search yields poor results
 ```
 
-- **`action: 'resume'`**: Create new session (fails if another session active)
-- **`action: 'takeover'`**: Deactivate other session, create new one (requires valid PIN)
-- **`action: 'force_end'`**: Release frozen session without taking over (requires valid PIN)
-- Automatically clears stale sessions older than `MENTOR_SESSION_TIMEOUT_MINUTES` (default: 15 minutes)
+---
 
-Response:
-```json
-{
-  "session": { ... },
-  "status": "active" | "taken_over" | "force_ended"
-}
-```
+## Multi-Screen Overlay System
 
-**`PATCH /api/mentor-session`** - Update conversation/draft
+The Mr. Mentor interface includes a multi-screen overlay system allowing users to switch between video and different tool views without leaving the counselor page.
 
-Request:
-```json
-{
-  "sessionId": "...",
-  "conversationHistory": [...],
-  "draftSummary": "..."
-}
-```
+### Screen Toggle Buttons
+Located on same row as "Discussing learner" dropdown, five buttons for switching views:
+- **👨‍🏫 Mr. Mentor**: Default video view
+- **📚 Lessons**: Facilitator lessons list (scrollable)
+- **📅 Calendar**: Lesson calendar panel
+- **✨ Generated**: Generated lessons list (scrollable)
+- **🎨 Maker**: Lesson creation form
 
-Auto-debounced on client (saves 1 second after last change).
+### Overlay Components
 
-**`DELETE /api/mentor-session?sessionId={id}`** - End session
+All overlay components fit in video screen area, match half-screen format:
 
-Called when user clicks "New Conversation". Deactivates session, returns `{ success: true }`.
+**CalendarOverlay** (`overlays/CalendarOverlay.jsx`)
+- Shows only calendar panel (not scheduling panel)
+- Learner selector at top
+- Month/year navigation
+- Visual indicators for scheduled lessons
+- Shows scheduled lessons for selected date
 
-## Client Flow
+**LessonsOverlay** (`overlays/LessonsOverlay.jsx`)
+- Learner selector
+- Subject-based expandable sections
+- Grade filters per subject
+- Shows approved lessons, medals, progress
+- Fully scrollable list
 
-**Entitlement gating (view-only vs active session)**
+**GeneratedLessonsOverlay** (`overlays/GeneratedLessonsOverlay.jsx`)
+- Subject and grade filters
+- Status indicators (approved, needs update)
+- Scrollable lesson list
+- Color-coded by status
 
-### 40. docs/brain/ingests/pack.planned-lessons-flow.md (155578c318bfa1c68504c39454f35d1dcfc25dd6e797a69bfbd7d4d8c9043962)
-- bm25: -1.6993 | entity_overlap_w: 1.30 | adjusted: -2.0243 | relevance: 1.0000
+### 38. docs/brain/ingests/pack-mentor-intercepts.md (ad9be28e3be4c170969fd8d3a91e2b0202957cc880842fc857610f9d7f8b194a)
+- bm25: -21.3587 | relevance: 1.0000
 
-## Key Files
+**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
 
-- UI
-  - `src/app/facilitator/calendar/page.js` (header button + modal wiring)
-  - `src/app/facilitator/calendar/GeneratePortfolioModal.jsx` (overlay)
-  - `src/components/FacilitatorHelp/PageHeader.jsx` (adds optional `actions` slot)
+**DON'T fail to update notes** - Stale notes mislead Mr. Mentor. Encourage facilitators to update notes as learner progresses.
 
-- API
-  - `src/app/api/portfolio/generate/route.js` (portfolio builder)
-  - `src/app/api/portfolio/list/route.js` (list saved portfolios)
-  - `src/app/api/portfolio/delete/route.js` (delete saved portfolios + files)
-  - `src/app/api/portfolio/lib.js` (HTML builder + helpers)
+**DON'T forget empty note deletion** - Save function correctly deletes empty notes from JSONB object (avoids storing null/empty values).
 
-### 34. src/app/facilitator/generator/counselor/MentorInterceptor.js (dd9fc7d0f63f857e45b48169025dafbb0d96182f685e4e93f894b4f372b1d6a0)
-- bm25: -12.9933 | relevance: 1.0000
+### 14. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -17.8102 | relevance: 1.0000
 
-,
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
 
-lesson_plan: {
-    keywords: [
-      'lesson plan',
-      'lesson planner',
-      'planned lessons',
-      'curriculum preferences',
-      'curriculum',
-      'weekly pattern',
-      'schedule template',
-      'start date',
-      'duration',
-      'generate lesson plan',
-      'schedule a lesson plan'
-    ],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
 
-// FAQ-style questions about the planner should defer to FAQ intent.
-      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
-      if (faqPatterns.some(p => normalized.includes(p))) {
-        return 0
-      }
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
 
-return INTENT_PATTERNS.lesson_plan.keywords.some(kw => normalized.includes(kw)) ? 0.85 : 0
-    }
-  }
-}
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+### 39. docs/brain/calendar-lesson-planning.md (1855144ade44b43a78489cf3246c6df30aa1531fdb5dbb9a20f4fe3d2898703f)
+- bm25: -20.9643 | relevance: 1.0000
+
+### Redo for Planned Lessons (Pre-Scheduling)
+
+Planned lessons (outlines) shown in the day view have a **Redo** action that regenerates the outline before scheduling.
+
+**Redo prompt update:**
+- Each planned lesson can optionally store a `promptUpdate` string.
+- The UI exposes a "Redo prompt update" field.
+- When Redo is clicked, this text is appended to the GPT prompt so the facilitator can steer what changes (e.g., "different topic", "more reading comprehension", "avoid fractions").
+
+**Redo context rule:**
+- Redo must include learner history (with scores when available) + current scheduled lessons + planned lessons in the prompt context.
+- This prevents Redo from returning the same two outlines repeatedly.
+
+**Redo rule (matches planner):**
+- Redo should follow the same score-aware repeat policy as planner generation (new topics preferred; review allowed for low scores; avoid repeating high-score topics).
+- Redo additionally supports `promptUpdate` to let the facilitator steer the regeneration.
+- Redo should not force every regeneration to be a review; instead, only label as `Review:` when a review is actually chosen.
+
+**Grade source of truth:**
+- Planned-lesson outlines must use the selected learner's grade as the default `grade` sent to `/api/generate-lesson-outline`.
+- Do not hardcode a default grade like "3rd" at the planner layer; that will leak into every planned lesson and any downstream generator that uses the outline.
+
+**Grade type normalization:**
+- Treat `grade` as a string in generator UIs.
+- Some data sources store grade as a number (e.g., `3`), which will crash code that assumes `.trim()` exists.
+
+### 40. docs/brain/ingests/pack.md (8553ec4a96cb35a36453f5c28d63fd06cec584d5e5726093793930c77128e5d0)
+- bm25: -20.6530 | relevance: 1.0000
+
+### 23. docs/brain/calendar-lesson-planning.md (8471470a735a79332c0085400ffaf63cf33c55dc69d22a40bbf8280784aabc7b)
+- bm25: -19.8502 | relevance: 1.0000
+
+**Score-aware repeat policy (important):**
+- The planner should prefer new topics, but it is allowed to repeat a concept as a **Review** when prior scores are low.
+- Low-score completed lessons are eligible for review; high-score lessons should generally not be repeated soon.
+- Review lessons must be rephrased (new framing/examples) and the title should start with `Review:`.
+- Outlines may include `kind: "review" | "new"`, and review outlines are title-prefixed for visibility.
+
+### 24. docs/brain/lesson-library-downloads.md (b1b9e213db751b5765dbf2e696989c3293e61bd99e1db9d560a4332ae5c3532e)
+- bm25: -19.7895 | relevance: 1.0000
+
+# Lesson Library Downloads (Owned vs Downloadable)
+
+**Status:** Canonical
+**Created:** 2026-01-10
+**Purpose:** Define how facilitator-visible "download" works without any device storage.
+
+## How It Works
+
+### Concepts
+
+- **Downloadable lesson**: A built-in lesson JSON that exists on the server under `public/lessons/<subject>/...`.
+- **Owned lesson**: A facilitator-specific copy of a lesson stored in Supabase Storage under `lessons/facilitator-lessons/<facilitatorId>/<file>.json`.
+- **Download action**: Server-side copy from the built-in library into the facilitator's Storage folder (not a device download).
+
+### UX Rules (Facilitator Lessons Page)
+
+- Top-of-page actions:
+  - **📝 New Lesson** opens the lesson editor with a blank lesson (no Storage write until the user saves).
+  - **✨ Generate Lesson** opens the Lesson Maker flow (`/facilitator/generator`).

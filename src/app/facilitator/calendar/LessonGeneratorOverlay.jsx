@@ -336,13 +336,16 @@ export default function LessonGeneratorOverlay({
         return
       }
 
+      const scheduleJson = await scheduleRes.json().catch(() => null)
+      const newEntry = scheduleJson?.data || { lesson_key: lessonKey, scheduled_date: scheduledDate }
+
       setMessage('Lesson generated and scheduled successfully!')
       
       // Dispatch event to refresh lesson lists
       window.dispatchEvent(new CustomEvent('mr-mentor:lesson-generated'))
       
       setTimeout(() => {
-        if (onGenerated) onGenerated()
+        if (onGenerated) onGenerated(newEntry)
         onClose()
       }, 1000)
 

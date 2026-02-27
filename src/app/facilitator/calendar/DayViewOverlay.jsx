@@ -651,9 +651,9 @@ export default function DayViewOverlay({
         scheduledDate={selectedDate}
         prefilledData={generatorData}
         onClose={() => setShowGenerator(false)}
-        onGenerated={() => {
+        onGenerated={(entry) => {
           setShowGenerator(false)
-          if (onLessonGenerated) onLessonGenerated()
+          if (onLessonGenerated) onLessonGenerated(entry)
         }}
       />
     )
