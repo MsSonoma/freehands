@@ -447,9 +447,9 @@ export default function LessonMakerPage(){
                 required
               />
               <AIRewriteButton
+                text={form.title}
                 onRewrite={handleRewriteTitle}
-                rewriting={rewritingTitle}
-                compact
+                loading={rewritingTitle}
               />
             </div>
           </label>
@@ -464,9 +464,9 @@ export default function LessonMakerPage(){
                 placeholder="What should the learner learn?"
               />
               <AIRewriteButton
+                text={form.description}
                 onRewrite={handleRewriteDescription}
-                rewriting={rewritingDescription}
-                compact
+                loading={rewritingDescription}
               />
             </div>
           </label>
@@ -481,9 +481,9 @@ export default function LessonMakerPage(){
                 placeholder="Facilitator notes, examples, reminders..."
               />
               <AIRewriteButton
+                text={form.notes}
                 onRewrite={handleRewriteNotes}
-                rewriting={rewritingNotes}
-                compact
+                loading={rewritingNotes}
               />
             </div>
           </label>
@@ -498,9 +498,9 @@ export default function LessonMakerPage(){
                 placeholder="Comma-separated terms, or term: definition pairs"
               />
               <AIRewriteButton
+                text={form.vocab}
                 onRewrite={handleRewriteVocab}
-                rewriting={rewritingVocab}
-                compact
+                loading={rewritingVocab}
               />
             </div>
           </label>
