@@ -81,15 +81,26 @@ let EXERCISE_TARGET = 5;
 let WORKSHEET_TARGET = 15;
 let TEST_TARGET = 10;
 
+// Strip markdown bold/italic so captions display clean text (vocab terms are bolded
+// separately by the vocab-highlight pass; asterisks should never be shown raw).
+function stripMarkdownFromCaption(str) {
+  if (!str) return str;
+  return String(str)
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    .replace(/`([^`]+)`/g, '$1');
+}
+
 function mapToAssistantCaptionEntries(sentences) {
   if (!Array.isArray(sentences)) return [];
   return sentences.map((entry) => {
     if (entry && typeof entry === 'object' && typeof entry.text === 'string') {
       const role = entry.role === 'user' ? 'user' : 'assistant';
-      return { text: entry.text, role };
+      return { text: stripMarkdownFromCaption(entry.text), role };
     }
-    const text = typeof entry === 'string' ? entry : String(entry ?? '');
-    return { text, role: 'assistant' };
+    const raw = typeof entry === 'string' ? entry : String(entry ?? '');
+    return { text: stripMarkdownFromCaption(raw), role: 'assistant' };
   });
 }
 

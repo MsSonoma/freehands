@@ -78,8 +78,19 @@ function normalizeBlanksForSpeech(safe) {
   } catch { return safe }
 }
 
+// Strip markdown formatting so TTS does not read asterisks, underscores, etc.
+function stripMarkdownForSpeech(text) {
+  if (!text) return text
+  return String(text)
+    .replace(/\*\*([^*]+)\*\*/g, '$1')  // **bold**
+    .replace(/\*([^*]+)\*/g, '$1')       // *italic*
+    .replace(/_([^_]+)_/g, '$1')         // _italic_
+    .replace(/`([^`]+)`/g, '$1')         // `code`
+}
+
 function toSsml(text) {
-  const safe = escapeForSsml(text || '')
+  const stripped = stripMarkdownForSpeech(text || '')
+  const safe = escapeForSsml(stripped)
   const withParagraphBreaks = safe.replace(/(?:\r?\n){2,}/g, ' <break time="700ms"/> ')
   const withBlanks = normalizeBlanksForSpeech(withParagraphBreaks)
   return `<speak>${withBlanks}</speak>`

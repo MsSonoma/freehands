@@ -6,22 +6,12 @@ Mode: standard
 
 Prompt (original):
 ```text
-flash cards game keyboard covers game on iPad when keyboard opens
+Timers overlay PIN check pause redundant already authenticated
 ```
 
 Filter terms used:
 ```text
-flash
-cards
-game
-keyboard
-covers
-game
-on
-iPad
-when
-keyboard
-opens
+PIN
 ```
 # Context Pack
 
@@ -35,7 +25,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-flash cards game keyboard covers game on iPad when keyboard opens
+PIN
 
 ## Forced Context
 
@@ -43,336 +33,1169 @@ flash cards game keyboard covers game on iPad when keyboard opens
 
 ## Ranked Evidence
 
-### 1. cohere-changelog.md (93e65a8af97333c36619803164a58725c36d5221593c9be0874f40fc6941fcd8)
-- bm25: -27.8177 | relevance: 1.0000
+### 1. docs/brain/pin-protection.md (3aa2a8e5f407ed24098e9d06429a29a96012af85911782bdf9d220a708346647)
+- bm25: -6.1423 | entity_overlap_w: 14.30 | adjusted: -9.7173 | relevance: 1.0000
 
-Follow-ups:
-- None (takeover enforces a single active session per account).
+### Preferences
 
----
+PIN preferences are stored in:
+- Server: `profiles.pin_prefs` (JSON column)
+- Client: `localStorage.facilitator_pin_prefs` (cached copy)
 
-Date (UTC): 2026-02-23T17:37:08.8912021Z
-
-Topic: Flash Cards visual polish (portrait card + slide animation)
-
-Recon prompt (exact string):
-Flash Cards game: make the card look like a real vertical flashcard and add a simple slide-in/slide-out animation between cards. Find existing animation/style patterns in the session UI and confirm where FlashCards is rendered.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-
-Result:
-- Updated the card UI to a tall portrait âflash cardâ and added a lightweight slide-out/slide-in transition when advancing cards.
-- Files changed: src/app/session/components/games/FlashCards.jsx, cohere-changelog.md
-
----
-
-Date (UTC): 2026-02-23T18:07:12.8146173Z
-
-Topic: Flash Cards meter decay (stage-scaled time pressure)
-
-Recon prompt (exact string):
-Flash Cards game: add gradual meter degradation over time on the card screen; decay rate increases with stage. Find current meter logic in FlashCards.jsx and implement an interval/timer consistent with existing patterns.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-
-Result:
-- Added a meter decay interval while on the card screen; decay speeds up as stage increases, creating a variable time limit.
-- Smoothed meter width changes via a short CSS transition so the bar glides left.
-- Files changed: src/app/session/components/games/FlashCards.jsx, cohere-changelog.md
-
----
-
-Date (UTC): 2026-02-23T21:02:07.7947459Z
-
-Topic: Flash Cards meter decay fix (smooth tick-down + beatable)
-
-Issue:
-- Decay felt like it âwaits then clears entirelyâ and made stages effectively unbeatable.
-
-### 2. docs/brain/platform-jumper.md (7caf44efa572f22fa67617302787b5bd0614f14c56a964f6bd0bce09734cca91)
-- bm25: -26.8907 | relevance: 1.0000
-
-# Platform Jumper (#platform-jumper)
-
-## How It Works
-
-Platform Jumper is a small in-session game rendered by a single client component.
-
-The player moves and jumps using a simple velocity + gravity loop:
-
-- `playerPos` holds the current position in game coordinates.
-- `playerVelocity` holds the current velocity.
-- Gravity (`GRAVITY`) accelerates downward each tick.
-- Jumping sets an immediate upward `y` velocity.
-
-Jump types:
-
-- Normal jump uses `JUMP_STRENGTH` (negative y velocity).
-- Trampoline jump uses `TRAMPOLINE_BOUNCE` when the current platform has `trampoline: true`.
-
-Practical beatability note:
-
-- With the current physics, trampoline bounce height is finite; avoid placing required landing platforms too close to the top of the screen unless there is an intermediate trampoline/platform.
-
-Level layouts:
-
-- Levels are declared in the `levels` object; keys are level numbers.
-- Each level has a `platforms` array (rectangles) plus `startPos` and `goalArea`.
-- Coordinates use game space: `x` increases to the right, `y` increases downward.
-- Reference size: `GAME_WIDTH = 800`, `GAME_HEIGHT = 500`.
-- A movement like "raise 15%" means subtract `0.15 * GAME_HEIGHT` from `y`.
-- A movement like "move left 20%" means subtract `0.20 * GAME_WIDTH` from `x`.
-- For beatability gaps between trampolines, prefer adding a single intermediate trampoline before changing global physics (example: Level 37 bridge).
-
-Input:
-
-- Keyboard: arrow keys move; Space jumps.
-- Touch: left/right controls set movement; jump uses the shared `performJump` logic.
-
-Scaling:
-
-- The game scales to fit available viewport space using a calculated `scale` based on `GAME_WIDTH`/`GAME_HEIGHT`.
-
-PIN-gated settings:
-
-### 3. src/app/session/components/games/GamesOverlay.jsx (e58cc08e2f4da1c2eea41dd560fcdccf25f88f8a0daad3a853f89919bfec5882)
-- bm25: -23.6843 | relevance: 1.0000
-
-// Active game screen
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: '#fff',
-        zIndex: 20000,
-        overflow: 'auto',
-      }}
-    >
-      {/* Play timer in upper left */}
-      {playTimer && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 16,
-            left: 16,
-            zIndex: 10001,
-          }}
-        >
-          {playTimer}
-        </div>
-      )}
-
-{/* Render the selected game */}
-      {selectedGame === 'memory-match' && (
-        <MemoryMatch onExit={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'snake' && (
-        <Snake onExit={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'catch-collect' && (
-        <CatchCollect onBack={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'maze-runner' && (
-        <MazeRunner onBack={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'whack-a-mole' && (
-        <WhackAMole onBack={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'platform-jumper' && (
-        <PlatformJumper onBack={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'flood-climb' && (
-        <FloodClimbSpelling onBack={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'flash-cards' && (
-        <FlashCards onBack={() => setSelectedGame(null)} />
-      )}
-    </div>
-  );
+Default preferences (when PIN exists but prefs not set):
+```javascript
+{
+  downloads: true,
+  facilitatorKey: true,
+  skipTimeline: true,
+  changeLearner: true,
+  refresh: true,
+  timer: true,
+  facilitatorPage: true,
+  activeSession: true
 }
-
-### 4. cohere-changelog.md (dd6e6ae5707d3e124658ca52a34f2bbd182750903ae093c250f5ee263693b25c)
-- bm25: -21.3058 | relevance: 1.0000
-
-Follow-ups:
-- If this still reproduces, log the restored `snap.currentTimerMode`, `snap.timerSnapshot`, and which key was drift-corrected to confirm which mode was captured at save time.
-
----
-
-Date (UTC): 2026-02-22T19:03:42.3423235Z
-
-Topic: App slowness from unnecessary base64 audio payloads
-
-Recon prompt (exact string):
-Performance: the entire freehands app feels extremely slow / barely works. Identify likely bottlenecks (Next.js App Router, session page, API routes like /api/sonoma), and where to instrument or optimize. Focus on critical path on initial load.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
-
-Result:
-- Decision: Add `skipAudio: true` to `/api/sonoma` calls that only need text (story summaries/suggestions/poems/story generation in Opening Actions), since speech is performed separately via `/api/tts` (`speakFrontend` / `audioEngine.speak`). This avoids server-side TTS + large base64 audio responses on the critical path.
-- Files changed: src/app/session/hooks/useDiscussionHandlers.js, src/app/session/v2/OpeningActionsController.jsx, cohere-changelog.md
-
-Follow-ups:
-- If the app still feels slow, instrument counts/latency of `/api/sonoma` calls per phase and consider parallelizing non-dependent prefetches.
-
----
-
-Date (UTC): 2026-02-23T16:53:49.2989770Z
-
-Topic: New Games overlay game â Flash Cards (math)
-
-Recon prompt (exact string):
-Build new Games overlay game 'Flash Cards': setup screen selects subject (math dropdown), topic, stage; 50 flashcards per topic per stage; 10 stages per topic; meter up/down with goal to advance; stage completion screen (Next); topic completion screen (more exciting, movement, shows next topic + Next). Persist per-learner progress across sessions.
-
-### 5. src/app/session/v2/SessionPageV2.jsx (66736f778361c860e5930737bf7c4d2b04bd8aa0fc7b9cef3a57fd431d1d692e)
-- bm25: -20.0002 | relevance: 1.0000
-
-timerServiceRef.current.setPlayTimerLimits({
-      comprehension: m2s(phaseTimers.comprehension_play_min) + playBonusSec,
-      exercise: m2s(phaseTimers.exercise_play_min) + playBonusSec,
-      worksheet: m2s(phaseTimers.worksheet_play_min) + playBonusSec,
-      test: m2s(phaseTimers.test_play_min) + playBonusSec
-    });
-  }, [phaseTimers, goldenKeyBonus, goldenKeysEnabled]);
-  
-  // Initialize KeyboardService
-  useEffect(() => {
-    if (!eventBusRef.current) return;
-    
-    const eventBus = eventBusRef.current;
-    
-    // Forward hotkey events
-    const unsubHotkey = eventBus.on('hotkeyPressed', (data) => {
-      handleHotkey(data);
-    });
-    
-    const keyboard = new KeyboardService(eventBus);
-    
-    keyboardServiceRef.current = keyboard;
-    keyboard.init();
-    
-    return () => {
-      keyboard.destroy();
-      keyboardServiceRef.current = null;
-    };
-  }, []);
-  
-  const addEvent = (msg) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setEvents(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 15));
-  };
-
-### 6. src/app/session/components/games/GamesOverlay.jsx (15dbcea69870646e196b5d308568b9c0e7ff1da1c93d4c9161d65e632f734729)
-- bm25: -17.5487 | relevance: 1.0000
-
-{/* Games list */}
-          <div
-            style={{
-              padding: 24,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 16,
-            }}
-          >
-            {gamesList.map((game) => (
-              <button
-                key={game.id}
-                onClick={() => setSelectedGame(game.id)}
-                style={{
-                  background: '#f9fafb',
-                  border: `2px solid ${game.color}`,
-                  borderRadius: 12,
-                  padding: 20,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 16,
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.12)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 48,
-                    lineHeight: 1,
-                  }}
-                >
-                  {game.icon}
-                </div>
-                <div style={{ flex: 1, textAlign: 'left' }}>
-                  <div
-                    style={{
-                      fontSize: 20,
-                      fontWeight: 700,
-                      color: '#1f2937',
-                      marginBottom: 4,
-                    }}
-                  >
-                    {game.name}
-
-### 7. docs/brain/games-overlay.md (3d69f6755dd3a8792771418e6e2fe533bcaad2786166bfa293915f77a4ff8f9d)
-- bm25: -17.2402 | relevance: 1.0000
-
-# Games Overlay (#games-overlay)
-
-**Status**: Canonical  
-**Last Updated**: 2026-01-13T00:59:23Z
-
-## How It Works
-
-Games are launched from the in-session **Games overlay**.
-
-- The session pages (V1 and V2) open `GamesOverlay` during play time.
-- `GamesOverlay` renders a full-screen modal experience:
-  - A game picker menu (list of games)
-  - A full-screen active-game view
-- A play timer badge (rendered by `SessionTimer`) is optionally passed in and displayed at the top-left.
-
-**Click parity:** If the timer badge is present, it should remain interactive (cursor + click) so the facilitator can open `TimerControlOverlay` from within the Games overlay (PIN-gated), matching the rest of the session.
-
-### Difficulty and Grade
-
-The Games overlay does **not** own a global difficulty setting.
-
-- If a specific game needs grade-driven difficulty, that game should present its own grade selector (or other difficulty control) inside the game UI.
-- Games may optionally initialize their own difficulty from the currently selected learner profile (when the game is launched), but that choice must remain scoped to the game.
-
-### Props
-
-`GamesOverlay` accepts:
-- `onClose`: closes the overlay
-- `playTimer`: a React node (typically `SessionTimer`) rendered as a badge
+```
 
 ## What NOT To Do
 
-- Do not add an overlay-wide difficulty selector unless explicitly requested.
-- Do not store or persist Games settings to localStorage as a fallback.
-- Do not couple Games overlay state to Ms. Sonoma prompt/state; games are independent UI.
+**❌ DON'T** set facilitator section flag for non-facilitator actions
+- Only `facilitator-page` action and session-exit-to-facilitator navigation should set the flag
+- Setting it for other actions would allow bypassing PIN on facilitator pages
+
+**❌ DON'T** store PIN in localStorage
+- PIN verification is server-only for security
+- Never cache PIN validation results beyond sessionStorage flag
+
+**❌ DON'T** create multiple PIN prompts simultaneously
+- `ensurePinAllowed` uses global lock (`activePinPrompt`) to prevent concurrent prompts
+- If another prompt is active, wait for its result
+
+**❌ DON'T** forget to clear facilitator section flag when leaving facilitator routes
+- FacilitatorSectionTracker handles this automatically
+- Manual flag clearing should match its logic
+
+**❌ DON'T** use `ensurePinAllowed` for non-gated features
+- Only call it when you genuinely need to gate an action
+- Unnecessary calls degrade user experience
 
 ## Key Files
 
-- `src/app/session/components/games/GamesOverlay.jsx`
-- `src/app/session/page.js` (V1 integration)
-- `src/app/session/v2/SessionPageV2.jsx` (V2 integration)
+**Core Logic**:
+- `src/app/lib/pinGate.js` - PIN validation, section tracking, preferences
+- `src/app/api/facilitator/pin/route.js` - Get PIN state, preferences
+- `src/app/api/facilitator/pin/verify/route.js` - Server PIN verification
 
-### 8. docs/brain/session-takeover.md (f547b8a84945c079f4753cfc178e83afd5ab0d6acc67018afbe877b3d81da9b9)
-- bm25: -17.2029 | relevance: 1.0000
+**Navigation Integration**:
+- `src/app/HeaderBar.js` - Navigation PIN checks, facilitator flag setting
+- `src/components/FacilitatorSectionTracker.jsx` - Section flag lifecycle
+
+### 2. docs/brain/pin-protection.md (ebdd1e94caea25980934f22545b5a075ce528dea5b0b231341f83cf36273fe59)
+- bm25: -5.8088 | entity_overlap_w: 10.40 | adjusted: -8.4088 | relevance: 1.0000
+
+## Recent Changes
+
+**2025-12-03**: Fixed double PIN prompt when exiting session to facilitator pages
+- Modified `HeaderBar.goWithPin` to set facilitator section flag after successful session-exit PIN when destination is facilitator route
+- Prevents facilitator page from prompting again since flag is already set
+- Files: `src/app/HeaderBar.js` (imported setInFacilitatorSection, added flag set logic in goWithPin)
+
+## Design Decisions
+
+**Why sessionStorage for flag instead of localStorage?**
+- Flag should expire when browser tab closes (session-based)
+- Prevents stale "logged in" state across browser restarts
+- User must re-validate PIN in new browser sessions
+
+**Why global lock for PIN prompts?**
+- Prevents race conditions when multiple components check PIN simultaneously
+- Ensures single PIN prompt even if multiple checks triggered during navigation
+
+**Why server-only verification?**
+- Security: can't bypass by tampulating localStorage
+- Centralized: PIN hash stored only in database
+- Audit trail: all PIN verifications logged server-side
+
+**Why separate flag for facilitator section vs individual actions?**
+- Facilitator pages form a logical "section" where re-prompting is annoying
+- Other actions (downloads, timeline) are one-off and don't imply continued access
+- Section flag balances security (prompt when entering) with UX (don't re-prompt)
+
+### 3. docs/brain/pin-protection.md (a572b2eaa4ac61bc5c6c926b97a5f45498691130f5af49873ea35f306e9ecc36)
+- bm25: -5.7455 | entity_overlap_w: 10.40 | adjusted: -8.3455 | relevance: 1.0000
+
+# PIN Protection System
+
+## Overview
+
+PIN protection gates access to facilitator features and controls session exits. The system prevents learners from accessing facilitator tools, downloads, or modifying session state without adult supervision.
+
+## How It Works
+
+### Core Components
+
+**pinGate.js** (`src/app/lib/pinGate.js`)
+- Central PIN validation utility
+- Manages facilitator section tracking
+- Provides `ensurePinAllowed(action)` function for gating actions
+- Stores PIN preferences in localStorage and server
+
+**FacilitatorSectionTracker.jsx** (`src/components/FacilitatorSectionTracker.jsx`)
+- Tracks when user enters/leaves facilitator section
+- Clears facilitator section flag when navigating away from `/facilitator/*`
+- Mounted in root layout to track all navigation
+
+**HeaderBar.js** (`src/app/HeaderBar.js`)
+- Implements navigation PIN checks
+- Sets facilitator section flag when navigating from session to facilitator
+- Prevents double PIN prompts
+
+### PIN Actions
+
+Each action type maps to a preference key that controls whether PIN is required:
+
+| Action | Preference Key | When Triggered | Sets Facilitator Flag? |
+|--------|---------------|----------------|----------------------|
+| `facilitator-page` | `facilitatorPage` | Entering any `/facilitator/*` page | YES |
+| `session-exit` | `activeSession` | Leaving active lesson session | NO (but sets flag if destination is facilitator) |
+| `download` | `downloads` | Worksheet/test downloads | NO |
+| `facilitator-key` | `facilitatorKey` | Combined answer key | NO |
+| `skip` / `timeline` | `skipTimeline` | Timeline jumps, skip buttons | NO |
+| `change-learner` | `changeLearner` | Switching learners | NO |
+| `refresh` | `refresh` | Re-generate worksheet/test | NO |
+| `timer` | `timer` | Pause/resume timer | NO |
+
+### 4. docs/brain/pin-protection.md (099075fb976b0dc884d23cec569d3b693ff409180962ef058793b7f53217859f)
+- bm25: -5.6836 | entity_overlap_w: 10.40 | adjusted: -8.2836 | relevance: 1.0000
+
+Session surfaces that mutate session state should gate with `ensurePinAllowed(action)` before performing the action.
+
+**Session V2 (timeline + timer controls):**
+- Timeline jumps call `ensurePinAllowed('timeline')` before switching phases.
+- Timer controls call `ensurePinAllowed('timer')` before opening the timer control overlay and before pause/resume toggles.
+
+**Games (example: Platform Jumper):**
+- Facilitator-only game shortcuts (like skipping to a level) must call `ensurePinAllowed('skip')` before opening any level picker.
+
+### Facilitator Section Flag
+
+**Purpose**: Prevent double PIN prompts when navigating between facilitator pages
+
+**How it works**:
+1. Flag is stored in `sessionStorage` (cleared when browser tab closes)
+2. When `ensurePinAllowed('facilitator-page')` succeeds, it sets the flag
+3. Subsequent `facilitator-page` checks skip PIN if flag is already set
+4. Flag is cleared when user navigates away from `/facilitator/*` routes
+
+### Navigation Flow (Session → Facilitator)
+
+**Before Fix (Double PIN Prompt)**:
+1. User clicks Facilitator link from session page
+2. HeaderBar calls `ensurePinAllowed('session-exit')` → prompts for PIN
+3. Navigation to `/facilitator` happens
+4. Facilitator page calls `ensurePinAllowed('facilitator-page')` → prompts for PIN AGAIN (flag not set)
+
+**After Fix (Single PIN Prompt)**:
+1. User clicks Facilitator link from session page
+2. HeaderBar calls `ensurePinAllowed('session-exit')` → prompts for PIN
+3. HeaderBar detects destination is facilitator route → calls `setInFacilitatorSection(true)`
+4. Navigation to `/facilitator` happens
+5. Facilitator page calls `ensurePinAllowed('facilitator-page')` → SKIPS PIN (flag already set)
+
+### Server Verification
+
+### 5. docs/brain/ingests/pack-mentor-intercepts.md (ede430caef237b7b0db5b0d3de9c65b88aa4cd3048b43318b8699396eb14daae)
+- bm25: -5.7173 | entity_overlap_w: 9.10 | adjusted: -7.9923 | relevance: 1.0000
+
+```
+If user says during parameter collection:
+- "stop"
+- "no"
+- "I don't want to generate"
+- "give me advice instead"
+- "I don't want you to generate the lesson"
+Skip Confirmation When Intent Is Ambiguous
+```
+User: "I need a language arts lesson but I don't want one of the ones we have in 
+       the library. It should have a Christmas theme, please make some recommendations."
+
+WRONG: "Is this lesson for Emma's grade (4)?"
+RIGHT: "Would you like me to generate a custom lesson?"
+       (If they say no: "Let me search for Christmas-themed language arts lessons...")
+```
+
+### 33. docs/brain/pin-protection.md (3aa2a8e5f407ed24098e9d06429a29a96012af85911782bdf9d220a708346647)
+- bm25: -12.0850 | relevance: 1.0000
+
+### Preferences
+
+PIN preferences are stored in:
+- Server: `profiles.pin_prefs` (JSON column)
+- Client: `localStorage.facilitator_pin_prefs` (cached copy)
+
+Default preferences (when PIN exists but prefs not set):
+```javascript
+{
+  downloads: true,
+  facilitatorKey: true,
+  skipTimeline: true,
+  changeLearner: true,
+  refresh: true,
+  timer: true,
+  facilitatorPage: true,
+  activeSession: true
+}
+```
+
+## What NOT To Do
+
+**❌ DON'T** set facilitator section flag for non-facilitator actions
+- Only `facilitator-page` action and session-exit-to-facilitator navigation should set the flag
+- Setting it for other actions would allow bypassing PIN on facilitator pages
+
+**❌ DON'T** store PIN in localStorage
+- PIN verification is server-only for security
+- Never cache PIN validation results beyond sessionStorage flag
+
+**❌ DON'T** create multiple PIN prompts simultaneously
+- `ensurePinAllowed` uses global lock (`activePinPrompt`) to prevent concurrent prompts
+- If another prompt is active, wait for its result
+
+### 6. src/app/facilitator/account/page.js (ba65d353ea7b5b7ee8155d70feecfcb97e64c738ede74d283ec9d72d92ded791)
+- bm25: -5.4197 | entity_overlap_w: 6.50 | adjusted: -7.0447 | relevance: 1.0000
+
+return (
+    <SettingsOverlay
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Facilitator PIN"
+      maxWidth={550}
+    >
+      {loading ? (
+        <p>Loading…</p>
+      ) : (
+        <form onSubmit={handleSave} style={{ display:'grid', gap: 16 }}>
+          <p style={{ color: '#6b7280', margin: 0 }}>
+            Protect sensitive actions like skipping or downloading. This PIN is saved to your account.
+          </p>
+          
+          {/* Hidden username for accessibility */}
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            defaultValue={email || ''}
+            aria-hidden="true"
+            tabIndex={-1}
+            style={{ position:'absolute', width:1, height:1, overflow:'hidden', clip:'rect(0 0 0 0)', clipPath:'inset(50%)', whiteSpace:'nowrap', border:0, padding:0, margin:-1 }}
+          />
+          
+          {hasPin && (
+            <div>
+              <label style={{ display:'block', marginBottom:8, fontWeight:600, color:'#374151' }}>Current PIN</label>
+              <input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="current-password"
+                value={currentPin} onChange={e=>setCurrentPin(e.target.value)}
+                style={{ padding:'8px 12px', border:'1px solid #e5e7eb', borderRadius:8, width: '100%', fontSize: 14 }} />
+            </div>
+          )}
+          
+          <div>
+            <label style={{ display:'block', marginBottom:8, fontWeight:600, color:'#374151' }}>{hasPin ? 'New PIN' : 'Set PIN'}</label>
+            <input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="new-password"
+              value={pin} onChange={e=>setPin(e.target.value)}
+              placeholder="4–8 digits"
+              style={{ padding:'8p
+
+### 7. docs/brain/pin-protection.md (9d13ed0a83c6fafa15ecaac2fcd18ecc25090900b8af7f490f6909677b7b779f)
+- bm25: -6.2279 | entity_overlap_w: 2.60 | adjusted: -6.8779 | relevance: 1.0000
+
+PIN verification is server-only (no localStorage fallback):
+- Server validates PIN against hashed value in `profiles.facilitator_pin_hash`
+- Uses bcrypt for secure comparison
+- API endpoint: `POST /api/facilitator/pin/verify`
+
+### 8. docs/brain/ingests/pack-mentor-intercepts.md (356cf263e7cd125b6f2899eaf6780a3e6b0427dbef63b6e3757dc56b623a2733)
+- bm25: -5.6907 | entity_overlap_w: 3.90 | adjusted: -6.6657 | relevance: 1.0000
+
+**Already implemented** in `page.js` lines 286-314:
+- Client calls `ensurePinAllowed(pinCode)` from `src/app/lib/pinAuth.js`
+- Server validates PIN hash against learner's stored scrypt hash
+- Only correct PIN allows session takeover
+- Failed PIN shows error, user can retry
+
+### 9. docs/brain/ingests/pack-mentor-intercepts.md (3e231008a05445b5759eef203b600a852bd9520ce71072cb95d474a484742b29)
+- bm25: -5.1706 | entity_overlap_w: 5.20 | adjusted: -6.4706 | relevance: 1.0000
+
+**❌ DON'T** use `ensurePinAllowed` for non-gated features
+- Only call it when you genuinely need to gate an action
+- Unnecessary calls degrade user experience
+
+## Key Files
+
+**Core Logic**:
+- `src/app/lib/pinGate.js` - PIN validation, section tracking, preferences
+- `src/app/api/facilitator/pin/route.js` - Get PIN state, preferences
+- `src/app/api/facilitator/pin/verify/route.js` - Server PIN verification
+
+**Navigation Integration**:
+- `src/app/HeaderBar.js` - Navigation PIN checks, facilitator flag setting
+- `src/components/FacilitatorSectionTracker.jsx` - Section flag lifecycle
+
+### 34. docs/brain/session-takeover.md (1f835d163bf68929a4e5f34cd5f4cffe3ef482a5e6b64ab8f8d4977332da7266)
+- bm25: -12.0329 | relevance: 1.0000
+
+**Result**: When play timer expires with page closed, restore automatically:
+1. Sets countdown completed flag (blocks countdown)
+2. Transitions timer to work mode
+3. Triggers phase handler to start work phase
+4. User lands directly in work phase entrance, can click Go to begin
+
+**Key Files:**
+- `src/app/session/page.js`: Flag setting in completion handlers, not in handlePlayTimeUp
+- `src/app/session/hooks/useSnapshotPersistence.js`: Detect expired timer on restore, auto-transition
+- `src/app/session/sessionSnapshotStore.js`: Persist flag in snapshot
+
+### Database Schema
+
+#### `lesson_sessions` Table Extensions
+
+**New columns:**
+```sql
+ALTER TABLE lesson_sessions
+  ADD COLUMN session_id UUID NOT NULL DEFAULT gen_random_uuid(),
+  ADD COLUMN device_name TEXT,
+  ADD COLUMN last_activity_at TIMESTAMPTZ DEFAULT NOW();
+
+CREATE UNIQUE INDEX unique_active_lesson_session 
+  ON lesson_sessions (learner_id, lesson_id) 
+  WHERE ended_at IS NULL;
+```
+
+### 10. src/app/api/mentor-session/route.js (d7a1a870ca1f26628f085edc7e6fbc70a8b0a78548e2d9de8be14e9bf467a062)
+- bm25: -4.9904 | entity_overlap_w: 5.20 | adjusted: -6.2904 | relevance: 1.0000
+
+const targetId = targetSessionId || existingSession?.session_id
+      if (!targetId) {
+        return jsonWithDeviceCookie({ body: { error: 'No target session available to force end' }, status: 400, deviceCookieHeader })
+      }
+
+const { data: targetSessions, error: targetFetchError } = await supabase
+        .from('mentor_sessions')
+        .select('id, session_id')
+        .eq('facilitator_id', user.id)
+        .eq('session_id', targetId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+if (targetFetchError) {
+        return jsonWithDeviceCookie({ body: { error: 'Database error' }, status: 500, deviceCookieHeader })
+      }
+
+const targetSession = targetSessions?.[0]
+      if (!targetSession) {
+        return jsonWithDeviceCookie({ body: { status: 'already_inactive' }, status: 200, deviceCookieHeader })
+      }
+
+const success = await deactivateSessionById(targetSession.id)
+      if (!success) {
+        return jsonWithDeviceCookie({ body: { error: 'Failed to end session' }, status: 500, deviceCookieHeader })
+      }
+
+return jsonWithDeviceCookie({
+        body: { status: 'force_ended', clearedSessionId: targetSession.session_id },
+        status: 200,
+        deviceCookieHeader
+      })
+    }
+
+// If taking over from another device, verify PIN
+    // If device_id is missing (legacy rows), we conservatively require PIN for takeover.
+    if (existingSession && existingSession.device_id !== deviceId && action === 'takeover') {
+      // Verify PIN code
+      if (!pinCode) {
+        return jsonWithDeviceCookie({
+          body: { error: 'PIN required to take over session', requiresPin: true },
+          status: 403,
+          deviceCookieHeader
+        })
+      }
+
+### 11. src/app/api/mentor-session/route.js (dd18893516fb24aa77fa662c5e7be065e7de2c6f0f7e4e27bdfa5686a51df6e3)
+- bm25: -5.8735 | entity_overlap_w: 1.30 | adjusted: -6.1985 | relevance: 1.0000
+
+return true
+}
+
+function scryptHash(pin, salt) {
+  return `s1$${salt}$${scryptSync(pin, salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex')}`
+}
+
+function verifyPinHash(pin, stored) {
+  if (typeof stored !== 'string') return false
+  const parts = stored.split('$')
+  if (parts.length !== 3 || parts[0] !== 's1') return false
+  const [, salt] = parts
+  const recomputed = scryptHash(pin, salt)
+  try {
+    return timingSafeEqual(Buffer.from(recomputed), Buffer.from(stored))
+  } catch {
+    return false
+  }
+}
+
+async function requireMrMentorAccess(userId) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_tier, plan_tier')
+    .eq('id', userId)
+    .maybeSingle()
+
+const effectiveTier = resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier)
+  const ent = featuresForTier(effectiveTier)
+  const allowed = ent?.mentorSessions === Infinity || (Number.isFinite(ent?.mentorSessions) && ent.mentorSessions > 0)
+  return { allowed, tier: effectiveTier }
+}
+
+async function verifyPin(userId, pinCode) {
+  // Try to get facilitator_pin_hash first (modern schema)
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('facilitator_pin_hash')
+    .eq('id', userId)
+    .maybeSingle()
+
+if (error) {
+    throw error
+  }
+
+if (!profile) {
+    return false
+  }
+
+if (profile.facilitator_pin_hash) {
+    return verifyPinHash(pinCode, profile.facilitator_pin_hash)
+  }
+
+// No PIN set
+  return false
+}
+
+export const maxDuration = 60
+
+### 12. src/app/facilitator/account/page.js (9cd81d85e5c8612947bee6f1a9c67102b35c19f5d76832b04d9026dc2470405e)
+- bm25: -5.8625 | entity_overlap_w: 1.30 | adjusted: -6.1875 | relevance: 1.0000
+
+const pinChange = (pin && pin.length) || (pin2 && pin2.length)
+      if (pinChange) {
+        if (!/^\d{4,8}$/.test(pin)) throw new Error('Use a 4–8 digit PIN')
+        if (pin !== pin2) throw new Error('PINs do not match')
+        const res = await fetch('/api/facilitator/pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ pin, currentPin: hasPin ? currentPin : null, prefs })
+        })
+        const js = await res.json().catch(()=>({}))
+        if (!res.ok || !js?.ok) {
+          const errorMsg = js?.error || `Failed to save (${res.status})`
+          throw new Error(errorMsg)
+        }
+        setHasPin(true)
+        setPin(''); setPin2(''); setCurrentPin('')
+        setPinPrefsLocal(prefs)
+        setMsg('Saved')
+      } else {
+        try {
+          const res = await fetch('/api/facilitator/pin', { method:'PUT', headers: { 'Content-Type':'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ prefs }) })
+          if (!res.ok) { const js = await res.json().catch(()=>({})); throw new Error(js?.error || 'Failed to save') }
+        } catch (e2) {}
+        setPinPrefsLocal(prefs)
+        setMsg('Saved')
+      }
+    } catch (e3) {
+      setMsg(e3?.message || 'Failed to save')
+    } finally { setSaving(false) }
+  }
+
+### 13. docs/brain/session-takeover.md (67d6f1cc34af6fd217783490d4f011c8cef30e9a03ac7f4e9f0c5692245348e3)
+- bm25: -4.8801 | entity_overlap_w: 5.20 | adjusted: -6.1801 | relevance: 1.0000
+
+## Timer Continuity Details
+
+**Timer state components:**
+- `currentTimerMode`: 'play' (Begin to Go) or 'work' (Go to next phase)
+- `workPhaseCompletions`: object tracking which phases completed work timer
+- `elapsedSeconds`: current countdown value
+- `targetSeconds`: phase-specific target (from runtime config)
+- `capturedAt`: ISO timestamp when snapshot saved
+
+**Snapshot capture (every gate):**
+```javascript
+timerSnapshot: {
+  phase: phase,
+  mode: currentTimerModeRef.current || currentTimerMode,
+  capturedAt: new Date().toISOString(),
+  elapsedSeconds: getElapsedFromSessionStorage(phase, currentTimerMode),
+  targetSeconds: getTargetForPhase(phase, currentTimerMode)
+}
+```
+
+**Restore logic:**
+```javascript
+const { timerSnapshot } = restoredSnapshot;
+if (timerSnapshot) {
+  const drift = Math.floor((Date.now() - new Date(timerSnapshot.capturedAt)) / 1000);
+  const adjustedElapsed = Math.min(
+    timerSnapshot.elapsedSeconds + drift,
+    timerSnapshot.targetSeconds
+  );
+  
+  // Write to sessionStorage (source for timer component)
+  sessionStorage.setItem(
+    `timer_${timerSnapshot.phase}_${timerSnapshot.mode}`,
+    JSON.stringify({
+      elapsedSeconds: adjustedElapsed,
+      startTimestamp: Date.now() - (adjustedElapsed * 1000)
+    })
+  );
+  
+  setCurrentTimerMode(timerSnapshot.mode);
+}
+```
+
+**Result:** Timer continues within ±2 seconds of where old device left off (gate save latency + network round-trip).
+
+## PIN Validation Security
+
+**Already implemented** in `page.js` lines 286-314:
+- Client calls `ensurePinAllowed(pinCode)` from `src/app/lib/pinAuth.js`
+- Server validates PIN hash against learner's stored scrypt hash
+- Only correct PIN allows session takeover
+- Failed PIN shows error, user can retry
+
+### 14. docs/brain/timer-system.md (42aa7c76a1e732a4ec83b46c76f7214efa5fa927819ed9a691f311cae452a2df)
+- bm25: -4.8045 | entity_overlap_w: 5.20 | adjusted: -6.1045 | relevance: 1.0000
+
+**Rule (single instance):** Only one `SessionTimer` instance should be mounted at a time for a given `{lessonKey, phase, mode}`.
+- Mounting two `SessionTimer` components simultaneously can show brief 1-second drift when `SessionTimer` is in self-timing mode.
+- In Session V2, when the Games overlay is open, the on-video timer is not rendered; the Games overlay renders the timer instead.
+
+**Rule (click parity):** Clicking the timer badge in the Games overlay must behave the same as clicking the timer during the rest of the session: it opens `TimerControlOverlay` (PIN-gated).
+- The timer badge must be a `SessionTimer` with `onTimerClick` wired to the same handler used by the main session timer.
+
+### Overlay Stacking (V2)
+
+Games and Visual Aids overlays must render above the timeline and timer overlays.
+- Timeline must not use an extremely high `zIndex`.
+- Full-screen overlays should use a higher `zIndex` than the on-video timer.
+
+**TimerControlOverlay vs GamesOverlay:** If the facilitator opens `TimerControlOverlay` while the Games overlay is open, `TimerControlOverlay` must render above `GamesOverlay` so it is visible and usable.
+
+**PlayTimeExpiredOverlay must be above GamesOverlay:**
+- `PlayTimeExpiredOverlay` is a full-screen, blocking overlay. It must have a higher `zIndex` than `GamesOverlay` so the 30-second countdown cannot appear behind a running game.
+
+### PIN Gating (V2)
+
+Timer controls that can change session pacing are PIN-gated:
+- Opening the TimerControlOverlay is gated by `ensurePinAllowed('timer')`.
+- Pause/resume toggles are gated by `ensurePinAllowed('timer')`.
+
+Timeline jumps are also PIN-gated (see pin-protection.md action `timeline`).
+
+### Play Time Expiration Flow
+
+When play timer reaches 00:00:
+
+### 15. src/app/session/page.js (f7602cae35eee7bc49eaa6db8baf090677611eb2715bc6e5162329af5d9bb621)
+- bm25: -5.3538 | entity_overlap_w: 2.60 | adjusted: -6.0038 | relevance: 1.0000
+
+useEffect(() => {
+    // Load runtime & learner targets once on mount
+    reloadTargetsForCurrentLearner();
+  }, [reloadTargetsForCurrentLearner]);
+
+// Handle session takeover
+  const handleSessionTakeover = useCallback(async (pinCode) => {
+    if (!trackingLearnerId || !normalizedLessonKey || !browserSessionId) {
+      throw new Error('Session not initialized');
+    }
+
+try {
+      // Validate PIN via server API (don't use ensurePinAllowed - it shows another dialog)
+      const mod = await import('@/app/lib/supabaseClient');
+      const getSupabaseClient = mod.getSupabaseClient;
+      const supabase = getSupabaseClient?.();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        throw new Error('Not logged in');
+      }
+      
+      const res = await fetch('/api/facilitator/pin/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ pin: pinCode })
+      });
+      
+      const result = await res.json();
+      if (!res.ok || !result?.ok) {
+        throw new Error('Invalid PIN');
+      }
+
+### 16. src/app/api/mentor-session/route.js (77202383ec70241edf62e293a8096138174a5710f6cec5cffa6eaf5f8c9011e0)
+- bm25: -5.3116 | entity_overlap_w: 2.60 | adjusted: -5.9616 | relevance: 1.0000
+
+try {
+        const pinValid = await verifyPin(user.id, pinCode)
+        if (!pinValid) {
+          return jsonWithDeviceCookie({
+            body: { error: 'Invalid PIN code', requiresPin: true },
+            status: 403,
+            deviceCookieHeader
+          })
+        }
+      } catch (pinErr) {
+        return jsonWithDeviceCookie({ body: { error: 'Failed to verify PIN' }, status: 500, deviceCookieHeader })
+      }
+
+### 17. docs/brain/mr-mentor-session-persistence.md (8a0b3c4381dd8c1aeb08c7e62253763457ae7c98ef1a6aa7711070f19c53afc9)
+- bm25: -5.2966 | entity_overlap_w: 2.60 | adjusted: -5.9466 | relevance: 1.0000
+
+**Takeover Confirmation:**
+1. User on Device B enters PIN
+2. Backend verifies PIN, deactivates old session, creates new session
+3. Device A's realtime subscription triggers instantly (no 8-second delay)
+4. Frontend shows takeover dialog
+
+### 18. src/app/api/mentor-session/route.js (93a269f50eb1f2c905afc4bebf9f0efe5e96ff87b89909d43ec1d487123ac17f)
+- bm25: -5.2668 | entity_overlap_w: 2.60 | adjusted: -5.9168 | relevance: 1.0000
+
+try {
+        const pinValid = await verifyPin(user.id, pinCode)
+        if (!pinValid) {
+          return jsonWithDeviceCookie({
+            body: { error: 'Invalid PIN code', requiresPin: true },
+            status: 403,
+            deviceCookieHeader
+          })
+        }
+      } catch (pinErr) {
+        return jsonWithDeviceCookie({
+          body: { error: 'Failed to verify PIN', details: pinErr.message },
+          status: 500,
+          deviceCookieHeader
+        })
+      }
+
+### 19. src/app/learn/lessons/page.js (82c6cc891c4d9a7cb098915d0ef511fe1ae156ff77df4e93bf066854a7a5d44d)
+- bm25: -5.1939 | entity_overlap_w: 2.60 | adjusted: -5.8439 | relevance: 1.0000
+
+;(async () => {
+      try {
+        // Just check for active session without PIN requirement
+        // The lessons page should be freely accessible
+        const active = await getActiveLessonSession(learnerId)
+        if (cancelled) return
+        // No PIN gate here - let learners view lessons freely
+        if (!cancelled) setSessionGateReady(true)
+      } catch (err) {
+        if (!cancelled) setSessionGateReady(true)
+      }
+    })()
+
+### 20. docs/brain/facilitator-help-system.md (e7aac353101308d57f1fd60b5f3f803d31343881ecc59bd6858d0e1652ecc798)
+- bm25: -5.0747 | entity_overlap_w: 2.60 | adjusted: -5.7247 | relevance: 1.0000
+
+### Expansion Points
+- Account settings pages (PIN setup, 2FA, preferences)
+- Mr. Mentor page (natural language commands)
+- Hotkeys configuration
+- Learner transcript analysis
+
+### Maintenance
+- Review help content quarterly against beta feedback
+- Update when workflows change (e.g., new planner features)
+- Remove help for features that become self-evident after redesign
+- Keep help content in sync with actual UI behavior (no drift)
+
+---
+
+## Related Brain Files
+
+- **calendar-lesson-planning.md** - Automated planning backend logic (planner workflow backend)
+- **timer-system.md** - Phase timer mechanics (what timers control in lessons)
+- **pin-protection.md** - Facilitator section gating (why PIN checks appear)
+- **beta-program.md** - Tutorial system (complementary to help system)
+
+### 21. src/app/facilitator/generator/counselor/CounselorClient.jsx (dce5a32bfc27a43bf530a2b77b02786553abb3323bf255b119b569fc490a2c19)
+- bm25: -4.7491 | entity_overlap_w: 3.90 | adjusted: -5.7241 | relevance: 1.0000
+
+// Periodic heartbeat to detect if session was taken over (backup to realtime)
+  useEffect(() => {
+    if (!accessToken || !hasAccess || sessionLoading) return
+
+const checkSessionStatus = async () => {
+      try {
+        const res = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}`, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        })
+        
+        if (!res.ok) return
+
+const data = await res.json()
+        
+        console.log('[Heartbeat] Checking session status:', {
+          mySessionId: sessionId,
+          activeSessionId: data.session?.session_id,
+          isOwner: data.isOwner,
+          sessionStarted,
+          hasSession: !!data.session
+        })
+        
+        // Only show PIN if there's an active session AND we're not the owner
+        // If there's no session at all, don't show PIN - user can start fresh
+        if (data.session && !data.isOwner) {
+          console.log('[Heartbeat] Not owner - showing PIN overlay')
+          
+          initializedSessionIdRef.current = null
+          
+          setConversationHistory([])
+          setDraftSummary('')
+          setCurrentSessionTokens(0)
+          setSessionStarted(false)
+          setSessionLoading(false)
+          
+          // Show takeover dialog with the active session info
+          setConflictingSession(data.session)
+          setShowTakeoverDialog(true)
+        }
+      } catch (err) {
+        console.error('[Heartbeat] Error:', err)
+      }
+    }
+
+### 22. docs/brain/header-navigation.md (e68f7c5a1dab25ec0465f75a152c356c65209da788b72d81a8f8a94c365e61f5)
+- bm25: -5.0474 | entity_overlap_w: 2.60 | adjusted: -5.6974 | relevance: 1.0000
+
+When triggered from an active Session page, these links must route through the session-exit PIN gate (`goWithPin`) so leaving a session remains protected.
+
+## What NOT To Do
+
+- Do not navigate from `/session/*` to `/facilitator/*` without `goWithPin()`.
+- Do not add billing as a top-level header link; billing lives under Account.
+- Do not create multiple overlapping header overlays; keep menus mutually non-blocking.
+- Do not rely on default `<button>` behavior in the header; always set `type="button"`.
+
+## Key Files
+
+- `src/app/HeaderBar.js` - Header layout, nav links, facilitator dropdown, session print menu
+- `docs/brain/pin-protection.md` - PIN gating rules for session exits and facilitator routes
+
+### 23. src/app/facilitator/account/page.js (6aed1abc117b23e8a42a6c17d6bcabeaff35bac0c1ce972cb85108b58886b86c)
+- bm25: -5.2083 | entity_overlap_w: 1.30 | adjusted: -5.5333 | relevance: 1.0000
+
+// PIN Overlay
+function PinOverlay({ isOpen, onClose, email }) {
+  const [hasPin, setHasPin] = useState(false)
+  const [pin, setPin] = useState('')
+  const [pin2, setPin2] = useState('')
+  const [currentPin, setCurrentPin] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [prefs, setPrefs] = useState(() => getPinPrefsLocal())
+  const [loading, setLoading] = useState(true)
+
+### 24. src/app/session/v2/SessionPageV2.jsx (f0f452675edb85355a5f1390651a4d38be611193f074ef5a6bdccd3d5ae449e2)
+- bm25: -4.8449 | entity_overlap_w: 2.60 | adjusted: -5.4949 | relevance: 1.0000
+
+// PIN gate: timeline jumps are facilitator-only
+    let allowed = false;
+    try {
+      allowed = await ensurePinAllowed('timeline');
+    } catch (e) {
+      console.warn('[SessionPageV2] Timeline PIN gate error:', e);
+    }
+    if (!allowed) {
+      timelineJumpInProgressRef.current = false;
+      return;
+    }
+    
+    console.log('[SessionPageV2] Timeline jump proceeding to:', targetPhase);
+    
+    // Stop any playing audio first
+    stopAudioSafe({ force: true });
+    
+    // Reset opening actions state to prevent zombie UI
+    setOpeningActionActive(false);
+    setOpeningActionType(null);
+    setOpeningActionState({});
+    setOpeningActionInput('');
+    setOpeningActionError('');
+    setOpeningActionBusy(false);
+    setShowPlayWithSonomaMenu(false);
+    setShowGames(false);
+    setShowFullscreenPlayTimer(false);
+
+### 25. docs/brain/pin-protection.md (771d09bf70621a2a47da98e3ac52455b98299582fe3c7fc3744c6d3234d5db17)
+- bm25: -5.1652 | entity_overlap_w: 1.30 | adjusted: -5.4902 | relevance: 1.0000
+
+**Facilitator Pages** (all check PIN on mount):
+- `src/app/facilitator/page.js` - Main facilitator hub
+- `src/app/facilitator/learners/page.js` - Learner management
+- `src/app/facilitator/lessons/page.js` - Lesson management
+- `src/app/facilitator/generator/*/page.js` - Content generators
+- `src/app/facilitator/account/*/page.js` - Account pages
+
+### 26. sidekick_pack.md (823f4a32054ed567322f6c38220db8530887b63d7930a702a348ffe734c95072)
+- bm25: -4.6559 | entity_overlap_w: 2.60 | adjusted: -5.3059 | relevance: 1.0000
+
+### 22. sidekick_pack.md (f0e0466a6588f66493c88c0b00e750e7c20b3e5b9f4eedd4cfc00bcd3826f40a)
+- bm25: -24.5808 | relevance: 1.0000
+
+PIN verification is server-only (no localStorage fallback):
+- Server validates PIN against hashed value in `profiles.facilitator_pin_hash`
+- Uses bcrypt for secure comparison
+- API endpoint: `POST /api/facilitator/pin/verify`
+
+### 38. docs/brain/ingests/pack.planned-lessons-flow.md (c1630e20d42e7416e0786d4762a62020e29931c3609ba5301492ca0c6c410df5)
+- bm25: -1.7211 | entity_overlap_w: 1.30 | adjusted: -2.0461 | relevance: 1.0000
+
+## What NOT To Do
+
+- Do not store lessons on the device (no localStorage/indexedDB/file downloads).
+- Do not reuse Golden Keys to mean "unlock lessons"; Golden Keys are bonus play-time semantics.
+- Do not match ownership using filename-only; subject collisions are possible.
+- Do not allow path traversal in the download endpoint (`..`, `/`, `\\`).
+
+## Key Files
+
+- `src/app/facilitator/lessons/page.js`
+- `src/app/api/facilitator/lessons/download/route.js`
+- `src/app/api/facilitator/lessons/list/route.js`
+- `src/app/api/lessons/[subject]/route.js`
+- `src/app/api/lesson-file/route.js`
+
+### 27. docs/brain/calendar-lesson-planning.md (4da551360e5a46cca2826bfe58a71289a036bb89df00313db4714021b4cc5eab)
+- bm25: -14.3879 | relevance: 1.0000
+
+**Usage:**
+- `node scripts/check-completions-for-keys.mjs --learner Emma --from 2026-01-05 --to 2026-01-08`
+
+### Scheduled Lessons Overlay: Built-in Lesson Editor
+
+The Calendar day overlay includes an inline lesson editor for scheduled lessons.
+
+This editor matches the regular lesson editor for Visual Aids (button + carousel + generation + persistence).
+
+### 27. docs/brain/session-takeover.md (3f93c80afc3393066fb29eb5e8562c9fa07c364f0e666aac42099607b082384b)
+- bm25: -4.9139 | entity_overlap_w: 1.30 | adjusted: -5.2389 | relevance: 1.0000
+
+**No changes needed** - existing PIN flow reused for session takeover.
+
+### 28. src/app/facilitator/account/page.js (effdfff11e825a9eadf541b68090219a19d4b2a78dda5b463ac44adad0ef5fb1)
+- bm25: -4.5642 | entity_overlap_w: 2.60 | adjusted: -5.2142 | relevance: 1.0000
+
+{/* Facilitator PIN */}
+            <div
+              onClick={() => setActiveOverlay('pin')}
+              style={cardStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+                e.currentTarget.style.borderColor = '#9ca3af'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
+                e.currentTarget.style.borderColor = '#e5e7eb'
+              }}
+            >
+              <div style={iconStyle}>📌</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Facilitator PIN</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Protect sensitive actions</div>
+              </div>
+            </div>
+
+{/* Connected Accounts */}
+            <div
+              onClick={() => setActiveOverlay('accounts')}
+              style={cardStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+                e.currentTarget.style.borderColor = '#9ca3af'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
+                e.currentTarget.style.borderColor = '#e5e7eb'
+              }}
+            >
+              <div style={iconStyle}>🔗</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Connected Accounts</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Link Google and other services</div>
+              </div>
+            </div>
+
+### 29. docs/brain/ingests/pack-mentor-intercepts.md (d5ec0788e6e2b4fbfaa482984112c82b9b297da545b06943e8edb3632c935164)
+- bm25: -4.1902 | entity_overlap_w: 3.90 | adjusted: -5.1652 | relevance: 1.0000
+
+### 10. docs/brain/mr-mentor-sessions.md (f2b7ab2dc155d2357594b47f2a3a65b057f762766ec8dbf9983ebc72fa37ef8e)
+- bm25: -21.7710 | relevance: 1.0000
+
+- **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Three-layer persistence for conversation state
+- **[mr-mentor-memory.md](mr-mentor-memory.md)** - Conversation memory accessed during sessions
+
+## Key Files
+
+- `src/app/facilitator/generator/counselor/CounselorClient.jsx` - Session initialization, realtime/heartbeat conflict detection, takeover handling, conversation sync
+- `src/components/SessionTakeoverDialog.jsx` - Takeover modal UI
+- `src/app/api/mentor-session/route.js` - GET/POST/PATCH/DELETE endpoints, PIN validation, session enforcement
+
+## Maintenance
+
+**Manual cleanup** (if needed):
+```sql
+-- View all active sessions
+SELECT * FROM mentor_sessions WHERE is_active = true;
+
+-- Force-end specific session
+UPDATE mentor_sessions 
+SET is_active = false 
+WHERE facilitator_id = 'uuid' AND is_active = true;
+```
+
+**Automatic cleanup:**
+- API automatically deactivates stale sessions (no activity > 15 minutes) before creating new sessions
+- No cron job needed
+
+## What NOT To Do
+
+**DON'T allow multiple active sessions** - Enforced by unique constraint + API validation. Multiple active sessions = split-brain state.
+
+**DON'T skip PIN validation on takeover** - PIN required for `action: 'takeover'` and `action: 'force_end'`. Prevents unauthorized session hijacking.
+
+**DON'T lose conversation history on takeover** - New session inherits full `conversation_history` from old session. Zero data loss.
+
+**DON'T forget to stop polling on unmount** - Clear interval in cleanup effect. Memory leak otherwise.
+
+### 30. docs/brain/ingests/pack.planned-lessons-flow.md (55294648e25051f8a5d5ef1152fb17c1f737ec2144ee257b22c174812502e2af)
+- bm25: -4.1840 | entity_overlap_w: 3.90 | adjusted: -5.1590 | relevance: 1.0000
+
+### 36. docs/brain/mr-mentor-sessions.md (f2b7ab2dc155d2357594b47f2a3a65b057f762766ec8dbf9983ebc72fa37ef8e)
+- bm25: -12.6159 | relevance: 1.0000
+
+- **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Three-layer persistence for conversation state
+- **[mr-mentor-memory.md](mr-mentor-memory.md)** - Conversation memory accessed during sessions
+
+## Key Files
+
+- `src/app/facilitator/generator/counselor/CounselorClient.jsx` - Session initialization, realtime/heartbeat conflict detection, takeover handling, conversation sync
+- `src/components/SessionTakeoverDialog.jsx` - Takeover modal UI
+- `src/app/api/mentor-session/route.js` - GET/POST/PATCH/DELETE endpoints, PIN validation, session enforcement
+
+## Maintenance
+
+**Manual cleanup** (if needed):
+```sql
+-- View all active sessions
+SELECT * FROM mentor_sessions WHERE is_active = true;
+
+-- Force-end specific session
+UPDATE mentor_sessions 
+SET is_active = false 
+WHERE facilitator_id = 'uuid' AND is_active = true;
+```
+
+**Automatic cleanup:**
+- API automatically deactivates stale sessions (no activity > 15 minutes) before creating new sessions
+- No cron job needed
+
+## What NOT To Do
+
+**DON'T allow multiple active sessions** - Enforced by unique constraint + API validation. Multiple active sessions = split-brain state.
+
+**DON'T skip PIN validation on takeover** - PIN required for `action: 'takeover'` and `action: 'force_end'`. Prevents unauthorized session hijacking.
+
+**DON'T lose conversation history on takeover** - New session inherits full `conversation_history` from old session. Zero data loss.
+
+**DON'T forget to stop polling on unmount** - Clear interval in cleanup effect. Memory leak otherwise.
+
+### 31. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (b30861338c07d988f2d66b61fe6040a9644c696ebac6e49160688207185b4517)
+- bm25: -4.1840 | entity_overlap_w: 3.90 | adjusted: -5.1590 | relevance: 1.0000
+
+### 22. docs/brain/mr-mentor-sessions.md (f2b7ab2dc155d2357594b47f2a3a65b057f762766ec8dbf9983ebc72fa37ef8e)
+- bm25: -15.5683 | relevance: 1.0000
+
+- **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Three-layer persistence for conversation state
+- **[mr-mentor-memory.md](mr-mentor-memory.md)** - Conversation memory accessed during sessions
+
+## Key Files
+
+- `src/app/facilitator/generator/counselor/CounselorClient.jsx` - Session initialization, realtime/heartbeat conflict detection, takeover handling, conversation sync
+- `src/components/SessionTakeoverDialog.jsx` - Takeover modal UI
+- `src/app/api/mentor-session/route.js` - GET/POST/PATCH/DELETE endpoints, PIN validation, session enforcement
+
+## Maintenance
+
+**Manual cleanup** (if needed):
+```sql
+-- View all active sessions
+SELECT * FROM mentor_sessions WHERE is_active = true;
+
+-- Force-end specific session
+UPDATE mentor_sessions 
+SET is_active = false 
+WHERE facilitator_id = 'uuid' AND is_active = true;
+```
+
+**Automatic cleanup:**
+- API automatically deactivates stale sessions (no activity > 15 minutes) before creating new sessions
+- No cron job needed
+
+## What NOT To Do
+
+**DON'T allow multiple active sessions** - Enforced by unique constraint + API validation. Multiple active sessions = split-brain state.
+
+**DON'T skip PIN validation on takeover** - PIN required for `action: 'takeover'` and `action: 'force_end'`. Prevents unauthorized session hijacking.
+
+**DON'T lose conversation history on takeover** - New session inherits full `conversation_history` from old session. Zero data loss.
+
+**DON'T forget to stop polling on unmount** - Clear interval in cleanup effect. Memory leak otherwise.
+
+### 32. docs/brain/pin-protection.md (68d0aa13898a78445bc9421b5bfd8dfc4afdcff0ffc2618661cd93a867bf6248)
+- bm25: -5.1289 | relevance: 1.0000
+
+### Session Integrations
+
+### 33. docs/brain/mr-mentor-sessions.md (f2b7ab2dc155d2357594b47f2a3a65b057f762766ec8dbf9983ebc72fa37ef8e)
+- bm25: -4.1531 | entity_overlap_w: 3.90 | adjusted: -5.1281 | relevance: 1.0000
+
+- **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Three-layer persistence for conversation state
+- **[mr-mentor-memory.md](mr-mentor-memory.md)** - Conversation memory accessed during sessions
+
+## Key Files
+
+- `src/app/facilitator/generator/counselor/CounselorClient.jsx` - Session initialization, realtime/heartbeat conflict detection, takeover handling, conversation sync
+- `src/components/SessionTakeoverDialog.jsx` - Takeover modal UI
+- `src/app/api/mentor-session/route.js` - GET/POST/PATCH/DELETE endpoints, PIN validation, session enforcement
+
+## Maintenance
+
+**Manual cleanup** (if needed):
+```sql
+-- View all active sessions
+SELECT * FROM mentor_sessions WHERE is_active = true;
+
+-- Force-end specific session
+UPDATE mentor_sessions 
+SET is_active = false 
+WHERE facilitator_id = 'uuid' AND is_active = true;
+```
+
+**Automatic cleanup:**
+- API automatically deactivates stale sessions (no activity > 15 minutes) before creating new sessions
+- No cron job needed
+
+## What NOT To Do
+
+**DON'T allow multiple active sessions** - Enforced by unique constraint + API validation. Multiple active sessions = split-brain state.
+
+**DON'T skip PIN validation on takeover** - PIN required for `action: 'takeover'` and `action: 'force_end'`. Prevents unauthorized session hijacking.
+
+**DON'T lose conversation history on takeover** - New session inherits full `conversation_history` from old session. Zero data loss.
+
+**DON'T forget to stop polling on unmount** - Clear interval in cleanup effect. Memory leak otherwise.
+
+**DON'T allow takeover without showing warning** - Dialog must explain consequences (other device loses session). User should understand what's happening.
+
+### 34. src/app/facilitator/generator/counselor/SessionTakeoverDialog.jsx (6016f2b53b03b966646f7435ad1c459b6be9534a695cc2a3892c6bdb1e85018f)
+- bm25: -4.7977 | entity_overlap_w: 1.30 | adjusted: -5.1227 | relevance: 1.0000
+
+<form onSubmit={handleSubmit}>
+          <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#374151' }}>
+            Enter your 4-digit PIN to continue:
+          </label>
+          
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={4}
+            value={pinCode}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, '')
+              setPinCode(val)
+              setError('')
+            }}
+            placeholder="••••"
+            disabled={loading}
+            autoFocus
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            data-lpignore="true"
+            data-form-type="other"
+            data-1p-ignore="true"
+            name="pin-code-single-use"
+            id={`pin-${Math.random()}`}
+            style={{
+              width: '100%',
+              padding: 12,
+              fontSize: 18,
+              letterSpacing: '0.5em',
+              textAlign: 'center',
+              border: error ? '2px solid #ef4444' : '2px solid #d1d5db',
+              borderRadius: 8,
+              marginBottom: 12,
+              outline: 'none',
+              transition: 'border-color 0.2s',
+              backgroundColor: loading ? '#f9fafb' : '#fff',
+              WebkitTextSecurity: 'disc'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+            onBlur={(e) => {
+              if (!error) e.target.style.borderColor = '#d1d5db'
+            }}
+          />
+
+### 35. docs/brain/mr-mentor-sessions.md (694177aba3dfafe3c5962c85765d8bf7d1cdb181c40c89e76871879f3e347ac8)
+- bm25: -4.0867 | entity_overlap_w: 3.90 | adjusted: -5.0617 | relevance: 1.0000
+
+# Mr. Mentor Session Management
+
+## How It Works
+
+Mr. Mentor enforces **single-device access per facilitator** to prevent state conflicts and persists conversations across devices for seamless continuity. Only one device can have an active session at a time. Taking over a session from another device requires PIN validation.
+
+**Flow:**
+1. Facilitator opens Mr. Mentor on Device A → Session created, `sessionId` stored in sessionStorage
+2. Facilitator opens Mr. Mentor on Device B → Detects existing active session on Device A
+3. Device B shows `SessionTakeoverDialog` with device name, last activity time, PIN input
+4. Facilitator enters 4-digit PIN → Validated via `POST /api/mentor-session` with `action: 'takeover'`
+5. If valid: Device A session deactivated, Device B session activated with full conversation history
+6. Device A's next poll (every 8 seconds) detects takeover → Shows alert, redirects to `/facilitator`
+7. Facilitator continues conversation on Device B with zero data loss
+
+**Purpose**: Prevents split-brain scenarios where two devices have conflicting conversation states. Enables cross-device workflows (start on desktop, continue on tablet) while maintaining conversation integrity.
+
+## Database Schema
+
+**`mentor_sessions` table:**
+```sql
+- id: UUID (primary key)
+- facilitator_id: UUID (references auth.users)
+- session_id: TEXT (browser-generated unique ID, stored in sessionStorage)
+- device_name: TEXT (optional device identifier)
+- conversation_history: JSONB (full conversation array)
+- draft_summary: TEXT (summary draft)
+- last_activity_at: TIMESTAMPTZ (updated on every interaction)
+- created_at: TIMESTAMPTZ
+- is_active: BOOLEAN (only one true per facilitator)
+
+### 36. docs/brain/session-takeover.md (f547b8a84945c079f4753cfc178e83afd5ab0d6acc67018afbe877b3d81da9b9)
+- bm25: -4.0749 | entity_overlap_w: 3.90 | adjusted: -5.0499 | relevance: 1.0000
 
 ## Why We Use Gates (and Sometimes Polling)
 
@@ -417,1001 +1240,176 @@ The Games overlay does **not** own a global difficulty setting.
    - Resume teaching at vocab sentence 3
    - Apply teaching flow snapshot (vocab index, stage, etc.)
 
-### 9. docs/brain/flood-climb-spelling.md (632422d834fc3ead2e54d0c5f015a851978cc243800fcc58da233e1f9df54f46)
-- bm25: -16.0788 | relevance: 1.0000
+### 37. src/app/session/v2/SessionPageV2.jsx (ad049a4dbb159a48b481d96c665a3257e0d0cad08e3eec63df75c8a7c18aed81)
+- bm25: -4.6936 | entity_overlap_w: 1.30 | adjusted: -5.0186 | relevance: 1.0000
 
-# Flood Climb Spelling Game (#flood-climb-spelling)
+const res = await fetch('/api/facilitator/pin/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ pin: pinCode })
+    });
 
-**Status**: Canonical  
-**Last Updated**: 2026-01-13T03:35:15Z
+const result = await res.json().catch(() => null);
+    if (!res.ok || !result?.ok) {
+      throw new Error('Invalid PIN');
+    }
 
-## How It Works
-
-Flood Climb is a time-pressure spelling game inside the Games overlay.
-
-- The player sees an emoji prompt (example: 🐮).
-- The game also shows a scrambled-letter hint for the target word.
-- The prompt is shown in-stage in the "sky" area (right of the rock wall).
-- The rock wall uses a non-repeating polygon SVG texture (asymmetrical facets; no round blobs) with a flat, cool stone palette to match the climber rock.
-- The rock wall uses the SVG palette directly (no CSS tint overlay).
-- The SVG URL is cache-busted so palette tweaks show up immediately during dev.
-- The "How to play" instructions are also shown in the sky area before Start.
-- Win/lose messaging and the "Play Again" / "Next Level" actions also render in that same sky area.
-- The player types the matching word (example: "cow") and submits (Enter or Submit).
-- The input placeholder reads "Type your answer and press Enter."
-- The standalone instruction line above the input is not shown.
-- Clicking in-game buttons should not steal focus from the input during play.
-- Score accumulates across levels and across runs during the session.
-- Correct answers move the climber upward.
-- Wrong answers cause the water level to jump upward.
-- The water also rises continuously over time.
-- The climber renders behind the water, so submerging looks underwater.
-- The climber is slightly inset from the rock wall for visibility.
-- The player loses when the water reaches the climber's head.
-- The player wins by reaching the top zone before the water catches them.
-
-### Level Progression (Game-Scoped)
-
-Difficulty is owned by this game (not by the Games overlay).
-
-### 10. src/app/session/components/games/GamesOverlay.jsx (f7b93685a61b7cfe578ae117fcc8c87cfdf1623230d58a53e84404a54c276092)
-- bm25: -15.7997 | relevance: 1.0000
-
-{/* Header */}
-          <div
-            style={{
-              padding: '24px 24px 16px',
-              borderBottom: '2px solid #e5e7eb',
-              textAlign: 'center',
-            }}
-          >
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 28,
-                fontWeight: 800,
-                color: '#1f2937',
-              }}
-            >
-              🎮 Choose a Game
-            </h2>
-            <p
-              style={{
-                margin: '8px 0 0',
-                fontSize: 16,
-                color: '#6b7280',
-              }}
-            >
-              Pick a game to play as your reward!
-            </p>
-          </div>
-
-### 11. docs/brain/platform-jumper.md (99d8d1f6d607b81bae89af7c3a7f30bb039f068629132e278dee5a3ba03be196)
-- bm25: -14.6363 | relevance: 1.0000
-
-## What NOT To Do
-
-- Do not add compatibility fallbacks for missing state; keep physics/state explicit.
-- Do not change jump logic separately for touch vs keyboard; both must call the same jump function.
-- Do not make trampoline behavior implicit; trampoline boost must be controlled by the `trampoline` flag on platforms.
-- Avoid large physics changes (gravity, speed, jump) without validating level beatability.
-- Avoid editing multiple level elements at once when fixing a single-beatability issue; move one platform, then re-check.
-
-## Key Files
-
-- `src/app/session/components/games/PlatformJumper.jsx`
-
-### 12. docs/brain/flood-climb-spelling.md (236e3ac8a9612c32cbbd04f089b1ef7260b0e1cf276cd3200afd859af05644c4)
-- bm25: -14.0805 | relevance: 1.0000
-
-The game uses numbered levels (Level 1 .. Level 20). Levels are not labeled.
-The level selector defaults to Level 1 (no placeholder option).
-
-### 13. docs/brain/flood-climb-spelling.md (cd2bc0ac77d08c2d99330dacc03e08685639e9ec766a374661ebb95c861ad2e9)
-- bm25: -14.0699 | relevance: 1.0000
-
-The level controls:
-- The word deck used for prompts (higher levels use harder-to-spell words)
-- Water rise rate (higher level = faster)
-- Climb amount per correct answer (higher level = smaller climb)
-- Water penalty on wrong answers (higher level = bigger penalty)
-
-Notes:
-- The game includes a short start delay before the water begins rising.
-- Starting positions provide a playable buffer so players are not forced to type instantly.
-
-## What NOT To Do
-
-- Do not add an overlay-wide difficulty selector to support this game.
-- Do not persist the level selection via localStorage as a fallback.
-- Do not require learner profile plumbing through `GamesOverlay` unless explicitly requested.
-
-## Key Files
-
-- `src/app/session/components/games/FloodClimbSpelling.jsx`
-- `src/app/session/components/games/GamesOverlay.jsx`
-- `public/media/flood-climb-rockwall.svg`
-
-### 14. src/app/session/components/games/GamesOverlay.jsx (066072b09634e20c5d4b759980b76b47fedebc75f211edfcac86d1fcca6c8571)
-- bm25: -13.8459 | relevance: 1.0000
-
-const gamesList = [
-    {
-      id: 'memory-match',
-      name: 'Memory Match',
-      description: 'Find matching pairs of cards',
-      icon: '🎴',
-      color: '#10b981',
-    },
-    {
-      id: 'snake',
-      name: 'Snake',
-      description: 'Eat food and grow longer!',
-      icon: '🐍',
-      color: '#8b5cf6',
-    },
-    {
-      id: 'catch-collect',
-      name: 'Catch & Collect',
-      description: 'Catch falling items with your basket!',
-      icon: '🧺',
-      color: '#f59e0b',
-    },
-    {
-      id: 'maze-runner',
-      name: 'Maze Runner',
-      description: 'Navigate through the maze to the flag!',
-      icon: '🏁',
-      color: '#ef4444',
-    },
-    {
-      id: 'whack-a-mole',
-      name: 'Whack-a-Mole',
-      description: 'Click the moles before they hide!',
-      icon: '🦫',
-      color: '#06b6d4',
-    },
-    {
-      id: 'platform-jumper',
-      name: 'Platform Jumper',
-      description: 'Jump across platforms to reach the trophy!',
-      icon: '🏆',
-      color: '#ec4899',
-    },
-    {
-      id: 'flood-climb',
-      name: 'Flood Climb',
-      description: 'Spell the emoji word to climb to safety!',
-      icon: '🌊',
-      color: '#3b82f6',
-    },
-    {
-      id: 'flash-cards',
-      name: 'Flash Cards',
-      description: 'Answer cards to level up stages',
-      icon: '🃏',
-      color: '#111827',
-    },
-    // Future games will go here
-  ];
-
-### 15. docs/brain/timer-system.md (42aa7c76a1e732a4ec83b46c76f7214efa5fa927819ed9a691f311cae452a2df)
-- bm25: -13.6991 | relevance: 1.0000
-
-**Rule (single instance):** Only one `SessionTimer` instance should be mounted at a time for a given `{lessonKey, phase, mode}`.
-- Mounting two `SessionTimer` components simultaneously can show brief 1-second drift when `SessionTimer` is in self-timing mode.
-- In Session V2, when the Games overlay is open, the on-video timer is not rendered; the Games overlay renders the timer instead.
-
-**Rule (click parity):** Clicking the timer badge in the Games overlay must behave the same as clicking the timer during the rest of the session: it opens `TimerControlOverlay` (PIN-gated).
-- The timer badge must be a `SessionTimer` with `onTimerClick` wired to the same handler used by the main session timer.
-
-### Overlay Stacking (V2)
-
-Games and Visual Aids overlays must render above the timeline and timer overlays.
-- Timeline must not use an extremely high `zIndex`.
-- Full-screen overlays should use a higher `zIndex` than the on-video timer.
-
-**TimerControlOverlay vs GamesOverlay:** If the facilitator opens `TimerControlOverlay` while the Games overlay is open, `TimerControlOverlay` must render above `GamesOverlay` so it is visible and usable.
-
-**PlayTimeExpiredOverlay must be above GamesOverlay:**
-- `PlayTimeExpiredOverlay` is a full-screen, blocking overlay. It must have a higher `zIndex` than `GamesOverlay` so the 30-second countdown cannot appear behind a running game.
-
-### PIN Gating (V2)
-
-Timer controls that can change session pacing are PIN-gated:
-- Opening the TimerControlOverlay is gated by `ensurePinAllowed('timer')`.
-- Pause/resume toggles are gated by `ensurePinAllowed('timer')`.
-
-Timeline jumps are also PIN-gated (see pin-protection.md action `timeline`).
-
-### Play Time Expiration Flow
-
-When play timer reaches 00:00:
-
-### 16. docs/brain/platform-jumper.md (9a339a36391a029463f0f74ab945ebd04f3f2fc372d017cf1b0928812f34f96c)
-- bm25: -13.5312 | relevance: 1.0000
-
-- On the start screen (under the "Start Level" button) there is a settings (gear) button.
-- Clicking the gear calls `ensurePinAllowed('skip')`.
-- If allowed, the game shows a small dialog that lets the facilitator pick a level to jump to.
-- Skipping resets gameplay state (`gameStarted`, `gameWon`, `gameLost`, velocity/grounding) and sets `playerPos` to the target level's `startPos`.
-
-### 17. src/app/session/components/games/FlashCards.jsx (a9dc52302f19bd51e3d7680b5c14aefd7d026b8b0aa02fd1549e4896c13a648a)
-- bm25: -13.3586 | relevance: 1.0000
-
-<div style={headerRow}>
-          <button type="button" style={softBtn} onClick={onBack}>← Back</button>
-          <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
-          <div style={{ width: 90 }} />
-        </div>
-
-### 18. src/app/session/components/games/FlashCards.jsx (eca4d5f6ae2739ca4f212624a289bc316ae8fffc477b8d031d78bd4fd53d6114)
-- bm25: -12.9291 | relevance: 1.0000
-
-if (screen === 'setup') {
-    return (
-      <div style={frame}>
-        <div style={headerRow}>
-          <button type="button" style={softBtn} onClick={onBack}>← Back</button>
-          <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
-          <div style={{ width: 90 }} />
-        </div>
-
-### 19. src/app/session/components/games/FlashCards.jsx (7e38e3c0b9df4de14e14205a10f230934fc06cddd160008c7210f3a3998cc0b9)
-- bm25: -12.8700 | relevance: 1.0000
-
-if (screen === 'stage-complete') {
-    return (
-      <div style={frame}>
-        <div style={headerRow}>
-          <button type="button" style={softBtn} onClick={onBack}>← Back</button>
-          <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
-          <div style={{ width: 90 }} />
-        </div>
-
-### 20. src/app/facilitator/account/page.js (424d7e064b512135160a762d0e5d1aff7cdc0949854f0c32250911e6bbe54989)
-- bm25: -12.1474 | relevance: 1.0000
-
-{/* Hotkeys */}
-            <div
-              onClick={() => setActiveOverlay('hotkeys')}
-              style={cardStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#9ca3af'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
-                e.currentTarget.style.borderColor = '#e5e7eb'
-              }}
-            >
-              <div style={iconStyle}>⌨️</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Hotkeys</div>
-                <div style={{ fontSize: 13, color: '#6b7280' }}>Customize keyboard shortcuts</div>
-              </div>
-            </div>
-
-### 21. src/app/facilitator/hotkeys/page.js (011cc64e1e65e70eb1e6e0cd4f65a2ec71f6849883b78f1c3a4db7115b77b140)
-- bm25: -12.0828 | relevance: 1.0000
-
-"use client";
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ensurePinAllowed } from '@/app/lib/pinGate';
-import HotkeysManager from '@/components/HotkeysManager'
-
-export default function FacilitatorHotkeysPage() {
-  const router = useRouter();
-  const [pinChecked, setPinChecked] = useState(false);
-
-// Check PIN requirement on mount
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
+if (conflictingSession?.id) {
       try {
-        const allowed = await ensurePinAllowed('facilitator-page');
-        if (!allowed) {
-          router.push('/');
-          return;
-        }
-        if (!cancelled) setPinChecked(true);
-      } catch (e) {
-        if (!cancelled) setPinChecked(true);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [router]);
-
-if (!pinChecked) {
-    return <main style={{ padding: 20 }}><p>Loading…</p></main>;
-  }
-
-return (
-    <main style={{ padding: 20 }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:8, marginBottom:12 }}>
-        <h1 style={{ fontSize:24, fontWeight:800 }}>Hotkeys</h1>
-      </div>
-      <p style={{ color:'#6b7280', marginBottom:8 }}>Customize your keyboard shortcuts. These save to your account when possible and also locally.</p>
-      <div style={{ border:'1px solid #e5e7eb', borderRadius:12, padding:8 }}>
-        <HotkeysManager />
-      </div>
-    </main>
-  )
-}
-
-### 22. src/app/facilitator/learners/components/AIFeaturesOverlay.js (8a0f5982dadaec3ff6c3348c296e3838eefba938f45a4a71dedefcf68f8b7107)
-- bm25: -12.0247 | relevance: 1.0000
-
-{/* Fill-in-Fun Feature */}
-					<div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-						<div>
-							<div style={{ fontWeight: 600, fontSize: '1.05rem', marginBottom: 4 }}>
-								Fill-in-Fun Feature
-							</div>
-							<div style={{ fontSize: '0.9rem', color: '#666' }}>
-								Mad libs style creative game with content safety
-							</div>
-						</div>
-						<button
-							onClick={() => setFillInFunDisabled(!fillInFunDisabled)}
-							style={toggleButtonStyle(fillInFunDisabled)}
-						>
-							{fillInFunDisabled ? '🚫 Disabled' : '✅ Enabled'}
-						</button>
-					</div>
-				</div>
-
-### 23. cohere-changelog.md (feeda18a04f23263202dd5d2da3b92defec989d6ff6f2bdddc55380a3638cbe4)
-- bm25: -11.3610 | relevance: 1.0000
-
----
-
-Date (UTC): 2026-02-18T17:44:15.770Z
-
-Topic: Fix recon auto-catch scripts (PowerShell 5.1 + meaningful anchor checks)
-
-Recon prompt (exact string):
-Fix scripts/cohere-recon.ps1 to run on Windows PowerShell 5.1 (no PS7-only syntax), implement auto-catch recon failure via anchor scoring, auto-ingest, optional gap note, and audit log.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
-
-Result:
-- Decision: Fix PowerShell parsing issues caused by backticks in double-quoted regex strings; make anchor scoring meaningful by ignoring prompt/filter/question metadata (and pack self-citations) so âsuspiciousâ can actually trigger; make gap-note helper PS5.1 compatible.
-- Files changed: scripts/cohere-recon.ps1, scripts/cohere-gap-note.ps1, cohere-changelog.md
-
-Follow-ups:
-- If we want stronger detection, add an optional manual `-Expect` list (high-value anchors) and require a minimum hit-rate (e.g., >= 30%).
-
----
-
-Date (UTC): 2026-02-23T17:13:02.2543565Z
-
-Topic: Flash Cards progress sync across devices/browsers
-
-Recon prompt (exact string):
-Flash Cards progress across all devices and browsers: locate the existing Supabase learner-scoped persistence patterns (tables, RLS, upsert/read helpers) used by sessionSnapshotStore/SnapshotService, then outline how to implement the same for flashcards progress.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
-
-### 24. docs/brain/v2-architecture.md (c2951fa25d44e4fc0435acc27bd610e877cb0bb0b1da4921680892c9bd47fa32)
-- bm25: -11.1627 | relevance: 1.0000
-
-**Worksheet/Test:** Worksheet and Test follow the same no-skip rule. Missing targets or empty pools must block with a clear error instead of auto-advancing to the next phase.
-- The "Go" control in the Opening Actions footer must call the inline Exercise Go handler (not an ExercisePhase controller).
-- Keyboard skip for Exercise should route to the inline skip handler, which advances to the next question and preserves the hint/hint/reveal attempt tracking.
-- Worksheet question normalization must preserve provided `sourceType`/`type` so MC/TF items stay MC/TF (local judging, quick buttons). Only plain string questions should default to fill-in-blank.
-
-### 25. src/app/session/hooks/useDiscussionHandlers.js (7be01249aa3dede88fdd9756fbda8fd5fed5a2c477980961af851344d51ff9f9)
-- bm25: -11.1416 | relevance: 1.0000
-
-/**
- * useDiscussionHandlers.js
- * Custom hook managing all Discussion phase interactive features:
- * - Jokes
- * - Riddles (with hint/reveal)
- * - Poems
- * - Stories (collaborative storytelling)
- * - Fill-in-Fun (word game similar to Mad Libs)
- * - Ask Questions (learner can ask Ms. Sonoma questions)
- */
-
-import { useCallback } from 'react';
-import { splitIntoSentences, mergeMcChoiceFragments, enforceNbspAfterMcLabels } from '../utils/textProcessing';
-import { normalizeBase64Audio } from '../utils/audioUtils';
-import { ensureQuestionMark, formatQuestionForSpeech } from '../utils/questionFormatting';
-import { pickNextJoke, renderJoke } from '@/app/lib/jokes';
-import { pickNextRiddle, renderRiddle } from '@/app/lib/riddles';
-import { getGradeAndDifficultyStyle } from '../utils/constants';
-
-### 26. docs/brain/session-takeover.md (60c9d4cd0ab0fea91764faad1891a96fb7c304045c5c530242436be8f9fdd5f4)
-- bm25: -10.7981 | relevance: 1.0000
-
-5. **iPad - Next gate attempt**
-   - User clicks Next (or any action triggering gate)
-   - Gate: `scheduleSaveSnapshot('vocab-sentence-4')`
-   - Database returns "session ended" error
-   - Show notification: "Lesson continued on laptop"
-   - Redirect to learner dashboard (or show Resume option for laptop)
-
-### 27. src/app/session/v2/SessionPageV2.jsx (0b4286f1a64628f23ef5951a07a7963ed09877e14b6a3bfce1a157394dbc846e)
-- bm25: -10.7161 | relevance: 1.0000
+        const { endLessonSession } = await import('@/app/lib/sessionTracking');
+        await endLessonSession(conflictingSession.id, {
+          reason: 'taken_over',
+          metadata: {
+            taken_over_by_session_id: browserSessionId,
+            taken_over_at: new Date().toISOString(),
+          },
+          learnerId: trackingLearnerId,
+          lessonId: trackingLessonId,
+        });
+      } catch {}
+    }
 
 try {
-        engine.on?.('end', onEnd);
-      } catch {
-        // If we cannot subscribe, fall back to delayed start.
-        deferClosingStartUntilAudioEndRef.current = false;
-        setTimeout(() => phase.start(), 500);
+      const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+      const takeoverStart = await startTrackedSession(browserSessionId, deviceName);
+      if (takeoverStart?.conflict) {
+        throw new Error('Lesson is still active on another device');
       }
-      return;
+      try { startSessionPolling?.(); } catch {}
+    } catch (err) {
+      throw err;
     }
 
-phase.start();
-  };
-  
-  // Handle keyboard hotkeys
-  const handleHotkey = (data) => {
-    const { action, phase, key } = data;
+// Clear local snapshot so reload pulls the latest remote snapshot.
+    try {
+      localStorage.removeItem(`atomic_snapshot:${trackingLearnerId}:${trackingLessonId}`);
+    } catch {}
+
+setShowTakeoverDialog(false);
+    setConflictingSession(null);
+
+if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  }, [browserSessionId, conflictingSession, learnerProfile?.id, lessonKey, startTrackedSession, startSessionPolling]);
+
+### 38. docs/brain/session-takeover.md (ca30ae3def190ad001f0315ab105c9a0786e60c8a03e19d920954fde732dc4ab)
+- bm25: -4.3005 | entity_overlap_w: 2.60 | adjusted: -4.9505 | relevance: 1.0000
+
+**When new device loads lesson page:**
+1. Page generates `browserSessionId` (UUID stored in sessionStorage)
+2. Once `trackingLearnerId`, `normalizedLessonKey`, and `browserSessionId` are available, page calls `startTrackedSession()`
+3. Database detects conflict (different `session_id` already owns this learner+lesson)
+4. `startTrackedSession()` returns `{conflict: true, existingSession: {...}}`
+5. UI immediately shows `SessionTakeoverDialog`
+6. **CRITICAL**: `sessionConflictChecked` remains FALSE when conflict detected, blocking snapshot restore
+7. Snapshot restore logic waits for `sessionConflictChecked` flag before proceeding
+8. User enters 4-digit PIN to validate ownership transfer
+9. On PIN success:
+   - Old session deactivated (`ended_at` set, event logged)
+   - New session created with current `session_id`
+   - Page reloads to restore snapshot from database (most recent for this learner+lesson)
+   - localStorage updated with restored snapshot
+   - Lesson resumes from checkpoint
+
+### 39. src/app/facilitator/generator/counselor/SessionTakeoverDialog.jsx (9fc73230b81c439e0926e5ac87e0768bdd8d0e69ad971349b215356846683fff)
+- bm25: -4.1209 | entity_overlap_w: 2.60 | adjusted: -4.7709 | relevance: 1.0000
+
+// Session Takeover Dialog - requires PIN to take over Mr. Mentor session from another device
+'use client'
+
+import { useState } from 'react'
+
+export default function SessionTakeoverDialog({ 
+  existingSession, 
+  onTakeover, 
+  onCancel
+}) {
+  const [pinCode, setPinCode] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+const handleSubmit = async (e) => {
+    e.preventDefault()
     
-    addEvent(`âŒ¨ï¸ Hotkey: ${key} (${action})`);
+    if (pinCode.length !== 4) {
+      setError('PIN must be 4 digits')
+      return
+    }
+
+setError('')
+    setLoading(true)
+
+try {
+      await onTakeover(pinCode)
+    } catch (err) {
+      setError(err.message || 'Failed to take over session')
+      setLoading(false)
+    }
+  }
+
+const formatLastActivity = (isoString) => {
+    if (!isoString) return 'Unknown'
+    const date = new Date(isoString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
     
-    // Handle phase-specific actions
-    if (action === 'skip') {
-      if (phase === 'teaching') {
-        skipSentence();
-      } else if (phase === 'discussion') {
-        skipDiscussion();
-      } else if (phase === 'comprehension') {
-        skipComprehension();
-      } else if (phase === 'exercise') {
-        skipExerciseQuestion();
-      } else if (phase === 'worksheet') {
-        skipWorksheetQuestion();
-      } else if (phase === 'test') {
-        skipTestQuestion();
-      }
-    } else if (action === 'repeat' && phase === 'teaching') {
-      repeatSentence();
-    } else if (action === 'next' && phase === 'teaching') {
-      nextSentence();
-    } else if (action === 'pause') {
-      // Toggle pause/resume
-      if (audioEngineRef.current) {
-        const state = audioEngineRef.current.state;
-        if (state === 'playing') {
-          pauseAudio();
-        } else if (state === 'paused') {
-          resumeAudio();
-        }
-      }
-    } else if (action === 'stop') {
-      stopAudio();
-    }
-  };
-  
-  const startSession = async (options = {}) => {
-    if (!orchestratorRef.current) {
-      console.warn('[SessionPageV2] No orchestrator');
-      return;
-    }
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`
     
-    if (!audioEngineRef.current) {
-      console.error('[SessionPageV2] Audio engine not ready');
-      return;
-    }
-
-### 28. src/app/session/page.js (dedf2f008fa5192ca5f78b94d1d52ced408f2858b2be94b712db6be350d54b4e)
-- bm25: -10.6620 | relevance: 1.0000
-
-// Helper to get the current phase name from phase state
-  const getCurrentPhaseName = useCallback(() => {
-    // Map phase state to phase timer key
-    // Teaching phase uses discussion timer (they're grouped together)
-    if (phase === 'discussion' || phase === 'teaching') return 'discussion';
-    if (phase === 'comprehension') return 'comprehension';
-    if (phase === 'exercise') return 'exercise';
-    if (phase === 'worksheet') return 'worksheet';
-    if (phase === 'test') return 'test';
-    return null;
-  }, [phase]);
-
-// Check if we're currently in play or work mode
-  const isInPlayMode = useCallback(() => {
-    const currentPhase = getCurrentPhaseName();
-    if (!currentPhase) return false;
-    return currentTimerMode[currentPhase] === 'play';
-  }, [getCurrentPhaseName, currentTimerMode]);
-
-// Handle timer time-up callback (determines if play or work timer expired)
-  const handlePhaseTimerTimeUp = useCallback(() => {
-    const currentPhase = getCurrentPhaseName();
-    if (!currentPhase) return;
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
     
-    const mode = currentTimerMode[currentPhase];
-    if (mode === 'play') {
-      handlePlayTimeUp(currentPhase);
-    } else if (mode === 'work') {
-      handleWorkTimeUp(currentPhase);
-    }
-  }, [getCurrentPhaseName, currentTimerMode, handlePlayTimeUp, handleWorkTimeUp]);
-
-// Reset opening actions visibility on begin and on major phase changes
-  useEffect(() => {
-    if (phase === 'discussion' && subPhase === 'unified-discussion') {
-      setShowOpeningActions(false);
-      // Game usage gates removed - games are now repeatable during play time
-      // Story persists across phases - don't reset or clear transcript
-      // Only clear story when starting a completely new session
-    }
-  }, [phase, subPhase]);
-
-### 29. cohere-changelog.md (4f71f7de200141f488aba8601ec66b31064a2b7bb9f8bfe745edd889c88f1560)
-- bm25: -10.6432 | relevance: 1.0000
-
-Result:
-- Decision: Implement Flash Cards entirely client-side inside GamesOverlay, with deterministic per-learner math decks (50 cards per stage/topic) and localStorage persistence so progress resumes across sessions.
-- Files changed: src/app/session/components/games/GamesOverlay.jsx, src/app/session/components/games/FlashCards.jsx, src/app/session/components/games/flashcardsMathDeck.js, cohere-changelog.md
-
-Follow-ups:
-- If you want cross-device progress (not just same browser), add a Supabase-backed progress table and swap the storage adapter.
-
-### 2026-02-27  Generation error: e.map is not a function
-- Recon prompt: `Generation Failed error from lesson generator API route - investigate callModel and storage upload`
-- Root cause: `buildValidationChangeRequest(validation)` passed whole `{ passed, issues, warnings }` object; function calls `.map()` directly on its argument
-- Fix: `src/app/facilitator/generator/page.js`  `buildValidationChangeRequest(validation)` ? `buildValidationChangeRequest(validation.issues)`
-
-### 2026-02-27  Lesson generated with warnings / Missing file or changeRequest
-- Root cause: generator sent `changes` in POST body but `/api/facilitator/lessons/request-changes` destructures `changeRequest`  
-- Fix: `src/app/facilitator/generator/page.js`  renamed field `changes` ? `changeRequest` in request body
-
-### 30. src/app/session/components/games/GamesOverlay.jsx (2112e811927bb34680ad0bc7aa885859d39794b54cd4be48aaabb957d4963fef)
-- bm25: -10.4927 | relevance: 1.0000
-
-// Game selection menu
-  if (!selectedGame) {
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          zIndex: 20000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backdropFilter: 'blur(4px)',
-        }}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
-        }}
-      >
-        <div
-          style={{
-            background: '#fff',
-            borderRadius: 16,
-            maxWidth: 600,
-            width: '90%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-            position: 'relative',
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Play timer in upper left */}
-          {playTimer && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 16,
-                left: 16,
-                zIndex: 10001,
-              }}
-            >
-              {playTimer}
-            </div>
-          )}
-
-### 31. docs/brain/pin-protection.md (099075fb976b0dc884d23cec569d3b693ff409180962ef058793b7f53217859f)
-- bm25: -9.3677 | relevance: 1.0000
-
-Session surfaces that mutate session state should gate with `ensurePinAllowed(action)` before performing the action.
-
-**Session V2 (timeline + timer controls):**
-- Timeline jumps call `ensurePinAllowed('timeline')` before switching phases.
-- Timer controls call `ensurePinAllowed('timer')` before opening the timer control overlay and before pause/resume toggles.
-
-**Games (example: Platform Jumper):**
-- Facilitator-only game shortcuts (like skipping to a level) must call `ensurePinAllowed('skip')` before opening any level picker.
-
-### Facilitator Section Flag
-
-**Purpose**: Prevent double PIN prompts when navigating between facilitator pages
-
-**How it works**:
-1. Flag is stored in `sessionStorage` (cleared when browser tab closes)
-2. When `ensurePinAllowed('facilitator-page')` succeeds, it sets the flag
-3. Subsequent `facilitator-page` checks skip PIN if flag is already set
-4. Flag is cleared when user navigates away from `/facilitator/*` routes
-
-### Navigation Flow (Session → Facilitator)
-
-**Before Fix (Double PIN Prompt)**:
-1. User clicks Facilitator link from session page
-2. HeaderBar calls `ensurePinAllowed('session-exit')` → prompts for PIN
-3. Navigation to `/facilitator` happens
-4. Facilitator page calls `ensurePinAllowed('facilitator-page')` → prompts for PIN AGAIN (flag not set)
-
-**After Fix (Single PIN Prompt)**:
-1. User clicks Facilitator link from session page
-2. HeaderBar calls `ensurePinAllowed('session-exit')` → prompts for PIN
-3. HeaderBar detects destination is facilitator route → calls `setInFacilitatorSection(true)`
-4. Navigation to `/facilitator` happens
-5. Facilitator page calls `ensurePinAllowed('facilitator-page')` → SKIPS PIN (flag already set)
-
-### Server Verification
-
-### 32. src/app/session/v2/SessionPageV2.jsx (aba181cea98f9fd675ef1a6ce479d4073f258f450478bdefdb45efb001343348)
-- bm25: -9.1344 | relevance: 1.0000
-
-// Keep snapshot currentPhase aligned so granular saves write under the active phase.
-      if (snapshotServiceRef.current) {
-        snapshotServiceRef.current.saveProgress('phase-change', { phaseOverride: data.phase });
-      }
-      
-      // Update keyboard service phase
-      if (keyboardServiceRef.current) {
-        keyboardServiceRef.current.setPhase(data.phase);
-      }
-      
-      // For discussion and test phases, initialize them but DON'T auto-start them
-      // after a timeline jump. They should show the "Begin" button first.
-      const isTimelineJump = timelineJumpInProgressRef.current;
-      
-      // Start phase-specific controller
-      if (data.phase === 'discussion') {
-        startDiscussionPhase();
-        // Discussion has no play timer - start directly in work mode
-        setCurrentTimerMode(prev => ({ ...prev, discussion: 'work' }));
-        setTimerRefreshKey(k => k + 1);
-        // If timeline jump, keep discussionState as 'idle' to show Begin button
-        if (!isTimelineJump && discussionPhaseRef.current) {
-          discussionPhaseRef.current.start();
-        }
-      } else if (data.phase === 'teaching') {
-        startTeachingPhase();
-        // Teaching uses discussion timer (grouped together, already in work mode)
-      } else if (data.phase === 'comprehension') {
-        const started = startComprehensionPhase();
-        if (started) {
-          // Start play timer for comprehension once phase exists (unless play portion is disabled)
-          if (playPortionsEnabledRef.current?.comprehension !== false) {
-            startPhasePlayTimer('comprehension');
-          }
-        } else {
-          if (playPortionsEnabledRef.current?.comprehension !== false) {
-            pendingPlayTimersRef.current.comprehension = true;
-          }
-
-### 33. scripts/add-cohere-style-chronograph.sql (33816351a653cd6f9ad99d8c847e11b711ea222f851ed5010e135ab07c6a9b27)
-- bm25: -8.7722 | relevance: 1.0000
-
-create index if not exists user_goal_versions_latest_idx
-  on public.user_goal_versions (tenant_id, user_id, sector, ts desc, goal_version_id desc);
-
-create table if not exists public.thread_summary_versions (
-  summary_version_id uuid primary key default gen_random_uuid(),
-  tenant_id uuid not null references public.tenants(tenant_id) on delete cascade,
-  thread_id uuid not null references public.threads(thread_id) on delete cascade,
-  sector text not null check (sector in ('child','adult','both')),
-  ts timestamptz not null default now(),
-  title text not null,
-  summary text not null,
-  covers_event_min uuid null,
-  covers_event_max uuid null,
-  source_event_ids uuid[] not null default '{}'::uuid[]
-);
-
-create index if not exists thread_summary_versions_latest_idx
-  on public.thread_summary_versions (tenant_id, thread_id, ts desc, summary_version_id desc);
-
--- FTS support on summaries
-alter table public.thread_summary_versions
-  add column if not exists tsv tsvector generated always as (to_tsvector('english', coalesce(summary,''))) stored;
-
-create index if not exists thread_summary_versions_tsv_gin
-  on public.thread_summary_versions using gin (tsv);
-
--- 5) FAQ / intent gate
-create table if not exists public.gate_intents (
-  intent_id uuid primary key default gen_random_uuid(),
-  tenant_id uuid not null references public.tenants(tenant_id) on delete cascade,
-  sector text not null check (sector in ('child','adult','both')),
-  label text not null,
-  trigger_text text not null,
-  answer_text text null,
-  robot_text text null,
-  updated_at timestamptz not null default now()
-);
-
-alter table public.gate_intents
-  add column if not exists tsv tsvector generated always as (to_tsvector('english', coalesce(trigger_text,''))) stored;
-
-### 34. docs/brain/v2-architecture.md (dcea5ecf862257a5f80f2259d150c9f5b9ae6ce42bb7e280b9ad10ee41710f36)
-- bm25: -8.7314 | relevance: 1.0000
-
-**V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (3500+ lines, includes comprehension logic)
-- `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
-- `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
-- `src/app/session/v2/ComprehensionPhase.jsx` - DEPRECATED, not used (comprehension handled inline in SessionPageV2)
-- `src/app/session/v2/DiscussionPhase.jsx` - Discussion activities (200 lines)
-- `src/app/session/v2/ExercisePhase.jsx` - Exercise questions with scoring (300 lines)
-- `src/app/session/v2/WorksheetPhase.jsx` - Fill-in-blank questions (300 lines)
-- `src/app/session/v2/TestPhase.jsx` - Graded test with review (400 lines)
-- `src/app/session/v2/ClosingPhase.jsx` - Closing message with encouragement (150 lines)
-- `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
-- `src/app/session/v2/SnapshotService.jsx` - Session persistence (300 lines)
-- `src/app/session/v2/TimerService.jsx` - Session and work phase timers (350 lines)
-- `src/app/session/v2/KeyboardService.jsx` - Keyboard hotkey management (150 lines)
-- `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading, includes question pools)
-- `src/app/session/v2test/page.jsx` - Direct test route
-
-### 35. docs/brain/ingests/pack-mentor-intercepts.md (3300157944d072852387421f46174f6339d6a53250501dd8a14f2dc88db84519)
-- bm25: -8.6835 | relevance: 1.0000
-
-**V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (3500+ lines, includes comprehension logic)
-- `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
-- `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
-- `src/app/session/v2/ComprehensionPhase.jsx` - DEPRECATED, not used (comprehension handled inline in SessionPageV2)
-- `src/app/session/v2/DiscussionPhase.jsx` - Discussion activities (200 lines)
-- `src/app/session/v2/ExercisePhase.jsx` - Exercise questions with scoring (300 lines)
-- `src/app/session/v2/WorksheetPhase.jsx` - Fill-in-blank questions (300 lines)
-- `src/app/session/v2/TestPhase.jsx` - Graded test with review (400 lines)
-- `src/app/session/v2/ClosingPhase.jsx` - Closing message with encouragement (150 lines)
-- `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
-- `src/app/session/v2/SnapshotService.jsx` - Session persistence (300 lines)
-- `src/app/session/v2/TimerService.jsx` - Session and work phase timers (350 lines)
-- `src/app/session/v2/KeyboardService.jsx` - Keyboard hotkey management (150 lines)
-- `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading, includes question pools)
-- `src/app/session/v2test/page.jsx` - Direct test route
-
-### 36. sidekick_pack.md (af53ecc19ee10a49a8b05a6d9667006979cd7d5f304dcfad57d5acde47312bea)
-- bm25: -7.9834 | relevance: 1.0000
-
-# Cohere Pack (Sidekick Recon) - MsSonoma
-
-Project: freehands
-Profile: MsSonoma
-Mode: standard
-
-Prompt (original):
-```text
-Calendar day cell overlay opens generator, generates lesson, lesson appears in lessons list but not in calendar day cell or as scheduled lesson - investigate the flow from Generate on date button through to calendar state update
-```
-
-Filter terms used:
-```text
-Calendar
-day
-cell
-overlay
-opens
-generator
-generates
-lesson
-lesson
-appears
-in
-lessons
-list
-but
-not
-in
-calendar
-day
-cell
-or
-as
-scheduled
-lesson
-investigate
-```
-# Context Pack
-
-**Project**: freehands
-**Profile**: MsSonoma
-**Mode**: standard
-
-## Pack Contract
-
-This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
-
-## Question
-
-Calendar day cell overlay opens generator generates lesson lesson appears in lessons list but not in calendar day cell or as scheduled lesson investigate
-
-## Forced Context
-
-(none)
-
-## Ranked Evidence
-
-### 1. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
-- bm25: -37.0855 | relevance: 1.0000
-
-**Completion query rule (visibility > micro-optimization):**
-- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
-- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
-
-### 37. docs/brain/v2-architecture.md (07100d0540a5bc32812eb611909832cc0b8baa09ad9bbd8bb32fb71cf34aae1c)
-- bm25: -7.9034 | relevance: 1.0000
-
-**User Flow:**
-1. Learner clicks Start Lesson
-2. Discussion phase loads, plays greeting: "Hi [name], ready to learn about [topic]?"
-3. Learner clicks "Begin" button
-4. Teaching phase starts with play timer (green) - opening action buttons available
-5. Learner can interact with opening actions during play time in teaching phase
-6. Play timer expires → PlayTimeExpiredOverlay → work timer starts → teaching questions begin
-
----
-
-## Why V2 Exists
-
-The v1 session page (`src/app/session/page.js`) is a 9,797-line monolith managing 30+ coupled state machines simultaneously:
-- Phase/subPhase navigation
-- Teaching flow (definitions → examples with sentence-by-sentence gating)
-- Audio playback (HTMLAudio vs WebAudio vs Synthetic paths)
-- Caption synchronization
-- Video coordination
-- Question tracking (comprehension, exercise, worksheet, test)
-- Discussion activities (Ask, Riddle, Poem, Story, Fill-in-Fun)
-- Snapshot persistence
-- Timer systems (session timer + 11 phase timers + speech guard)
-- Keyboard hotkeys
-
-**Problem:** All systems share state directly via props drilling (~150 props to each hook). Every fix breaks something else because there are no boundaries. Example: Skip hotkey clears audio, but Next Sentence hotkey fires immediately after, advancing teaching stage while audio system thinks playback is still active → examples stage plays no audio.
-
-**Solution:** V2 implements clean architectural boundaries with event-driven communication. Systems don't manipulate each other's state—they emit events and react to events.
-
----
-
-## Migration Strategy: Parallel Implementation (Option C)
-
-### 38. src/app/session/components/games/FlashCards.jsx (8801f24301980b95bef103428a0cf7e65f48f137e5cc5eadd89d2a54d5ad029a)
-- bm25: -7.8911 | relevance: 1.0000
-
-@keyframes flashcards-card-in {
-          0% { transform: translateX(120%); opacity: 0.15; }
-          100% { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes flashcards-card-out {
-          0% { transform: translateX(0); opacity: 1; }
-          100% { transform: translateX(-120%); opacity: 0.15; }
-        }
-      `}</style>
-
-<div style={headerRow}>
-        <button type="button" style={softBtn} onClick={onBack}>← Back</button>
-        <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
-        <button type="button" style={softBtn} onClick={() => setScreen('setup')}>Setup</button>
-      </div>
-
-{/* Meter */}
-      <div style={{ background: '#fff', border: '2px solid #e5e7eb', borderRadius: 16, padding: 14, marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
-          <div style={{ fontWeight: 900, color: '#111827' }}>{topicLabel}</div>
-          <div style={{ fontWeight: 900, color: '#111827' }}>Stage {clampStage(stage)} / {STAGES_TOTAL}</div>
-        </div>
-
-<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ flex: 1, height: 14, borderRadius: 999, background: '#e5e7eb', overflow: 'hidden' }}>
-            <div
-              style={{
-                width: `${(Math.max(0, Math.min(goal, meter)) / goal) * 100}%`,
-                height: '100%',
-                background: '#111827',
-                transition: 'width 240ms linear',
-              }}
-            />
-          </div>
-          <div style={{ minWidth: 86, textAlign: 'right', fontWeight: 900, color: '#111827' }}>
-            Goal {goal}
-          </div>
-        </div>
-      </div>
-
-### 39. src/app/session/v2/OpeningActionsController.jsx (51c1629192972253c3170a3a832ffcd6ca03eb6a1f3a31767de88d31d50977f9)
-- bm25: -7.8603 | relevance: 1.0000
-
-/**
- * OpeningActionsController.jsx
- * 
- * Manages opening actions (Ask, Riddle, Poem, Story, Fill-in-Fun) in V2 architecture.
- * Available during play time in phases 2-5 (Comprehension, Exercise, Worksheet, Test).
- * 
- * V2 architectural patterns:
- * - Event-driven communication via EventBus
- * - Private fields for encapsulation (#)
- * - Single source of truth (no state duplication)
- * - Deterministic async/await chains
- * 
- * Events emitted:
- * - openingActionStart: { action, phase }
- * - openingActionComplete: { action, phase }
- * - openingActionCancel: { action, phase }
- * 
- * Events consumed:
- * - (none currently - self-contained controller)
- * 
- * Opening Actions:
- * 1. Ask: Learner asks Ms. Sonoma questions
- * 2. Riddle: Present riddle with hint/reveal
- * 3. Poem: Read subject-themed poem
- * 4. Story: Collaborative storytelling
- * 5. Fill-in-Fun: Mad Libs word game
- */
-
-import { pickNextRiddle, renderRiddle } from '@/app/lib/riddles';
-import { pickNextJoke, renderJoke } from '@/app/lib/jokes';
-import { fetchTTS } from './services';
-import { getGradeAndDifficultyStyle } from '../utils/constants';
-
-export class OpeningActionsController {
-  #eventBus;
-  #audioEngine;
-  #phase;
-  #subject;
-  #learnerGrade;
-  #difficulty;
-
-#actionNonce = 0;
-
-#fillInFunTemplatePromise = null;
-  
-  // Current action state
-  #currentAction = null; // 'ask' | 'riddle' | 'poem' | 'story' | 'fill-in-fun' | 'joke' | null
-  #actionState = {}; // Action-specific state
-  
-  constructor(eventBus, audioEngine, options = {}) {
-    this.#eventBus = eventBus;
-    this.#audioEngine = audioEngine;
-    this.#phase = options.phase || null;
-    this.#subject = options.subject || 'math';
-    this.#learnerGrade = options.learnerGrade || '';
-    this.#difficulty = options.difficulty || 'moderate';
-
-### 40. docs/brain/facilitator-hub.md (da9aec6fdfc1ea2738cb90fb2977c145f037ea8248bca3683693f7940f7ecae9)
-- bm25: -7.5852 | relevance: 1.0000
-
-# Facilitator Hub
-
-## How It Works
-
-The Facilitator hub is the main entry point for facilitator workflows at `/facilitator`.
-
-- It shows a small grid of primary sections (cards) that route to key areas.
-- It displays the current subscription tier as informational status.
-- Billing is treated as part of **Account** (plan + billing lives under `/facilitator/account/*`).
-
-## What NOT To Do
-
-- Do not add a separate "Billing" section on the hub. Billing navigation belongs under **Account**.
-- Do not duplicate billing management UIs on the hub. Use the account plan/billing pages.
-
-## Key Files
-
-- `src/app/facilitator/page.js` - Facilitator hub cards and subscription status display
-- `src/app/facilitator/account/page.js` - Account hub (settings overlays)
-- `src/app/facilitator/account/plan/page.js` - Plans & billing entry point
-- `src/app/billing/manage/*` - Billing portal UI
+    return date.toLocaleDateString()
+  }
+
+### 40. src/lib/faq/facilitator-pages.json (4b848d3bcb8fd074168f4bfd8805c4c4143f1f27948661b54e4fbba3e5eaf7e3)
+- bm25: -4.4346 | entity_overlap_w: 1.30 | adjusted: -4.7596 | relevance: 1.0000
+
+{
+  "category": "Facilitator Pages",
+  "features": [
+    {
+      "id": "facilitator-page-hub",
+      "title": "Facilitator Hub (/facilitator)",
+      "keywords": [
+        "facilitator hub",
+        "facilitator home",
+        "facilitator dashboard page",
+        "/facilitator",
+        "account learners lessons calendar",
+        "talk to mr mentor"
+      ],
+      "description": "The Facilitator Hub is the entry point to adult tools. It shows quick links to Account, Learners, Lessons, Calendar, and Mr. Mentor.",
+      "howToUse": "Use the cards to open a section (Account/Learners/Lessons/Calendar). Use the Mr. Mentor button to open the facilitator chat experience.",
+      "relatedFeatures": ["facilitator-dashboard", "mr-mentor", "pin-security"]
+    },
+    {
+      "id": "facilitator-page-account",
+      "title": "Account (/facilitator/account)",
+      "keywords": [
+        "facilitator account",
+        "account page",
+        "profile",
+        "security",
+        "2fa",
+        "connected accounts",
+        "timezone",
+        "marketing emails",
+        "policies",
+        "danger zone",
+        "/facilitator/account"
+      ],
+      "description": "The Account page is the central place to manage facilitator profile and security settings, connections, hotkeys, timezone, and billing links.",
+      "howToUse": "Open a card to edit: Your Name; Email and Password; Two-Factor Auth; Facilitator PIN; Connected Accounts; Hotkeys; Timezone; Marketing Emails; Policies; Plan; Danger Zone. Notifications is also linked from here.",
+      "relatedFeatures": ["pin-security", "subscription-tiers"]
+    },
+    {
+      "id": "facilitator-page-account-settings-redirect",
+      "title": "Account Settings (Redirect) (/facilitator/account/settings)",
+      "keywords": [
+        "account se

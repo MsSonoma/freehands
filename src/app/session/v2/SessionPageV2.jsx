@@ -2584,16 +2584,8 @@ function SessionPageV2Inner() {
     setShowTimerControl(true);
   }, []);
   
-  // Handle timer pause toggle
-  const handleTimerPauseToggle = useCallback(async () => {
-    let allowed = false;
-    try {
-      allowed = await ensurePinAllowed('timer');
-    } catch (e) {
-      console.warn('[SessionPageV2] Timer PIN gate error:', e);
-    }
-    if (!allowed) return;
-
+  // Handle timer pause toggle (no PIN check here — overlay open already required PIN)
+  const handleTimerPauseToggle = useCallback(() => {
     setTimerPaused(prev => {
       const nextPaused = !prev;
       
