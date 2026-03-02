@@ -591,23 +591,26 @@ export default function FlashCards({ onBack }) {
   }
 
   // Card screen
+  // "compact" fires when the visible viewport is short enough that the keyboard
+  // is open in landscape. Priority: card visible > input usable > meter minimal > no header.
+  const compact = vpHeight < 260;
+
   return (
     <div
       style={{
         height: vpHeight,
         display: 'flex',
         flexDirection: 'column',
-        padding: '12px 16px',
+        padding: compact ? '4px 8px' : '12px 16px',
         maxWidth: 720,
         margin: '0 auto',
         boxSizing: 'border-box',
-        // Anchor to visual viewport: on iOS, position:fixed is layout-viewport-relative
-        // so we offset by visualViewport.offsetTop to follow the panned visual area.
         position: 'fixed',
         top: vpOffsetTop,
         left: 0,
         right: 0,
         overflow: 'hidden',
+        background: '#f9fafb',
       }}
     >
       <style>{`
@@ -629,21 +632,19 @@ export default function FlashCards({ onBack }) {
         }
       `}</style>
 
-      {/* Header */}
-      <div style={{ ...headerRow, flexShrink: 0 }}>
-        <button type="button" style={softBtn} onClick={onBack}>← Back</button>
-        <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
-        <button type="button" style={softBtn} onClick={() => setScreen('setup')}>Setup</button>
-      </div>
-
-      {/* Meter */}
-      <div style={{ flexShrink: 0, background: '#fff', border: '2px solid #e5e7eb', borderRadius: 16, padding: '10px 14px', marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
-          <div style={{ fontWeight: 900, color: '#111827' }}>{topicLabel}</div>
-          <div style={{ fontWeight: 900, color: '#111827' }}>Stage {clampStage(stage)} / {STAGES_TOTAL}</div>
+      {/* Header — hidden in compact (landscape + keyboard open) */}
+      {!compact && (
+        <div style={{ ...headerRow, flexShrink: 0 }}>
+          <button type="button" style={softBtn} onClick={onBack}>← Back</button>
+          <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
+          <button type="button" style={softBtn} onClick={() => setScreen('setup')}>Setup</button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ flex: 1, height: 14, borderRadius: 999, background: '#e5e7eb', overflow: 'hidden' }}>
+      )}
+
+      {/* Meter — full card in normal; bare progress bar + stage label inline in compact */}
+      {compact ? (
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <div style={{ flex: 1, height: 6, borderRadius: 999, background: '#e5e7eb', overflow: 'hidden' }}>
             <div
               style={{
                 width: `${(Math.max(0, Math.min(goal, meter)) / goal) * 100}%`,
@@ -653,11 +654,34 @@ export default function FlashCards({ onBack }) {
               }}
             />
           </div>
-          <div style={{ minWidth: 86, textAlign: 'right', fontWeight: 900, color: '#111827' }}>
-            Goal {goal}
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#6b7280', whiteSpace: 'nowrap' }}>
+            S{clampStage(stage)}/{STAGES_TOTAL}
+          </div>
+          <button type="button" style={{ ...softBtn, padding: '2px 8px', fontSize: 11 }} onClick={onBack}>✕</button>
+        </div>
+      ) : (
+        <div style={{ flexShrink: 0, background: '#fff', border: '2px solid #e5e7eb', borderRadius: 16, padding: '10px 14px', marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
+            <div style={{ fontWeight: 900, color: '#111827' }}>{topicLabel}</div>
+            <div style={{ fontWeight: 900, color: '#111827' }}>Stage {clampStage(stage)} / {STAGES_TOTAL}</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ flex: 1, height: 14, borderRadius: 999, background: '#e5e7eb', overflow: 'hidden' }}>
+              <div
+                style={{
+                  width: `${(Math.max(0, Math.min(goal, meter)) / goal) * 100}%`,
+                  height: '100%',
+                  background: '#111827',
+                  transition: 'width 240ms linear',
+                }}
+              />
+            </div>
+            <div style={{ minWidth: 86, textAlign: 'right', fontWeight: 900, color: '#111827' }}>
+              Goal {goal}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Card + form — flex:1 fills all remaining height, minHeight:0 allows shrinking */}
       <div
@@ -667,13 +691,13 @@ export default function FlashCards({ onBack }) {
           display: 'flex',
           flexDirection: 'column',
           background: '#fff',
-          border: '2px solid #e5e7eb',
-          borderRadius: 16,
-          padding: '12px 14px',
+          border: compact ? 'none' : '2px solid #e5e7eb',
+          borderRadius: compact ? 10 : 16,
+          padding: compact ? '6px 8px' : '12px 14px',
           overflow: 'hidden',
         }}
       >
-        {/* Card area fills leftover space between meter and input row */}
+        {/* Card area — flex:1 so it shrinks/grows to fill between meter and input */}
         <div
           style={{
             flex: 1,
@@ -686,15 +710,15 @@ export default function FlashCards({ onBack }) {
         >
           <div
             style={{
-              width: 'min(360px, 92vw)',
+              width: compact ? '100%' : 'min(360px, 92vw)',
               height: '100%',
-              maxHeight: 520,
+              maxHeight: compact ? undefined : 520,
               border: '2px solid #e5e7eb',
-              borderRadius: 18,
+              borderRadius: 14,
               background: '#fff',
               position: 'relative',
               overflow: 'hidden',
-              padding: 18,
+              padding: compact ? '6px 12px' : 18,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -724,14 +748,14 @@ export default function FlashCards({ onBack }) {
               </div>
             )}
 
-            <div style={{ fontSize: 38, fontWeight: 900, color: '#111827', lineHeight: 1.15 }}>
+            <div style={{ fontSize: compact ? 26 : 38, fontWeight: 900, color: '#111827', lineHeight: 1.15 }}>
               {currentCard ? currentCard.prompt : 'Loading…'}
             </div>
           </div>
         </div>
 
-        {/* Input row — never shrinks, always anchored at bottom of card panel */}
-        <form onSubmit={handleSubmit} style={{ flexShrink: 0, display: 'flex', gap: 10, marginTop: 10 }}>
+        {/* Input row — never shrinks, anchored at bottom of card panel */}
+        <form onSubmit={handleSubmit} style={{ flexShrink: 0, display: 'flex', gap: 8, marginTop: compact ? 4 : 10 }}>
           <input
             ref={inputRef}
             value={answer}
@@ -739,16 +763,16 @@ export default function FlashCards({ onBack }) {
             onFocus={() => {
               setTimeout(() => inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
             }}
-            placeholder="Type your answer"
+            placeholder="Answer"
             style={{
               flex: 1,
-              padding: '12px 12px',
-              borderRadius: 12,
+              padding: compact ? '6px 10px' : '12px 12px',
+              borderRadius: 10,
               border: '2px solid #e5e7eb',
-              fontSize: 18,
+              fontSize: compact ? 15 : 18,
             }}
           />
-          <button type="submit" style={{ ...btn, padding: '12px 16px', fontSize: 16 }}>Send</button>
+          <button type="submit" style={{ ...btn, padding: compact ? '6px 12px' : '12px 16px', fontSize: compact ? 14 : 16 }}>Send</button>
         </form>
       </div>
     </div>
