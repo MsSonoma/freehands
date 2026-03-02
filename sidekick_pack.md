@@ -6,25 +6,12 @@ Mode: standard
 
 Prompt (original):
 ```text
-Golden Key applied from Timers overlay changes overlay clock but not session clock authority
+skip button skips questions instead of only skipping TTS speech audio
 ```
 
 Filter terms used:
 ```text
-Golden
-Key
-applied
-from
-Timers
-overlay
-changes
-overlay
-clock
-but
-not
-session
-clock
-authority
+TTS
 ```
 # Context Pack
 
@@ -38,7 +25,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-Golden Key applied from Timers overlay changes overlay clock but not session clock authority
+TTS
 
 ## Forced Context
 
@@ -46,1324 +33,1393 @@ Golden Key applied from Timers overlay changes overlay clock but not session clo
 
 ## Ranked Evidence
 
-### 1. src/app/session/v2/SessionPageV2.jsx (f78d065f61ddcc60f2a389e10ff30a464b473f25b3641b67b407c7b53f0105b2)
-- bm25: -20.8791 | relevance: 1.0000
+### 1. src/app/session/page.js (24d0ad1fca5c4d9e137faf448d67edbdd18d815a89dd1d4902030a56f456fcba)
+- bm25: -5.4949 | entity_overlap_w: 3.90 | adjusted: -6.4699 | relevance: 1.0000
 
-// Reflect in local session state.
-      setLearnerProfile(updated || learner);
-      setHasGoldenKey(true);
-      setIsGoldenKeySuspended(false);
-      const timers = loadPhaseTimersForLearner(updated || learner);
-      setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
-      setTimerRefreshKey(k => k + 1);
-      persistTimerStateNow('golden-key-applied');
-    } catch (err) {
-      console.warn('[SessionPageV2] Failed to apply golden key:', err);
-    }
-  }, [hasGoldenKey, lessonKey, goldenKeyLessonKey, learnerProfile, persistTimerStateNow]);
+// isSpeaking/phase/subPhase defined earlier; do not redeclare here
+  const [transcript, setTranscript] = useState("");
+  // Start with loading=true so the existing overlay spinner shows during initial restore
+  const [loading, setLoading] = useState(true);
+  // TTS overlay: track TTS fetch activity separately; overlay shows when either API or TTS is loading
+  const [ttsLoadingCount, setTtsLoadingCount] = useState(0);
+  const overlayLoading = loading || (ttsLoadingCount > 0);
 
-### 2. docs/brain/timer-system.md (f6039f66c89f72a9b7a6605c84ec61b2bb3d87b5f9d91a8dfe35b82d55d0be59)
-- bm25: -20.7387 | relevance: 1.0000
+### 2. src/app/session/page.js (df9788fcf3d8a451ee6730b44593b0670d7e3844110c56f24d473caa04751eb2)
+- bm25: -4.8643 | entity_overlap_w: 5.20 | adjusted: -6.1643 | relevance: 1.0000
 
-### Golden Keys Gating (Plan + Per Learner)
-
-Golden Keys have two independent gates:
-
-1) **Plan entitlement (account level)**
-- Source: `profiles.plan_tier` + `profiles.subscription_tier` resolved through `resolveEffectiveTier()` + `featuresForTier()`.
-- If `featuresForTier(effectiveTier).goldenKeyFeatures === false` (e.g., `trial`), Golden Keys are not usable in-session.
-- In Session V2, the plan entitlement is enforced even if the learner setting is on (learner setting is coerced off).
-
-2) **Per-learner setting (learner level)**
-- Column: `public.learners.golden_keys_enabled` (boolean, default true)
-- Only applies when the plan is entitled.
-
-**UI behavior (TimerControlOverlay):**
-- Not entitled by plan: show the Golden Key section with an upgrade note; do not allow applying/suspending/earning keys.
-- Entitled by plan, learner setting off: keep controls visible but disable actions with explanatory copy.
-- Entitled by plan, learner setting on: full Golden Key behavior enabled.
-
-### Golden Key Application (Per Lesson)
-
-Golden Key usage is **per-lesson**, stored on the learner record:
-- Field: `learners.active_golden_keys` (JSON map `{ [lessonKey]: true }`)
-- When a facilitator applies a Golden Key for the current lesson, Session V2 must persist:
-  - Set `active_golden_keys[lessonKey] = true`
-  - Decrement `learners.golden_keys` inventory by 1
-
-Once applied:
-- The Golden Key bonus minutes are added to **all play timers** (phases 2-5) for that session.
-- Suspending the Golden Key sets the play bonus to 0 (bonus is removed immediately from running timers).
-
-### 3. src/app/session/page.js (441c5b0468568c0ee81383d2ff1659da127f5404e6cc3571903b476a83ca65af)
-- bm25: -19.7058 | relevance: 1.0000
-
-// Decrement available golden keys and mark this lesson as having one
-      await updateLearner(learnerId, {
-        name: learner.name,
-        grade: learner.grade,
-        targets: {
-          comprehension: learner.comprehension,
-          exercise: learner.exercise,
-          worksheet: learner.worksheet,
-          test: learner.test
-        },
-        session_timer_minutes: learner.session_timer_minutes,
-        golden_keys: (learner.golden_keys || 0) - 1,
-        active_golden_keys: activeKeys
-      });
-      
-      // Get the golden key bonus from the learner's settings
-      const bonusMinutes = learner.golden_key_bonus_min ?? 5; // Default to 5 if not set
-      
-      // Update local state
-      setHasGoldenKey(true);
-      setIsGoldenKeySuspended(false);
-      setGoldenKeyBonus(bonusMinutes);
-      
-      // Force timer to refresh and pick up the new golden key bonus
-      setTimerRefreshKey(prev => prev + 1);
-      
-      // Show success and close overlay
-      alert('Golden key applied! This lesson now has bonus play time.');
-      setShowTimerControls(false);
-      
-    } catch (err) {
-      alert('Failed to apply golden key. Please try again.');
-    }
-  }, [hasGoldenKey, lessonKey]);
-
-### 4. docs/brain/timer-system.md (b528b741fad7d3d86f62d013e0cc846e2e18e614028489363ed3671475b5ee8b)
-- bm25: -19.0573 | relevance: 1.0000
-
-**Pause behavior:**
-- Stops all tick intervals (play and work)
-- Stores current elapsed time for active timers
-- Tick methods guard against running when paused
-- **Critical:** Prevents `playTimerExpired` event from firing during pause
-- Timer UI shows pause icon but displays frozen elapsed time
-
-**Resume behavior:**
-- Adjusts `startTime` to account for paused duration
-- Restarts tick intervals
-- Timers continue from where they left off
-- No time is lost or gained during pause
-
-**Event-Driven Display (V2):**
-- `SessionPageV2` maintains separate display state for play and work timers:
-  - `playTimerDisplayElapsed` / `playTimerDisplayRemaining`
-  - `workTimerDisplayElapsed` / `workTimerDisplayRemaining`
-- Event subscriptions update display state:
-  - `playTimerTick` / `workPhaseTimerTick` - continuous updates while running
-  - `playTimerStart` / `workPhaseTimerStart` - initialize display when timer starts
-- `SessionTimer` receives `elapsedSeconds`/`remainingSeconds` as props based on current timer mode
-- This prevents play and work timers from sharing/overwriting countdown values
-
-**Phase Transitions:**
-- `playTimerExpired` event handler calls `handlePhaseTimerTimeUp()` to trigger state changes
-- Without this call, timer expiry would show overlay but not advance phases or update timer modes
-- Phase state machine depends on `handlePhaseTimerTimeUp` for 'play' → 'work' transitions
-
-**Key files:**
-- `src/app/session/v2/TimerService.jsx` - `pause()`, `resume()`, pause guards in tick methods
-- `src/app/session/v2/SessionPageV2.jsx` - `handleTimerPauseToggle`, `timerPaused` state, event subscriptions, separate play/work display state
-
-## Recent Changes
-
-### 5. src/app/session/v2/SessionPageV2.jsx (666070c5d3f55ec39dbbc5f387961507a315ceda43f33fd07c52462a167575f1)
-- bm25: -18.8385 | relevance: 1.0000
-
-return () => {
-      try { unsubPlayStart?.(); } catch {}
-      try { unsubWorkStart?.(); } catch {}
-      try { unsubPlayExpired?.(); } catch {}
-      try { unsubPlayTick?.(); } catch {}
-      try { unsubWorkTick?.(); } catch {}
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('beforeunload', onBeforeUnload);
-      window.removeEventListener('focus', onFocus);
-      window.removeEventListener('pageshow', onPageShow);
-    };
-  }, [lessonKey, persistTimerStateNow]);
-
-const handleApplyGoldenKeyForLesson = useCallback(async () => {
-    if (goldenKeysEnabledRef.current === false) return;
-    if (!lessonKey) return;
-
-const learnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
-    if (!learnerId || learnerId === 'demo') return;
-
-// If already applied locally, don't reapply.
-    if (hasGoldenKey) return;
-
-try {
-      const learner = await getLearner(learnerId);
-      if (!learner) return;
-
-if (!goldenKeyLessonKey) return;
-
-const activeKeys = { ...(learner.active_golden_keys || {}) };
-      if (activeKeys[goldenKeyLessonKey]) {
-        setHasGoldenKey(true);
-        setIsGoldenKeySuspended(false);
-        const timers = loadPhaseTimersForLearner(learner);
-        setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
-        setTimerRefreshKey(k => k + 1);
-        persistTimerStateNow('golden-key-applied');
-        return;
+// Helper: speak arbitrary frontend text via unified captions + TTS
+  // (defined here after playAudioFromBase64 is available, and updates the ref for early callbacks)
+  const speakFrontendImpl = useCallback(async (text, opts = {}) => {
+    try {
+      const mcLayout = opts && typeof opts === 'object' ? (opts.mcLayout || 'inline') : 'inline';
+      const noCaptions = !!(opts && typeof opts === 'object' && opts.noCaptions);
+      let sentences = splitIntoSentences(text);
+      sentences = mergeMcChoiceFragments(sentences, mcLayout).map((s) => enforceNbspAfterMcLabels(s));
+      const assistantSentences = mapToAssistantCaptionEntries(sentences);
+      // When noCaptions is set (e.g., resume after refresh), do not mutate caption state
+      // so the transcript on screen does not duplicate. Still play TTS.
+      let startIndexForBatch = 0;
+      if (!noCaptions) {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), ...assistantSentences];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+        startIndexForBatch = prevLen;
+      } else {
+        // Keep current caption index; batch will be empty so no scheduling occurs
+        try { startIndexForBatch = Number(captionIndexRef.current || 0); } catch { startIndexForBatch = 0; }
       }
+      let dec = false;
+      try {
+        // Check cache first
+        let b64 = ttsCache.get(text);
+        
+        if (b64) {
+          console.log('[TTS CACHE HIT]', text.substring(0, 50));
+        } else {
+          console.log('[TTS CACHE MISS]', text.substring(0, 50));
+        }
+        
+        if (!b64) {
+          // Cache miss - fetch from API
+          setTtsLoadingCount((c) => c + 1
 
-const available = Number(learner.golden_keys || 0);
-      if (!Number.isFinite(available) || available <= 0) {
-        return;
-      }
+### 3. docs/brain/ms-sonoma-teaching-system.md (a4cd628a3ea6f93deb0a26acad8137200825707078575f9b6d681391de3d7af7)
+- bm25: -5.0590 | entity_overlap_w: 2.60 | adjusted: -5.7090 | relevance: 1.0000
 
-activeKeys[goldenKeyLessonKey] = true;
-      const updated = await updateLearner(learnerId, {
-        golden_keys: available - 1,
-        active_golden_keys: activeKeys
-      });
+### Hotkey Behavior
 
-### 6. src/app/session/page.js (94e48e98dfe42c83ad0ba9aa2ce72e862e51ac741c6764caa468e7c7a03934a0)
-- bm25: -17.8117 | relevance: 1.0000
+- Default bindings: Skip = PageDown; Next Sentence = End; Repeat = PageUp.
+- Teaching gate Next Sentence hotkey (PageDown) only fires after TTS finishes or has been skipped; while speech is active the key is ignored.
+- Skip still routes through the central speech abort to halt TTS before advancing.
 
-// Handle timer pause/resume (no PIN required - overlay already authenticated)
-  const handleTimerPauseToggle = useCallback(async () => {
-    setTimerPaused(prev => !prev);
-  }, []);
+### Teaching Gate Flow
 
-// Handle timer click - open controls with PIN
-  const handleTimerClick = useCallback(async (currentElapsedSeconds) => {
-    const ok = await ensurePinAllowed('timer');
-    if (!ok) return;
-    setShowTimerControls(true);
-  }, []);
+### 4. docs/brain/v2-architecture.md (bc99e4b71f540c7bf37fdef5f564161060387111ec7a1c9304f9cd3ccfe6fd49)
+- bm25: -4.6226 | entity_overlap_w: 3.90 | adjusted: -5.5976 | relevance: 1.0000
 
-// Handle timer time adjustment
-  const handleUpdateTime = useCallback((newElapsedSeconds) => {
-    // TimerControlOverlay now handles sessionStorage updates directly
-    // Force SessionTimer to re-read its state by changing its key
-    setTimerRefreshKey(prev => prev + 1);
-    setShowTimerControls(false);
-  }, []);
+**Retry + Rate Limit Handling:**
+- If GPT returns 429, TeachingController enters a cooldown and produces a deterministic "wait then press Next" sentence
+- If GPT returns 500+ (or the fetch throws), TeachingController shows a generic server error message (not rate limit)
+- When a non-429 error message is shown, the next Next/Repeat/Restart action triggers an actual retry fetch (instead of advancing past the error sentence and effectively skipping the stage)
+- Next/Repeat/Restart must not spam GPT requests during cooldown
+- Public methods called without `await` (Repeat/Skip/Restart) must not generate unhandled promise rejections
 
-// Handle golden key application from timer controls
-  const handleApplyGoldenKey = useCallback(async () => {
-    if (hasGoldenKey) {
-      alert('This lesson already has a golden key applied.');
+**Environment Variable Requirements:**
+- At least one LLM provider key must be configured: `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
+- Google TTS requires: `GOOGLE_APPLICATION_CREDENTIALS` (path to JSON file) or `GOOGLE_TTS_CREDENTIALS` (inline JSON or base64)
+- Dev server must be restarted after adding/changing `.env.local` to load new environment variables
+- Missing keys cause 500 errors (not 429s); TeachingController now distinguishes these in user-facing messages
+
+**Gate Prompt Flow (uses prefetched content):**
+1. Speak "Do you have any questions?" (TTS prefetched)
+2. Await prefetched GPT result (usually instant)
+3. Speak GPT-generated sample questions (TTS prefetched)
+4. Fallback if GPT failed: deterministic questions using lesson title
+
+**Exposes:**
+- `prefetchAll()` - start all background prefetches (call on Begin)
+- `startTeaching(lessonData)`
+- `advanceSentence()`
+- `repeatSentence()`
+- `skipToExamples()`
+- Events: `onStageChange`, `onSentenceAdvance`, `onTeachingComplete`
+
+### 5. src/app/api/counselor/route.js (86a4ead5f24d3e066223ffc9afb48afe1a5b76912ee87576c502487a9e7cd4eb)
+- bm25: -4.9418 | entity_overlap_w: 2.60 | adjusted: -5.5918 | relevance: 1.0000
+
+function loadTtsCredentials() {
+  const inline = process.env.GOOGLE_TTS_CREDENTIALS
+  const inlineCreds = decodeCredentials(inline)
+  if (inlineCreds) return inlineCreds
+
+const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(process.cwd(), 'google-tts-key.json')
+  try {
+    if (credentialPath && fs.existsSync(credentialPath)) {
+      const raw = fs.readFileSync(credentialPath, 'utf8').trim()
+      if (raw) return decodeCredentials(raw) || JSON.parse(raw)
+    }
+  } catch (fileError) {
+    // Credentials load failed - TTS will be unavailable
+  }
+  return null
+}
+
+async function getTtsClient() {
+  if (ttsClientPromise) return ttsClientPromise
+
+const credentials = loadTtsCredentials()
+  if (!credentials) {
+    // No credentials - voice playback disabled
+    return null
+  }
+
+ttsClientPromise = (async () => {
+    try {
+      return new TextToSpeechClient({ credentials })
+    } catch (error) {
+      // TTS client init failed
+      ttsClientPromise = undefined
+      return null
+    }
+  })()
+
+ttsClientPromise.catch(() => { ttsClientPromise = undefined })
+  return ttsClientPromise
+}
+
+function createCallId() {
+  const timePart = Date.now().toString(36)
+  const randomPart = Math.random().toString(36).slice(2, 8)
+  return `${timePart}-${randomPart}`
+}
+
+function pushToolLog(toolLog, entry) {
+  if (!Array.isArray(toolLog)) return
+  const message = buildToolLogMessage(entry?.name, entry?.phase, entry?.context)
+  if (!message) return
+  toolLog.push({
+    id: entry?.id || createCallId(),
+    timestamp: Date.now(),
+    name: entry?.name,
+    phase: entry?.phase,
+    message,
+    context: entry?.context || {}
+  })
+}
+
+### 6. src/app/session/v2/TeachingController.jsx (cd903932d69c019531594d7f3ad425c158d1999a6659b77363e9aaa89296d3fa)
+- bm25: -4.4521 | entity_overlap_w: 3.90 | adjusted: -5.4271 | relevance: 1.0000
+
+if (this.#prefetchStarted) {
+      console.log('[TeachingController] Prefetch already started - skipping');
       return;
     }
+    this.#prefetchStarted = true;
     
-    try {
-      const learnerId = localStorage.getItem('learner_id');
-      if (!learnerId) {
-        alert('No learner selected');
-        return;
-      }
+    // Start definitions GPT (don't await) - then prefetch TTS for first few sentences.
+    // IMPORTANT: Stagger downstream GPT calls to reduce 429 risk.
+    // Prefetch promises should never produce unhandled rejections.
+    this.#definitionsGptPromise = this.#fetchDefinitionsFromGPT()
+      .then(sentences => {
+        // Prefetch TTS for first 3 definition sentences
+        sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
+        return sentences;
+      })
+      .catch(err => {
+        console.error('[TeachingController] Definitions prefetch error:', err);
+        return [];
+      });
+    
+    // Start examples GPT after definitions completes + 4 second delay (rate limit safety).
+    this.#examplesGptPromise = this.#definitionsGptPromise
+      .catch(() => [])
+      .then(() => new Promise(resolve => setTimeout(resolve, 4000)))
+      .then(() => this.#fetchExamplesFromGPT())
+      .then(sentences => {
+        // Prefetch TTS for first 3 example sentences
+        sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
+        return sentences;
+      })
+      .catch(err => {
+        console.error('[TeachingController] Examples prefetch error:', err);
+        return [];
+      });
+    
+    // Gate prompts are nice-to-have; fetch them after their parent content + 2s delay each.
+    this.#definitionsGatePromptPromise = this.#definitionsGptPromise
+      .catch(() => [])
+      .then(() => new Promise(resolve => setTimeout(resolve, 2000)))
+      .then(() => this.#fetchGatePromptFromGPT('definitions'))
+      .then(text => {
+      if (text) ttsCache.prefetch(text);
+      return text;
+    });
+    
+    t
 
-// Import learner API
-      const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
-      const learner = await getLearner(learnerId);
-      if (!learner) {
-        alert('Learner not found');
-        return;
-      }
+### 7. src/app/facilitator/generator/counselor/CounselorClient.jsx (eeee8bf62119b0a3950c8ae02dfea3b24db32aa02bec35def65e5acb416bfe08)
+- bm25: -4.6369 | entity_overlap_w: 2.60 | adjusted: -5.2869 | relevance: 1.0000
 
-// Check if learner has available golden keys
-      if (!learner.golden_keys || learner.golden_keys <= 0) {
-        alert('No golden keys available. Complete lessons to earn golden keys.');
-        return;
-      }
-
-// Apply golden key to this lesson
-      const activeKeys = { ...(learner.active_golden_keys || {}) };
-      activeKeys[lessonKey] = true;
-
-### 7. src/app/session/v2/SessionPageV2.jsx (a9e9809cf3610a8a1f4183325c60c1b9b842c5539910c2a3707833c1101951c5)
-- bm25: -17.2319 | relevance: 1.0000
-
-// Play portion flags (required - no defaults or fallback)
-        const playFlags = {
-          comprehension: learner.play_comprehension_enabled,
-          exercise: learner.play_exercise_enabled,
-          worksheet: learner.play_worksheet_enabled,
-          test: learner.play_test_enabled,
-        };
-        for (const [k, v] of Object.entries(playFlags)) {
-          if (typeof v !== 'boolean') {
-            throw new Error(`Learner profile missing play_${k}_enabled flag. Please run migrations.`);
+interceptResult.response = `Ok. I\'m opening the Lesson Planner and generating a ${action.durationMonths}-month plan starting ${action.startDate}.`
           }
         }
-        setPlayPortionsEnabled(playFlags);
-        playPortionsEnabledRef.current = playFlags;
         
-        // Load phase timer settings from learner profile
-        const timers = loadPhaseTimersForLearner(learner);
-        setPhaseTimers(timers);
+        // Add interceptor response to conversation
+        const finalHistory = [
+          ...updatedHistory,
+          { role: 'assistant', content: interceptResult.response }
+        ]
+        setConversationHistory(finalHistory)
         
-        // Initialize currentTimerMode (null = not started yet), but do not clobber
-        // any existing restore/resume-derived modes.
-        setCurrentTimerMode((prev) => {
-          const hasExistingMode = prev && Object.values(prev).some((mode) => mode === 'play' || mode === 'work');
-          if (hasExistingMode) return prev;
-          return {
-            discussion: null,
-            comprehension: null,
-            exercise: null,
-            worksheet: null,
-            test: null
-          };
-        });
+        // Display interceptor response in captions
+        setCaptionText(interceptResult.response)
+        const sentences = splitIntoSentences(interceptResult.response)
+        setCaptionSentences(sentences)
+        setCaptionIndex(0)
         
-        // Check for active golden key on this lesson (only affects play timers when Golden Keys are enabled)
-        // Key format must match V1 + /learn/lessons: `${subject}/${lesson}`.
-        if (!goldenKeyLessonKey) {
-          throw new Error('Missing lesson key for golden key lookup.');
-        }
-        const activeKeys = learner.active_golden_keys || {};
-        if (learner.golden_keys_enabled && activeKeys[goldenKeyLessonKey]) {
-          setHasGoldenKey(true);
-
-### 8. src/app/facilitator/learners/components/LearnerEditOverlay.jsx (51c37a4c43097636d469452a1fc72ad7ca84cc7183cbbcbaa8aa3129c900b337)
-- bm25: -16.8118 | relevance: 1.0000
-
-{/* Golden Key Bonus */}
-							<div style={{
-								borderTop: '2px solid #e5e7eb',
-								paddingTop: 12,
-								marginTop: 4
-							}}>
-								<div style={{ position: 'relative', marginBottom: 6 }}>
-										<div
-											style={{
-												fontSize: 16,
-												fontWeight: 700,
-												color: '#b45309',
-												cursor: 'help',
-												display: 'inline-block',
-												borderBottom: '1px dotted #9ca3af',
-												userSelect: 'none'
-											}}
-											onMouseEnter={() => handleTooltipHover('golden-key', true)}
-											onMouseLeave={() => handleTooltipHover('golden-key', false)}
-											onClick={() => handleTooltipClick('golden-key')}
-										>
-											⚡ Golden Key Bonus
-										</div>
-
-{/* Golden key tooltip */}
-										{showTooltip('golden-key') && (
-											<div style={{
-												position: 'absolute',
-												top: '100%',
-												left: 0,
-												marginTop: 6,
-												background: '#1f2937',
-												color: '#fff',
-												padding: '8px 12px',
-												borderRadius: 6,
-												fontSize: 12,
-												lineHeight: 1.4,
-												boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-												zIndex: 10,
-												maxWidth: 280,
-												whiteSpace: 'normal'
-											}}>
-												Extra time added to <strong>all play timers</strong> when golden key is earned (completing 4/5 work phases) or applied by facilitator.
-											</div>
-										)}
-									</div>
-
-### 9. docs/brain/timer-system.md (75eb75b205360de0660d27d8b243209381277ef9ef5df63d1e5253f267fa4a8d)
-- bm25: -16.5975 | relevance: 1.0000
-
-## Key Files
-
-### Core Timer Logic
-- **src/app/session/page.js**:
-  - `currentTimerMode` state (line ~398)
-  - `startPhasePlayTimer()` (line ~780)
-  - `transitionToWorkTimer()` (line ~788)
-  - `handlePlayTimeUp()` (line ~803)
-  - `handlePlayExpiredComplete()` (line ~810)
-  - `handleWorkTimeUp()` (line ~835)
-  - `markWorkPhaseComplete()` (line ~843)
-  - `workPhaseCompletions` state (line ~491)
-
-### Timer Component
-
-#### Pace Coloring (Work Timers)
-
-`SessionTimer` colors **work** timers by comparing lesson progress ($0$-$100$) vs time elapsed ($0$-$100$):
-
-- `timeProgress = (elapsedSeconds / totalSeconds) * 100`
-- `progressDiff = lessonProgress - timeProgress`
-- Work timers:
-  - Yellow when `progressDiff < -5`
-  - Red when `progressDiff < -15` or at `00:00`
-
-**Critical wiring rule (V2 parity):** V2 must pass a real `lessonProgress` value into every `SessionTimer` render (especially the in-video overlay timer). If omitted, `SessionTimer` defaults `lessonProgress = 0`, which causes timers to turn yellow/red almost immediately as soon as timeProgress exceeds 5%/15%.
-
-**V2 implementation detail:** V2 computes `lessonProgress` using the same phase-weight mapping as V1 and derives within-phase progress from snapshot `phaseData[phase].nextQuestionIndex` vs total questions.
-- **src/app/session/components/PlayTimeExpiredOverlay.jsx**:
-  - 30-second countdown overlay
-  - Auto-fires `onComplete` callback when countdown finishes
-
-### Timer Defaults
-- **src/app/session/utils/phaseTimerDefaults.js**:
-  - Default minutes per phase per mode
-  - Golden key bonus time constant
-
-### Phase Handlers
-
-### Timer Pause/Resume
-
-**Feature:** Facilitators can pause/resume timers via PIN-gated controls in the timer overlay.
-
-### 10. src/app/session/v2/SessionPageV2.jsx (809a1b3409384be22a2036f6eff125085adec77966a5637ee6877186752abb70)
-- bm25: -16.2798 | relevance: 1.0000
-
-{/* Fullscreen Play Timer - mirrors play timer display only (does not control timers) */}
-      {showFullscreenPlayTimer && (
-        <FullscreenPlayTimerOverlay
-          isOpen={showFullscreenPlayTimer}
-          secondsRemaining={playTimerDisplayRemaining}
-          isPaused={timerPaused}
-          onClose={() => setShowFullscreenPlayTimer(false)}
-        />
-      )}
-      
-      {/* Play Time Expired Overlay - V1 parity: full-screen overlay outside main container */}
-      {showPlayTimeExpired && playExpiredPhase && (
-        <PlayTimeExpiredOverlay
-          isOpen={showPlayTimeExpired}
-          phase={playExpiredPhase}
-          lessonKey={lessonKey}
-          isPaused={timerPaused}
-          muted={isMuted}
-          onComplete={handlePlayExpiredComplete}
-          onStartNow={handlePlayExpiredStartNow}
-        />
-      )}
-      
-      {/* Timer Control Overlay - Facilitator controls for timer and golden key */}
-      {showTimerControl && (
-        <TimerControlOverlay
-          isOpen={showTimerControl}
-          onClose={() => setShowTimerControl(false)}
-          lessonKey={lessonKey}
-          phase={getCurrentPhaseName()}
-          timerType={currentTimerMode[getCurrentPhaseName()] || 'work'}
-          totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()] || 'work')}
-          goldenKeysEntitled={!!planEnt?.goldenKeyFeatures}
-          goldenKeysEnabled={!!planEnt?.goldenKeyFeatures && goldenKeysEnabledRef.current !== false}
-          goldenKeyBonus={!!planEnt?.goldenKeyFeatures && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
-          isPaused={timerPaused}
-          onUpdateTime={(seconds) => {
-            const phaseName = getCurrentPhaseName();
-            const mode = phaseName ? (curr
-
-### 11. docs/brain/learner-settings-bus.md (b7300c9e22d6512f30566d253d4b066121665795153995c1604d484c67d3c48f)
-- bm25: -15.8109 | relevance: 1.0000
-
-### UI Integration Gotcha (LearnerEditOverlay)
-
-The Learners page passes a cloned `learner` prop into `LearnerEditOverlay` (spread + `initialTab`). If the overlay initializes form state in a `useEffect` that depends on the whole `learner` object, the effect will run on every parent rerender and reset local state.
-
-Impact:
-- Optimistic toggles (like `golden_keys_enabled`) can appear to "flip back" immediately even when the Supabase update succeeded.
-
-Rule:
-- In `LearnerEditOverlay`, only re-initialize local form state when the overlay opens or the learner identity changes (e.g. depend on `isOpen`, `learner.id`, `learner.initialTab`), not on the entire object identity.
-
-This bus is intentionally "dumb": it does not do retries, persistence, or reconciliation.
-
-## What NOT To Do
-
-- Do not store the patches in `localStorage` (this can leak across facilitator accounts on a shared device).
-- Do not treat the bus as a database or long-lived state. It is only for immediate UI reaction.
-- Do not broadcast before Supabase writes succeed.
-- Do not rely on the bus for initial state; always load initial state from Supabase.
-
-## Key Files
-
-- `src/app/lib/learnerSettingsBus.js`
-  - `broadcastLearnerSettingsPatch(learnerId, patch)`
-  - `subscribeLearnerSettingsPatches(handler)`
-
-- `src/app/facilitator/learners/page.js`
-  - Broadcasts patches after updating learner settings.
-
-- `src/app/learn/lessons/page.js`
-  - Subscribes and hides Golden Key UI immediately when disabled.
-
-- `src/app/session/page.js`
-  - Subscribes in-session and disables Golden Key behavior/UI immediately when disabled.
-
-- `src/app/session/v2/SessionPageV2.jsx`
-  - Subscribes in-session and updates `TimerService` Golden Key gate immediately when disabled.
-
-### 12. docs/brain/timer-system.md (cf69c7c5147d370c19d2f265cc0927d39c4a76469db0eb8300c73e80dbae02ad)
-- bm25: -14.4937 | relevance: 1.0000
-
-**Persistence:**
-- `serialize()` includes playTimers state (phase, elapsed, timeLimit, expired)
-- `restore()` resumes play timers from snapshot (recalculates startTime from elapsed)
-- `#saveToSessionStorage()` saves currentPlayPhase, playTimerElapsed, playTimerExpired
-- `#loadFromSessionStorage()` restores play timer and resumes tick interval if not expired
-
-### Timer State Persistence
-
-**Authoritative source (V2):** `TimerService` state is the source of truth and is persisted/restored via SnapshotService (`snapshot.timerState`).
-
-**Timer state must be saved continuously (V2):**
-- Relying only on "one-off" snapshot saves (e.g., on Go, or on overlay actions) causes timers to reset to the full limit on refresh.
-- Session V2 must persist `timerState` on a cadence while timers are running so refresh resumes from near-current elapsed time.
-- Implementation: SessionPageV2 subscribes to TimerService events and snapshot-saves `timerState`:
-  - On `playTimerStart`, `workPhaseTimerStart`, and `playTimerExpired` (immediate)
-  - On `playTimerTick` and `workPhaseTimerTick` (throttled; currently ~10s)
-  - On `visibilitychange` when the tab is hidden, and on `beforeunload`
-
-**SessionStorage is a mirror (not authoritative):**
-- Key pattern: `session_timer_state:{lessonKey}:{phase}:{mode}`
-- Keys are written on each tick by TimerService.
-- Keys must be cleared for the whole lesson on reset/start-over to avoid stale timers (especially discussion work timers) reappearing after restart.
-
-**Authoritative edits (facilitator overlay):**
-- TimerControlOverlay must not mutate `session_timer_state:*` directly because TimerService overwrites these keys every second.
-- Authoritative add/subtract time must go through TimerService so phase transitions and the UI stay in sync.
-
-### 13. docs/brain/games-overlay.md (3d69f6755dd3a8792771418e6e2fe533bcaad2786166bfa293915f77a4ff8f9d)
-- bm25: -13.7346 | relevance: 1.0000
-
-# Games Overlay (#games-overlay)
-
-**Status**: Canonical  
-**Last Updated**: 2026-01-13T00:59:23Z
-
-## How It Works
-
-Games are launched from the in-session **Games overlay**.
-
-- The session pages (V1 and V2) open `GamesOverlay` during play time.
-- `GamesOverlay` renders a full-screen modal experience:
-  - A game picker menu (list of games)
-  - A full-screen active-game view
-- A play timer badge (rendered by `SessionTimer`) is optionally passed in and displayed at the top-left.
-
-**Click parity:** If the timer badge is present, it should remain interactive (cursor + click) so the facilitator can open `TimerControlOverlay` from within the Games overlay (PIN-gated), matching the rest of the session.
-
-### Difficulty and Grade
-
-The Games overlay does **not** own a global difficulty setting.
-
-- If a specific game needs grade-driven difficulty, that game should present its own grade selector (or other difficulty control) inside the game UI.
-- Games may optionally initialize their own difficulty from the currently selected learner profile (when the game is launched), but that choice must remain scoped to the game.
-
-### Props
-
-`GamesOverlay` accepts:
-- `onClose`: closes the overlay
-- `playTimer`: a React node (typically `SessionTimer`) rendered as a badge
-
-## What NOT To Do
-
-- Do not add an overlay-wide difficulty selector unless explicitly requested.
-- Do not store or persist Games settings to localStorage as a fallback.
-- Do not couple Games overlay state to Ms. Sonoma prompt/state; games are independent UI.
-
-## Key Files
-
-- `src/app/session/components/games/GamesOverlay.jsx`
-- `src/app/session/page.js` (V1 integration)
-- `src/app/session/v2/SessionPageV2.jsx` (V2 integration)
-
-### 14. docs/brain/timer-system.md (b404039d9962462ff4e3c0434db375ab6763da6d88ccc7462dacc762647febfb)
-- bm25: -13.2042 | relevance: 1.0000
-
-**2026-01-14**: MAJOR refactor - SessionTimer now pure display component in V2. Receives elapsed/remaining from TimerService events via SessionPageV2 subscriptions. No internal timing logic. Single source of truth architecture eliminates duplicate timer tracking and pause race conditions.
-
-**2026-01-14**: Fixed timer pause issue (second pass): Prevented TimerService from writing to sessionStorage when paused, and prevented SessionTimer from triggering onTimeUp when paused or when resuming from a paused state past expiration time.
-
-**2026-01-14**: Fixed timer pause issue where pausing stopped cosmetic timer display but authoritative timer kept running and could trigger playTimerExpired/stage transitions. Added pause()/resume() methods to TimerService that stop/restart intervals and adjust startTime to preserve elapsed time. Tick methods now guard against running when paused.
-
-**2025-12-28**: Entering Test review now calls `markWorkPhaseComplete('test')`, clears the test timer, and records remaining work time immediately. Grading/review can no longer show an active or timed-out test after all questions are answered.
-
-**2025-12-28**: Golden key detection now reads `workPhaseCompletionsRef` to include phases marked complete in the same tick (no stale state), ensuring earned keys are awarded when the third on-time work phase finishes.
-
-**2025-12-19**: Golden key eligibility now requires three on-time work timers. Facilitator test review shows remaining work time per phase based on work timers only; play timers are ignored.
-
-### 15. src/app/facilitator/learners/components/LearnerEditOverlay.jsx (b83f934b518dda8d3a77981f5cf9040d977cdadbc1963e2a35ce2e0680e6c975)
-- bm25: -12.6225 | relevance: 1.0000
-
-// Initialize form when overlay opens or learner identity changes.
-	// IMPORTANT: Parent passes a freshly cloned `learner` object each render, so
-	// depending on the whole object will reset local form state (including toggles)
-	// and can cause optimistic UI (like Golden Keys Off) to snap back.
-	useEffect(() => {
-		if (!isOpen) return;
-		if (!learner) return;
-		
-		setActiveTab(learner.initialTab || 'basic');
-		setName(learner.name || '');
-		setGrade(learner.grade || 'K');
-		setHumorLevel(normalizeHumorLevel(learner.humor_level));
-		setComprehension(String(learner.targets?.comprehension ?? learner.comprehension ?? ''));
-		setExercise(String(learner.targets?.exercise ?? learner.exercise ?? ''));
-		setWorksheet(String(learner.targets?.worksheet ?? learner.worksheet ?? ''));
-		setTest(String(learner.targets?.test ?? learner.test ?? ''));
-		setGoldenKeys(String(learner.golden_keys ?? 0));
-		setAskDisabled(!!learner.ask_disabled);
-		setPoemDisabled(!!learner.poem_disabled);
-		setStoryDisabled(!!learner.story_disabled);
-		setFillInFunDisabled(!!learner.fill_in_fun_disabled);
-		setGoldenKeysEnabled(learner.golden_keys_enabled !== false);
-		setPlayComprehensionEnabled(learner.play_comprehension_enabled !== false);
-		setPlayExerciseEnabled(learner.play_exercise_enabled !== false);
-		setPlayWorksheetEnabled(learner.play_worksheet_enabled !== false);
-		setPlayTestEnabled(learner.play_test_enabled !== false);
-		setPhaseTimers({ ...getDefaultPhaseTimers(), ...loadPhaseTimersForLearner(learner) });
-		setAutoAdvancePhases(learner.auto_advance_phases !== false); // Default true if not set
-	}, [isOpen, learner?.id, learner?.initialTab]);
-
-const handleTimerChange = (phase, type, value) => {
-		const key = `${phase}_${type}_min`;
-		setPhaseTimers(prev => ({ ...prev, [key]: value }));
-	};
-
-### 16. sidekick_pack.md (528e7f0cc9fc4bcf24b80f3026738d927dfdc4e41e08c9426d99a1fd47de33e2)
-- bm25: -12.5501 | relevance: 1.0000
-
-## What NOT To Do
-
-- Do not store lessons on the device (no localStorage/indexedDB/file downloads).
-- Do not reuse Golden Keys to mean "unlock lessons"; Golden Keys are bonus play-time semantics.
-- Do not match ownership using filename-only; subject collisions are possible.
-- Do not allow path traversal in the download endpoint (`..`, `/`, `\\`).
-
-## Key Files
-
-- `src/app/facilitator/lessons/page.js`
-- `src/app/api/facilitator/lessons/download/route.js`
-- `src/app/api/facilitator/lessons/list/route.js`
-- `src/app/api/lessons/[subject]/route.js`
-- `src/app/api/lesson-file/route.js`
-
-### 27. docs/brain/calendar-lesson-planning.md (4da551360e5a46cca2826bfe58a71289a036bb89df00313db4714021b4cc5eab)
-- bm25: -14.3879 | relevance: 1.0000
-
-**Usage:**
-- `node scripts/check-completions-for-keys.mjs --learner Emma --from 2026-01-05 --to 2026-01-08`
-
-### Scheduled Lessons Overlay: Built-in Lesson Editor
-
-The Calendar day overlay includes an inline lesson editor for scheduled lessons.
-
-This editor matches the regular lesson editor for Visual Aids (button + carousel + generation + persistence).
-
-**Lesson load:**
-- Uses `GET /api/facilitator/lessons/get?file=<lesson_key>`
-- This endpoint requires an `Authorization: Bearer <access_token>` header.
-- The API derives the facilitator user id from the bearer token and loads from `facilitator-lessons/<userId>/...`.
-- Client code must not rely on a `userId` query param for this endpoint.
-
-**Lesson save:**
-- Uses `PUT /api/facilitator/lessons/update` with JSON body `{ file, lesson }` and `Authorization: Bearer <access_token>`.
-- The server enforces that the authenticated user can only edit their own lessons.
-
-### 17. sidekick_pack.md (af53ecc19ee10a49a8b05a6d9667006979cd7d5f304dcfad57d5acde47312bea)
-- bm25: -12.5446 | relevance: 1.0000
-
-# Cohere Pack (Sidekick Recon) - MsSonoma
-
-Project: freehands
-Profile: MsSonoma
-Mode: standard
-
-Prompt (original):
-```text
-Calendar day cell overlay opens generator, generates lesson, lesson appears in lessons list but not in calendar day cell or as scheduled lesson - investigate the flow from Generate on date button through to calendar state update
-```
-
-Filter terms used:
-```text
-Calendar
-day
-cell
-overlay
-opens
-generator
-generates
-lesson
-lesson
-appears
-in
-lessons
-list
-but
-not
-in
-calendar
-day
-cell
-or
-as
-scheduled
-lesson
-investigate
-```
-# Context Pack
-
-**Project**: freehands
-**Profile**: MsSonoma
-**Mode**: standard
-
-## Pack Contract
-
-This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
-
-## Question
-
-Calendar day cell overlay opens generator generates lesson lesson appears in lessons list but not in calendar day cell or as scheduled lesson investigate
-
-## Forced Context
-
-(none)
-
-## Ranked Evidence
-
-### 1. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
-- bm25: -37.0855 | relevance: 1.0000
-
-**Completion query rule (visibility > micro-optimization):**
-- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
-- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
-
-### 18. src/app/session/page.js (dc05449d7bbe84c1738d6f67fd731600f41c57280bd3167d9da6192aae876dfa)
-- bm25: -12.4971 | relevance: 1.0000
-
-if (typeof learner?.golden_keys_enabled !== 'boolean') {
-            throw new Error('Learner profile missing golden_keys_enabled flag. Please run migrations.');
-          }
-          setGoldenKeysEnabled(learner.golden_keys_enabled);
-          goldenKeysEnabledRef.current = learner.golden_keys_enabled;
-          if (learner?.session_timer_minutes) {
-            setSessionTimerMinutes(Number(learner.session_timer_minutes));
-          } else {
-            setSessionTimerMinutes(60); // Reset to default if not set
-          }
-          // Load learner grade
-          if (learner?.grade) {
-            setLearnerGrade(learner.grade);
-          } else {
-            setLearnerGrade(''); // Clear if not set
-          }
+        // Play TTS for interceptor response (Mr. Mentor's voice)
+        setLoadingThought("Preparing response...")
+        try {
+          const ttsResponse = await fetch('/api/mentor-tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: interceptResult.response })
+          })
           
-          // Load AI feature toggles (default to enabled if not set)
-          setAskDisabled(!!learner?.ask_disabled);
-          setPoemDisabled(!!learner?.poem_disabled);
-          setStoryDisabled(!!learner?.story_disabled);
-          setFillInFunDisabled(!!learner?.fill_in_fun_disabled);
-          
-          // Load auto-advance phases setting (default true = show buttons)
-          setAutoAdvancePhases(learner?.auto_advance_phases !== false);
-          
-          // Load phase timer settings (11 timers)
-          const timers = loadPhaseTimersForLearner(learner);
-          setPhaseTimers(timers);
-          
-          // Initialize currentTimerMode to 'play' for all phases
-          setCurrentTimerMode(prev => {
-            const hasExistingMode = prev && Object.values(prev).some((mode) => mode === 'play' || mode === 'work');
-            if (hasExistingMode) {
-              return prev;
+          if (ttsResponse.ok) {
+            const ttsData = await ttsResponse.json()
+            if (ttsData.audio) {
+              // Never block the UI on audio playback.
+              void playAudio(ttsData.audio)
             }
-            return {
-              discussion: null, // Not started yet
-              comprehension: null,
-              exercise: null,
+          }
+        } catch (err) {
+          // Silent TTS error - don't block UX
+        }
+        
+        setLoading(false)
+        setLoadingThought(null)
+        return
+      }
+      
+      // Interceptor didn't handle - forward to API
+      setLoadingThought("Consulting my knowledge base...")
+      const forwardMessage = interceptResult.apiForward?.message || message
+      const finalForwardMessage = declineNote ? `${forwardMessage}\n\n${declineNote}` : forwardMessage
+      const forwardContext = interceptResult
 
-### 19. docs/brain/ingests/pack.planned-lessons-flow.md (c1630e20d42e7416e0786d4762a62020e29931c3609ba5301492ca0c6c410df5)
-- bm25: -12.4475 | relevance: 1.0000
+### 8. src/app/api/counselor/route.js (3295cbeb2bdc54ba0515b75298f3139c4aff4e07d4f05ab9793eee9770a865e3)
+- bm25: -4.5761 | entity_overlap_w: 2.60 | adjusted: -5.2261 | relevance: 1.0000
 
-## What NOT To Do
+// Helper function to synthesize audio with caching
+async function synthesizeAudio(text, logPrefix) {
+  let audioContent = undefined
+  
+  // Strip markdown formatting for TTS (keep text readable but remove syntax)
+  // Remove **bold**, *italic*, and other markdown markers
+  const cleanTextForTTS = text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')  // Remove **bold**
+    .replace(/\*([^*]+)\*/g, '$1')      // Remove *italic*
+    .replace(/_([^_]+)_/g, '$1')        // Remove _underline_
+    .replace(/`([^`]+)`/g, '$1')        // Remove `code`
+    .replace(/^#+\s+/gm, '')            // Remove # headers
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Remove [links](url)
+  
+  // Check cache first (use cleaned text as key)
+  if (ttsCache.has(cleanTextForTTS)) {
+    audioContent = ttsCache.get(cleanTextForTTS)
+  } else {
+    const ttsClient = await getTtsClient()
+    if (ttsClient) {
+      try {
+        const ssml = toSsml(cleanTextForTTS)
+        const [ttsResponse] = await ttsClient.synthesizeSpeech({
+          input: { ssml },
+          voice: MENTOR_VOICE,
+          audioConfig: MENTOR_AUDIO_CONFIG
+        })
+        
+        if (ttsResponse?.audioContent) {
+          audioContent = typeof ttsResponse.audioContent === 'string'
+            ? ttsResponse.audioContent
+            : Buffer.from(ttsResponse.audioContent).toString('base64')
+          
+          // Cache with naive LRU
+          ttsCache.set(cleanTextForTTS, audioContent)
+          if (ttsCache.size > TTS_CACHE_MAX) {
+            const firstKey = ttsCache.keys().next().value
+            ttsCache.delete(firstKey)
+          }
+        }
+      } catch (ttsError) {
+        // TTS synthesis failed - will return undefined
+      }
+    }
+  }
+  
+  return audioContent
+}
 
-- Do not store lessons on the device (no localStorage/indexedDB/file downloads).
-- Do not reuse Golden Keys to mean "unlock lessons"; Golden Keys are bonus play-time semantics.
-- Do not match ownership using filename-only; subject collisions are possible.
-- Do not allow path traversal in the download endpoint (`..`, `/`, `\\`).
+### 9. docs/brain/tts-prefetching.md (edcb8c1a972c4e179c52dea1736883e05713d12c1179a797d2128f88803a9626)
+- bm25: -4.5492 | entity_overlap_w: 2.60 | adjusted: -5.1992 | relevance: 1.0000
 
-## Key Files
+**API**:
+- `src/app/api/tts/route.js`: TTS endpoint that returns `{ audio: base64 }`
 
-- `src/app/facilitator/lessons/page.js`
-- `src/app/api/facilitator/lessons/download/route.js`
-- `src/app/api/facilitator/lessons/list/route.js`
-- `src/app/api/lessons/[subject]/route.js`
-- `src/app/api/lesson-file/route.js`
+## Performance Impact
 
-### 27. docs/brain/calendar-lesson-planning.md (4da551360e5a46cca2826bfe58a71289a036bb89df00313db4714021b4cc5eab)
-- bm25: -14.3879 | relevance: 1.0000
+**Before**: 2-3 second wait between questions (TTS generation time)
+**After**: Questions 2+ load instantly (cache hit), only Q1 shows loading
 
-**Usage:**
-- `node scripts/check-completions-for-keys.mjs --learner Emma --from 2026-01-05 --to 2026-01-08`
+**Cache stats during 5-question comprehension**:
+- Q1: Cache miss (no prefetch yet) - 2-3s wait
+- Q2: Cache hit (prefetched during Q1) - instant
+- Q3: Cache hit (prefetched during Q2) - instant
+- Q4: Cache hit (prefetched during Q3) - instant
+- Q5: Cache hit (prefetched during Q4) - instant
 
-### Scheduled Lessons Overlay: Built-in Lesson Editor
+**Total time saved**: 8-12 seconds per 5-question phase.
 
-The Calendar day overlay includes an inline lesson editor for scheduled lessons.
+## Edge Cases
 
-This editor matches the regular lesson editor for Visual Aids (button + carousel + generation + persistence).
+**Skip During Prefetch**:
+- Prefetch continues in background (silent)
+- Cache stores result even if not used
+- Worst case: slight network waste, no user impact
 
-**Lesson load:**
-- Uses `GET /api/facilitator/lessons/get?file=<lesson_key>`
-- This endpoint requires an `Authorization: Bearer <access_token>` header.
-- The API derives the facilitator user id from the bearer token and loads from `facilitator-lessons/<userId>/...`.
-- Client code must not rely on a `userId` query param for this endpoint.
+**Failed Prefetch**:
+- Silent catch, no cache entry
+- Next question falls back to normal fetch (shows loading)
+- User sees 2-3s wait but flow works normally
 
-**Lesson save:**
-- Uses `PUT /api/facilitator/lessons/update` with JSON body `{ file, lesson }` and `Authorization: Bearer <access_token>`.
-- The server enforces that the authenticated user can only edit their own lessons.
+**Concurrent Prefetches**:
+- Each prefetch gets unique AbortController
+- Multiple pending fetches tracked in Map
+- Phase transition aborts ALL pending
 
-### 20. docs/brain/timer-system.md (93b5f5f1e95bf4a72b420f92660d6ca4559847ff7ab32409c591f92360c08643)
-- bm25: -12.3941 | relevance: 1.0000
+**Resume from Refresh**:
+- Cache doesn't persist (memory only)
+- First question after refresh shows loading
+- Subsequent questions prefetch normally
 
-❌ **Never use local persistence fallback for `play_*_enabled`**
-- Do not store per-learner play portion flags in localStorage.
-- Source of truth is Supabase; the bus is for immediate UI reaction only.
-
-❌ **Never add a Discussion play toggle**
-- Discussion has no play timer in V2, and this feature only targets phases 2-5.
-
-❌ **Never award or apply Golden Key bonus when disabled**
-- If `golden_keys_enabled` is false, do not apply bonus minutes and do not write golden key awards.
-
-❌ **Never hide play buttons manually in timer expiry handler**
-- Phase handlers (handleGoComprehension, etc.) already call `setShowOpeningActions(false)`
-- Setting it in handlePlayExpiredComplete creates race conditions and breaks phase transitions
-- Let each phase handler manage its own button visibility
-
-❌ **Never allow play buttons to remain visible after timer expiry**
-- Timer expiry must automatically advance to work phase
-- Play buttons will be hidden by the phase handler that starts the work
-
-❌ **Never require Go button click after timer expiry**
-- Timer expiry should bypass Go button confirmation
-- `handlePlayExpiredComplete` must auto-start the work phase
-
-❌ **Never allow refresh to reset play timer**
-- First interaction gate persists timer state
-- `recordFirstInteraction()` wrapper ensures snapshot save on first button click
-
-❌ **Never modify timer state without clearing sessionStorage**
-- When transitioning play → work, clear play timer key from sessionStorage
-- Prevents stale timer state on refresh
-
-❌ **Never show countdown overlay without phase context**
-- `playExpiredPhase` must be set so correct work handler fires
-- Overlay should display which phase learner will return to
-
-## Related Brain Files
-
-### 21. docs/brain/facilitator-help-system.md (ffbf431a9f6e26b06514fa0338cb9cd66e55ce8d4e66f733d9e2e5b45aa1864e)
-- bm25: -12.1977 | relevance: 1.0000
-
-**InlineExplainer (Footer Help Pattern)** placed in overlay footers:
-- Learners page: Targets, AI Features, and Timers overlays
-- Help button (❓ Show/Hide Help) appears in left side of footer
-- Expands inline help text above footer buttons
-- Uses `showHelp` state to toggle visibility
-- Help content changes based on active tab context
-
-**WorkflowGuide** placed at:
-- Top of calendar Planner tab (automated lesson planning workflow)
-- Top of lessons library (approve vs schedule workflow)
-
-**PageHeader** replaces:
-- Standalone h1/p combos on Calendar, Learners, Lessons pages
-- Provides consistent page context
-
-### Import Pattern
-
-Components exported as named exports from `src/components/FacilitatorHelp/index.js`:
-
+**Celebration Text Variations**:
 ```javascript
-import { InlineExplainer, WorkflowGuide, PageHeader } from '@/components/FacilitatorHelp'
+// WRONG - prefetch won't match actual spoken text
+ttsCache.prefetch(nextQ); // Just the question
+await speakFrontend(`${celebration}. ${nextQ}`); // Celebration + question
+
+// RIGHT - prefetch exact text that will be spoken
+const prefetchText = `${CELEBRATE_CORRECT[0]}. ${nextQ}`;
+ttsCache.prefetch(prefetchText);
 ```
+
+Uses first celebration variant for prefetch since we can't predict random selection.
+
+## Debug Helpers
+
+### 10. docs/brain/v2-architecture.md (afffb9d44c9d9d5e9aee21cef0911b2f58779289d8122262e1045a2a4c0d3206)
+- bm25: -4.8045 | entity_overlap_w: 1.30 | adjusted: -5.1295 | relevance: 1.0000
+
+### 🚧 In Progress
+- None (all critical issues fixed, ready for testing)
+
+### 📋 Next Steps
+1. Browser test: Full session flow with EventBus event coordination
+2. Browser test: Verify Supabase snapshot persistence
+3. Browser test: Verify audio initialization on iOS
+4. Browser test: Verify timer events update UI correctly
+5. Browser test: Verify golden key award persistence (3 on-time completions increments `learners.golden_keys`)
+6. Browser test: Verify generated lesson loading
+7. Production deployment with feature flag
 
 ---
 
-## What NOT To Do
+## Related Brain Files
 
-1. **Do NOT add help to every field** - Only explain genuinely confusing concepts (timers, planner workflow). Avoid over-explaining obvious controls.
-
-2. **Do NOT replace existing tooltips** - LearnerEditOverlay has hover tooltips for individual timer fields. InlineExplainer supplements, doesn't replace.
-
-3. **Do NOT hardcode content in 100 places** - Use centralized help components. If content needs to be dynamic, pass as props, don't fork components.
-
-4. **Do NOT break dismissal persistence** - Always provide unique helpKey/workflowKey. Duplicate keys cause unintended dismissals across different help instances.
-
-5. **Do NOT add help without user testing feedback** - This system addresses specific beta tester confusion. Don't add speculative help for features users haven't reported issues with.
-
-### 22. src/app/session/v2/TimerService.jsx (c366ffd95c213031782db363c3a2ba3af35515665534c9d34e73a8e41492b13b)
-- bm25: -12.1447 | relevance: 1.0000
-
-/**
- * TimerService.jsx
- * Manages session, play, and work phase timers
- * 
- * Timers:
- * - Session timer: Tracks total session duration from start to complete
- * - Play timers: Green timer for exploration/opening actions (phases 2-5: Comprehension, Exercise, Worksheet, Test)
- * - Work phase timers: Amber/red timer for focused work (for golden key)
- * 
- * Timer Modes:
- * - Phase 1 (Discussion): No play timer, no opening actions (eliminates play timer exploit)
- * - Phases 2-5 (Comprehension, Exercise, Worksheet, Test): Play timer → opening actions → work timer
- * 
- * Golden Key Requirements:
- * - Need 3 work phases completed within time limit
- * - Work phases: exercise, worksheet, test
- * - Time limits defined per grade/subject
- * 
- * Events emitted:
- * - sessionTimerStart: { timestamp } - Session timer started
- * - sessionTimerTick: { elapsed, formatted } - Every second while running
- * - sessionTimerStop: { elapsed, formatted } - Session timer stopped
- * - playTimerStart: { phase, timestamp, timeLimit } - Play timer started
- * - playTimerTick: { phase, elapsed, remaining, formatted } - Every second during play time
- * - playTimerExpired: { phase } - Play timer reached 0:00
- * - workPhaseTimerStart: { phase, timestamp } - Work phase timer started
- * - workPhaseTimerTick: { phase, elapsed, remaining, onTime } - Every second during work time
- * - workPhaseTimerComplete: { phase, elapsed, onTime } - Work phase completed
- * - workPhaseTimerStop: { phase, elapsed } - Work phase stopped
- * - goldenKeyEligible: { completedPhases } - 3 on-time work phases achieved
- */
-
-'use client';
-
-### 23. src/app/session/v2/SessionPageV2.jsx (068180622d252e4bf7e9a66be7739be947aa31bb6b73c11357cd1f6d2ab6a1b7)
-- bm25: -12.0934 | relevance: 1.0000
-
-// Convert minutes -> seconds; golden key bonus applies to play timers only (and only when Golden Keys are enabled).
-    const playBonusSec = goldenKeysEnabledRef.current
-      ? Math.max(0, Number(goldenKeyBonusRef.current || 0)) * 60
-      : 0;
-    const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
-
-### 24. src/app/session/v2/SessionPageV2.jsx (02513d60ecb74795308f0a5973f855e70f428134f295b6109b606cfd91fc414f)
-- bm25: -12.0201 | relevance: 1.0000
-
-const meetsGoldenKey = (() => {
-    try {
-      if (!goldenKeysEnabled) return false;
-      const status = timerService?.getGoldenKeyStatus?.();
-      if (status && typeof status.eligible === 'boolean') return status.eligible;
-      return onTimeCount >= 3;
-    } catch {
-      return onTimeCount >= 3;
-    }
-  })();
-  
-  const formatQuestionForDisplay = (q) => {
-    if (typeof q === 'string') return q;
-    return q?.question || q?.text || '';
-  };
-  
-  return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      gap: 12, 
-      overflow: 'auto', 
-      paddingTop: 8, 
-      paddingBottom: 8,
-      height: '100%'
-    }}>
-      <div style={{ 
-        ...card, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        gap: 12, 
-        position: 'sticky', 
-        top: 0, 
-        zIndex: 5, 
-        background: '#ffffff' 
-      }}>
-        <div style={{ fontSize: 'clamp(1.1rem, 2.4vw, 1.4rem)', fontWeight: 800, color: '#065f46' }}>
-          {percentage}% grade
-        </div>
-        <div style={{ fontSize: 'clamp(1.2rem, 2.6vw, 1.5rem)' }} aria-label="Medal preview">{medal}</div>
-      </div>
-      
-      <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ fontWeight: 800 }}>Work timers</div>
-        {goldenKeysEnabled ? (
-          <div style={{ fontWeight: 700, color: meetsGoldenKey ? '#065f46' : '#7f1d1d' }}>
-            {meetsGoldenKey ? 'Golden key eligible (3+ on-time work timers)' : 'Golden key not yet met (needs 3 on-time work timers)'}
-          </div>
-        ) : null}
-        <div style={{ fontSize: 13, color: '#4b5563' }}>Play timers are ignored here.</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minm
-
-### 25. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (8163644eb7df3a7e0c7fbbd03814d28f85cdc1339a3c403f07748601ecc1ac92)
-- bm25: -11.8671 | relevance: 1.0000
-
-2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
-2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
-
-### 26. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (6f33983453dfbb17ba0b015de6cc76fa071dc0e7a401f52396b7093115ac315c)
-- bm25: -11.8410 | relevance: 1.0000
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 27. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (9cc323629ddd2145461939a8ea0910f1262ae81d210a78303cc32979399b4a31)
-- bm25: -11.8132 | relevance: 1.0000
-
-**`/api/counselor` integration:**
-- Request body now includes `goals_notes` field
-- System prompt includes: `"PERSISTENT GOALS & PRIORITIES:\n{goals_notes}"`
-- Mr. Mentor sees goals in every conversation turn
+- **[snapshot-persistence.md](snapshot-persistence.md)** - V2 reimplements snapshot system with SnapshotService
+- **[timer-system.md](timer-system.md)** - V2 reimplements timers with TimerService
+- **[tts-prefetching.md](tts-prefetching.md)** - V2 reimplements TTS with AudioEngine
+- **[ms-sonoma-teaching-system.md](ms-sonoma-teaching-system.md)** - V2 reimplements teaching flow with TeachingController
 
 ## Key Files
 
-- `src/app/counselor/CounselorClient.jsx` - Goals button, state management, auto-load on learner switch
-- `src/components/GoalsClipboardOverlay.jsx` - Overlay UI component
-- `src/app/api/goals-notes/route.js` - Load/save API endpoint
-- `src/app/api/counselor/route.js` - Receives goals_notes, includes in system prompt
+### 11. docs/brain/api-routes.md (dd3378227a6324ce4a86f9e043ed13060e4abcc4a4fabc05a7854dad2c6ce68c)
+- bm25: -4.1539 | entity_overlap_w: 3.90 | adjusted: -5.1289 | relevance: 1.0000
+
+# API Routes
+
+## `/api/sonoma` - Core Ms. Sonoma Endpoint
+
+### Request Format
+
+**Method**: POST  
+**Content-Type**: application/json
+
+```json
+{
+  "instruction": "<string>",
+  "innertext": "<string>",
+  "skipAudio": true
+}
+```
+
+**Fields**:
+- `instruction`: The per-turn instruction string (server hardens it for safety).
+- `innertext`: Optional learner input for this turn.
+- `skipAudio`: Optional boolean; when `true`, the API will skip Google TTS and return `audio: null`.
+
+**Why `skipAudio` exists**:
+- Some callers (especially teaching definitions/examples generation) need text only.
+- Returning base64 audio for large responses can be slow on mobile devices.
+
+### Response Format
+
+```json
+{
+  "reply": "<string>",
+  "audio": "<base64 mp3>" 
+}
+```
+
+**Fields**:
+- `reply`: Ms. Sonoma response text from the configured LLM provider.
+- `audio`: Base64-encoded MP3 when TTS is enabled and available; `null` when `skipAudio=true` (or when TTS is not configured).
+
+### Implementation
+
+- **Location**: `src/app/api/sonoma/route.js`
+- **Providers**: OpenAI or Anthropic depending on env configuration
+- **Runtime**: Node.js (Google SDKs require Node, not Edge)
+- **Stateless**: Each call is independent; no DB writes from this endpoint
+
+### Health Check
+
+**Method**: GET
+
+Returns `200` with `{ ok: true, route: 'sonoma', runtime }`.
+
+### Logging Controls
+
+Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
+
+- `full`, `off`, `none`, or `0` — No truncation
+- Positive integer (e.g., `2000`) — Truncate after N characters
+- Default: Unlimited in development; 600 chars in production
+
+---
+
+## Other Core Routes
+
+### `/api/counselor`
+**Purpose**: Mr. Mentor counselor chat endpoint (facilitator-facing)  
+**Status**: Operational
+
+### 12. docs/brain/ingests/pack-mentor-intercepts.md (35e76a89c7f5240f0e94cbd2877e930ae62cde56e079f99fd9382929f9faf2a0)
+- bm25: -4.1355 | entity_overlap_w: 3.90 | adjusted: -5.1105 | relevance: 1.0000
+
+### 15. docs/brain/api-routes.md (dd3378227a6324ce4a86f9e043ed13060e4abcc4a4fabc05a7854dad2c6ce68c)
+- bm25: -16.5866 | relevance: 1.0000
+
+# API Routes
+
+## `/api/sonoma` - Core Ms. Sonoma Endpoint
+
+### Request Format
+
+**Method**: POST  
+**Content-Type**: application/json
+
+```json
+{
+  "instruction": "<string>",
+  "innertext": "<string>",
+  "skipAudio": true
+}
+```
+
+**Fields**:
+- `instruction`: The per-turn instruction string (server hardens it for safety).
+- `innertext`: Optional learner input for this turn.
+- `skipAudio`: Optional boolean; when `true`, the API will skip Google TTS and return `audio: null`.
+
+**Why `skipAudio` exists**:
+- Some callers (especially teaching definitions/examples generation) need text only.
+- Returning base64 audio for large responses can be slow on mobile devices.
+
+### Response Format
+
+```json
+{
+  "reply": "<string>",
+  "audio": "<base64 mp3>" 
+}
+```
+
+**Fields**:
+- `reply`: Ms. Sonoma response text from the configured LLM provider.
+- `audio`: Base64-encoded MP3 when TTS is enabled and available; `null` when `skipAudio=true` (or when TTS is not configured).
+
+### Implementation
+
+- **Location**: `src/app/api/sonoma/route.js`
+- **Providers**: OpenAI or Anthropic depending on env configuration
+- **Runtime**: Node.js (Google SDKs require Node, not Edge)
+- **Stateless**: Each call is independent; no DB writes from this endpoint
+
+### Health Check
+
+**Method**: GET
+
+Returns `200` with `{ ok: true, route: 'sonoma', runtime }`.
+
+### Logging Controls
+
+Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
+
+- `full`, `off`, `none`, or `0` — No truncation
+- Positive integer (e.g., `2000`) — Truncate after N characters
+- Default: Unlimited in development; 600 chars in production
+
+---
+
+## Other Core Routes
+
+### 13. docs/brain/v2-architecture.md (aa7153d876592c21696ed81eef5a176acfcefd0ddf6ceff0300b5c58d431458c)
+- bm25: -4.4010 | entity_overlap_w: 2.60 | adjusted: -5.0510 | relevance: 1.0000
+
+**Zero-Latency Prefetch Strategy:**
+- `prefetchAll()` triggered on Begin click (deferred to next tick so it does not block the UI)
+- Prefetch is **single-flight** (subsequent calls are ignored)
+- GPT calls are **staggered** to reduce 429 risk:
+  - Start definitions first
+  - Start examples only after definitions resolves (or fails)
+  - Gate prompts start after their parent stage begins
+- GPT calls run in background during discussion greeting (~3-5 seconds)
+- When teaching starts, prefetched data is awaited (often already complete)
+- TTS prefetched for first 3 sentences of each stage + gate prompt text
+- **No loading states** - UI never shows "loading" for teaching content
+- Prefetch chain: GPT completes → automatically prefetches TTS for sentences
+
+### 14. src/app/session/page.js (5081bab5884e02689acef54dcbfce6800c4856f78c451b0a67136e3e40d1fded)
+- bm25: -4.6985 | entity_overlap_w: 1.30 | adjusted: -5.0235 | relevance: 1.0000
+
+// Request TTS for the local opening and play it using the same pipeline as API replies.
+      setLoading(true);
+      setTtsLoadingCount((c) => c + 1);
+  const replyStartIndex = prevLen; // we appended opening sentences at the end
+      let res;
+      try {
+        res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
+        var data = await res.json().catch(() => ({}));
+        var audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+        // Dev warm-up: if route wasn't ready (404) or no audio returned, pre-warm and retry once
+        if ((!res.ok && res.status === 404) || !audioB64) {
+          try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
+          try { await waitForBeat(400); } catch {}
+          res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
+          data = await res.json().catch(() => ({}));
+          audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+        }
+      } finally {
+        setTtsLoadingCount((c) => Math.max(0, c - 1));
+      }
+      if (audioB64) audioB64 = normalizeBase64Audio(audioB64);
+      // Match API flow: stop showing loading before kicking off audio
+      setLoading(false);
+      if (audioB64) {
+        // Stash payload so gesture-based unlock can retry immediately if needed
+        try { lastAudioBase64Ref.current = audioB64; } catch {}
+        setIsSpeaking(true);
+        // CRITICAL: Also update the ref immediately to prevent double-playback in recovery timeout
+
+### 15. docs/brain/tts-prefetching.md (5d2c47ccfb9a2ebf8730cf484617315b098470bc24f095612364f494190624e7)
+- bm25: -4.9573 | relevance: 1.0000
+
+Useful for verifying cache behavior during development.
+
+### 16. docs/brain/tts-prefetching.md (6d1b96b8f6272894a5c5f0a5c3a22454adfc86b0f45bf0f04266b9459a647c37)
+- bm25: -4.9573 | relevance: 1.0000
+
+**AbortController Pattern**:
+```javascript
+pendingFetches: Map<string, AbortController>
+
+### 17. docs/brain/v2-architecture.md (f0f7d5791f87c43312f84768585c3f5e0ddbb77f03f5af6f3a469f7e7634e7c5)
+- bm25: -3.8987 | entity_overlap_w: 3.90 | adjusted: -4.8737 | relevance: 1.0000
+
+**Test judging rule (V1 parity):** Test is single-attempt.
+- Judge the learner answer (MC/TF locally; SA/FIB via `/api/judge-short-answer` through `judging.js` with local fallback).
+- If correct: speak praise, then advance.
+- If incorrect: speak the correct answer immediately, then advance.
+
+**Test ticker rule (single-attempt):** The Test question counter must advance on every answered/skipped question.
+- Do not derive the question counter from `score` (score only increments on correct answers).
+- Use the current question index (questionNumber = questionIndex + 1) so incorrect answers still advance the ticker.
+
+**Test Skip/Next robustness rule (no premature actions):** In Test, user actions must never break the phase even when pressed repeatedly during async work.
+- The learner may mash Skip/Submit while question TTS is still loading or while judging is in-flight.
+- The phase must not double-advance, throw, or play stale audio for a previously-skipped question.
+- When an action advances to a new question while a prior question's TTS fetch is in-flight, the stale fetch result must be discarded (do not play it).
+- While a Submit/Skip transition is in-flight, additional Submit/Skip presses must be safely ignored (no double grading, no double skipping).
+- The Test intro line ("Time for the test") must also be skippable: the phase must advance to `awaiting-go` on AudioEngine `end` (completed OR skipped) and must not depend on awaiting `playAudio()`.
+
+### Exercise: Inline Q&A (Comprehension Parity) (2026-01-02)
+
+**Decision:** Exercise uses the same inline (V1-style) Q&A flow as Comprehension: questions are spoken via TTS, and the learner answers using the footer input.
+
+### 18. docs/brain/tts-prefetching.md (05e6eff1863500855ddc6c183a5ac48103c48804c8f4dbabf875f31ef1a1e1db)
+- bm25: -4.1294 | entity_overlap_w: 2.60 | adjusted: -4.7794 | relevance: 1.0000
+
+# TTS Prefetching System
+
+## Overview
+
+TTS (text-to-speech) prefetching eliminates 2-3 second waits between questions by loading question N+1 in the background while student answers question N. This was the main performance bottleneck identified by user after zombie code cleanup.
+
+## How It Works
+
+### Cache Architecture
+
+**Module**: `src/app/session/utils/ttsCache.js` (212 lines)
+
+**Core Components**:
+- `TTSCache` class: Singleton instance exported as `ttsCache`
+- LRU cache: Map-based storage with timestamp tracking
+- MAX_CACHE_SIZE: 10 items (prevents memory issues during long sessions)
+- Eviction: Oldest by timestamp when cache full
+
+**Cache API**:
+```javascript
+ttsCache.get(text)           // Returns cached base64 audio or null
+ttsCache.set(text, audio)    // Stores audio, evicts oldest if full
+ttsCache.prefetch(text)      // Background fetch, fire-and-forget
+ttsCache.clear()             // Cancels pending fetches, clears cache
+ttsCache.cancelPrefetch(text) // Aborts specific pending request
+```
+
+### Integration Points
+
+**1. speakFrontendImpl (page.js line ~2927)**
+```javascript
+// Check cache first
+let b64 = ttsCache.get(text);
+
+if (!b64) {
+  // Cache miss - fetch from API
+  setTtsLoadingCount((c) => c + 1);
+  // ... fetch logic ...
+  if (b64) {
+    b64 = normalizeBase64Audio(b64);
+    // Store successful fetch in cache
+    ttsCache.set(text, b64);
+  }
+  setTtsLoadingCount((c) => Math.max(0, c - 1));
+}
+// else: cache hit - b64 already set, no loading indicator
+```
+
+Cache hits skip loading indicator entirely since audio is instant.
+
+**2. Prefetch Triggers**
+
+**After Comprehension Answer (page.js line ~5895)**:
+```javascript
+try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
+
+### 19. docs/brain/tts-prefetching.md (cba8101ac4406e3a169ec45922876fe9bc7e7be991dc9b30d6274e1acfb795ee)
+- bm25: -4.7065 | relevance: 1.0000
+
+```javascript
+// Get cache statistics
+const stats = ttsCache.getStats();
+console.log(stats); // { size: 3, pending: 1, maxSize: 10 }
+```
+
+### 20. docs/brain/ingests/pack-mentor-intercepts.md (d5ddc893728a86d159bcf5ff419f02c5ace96e1133048d430ac99ee743f074bd)
+- bm25: -4.2939 | entity_overlap_w: 1.30 | adjusted: -4.6189 | relevance: 1.0000
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 21. src/app/session/v2/AudioEngine.jsx (bed4b96439e1d30f0a5b1d216834205045a7703c4a54276fea998b7e9dd361ed)
+- bm25: -3.9440 | entity_overlap_w: 2.60 | adjusted: -4.5940 | relevance: 1.0000
+
+// Pause as soon as playback actually starts (playing event), so we end in a paused state
+    // while still getting the autoplay "unlock" side effect from play().
+    // IMPORTANT: If unlock playback never starts during the gesture, do not leave a stale
+    // 'playing' handler around — it can pause the first real TTS video playback later.
+    this.#videoUnlockPlayingHandler = () => {
+      // Never pause the real TTS video playback.
+      if (this.#isPlaying) {
+        clearUnlockHandler();
+        return;
+      }
+      try { video.pause(); } catch {}
+      try { video.currentTime = 0; } catch {}
+      clearUnlockHandler();
+    };
+
+try {
+      video.addEventListener('playing', this.#videoUnlockPlayingHandler);
+    } catch {}
+
+// Cleanup even if 'playing' never fires (e.g., autoplay blocked).
+    try {
+      this.#videoUnlockCleanupTimer = setTimeout(() => {
+        clearUnlockHandler();
+      }, 1500);
+    } catch {}
+
+try {
+      const p = video.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => {
+          clearUnlockHandler();
+        });
+      }
+    } catch {
+      clearUnlockHandler();
+    }
+  }
+  
+  // Public API: Playback control
+  async playAudio(base64Audio, sentences = [], startIndex = 0, options = {}) {
+    this.#lastAudioBase64 = base64Audio;
+    this.#lastSentences = sentences;
+    
+    // Stop any existing playback
+    this.stop();
+    
+    // Validate
+    if (!Array.isArray(sentences) || sentences.length === 0) {
+      console.warn('[AudioEngine] No sentences provided');
+      return;
+    }
+
+### 22. docs/brain/ms-sonoma-teaching-system.md (cede03814a8e282c9f02f9885e01f2a1ed833b57c04cd2aef304bf98f2d7f4ba)
+- bm25: -4.2683 | entity_overlap_w: 1.30 | adjusted: -4.5933 | relevance: 1.0000
+
+## Related Brain Files
+
+- **[tts-prefetching.md](tts-prefetching.md)** - TTS powers audio playback for Ms. Sonoma speech
+- **[visual-aids.md](visual-aids.md)** - Visual aids displayed during teaching phase
+
+## Key Files
+
+### Core API
+- `src/app/api/sonoma/route.js` - Main Ms. Sonoma API endpoint, integrates content safety validation
+
+### Content Safety
+- `src/lib/contentSafety.js` - Lenient validation system: prompt injection detection (always), banned keywords (reduced list, skipped for creative features), instruction hardening (primary defense), output validation with skipModeration=true (OpenAI Moderation API bypassed to prevent false positives like "pajamas" flagged as sexual)
+
+### Teaching Flow Hooks
+- `src/app/session/hooks/useTeachingFlow.js` - Orchestrates teaching definitions and examples stages
+
+### Phase Handlers
+- `src/app/session/hooks/usePhaseHandlers.js` - Manages phase transitions (comprehension, exercise, worksheet, test)
+
+### Session Page
+- `src/app/session/page.js` - Main session orchestration, phase state management
+
+### Brand Signal Sources (Read-Only)
+- `.github/Signals/MsSonoma_Voice_and_Vocabulary_Guide.pdf`
+- `.github/Signals/MsSonoma_Messaging_Matrix_Text.pdf`
+- `.github/Signals/MsSonoma_OnePage_Brand_Story.pdf`
+- `.github/Signals/MsSonoma_Homepage_Copy_Framework.pdf`
+- `.github/Signals/MsSonoma_Launch_Deck_The_Calm_Revolution.pdf`
+- `.github/Signals/MsSonoma_SignalFlow_Full_Report.pdf`
+
+### Data Schema
+- Supabase tables for lesson content, vocab terms, comprehension items
+- Content safety incidents logging table
+
+## Notes
+
+### 23. docs/brain/tts-prefetching.md (6948e68ea1a8bc628314d0baad0fc061f964291c736f4224062885a7cba94bde)
+- bm25: -4.5679 | relevance: 1.0000
+
+// RIGHT - only show loading on cache miss
+let b64 = ttsCache.get(text);
+if (!b64) {
+  setTtsLoadingCount((c) => c + 1);
+  /* fetch */
+  setTtsLoadingCount((c) => c - 1);
+}
+```
+
+### 24. docs/brain/tts-prefetching.md (072d1470417a91efeda996cf6ff4ab16a94be413be6e572d439f2f0f73e61aeb)
+- bm25: -4.2423 | entity_overlap_w: 1.30 | adjusted: -4.5673 | relevance: 1.0000
+
+prefetch(text) {
+  const controller = new AbortController();
+  this.pendingFetches.set(text, controller);
+  
+  fetch('/api/tts', { signal: controller.signal, ... })
+    .then(...)
+    .catch(err => {
+      if (err.name === 'AbortError') return; // Silent - expected
+      // Other errors also silent - prefetch is non-critical
+    })
+    .finally(() => this.pendingFetches.delete(text));
+}
+
+clear() {
+  this.pendingFetches.forEach(controller => controller.abort());
+  this.pendingFetches.clear();
+  this.cache.clear();
+}
+```
+
+Ensures no memory leaks from abandoned prefetch requests.
+
+### Text Normalization
+
+```javascript
+normalizeText(text) {
+  return text.toLowerCase().trim();
+}
+```
+
+Cache keys are normalized so "What is 2+2?" and "what is 2+2? " hit same entry.
+
+### Audio Extraction
+
+```javascript
+extractAudio(data) {
+  if (!data) return null;
+  
+  // API can return audio in multiple formats:
+  // { audio, audioBase64, audioContent, content, b64 }
+  return data.audio || data.audioBase64 || data.audioContent || 
+         data.content || data.b64 || null;
+}
+```
+
+Handles various TTS API response formats.
 
 ## What NOT To Do
 
-**DON'T exceed 600 character limit** - UI enforces this but API should validate too. Longer text risks token bloat and poor UX.
+**DON'T prefetch without abort capability**
+- Memory leaks from abandoned requests
+- Network congestion from redundant fetches
+- Phase transitions leave orphaned requests
 
-**DON'T fail silently on load errors** - If goals fail to load, show user-friendly message. Missing goals can confuse facilitators who expect Mr. Mentor to remember context.
+**DON'T fail loudly on prefetch errors**
+- Prefetch is optimization only
+- User should never see prefetch failures
+- Core flow must work without cache
 
-**DON'T forget to clear goals on learner switch** - When learner changes, immediately load new goals. Stale goals = wrong context.
+**DON'NOT show loading indicator on cache hits**
+```javascript
+// WRONG - shows loading even for instant cache hits
+setTtsLoadingCount((c) => c + 1);
+let b64 = ttsCache.get(text);
+if (!b64) { /* fetch */ }
+setTtsLoadingCount((c) => c - 1);
 
-**DON'T make goals optional in API calls** - Always send `goals_notes` field (empty string if none) so Mr. Mentor knows explicitly whether goals exist or not.
+### 25. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -3.8945 | entity_overlap_w: 2.60 | adjusted: -4.5445 | relevance: 1.0000
 
-### 18. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (a69efca9880db84d16bcf2416cead5e30a8ee222c1531e8f6d6ad02cf39c54d3)
-- bm25: -17.0642 | relevance: 1.0000
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
 
-### 28. src/app/session/v2/SessionPageV2.jsx (8a144872f2fee2d020af559c7576ecdbb801e6cdf248baf4f405694cd145de71)
-- bm25: -11.7528 | relevance: 1.0000
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
 
-// Clear active golden key for this lesson when the lesson is completed (V1 parity).
-      // This ensures the key persists across exits/resumes until completion, but does not stick forever after completion.
-      if (goldenKeysEnabledRef.current !== false && hasGoldenKeyRef.current) {
-        const appliedKey = goldenKeyLessonKeyRef.current;
-        const clearLearnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
-        if (appliedKey && clearLearnerId && clearLearnerId !== 'demo') {
-          try {
-            const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
-            const learner = await getLearner(clearLearnerId);
-            if (learner) {
-              const activeKeys = { ...(learner.active_golden_keys || {}) };
-              if (activeKeys[appliedKey]) {
-                delete activeKeys[appliedKey];
-                await updateLearner(clearLearnerId, { active_golden_keys: activeKeys });
-              }
-            }
-          } catch (err) {
-            console.warn('[SessionPageV2] Failed to clear active golden key on completion:', err);
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 26. src/app/session/v2/SessionPageV2.jsx (8f890c777eaff0b74ffd81a9546f3929a2272e71e68305715c040955574e768c)
+- bm25: -3.8863 | entity_overlap_w: 2.60 | adjusted: -4.5363 | relevance: 1.0000
+
+const playEnabledForPhase = (p) => {
+      if (!p) return true;
+      if (p === 'comprehension') return playPortionsEnabledRef.current?.comprehension !== false;
+      if (p === 'exercise') return playPortionsEnabledRef.current?.exercise !== false;
+      if (p === 'worksheet') return playPortionsEnabledRef.current?.worksheet !== false;
+      if (p === 'test') return playPortionsEnabledRef.current?.test !== false;
+      return true;
+    };
+    const skipPlayPortion = ['comprehension', 'exercise', 'worksheet', 'test'].includes(phaseName)
+      ? !playEnabledForPhase(phaseName)
+      : false;
+    
+    // Special handling for discussion: prefetch greeting TTS before starting
+    if (phaseName === 'discussion') {
+      setDiscussionState('loading');
+      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'friend';
+      const lessonTitle = lessonData?.title || lessonId || 'this topic';
+      const greetingText = `Hi ${learnerName}, ready to learn about ${lessonTitle}?`;
+      
+      try {
+        // Prefetch greeting TTS
+        await fetchTTS(greetingText);
+      } catch (err) {
+        console.error('[SessionPageV2] Failed to prefetch greeting:', err);
+      }
+      
+      // Discussion work timer starts when Begin is clicked, not here
+    }
+    
+    const ref = getPhaseRef(phaseName);
+    if (ref?.current?.start) {
+      if (skipPlayPortion) {
+        transitionToWorkTimer(phaseName);
+        // Start work timer immediately when skipping play portion (unless timeline jump already started it)
+        if (timerServiceRef.current && timelineJumpTimerStartedRef.current !== phaseName) {
+          timerServiceRef.current.startWorkPhaseTimer(phaseName);
+        }
+        await ref.current.start({ skipPlayPortion: true });
+      }
+
+### 27. docs/brain/ingests/pack-mentor-intercepts.md (88ae68a3e8cf1cfeacc9415f2912f09d93188deb2e3a1c2278a1d6bac0d438b4)
+- bm25: -4.1851 | entity_overlap_w: 1.30 | adjusted: -4.5101 | relevance: 1.0000
+
+CREATE TRIGGER auto_deactivate_old_lesson_sessions
+  BEFORE INSERT ON lesson_sessions
+  FOR EACH ROW
+  EXECUTE FUNCTION deactivate_old_lesson_sessions();
+```
+
+**Purpose**: Database enforces single-session constraint even if application logic fails. Ensures no orphaned active sessions.
+
+### Checkpoint Gates (Where Conflicts Detected)
+
+### 35. docs/brain/ai-rewrite-system.md (316854d4d2bc71c0ac5f86896adc58c38b29b41d22194aff261c0a1ca02bde82)
+- bm25: -11.8770 | relevance: 1.0000
+
+## Related Brain Files
+
+- **[visual-aids.md](visual-aids.md)** - AI rewrite optimizes DALL-E 3 prompts for visual aid generation
+- **[lesson-editor.md](lesson-editor.md)** - AIRewriteButton integrated in lesson editor for content improvement
+
+## Key Files
+
+- `src/components/AIRewriteButton.jsx` - Reusable button component
+- `src/app/api/ai/rewrite-text/route.js` - Rewrite API endpoint
+- `src/components/VisualAidsCarousel.jsx` - Current usage example
+
+## What NOT To Do
+
+- Never expose rewrite API publicly (requires auth)
+- Never skip purpose parameter (determines prompt style)
+- Never rewrite without user trigger (button click required)
+- Never cache rewritten text globally (user-specific content)
+
+### 36. docs/brain/ms-sonoma-teaching-system.md (cede03814a8e282c9f02f9885e01f2a1ed833b57c04cd2aef304bf98f2d7f4ba)
+- bm25: -11.6708 | relevance: 1.0000
+
+## Related Brain Files
+
+- **[tts-prefetching.md](tts-prefetching.md)** - TTS powers audio playback for Ms. Sonoma speech
+- **[visual-aids.md](visual-aids.md)** - Visual aids displayed during teaching phase
+
+## Key Files
+
+### Core API
+- `src/app/api/sonoma/route.js` - Main Ms. Sonoma API endpoint, integrates content safety validation
+
+### 28. docs/brain/tts-prefetching.md (d4d48f07f7f9a11e80b3ef68e048d4c9b4038755fe3b6610d8d8f62094649b0b)
+- bm25: -4.4162 | relevance: 1.0000
+
+// Prefetch second question while student answers first
+try {
+  if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
+    const prefetchProblem = generatedComprehension[currentCompIndex];
+    const prefetchQ = ensureQuestionMark(formatQuestionForSpeech(prefetchProblem, { layout: 'multiline' }));
+    ttsCache.prefetch(prefetchQ);
+  }
+} catch {}
+```
+
+### 29. docs/brain/v2-architecture.md (dcea5ecf862257a5f80f2259d150c9f5b9ae6ce42bb7e280b9ad10ee41710f36)
+- bm25: -3.7380 | entity_overlap_w: 2.60 | adjusted: -4.3880 | relevance: 1.0000
+
+**V2 Implementation:**
+- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (3500+ lines, includes comprehension logic)
+- `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
+- `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
+- `src/app/session/v2/ComprehensionPhase.jsx` - DEPRECATED, not used (comprehension handled inline in SessionPageV2)
+- `src/app/session/v2/DiscussionPhase.jsx` - Discussion activities (200 lines)
+- `src/app/session/v2/ExercisePhase.jsx` - Exercise questions with scoring (300 lines)
+- `src/app/session/v2/WorksheetPhase.jsx` - Fill-in-blank questions (300 lines)
+- `src/app/session/v2/TestPhase.jsx` - Graded test with review (400 lines)
+- `src/app/session/v2/ClosingPhase.jsx` - Closing message with encouragement (150 lines)
+- `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
+- `src/app/session/v2/SnapshotService.jsx` - Session persistence (300 lines)
+- `src/app/session/v2/TimerService.jsx` - Session and work phase timers (350 lines)
+- `src/app/session/v2/KeyboardService.jsx` - Keyboard hotkey management (150 lines)
+- `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading, includes question pools)
+- `src/app/session/v2test/page.jsx` - Direct test route
+
+### 30. docs/brain/ingests/pack.md (562ccdceec920fc88c19e3612ebf7902f23d8078e37896c0623a90e70a093280)
+- bm25: -4.0557 | entity_overlap_w: 1.30 | adjusted: -4.3807 | relevance: 1.0000
+
+**Response**:
+- Returns `{ outline: { kind, title, description, subject, grade, difficulty } }`
+- `kind` is `new` or `review`
+- When `kind=review`, the title is prefixed with `Review:` for clarity
+
+### `/api/generate-lesson`
+**Purpose**: Generate new lesson content via LLM  
+**Status**: Legacy route, may be superseded by facilitator lesson editor
+
+### `/api/tts`
+**Purpose**: Text-to-speech conversion (Google TTS)  
+**Status**: Operational, used for all Ms. Sonoma audio
+
+### `/api/visual-aids/generate`
+**Purpose**: Generate visual aid images via DALL-E 3  
+**Status**: Operational, see `docs/brain/visual-aids.md`
+
+### 33. src/app/facilitator/calendar/LessonPlanner.jsx (2cdb279d41617abc41fcf9088b8da7c5c209b33cd6b03cc5f9bccb95193eb4d0)
+- bm25: -17.9938 | relevance: 1.0000
+
+// Add scheduled lessons
+      if (scheduledRes.ok) {
+        const scheduledData = await scheduledRes.json()
+        const scheduledLessons = (scheduledData.schedule || []).map(s => ({
+          name: s.lesson_key,
+          date: s.scheduled_date,
+          status: 'scheduled'
+        }))
+        lessonContext = [...lessonContext, ...scheduledLessons]
+      }
+
+### 34. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (5d41b9bf517eebb4d3804a2d02aef902c5ef59c377353f9f57c89608469dd536)
+- bm25: -17.9535 | relevance: 1.0000
+
+### 31. docs/brain/ingests/pack-mentor-intercepts.md (3300157944d072852387421f46174f6339d6a53250501dd8a14f2dc88db84519)
+- bm25: -3.7231 | entity_overlap_w: 2.60 | adjusted: -4.3731 | relevance: 1.0000
+
+**V2 Implementation:**
+- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (3500+ lines, includes comprehension logic)
+- `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
+- `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
+- `src/app/session/v2/ComprehensionPhase.jsx` - DEPRECATED, not used (comprehension handled inline in SessionPageV2)
+- `src/app/session/v2/DiscussionPhase.jsx` - Discussion activities (200 lines)
+- `src/app/session/v2/ExercisePhase.jsx` - Exercise questions with scoring (300 lines)
+- `src/app/session/v2/WorksheetPhase.jsx` - Fill-in-blank questions (300 lines)
+- `src/app/session/v2/TestPhase.jsx` - Graded test with review (400 lines)
+- `src/app/session/v2/ClosingPhase.jsx` - Closing message with encouragement (150 lines)
+- `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
+- `src/app/session/v2/SnapshotService.jsx` - Session persistence (300 lines)
+- `src/app/session/v2/TimerService.jsx` - Session and work phase timers (350 lines)
+- `src/app/session/v2/KeyboardService.jsx` - Keyboard hotkey management (150 lines)
+- `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading, includes question pools)
+- `src/app/session/v2test/page.jsx` - Direct test route
+
+### 32. src/app/session/v2/AudioEngine.jsx (b00f8222e6f278ea9df16d8ae24a4c45803094c441a9567d00c67743b3de523d)
+- bm25: -3.6789 | entity_overlap_w: 2.60 | adjusted: -4.3289 | relevance: 1.0000
+
+// If a video-unlock handler is still attached (e.g., autoplay was blocked during
+    // initialize()), clear it so it cannot pause the first real TTS playback.
+    try {
+      if (this.#videoUnlockCleanupTimer) {
+        clearTimeout(this.#videoUnlockCleanupTimer);
+        this.#videoUnlockCleanupTimer = null;
+      }
+    } catch {}
+    try {
+      if (this.#videoUnlockPlayingHandler) {
+        this.#videoElement.removeEventListener('playing', this.#videoUnlockPlayingHandler);
+        this.#videoUnlockPlayingHandler = null;
+      }
+    } catch {}
+    
+    // Use robust retry mechanism from audioUtils (handles iOS edge cases)
+    playVideoWithRetry(this.#videoElement, 3, 100).catch(() => {
+      // Log silently if all retries fail to avoid breaking session
+    });
+  }
+  
+  // Private: Cleanup
+  #cleanup() {
+    this.#isPlaying = false;
+    
+    // Pause video when audio ends (video syncs with TTS)
+    if (this.#videoElement) {
+      try {
+        this.#videoElement.pause();
+      } catch {}
+    }
+    
+    this.#clearCaptionTimers();
+    this.#clearSpeechGuard();
+  }
+  
+  // Private: Utilities
+  #parseAudioInput(rawInput) {
+    if (!rawInput) return null;
+
+const raw = String(rawInput).trim();
+    if (!raw) return null;
+
+// Accept either a data URL or a raw base64 string.
+    const match = raw.match(/^data:(audio\/[^;]+);base64,(.*)$/i);
+    const contentType = match?.[1] || 'audio/mpeg';
+    let b64 = (match?.[2] || raw).trim();
+
+// Normalize: strip whitespace, base64url -> base64, add padding.
+    b64 = b64.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+    const pad = b64.length % 4;
+    if (pad === 2) b64 += '==';
+    else if (pad === 3) b64 += '=';
+    else if (pad === 1) b64 += '===';
+
+return { contentType, b64 };
+  }
+
+### 33. src/app/session/page.js (69753b375f4d2cb4fc49cc16d8e27b4821c2bc10af77bfe4da4993eada08aab9)
+- bm25: -3.6717 | entity_overlap_w: 2.60 | adjusted: -4.3217 | relevance: 1.0000
+
+const startDiscussionStep = async () => {
+    // CRITICAL: Unlock audio during user gesture (Begin click) - required for Chrome
+    try {
+      await unlockAudioPlaybackWrapped();
+    } catch (e) {
+      // Silent error handling
+    }
+    
+    // Ensure we are not starting in a muted state
+    try { setMuted(false); } catch {}
+    try { mutedRef.current = false; } catch {}
+    try { forceNextPlaybackRef.current = true; } catch {}
+    
+    // CRITICAL for Chrome: Preload video during user gesture but don't play yet
+    // The video will start when TTS actually begins playing
+    try {
+      if (videoRef.current) {
+        if (videoRef.current.readyState < 2) {
+          videoRef.current.load();
+          // Wait a moment for load to register
+          await new Promise(r => setTimeout(r, 100));
+        }
+        // Just seek to first frame to unlock autoplay, but don't start playing yet
+        try {
+          videoRef.current.currentTime = 0;
+        } catch (e) {
+          // Fallback: briefly play then pause to unlock autoplay
+          const playPromise = videoRef.current.play();
+          if (playPromise && playPromise.then) {
+            await playPromise.then(() => {
+              try { videoRef.current.pause(); } catch {}
+            });
           }
         }
       }
+    } catch (e) {
+      // Silent error handling
+    }
+    
+  // Unified discussion is now generated locally: Greeting + Encouragement + next-step prompt (no joke/silly question)
+    setCanSend(false);
+    // Compose the opening text using local pools (no API/TTS for this step)
+    const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
+    const lessonTitleExact = (effectiveLessonTitle && typeof effectiveLessonTitle === 'string' && effectiveLes
 
-### 29. sidekick_pack.md (823f4a32054ed567322f6c38220db8530887b63d7930a702a348ffe734c95072)
-- bm25: -11.7054 | relevance: 1.0000
+### 34. sidekick_pack.md (bba8c9d0a2ad1fcfae649c359a4219ed32e5a5913249044c89d6ec0d9ecb4d56)
+- bm25: -3.6429 | entity_overlap_w: 2.60 | adjusted: -4.2929 | relevance: 1.0000
 
-### 22. sidekick_pack.md (f0e0466a6588f66493c88c0b00e750e7c20b3e5b9f4eedd4cfc00bcd3826f40a)
-- bm25: -24.5808 | relevance: 1.0000
+### Storage + Public Access (No Login)
 
-PIN verification is server-only (no localStorage fallback):
-- Server validates PIN against hashed value in `profiles.facilitator_pin_hash`
-- Uses bcrypt for secure comparison
-- API endpoint: `POST /api/facilitator/pin/verify`
+Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
 
-### 38. docs/brain/ingests/pack.planned-lessons-flow.md (c1630e20d42e7416e0786d4762a62020e29931c3609ba5301492ca0c6c410df5)
-- bm25: -1.7211 | entity_overlap_w: 1.30 | adjusted: -2.0461 | relevance: 1.0000
+### 35. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.0390 | relevance: 1.0000
 
-## What NOT To Do
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
 
-- Do not store lessons on the device (no localStorage/indexedDB/file downloads).
-- Do not reuse Golden Keys to mean "unlock lessons"; Golden Keys are bonus play-time semantics.
-- Do not match ownership using filename-only; subject collisions are possible.
-- Do not allow path traversal in the download endpoint (`..`, `/`, `\\`).
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 35. sidekick_pack.md (df3b0d06c6e97315f9ac315d8fe85c1be37b146340873af631c44fae1bc3250f)
+- bm25: -3.6358 | entity_overlap_w: 2.60 | adjusted: -4.2858 | relevance: 1.0000
+
+### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.4515 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
+- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
+
+### 36. docs/brain/tts-prefetching.md (82573e35d3de76ccd7683dbceabb9c66fd6c3d9cbf8e7438464c4c6ee0808e45)
+- bm25: -4.2546 | relevance: 1.0000
+
+// Prefetch the question after this one while student answers
+try {
+  if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
+    const prefetchProblem = generatedComprehension[currentCompIndex];
+    const prefetchQ = ensureQuestionMark(formatQuestionForSpeech(prefetchProblem, { layout: 'multiline' }));
+    const prefetchText = `${CELEBRATE_CORRECT[0]}. ${prefetchQ}`;
+    ttsCache.prefetch(prefetchText);
+  }
+} catch {}
+```
+
+### 37. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (86b60aae069b5e5cd6312d1188af36820d92ad5d50ac3acdfbcc0206a1059f7c)
+- bm25: -3.6006 | entity_overlap_w: 2.60 | adjusted: -4.2506 | relevance: 1.0000
+
+### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.4515 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
+- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
+
+### 38. docs/brain/tts-prefetching.md (20cc073772503cfe6baaa7bda436dd53dc02fbe589fd39e4fcad508f79f39b46)
+- bm25: -3.9026 | entity_overlap_w: 1.30 | adjusted: -4.2276 | relevance: 1.0000
+
+**DON'T cache indefinitely**
+- LRU eviction at 10 items prevents memory growth
+- Phase transitions clear cache (old phase audio irrelevant)
+
+**DON'T prefetch more than one question ahead**
+- Student might skip, fail, or use hint - next question unpredictable
+- Better to prefetch N+1 after each answer than N+2..N+10 upfront
+
+**DON'T trust question order without increment tracking**
+```javascript
+// WRONG - currentCompIndex already incremented, so array[currentCompIndex] is N+2 not N+1
+const nextProblem = generatedComprehension[currentCompIndex];
+setCurrentCompIndex(currentCompIndex + 1);
+await speakFrontend(nextProblem);
+ttsCache.prefetch(generatedComprehension[currentCompIndex]); // N+2!
+
+// RIGHT - prefetch from same index that will be used next
+const nextProblem = generatedComprehension[currentCompIndex];
+setCurrentCompIndex(currentCompIndex + 1);
+await speakFrontend(nextProblem);
+// currentCompIndex now points to N+1 (just incremented)
+ttsCache.prefetch(generatedComprehension[currentCompIndex]);
+```
+
+## Related Brain Files
+
+- **[ms-sonoma-teaching-system.md](ms-sonoma-teaching-system.md)** - TTS integrates with Ms. Sonoma teaching flow and phase transitions
 
 ## Key Files
 
-- `src/app/facilitator/lessons/page.js`
-- `src/app/api/facilitator/lessons/download/route.js`
-- `src/app/api/facilitator/lessons/list/route.js`
-- `src/app/api/lessons/[subject]/route.js`
-- `src/app/api/lesson-file/route.js`
+**Core Module**:
+- `src/app/session/utils/ttsCache.js`: TTSCache class, LRU cache, prefetch logic
 
-### 27. docs/brain/calendar-lesson-planning.md (4da551360e5a46cca2826bfe58a71289a036bb89df00313db4714021b4cc5eab)
-- bm25: -14.3879 | relevance: 1.0000
+### 39. docs/brain/ingests/pack.lesson-schedule-debug.md (97751540286f2a57603f636cb881fe3d9cd46c0662c02fd8f3dc23c69ea8bd7d)
+- bm25: -3.7871 | entity_overlap_w: 1.30 | adjusted: -4.1121 | relevance: 1.0000
 
-**Usage:**
-- `node scripts/check-completions-for-keys.mjs --learner Emma --from 2026-01-05 --to 2026-01-08`
+**Test progression:**
+1. Test each flow independently
+2. Test parameter gathering Q&A
+3. Test confirmation flows (yes/no/unclear)
+4. Test lesson search with various queries
+5. Test action execution (schedule/generate/edit)
+6. Test recall with conversation history
+7. Test bypass commands
+8. Test API fallback for unhandled intents
+9. Test TTS synchronization
+10. Test conversation continuity across interceptor/API
 
-### Scheduled Lessons Overlay: Built-in Lesson Editor
+### 40. docs/brain/snapshot-persistence.md (83771570e459d80f3130a04413886133c035ef9a1167a6692812acf99b672017)
+- bm25: -3.4600 | entity_overlap_w: 2.60 | adjusted: -4.1100 | relevance: 1.0000
 
-The Calendar day overlay includes an inline lesson editor for scheduled lessons.
+## Checkpoint Gates (Where Snapshots Save)
 
-This editor matches the regular lesson editor for Visual Aids (button + carousel + generation + persistence).
+- **Discussion entry**: `begin-discussion` (no opening actions in V2).
+- **Teaching**: `begin-teaching-definitions`, `vocab-sentence-1/N` (before each TTS), `begin-teaching-examples`, `example-sentence-1/N` (before each TTS).
+- **Q&A seeding** (deterministic resume): `comprehension-init`, `exercise-init`, `worksheet-init`, `test-init` fire on phase start and persist question arrays + `nextQuestionIndex` + `score` + `answers` + `timerMode` (with `phaseOverride`).
+- **Q&A post-Go (work-mode checkpoint)**: `comprehension-go`, `exercise-go`, `worksheet-go`, `test-go` fire immediately when the learner presses **Go**. These writes set `timerMode:'work'` with `nextQuestionIndex:0` so a refresh before answering Q1 resumes on the first question (not back to Opening Actions).
+- **Q&A granular**: `comprehension-answer`, `comprehension-skip`, `exercise-answer`, `exercise-skip`, `worksheet-answer`, `worksheet-skip`, `test-answer`, `test-skip` after each submission/skip (payload includes questions, answers, next index, timerMode; Test also includes reviewIndex).
+- **Navigation**: `skip-forward`, `skip-back` (timeline jumps).
 
-### 30. docs/brain/timer-system.md (094648dd5ab12b57480db81378d3eff701f115a508b88fabd9e56c6787fe3b91)
-- bm25: -11.6954 | relevance: 1.0000
+## Related Brain Files
 
-When the work timer expires or the phase is completed (including when Test hands off to facilitator review):
-- `markWorkPhaseComplete` stamps the phase in `workPhaseCompletions` and clears that phase's timer entry in `currentTimerMode`
-- Completing 3 on-time work phases earns a golden key (play timers ignored)
-- Golden key adds bonus time to all future play timers
-- `workTimeRemaining` records minutes left on each work timer when the phase ends (0 on timeout) and is surfaced in facilitator review for transparency; entering Test review now captures and freezes the remaining test work time so review/grading cannot keep an active timer running
-- Golden key detection uses the live `workPhaseCompletionsRef` so a just-marked phase (e.g., Test on review entry) counts immediately without waiting for React state flush
+- **[timer-system.md](timer-system.md)** - Timer state (currentTimerMode, workPhaseCompletions, golden key) persisted in snapshots
+- **[session-takeover.md](session-takeover.md)** - Takeover flow triggers snapshot restore with timer state
 
-### 31. src/app/session/page.js (bd54ae00b138d3799981ca411eec174706f32b2460c5e3d029f3acc474cb5c71)
-- bm25: -11.6104 | relevance: 1.0000
+## Key Files
 
-// Handle golden key suspension
-  const handleSuspendGoldenKey = useCallback(() => {
-    setIsGoldenKeySuspended(true);
-    setShowTimerControls(false);
-  }, []);
+- `src/app/session/sessionSnapshotStore.js` - Save/restore with localStorage+database
+- `src/app/session/hooks/useSnapshotPersistence.js` - scheduleSaveSnapshot wrapper
+- `src/app/session/hooks/useTeachingFlow.js` - Teaching checkpoint saves
+- `src/app/session/page.js` - Comprehension/phase checkpoint saves
 
-// Handle golden key unsuspension
-  const handleUnsuspendGoldenKey = useCallback(() => {
-    setIsGoldenKeySuspended(false);
-    setShowTimerControls(false);
-  }, []);
-
-// Handle timer completion
-  const handleTimeUp = useCallback(() => {
-    // When time is up, show warning but allow learner to continue
-    if (typeof window !== 'undefined') {
-      alert('Time is up! Complete the lesson to see if you earned the golden key.');
-    }
-  }, []);
-
-### 32. sidekick_pack.md (a6a5a8402f60a32ae3f5331f3e88e3b679090d1e257e5157603316df1542732f)
-- bm25: -11.5763 | relevance: 1.0000
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 33. sidekick_pack.md (cad378213fd13855af53d533bd71221aed90460d4fbb4523573edc023e104f0e)
-- bm25: -11.5763 | relevance: 1.0000
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 34. sidekick_pack.md (1f28777aa00516f363d491420dfa6a99c690b1cfebadbd59af7be0334bd94883)
-- bm25: -11.5763 | relevance: 1.0000
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 35. docs/brain/MentorInterceptor_Architecture.md (b9af78a6a85babc29ee74ec9cf6073767b7a2e84a19456e1f96ab9a407cbd74d)
-- bm25: -11.5451 | relevance: 1.0000
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 36. docs/brain/ingests/pack.planned-lessons-flow.md (88c29dc19b3f25ed0178c73764a3887f3532851fb2e1292ab2f58b31241fad00)
-- bm25: -11.4986 | relevance: 1.0000
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 37. docs/brain/snapshot-persistence.md (4e5c83ecb2a3d3d2fc5d4ef712795b0c811f949a3a73536e87274e302e86b831)
-- bm25: -11.2415 | relevance: 1.0000
-
-# Snapshot Persistence System
-
-## Core Architecture
-
-**ATOMIC GATES, NOT POLLING**
-
-Snapshots save at explicit checkpoints only. No autosave, no polling, no drift correction.
-
-**Scope:** This document covers snapshot saves and restores for lesson state persistence. For session ownership and device conflict detection, see [session-takeover.md](session-takeover.md).
-
-**Identity:** Snapshot identity is strictly `(learnerId, lessonKey)` where `lessonKey` is the canonical filename (no subject prefix, no `.json`). V2 now derives this with the same helper as V1 (`getSnapshotStorageKey` rules: URL param first, then manifest file, then lesson id; strip prefixes/extensions). Lesson == session; no extra sessionId dimension is used in the key, so golden key, timers, and snapshots all share the same canonical `lessonKey`.
-
-## Complete Lesson Cleanup
-
-When user clicks "Complete Lesson" button:
-
-1. **Set prevention flag** - `window.__PREVENT_SNAPSHOT_SAVE__ = true` blocks any snapshot saves during cleanup
-2. **Clear assessments** - `clearAssessments()` removes all 4 generated arrays (comprehension, exercise, worksheet, test) from localStorage and database
-3. **Clear snapshots** - `clearSnapshot()` removes resume state from localStorage and database using all possible key variations
-4. **Clear timer state** - Remove phase-based timer states from sessionStorage
-5. **Clear golden key** - Remove active golden key for this lesson if used
-6. **End tracked session** - Close `lesson_sessions` and write a `lesson_session_events` row (`event_type='completed'`) so Calendar history can detect completion
-7. **Save transcript** - Persist final transcript segment to Supabase Storage
-8. **Navigate away** - Redirect to /learn/lessons
-
-### 38. docs/brain/learner-settings-bus.md (b9605e778142d0a5b6b23fbb0be32d75ff6241842ee197d10f42c66a06cbd08d)
-- bm25: -11.1590 | relevance: 1.0000
-
-Keep behavior strict:
-- Do not create local fallback state that can diverge from Supabase.
-- Treat settings as **unknown until loaded**. For example, `golden_keys_enabled` should start as `null` (unknown), then become `true`/`false` once loaded.
-- Treat `play_*_enabled` the same way: required booleans loaded from Supabase (no local fallback).
-- Avoid UI flashes: do not render Golden Key UI until `golden_keys_enabled === true` and the page is done loading learner settings.
-- Hide per-lesson Golden Key indicators (like a "🔑 Active" badge) unless `golden_keys_enabled === true`.
-- Avoid toast loss: do not clear `sessionStorage.just_earned_golden_key` while `golden_keys_enabled` is unknown; only clear/suppress once it is explicitly `false`.
-
-### 39. docs/brain/README.md (a9d53428a66f32a8f0f0b034bee45fb77b0ac883ab99d0de9cdcabf09ef72d0a)
-- bm25: -11.1397 | relevance: 1.0000
-
-## Instruction Inventory
-| Area | Reference | Notes |
-| --- | --- | --- |
-| Beta program gating | `docs/BETA_PROGRAM_IMPLEMENTATION.md` | Contains flow and schema details; summarize key guardrails here after review. |
-| Universal gating overlays | `docs/UNIVERSAL_GATING_SYSTEM.md` | Track overlay patterns and migration status. |
-| Lesson approvals | `APPROVED_LESSONS_IMPLEMENTATION.md` | Record facilitator approval protocol highlights. |
-| Session timing | `docs/session-timer-system.md` | Capture timers, warnings, and dependencies. |
-| Profanity filtering | `docs/profanity-filter*.md` | Note vocabulary policies and testing steps. |
-
-### 40. docs/brain/timer-system.md (1f66fc9b2014880a4f602ba3a64aeb3037bbda3f80bafc5c833fb3aeea069133)
-- bm25: -11.0659 | relevance: 1.0000
-
-### Play Portion Enabled Flags (Per Learner)
-
-Phases 2-5 (Comprehension, Exercise, Worksheet, Test) each have a per-learner flag that can disable the "play portion" of that phase.
-
-Columns (boolean, default true):
-- `public.learners.play_comprehension_enabled`
-- `public.learners.play_exercise_enabled`
-- `public.learners.play_worksheet_enabled`
-- `public.learners.play_test_enabled`
-
-Definition:
-- "Play portion" means the intro + opening-actions gate + play timer.
-- When a play portion flag is `false`, the phase should begin directly in work mode.
-
-V2 behavior (implemented):
-- When play portion is disabled for a phase, "Begin" behaves like "Go": it skips intro/opening actions, skips starting the play timer, and starts the work timer immediately.
-- The session fails loudly if any `play_*_enabled` field is missing (not a boolean).
-- Live updates use the Learner Settings Bus; if a flag is turned off while sitting at the Go gate (`awaiting-go`), the session transitions to work immediately.
-
-V1 behavior:
-- V1 is not updated by this feature unless explicitly requested.
-
-### Timer Defaults
-
-Defined in `src/app/session/utils/phaseTimerDefaults.js`:
-- Discussion: 8 min play, 12 min work
-- Comprehension: 8 min play, 12 min work
-- Exercise: 8 min play, 12 min work
-- Worksheet: 8 min play, 12 min work
-- Test: 8 min play, 12 min work
-- Golden key bonus: +5 min to all play timers
-
-## What NOT To Do
-
-❌ **Never describe Golden Keys as unlocking Poem/Story**
-- A Golden Key adds bonus minutes to play timers (extra play time)
-- Do not label it as unlocking specific activities (Poem/Story)
+## What Was Removed

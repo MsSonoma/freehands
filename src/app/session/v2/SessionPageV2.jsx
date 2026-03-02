@@ -5647,23 +5647,12 @@ function SessionPageV2Inner() {
     setIsMuted(newMuted);
   };
   
-  // Skip current TTS playback
+  // Skip current TTS playback ONLY - does NOT skip the question itself.
+  // The button is a TTS skip (stop Ms. Sonoma's current sentence); the question stays.
   const skipTTS = () => {
     if (!audioEngineRef.current) return;
     if (askExitSpeechLockRef.current) return;
     stopAudioSafe();
-    
-    // If we're in a phase with a skip handler, call it to transition state properly
-    const phaseName = getCurrentPhaseName();
-    if (phaseName === 'comprehension' && comprehensionPhaseRef.current?.skip) {
-      comprehensionPhaseRef.current.skip();
-    } else if (phaseName === 'exercise' && exercisePhaseRef.current?.skip) {
-      exercisePhaseRef.current.skip();
-    } else if (phaseName === 'worksheet' && worksheetPhaseRef.current?.skip) {
-      worksheetPhaseRef.current.skip();
-    } else if (phaseName === 'test' && testPhaseRef.current?.skip) {
-      testPhaseRef.current.skip();
-    }
   };
   
   // Skip sentence (hotkey handler for teaching phase)
