@@ -569,7 +569,17 @@ export default function FlashCards({ onBack }) {
 
   // Card screen
   return (
-    <div style={frame}>
+    <div
+      style={{
+        height: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '12px 16px',
+        maxWidth: 720,
+        margin: '0 auto',
+        boxSizing: 'border-box',
+      }}
+    >
       <style>{`
         @keyframes flashcards-party {
           0% { transform: translateX(-40px); opacity: 0; }
@@ -589,19 +599,19 @@ export default function FlashCards({ onBack }) {
         }
       `}</style>
 
-      <div style={headerRow}>
+      {/* Header */}
+      <div style={{ ...headerRow, flexShrink: 0 }}>
         <button type="button" style={softBtn} onClick={onBack}>← Back</button>
         <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
         <button type="button" style={softBtn} onClick={() => setScreen('setup')}>Setup</button>
       </div>
 
       {/* Meter */}
-      <div style={{ background: '#fff', border: '2px solid #e5e7eb', borderRadius: 16, padding: 14, marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+      <div style={{ flexShrink: 0, background: '#fff', border: '2px solid #e5e7eb', borderRadius: 16, padding: '10px 14px', marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
           <div style={{ fontWeight: 900, color: '#111827' }}>{topicLabel}</div>
           <div style={{ fontWeight: 900, color: '#111827' }}>Stage {clampStage(stage)} / {STAGES_TOTAL}</div>
         </div>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ flex: 1, height: 14, borderRadius: 999, background: '#e5e7eb', overflow: 'hidden' }}>
             <div
@@ -619,13 +629,36 @@ export default function FlashCards({ onBack }) {
         </div>
       </div>
 
-      {/* Flash card */}
-      <div style={{ background: '#fff', border: '2px solid #e5e7eb', borderRadius: 16, padding: 18 }}>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+      {/* Card + form — flex:1 fills all remaining height, minHeight:0 allows shrinking */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          background: '#fff',
+          border: '2px solid #e5e7eb',
+          borderRadius: 16,
+          padding: '12px 14px',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Card area fills leftover space between meter and input row */}
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            overflow: 'hidden',
+          }}
+        >
           <div
             style={{
               width: 'min(360px, 92vw)',
-              height: 'min(520px, 50dvh)',
+              height: '100%',
+              maxHeight: 520,
               border: '2px solid #e5e7eb',
               borderRadius: 18,
               background: '#fff',
@@ -667,7 +700,8 @@ export default function FlashCards({ onBack }) {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+        {/* Input row — never shrinks, always anchored at bottom of card panel */}
+        <form onSubmit={handleSubmit} style={{ flexShrink: 0, display: 'flex', gap: 10, marginTop: 10 }}>
           <input
             ref={inputRef}
             value={answer}
