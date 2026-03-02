@@ -1,3 +1,4 @@
+2026-03-02T00:00:00Z | Fix: session clock didn't update when Golden Key applied from Timers overlay. Root cause: TimerService.setPlayTimerLimits updated timer.timeLimit + sessionStorage but never emitted a playTimerTick event. SessionPageV2 session clock is driven by playTimerTick events, so it stayed frozen until the next natural 1-second interval â€” or indefinitely if timer was paused. Fix: emit playTimerTick immediately after updating timer.timeLimit for currentPlayPhase (skip if expired). File: src/app/session/v2/TimerService.jsx. Recon prompt: "Golden Key applied from Timers overlay changes overlay clock but not session clock authority". See sidekick_pack.md.
 2026-02-27T18:25:00Z | Fix: quota useEffect was gated on hasAccess (itself blocked by RLS) so quotaInfo never loaded; fallback tier logic never fired. Changed gate to isAuthenticated-only so quota API always loads for signed-in users. generator/page.js.
 2026-02-27T18:15:00Z | Fix: generator/calendar entitlement checks bypassed RLS by using quota API tier (service role) as authoritative fallback; useAccessControl client-side query was RLS-blocked returning free tier silently. generator/page.js + calendar/page.js updated.
 2026-02-27T18:00:00Z | Fix: Infinity serializes as null in JSON \u2014 quota routes now use -1 sentinel for unlimited; generator display handles -1 as "Unlimited generations". See sidekick_pack.md.
@@ -407,16 +408,16 @@ Result:
 Follow-ups:
 - If you want cross-device progress (not just same browser), add a Supabase-backed progress table and swap the storage adapter.
 
-### 2026-02-27 — Generation error: e.map is not a function
+### 2026-02-27 ï¿½ Generation error: e.map is not a function
 - Recon prompt: `Generation Failed error from lesson generator API route - investigate callModel and storage upload`
 - Root cause: `buildValidationChangeRequest(validation)` passed whole `{ passed, issues, warnings }` object; function calls `.map()` directly on its argument
-- Fix: `src/app/facilitator/generator/page.js` — `buildValidationChangeRequest(validation)` ? `buildValidationChangeRequest(validation.issues)`
+- Fix: `src/app/facilitator/generator/page.js` ï¿½ `buildValidationChangeRequest(validation)` ? `buildValidationChangeRequest(validation.issues)`
 
-### 2026-02-27 — Lesson generated with warnings / Missing file or changeRequest
+### 2026-02-27 ï¿½ Lesson generated with warnings / Missing file or changeRequest
 - Root cause: generator sent `changes` in POST body but `/api/facilitator/lessons/request-changes` destructures `changeRequest`  
-- Fix: `src/app/facilitator/generator/page.js` — renamed field `changes` ? `changeRequest` in request body
+- Fix: `src/app/facilitator/generator/page.js` ï¿½ renamed field `changes` ? `changeRequest` in request body
 
-### 2026-02-27 — Generated lesson not appearing in calendar after scheduling
+### 2026-02-27 ï¿½ Generated lesson not appearing in calendar after scheduling
 - Root cause (1): `loadSchedule` filtered out past-date+uncompleted lessons, hiding intentionally-scheduled entries for past/same-day dates
 - Root cause (2): `onGenerated` callback passed no data; calendar had to wait for `loadSchedule` to complete before showing the new lesson (race condition)
 - Fix (1): Removed `if (isPast && !completed && !completionLookupFailed) return` filter from `calendar/page.js`; all entries in `lesson_schedule` table now always display

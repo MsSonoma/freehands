@@ -178,6 +178,21 @@ export class TimerService {
             }));
           } catch {}
         }
+
+        // Immediately broadcast an updated tick so the session clock (which is
+        // driven by playTimerTick events) reflects the new limit right away —
+        // rather than waiting up to 1 second for the next interval tick, or
+        // never updating when the timer is paused.
+        if (phase === this.currentPlayPhase && !timer.expired) {
+          const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
+          this.eventBus.emit('playTimerTick', {
+            phase,
+            elapsed: timer.elapsed,
+            remaining,
+            formatted: this.#formatTime(timer.elapsed),
+            remainingFormatted: this.#formatTime(remaining)
+          });
+        }
       }
     } catch {}
   }
