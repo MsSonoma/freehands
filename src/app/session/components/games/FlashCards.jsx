@@ -625,7 +625,7 @@ export default function FlashCards({ onBack }) {
           <div
             style={{
               width: 'min(360px, 92vw)',
-              height: 'min(520px, 62vh)',
+              height: 'min(520px, 50dvh)',
               border: '2px solid #e5e7eb',
               borderRadius: 18,
               background: '#fff',
@@ -672,6 +672,9 @@ export default function FlashCards({ onBack }) {
             ref={inputRef}
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
+            onFocus={() => {
+              setTimeout(() => inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
+            }}
             placeholder="Type your answer"
             style={{
               flex: 1,

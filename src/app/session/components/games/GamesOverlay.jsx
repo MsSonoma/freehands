@@ -99,7 +99,7 @@ export default function GamesOverlay({ onClose, playTimer }) {
             borderRadius: 16,
             maxWidth: 600,
             width: '90%',
-            maxHeight: '90vh',
+            maxHeight: '90dvh',
             overflow: 'auto',
             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
             position: 'relative',
