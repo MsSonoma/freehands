@@ -5647,8 +5647,12 @@ function SessionPageV2Inner() {
     setIsMuted(newMuted);
   };
   
-  // Skip current TTS playback ONLY - does NOT skip the question itself.
-  // The button is a TTS skip (stop Ms. Sonoma's current sentence); the question stays.
+  // Skip current TTS playback ONLY — NEVER call phase.skip() here.
+  // This is a TTS/audio skip: it stops Ms. Sonoma's current sentence so the user
+  // doesn't have to listen to the full read-aloud. The question remains on screen
+  // and the student must still answer it.
+  // !! DO NOT add phase.skip() / skipComprehension / skipExerciseQuestion / etc. !!
+  // Those call phase.skip() which records a null answer and advances the question — wrong.
   const skipTTS = () => {
     if (!audioEngineRef.current) return;
     if (askExitSpeechLockRef.current) return;
