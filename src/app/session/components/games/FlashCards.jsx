@@ -103,6 +103,29 @@ export default function FlashCards({ onBack }) {
   const saveTimerRef = useRef(null);
   const lastSavedSigRef = useRef('');
 
+  // Track the actual visible-viewport height so the card screen resizes when the
+  // iOS keyboard opens (visualViewport.height shrinks; layout viewport / dvh do not).
+  // Also track offsetTop: on iOS, position:fixed is relative to the layout viewport;
+  // visualViewport.offsetTop tells us how far the visual viewport has scrolled/panned.
+  const [vpHeight, setVpHeight] = useState(() =>
+    typeof window !== 'undefined' ? (window.visualViewport?.height ?? window.innerHeight) : 800
+  );
+  const [vpOffsetTop, setVpOffsetTop] = useState(0);
+  useEffect(() => {
+    const vp = window.visualViewport;
+    if (!vp) return;
+    const onResize = () => {
+      setVpHeight(vp.height);
+      setVpOffsetTop(vp.offsetTop);
+    };
+    vp.addEventListener('resize', onResize);
+    vp.addEventListener('scroll', onResize);
+    return () => {
+      vp.removeEventListener('resize', onResize);
+      vp.removeEventListener('scroll', onResize);
+    };
+  }, []);
+
   const clearCardAnimTimers = () => {
     try {
       const timers = Array.isArray(cardAnimTimersRef.current) ? cardAnimTimersRef.current : [];
@@ -571,13 +594,20 @@ export default function FlashCards({ onBack }) {
   return (
     <div
       style={{
-        height: '100dvh',
+        height: vpHeight,
         display: 'flex',
         flexDirection: 'column',
         padding: '12px 16px',
         maxWidth: 720,
         margin: '0 auto',
         boxSizing: 'border-box',
+        // Anchor to visual viewport: on iOS, position:fixed is layout-viewport-relative
+        // so we offset by visualViewport.offsetTop to follow the panned visual area.
+        position: 'fixed',
+        top: vpOffsetTop,
+        left: 0,
+        right: 0,
+        overflow: 'hidden',
       }}
     >
       <style>{`
