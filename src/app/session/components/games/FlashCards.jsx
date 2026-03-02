@@ -58,6 +58,17 @@ function getDefaultTopicId() {
   return MATH_FLASHCARD_TOPICS[0]?.id || 'addition';
 }
 
+// Choose the right mobile keyboard for each topic.
+// 'numeric'  → plain numpad (integers only)
+// 'decimal'  → numpad + decimal point
+// 'text'     → full keyboard (fractions need the '/' key)
+function getInputMode(topicId) {
+  if (!topicId) return 'numeric';
+  if (topicId.startsWith('fractions')) return 'text';
+  if (topicId.startsWith('decimals')) return 'decimal';
+  return 'numeric';
+}
+
 function makeSeed(learnerId, subjectId, topicId, stage) {
   // Deterministic seed per (learner, subject, topic, stage)
   // Ensures decks are stable across sessions until stage changes.
@@ -763,6 +774,7 @@ export default function FlashCards({ onBack }) {
             onFocus={() => {
               setTimeout(() => inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
             }}
+            inputMode={getInputMode(topicId)}
             placeholder="Answer"
             style={{
               flex: 1,
