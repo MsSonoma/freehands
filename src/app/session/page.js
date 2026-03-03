@@ -9585,7 +9585,12 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
         {Array.isArray(items) && items.length > 0 ? (
           <>
           {items.map((s, idx) => {
-            const text = (s && typeof s.text === 'string') ? s.text : '';
+            const rawText = (s && typeof s.text === 'string') ? s.text : '';
+            // Strip markdown bold/italic markers (GPT sometimes outputs **word**)
+            const text = rawText
+              .replace(/\*\*([^*]+)\*\*/g, '$1')
+              .replace(/\*([^*]+)\*/g, '$1')
+              .replace(/_([^_]+)_/g, '$1');
             if (text === '\n') {
               return <div key={idx} data-idx={idx} style={{ height: 6 }} />;
             }
@@ -9616,10 +9621,10 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
                 }
               } catch {}
             }
-            // Build highlighted parts when in Discussion and vocab terms exist; skip for user lines and MC renders
+            // Bold vocab terms in all phases — no phase restriction
             let highlighted = null;
             try {
-              if (!mcRender && s.role !== 'user' && (phase === 'discussion' || phase === 'teaching') && text) {
+              if (!mcRender && s.role !== 'user' && text) {
                 const terms = Array.isArray(vocabTerms) ? vocabTerms.filter(Boolean).map(t => String(t).trim()).filter(Boolean) : [];
                 if (terms.length) {
                   const esc = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

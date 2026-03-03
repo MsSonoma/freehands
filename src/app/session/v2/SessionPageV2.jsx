@@ -1025,7 +1025,15 @@ function SessionPageV2Inner() {
   // Vocab terms for caption highlighting (Discussion/Teaching)
   const vocabTerms = useMemo(() => {
     if (!lessonData) return [];
-    const normalizeList = (arr = []) => (Array.isArray(arr) ? arr : []).map((t) => String(t || '').trim()).filter(Boolean);
+    // Vocab entries may be plain strings OR objects like { term, word, name, definition }
+    const normalizeList = (arr = []) => (Array.isArray(arr) ? arr : [])
+      .map((t) => {
+        if (!t) return '';
+        if (typeof t === 'string') return t.trim();
+        // Object shape: prefer .term, then .word, then .name
+        return String(t.term || t.word || t.name || '').trim();
+      })
+      .filter(Boolean);
     const explicit = normalizeList(lessonData.vocabulary || lessonData.vocab || lessonData.vocab_terms);
     const fallback = (() => {
       const rawTitle = String(lessonData.title || lessonId || '').trim();
