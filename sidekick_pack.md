@@ -6,12 +6,26 @@ Mode: standard
 
 Prompt (original):
 ```text
-vocab words bold captions TTS text display caption rendering
+video initialization race condition Start Over button lesson restart snapshot early init order of operations
 ```
 
 Filter terms used:
 ```text
-TTS
+video
+initialization
+race
+condition
+Start
+Over
+button
+lesson
+restart
+snapshot
+early
+init
+order
+of
+operations
 ```
 # Context Pack
 
@@ -25,7 +39,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-TTS
+video initialization race condition Start Over button lesson restart snapshot early init order of operations
 
 ## Forced Context
 
@@ -33,517 +47,1048 @@ TTS
 
 ## Ranked Evidence
 
-### 1. src/app/session/page.js (bfbdd9279e12e335171b2c26363c6898c2fb7f8e3418393d46892cfe06dd385c)
-- bm25: -5.4112 | entity_overlap_w: 3.90 | adjusted: -6.3862 | relevance: 1.0000
+### 1. docs/brain/session-takeover.md (14df12c7a62937c86813110078060032d35e8d76727c3cdc51c2526a532981bb)
+- bm25: -22.3327 | relevance: 1.0000
 
-// isSpeaking/phase/subPhase defined earlier; do not redeclare here
-  const [transcript, setTranscript] = useState("");
-  // Start with loading=true so the existing overlay spinner shows during initial restore
-  const [loading, setLoading] = useState(true);
-  // TTS overlay: track TTS fetch activity separately; overlay shows when either API or TTS is loading
-  const [ttsLoadingCount, setTtsLoadingCount] = useState(0);
-  const overlayLoading = loading || (ttsLoadingCount > 0);
+**DO NOT USE:**
+- Separate timer persistence API calls
+- Timer state in localStorage independent of snapshots
+- Race condition checks between timer updates and snapshot saves
 
-### 2. src/app/session/page.js (53174fc6cc851fc03308dde6cd0042bc9a832ed884e113a196bdce5bcd777966)
-- bm25: -4.7902 | entity_overlap_w: 5.20 | adjusted: -6.0902 | relevance: 1.0000
+### 2. docs/brain/v2-architecture.md (8ec1e8e7ff11b868bda1adcbf7227de9eee5ed57674484e751d290fd80163f9f)
+- bm25: -21.8204 | relevance: 1.0000
 
-// Helper: speak arbitrary frontend text via unified captions + TTS
-  // (defined here after playAudioFromBase64 is available, and updates the ref for early callbacks)
-  const speakFrontendImpl = useCallback(async (text, opts = {}) => {
+**Post-audit UX/telemetry fixes (2026-01-01)**
+- Teaching controls (Next/Repeat/Restart/Skip) are anchored in the fixed footer instead of overlaid on the video to match V1 footer placement and avoid covering the video.
+- All Q&A phase controls (Comprehension, Exercise, Worksheet, Test) are anchored in the fixed footer (answer input or MC/TF quick buttons + submit/skip) and must not render as on-video overlays.
+- `captionChange` payloads from HTMLAudio now emit `{ index, text }`, keeping transcript rendering consistent with WebAudio/Synthetic paths.
+- Session timer interval is bound to the TimerService instance, ensuring `sessionTimerTick` events fire and the on-screen timer advances.
+- HTMLAudio path emits the first caption immediately so transcripts populate as soon as playback starts (no blank transcript on first line).
+- AudioEngine replays the current caption immediately on `captionChange` subscription so the transcript works even if playback starts before the UI attaches listeners.
+- AudioEngine falls back to Synthetic playback (caption scheduling only) when both HTMLAudio and WebAudio playback fail (e.g., invalid base64, decode errors), so transcripts still populate and sessions can proceed even when TTS audio cannot be decoded.
+- Captions/transcripts are rendered only in the transcript panel (no on-video caption overlay).
+- Fixed AudioEngine initialization race: AudioEngine now retries initialization until the video element ref is available, preventing the Discussion phase Begin button from getting stuck on "Loading..." due to a one-shot effect returning early.
+- Teaching phase no longer auto-plays the first sentence; audio waits for the learner's first Next/Repeat click (V1 pacing gate).
+- SnapshotService now automatically falls back to localStorage when Supabas
+
+### 3. docs/brain/snapshot-persistence.md (21a8bbfae35597a8c397e2fce48a68622e36d63147cd8c10ac34190f362ea5ff)
+- bm25: -19.6202 | relevance: 1.0000
+
+**Start Over button:**
+- Confirms with user (cannot be reversed)
+- Calls `snapshotServiceRef.current.deleteSnapshot()` to clear localStorage and database
+- Calls `timerServiceRef.current.reset()` to clear timer Maps and remove all `session_timer_state:{lessonKey}:*` keys
+- Clears `resumePhase` state **and** `resumePhaseRef` to null (prevents stale closure values)
+- Calls `startSession({ ignoreResume: true })` which forces a fresh start from discussion/teaching (no resume)
+
+**Resume phase source of truth:** `startSession` reads `resumePhaseRef.current` so it always uses the latest loaded snapshot. Call sites that should never resume (Start Over, PlayTimeExpired overlay auto-start) pass `{ ignoreResume: true }` so they cannot jump to a saved phase accidentally. Resume normalization now derives the furthest saved phase from `currentPhase`, `completedPhases`, and `phaseData` keys, preferring the latest valid phase order (discussion → teaching → comprehension → exercise → worksheet → test → closing). Aliases `grading`/`congrats` map to `test`, and `complete` maps to `closing` before ranking.
+
+**Teaching resume state applied:** SessionPageV2 now passes `snapshot.phaseData.teaching` (stage, sentenceIndex, isInSentenceMode, vocabSentences, exampleSentences) into TeachingController so Resume lands on the exact teaching sentence and gate state instead of restarting definitions/examples.
+
+### 4. src/app/session/page.js (4a89fc25fa89536d97056d55dd151840db0f1ebfccbf5162d219c1e3023fdd64)
+- bm25: -18.6215 | relevance: 1.0000
+
+// Preload video on mount to avoid race condition on Begin
+  useEffect(() => {
     try {
-      const mcLayout = opts && typeof opts === 'object' ? (opts.mcLayout || 'inline') : 'inline';
-      const noCaptions = !!(opts && typeof opts === 'object' && opts.noCaptions);
-      let sentences = splitIntoSentences(text);
-      sentences = mergeMcChoiceFragments(sentences, mcLayout).map((s) => enforceNbspAfterMcLabels(s));
-      const assistantSentences = mapToAssistantCaptionEntries(sentences);
-      // When noCaptions is set (e.g., resume after refresh), do not mutate caption state
-      // so the transcript on screen does not duplicate. Still play TTS.
-      let startIndexForBatch = 0;
-      if (!noCaptions) {
-        const prevLen = captionSentencesRef.current?.length || 0;
-        const nextAll = [...(captionSentencesRef.current || []), ...assistantSentences];
-        captionSentencesRef.current = nextAll;
-        setCaptionSentences(nextAll);
-        setCaptionIndex(prevLen);
-        startIndexForBatch = prevLen;
-      } else {
-        // Keep current caption index; batch will be empty so no scheduling occurs
-        try { startIndexForBatch = Number(captionIndexRef.current || 0); } catch { startIndexForBatch = 0; }
+      if (videoRef.current) {
+        // Trigger video load immediately
+        videoRef.current.load();
+        
+        // Track video playing state for Chrome autoplay coordination
+        const video = videoRef.current;
+        const onPlay = () => {
+          videoPlayingRef.current = true;
+        };
+        const onPause = () => {
+          videoPlayingRef.current = false;
+        };
+        const onEnded = () => {
+          videoPlayingRef.current = false;
+        };
+        
+        video.addEventListener('play', onPlay);
+        video.addEventListener('playing', onPlay);
+        video.addEventListener('pause', onPause);
+        video.addEventListener('ended', onEnded);
+        
+        return () => {
+          video.removeEventListener('play', onPlay);
+          video.removeEventListener('playing', onPlay);
+          video.removeEventListener('pause', onPause);
+          video.removeEventListener('ended', onEnded);
+        };
       }
-      let dec = false;
+    } catch (e) {
+      // Silent error handling
+    }
+  }, []);
+
+### 5. docs/brain/snapshot-persistence.md (45bc77a7e30d58131759caf542bc68bf11c86d57594f5691eeaa687086e61a57)
+- bm25: -18.2484 | relevance: 1.0000
+
+Initialization now fails loudly when identity is missing: SnapshotService construction is wrapped in try/catch, and `snapshotLoaded` is set in a `finally` so Begin gating does not hang. Missing `lessonKey`/`learnerId` surfaces as an error instead of silently starting over.
+
+### 6. docs/brain/snapshot-persistence.md (d9e58e922bd58bed557959d4d85289d99d87d9c9b473ae1781ccd0bdf66ec27f)
+- bm25: -17.5309 | relevance: 1.0000
+
+### V2 Resume Flow
+On session load:
+1. **SnapshotService.initialize()** loads existing snapshot during mount effect (async)
+2. If snapshot found:
+   - Sets `resumePhase` state to `snapshot.currentPhase`
+  - Displays Resume and Start Over buttons in footer when `resumePhase` is not at beginning (not idle/discussion)
+3. If no snapshot or snapshot at beginning:
+   - Shows normal Begin button
+4. Sets `snapshotLoaded` to true when load completes
+
+**Phase auto-start on resume:** When resuming into any Q&A phase (comprehension/exercise/worksheet/test), the phase instance is created and immediately started if snapshot data exists for that phase. This bypasses the intermediate Begin button (which visually sits before opening actions) and restores the learner directly to the in-phase state (intro/Go or current question). Pending play timers start as well so tickers and timer badges do not flash 0/X on refresh.
+
+**Ticker seeding on resume:** When snapshot data exists for a Q&A phase, the counters and current question are pre-seeded from the saved arrays and indices before the phase starts. This keeps the question ticker/progress display accurate immediately after a refresh (no temporary 0/X) even before the next answer is submitted.
+
+**Begin gating:** The top-level Begin button is disabled until both `audioReady` and `snapshotLoaded` are true, preventing a refresh race where the user can start a fresh session before the snapshot finishes loading.
+
+### 7. docs/brain/v2-architecture.md (985974160a35136c392a236c5b8f254c23354ebffcf78b830174ed102767bd67)
+- bm25: -17.2578 | relevance: 1.0000
+
+**Race Condition Fix (2026-01-03):**
+When user presses Next/Skip during intro audio (e.g., "First let's go over some definitions"), the GPT content may not be ready yet. Fixed with async content awaiting:
+
+**Stage Machine:**
+- `idle` → `loading-definitions` → `definitions` → `loading-examples` → `examples` → `complete`
+- Loading stages (`loading-definitions`, `loading-examples`) track when intro is playing and GPT is being fetched
+
+**nextSentence() / repeatSentence() Async Behavior:**
+- If called during `loading-definitions`: stops intro audio, awaits `#ensureDefinitionsLoaded()`, sets stage to `definitions`, plays first sentence
+- If called during `loading-examples`: stops intro audio, awaits `#ensureExamplesLoaded()`, sets stage to `examples`, plays first sentence
+- Emits `'loading'` event when awaiting GPT (UI can show spinner if needed)
+
+**Double-Load Prevention:**
+- `#startDefinitions()` checks if stage changed during intro (user already triggered nextSentence)
+- If stage changed, content is already loaded and playing - exits early to avoid double-load
+- Same pattern in `#startExamples()`
+
+### 8. src/app/session/page.js (f57be4543fd763ba51645d60c9bee10dfe17fefdfd6f606dc5b2ddd7303f5af6)
+- bm25: -14.7598 | relevance: 1.0000
+
+// Session was already started during early conflict check
+    // Skip redundant session start here to avoid double-starting
+    // The early conflict check (before snapshot restore) already called startTrackedSession
+    console.log('[SESSION] Session already started during early conflict check, skipping duplicate start');
+
+// Immediately update UI so it feels responsive
+    setShowBegin(false);
+    setPhase("discussion");
+    setPhaseGuardSent({});
+    setSubPhase("unified-discussion");
+    setCanSend(false);
+  try { scheduleSaveSnapshot('begin-discussion'); } catch {}
+
+// Start the discussion play timer
+    startPhasePlayTimer('discussion');
+
+// Non-blocking: load targets in the background
+    // so Opening can start speaking right away.
+    (async () => {
       try {
-        // Check cache first
-        let b64 = ttsCache.get(text);
-        
-        if (b64) {
-          console.log('[TTS CACHE HIT]', text.substring(0, 50));
-        } else {
-          console.log('[TTS CACHE MISS]', text.substring(0, 50));
-        }
-        
-        if (!b64) {
-          // Cache miss - fetch from API
-          setTtsLoadingCount((c) => c + 1
+        await ensureRuntimeTargets(true); // Force fresh reload of targets
+        ensureBaseSessionSetup();
+        // REMOVED: ephemeral question set generation - now done atomically during lesson load
+        // All 4 arrays (comprehension, exercise, worksheet, test) generated together or restored together
+      } catch (e) {
+        // ensureRuntimeTargets failed
+      }
+    })();
 
-### 3. src/app/api/tts/route.js (d93cecdec713c348f16222463b4ea44f88d56f49da5d9180865cc5c62e2ac630)
-- bm25: -5.1002 | entity_overlap_w: 2.60 | adjusted: -5.7502 | relevance: 1.0000
+// Kick off the Opening immediately (does its own loading state for TTS)
+    await startDiscussionStep();
+  };
 
-// Simple TTS-only route: synthesize provided text to MP3 base64 using Google Cloud TTS
-// Reuses the same credential loading approach as /api/sonoma
-
-import { NextResponse } from 'next/server'
-import fs from 'node:fs'
-import path from 'node:path'
-import textToSpeech from '@google-cloud/text-to-speech'
-
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-
-const { TextToSpeechClient } = textToSpeech
-let ttsClientPromise
-
-const DEFAULT_VOICE = {
-  languageCode: 'en-GB',
-  name: 'en-GB-Neural2-F',
-  ssmlGender: 'FEMALE'
-}
-
-const AUDIO_CONFIG = {
-  audioEncoding: 'MP3',
-  speakingRate: 0.92
-}
-
-function decodeCredentials(raw) {
-  if (!raw) return null
-  try { return JSON.parse(raw) } catch {}
-  try { const decoded = Buffer.from(raw, 'base64').toString('utf8'); return JSON.parse(decoded) } catch {}
-  return null
-}
-
-function loadTtsCredentials() {
-  const inline = process.env.GOOGLE_TTS_CREDENTIALS
-  const inlineCreds = decodeCredentials(inline)
-  if (inlineCreds) return inlineCreds
-  const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(process.cwd(), 'google-tts-key.json')
-  try {
-    if (credentialPath && fs.existsSync(credentialPath)) {
-      const raw = fs.readFileSync(credentialPath, 'utf8').trim()
-      if (raw) return decodeCredentials(raw) || JSON.parse(raw)
-    }
-  } catch (err) {
-    // Failed to load Google credentials
-  }
-  return null
-}
-
-### 4. docs/brain/ms-sonoma-teaching-system.md (a4cd628a3ea6f93deb0a26acad8137200825707078575f9b6d681391de3d7af7)
-- bm25: -4.9819 | entity_overlap_w: 2.60 | adjusted: -5.6319 | relevance: 1.0000
-
-### Hotkey Behavior
-
-- Default bindings: Skip = PageDown; Next Sentence = End; Repeat = PageUp.
-- Teaching gate Next Sentence hotkey (PageDown) only fires after TTS finishes or has been skipped; while speech is active the key is ignored.
-- Skip still routes through the central speech abort to halt TTS before advancing.
-
-### Teaching Gate Flow
-
-### 5. docs/brain/v2-architecture.md (bc99e4b71f540c7bf37fdef5f564161060387111ec7a1c9304f9cd3ccfe6fd49)
-- bm25: -4.5523 | entity_overlap_w: 3.90 | adjusted: -5.5273 | relevance: 1.0000
-
-**Retry + Rate Limit Handling:**
-- If GPT returns 429, TeachingController enters a cooldown and produces a deterministic "wait then press Next" sentence
-- If GPT returns 500+ (or the fetch throws), TeachingController shows a generic server error message (not rate limit)
-- When a non-429 error message is shown, the next Next/Repeat/Restart action triggers an actual retry fetch (instead of advancing past the error sentence and effectively skipping the stage)
-- Next/Repeat/Restart must not spam GPT requests during cooldown
-- Public methods called without `await` (Repeat/Skip/Restart) must not generate unhandled promise rejections
-
-**Environment Variable Requirements:**
-- At least one LLM provider key must be configured: `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
-- Google TTS requires: `GOOGLE_APPLICATION_CREDENTIALS` (path to JSON file) or `GOOGLE_TTS_CREDENTIALS` (inline JSON or base64)
-- Dev server must be restarted after adding/changing `.env.local` to load new environment variables
-- Missing keys cause 500 errors (not 429s); TeachingController now distinguishes these in user-facing messages
-
-**Gate Prompt Flow (uses prefetched content):**
-1. Speak "Do you have any questions?" (TTS prefetched)
-2. Await prefetched GPT result (usually instant)
-3. Speak GPT-generated sample questions (TTS prefetched)
-4. Fallback if GPT failed: deterministic questions using lesson title
-
-**Exposes:**
-- `prefetchAll()` - start all background prefetches (call on Begin)
-- `startTeaching(lessonData)`
-- `advanceSentence()`
-- `repeatSentence()`
-- `skipToExamples()`
-- Events: `onStageChange`, `onSentenceAdvance`, `onTeachingComplete`
-
-### 6. src/app/api/counselor/route.js (86a4ead5f24d3e066223ffc9afb48afe1a5b76912ee87576c502487a9e7cd4eb)
-- bm25: -4.8665 | entity_overlap_w: 2.60 | adjusted: -5.5165 | relevance: 1.0000
-
-function loadTtsCredentials() {
-  const inline = process.env.GOOGLE_TTS_CREDENTIALS
-  const inlineCreds = decodeCredentials(inline)
-  if (inlineCreds) return inlineCreds
-
-const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(process.cwd(), 'google-tts-key.json')
-  try {
-    if (credentialPath && fs.existsSync(credentialPath)) {
-      const raw = fs.readFileSync(credentialPath, 'utf8').trim()
-      if (raw) return decodeCredentials(raw) || JSON.parse(raw)
-    }
-  } catch (fileError) {
-    // Credentials load failed - TTS will be unavailable
-  }
-  return null
-}
-
-async function getTtsClient() {
-  if (ttsClientPromise) return ttsClientPromise
-
-const credentials = loadTtsCredentials()
-  if (!credentials) {
-    // No credentials - voice playback disabled
-    return null
-  }
-
-ttsClientPromise = (async () => {
+// Helper: get teaching notes from the loaded lesson (if present)
+  const getTeachingNotes = useCallback(() => {
     try {
-      return new TextToSpeechClient({ credentials })
-    } catch (error) {
-      // TTS client init failed
-      ttsClientPromise = undefined
-      return null
+      const tn = lessonData?.teachingNotes || lessonData?.teacherNotes || lessonData?.notes;
+      const s = typeof tn === 'string' ? tn.trim() : '';
+      return s || '';
+    } catch {
+      return '';
     }
-  })()
+  }, [lessonData]);
 
-ttsClientPromise.catch(() => { ttsClientPromise = undefined })
-  return ttsClientPromise
-}
+### 9. docs/brain/snapshot-persistence.md (cae4084ba5cfb06fad9433ab2591a046d3510a7955ef5e19123de0d42a650a18)
+- bm25: -14.5305 | relevance: 1.0000
 
-function createCallId() {
-  const timePart = Date.now().toString(36)
-  const randomPart = Math.random().toString(36).slice(2, 8)
-  return `${timePart}-${randomPart}`
-}
+**Question set persistence (all Q&A phases):** Comprehension, Exercise, Worksheet, and Test question arrays are built once, saved to the assessment store (localStorage + Supabase), and reused on refresh/restart/resume. Snapshot `*-init` writes keep the same arrays and indices in `phaseData` so per-question snapshots align with the stored sets. Sets are only cleared in two cases: (1) the facilitator taps the red “Refresh” item in the hamburger menu (ms:print:refresh), which clears assessments and the snapshot, or (2) the lesson completes (sessionComplete), which clears assessments for a fresh next run. No other code path regenerates question arrays, preventing mismatches between printed worksheets/tests and in-session prompts.
 
-function pushToolLog(toolLog, entry) {
-  if (!Array.isArray(toolLog)) return
-  const message = buildToolLogMessage(entry?.name, entry?.phase, entry?.context)
-  if (!message) return
-  toolLog.push({
-    id: entry?.id || createCallId(),
-    timestamp: Date.now(),
-    name: entry?.name,
-    phase: entry?.phase,
-    message,
-    context: entry?.context || {}
-  })
-}
+### 10. src/app/session/v2/SessionPageV2.jsx (648f14c9f9ca255b06665f1cba4cbc1582716d50b4cf2a26245b063e61cc3e83)
+- bm25: -14.2692 | relevance: 1.0000
 
-### 7. src/app/api/tts/route.js (e002370821c02fd74a3b21a7cfdc26d6eeab4d1e1502ed187ecb5a8381574021)
-- bm25: -5.1069 | entity_overlap_w: 1.30 | adjusted: -5.4319 | relevance: 1.0000
-
-async function getTtsClient() {
-  if (ttsClientPromise) return ttsClientPromise
-  const credentials = loadTtsCredentials()
-  if (!credentials) {
-    // Google TTS credentials not configured
-    return null
-  }
-  ttsClientPromise = (async () => {
-    try { return new TextToSpeechClient({ credentials }) } catch (e) {
-      // Failed to init client
-      ttsClientPromise = undefined; return null
+if (forceFresh) {
+      timelineJumpForceFreshPhaseRef.current = null;
     }
-  })()
-  ttsClientPromise.catch(() => { ttsClientPromise = undefined })
-  return ttsClientPromise
-}
-
-### 8. src/app/session/v2/TeachingController.jsx (cd903932d69c019531594d7f3ad425c158d1999a6659b77363e9aaa89296d3fa)
-- bm25: -4.3843 | entity_overlap_w: 3.90 | adjusted: -5.3593 | relevance: 1.0000
-
-if (this.#prefetchStarted) {
-      console.log('[TeachingController] Prefetch already started - skipping');
-      return;
+    return true;
+  };
+  
+  // Start worksheet phase
+  const startWorksheetPhase = () => {
+    console.log('[SessionPageV2] startWorksheetPhase called');
+    console.log('[SessionPageV2] startWorksheetPhase audioEngineRef:', !!audioEngineRef.current);
+    if (!audioEngineRef.current || !lessonData) {
+      console.log('[SessionPageV2] startWorksheetPhase - guard failed, returning early');
+      return false;
     }
-    this.#prefetchStarted = true;
-    
-    // Start definitions GPT (don't await) - then prefetch TTS for first few sentences.
-    // IMPORTANT: Stagger downstream GPT calls to reduce 429 risk.
-    // Prefetch promises should never produce unhandled rejections.
-    this.#definitionsGptPromise = this.#fetchDefinitionsFromGPT()
-      .then(sentences => {
-        // Prefetch TTS for first 3 definition sentences
-        sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
-        return sentences;
-      })
-      .catch(err => {
-        console.error('[TeachingController] Definitions prefetch error:', err);
-        return [];
-      });
-    
-    // Start examples GPT after definitions completes + 4 second delay (rate limit safety).
-    this.#examplesGptPromise = this.#definitionsGptPromise
-      .catch(() => [])
-      .then(() => new Promise(resolve => setTimeout(resolve, 4000)))
-      .then(() => this.#fetchExamplesFromGPT())
-      .then(sentences => {
-        // Prefetch TTS for first 3 example sentences
-        sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
-        return sentences;
-      })
-      .catch(err => {
-        console.error('[TeachingController] Examples prefetch error:', err);
-        return [];
-      });
-    
-    // Gate prompts are nice-to-have; fetch them after their parent content + 2s delay each.
-    this.#definitionsGatePromptPromise = this.#definitionsGptPromise
-      .catch(() => [])
-      .then(() => new Promise(resolve => setTimeout(resolve, 2000)))
-      .then(() => this.#fetchGatePromptFromGPT('definitions'))
-      .then(text => {
-      if (text) ttsCache.prefetch(text);
-      return text;
-    });
-    
-    t
+    if (!learnerProfile) {
+      addEvent('⏸️ Learner not loaded yet - delaying worksheet init');
+      return false;
+    }
 
-### 9. src/app/facilitator/generator/counselor/CounselorClient.jsx (eeee8bf62119b0a3950c8ae02dfea3b24db32aa02bec35def65e5acb416bfe08)
-- bm25: -4.5664 | entity_overlap_w: 2.60 | adjusted: -5.2164 | relevance: 1.0000
+### 11. docs/brain/timer-system.md (cf69c7c5147d370c19d2f265cc0927d39c4a76469db0eb8300c73e80dbae02ad)
+- bm25: -14.0131 | relevance: 1.0000
 
-interceptResult.response = `Ok. I\'m opening the Lesson Planner and generating a ${action.durationMonths}-month plan starting ${action.startDate}.`
-          }
+**Persistence:**
+- `serialize()` includes playTimers state (phase, elapsed, timeLimit, expired)
+- `restore()` resumes play timers from snapshot (recalculates startTime from elapsed)
+- `#saveToSessionStorage()` saves currentPlayPhase, playTimerElapsed, playTimerExpired
+- `#loadFromSessionStorage()` restores play timer and resumes tick interval if not expired
+
+### Timer State Persistence
+
+**Authoritative source (V2):** `TimerService` state is the source of truth and is persisted/restored via SnapshotService (`snapshot.timerState`).
+
+**Timer state must be saved continuously (V2):**
+- Relying only on "one-off" snapshot saves (e.g., on Go, or on overlay actions) causes timers to reset to the full limit on refresh.
+- Session V2 must persist `timerState` on a cadence while timers are running so refresh resumes from near-current elapsed time.
+- Implementation: SessionPageV2 subscribes to TimerService events and snapshot-saves `timerState`:
+  - On `playTimerStart`, `workPhaseTimerStart`, and `playTimerExpired` (immediate)
+  - On `playTimerTick` and `workPhaseTimerTick` (throttled; currently ~10s)
+  - On `visibilitychange` when the tab is hidden, and on `beforeunload`
+
+**SessionStorage is a mirror (not authoritative):**
+- Key pattern: `session_timer_state:{lessonKey}:{phase}:{mode}`
+- Keys are written on each tick by TimerService.
+- Keys must be cleared for the whole lesson on reset/start-over to avoid stale timers (especially discussion work timers) reappearing after restart.
+
+**Authoritative edits (facilitator overlay):**
+- TimerControlOverlay must not mutate `session_timer_state:*` directly because TimerService overwrites these keys every second.
+- Authoritative add/subtract time must go through TimerService so phase transitions and the UI stay in sync.
+
+### 12. docs/brain/session-takeover.md (d2a5b9236d4e3241d8f4e67037d76d49d3dbd2ded9acab697c6da918d63a12a1)
+- bm25: -13.5044 | relevance: 1.0000
+
+- `src/app/lib/sessionTracking.js` - Session lifecycle (start/end/events), NO polling logic
+- `src/app/session/sessionSnapshotStore.js` - Snapshot save with conflict detection, takeover trigger
+- `src/app/session/hooks/useSnapshotPersistence.js` - Snapshot payload with timer state, restore logic
+- `src/app/session/page.js` - PIN validation, takeover handler, session_id initialization
+- `src/app/session/components/SessionTakeoverDialog.jsx` - Takeover UI (already exists)
+
+### 13. docs/brain/snapshot-persistence.md (f0457970d961a840086588db5a8b8cce1d7171c4b615d5f358f49e242faf0609)
+- bm25: -13.1716 | relevance: 1.0000
+
+**Resume button:**
+- Hides Resume/Restart buttons
+- Calls `startSession()` which, when `resumePhase` is set, starts PhaseOrchestrator directly at that phase via `startSession({ startPhase: resumePhase })`
+- This avoids starting Discussion first and then skipping, because Discussion/Teaching can still complete later and override the manual skip.
+- Phase controller restores granular state from `snapshot.phaseData[phase]`
+- Timer state restored via `timerServiceRef.current.restoreState(snapshot.timerState)`
+
+### 14. src/app/session/v2/SessionPageV2.jsx (da3eab2385e310eb1361874ea3f0df07a857b24e4f20a8ba832ce25275f735df)
+- bm25: -13.0393 | relevance: 1.0000
+
+const startExercisePhase = () => {
+    console.log('[SessionPageV2] startExercisePhase called');
+    console.log('[SessionPageV2] startExercisePhase audioEngineRef:', !!audioEngineRef.current);
+    if (!audioEngineRef.current || !lessonData) {
+      console.log('[SessionPageV2] startExercisePhase - guard failed, returning early');
+      return false;
+    }
+    if (!learnerProfile) {
+      addEvent('⏸️ Learner not loaded yet - delaying exercise init');
+      return false;
+    }
+
+const forceFresh = timelineJumpForceFreshPhaseRef.current === 'exercise';
+
+const snapshot = snapshotServiceRef.current?.snapshot;
+    const savedExercise = forceFresh ? null : (snapshot?.phaseData?.exercise || null);
+    const savedExerciseQuestions = !forceFresh && Array.isArray(savedExercise?.questions) && savedExercise.questions.length ? savedExercise.questions : null;
+    if (savedExerciseQuestions && savedExerciseQuestions.length && (!generatedExercise || !generatedExercise.length)) {
+      setGeneratedExercise(savedExerciseQuestions);
+    }
+    const storedExerciseQuestions = !forceFresh && Array.isArray(generatedExercise) && generatedExercise.length ? generatedExercise : null;
+    
+    const exerciseTarget = savedExerciseQuestions ? savedExerciseQuestions.length : (storedExerciseQuestions ? storedExerciseQuestions.length : getLearnerTarget('exercise'));
+    if (!exerciseTarget) return false;
+    // Build exercise questions with 80/20 MC+TF vs SA+FIB blend
+    const questions = savedExerciseQuestions || storedExerciseQuestions || buildQuestionPool(exerciseTarget, []);
+    console.log('[SessionPageV2] startExercisePhase built questions:', questions.length);
+
+### 15. src/app/facilitator/generator/counselor/CounselorClient.jsx (3de73a5798e52532c1b01008d1268d358c6d644a2bb073fbfd8ed54370796a29)
+- bm25: -12.8351 | relevance: 1.0000
+
+// Save audio for repeat functionality
+      lastAudioRef.current = base64Audio
+
+const audio = new Audio(`data:audio/mp3;base64,${base64Audio}`)
+      audio.muted = muted
+      audio.volume = muted ? 0 : 1
+      audioRef.current = audio
+
+audio.onended = () => {
+        setIsSpeaking(false)
+        if (videoRef.current) {
+          videoRef.current.pause()
         }
-        
-        // Add interceptor response to conversation
-        const finalHistory = [
-          ...updatedHistory,
-          { role: 'assistant', content: interceptResult.response }
-        ]
-        setConversationHistory(finalHistory)
-        
-        // Display interceptor response in captions
-        setCaptionText(interceptResult.response)
-        const sentences = splitIntoSentences(interceptResult.response)
-        setCaptionSentences(sentences)
-        setCaptionIndex(0)
-        
-        // Play TTS for interceptor response (Mr. Mentor's voice)
-        setLoadingThought("Preparing response...")
+        if (buttonVideoRef.current) {
+          buttonVideoRef.current.pause()
+        }
+        audioRef.current = null
+      }
+
+audio.onerror = () => {
+        setIsSpeaking(false)
+        audioRef.current = null
+      }
+
+setIsSpeaking(true)
+      await audio.play()
+      
+      // Start video if available
+      if (videoRef.current) {
         try {
-          const ttsResponse = await fetch('/api/mentor-tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: interceptResult.response })
-          })
-          
-          if (ttsResponse.ok) {
-            const ttsData = await ttsResponse.json()
-            if (ttsData.audio) {
-              // Never block the UI on audio playback.
-              void playAudio(ttsData.audio)
-            }
-          }
-        } catch (err) {
-          // Silent TTS error - don't block UX
-        }
-        
-        setLoading(false)
-        setLoadingThought(null)
-        return
+          videoRef.current.play().catch(() => {})
+        } catch {}
       }
       
-      // Interceptor didn't handle - forward to API
-      setLoadingThought("Consulting my knowledge base...")
-      const forwardMessage = interceptResult.apiForward?.message || message
-      const finalForwardMessage = declineNote ? `${forwardMessage}\n\n${declineNote}` : forwardMessage
-      const forwardContext = interceptResult
-
-### 10. src/app/api/counselor/route.js (3295cbeb2bdc54ba0515b75298f3139c4aff4e07d4f05ab9793eee9770a865e3)
-- bm25: -4.5065 | entity_overlap_w: 2.60 | adjusted: -5.1565 | relevance: 1.0000
-
-// Helper function to synthesize audio with caching
-async function synthesizeAudio(text, logPrefix) {
-  let audioContent = undefined
-  
-  // Strip markdown formatting for TTS (keep text readable but remove syntax)
-  // Remove **bold**, *italic*, and other markdown markers
-  const cleanTextForTTS = text
-    .replace(/\*\*([^*]+)\*\*/g, '$1')  // Remove **bold**
-    .replace(/\*([^*]+)\*/g, '$1')      // Remove *italic*
-    .replace(/_([^_]+)_/g, '$1')        // Remove _underline_
-    .replace(/`([^`]+)`/g, '$1')        // Remove `code`
-    .replace(/^#+\s+/gm, '')            // Remove # headers
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Remove [links](url)
-  
-  // Check cache first (use cleaned text as key)
-  if (ttsCache.has(cleanTextForTTS)) {
-    audioContent = ttsCache.get(cleanTextForTTS)
-  } else {
-    const ttsClient = await getTtsClient()
-    if (ttsClient) {
-      try {
-        const ssml = toSsml(cleanTextForTTS)
-        const [ttsResponse] = await ttsClient.synthesizeSpeech({
-          input: { ssml },
-          voice: MENTOR_VOICE,
-          audioConfig: MENTOR_AUDIO_CONFIG
-        })
-        
-        if (ttsResponse?.audioContent) {
-          audioContent = typeof ttsResponse.audioContent === 'string'
-            ? ttsResponse.audioContent
-            : Buffer.from(ttsResponse.audioContent).toString('base64')
-          
-          // Cache with naive LRU
-          ttsCache.set(cleanTextForTTS, audioContent)
-          if (ttsCache.size > TTS_CACHE_MAX) {
-            const firstKey = ttsCache.keys().next().value
-            ttsCache.delete(firstKey)
-          }
-        }
-      } catch (ttsError) {
-        // TTS synthesis failed - will return undefined
+      // Start button video if available
+      if (buttonVideoRef.current) {
+        try {
+          buttonVideoRef.current.play().catch(() => {})
+        } catch {}
       }
+    } catch (err) {
+      // Silent error handling
+      setIsSpeaking(false)
     }
-  }
+  }, [muted])
+
+// Skip speech: stop audio and video, jump to end of response
+  const handleSkipSpeech = useCallback(() => {
+    // Stop audio
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause()
+        audioRef.current = null
+      } catch {}
+    }
+    
+    // Pause video
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause()
+      } catch {}
+    }
+    
+    // Pause button video
+    if (buttonVideoRef.current) {
+      try {
+        buttonVideoRef.current.pause()
+      } catch {}
+    }
+    
+    // Set speaking to false
+    setIsSpeaking(false)
+  }, [])
+
+### 16. src/app/session/page.js (9fa2ca1f62f5e7c5c8fb58aa1333d63c3c839bf2c376cdbe57cd2f7796d1bbaf)
+- bm25: -12.2716 | relevance: 1.0000
+
+// Start NEW session for this device to take over
+      if (typeof startTrackedSession === 'function') {
+        try {
+          const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+          const newSession = await startTrackedSession(browserSessionId, deviceName);
+          console.log('[SESSION TAKEOVER] Started new session:', newSession?.id);
+        } catch (startErr) {
+          console.error('[SESSION TAKEOVER] Failed to start new session:', startErr);
+        }
+      }
+
+// Clear localStorage to force fresh server snapshot load
+      const lsKey = `atomic_snapshot:${trackingLearnerId}:${normalizedLessonKey}`;
+      try {
+        localStorage.removeItem(lsKey);
+      } catch {}
+
+// Close dialog
+      setShowTakeoverDialog(false);
+      setConflictingSession(null);
+
+// Reload page to restore fresh state from server
+      window.location.reload();
+    } catch (err) {
+      throw err;
+    }
+  }, [trackingLearnerId, normalizedLessonKey, browserSessionId, conflictingSession, startTrackedSession]); // endTrackedSession not used, removed (TDZ fix)
+
+const handleCancelTakeover = useCallback(() => {
+    setShowTakeoverDialog(false);
+    setConflictingSession(null);
+    // User chose not to take over - redirect to learner dashboard
+    if (typeof window !== 'undefined') {
+      window.location.href = '/facilitator/learners';
+    }
+  }, []);
+
+### 17. src/app/session/page.js (0fbdbe074c646b0ae0b72244711b8cac4d11853efa56564250f1dbdd6f79adbc)
+- bm25: -12.1590 | relevance: 1.0000
+
+// (session snapshot hooks moved below test state initialization to avoid TDZ)
+
+### 18. docs/brain/snapshot-persistence.md (6f799d7afaab7f9b3ed3830fd2634632b03e89510dd0d6594971c7250a5b7c6c)
+- bm25: -12.0024 | relevance: 1.0000
+
+The prevention flag ensures no snapshot saves occur between clicking Complete Lesson and finishing cleanup. This prevents the lesson from showing "Continue" instead of "Start Lesson" on next visit.
+
+### 19. src/app/session/v2/SessionPageV2.jsx (1a44525d187a8fbbd6a89a1f15653011dfabc1ae31b0e6f6cb02c3d479ad032b)
+- bm25: -11.9045 | relevance: 1.0000
+
+if (askExitSpeechLockRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked while Ask exit reminder is speaking');
+      return;
+    }
+    
+    // Debounce: Block rapid successive clicks
+    if (timelineJumpInProgressRef.current) {
+      console.warn('[SessionPageV2] Timeline jump BLOCKED - jump already in progress for:', targetPhase);
+      return;
+    }
+    
+    // Set jump in progress flag IMMEDIATELY (before any async operations)
+    timelineJumpInProgressRef.current = true;
+    console.log('[SessionPageV2] Flag NOW set to true, value:', timelineJumpInProgressRef.current, 'for:', targetPhase);
+    
+    // Only allow jumping to valid phases
+    const validPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
+    if (!validPhases.includes(targetPhase)) {
+      console.warn('[SessionPageV2] Invalid timeline jump target:', targetPhase);
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+    
+    // Guard: Need orchestrator
+    if (!orchestratorRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked - no orchestrator');
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+    
+    // Guard: Need audio engine
+    if (!audioEngineRef.current) {
+      console.warn('[SessionPageV2] Timeline jump blocked - no audio engine');
+      timelineJumpInProgressRef.current = false; // Reset flag on early return
+      return;
+    }
+
+### 20. docs/brain/v2-architecture.md (bcbaba8ae74f1369524b1c55e3e577738be446bf70f09f6d42f753c7ecc5b154)
+- bm25: -11.7498 | relevance: 1.0000
+
+**Implementation notes:**
+- On every `phaseChange`, reset the per-phase UI gates (e.g., `showOpeningActions`, any active opening action state, and any games overlay) before rendering the next phase.
+- Timeline click-to-skip must call `ensurePinAllowed('timeline')` before navigating.
+- Timeline click-to-skip must stop active TTS before jumping (only when speech is currently playing) and then call `PhaseOrchestrator.skipToPhase(targetPhase)`.
+- Timeline click-to-skip must not bypass Begin gating; after a jump, the destination phase should still present its Begin CTA (then Opening Actions, then Go).
+- Timeline click-to-skip must not resume mid-phase (no resumeState). A timeline jump forces a fresh entry so Opening Actions are always available.
+- Q&A phases must emit a post-Go snapshot checkpoint (`<phase>-go`) that sets `timerMode:'work'` with `nextQuestionIndex:0`. Without this, a refresh after pressing Go (but before answering Q1) can incorrectly resume back at Opening Actions (timerMode still 'play' from `<phase>-init`).
+- Use the app alias when importing the PIN gate utility from V2 files: `@/app/lib/pinGate` (relative `../lib/pinGate` is one level short inside `session/v2` and will fail at build time).
+- Comprehension initialization must **wait for learnerProfile** to be loaded. If the orchestrator enters Comprehension before learner load completes, the app retries comprehension initialization once `learnerLoading` is false and `learnerProfile` is present.
+- Worksheet and Test initialization must follow the same rule as Comprehension: if the orchestrator enters the phase before learner load completes, initialization must be retried after learner load.
+- Any helper that reads learner targets must not rely on a stale closure captured before learner load. Use a ref-backe
+
+### 21. cohere-changelog.md (6328b21c06717c18b760d7aedfef41561dfb9a67d6ef973e77621c0b36a44a9e)
+- bm25: -11.6876 | relevance: 1.0000
+
+### 2026-02-27  Generated lesson not appearing in calendar after scheduling
+- Root cause (1): `loadSchedule` filtered out past-date+uncompleted lessons, hiding intentionally-scheduled entries for past/same-day dates
+- Root cause (2): `onGenerated` callback passed no data; calendar had to wait for `loadSchedule` to complete before showing the new lesson (race condition)
+- Fix (1): Removed `if (isPast && !completed && !completionLookupFailed) return` filter from `calendar/page.js`; all entries in `lesson_schedule` table now always display
+- Fix (2): `LessonGeneratorOverlay` now parses schedule POST response and passes `newEntry` to `onGenerated(newEntry)`; forwarded through `DayViewOverlay` to calendar page which immediately injects it into `scheduledLessons` state before `loadSchedule` completes
+- Files: `LessonGeneratorOverlay.jsx`, `DayViewOverlay.jsx`, `calendar/page.js`
+
+### 22. docs/brain/snapshot-persistence.md (83771570e459d80f3130a04413886133c035ef9a1167a6692812acf99b672017)
+- bm25: -11.5217 | relevance: 1.0000
+
+## Checkpoint Gates (Where Snapshots Save)
+
+- **Discussion entry**: `begin-discussion` (no opening actions in V2).
+- **Teaching**: `begin-teaching-definitions`, `vocab-sentence-1/N` (before each TTS), `begin-teaching-examples`, `example-sentence-1/N` (before each TTS).
+- **Q&A seeding** (deterministic resume): `comprehension-init`, `exercise-init`, `worksheet-init`, `test-init` fire on phase start and persist question arrays + `nextQuestionIndex` + `score` + `answers` + `timerMode` (with `phaseOverride`).
+- **Q&A post-Go (work-mode checkpoint)**: `comprehension-go`, `exercise-go`, `worksheet-go`, `test-go` fire immediately when the learner presses **Go**. These writes set `timerMode:'work'` with `nextQuestionIndex:0` so a refresh before answering Q1 resumes on the first question (not back to Opening Actions).
+- **Q&A granular**: `comprehension-answer`, `comprehension-skip`, `exercise-answer`, `exercise-skip`, `worksheet-answer`, `worksheet-skip`, `test-answer`, `test-skip` after each submission/skip (payload includes questions, answers, next index, timerMode; Test also includes reviewIndex).
+- **Navigation**: `skip-forward`, `skip-back` (timeline jumps).
+
+## Related Brain Files
+
+- **[timer-system.md](timer-system.md)** - Timer state (currentTimerMode, workPhaseCompletions, golden key) persisted in snapshots
+- **[session-takeover.md](session-takeover.md)** - Takeover flow triggers snapshot restore with timer state
+
+## Key Files
+
+- `src/app/session/sessionSnapshotStore.js` - Save/restore with localStorage+database
+- `src/app/session/hooks/useSnapshotPersistence.js` - scheduleSaveSnapshot wrapper
+- `src/app/session/hooks/useTeachingFlow.js` - Teaching checkpoint saves
+- `src/app/session/page.js` - Comprehension/phase checkpoint saves
+
+## What Was Removed
+
+### 23. docs/brain/timer-system.md (75d8a232d29d5fb010eabbc533054f137be7f538059c421192c44ef3e3a8eef1)
+- bm25: -11.1156 | relevance: 1.0000
+
+**2025-12-05**: CRITICAL FIX - Removed `setShowOpeningActions(false)` from `handlePlayExpiredComplete`. This was breaking all phase transitions because phase handlers already hide buttons as part of their normal flow. The premature state change created race conditions preventing Go button from working and timer from advancing phases. Each phase handler (handleGoComprehension, handleGoExercise, etc.) manages its own button visibility - timer handler should not interfere.
+
+### 24. docs/brain/timer-system.md (93b5f5f1e95bf4a72b420f92660d6ca4559847ff7ab32409c591f92360c08643)
+- bm25: -11.1031 | relevance: 1.0000
+
+❌ **Never use local persistence fallback for `play_*_enabled`**
+- Do not store per-learner play portion flags in localStorage.
+- Source of truth is Supabase; the bus is for immediate UI reaction only.
+
+❌ **Never add a Discussion play toggle**
+- Discussion has no play timer in V2, and this feature only targets phases 2-5.
+
+❌ **Never award or apply Golden Key bonus when disabled**
+- If `golden_keys_enabled` is false, do not apply bonus minutes and do not write golden key awards.
+
+❌ **Never hide play buttons manually in timer expiry handler**
+- Phase handlers (handleGoComprehension, etc.) already call `setShowOpeningActions(false)`
+- Setting it in handlePlayExpiredComplete creates race conditions and breaks phase transitions
+- Let each phase handler manage its own button visibility
+
+❌ **Never allow play buttons to remain visible after timer expiry**
+- Timer expiry must automatically advance to work phase
+- Play buttons will be hidden by the phase handler that starts the work
+
+❌ **Never require Go button click after timer expiry**
+- Timer expiry should bypass Go button confirmation
+- `handlePlayExpiredComplete` must auto-start the work phase
+
+❌ **Never allow refresh to reset play timer**
+- First interaction gate persists timer state
+- `recordFirstInteraction()` wrapper ensures snapshot save on first button click
+
+❌ **Never modify timer state without clearing sessionStorage**
+- When transitioning play → work, clear play timer key from sessionStorage
+- Prevents stale timer state on refresh
+
+❌ **Never show countdown overlay without phase context**
+- `playExpiredPhase` must be set so correct work handler fires
+- Overlay should display which phase learner will return to
+
+## Related Brain Files
+
+### 25. src/app/session/v2/SessionPageV2.jsx (846ff2cfe31debd4753a57df0c846ea02d1df3fdd4af05937cd1e16fdaf500f7)
+- bm25: -11.0003 | relevance: 1.0000
+
+if (snapshot.timerState) {
+            // Keep UI timer mode aligned with the restored timer engine state.
+            applyRestoredTimerStateToUi(snapshot.timerState, 'snapshot-load');
+            if (timerServiceRef.current) {
+              try {
+                timerServiceRef.current.restoreState(snapshot.timerState);
+                timerServiceRef.current.resync?.('snapshot-restore');
+                hydrateWorkTimerSummaryFromTimerService('snapshot-restore');
+              } catch {}
+            } else {
+              pendingTimerStateRef.current = snapshot.timerState;
+            }
+          }
+        } else {
+          resetTranscriptState();
+          addEvent('💾 No snapshot found - Starting fresh');
+        }
+      }).catch(err => {
+        if (cancelled) return;
+        console.error('[SessionPageV2] Snapshot init error:', err);
+        setError('Unable to load saved progress for this lesson.');
+      }).finally(() => {
+        if (!cancelled) {
+          setSnapshotLoaded(true);
+        }
+      });
+    } catch (err) {
+      console.error('[SessionPageV2] Snapshot service construction failed:', err);
+      setError('Unable to initialize persistence for this lesson.');
+      setSnapshotLoaded(true);
+    }
+
+return () => {
+      cancelled = true;
+      snapshotServiceRef.current = null;
+    };
+  }, [lessonData, learnerProfile, browserSessionId, lessonKey, resetTranscriptState, applyRestoredTimerStateToUi]);
   
-  return audioContent
-}
+  // Initialize TimerService
+  useEffect(() => {
+    if (!eventBusRef.current || !lessonKey || !phaseTimers) return;
 
-### 11. docs/brain/tts-prefetching.md (edcb8c1a972c4e179c52dea1736883e05713d12c1179a797d2128f88803a9626)
-- bm25: -4.4799 | entity_overlap_w: 2.60 | adjusted: -5.1299 | relevance: 1.0000
+const eventBus = eventBusRef.current;
 
-**API**:
-- `src/app/api/tts/route.js`: TTS endpoint that returns `{ audio: base64 }`
+### 26. docs/brain/session-takeover.md (15220505a1b46edd3a4491aa177082deecf628df049e021e34cfda9447fbf112)
+- bm25: -10.8312 | relevance: 1.0000
 
-## Performance Impact
+**Why this sequencing matters:**
+- OLD BUG (pre 2026-01-14): `sessionConflictChecked` set true in finally block → Snapshot restored WHILE takeover dialog showing → Creates duplicate session/transcript splits
+- NEW FIX (2026-01-14): `sessionConflictChecked` stays false on conflict → Takeover resolved first (via reload) → Snapshot restored cleanly ONCE
 
-**Before**: 2-3 second wait between questions (TTS generation time)
-**After**: Questions 2+ load instantly (cache hit), only Q1 shows loading
+**Settlement order enforcement:**
+- NO conflict: `sessionConflictChecked = true` immediately, snapshot restore proceeds
+- CONFLICT detected: `sessionConflictChecked` stays false, snapshot restore blocked
+- Takeover resolved: page reloads, fresh conflict check passes, snapshot restores once
+- Error during check: `sessionConflictChecked = true` (fail-safe to allow snapshot restore)
 
-**Cache stats during 5-question comprehension**:
-- Q1: Cache miss (no prefetch yet) - 2-3s wait
-- Q2: Cache hit (prefetched during Q1) - instant
-- Q3: Cache hit (prefetched during Q2) - instant
-- Q4: Cache hit (prefetched during Q3) - instant
-- Q5: Cache hit (prefetched during Q4) - instant
+**Old device behavior:**
+- No active notification (no polling)
+- Next gate attempt (user clicks Next, answers question, etc.) detects session ended
+- Shows takeover notification: "This lesson was continued on another device"
+- Redirects to learner dashboard
 
-**Total time saved**: 8-12 seconds per 5-question phase.
+### Timer State: Snapshot-Based Persistence
 
-## Edge Cases
+**Source of truth**: Snapshot database (cross-device)  
+**Mechanism**: Timer state captured at every checkpoint gate
 
-**Skip During Prefetch**:
-- Prefetch continues in background (silent)
-- Cache stores result even if not used
-- Worst case: slight network waste, no user impact
-
-**Failed Prefetch**:
-- Silent catch, no cache entry
-- Next question falls back to normal fetch (shows loading)
-- User sees 2-3s wait but flow works normally
-
-**Concurrent Prefetches**:
-- Each prefetch gets unique AbortController
-- Multiple pending fetches tracked in Map
-- Phase transition aborts ALL pending
-
-**Resume from Refresh**:
-- Cache doesn't persist (memory only)
-- First question after refresh shows loading
-- Subsequent questions prefetch normally
-
-**Celebration Text Variations**:
+Timer state in snapshot payload:
 ```javascript
-// WRONG - prefetch won't match actual spoken text
-ttsCache.prefetch(nextQ); // Just the question
-await speakFrontend(`${celebration}. ${nextQ}`); // Celebration + question
-
-// RIGHT - prefetch exact text that will be spoken
-const prefetchText = `${CELEBRATE_CORRECT[0]}. ${nextQ}`;
-ttsCache.prefetch(prefetchText);
-```
-
-Uses first celebration variant for prefetch since we can't predict random selection.
-
-## Debug Helpers
-
-### 12. docs/brain/api-routes.md (dd3378227a6324ce4a86f9e043ed13060e4abcc4a4fabc05a7854dad2c6ce68c)
-- bm25: -4.0907 | entity_overlap_w: 3.90 | adjusted: -5.0657 | relevance: 1.0000
-
-# API Routes
-
-## `/api/sonoma` - Core Ms. Sonoma Endpoint
-
-### Request Format
-
-**Method**: POST  
-**Content-Type**: application/json
-
-```json
 {
-  "instruction": "<string>",
-  "innertext": "<string>",
-  "skipAudio": true
+  currentTimerMode: 'play' | 'work',
+  workPhaseCompletions: { discussion: true, teaching: false, ... },
+  timerSnapshot: {
+    phase: 'teaching',
+    mode: 'work',
+    capturedAt: '2025-11-20T22:15:30.123Z',
+    elapsedSeconds: 45,
+    targetSeconds: 300
+  }
 }
 ```
 
-**Fields**:
-- `instruction`: The per-turn instruction string (server hardens it for safety).
-- `innertext`: Optional learner input for this turn.
-- `skipAudio`: Optional boolean; when `true`, the API will skip Google TTS and return `audio: null`.
+### 27. docs/brain/beta-program.md (44b7322c4c91ceb611437def5e3574de2693a536ad54a3c2ff9f3a05be97fcc3)
+- bm25: -10.8168 | relevance: 1.0000
 
-**Why `skipAudio` exists**:
-- Some callers (especially teaching definitions/examples generation) need text only.
-- Returning base64 audio for large responses can be slow on mobile devices.
+### Derived Metrics
 
-### Response Format
+Expose per session:
+- Total duration
+- Repeats per sentence
+- Counts by minute
+- Notes per minute
+- Transcript-note cross-reference by timestamp proximity
 
-```json
-{
-  "reply": "<string>",
-  "audio": "<base64 mp3>" 
-}
-```
+## Survey Content (Unlock Condition)
 
-**Fields**:
-- `reply`: Ms. Sonoma response text from the configured LLM provider.
-- `audio`: Base64-encoded MP3 when TTS is enabled and available; `null` when `skipAudio=true` (or when TTS is not configured).
+Require facilitator to complete fields covering:
+- Environment
+- Learning style
+- Fatigue moments
+- Struggles
+- Freeform notes
 
-### Implementation
+**Unlock Condition**: Successful re-auth within window AND `post_lesson_surveys.submitted_at` present for session
 
-- **Location**: `src/app/api/sonoma/route.js`
-- **Providers**: OpenAI or Anthropic depending on env configuration
-- **Runtime**: Node.js (Google SDKs require Node, not Edge)
-- **Stateless**: Each call is independent; no DB writes from this endpoint
+## Admin and Lifecycle
 
-### Health Check
+- Only admins assign `subscription_tier = 'Beta'` in Supabase manually
+- When Beta ends and tier is removed from profile, account remains
+- `subscription_tier` becomes null and no gates apply
+- Keep all collected data for analysis
+- Gates can be disabled via flags without schema removal
 
-**Method**: GET
+## Removal Plan (Post-Beta)
 
-Returns `200` with `{ ok: true, route: 'sonoma', runtime }`.
+1. Set `FORCE_TUTORIALS_FOR_BETA = false`
+2. Set `SURVEY_GOLDEN_KEY_ENABLED = false`
+3. Do not drop tables; keep data for audits
+4. Optionally archive old sessions
+5. Remove Beta tier values from `profiles.subscription_tier` while leaving accounts intact
 
-### Logging Controls
+## Acceptance Criteria
 
-Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
+- Beta facilitators cannot proceed without signup video and facilitator tutorial completion
+- Beta learners must complete learner tutorial once per learner profile on first lesson entry
+- Golden key remains locked until password re-auth success and survey submission for session
+- Transcripts and facilitator notes are timestamped
+- Repeat clicks are evented and countable per sentence
+- Lesson time is measurable from session start to end
+- Non-Beta users are not blocked but can access tutorials optionally
 
-- `full`, `off`, `none`, or `0` — No truncation
-- Positive integer (e.g., `2000`) — Truncate after N characters
-- Default: Unlimited in development; 600 chars in production
+## What NOT To Do
+
+### Never Hard-Code Beta Logic in UI Components
+- Use feature flags and database-driven gates
+- Don't assume subscription tier in client-side code
+
+### 28. src/app/session/page.js (c944a3d05366ae6752614849d2ed5d306adbde6b5ced4ef7fb7c574fcb58de04)
+- bm25: -10.7923 | relevance: 1.0000
+
+// Session snapshot persistence (restore and save) � placed after state declarations to avoid TDZ
+  const restoredSnapshotRef = useRef(false);
+  const didRunRestoreRef = useRef(false); // ensure we attempt restore exactly once per mount
+  const restoreFoundRef = useRef(false);  // whether we actually applied a prior snapshot
+  const resumeAppliedRef = useRef(false); // track whether resume reconciliation has been applied
+  const snapshotSaveTimerRef = useRef(null);
+  // Track a logical per-restart session id for per-session transcript files
+  const [transcriptSessionId, setTranscriptSessionId] = useState(null);
+  // Used to coalesce redundant saves: store a compact signature of the last saved meaningful state
+  const lastSavedSigRef = useRef(null);
+  // Retry budget for labeled saves when key is not yet ready
+  const pendingSaveRetriesRef = useRef({});
+
+### 29. docs/brain/snapshot-persistence.md (f87d966760c556fc2fde0b69db52ba05eaee701f6f8d5ee1c6782274d56614c0)
+- bm25: -10.7863 | relevance: 1.0000
+
+### V2 Save Flow
+On phase transition:
+1. **PhaseOrchestrator** emits `phaseChange` with the new phase name.
+2. **SessionPageV2** calls `savePhaseCompletion(phase)` immediately so `SnapshotService.#snapshot.currentPhase` is set before granular saves run.
+3. Each phase controller emits `requestSnapshotSave` after user actions (answers, skips, teaching sentence advances), and **saveProgress()** writes under the active phase key. `saveProgress()` now accepts `phaseOverride` so seed saves can force the correct phase even if currentPhase has not advanced yet.
+4. Granular saves **wait for any in-flight save to finish** (instead of skipping) so phase-change and seed saves cannot be dropped when a prior write is still completing.
+4. Q&A phases (comprehension, exercise, worksheet, test) call `saveProgress('<phase>-init')` on phase start with `{ questions, nextQuestionIndex, score, answers, timerMode: 'play', phaseOverride: '<phase>' }` to freeze deterministic question pools for resume.
+5. The same Q&A phases emit `<phase>-answer` and `<phase>-skip` saves that include `questions`, `answers`, `nextQuestionIndex`, `score`, and `timerMode` (Test also includes `reviewIndex`). This keeps snapshots aligned to the next pending question.
+6. Resume path: `start*Phase` reads `snapshot.phaseData.<phase>` and passes it as `resumeState` so controllers skip intros/Go, restore timer mode (play/work), reuse the exact question array, and drop the learner at `nextQuestionIndex` (Test also restores `reviewIndex`).
+
+Without step 2, granular saves would use `idle` as currentPhase and store under the wrong phase. Without step 4, question pools would reshuffle on resume and lose intra-phase progress.
+
+### 30. docs/brain/timer-system.md (b7aa6681ad045e85a58422ec46641d948683a8b9be9eb4e041d2b6d83bd36742)
+- bm25: -10.7542 | relevance: 1.0000
+
+2. **PlayTimeExpiredOverlay** displays:
+   - Shows "Time to Get Back to Work!" message
+   - 30-second countdown (green, turns amber at 5 seconds)
+   - Displays phase name user will return to
+   - Auto-advances when countdown reaches 0
+
+3. **handlePlayExpiredComplete** fires when countdown completes:
+   - Hides overlay (`showPlayTimeExpired = false`)
+   - Transitions to work timer for expired phase
+   - Automatically starts the work phase:
+     - Discussion/Teaching: calls `startSession()` (orchestrator start)
+     - Comprehension/Exercise/Worksheet/Test: calls the phase controller `go()` (`comprehensionPhaseRef.current.go()`, etc.)
+   - Each phase handler hides play buttons as part of its normal flow
+   - Clears `playExpiredPhase`
+  - When discussion/teaching needs to auto-start, `startSession({ ignoreResume: true })` is used so a stale snapshot resumePhase cannot skip ahead during an active lesson.
+
+### Go Button Override
+
+If user clicks Go button during the 30-second countdown:
+- Overlay is immediately dismissed
+- Work timer starts without waiting for countdown
+- All phase start handlers check and clear overlay state
+
+### Work Time Completion Tracking
+
+### 31. src/app/session/v2/SessionPageV2.jsx (43985aaa7414662fa8ae12ab7faa7ca42408b12585de9ef2654661955bf556b4)
+- bm25: -10.7424 | relevance: 1.0000
+
+const res = await fetch('/api/facilitator/pin/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ pin: pinCode })
+    });
+
+const result = await res.json().catch(() => null);
+    if (!res.ok || !result?.ok) {
+      throw new Error('Invalid PIN');
+    }
+
+if (conflictingSession?.id) {
+      try {
+        const { endLessonSession } = await import('@/app/lib/sessionTracking');
+        await endLessonSession(conflictingSession.id, {
+          reason: 'taken_over',
+          metadata: {
+            taken_over_by_session_id: browserSessionId,
+            taken_over_at: new Date().toISOString(),
+          },
+          learnerId: trackingLearnerId,
+          lessonId: trackingLessonId,
+        });
+      } catch {}
+    }
+
+try {
+      const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+      const takeoverStart = await startTrackedSession(browserSessionId, deviceName);
+      if (takeoverStart?.conflict) {
+        throw new Error('Lesson is still active on another device');
+      }
+      try { startSessionPolling?.(); } catch {}
+    } catch (err) {
+      throw err;
+    }
+
+// Clear local snapshot so reload pulls the latest remote snapshot.
+    try {
+      localStorage.removeItem(`atomic_snapshot:${trackingLearnerId}:${trackingLessonId}`);
+    } catch {}
+
+setShowTakeoverDialog(false);
+    setConflictingSession(null);
+
+if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  }, [browserSessionId, conflictingSession, learnerProfile?.id, lessonKey, startTrackedSession, startSessionPolling]);
+
+### 32. docs/brain/v2-architecture.md (b14f1ec9efc48af5207973c9298ed4218c7262ba742a852fa8b672fd9a713852)
+- bm25: -10.7158 | relevance: 1.0000
+
+**Week 7+: Cleanup**
+- Remove V1 code once V2 proven stable for 2 weeks
+- Delete page.js, rename SessionPageV2.jsx → page.js
+- Archive v1 implementation in git history
 
 ---
 
-## Other Core Routes
+## Core Architectural Principles
 
-### `/api/counselor`
-**Purpose**: Mr. Mentor counselor chat endpoint (facilitator-facing)  
-**Status**: Operational
+### 1. Event-Driven Communication
+Systems emit events, don't call each other's functions directly.
 
-### 13. docs/brain/v2-architecture.md (afffb9d44c9d9d5e9aee21cef0911b2f58779289d8122262e1045a2a4c0d3206)
-- bm25: -4.7314 | entity_overlap_w: 1.30 | adjusted: -5.0564 | relevance: 1.0000
+```javascript
+// ❌ V1 (direct coupling)
+audioSystem.playAudio(base64);
+teachingSystem.advanceSentence();
+snapshotSystem.save();
+
+// ✅ V2 (event-driven)
+audioEngine.emit('play', { base64, sentences });
+// TeachingController listens:
+audioEngine.on('audioEnd', () => {
+  this.emit('sentenceComplete');
+});
+// PhaseOrchestrator listens:
+teachingController.on('teachingComplete', () => {
+  this.transitionToComprehension();
+});
+```
+
+### 2. Single Source of Truth
+Each system owns its state. No refs + state duplication.
+
+```javascript
+// ❌ V1 (double-sourced)
+const [captionIndex, setCaptionIndex] = useState(0);
+const captionIndexRef = useRef(0);
+// Ref and state can diverge
+
+// ✅ V2 (single source)
+class AudioEngine {
+  #captionIndex = 0; // Private field, only AudioEngine mutates
+  getCurrentCaptionIndex() { return this.#captionIndex; }
+}
+```
+
+### 3. Deterministic State Updates
+State changes in predictable order via promise chains.
+
+```javascript
+// ❌ V1 (race conditions)
+scheduleSaveSnapshot('example-2').catch(...); // Fire and forget
+await speakFrontend(sentence); // Blocks, but save may complete first
+
+// ✅ V2 (deterministic)
+await teachingController.advanceSentence();
+  // → Waits for audio to complete
+  // → Then saves snapshot
+  // → Then advances index
+```
+
+### 4. Independent Testing
+Each component can be tested without the full page context.
+
+### 33. docs/brain/mr-mentor-sessions.md (973e3de11950f5a0be1e7f5a77ab27d5a507cadd8918e997a510b58184d1a6d2)
+- bm25: -10.7043 | relevance: 1.0000
+
+**Initialization** (`src/app/facilitator/generator/counselor/CounselorClient.jsx`):
+1. Generate/reuse a unique `sessionId`, persist it to sessionStorage/localStorage
+2. Wait for accessToken and tier validation
+3. `GET /api/mentor-session?sessionId={id}`
+4. If another device owns the active session → show `SessionTakeoverDialog`
+5. If no active session exists → `POST /api/mentor-session` with `action: 'initialize'`
+6. Load `conversation_history` and `draft_summary` from the returned session
+7. Start conflict detection (realtime + heartbeat)
+
+**Conflict detection:**
+
+- Realtime subscription listens to `mentor_sessions` updates for fast takeover detection.
+- Heartbeat polling runs as a backup (`GET /api/mentor-session?sessionId={id}` every ~3 seconds).
+- If an active session exists and `isOwner` is false:
+  - Clear the persisted session id
+  - Reset local conversation state
+  - Show `SessionTakeoverDialog` with the active session info
+
+**Conversation Persistence:**
+- Every change to `conversationHistory` or `draftSummary` triggers debounced `PATCH` (1 second delay)
+- On "New Conversation" click: `DELETE /api/mentor-session?sessionId={id}`
+
+## Components
+
+**`SessionTakeoverDialog.jsx`** - Modal for takeover flow
+
+Props:
+```jsx
+{
+  existingSession: {
+    session_id: string,
+    device_name: string,
+    last_activity_at: string (ISO timestamp)
+  },
+  onTakeover: (pinCode: string) => Promise<void>,
+  onForceEnd?: (pinCode: string) => Promise<void>,
+  onCancel: () => void
+}
+```
+
+Features:
+- Displays device name and last activity timestamp
+- 4-digit PIN input (numeric only)
+- "Take Over Session" button (calls `onTakeover`)
+- "Force End Session" button (calls `onForceEnd` to release frozen session)
+- Warning about consequences
+- Cancel button returns to facilitator page
+
+### 34. src/app/session/page.js (dffb8a5f4f0ab8dd92946a8f638677d31fae5638b2046525a671e3dc612240e4)
+- bm25: -10.6745 | relevance: 1.0000
+
+// CRITICAL: Check for session conflicts BEFORE snapshot restore runs
+  // This prevents the user from experiencing the snapshot restore twice:
+  // once during initial load, then again after PIN entry
+  useEffect(() => {
+    const checkConflictEarly = async () => {
+      // Only run once
+      if (sessionConflictChecked) return;
+      
+      // Wait for required IDs to be available
+      if (!trackingLearnerId || !normalizedLessonKey || !browserSessionId) return;
+      
+      console.log('[SESSION CONFLICT CHECK] Running early conflict check before snapshot restore');
+      
+      try {
+        const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+        const sessionResult = await startTrackedSession(browserSessionId, deviceName);
+        
+        // If conflict detected, show takeover dialog immediately
+        if (sessionResult?.conflict) {
+          console.log('[SESSION CONFLICT CHECK] Conflict detected, showing takeover dialog:', sessionResult.existingSession);
+          setConflictingSession(sessionResult.existingSession);
+          setShowTakeoverDialog(true);
+          // Do NOT set sessionConflictChecked=true here - keep snapshot restore blocked until takeover resolved
+        } else {
+          console.log('[SESSION CONFLICT CHECK] No conflict, session started:', sessionResult?.id);
+          // Gate-based detection handles future conflicts through snapshot saves
+          // No polling needed - conflicts detected when Device A tries to save next snapshot
+          setSessionConflictChecked(true);
+        }
+      } catch (err) {
+        console.error('[SESSION CONFLICT CHECK] Error during early conflict check:', err);
+        // On error, mark as checked so snapshot restore can proceed
+        setSessionConflictChecked(true)
+
+### 35. docs/brain/snapshot-persistence.md (badceaa786b7fbed311c2f1cd972c7e88b2851d87beca33fa9784a499139749c)
+- bm25: -10.4978 | relevance: 1.0000
+
+### Version Gating
+- `snapshotVersion=2` marker prevents old v1 snapshots from loading
+- Old snapshots ignored, session starts fresh
+
+## What NOT To Do
+
+**DO NOT ADD:**
+- Polling/intervals for snapshot saves
+- Autosave on state change
+- Reconciliation after restore
+- Signature comparison
+- Debouncing (save immediately at checkpoints)
+
+**DO NOT USE:**
+- Session takeover polling
+- checkSessionStatus intervals
+- SessionTakeoverDialog overlay
+- Device detection for sync
+
+## Why Gates Not Polling
+
+Gates are explicit, predictable, and testable:
+- Save happens exactly when we say
+- No drift from timing issues
+- No performance overhead
+- No race conditions
+
+Polling causes:
+- Unpredictable save timing
+- Performance overhead
+- Race conditions with React state
+- Complexity in determining "what changed"
+
+## Device Switch Behavior
+
+When user switches devices:
+1. localStorage on new device is empty
+2. getStoredSnapshot falls back to database
+3. Database returns latest snapshot
+4. Snapshot written to new device's localStorage
+5. Subsequent saves/restores use localStorage (fast)
+
+**Session conflicts** (same learner+lesson on two devices simultaneously): Handled by session-takeover system, see [session-takeover.md](session-takeover.md). Takeover dialog appears at first gate when conflict detected, requires PIN validation.
+## V2 Assessment Print System
+
+**Integration:** SessionPageV2 registers print handlers directly (no separate hook) and persists worksheet/test decks via `assessmentStore` (localStorage + Supabase) keyed by `lesson_assessments:{learnerId}:{lessonKey}`.
+
+### Architecture
+
+### 36. docs/brain/v2-architecture.md (6a7b91ff6e8e0570e3cb0b8ab750c6e9a442924b2edcc946c2ebed47715132c1)
+- bm25: -10.4605 | relevance: 1.0000
+
+**Idle Begin CTA loading feedback (2026-01-07)**
+- When the learner clicks the initial "Begin" (idle phase) or "Resume", the CTA must immediately flip to "Loading..." and disable until `startSession()` returns.
+- The Begin CTA must never hang indefinitely.
+  - Any awaited Begin-start steps must be time-boxed.
+  - On timeout/failure, the CTA must re-enable and show a user-facing error so the learner can retry.
+- When the CTA is disabled because prerequisites are still initializing (e.g., snapshot load), the label must not misleadingly show "Loading..." without context.
+
+**Complete Lesson farewell sequencing (2026-01-07)**
+- The Test review "Complete Lesson" click plays a short congrats line to hide end-of-lesson load.
+- The Closing phase farewell must NOT interrupt that congrats line.
+- If congrats audio is playing when Closing begins, defer `ClosingPhase.start()` until the AudioEngine emits `end`.
+- Transcript now uses V1's `CaptionPanel` (assistant/user styling, MC stack, vocab highlighting) and saves `{ lines:[{text,role}], activeIndex }` into snapshots. Caption changes and learner submissions append lines with duplicate detection; active caption highlights are restored on load for cross-device continuity. The caption panel auto-scrolls to the newest line; on iOS Safari this must use an end-of-list sentinel + `scrollIntoView` with multi-tick retries (direct `scrollTop` writes can be ignored during layout). Transcript state resets when Start Over ignores resume so captions do not accumulate across restarts. In portrait mode, the caption panel height is set to 35vh.
+
+### 37. docs/brain/session-takeover.md (72ae25e3e29d75232134dc441859a03f901f7fbefdbe1ac720e5391b512b6775)
+- bm25: -10.2551 | relevance: 1.0000
+
+# Session Takeover System (Gate-Based)
+
+## Core Architecture
+
+**EARLY CONFLICT DETECTION, NO POLLING**
+
+Session ownership enforced at page load before snapshot restore. No polling, no intervals, no performance overhead.
+
+## How It Works
+
+### Session Ownership Model
+
+Each learner+lesson combination can have **exactly one active session** at any time. Session ownership is tracked in `lesson_sessions` table with device identification and activity timestamps.
+
+When Device B attempts to access the same lesson that Device A is using, conflict is detected immediately at page load before any snapshot restore, triggering takeover dialog with PIN validation.
+
+### Conflict Detection Strategy: Check Before Snapshot Restore
+
+**CRITICAL FIX (2026-01-14)**: `sessionConflictChecked` flag now remains false when conflict is detected, blocking snapshot restore until takeover is resolved. This prevents transcript splits and duplicate sessions caused by snapshot restore running before takeover settlement.
+
+### 38. docs/brain/v2-architecture.md (afffb9d44c9d9d5e9aee21cef0911b2f58779289d8122262e1045a2a4c0d3206)
+- bm25: -10.1545 | relevance: 1.0000
 
 ### 🚧 In Progress
 - None (all critical issues fixed, ready for testing)
@@ -568,902 +1113,84 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 
 ## Key Files
 
-### 14. docs/brain/ingests/pack-mentor-intercepts.md (35e76a89c7f5240f0e94cbd2877e930ae62cde56e079f99fd9382929f9faf2a0)
-- bm25: -4.0726 | entity_overlap_w: 3.90 | adjusted: -5.0476 | relevance: 1.0000
+### 39. src/app/session/page.js (371509ee9e0e1a0910876cccca05772750493bc1cb00f6f0923e6cd3b042a1e7)
+- bm25: -10.1007 | relevance: 1.0000
 
-### 15. docs/brain/api-routes.md (dd3378227a6324ce4a86f9e043ed13060e4abcc4a4fabc05a7854dad2c6ce68c)
-- bm25: -16.5866 | relevance: 1.0000
-
-# API Routes
-
-## `/api/sonoma` - Core Ms. Sonoma Endpoint
-
-### Request Format
-
-**Method**: POST  
-**Content-Type**: application/json
-
-```json
-{
-  "instruction": "<string>",
-  "innertext": "<string>",
-  "skipAudio": true
-}
-```
-
-**Fields**:
-- `instruction`: The per-turn instruction string (server hardens it for safety).
-- `innertext`: Optional learner input for this turn.
-- `skipAudio`: Optional boolean; when `true`, the API will skip Google TTS and return `audio: null`.
-
-**Why `skipAudio` exists**:
-- Some callers (especially teaching definitions/examples generation) need text only.
-- Returning base64 audio for large responses can be slow on mobile devices.
-
-### Response Format
-
-```json
-{
-  "reply": "<string>",
-  "audio": "<base64 mp3>" 
-}
-```
-
-**Fields**:
-- `reply`: Ms. Sonoma response text from the configured LLM provider.
-- `audio`: Base64-encoded MP3 when TTS is enabled and available; `null` when `skipAudio=true` (or when TTS is not configured).
-
-### Implementation
-
-- **Location**: `src/app/api/sonoma/route.js`
-- **Providers**: OpenAI or Anthropic depending on env configuration
-- **Runtime**: Node.js (Google SDKs require Node, not Edge)
-- **Stateless**: Each call is independent; no DB writes from this endpoint
-
-### Health Check
-
-**Method**: GET
-
-Returns `200` with `{ ok: true, route: 'sonoma', runtime }`.
-
-### Logging Controls
-
-Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
-
-- `full`, `off`, `none`, or `0` — No truncation
-- Positive integer (e.g., `2000`) — Truncate after N characters
-- Default: Unlimited in development; 600 chars in production
-
----
-
-## Other Core Routes
-
-### 15. docs/brain/v2-architecture.md (aa7153d876592c21696ed81eef5a176acfcefd0ddf6ceff0300b5c58d431458c)
-- bm25: -4.3340 | entity_overlap_w: 2.60 | adjusted: -4.9840 | relevance: 1.0000
-
-**Zero-Latency Prefetch Strategy:**
-- `prefetchAll()` triggered on Begin click (deferred to next tick so it does not block the UI)
-- Prefetch is **single-flight** (subsequent calls are ignored)
-- GPT calls are **staggered** to reduce 429 risk:
-  - Start definitions first
-  - Start examples only after definitions resolves (or fails)
-  - Gate prompts start after their parent stage begins
-- GPT calls run in background during discussion greeting (~3-5 seconds)
-- When teaching starts, prefetched data is awaited (often already complete)
-- TTS prefetched for first 3 sentences of each stage + gate prompt text
-- **No loading states** - UI never shows "loading" for teaching content
-- Prefetch chain: GPT completes → automatically prefetches TTS for sentences
-
-### 16. src/app/session/page.js (5716a05adad5d46c2d80babc2816a00bb812fa2fa69a4ac39b220339c676caa1)
-- bm25: -4.6270 | entity_overlap_w: 1.30 | adjusted: -4.9520 | relevance: 1.0000
-
-// Request TTS for the local opening and play it using the same pipeline as API replies.
-      setLoading(true);
-      setTtsLoadingCount((c) => c + 1);
-  const replyStartIndex = prevLen; // we appended opening sentences at the end
-      let res;
-      try {
-        res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
-        var data = await res.json().catch(() => ({}));
-        var audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
-        // Dev warm-up: if route wasn't ready (404) or no audio returned, pre-warm and retry once
-        if ((!res.ok && res.status === 404) || !audioB64) {
-          try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
-          try { await waitForBeat(400); } catch {}
-          res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
-          data = await res.json().catch(() => ({}));
-          audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
-        }
-      } finally {
-        setTtsLoadingCount((c) => Math.max(0, c - 1));
-      }
-      if (audioB64) audioB64 = normalizeBase64Audio(audioB64);
-      // Match API flow: stop showing loading before kicking off audio
-      setLoading(false);
-      if (audioB64) {
-        // Stash payload so gesture-based unlock can retry immediately if needed
-        try { lastAudioBase64Ref.current = audioB64; } catch {}
-        setIsSpeaking(true);
-        // CRITICAL: Also update the ref immediately to prevent double-playback in recovery timeout
-
-### 17. docs/brain/tts-prefetching.md (5d2c47ccfb9a2ebf8730cf484617315b098470bc24f095612364f494190624e7)
-- bm25: -4.8817 | relevance: 1.0000
-
-Useful for verifying cache behavior during development.
-
-### 18. docs/brain/tts-prefetching.md (6d1b96b8f6272894a5c5f0a5c3a22454adfc86b0f45bf0f04266b9459a647c37)
-- bm25: -4.8817 | relevance: 1.0000
-
-**AbortController Pattern**:
-```javascript
-pendingFetches: Map<string, AbortController>
-
-### 19. docs/brain/v2-architecture.md (f0f7d5791f87c43312f84768585c3f5e0ddbb77f03f5af6f3a469f7e7634e7c5)
-- bm25: -3.8394 | entity_overlap_w: 3.90 | adjusted: -4.8144 | relevance: 1.0000
-
-**Test judging rule (V1 parity):** Test is single-attempt.
-- Judge the learner answer (MC/TF locally; SA/FIB via `/api/judge-short-answer` through `judging.js` with local fallback).
-- If correct: speak praise, then advance.
-- If incorrect: speak the correct answer immediately, then advance.
-
-**Test ticker rule (single-attempt):** The Test question counter must advance on every answered/skipped question.
-- Do not derive the question counter from `score` (score only increments on correct answers).
-- Use the current question index (questionNumber = questionIndex + 1) so incorrect answers still advance the ticker.
-
-**Test Skip/Next robustness rule (no premature actions):** In Test, user actions must never break the phase even when pressed repeatedly during async work.
-- The learner may mash Skip/Submit while question TTS is still loading or while judging is in-flight.
-- The phase must not double-advance, throw, or play stale audio for a previously-skipped question.
-- When an action advances to a new question while a prior question's TTS fetch is in-flight, the stale fetch result must be discarded (do not play it).
-- While a Submit/Skip transition is in-flight, additional Submit/Skip presses must be safely ignored (no double grading, no double skipping).
-- The Test intro line ("Time for the test") must also be skippable: the phase must advance to `awaiting-go` on AudioEngine `end` (completed OR skipped) and must not depend on awaiting `playAudio()`.
-
-### Exercise: Inline Q&A (Comprehension Parity) (2026-01-02)
-
-**Decision:** Exercise uses the same inline (V1-style) Q&A flow as Comprehension: questions are spoken via TTS, and the learner answers using the footer input.
-
-### 20. docs/brain/tts-prefetching.md (05e6eff1863500855ddc6c183a5ac48103c48804c8f4dbabf875f31ef1a1e1db)
-- bm25: -4.0665 | entity_overlap_w: 2.60 | adjusted: -4.7165 | relevance: 1.0000
-
-# TTS Prefetching System
-
-## Overview
-
-TTS (text-to-speech) prefetching eliminates 2-3 second waits between questions by loading question N+1 in the background while student answers question N. This was the main performance bottleneck identified by user after zombie code cleanup.
-
-## How It Works
-
-### Cache Architecture
-
-**Module**: `src/app/session/utils/ttsCache.js` (212 lines)
-
-**Core Components**:
-- `TTSCache` class: Singleton instance exported as `ttsCache`
-- LRU cache: Map-based storage with timestamp tracking
-- MAX_CACHE_SIZE: 10 items (prevents memory issues during long sessions)
-- Eviction: Oldest by timestamp when cache full
-
-**Cache API**:
-```javascript
-ttsCache.get(text)           // Returns cached base64 audio or null
-ttsCache.set(text, audio)    // Stores audio, evicts oldest if full
-ttsCache.prefetch(text)      // Background fetch, fire-and-forget
-ttsCache.clear()             // Cancels pending fetches, clears cache
-ttsCache.cancelPrefetch(text) // Aborts specific pending request
-```
-
-### Integration Points
-
-**1. speakFrontendImpl (page.js line ~2927)**
-```javascript
-// Check cache first
-let b64 = ttsCache.get(text);
-
-if (!b64) {
-  // Cache miss - fetch from API
-  setTtsLoadingCount((c) => c + 1);
-  // ... fetch logic ...
-  if (b64) {
-    b64 = normalizeBase64Audio(b64);
-    // Store successful fetch in cache
-    ttsCache.set(text, b64);
-  }
-  setTtsLoadingCount((c) => Math.max(0, c - 1));
-}
-// else: cache hit - b64 already set, no loading indicator
-```
-
-Cache hits skip loading indicator entirely since audio is instant.
-
-**2. Prefetch Triggers**
-
-**After Comprehension Answer (page.js line ~5895)**:
-```javascript
-try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
-
-### 21. src/app/api/tts/route.js (3db3babb7d72eecfb8ea85f7a76fd614f9d78fd30e63ecd6443660a2ba346a24)
-- bm25: -4.7062 | relevance: 1.0000
-
-const client = await getTtsClient()
-    if (!client) return NextResponse.json({ reply: text, audio: undefined })
-
-### 22. docs/brain/tts-prefetching.md (cba8101ac4406e3a169ec45922876fe9bc7e7be991dc9b30d6274e1acfb795ee)
-- bm25: -4.6348 | relevance: 1.0000
-
-```javascript
-// Get cache statistics
-const stats = ttsCache.getStats();
-console.log(stats); // { size: 3, pending: 1, maxSize: 10 }
-```
-
-### 23. docs/brain/ingests/pack-mentor-intercepts.md (d5ddc893728a86d159bcf5ff419f02c5ace96e1133048d430ac99ee743f074bd)
-- bm25: -4.2285 | entity_overlap_w: 1.30 | adjusted: -4.5535 | relevance: 1.0000
-
-- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
-  - Loads visual aids by normalized `lessonKey`
-  - Video overlay includes a Visual Aids button when images exist
-  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
-
-### 24. src/app/session/v2/AudioEngine.jsx (bed4b96439e1d30f0a5b1d216834205045a7703c4a54276fea998b7e9dd361ed)
-- bm25: -3.8840 | entity_overlap_w: 2.60 | adjusted: -4.5340 | relevance: 1.0000
-
-// Pause as soon as playback actually starts (playing event), so we end in a paused state
-    // while still getting the autoplay "unlock" side effect from play().
-    // IMPORTANT: If unlock playback never starts during the gesture, do not leave a stale
-    // 'playing' handler around — it can pause the first real TTS video playback later.
-    this.#videoUnlockPlayingHandler = () => {
-      // Never pause the real TTS video playback.
-      if (this.#isPlaying) {
-        clearUnlockHandler();
-        return;
-      }
-      try { video.pause(); } catch {}
-      try { video.currentTime = 0; } catch {}
-      clearUnlockHandler();
-    };
-
-try {
-      video.addEventListener('playing', this.#videoUnlockPlayingHandler);
-    } catch {}
-
-// Cleanup even if 'playing' never fires (e.g., autoplay blocked).
+// TEMP development helper: skip forward through major phases
+  const skipForwardPhase = async () => {
+    const ok = await ensurePinAllowed('skip');
+    if (!ok) return;
+    // Confirm out-of-order move: skipping alters the lesson timeline irreversibly
     try {
-      this.#videoUnlockCleanupTimer = setTimeout(() => {
-        clearUnlockHandler();
-      }, 1500);
+      const ans = typeof window !== 'undefined' ? window.prompt("This will alter the lesson in a way that can't be reversed. Type 'ok' to proceed.") : null;
+      if (!ans || String(ans).trim().toLowerCase() !== 'ok') return;
     } catch {}
-
-try {
-      const p = video.play();
-      if (p && typeof p.catch === 'function') {
-        p.catch(() => {
-          clearUnlockHandler();
-        });
-      }
-    } catch {
-      clearUnlockHandler();
-    }
-  }
-  
-  // Public API: Playback control
-  async playAudio(base64Audio, sentences = [], startIndex = 0, options = {}) {
-    this.#lastAudioBase64 = base64Audio;
-    this.#lastSentences = sentences;
-    
-    // Stop any existing playback
-    this.stop();
-    
-    // Validate
-    if (!Array.isArray(sentences) || sentences.length === 0) {
-      console.warn('[AudioEngine] No sentences provided');
-      return;
-    }
-
-### 25. docs/brain/ms-sonoma-teaching-system.md (cede03814a8e282c9f02f9885e01f2a1ed833b57c04cd2aef304bf98f2d7f4ba)
-- bm25: -4.2033 | entity_overlap_w: 1.30 | adjusted: -4.5283 | relevance: 1.0000
-
-## Related Brain Files
-
-- **[tts-prefetching.md](tts-prefetching.md)** - TTS powers audio playback for Ms. Sonoma speech
-- **[visual-aids.md](visual-aids.md)** - Visual aids displayed during teaching phase
-
-## Key Files
-
-### Core API
-- `src/app/api/sonoma/route.js` - Main Ms. Sonoma API endpoint, integrates content safety validation
-
-### Content Safety
-- `src/lib/contentSafety.js` - Lenient validation system: prompt injection detection (always), banned keywords (reduced list, skipped for creative features), instruction hardening (primary defense), output validation with skipModeration=true (OpenAI Moderation API bypassed to prevent false positives like "pajamas" flagged as sexual)
-
-### Teaching Flow Hooks
-- `src/app/session/hooks/useTeachingFlow.js` - Orchestrates teaching definitions and examples stages
-
-### Phase Handlers
-- `src/app/session/hooks/usePhaseHandlers.js` - Manages phase transitions (comprehension, exercise, worksheet, test)
-
-### Session Page
-- `src/app/session/page.js` - Main session orchestration, phase state management
-
-### Brand Signal Sources (Read-Only)
-- `.github/Signals/MsSonoma_Voice_and_Vocabulary_Guide.pdf`
-- `.github/Signals/MsSonoma_Messaging_Matrix_Text.pdf`
-- `.github/Signals/MsSonoma_OnePage_Brand_Story.pdf`
-- `.github/Signals/MsSonoma_Homepage_Copy_Framework.pdf`
-- `.github/Signals/MsSonoma_Launch_Deck_The_Calm_Revolution.pdf`
-- `.github/Signals/MsSonoma_SignalFlow_Full_Report.pdf`
-
-### Data Schema
-- Supabase tables for lesson content, vocab terms, comprehension items
-- Content safety incidents logging table
-
-## Notes
-
-### 26. docs/brain/tts-prefetching.md (072d1470417a91efeda996cf6ff4ab16a94be413be6e572d439f2f0f73e61aeb)
-- bm25: -4.1778 | entity_overlap_w: 1.30 | adjusted: -4.5028 | relevance: 1.0000
-
-prefetch(text) {
-  const controller = new AbortController();
-  this.pendingFetches.set(text, controller);
-  
-  fetch('/api/tts', { signal: controller.signal, ... })
-    .then(...)
-    .catch(err => {
-      if (err.name === 'AbortError') return; // Silent - expected
-      // Other errors also silent - prefetch is non-critical
-    })
-    .finally(() => this.pendingFetches.delete(text));
-}
-
-clear() {
-  this.pendingFetches.forEach(controller => controller.abort());
-  this.pendingFetches.clear();
-  this.cache.clear();
-}
-```
-
-Ensures no memory leaks from abandoned prefetch requests.
-
-### Text Normalization
-
-```javascript
-normalizeText(text) {
-  return text.toLowerCase().trim();
-}
-```
-
-Cache keys are normalized so "What is 2+2?" and "what is 2+2? " hit same entry.
-
-### Audio Extraction
-
-```javascript
-extractAudio(data) {
-  if (!data) return null;
-  
-  // API can return audio in multiple formats:
-  // { audio, audioBase64, audioContent, content, b64 }
-  return data.audio || data.audioBase64 || data.audioContent || 
-         data.content || data.b64 || null;
-}
-```
-
-Handles various TTS API response formats.
-
-## What NOT To Do
-
-**DON'T prefetch without abort capability**
-- Memory leaks from abandoned requests
-- Network congestion from redundant fetches
-- Phase transitions leave orphaned requests
-
-**DON'T fail loudly on prefetch errors**
-- Prefetch is optimization only
-- User should never see prefetch failures
-- Core flow must work without cache
-
-**DON'NOT show loading indicator on cache hits**
-```javascript
-// WRONG - shows loading even for instant cache hits
-setTtsLoadingCount((c) => c + 1);
-let b64 = ttsCache.get(text);
-if (!b64) { /* fetch */ }
-setTtsLoadingCount((c) => c - 1);
-
-### 27. docs/brain/tts-prefetching.md (6948e68ea1a8bc628314d0baad0fc061f964291c736f4224062885a7cba94bde)
-- bm25: -4.4983 | relevance: 1.0000
-
-// RIGHT - only show loading on cache miss
-let b64 = ttsCache.get(text);
-if (!b64) {
-  setTtsLoadingCount((c) => c + 1);
-  /* fetch */
-  setTtsLoadingCount((c) => c - 1);
-}
-```
-
-### 28. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
-- bm25: -3.8352 | entity_overlap_w: 2.60 | adjusted: -4.4852 | relevance: 1.0000
-
-- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
-  - Full-screen carousel during lesson
-  - "Explain" button triggers Ms. Sonoma TTS of description
-  - Read-only view (no editing)
-
-### Integration Points
-- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
-  - `handleGenerateVisualAids()` - initiates generation
-  - Manages visual aids state and save flow
-
-- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
-  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
-  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
-  - Renders `VisualAidsCarousel` above the inline editor modal
-
-- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
-  - `handleGenerateVisualAids()` - generation from counselor lesson creation
-
-- **`src/app/session/page.js`** - Learner session
-  - Loads visual aids by normalized `lessonKey`
-  - `onShowVisualAids()` - opens carousel
-  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
-
-- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
-  - Loads visual aids by normalized `lessonKey`
-  - Video overlay includes a Visual Aids button when images exist
-  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
-
-### 29. src/app/session/v2/SessionPageV2.jsx (1f3135b2c00a8c1040ead04334dab50b90a1ca101640c97972e94076a852f4bb)
-- bm25: -3.8272 | entity_overlap_w: 2.60 | adjusted: -4.4772 | relevance: 1.0000
-
-const playEnabledForPhase = (p) => {
-      if (!p) return true;
-      if (p === 'comprehension') return playPortionsEnabledRef.current?.comprehension !== false;
-      if (p === 'exercise') return playPortionsEnabledRef.current?.exercise !== false;
-      if (p === 'worksheet') return playPortionsEnabledRef.current?.worksheet !== false;
-      if (p === 'test') return playPortionsEnabledRef.current?.test !== false;
-      return true;
-    };
-    const skipPlayPortion = ['comprehension', 'exercise', 'worksheet', 'test'].includes(phaseName)
-      ? !playEnabledForPhase(phaseName)
-      : false;
-    
-    // Special handling for discussion: prefetch greeting TTS before starting
-    if (phaseName === 'discussion') {
-      setDiscussionState('loading');
-      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'friend';
-      const lessonTitle = lessonData?.title || lessonId || 'this topic';
-      const greetingText = `Hi ${learnerName}, ready to learn about ${lessonTitle}?`;
-      
-      try {
-        // Prefetch greeting TTS
-        await fetchTTS(greetingText);
-      } catch (err) {
-        console.error('[SessionPageV2] Failed to prefetch greeting:', err);
-      }
-      
-      // Discussion work timer starts when Begin is clicked, not here
-    }
-    
-    const ref = getPhaseRef(phaseName);
-    if (ref?.current?.start) {
-      if (skipPlayPortion) {
-        transitionToWorkTimer(phaseName);
-        // Start work timer immediately when skipping play portion (unless timeline jump already started it)
-        if (timerServiceRef.current && timelineJumpTimerStartedRef.current !== phaseName) {
-          timerServiceRef.current.startWorkPhaseTimer(phaseName);
-        }
-        await ref.current.start({ skipPlayPortion: true });
-      }
-
-### 30. src/app/session/v2/SessionPageV2.jsx (b763b304b945e0806dd28f0c361c8ede66380f075bf2fe541fa4ed72f549a709)
-- bm25: -3.8034 | entity_overlap_w: 2.60 | adjusted: -4.4534 | relevance: 1.0000
-
-// Allow early-declared callbacks to invoke startSession without TDZ issues.
-  startSessionRef.current = startSession;
-  
-  const startTeaching = async (options = {}) => {
-    if (!teachingControllerRef.current) return;
-    await teachingControllerRef.current.startTeaching(options);
-  };
-  
-  const nextSentence = async () => {
-    if (!teachingControllerRef.current) return;
-    
-    // Show loading if GPT content isn't ready
-    setTeachingLoading(true);
+    // Centralized abort/cleanup
+    abortAllActivity(true);
+    // Ensure overlays tied to !loading can render immediately (Begin buttons)
+    setLoading(false);
+    // On any timeline skip, cut over transcript and clear prior resume snapshots
     try {
-      await teachingControllerRef.current.nextSentence();
+      const learnerId = (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null) || null;
+      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
+      const lessonId = String(lessonParam || '').replace(/\.json$/i, '');
+      // Append only the lines since the last segment start to avoid duplicating prior session text
+      const startIdx = Math.max(0, Number(transcriptSegmentStartIndexRef.current) || 0);
+      const all = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current : [];
+      const slice = normalizeTranscriptLines(all.slice(startIdx));
+      if (learnerId && learnerId !== 'demo' && slice.length > 0) {
+        await appendTranscriptSegment({
+          learnerId,
+          learnerName,
+          lessonId,
+          lessonTitle: effectiveLessonTitle,
+          segment: { startedAt: sessionStartRef.current || new Date().toISOString(), completedAt: new Date().toISOString(), lines: slice },
+          sessionId: transcriptSess
+
+### 40. src/app/facilitator/generator/counselor/CounselorClient.jsx (7f3eb2007b09d0ce6b2e9e5c03cedee3dc3ff4cb20157d6a72cab3fb62b16561)
+- bm25: -10.0301 | relevance: 1.0000
+
+// If a newer init attempt started, don't clobber its loading state.
+      if (attemptId !== initAttemptIdRef.current) {
+        return
+      }
+
+// Silent error handling
+      setSessionLoading(false)
+      if (initializedSessionIdRef.current === subjectKey) {
+        initializedSessionIdRef.current = null
+      }
     } finally {
-      setTeachingLoading(false);
+      if (initInFlightSubjectRef.current === subjectKey) {
+        initInFlightSubjectRef.current = null
+      }
     }
-  };
-  
-  const repeatSentence = () => {
-    if (!teachingControllerRef.current) return;
-    teachingControllerRef.current.repeatSentence();
-  };
-  
-  const skipToExamples = () => {
-    if (!teachingControllerRef.current) return;
-    teachingControllerRef.current.skipToExamples();
-  };
-  
-  const restartStage = () => {
-    if (!teachingControllerRef.current) return;
-    teachingControllerRef.current.restartStage();
-  };
-  
-  const stopAudio = () => {
-    if (!audioEngineRef.current) return;
-    stopAudioSafe();
-  };
-  
-  const pauseAudio = () => {
-    if (!audioEngineRef.current) return;
-    audioEngineRef.current.pause();
-  };
-  
-  const resumeAudio = () => {
-    if (!audioEngineRef.current) return;
-    audioEngineRef.current.resume();
-  };
-  
-  const toggleMute = () => {
-    if (!audioEngineRef.current) return;
-    const newMuted = !audioEngineRef.current.isMuted;
-    audioEngineRef.current.setMuted(newMuted);
-    setIsMuted(newMuted);
-  };
-  
-  // Skip current TTS playback ONLY — NEVER call phase.skip() here.
-  // This is a TTS/audio skip: it stops Ms. Sonoma's current sentence so the user
-  // doesn't have to listen to the full read-aloud. The question remains on screen
-  // and the student must
+  }, [sessionId, accessToken, hasAccess, tierChecked, subjectKey, assignSessionIdentifier, startRealtimeSubscription])
 
-### 31. docs/brain/ingests/pack-mentor-intercepts.md (88ae68a3e8cf1cfeacc9415f2912f09d93188deb2e3a1c2278a1d6bac0d438b4)
-- bm25: -4.1214 | entity_overlap_w: 1.30 | adjusted: -4.4464 | relevance: 1.0000
-
-CREATE TRIGGER auto_deactivate_old_lesson_sessions
-  BEFORE INSERT ON lesson_sessions
-  FOR EACH ROW
-  EXECUTE FUNCTION deactivate_old_lesson_sessions();
-```
-
-**Purpose**: Database enforces single-session constraint even if application logic fails. Ensures no orphaned active sessions.
-
-### Checkpoint Gates (Where Conflicts Detected)
-
-### 35. docs/brain/ai-rewrite-system.md (316854d4d2bc71c0ac5f86896adc58c38b29b41d22194aff261c0a1ca02bde82)
-- bm25: -11.8770 | relevance: 1.0000
-
-## Related Brain Files
-
-- **[visual-aids.md](visual-aids.md)** - AI rewrite optimizes DALL-E 3 prompts for visual aid generation
-- **[lesson-editor.md](lesson-editor.md)** - AIRewriteButton integrated in lesson editor for content improvement
-
-## Key Files
-
-- `src/components/AIRewriteButton.jsx` - Reusable button component
-- `src/app/api/ai/rewrite-text/route.js` - Rewrite API endpoint
-- `src/components/VisualAidsCarousel.jsx` - Current usage example
-
-## What NOT To Do
-
-- Never expose rewrite API publicly (requires auth)
-- Never skip purpose parameter (determines prompt style)
-- Never rewrite without user trigger (button click required)
-- Never cache rewritten text globally (user-specific content)
-
-### 36. docs/brain/ms-sonoma-teaching-system.md (cede03814a8e282c9f02f9885e01f2a1ed833b57c04cd2aef304bf98f2d7f4ba)
-- bm25: -11.6708 | relevance: 1.0000
-
-## Related Brain Files
-
-- **[tts-prefetching.md](tts-prefetching.md)** - TTS powers audio playback for Ms. Sonoma speech
-- **[visual-aids.md](visual-aids.md)** - Visual aids displayed during teaching phase
-
-## Key Files
-
-### Core API
-- `src/app/api/sonoma/route.js` - Main Ms. Sonoma API endpoint, integrates content safety validation
-
-### 32. src/app/api/tts/route.js (9f06659d447e883020b8b869c2c1c474e2e62fce98629b354c5abaa732f7ddfe)
-- bm25: -4.3754 | relevance: 1.0000
-
-const ssml = toSsml(text)
-    const [res] = await client.synthesizeSpeech({ input: { ssml }, voice: DEFAULT_VOICE, audioConfig: AUDIO_CONFIG })
-    const base64 = res?.audioContent
-      ? (typeof res.audioContent === 'string' ? res.audioContent : Buffer.from(res.audioContent).toString('base64'))
-      : undefined
-    // Add data URL prefix for AudioEngine compatibility
-    const dataUrl = base64 ? `data:audio/mp3;base64,${base64}` : undefined
-    // Synth ok
-    return NextResponse.json({ reply: text, audio: dataUrl })
-  } catch (e) {
-    // Synthesis failed
-    return NextResponse.json({ error: 'tts_failed' }, { status: 500 })
-  }
-}
-
-// Lightweight warm-up/health endpoint
-export async function GET() {
-  try {
-    const client = await getTtsClient();
-    const ready = !!client;
-    return NextResponse.json({ ok: true, ready });
-  } catch {
-    return NextResponse.json({ ok: true, ready: false });
-  }
-}
-
-### 33. docs/brain/tts-prefetching.md (d4d48f07f7f9a11e80b3ef68e048d4c9b4038755fe3b6610d8d8f62094649b0b)
-- bm25: -4.3489 | relevance: 1.0000
-
-// Prefetch second question while student answers first
-try {
-  if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
-    const prefetchProblem = generatedComprehension[currentCompIndex];
-    const prefetchQ = ensureQuestionMark(formatQuestionForSpeech(prefetchProblem, { layout: 'multiline' }));
-    ttsCache.prefetch(prefetchQ);
-  }
-} catch {}
-```
-
-### 34. docs/brain/v2-architecture.md (dcea5ecf862257a5f80f2259d150c9f5b9ae6ce42bb7e280b9ad10ee41710f36)
-- bm25: -3.6812 | entity_overlap_w: 2.60 | adjusted: -4.3312 | relevance: 1.0000
-
-**V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (3500+ lines, includes comprehension logic)
-- `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
-- `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
-- `src/app/session/v2/ComprehensionPhase.jsx` - DEPRECATED, not used (comprehension handled inline in SessionPageV2)
-- `src/app/session/v2/DiscussionPhase.jsx` - Discussion activities (200 lines)
-- `src/app/session/v2/ExercisePhase.jsx` - Exercise questions with scoring (300 lines)
-- `src/app/session/v2/WorksheetPhase.jsx` - Fill-in-blank questions (300 lines)
-- `src/app/session/v2/TestPhase.jsx` - Graded test with review (400 lines)
-- `src/app/session/v2/ClosingPhase.jsx` - Closing message with encouragement (150 lines)
-- `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
-- `src/app/session/v2/SnapshotService.jsx` - Session persistence (300 lines)
-- `src/app/session/v2/TimerService.jsx` - Session and work phase timers (350 lines)
-- `src/app/session/v2/KeyboardService.jsx` - Keyboard hotkey management (150 lines)
-- `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading, includes question pools)
-- `src/app/session/v2test/page.jsx` - Direct test route
-
-### 35. docs/brain/ingests/pack.md (562ccdceec920fc88c19e3612ebf7902f23d8078e37896c0623a90e70a093280)
-- bm25: -3.9940 | entity_overlap_w: 1.30 | adjusted: -4.3190 | relevance: 1.0000
-
-**Response**:
-- Returns `{ outline: { kind, title, description, subject, grade, difficulty } }`
-- `kind` is `new` or `review`
-- When `kind=review`, the title is prefixed with `Review:` for clarity
-
-### `/api/generate-lesson`
-**Purpose**: Generate new lesson content via LLM  
-**Status**: Legacy route, may be superseded by facilitator lesson editor
-
-### `/api/tts`
-**Purpose**: Text-to-speech conversion (Google TTS)  
-**Status**: Operational, used for all Ms. Sonoma audio
-
-### `/api/visual-aids/generate`
-**Purpose**: Generate visual aid images via DALL-E 3  
-**Status**: Operational, see `docs/brain/visual-aids.md`
-
-### 33. src/app/facilitator/calendar/LessonPlanner.jsx (2cdb279d41617abc41fcf9088b8da7c5c209b33cd6b03cc5f9bccb95193eb4d0)
-- bm25: -17.9938 | relevance: 1.0000
-
-// Add scheduled lessons
-      if (scheduledRes.ok) {
-        const scheduledData = await scheduledRes.json()
-        const scheduledLessons = (scheduledData.schedule || []).map(s => ({
-          name: s.lesson_key,
-          date: s.scheduled_date,
-          status: 'scheduled'
-        }))
-        lessonContext = [...lessonContext, ...scheduledLessons]
+// Initialize session when all dependencies are ready
+  useEffect(() => {
+    // Only attempt initialization when all required dependencies are ready
+    if (!accessToken || !hasAccess || !tierChecked) {
+      // If we're still waiting for dependencies, keep loading state true only if we haven't checked yet
+      if (tierChecked && (!hasAccess || !accessToken)) {
+        // Dependencies are checked but we don't have access - stop loading
+        setSessionLoading(false)
       }
-
-### 34. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (5d41b9bf517eebb4d3804a2d02aef902c5ef59c377353f9f57c89608469dd536)
-- bm25: -17.9535 | relevance: 1.0000
-
-### 36. docs/brain/ingests/pack-mentor-intercepts.md (3300157944d072852387421f46174f6339d6a53250501dd8a14f2dc88db84519)
-- bm25: -3.6664 | entity_overlap_w: 2.60 | adjusted: -4.3164 | relevance: 1.0000
-
-**V2 Implementation:**
-- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (3500+ lines, includes comprehension logic)
-- `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
-- `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
-- `src/app/session/v2/ComprehensionPhase.jsx` - DEPRECATED, not used (comprehension handled inline in SessionPageV2)
-- `src/app/session/v2/DiscussionPhase.jsx` - Discussion activities (200 lines)
-- `src/app/session/v2/ExercisePhase.jsx` - Exercise questions with scoring (300 lines)
-- `src/app/session/v2/WorksheetPhase.jsx` - Fill-in-blank questions (300 lines)
-- `src/app/session/v2/TestPhase.jsx` - Graded test with review (400 lines)
-- `src/app/session/v2/ClosingPhase.jsx` - Closing message with encouragement (150 lines)
-- `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
-- `src/app/session/v2/SnapshotService.jsx` - Session persistence (300 lines)
-- `src/app/session/v2/TimerService.jsx` - Session and work phase timers (350 lines)
-- `src/app/session/v2/KeyboardService.jsx` - Keyboard hotkey management (150 lines)
-- `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading, includes question pools)
-- `src/app/session/v2test/page.jsx` - Direct test route
-
-### 37. src/app/session/v2/AudioEngine.jsx (b00f8222e6f278ea9df16d8ae24a4c45803094c441a9567d00c67743b3de523d)
-- bm25: -3.6230 | entity_overlap_w: 2.60 | adjusted: -4.2730 | relevance: 1.0000
-
-// If a video-unlock handler is still attached (e.g., autoplay was blocked during
-    // initialize()), clear it so it cannot pause the first real TTS playback.
-    try {
-      if (this.#videoUnlockCleanupTimer) {
-        clearTimeout(this.#videoUnlockCleanupTimer);
-        this.#videoUnlockCleanupTimer = null;
-      }
-    } catch {}
-    try {
-      if (this.#videoUnlockPlayingHandler) {
-        this.#videoElement.removeEventListener('playing', this.#videoUnlockPlayingHandler);
-        this.#videoUnlockPlayingHandler = null;
-      }
-    } catch {}
-    
-    // Use robust retry mechanism from audioUtils (handles iOS edge cases)
-    playVideoWithRetry(this.#videoElement, 3, 100).catch(() => {
-      // Log silently if all retries fail to avoid breaking session
-    });
-  }
-  
-  // Private: Cleanup
-  #cleanup() {
-    this.#isPlaying = false;
-    
-    // Pause video when audio ends (video syncs with TTS)
-    if (this.#videoElement) {
-      try {
-        this.#videoElement.pause();
-      } catch {}
+      return
     }
     
-    this.#clearCaptionTimers();
-    this.#clearSpeechGuard();
-  }
-  
-  // Private: Utilities
-  #parseAudioInput(rawInput) {
-    if (!rawInput) return null;
+    // Don't re-initialize if we've already initialized this subject
+    if (initializedSessionIdRef.current === subjectKey) {
+      return
+    }
 
-const raw = String(rawInput).trim();
-    if (!raw) return null;
-
-// Accept either a data URL or a raw base64 string.
-    const match = raw.match(/^data:(audio\/[^;]+);base64,(.*)$/i);
-    const contentType = match?.[1] || 'audio/mpeg';
-    let b64 = (match?.[2] || raw).trim();
-
-// Normalize: strip whitespace, base64url -> base64, add padding.
-    b64 = b64.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
-    const pad = b64.length % 4;
-    if (pad === 2) b64 += '==';
-    else if (pad === 3) b64 += '=';
-    else if (pad === 1) b64 += '===';
-
-return { contentType, b64 };
-  }
-
-### 38. src/app/session/page.js (7f0daa5c2b0f98ea56232f1c428f4aa6417c952e188d722b5106c0789dd53308)
-- bm25: -3.6158 | entity_overlap_w: 2.60 | adjusted: -4.2658 | relevance: 1.0000
-
-const startDiscussionStep = async () => {
-    // CRITICAL: Unlock audio during user gesture (Begin click) - required for Chrome
-    try {
-      await unlockAudioPlaybackWrapped();
-    } catch (e) {
-      // Silent error handling
+// Avoid duplicate in-flight init for the same subject
+    if (initInFlightSubjectRef.current === subjectKey) {
+      return
     }
     
-    // Ensure we are not starting in a muted state
-    try { setMuted(false); } catch {}
-    try { mutedRef.current = false; } catch {}
-    try { forceNextPlaybackRef.current = true; } catch {}
+    // All dependencies ready - initialize
+    initializeMentorSession()
     
-    // CRITICAL for Chrome: Preload video during user gesture but don't play yet
-    // The video will start when TTS actually begins playing
-    try {
-      if (videoRef.current) {
-        if (videoRef.current.readyState < 2) {
-          videoRef.current.load();
-          // Wait a moment for load to register
-          await new Promise(r => setTimeout(r, 100));
-        }
-        // Just seek to first frame to unlock autoplay, but don't start playing yet
-        try {
-          videoRef.current.currentTime = 0;
-        } catch (e) {
-          // Fallback: briefly play then pause to unlock autoplay
-          const playPromise = videoRef.current.play();
-          if (playPromise && playPromise.then) {
-            await playPromise.then(() => {
-              try { videoRef.current.pause(); } catch {}
-            });
-          }
-        }
-      }
-    } catch (e) {
-      // Silent error handling
-    }
-    
-  // Unified discussion is now generated locally: Greeting + Encouragement + next-step prompt (no joke/silly question)
-    setCanSend(false);
-    // Compose the opening text using local pools (no API/TTS for this step)
-    const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
-    const lessonTitleExact = (effectiveLessonTitle && typeof effectiveLessonTitle === 'string' && effectiveLes
-
-### 39. sidekick_pack.md (bba8c9d0a2ad1fcfae649c359a4219ed32e5a5913249044c89d6ec0d9ecb4d56)
-- bm25: -3.5875 | entity_overlap_w: 2.60 | adjusted: -4.2375 | relevance: 1.0000
-
-### Storage + Public Access (No Login)
-
-Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
-
-### 35. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
-- bm25: -22.0390 | relevance: 1.0000
-
-- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
-  - Full-screen carousel during lesson
-  - "Explain" button triggers Ms. Sonoma TTS of description
-  - Read-only view (no editing)
-
-### Integration Points
-- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
-  - `handleGenerateVisualAids()` - initiates generation
-  - Manages visual aids state and save flow
-
-- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
-  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
-  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
-  - Renders `VisualAidsCarousel` above the inline editor modal
-
-- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
-  - `handleGenerateVisualAids()` - generation from counselor lesson creation
-
-- **`src/app/session/page.js`** - Learner session
-  - Loads visual aids by normalized `lessonKey`
-  - `onShowVisualAids()` - opens carousel
-  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
-
-- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
-  - Loads visual aids by normalized `lessonKey`
-  - Video overlay includes a Visual Aids button when images exist
-  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
-
-### 40. sidekick_pack.md (df3b0d06c6e97315f9ac315d8fe85c1be37b146340873af631c44fae1bc3250f)
-- bm25: -3.5805 | entity_overlap_w: 2.60 | adjusted: -4.2305 | relevance: 1.0000
-
-### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
-- bm25: -22.4515 | relevance: 1.0000
-
-- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
-  - Full-screen carousel during lesson
-  - "Explain" button triggers Ms. Sonoma TTS of description
-  - Read-only view (no editing)
-
-### Integration Points
-- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
-  - `handleGenerateVisualAids()` - initiates generation
-  - Manages visual aids state and save flow
-
-- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
-  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
-  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
-  - Renders `VisualAidsCarousel` above the inline editor modal
-
-- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
-  - `handleGenerateVisualAids()` - generation from counselor lesson creation
-
-- **`src/app/session/page.js`** - Learner session
-  - Loads visual aids by normalized `lessonKey`
-  - `onShowVisualAids()` - opens carousel
-  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
-
-- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
-  - Loads visual aids by normalized `lessonKey`
-  - Video overlay includes a Visual Aids button when images exist
-  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
-
-### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
-- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken, hasAccess, tierChecked, subjectKey, initializeMentorSession])

@@ -483,6 +483,7 @@ function SessionPageV2Inner() {
   const timelineJumpForceFreshPhaseRef = useRef(null); // timeline jumps should show opening actions, not resume mid-phase
   const timelineJumpTimerStartedRef = useRef(null); // track which phase had timer started by timeline jump (prevent double-start)
   const timelineJumpInProgressRef = useRef(false); // Debounce timeline jumps
+  const startOverInProgressRef = useRef(false); // Debounce Start Over to prevent concurrent handler executions
   const pendingTimerStateRef = useRef(null);
   const lastTimerPersistAtRef = useRef(0);
   const startSessionRef = useRef(null);
@@ -5463,6 +5464,10 @@ function SessionPageV2Inner() {
     try {
       if (videoRef.current) {
         try { videoRef.current.muted = true; } catch {}
+        // Pause first so any in-flight video.play() from the unlock sequence settles
+        // cleanly before we seek. On iOS Safari, setting currentTime while play() is
+        // pending can leave the element in an inconsistent state.
+        try { videoRef.current.pause(); } catch {}
         if (videoRef.current.readyState < 2) {
           try { videoRef.current.load(); } catch {}
         }
@@ -7054,14 +7059,26 @@ function SessionPageV2Inner() {
                           opacity: (audioReady && snapshotLoaded) ? 1 : 0.5
                         }}
                         onClick={async () => {
-                          try { await snapshotServiceRef.current?.deleteSnapshot?.(); } catch {}
-                          resumePhaseRef.current = null;
-                          setResumePhase(null);
-                          resetTranscriptState();
-                          try { timerServiceRef.current?.reset?.(); } catch {}
-                          // Don't auto-start - let user click Begin button
-                          setCurrentPhase('idle');
-                          setDiscussionState('idle');
+                          // Debounce: prevent concurrent executions from rapid taps
+                          if (startOverInProgressRef.current) return;
+                          startOverInProgressRef.current = true;
+                          try {
+                            // Stop any in-progress audio/video first so the engine is in a
+                            // clean state before the session restarts. Without this, a playing
+                            // video.play() from the unlock sequence can race with the fresh
+                            // playVideoWithRetry() call that comes with the next Begin click.
+                            try { audioEngineRef.current?.stop(); } catch {}
+                            try { await snapshotServiceRef.current?.deleteSnapshot?.(); } catch {}
+                            resumePhaseRef.current = null;
+                            setResumePhase(null);
+                            resetTranscriptState();
+                            try { timerServiceRef.current?.reset?.(); } catch {}
+                            // Don't auto-start - let user click Begin button
+                            setCurrentPhase('idle');
+                            setDiscussionState('idle');
+                          } finally {
+                            startOverInProgressRef.current = false;
+                          }
                         }}
                         disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
                       >

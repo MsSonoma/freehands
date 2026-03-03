@@ -654,6 +654,11 @@ export class AudioEngine {
 
     // If a video-unlock handler is still attached (e.g., autoplay was blocked during
     // initialize()), clear it so it cannot pause the first real TTS playback.
+    // Track whether the unlock play() was still in-flight BEFORE clearing, so we can
+    // issue a pause() to settle it before starting the real TTS play(). This prevents
+    // the race where the unlock play() resolves after playVideoWithRetry() starts and
+    // the (now-removed) handler would have paused the video mid-TTS.
+    const unlockWasActive = !!(this.#videoUnlockPlayingHandler);
     try {
       if (this.#videoUnlockCleanupTimer) {
         clearTimeout(this.#videoUnlockCleanupTimer);
@@ -666,6 +671,14 @@ export class AudioEngine {
         this.#videoUnlockPlayingHandler = null;
       }
     } catch {}
+
+    // If the unlock video.play() was still in-flight, pause the element first so that
+    // pending play() promise settles (typically aborts with AbortError) before we
+    // call playVideoWithRetry(). Without this, iOS Safari can have two overlapping
+    // play() calls which race and leave the video stuck.
+    if (unlockWasActive) {
+      try { this.#videoElement.pause(); } catch {}
+    }
     
     // Use robust retry mechanism from audioUtils (handles iOS edge cases)
     playVideoWithRetry(this.#videoElement, 3, 100).catch(() => {
