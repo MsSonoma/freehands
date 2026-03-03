@@ -18,10 +18,21 @@ export function splitIntoSentences(text) {
       if (!line) continue;
       // Split on sentence-ending punctuation followed by whitespace or closing quotes then whitespace
       // This prevents splitting numbered lists (1. Item) and preserves quotes with periods ("text.")
-      const parts = line
+      const rawParts = line
         .split(/(?<=[.?!]["']?)\s+/)
         .map((part) => String(part).trim())
         .filter(Boolean);
+      // Merge any standalone number-period token (e.g. "1." "2.") with the fragment that follows it,
+      // so numbered list items stay together as a single caption sentence.
+      const parts = [];
+      for (let pi = 0; pi < rawParts.length; pi++) {
+        if (/^\d+\.$/.test(rawParts[pi]) && pi + 1 < rawParts.length) {
+          parts.push(rawParts[pi] + ' ' + rawParts[pi + 1]);
+          pi++; // consumed the next fragment
+        } else {
+          parts.push(rawParts[pi]);
+        }
+      }
       if (parts.length) out.push(...parts);
     }
     return out.length ? out : [String(text).trim()];
