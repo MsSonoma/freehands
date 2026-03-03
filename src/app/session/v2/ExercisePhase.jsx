@@ -456,6 +456,15 @@ export class ExercisePhase {
     
     this.#advanceQuestion();
   }
+
+  // Public API: Recover from a stuck state (e.g. TTS/API timeout).
+  // Resets to awaiting-answer so the learner can re-submit without reloading.
+  recover() {
+    if (this.#state === 'complete' || this.#state === 'idle') return;
+    try { this.#audioEngine.stop(); } catch {}
+    this.#state = 'awaiting-answer';
+    this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
+  }
   
   // Getters
   get state() {

@@ -5698,10 +5698,19 @@ function SessionPageV2Inner() {
       appendTranscriptLine({ text: answerText, role: 'user' });
     }
     setComprehensionSubmitting(true);
+    // Watchdog: if the phase hangs (TTS/API stall), unblock the UI after 35 s.
+    let watchdogId;
+    const watchdog = new Promise((_, reject) => {
+      watchdogId = setTimeout(() => reject(new Error('submit-watchdog')), 35000);
+    });
     try {
-      await comprehensionPhaseRef.current.submitAnswer(answerText);
+      await Promise.race([comprehensionPhaseRef.current.submitAnswer(answerText), watchdog]);
       setComprehensionAnswer('');
+    } catch (err) {
+      console.warn('[SessionPageV2] Comprehension submit error – recovering phase state:', err?.message);
+      try { comprehensionPhaseRef.current.recover?.(); } catch {}
     } finally {
+      clearTimeout(watchdogId);
       setComprehensionSubmitting(false);
     }
   };
@@ -5716,9 +5725,17 @@ function SessionPageV2Inner() {
     if (!exercisePhaseRef.current || !selectedExerciseAnswer) return;
     appendTranscriptLine({ text: selectedExerciseAnswer, role: 'user' });
     setExerciseSubmitting(true);
+    let watchdogId;
+    const watchdog = new Promise((_, reject) => {
+      watchdogId = setTimeout(() => reject(new Error('submit-watchdog')), 35000);
+    });
     try {
-      await exercisePhaseRef.current.submitAnswer(selectedExerciseAnswer);
+      await Promise.race([exercisePhaseRef.current.submitAnswer(selectedExerciseAnswer), watchdog]);
+    } catch (err) {
+      console.warn('[SessionPageV2] Exercise submit error – recovering phase state:', err?.message);
+      try { exercisePhaseRef.current.recover?.(); } catch {}
     } finally {
+      clearTimeout(watchdogId);
       setExerciseSubmitting(false);
     }
   };
@@ -5733,10 +5750,18 @@ function SessionPageV2Inner() {
     if (!worksheetPhaseRef.current || !worksheetAnswer.trim()) return;
     appendTranscriptLine({ text: worksheetAnswer, role: 'user' });
     setWorksheetSubmitting(true);
+    let watchdogId;
+    const watchdog = new Promise((_, reject) => {
+      watchdogId = setTimeout(() => reject(new Error('submit-watchdog')), 35000);
+    });
     try {
-      await worksheetPhaseRef.current.submitAnswer(worksheetAnswer);
+      await Promise.race([worksheetPhaseRef.current.submitAnswer(worksheetAnswer), watchdog]);
       setWorksheetAnswer('');
+    } catch (err) {
+      console.warn('[SessionPageV2] Worksheet submit error – recovering phase state:', err?.message);
+      try { worksheetPhaseRef.current.recover?.(); } catch {}
     } finally {
+      clearTimeout(watchdogId);
       setWorksheetSubmitting(false);
     }
   };
@@ -5754,20 +5779,28 @@ function SessionPageV2Inner() {
     if (!question) return;
     
     setTestSubmitting(true);
+    let watchdogId;
+    const watchdog = new Promise((_, reject) => {
+      watchdogId = setTimeout(() => reject(new Error('submit-watchdog')), 35000);
+    });
     try {
       if (question.type === 'fill' || question.type === 'fib' || question.sourceType === 'fib') {
-        if (!testAnswer.trim()) return;
+        if (!testAnswer.trim()) { clearTimeout(watchdogId); setTestSubmitting(false); return; }
         appendTranscriptLine({ text: testAnswer, role: 'user' });
-        await testPhaseRef.current.submitAnswer(testAnswer);
+        await Promise.race([testPhaseRef.current.submitAnswer(testAnswer), watchdog]);
         setTestAnswer('');
       } else {
         // MC/TF
-        if (!testAnswer) return;
+        if (!testAnswer) { clearTimeout(watchdogId); setTestSubmitting(false); return; }
         appendTranscriptLine({ text: testAnswer, role: 'user' });
-        await testPhaseRef.current.submitAnswer(testAnswer);
+        await Promise.race([testPhaseRef.current.submitAnswer(testAnswer), watchdog]);
         setTestAnswer('');
       }
+    } catch (err) {
+      console.warn('[SessionPageV2] Test submit error – recovering phase state:', err?.message);
+      try { testPhaseRef.current.recover?.(); } catch {}
     } finally {
+      clearTimeout(watchdogId);
       setTestSubmitting(false);
     }
   };

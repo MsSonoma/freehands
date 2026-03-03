@@ -12,12 +12,17 @@
  */
 export async function fetchTTS(text) {
   if (!text?.trim()) return null;
-  
+
+  // Hard 12-second timeout so a stalled TTS response never blocks the answer flow.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+
   try {
     const response = await fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text.trim() })
+      body: JSON.stringify({ text: text.trim() }),
+      signal: controller.signal,
     });
     
     if (!response.ok) {
@@ -28,8 +33,12 @@ export async function fetchTTS(text) {
     const data = await response.json();
     return data.audio || null;
   } catch (err) {
-    console.error('[TTS] Fetch error:', err);
+    if (err?.name !== 'AbortError') {
+      console.error('[TTS] Fetch error:', err);
+    }
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

@@ -123,36 +123,53 @@ export async function judgeAnswer(learnerAnswerRaw, acceptableList, problem) {
   const shouldUseBackend = isShortAnswerItem(problem) || isFillInBlank(problem);
   if (!shouldUseBackend) return localFallback();
 
-  try {
-    const questionText = String(
-      problem?.question || problem?.prompt || problem?.Q || problem?.q || ''
-    ).trim();
-    const expectedAnswer = String(problem?.answer || problem?.expected || '').trim();
+  // SA/FIB: backend is the only authoritative judge — no local fallback.
+  // Retry up to 3 times (5 s timeout each, 2 s gap) before giving up.
+  const MAX_ATTEMPTS = 3;
+  const ATTEMPT_TIMEOUT_MS = 5000;
+  const RETRY_DELAY_MS = 2000;
 
-    const keywords = Array.isArray(problem?.keywords) ? problem.keywords : [];
-    const minKeywords = Number.isInteger(problem?.minKeywords)
-      ? problem.minKeywords
-      : (keywords.length > 0 ? 1 : 0);
+  const questionText = String(
+    problem?.question || problem?.prompt || problem?.Q || problem?.q || ''
+  ).trim();
+  const expectedAnswer = String(problem?.answer || problem?.expected || '').trim();
+  const keywords = Array.isArray(problem?.keywords) ? problem.keywords : [];
+  const minKeywords = Number.isInteger(problem?.minKeywords)
+    ? problem.minKeywords
+    : (keywords.length > 0 ? 1 : 0);
 
-    const res = await fetch('/api/judge-short-answer', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question: questionText,
-        learnerAnswer,
-        expectedAnswer,
-        expectedAny: acceptable,
-        keywords,
-        minKeywords,
-      }),
-    });
-
-    if (!res.ok) throw new Error(`judge-short-answer ${res.status}`);
-    const data = await res.json();
-    if (typeof data?.correct === 'boolean') return data.correct;
-  } catch {
-    // ignore and fall back to local
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ATTEMPT_TIMEOUT_MS);
+    try {
+      const res = await fetch('/api/judge-short-answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: questionText,
+          learnerAnswer,
+          expectedAnswer,
+          expectedAny: acceptable,
+          keywords,
+          minKeywords,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) throw new Error(`judge-short-answer ${res.status}`);
+      const data = await res.json();
+      if (typeof data?.correct === 'boolean') return data.correct;
+      // Unexpected response shape — treat as retriable.
+      throw new Error('judge-short-answer: unexpected response shape');
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (attempt < MAX_ATTEMPTS) {
+        // Wait before retrying.
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+      }
+    }
   }
 
-  return localFallback();
+  // All attempts exhausted — throw so the caller can recover the phase.
+  throw new Error('judge-unavailable');
 }

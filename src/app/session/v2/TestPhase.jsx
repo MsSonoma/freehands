@@ -483,6 +483,16 @@ export class TestPhase {
     }
     this.#interactionInFlight = false;
   }
+
+  // Public API: Recover from a stuck state (e.g. TTS/API timeout).
+  // Resets to awaiting-answer so the learner can re-submit without reloading.
+  recover() {
+    if (this.#state === 'complete' || this.#state === 'idle' || this.#state === 'reviewing') return;
+    try { this.#audioEngine.stop(); } catch {}
+    this.#interactionInFlight = false;
+    this.#state = 'awaiting-answer';
+    this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
+  }
   
   // Public API: Start review
   startReview() {
