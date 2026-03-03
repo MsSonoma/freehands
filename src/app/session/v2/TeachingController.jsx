@@ -24,6 +24,7 @@
 
 import { fetchTTS } from './services';
 import { ttsCache } from '../utils/ttsCache';
+import { splitIntoSentences as sharedSplitIntoSentences } from '../utils/textProcessing';
 
 export class TeachingController {
   // Private state
@@ -518,25 +519,8 @@ export class TeachingController {
   }
   
   #splitIntoSentences(text) {
-    if (!text) return [];
-    
-    try {
-      const lines = String(text).split(/\n+/);
-      const out = [];
-      for (const lineRaw of lines) {
-        const line = String(lineRaw).replace(/[\t ]+/g, ' ').trimEnd();
-        if (!line) continue;
-        // Split on sentence-ending punctuation followed by whitespace
-        const parts = line
-          .split(/(?<=[.?!]["']?)\s+/)
-          .map((part) => String(part).trim())
-          .filter(Boolean);
-        if (parts.length) out.push(...parts);
-      }
-      return out.length ? out : [String(text).trim()];
-    } catch {
-      return [String(text).trim()];
-    }
+    // Delegate to shared util so numbered-list merging and all fixes stay in one place
+    return sharedSplitIntoSentences(text);
   }
   
   // Private: Call GPT for definitions
