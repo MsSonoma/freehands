@@ -35,7 +35,18 @@ export function splitIntoSentences(text) {
       }
       if (parts.length) out.push(...parts);
     }
-    return out.length ? out : [String(text).trim()];
+    // Second pass: merge any bare "N." fragments that ended up on their own entry
+    // (e.g. GPT puts "1.\nFirst item" — split by \n gives separate entries in out)
+    const merged = [];
+    for (let i = 0; i < out.length; i++) {
+      if (/^\d+\.$/.test(out[i].trim()) && i + 1 < out.length) {
+        merged.push(out[i].trim() + ' ' + out[i + 1].trim());
+        i++;
+      } else {
+        merged.push(out[i]);
+      }
+    }
+    return merged.length ? merged : [String(text).trim()];
   } catch {
     return [String(text).trim()];
   }
