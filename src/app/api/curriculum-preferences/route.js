@@ -68,32 +68,103 @@ export async function POST(request) {
     }
 
     const body = await request.json()
-    const { learnerId, bannedWords, bannedTopics, bannedConcepts, focusTopics, focusConcepts, focusKeywords } = body
+    const { learnerId, subject = 'all', bannedWords, bannedTopics, bannedConcepts, focusTopics, focusConcepts, focusKeywords } = body
 
     if (!learnerId) {
       return NextResponse.json({ error: 'Learner ID is required' }, { status: 400 })
     }
 
-    const { data, error } = await supabase
+    const now = new Date().toISOString()
+
+    if (subject === 'all') {
+      // Save global (all-subjects) preferences using the existing top-level columns
+      const { data, error } = await supabase
+        .from('curriculum_preferences')
+        .upsert({
+          facilitator_id: user.id,
+          learner_id: learnerId,
+          banned_words: bannedWords || [],
+          banned_topics: bannedTopics || [],
+          banned_concepts: bannedConcepts || [],
+          focus_topics: focusTopics || [],
+          focus_concepts: focusConcepts || [],
+          focus_keywords: focusKeywords || [],
+          updated_at: now
+        }, {
+          onConflict: 'facilitator_id,learner_id'
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error saving curriculum preferences:', error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ preferences: data }, { status: 200 })
+    }
+
+    // Save per-subject preferences into the subject_preferences JSONB column.
+    // Requires the subject_preferences column added by scripts/add-curriculum-subject-preferences.sql.
+
+    // 1. Fetch existing row (if any) to merge subject_preferences
+    const { data: existing, error: fetchErr } = await supabase
       .from('curriculum_preferences')
-      .upsert({
-        facilitator_id: user.id,
-        learner_id: learnerId,
-        banned_words: bannedWords || [],
-        banned_topics: bannedTopics || [],
-        banned_concepts: bannedConcepts || [],
-        focus_topics: focusTopics || [],
-        focus_concepts: focusConcepts || [],
-        focus_keywords: focusKeywords || [],
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'facilitator_id,learner_id'
-      })
-      .select()
-      .single()
+      .select('id, subject_preferences')
+      .eq('facilitator_id', user.id)
+      .eq('learner_id', learnerId)
+      .maybeSingle()
+
+    if (fetchErr) {
+      console.error('Error fetching existing curriculum preferences:', fetchErr)
+      return NextResponse.json({ error: fetchErr.message }, { status: 500 })
+    }
+
+    const currentSubjectPrefs = existing?.subject_preferences || {}
+    currentSubjectPrefs[subject] = {
+      focusTopics: focusTopics || [],
+      focusConcepts: focusConcepts || [],
+      focusKeywords: focusKeywords || [],
+      bannedTopics: bannedTopics || [],
+      bannedConcepts: bannedConcepts || [],
+      bannedWords: bannedWords || [],
+    }
+
+    let data, error
+    if (existing?.id) {
+      // Update the existing row's subject_preferences
+      const res = await supabase
+        .from('curriculum_preferences')
+        .update({ subject_preferences: currentSubjectPrefs, updated_at: now })
+        .eq('id', existing.id)
+        .select()
+        .single()
+      data = res.data
+      error = res.error
+    } else {
+      // Create a new row with empty global prefs and the subject-specific prefs
+      const res = await supabase
+        .from('curriculum_preferences')
+        .insert({
+          facilitator_id: user.id,
+          learner_id: learnerId,
+          banned_words: [],
+          banned_topics: [],
+          banned_concepts: [],
+          focus_topics: [],
+          focus_concepts: [],
+          focus_keywords: [],
+          subject_preferences: currentSubjectPrefs,
+          updated_at: now
+        })
+        .select()
+        .single()
+      data = res.data
+      error = res.error
+    }
 
     if (error) {
-      console.error('Error saving curriculum preferences:', error)
+      console.error('Error saving subject curriculum preferences:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 

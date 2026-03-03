@@ -9,6 +9,17 @@ import { InlineExplainer, WorkflowGuide } from '@/components/FacilitatorHelp'
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 const CORE_SUBJECTS = ['math', 'language arts', 'science', 'social studies', 'general']
 
+// Convert a duration code to total calendar days.
+// Codes: '1d'..'4d' = days, '1w'..'4w' = weeks.
+// Backward compat: numbers are treated as weeks (old "months" interpretation removed).
+const parseDurationToDays = (dur) => {
+  if (typeof dur === 'number') return dur * 7 // backward compat: old numeric = weeks
+  const str = String(dur)
+  if (str.endsWith('d')) return parseInt(str, 10)
+  if (str.endsWith('w')) return parseInt(str, 10) * 7
+  return 7 // fallback
+}
+
 export default function LessonPlanner({ 
   learnerId, 
   learnerGrade,
@@ -40,7 +51,7 @@ export default function LessonPlanner({
   const [generating, setGenerating] = useState(false)
   const [templateId, setTemplateId] = useState(null)
   const [planStartDate, setPlanStartDate] = useState('')
-  const [planDuration, setPlanDuration] = useState(1)
+  const [planDuration, setPlanDuration] = useState('1w')
 
   const weeklyPatternLoadedRef = useRef(false)
   const autoGenerateKeyRef = useRef(null)
@@ -64,9 +75,15 @@ export default function LessonPlanner({
 
   useEffect(() => {
     if (initialPlanDuration !== undefined && initialPlanDuration !== null) {
-      const asNum = Number(initialPlanDuration)
-      if (Number.isFinite(asNum) && asNum >= 1 && asNum <= 4) {
-        setPlanDuration(asNum)
+      const str = String(initialPlanDuration)
+      if (/^[1-4][dw]$/.test(str)) {
+        setPlanDuration(str)
+      } else {
+        // backward compat: old numeric values (months) → treat as weeks
+        const asNum = Number(initialPlanDuration)
+        if (Number.isFinite(asNum) && asNum >= 1 && asNum <= 4) {
+          setPlanDuration(`${asNum}w`)
+        }
       }
     }
   }, [initialPlanDuration])
@@ -247,7 +264,7 @@ export default function LessonPlanner({
     }
   }
 
-  const generatePlannedLessons = async (startDate, weeks = 4) => {
+  const generatePlannedLessons = async (startDate, totalDays = 7) => {
     if (!requirePlannerAccess()) return
     if (!learnerId) {
       alert('Please select a learner first')
@@ -285,7 +302,7 @@ export default function LessonPlanner({
       ])
 
       let lessonContext = []
-      let curriculumPrefs = {}
+      let prefsRow = null
 
       // Build chronological lesson history with scores
       if (historyRes.ok) {
@@ -346,7 +363,34 @@ export default function LessonPlanner({
 
       // Get curriculum preferences
       if (preferencesRes.ok) {
-        curriculumPrefs = await preferencesRes.json()
+        const prefsJson = await preferencesRes.json()
+        prefsRow = prefsJson.preferences || null
+      }
+
+      // Build a function to add per-subject context additions (global + subject-specific merged)
+      const getSubjectContextAdditions = (subject) => {
+        if (!prefsRow) return ''
+        const globalFocusConcepts = prefsRow.focus_concepts || []
+        const globalFocusTopics = prefsRow.focus_topics || []
+        const globalFocusKeywords = prefsRow.focus_keywords || []
+        const globalBannedConcepts = prefsRow.banned_concepts || []
+        const globalBannedTopics = prefsRow.banned_topics || []
+        const globalBannedWords = prefsRow.banned_words || []
+        const subPrefs = prefsRow.subject_preferences?.[subject] || {}
+        const focusConcepts = [...globalFocusConcepts, ...(subPrefs.focusConcepts || [])]
+        const focusTopics = [...globalFocusTopics, ...(subPrefs.focusTopics || [])]
+        const focusKeywords = [...globalFocusKeywords, ...(subPrefs.focusKeywords || [])]
+        const bannedConcepts = [...globalBannedConcepts, ...(subPrefs.bannedConcepts || [])]
+        const bannedTopics = [...globalBannedTopics, ...(subPrefs.bannedTopics || [])]
+        const bannedWords = [...globalBannedWords, ...(subPrefs.bannedWords || [])]
+        let additions = ''
+        if (focusConcepts.length) additions += `\n\nFocus Concepts (this subject): ${focusConcepts.join(', ')}`
+        if (focusTopics.length) additions += `\n\nFocus Topics (this subject): ${focusTopics.join(', ')}`
+        if (focusKeywords.length) additions += `\n\nFocus Keywords (this subject): ${focusKeywords.join(', ')}`
+        if (bannedConcepts.length) additions += `\n\nBanned Concepts (this subject): ${bannedConcepts.join(', ')}`
+        if (bannedTopics.length) additions += `\n\nBanned Topics (this subject): ${bannedTopics.join(', ')}`
+        if (bannedWords.length) additions += `\n\nBanned Words (this subject): ${bannedWords.join(', ')}`
+        return additions
       }
 
       // Build context string for GPT
@@ -374,25 +418,7 @@ export default function LessonPlanner({
           .filter((l) => l.status === 'completed' && l.score !== null && l.score >= HIGH_SCORE_AVOID_REPEAT_THRESHOLD)
           .slice(-30)
 
-      // Add curriculum preferences (only non-empty fields)
-      if (curriculumPrefs.focus_concepts) {
-        contextText += `\n\nFocus Concepts: ${curriculumPrefs.focus_concepts}`
-      }
-      if (curriculumPrefs.focus_topics) {
-        contextText += `\n\nFocus Topics: ${curriculumPrefs.focus_topics}`
-      }
-      if (curriculumPrefs.focus_words) {
-        contextText += `\n\nFocus Words: ${curriculumPrefs.focus_words}`
-      }
-      if (curriculumPrefs.banned_concepts) {
-        contextText += `\n\nBanned Concepts: ${curriculumPrefs.banned_concepts}`
-      }
-      if (curriculumPrefs.banned_topics) {
-        contextText += `\n\nBanned Topics: ${curriculumPrefs.banned_topics}`
-      }
-      if (curriculumPrefs.banned_words) {
-        contextText += `\n\nBanned Words: ${curriculumPrefs.banned_words}`
-      }
+      // Curriculum preferences are applied per-subject inside getSubjectContextAdditions below.
 
       // Calculate recommended difficulty based on recent performance
       const recentCompleted = lessonContext
@@ -497,20 +523,19 @@ export default function LessonPlanner({
       // Parse as local date to avoid timezone issues
       const [year, month, day] = startDate.split('-').map(Number)
       const start = new Date(year, month - 1, day)
-      
-      for (let week = 0; week < weeks; week++) {
-        for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-          const currentDate = new Date(start)
-          currentDate.setDate(start.getDate() + (week * 7) + dayIndex)
-          
-          const dayName = DAYS[currentDate.getDay()]
-          const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`
-          const daySubjects = weeklyPattern[dayName] || []
 
-          for (const subjectInfo of daySubjects) {
-            // Generate outline for each subject on this day
-            try {
-              const dynamicContextText = `${contextText}${buildGenerationSoFarText(subjectInfo.subject)}`
+      for (let dayOffset = 0; dayOffset < totalDays; dayOffset++) {
+        const currentDate = new Date(start)
+        currentDate.setDate(start.getDate() + dayOffset)
+
+        const dayName = DAYS[currentDate.getDay()]
+        const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`
+        const daySubjects = weeklyPattern[dayName] || []
+
+        for (const subjectInfo of daySubjects) {
+          // Generate outline for each subject on this day
+          try {
+            const dynamicContextText = `${contextText}${getSubjectContextAdditions(subjectInfo.subject)}${buildGenerationSoFarText(subjectInfo.subject)}`
 
               const response = await fetch('/api/generate-lesson-outline', {
                 method: 'POST',
@@ -552,14 +577,16 @@ export default function LessonPlanner({
             }
           }
         }
-      }
 
       if (onPlannedLessonsChange) {
         onPlannedLessonsChange(lessons)
       }
     } catch (err) {
       console.error('Error generating planned lessons:', err)
-      alert('Failed to generate lesson plan')
+      // Save any partial results already generated rather than discarding them
+      if (Object.keys(lessons).length > 0 && onPlannedLessonsChange) {
+        onPlannedLessonsChange(lessons)
+      }
     } finally {
       setGenerating(false)
     }
@@ -579,8 +606,7 @@ export default function LessonPlanner({
     if (!hasAnySubjects) return
 
     autoGenerateKeyRef.current = key
-    const weeksToGenerate = Number(planDuration) * 4
-    generatePlannedLessons(planStartDate, weeksToGenerate)
+    generatePlannedLessons(planStartDate, parseDurationToDays(planDuration))
   }, [autoGeneratePlan, learnerId, planStartDate, planDuration, weeklyPattern, generating])
 
   const handleLessonClick = (lesson, date) => {
@@ -802,10 +828,18 @@ export default function LessonPlanner({
                 background: '#fff'
               }}
             >
-              <option value={1}>1 Month</option>
-              <option value={2}>2 Months</option>
-              <option value={3}>3 Months</option>
-              <option value={4}>4 Months</option>
+              <optgroup label="Days">
+                <option value="1d">1 Day</option>
+                <option value="2d">2 Days</option>
+                <option value="3d">3 Days</option>
+                <option value="4d">4 Days</option>
+              </optgroup>
+              <optgroup label="Weeks">
+                <option value="1w">1 Week</option>
+                <option value="2w">2 Weeks</option>
+                <option value="3w">3 Weeks</option>
+                <option value="4w">4 Weeks</option>
+              </optgroup>
             </select>
           </div>
 
@@ -816,8 +850,7 @@ export default function LessonPlanner({
                 const today = new Date()
                 return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
               })()
-              const weeksToGenerate = planDuration * 4 // Approximate weeks per month
-              generatePlannedLessons(startDate, weeksToGenerate)
+              generatePlannedLessons(startDate, parseDurationToDays(planDuration))
             }}
             disabled={generating || !learnerId}
             style={{
@@ -938,6 +971,7 @@ export default function LessonPlanner({
       {showPreferences && (
         <CurriculumPreferencesOverlay
           learnerId={learnerId}
+          customSubjects={customSubjects}
           onClose={() => setShowPreferences(false)}
           onSaved={() => {
             // Preferences saved
