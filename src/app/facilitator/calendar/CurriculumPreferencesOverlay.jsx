@@ -111,14 +111,25 @@ export default function CurriculumPreferencesOverlay({ learnerId, customSubjects
         })
       })
 
-      if (!response.ok) throw new Error('Failed to save preferences')
-
       const result = await response.json()
+      if (!response.ok) {
+        if (result.migrationNeeded) {
+          alert(
+            'Per-subject preferences require a one-time database update.\n\n' +
+            'Run this SQL in Supabase:\n\n' +
+            'ALTER TABLE curriculum_preferences ADD COLUMN IF NOT EXISTS subject_preferences JSONB DEFAULT \'{}\'::jsonb;'
+          )
+        } else {
+          alert('Failed to save preferences: ' + (result.error || 'Unknown error'))
+        }
+        return
+      }
+
       setFullRow(result.preferences)
       if (onSaved) onSaved()
     } catch (err) {
       console.error('Error saving preferences:', err)
-      alert('Failed to save curriculum preferences')
+      alert('Failed to save curriculum preferences: ' + (err.message || 'Unknown error'))
     } finally {
       setSaving(false)
     }

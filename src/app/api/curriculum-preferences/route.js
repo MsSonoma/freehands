@@ -105,9 +105,14 @@ export async function POST(request) {
     }
 
     // Save per-subject preferences into the subject_preferences JSONB column.
-    // Requires the subject_preferences column added by scripts/add-curriculum-subject-preferences.sql.
+    // Requires scripts/add-curriculum-subject-preferences.sql to have been run.
 
-    // 1. Fetch existing row (if any) to merge subject_preferences
+    // 1. Fetch existing row — try to read subject_preferences for merge;
+    //    if the column doesn't exist the select will error, so we fall back to id-only.
+    let existingId = null
+    let existingSubjectPrefs = {}
+    let columnExists = true
+
     const { data: existing, error: fetchErr } = await supabase
       .from('curriculum_preferences')
       .select('id, subject_preferences')
@@ -116,36 +121,63 @@ export async function POST(request) {
       .maybeSingle()
 
     if (fetchErr) {
-      console.error('Error fetching existing curriculum preferences:', fetchErr)
-      return NextResponse.json({ error: fetchErr.message }, { status: 500 })
+      const isColMissing =
+        fetchErr.message?.includes('subject_preferences') ||
+        fetchErr.code === '42703' ||
+        fetchErr.code === 'PGRST204'
+      if (isColMissing) {
+        // Column not yet added — fall back to id-only fetch so we at least know row state
+        columnExists = false
+        const { data: idOnly } = await supabase
+          .from('curriculum_preferences')
+          .select('id')
+          .eq('facilitator_id', user.id)
+          .eq('learner_id', learnerId)
+          .maybeSingle()
+        existingId = idOnly?.id || null
+      } else {
+        console.error('Error fetching existing curriculum preferences:', fetchErr)
+        return NextResponse.json({ error: fetchErr.message }, { status: 500 })
+      }
+    } else {
+      existingId = existing?.id || null
+      existingSubjectPrefs = existing?.subject_preferences || {}
     }
 
-    const currentSubjectPrefs = existing?.subject_preferences || {}
-    currentSubjectPrefs[subject] = {
-      focusTopics: focusTopics || [],
-      focusConcepts: focusConcepts || [],
-      focusKeywords: focusKeywords || [],
-      bannedTopics: bannedTopics || [],
-      bannedConcepts: bannedConcepts || [],
-      bannedWords: bannedWords || [],
+    if (!columnExists) {
+      return NextResponse.json({
+        error: 'Per-subject preferences require a one-time database update. Run scripts/add-curriculum-subject-preferences.sql in Supabase.',
+        migrationNeeded: true
+      }, { status: 500 })
+    }
+
+    // Merge this subject's data into existing subject_preferences map
+    const mergedSubjectPrefs = {
+      ...existingSubjectPrefs,
+      [subject]: {
+        focusTopics: focusTopics || [],
+        focusConcepts: focusConcepts || [],
+        focusKeywords: focusKeywords || [],
+        bannedTopics: bannedTopics || [],
+        bannedConcepts: bannedConcepts || [],
+        bannedWords: bannedWords || [],
+      }
     }
 
     let data, error
-    if (existing?.id) {
-      // Update the existing row's subject_preferences
+    if (existingId) {
       const res = await supabase
         .from('curriculum_preferences')
-        .update({ subject_preferences: currentSubjectPrefs, updated_at: now })
-        .eq('id', existing.id)
+        .update({ subject_preferences: mergedSubjectPrefs, updated_at: now })
+        .eq('id', existingId)
         .select()
         .single()
       data = res.data
       error = res.error
     } else {
-      // Create a new row with empty global prefs and the subject-specific prefs
       const res = await supabase
         .from('curriculum_preferences')
-        .insert({
+        .upsert({
           facilitator_id: user.id,
           learner_id: learnerId,
           banned_words: [],
@@ -154,9 +186,9 @@ export async function POST(request) {
           focus_topics: [],
           focus_concepts: [],
           focus_keywords: [],
-          subject_preferences: currentSubjectPrefs,
+          subject_preferences: mergedSubjectPrefs,
           updated_at: now
-        })
+        }, { onConflict: 'facilitator_id,learner_id' })
         .select()
         .single()
       data = res.data
@@ -164,6 +196,17 @@ export async function POST(request) {
     }
 
     if (error) {
+      const isMissingColumn =
+        error.message?.includes('subject_preferences') ||
+        error.code === '42703' ||
+        error.code === 'PGRST204'
+      if (isMissingColumn) {
+        console.error('subject_preferences column missing — run scripts/add-curriculum-subject-preferences.sql', error)
+        return NextResponse.json({
+          error: 'Per-subject preferences require a one-time database update. Run scripts/add-curriculum-subject-preferences.sql in Supabase.',
+          migrationNeeded: true
+        }, { status: 500 })
+      }
       console.error('Error saving subject curriculum preferences:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
