@@ -6,12 +6,12 @@ Mode: standard
 
 Prompt (original):
 ```text
-Timers overlay PIN check pause redundant already authenticated
+vocab words bold captions TTS text display caption rendering
 ```
 
 Filter terms used:
 ```text
-PIN
+TTS
 ```
 # Context Pack
 
@@ -25,7 +25,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-PIN
+TTS
 
 ## Forced Context
 
@@ -33,1383 +33,1437 @@ PIN
 
 ## Ranked Evidence
 
-### 1. docs/brain/pin-protection.md (3aa2a8e5f407ed24098e9d06429a29a96012af85911782bdf9d220a708346647)
-- bm25: -6.1423 | entity_overlap_w: 14.30 | adjusted: -9.7173 | relevance: 1.0000
-
-### Preferences
-
-PIN preferences are stored in:
-- Server: `profiles.pin_prefs` (JSON column)
-- Client: `localStorage.facilitator_pin_prefs` (cached copy)
-
-Default preferences (when PIN exists but prefs not set):
-```javascript
-{
-  downloads: true,
-  facilitatorKey: true,
-  skipTimeline: true,
-  changeLearner: true,
-  refresh: true,
-  timer: true,
-  facilitatorPage: true,
-  activeSession: true
-}
-```
-
-## What NOT To Do
-
-**❌ DON'T** set facilitator section flag for non-facilitator actions
-- Only `facilitator-page` action and session-exit-to-facilitator navigation should set the flag
-- Setting it for other actions would allow bypassing PIN on facilitator pages
-
-**❌ DON'T** store PIN in localStorage
-- PIN verification is server-only for security
-- Never cache PIN validation results beyond sessionStorage flag
-
-**❌ DON'T** create multiple PIN prompts simultaneously
-- `ensurePinAllowed` uses global lock (`activePinPrompt`) to prevent concurrent prompts
-- If another prompt is active, wait for its result
-
-**❌ DON'T** forget to clear facilitator section flag when leaving facilitator routes
-- FacilitatorSectionTracker handles this automatically
-- Manual flag clearing should match its logic
-
-**❌ DON'T** use `ensurePinAllowed` for non-gated features
-- Only call it when you genuinely need to gate an action
-- Unnecessary calls degrade user experience
-
-## Key Files
-
-**Core Logic**:
-- `src/app/lib/pinGate.js` - PIN validation, section tracking, preferences
-- `src/app/api/facilitator/pin/route.js` - Get PIN state, preferences
-- `src/app/api/facilitator/pin/verify/route.js` - Server PIN verification
-
-**Navigation Integration**:
-- `src/app/HeaderBar.js` - Navigation PIN checks, facilitator flag setting
-- `src/components/FacilitatorSectionTracker.jsx` - Section flag lifecycle
-
-### 2. docs/brain/pin-protection.md (ebdd1e94caea25980934f22545b5a075ce528dea5b0b231341f83cf36273fe59)
-- bm25: -5.8088 | entity_overlap_w: 10.40 | adjusted: -8.4088 | relevance: 1.0000
-
-## Recent Changes
-
-**2025-12-03**: Fixed double PIN prompt when exiting session to facilitator pages
-- Modified `HeaderBar.goWithPin` to set facilitator section flag after successful session-exit PIN when destination is facilitator route
-- Prevents facilitator page from prompting again since flag is already set
-- Files: `src/app/HeaderBar.js` (imported setInFacilitatorSection, added flag set logic in goWithPin)
-
-## Design Decisions
-
-**Why sessionStorage for flag instead of localStorage?**
-- Flag should expire when browser tab closes (session-based)
-- Prevents stale "logged in" state across browser restarts
-- User must re-validate PIN in new browser sessions
-
-**Why global lock for PIN prompts?**
-- Prevents race conditions when multiple components check PIN simultaneously
-- Ensures single PIN prompt even if multiple checks triggered during navigation
-
-**Why server-only verification?**
-- Security: can't bypass by tampulating localStorage
-- Centralized: PIN hash stored only in database
-- Audit trail: all PIN verifications logged server-side
-
-**Why separate flag for facilitator section vs individual actions?**
-- Facilitator pages form a logical "section" where re-prompting is annoying
-- Other actions (downloads, timeline) are one-off and don't imply continued access
-- Section flag balances security (prompt when entering) with UX (don't re-prompt)
-
-### 3. docs/brain/pin-protection.md (a572b2eaa4ac61bc5c6c926b97a5f45498691130f5af49873ea35f306e9ecc36)
-- bm25: -5.7455 | entity_overlap_w: 10.40 | adjusted: -8.3455 | relevance: 1.0000
-
-# PIN Protection System
-
-## Overview
-
-PIN protection gates access to facilitator features and controls session exits. The system prevents learners from accessing facilitator tools, downloads, or modifying session state without adult supervision.
-
-## How It Works
-
-### Core Components
-
-**pinGate.js** (`src/app/lib/pinGate.js`)
-- Central PIN validation utility
-- Manages facilitator section tracking
-- Provides `ensurePinAllowed(action)` function for gating actions
-- Stores PIN preferences in localStorage and server
-
-**FacilitatorSectionTracker.jsx** (`src/components/FacilitatorSectionTracker.jsx`)
-- Tracks when user enters/leaves facilitator section
-- Clears facilitator section flag when navigating away from `/facilitator/*`
-- Mounted in root layout to track all navigation
-
-**HeaderBar.js** (`src/app/HeaderBar.js`)
-- Implements navigation PIN checks
-- Sets facilitator section flag when navigating from session to facilitator
-- Prevents double PIN prompts
-
-### PIN Actions
-
-Each action type maps to a preference key that controls whether PIN is required:
-
-| Action | Preference Key | When Triggered | Sets Facilitator Flag? |
-|--------|---------------|----------------|----------------------|
-| `facilitator-page` | `facilitatorPage` | Entering any `/facilitator/*` page | YES |
-| `session-exit` | `activeSession` | Leaving active lesson session | NO (but sets flag if destination is facilitator) |
-| `download` | `downloads` | Worksheet/test downloads | NO |
-| `facilitator-key` | `facilitatorKey` | Combined answer key | NO |
-| `skip` / `timeline` | `skipTimeline` | Timeline jumps, skip buttons | NO |
-| `change-learner` | `changeLearner` | Switching learners | NO |
-| `refresh` | `refresh` | Re-generate worksheet/test | NO |
-| `timer` | `timer` | Pause/resume timer | NO |
-
-### 4. docs/brain/pin-protection.md (099075fb976b0dc884d23cec569d3b693ff409180962ef058793b7f53217859f)
-- bm25: -5.6836 | entity_overlap_w: 10.40 | adjusted: -8.2836 | relevance: 1.0000
-
-Session surfaces that mutate session state should gate with `ensurePinAllowed(action)` before performing the action.
-
-**Session V2 (timeline + timer controls):**
-- Timeline jumps call `ensurePinAllowed('timeline')` before switching phases.
-- Timer controls call `ensurePinAllowed('timer')` before opening the timer control overlay and before pause/resume toggles.
-
-**Games (example: Platform Jumper):**
-- Facilitator-only game shortcuts (like skipping to a level) must call `ensurePinAllowed('skip')` before opening any level picker.
-
-### Facilitator Section Flag
-
-**Purpose**: Prevent double PIN prompts when navigating between facilitator pages
-
-**How it works**:
-1. Flag is stored in `sessionStorage` (cleared when browser tab closes)
-2. When `ensurePinAllowed('facilitator-page')` succeeds, it sets the flag
-3. Subsequent `facilitator-page` checks skip PIN if flag is already set
-4. Flag is cleared when user navigates away from `/facilitator/*` routes
-
-### Navigation Flow (Session → Facilitator)
-
-**Before Fix (Double PIN Prompt)**:
-1. User clicks Facilitator link from session page
-2. HeaderBar calls `ensurePinAllowed('session-exit')` → prompts for PIN
-3. Navigation to `/facilitator` happens
-4. Facilitator page calls `ensurePinAllowed('facilitator-page')` → prompts for PIN AGAIN (flag not set)
-
-**After Fix (Single PIN Prompt)**:
-1. User clicks Facilitator link from session page
-2. HeaderBar calls `ensurePinAllowed('session-exit')` → prompts for PIN
-3. HeaderBar detects destination is facilitator route → calls `setInFacilitatorSection(true)`
-4. Navigation to `/facilitator` happens
-5. Facilitator page calls `ensurePinAllowed('facilitator-page')` → SKIPS PIN (flag already set)
-
-### Server Verification
-
-### 5. docs/brain/ingests/pack-mentor-intercepts.md (ede430caef237b7b0db5b0d3de9c65b88aa4cd3048b43318b8699396eb14daae)
-- bm25: -5.7173 | entity_overlap_w: 9.10 | adjusted: -7.9923 | relevance: 1.0000
-
-```
-If user says during parameter collection:
-- "stop"
-- "no"
-- "I don't want to generate"
-- "give me advice instead"
-- "I don't want you to generate the lesson"
-Skip Confirmation When Intent Is Ambiguous
-```
-User: "I need a language arts lesson but I don't want one of the ones we have in 
-       the library. It should have a Christmas theme, please make some recommendations."
-
-WRONG: "Is this lesson for Emma's grade (4)?"
-RIGHT: "Would you like me to generate a custom lesson?"
-       (If they say no: "Let me search for Christmas-themed language arts lessons...")
-```
-
-### 33. docs/brain/pin-protection.md (3aa2a8e5f407ed24098e9d06429a29a96012af85911782bdf9d220a708346647)
-- bm25: -12.0850 | relevance: 1.0000
-
-### Preferences
-
-PIN preferences are stored in:
-- Server: `profiles.pin_prefs` (JSON column)
-- Client: `localStorage.facilitator_pin_prefs` (cached copy)
-
-Default preferences (when PIN exists but prefs not set):
-```javascript
-{
-  downloads: true,
-  facilitatorKey: true,
-  skipTimeline: true,
-  changeLearner: true,
-  refresh: true,
-  timer: true,
-  facilitatorPage: true,
-  activeSession: true
-}
-```
-
-## What NOT To Do
-
-**❌ DON'T** set facilitator section flag for non-facilitator actions
-- Only `facilitator-page` action and session-exit-to-facilitator navigation should set the flag
-- Setting it for other actions would allow bypassing PIN on facilitator pages
-
-**❌ DON'T** store PIN in localStorage
-- PIN verification is server-only for security
-- Never cache PIN validation results beyond sessionStorage flag
-
-**❌ DON'T** create multiple PIN prompts simultaneously
-- `ensurePinAllowed` uses global lock (`activePinPrompt`) to prevent concurrent prompts
-- If another prompt is active, wait for its result
-
-### 6. src/app/facilitator/account/page.js (ba65d353ea7b5b7ee8155d70feecfcb97e64c738ede74d283ec9d72d92ded791)
-- bm25: -5.4197 | entity_overlap_w: 6.50 | adjusted: -7.0447 | relevance: 1.0000
-
-return (
-    <SettingsOverlay
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Facilitator PIN"
-      maxWidth={550}
-    >
-      {loading ? (
-        <p>Loading…</p>
-      ) : (
-        <form onSubmit={handleSave} style={{ display:'grid', gap: 16 }}>
-          <p style={{ color: '#6b7280', margin: 0 }}>
-            Protect sensitive actions like skipping or downloading. This PIN is saved to your account.
-          </p>
-          
-          {/* Hidden username for accessibility */}
-          <input
-            type="text"
-            name="username"
-            autoComplete="username"
-            defaultValue={email || ''}
-            aria-hidden="true"
-            tabIndex={-1}
-            style={{ position:'absolute', width:1, height:1, overflow:'hidden', clip:'rect(0 0 0 0)', clipPath:'inset(50%)', whiteSpace:'nowrap', border:0, padding:0, margin:-1 }}
-          />
-          
-          {hasPin && (
-            <div>
-              <label style={{ display:'block', marginBottom:8, fontWeight:600, color:'#374151' }}>Current PIN</label>
-              <input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="current-password"
-                value={currentPin} onChange={e=>setCurrentPin(e.target.value)}
-                style={{ padding:'8px 12px', border:'1px solid #e5e7eb', borderRadius:8, width: '100%', fontSize: 14 }} />
-            </div>
-          )}
-          
-          <div>
-            <label style={{ display:'block', marginBottom:8, fontWeight:600, color:'#374151' }}>{hasPin ? 'New PIN' : 'Set PIN'}</label>
-            <input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="new-password"
-              value={pin} onChange={e=>setPin(e.target.value)}
-              placeholder="4–8 digits"
-              style={{ padding:'8p
-
-### 7. docs/brain/pin-protection.md (9d13ed0a83c6fafa15ecaac2fcd18ecc25090900b8af7f490f6909677b7b779f)
-- bm25: -6.2279 | entity_overlap_w: 2.60 | adjusted: -6.8779 | relevance: 1.0000
-
-PIN verification is server-only (no localStorage fallback):
-- Server validates PIN against hashed value in `profiles.facilitator_pin_hash`
-- Uses bcrypt for secure comparison
-- API endpoint: `POST /api/facilitator/pin/verify`
-
-### 8. docs/brain/ingests/pack-mentor-intercepts.md (356cf263e7cd125b6f2899eaf6780a3e6b0427dbef63b6e3757dc56b623a2733)
-- bm25: -5.6907 | entity_overlap_w: 3.90 | adjusted: -6.6657 | relevance: 1.0000
-
-**Already implemented** in `page.js` lines 286-314:
-- Client calls `ensurePinAllowed(pinCode)` from `src/app/lib/pinAuth.js`
-- Server validates PIN hash against learner's stored scrypt hash
-- Only correct PIN allows session takeover
-- Failed PIN shows error, user can retry
-
-### 9. docs/brain/ingests/pack-mentor-intercepts.md (3e231008a05445b5759eef203b600a852bd9520ce71072cb95d474a484742b29)
-- bm25: -5.1706 | entity_overlap_w: 5.20 | adjusted: -6.4706 | relevance: 1.0000
-
-**❌ DON'T** use `ensurePinAllowed` for non-gated features
-- Only call it when you genuinely need to gate an action
-- Unnecessary calls degrade user experience
-
-## Key Files
-
-**Core Logic**:
-- `src/app/lib/pinGate.js` - PIN validation, section tracking, preferences
-- `src/app/api/facilitator/pin/route.js` - Get PIN state, preferences
-- `src/app/api/facilitator/pin/verify/route.js` - Server PIN verification
-
-**Navigation Integration**:
-- `src/app/HeaderBar.js` - Navigation PIN checks, facilitator flag setting
-- `src/components/FacilitatorSectionTracker.jsx` - Section flag lifecycle
-
-### 34. docs/brain/session-takeover.md (1f835d163bf68929a4e5f34cd5f4cffe3ef482a5e6b64ab8f8d4977332da7266)
-- bm25: -12.0329 | relevance: 1.0000
-
-**Result**: When play timer expires with page closed, restore automatically:
-1. Sets countdown completed flag (blocks countdown)
-2. Transitions timer to work mode
-3. Triggers phase handler to start work phase
-4. User lands directly in work phase entrance, can click Go to begin
-
-**Key Files:**
-- `src/app/session/page.js`: Flag setting in completion handlers, not in handlePlayTimeUp
-- `src/app/session/hooks/useSnapshotPersistence.js`: Detect expired timer on restore, auto-transition
-- `src/app/session/sessionSnapshotStore.js`: Persist flag in snapshot
-
-### Database Schema
-
-#### `lesson_sessions` Table Extensions
-
-**New columns:**
-```sql
-ALTER TABLE lesson_sessions
-  ADD COLUMN session_id UUID NOT NULL DEFAULT gen_random_uuid(),
-  ADD COLUMN device_name TEXT,
-  ADD COLUMN last_activity_at TIMESTAMPTZ DEFAULT NOW();
-
-CREATE UNIQUE INDEX unique_active_lesson_session 
-  ON lesson_sessions (learner_id, lesson_id) 
-  WHERE ended_at IS NULL;
-```
-
-### 10. src/app/api/mentor-session/route.js (d7a1a870ca1f26628f085edc7e6fbc70a8b0a78548e2d9de8be14e9bf467a062)
-- bm25: -4.9904 | entity_overlap_w: 5.20 | adjusted: -6.2904 | relevance: 1.0000
-
-const targetId = targetSessionId || existingSession?.session_id
-      if (!targetId) {
-        return jsonWithDeviceCookie({ body: { error: 'No target session available to force end' }, status: 400, deviceCookieHeader })
-      }
-
-const { data: targetSessions, error: targetFetchError } = await supabase
-        .from('mentor_sessions')
-        .select('id, session_id')
-        .eq('facilitator_id', user.id)
-        .eq('session_id', targetId)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-
-if (targetFetchError) {
-        return jsonWithDeviceCookie({ body: { error: 'Database error' }, status: 500, deviceCookieHeader })
-      }
-
-const targetSession = targetSessions?.[0]
-      if (!targetSession) {
-        return jsonWithDeviceCookie({ body: { status: 'already_inactive' }, status: 200, deviceCookieHeader })
-      }
-
-const success = await deactivateSessionById(targetSession.id)
-      if (!success) {
-        return jsonWithDeviceCookie({ body: { error: 'Failed to end session' }, status: 500, deviceCookieHeader })
-      }
-
-return jsonWithDeviceCookie({
-        body: { status: 'force_ended', clearedSessionId: targetSession.session_id },
-        status: 200,
-        deviceCookieHeader
-      })
-    }
-
-// If taking over from another device, verify PIN
-    // If device_id is missing (legacy rows), we conservatively require PIN for takeover.
-    if (existingSession && existingSession.device_id !== deviceId && action === 'takeover') {
-      // Verify PIN code
-      if (!pinCode) {
-        return jsonWithDeviceCookie({
-          body: { error: 'PIN required to take over session', requiresPin: true },
-          status: 403,
-          deviceCookieHeader
-        })
-      }
-
-### 11. src/app/api/mentor-session/route.js (dd18893516fb24aa77fa662c5e7be065e7de2c6f0f7e4e27bdfa5686a51df6e3)
-- bm25: -5.8735 | entity_overlap_w: 1.30 | adjusted: -6.1985 | relevance: 1.0000
-
-return true
-}
-
-function scryptHash(pin, salt) {
-  return `s1$${salt}$${scryptSync(pin, salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex')}`
-}
-
-function verifyPinHash(pin, stored) {
-  if (typeof stored !== 'string') return false
-  const parts = stored.split('$')
-  if (parts.length !== 3 || parts[0] !== 's1') return false
-  const [, salt] = parts
-  const recomputed = scryptHash(pin, salt)
-  try {
-    return timingSafeEqual(Buffer.from(recomputed), Buffer.from(stored))
-  } catch {
-    return false
-  }
-}
-
-async function requireMrMentorAccess(userId) {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('subscription_tier, plan_tier')
-    .eq('id', userId)
-    .maybeSingle()
-
-const effectiveTier = resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier)
-  const ent = featuresForTier(effectiveTier)
-  const allowed = ent?.mentorSessions === Infinity || (Number.isFinite(ent?.mentorSessions) && ent.mentorSessions > 0)
-  return { allowed, tier: effectiveTier }
-}
-
-async function verifyPin(userId, pinCode) {
-  // Try to get facilitator_pin_hash first (modern schema)
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('facilitator_pin_hash')
-    .eq('id', userId)
-    .maybeSingle()
-
-if (error) {
-    throw error
-  }
-
-if (!profile) {
-    return false
-  }
-
-if (profile.facilitator_pin_hash) {
-    return verifyPinHash(pinCode, profile.facilitator_pin_hash)
-  }
-
-// No PIN set
-  return false
-}
-
-export const maxDuration = 60
-
-### 12. src/app/facilitator/account/page.js (9cd81d85e5c8612947bee6f1a9c67102b35c19f5d76832b04d9026dc2470405e)
-- bm25: -5.8625 | entity_overlap_w: 1.30 | adjusted: -6.1875 | relevance: 1.0000
-
-const pinChange = (pin && pin.length) || (pin2 && pin2.length)
-      if (pinChange) {
-        if (!/^\d{4,8}$/.test(pin)) throw new Error('Use a 4–8 digit PIN')
-        if (pin !== pin2) throw new Error('PINs do not match')
-        const res = await fetch('/api/facilitator/pin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ pin, currentPin: hasPin ? currentPin : null, prefs })
-        })
-        const js = await res.json().catch(()=>({}))
-        if (!res.ok || !js?.ok) {
-          const errorMsg = js?.error || `Failed to save (${res.status})`
-          throw new Error(errorMsg)
-        }
-        setHasPin(true)
-        setPin(''); setPin2(''); setCurrentPin('')
-        setPinPrefsLocal(prefs)
-        setMsg('Saved')
+### 1. src/app/session/page.js (bfbdd9279e12e335171b2c26363c6898c2fb7f8e3418393d46892cfe06dd385c)
+- bm25: -5.4112 | entity_overlap_w: 3.90 | adjusted: -6.3862 | relevance: 1.0000
+
+// isSpeaking/phase/subPhase defined earlier; do not redeclare here
+  const [transcript, setTranscript] = useState("");
+  // Start with loading=true so the existing overlay spinner shows during initial restore
+  const [loading, setLoading] = useState(true);
+  // TTS overlay: track TTS fetch activity separately; overlay shows when either API or TTS is loading
+  const [ttsLoadingCount, setTtsLoadingCount] = useState(0);
+  const overlayLoading = loading || (ttsLoadingCount > 0);
+
+### 2. src/app/session/page.js (53174fc6cc851fc03308dde6cd0042bc9a832ed884e113a196bdce5bcd777966)
+- bm25: -4.7902 | entity_overlap_w: 5.20 | adjusted: -6.0902 | relevance: 1.0000
+
+// Helper: speak arbitrary frontend text via unified captions + TTS
+  // (defined here after playAudioFromBase64 is available, and updates the ref for early callbacks)
+  const speakFrontendImpl = useCallback(async (text, opts = {}) => {
+    try {
+      const mcLayout = opts && typeof opts === 'object' ? (opts.mcLayout || 'inline') : 'inline';
+      const noCaptions = !!(opts && typeof opts === 'object' && opts.noCaptions);
+      let sentences = splitIntoSentences(text);
+      sentences = mergeMcChoiceFragments(sentences, mcLayout).map((s) => enforceNbspAfterMcLabels(s));
+      const assistantSentences = mapToAssistantCaptionEntries(sentences);
+      // When noCaptions is set (e.g., resume after refresh), do not mutate caption state
+      // so the transcript on screen does not duplicate. Still play TTS.
+      let startIndexForBatch = 0;
+      if (!noCaptions) {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), ...assistantSentences];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+        startIndexForBatch = prevLen;
       } else {
-        try {
-          const res = await fetch('/api/facilitator/pin', { method:'PUT', headers: { 'Content-Type':'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ prefs }) })
-          if (!res.ok) { const js = await res.json().catch(()=>({})); throw new Error(js?.error || 'Failed to save') }
-        } catch (e2) {}
-        setPinPrefsLocal(prefs)
-        setMsg('Saved')
+        // Keep current caption index; batch will be empty so no scheduling occurs
+        try { startIndexForBatch = Number(captionIndexRef.current || 0); } catch { startIndexForBatch = 0; }
       }
-    } catch (e3) {
-      setMsg(e3?.message || 'Failed to save')
-    } finally { setSaving(false) }
+      let dec = false;
+      try {
+        // Check cache first
+        let b64 = ttsCache.get(text);
+        
+        if (b64) {
+          console.log('[TTS CACHE HIT]', text.substring(0, 50));
+        } else {
+          console.log('[TTS CACHE MISS]', text.substring(0, 50));
+        }
+        
+        if (!b64) {
+          // Cache miss - fetch from API
+          setTtsLoadingCount((c) => c + 1
+
+### 3. src/app/api/tts/route.js (d93cecdec713c348f16222463b4ea44f88d56f49da5d9180865cc5c62e2ac630)
+- bm25: -5.1002 | entity_overlap_w: 2.60 | adjusted: -5.7502 | relevance: 1.0000
+
+// Simple TTS-only route: synthesize provided text to MP3 base64 using Google Cloud TTS
+// Reuses the same credential loading approach as /api/sonoma
+
+import { NextResponse } from 'next/server'
+import fs from 'node:fs'
+import path from 'node:path'
+import textToSpeech from '@google-cloud/text-to-speech'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+const { TextToSpeechClient } = textToSpeech
+let ttsClientPromise
+
+const DEFAULT_VOICE = {
+  languageCode: 'en-GB',
+  name: 'en-GB-Neural2-F',
+  ssmlGender: 'FEMALE'
+}
+
+const AUDIO_CONFIG = {
+  audioEncoding: 'MP3',
+  speakingRate: 0.92
+}
+
+function decodeCredentials(raw) {
+  if (!raw) return null
+  try { return JSON.parse(raw) } catch {}
+  try { const decoded = Buffer.from(raw, 'base64').toString('utf8'); return JSON.parse(decoded) } catch {}
+  return null
+}
+
+function loadTtsCredentials() {
+  const inline = process.env.GOOGLE_TTS_CREDENTIALS
+  const inlineCreds = decodeCredentials(inline)
+  if (inlineCreds) return inlineCreds
+  const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(process.cwd(), 'google-tts-key.json')
+  try {
+    if (credentialPath && fs.existsSync(credentialPath)) {
+      const raw = fs.readFileSync(credentialPath, 'utf8').trim()
+      if (raw) return decodeCredentials(raw) || JSON.parse(raw)
+    }
+  } catch (err) {
+    // Failed to load Google credentials
+  }
+  return null
+}
+
+### 4. docs/brain/ms-sonoma-teaching-system.md (a4cd628a3ea6f93deb0a26acad8137200825707078575f9b6d681391de3d7af7)
+- bm25: -4.9819 | entity_overlap_w: 2.60 | adjusted: -5.6319 | relevance: 1.0000
+
+### Hotkey Behavior
+
+- Default bindings: Skip = PageDown; Next Sentence = End; Repeat = PageUp.
+- Teaching gate Next Sentence hotkey (PageDown) only fires after TTS finishes or has been skipped; while speech is active the key is ignored.
+- Skip still routes through the central speech abort to halt TTS before advancing.
+
+### Teaching Gate Flow
+
+### 5. docs/brain/v2-architecture.md (bc99e4b71f540c7bf37fdef5f564161060387111ec7a1c9304f9cd3ccfe6fd49)
+- bm25: -4.5523 | entity_overlap_w: 3.90 | adjusted: -5.5273 | relevance: 1.0000
+
+**Retry + Rate Limit Handling:**
+- If GPT returns 429, TeachingController enters a cooldown and produces a deterministic "wait then press Next" sentence
+- If GPT returns 500+ (or the fetch throws), TeachingController shows a generic server error message (not rate limit)
+- When a non-429 error message is shown, the next Next/Repeat/Restart action triggers an actual retry fetch (instead of advancing past the error sentence and effectively skipping the stage)
+- Next/Repeat/Restart must not spam GPT requests during cooldown
+- Public methods called without `await` (Repeat/Skip/Restart) must not generate unhandled promise rejections
+
+**Environment Variable Requirements:**
+- At least one LLM provider key must be configured: `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
+- Google TTS requires: `GOOGLE_APPLICATION_CREDENTIALS` (path to JSON file) or `GOOGLE_TTS_CREDENTIALS` (inline JSON or base64)
+- Dev server must be restarted after adding/changing `.env.local` to load new environment variables
+- Missing keys cause 500 errors (not 429s); TeachingController now distinguishes these in user-facing messages
+
+**Gate Prompt Flow (uses prefetched content):**
+1. Speak "Do you have any questions?" (TTS prefetched)
+2. Await prefetched GPT result (usually instant)
+3. Speak GPT-generated sample questions (TTS prefetched)
+4. Fallback if GPT failed: deterministic questions using lesson title
+
+**Exposes:**
+- `prefetchAll()` - start all background prefetches (call on Begin)
+- `startTeaching(lessonData)`
+- `advanceSentence()`
+- `repeatSentence()`
+- `skipToExamples()`
+- Events: `onStageChange`, `onSentenceAdvance`, `onTeachingComplete`
+
+### 6. src/app/api/counselor/route.js (86a4ead5f24d3e066223ffc9afb48afe1a5b76912ee87576c502487a9e7cd4eb)
+- bm25: -4.8665 | entity_overlap_w: 2.60 | adjusted: -5.5165 | relevance: 1.0000
+
+function loadTtsCredentials() {
+  const inline = process.env.GOOGLE_TTS_CREDENTIALS
+  const inlineCreds = decodeCredentials(inline)
+  if (inlineCreds) return inlineCreds
+
+const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(process.cwd(), 'google-tts-key.json')
+  try {
+    if (credentialPath && fs.existsSync(credentialPath)) {
+      const raw = fs.readFileSync(credentialPath, 'utf8').trim()
+      if (raw) return decodeCredentials(raw) || JSON.parse(raw)
+    }
+  } catch (fileError) {
+    // Credentials load failed - TTS will be unavailable
+  }
+  return null
+}
+
+async function getTtsClient() {
+  if (ttsClientPromise) return ttsClientPromise
+
+const credentials = loadTtsCredentials()
+  if (!credentials) {
+    // No credentials - voice playback disabled
+    return null
   }
 
-### 13. docs/brain/session-takeover.md (67d6f1cc34af6fd217783490d4f011c8cef30e9a03ac7f4e9f0c5692245348e3)
-- bm25: -4.8801 | entity_overlap_w: 5.20 | adjusted: -6.1801 | relevance: 1.0000
-
-## Timer Continuity Details
-
-**Timer state components:**
-- `currentTimerMode`: 'play' (Begin to Go) or 'work' (Go to next phase)
-- `workPhaseCompletions`: object tracking which phases completed work timer
-- `elapsedSeconds`: current countdown value
-- `targetSeconds`: phase-specific target (from runtime config)
-- `capturedAt`: ISO timestamp when snapshot saved
-
-**Snapshot capture (every gate):**
-```javascript
-timerSnapshot: {
-  phase: phase,
-  mode: currentTimerModeRef.current || currentTimerMode,
-  capturedAt: new Date().toISOString(),
-  elapsedSeconds: getElapsedFromSessionStorage(phase, currentTimerMode),
-  targetSeconds: getTargetForPhase(phase, currentTimerMode)
-}
-```
-
-**Restore logic:**
-```javascript
-const { timerSnapshot } = restoredSnapshot;
-if (timerSnapshot) {
-  const drift = Math.floor((Date.now() - new Date(timerSnapshot.capturedAt)) / 1000);
-  const adjustedElapsed = Math.min(
-    timerSnapshot.elapsedSeconds + drift,
-    timerSnapshot.targetSeconds
-  );
-  
-  // Write to sessionStorage (source for timer component)
-  sessionStorage.setItem(
-    `timer_${timerSnapshot.phase}_${timerSnapshot.mode}`,
-    JSON.stringify({
-      elapsedSeconds: adjustedElapsed,
-      startTimestamp: Date.now() - (adjustedElapsed * 1000)
-    })
-  );
-  
-  setCurrentTimerMode(timerSnapshot.mode);
-}
-```
-
-**Result:** Timer continues within ±2 seconds of where old device left off (gate save latency + network round-trip).
-
-## PIN Validation Security
-
-**Already implemented** in `page.js` lines 286-314:
-- Client calls `ensurePinAllowed(pinCode)` from `src/app/lib/pinAuth.js`
-- Server validates PIN hash against learner's stored scrypt hash
-- Only correct PIN allows session takeover
-- Failed PIN shows error, user can retry
-
-### 14. docs/brain/timer-system.md (42aa7c76a1e732a4ec83b46c76f7214efa5fa927819ed9a691f311cae452a2df)
-- bm25: -4.8045 | entity_overlap_w: 5.20 | adjusted: -6.1045 | relevance: 1.0000
-
-**Rule (single instance):** Only one `SessionTimer` instance should be mounted at a time for a given `{lessonKey, phase, mode}`.
-- Mounting two `SessionTimer` components simultaneously can show brief 1-second drift when `SessionTimer` is in self-timing mode.
-- In Session V2, when the Games overlay is open, the on-video timer is not rendered; the Games overlay renders the timer instead.
-
-**Rule (click parity):** Clicking the timer badge in the Games overlay must behave the same as clicking the timer during the rest of the session: it opens `TimerControlOverlay` (PIN-gated).
-- The timer badge must be a `SessionTimer` with `onTimerClick` wired to the same handler used by the main session timer.
-
-### Overlay Stacking (V2)
-
-Games and Visual Aids overlays must render above the timeline and timer overlays.
-- Timeline must not use an extremely high `zIndex`.
-- Full-screen overlays should use a higher `zIndex` than the on-video timer.
-
-**TimerControlOverlay vs GamesOverlay:** If the facilitator opens `TimerControlOverlay` while the Games overlay is open, `TimerControlOverlay` must render above `GamesOverlay` so it is visible and usable.
-
-**PlayTimeExpiredOverlay must be above GamesOverlay:**
-- `PlayTimeExpiredOverlay` is a full-screen, blocking overlay. It must have a higher `zIndex` than `GamesOverlay` so the 30-second countdown cannot appear behind a running game.
-
-### PIN Gating (V2)
-
-Timer controls that can change session pacing are PIN-gated:
-- Opening the TimerControlOverlay is gated by `ensurePinAllowed('timer')`.
-- Pause/resume toggles are gated by `ensurePinAllowed('timer')`.
-
-Timeline jumps are also PIN-gated (see pin-protection.md action `timeline`).
-
-### Play Time Expiration Flow
-
-When play timer reaches 00:00:
-
-### 15. src/app/session/page.js (f7602cae35eee7bc49eaa6db8baf090677611eb2715bc6e5162329af5d9bb621)
-- bm25: -5.3538 | entity_overlap_w: 2.60 | adjusted: -6.0038 | relevance: 1.0000
-
-useEffect(() => {
-    // Load runtime & learner targets once on mount
-    reloadTargetsForCurrentLearner();
-  }, [reloadTargetsForCurrentLearner]);
-
-// Handle session takeover
-  const handleSessionTakeover = useCallback(async (pinCode) => {
-    if (!trackingLearnerId || !normalizedLessonKey || !browserSessionId) {
-      throw new Error('Session not initialized');
+ttsClientPromise = (async () => {
+    try {
+      return new TextToSpeechClient({ credentials })
+    } catch (error) {
+      // TTS client init failed
+      ttsClientPromise = undefined
+      return null
     }
+  })()
 
-try {
-      // Validate PIN via server API (don't use ensurePinAllowed - it shows another dialog)
-      const mod = await import('@/app/lib/supabaseClient');
-      const getSupabaseClient = mod.getSupabaseClient;
-      const supabase = getSupabaseClient?.();
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) {
-        throw new Error('Not logged in');
-      }
-      
-      const res = await fetch('/api/facilitator/pin/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ pin: pinCode })
+ttsClientPromise.catch(() => { ttsClientPromise = undefined })
+  return ttsClientPromise
+}
+
+function createCallId() {
+  const timePart = Date.now().toString(36)
+  const randomPart = Math.random().toString(36).slice(2, 8)
+  return `${timePart}-${randomPart}`
+}
+
+function pushToolLog(toolLog, entry) {
+  if (!Array.isArray(toolLog)) return
+  const message = buildToolLogMessage(entry?.name, entry?.phase, entry?.context)
+  if (!message) return
+  toolLog.push({
+    id: entry?.id || createCallId(),
+    timestamp: Date.now(),
+    name: entry?.name,
+    phase: entry?.phase,
+    message,
+    context: entry?.context || {}
+  })
+}
+
+### 7. src/app/api/tts/route.js (e002370821c02fd74a3b21a7cfdc26d6eeab4d1e1502ed187ecb5a8381574021)
+- bm25: -5.1069 | entity_overlap_w: 1.30 | adjusted: -5.4319 | relevance: 1.0000
+
+async function getTtsClient() {
+  if (ttsClientPromise) return ttsClientPromise
+  const credentials = loadTtsCredentials()
+  if (!credentials) {
+    // Google TTS credentials not configured
+    return null
+  }
+  ttsClientPromise = (async () => {
+    try { return new TextToSpeechClient({ credentials }) } catch (e) {
+      // Failed to init client
+      ttsClientPromise = undefined; return null
+    }
+  })()
+  ttsClientPromise.catch(() => { ttsClientPromise = undefined })
+  return ttsClientPromise
+}
+
+### 8. src/app/session/v2/TeachingController.jsx (cd903932d69c019531594d7f3ad425c158d1999a6659b77363e9aaa89296d3fa)
+- bm25: -4.3843 | entity_overlap_w: 3.90 | adjusted: -5.3593 | relevance: 1.0000
+
+if (this.#prefetchStarted) {
+      console.log('[TeachingController] Prefetch already started - skipping');
+      return;
+    }
+    this.#prefetchStarted = true;
+    
+    // Start definitions GPT (don't await) - then prefetch TTS for first few sentences.
+    // IMPORTANT: Stagger downstream GPT calls to reduce 429 risk.
+    // Prefetch promises should never produce unhandled rejections.
+    this.#definitionsGptPromise = this.#fetchDefinitionsFromGPT()
+      .then(sentences => {
+        // Prefetch TTS for first 3 definition sentences
+        sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
+        return sentences;
+      })
+      .catch(err => {
+        console.error('[TeachingController] Definitions prefetch error:', err);
+        return [];
       });
+    
+    // Start examples GPT after definitions completes + 4 second delay (rate limit safety).
+    this.#examplesGptPromise = this.#definitionsGptPromise
+      .catch(() => [])
+      .then(() => new Promise(resolve => setTimeout(resolve, 4000)))
+      .then(() => this.#fetchExamplesFromGPT())
+      .then(sentences => {
+        // Prefetch TTS for first 3 example sentences
+        sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
+        return sentences;
+      })
+      .catch(err => {
+        console.error('[TeachingController] Examples prefetch error:', err);
+        return [];
+      });
+    
+    // Gate prompts are nice-to-have; fetch them after their parent content + 2s delay each.
+    this.#definitionsGatePromptPromise = this.#definitionsGptPromise
+      .catch(() => [])
+      .then(() => new Promise(resolve => setTimeout(resolve, 2000)))
+      .then(() => this.#fetchGatePromptFromGPT('definitions'))
+      .then(text => {
+      if (text) ttsCache.prefetch(text);
+      return text;
+    });
+    
+    t
+
+### 9. src/app/facilitator/generator/counselor/CounselorClient.jsx (eeee8bf62119b0a3950c8ae02dfea3b24db32aa02bec35def65e5acb416bfe08)
+- bm25: -4.5664 | entity_overlap_w: 2.60 | adjusted: -5.2164 | relevance: 1.0000
+
+interceptResult.response = `Ok. I\'m opening the Lesson Planner and generating a ${action.durationMonths}-month plan starting ${action.startDate}.`
+          }
+        }
+        
+        // Add interceptor response to conversation
+        const finalHistory = [
+          ...updatedHistory,
+          { role: 'assistant', content: interceptResult.response }
+        ]
+        setConversationHistory(finalHistory)
+        
+        // Display interceptor response in captions
+        setCaptionText(interceptResult.response)
+        const sentences = splitIntoSentences(interceptResult.response)
+        setCaptionSentences(sentences)
+        setCaptionIndex(0)
+        
+        // Play TTS for interceptor response (Mr. Mentor's voice)
+        setLoadingThought("Preparing response...")
+        try {
+          const ttsResponse = await fetch('/api/mentor-tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: interceptResult.response })
+          })
+          
+          if (ttsResponse.ok) {
+            const ttsData = await ttsResponse.json()
+            if (ttsData.audio) {
+              // Never block the UI on audio playback.
+              void playAudio(ttsData.audio)
+            }
+          }
+        } catch (err) {
+          // Silent TTS error - don't block UX
+        }
+        
+        setLoading(false)
+        setLoadingThought(null)
+        return
+      }
       
-      const result = await res.json();
-      if (!res.ok || !result?.ok) {
-        throw new Error('Invalid PIN');
-      }
+      // Interceptor didn't handle - forward to API
+      setLoadingThought("Consulting my knowledge base...")
+      const forwardMessage = interceptResult.apiForward?.message || message
+      const finalForwardMessage = declineNote ? `${forwardMessage}\n\n${declineNote}` : forwardMessage
+      const forwardContext = interceptResult
 
-### 16. src/app/api/mentor-session/route.js (77202383ec70241edf62e293a8096138174a5710f6cec5cffa6eaf5f8c9011e0)
-- bm25: -5.3116 | entity_overlap_w: 2.60 | adjusted: -5.9616 | relevance: 1.0000
+### 10. src/app/api/counselor/route.js (3295cbeb2bdc54ba0515b75298f3139c4aff4e07d4f05ab9793eee9770a865e3)
+- bm25: -4.5065 | entity_overlap_w: 2.60 | adjusted: -5.1565 | relevance: 1.0000
 
-try {
-        const pinValid = await verifyPin(user.id, pinCode)
-        if (!pinValid) {
-          return jsonWithDeviceCookie({
-            body: { error: 'Invalid PIN code', requiresPin: true },
-            status: 403,
-            deviceCookieHeader
-          })
-        }
-      } catch (pinErr) {
-        return jsonWithDeviceCookie({ body: { error: 'Failed to verify PIN' }, status: 500, deviceCookieHeader })
-      }
-
-### 17. docs/brain/mr-mentor-session-persistence.md (8a0b3c4381dd8c1aeb08c7e62253763457ae7c98ef1a6aa7711070f19c53afc9)
-- bm25: -5.2966 | entity_overlap_w: 2.60 | adjusted: -5.9466 | relevance: 1.0000
-
-**Takeover Confirmation:**
-1. User on Device B enters PIN
-2. Backend verifies PIN, deactivates old session, creates new session
-3. Device A's realtime subscription triggers instantly (no 8-second delay)
-4. Frontend shows takeover dialog
-
-### 18. src/app/api/mentor-session/route.js (93a269f50eb1f2c905afc4bebf9f0efe5e96ff87b89909d43ec1d487123ac17f)
-- bm25: -5.2668 | entity_overlap_w: 2.60 | adjusted: -5.9168 | relevance: 1.0000
-
-try {
-        const pinValid = await verifyPin(user.id, pinCode)
-        if (!pinValid) {
-          return jsonWithDeviceCookie({
-            body: { error: 'Invalid PIN code', requiresPin: true },
-            status: 403,
-            deviceCookieHeader
-          })
-        }
-      } catch (pinErr) {
-        return jsonWithDeviceCookie({
-          body: { error: 'Failed to verify PIN', details: pinErr.message },
-          status: 500,
-          deviceCookieHeader
-        })
-      }
-
-### 19. src/app/learn/lessons/page.js (82c6cc891c4d9a7cb098915d0ef511fe1ae156ff77df4e93bf066854a7a5d44d)
-- bm25: -5.1939 | entity_overlap_w: 2.60 | adjusted: -5.8439 | relevance: 1.0000
-
-;(async () => {
+// Helper function to synthesize audio with caching
+async function synthesizeAudio(text, logPrefix) {
+  let audioContent = undefined
+  
+  // Strip markdown formatting for TTS (keep text readable but remove syntax)
+  // Remove **bold**, *italic*, and other markdown markers
+  const cleanTextForTTS = text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')  // Remove **bold**
+    .replace(/\*([^*]+)\*/g, '$1')      // Remove *italic*
+    .replace(/_([^_]+)_/g, '$1')        // Remove _underline_
+    .replace(/`([^`]+)`/g, '$1')        // Remove `code`
+    .replace(/^#+\s+/gm, '')            // Remove # headers
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Remove [links](url)
+  
+  // Check cache first (use cleaned text as key)
+  if (ttsCache.has(cleanTextForTTS)) {
+    audioContent = ttsCache.get(cleanTextForTTS)
+  } else {
+    const ttsClient = await getTtsClient()
+    if (ttsClient) {
       try {
-        // Just check for active session without PIN requirement
-        // The lessons page should be freely accessible
-        const active = await getActiveLessonSession(learnerId)
-        if (cancelled) return
-        // No PIN gate here - let learners view lessons freely
-        if (!cancelled) setSessionGateReady(true)
-      } catch (err) {
-        if (!cancelled) setSessionGateReady(true)
+        const ssml = toSsml(cleanTextForTTS)
+        const [ttsResponse] = await ttsClient.synthesizeSpeech({
+          input: { ssml },
+          voice: MENTOR_VOICE,
+          audioConfig: MENTOR_AUDIO_CONFIG
+        })
+        
+        if (ttsResponse?.audioContent) {
+          audioContent = typeof ttsResponse.audioContent === 'string'
+            ? ttsResponse.audioContent
+            : Buffer.from(ttsResponse.audioContent).toString('base64')
+          
+          // Cache with naive LRU
+          ttsCache.set(cleanTextForTTS, audioContent)
+          if (ttsCache.size > TTS_CACHE_MAX) {
+            const firstKey = ttsCache.keys().next().value
+            ttsCache.delete(firstKey)
+          }
+        }
+      } catch (ttsError) {
+        // TTS synthesis failed - will return undefined
       }
-    })()
+    }
+  }
+  
+  return audioContent
+}
 
-### 20. docs/brain/facilitator-help-system.md (e7aac353101308d57f1fd60b5f3f803d31343881ecc59bd6858d0e1652ecc798)
-- bm25: -5.0747 | entity_overlap_w: 2.60 | adjusted: -5.7247 | relevance: 1.0000
+### 11. docs/brain/tts-prefetching.md (edcb8c1a972c4e179c52dea1736883e05713d12c1179a797d2128f88803a9626)
+- bm25: -4.4799 | entity_overlap_w: 2.60 | adjusted: -5.1299 | relevance: 1.0000
 
-### Expansion Points
-- Account settings pages (PIN setup, 2FA, preferences)
-- Mr. Mentor page (natural language commands)
-- Hotkeys configuration
-- Learner transcript analysis
+**API**:
+- `src/app/api/tts/route.js`: TTS endpoint that returns `{ audio: base64 }`
 
-### Maintenance
-- Review help content quarterly against beta feedback
-- Update when workflows change (e.g., new planner features)
-- Remove help for features that become self-evident after redesign
-- Keep help content in sync with actual UI behavior (no drift)
+## Performance Impact
+
+**Before**: 2-3 second wait between questions (TTS generation time)
+**After**: Questions 2+ load instantly (cache hit), only Q1 shows loading
+
+**Cache stats during 5-question comprehension**:
+- Q1: Cache miss (no prefetch yet) - 2-3s wait
+- Q2: Cache hit (prefetched during Q1) - instant
+- Q3: Cache hit (prefetched during Q2) - instant
+- Q4: Cache hit (prefetched during Q3) - instant
+- Q5: Cache hit (prefetched during Q4) - instant
+
+**Total time saved**: 8-12 seconds per 5-question phase.
+
+## Edge Cases
+
+**Skip During Prefetch**:
+- Prefetch continues in background (silent)
+- Cache stores result even if not used
+- Worst case: slight network waste, no user impact
+
+**Failed Prefetch**:
+- Silent catch, no cache entry
+- Next question falls back to normal fetch (shows loading)
+- User sees 2-3s wait but flow works normally
+
+**Concurrent Prefetches**:
+- Each prefetch gets unique AbortController
+- Multiple pending fetches tracked in Map
+- Phase transition aborts ALL pending
+
+**Resume from Refresh**:
+- Cache doesn't persist (memory only)
+- First question after refresh shows loading
+- Subsequent questions prefetch normally
+
+**Celebration Text Variations**:
+```javascript
+// WRONG - prefetch won't match actual spoken text
+ttsCache.prefetch(nextQ); // Just the question
+await speakFrontend(`${celebration}. ${nextQ}`); // Celebration + question
+
+// RIGHT - prefetch exact text that will be spoken
+const prefetchText = `${CELEBRATE_CORRECT[0]}. ${nextQ}`;
+ttsCache.prefetch(prefetchText);
+```
+
+Uses first celebration variant for prefetch since we can't predict random selection.
+
+## Debug Helpers
+
+### 12. docs/brain/api-routes.md (dd3378227a6324ce4a86f9e043ed13060e4abcc4a4fabc05a7854dad2c6ce68c)
+- bm25: -4.0907 | entity_overlap_w: 3.90 | adjusted: -5.0657 | relevance: 1.0000
+
+# API Routes
+
+## `/api/sonoma` - Core Ms. Sonoma Endpoint
+
+### Request Format
+
+**Method**: POST  
+**Content-Type**: application/json
+
+```json
+{
+  "instruction": "<string>",
+  "innertext": "<string>",
+  "skipAudio": true
+}
+```
+
+**Fields**:
+- `instruction`: The per-turn instruction string (server hardens it for safety).
+- `innertext`: Optional learner input for this turn.
+- `skipAudio`: Optional boolean; when `true`, the API will skip Google TTS and return `audio: null`.
+
+**Why `skipAudio` exists**:
+- Some callers (especially teaching definitions/examples generation) need text only.
+- Returning base64 audio for large responses can be slow on mobile devices.
+
+### Response Format
+
+```json
+{
+  "reply": "<string>",
+  "audio": "<base64 mp3>" 
+}
+```
+
+**Fields**:
+- `reply`: Ms. Sonoma response text from the configured LLM provider.
+- `audio`: Base64-encoded MP3 when TTS is enabled and available; `null` when `skipAudio=true` (or when TTS is not configured).
+
+### Implementation
+
+- **Location**: `src/app/api/sonoma/route.js`
+- **Providers**: OpenAI or Anthropic depending on env configuration
+- **Runtime**: Node.js (Google SDKs require Node, not Edge)
+- **Stateless**: Each call is independent; no DB writes from this endpoint
+
+### Health Check
+
+**Method**: GET
+
+Returns `200` with `{ ok: true, route: 'sonoma', runtime }`.
+
+### Logging Controls
+
+Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
+
+- `full`, `off`, `none`, or `0` — No truncation
+- Positive integer (e.g., `2000`) — Truncate after N characters
+- Default: Unlimited in development; 600 chars in production
+
+---
+
+## Other Core Routes
+
+### `/api/counselor`
+**Purpose**: Mr. Mentor counselor chat endpoint (facilitator-facing)  
+**Status**: Operational
+
+### 13. docs/brain/v2-architecture.md (afffb9d44c9d9d5e9aee21cef0911b2f58779289d8122262e1045a2a4c0d3206)
+- bm25: -4.7314 | entity_overlap_w: 1.30 | adjusted: -5.0564 | relevance: 1.0000
+
+### 🚧 In Progress
+- None (all critical issues fixed, ready for testing)
+
+### 📋 Next Steps
+1. Browser test: Full session flow with EventBus event coordination
+2. Browser test: Verify Supabase snapshot persistence
+3. Browser test: Verify audio initialization on iOS
+4. Browser test: Verify timer events update UI correctly
+5. Browser test: Verify golden key award persistence (3 on-time completions increments `learners.golden_keys`)
+6. Browser test: Verify generated lesson loading
+7. Production deployment with feature flag
 
 ---
 
 ## Related Brain Files
 
-- **calendar-lesson-planning.md** - Automated planning backend logic (planner workflow backend)
-- **timer-system.md** - Phase timer mechanics (what timers control in lessons)
-- **pin-protection.md** - Facilitator section gating (why PIN checks appear)
-- **beta-program.md** - Tutorial system (complementary to help system)
+- **[snapshot-persistence.md](snapshot-persistence.md)** - V2 reimplements snapshot system with SnapshotService
+- **[timer-system.md](timer-system.md)** - V2 reimplements timers with TimerService
+- **[tts-prefetching.md](tts-prefetching.md)** - V2 reimplements TTS with AudioEngine
+- **[ms-sonoma-teaching-system.md](ms-sonoma-teaching-system.md)** - V2 reimplements teaching flow with TeachingController
 
-### 21. src/app/facilitator/generator/counselor/CounselorClient.jsx (dce5a32bfc27a43bf530a2b77b02786553abb3323bf255b119b569fc490a2c19)
-- bm25: -4.7491 | entity_overlap_w: 3.90 | adjusted: -5.7241 | relevance: 1.0000
+## Key Files
 
-// Periodic heartbeat to detect if session was taken over (backup to realtime)
-  useEffect(() => {
-    if (!accessToken || !hasAccess || sessionLoading) return
+### 14. docs/brain/ingests/pack-mentor-intercepts.md (35e76a89c7f5240f0e94cbd2877e930ae62cde56e079f99fd9382929f9faf2a0)
+- bm25: -4.0726 | entity_overlap_w: 3.90 | adjusted: -5.0476 | relevance: 1.0000
 
-const checkSessionStatus = async () => {
+### 15. docs/brain/api-routes.md (dd3378227a6324ce4a86f9e043ed13060e4abcc4a4fabc05a7854dad2c6ce68c)
+- bm25: -16.5866 | relevance: 1.0000
+
+# API Routes
+
+## `/api/sonoma` - Core Ms. Sonoma Endpoint
+
+### Request Format
+
+**Method**: POST  
+**Content-Type**: application/json
+
+```json
+{
+  "instruction": "<string>",
+  "innertext": "<string>",
+  "skipAudio": true
+}
+```
+
+**Fields**:
+- `instruction`: The per-turn instruction string (server hardens it for safety).
+- `innertext`: Optional learner input for this turn.
+- `skipAudio`: Optional boolean; when `true`, the API will skip Google TTS and return `audio: null`.
+
+**Why `skipAudio` exists**:
+- Some callers (especially teaching definitions/examples generation) need text only.
+- Returning base64 audio for large responses can be slow on mobile devices.
+
+### Response Format
+
+```json
+{
+  "reply": "<string>",
+  "audio": "<base64 mp3>" 
+}
+```
+
+**Fields**:
+- `reply`: Ms. Sonoma response text from the configured LLM provider.
+- `audio`: Base64-encoded MP3 when TTS is enabled and available; `null` when `skipAudio=true` (or when TTS is not configured).
+
+### Implementation
+
+- **Location**: `src/app/api/sonoma/route.js`
+- **Providers**: OpenAI or Anthropic depending on env configuration
+- **Runtime**: Node.js (Google SDKs require Node, not Edge)
+- **Stateless**: Each call is independent; no DB writes from this endpoint
+
+### Health Check
+
+**Method**: GET
+
+Returns `200` with `{ ok: true, route: 'sonoma', runtime }`.
+
+### Logging Controls
+
+Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
+
+- `full`, `off`, `none`, or `0` — No truncation
+- Positive integer (e.g., `2000`) — Truncate after N characters
+- Default: Unlimited in development; 600 chars in production
+
+---
+
+## Other Core Routes
+
+### 15. docs/brain/v2-architecture.md (aa7153d876592c21696ed81eef5a176acfcefd0ddf6ceff0300b5c58d431458c)
+- bm25: -4.3340 | entity_overlap_w: 2.60 | adjusted: -4.9840 | relevance: 1.0000
+
+**Zero-Latency Prefetch Strategy:**
+- `prefetchAll()` triggered on Begin click (deferred to next tick so it does not block the UI)
+- Prefetch is **single-flight** (subsequent calls are ignored)
+- GPT calls are **staggered** to reduce 429 risk:
+  - Start definitions first
+  - Start examples only after definitions resolves (or fails)
+  - Gate prompts start after their parent stage begins
+- GPT calls run in background during discussion greeting (~3-5 seconds)
+- When teaching starts, prefetched data is awaited (often already complete)
+- TTS prefetched for first 3 sentences of each stage + gate prompt text
+- **No loading states** - UI never shows "loading" for teaching content
+- Prefetch chain: GPT completes → automatically prefetches TTS for sentences
+
+### 16. src/app/session/page.js (5716a05adad5d46c2d80babc2816a00bb812fa2fa69a4ac39b220339c676caa1)
+- bm25: -4.6270 | entity_overlap_w: 1.30 | adjusted: -4.9520 | relevance: 1.0000
+
+// Request TTS for the local opening and play it using the same pipeline as API replies.
+      setLoading(true);
+      setTtsLoadingCount((c) => c + 1);
+  const replyStartIndex = prevLen; // we appended opening sentences at the end
+      let res;
       try {
-        const res = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}`, {
-          headers: { 'Authorization': `Bearer ${accessToken}` }
-        })
-        
-        if (!res.ok) return
-
-const data = await res.json()
-        
-        console.log('[Heartbeat] Checking session status:', {
-          mySessionId: sessionId,
-          activeSessionId: data.session?.session_id,
-          isOwner: data.isOwner,
-          sessionStarted,
-          hasSession: !!data.session
-        })
-        
-        // Only show PIN if there's an active session AND we're not the owner
-        // If there's no session at all, don't show PIN - user can start fresh
-        if (data.session && !data.isOwner) {
-          console.log('[Heartbeat] Not owner - showing PIN overlay')
-          
-          initializedSessionIdRef.current = null
-          
-          setConversationHistory([])
-          setDraftSummary('')
-          setCurrentSessionTokens(0)
-          setSessionStarted(false)
-          setSessionLoading(false)
-          
-          // Show takeover dialog with the active session info
-          setConflictingSession(data.session)
-          setShowTakeoverDialog(true)
+        res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
+        var data = await res.json().catch(() => ({}));
+        var audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
+        // Dev warm-up: if route wasn't ready (404) or no audio returned, pre-warm and retry once
+        if ((!res.ok && res.status === 404) || !audioB64) {
+          try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
+          try { await waitForBeat(400); } catch {}
+          res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
+          data = await res.json().catch(() => ({}));
+          audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
         }
-      } catch (err) {
-        console.error('[Heartbeat] Error:', err)
+      } finally {
+        setTtsLoadingCount((c) => Math.max(0, c - 1));
       }
-    }
+      if (audioB64) audioB64 = normalizeBase64Audio(audioB64);
+      // Match API flow: stop showing loading before kicking off audio
+      setLoading(false);
+      if (audioB64) {
+        // Stash payload so gesture-based unlock can retry immediately if needed
+        try { lastAudioBase64Ref.current = audioB64; } catch {}
+        setIsSpeaking(true);
+        // CRITICAL: Also update the ref immediately to prevent double-playback in recovery timeout
 
-### 22. docs/brain/header-navigation.md (e68f7c5a1dab25ec0465f75a152c356c65209da788b72d81a8f8a94c365e61f5)
-- bm25: -5.0474 | entity_overlap_w: 2.60 | adjusted: -5.6974 | relevance: 1.0000
+### 17. docs/brain/tts-prefetching.md (5d2c47ccfb9a2ebf8730cf484617315b098470bc24f095612364f494190624e7)
+- bm25: -4.8817 | relevance: 1.0000
 
-When triggered from an active Session page, these links must route through the session-exit PIN gate (`goWithPin`) so leaving a session remains protected.
+Useful for verifying cache behavior during development.
 
-## What NOT To Do
+### 18. docs/brain/tts-prefetching.md (6d1b96b8f6272894a5c5f0a5c3a22454adfc86b0f45bf0f04266b9459a647c37)
+- bm25: -4.8817 | relevance: 1.0000
 
-- Do not navigate from `/session/*` to `/facilitator/*` without `goWithPin()`.
-- Do not add billing as a top-level header link; billing lives under Account.
-- Do not create multiple overlapping header overlays; keep menus mutually non-blocking.
-- Do not rely on default `<button>` behavior in the header; always set `type="button"`.
+**AbortController Pattern**:
+```javascript
+pendingFetches: Map<string, AbortController>
 
-## Key Files
+### 19. docs/brain/v2-architecture.md (f0f7d5791f87c43312f84768585c3f5e0ddbb77f03f5af6f3a469f7e7634e7c5)
+- bm25: -3.8394 | entity_overlap_w: 3.90 | adjusted: -4.8144 | relevance: 1.0000
 
-- `src/app/HeaderBar.js` - Header layout, nav links, facilitator dropdown, session print menu
-- `docs/brain/pin-protection.md` - PIN gating rules for session exits and facilitator routes
+**Test judging rule (V1 parity):** Test is single-attempt.
+- Judge the learner answer (MC/TF locally; SA/FIB via `/api/judge-short-answer` through `judging.js` with local fallback).
+- If correct: speak praise, then advance.
+- If incorrect: speak the correct answer immediately, then advance.
 
-### 23. src/app/facilitator/account/page.js (6aed1abc117b23e8a42a6c17d6bcabeaff35bac0c1ce972cb85108b58886b86c)
-- bm25: -5.2083 | entity_overlap_w: 1.30 | adjusted: -5.5333 | relevance: 1.0000
+**Test ticker rule (single-attempt):** The Test question counter must advance on every answered/skipped question.
+- Do not derive the question counter from `score` (score only increments on correct answers).
+- Use the current question index (questionNumber = questionIndex + 1) so incorrect answers still advance the ticker.
 
-// PIN Overlay
-function PinOverlay({ isOpen, onClose, email }) {
-  const [hasPin, setHasPin] = useState(false)
-  const [pin, setPin] = useState('')
-  const [pin2, setPin2] = useState('')
-  const [currentPin, setCurrentPin] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState('')
-  const [prefs, setPrefs] = useState(() => getPinPrefsLocal())
-  const [loading, setLoading] = useState(true)
+**Test Skip/Next robustness rule (no premature actions):** In Test, user actions must never break the phase even when pressed repeatedly during async work.
+- The learner may mash Skip/Submit while question TTS is still loading or while judging is in-flight.
+- The phase must not double-advance, throw, or play stale audio for a previously-skipped question.
+- When an action advances to a new question while a prior question's TTS fetch is in-flight, the stale fetch result must be discarded (do not play it).
+- While a Submit/Skip transition is in-flight, additional Submit/Skip presses must be safely ignored (no double grading, no double skipping).
+- The Test intro line ("Time for the test") must also be skippable: the phase must advance to `awaiting-go` on AudioEngine `end` (completed OR skipped) and must not depend on awaiting `playAudio()`.
 
-### 24. src/app/session/v2/SessionPageV2.jsx (f0f452675edb85355a5f1390651a4d38be611193f074ef5a6bdccd3d5ae449e2)
-- bm25: -4.8449 | entity_overlap_w: 2.60 | adjusted: -5.4949 | relevance: 1.0000
+### Exercise: Inline Q&A (Comprehension Parity) (2026-01-02)
 
-// PIN gate: timeline jumps are facilitator-only
-    let allowed = false;
-    try {
-      allowed = await ensurePinAllowed('timeline');
-    } catch (e) {
-      console.warn('[SessionPageV2] Timeline PIN gate error:', e);
-    }
-    if (!allowed) {
-      timelineJumpInProgressRef.current = false;
-      return;
-    }
-    
-    console.log('[SessionPageV2] Timeline jump proceeding to:', targetPhase);
-    
-    // Stop any playing audio first
-    stopAudioSafe({ force: true });
-    
-    // Reset opening actions state to prevent zombie UI
-    setOpeningActionActive(false);
-    setOpeningActionType(null);
-    setOpeningActionState({});
-    setOpeningActionInput('');
-    setOpeningActionError('');
-    setOpeningActionBusy(false);
-    setShowPlayWithSonomaMenu(false);
-    setShowGames(false);
-    setShowFullscreenPlayTimer(false);
+**Decision:** Exercise uses the same inline (V1-style) Q&A flow as Comprehension: questions are spoken via TTS, and the learner answers using the footer input.
 
-### 25. docs/brain/pin-protection.md (771d09bf70621a2a47da98e3ac52455b98299582fe3c7fc3744c6d3234d5db17)
-- bm25: -5.1652 | entity_overlap_w: 1.30 | adjusted: -5.4902 | relevance: 1.0000
+### 20. docs/brain/tts-prefetching.md (05e6eff1863500855ddc6c183a5ac48103c48804c8f4dbabf875f31ef1a1e1db)
+- bm25: -4.0665 | entity_overlap_w: 2.60 | adjusted: -4.7165 | relevance: 1.0000
 
-**Facilitator Pages** (all check PIN on mount):
-- `src/app/facilitator/page.js` - Main facilitator hub
-- `src/app/facilitator/learners/page.js` - Learner management
-- `src/app/facilitator/lessons/page.js` - Lesson management
-- `src/app/facilitator/generator/*/page.js` - Content generators
-- `src/app/facilitator/account/*/page.js` - Account pages
+# TTS Prefetching System
 
-### 26. sidekick_pack.md (823f4a32054ed567322f6c38220db8530887b63d7930a702a348ffe734c95072)
-- bm25: -4.6559 | entity_overlap_w: 2.60 | adjusted: -5.3059 | relevance: 1.0000
+## Overview
 
-### 22. sidekick_pack.md (f0e0466a6588f66493c88c0b00e750e7c20b3e5b9f4eedd4cfc00bcd3826f40a)
-- bm25: -24.5808 | relevance: 1.0000
-
-PIN verification is server-only (no localStorage fallback):
-- Server validates PIN against hashed value in `profiles.facilitator_pin_hash`
-- Uses bcrypt for secure comparison
-- API endpoint: `POST /api/facilitator/pin/verify`
-
-### 38. docs/brain/ingests/pack.planned-lessons-flow.md (c1630e20d42e7416e0786d4762a62020e29931c3609ba5301492ca0c6c410df5)
-- bm25: -1.7211 | entity_overlap_w: 1.30 | adjusted: -2.0461 | relevance: 1.0000
-
-## What NOT To Do
-
-- Do not store lessons on the device (no localStorage/indexedDB/file downloads).
-- Do not reuse Golden Keys to mean "unlock lessons"; Golden Keys are bonus play-time semantics.
-- Do not match ownership using filename-only; subject collisions are possible.
-- Do not allow path traversal in the download endpoint (`..`, `/`, `\\`).
-
-## Key Files
-
-- `src/app/facilitator/lessons/page.js`
-- `src/app/api/facilitator/lessons/download/route.js`
-- `src/app/api/facilitator/lessons/list/route.js`
-- `src/app/api/lessons/[subject]/route.js`
-- `src/app/api/lesson-file/route.js`
-
-### 27. docs/brain/calendar-lesson-planning.md (4da551360e5a46cca2826bfe58a71289a036bb89df00313db4714021b4cc5eab)
-- bm25: -14.3879 | relevance: 1.0000
-
-**Usage:**
-- `node scripts/check-completions-for-keys.mjs --learner Emma --from 2026-01-05 --to 2026-01-08`
-
-### Scheduled Lessons Overlay: Built-in Lesson Editor
-
-The Calendar day overlay includes an inline lesson editor for scheduled lessons.
-
-This editor matches the regular lesson editor for Visual Aids (button + carousel + generation + persistence).
-
-### 27. docs/brain/session-takeover.md (3f93c80afc3393066fb29eb5e8562c9fa07c364f0e666aac42099607b082384b)
-- bm25: -4.9139 | entity_overlap_w: 1.30 | adjusted: -5.2389 | relevance: 1.0000
-
-**No changes needed** - existing PIN flow reused for session takeover.
-
-### 28. src/app/facilitator/account/page.js (effdfff11e825a9eadf541b68090219a19d4b2a78dda5b463ac44adad0ef5fb1)
-- bm25: -4.5642 | entity_overlap_w: 2.60 | adjusted: -5.2142 | relevance: 1.0000
-
-{/* Facilitator PIN */}
-            <div
-              onClick={() => setActiveOverlay('pin')}
-              style={cardStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#9ca3af'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
-                e.currentTarget.style.borderColor = '#e5e7eb'
-              }}
-            >
-              <div style={iconStyle}>📌</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Facilitator PIN</div>
-                <div style={{ fontSize: 13, color: '#6b7280' }}>Protect sensitive actions</div>
-              </div>
-            </div>
-
-{/* Connected Accounts */}
-            <div
-              onClick={() => setActiveOverlay('accounts')}
-              style={cardStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                e.currentTarget.style.borderColor = '#9ca3af'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
-                e.currentTarget.style.borderColor = '#e5e7eb'
-              }}
-            >
-              <div style={iconStyle}>🔗</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Connected Accounts</div>
-                <div style={{ fontSize: 13, color: '#6b7280' }}>Link Google and other services</div>
-              </div>
-            </div>
-
-### 29. docs/brain/ingests/pack-mentor-intercepts.md (d5ec0788e6e2b4fbfaa482984112c82b9b297da545b06943e8edb3632c935164)
-- bm25: -4.1902 | entity_overlap_w: 3.90 | adjusted: -5.1652 | relevance: 1.0000
-
-### 10. docs/brain/mr-mentor-sessions.md (f2b7ab2dc155d2357594b47f2a3a65b057f762766ec8dbf9983ebc72fa37ef8e)
-- bm25: -21.7710 | relevance: 1.0000
-
-- **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Three-layer persistence for conversation state
-- **[mr-mentor-memory.md](mr-mentor-memory.md)** - Conversation memory accessed during sessions
-
-## Key Files
-
-- `src/app/facilitator/generator/counselor/CounselorClient.jsx` - Session initialization, realtime/heartbeat conflict detection, takeover handling, conversation sync
-- `src/components/SessionTakeoverDialog.jsx` - Takeover modal UI
-- `src/app/api/mentor-session/route.js` - GET/POST/PATCH/DELETE endpoints, PIN validation, session enforcement
-
-## Maintenance
-
-**Manual cleanup** (if needed):
-```sql
--- View all active sessions
-SELECT * FROM mentor_sessions WHERE is_active = true;
-
--- Force-end specific session
-UPDATE mentor_sessions 
-SET is_active = false 
-WHERE facilitator_id = 'uuid' AND is_active = true;
-```
-
-**Automatic cleanup:**
-- API automatically deactivates stale sessions (no activity > 15 minutes) before creating new sessions
-- No cron job needed
-
-## What NOT To Do
-
-**DON'T allow multiple active sessions** - Enforced by unique constraint + API validation. Multiple active sessions = split-brain state.
-
-**DON'T skip PIN validation on takeover** - PIN required for `action: 'takeover'` and `action: 'force_end'`. Prevents unauthorized session hijacking.
-
-**DON'T lose conversation history on takeover** - New session inherits full `conversation_history` from old session. Zero data loss.
-
-**DON'T forget to stop polling on unmount** - Clear interval in cleanup effect. Memory leak otherwise.
-
-### 30. docs/brain/ingests/pack.planned-lessons-flow.md (55294648e25051f8a5d5ef1152fb17c1f737ec2144ee257b22c174812502e2af)
-- bm25: -4.1840 | entity_overlap_w: 3.90 | adjusted: -5.1590 | relevance: 1.0000
-
-### 36. docs/brain/mr-mentor-sessions.md (f2b7ab2dc155d2357594b47f2a3a65b057f762766ec8dbf9983ebc72fa37ef8e)
-- bm25: -12.6159 | relevance: 1.0000
-
-- **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Three-layer persistence for conversation state
-- **[mr-mentor-memory.md](mr-mentor-memory.md)** - Conversation memory accessed during sessions
-
-## Key Files
-
-- `src/app/facilitator/generator/counselor/CounselorClient.jsx` - Session initialization, realtime/heartbeat conflict detection, takeover handling, conversation sync
-- `src/components/SessionTakeoverDialog.jsx` - Takeover modal UI
-- `src/app/api/mentor-session/route.js` - GET/POST/PATCH/DELETE endpoints, PIN validation, session enforcement
-
-## Maintenance
-
-**Manual cleanup** (if needed):
-```sql
--- View all active sessions
-SELECT * FROM mentor_sessions WHERE is_active = true;
-
--- Force-end specific session
-UPDATE mentor_sessions 
-SET is_active = false 
-WHERE facilitator_id = 'uuid' AND is_active = true;
-```
-
-**Automatic cleanup:**
-- API automatically deactivates stale sessions (no activity > 15 minutes) before creating new sessions
-- No cron job needed
-
-## What NOT To Do
-
-**DON'T allow multiple active sessions** - Enforced by unique constraint + API validation. Multiple active sessions = split-brain state.
-
-**DON'T skip PIN validation on takeover** - PIN required for `action: 'takeover'` and `action: 'force_end'`. Prevents unauthorized session hijacking.
-
-**DON'T lose conversation history on takeover** - New session inherits full `conversation_history` from old session. Zero data loss.
-
-**DON'T forget to stop polling on unmount** - Clear interval in cleanup effect. Memory leak otherwise.
-
-### 31. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (b30861338c07d988f2d66b61fe6040a9644c696ebac6e49160688207185b4517)
-- bm25: -4.1840 | entity_overlap_w: 3.90 | adjusted: -5.1590 | relevance: 1.0000
-
-### 22. docs/brain/mr-mentor-sessions.md (f2b7ab2dc155d2357594b47f2a3a65b057f762766ec8dbf9983ebc72fa37ef8e)
-- bm25: -15.5683 | relevance: 1.0000
-
-- **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Three-layer persistence for conversation state
-- **[mr-mentor-memory.md](mr-mentor-memory.md)** - Conversation memory accessed during sessions
-
-## Key Files
-
-- `src/app/facilitator/generator/counselor/CounselorClient.jsx` - Session initialization, realtime/heartbeat conflict detection, takeover handling, conversation sync
-- `src/components/SessionTakeoverDialog.jsx` - Takeover modal UI
-- `src/app/api/mentor-session/route.js` - GET/POST/PATCH/DELETE endpoints, PIN validation, session enforcement
-
-## Maintenance
-
-**Manual cleanup** (if needed):
-```sql
--- View all active sessions
-SELECT * FROM mentor_sessions WHERE is_active = true;
-
--- Force-end specific session
-UPDATE mentor_sessions 
-SET is_active = false 
-WHERE facilitator_id = 'uuid' AND is_active = true;
-```
-
-**Automatic cleanup:**
-- API automatically deactivates stale sessions (no activity > 15 minutes) before creating new sessions
-- No cron job needed
-
-## What NOT To Do
-
-**DON'T allow multiple active sessions** - Enforced by unique constraint + API validation. Multiple active sessions = split-brain state.
-
-**DON'T skip PIN validation on takeover** - PIN required for `action: 'takeover'` and `action: 'force_end'`. Prevents unauthorized session hijacking.
-
-**DON'T lose conversation history on takeover** - New session inherits full `conversation_history` from old session. Zero data loss.
-
-**DON'T forget to stop polling on unmount** - Clear interval in cleanup effect. Memory leak otherwise.
-
-### 32. docs/brain/pin-protection.md (68d0aa13898a78445bc9421b5bfd8dfc4afdcff0ffc2618661cd93a867bf6248)
-- bm25: -5.1289 | relevance: 1.0000
-
-### Session Integrations
-
-### 33. docs/brain/mr-mentor-sessions.md (f2b7ab2dc155d2357594b47f2a3a65b057f762766ec8dbf9983ebc72fa37ef8e)
-- bm25: -4.1531 | entity_overlap_w: 3.90 | adjusted: -5.1281 | relevance: 1.0000
-
-- **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Three-layer persistence for conversation state
-- **[mr-mentor-memory.md](mr-mentor-memory.md)** - Conversation memory accessed during sessions
-
-## Key Files
-
-- `src/app/facilitator/generator/counselor/CounselorClient.jsx` - Session initialization, realtime/heartbeat conflict detection, takeover handling, conversation sync
-- `src/components/SessionTakeoverDialog.jsx` - Takeover modal UI
-- `src/app/api/mentor-session/route.js` - GET/POST/PATCH/DELETE endpoints, PIN validation, session enforcement
-
-## Maintenance
-
-**Manual cleanup** (if needed):
-```sql
--- View all active sessions
-SELECT * FROM mentor_sessions WHERE is_active = true;
-
--- Force-end specific session
-UPDATE mentor_sessions 
-SET is_active = false 
-WHERE facilitator_id = 'uuid' AND is_active = true;
-```
-
-**Automatic cleanup:**
-- API automatically deactivates stale sessions (no activity > 15 minutes) before creating new sessions
-- No cron job needed
-
-## What NOT To Do
-
-**DON'T allow multiple active sessions** - Enforced by unique constraint + API validation. Multiple active sessions = split-brain state.
-
-**DON'T skip PIN validation on takeover** - PIN required for `action: 'takeover'` and `action: 'force_end'`. Prevents unauthorized session hijacking.
-
-**DON'T lose conversation history on takeover** - New session inherits full `conversation_history` from old session. Zero data loss.
-
-**DON'T forget to stop polling on unmount** - Clear interval in cleanup effect. Memory leak otherwise.
-
-**DON'T allow takeover without showing warning** - Dialog must explain consequences (other device loses session). User should understand what's happening.
-
-### 34. src/app/facilitator/generator/counselor/SessionTakeoverDialog.jsx (6016f2b53b03b966646f7435ad1c459b6be9534a695cc2a3892c6bdb1e85018f)
-- bm25: -4.7977 | entity_overlap_w: 1.30 | adjusted: -5.1227 | relevance: 1.0000
-
-<form onSubmit={handleSubmit}>
-          <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#374151' }}>
-            Enter your 4-digit PIN to continue:
-          </label>
-          
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={4}
-            value={pinCode}
-            onChange={(e) => {
-              const val = e.target.value.replace(/\D/g, '')
-              setPinCode(val)
-              setError('')
-            }}
-            placeholder="••••"
-            disabled={loading}
-            autoFocus
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck="false"
-            data-lpignore="true"
-            data-form-type="other"
-            data-1p-ignore="true"
-            name="pin-code-single-use"
-            id={`pin-${Math.random()}`}
-            style={{
-              width: '100%',
-              padding: 12,
-              fontSize: 18,
-              letterSpacing: '0.5em',
-              textAlign: 'center',
-              border: error ? '2px solid #ef4444' : '2px solid #d1d5db',
-              borderRadius: 8,
-              marginBottom: 12,
-              outline: 'none',
-              transition: 'border-color 0.2s',
-              backgroundColor: loading ? '#f9fafb' : '#fff',
-              WebkitTextSecurity: 'disc'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-            onBlur={(e) => {
-              if (!error) e.target.style.borderColor = '#d1d5db'
-            }}
-          />
-
-### 35. docs/brain/mr-mentor-sessions.md (694177aba3dfafe3c5962c85765d8bf7d1cdb181c40c89e76871879f3e347ac8)
-- bm25: -4.0867 | entity_overlap_w: 3.90 | adjusted: -5.0617 | relevance: 1.0000
-
-# Mr. Mentor Session Management
+TTS (text-to-speech) prefetching eliminates 2-3 second waits between questions by loading question N+1 in the background while student answers question N. This was the main performance bottleneck identified by user after zombie code cleanup.
 
 ## How It Works
 
-Mr. Mentor enforces **single-device access per facilitator** to prevent state conflicts and persists conversations across devices for seamless continuity. Only one device can have an active session at a time. Taking over a session from another device requires PIN validation.
+### Cache Architecture
 
-**Flow:**
-1. Facilitator opens Mr. Mentor on Device A → Session created, `sessionId` stored in sessionStorage
-2. Facilitator opens Mr. Mentor on Device B → Detects existing active session on Device A
-3. Device B shows `SessionTakeoverDialog` with device name, last activity time, PIN input
-4. Facilitator enters 4-digit PIN → Validated via `POST /api/mentor-session` with `action: 'takeover'`
-5. If valid: Device A session deactivated, Device B session activated with full conversation history
-6. Device A's next poll (every 8 seconds) detects takeover → Shows alert, redirects to `/facilitator`
-7. Facilitator continues conversation on Device B with zero data loss
+**Module**: `src/app/session/utils/ttsCache.js` (212 lines)
 
-**Purpose**: Prevents split-brain scenarios where two devices have conflicting conversation states. Enables cross-device workflows (start on desktop, continue on tablet) while maintaining conversation integrity.
+**Core Components**:
+- `TTSCache` class: Singleton instance exported as `ttsCache`
+- LRU cache: Map-based storage with timestamp tracking
+- MAX_CACHE_SIZE: 10 items (prevents memory issues during long sessions)
+- Eviction: Oldest by timestamp when cache full
 
-## Database Schema
+**Cache API**:
+```javascript
+ttsCache.get(text)           // Returns cached base64 audio or null
+ttsCache.set(text, audio)    // Stores audio, evicts oldest if full
+ttsCache.prefetch(text)      // Background fetch, fire-and-forget
+ttsCache.clear()             // Cancels pending fetches, clears cache
+ttsCache.cancelPrefetch(text) // Aborts specific pending request
+```
 
-**`mentor_sessions` table:**
-```sql
-- id: UUID (primary key)
-- facilitator_id: UUID (references auth.users)
-- session_id: TEXT (browser-generated unique ID, stored in sessionStorage)
-- device_name: TEXT (optional device identifier)
-- conversation_history: JSONB (full conversation array)
-- draft_summary: TEXT (summary draft)
-- last_activity_at: TIMESTAMPTZ (updated on every interaction)
-- created_at: TIMESTAMPTZ
-- is_active: BOOLEAN (only one true per facilitator)
+### Integration Points
 
-### 36. docs/brain/session-takeover.md (f547b8a84945c079f4753cfc178e83afd5ab0d6acc67018afbe877b3d81da9b9)
-- bm25: -4.0749 | entity_overlap_w: 3.90 | adjusted: -5.0499 | relevance: 1.0000
+**1. speakFrontendImpl (page.js line ~2927)**
+```javascript
+// Check cache first
+let b64 = ttsCache.get(text);
 
-## Why We Use Gates (and Sometimes Polling)
+if (!b64) {
+  // Cache miss - fetch from API
+  setTtsLoadingCount((c) => c + 1);
+  // ... fetch logic ...
+  if (b64) {
+    b64 = normalizeBase64Audio(b64);
+    // Store successful fetch in cache
+    ttsCache.set(text, b64);
+  }
+  setTtsLoadingCount((c) => Math.max(0, c - 1));
+}
+// else: cache hit - b64 already set, no loading indicator
+```
 
-**Gates are the primary mechanism:**
-- Conflict is detected exactly at meaningful checkpoints (Begin and snapshot saves).
-- This aligns with persistence writes and avoids background chatter.
+Cache hits skip loading indicator entirely since audio is instant.
 
-**Polling is secondary and optional:**
-- Polling can improve UX by discovering a takeover/end even when the learner is idle.
-- Keep it low-frequency and read-only, and only while a session is active.
+**2. Prefetch Triggers**
 
-## Device Switch Flow Example
+**After Comprehension Answer (page.js line ~5895)**:
+```javascript
+try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
 
-**Scenario:** Learner starts lesson on iPad, switches to laptop mid-teaching
+### 21. src/app/api/tts/route.js (3db3babb7d72eecfb8ea85f7a76fd614f9d78fd30e63ecd6443660a2ba346a24)
+- bm25: -4.7062 | relevance: 1.0000
 
-1. **iPad - Teaching vocab sentence 3**
-   - User clicks Next
-   - Gate: `scheduleSaveSnapshot('vocab-sentence-3')`
-   - Snapshot saved with `session_id: "abc-123-ipad"`, timer at 45 seconds
-   - Success
+const client = await getTtsClient()
+    if (!client) return NextResponse.json({ reply: text, audio: undefined })
 
-2. **Laptop - Opens same lesson**
-   - Page loads, generates new `session_id: "xyz-789-laptop"`
-   - User clicks Begin
-   - Gate: `scheduleSaveSnapshot('begin-discussion')`
-   - Database detects conflict (iPad session "abc-123-ipad" still active)
-   - Returns conflict error with iPad session details
+### 22. docs/brain/tts-prefetching.md (cba8101ac4406e3a169ec45922876fe9bc7e7be991dc9b30d6274e1acfb795ee)
+- bm25: -4.6348 | relevance: 1.0000
 
-3. **Laptop - Takeover dialog shows**
-   - "A session for this lesson is active on another device (iPad)"
-   - "Last activity: 2 minutes ago"
-   - "Enter 4-digit PIN to take over"
-   - User enters PIN
+```javascript
+// Get cache statistics
+const stats = ttsCache.getStats();
+console.log(stats); // { size: 3, pending: 1, maxSize: 10 }
+```
 
-4. **Laptop - PIN validated**
-   - Clear localStorage (force database restore)
-   - Deactivate iPad session "abc-123-ipad" (set ended_at)
-   - Create new session "xyz-789-laptop"
-   - Restore snapshot from database (vocab-sentence-3 checkpoint)
-   - Extract timer state: 45 seconds + (now - capturedAt) = ~47 seconds
-   - Set timer to 47 seconds, mode 'work'
-   - Resume teaching at vocab sentence 3
-   - Apply teaching flow snapshot (vocab index, stage, etc.)
+### 23. docs/brain/ingests/pack-mentor-intercepts.md (d5ddc893728a86d159bcf5ff419f02c5ace96e1133048d430ac99ee743f074bd)
+- bm25: -4.2285 | entity_overlap_w: 1.30 | adjusted: -4.5535 | relevance: 1.0000
 
-### 37. src/app/session/v2/SessionPageV2.jsx (ad049a4dbb159a48b481d96c665a3257e0d0cad08e3eec63df75c8a7c18aed81)
-- bm25: -4.6936 | entity_overlap_w: 1.30 | adjusted: -5.0186 | relevance: 1.0000
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
 
-const res = await fetch('/api/facilitator/pin/verify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ pin: pinCode })
-    });
+### 24. src/app/session/v2/AudioEngine.jsx (bed4b96439e1d30f0a5b1d216834205045a7703c4a54276fea998b7e9dd361ed)
+- bm25: -3.8840 | entity_overlap_w: 2.60 | adjusted: -4.5340 | relevance: 1.0000
 
-const result = await res.json().catch(() => null);
-    if (!res.ok || !result?.ok) {
-      throw new Error('Invalid PIN');
-    }
-
-if (conflictingSession?.id) {
-      try {
-        const { endLessonSession } = await import('@/app/lib/sessionTracking');
-        await endLessonSession(conflictingSession.id, {
-          reason: 'taken_over',
-          metadata: {
-            taken_over_by_session_id: browserSessionId,
-            taken_over_at: new Date().toISOString(),
-          },
-          learnerId: trackingLearnerId,
-          lessonId: trackingLessonId,
-        });
-      } catch {}
-    }
+// Pause as soon as playback actually starts (playing event), so we end in a paused state
+    // while still getting the autoplay "unlock" side effect from play().
+    // IMPORTANT: If unlock playback never starts during the gesture, do not leave a stale
+    // 'playing' handler around — it can pause the first real TTS video playback later.
+    this.#videoUnlockPlayingHandler = () => {
+      // Never pause the real TTS video playback.
+      if (this.#isPlaying) {
+        clearUnlockHandler();
+        return;
+      }
+      try { video.pause(); } catch {}
+      try { video.currentTime = 0; } catch {}
+      clearUnlockHandler();
+    };
 
 try {
-      const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
-      const takeoverStart = await startTrackedSession(browserSessionId, deviceName);
-      if (takeoverStart?.conflict) {
-        throw new Error('Lesson is still active on another device');
-      }
-      try { startSessionPolling?.(); } catch {}
-    } catch (err) {
-      throw err;
-    }
-
-// Clear local snapshot so reload pulls the latest remote snapshot.
-    try {
-      localStorage.removeItem(`atomic_snapshot:${trackingLearnerId}:${trackingLessonId}`);
+      video.addEventListener('playing', this.#videoUnlockPlayingHandler);
     } catch {}
 
-setShowTakeoverDialog(false);
-    setConflictingSession(null);
-
-if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
-  }, [browserSessionId, conflictingSession, learnerProfile?.id, lessonKey, startTrackedSession, startSessionPolling]);
-
-### 38. docs/brain/session-takeover.md (ca30ae3def190ad001f0315ab105c9a0786e60c8a03e19d920954fde732dc4ab)
-- bm25: -4.3005 | entity_overlap_w: 2.60 | adjusted: -4.9505 | relevance: 1.0000
-
-**When new device loads lesson page:**
-1. Page generates `browserSessionId` (UUID stored in sessionStorage)
-2. Once `trackingLearnerId`, `normalizedLessonKey`, and `browserSessionId` are available, page calls `startTrackedSession()`
-3. Database detects conflict (different `session_id` already owns this learner+lesson)
-4. `startTrackedSession()` returns `{conflict: true, existingSession: {...}}`
-5. UI immediately shows `SessionTakeoverDialog`
-6. **CRITICAL**: `sessionConflictChecked` remains FALSE when conflict detected, blocking snapshot restore
-7. Snapshot restore logic waits for `sessionConflictChecked` flag before proceeding
-8. User enters 4-digit PIN to validate ownership transfer
-9. On PIN success:
-   - Old session deactivated (`ended_at` set, event logged)
-   - New session created with current `session_id`
-   - Page reloads to restore snapshot from database (most recent for this learner+lesson)
-   - localStorage updated with restored snapshot
-   - Lesson resumes from checkpoint
-
-### 39. src/app/facilitator/generator/counselor/SessionTakeoverDialog.jsx (9fc73230b81c439e0926e5ac87e0768bdd8d0e69ad971349b215356846683fff)
-- bm25: -4.1209 | entity_overlap_w: 2.60 | adjusted: -4.7709 | relevance: 1.0000
-
-// Session Takeover Dialog - requires PIN to take over Mr. Mentor session from another device
-'use client'
-
-import { useState } from 'react'
-
-export default function SessionTakeoverDialog({ 
-  existingSession, 
-  onTakeover, 
-  onCancel
-}) {
-  const [pinCode, setPinCode] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    if (pinCode.length !== 4) {
-      setError('PIN must be 4 digits')
-      return
-    }
-
-setError('')
-    setLoading(true)
+// Cleanup even if 'playing' never fires (e.g., autoplay blocked).
+    try {
+      this.#videoUnlockCleanupTimer = setTimeout(() => {
+        clearUnlockHandler();
+      }, 1500);
+    } catch {}
 
 try {
-      await onTakeover(pinCode)
-    } catch (err) {
-      setError(err.message || 'Failed to take over session')
-      setLoading(false)
+      const p = video.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => {
+          clearUnlockHandler();
+        });
+      }
+    } catch {
+      clearUnlockHandler();
     }
   }
+  
+  // Public API: Playback control
+  async playAudio(base64Audio, sentences = [], startIndex = 0, options = {}) {
+    this.#lastAudioBase64 = base64Audio;
+    this.#lastSentences = sentences;
+    
+    // Stop any existing playback
+    this.stop();
+    
+    // Validate
+    if (!Array.isArray(sentences) || sentences.length === 0) {
+      console.warn('[AudioEngine] No sentences provided');
+      return;
+    }
 
-const formatLastActivity = (isoString) => {
-    if (!isoString) return 'Unknown'
-    const date = new Date(isoString)
-    const now = new Date()
-    const diffMs = now - date
-    const diffMins = Math.floor(diffMs / 60000)
+### 25. docs/brain/ms-sonoma-teaching-system.md (cede03814a8e282c9f02f9885e01f2a1ed833b57c04cd2aef304bf98f2d7f4ba)
+- bm25: -4.2033 | entity_overlap_w: 1.30 | adjusted: -4.5283 | relevance: 1.0000
+
+## Related Brain Files
+
+- **[tts-prefetching.md](tts-prefetching.md)** - TTS powers audio playback for Ms. Sonoma speech
+- **[visual-aids.md](visual-aids.md)** - Visual aids displayed during teaching phase
+
+## Key Files
+
+### Core API
+- `src/app/api/sonoma/route.js` - Main Ms. Sonoma API endpoint, integrates content safety validation
+
+### Content Safety
+- `src/lib/contentSafety.js` - Lenient validation system: prompt injection detection (always), banned keywords (reduced list, skipped for creative features), instruction hardening (primary defense), output validation with skipModeration=true (OpenAI Moderation API bypassed to prevent false positives like "pajamas" flagged as sexual)
+
+### Teaching Flow Hooks
+- `src/app/session/hooks/useTeachingFlow.js` - Orchestrates teaching definitions and examples stages
+
+### Phase Handlers
+- `src/app/session/hooks/usePhaseHandlers.js` - Manages phase transitions (comprehension, exercise, worksheet, test)
+
+### Session Page
+- `src/app/session/page.js` - Main session orchestration, phase state management
+
+### Brand Signal Sources (Read-Only)
+- `.github/Signals/MsSonoma_Voice_and_Vocabulary_Guide.pdf`
+- `.github/Signals/MsSonoma_Messaging_Matrix_Text.pdf`
+- `.github/Signals/MsSonoma_OnePage_Brand_Story.pdf`
+- `.github/Signals/MsSonoma_Homepage_Copy_Framework.pdf`
+- `.github/Signals/MsSonoma_Launch_Deck_The_Calm_Revolution.pdf`
+- `.github/Signals/MsSonoma_SignalFlow_Full_Report.pdf`
+
+### Data Schema
+- Supabase tables for lesson content, vocab terms, comprehension items
+- Content safety incidents logging table
+
+## Notes
+
+### 26. docs/brain/tts-prefetching.md (072d1470417a91efeda996cf6ff4ab16a94be413be6e572d439f2f0f73e61aeb)
+- bm25: -4.1778 | entity_overlap_w: 1.30 | adjusted: -4.5028 | relevance: 1.0000
+
+prefetch(text) {
+  const controller = new AbortController();
+  this.pendingFetches.set(text, controller);
+  
+  fetch('/api/tts', { signal: controller.signal, ... })
+    .then(...)
+    .catch(err => {
+      if (err.name === 'AbortError') return; // Silent - expected
+      // Other errors also silent - prefetch is non-critical
+    })
+    .finally(() => this.pendingFetches.delete(text));
+}
+
+clear() {
+  this.pendingFetches.forEach(controller => controller.abort());
+  this.pendingFetches.clear();
+  this.cache.clear();
+}
+```
+
+Ensures no memory leaks from abandoned prefetch requests.
+
+### Text Normalization
+
+```javascript
+normalizeText(text) {
+  return text.toLowerCase().trim();
+}
+```
+
+Cache keys are normalized so "What is 2+2?" and "what is 2+2? " hit same entry.
+
+### Audio Extraction
+
+```javascript
+extractAudio(data) {
+  if (!data) return null;
+  
+  // API can return audio in multiple formats:
+  // { audio, audioBase64, audioContent, content, b64 }
+  return data.audio || data.audioBase64 || data.audioContent || 
+         data.content || data.b64 || null;
+}
+```
+
+Handles various TTS API response formats.
+
+## What NOT To Do
+
+**DON'T prefetch without abort capability**
+- Memory leaks from abandoned requests
+- Network congestion from redundant fetches
+- Phase transitions leave orphaned requests
+
+**DON'T fail loudly on prefetch errors**
+- Prefetch is optimization only
+- User should never see prefetch failures
+- Core flow must work without cache
+
+**DON'NOT show loading indicator on cache hits**
+```javascript
+// WRONG - shows loading even for instant cache hits
+setTtsLoadingCount((c) => c + 1);
+let b64 = ttsCache.get(text);
+if (!b64) { /* fetch */ }
+setTtsLoadingCount((c) => c - 1);
+
+### 27. docs/brain/tts-prefetching.md (6948e68ea1a8bc628314d0baad0fc061f964291c736f4224062885a7cba94bde)
+- bm25: -4.4983 | relevance: 1.0000
+
+// RIGHT - only show loading on cache miss
+let b64 = ttsCache.get(text);
+if (!b64) {
+  setTtsLoadingCount((c) => c + 1);
+  /* fetch */
+  setTtsLoadingCount((c) => c - 1);
+}
+```
+
+### 28. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -3.8352 | entity_overlap_w: 2.60 | adjusted: -4.4852 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 29. src/app/session/v2/SessionPageV2.jsx (1f3135b2c00a8c1040ead04334dab50b90a1ca101640c97972e94076a852f4bb)
+- bm25: -3.8272 | entity_overlap_w: 2.60 | adjusted: -4.4772 | relevance: 1.0000
+
+const playEnabledForPhase = (p) => {
+      if (!p) return true;
+      if (p === 'comprehension') return playPortionsEnabledRef.current?.comprehension !== false;
+      if (p === 'exercise') return playPortionsEnabledRef.current?.exercise !== false;
+      if (p === 'worksheet') return playPortionsEnabledRef.current?.worksheet !== false;
+      if (p === 'test') return playPortionsEnabledRef.current?.test !== false;
+      return true;
+    };
+    const skipPlayPortion = ['comprehension', 'exercise', 'worksheet', 'test'].includes(phaseName)
+      ? !playEnabledForPhase(phaseName)
+      : false;
     
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`
+    // Special handling for discussion: prefetch greeting TTS before starting
+    if (phaseName === 'discussion') {
+      setDiscussionState('loading');
+      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'friend';
+      const lessonTitle = lessonData?.title || lessonId || 'this topic';
+      const greetingText = `Hi ${learnerName}, ready to learn about ${lessonTitle}?`;
+      
+      try {
+        // Prefetch greeting TTS
+        await fetchTTS(greetingText);
+      } catch (err) {
+        console.error('[SessionPageV2] Failed to prefetch greeting:', err);
+      }
+      
+      // Discussion work timer starts when Begin is clicked, not here
+    }
     
-    const diffHours = Math.floor(diffMins / 60)
-    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
+    const ref = getPhaseRef(phaseName);
+    if (ref?.current?.start) {
+      if (skipPlayPortion) {
+        transitionToWorkTimer(phaseName);
+        // Start work timer immediately when skipping play portion (unless timeline jump already started it)
+        if (timerServiceRef.current && timelineJumpTimerStartedRef.current !== phaseName) {
+          timerServiceRef.current.startWorkPhaseTimer(phaseName);
+        }
+        await ref.current.start({ skipPlayPortion: true });
+      }
+
+### 30. src/app/session/v2/SessionPageV2.jsx (b763b304b945e0806dd28f0c361c8ede66380f075bf2fe541fa4ed72f549a709)
+- bm25: -3.8034 | entity_overlap_w: 2.60 | adjusted: -4.4534 | relevance: 1.0000
+
+// Allow early-declared callbacks to invoke startSession without TDZ issues.
+  startSessionRef.current = startSession;
+  
+  const startTeaching = async (options = {}) => {
+    if (!teachingControllerRef.current) return;
+    await teachingControllerRef.current.startTeaching(options);
+  };
+  
+  const nextSentence = async () => {
+    if (!teachingControllerRef.current) return;
     
-    return date.toLocaleDateString()
+    // Show loading if GPT content isn't ready
+    setTeachingLoading(true);
+    try {
+      await teachingControllerRef.current.nextSentence();
+    } finally {
+      setTeachingLoading(false);
+    }
+  };
+  
+  const repeatSentence = () => {
+    if (!teachingControllerRef.current) return;
+    teachingControllerRef.current.repeatSentence();
+  };
+  
+  const skipToExamples = () => {
+    if (!teachingControllerRef.current) return;
+    teachingControllerRef.current.skipToExamples();
+  };
+  
+  const restartStage = () => {
+    if (!teachingControllerRef.current) return;
+    teachingControllerRef.current.restartStage();
+  };
+  
+  const stopAudio = () => {
+    if (!audioEngineRef.current) return;
+    stopAudioSafe();
+  };
+  
+  const pauseAudio = () => {
+    if (!audioEngineRef.current) return;
+    audioEngineRef.current.pause();
+  };
+  
+  const resumeAudio = () => {
+    if (!audioEngineRef.current) return;
+    audioEngineRef.current.resume();
+  };
+  
+  const toggleMute = () => {
+    if (!audioEngineRef.current) return;
+    const newMuted = !audioEngineRef.current.isMuted;
+    audioEngineRef.current.setMuted(newMuted);
+    setIsMuted(newMuted);
+  };
+  
+  // Skip current TTS playback ONLY — NEVER call phase.skip() here.
+  // This is a TTS/audio skip: it stops Ms. Sonoma's current sentence so the user
+  // doesn't have to listen to the full read-aloud. The question remains on screen
+  // and the student must
+
+### 31. docs/brain/ingests/pack-mentor-intercepts.md (88ae68a3e8cf1cfeacc9415f2912f09d93188deb2e3a1c2278a1d6bac0d438b4)
+- bm25: -4.1214 | entity_overlap_w: 1.30 | adjusted: -4.4464 | relevance: 1.0000
+
+CREATE TRIGGER auto_deactivate_old_lesson_sessions
+  BEFORE INSERT ON lesson_sessions
+  FOR EACH ROW
+  EXECUTE FUNCTION deactivate_old_lesson_sessions();
+```
+
+**Purpose**: Database enforces single-session constraint even if application logic fails. Ensures no orphaned active sessions.
+
+### Checkpoint Gates (Where Conflicts Detected)
+
+### 35. docs/brain/ai-rewrite-system.md (316854d4d2bc71c0ac5f86896adc58c38b29b41d22194aff261c0a1ca02bde82)
+- bm25: -11.8770 | relevance: 1.0000
+
+## Related Brain Files
+
+- **[visual-aids.md](visual-aids.md)** - AI rewrite optimizes DALL-E 3 prompts for visual aid generation
+- **[lesson-editor.md](lesson-editor.md)** - AIRewriteButton integrated in lesson editor for content improvement
+
+## Key Files
+
+- `src/components/AIRewriteButton.jsx` - Reusable button component
+- `src/app/api/ai/rewrite-text/route.js` - Rewrite API endpoint
+- `src/components/VisualAidsCarousel.jsx` - Current usage example
+
+## What NOT To Do
+
+- Never expose rewrite API publicly (requires auth)
+- Never skip purpose parameter (determines prompt style)
+- Never rewrite without user trigger (button click required)
+- Never cache rewritten text globally (user-specific content)
+
+### 36. docs/brain/ms-sonoma-teaching-system.md (cede03814a8e282c9f02f9885e01f2a1ed833b57c04cd2aef304bf98f2d7f4ba)
+- bm25: -11.6708 | relevance: 1.0000
+
+## Related Brain Files
+
+- **[tts-prefetching.md](tts-prefetching.md)** - TTS powers audio playback for Ms. Sonoma speech
+- **[visual-aids.md](visual-aids.md)** - Visual aids displayed during teaching phase
+
+## Key Files
+
+### Core API
+- `src/app/api/sonoma/route.js` - Main Ms. Sonoma API endpoint, integrates content safety validation
+
+### 32. src/app/api/tts/route.js (9f06659d447e883020b8b869c2c1c474e2e62fce98629b354c5abaa732f7ddfe)
+- bm25: -4.3754 | relevance: 1.0000
+
+const ssml = toSsml(text)
+    const [res] = await client.synthesizeSpeech({ input: { ssml }, voice: DEFAULT_VOICE, audioConfig: AUDIO_CONFIG })
+    const base64 = res?.audioContent
+      ? (typeof res.audioContent === 'string' ? res.audioContent : Buffer.from(res.audioContent).toString('base64'))
+      : undefined
+    // Add data URL prefix for AudioEngine compatibility
+    const dataUrl = base64 ? `data:audio/mp3;base64,${base64}` : undefined
+    // Synth ok
+    return NextResponse.json({ reply: text, audio: dataUrl })
+  } catch (e) {
+    // Synthesis failed
+    return NextResponse.json({ error: 'tts_failed' }, { status: 500 })
+  }
+}
+
+// Lightweight warm-up/health endpoint
+export async function GET() {
+  try {
+    const client = await getTtsClient();
+    const ready = !!client;
+    return NextResponse.json({ ok: true, ready });
+  } catch {
+    return NextResponse.json({ ok: true, ready: false });
+  }
+}
+
+### 33. docs/brain/tts-prefetching.md (d4d48f07f7f9a11e80b3ef68e048d4c9b4038755fe3b6610d8d8f62094649b0b)
+- bm25: -4.3489 | relevance: 1.0000
+
+// Prefetch second question while student answers first
+try {
+  if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
+    const prefetchProblem = generatedComprehension[currentCompIndex];
+    const prefetchQ = ensureQuestionMark(formatQuestionForSpeech(prefetchProblem, { layout: 'multiline' }));
+    ttsCache.prefetch(prefetchQ);
+  }
+} catch {}
+```
+
+### 34. docs/brain/v2-architecture.md (dcea5ecf862257a5f80f2259d150c9f5b9ae6ce42bb7e280b9ad10ee41710f36)
+- bm25: -3.6812 | entity_overlap_w: 2.60 | adjusted: -4.3312 | relevance: 1.0000
+
+**V2 Implementation:**
+- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (3500+ lines, includes comprehension logic)
+- `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
+- `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
+- `src/app/session/v2/ComprehensionPhase.jsx` - DEPRECATED, not used (comprehension handled inline in SessionPageV2)
+- `src/app/session/v2/DiscussionPhase.jsx` - Discussion activities (200 lines)
+- `src/app/session/v2/ExercisePhase.jsx` - Exercise questions with scoring (300 lines)
+- `src/app/session/v2/WorksheetPhase.jsx` - Fill-in-blank questions (300 lines)
+- `src/app/session/v2/TestPhase.jsx` - Graded test with review (400 lines)
+- `src/app/session/v2/ClosingPhase.jsx` - Closing message with encouragement (150 lines)
+- `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
+- `src/app/session/v2/SnapshotService.jsx` - Session persistence (300 lines)
+- `src/app/session/v2/TimerService.jsx` - Session and work phase timers (350 lines)
+- `src/app/session/v2/KeyboardService.jsx` - Keyboard hotkey management (150 lines)
+- `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading, includes question pools)
+- `src/app/session/v2test/page.jsx` - Direct test route
+
+### 35. docs/brain/ingests/pack.md (562ccdceec920fc88c19e3612ebf7902f23d8078e37896c0623a90e70a093280)
+- bm25: -3.9940 | entity_overlap_w: 1.30 | adjusted: -4.3190 | relevance: 1.0000
+
+**Response**:
+- Returns `{ outline: { kind, title, description, subject, grade, difficulty } }`
+- `kind` is `new` or `review`
+- When `kind=review`, the title is prefixed with `Review:` for clarity
+
+### `/api/generate-lesson`
+**Purpose**: Generate new lesson content via LLM  
+**Status**: Legacy route, may be superseded by facilitator lesson editor
+
+### `/api/tts`
+**Purpose**: Text-to-speech conversion (Google TTS)  
+**Status**: Operational, used for all Ms. Sonoma audio
+
+### `/api/visual-aids/generate`
+**Purpose**: Generate visual aid images via DALL-E 3  
+**Status**: Operational, see `docs/brain/visual-aids.md`
+
+### 33. src/app/facilitator/calendar/LessonPlanner.jsx (2cdb279d41617abc41fcf9088b8da7c5c209b33cd6b03cc5f9bccb95193eb4d0)
+- bm25: -17.9938 | relevance: 1.0000
+
+// Add scheduled lessons
+      if (scheduledRes.ok) {
+        const scheduledData = await scheduledRes.json()
+        const scheduledLessons = (scheduledData.schedule || []).map(s => ({
+          name: s.lesson_key,
+          date: s.scheduled_date,
+          status: 'scheduled'
+        }))
+        lessonContext = [...lessonContext, ...scheduledLessons]
+      }
+
+### 34. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (5d41b9bf517eebb4d3804a2d02aef902c5ef59c377353f9f57c89608469dd536)
+- bm25: -17.9535 | relevance: 1.0000
+
+### 36. docs/brain/ingests/pack-mentor-intercepts.md (3300157944d072852387421f46174f6339d6a53250501dd8a14f2dc88db84519)
+- bm25: -3.6664 | entity_overlap_w: 2.60 | adjusted: -4.3164 | relevance: 1.0000
+
+**V2 Implementation:**
+- `src/app/session/v2/SessionPageV2.jsx` - Complete session flow UI (3500+ lines, includes comprehension logic)
+- `src/app/session/v2/AudioEngine.jsx` - Audio playback system (600 lines)
+- `src/app/session/v2/TeachingController.jsx` - Teaching stage machine with TTS (400 lines)
+- `src/app/session/v2/ComprehensionPhase.jsx` - DEPRECATED, not used (comprehension handled inline in SessionPageV2)
+- `src/app/session/v2/DiscussionPhase.jsx` - Discussion activities (200 lines)
+- `src/app/session/v2/ExercisePhase.jsx` - Exercise questions with scoring (300 lines)
+- `src/app/session/v2/WorksheetPhase.jsx` - Fill-in-blank questions (300 lines)
+- `src/app/session/v2/TestPhase.jsx` - Graded test with review (400 lines)
+- `src/app/session/v2/ClosingPhase.jsx` - Closing message with encouragement (150 lines)
+- `src/app/session/v2/PhaseOrchestrator.jsx` - Session phase management (150 lines)
+- `src/app/session/v2/SnapshotService.jsx` - Session persistence (300 lines)
+- `src/app/session/v2/TimerService.jsx` - Session and work phase timers (350 lines)
+- `src/app/session/v2/KeyboardService.jsx` - Keyboard hotkey management (150 lines)
+- `src/app/session/v2/services.js` - API integration layer (TTS + lesson loading, includes question pools)
+- `src/app/session/v2test/page.jsx` - Direct test route
+
+### 37. src/app/session/v2/AudioEngine.jsx (b00f8222e6f278ea9df16d8ae24a4c45803094c441a9567d00c67743b3de523d)
+- bm25: -3.6230 | entity_overlap_w: 2.60 | adjusted: -4.2730 | relevance: 1.0000
+
+// If a video-unlock handler is still attached (e.g., autoplay was blocked during
+    // initialize()), clear it so it cannot pause the first real TTS playback.
+    try {
+      if (this.#videoUnlockCleanupTimer) {
+        clearTimeout(this.#videoUnlockCleanupTimer);
+        this.#videoUnlockCleanupTimer = null;
+      }
+    } catch {}
+    try {
+      if (this.#videoUnlockPlayingHandler) {
+        this.#videoElement.removeEventListener('playing', this.#videoUnlockPlayingHandler);
+        this.#videoUnlockPlayingHandler = null;
+      }
+    } catch {}
+    
+    // Use robust retry mechanism from audioUtils (handles iOS edge cases)
+    playVideoWithRetry(this.#videoElement, 3, 100).catch(() => {
+      // Log silently if all retries fail to avoid breaking session
+    });
+  }
+  
+  // Private: Cleanup
+  #cleanup() {
+    this.#isPlaying = false;
+    
+    // Pause video when audio ends (video syncs with TTS)
+    if (this.#videoElement) {
+      try {
+        this.#videoElement.pause();
+      } catch {}
+    }
+    
+    this.#clearCaptionTimers();
+    this.#clearSpeechGuard();
+  }
+  
+  // Private: Utilities
+  #parseAudioInput(rawInput) {
+    if (!rawInput) return null;
+
+const raw = String(rawInput).trim();
+    if (!raw) return null;
+
+// Accept either a data URL or a raw base64 string.
+    const match = raw.match(/^data:(audio\/[^;]+);base64,(.*)$/i);
+    const contentType = match?.[1] || 'audio/mpeg';
+    let b64 = (match?.[2] || raw).trim();
+
+// Normalize: strip whitespace, base64url -> base64, add padding.
+    b64 = b64.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+    const pad = b64.length % 4;
+    if (pad === 2) b64 += '==';
+    else if (pad === 3) b64 += '=';
+    else if (pad === 1) b64 += '===';
+
+return { contentType, b64 };
   }
 
-### 40. src/lib/faq/facilitator-pages.json (4b848d3bcb8fd074168f4bfd8805c4c4143f1f27948661b54e4fbba3e5eaf7e3)
-- bm25: -4.4346 | entity_overlap_w: 1.30 | adjusted: -4.7596 | relevance: 1.0000
+### 38. src/app/session/page.js (7f0daa5c2b0f98ea56232f1c428f4aa6417c952e188d722b5106c0789dd53308)
+- bm25: -3.6158 | entity_overlap_w: 2.60 | adjusted: -4.2658 | relevance: 1.0000
 
-{
-  "category": "Facilitator Pages",
-  "features": [
-    {
-      "id": "facilitator-page-hub",
-      "title": "Facilitator Hub (/facilitator)",
-      "keywords": [
-        "facilitator hub",
-        "facilitator home",
-        "facilitator dashboard page",
-        "/facilitator",
-        "account learners lessons calendar",
-        "talk to mr mentor"
-      ],
-      "description": "The Facilitator Hub is the entry point to adult tools. It shows quick links to Account, Learners, Lessons, Calendar, and Mr. Mentor.",
-      "howToUse": "Use the cards to open a section (Account/Learners/Lessons/Calendar). Use the Mr. Mentor button to open the facilitator chat experience.",
-      "relatedFeatures": ["facilitator-dashboard", "mr-mentor", "pin-security"]
-    },
-    {
-      "id": "facilitator-page-account",
-      "title": "Account (/facilitator/account)",
-      "keywords": [
-        "facilitator account",
-        "account page",
-        "profile",
-        "security",
-        "2fa",
-        "connected accounts",
-        "timezone",
-        "marketing emails",
-        "policies",
-        "danger zone",
-        "/facilitator/account"
-      ],
-      "description": "The Account page is the central place to manage facilitator profile and security settings, connections, hotkeys, timezone, and billing links.",
-      "howToUse": "Open a card to edit: Your Name; Email and Password; Two-Factor Auth; Facilitator PIN; Connected Accounts; Hotkeys; Timezone; Marketing Emails; Policies; Plan; Danger Zone. Notifications is also linked from here.",
-      "relatedFeatures": ["pin-security", "subscription-tiers"]
-    },
-    {
-      "id": "facilitator-page-account-settings-redirect",
-      "title": "Account Settings (Redirect) (/facilitator/account/settings)",
-      "keywords": [
-        "account se
+const startDiscussionStep = async () => {
+    // CRITICAL: Unlock audio during user gesture (Begin click) - required for Chrome
+    try {
+      await unlockAudioPlaybackWrapped();
+    } catch (e) {
+      // Silent error handling
+    }
+    
+    // Ensure we are not starting in a muted state
+    try { setMuted(false); } catch {}
+    try { mutedRef.current = false; } catch {}
+    try { forceNextPlaybackRef.current = true; } catch {}
+    
+    // CRITICAL for Chrome: Preload video during user gesture but don't play yet
+    // The video will start when TTS actually begins playing
+    try {
+      if (videoRef.current) {
+        if (videoRef.current.readyState < 2) {
+          videoRef.current.load();
+          // Wait a moment for load to register
+          await new Promise(r => setTimeout(r, 100));
+        }
+        // Just seek to first frame to unlock autoplay, but don't start playing yet
+        try {
+          videoRef.current.currentTime = 0;
+        } catch (e) {
+          // Fallback: briefly play then pause to unlock autoplay
+          const playPromise = videoRef.current.play();
+          if (playPromise && playPromise.then) {
+            await playPromise.then(() => {
+              try { videoRef.current.pause(); } catch {}
+            });
+          }
+        }
+      }
+    } catch (e) {
+      // Silent error handling
+    }
+    
+  // Unified discussion is now generated locally: Greeting + Encouragement + next-step prompt (no joke/silly question)
+    setCanSend(false);
+    // Compose the opening text using local pools (no API/TTS for this step)
+    const learnerName = (typeof window !== 'undefined' ? (localStorage.getItem('learner_name') || '') : '').trim();
+    const lessonTitleExact = (effectiveLessonTitle && typeof effectiveLessonTitle === 'string' && effectiveLes
+
+### 39. sidekick_pack.md (bba8c9d0a2ad1fcfae649c359a4219ed32e5a5913249044c89d6ec0d9ecb4d56)
+- bm25: -3.5875 | entity_overlap_w: 2.60 | adjusted: -4.2375 | relevance: 1.0000
+
+### Storage + Public Access (No Login)
+
+Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
+
+### 35. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.0390 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 40. sidekick_pack.md (df3b0d06c6e97315f9ac315d8fe85c1be37b146340873af631c44fae1bc3250f)
+- bm25: -3.5805 | entity_overlap_w: 2.60 | adjusted: -4.2305 | relevance: 1.0000
+
+### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.4515 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
+- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
