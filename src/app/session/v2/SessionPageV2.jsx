@@ -1728,8 +1728,11 @@ function SessionPageV2Inner() {
   useEffect(() => {
     if (!timerServiceRef.current || !phaseTimers) return;
 
-    const playBonusSec = goldenKeysEnabledRef.current
-      ? Math.max(0, Number(goldenKeyBonusRef.current || 0)) * 60
+    // Read state values directly (not refs) — the effect fires because these state
+    // values changed, and the refs may lag by one render if the ref-sync effect
+    // hasn't run yet in the same batch.
+    const playBonusSec = goldenKeysEnabled
+      ? Math.max(0, Number(goldenKeyBonus || 0)) * 60
       : 0;
     const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
 
@@ -3877,9 +3880,14 @@ function SessionPageV2Inner() {
       } else if (data.phase === 'comprehension') {
         const started = startComprehensionPhase();
         if (started) {
-          // Start play timer for comprehension once phase exists (unless play portion is disabled)
+          // Start play timer for comprehension once phase exists (unless play portion is disabled).
+          // Guard: do NOT call startPhasePlayTimer when resuming into work mode — the phase's
+          // stateChange already queued 'work', and calling this after would overwrite it with 'play'.
           if (playPortionsEnabledRef.current?.comprehension !== false) {
-            startPhasePlayTimer('comprehension');
+            const resumedInWorkMode = snapshotServiceRef.current?.snapshot?.phaseData?.comprehension?.timerMode === 'work';
+            if (!resumedInWorkMode) {
+              startPhasePlayTimer('comprehension');
+            }
           }
         } else {
           if (playPortionsEnabledRef.current?.comprehension !== false) {
@@ -3890,7 +3898,10 @@ function SessionPageV2Inner() {
         const started = startExercisePhase();
         if (started) {
           if (playPortionsEnabledRef.current?.exercise !== false) {
-            startPhasePlayTimer('exercise');
+            const resumedInWorkMode = snapshotServiceRef.current?.snapshot?.phaseData?.exercise?.timerMode === 'work';
+            if (!resumedInWorkMode) {
+              startPhasePlayTimer('exercise');
+            }
           }
         } else {
           if (playPortionsEnabledRef.current?.exercise !== false) {
@@ -3901,7 +3912,10 @@ function SessionPageV2Inner() {
         const started = startWorksheetPhase();
         if (started) {
           if (playPortionsEnabledRef.current?.worksheet !== false) {
-            startPhasePlayTimer('worksheet');
+            const resumedInWorkMode = snapshotServiceRef.current?.snapshot?.phaseData?.worksheet?.timerMode === 'work';
+            if (!resumedInWorkMode) {
+              startPhasePlayTimer('worksheet');
+            }
           }
         } else {
           if (playPortionsEnabledRef.current?.worksheet !== false) {
@@ -3912,7 +3926,10 @@ function SessionPageV2Inner() {
         const started = startTestPhase();
         if (started) {
           if (playPortionsEnabledRef.current?.test !== false) {
-            startPhasePlayTimer('test');
+            const resumedInWorkMode = snapshotServiceRef.current?.snapshot?.phaseData?.test?.timerMode === 'work';
+            if (!resumedInWorkMode) {
+              startPhasePlayTimer('test');
+            }
           }
         } else {
           if (playPortionsEnabledRef.current?.test !== false) {
@@ -5395,8 +5412,18 @@ function SessionPageV2Inner() {
     }
     
     if (!audioEngineRef.current) {
-      console.error('[SessionPageV2] Audio engine not ready');
-      return;
+      // Engine not yet created (slow iOS, videoRef retry still in-flight).
+      // Construct it now while we are inside a user gesture so the iOS audio
+      // unlock (play/pause of the video element) can succeed.
+      const videoEl = videoRef.current;
+      if (!videoEl) {
+        console.error('[SessionPageV2] Audio engine not ready and no video element');
+        return;
+      }
+      console.warn('[SessionPageV2] AudioEngine not ready at Begin — constructing now');
+      const engine = new AudioEngine({ videoElement: videoEl });
+      audioEngineRef.current = engine;
+      setAudioReady(true);
     }
 
     const withTimeout = async (promise, ms, label) => {
