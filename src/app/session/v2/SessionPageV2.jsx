@@ -1734,6 +1734,7 @@ function SessionPageV2Inner() {
     const playBonusSec = goldenKeysEnabled
       ? Math.max(0, Number(goldenKeyBonus || 0)) * 60
       : 0;
+    console.log('[TimerFix] setPlayTimerLimits — goldenKeyBonus:', goldenKeyBonus, 'enabled:', goldenKeysEnabled, 'bonusSec:', playBonusSec);
     const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
 
     timerServiceRef.current.setPlayTimerLimits({
@@ -3885,6 +3886,7 @@ function SessionPageV2Inner() {
           // stateChange already queued 'work', and calling this after would overwrite it with 'play'.
           if (playPortionsEnabledRef.current?.comprehension !== false) {
             const resumedInWorkMode = snapshotServiceRef.current?.snapshot?.phaseData?.comprehension?.timerMode === 'work';
+            console.log('[TimerFix] comprehension phaseChange — resumedInWorkMode:', resumedInWorkMode);
             if (!resumedInWorkMode) {
               startPhasePlayTimer('comprehension');
             }
@@ -3899,6 +3901,7 @@ function SessionPageV2Inner() {
         if (started) {
           if (playPortionsEnabledRef.current?.exercise !== false) {
             const resumedInWorkMode = snapshotServiceRef.current?.snapshot?.phaseData?.exercise?.timerMode === 'work';
+            console.log('[TimerFix] exercise phaseChange — resumedInWorkMode:', resumedInWorkMode);
             if (!resumedInWorkMode) {
               startPhasePlayTimer('exercise');
             }
@@ -3913,6 +3916,7 @@ function SessionPageV2Inner() {
         if (started) {
           if (playPortionsEnabledRef.current?.worksheet !== false) {
             const resumedInWorkMode = snapshotServiceRef.current?.snapshot?.phaseData?.worksheet?.timerMode === 'work';
+            console.log('[TimerFix] worksheet phaseChange — resumedInWorkMode:', resumedInWorkMode);
             if (!resumedInWorkMode) {
               startPhasePlayTimer('worksheet');
             }
@@ -3927,6 +3931,7 @@ function SessionPageV2Inner() {
         if (started) {
           if (playPortionsEnabledRef.current?.test !== false) {
             const resumedInWorkMode = snapshotServiceRef.current?.snapshot?.phaseData?.test?.timerMode === 'work';
+            console.log('[TimerFix] test phaseChange — resumedInWorkMode:', resumedInWorkMode);
             if (!resumedInWorkMode) {
               startPhasePlayTimer('test');
             }
