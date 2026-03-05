@@ -183,7 +183,9 @@ export class TimerService {
         // driven by playTimerTick events) reflects the new limit right away —
         // rather than waiting up to 1 second for the next interval tick, or
         // never updating when the timer is paused.
-        if (phase === this.currentPlayPhase && !timer.expired) {
+        const isCurrentPhase = phase === this.currentPlayPhase;
+        console.log(`[TimerFix] setPlayTimerLimits phase=${phase} currentPlayPhase=${this.currentPlayPhase} expired=${timer.expired} willEmitTick=${isCurrentPhase && !timer.expired} newLimit=${timer.timeLimit} elapsed=${timer.elapsed}`);
+        if (isCurrentPhase && !timer.expired) {
           const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
           this.eventBus.emit('playTimerTick', {
             phase,
