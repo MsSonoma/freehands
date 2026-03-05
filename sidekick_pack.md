@@ -6,23 +6,19 @@ Mode: standard
 
 Prompt (original):
 ```text
-phaseChange handler startPhasePlayTimer overwrites work mode on resume — fix for comprehension exercise worksheet test phases
+session page refresh hangs times out eventually loads
 ```
 
 Filter terms used:
 ```text
-phasechange
-handler
-startphaseplaytimer
-overwrites
-work
-mode
-resume
-fix
-comprehension
-exercise
-worksheet
-test
+session
+page
+refresh
+hangs
+times
+out
+eventually
+loads
 ```
 
 ---
@@ -31,9 +27,9 @@ test
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-03-02 19:52` — Q&A answer submission hangs or goes unresponsive in session teaching flow
 - `2026-03-03 08:50` — Curriculum Preferences focuses and bans per subject with dropdown selector, custom subjects, per-subject saving, prompt 
 - `2026-03-05 11:36` — hardened video initialization, resume logic correct time, golden key timer overlay applies to authoritative timer, skip 
+- `2026-03-05 12:17` — phaseChange handler startPhasePlayTimer overwrites work mode on resume — fix for comprehension exercise worksheet test p
 
 ---
 
@@ -54,7 +50,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 5. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 3. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -69,7 +65,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-phasechange handler startphaseplaytimer overwrites work mode resume fix comprehension exercise worksheet test
+session page refresh hangs times out eventually loads
 
 ## Forced Context
 
@@ -77,1286 +73,1178 @@ phasechange handler startphaseplaytimer overwrites work mode resume fix comprehe
 
 ## Ranked Evidence
 
-### 1. src/app/session/v2/SessionPageV2.jsx (8b1614f1b3679130fde770c0d063433bcd5cb4796e14b81131a420da0c9fb6a3)
-- bm25: -24.3739 | relevance: 0.9606
+### 1. docs/brain/auth-session-isolation.md (34ebf74e4612d3e92576d4ecd0198993b6ca4d0a1afc6bd927f053cbe69ecadc)
+- bm25: -17.5829 | relevance: 0.9462
 
-// Ensure a phase instance exists (e.g., when learner loads after phaseChange fired).
-  const ensurePhaseInitialized = (phaseName) => {
-    const refMap = {
-      comprehension: comprehensionPhaseRef,
-      exercise: exercisePhaseRef,
-      worksheet: worksheetPhaseRef,
-      test: testPhaseRef
-    };
-    const startMap = {
-      comprehension: startComprehensionPhase,
-      exercise: startExercisePhase,
-      worksheet: startWorksheetPhase,
-      test: startTestPhase
-    };
+- ✅ Logging out on Device A does NOT log out Device B
+- ✅ Logging into different account on Device A does NOT affect Device B
+- ✅ Sessions persist across browser refresh on same device
+- ✅ Sessions eventually expire naturally (JWT expiry)
+- ✅ No custom storage adapters needed (default Supabase behavior works)
+- ✅ All signOut() calls explicitly specify scope parameter
 
-### 2. src/app/session/v2/SessionPageV2.jsx (2dd79b6a5e5782c933381ac94dbae5728682bb02d041f40ca0d5ea32f38fd8fe)
-- bm25: -23.1181 | relevance: 0.9585
+### 2. docs/brain/auth-session-isolation.md (6a7a5ab7984f7e7c9e74a9fb7bfb81a67e77fe56b4c5d0e26ac30b318d177606)
+- bm25: -13.8897 | relevance: 0.9328
 
-// Play portion flags (required - no defaults or fallback)
-        const playFlags = {
-          comprehension: learner.play_comprehension_enabled,
-          exercise: learner.play_exercise_enabled,
-          worksheet: learner.play_worksheet_enabled,
-          test: learner.play_test_enabled,
-        };
-        for (const [k, v] of Object.entries(playFlags)) {
-          if (typeof v !== 'boolean') {
-            throw new Error(`Learner profile missing play_${k}_enabled flag. Please run migrations.`);
-          }
-        }
-        setPlayPortionsEnabled(playFlags);
-        playPortionsEnabledRef.current = playFlags;
-        
-        // Load phase timer settings from learner profile
-        const timers = loadPhaseTimersForLearner(learner);
-        setPhaseTimers(timers);
-        
-        // Initialize currentTimerMode (null = not started yet), but do not clobber
-        // any existing restore/resume-derived modes.
-        setCurrentTimerMode((prev) => {
-          const hasExistingMode = prev && Object.values(prev).some((mode) => mode === 'play' || mode === 'work');
-          if (hasExistingMode) return prev;
-          return {
-            discussion: null,
-            comprehension: null,
-            exercise: null,
-            worksheet: null,
-            test: null
-          };
-        });
-        
-        // Check for active golden key on this lesson (only affects play timers when Golden Keys are enabled)
-        // Key format must match V1 + /learn/lessons: `${subject}/${lesson}`.
-        if (!goldenKeyLessonKey) {
-          throw new Error('Missing lesson key for golden key lookup.');
-        }
-        const activeKeys = learner.active_golden_keys || {};
-        if (learner.golden_keys_enabled && activeKeys[goldenKeyLessonKey]) {
-          setHasGoldenKey(true);
+**Test 2: Account Switch**
+1. Log in as User 1 on Device A
+2. Log in as User 1 on Device B
+3. Log out on Device A, log in as User 2 on Device A
+4. **Expected**: Device A is User 2, Device B still User 1
+5. **Before Fix**: Device B switched to User 2 or logged out
 
-### 3. src/app/session/v2/TimerService.jsx (5d1aff774ce802b41453c7627fd9add331616de55a4f27ac75250e10e83b7689)
-- bm25: -23.0198 | relevance: 0.9584
+**Test 3: Session Persistence**
+1. Log in on Device A
+2. Log in on Device B (same account)
+3. Close browser on Device A (not logged out)
+4. Reopen browser on Device A
+5. **Expected**: Device A still logged in (session persisted)
 
-if (mode === 'work') {
-      const validPhases = ['discussion', 'comprehension', 'exercise', 'worksheet', 'test'];
-      if (!validPhases.includes(phase)) return;
+## Edge Cases
 
-### 4. docs/brain/snapshot-persistence.md (83771570e459d80f3130a04413886133c035ef9a1167a6692812acf99b672017)
-- bm25: -22.1644 | relevance: 0.9568
+### Natural Session Expiry
+- Access token expires after 1 hour (configurable in Supabase)
+- Refresh token expires after 7 days (configurable)
+- Device automatically refreshes using refresh token
+- If refresh token expires, user must log in again (on that device only)
 
-## Checkpoint Gates (Where Snapshots Save)
+### Concurrent Logout
+- User logs out on Device A and Device B simultaneously
+- Both use `scope: 'local'`
+- Server session remains valid (neither invalidated it)
+- Session eventually expires naturally
 
-- **Discussion entry**: `begin-discussion` (no opening actions in V2).
-- **Teaching**: `begin-teaching-definitions`, `vocab-sentence-1/N` (before each TTS), `begin-teaching-examples`, `example-sentence-1/N` (before each TTS).
-- **Q&A seeding** (deterministic resume): `comprehension-init`, `exercise-init`, `worksheet-init`, `test-init` fire on phase start and persist question arrays + `nextQuestionIndex` + `score` + `answers` + `timerMode` (with `phaseOverride`).
-- **Q&A post-Go (work-mode checkpoint)**: `comprehension-go`, `exercise-go`, `worksheet-go`, `test-go` fire immediately when the learner presses **Go**. These writes set `timerMode:'work'` with `nextQuestionIndex:0` so a refresh before answering Q1 resumes on the first question (not back to Opening Actions).
-- **Q&A granular**: `comprehension-answer`, `comprehension-skip`, `exercise-answer`, `exercise-skip`, `worksheet-answer`, `worksheet-skip`, `test-answer`, `test-skip` after each submission/skip (payload includes questions, answers, next index, timerMode; Test also includes reviewIndex).
-- **Navigation**: `skip-forward`, `skip-back` (timeline jumps).
+### Password Change
+- Should use `scope: 'global'` to force re-auth everywhere
+- Not implemented yet - future enhancement
 
-## Related Brain Files
+### Account Deletion
+- Currently uses `scope: 'local'`
+- Could argue for `scope: 'global'` since account is gone
+- But API deletes user anyway, so other devices will fail on next API call
 
-- **[timer-system.md](timer-system.md)** - Timer state (currentTimerMode, workPhaseCompletions, golden key) persisted in snapshots
-- **[session-takeover.md](session-takeover.md)** - Takeover flow triggers snapshot restore with timer state
+## Future Enhancements
 
-## Key Files
+- Add "Log out everywhere" button (explicit `scope: 'global'`)
+- Force global logout on password change
+- Show "active sessions" list (like Google/Facebook)
+- Server-side session revocation API
 
-- `src/app/session/sessionSnapshotStore.js` - Save/restore with localStorage+database
-- `src/app/session/hooks/useSnapshotPersistence.js` - scheduleSaveSnapshot wrapper
-- `src/app/session/hooks/useTeachingFlow.js` - Teaching checkpoint saves
-- `src/app/session/page.js` - Comprehension/phase checkpoint saves
+## Acceptance Criteria
 
-## What Was Removed
+### 3. docs/brain/auth-session-isolation.md (a12fba6b9cdf1ad88cae87c975621eed6a8730be439d6a83fad3c0c13a62c81e)
+- bm25: -10.3369 | relevance: 0.9118
 
-### 5. src/app/facilitator/learners/clientApi.js (75eb93ab506eaa0c7451ad91d14358e6207022eecf10ffe6d02f87244f5c1596)
-- bm25: -21.6010 | relevance: 0.9558
+# Auth Session Isolation (Cross-Device Logout Issue)
 
-// Helpers
-function normalizeRow(row) {
-  if (!row) return row;
-  const c = (v)=> (v == null ? undefined : Number(v));
-  const humorLevel = resolveHumorLevel(row.humor_level ?? row.preferences?.humor_level ?? null, DEFAULT_HUMOR_LEVEL);
-  const merged = {
-    ...row,
-    comprehension: c(row.comprehension ?? row.targets?.comprehension),
-    exercise: c(row.exercise ?? row.targets?.exercise),
-    worksheet: c(row.worksheet ?? row.targets?.worksheet),
-    test: c(row.test ?? row.targets?.test),
-    session_timer_minutes: c(row.session_timer_minutes),
-    golden_keys: c(row.golden_keys),
-    active_golden_keys: row.active_golden_keys || {},
-    golden_keys_enabled: row.golden_keys_enabled !== false,
-    play_comprehension_enabled: row.play_comprehension_enabled !== false,
-    play_exercise_enabled: row.play_exercise_enabled !== false,
-    play_worksheet_enabled: row.play_worksheet_enabled !== false,
-    play_test_enabled: row.play_test_enabled !== false,
-    humor_level: humorLevel,
-    ask_disabled: !!row.ask_disabled,
-    poem_disabled: !!row.poem_disabled,
-    story_disabled: !!row.story_disabled,
-    fill_in_fun_disabled: !!row.fill_in_fun_disabled,
-    auto_advance_phases: row.auto_advance_phases !== false,
-    // Phase timer fields
-    discussion_play_min: c(row.discussion_play_min),
-    discussion_work_min: c(row.discussion_work_min),
-    comprehension_play_min: c(row.comprehension_play_min),
-    comprehension_work_min: c(row.comprehension_work_min),
-    exercise_play_min: c(row.exercise_play_min),
-    exercise_work_min: c(row.exercise_work_min),
-    worksheet_play_min: c(row.worksheet_play_min),
-    worksheet_work_min: c(row.worksheet_work_min),
-    test_play_min: c(row.test_play_min),
-    test_work_min: c(row.test_work_min),
-    golden_key_bonus_min: c(row.golden_
+## Critical Problem Solved
 
-### 6. src/app/session/hooks/useSnapshotPersistence.js (4698b3071633f16c3763fdf8ca347c1b304fae9a54d2632505f7143c44bfb80b)
-- bm25: -21.5269 | relevance: 0.9556
+**BUG**: Logging out on Device A logged out Device B. Logging into a different account on Device A changed the logged-in user on Device B.
 
-// Check if play timer expired while page was closed.
-              // Skip countdown by setting flag and transition to work mode.
-              if (desiredMode === 'play' && Number.isFinite(target) && adjustedElapsed >= target) {
-                if (typeof setPlayExpiredCountdownCompleted === 'function') {
-                  setPlayExpiredCountdownCompleted(true);
-                }
-                setCurrentTimerMode((prev) => ({
-                  ...(prev || {}),
-                  [timerPhaseName]: 'work',
-                }));
-                try {
-                  sessionStorage.removeItem(storageKey);
-                } catch {}
-                if (typeof setNeedsPlayExpiredTransition === 'function') {
-                  setNeedsPlayExpiredTransition(timerPhaseName);
-                }
-              }
-            }
-          }
-        } catch {}
-        
-        // Defer clearing loading until the resume reconciliation effect completes
-        try { setTtsLoadingCount(0); } catch {}
-        // DO NOT set isSpeaking=false here - let audio.onended handle it after caption replay
-        try {
-          // Minimal canSend heuristics on restore: enable only when in awaiting-begin or review or teaching stage prompts
-          const enable = (
-            (snap.phase === 'discussion' && snap.subPhase === 'awaiting-learner') ||
-            (snap.phase === 'comprehension' && snap.subPhase === 'comprehension-start') ||
-            (snap.phase === 'exercise' && snap.subPhase === 'exercise-awaiting-begin') ||
-            (snap.phase === 'worksheet' && snap.subPhase === 'worksheet-awaiting-begin') ||
-            (snap.phase === 'test' && (snap.subPhase === 'test-awaiting-begin' || snap.subPhase === 'review-start')) ||
-            (snap.phase === 'teaching' && snap.subPhase === 'tea
+**ROOT CAUSE**: `supabase.auth.signOut()` defaults to `scope: 'global'`, which invalidates the session **server-side** in the Supabase database. This affects ALL devices using that account because they all share the same server-side session.
 
-### 7. docs/brain/snapshot-persistence.md (f87d966760c556fc2fde0b69db52ba05eaee701f6f8d5ee1c6782274d56614c0)
-- bm25: -20.8499 | relevance: 0.9542
+## How It Works Now
 
-### V2 Save Flow
-On phase transition:
-1. **PhaseOrchestrator** emits `phaseChange` with the new phase name.
-2. **SessionPageV2** calls `savePhaseCompletion(phase)` immediately so `SnapshotService.#snapshot.currentPhase` is set before granular saves run.
-3. Each phase controller emits `requestSnapshotSave` after user actions (answers, skips, teaching sentence advances), and **saveProgress()** writes under the active phase key. `saveProgress()` now accepts `phaseOverride` so seed saves can force the correct phase even if currentPhase has not advanced yet.
-4. Granular saves **wait for any in-flight save to finish** (instead of skipping) so phase-change and seed saves cannot be dropped when a prior write is still completing.
-4. Q&A phases (comprehension, exercise, worksheet, test) call `saveProgress('<phase>-init')` on phase start with `{ questions, nextQuestionIndex, score, answers, timerMode: 'play', phaseOverride: '<phase>' }` to freeze deterministic question pools for resume.
-5. The same Q&A phases emit `<phase>-answer` and `<phase>-skip` saves that include `questions`, `answers`, `nextQuestionIndex`, `score`, and `timerMode` (Test also includes `reviewIndex`). This keeps snapshots aligned to the next pending question.
-6. Resume path: `start*Phase` reads `snapshot.phaseData.<phase>` and passes it as `resumeState` so controllers skip intros/Go, restore timer mode (play/work), reuse the exact question array, and drop the learner at `nextQuestionIndex` (Test also restores `reviewIndex`).
+### Local Logout Scope
 
-Without step 2, granular saves would use `idle` as currentPhase and store under the wrong phase. Without step 4, question pools would reshuffle on resume and lose intra-phase progress.
+Changed all `signOut()` calls to use `scope: 'local'`:
 
-### 8. src/app/session/v2/SessionPageV2.jsx (6c8d311eec76ed7649fe9c9a711c569c02054bb1129ccf244bda9f82fabfb00d)
-- bm25: -20.6861 | relevance: 0.9539
+```javascript
+// Before (global logout - affects all devices):
+await supabase.auth.signOut()
 
-const playTimerLimits = {
-      comprehension: m2s(phaseTimers.comprehension_play_min) + playBonusSec,
-      exercise: m2s(phaseTimers.exercise_play_min) + playBonusSec,
-      worksheet: m2s(phaseTimers.worksheet_play_min) + playBonusSec,
-      test: m2s(phaseTimers.test_play_min) + playBonusSec
-    };
+// After (local logout - only this device):
+await supabase.auth.signOut({ scope: 'local' })
+```
 
-const workPhaseTimeLimits = {
-      discussion: m2s(phaseTimers.discussion_work_min),
-      comprehension: m2s(phaseTimers.comprehension_work_min),
-      exercise: m2s(phaseTimers.exercise_work_min),
-      worksheet: m2s(phaseTimers.worksheet_work_min),
-      test: m2s(phaseTimers.test_work_min)
-    };
+**What scope: 'local' does:**
+- Clears auth tokens from localStorage on **current device only**
+- Does NOT invalidate the server-side session
+- Other devices continue using the same session
+- Server session eventually expires naturally (based on JWT expiry time)
 
-// Forward timer events to UI
-    const unsubWorkTick = eventBus.on('workPhaseTimerTick', (data) => {
-      setWorkPhaseTime(data.formatted);
-      setWorkPhaseRemaining(data.remainingFormatted);
-    });
+**What scope: 'global' does (default):**
+- Clears auth tokens from localStorage on current device
+- **Invalidates server-side session in Supabase database**
+- All other devices immediately lose access when they next make an API call
+- Session tokens on other devices become invalid
 
-const unsubWorkComplete = eventBus.on('workPhaseTimerComplete', (data) => {
-      addEvent(`â±ï¸ ${data.phase} timer complete!`);
-      hydrateWorkTimerSummaryFromTimerService('workPhaseTimerComplete');
-    });
+## Why This Happened
 
-const unsubGoldenKey = eventBus.on('goldenKeyEligible', (data) => {
-      if (goldenKeysEnabledRef.current === false) return;
-      const eligible = data?.eligible === true;
-      setGoldenKeyEligible(eligible);
-      if (eligible) addEvent('🔑 Golden Key earned!');
-    });
+Supabase auth sessions work in two layers:
 
-### 9. src/app/session/page.js (5806f1e849652436b202c7bb2a8661d22a9e77d4a120819ac47fb4862dbff76a)
-- bm25: -20.0313 | relevance: 0.9525
+1. **Client-side (localStorage)**: Access token + refresh token stored locally
+2. **Server-side (Supabase database)**: Session record with expiry, used to validate tokens
 
-// Helper to get the current phase name from phase state
-  const getCurrentPhaseName = useCallback(() => {
-    // Map phase state to phase timer key
-    // Teaching phase uses discussion timer (they're grouped together)
-    if (phase === 'discussion' || phase === 'teaching') return 'discussion';
-    if (phase === 'comprehension') return 'comprehension';
-    if (phase === 'exercise') return 'exercise';
-    if (phase === 'worksheet') return 'worksheet';
-    if (phase === 'test') return 'test';
-    return null;
-  }, [phase]);
+When you call `signOut()` with default settings:
+- It clears localStorage on Device A ✓
+- It calls Supabase API to invalidate the session record ✗
+- Device B's tokens become invalid because server session is gone
 
-// Check if we're currently in play or work mode
-  const isInPlayMode = useCallback(() => {
-    const currentPhase = getCurrentPhaseName();
-    if (!currentPhase) return false;
-    return currentTimerMode[currentPhase] === 'play';
-  }, [getCurrentPhaseName, currentTimerMode]);
+### 4. docs/brain/ms-sonoma-teaching-system.md (25924444b0a99e010e5adc790311b5b3a6f525223ee557909a969e29fbeb292d)
+- bm25: -9.0891 | relevance: 0.9009
 
-// Handle timer time-up callback (determines if play or work timer expired)
-  const handlePhaseTimerTimeUp = useCallback(() => {
-    const currentPhase = getCurrentPhaseName();
-    if (!currentPhase) return;
-    
-    const mode = currentTimerMode[currentPhase];
-    if (mode === 'play') {
-      handlePlayTimeUp(currentPhase);
-    } else if (mode === 'work') {
-      handleWorkTimeUp(currentPhase);
-    }
-  }, [getCurrentPhaseName, currentTimerMode, handlePlayTimeUp, handleWorkTimeUp]);
+### Slot Policy
 
-// Reset opening actions visibility on begin and on major phase changes
-  useEffect(() => {
-    if (phase === 'discussion' && subPhase === 'unified-discussion') {
-      setShowOpeningActions(false);
-      // Game usage gates removed - games are now repeatable during play time
-      // Story persists across phases - don't reset or clear transcript
-      // Only clear story when starting a completely new session
-    }
-  }, [phase, subPhase]);
+- Build with templates in code
+- Substitute slots (e.g., {NAME}, {TITLE}) to literals before send
+- Never let placeholders reach Ms. Sonoma
+- Normalize quotes to straight ASCII before validation
 
-### 10. src/app/session/v2/SessionPageV2.jsx (1755a87c9805005bf194c80a94647585bb31b90951ddfefb665eb5beed7a10b4)
-- bm25: -19.8019 | relevance: 0.9519
+### Developer-Only Examples
 
-// Start play timer at the Begin gate (before Begin is clicked) for play-enabled Q&A phases.
-    // Do NOT do this on resume auto-start, and do NOT double-start after timeline jumps.
-    const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'comprehension';
-    const shouldAutoStart = resumeMatch || !!savedComp;
-    const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.comprehension !== false;
-    if (
-      shouldStartPlayAtBeginGate
-      && timerServiceRef.current
-      && timelineJumpTimerStartedRef.current !== 'comprehension'
-    ) {
-      timerServiceRef.current.startPlayTimer('comprehension');
-    }
-    
-    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
-    if (shouldAutoStart && phase.start) {
-      if (playPortionsEnabledRef.current?.comprehension === false) {
-        transitionToWorkTimer('comprehension');
-        phase.start({ skipPlayPortion: true });
-        if (pendingPlayTimersRef.current?.comprehension) {
-          delete pendingPlayTimersRef.current.comprehension;
-        }
-      } else {
-        phase.start();
-        if (pendingPlayTimersRef.current?.comprehension) {
-          // If resuming into work, do not overwrite the restored work timer mode.
-          if (savedComp?.timerMode === 'work') {
-            delete pendingPlayTimersRef.current.comprehension;
-          } else {
-            startPhasePlayTimer('comprehension');
-            delete pendingPlayTimersRef.current.comprehension;
-          }
-        }
-      }
-    }
+These are shapes for Copilot reference only - never emit to children:
 
-### 11. src/app/session/page.js (e50f9bb16716e0705c0395afcd00392416183239ba7e6120dc98053d64b9f490)
-- bm25: -19.2377 | relevance: 0.9506
+**Opening**:
+```
+Hello Emma. Today's lesson is 4th Multiplying with Zeros. You've got this. Let's start with a joke. Why did zero skip dessert? Because it was already nothing. If zero wore a tiny hat, what would it look like?
+```
 
-{/* Timer Controls Overlay - facilitator can adjust timer and golden key */}
-    {showTimerControls && sessionTimerMinutes > 0 && (
-      <TimerControlOverlay
-        isOpen={showTimerControls}
-        onClose={() => setShowTimerControls(false)}
-        lessonKey={lessonKey}
-        phase={(() => {
-          // Map current phase to timer phase key
-          if (phase === 'discussion' || phase === 'teaching') return 'discussion';
-          else if (phase === 'comprehension') return 'comprehension';
-          else if (phase === 'exercise') return 'exercise';
-          else if (phase === 'worksheet') return 'worksheet';
-          else if (phase === 'test') return 'test';
-          return phase;
-        })()}
-        timerType={(() => {
-          // Get current timer mode for the phase
-          let currentPhase = null;
-          if (phase === 'discussion' || phase === 'teaching') currentPhase = 'discussion';
-          else if (phase === 'comprehension') currentPhase = 'comprehension';
-          else if (phase === 'exercise') currentPhase = 'exercise';
-          else if (phase === 'worksheet') currentPhase = 'worksheet';
-          else if (phase === 'test') currentPhase = 'test';
-          return currentPhase ? (currentTimerMode[currentPhase] || 'play') : 'play';
-        })()}
-        currentElapsedSeconds={(() => {
-          try {
-            // Map current phase to timer phase key (inline to avoid TDZ issues)
-            let currentPhase = null;
-            if (phase === 'discussion' || phase === 'teaching') currentPhase = 'discussion';
-            else if (phase === 'comprehension') currentPhase = 'comprehension';
-            else if (phase === 'exercise') currentPhase = 'exercise';
-            else if (phase === 'worksheet') currentPhase = 'worksheet';
-            else
+**Teaching Definitions**:
+```
+Zero property means any number times zero is zero. Identity property means any number times one stays the same. Place value means where a digit sits in a number. A placeholder zero holds a place and does not change digits. A trailing zero sits at the end and shifts place value. A leading zero is at the start and does not change value. Do you have any questions? You could ask questions like: What does zero property mean? Why is place value important? What is a trailing zero?
+```
 
-### 12. src/app/session/v2/SessionPageV2.jsx (e771da696082ec3b8216c5374c8405fb17e186d49578ed87d31e12f743ce7394)
-- bm25: -19.1049 | relevance: 0.9503
+**Teaching Examples**:
+```
+Three times zero is zero because of the zero property. Ten times five is fifty; the trailing zero shifts place value. One times seven is seven because of the identity property. Do you have any questions? You could ask questions like: Can you show me another zero property example? What happens with twenty times two? How does the identity property work?
+```
 
-// If play portion is turned off while sitting at the Go gate, jump straight to work.
-        // (Do not attempt to interrupt intro playback states here.)
-        try {
-          const phaseNow = String(currentPhaseRef.current || '');
-          const disableNow = (
-            (phaseNow === 'comprehension' && nextPlayFlags.comprehension === false) ||
-            (phaseNow === 'exercise' && nextPlayFlags.exercise === false) ||
-            (phaseNow === 'worksheet' && nextPlayFlags.worksheet === false) ||
-            (phaseNow === 'test' && nextPlayFlags.test === false)
-          );
-          if (disableNow) {
-            const phaseStateMap = {
-              comprehension: comprehensionStateRef.current,
-              exercise: exerciseStateRef.current,
-              worksheet: worksheetStateRef.current,
-              test: testStateRef.current,
-            };
-            const refMap = {
-              comprehension: comprehensionPhaseRef,
-              exercise: exercisePhaseRef,
-              worksheet: worksheetPhaseRef,
-              test: testPhaseRef,
-            };
-            if (phaseStateMap[phaseNow] === 'awaiting-go') {
-              transitionToWorkTimer(phaseNow);
-              refMap[phaseNow]?.current?.go?.();
-            }
-          }
-        } catch {}
-      }
-    });
+**Transition**:
+```
+Great. Let's move on to comprehension.
+```
 
-return () => {
-      try { unsubscribe?.(); } catch {}
-    };
-  }, [learnerProfile?.id, planEnt?.goldenKeyFeatures]);
+**Comprehension Ask**:
+```
+What is 9 times zero?
+```
 
-// Load persisted worksheet/test sets for printing (local+Supabase)
-  useEffect(() => {
-    if (!lessonKey) return;
-    let cancelled = false;
+**Correct Feedback**:
+```
+Yes, great thinking. It is zero because anything times zero is zero. What is 20 times one?
+```
 
-### 13. docs/brain/timer-system.md (1f66fc9b2014880a4f602ba3a64aeb3037bbda3f80bafc5c833fb3aeea069133)
-- bm25: -18.7793 | relevance: 0.9494
+**Hint Feedback**:
+```
+Let's go smaller. What is 1 times zero? Now try 9 times zero again.
+```
 
-### Play Portion Enabled Flags (Per Learner)
+### 5. docs/brain/auth-session-isolation.md (9da46bc8495d845a56fab200c340c1d2f3775c432f8d0972bfbdceaf7d46e82a)
+- bm25: -8.8689 | relevance: 0.8987
 
-Phases 2-5 (Comprehension, Exercise, Worksheet, Test) each have a per-learner flag that can disable the "play portion" of that phase.
+## Files Changed
 
-Columns (boolean, default true):
-- `public.learners.play_comprehension_enabled`
-- `public.learners.play_exercise_enabled`
-- `public.learners.play_worksheet_enabled`
-- `public.learners.play_test_enabled`
-
-Definition:
-- "Play portion" means the intro + opening-actions gate + play timer.
-- When a play portion flag is `false`, the phase should begin directly in work mode.
-
-V2 behavior (implemented):
-- When play portion is disabled for a phase, "Begin" behaves like "Go": it skips intro/opening actions, skips starting the play timer, and starts the work timer immediately.
-- The session fails loudly if any `play_*_enabled` field is missing (not a boolean).
-- Live updates use the Learner Settings Bus; if a flag is turned off while sitting at the Go gate (`awaiting-go`), the session transitions to work immediately.
-
-V1 behavior:
-- V1 is not updated by this feature unless explicitly requested.
-
-### Timer Defaults
-
-Defined in `src/app/session/utils/phaseTimerDefaults.js`:
-- Discussion: 8 min play, 12 min work
-- Comprehension: 8 min play, 12 min work
-- Exercise: 8 min play, 12 min work
-- Worksheet: 8 min play, 12 min work
-- Test: 8 min play, 12 min work
-- Golden key bonus: +5 min to all play timers
+- `src/app/facilitator/account/settings/page.js` - Added `scope: 'local'` to delete account signOut
+- `src/app/facilitator/account/page.js` - Added `scope: 'local'` to logout button signOut
 
 ## What NOT To Do
 
-❌ **Never describe Golden Keys as unlocking Poem/Story**
-- A Golden Key adds bonus minutes to play timers (extra play time)
-- Do not label it as unlocking specific activities (Poem/Story)
+**DO NOT:**
+- Use `scope: 'global'` unless you explicitly want to log out all devices (e.g., "Log out everywhere" button)
+- Remove the scope parameter (reverts to global logout)
+- Assume localStorage changes affect other devices (they don't - this was server-side)
 
-### 14. src/app/session/page.js (3b25bf474ff0bdfa5ac71e75190fba7f2653ca17a88511fb8f821c086e257d5a)
-- bm25: -18.7025 | relevance: 0.9492
+## When To Use Each Scope
 
-// Session Timer state
-  const [timerPaused, setTimerPaused] = useState(false);
-  const [sessionTimerMinutes, setSessionTimerMinutes] = useState(60); // Default 1 hour
-  
-  // Phase-based timer system (11 timers: 5 phases × 2 types + 1 golden key bonus)
-  const [phaseTimers, setPhaseTimers] = useState(null); // Loaded from learner profile
-  const [currentTimerMode, setCurrentTimerModeState] = useState({}); // { discussion: 'play'|'work', comprehension: 'play'|'work', ... }
-  const currentTimerModeRef = useRef(currentTimerMode);
-  const setCurrentTimerMode = useCallback((updater) => {
-    setCurrentTimerModeState(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : (updater || {});
-      currentTimerModeRef.current = next;
-      return next;
-    });
-  }, []);
-  const [workPhaseCompletions, setWorkPhaseCompletionsState] = useState({
-    discussion: false,
-    comprehension: false,
-    exercise: false,
-    worksheet: false,
-    test: false
-  }); // Tracks which work phases completed without timing out (for golden key earning)
-  const workPhaseCompletionsRef = useRef(workPhaseCompletions);
-  const setWorkPhaseCompletions = useCallback((updater) => {
-    setWorkPhaseCompletionsState(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : (updater || {
-        discussion: false,
-        comprehension: false,
-        exercise: false,
-        worksheet: false,
-        test: false,
-      });
-      workPhaseCompletionsRef.current = next;
-      return next;
-    });
-  }, []);
-  const [workTimeRemaining, setWorkTimeRemainingState] = useState({
-    discussion: null,
-    comprehension: null,
-    exercise: null,
-    worksheet: null,
-    test: null,
-  }); // Minutes remaining when each work timer stopped (null when never started)
-  const work
+**Use `scope: 'local'` (default choice):**
+- Normal logout button
+- Account deletion (user may have other devices)
+- Session timeout on current device
+- "Log out of this device" action
 
-### 15. src/app/session/v2/TimerService.jsx (4631dc02d5f103bcbe70904b1f8d2f3ce9c53e963e4e2faa5a113f2c660b787f)
-- bm25: -18.3393 | relevance: 0.9483
+**Use `scope: 'global'` (explicit choice):**
+- "Log out everywhere" feature (security)
+- Password change (force re-auth on all devices)
+- Account compromise response
+- Admin-initiated logout
 
-// Sticky completion records for Golden Key + end-of-test reporting.
-    // Once a phase has been completed on time, it retains credit until explicit reset.
-    // Map: phase -> { completed, onTime, elapsed, timeLimit, remaining, finishedAt }
-    this.workPhaseResults = new Map();
-    
-    // Work phase time limits (seconds) - all phases have work timers
-    this.workPhaseTimeLimits = options.workPhaseTimeLimits || {
-      discussion: 300,    // 5 minutes
-      comprehension: 180, // 3 minutes
-      exercise: 180,      // 3 minutes
-      worksheet: 300,     // 5 minutes
-      test: 600           // 10 minutes
-    };
-    
-    // Golden key tracking (only counts comprehension, exercise, worksheet, test)
-    this.onTimeCompletions = 0;
-    this.goldenKeyAwarded = false;
+## Security Considerations
 
-### 16. src/app/session/v2/SessionPageV2.jsx (e3e46406441cc85403237439357738902a2d59ed5d6ca94c95781df4f62f1c2f)
-- bm25: -18.1867 | relevance: 0.9479
+**Reduced Security vs. Better UX:**
+- `scope: 'local'` means compromised device logout doesn't revoke other devices
+- Session remains valid until JWT expiry (default: 1 hour with 7-day refresh)
+- Attacker with stolen token could use it until natural expiry
 
-// Q&A phases with play timers: after Begin, tell the learner they can play.
-      // (Exclude discussion; skipPlayPortion phases should not say this.)
-      if (!skipPlayPortion && ['comprehension', 'exercise', 'worksheet', 'test'].includes(phaseName)) {
-        const playLine = 'Now you can play until the play timer runs out.';
-        try {
-          const playAudio = await fetchTTS(playLine);
-          if (audioEngineRef.current) {
-            await audioEngineRef.current.playAudio(playAudio || '', [playLine]);
-          }
-        } catch (err) {
-          console.warn('[SessionPageV2] Failed to speak play timer line:', err);
+**Mitigation:**
+- Keep JWT expiry time reasonable (1 hour is good)
+- Provide "Log out everywhere" button for users who want it
+- Force global logout on password change
+- Monitor suspicious activity and force global logout server-side
+
+**Why this trade-off is OK:**
+- Most users expect device-independent sessions (Gmail, Facebook, etc. work this way)
+- Losing all devices on single logout is bad UX
+- Users can explicitly choose "log out everywhere" if needed
+
+## Testing Verification
+
+### 6. docs/brain/v2-architecture.md (d350b4726054514cb1d99074a785f6086c5485633f6a9dbbbc07f3d60ba53b15)
+- bm25: -8.0787 | relevance: 0.8899
+
+**Implementation notes:**
+- Exercise must show "Begin Exercise" on phase entry (Exercise state `awaiting-go`). Question selection must not block this gate.
+- Exercise question selection comes only from the allowed pools (TF/MC/FIB/SA) and is limited by the learner target for Exercise.
+- Exercise question selection happens on **Go** (lazy initialization). This keeps Begin/Opening Actions independent from pool/target checks.
+- If learner targets are missing, Exercise must block with a clear error (no silent fallback; no auto-advance).
+- Test decks must stay stable across timeline jumps; only refresh via the hamburger “refresh” action or after completion. Prefer saved deck, then cached generation; rebuild only when none exist.
+- Test start must still clamp the deck to the learner target and clamp saved nextQuestionIndex/answers/reviewIndex to that length so completion always enters review after the target count (no extra questions from older snapshots).
+- Question pool blending must backfill to the learner target (cycle source pool if dedup leaves fewer items) so decks never stall below target counts.
+- Test submit/skip must enter review immediately when the next index reaches deck length (no reliance on follow-up playback), preventing hangs after the last question.
+- Praise/reveal playback in Test must await audio completion before advancing to next question, matching WorksheetPhase pattern to prevent overlapping TTS (duplicate "Perfect!" and next question playing together).
+- Starting Test must tear down any existing TestPhase instance and stop active audio before rebuilding so duplicate listeners cannot trigger overlapping question/praise/reveal playback.
+
+### 7. sidekick_pack.md (a6a5a8402f60a32ae3f5331f3e88e3b679090d1e257e5157603316df1542732f)
+- bm25: -7.8236 | relevance: 0.8867
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 8. sidekick_pack.md (cad378213fd13855af53d533bd71221aed90460d4fbb4523573edc023e104f0e)
+- bm25: -7.8236 | relevance: 0.8867
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 9. sidekick_pack.md (1f28777aa00516f363d491420dfa6a99c690b1cfebadbd59af7be0334bd94883)
+- bm25: -7.8236 | relevance: 0.8867
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 10. docs/brain/MentorInterceptor_Architecture.md (b9af78a6a85babc29ee74ec9cf6073767b7a2e84a19456e1f96ab9a407cbd74d)
+- bm25: -7.7954 | relevance: 0.8863
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 11. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (6f33983453dfbb17ba0b015de6cc76fa071dc0e7a401f52396b7093115ac315c)
+- bm25: -7.7536 | relevance: 0.8858
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 12. docs/brain/ingests/pack.planned-lessons-flow.md (88c29dc19b3f25ed0178c73764a3887f3532851fb2e1292ab2f58b31241fad00)
+- bm25: -7.7536 | relevance: 0.8858
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 13. docs/brain/changelog.md (db87d0c32f1221d6e92b21aca469566011b9827dda19431e958af521d64f4d87)
+- bm25: -7.5146 | relevance: 0.8826
+
+2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
+2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
+
+### 14. docs/brain/ingests/pack.md (e6cb2fa8b6944fa68dc5e2440ce225b3182b8d5f274fbbebc661df7098a22acf)
+- bm25: -7.5019 | relevance: 0.8824
+
+2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
+2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
+
+### 15. docs/brain/ingests/pack-mentor-intercepts.md (ed8a6fcab62679dfdb637388493a41a0aaaea65e2f3e70d3653532a9e69a5a32)
+- bm25: -7.4767 | relevance: 0.8820
+
+2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
+2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
+
+### 16. docs/brain/ingests/pack.lesson-schedule-debug.md (f078b24e49eb4bdb263b2356fda5fa4458086fbfdd6a810c30d68a75b22fecd2)
+- bm25: -7.4642 | relevance: 0.8819
+
+2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
+2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
+
+### 17. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (8163644eb7df3a7e0c7fbbd03814d28f85cdc1339a3c403f07748601ecc1ac92)
+- bm25: -7.4642 | relevance: 0.8819
+
+2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
+2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
+
+### 18. docs/brain/ingests/pack.planned-lessons-flow.md (a766bbdf348c6973f1ab7149e48b48e23d3bca37b03c50426a199d1173545dce)
+- bm25: -7.4642 | relevance: 0.8819
+
+2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
+2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
+
+### 19. src/app/session/v2/ExercisePhase.jsx (c340edc107843e2e2f6afbcb8783da97fdfabf58588ce778365df1a7a63c3252)
+- bm25: -7.4053 | relevance: 0.8810
+
+/**
+ * ExercisePhase - Multiple choice and true/false questions with scoring
+ * 
+ * Consumes AudioEngine for question playback.
+ * Manages question progression and score tracking.
+ * Zero coupling to session state or other phases.
+ * 
+ * Architecture:
+ * - Loads exercise questions from lesson data
+ * - Plays each question with TTS
+ * - Prefetches N+1 question during N playback (eliminates wait times)
+ * - Presents multiple choice or true/false options
+ * - Validates answers and tracks score
+ * - Emits exerciseComplete with results
+ * 
+ * Usage:
+ *   const phase = new ExercisePhase({ audioEngine, questions });
+ *   phase.on('exerciseComplete', (results) => saveScore(results));
+ *   await phase.start();
+ */
+
+import { fetchTTS } from './services';
+import { ttsCache } from '../utils/ttsCache';
+import { buildAcceptableList, judgeAnswer } from './judging';
+import { deriveCorrectAnswerText, formatQuestionForSpeech } from '../utils/questionFormatting';
+import { HINT_FIRST, HINT_SECOND, pickHint } from '../utils/feedbackMessages';
+
+// V1 praise phrases for correct answers
+const PRAISE_PHRASES = [
+  'Great job!',
+  'Excellent!',
+  'You got it!',
+  'Nice work!',
+  'Well done!',
+  'Perfect!',
+  'Awesome!',
+  'Fantastic!'
+];
+
+// Intro phrases for phase start (V1 pacing pattern)
+const INTRO_PHRASES = [
+  "Time for some practice questions.",
+  "Let's try some exercises.",
+  "Ready to practice?",
+  "Let's see how much you know."
+];
+
+### 20. src/app/session/v2/TestPhase.jsx (37f6634e7eaad67601717d18c9172cfebddf42d526c7cd2a70358900aa545d26)
+- bm25: -7.3841 | relevance: 0.8807
+
+/**
+ * TestPhase - Graded assessment questions with review
+ * 
+ * Consumes AudioEngine for question playback.
+ * Manages test progression, grading, and review.
+ * Zero coupling to session state or other phases.
+ * 
+ * Architecture:
+ * - Loads test questions (MC/TF/fill-in-blank)
+ * - Plays each question with TTS
+ * - Prefetches N+1 question during N playback (eliminates wait times)
+ * - Presents appropriate UI (radio/text input)
+ * - Validates answers and tracks results
+ * - Calculates grade and shows review
+ * - Emits testComplete with final grade
+ * 
+ * Usage:
+ *   const phase = new TestPhase({ audioEngine, questions });
+ *   phase.on('testComplete', (results) => saveGrade(results));
+ *   await phase.start();
+ */
+
+import { fetchTTS } from './services';
+import { ttsCache } from '../utils/ttsCache';
+import { buildAcceptableList, judgeAnswer } from './judging';
+import { deriveCorrectAnswerText, ensureQuestionMark, formatQuestionForSpeech } from '../utils/questionFormatting';
+
+// Praise phrases for correct answers (matches V1 engagement pattern)
+const PRAISE_PHRASES = [
+  "Great job!",
+  "That's correct!",
+  "Perfect!",
+  "Excellent work!",
+  "You got it!",
+  "Well done!",
+  "Fantastic!",
+  "Nice work!"
+];
+
+// Intro phrases for phase start (matches V1 pacing)
+const INTRO_PHRASES = [
+  "Time for the test.",
+  "Let's start the test.",
+  "Ready for your test?",
+  "Let's see what you learned."
+];
+
+### 21. docs/brain/riddle-system.md (e7a77c2b835fc9efe745f2ea074fb5057af04a77723b4c711553604b5efdf2c5)
+- bm25: -7.3194 | relevance: 0.8798
+
+### Dead Imports (Not Currently Used)
+- `src/app/session/[sessionId]/page.js` - imports but never calls
+- Teaching system components - no riddle UI elements
+
+---
+
+## Design Decisions
+
+### Why Hardcoded?
+- **Performance**: Zero latency, works offline
+- **Quality Control**: Curated by humans, tested for age-appropriateness
+- **Simplicity**: No database schema, no API, no cache invalidation
+
+### Why localStorage Rotation?
+- **Stateless**: No server-side session tracking needed
+- **Fair**: Kids see all riddles eventually, not just favorites
+- **Simple**: One line of code, no edge cases
+
+### Why Subject Categories?
+- **Alignment**: Can match riddles to lesson subject
+- **Variety**: Prevents repetition within subject area
+- **Flexibility**: 'general' category for cross-subject riddles
+
+---
+
+**Remember**: Riddles are playful mysteries, not educational quizzes. Every riddle should make you smile, groan, or go "aha!" - not just "oh, I knew that fact."
+
+### 22. src/app/session/v2/WorksheetPhase.jsx (fb1bf3c1640788090705971a8f76edca43afbbb2298f7c6dd4afbf96b70480cc)
+- bm25: -7.2802 | relevance: 0.8792
+
+/**
+ * WorksheetPhase - Fill-in-blank questions with text input
+ * 
+ * Consumes AudioEngine for question playback.
+ * Manages question progression and score tracking.
+ * Zero coupling to session state or other phases.
+ * 
+ * Architecture:
+ * - Loads fill-in-blank questions from lesson data
+ * - Plays each question with TTS
+ * - Prefetches N+1 question during N playback (eliminates wait times)
+ * - Presents text input for answers
+ * - Validates answers (case-insensitive, trimmed)
+ * - Tracks score
+ * - Emits worksheetComplete with results
+ * 
+ * Usage:
+ *   const phase = new WorksheetPhase({ audioEngine, questions });
+ *   phase.on('worksheetComplete', (results) => saveScore(results));
+ *   await phase.start();
+ */
+
+import { fetchTTS } from './services';
+import { ttsCache } from '../utils/ttsCache';
+import { buildAcceptableList, judgeAnswer } from './judging';
+import { deriveCorrectAnswerText, formatQuestionForSpeech } from '../utils/questionFormatting';
+import { HINT_FIRST, HINT_SECOND, pickHint } from '../utils/feedbackMessages';
+
+// Praise phrases for correct answers (matches V1 engagement pattern)
+const PRAISE_PHRASES = [
+  "Great job!",
+  "That's correct!",
+  "Perfect!",
+  "Excellent work!",
+  "You got it!",
+  "Well done!",
+  "Fantastic!",
+  "Nice work!"
+];
+
+// Intro phrases for phase start (matches V1 pacing)
+const INTRO_PHRASES = [
+  "Time for the worksheet.",
+  "Let's fill in some blanks.",
+  "Ready for the worksheet?",
+  "Let's complete these sentences."
+];
+
+### 23. src/app/session/v2/ComprehensionPhase.jsx (d01e99ca2a3e724b74eb7e7aee04c05db031eb947b5bbc97b333bb194696ab85)
+- bm25: -7.1198 | relevance: 0.8768
+
+/**
+ * ComprehensionPhase - Multiple comprehension questions with scoring
+ * 
+ * Consumes AudioEngine for question playback.
+ * Manages question progression and score tracking.
+ * Zero coupling to session state or other phases.
+ * 
+ * Architecture:
+ * - Loads comprehension questions from lesson data
+ * - Plays each question with TTS
+ * - Prefetches N+1 question during N playback (eliminates wait times)
+ * - Presents short-answer or fill-in-blank questions
+ * - Validates answers and tracks score
+ * - Opening actions (play timer) before work mode
+ * - Emits comprehensionComplete with results
+ * 
+ * Usage:
+ *   const phase = new ComprehensionPhase({ audioEngine, eventBus, timerService, questions });
+ *   phase.on('comprehensionComplete', (results) => saveScore(results));
+ *   await phase.start();
+ *   await phase.go(); // After opening actions
+ */
+
+import { fetchTTS } from './services';
+import { ttsCache } from '../utils/ttsCache';
+import { buildAcceptableList, judgeAnswer } from './judging';
+import { deriveCorrectAnswerText, formatQuestionForSpeech } from '../utils/questionFormatting';
+import { HINT_FIRST, HINT_SECOND, pickHint } from '../utils/feedbackMessages';
+
+// V1 praise phrases for correct answers
+const PRAISE_PHRASES = [
+  'Great job!',
+  'Excellent!',
+  'You got it!',
+  'Nice work!',
+  'Well done!',
+  'Perfect!',
+  'Awesome!',
+  'Fantastic!'
+];
+
+// Intro phrases for phase start (V1 pacing pattern)
+const INTRO_PHRASES = [
+  "Now let's check your understanding.",
+  "Time to see what you learned.",
+  "Let's test your knowledge.",
+  "Ready for a question?"
+];
+
+### 24. src/app/session/utils/textProcessing.js (ff5c27d8e0b0dec764c9a661d681660a4ce2d16d14dcae4da7f2144f122e1a60)
+- bm25: -6.8254 | relevance: 0.8722
+
+// 2) Optionally prepend preceding numeric line like "4." for Test phase numbering
+      let prefix = '';
+      if (out.length && isNumberLine(out[out.length - 1])) {
+        prefix = String(out.pop()).trim();
+      }
+
+// 3) If prior output line is a question/stem, decide how to attach options
+      let head = '';
+      if (out.length) {
+        const prev = String(out[out.length - 1]);
+        if (/[?)]$/.test(prev)) head = String(out.pop());
+      }
+
+if (layout === 'multiline') {
+        // Keep the question/stem as its own line, then list each option on a new line
+        if (head) {
+          const withPrefix = prefix ? `${prefix} ${head}` : head;
+          out.push(withPrefix.trim());
+        } else if (prefix && parts.length) {
+          // No explicit head; attach prefix to the first option
+          parts[0] = `${prefix} ${parts[0]}`;
         }
-      }
-    } else {
-      addEvent(`⚠️ Unable to start ${phaseName} (not initialized yet)`);
-    }
-    
-    // Clear the timeline jump timer flag after phase starts
-    if (timelineJumpTimerStartedRef.current === phaseName) {
-      timelineJumpTimerStartedRef.current = null;
-    }
-    
-    if (pendingPlayTimersRef.current?.[phaseName]) {
-      if (!skipPlayPortion) {
-        startPhasePlayTimer(phaseName);
-      }
-      delete pendingPlayTimersRef.current[phaseName];
-    }
-  };
-  
-  // Get timer duration for a phase and type from phaseTimers
-  const getCurrentPhaseTimerDuration = useCallback((phaseName, timerType) => {
-    if (!phaseTimers || !phaseName || !timerType) return 0;
-    const key = `${phaseName}_${timerType}_min`;
-    return phaseTimers[key] || 0;
-  }, [phaseTimers]);
-
-// Calculate lesson progress percentage (V1 parity)
-  // Used by SessionTimer to determine pace color for WORK timers.
-  const calculateLessonProgress = useCallback(() => {
-    const phaseWeights = {
-      discussion: 10,
-      teaching: 30,
-      comprehension: 50,
-      exercise: 70,
-      worksheet: 85,
-      test: 95
-    };
-
-### 17. src/app/session/v2/SessionPageV2.jsx (560d50d4b2106176e24e18fe0cd47383b2d1910d28f9569656d8398f1261ef81)
-- bm25: -18.1400 | relevance: 0.9478
-
-// Keep snapshot currentPhase aligned so granular saves write under the active phase.
-      if (snapshotServiceRef.current) {
-        snapshotServiceRef.current.saveProgress('phase-change', { phaseOverride: data.phase });
-      }
-      
-      // Update keyboard service phase
-      if (keyboardServiceRef.current) {
-        keyboardServiceRef.current.setPhase(data.phase);
-      }
-      
-      // For discussion and test phases, initialize them but DON'T auto-start them
-      // after a timeline jump. They should show the "Begin" button first.
-      const isTimelineJump = timelineJumpInProgressRef.current;
-      
-      // Start phase-specific controller
-      if (data.phase === 'discussion') {
-        startDiscussionPhase();
-        // Discussion has no play timer - start directly in work mode
-        setCurrentTimerMode(prev => ({ ...prev, discussion: 'work' }));
-        setTimerRefreshKey(k => k + 1);
-        // If timeline jump, keep discussionState as 'idle' to show Begin button
-        if (!isTimelineJump && discussionPhaseRef.current) {
-          discussionPhaseRef.current.start();
+        for (const p of parts) {
+          out.push(p.trim());
         }
-      } else if (data.phase === 'teaching') {
-        startTeachingPhase();
-        // Teaching uses discussion timer (grouped together, already in work mode)
-      } else if (data.phase === 'comprehension') {
-        const started = startComprehensionPhase();
-        if (started) {
-          // Start play timer for comprehension once phase exists (unless play portion is disabled)
-          if (playPortionsEnabledRef.current?.comprehension !== false) {
-            startPhasePlayTimer('comprehension');
-          }
-        } else {
-          if (playPortionsEnabledRef.current?.comprehension !== false) {
-            pendingPlayTimersRef.current.comprehension = true;
-          }
+        i = k + 1;
+        continue;
+      } else {
+        const inline = parts.join(',   ');
+        let finalLine = head ? `${head}   ${inline}` : inline;
+        if (prefix) finalLine = `${prefix} ${finalLine}`;
+        if (!/[.?!]$/.test(finalLine)) finalLine += '.';
+        out.push(finalLine.trim());
+        i = k + 1;
+        continue;
+      }
+    }
 
-### 18. docs/brain/timer-system.md (b90b83953b55369af6b1840a6cccf28923940068aa3948b4bb4042752c4610dc)
-- bm25: -18.1300 | relevance: 0.9477
+out.push(sentences[i]);
+    i += 1;
+  }
+  return out;
+}
 
-# Timer System Architecture
+### 25. src/app/facilitator/generator/counselor/CounselorClient.jsx (d57a90e7e8c1f2cd41abede1d7e358dfd31ececcb16a01aa56dbd2a0024fa53d)
+- bm25: -6.8074 | relevance: 0.8719
 
-**Last updated**: 2026-02-04T01:00:00Z  
-**Status**: Canonical
+useEffect(() => {
+    try {
+      console.log('[Mr. Mentor] Browser origin', { origin: window.location.origin })
+    } catch {}
+  }, [])
+
+useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+      // Clear initialization flag on unmount so conversation loads on remount/refresh
+      initializedSessionIdRef.current = null
+    }
+  }, [])
+
+// Check PIN requirement on mount
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const allowed = await ensurePinAllowed('facilitator-page')
+        if (!allowed) {
+          router.push('/')
+          return
+        }
+      } catch (err) {
+        // Silent error handling
+      }
+      if (!cancelled) setPinChecked(true)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [router])
+  
+  // Learner selection
+  const [learners, setLearners] = useState([])
+  const [selectedLearnerId, setSelectedLearnerId] = useState('none')
+  const [learnerTranscript, setLearnerTranscript] = useState('')
+  const [goalsNotes, setGoalsNotes] = useState('')
+
+const subjectKey = selectedLearnerId === 'none' ? 'facilitator' : `learner:${selectedLearnerId}`
+
+// Switch Mr. Mentor chat persistence/context to Supabase chronograph + deterministic packs.
+  // Legacy mentor_conversation_threads JSON persistence is disabled when this is true.
+  const useCohereChronograph = true
+
+// Only disable legacy persistence once we confirm the chronograph endpoint works.
+  const [chronographReady, setChronographReady] = useState(false)
+
+### 26. src/app/facilitator/notifications/page.js (22eb75fe7ba89568275fdf26ef19f49bf415284e16cfed365da167c448d7038d)
+- bm25: -6.6922 | relevance: 0.8700
+
+<button
+                type="button"
+                onClick={refresh}
+                style={{
+                  padding: '9px 12px',
+                  borderRadius: 10,
+                  border: '1px solid #e5e7eb',
+                  background: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 700
+                }}
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+
+### 27. docs/brain/snapshot-persistence.md (d9e58e922bd58bed557959d4d85289d99d87d9c9b473ae1781ccd0bdf66ec27f)
+- bm25: -6.6603 | relevance: 0.8695
+
+### V2 Resume Flow
+On session load:
+1. **SnapshotService.initialize()** loads existing snapshot during mount effect (async)
+2. If snapshot found:
+   - Sets `resumePhase` state to `snapshot.currentPhase`
+  - Displays Resume and Start Over buttons in footer when `resumePhase` is not at beginning (not idle/discussion)
+3. If no snapshot or snapshot at beginning:
+   - Shows normal Begin button
+4. Sets `snapshotLoaded` to true when load completes
+
+**Phase auto-start on resume:** When resuming into any Q&A phase (comprehension/exercise/worksheet/test), the phase instance is created and immediately started if snapshot data exists for that phase. This bypasses the intermediate Begin button (which visually sits before opening actions) and restores the learner directly to the in-phase state (intro/Go or current question). Pending play timers start as well so tickers and timer badges do not flash 0/X on refresh.
+
+**Ticker seeding on resume:** When snapshot data exists for a Q&A phase, the counters and current question are pre-seeded from the saved arrays and indices before the phase starts. This keeps the question ticker/progress display accurate immediately after a refresh (no temporary 0/X) even before the next answer is submitted.
+
+**Begin gating:** The top-level Begin button is disabled until both `audioReady` and `snapshotLoaded` are true, preventing a refresh race where the user can start a fresh session before the snapshot finishes loading.
+
+### 28. docs/brain/lesson-notes.md (ba1927d5f15444bd06ae20de79a25c5719c23ee58aaed5fda05b53a8bd35dbd8)
+- bm25: -6.6045 | relevance: 0.8685
+
+# Lesson Notes
 
 ## How It Works
 
-### Play vs Work Timers
+Facilitators can add notes to any lesson in the `facilitator/lessons` page. These notes are stored per learner and automatically included in Mr. Mentor's learner transcript, providing context about specific challenges, progress, or needs.
 
-**V1**: Each phase (discussion, comprehension, exercise, worksheet, test) has two timer modes.
+**Flow (entry points):**
+1. Facilitator Lessons page: navigate to `facilitator/lessons`, select learner, expand subject
+2. Calendar schedule view (past completed lessons): click **Notes** on a scheduled lesson
+3. Mr. Mentor Calendar overlay (past completed lessons): click **Notes** on a scheduled lesson
+4. Type note text and save
+5. Empty note deletes the key from the JSONB map (no empty-string storage)
+5. When facilitator discusses learner with Mr. Mentor, notes appear in transcript:
+   ```
+   FACILITATOR NOTES ON LESSONS:
 
-**V2**: Discussion has **no play timer**. Phases 2-5 (Comprehension, Exercise, Worksheet, Test) use play → work mode. A **discussion work timer** still exists and spans discussion + teaching.
+math - Multiplication Basics:
+     "Struggles with times tables above 5x. Needs more practice with visual aids."
 
-**Rationale**: Removing play timer from discussion phase eliminates infinite play timer exploit (learner could refresh during discussion to reset play timer indefinitely without starting teaching).
+science - Solar System:
+     "Very interested in planets, completed ahead of schedule."
+   ```
+6. Mr. Mentor references notes in responses for data-informed, personalized counseling
 
-**Discussion work timer startup**: The work timer for discussion is started when the greeting begins playing (greetingPlaying event). This is an exception - all other work timers start when the awaiting-go gate appears.
+**Purpose**: Enables facilitators to document learner-specific observations that persist across lessons, providing Mr. Mentor with longitudinal context for better guidance.
 
-**Timeline jump timer startup**: When facilitator uses timeline to jump to a phase, the appropriate timer starts immediately:
-- Discussion: Work timer starts immediately (exception to normal greetingPlaying rule)
-- Other phases: Play timer starts immediately (not when Begin clicked)
+## Database Schema
 
-Timeline jumps explicitly stop any existing timers for the target phase before starting new ones, ensuring a clean reset.
+**Learners table:**
+```sql
+-- Column added to learners table
+lesson_notes jsonb default '{}'::jsonb
 
-**Timer restart prevention**: Removed in favor of explicit stop/start pattern on timeline jumps. Timers can now be legitimately restarted when needed.
-
-### 19. src/app/session/v2/TimerService.jsx (c49ecc9681585c6f09b5f39f28a047ea3e9dcf1cb5d01177df9852b5a5f36b5e)
-- bm25: -17.8813 | relevance: 0.9470
-
-/**
- * TimerService.jsx
- * Manages session, play, and work phase timers
- * 
- * Timers:
- * - Session timer: Tracks total session duration from start to complete
- * - Play timers: Green timer for exploration/opening actions (phases 2-5: Comprehension, Exercise, Worksheet, Test)
- * - Work phase timers: Amber/red timer for focused work (for golden key)
- * 
- * Timer Modes:
- * - Phase 1 (Discussion): No play timer, no opening actions (eliminates play timer exploit)
- * - Phases 2-5 (Comprehension, Exercise, Worksheet, Test): Play timer → opening actions → work timer
- * 
- * Golden Key Requirements:
- * - Need 3 work phases completed within time limit
- * - Work phases: exercise, worksheet, test
- * - Time limits defined per grade/subject
- * 
- * Events emitted:
- * - sessionTimerStart: { timestamp } - Session timer started
- * - sessionTimerTick: { elapsed, formatted } - Every second while running
- * - sessionTimerStop: { elapsed, formatted } - Session timer stopped
- * - playTimerStart: { phase, timestamp, timeLimit } - Play timer started
- * - playTimerTick: { phase, elapsed, remaining, formatted } - Every second during play time
- * - playTimerExpired: { phase } - Play timer reached 0:00
- * - workPhaseTimerStart: { phase, timestamp } - Work phase timer started
- * - workPhaseTimerTick: { phase, elapsed, remaining, onTime } - Every second during work time
- * - workPhaseTimerComplete: { phase, elapsed, onTime } - Work phase completed
- * - workPhaseTimerStop: { phase, elapsed } - Work phase stopped
- * - goldenKeyEligible: { completedPhases } - 3 on-time work phases achieved
- */
-
-'use client';
-
-### 20. src/app/session/v2/SessionPageV2.jsx (28b87f9ab988afec3135e2565204b8968ab367697b91e81e3df87495462abca9)
-- bm25: -17.8327 | relevance: 0.9469
-
-const nextPlayFlags = {
-        comprehension: ('play_comprehension_enabled' in patch) ? patch.play_comprehension_enabled : undefined,
-        exercise: ('play_exercise_enabled' in patch) ? patch.play_exercise_enabled : undefined,
-        worksheet: ('play_worksheet_enabled' in patch) ? patch.play_worksheet_enabled : undefined,
-        test: ('play_test_enabled' in patch) ? patch.play_test_enabled : undefined,
-      };
-      const hasAnyPlayFlag = Object.values(nextPlayFlags).some(v => v !== undefined);
-      if (hasAnyPlayFlag) {
-        const merged = {
-          ...playPortionsEnabledRef.current,
-          ...(typeof nextPlayFlags.comprehension === 'boolean' ? { comprehension: nextPlayFlags.comprehension } : {}),
-          ...(typeof nextPlayFlags.exercise === 'boolean' ? { exercise: nextPlayFlags.exercise } : {}),
-          ...(typeof nextPlayFlags.worksheet === 'boolean' ? { worksheet: nextPlayFlags.worksheet } : {}),
-          ...(typeof nextPlayFlags.test === 'boolean' ? { test: nextPlayFlags.test } : {}),
-        };
-        setPlayPortionsEnabled(merged);
-        playPortionsEnabledRef.current = merged;
-
-### 21. docs/brain/v2-architecture.md (97a3fc3349f3fcbc86f038ed45a9b6fdb7c143dedc6e04577e4b989d5805417e)
-- bm25: -17.5100 | relevance: 0.9460
-
-### PhaseOrchestrator Component
-**Owns:**
-- Phase state (discussion, teaching, comprehension, ...)
-- SubPhase state
-- Phase transition logic
-- Snapshot save/restore coordination
-
-**Exposes:**
-- `startSession()` - starts at Discussion (if enabled) or Teaching
-- `startSession({ startPhase })` - starts directly at the requested phase (used by Resume)
-- `skipToPhase(phase)` - manual navigation (e.g., timeline jumps)
-- Events: `phaseChange`, `sessionComplete`
-
-**Does NOT:**
-- Render UI (presentation components subscribe to events)
-- Play audio
-- Manage teaching sentence state
-
----
-
-## What NOT To Do
-
-### ❌ Don't Mix V1 and V2 Code
-- Keep V1 (`page.js`) completely untouched except for feature flag check
-- Don't import V2 components into V1 hooks
-- Don't share utility functions between V1 and V2 (duplicate if needed)
-
-### ❌ Don't Rush Extraction
-- Build each component fully before wiring to next
-- Test each component in isolation before integration
-- Don't skip stub → isolated test → integration test sequence
-
-### ❌ Don't Break Snapshots
-- V2 must read V1 snapshot format perfectly
-- Test snapshot restore on real session data before enabling writes
-- Keep dual-write (V1 + V2 formats) until all active sessions migrated
-
-### ❌ Don't Assume V2 is Better Until Proven
-- Validate Teaching examples bug is actually fixed
-- Verify no regressions in other flows (comprehension, exercise, worksheet, test)
-- Get facilitator signoff before defaulting to V2
-
----
-
-## Current Implementation Status
-
-### 22. src/app/session/v2/SessionPageV2.jsx (3d2fa7afb0179208b2c8c85cb91af2d6c68c90b26a894279e75575b4596823ea)
-- bm25: -17.2794 | relevance: 0.9453
-
-if (currentPhase === 'comprehension') {
-      const phaseRange = phaseWeights.comprehension - phaseWeights.teaching;
-      const ratio = getRatioFromSnapshot('comprehension', comprehensionTotalQuestions);
-      progress = phaseWeights.teaching + (ratio * phaseRange);
-    } else if (currentPhase === 'exercise') {
-      const phaseRange = phaseWeights.exercise - phaseWeights.comprehension;
-      const ratio = getRatioFromSnapshot('exercise', exerciseTotalQuestions);
-      progress = phaseWeights.comprehension + (ratio * phaseRange);
-    } else if (currentPhase === 'worksheet') {
-      const phaseRange = phaseWeights.worksheet - phaseWeights.exercise;
-      const ratio = getRatioFromSnapshot('worksheet', worksheetTotalQuestions);
-      progress = phaseWeights.exercise + (ratio * phaseRange);
-    } else if (currentPhase === 'test') {
-      const phaseRange = phaseWeights.test - phaseWeights.worksheet;
-      const ratio = getRatioFromSnapshot('test', testTotalQuestions);
-      progress = phaseWeights.worksheet + (ratio * phaseRange);
-    }
-
-### 23. docs/brain/timer-system.md (afad3d67c6731ffd234f48a50bd80e7569f7b92cd4cc8bdd5bcbaad5ac994b38)
-- bm25: -17.1870 | relevance: 0.9450
-
-This ensures timers tick down from the moment the relevant gate is visible (Begin for play; Go for work), not when it's clicked.
-
-**Work timer spans discussion + teaching**: The discussion work timer starts when the discussion greeting begins playing and runs through the entire teaching phase. It is completed when teaching finishes, so the countdown must **not** be stopped at `greetingComplete` or `discussionComplete`. Completing it early will freeze the visible timer as soon as the teaching controls appear.
-
-**Timer Modes:**
-1. **Play Timer** (green) - Expected to use full time; learner can interact with Ask, Riddle, Poem, Story, Fill-in-Fun opening actions
-2. **Work Timer** (amber/red) - Learner should complete phase; input focused on lesson questions
-
-**V2** Timer mode tracked only for phases 2-5:
-```javascript
+-- Structure: { 'subject/lesson_file': 'note text', ... }
+-- Example:
 {
-  comprehension: 'play' | 'work',
-  exercise: 'play' | 'work',
-  worksheet: 'play' | 'work',
-  test: 'play' | 'work'
+  "math/Multiplication_Basics.json": "Struggles with times tables above 5x",
+  "science/Solar_System.json": "Very interested in planets, completed ahead of schedule"
 }
 ```
 
-### Phase 2 Implementation (V2)
+## Mr. Mentor Integration
 
-**TimerService Extensions:**
-- `playTimers` Map: phase → `{ startTime, elapsed, timeLimit, expired }`
-- `playTimerInterval`: 1-second tick interval for active play timers
-- `currentPlayPhase`: Currently active play phase (only one at a time)
-- `mode`: Current timer mode ('play' | 'work')
+### 29. docs/brain/timer-system.md (f0d739f4de2823c82ffcac0ab265588ace3248c8ad13eae9a05c51d8d7ee13a7)
+- bm25: -6.5918 | relevance: 0.8683
 
-### 24. src/app/session/v2/SessionPageV2.jsx (e74f8d18813593206c6800181672f17b47d4d03381e5fe952ef7f95127cf5a26)
-- bm25: -17.0811 | relevance: 0.9447
+**Implementation (V2):**
+- SessionPageV2 maintains `timerPaused` state (boolean)
+- When toggled, calls `timerService.pause()` or `timerService.resume()`
+- TimerService tracks pause state and paused elapsed times:
+  - `isPaused`: Boolean flag indicating if timers are currently paused
+  - `pausedPlayElapsed`: Stored play timer elapsed seconds when paused
+  - `pausedWorkElapsed`: Stored work timer elapsed seconds when paused
 
-const playEnabledForPhase = (p) => {
-      if (!p) return true;
-      if (p === 'comprehension') return playPortionsEnabledRef.current?.comprehension !== false;
-      if (p === 'exercise') return playPortionsEnabledRef.current?.exercise !== false;
-      if (p === 'worksheet') return playPortionsEnabledRef.current?.worksheet !== false;
-      if (p === 'test') return playPortionsEnabledRef.current?.test !== false;
-      return true;
-    };
-    const skipPlayPortion = ['comprehension', 'exercise', 'worksheet', 'test'].includes(phaseName)
-      ? !playEnabledForPhase(phaseName)
-      : false;
-    
-    // Special handling for discussion: prefetch greeting TTS before starting
-    if (phaseName === 'discussion') {
-      setDiscussionState('loading');
-      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'friend';
-      const lessonTitle = lessonData?.title || lessonId || 'this topic';
-      const greetingText = `Hi ${learnerName}, ready to learn about ${lessonTitle}?`;
-      
-      try {
-        // Prefetch greeting TTS
-        await fetchTTS(greetingText);
-      } catch (err) {
-        console.error('[SessionPageV2] Failed to prefetch greeting:', err);
-      }
-      
-      // Discussion work timer starts when Begin is clicked, not here
-    }
-    
-    const ref = getPhaseRef(phaseName);
-    if (ref?.current?.start) {
-      if (skipPlayPortion) {
-        transitionToWorkTimer(phaseName);
-        // Start work timer immediately when skipping play portion (unless timeline jump already started it)
-        if (timerServiceRef.current && timelineJumpTimerStartedRef.current !== phaseName) {
-          timerServiceRef.current.startWorkPhaseTimer(phaseName);
-        }
-        await ref.current.start({ skipPlayPortion: true });
-      }
+### 30. scripts/debug-emma-mismatch.mjs (b975745d1fdcd6f6d2cf9e5cdfed025d16466d184583c7c064ce2955a38ce957)
+- bm25: -6.5371 | relevance: 0.8673
 
-### 25. src/app/session/page.js (f118d1a55294c813ca2cadab90898a1fb0f1e96bf8acff3fe69016b88755b40d)
-- bm25: -16.9703 | relevance: 0.9444
+function setDiff(a, b) {
+  const out = []
+  for (const item of a) {
+    if (!b.has(item)) out.push(item)
+  }
+  out.sort((x, y) => String(x).localeCompare(String(y)))
+  return out
+}
 
-// Begin Exercise manually when awaiting begin (either skipped or auto-transitioned)
-  const beginSkippedExercise = async () => {
-    if (phase !== 'exercise' || subPhase !== 'exercise-awaiting-begin') return;
-    // Mark comprehension work phase as completed (user finished comprehension work)
-    markWorkPhaseComplete('comprehension');
-    // End any prior API/audio/mic activity before starting fresh
-    try { abortAllActivity(true); } catch {}
-    // Ensure audio/mic unlocked via Begin
-  // mic permission will be requested only when user starts recording
-    // Clear any temporary awaiting lock now that the user is explicitly starting
-    try { exerciseAwaitingLockRef.current = false; } catch {}
-    // Ensure pools/assessments exist if we arrived here via skip before setup
-    ensureBaseSessionSetup();
-    // No standalone unlock prompt
-    // Do NOT arm the first question here - it will be armed when Go is pressed
-    // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
-  setExerciseSkippedAwaitBegin(false);
-  // Gate quick-answer buttons until Start the lesson
-  setQaAnswersUnlocked(false);
+### 31. docs/brain/ingests/pack.md (b5adbc57ffb081312d82eb41107cf88819855e985f0bde2dcc5c657df7a0f2a8)
+- bm25: -6.4611 | relevance: 0.8660
+
+## Ranked Evidence
+
+### 1. docs/brain/lesson-notes.md (ba1927d5f15444bd06ae20de79a25c5719c23ee58aaed5fda05b53a8bd35dbd8)
+- bm25: -36.2172 | relevance: 1.0000
+
+# Lesson Notes
+
+## How It Works
+
+Facilitators can add notes to any lesson in the `facilitator/lessons` page. These notes are stored per learner and automatically included in Mr. Mentor's learner transcript, providing context about specific challenges, progress, or needs.
+
+**Flow (entry points):**
+1. Facilitator Lessons page: navigate to `facilitator/lessons`, select learner, expand subject
+2. Calendar schedule view (past completed lessons): click **Notes** on a scheduled lesson
+3. Mr. Mentor Calendar overlay (past completed lessons): click **Notes** on a scheduled lesson
+4. Type note text and save
+5. Empty note deletes the key from the JSONB map (no empty-string storage)
+5. When facilitator discusses learner with Mr. Mentor, notes appear in transcript:
+   ```
+   FACILITATOR NOTES ON LESSONS:
+
+math - Multiplication Basics:
+     "Struggles with times tables above 5x. Needs more practice with visual aids."
+
+science - Solar System:
+     "Very interested in planets, completed ahead of schedule."
+   ```
+6. Mr. Mentor references notes in responses for data-informed, personalized counseling
+
+**Purpose**: Enables facilitators to document learner-specific observations that persist across lessons, providing Mr. Mentor with longitudinal context for better guidance.
+
+## Database Schema
+
+**Learners table:**
+```sql
+-- Column added to learners table
+lesson_notes jsonb default '{}'::jsonb
+
+-- Structure: { 'subject/lesson_file': 'note text', ... }
+-- Example:
+{
+  "math/Multiplication_Basics.json": "Struggles with times tables above 5x",
+  "science/Solar_System.json": "Very interested in planets, completed ahead of schedule"
+}
+```
+
+### 32. docs/brain/auth-session-isolation.md (ce481795543abb2eb2ed4dc049a6c9561614c2bde95ebbc61b34c56a3a775bfd)
+- bm25: -6.3176 | relevance: 0.8633
+
+**Test 1: Local Logout**
+1. Log in on Device A (laptop)
+2. Log in on Device B (phone) with same account
+3. Log out on Device A
+4. **Expected**: Device A logged out, Device B still logged in
+5. **Before Fix**: Both devices logged out
+
+### 33. docs/brain/snapshot-persistence.md (1124fa71ece86ec048aaeef637c7cf577508731d10f3802149bc448806e41006)
+- bm25: -6.2733 | relevance: 0.8625
+
+**Event-Driven Print:**
+- HeaderBar emits `ms:print:worksheet`, `ms:print:test`, `ms:print:combined`, `ms:print:refresh`.
+- SessionPageV2 useEffect wires listeners that call download handlers (worksheet/test PDFs, facilitator key) or refresh (clear cached sets + assessments store).
+- Download handlers are PIN-gated via `ensurePinAllowed('download')` and use a local `createPdfForItems` helper (jsPDF) with a share/preview fallback.
+
+**Refresh Behavior:**
+- `ensurePinAllowed('refresh')` → `clearAssessments(lessonKey, learnerId)` → clear cached sets. Next print regenerates from lesson pools using current learner targets.
+
+**Layout Rules:**
+- PDF generation auto-selects the largest body font that fits the worksheet/test content on a single page (available height = page height minus top/bottom margins). Range: 8–18pt; headers are capped at 20pt.
+- If the content cannot fit even at the minimum size, the generator keeps 8pt and spills to additional pages with guarded page breaks (bottom margin respected). Choices render slightly smaller than prompts and indent by 6pt.
+- Worksheet spacing is compact (spacer ≈ 0.35× body font, min 3pt); Test uses wider spacing (≈0.7× body font, min 4pt) to keep pages balanced while filling available space.
+
+### Key Files
+
+- `src/app/session/v2/SessionPageV2.jsx` – cached assessment load/save, worksheet/test builders, jsPDF helpers, ms:print listeners, refresh handler.
+- `src/app/session/assessment/assessmentStore.js` – dual-write persistence for assessment sets.
+- `src/app/HeaderBar.js` – dispatches ms:print events from the hamburger/print menu.
+
+### 34. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -6.2288 | relevance: 0.8617
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 35. src/app/session/page.js (5ee4fd6f1cd76c334c9e8e4f2f732aa0dde200de1e842c46590724a035291ef6)
+- bm25: -6.2214 | relevance: 0.8615
+
+// Ensure a set matches target length by topping up from provided pools
+  const ensureExactCount = useCallback((base = [], target = 0, pools = [], allowDuplicatesAsLastResort = true) => {
+    return ensureExactCountUtil(base, target, pools, allowDuplicatesAsLastResort);
+  }, []);
+
+// REMOVED: sample deck - deprecated and no longer used
+  // See docs/KILL_SAMPLE_ARRAY.md for why this was removed
+
+// Word problem deck (math) with non-repeating behavior
+  const wordDeckRef = useRef([]);
+  const wordIndexRef = useRef(0);
   
-    // Start the exercise play timer
-    startPhasePlayTimer('exercise');
-    
-  setCanSend(false);
-  setTicker(0);
-    // Do NOT arm the first question here - it will be armed when Go is pressed
-    // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
-    // Immediately enter active subPhase so the Begin button disappears right away
-    setSubPhase('exercise-active');
-  // Persist the transition to exercise-active so resume lands on the five-button view
-  // Delay save to ensure state update has flushed
-  setTimeout(() => {
-    try { scheduleSaveSnapshot('begin-exercise'); } catch {}
+  const initWordDeck = useCallback((data) => {
+    initWordDeckUtil(data, { wordDeckRef, wordIndexRef });
+  }, []);
+  
+  const drawWordUnique = useCallback(() => {
+    return drawWordUniqueUtil({ wordDeckRef, wordIndexRef });
+  }, []);
+  
+  const reserveWords = useCallback((count) => {
+    const out = [];
+    for (let i = 0; i < count; i += 1) {
+      const it = drawWordUnique();
+      if (!it) break;
+      out.push(it);
+    }
+    return out;
+  }, [drawWordUnique]);
 
-### 26. src/app/session/page.js (53f025b5ec7c83531132e96db0459408484cbb4be67bde327749e497c0293a14)
-- bm25: -16.7662 | relevance: 0.9437
+// Assessment generation hook
+  const {
+    shuffle: shuffleHook,
+    shuffleArr: shuffleArrHook,
+    selectMixed: selectMixedHook,
+    takeMixed: takeMixedHook,
+    buildFromCategories: buildFromCategoriesHook,
+    generateAssessments: generateAssessmentsHook,
+    blendByType: blendByTypeHook,
+  } = useAssessmentGeneration({
+    lessonData,
+    subjectParam,
+    WORKSHEET_TARGET,
+    TEST_TARGET,
+    reserveWords,
+    // REMOVED: reserveSamples - sample array deprecated
+  });
 
-// Dynamically load per-user targets at runtime (recomputed on each call)
-async function ensureRuntimeTargets(forceReload = false) {
+### 36. src/app/session/utils/textProcessing.js (7adf67fbebfd5927317c8c94be8ee4668c4bd456eba0ac87564802854193a18f)
+- bm25: -6.1989 | relevance: 0.8611
+
+/**
+ * Split text into sentences, handling multi-line input and various punctuation.
+ * @param {string} text - The text to split
+ * @returns {string[]} Array of sentence strings
+ */
+export function splitIntoSentences(text) {
+  if (!text) return [];
   try {
-    const vars = await loadRuntimeVariables();
-    const t = vars?.targets || {};
-    COMPREHENSION_TARGET = (t.comprehension ?? t.discussion ?? COMPREHENSION_TARGET ?? 3);
-    EXERCISE_TARGET = (t.exercise ?? EXERCISE_TARGET ?? 5);
-    WORKSHEET_TARGET = (t.worksheet ?? WORKSHEET_TARGET ?? 15);
-    TEST_TARGET = (t.test ?? TEST_TARGET ?? 10);
-
-### 27. src/app/session/page.js (4f02e4d54517362ddce88260d0cbe03b66978c4f92e4942c5a9327953604d075)
-- bm25: -16.6752 | relevance: 0.9434
-
-if (learnerId && learnerId !== 'demo') {
-      try {
-        const learner = await getLearner(learnerId);
-        if (learner) {
-          const n = (v) => (v == null ? undefined : Number(v));
-          COMPREHENSION_TARGET = n(learner.comprehension ?? learner.targets?.comprehension) ?? COMPREHENSION_TARGET;
-          EXERCISE_TARGET = n(learner.exercise ?? learner.targets?.exercise) ?? EXERCISE_TARGET;
-          WORKSHEET_TARGET = n(learner.worksheet ?? learner.targets?.worksheet) ?? WORKSHEET_TARGET;
-          TEST_TARGET = n(learner.test ?? learner.targets?.test) ?? TEST_TARGET;
-          const humorLevel = normalizeHumorLevel(learner.humor_level);
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('learner_humor_level', humorLevel);
-              if (learnerId && learnerId !== 'demo') {
-                localStorage.setItem(`learner_humor_level_${learnerId}`, humorLevel);
-              }
-            } catch {}
-          }
+    const lines = String(text).split(/\n+/);
+    const out = [];
+    for (const lineRaw of lines) {
+      const line = String(lineRaw).replace(/[\t ]+/g, ' ').trimEnd();
+      if (!line) continue;
+      // Split on sentence-ending punctuation followed by whitespace or closing quotes then whitespace
+      // This prevents splitting numbered lists (1. Item) and preserves quotes with periods ("text.")
+      const rawParts = line
+        .split(/(?<=[.?!]["']?)\s+/)
+        .map((part) => String(part).trim())
+        .filter(Boolean);
+      // Merge any standalone number-period token (e.g. "1." "2.") with the fragment that follows it,
+      // so numbered list items stay together as a single caption sentence.
+      const parts = [];
+      for (let pi = 0; pi < rawParts.length; pi++) {
+        if (/^\d+\.$/.test(rawParts[pi]) && pi + 1 < rawParts.length) {
+          parts.push(rawParts[pi] + ' ' + rawParts[pi + 1]);
+          pi++; // consumed the next fragment
+        } else {
+          parts.push(rawParts[pi]);
         }
-      } catch (e) {
-        // Silent error handling
       }
-    } else if (learnerName && learnerName !== 'Demo Learner') {
-      try {
-        const raw = typeof window !== 'undefined' ? localStorage.getItem('facilitator_learners') : null;
-        if (raw) {
-          const list = JSON.parse(raw);
-          if (Array.isArray(list)) {
-            const match = list.find(l => l && (l.name === learnerName || l.full_name === learnerName));
-            if (match) {
-              const n = (v) => (v == null ? undefined : Number(v));
-              COMPREHENSION_TARGET = n(match.comprehension ?? match.targets?.comprehension) ?? COMPREHENSION_TARGET;
-              EXERCISE_TARGET = n(match.exercise ?? match.targets?.exercise) ?? EXERCISE_TARGET;
-              WORKSHEET_TARGET = n(match.worksheet ??
-
-### 28. docs/brain/timer-system.md (b7aa6681ad045e85a58422ec46641d948683a8b9be9eb4e041d2b6d83bd36742)
-- bm25: -16.6565 | relevance: 0.9434
-
-2. **PlayTimeExpiredOverlay** displays:
-   - Shows "Time to Get Back to Work!" message
-   - 30-second countdown (green, turns amber at 5 seconds)
-   - Displays phase name user will return to
-   - Auto-advances when countdown reaches 0
-
-3. **handlePlayExpiredComplete** fires when countdown completes:
-   - Hides overlay (`showPlayTimeExpired = false`)
-   - Transitions to work timer for expired phase
-   - Automatically starts the work phase:
-     - Discussion/Teaching: calls `startSession()` (orchestrator start)
-     - Comprehension/Exercise/Worksheet/Test: calls the phase controller `go()` (`comprehensionPhaseRef.current.go()`, etc.)
-   - Each phase handler hides play buttons as part of its normal flow
-   - Clears `playExpiredPhase`
-  - When discussion/teaching needs to auto-start, `startSession({ ignoreResume: true })` is used so a stale snapshot resumePhase cannot skip ahead during an active lesson.
-
-### Go Button Override
-
-If user clicks Go button during the 30-second countdown:
-- Overlay is immediately dismissed
-- Work timer starts without waiting for countdown
-- All phase start handlers check and clear overlay state
-
-### Work Time Completion Tracking
-
-### 29. src/app/session/v2/TimerService.jsx (7fe20ca947fed1427b6a69117fbb54acf5dfdd9deb945a6d33bb276160b5e354)
-- bm25: -16.6443 | relevance: 0.9433
-
-export class TimerService {
-  constructor(eventBus, options = {}) {
-    this.eventBus = eventBus;
-    
-    // Session timer
-    this.sessionStartTime = null;
-    this.sessionElapsed = 0; // seconds
-    this.sessionInterval = null;
-    
-    // Play timers (phases 2-5: comprehension, exercise, worksheet, test)
-    this.playTimers = new Map(); // phase -> { startTime, elapsed, timeLimit, expired }
-    this.playTimerInterval = null;
-    this.currentPlayPhase = null;
-    
-    // Play timer time limits (seconds) - default 3 minutes per phase
-    this.playTimerLimits = options.playTimerLimits || {
-      comprehension: 180, // 3 minutes
-      exercise: 180,      // 3 minutes  
-      worksheet: 180,     // 3 minutes
-      test: 180           // 3 minutes
-    };
-    
-    // Work phase timers
-    this.workPhaseTimers = new Map(); // phase -> { startTime, elapsed, timeLimit, completed }
-    this.workPhaseInterval = null;
-    this.currentWorkPhase = null;
-
-### 30. docs/brain/v2-architecture.md (fe3b9f85fd0c2ac0ea1bdb0dfecc4270568d1cd9a3aba24a6abf59dde77c0f05)
-- bm25: -16.4081 | relevance: 0.9426
-
-### ✅ Completed
-- Feature flag check in `page.js` (lines 65-69)
-- V2 stub component (`SessionPageV2.jsx`)
-- Brain file documentation (this file)
-- Manifest entry
-- Changelog entry
-- Q&A judging parity: Comprehension now matches V1 retry flow (hint, hint, reveal on 3rd) and does NOT advance on incorrect answers; Exercise/Worksheet match the same retry + reveal behavior; Test remains single-attempt grading with correct-answer reveal. SA/FIB route through `/api/judge-short-answer` with local fallback; MC/TF use V1-style local leniency (letters, TF synonyms).
-- **AudioEngine component** (`src/app/session/v2/AudioEngine.jsx`) - 600 lines
-  - Three playback paths: HTMLAudio (preferred), WebAudio (iOS), Synthetic (no audio)
-  - Event-driven architecture (start, end, captionChange, captionsDone, error)
-  - Single source of truth (no ref/state duplication)
-  - Deterministic caption timing (one timer system)
-  - Self-contained video coordination
-  - Pause/resume support
-  - Speech guard timeout
-- **AudioEngine tests** (`AudioEngine.test.jsx`) - Unit tests + manual browser test helpers
-- **PhaseOrchestrator component** (`src/app/session/v2/PhaseOrchestrator.jsx`) - 150 lines
-  - Manages session phase flow: teaching → comprehension → closing
-  - Owns phase state machine
-  - Emits phaseChange, sessionComplete events
-  - Consumes phase completion events
-  - Zero knowledge of phase implementation details
-- **ComprehensionPhase** - DEPRECATED (2026-01-03)
-  - **No longer used** - comprehension is now handled inline in SessionPageV2
-  - V2 uses V1's multi-question pattern instead of single-question class
-  - Questions loaded from lesson pools: truefalse, multiplechoice, fillintheblank, shortanswer
-  - Questions shuffled and limited to the learner's configured target
-    - Source of trut
-
-### 31. src/app/session/page.js (f498fdccd6175275fa89bdb6f35646ad305c3724dcd256b2f13acf8542c4c9fd)
-- bm25: -16.3925 | relevance: 0.9425
-
-// Calculate lesson progress percentage (defined after all state variables)
-  const calculateLessonProgress = useCallback(() => {
-    // Map phases to progress percentages
-    const phaseWeights = {
-      'discussion': 10,
-      'teaching': 30,
-      'comprehension': 50,
-      'exercise': 70,
-      'worksheet': 85,
-      'test': 95
-    };
-    
-    let baseProgress = phaseWeights[phase] || 0;
-    
-    // Add granular progress within each phase
-    if (phase === 'comprehension' && currentCompIndex > 0) {
-      const phaseRange = phaseWeights.comprehension - phaseWeights.teaching;
-      const withinPhase = (currentCompIndex / COMPREHENSION_TARGET) * phaseRange;
-      baseProgress = phaseWeights.teaching + Math.min(withinPhase, phaseRange);
-    } else if (phase === 'exercise' && currentExIndex > 0) {
-      const phaseRange = phaseWeights.exercise - phaseWeights.comprehension;
-      const withinPhase = (currentExIndex / EXERCISE_TARGET) * phaseRange;
-      baseProgress = phaseWeights.comprehension + Math.min(withinPhase, phaseRange);
-    } else if (phase === 'worksheet' && worksheetAnswers.length > 0) {
-      const phaseRange = phaseWeights.worksheet - phaseWeights.exercise;
-      const withinPhase = (worksheetAnswers.length / WORKSHEET_TARGET) * phaseRange;
-      baseProgress = phaseWeights.exercise + Math.min(withinPhase, phaseRange);
-    } else if (phase === 'test' && testAnswers.length > 0) {
-      const phaseRange = phaseWeights.test - phaseWeights.worksheet;
-      const withinPhase = (testAnswers.length / TEST_TARGET) * phaseRange;
-      baseProgress = phaseWeights.worksheet + Math.min(withinPhase, phaseRange);
+      if (parts.length) out.push(...parts);
     }
-    
-    return Math.min(100, Math.max(0, baseProgress));
-  }, [phase, currentCompIndex, currentExIndex, worksheetAnswers, testAnswers]);
-
-### 32. src/app/session/hooks/useSnapshotPersistence.js (b21361aa318eb7b862aa4217d443a08f461d579ab24dfc5cfef0211956be36e0)
-- bm25: -16.2591 | relevance: 0.9421
-
-const resolveTimerPhase = () => {
-        if (phase === 'discussion' || phase === 'teaching') return 'discussion';
-        if (phase === 'comprehension') return 'comprehension';
-        if (phase === 'exercise') return 'exercise';
-        if (phase === 'worksheet') return 'worksheet';
-        if (phase === 'test') return 'test';
-        return null;
-      };
-
-### 33. src/app/session/v2/SessionPageV2.jsx (a2ba52b7b15eeac5f94eae5e17b4e1dc32c9e111cddf1884492ef1d89026cbf7)
-- bm25: -16.1911 | relevance: 0.9418
-
-const loadStored = async () => {
-      try {
-        const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
-        const stored = await getStoredAssessments(lessonKey, { learnerId });
-        if (cancelled || !stored) return;
-        if (Array.isArray(stored.comprehension) && stored.comprehension.length) {
-          setGeneratedComprehension(stored.comprehension);
-        }
-        if (Array.isArray(stored.exercise) && stored.exercise.length) {
-          setGeneratedExercise(stored.exercise);
-        }
-        if (Array.isArray(stored.worksheet) && stored.worksheet.length) {
-          setGeneratedWorksheet(stored.worksheet);
-        }
-        if (Array.isArray(stored.test) && stored.test.length) {
-          setGeneratedTest(stored.test);
-        }
-      } catch {
-        /* noop */
-      }
-    };
-
-### 34. docs/brain/v2-architecture.md (c2951fa25d44e4fc0435acc27bd610e877cb0bb0b1da4921680892c9bd47fa32)
-- bm25: -16.0829 | relevance: 0.9415
-
-**Worksheet/Test:** Worksheet and Test follow the same no-skip rule. Missing targets or empty pools must block with a clear error instead of auto-advancing to the next phase.
-- The "Go" control in the Opening Actions footer must call the inline Exercise Go handler (not an ExercisePhase controller).
-- Keyboard skip for Exercise should route to the inline skip handler, which advances to the next question and preserves the hint/hint/reveal attempt tracking.
-- Worksheet question normalization must preserve provided `sourceType`/`type` so MC/TF items stay MC/TF (local judging, quick buttons). Only plain string questions should default to fill-in-blank.
-
-### 35. src/app/session/v2/SessionPageV2.jsx (efab6d4d0e309f310567843e56622f66e8a0568c63172a12387e99abfdca3907)
-- bm25: -16.0416 | relevance: 0.9413
-
-// Start play timer at the Begin gate (before Begin is clicked) for play-enabled Q&A phases.
-    // Do NOT do this on resume auto-start, and do NOT double-start after timeline jumps.
-    const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'exercise';
-    const shouldAutoStart = resumeMatch || !!savedExercise;
-    const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.exercise !== false;
-    if (
-      shouldStartPlayAtBeginGate
-      && timerServiceRef.current
-      && timelineJumpTimerStartedRef.current !== 'exercise'
-    ) {
-      timerServiceRef.current.startPlayTimer('exercise');
-    }
-    
-    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
-    if (shouldAutoStart && phase.start) {
-      if (playPortionsEnabledRef.current?.exercise === false) {
-        transitionToWorkTimer('exercise');
-        phase.start({ skipPlayPortion: true });
-        if (pendingPlayTimersRef.current?.exercise) {
-          delete pendingPlayTimersRef.current.exercise;
-        }
+    // Second pass: merge any bare "N." fragments that ended up on their own entry
+    // (e.g. GPT puts "1.\nFirst item" — split by \n gives separate entries in out)
+    const merged = [];
+    for (let i = 0; i < out.length; i++) {
+      if (/^\d+\.$/.test(out[i].trim()) && i + 1 < out.length) {
+        merged.push(out[i].trim() + ' ' + out[i + 1].trim());
+        i++;
       } else {
-        phase.start();
-        if (pendingPlayTimersRef.current?.exercise) {
-          if (savedExercise?.timerMode === 'work') {
-            delete pendingPlayTimersRef.current.exercise;
-          } else {
-            startPhasePlayTimer('exercise');
-            delete pendingPlayTimersRef.current.exercise;
-          }
-        }
+        merged.push(out[i]);
       }
     }
+    return merged.le
 
-### 36. src/app/session/page.js (99953f1c422ff8657f0674004e4dc20a0fe8c818407dce2bcacb6abfdc6e151c)
-- bm25: -15.8444 | relevance: 0.9406
+### 37. src/app/learn/lessons/page.js (937626e4e7c8e623ca81142b26f76a7f361556d9517a73c14b4bfa5a453d9c9b)
+- bm25: -6.0922 | relevance: 0.8590
 
-const timelineHighlight = useMemo(() => {
-    // Group teaching with discussion; comprehension is its own segment on the timeline
-    if (["discussion", "teaching", "awaiting-learner"].includes(phase)) {
-      return "discussion";
-    }
-    if (phase === "comprehension") {
-      return "comprehension";
-    }
-    if (phase === "exercise") {
-      return "exercise";
-    }
-    if (phase === "worksheet") {
-      return "worksheet";
-    }
-    if (["test", "grading", "congrats"].includes(phase)) {
-      return "test";
-    }
-    return phase;
-  }, [phase]);
-
-### 37. docs/brain/v2-architecture.md (bcbaba8ae74f1369524b1c55e3e577738be446bf70f09f6d42f753c7ecc5b154)
-- bm25: -15.7245 | relevance: 0.9402
-
-**Implementation notes:**
-- On every `phaseChange`, reset the per-phase UI gates (e.g., `showOpeningActions`, any active opening action state, and any games overlay) before rendering the next phase.
-- Timeline click-to-skip must call `ensurePinAllowed('timeline')` before navigating.
-- Timeline click-to-skip must stop active TTS before jumping (only when speech is currently playing) and then call `PhaseOrchestrator.skipToPhase(targetPhase)`.
-- Timeline click-to-skip must not bypass Begin gating; after a jump, the destination phase should still present its Begin CTA (then Opening Actions, then Go).
-- Timeline click-to-skip must not resume mid-phase (no resumeState). A timeline jump forces a fresh entry so Opening Actions are always available.
-- Q&A phases must emit a post-Go snapshot checkpoint (`<phase>-go`) that sets `timerMode:'work'` with `nextQuestionIndex:0`. Without this, a refresh after pressing Go (but before answering Q1) can incorrectly resume back at Opening Actions (timerMode still 'play' from `<phase>-init`).
-- Use the app alias when importing the PIN gate utility from V2 files: `@/app/lib/pinGate` (relative `../lib/pinGate` is one level short inside `session/v2` and will fail at build time).
-- Comprehension initialization must **wait for learnerProfile** to be loaded. If the orchestrator enters Comprehension before learner load completes, the app retries comprehension initialization once `learnerLoading` is false and `learnerProfile` is present.
-- Worksheet and Test initialization must follow the same rule as Comprehension: if the orchestrator enters the phase before learner load completes, initialization must be retried after learner load.
-- Any helper that reads learner targets must not rely on a stale closure captured before learner load. Use a ref-backe
-
-### 38. src/app/session/page.js (cf6b1632c1e237654ec56281ce7648c275cf3d70ed38564fd405548d66101865)
-- bm25: -15.6984 | relevance: 0.9401
-
-// Trigger work phase transition when play timer expired during restore
+// Set up midnight refresh timer
   useEffect(() => {
-    if (!needsPlayExpiredTransition) return;
-    if (!lessonData?.id) {
-      console.log('[PLAY EXPIRED] Waiting for lessonData to load');
-      return; // Wait for lesson data to load
+    const scheduleNextMidnightRefresh = () => {
+      const now = new Date()
+      const tomorrow = new Date(now)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      tomorrow.setHours(0, 0, 0, 0)
+      const msUntilMidnight = tomorrow.getTime() - now.getTime()
+      
+      const timer = setTimeout(() => {
+        setRefreshTrigger(prev => prev + 1)
+        // Schedule next midnight refresh
+        scheduleNextMidnightRefresh()
+      }, msUntilMidnight)
+      
+      return timer
     }
     
-    const triggerTransition = async () => {
-      try {
-        const phaseName = needsPlayExpiredTransition;
-        console.log('[PLAY EXPIRED] Triggering work phase transition for:', phaseName);
-        
-        if (phaseName === 'discussion' || phase === 'discussion' || phase === 'teaching') {
-          if (handleStartLessonRef.current) {
-            console.log('[PLAY EXPIRED] Calling handleStartLesson');
-            await handleStartLessonRef.current();
-          }
-        } else if (phaseName === 'comprehension' || phase === 'comprehension') {
-          if (handleGoComprehensionRef.current) {
-            console.log('[PLAY EXPIRED] Calling handleGoComprehension');
-            await handleGoComprehensionRef.current();
-          }
-        } else if (phaseName === 'exercise' || phase === 'exercise') {
-          if (handleGoExerciseRef.current) {
-            console.log('[PLAY EXPIRED] Calling handleGoExercise');
-            await handleGoExerciseRef.current();
-          }
-        } else if (phaseName === 'worksheet' || phase === 'worksheet') {
-          if (handleGoWorksheetRef.current) {
-            console.log('[PLAY EXPIRED] Calling handleGoWorksheet');
-            await handleGoWorksheetRef.current();
-          }
-        } else if (phaseName === 'test' || phase === 'test') {
-          if (handleGoTestRef.current) {
-            console.log('[PLAY EXPIRED] Calling handleGoTest');
-            await handleGoTestRef.current();
-          }
-        }
-      } catch (e) {
-        console
+    const timer = scheduleNextMidnightRefresh()
+    return () => clearTimeout(timer)
+  }, [])
 
-### 39. cohere-changelog.md (b508e048bded4b34a8e326f580d781d1528d5d287713263d762459af9dc916f5)
-- bm25: -15.6784 | relevance: 0.9400
+### 38. src/app/session/assessment/assessmentStore.js (f42050735208892df91578ed98ec2f23643e51085a712f9d1dd52612d69cd9d6)
+- bm25: -6.0833 | relevance: 0.8588
 
-Follow-ups:
-- If you want, we can add a `.gitignore` rule or wrapper script default to prevent new snapshot files from being created.
+export async function clearAssessments(lessonId, { learnerId } = {}) {
+	if (typeof window === 'undefined') return;
+	try { localStorage.removeItem(buildKey(lessonId)); } catch (e) { }
+	// Best-effort remote delete
+	try {
+		const supabaseMod = await import('@/app/lib/supabaseClient');
+		const supabase = supabaseMod.getSupabaseClient?.();
+		const hasEnv = supabaseMod.hasSupabaseEnv?.();
+		if (supabase && hasEnv && learnerId) {
+			const { data: { session } } = await supabase.auth.getSession();
+			const token = session?.access_token;
+			if (token) {
+				const url = `/api/assessments?learner_id=${encodeURIComponent(learnerId)}&lesson_key=${encodeURIComponent(lessonId)}`;
+				await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+			}
+		}
+	} catch (e) { /* ignore */ }
+}
 
----
+// Optional helper to nuke everything (not used yet)
+export function clearAllAssessments() {
+	if (typeof window === 'undefined') return;
+	try {
+		const keys = Object.keys(localStorage);
+		for (const k of keys) {
+			if (k.startsWith(KEY_PREFIX)) localStorage.removeItem(k);
+		}
+	} catch (e) {
+	}
+}
 
-Date (UTC): 2026-02-18T18:19:10.1845844Z
+function normalizeShape(obj) {
+	const out = { worksheet: [], test: [], comprehension: [], exercise: [], savedAt: obj?.savedAt || new Date().toISOString() };
+	if (Array.isArray(obj?.worksheet)) out.worksheet = obj.worksheet;
+	if (Array.isArray(obj?.test)) out.test = obj.test;
+	if (Array.isArray(obj?.comprehension)) out.comprehension = obj.comprehension;
+	if (Array.isArray(obj?.exercise)) out.exercise = obj.exercise;
+	return out;
+}
 
-Topic: Resume snapshot in work timer mode (avoid play 0:00)
+const assessmentStoreApi = { getStoredAssessments, saveAssessments, clearAssessments, clearAllAssessments };
+export default assessmentStoreApi;
 
-Recon prompt (exact string):
-Ms. Sonoma resume snapshot during work timer subphase shows play timer 0:00; should resume work timer countdown. Fix restore logic to keep work timer mode.
+### 39. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (07be0f8e844476d585e0b9a612c9a69eb2b991dc54097caeb3fe8707349d30df)
+- bm25: -5.9860 | relevance: 0.8569
 
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
+math - Multiplication Basics:
+     "Struggles with times tables above 5x. Needs more practice with visual aids."
 
-Result:
-- Decision: During restore, prefer `snap.currentTimerMode[phase]` over a potentially stale `snap.timerSnapshot.mode`, and drift-correct the correct timer state key (work vs play) so the resumed countdown uses a fresh `startTime`.
-- Files changed: src/app/session/hooks/useSnapshotPersistence.js, cohere-changelog.md
+science - Solar System:
+     "Very interested in planets, completed ahead of schedule."
+   ```
+6. Mr. Mentor references notes in responses for data-informed, personalized counseling
 
-Follow-ups:
-- If this still reproduces, log the restored `snap.currentTimerMode`, `snap.timerSnapshot`, and which key was drift-corrected to confirm which mode was captured at save time.
+**Purpose**: Enables facilitators to document learner-specific observations that persist across lessons, providing Mr. Mentor with longitudinal context for better guidance.
 
----
+## Database Schema
 
-Date (UTC): 2026-02-22T19:03:42.3423235Z
+**Learners table:**
+```sql
+-- Column added to learners table
+lesson_notes jsonb default '{}'::jsonb
 
-Topic: App slowness from unnecessary base64 audio payloads
+-- Structure: { 'subject/lesson_file': 'note text', ... }
+-- Example:
+{
+  "math/Multiplication_Basics.json": "Struggles with times tables above 5x",
+  "science/Solar_System.json": "Very interested in planets, completed ahead of schedule"
+}
+```
 
-Recon prompt (exact string):
-Performance: the entire freehands app feels extremely slow / barely works. Identify likely bottlenecks (Next.js App Router, session page, API routes like /api/sonoma), and where to instrument or optimize. Focus on critical path on initial load.
+## Mr. Mentor Integration
 
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
+### 13. docs/brain/calendar-lesson-planning.md (edc4501d8cf5402f28f2f259c81317facde5d8c4d278692219fb856850a029d8)
+- bm25: -18.4355 | relevance: 1.0000
 
-### 40. src/app/session/v2/SessionPageV2.jsx (fbcf865f504b8089d24f755ec7d73e1e3b1a8d9f47051ddc1005d0af3ad59f92)
-- bm25: -15.5607 | relevance: 0.9396
+- `src/app/facilitator/calendar/LessonNotesModal.jsx`
+  - Minimal notes editor for `learners.lesson_notes[lesson_key]`
+  - Empty note deletes the key from the JSONB map
 
-// Start play timer at the Begin gate (before Begin is clicked) for play-enabled Q&A phases.
-    // Do NOT do this on resume auto-start, and do NOT double-start after timeline jumps.
-    const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'worksheet';
-    const shouldAutoStart = resumeMatch || !!savedWorksheet;
-    const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.worksheet !== false;
-    if (
-      shouldStartPlayAtBeginGate
-      && timerServiceRef.current
-      && timelineJumpTimerStartedRef.current !== 'worksheet'
-    ) {
-      timerServiceRef.current.startPlayTimer('worksheet');
+- `src/app/facilitator/calendar/VisualAidsManagerModal.jsx`
+  - Visual Aids manager for a lessonKey using `/api/visual-aids/load|generate|save`
+  - Uses `VisualAidsCarousel` for selection/upload/save UI
+
+- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
+  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
+
+### 40. src/app/session/page.js (16ce27ece239dc020dadf303ee030d956267e43c81b5aacb18f657b56d74a07a)
+- bm25: -5.9226 | relevance: 0.8555
+
+// Helper: record first interaction snapshot (prevents infinite play hack via refresh)
+  // Moved after useSnapshotPersistence to avoid TDZ error
+  const recordFirstInteraction = useCallback(() => {
+    if (!hasRecordedFirstInteraction) {
+      scheduleSaveSnapshot('first-interaction');
+      setHasRecordedFirstInteraction(true);
     }
-    
-    // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
-    if (shouldAutoStart && phase.start) {
-      if (playPortionsEnabledRef.current?.worksheet === false) {
-        transitionToWorkTimer('worksheet');
-        phase.start({ skipPlayPortion: true });
-        if (pendingPlayTimersRef.current?.worksheet) {
-          delete pendingPlayTimersRef.current.worksheet;
-        }
-      } else {
-        phase.start();
-        if (pendingPlayTimersRef.current?.worksheet) {
-          if (savedWorksheet?.timerMode === 'work') {
-            delete pendingPlayTimersRef.current.worksheet;
-          } else {
-            startPhasePlayTimer('worksheet');
-            delete pendingPlayTimersRef.current.worksheet;
-          }
-        }
-      }
-    }
+  }, [hasRecordedFirstInteraction, scheduleSaveSnapshot]);
 
 
 ---

@@ -724,10 +724,18 @@ function SessionPageV2Inner() {
     };
   }, []);
 
-  // Trial: force-disable Golden Keys even if learner setting is enabled.
+  // Plan-tier gate for Golden Keys.
+  // When the plan-tier query resolves after learner is already loaded, sync goldenKeysEnabled
+  // in-place rather than triggering a full learner reload.
   useEffect(() => {
     if (!planEnt?.goldenKeyFeatures) {
       setGoldenKeysEnabled(false);
+      goldenKeysEnabledRef.current = false;
+    } else if (learnerProfileRef.current) {
+      // Plan upgraded post-load — re-derive from the already-fetched learner profile.
+      const next = !!learnerProfileRef.current.golden_keys_enabled;
+      setGoldenKeysEnabled(next);
+      goldenKeysEnabledRef.current = next;
     }
   }, [planEnt?.goldenKeyFeatures]);
 
@@ -903,6 +911,17 @@ function SessionPageV2Inner() {
       }
     }
   }, [goldenKeysEnabled]);
+
+  // Ref so loadLearnerProfile can read the current plan gate without depending on planEnt
+  // (depending on planEnt caused the learner to reload every time the plan tier query resolved).
+  const planGoldenKeyFeaturesRef = useRef(!!planEnt?.goldenKeyFeatures);
+  useEffect(() => {
+    planGoldenKeyFeaturesRef.current = !!planEnt?.goldenKeyFeatures;
+  }, [planEnt?.goldenKeyFeatures]);
+
+  // Ref that always mirrors the latest loaded learner so plan-tier effects can read it
+  // without taking a reactive dependency on learnerProfile.
+  const learnerProfileRef = useRef(null);
   
   // Play timer expired overlay state (V1 parity)
   const [showPlayTimeExpired, setShowPlayTimeExpired] = useState(false);
@@ -1308,12 +1327,13 @@ function SessionPageV2Inner() {
         
         // Pin the session learner id to avoid mid-session localStorage drift.
         sessionLearnerIdRef.current = learner.id;
+        learnerProfileRef.current = learner;
         setLearnerProfile(learner);
 
         if (typeof learner.golden_keys_enabled !== 'boolean') {
           throw new Error('Learner profile missing golden_keys_enabled flag. Please run migrations.');
         }
-        const nextGoldenKeysEnabled = planEnt?.goldenKeyFeatures ? learner.golden_keys_enabled : false;
+        const nextGoldenKeysEnabled = planGoldenKeyFeaturesRef.current ? learner.golden_keys_enabled : false;
         setGoldenKeysEnabled(nextGoldenKeysEnabled);
         goldenKeysEnabledRef.current = nextGoldenKeysEnabled;
 
@@ -1392,7 +1412,12 @@ function SessionPageV2Inner() {
     }
     
     loadLearnerProfile();
-  }, [lessonData, lessonId, lessonKey, subjectParam, goldenKeyFromUrl, goldenKeyLessonKey, planEnt?.goldenKeyFeatures]);
+  // lessonData and lessonKey intentionally omitted: they are not used inside loadLearnerProfile
+  // and including them caused a redundant Supabase fetch every time the lesson loaded.
+  // planEnt?.goldenKeyFeatures intentionally omitted: it's read via planGoldenKeyFeaturesRef to avoid
+  // a third re-load when the profiles query resolves. The plan-tier effect above handles post-load sync.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lessonId, subjectParam, goldenKeyFromUrl, goldenKeyLessonKey]);
 
   // Live-update learner settings (no localStorage persistence)
   useEffect(() => {
