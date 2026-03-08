@@ -13,7 +13,6 @@ import { getActiveLessonSession } from '@/app/lib/sessionTracking'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
-import FacilitatorPinPrompt from '@/app/learn/FacilitatorPinPrompt'
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 
@@ -93,7 +92,6 @@ function LessonsPageInner(){
   const [sessionGateReady, setSessionGateReady] = useState(false)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [showGoldenKeyToast, setShowGoldenKeyToast] = useState(false) // Show golden key earned notification
-  const [showGeneratorPinPrompt, setShowGeneratorPinPrompt] = useState(false)
   // null = unknown (still loading learner settings); true/false = loaded value
   const [goldenKeysEnabled, setGoldenKeysEnabled] = useState(null)
 
@@ -1089,7 +1087,10 @@ function LessonsPageInner(){
 
       <div style={{ display:'flex', justifyContent:'center', marginTop:16, marginBottom:8 }}>
         <button
-          onClick={() => setShowGeneratorPinPrompt(true)}
+          onClick={async () => {
+            const ok = await ensurePinAllowed('facilitator-page')
+            if (ok) router.push('/facilitator/generator')
+          }}
           style={{
             padding:'12px 28px',
             border:'1px solid #d1d5db',
@@ -1107,16 +1108,6 @@ function LessonsPageInner(){
           ✨ Generate a Lesson
         </button>
       </div>
-
-      {showGeneratorPinPrompt && (
-        <FacilitatorPinPrompt
-          onSuccess={() => {
-            setShowGeneratorPinPrompt(false)
-            router.push('/facilitator/generator')
-          }}
-          onCancel={() => setShowGeneratorPinPrompt(false)}
-        />
-      )}
       
       <LoadingProgress
         isLoading={sessionLoading}
