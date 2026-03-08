@@ -400,21 +400,6 @@ export default function LessonMakerPage(){
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {generatedLessonKey && (
-            <button
-              onClick={() => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`)}
-              style={{
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: '1px solid #d1d5db',
-                background: '#fff',
-                cursor: 'pointer',
-                fontWeight: 600
-              }}
-            >
-              ✏️ Edit This Lesson
-            </button>
-          )}
           <button
             onClick={() => router.push('/facilitator/lessons')}
             style={{
@@ -567,20 +552,46 @@ export default function LessonMakerPage(){
           )}
 
           <button
-            type="submit"
-            disabled={!canGenerate}
+            type={generatedLessonKey ? 'button' : 'submit'}
+            disabled={generatedLessonKey ? false : !canGenerate}
+            onClick={generatedLessonKey ? () => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`) : undefined}
             style={{
               padding: '12px 16px',
               borderRadius: 10,
-              border: '1px solid #3b82f6',
-              background: canGenerate ? '#3b82f6' : '#93c5fd',
+              border: `1px solid ${generatedLessonKey ? '#059669' : '#3b82f6'}`,
+              background: generatedLessonKey ? '#059669' : (canGenerate ? '#3b82f6' : '#93c5fd'),
               color: '#fff',
-              cursor: canGenerate ? 'pointer' : 'not-allowed',
+              cursor: (generatedLessonKey || canGenerate) ? 'pointer' : 'not-allowed',
               fontWeight: 700
             }}
           >
-            ✨ Generate Lesson
+            {generatedLessonKey ? '✏️ Edit Lesson' : '✨ Generate Lesson'}
           </button>
+
+          {generatedLessonKey && (
+            <button
+              type="button"
+              onClick={() => {
+                setGeneratedLessonKey(null)
+                setForm({ grade: '', difficulty: 'intermediate', subject: 'math', title: '', description: '', notes: '', vocab: '' })
+                setMessage('')
+                setToast(null)
+                setMakeActiveFor('none')
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#6b7280',
+                fontSize: 14,
+                fontWeight: 600,
+                padding: '4px 0',
+                textDecoration: 'underline',
+              }}
+            >
+              + New Lesson
+            </button>
+          )}
 
           {quotaLoading ? (
             <span style={{ color: '#6b7280', fontSize: 13 }}>Checking quota...</span>
