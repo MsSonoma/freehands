@@ -599,6 +599,37 @@ export default function LessonMakerPage(){
           </div>
         )}
       </form>
+
+      <div
+        onClick={() => router.push('/facilitator/calendar')}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator/calendar')}
+        style={{
+          marginTop: 32,
+          padding: '16px 20px',
+          border: '1px solid #dbeafe',
+          borderRadius: 12,
+          background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#1e40af', marginBottom: 4 }}>
+            📅 Want to generate whole weeks of lessons at once?
+          </div>
+          <div style={{ fontSize: 13, color: '#4b5563' }}>
+            The Lesson Planner builds a full curriculum calendar for you — automatically.
+          </div>
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#2563eb', whiteSpace: 'nowrap' }}>
+          Open Planner →
+        </div>
+      </div>
     </main>
 
     <GatedOverlay
