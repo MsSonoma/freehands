@@ -6,19 +6,20 @@ Mode: standard
 
 Prompt (original):
 ```text
-session page refresh hangs times out eventually loads
+learn lessons page generate a lesson button pin request lesson generator
 ```
 
 Filter terms used:
 ```text
-session
+learn
+lessons
 page
-refresh
-hangs
-times
-out
-eventually
-loads
+generate
+lesson
+button
+pin
+request
+generator
 ```
 
 ---
@@ -27,9 +28,9 @@ loads
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-03-03 08:50` — Curriculum Preferences focuses and bans per subject with dropdown selector, custom subjects, per-subject saving, prompt 
 - `2026-03-05 11:36` — hardened video initialization, resume logic correct time, golden key timer overlay applies to authoritative timer, skip 
 - `2026-03-05 12:17` — phaseChange handler startPhasePlayTimer overwrites work mode on resume — fix for comprehension exercise worksheet test p
+- `2026-03-05 13:03` — session page refresh hangs times out eventually loads
 
 ---
 
@@ -50,7 +51,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 3. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 23. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -65,7 +66,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-session page refresh hangs times out eventually loads
+learn lessons page generate lesson button pin request generator
 
 ## Forced Context
 
@@ -73,924 +74,860 @@ session page refresh hangs times out eventually loads
 
 ## Ranked Evidence
 
-### 1. docs/brain/auth-session-isolation.md (34ebf74e4612d3e92576d4ecd0198993b6ca4d0a1afc6bd927f053cbe69ecadc)
-- bm25: -17.5829 | relevance: 0.9462
+### 1. docs/brain/lesson-validation.md (6bd47820aa3da6e19dc9b0a9c78ca88859dc4dd6752d036fea1a2fe4318d515b)
+- bm25: -14.3511 | relevance: 0.9349
 
-- ✅ Logging out on Device A does NOT log out Device B
-- ✅ Logging into different account on Device A does NOT affect Device B
-- ✅ Sessions persist across browser refresh on same device
-- ✅ Sessions eventually expire naturally (JWT expiry)
-- ✅ No custom storage adapters needed (default Supabase behavior works)
-- ✅ All signOut() calls explicitly specify scope parameter
+**Lesson Maker** (`/facilitator/generator`, implemented in `src/app/facilitator/generator/page.js`):
+1. User fills form and clicks "Generate Lesson"
+2. Toast: "Generating lesson..."
+3. Call `/api/facilitator/lessons/generate`
+4. Validate with `lessonValidation.validateLesson()`
+5. If issues: Toast "Improving quality...", call `/api/facilitator/lessons/request-changes`
+6. Toast: "Lesson ready!"
 
-### 2. docs/brain/auth-session-isolation.md (6a7a5ab7984f7e7c9e74a9fb7bfb81a67e77fe56b4c5d0e26ac30b318d177606)
-- bm25: -13.8897 | relevance: 0.9328
+### 2. src/app/learn/lessons/page.js (82c6cc891c4d9a7cb098915d0ef511fe1ae156ff77df4e93bf066854a7a5d44d)
+- bm25: -13.5718 | relevance: 0.9314
 
-**Test 2: Account Switch**
-1. Log in as User 1 on Device A
-2. Log in as User 1 on Device B
-3. Log out on Device A, log in as User 2 on Device A
-4. **Expected**: Device A is User 2, Device B still User 1
-5. **Before Fix**: Device B switched to User 2 or logged out
+;(async () => {
+      try {
+        // Just check for active session without PIN requirement
+        // The lessons page should be freely accessible
+        const active = await getActiveLessonSession(learnerId)
+        if (cancelled) return
+        // No PIN gate here - let learners view lessons freely
+        if (!cancelled) setSessionGateReady(true)
+      } catch (err) {
+        if (!cancelled) setSessionGateReady(true)
+      }
+    })()
 
-**Test 3: Session Persistence**
-1. Log in on Device A
-2. Log in on Device B (same account)
-3. Close browser on Device A (not logged out)
-4. Reopen browser on Device A
-5. **Expected**: Device A still logged in (session persisted)
+### 3. docs/brain/ingests/pack-mentor-intercepts.md (e6c48420886918c3acdc7fcc127ea92bb0a9dbdba01e03e97f45aae4b136f069)
+- bm25: -12.2392 | relevance: 0.9245
 
-## Edge Cases
+- `src/app/lib/lessonValidation.js` - Validation logic, critical issue checks, change request builder
+- `src/components/Toast.jsx` - Toast notification component
+- `src/app/facilitator/generator/page.js` - Manual generation UI with validation flow
+- `src/app/api/counselor/route.js` - Mr. Mentor's automatic validation + retry logic
+- `src/app/api/facilitator/lessons/generate/route.js` - Generation endpoint
+- `src/app/api/facilitator/lessons/request-changes/route.js` - Improvement endpoint
 
-### Natural Session Expiry
-- Access token expires after 1 hour (configurable in Supabase)
-- Refresh token expires after 7 days (configurable)
-- Device automatically refreshes using refresh token
-- If refresh token expires, user must log in again (on that device only)
+### 4. docs/brain/lesson-validation.md (d76e6cdb4d66d09eca13f4085b6ffb89b9a9401296041ac37b869ece0a0289a0)
+- bm25: -11.6559 | relevance: 0.9210
 
-### Concurrent Logout
-- User logs out on Device A and Device B simultaneously
-- Both use `scope: 'local'`
-- Server session remains valid (neither invalidated it)
-- Session eventually expires naturally
+**Legacy route:** `/facilitator/generator/lesson-maker` redirects to `/facilitator/generator`.
 
-### Password Change
-- Should use `scope: 'global'` to force re-auth everywhere
-- Not implemented yet - future enhancement
+**Mr. Mentor** (`src/app/api/counselor/route.js`):
+1. User: "Create a 5th grade science lesson on photosynthesis"
+2. Mr. Mentor calls `generate_lesson` function
+3. Backend validates lesson automatically
+4. If issues: Make second call to fix quality
+5. Mr. Mentor confirms completion with improved lesson
 
-### Account Deletion
-- Currently uses `scope: 'local'`
-- Could argue for `scope: 'global'` since account is gone
-- But API deletes user anyway, so other devices will fail on next API call
+## Related Brain Files
 
-## Future Enhancements
+- **[lesson-editor.md](lesson-editor.md)** - Validation runs automatically on lesson editor save
+- **[mr-mentor-conversation-flows.md](mr-mentor-conversation-flows.md)** - Mr. Mentor auto-validates generated lessons
 
-- Add "Log out everywhere" button (explicit `scope: 'global'`)
-- Force global logout on password change
-- Show "active sessions" list (like Google/Facebook)
-- Server-side session revocation API
+## Key Files
 
-## Acceptance Criteria
-
-### 3. docs/brain/auth-session-isolation.md (a12fba6b9cdf1ad88cae87c975621eed6a8730be439d6a83fad3c0c13a62c81e)
-- bm25: -10.3369 | relevance: 0.9118
-
-# Auth Session Isolation (Cross-Device Logout Issue)
-
-## Critical Problem Solved
-
-**BUG**: Logging out on Device A logged out Device B. Logging into a different account on Device A changed the logged-in user on Device B.
-
-**ROOT CAUSE**: `supabase.auth.signOut()` defaults to `scope: 'global'`, which invalidates the session **server-side** in the Supabase database. This affects ALL devices using that account because they all share the same server-side session.
-
-## How It Works Now
-
-### Local Logout Scope
-
-Changed all `signOut()` calls to use `scope: 'local'`:
-
-```javascript
-// Before (global logout - affects all devices):
-await supabase.auth.signOut()
-
-// After (local logout - only this device):
-await supabase.auth.signOut({ scope: 'local' })
-```
-
-**What scope: 'local' does:**
-- Clears auth tokens from localStorage on **current device only**
-- Does NOT invalidate the server-side session
-- Other devices continue using the same session
-- Server session eventually expires naturally (based on JWT expiry time)
-
-**What scope: 'global' does (default):**
-- Clears auth tokens from localStorage on current device
-- **Invalidates server-side session in Supabase database**
-- All other devices immediately lose access when they next make an API call
-- Session tokens on other devices become invalid
-
-## Why This Happened
-
-Supabase auth sessions work in two layers:
-
-1. **Client-side (localStorage)**: Access token + refresh token stored locally
-2. **Server-side (Supabase database)**: Session record with expiry, used to validate tokens
-
-When you call `signOut()` with default settings:
-- It clears localStorage on Device A ✓
-- It calls Supabase API to invalidate the session record ✗
-- Device B's tokens become invalid because server session is gone
-
-### 4. docs/brain/ms-sonoma-teaching-system.md (25924444b0a99e010e5adc790311b5b3a6f525223ee557909a969e29fbeb292d)
-- bm25: -9.0891 | relevance: 0.9009
-
-### Slot Policy
-
-- Build with templates in code
-- Substitute slots (e.g., {NAME}, {TITLE}) to literals before send
-- Never let placeholders reach Ms. Sonoma
-- Normalize quotes to straight ASCII before validation
-
-### Developer-Only Examples
-
-These are shapes for Copilot reference only - never emit to children:
-
-**Opening**:
-```
-Hello Emma. Today's lesson is 4th Multiplying with Zeros. You've got this. Let's start with a joke. Why did zero skip dessert? Because it was already nothing. If zero wore a tiny hat, what would it look like?
-```
-
-**Teaching Definitions**:
-```
-Zero property means any number times zero is zero. Identity property means any number times one stays the same. Place value means where a digit sits in a number. A placeholder zero holds a place and does not change digits. A trailing zero sits at the end and shifts place value. A leading zero is at the start and does not change value. Do you have any questions? You could ask questions like: What does zero property mean? Why is place value important? What is a trailing zero?
-```
-
-**Teaching Examples**:
-```
-Three times zero is zero because of the zero property. Ten times five is fifty; the trailing zero shifts place value. One times seven is seven because of the identity property. Do you have any questions? You could ask questions like: Can you show me another zero property example? What happens with twenty times two? How does the identity property work?
-```
-
-**Transition**:
-```
-Great. Let's move on to comprehension.
-```
-
-**Comprehension Ask**:
-```
-What is 9 times zero?
-```
-
-**Correct Feedback**:
-```
-Yes, great thinking. It is zero because anything times zero is zero. What is 20 times one?
-```
-
-**Hint Feedback**:
-```
-Let's go smaller. What is 1 times zero? Now try 9 times zero again.
-```
-
-### 5. docs/brain/auth-session-isolation.md (9da46bc8495d845a56fab200c340c1d2f3775c432f8d0972bfbdceaf7d46e82a)
-- bm25: -8.8689 | relevance: 0.8987
-
-## Files Changed
-
-- `src/app/facilitator/account/settings/page.js` - Added `scope: 'local'` to delete account signOut
-- `src/app/facilitator/account/page.js` - Added `scope: 'local'` to logout button signOut
+- `src/app/lib/lessonValidation.js` - Validation logic, critical issue checks, change request builder
+- `src/components/Toast.jsx` - Toast notification component
+- `src/app/facilitator/generator/page.js` - Manual generation UI with validation flow
+- `src/app/api/counselor/route.js` - Mr. Mentor's automatic validation + retry logic
+- `src/app/api/facilitator/lessons/generate/route.js` - Generation endpoint
+- `src/app/api/facilitator/lessons/request-changes/route.js` - Improvement endpoint
 
 ## What NOT To Do
 
-**DO NOT:**
-- Use `scope: 'global'` unless you explicitly want to log out all devices (e.g., "Log out everywhere" button)
-- Remove the scope parameter (reverts to global logout)
-- Assume localStorage changes affect other devices (they don't - this was server-side)
+**DON'T block on warnings** - Only critical issues trigger retry. Warnings are logged but don't block lesson creation.
 
-## When To Use Each Scope
+**DON'T exceed 60s per call** - Each API call must stay under Vercel timeout. Split into two calls rather than one long call.
 
-**Use `scope: 'local'` (default choice):**
-- Normal logout button
-- Account deletion (user may have other devices)
-- Session timeout on current device
-- "Log out of this device" action
+**DON'T skip validation in Mr. Mentor flow** - Both manual (Lesson Maker) and conversational (Mr. Mentor) generation must validate.
 
-**Use `scope: 'global'` (explicit choice):**
-- "Log out everywhere" feature (security)
-- Password change (force re-auth on all devices)
-- Account compromise response
-- Admin-initiated logout
+**DON'T regenerate from scratch on retry** - Second call uses "request-changes" approach: "Fix these specific issues" not "regenerate entire lesson".
 
-## Security Considerations
+### 5. cohere-changelog.md (c632c4455f2b8872d0a6074399859885a47f1f9d5472019366c3d3c562399a4f)
+- bm25: -11.5286 | relevance: 0.9202
 
-**Reduced Security vs. Better UX:**
-- `scope: 'local'` means compromised device logout doesn't revoke other devices
-- Session remains valid until JWT expiry (default: 1 hour with 7-day refresh)
-- Attacker with stolen token could use it until natural expiry
+### 2026-02-27 � Lesson generated with warnings / Missing file or changeRequest
+- Root cause: generator sent `changes` in POST body but `/api/facilitator/lessons/request-changes` destructures `changeRequest`  
+- Fix: `src/app/facilitator/generator/page.js` � renamed field `changes` ? `changeRequest` in request body
 
-**Mitigation:**
-- Keep JWT expiry time reasonable (1 hour is good)
-- Provide "Log out everywhere" button for users who want it
-- Force global logout on password change
-- Monitor suspicious activity and force global logout server-side
+### 6. docs/brain/pin-protection.md (771d09bf70621a2a47da98e3ac52455b98299582fe3c7fc3744c6d3234d5db17)
+- bm25: -11.4062 | relevance: 0.9194
 
-**Why this trade-off is OK:**
-- Most users expect device-independent sessions (Gmail, Facebook, etc. work this way)
-- Losing all devices on single logout is bad UX
-- Users can explicitly choose "log out everywhere" if needed
+**Facilitator Pages** (all check PIN on mount):
+- `src/app/facilitator/page.js` - Main facilitator hub
+- `src/app/facilitator/learners/page.js` - Learner management
+- `src/app/facilitator/lessons/page.js` - Lesson management
+- `src/app/facilitator/generator/*/page.js` - Content generators
+- `src/app/facilitator/account/*/page.js` - Account pages
 
-## Testing Verification
+### 7. src/app/learn/lessons/page.js (ea237d615ce88b2452b58c79385b96994a27362869eff27be85e335052a210a9)
+- bm25: -11.2194 | relevance: 0.9182
 
-### 6. docs/brain/v2-architecture.md (d350b4726054514cb1d99074a785f6086c5485633f6a9dbbbc07f3d60ba53b15)
-- bm25: -8.0787 | relevance: 0.8899
+// CRITICAL: Don't treat 'congrats' or 'test' as meaningful progress
+  // Lesson is complete - no point resuming to "Complete Lesson" button
+  // Test phase includes both in-progress tests AND completed tests (testFinalPercent may be null)
+  if (phase === 'congrats' || phase === 'test') return false
 
-**Implementation notes:**
-- Exercise must show "Begin Exercise" on phase entry (Exercise state `awaiting-go`). Question selection must not block this gate.
-- Exercise question selection comes only from the allowed pools (TF/MC/FIB/SA) and is limited by the learner target for Exercise.
-- Exercise question selection happens on **Go** (lazy initialization). This keeps Begin/Opening Actions independent from pool/target checks.
-- If learner targets are missing, Exercise must block with a clear error (no silent fallback; no auto-advance).
-- Test decks must stay stable across timeline jumps; only refresh via the hamburger “refresh” action or after completion. Prefer saved deck, then cached generation; rebuild only when none exist.
-- Test start must still clamp the deck to the learner target and clamp saved nextQuestionIndex/answers/reviewIndex to that length so completion always enters review after the target count (no extra questions from older snapshots).
-- Question pool blending must backfill to the learner target (cycle source pool if dedup leaves fewer items) so decks never stall below target counts.
-- Test submit/skip must enter review immediately when the next index reaches deck length (no reliance on follow-up playback), preventing hangs after the last question.
-- Praise/reveal playback in Test must await audio completion before advancing to next question, matching WorksheetPhase pattern to prevent overlapping TTS (duplicate "Perfect!" and next question playing together).
-- Starting Test must tear down any existing TestPhase instance and stop active audio before rebuilding so duplicate listeners cannot trigger overlapping question/praise/reveal playback.
+### 8. src/app/api/counselor/route.js (5e02156291273b5c350150dad049e3111299419e079538c7f3365a10f9db3172)
+- bm25: -11.1991 | relevance: 0.9180
 
-### 7. sidekick_pack.md (a6a5a8402f60a32ae3f5331f3e88e3b679090d1e257e5157603316df1542732f)
-- bm25: -7.8236 | relevance: 0.8867
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 8. sidekick_pack.md (cad378213fd13855af53d533bd71221aed90460d4fbb4523573edc023e104f0e)
-- bm25: -7.8236 | relevance: 0.8867
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 9. sidekick_pack.md (1f28777aa00516f363d491420dfa6a99c690b1cfebadbd59af7be0334bd94883)
-- bm25: -7.8236 | relevance: 0.8867
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 10. docs/brain/MentorInterceptor_Architecture.md (b9af78a6a85babc29ee74ec9cf6073767b7a2e84a19456e1f96ab9a407cbd74d)
-- bm25: -7.7954 | relevance: 0.8863
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 11. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (6f33983453dfbb17ba0b015de6cc76fa071dc0e7a401f52396b7093115ac315c)
-- bm25: -7.7536 | relevance: 0.8858
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 12. docs/brain/ingests/pack.planned-lessons-flow.md (88c29dc19b3f25ed0178c73764a3887f3532851fb2e1292ab2f58b31241fad00)
-- bm25: -7.7536 | relevance: 0.8858
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 13. docs/brain/changelog.md (db87d0c32f1221d6e92b21aca469566011b9827dda19431e958af521d64f4d87)
-- bm25: -7.5146 | relevance: 0.8826
-
-2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
-2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
-
-### 14. docs/brain/ingests/pack.md (e6cb2fa8b6944fa68dc5e2440ce225b3182b8d5f274fbbebc661df7098a22acf)
-- bm25: -7.5019 | relevance: 0.8824
-
-2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
-2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
-
-### 15. docs/brain/ingests/pack-mentor-intercepts.md (ed8a6fcab62679dfdb637388493a41a0aaaea65e2f3e70d3653532a9e69a5a32)
-- bm25: -7.4767 | relevance: 0.8820
-
-2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
-2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
-
-### 16. docs/brain/ingests/pack.lesson-schedule-debug.md (f078b24e49eb4bdb263b2356fda5fa4458086fbfdd6a810c30d68a75b22fecd2)
-- bm25: -7.4642 | relevance: 0.8819
-
-2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
-2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
-
-### 17. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (8163644eb7df3a7e0c7fbbd03814d28f85cdc1339a3c403f07748601ecc1ac92)
-- bm25: -7.4642 | relevance: 0.8819
-
-2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
-2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
-
-### 18. docs/brain/ingests/pack.planned-lessons-flow.md (a766bbdf348c6973f1ab7149e48b48e23d3bca37b03c50426a199d1173545dce)
-- bm25: -7.4642 | relevance: 0.8819
-
-2025-12-09T20:30:00Z | Copilot | CRITICAL AUTH FIX v2: Per-user storage isolation instead of per-tab. Previous fix required re-login on every refresh (unacceptable UX). New approach: each USER gets isolated storage namespace, but same user shares auth across all tabs. Custom storage adapter implements Supabase Storage interface, stores auth at supabase-auth-user-<userId> keys. Client instances cached per userId (not singleton). Same user in multiple tabs shares client and auth (stay logged in together). Different users in different tabs use separate storage keys (isolated). Page refresh auto-detects user ID from localStorage, restores correct client (no re-login). Logout propagates to all tabs for that user but not to tabs with different users. Handles legacy migration from default storage key. Files: src/app/lib/supabaseClient.js (custom UserIsolatedStorage class, clientsByUserId Map, user ID auto-detection), docs/brain/auth-session-isolation.md (completely rewritten with per-user architecture). [REVERTED - see 2025-12-09T21:00:00Z]
-2025-12-09T20:00:00Z | Copilot | CRITICAL AUTH FIX: Cross-tab auth leakage - logging out in one tab logged out ALL tabs, logging into new account in Tab A switched Tab B to that account. Root cause: Supabase client used default shared localStorage key 'sb-<project>-auth-token' for all tabs. Auth state changes in one tab immediately affected all other tabs via shared localStorage. Solution: Added per-tab unique storageKey using sessionStorage-persisted UUID (supabase-auth-<UUID>). Each tab generates unique storage key on first load, isolating auth sessions. Tab A logout/login no longer affects Tab B. Auth persists within tab across page navigation but refreshing tab generates new UUID (requires re-login, acceptable trade-off vs auth leakage)
-
-### 19. src/app/session/v2/ExercisePhase.jsx (c340edc107843e2e2f6afbcb8783da97fdfabf58588ce778365df1a7a63c3252)
-- bm25: -7.4053 | relevance: 0.8810
-
-/**
- * ExercisePhase - Multiple choice and true/false questions with scoring
- * 
- * Consumes AudioEngine for question playback.
- * Manages question progression and score tracking.
- * Zero coupling to session state or other phases.
- * 
- * Architecture:
- * - Loads exercise questions from lesson data
- * - Plays each question with TTS
- * - Prefetches N+1 question during N playback (eliminates wait times)
- * - Presents multiple choice or true/false options
- * - Validates answers and tracks score
- * - Emits exerciseComplete with results
- * 
- * Usage:
- *   const phase = new ExercisePhase({ audioEngine, questions });
- *   phase.on('exerciseComplete', (results) => saveScore(results));
- *   await phase.start();
- */
-
-import { fetchTTS } from './services';
-import { ttsCache } from '../utils/ttsCache';
-import { buildAcceptableList, judgeAnswer } from './judging';
-import { deriveCorrectAnswerText, formatQuestionForSpeech } from '../utils/questionFormatting';
-import { HINT_FIRST, HINT_SECOND, pickHint } from '../utils/feedbackMessages';
-
-// V1 praise phrases for correct answers
-const PRAISE_PHRASES = [
-  'Great job!',
-  'Excellent!',
-  'You got it!',
-  'Nice work!',
-  'Well done!',
-  'Perfect!',
-  'Awesome!',
-  'Fantastic!'
-];
-
-// Intro phrases for phase start (V1 pacing pattern)
-const INTRO_PHRASES = [
-  "Time for some practice questions.",
-  "Let's try some exercises.",
-  "Ready to practice?",
-  "Let's see how much you know."
-];
-
-### 20. src/app/session/v2/TestPhase.jsx (37f6634e7eaad67601717d18c9172cfebddf42d526c7cd2a70358900aa545d26)
-- bm25: -7.3841 | relevance: 0.8807
-
-/**
- * TestPhase - Graded assessment questions with review
- * 
- * Consumes AudioEngine for question playback.
- * Manages test progression, grading, and review.
- * Zero coupling to session state or other phases.
- * 
- * Architecture:
- * - Loads test questions (MC/TF/fill-in-blank)
- * - Plays each question with TTS
- * - Prefetches N+1 question during N playback (eliminates wait times)
- * - Presents appropriate UI (radio/text input)
- * - Validates answers and tracks results
- * - Calculates grade and shows review
- * - Emits testComplete with final grade
- * 
- * Usage:
- *   const phase = new TestPhase({ audioEngine, questions });
- *   phase.on('testComplete', (results) => saveGrade(results));
- *   await phase.start();
- */
-
-import { fetchTTS } from './services';
-import { ttsCache } from '../utils/ttsCache';
-import { buildAcceptableList, judgeAnswer } from './judging';
-import { deriveCorrectAnswerText, ensureQuestionMark, formatQuestionForSpeech } from '../utils/questionFormatting';
-
-// Praise phrases for correct answers (matches V1 engagement pattern)
-const PRAISE_PHRASES = [
-  "Great job!",
-  "That's correct!",
-  "Perfect!",
-  "Excellent work!",
-  "You got it!",
-  "Well done!",
-  "Fantastic!",
-  "Nice work!"
-];
-
-// Intro phrases for phase start (matches V1 pacing)
-const INTRO_PHRASES = [
-  "Time for the test.",
-  "Let's start the test.",
-  "Ready for your test?",
-  "Let's see what you learned."
-];
-
-### 21. docs/brain/riddle-system.md (e7a77c2b835fc9efe745f2ea074fb5057af04a77723b4c711553604b5efdf2c5)
-- bm25: -7.3194 | relevance: 0.8798
-
-### Dead Imports (Not Currently Used)
-- `src/app/session/[sessionId]/page.js` - imports but never calls
-- Teaching system components - no riddle UI elements
-
----
-
-## Design Decisions
-
-### Why Hardcoded?
-- **Performance**: Zero latency, works offline
-- **Quality Control**: Curated by humans, tested for age-appropriateness
-- **Simplicity**: No database schema, no API, no cache invalidation
-
-### Why localStorage Rotation?
-- **Stateless**: No server-side session tracking needed
-- **Fair**: Kids see all riddles eventually, not just favorites
-- **Simple**: One line of code, no edge cases
-
-### Why Subject Categories?
-- **Alignment**: Can match riddles to lesson subject
-- **Variety**: Prevents repetition within subject area
-- **Flexibility**: 'general' category for cross-subject riddles
-
----
-
-**Remember**: Riddles are playful mysteries, not educational quizzes. Every riddle should make you smile, groan, or go "aha!" - not just "oh, I knew that fact."
-
-### 22. src/app/session/v2/WorksheetPhase.jsx (fb1bf3c1640788090705971a8f76edca43afbbb2298f7c6dd4afbf96b70480cc)
-- bm25: -7.2802 | relevance: 0.8792
-
-/**
- * WorksheetPhase - Fill-in-blank questions with text input
- * 
- * Consumes AudioEngine for question playback.
- * Manages question progression and score tracking.
- * Zero coupling to session state or other phases.
- * 
- * Architecture:
- * - Loads fill-in-blank questions from lesson data
- * - Plays each question with TTS
- * - Prefetches N+1 question during N playback (eliminates wait times)
- * - Presents text input for answers
- * - Validates answers (case-insensitive, trimmed)
- * - Tracks score
- * - Emits worksheetComplete with results
- * 
- * Usage:
- *   const phase = new WorksheetPhase({ audioEngine, questions });
- *   phase.on('worksheetComplete', (results) => saveScore(results));
- *   await phase.start();
- */
-
-import { fetchTTS } from './services';
-import { ttsCache } from '../utils/ttsCache';
-import { buildAcceptableList, judgeAnswer } from './judging';
-import { deriveCorrectAnswerText, formatQuestionForSpeech } from '../utils/questionFormatting';
-import { HINT_FIRST, HINT_SECOND, pickHint } from '../utils/feedbackMessages';
-
-// Praise phrases for correct answers (matches V1 engagement pattern)
-const PRAISE_PHRASES = [
-  "Great job!",
-  "That's correct!",
-  "Perfect!",
-  "Excellent work!",
-  "You got it!",
-  "Well done!",
-  "Fantastic!",
-  "Nice work!"
-];
-
-// Intro phrases for phase start (matches V1 pacing)
-const INTRO_PHRASES = [
-  "Time for the worksheet.",
-  "Let's fill in some blanks.",
-  "Ready for the worksheet?",
-  "Let's complete these sentences."
-];
-
-### 23. src/app/session/v2/ComprehensionPhase.jsx (d01e99ca2a3e724b74eb7e7aee04c05db031eb947b5bbc97b333bb194696ab85)
-- bm25: -7.1198 | relevance: 0.8768
-
-/**
- * ComprehensionPhase - Multiple comprehension questions with scoring
- * 
- * Consumes AudioEngine for question playback.
- * Manages question progression and score tracking.
- * Zero coupling to session state or other phases.
- * 
- * Architecture:
- * - Loads comprehension questions from lesson data
- * - Plays each question with TTS
- * - Prefetches N+1 question during N playback (eliminates wait times)
- * - Presents short-answer or fill-in-blank questions
- * - Validates answers and tracks score
- * - Opening actions (play timer) before work mode
- * - Emits comprehensionComplete with results
- * 
- * Usage:
- *   const phase = new ComprehensionPhase({ audioEngine, eventBus, timerService, questions });
- *   phase.on('comprehensionComplete', (results) => saveScore(results));
- *   await phase.start();
- *   await phase.go(); // After opening actions
- */
-
-import { fetchTTS } from './services';
-import { ttsCache } from '../utils/ttsCache';
-import { buildAcceptableList, judgeAnswer } from './judging';
-import { deriveCorrectAnswerText, formatQuestionForSpeech } from '../utils/questionFormatting';
-import { HINT_FIRST, HINT_SECOND, pickHint } from '../utils/feedbackMessages';
-
-// V1 praise phrases for correct answers
-const PRAISE_PHRASES = [
-  'Great job!',
-  'Excellent!',
-  'You got it!',
-  'Nice work!',
-  'Well done!',
-  'Perfect!',
-  'Awesome!',
-  'Fantastic!'
-];
-
-// Intro phrases for phase start (V1 pacing pattern)
-const INTRO_PHRASES = [
-  "Now let's check your understanding.",
-  "Time to see what you learned.",
-  "Let's test your knowledge.",
-  "Ready for a question?"
-];
-
-### 24. src/app/session/utils/textProcessing.js (ff5c27d8e0b0dec764c9a661d681660a4ce2d16d14dcae4da7f2144f122e1a60)
-- bm25: -6.8254 | relevance: 0.8722
-
-// 2) Optionally prepend preceding numeric line like "4." for Test phase numbering
-      let prefix = '';
-      if (out.length && isNumberLine(out[out.length - 1])) {
-        prefix = String(out.pop()).trim();
-      }
-
-// 3) If prior output line is a question/stem, decide how to attach options
-      let head = '';
-      if (out.length) {
-        const prev = String(out[out.length - 1]);
-        if (/[?)]$/.test(prev)) head = String(out.pop());
-      }
-
-if (layout === 'multiline') {
-        // Keep the question/stem as its own line, then list each option on a new line
-        if (head) {
-          const withPrefix = prefix ? `${prefix} ${head}` : head;
-          out.push(withPrefix.trim());
-        } else if (prefix && parts.length) {
-          // No explicit head; attach prefix to the first option
-          parts[0] = `${prefix} ${parts[0]}`;
-        }
-        for (const p of parts) {
-          out.push(p.trim());
-        }
-        i = k + 1;
-        continue;
-      } else {
-        const inline = parts.join(',   ');
-        let finalLine = head ? `${head}   ${inline}` : inline;
-        if (prefix) finalLine = `${prefix} ${finalLine}`;
-        if (!/[.?!]$/.test(finalLine)) finalLine += '.';
-        out.push(finalLine.trim());
-        i = k + 1;
-        continue;
-      }
+// Helper function to execute lesson generation with validation and auto-fix
+async function executeLessonGeneration(args, request, toolLog) {
+  try {
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      return { error: 'Authentication required' }
     }
-
-out.push(sentences[i]);
-    i += 1;
-  }
-  return out;
-}
-
-### 25. src/app/facilitator/generator/counselor/CounselorClient.jsx (d57a90e7e8c1f2cd41abede1d7e358dfd31ececcb16a01aa56dbd2a0024fa53d)
-- bm25: -6.8074 | relevance: 0.8719
-
-useEffect(() => {
+    
+    pushToolLog(toolLog, {
+      name: 'generate_lesson',
+      phase: 'start',
+      context: { title: args?.title }
+    })
+    
+    // Call the lesson generation API directly (avoid HTTP timeout stacking)
     try {
-      console.log('[Mr. Mentor] Browser origin', { origin: window.location.origin })
-    } catch {}
-  }, [])
-
-useEffect(() => {
-    return () => {
-      isMountedRef.current = false
-      // Clear initialization flag on unmount so conversation loads on remount/refresh
-      initializedSessionIdRef.current = null
-    }
-  }, [])
-
-// Check PIN requirement on mount
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        const allowed = await ensurePinAllowed('facilitator-page')
-        if (!allowed) {
-          router.push('/')
-          return
-        }
-      } catch (err) {
-        // Silent error handling
+      // Import and call the generate route's POST handler directly
+      const { POST: generatePOST } = await import('@/app/api/facilitator/lessons/generate/route')
+      
+      // Create a mock request object with the args and auth header
+      const mockRequest = new Request('http://localhost/api/facilitator/lessons/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader
+        },
+        body: JSON.stringify(args)
+      })
+      
+      const genResponse = await generatePOST(mockRequest)
+      const responseData = await genResponse.json()
+      
+      if (!genResponse.ok) {
+        pushToolLog(toolLog, {
+          name: 'generate_lesson',
+          phase: 'error',
+          context: { title: args?.title, message: responseData.error }
+        })
+        return { error: responseData.error || 'Lesson generation failed' }
       }
-      if (!cancelled) setPinChecked(true)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [router])
-  
-  // Learner selection
-  const [learners, setLearners] = useState([])
-  const [selectedLearnerId, setSelectedLearnerId] = useState('none')
-  const [learnerTranscript, setLearnerTranscript] = useState('')
-  const [goalsNotes, setGoalsNotes] = useState('')
+      
+      pushToolLog(toolLog, {
+        name: 'generate_lesson',
+        phase: 'success',
+        context: { title: responseData.lesson?.title }
+      })
+      
+      // Build the lessonKey in the format needed for scheduling: "facilitator/filename.json"
+      const lessonKey = `facilitator/${responseData.file}`
+      
+      // Return the generated lesson
 
-const subjectKey = selectedLearnerId === 'none' ? 'facilitator' : `learner:${selectedLearnerId}`
+### 9. src/app/facilitator/generator/page.js (ac77847f24fb2aeff8428b6ba1dfe169c024ece23652a76d3d85c0df19b04c03)
+- bm25: -11.1053 | relevance: 0.9174
 
-// Switch Mr. Mentor chat persistence/context to Supabase chronograph + deterministic packs.
-  // Legacy mentor_conversation_threads JSON persistence is disabled when this is true.
-  const useCohereChronograph = true
+<div style={{ marginTop: 14, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="submit"
+            disabled={!canGenerate}
+            style={{
+              padding: '12px 16px',
+              borderRadius: 10,
+              border: '1px solid #3b82f6',
+              background: canGenerate ? '#3b82f6' : '#93c5fd',
+              color: '#fff',
+              cursor: canGenerate ? 'pointer' : 'not-allowed',
+              fontWeight: 700
+            }}
+          >
+            ✨ Generate Lesson
+          </button>
 
-// Only disable legacy persistence once we confirm the chronograph endpoint works.
-  const [chronographReady, setChronographReady] = useState(false)
+{quotaLoading ? (
+            <span style={{ color: '#6b7280', fontSize: 13 }}>Checking quota...</span>
+          ) : quotaInfo ? (
+            <span style={{ color: quotaAllowed ? '#6b7280' : '#b45309', fontSize: 13 }}>
+              {quotaAllowed
+                ? (quotaInfo.remaining === -1 ? 'Unlimited generations' : `Generations remaining today: ${quotaInfo.remaining}`)
+                : 'Generation limit reached for today'}
+            </span>
+          ) : null}
+        </div>
 
-### 26. src/app/facilitator/notifications/page.js (22eb75fe7ba89568275fdf26ef19f49bf415284e16cfed365da167c448d7038d)
-- bm25: -6.6922 | relevance: 0.8700
-
-<button
-                type="button"
-                onClick={refresh}
-                style={{
-                  padding: '9px 12px',
-                  borderRadius: 10,
-                  border: '1px solid #e5e7eb',
-                  background: '#fff',
-                  cursor: 'pointer',
-                  fontWeight: 700
-                }}
-              >
-                Refresh
-              </button>
-            </div>
+{message && (
+          <div style={{ marginTop: 12, color: '#b91c1c', fontWeight: 600 }}>
+            {message}
           </div>
+        )}
+      </form>
+    </main>
 
-### 27. docs/brain/snapshot-persistence.md (d9e58e922bd58bed557959d4d85289d99d87d9c9b473ae1781ccd0bdf66ec27f)
-- bm25: -6.6603 | relevance: 0.8695
+<GatedOverlay
+      show={showGate}
+      gateType={gateType}
+      requiredTier="standard"
+      currentTier={tier}
+      feature="Lesson Generator"
+      benefits={["Generate custom lessons instantly","Edit and assign lessons", "Build a full curriculum over time"]}
+      emoji="✨"
+    />
+    </>
+  )
+}
 
-### V2 Resume Flow
-On session load:
-1. **SnapshotService.initialize()** loads existing snapshot during mount effect (async)
-2. If snapshot found:
-   - Sets `resumePhase` state to `snapshot.currentPhase`
-  - Displays Resume and Start Over buttons in footer when `resumePhase` is not at beginning (not idle/discussion)
-3. If no snapshot or snapshot at beginning:
-   - Shows normal Begin button
-4. Sets `snapshotLoaded` to true when load completes
+### 10. docs/brain/ingests/pack-mentor-intercepts.md (ede430caef237b7b0db5b0d3de9c65b88aa4cd3048b43318b8699396eb14daae)
+- bm25: -10.9538 | relevance: 0.9163
 
-**Phase auto-start on resume:** When resuming into any Q&A phase (comprehension/exercise/worksheet/test), the phase instance is created and immediately started if snapshot data exists for that phase. This bypasses the intermediate Begin button (which visually sits before opening actions) and restores the learner directly to the in-phase state (intro/Go or current question). Pending play timers start as well so tickers and timer badges do not flash 0/X on refresh.
+```
+If user says during parameter collection:
+- "stop"
+- "no"
+- "I don't want to generate"
+- "give me advice instead"
+- "I don't want you to generate the lesson"
+Skip Confirmation When Intent Is Ambiguous
+```
+User: "I need a language arts lesson but I don't want one of the ones we have in 
+       the library. It should have a Christmas theme, please make some recommendations."
 
-**Ticker seeding on resume:** When snapshot data exists for a Q&A phase, the counters and current question are pre-seeded from the saved arrays and indices before the phase starts. This keeps the question ticker/progress display accurate immediately after a refresh (no temporary 0/X) even before the next answer is submitted.
+WRONG: "Is this lesson for Emma's grade (4)?"
+RIGHT: "Would you like me to generate a custom lesson?"
+       (If they say no: "Let me search for Christmas-themed language arts lessons...")
+```
 
-**Begin gating:** The top-level Begin button is disabled until both `audioReady` and `snapshotLoaded` are true, preventing a refresh race where the user can start a fresh session before the snapshot finishes loading.
+### 33. docs/brain/pin-protection.md (3aa2a8e5f407ed24098e9d06429a29a96012af85911782bdf9d220a708346647)
+- bm25: -12.0850 | relevance: 1.0000
 
-### 28. docs/brain/lesson-notes.md (ba1927d5f15444bd06ae20de79a25c5719c23ee58aaed5fda05b53a8bd35dbd8)
-- bm25: -6.6045 | relevance: 0.8685
+### Preferences
 
-# Lesson Notes
+PIN preferences are stored in:
+- Server: `profiles.pin_prefs` (JSON column)
+- Client: `localStorage.facilitator_pin_prefs` (cached copy)
 
-## How It Works
-
-Facilitators can add notes to any lesson in the `facilitator/lessons` page. These notes are stored per learner and automatically included in Mr. Mentor's learner transcript, providing context about specific challenges, progress, or needs.
-
-**Flow (entry points):**
-1. Facilitator Lessons page: navigate to `facilitator/lessons`, select learner, expand subject
-2. Calendar schedule view (past completed lessons): click **Notes** on a scheduled lesson
-3. Mr. Mentor Calendar overlay (past completed lessons): click **Notes** on a scheduled lesson
-4. Type note text and save
-5. Empty note deletes the key from the JSONB map (no empty-string storage)
-5. When facilitator discusses learner with Mr. Mentor, notes appear in transcript:
-   ```
-   FACILITATOR NOTES ON LESSONS:
-
-math - Multiplication Basics:
-     "Struggles with times tables above 5x. Needs more practice with visual aids."
-
-science - Solar System:
-     "Very interested in planets, completed ahead of schedule."
-   ```
-6. Mr. Mentor references notes in responses for data-informed, personalized counseling
-
-**Purpose**: Enables facilitators to document learner-specific observations that persist across lessons, providing Mr. Mentor with longitudinal context for better guidance.
-
-## Database Schema
-
-**Learners table:**
-```sql
--- Column added to learners table
-lesson_notes jsonb default '{}'::jsonb
-
--- Structure: { 'subject/lesson_file': 'note text', ... }
--- Example:
+Default preferences (when PIN exists but prefs not set):
+```javascript
 {
-  "math/Multiplication_Basics.json": "Struggles with times tables above 5x",
-  "science/Solar_System.json": "Very interested in planets, completed ahead of schedule"
+  downloads: true,
+  facilitatorKey: true,
+  skipTimeline: true,
+  changeLearner: true,
+  refresh: true,
+  timer: true,
+  facilitatorPage: true,
+  activeSession: true
 }
 ```
 
-## Mr. Mentor Integration
+## What NOT To Do
 
-### 29. docs/brain/timer-system.md (f0d739f4de2823c82ffcac0ab265588ace3248c8ad13eae9a05c51d8d7ee13a7)
-- bm25: -6.5918 | relevance: 0.8683
+**❌ DON'T** set facilitator section flag for non-facilitator actions
+- Only `facilitator-page` action and session-exit-to-facilitator navigation should set the flag
+- Setting it for other actions would allow bypassing PIN on facilitator pages
 
-**Implementation (V2):**
-- SessionPageV2 maintains `timerPaused` state (boolean)
-- When toggled, calls `timerService.pause()` or `timerService.resume()`
-- TimerService tracks pause state and paused elapsed times:
-  - `isPaused`: Boolean flag indicating if timers are currently paused
-  - `pausedPlayElapsed`: Stored play timer elapsed seconds when paused
-  - `pausedWorkElapsed`: Stored work timer elapsed seconds when paused
+**❌ DON'T** store PIN in localStorage
+- PIN verification is server-only for security
+- Never cache PIN validation results beyond sessionStorage flag
 
-### 30. scripts/debug-emma-mismatch.mjs (b975745d1fdcd6f6d2cf9e5cdfed025d16466d184583c7c064ce2955a38ce957)
-- bm25: -6.5371 | relevance: 0.8673
+**❌ DON'T** create multiple PIN prompts simultaneously
+- `ensurePinAllowed` uses global lock (`activePinPrompt`) to prevent concurrent prompts
+- If another prompt is active, wait for its result
 
-function setDiff(a, b) {
-  const out = []
-  for (const item of a) {
-    if (!b.has(item)) out.push(item)
+### 11. docs/brain/ingests/pack.planned-lessons-flow.md (5562194e98eccff86674afbd40f840c9addc35ff6b8bafec10ed78d812ac1af7)
+- bm25: -10.7473 | relevance: 0.9149
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 12. docs/brain/ingests/pack.lesson-schedule-debug.md (e2b842c370bb0f99fc9f215cdd7f7ae8c892569b10dc1e4f04911b503e3c107c)
+- bm25: -10.7059 | relevance: 0.9146
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 13. docs/brain/ingests/pack-mentor-intercepts.md (e51688fc662a7cfeed539410f10ff803205d894fd46fa5cf904e66e0ab3adef1)
+- bm25: -10.6663 | relevance: 0.9143
+
+- API
+  - `src/app/api/portfolio/generate/route.js` (portfolio builder)
+  - `src/app/api/portfolio/list/route.js` (list saved portfolios)
+  - `src/app/api/portfolio/delete/route.js` (delete saved portfolios + files)
+  - `src/app/api/portfolio/lib.js` (HTML builder + helpers)
+
+### 21. docs/brain/content-safety.md (8439c6a11335f126b7eb9ca7e5cceeea2313c6fa8078c00e649bedbe03efc5ad)
+- bm25: -13.9812 | relevance: 1.0000
+
+- `src/app/session/utils/profanityFilter.js` - Profanity detection, word list
+- `src/app/api/sonoma/route.js` - Moderation API integration
+- Session page instruction builders - Safety directives
+
+### 22. docs/brain/lesson-validation.md (6bd47820aa3da6e19dc9b0a9c78ca88859dc4dd6752d036fea1a2fe4318d515b)
+- bm25: -13.7593 | relevance: 1.0000
+
+**Lesson Maker** (`/facilitator/generator`, implemented in `src/app/facilitator/generator/page.js`):
+1. User fills form and clicks "Generate Lesson"
+2. Toast: "Generating lesson..."
+3. Call `/api/facilitator/lessons/generate`
+4. Validate with `lessonValidation.validateLesson()`
+5. If issues: Toast "Improving quality...", call `/api/facilitator/lessons/request-changes`
+6. Toast: "Lesson ready!"
+
+### 23. docs/brain/visual-aids.md (a5475ac1e1d52b11fba2a131961efaa39fab393b62bc29614a7cbc09580ebb03)
+- bm25: -13.7064 | relevance: 1.0000
+
+**Never skip the no-text enforcement suffix:**
+- Every DALL-E prompt must include the explicit no-text suffix
+- This is the final guardrail against text appearing in images
+- Without it, even carefully worded prompts can accidentally trigger text rendering
+
+## Related Brain Files
+
+### 14. sidekick_pack.md (ea52f782e841090790f5f450d44659ced7bb0096516f8c4b0b21a15cdc8e3dd3)
+- bm25: -10.6619 | relevance: 0.9143
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 15. sidekick_pack.md (7b486dca2ef92c11069e34093bac91bf538a971b68cda5af5c64404cec994422)
+- bm25: -10.6619 | relevance: 0.9143
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 16. sidekick_pack.md (ba3e8bf0406164dfa0c3096d34b9842dd46fb0ca7b524827c8b7a979fbb3cebb)
+- bm25: -10.6619 | relevance: 0.9143
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 17. sidekick_pack.md (a237f43e0af45433569af31f2341da7049e26b07caab2ecdaf9d52d47f9daa23)
+- bm25: -10.6619 | relevance: 0.9143
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 18. sidekick_pack.md (d256fcca92b72c27cbae9b356b151b664e21783c1f700be2574e535b7534a28e)
+- bm25: -10.6619 | relevance: 0.9143
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 19. sidekick_pack.md (e19e1a050e7f6132846f504143ef111da6d8ea634e698514cccc7ed49a9cf4b8)
+- bm25: -10.6619 | relevance: 0.9143
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 20. docs/brain/changelog.md (734f5012565b6221ab41a07c6ed6a285bb49d94d1fedc65b70806108b10bec2c)
+- bm25: -10.6433 | relevance: 0.9141
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 21. docs/brain/ingests/pack.md (a6a5b49764bccdc0ea96a150066cafd71ebee15598c01794309a8254b535b74a)
+- bm25: -10.6247 | relevance: 0.9140
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 22. docs/brain/ingests/pack-mentor-intercepts.md (13da0bd320ddf15195177f579bcb9bd3b7d2c0a7543a07cb2df2712ac5a0bca6)
+- bm25: -10.5878 | relevance: 0.9137
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 23. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (db752affeea2f66a776f276697741c41922e9f65f2dad265d123b0fd6b485abd)
+- bm25: -10.5694 | relevance: 0.9136
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 24. src/app/learn/lessons/page.js (93fa6f4e8240bc42bdb24103acbdad859622694c2021d0e51176e30d8735fd83)
+- bm25: -10.3991 | relevance: 0.9123
+
+if (!sessionGateReady) {
+    return (
+      <main style={{ padding:24, maxWidth:980, margin:'0 auto' }}>
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'320px', gap:12, marginTop:32 }}>
+          <div style={{
+            width:48,
+            height:48,
+            border:'4px solid #e5e7eb',
+            borderTop:'4px solid #111',
+            borderRadius:'50%',
+            animation:'spin 1s linear infinite'
+          }}></div>
+          <p style={{ color:'#6b7280', fontSize:15, textAlign:'center' }}>Hang tight—enter the facilitator PIN to unlock lessons.</p>
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+        </div>
+      </main>
+    )
   }
-  out.sort((x, y) => String(x).localeCompare(String(y)))
-  return out
-}
 
-### 31. docs/brain/ingests/pack.md (b5adbc57ffb081312d82eb41107cf88819855e985f0bde2dcc5c657df7a0f2a8)
-- bm25: -6.4611 | relevance: 0.8660
+### 25. docs/brain/mr-mentor-conversation-flows.md (47a7f1d23cc6ab836950913552c45a69e0bbfb20cccb99e80ebdf542e7e579c2)
+- bm25: -10.3111 | relevance: 0.9116
 
-## Ranked Evidence
+# Mr. Mentor Conversation Flows
 
-### 1. docs/brain/lesson-notes.md (ba1927d5f15444bd06ae20de79a25c5719c23ee58aaed5fda05b53a8bd35dbd8)
-- bm25: -36.2172 | relevance: 1.0000
+**Last Updated:** 2025-12-18  
+**Status:** Canonical  
+**Systems:** Conversation decision logic, lesson generation vs recommendations, escape hatches, function calling triggers
 
-# Lesson Notes
+---
 
 ## How It Works
 
-Facilitators can add notes to any lesson in the `facilitator/lessons` page. These notes are stored per learner and automatically included in Mr. Mentor's learner transcript, providing context about specific challenges, progress, or needs.
+### Frontend Confirmation Gate
 
-**Flow (entry points):**
-1. Facilitator Lessons page: navigate to `facilitator/lessons`, select learner, expand subject
-2. Calendar schedule view (past completed lessons): click **Notes** on a scheduled lesson
-3. Mr. Mentor Calendar overlay (past completed lessons): click **Notes** on a scheduled lesson
-4. Type note text and save
-5. Empty note deletes the key from the JSONB map (no empty-string storage)
-5. When facilitator discusses learner with Mr. Mentor, notes appear in transcript:
-   ```
-   FACILITATOR NOTES ON LESSONS:
+- Every counselor request sets `require_generation_confirmation: true`.
+- If GPT tries to call `generate_lesson`, the API now returns a confirmation prompt instead of executing.
+- The frontend marks `pendingConfirmationTool = 'generate_lesson'` and asks the user.
+- If the user declines, the next request disables `generate_lesson` (`disableTools: ['generate_lesson']`) and appends a decline note to the user message: "(User declined generation. Respond by providing assistance with the user's problem.)" so GPT assists instead of forcing generation.
+- If the user confirms, the next request sets `generation_confirmed: true` and allows the tool call.
 
-math - Multiplication Basics:
-     "Struggles with times tables above 5x. Needs more practice with visual aids."
+### Recommendations vs Generation Decision Logic
 
-science - Solar System:
-     "Very interested in planets, completed ahead of schedule."
-   ```
-6. Mr. Mentor references notes in responses for data-informed, personalized counseling
+Mr. Mentor must distinguish between two fundamentally different user intents:
 
-**Purpose**: Enables facilitators to document learner-specific observations that persist across lessons, providing Mr. Mentor with longitudinal context for better guidance.
+1. **Seeking Recommendations/Advice** - User wants suggestions from existing lessons
+2. **Requesting Generation** - User wants to create a new custom lesson
 
-## Database Schema
+#### Recognition Patterns
 
-**Learners table:**
-```sql
--- Column added to learners table
-lesson_notes jsonb default '{}'::jsonb
+**Recommendation Intent (DO NOT trigger generation):**
+- "Do you have suggestions?"
+- "What do you recommend?"
+- "Any ideas for lessons?"
+- "Give me advice"
+- "What lessons are good for X?"
+- "Do you have lessons on X?"
+- Mentioning a topic without imperative verbs
 
--- Structure: { 'subject/lesson_file': 'note text', ... }
--- Example:
+**Generation Intent (ONLY time to trigger generation):**
+- "Create a lesson about X"
+- "Generate a lesson for X"
+- "Make me a lesson on X"
+- Explicit imperative verbs requesting creation
+
+#### Response Flow
+
+### 26. docs/brain/ingests/pack.md (448fa6793b60fe4fb8d76dce50028cc987c7258c998f901aa78e7fba616f347b)
+- bm25: -10.2122 | relevance: 0.9108
+
+### 36. docs/brain/mr-mentor-conversation-flows.md (47a7f1d23cc6ab836950913552c45a69e0bbfb20cccb99e80ebdf542e7e579c2)
+- bm25: -17.6202 | relevance: 1.0000
+
+# Mr. Mentor Conversation Flows
+
+**Last Updated:** 2025-12-18  
+**Status:** Canonical  
+**Systems:** Conversation decision logic, lesson generation vs recommendations, escape hatches, function calling triggers
+
+---
+
+## How It Works
+
+### Frontend Confirmation Gate
+
+- Every counselor request sets `require_generation_confirmation: true`.
+- If GPT tries to call `generate_lesson`, the API now returns a confirmation prompt instead of executing.
+- The frontend marks `pendingConfirmationTool = 'generate_lesson'` and asks the user.
+- If the user declines, the next request disables `generate_lesson` (`disableTools: ['generate_lesson']`) and appends a decline note to the user message: "(User declined generation. Respond by providing assistance with the user's problem.)" so GPT assists instead of forcing generation.
+- If the user confirms, the next request sets `generation_confirmed: true` and allows the tool call.
+
+### Recommendations vs Generation Decision Logic
+
+Mr. Mentor must distinguish between two fundamentally different user intents:
+
+1. **Seeking Recommendations/Advice** - User wants suggestions from existing lessons
+2. **Requesting Generation** - User wants to create a new custom lesson
+
+#### Recognition Patterns
+
+**Recommendation Intent (DO NOT trigger generation):**
+- "Do you have suggestions?"
+- "What do you recommend?"
+- "Any ideas for lessons?"
+- "Give me advice"
+- "What lessons are good for X?"
+- "Do you have lessons on X?"
+- Mentioning a topic without imperative verbs
+
+### 27. docs/brain/ingests/pack-mentor-intercepts.md (8a506df4d1d6c579b42f99b86030d338f223cb9cd86a289708d693e2a803c877)
+- bm25: -10.1853 | relevance: 0.9106
+
+### 7. docs/brain/mr-mentor-conversation-flows.md (47a7f1d23cc6ab836950913552c45a69e0bbfb20cccb99e80ebdf542e7e579c2)
+- bm25: -24.2774 | relevance: 1.0000
+
+# Mr. Mentor Conversation Flows
+
+**Last Updated:** 2025-12-18  
+**Status:** Canonical  
+**Systems:** Conversation decision logic, lesson generation vs recommendations, escape hatches, function calling triggers
+
+---
+
+## How It Works
+
+### Frontend Confirmation Gate
+
+- Every counselor request sets `require_generation_confirmation: true`.
+- If GPT tries to call `generate_lesson`, the API now returns a confirmation prompt instead of executing.
+- The frontend marks `pendingConfirmationTool = 'generate_lesson'` and asks the user.
+- If the user declines, the next request disables `generate_lesson` (`disableTools: ['generate_lesson']`) and appends a decline note to the user message: "(User declined generation. Respond by providing assistance with the user's problem.)" so GPT assists instead of forcing generation.
+- If the user confirms, the next request sets `generation_confirmed: true` and allows the tool call.
+
+### Recommendations vs Generation Decision Logic
+
+Mr. Mentor must distinguish between two fundamentally different user intents:
+
+1. **Seeking Recommendations/Advice** - User wants suggestions from existing lessons
+2. **Requesting Generation** - User wants to create a new custom lesson
+
+#### Recognition Patterns
+
+**Recommendation Intent (DO NOT trigger generation):**
+- "Do you have suggestions?"
+- "What do you recommend?"
+- "Any ideas for lessons?"
+- "Give me advice"
+- "What lessons are good for X?"
+- "Do you have lessons on X?"
+- Mentioning a topic without imperative verbs
+
+### 28. src/app/facilitator/generator/page.js (fdd8bda1607889a99ed61ba87997eb164eb7a77f6b8e770e2cefa68ee42e3a27)
+- bm25: -10.0998 | relevance: 0.9099
+
+if (loading || !pinChecked) {
+    return <main style={{ padding: 24 }}><p>Loading...</p></main>
+  }
+
+return (
+    <>
+    <main style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <h1 style={{ marginTop: 0, marginBottom: 6 }}>Lesson Maker</h1>
+          <p style={{ marginTop: 0, color: '#6b7280' }}>
+            Generate a lesson, then edit it in the lesson editor.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {generatedLessonKey && (
+            <button
+              onClick={() => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`)}
+              style={{
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: '1px solid #d1d5db',
+                background: '#fff',
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              ✏️ Edit This Lesson
+            </button>
+          )}
+          <button
+            onClick={() => router.push('/facilitator/lessons')}
+            style={{
+              padding: '10px 14px',
+              borderRadius: 8,
+              border: '1px solid #d1d5db',
+              background: '#fff',
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
+          >
+            ← Back to Lessons
+          </button>
+        </div>
+      </div>
+
+{toast && (
+        <div style={{ marginTop: 12 }}>
+          <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+        </div>
+      )}
+
+### 29. sidekick_pack.md (823f4a32054ed567322f6c38220db8530887b63d7930a702a348ffe734c95072)
+- bm25: -10.0054 | relevance: 0.9091
+
+### 22. sidekick_pack.md (f0e0466a6588f66493c88c0b00e750e7c20b3e5b9f4eedd4cfc00bcd3826f40a)
+- bm25: -24.5808 | relevance: 1.0000
+
+PIN verification is server-only (no localStorage fallback):
+- Server validates PIN against hashed value in `profiles.facilitator_pin_hash`
+- Uses bcrypt for secure comparison
+- API endpoint: `POST /api/facilitator/pin/verify`
+
+### 38. docs/brain/ingests/pack.planned-lessons-flow.md (c1630e20d42e7416e0786d4762a62020e29931c3609ba5301492ca0c6c410df5)
+- bm25: -1.7211 | entity_overlap_w: 1.30 | adjusted: -2.0461 | relevance: 1.0000
+
+## What NOT To Do
+
+- Do not store lessons on the device (no localStorage/indexedDB/file downloads).
+- Do not reuse Golden Keys to mean "unlock lessons"; Golden Keys are bonus play-time semantics.
+- Do not match ownership using filename-only; subject collisions are possible.
+- Do not allow path traversal in the download endpoint (`..`, `/`, `\\`).
+
+## Key Files
+
+- `src/app/facilitator/lessons/page.js`
+- `src/app/api/facilitator/lessons/download/route.js`
+- `src/app/api/facilitator/lessons/list/route.js`
+- `src/app/api/lessons/[subject]/route.js`
+- `src/app/api/lesson-file/route.js`
+
+### 27. docs/brain/calendar-lesson-planning.md (4da551360e5a46cca2826bfe58a71289a036bb89df00313db4714021b4cc5eab)
+- bm25: -14.3879 | relevance: 1.0000
+
+**Usage:**
+- `node scripts/check-completions-for-keys.mjs --learner Emma --from 2026-01-05 --to 2026-01-08`
+
+### Scheduled Lessons Overlay: Built-in Lesson Editor
+
+The Calendar day overlay includes an inline lesson editor for scheduled lessons.
+
+This editor matches the regular lesson editor for Visual Aids (button + carousel + generation + persistence).
+
+### 30. docs/brain/mr-mentor-conversation-flows.md (42b2e0d4656b257cea9bca3966dd0399cc703957ba299765bc117184f10b3945)
+- bm25: -9.8586 | relevance: 0.9079
+
+```
+User mentions topic or ambiguous intent
+  |
+  v
+Is this CLEARLY a generation request? (explicit imperative verbs?)
+  |
+  +--NO--> Is intent unclear?
+  |          |
+  |          +--YES--> ASK: "Would you like me to generate a custom 
+  |          |               lesson or search existing lessons?"
+  |          |          |
+  |          |          +--"generate"/"create"/"yes"--> Start parameter collection
+  |          |          |
+  |          |          +--"no"/"search"/"recommend"--> SEARCH existing lessons
+  |          |
+  |          +--NO (clearly wants recommendations)--> SEARCH existing lessons
+  |                    |
+  |                    v
+  |                  Recommend top results
+  |                    |
+  |                    v
+  |                  Offer to generate IF nothing suitable
+  |
+  +--YES--> Start generation parameter collection
+             |
+             v
+           Collect: grade, subject, difficulty, title, description
+  Two-Layer Protection:**
+
+### 31. src/app/learn/lessons/page.js (1532caf2044d527c988f2d1f72a0162bae55a0c22217120eff5e847950ec4249)
+- bm25: -9.8021 | relevance: 0.9074
+
+{/* Golden Key Counter */}
+      {goldenKeysEnabled === true && !loading && !lessonsLoading && (
+        <GoldenKeyCounter
+          learnerId={learnerId}
+          selected={goldenKeySelected}
+          onToggle={() => setGoldenKeySelected(prev => !prev)}
+        />
+      )}
+
+{learnerId && learnerId !== 'demo' && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, marginTop: 12 }}>
+          <button
+            onClick={() => setShowHistoryModal(true)}
+            style={{
+              padding: '10px 20px',
+              border: '1px solid #d1d5db',
+              borderRadius: 8,
+              background: '#fff',
+              color: '#111827',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: lessonHistoryLoading ? 'wait' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+            disabled={lessonHistoryLoading && !lessonHistorySessions.length}
+            title={lessonHistoryLoading ? 'Loading history…' : 'See completed lessons'}
+          >
+            ✅ Completed Lessons{completedLessonCount ? ` (${completedLessonCount})` : ''}
+            {activeLessonCount > 0 && (
+              <span style={{ fontSize: 12, color: '#d97706' }}>⏳ {activeLessonCount}</span>
+            )}
+          </button>
+        </div>
+      )}
+
+### 32. docs/brain/ingests/pack.lesson-schedule-debug.md (29249996be09c0693404295bc827d5da4c475eff693d707e837bdac9c49a7aa2)
+- bm25: -9.4489 | relevance: 0.9043
+
+Returns:
+```javascript
 {
-  "math/Multiplication_Basics.json": "Struggles with times tables above 5x",
-  "science/Solar_System.json": "Very interested in planets, completed ahead of schedule"
+  handled: false,
+  apiForward: { 
+    message: userMessage, 
+    bypassInterceptor: true 
+  }
 }
 ```
 
-### 32. docs/brain/auth-session-isolation.md (ce481795543abb2eb2ed4dc049a6c9561614c2bde95ebbc61b34c56a3a775bfd)
-- bm25: -6.3176 | relevance: 0.8633
+## Data Structures
 
-**Test 1: Local Logout**
-1. Log in on Device A (laptop)
-2. Log in on Device B (phone) with same account
-3. Log out on Device A
-4. **Expected**: Device A logged out, Device B still logged in
-5. **Before Fix**: Both devices logged out
+### allLessons (from loadAllLessons)
 
-### 33. docs/brain/snapshot-persistence.md (1124fa71ece86ec048aaeef637c7cf577508731d10f3802149bc448806e41006)
-- bm25: -6.2733 | relevance: 0.8625
+### 32. docs/brain/portfolio-generation.md (fe1e7ac464f2afc7d7f87532c21ef1729a468f8ae05052009b691a0e808f815e)
+- bm25: -17.3592 | relevance: 1.0000
 
-**Event-Driven Print:**
-- HeaderBar emits `ms:print:worksheet`, `ms:print:test`, `ms:print:combined`, `ms:print:refresh`.
-- SessionPageV2 useEffect wires listeners that call download handlers (worksheet/test PDFs, facilitator key) or refresh (clear cached sets + assessments store).
-- Download handlers are PIN-gated via `ensurePinAllowed('download')` and use a local `createPdfForItems` helper (jsPDF) with a share/preview fallback.
+# Portfolio Generation System
 
-**Refresh Behavior:**
-- `ensurePinAllowed('refresh')` → `clearAssessments(lessonKey, learnerId)` → clear cached sets. Next print regenerates from lesson pools using current learner targets.
+**Last Updated**: 2026-01-30T15:25:06Z
+**Status**: Canonical
 
-**Layout Rules:**
-- PDF generation auto-selects the largest body font that fits the worksheet/test content on a single page (available height = page height minus top/bottom margins). Range: 8–18pt; headers are capped at 20pt.
-- If the content cannot fit even at the minimum size, the generator keeps 8pt and spills to additional pages with guarded page breaks (bottom margin respected). Choices render slightly smaller than prompts and indent by 6pt.
-- Worksheet spacing is compact (spacer ≈ 0.35× body font, min 3pt); Test uses wider spacing (≈0.7× body font, min 4pt) to keep pages balanced while filling available space.
+## How It Works
 
-### Key Files
+The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
 
-- `src/app/session/v2/SessionPageV2.jsx` – cached assessment load/save, worksheet/test builders, jsPDF helpers, ms:print listeners, refresh handler.
-- `src/app/session/assessment/assessmentStore.js` – dual-write persistence for assessment sets.
-- `src/app/HeaderBar.js` – dispatches ms:print events from the hamburger/print menu.
+### UI Flow
 
-### 34. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
-- bm25: -6.2288 | relevance: 0.8617
+1. Facilitator opens Lesson Calendar.
+2. Clicks **Generate portfolio** (header button).
+3. Modal collects:
+   - Start date (YYYY-MM-DD)
+   - End date (YYYY-MM-DD)
+   - Include checkboxes: Visual aids, Notes, Images
+4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
+5. UI shows a public link to open the portfolio plus a manifest download link.
+6. UI also lists previously generated portfolios so they can be re-opened or deleted.
+
+### What Gets Included
+
+The generator produces one portfolio index with per-lesson recap sections.
+
+Per lesson (completed scheduled lessons only):
+- **Title**: derived from `lesson_schedule.lesson_key`.
+- **Date**: the scheduled date.
+- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
+- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
+- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
+
+### Completion Rule (Calendar parity)
+
+### 33. src/app/learn/lessons/page.js (d1e2484eadff009dae16ceaddadba937c74ec061f9e012995649c19fd46852c3)
+- bm25: -9.4217 | relevance: 0.9040
+
+async function saveNote(lessonKey, noteText) {
+    if (!learnerId) return
+    
+    // Require PIN before saving notes
+    const allowed = await ensurePinAllowed('lesson-notes')
+    if (!allowed) {
+      alert('PIN required to manage lesson notes')
+      setEditingNote(null)
+      return
+    }
+    
+    const newNotes = { ...lessonNotes }
+    if (noteText && noteText.trim()) {
+      newNotes[lessonKey] = noteText.trim()
+    } else {
+      delete newNotes[lessonKey]
+    }
+    
+    setLessonNotes(newNotes)
+    setEditingNote(null)
+    setSaving(true)
+    
+    try {
+      const supabase = getSupabaseClient()
+      const { error } = await supabase.from('learners').update({ lesson_notes: newNotes }).eq('id', learnerId)
+      if (error) {
+        throw error
+      }
+    } catch (e) {
+      alert('Failed to save note: ' + (e?.message || e?.hint || 'Unknown error'))
+      // Revert on error
+      setLessonNotes(lessonNotes)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+const card = { border:'1px solid #e5e7eb', borderRadius:12, padding:14, display:'flex', flexDirection:'column', justifyContent:'space-between', background:'#fff' }
+  const btn = { display:'inline-flex', justifyContent:'center', alignItems:'center', gap:8, width:'100%', padding:'10px 12px', border:'1px solid #111', borderRadius:10, background:'#111', color:'#fff', fontWeight:600 }
+  const btnDisabled = { ...btn, background:'#9ca3af', borderColor:'#9ca3af', cursor:'not-allowed' }
+  const subjectHeading = { margin:'24px 0 8px', fontSize:18, fontWeight:600 }
+  const grid = { display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:12, alignItems:'stretch' }
+
+### 34. src/lib/faq/facilitator-pages.json (4b848d3bcb8fd074168f4bfd8805c4c4143f1f27948661b54e4fbba3e5eaf7e3)
+- bm25: -9.3725 | relevance: 0.9036
+
+{
+  "category": "Facilitator Pages",
+  "features": [
+    {
+      "id": "facilitator-page-hub",
+      "title": "Facilitator Hub (/facilitator)",
+      "keywords": [
+        "facilitator hub",
+        "facilitator home",
+        "facilitator dashboard page",
+        "/facilitator",
+        "account learners lessons calendar",
+        "talk to mr mentor"
+      ],
+      "description": "The Facilitator Hub is the entry point to adult tools. It shows quick links to Account, Learners, Lessons, Calendar, and Mr. Mentor.",
+      "howToUse": "Use the cards to open a section (Account/Learners/Lessons/Calendar). Use the Mr. Mentor button to open the facilitator chat experience.",
+      "relatedFeatures": ["facilitator-dashboard", "mr-mentor", "pin-security"]
+    },
+    {
+      "id": "facilitator-page-account",
+      "title": "Account (/facilitator/account)",
+      "keywords": [
+        "facilitator account",
+        "account page",
+        "profile",
+        "security",
+        "2fa",
+        "connected accounts",
+        "timezone",
+        "marketing emails",
+        "policies",
+        "danger zone",
+        "/facilitator/account"
+      ],
+      "description": "The Account page is the central place to manage facilitator profile and security settings, connections, hotkeys, timezone, and billing links.",
+      "howToUse": "Open a card to edit: Your Name; Email and Password; Two-Factor Auth; Facilitator PIN; Connected Accounts; Hotkeys; Timezone; Marketing Emails; Policies; Plan; Danger Zone. Notifications is also linked from here.",
+      "relatedFeatures": ["pin-security", "subscription-tiers"]
+    },
+    {
+      "id": "facilitator-page-account-settings-redirect",
+      "title": "Account Settings (Redirect) (/facilitator/account/settings)",
+      "keywords": [
+        "account se
+
+### 35. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -9.2948 | relevance: 0.9029
 
 - **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
   - Full-screen carousel during lesson
@@ -1020,231 +957,219 @@ lesson_notes jsonb default '{}'::jsonb
   - Video overlay includes a Visual Aids button when images exist
   - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
 
-### 35. src/app/session/page.js (5ee4fd6f1cd76c334c9e8e4f2f732aa0dde200de1e842c46590724a035291ef6)
-- bm25: -6.2214 | relevance: 0.8615
+### 36. sidekick_pack.md (df3b0d06c6e97315f9ac315d8fe85c1be37b146340873af631c44fae1bc3250f)
+- bm25: -9.2188 | relevance: 0.9021
 
-// Ensure a set matches target length by topping up from provided pools
-  const ensureExactCount = useCallback((base = [], target = 0, pools = [], allowDuplicatesAsLastResort = true) => {
-    return ensureExactCountUtil(base, target, pools, allowDuplicatesAsLastResort);
-  }, []);
+### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.4515 | relevance: 1.0000
 
-// REMOVED: sample deck - deprecated and no longer used
-  // See docs/KILL_SAMPLE_ARRAY.md for why this was removed
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
 
-// Word problem deck (math) with non-repeating behavior
-  const wordDeckRef = useRef([]);
-  const wordIndexRef = useRef(0);
-  
-  const initWordDeck = useCallback((data) => {
-    initWordDeckUtil(data, { wordDeckRef, wordIndexRef });
-  }, []);
-  
-  const drawWordUnique = useCallback(() => {
-    return drawWordUniqueUtil({ wordDeckRef, wordIndexRef });
-  }, []);
-  
-  const reserveWords = useCallback((count) => {
-    const out = [];
-    for (let i = 0; i < count; i += 1) {
-      const it = drawWordUnique();
-      if (!it) break;
-      out.push(it);
-    }
-    return out;
-  }, [drawWordUnique]);
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
 
-// Assessment generation hook
-  const {
-    shuffle: shuffleHook,
-    shuffleArr: shuffleArrHook,
-    selectMixed: selectMixedHook,
-    takeMixed: takeMixedHook,
-    buildFromCategories: buildFromCategoriesHook,
-    generateAssessments: generateAssessmentsHook,
-    blendByType: blendByTypeHook,
-  } = useAssessmentGeneration({
-    lessonData,
-    subjectParam,
-    WORKSHEET_TARGET,
-    TEST_TARGET,
-    reserveWords,
-    // REMOVED: reserveSamples - sample array deprecated
-  });
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
 
-### 36. src/app/session/utils/textProcessing.js (7adf67fbebfd5927317c8c94be8ee4668c4bd456eba0ac87564802854193a18f)
-- bm25: -6.1989 | relevance: 0.8611
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
 
-/**
- * Split text into sentences, handling multi-line input and various punctuation.
- * @param {string} text - The text to split
- * @returns {string[]} Array of sentence strings
- */
-export function splitIntoSentences(text) {
-  if (!text) return [];
-  try {
-    const lines = String(text).split(/\n+/);
-    const out = [];
-    for (const lineRaw of lines) {
-      const line = String(lineRaw).replace(/[\t ]+/g, ' ').trimEnd();
-      if (!line) continue;
-      // Split on sentence-ending punctuation followed by whitespace or closing quotes then whitespace
-      // This prevents splitting numbered lists (1. Item) and preserves quotes with periods ("text.")
-      const rawParts = line
-        .split(/(?<=[.?!]["']?)\s+/)
-        .map((part) => String(part).trim())
-        .filter(Boolean);
-      // Merge any standalone number-period token (e.g. "1." "2.") with the fragment that follows it,
-      // so numbered list items stay together as a single caption sentence.
-      const parts = [];
-      for (let pi = 0; pi < rawParts.length; pi++) {
-        if (/^\d+\.$/.test(rawParts[pi]) && pi + 1 < rawParts.length) {
-          parts.push(rawParts[pi] + ' ' + rawParts[pi + 1]);
-          pi++; // consumed the next fragment
-        } else {
-          parts.push(rawParts[pi]);
-        }
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
+- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
+
+### 37. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (86b60aae069b5e5cd6312d1188af36820d92ad5d50ac3acdfbcc0206a1059f7c)
+- bm25: -9.1292 | relevance: 0.9013
+
+### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.4515 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
+- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
+
+### 38. docs/brain/pin-protection.md (a572b2eaa4ac61bc5c6c926b97a5f45498691130f5af49873ea35f306e9ecc36)
+- bm25: -9.0070 | relevance: 0.9001
+
+# PIN Protection System
+
+## Overview
+
+PIN protection gates access to facilitator features and controls session exits. The system prevents learners from accessing facilitator tools, downloads, or modifying session state without adult supervision.
+
+## How It Works
+
+### Core Components
+
+**pinGate.js** (`src/app/lib/pinGate.js`)
+- Central PIN validation utility
+- Manages facilitator section tracking
+- Provides `ensurePinAllowed(action)` function for gating actions
+- Stores PIN preferences in localStorage and server
+
+**FacilitatorSectionTracker.jsx** (`src/components/FacilitatorSectionTracker.jsx`)
+- Tracks when user enters/leaves facilitator section
+- Clears facilitator section flag when navigating away from `/facilitator/*`
+- Mounted in root layout to track all navigation
+
+**HeaderBar.js** (`src/app/HeaderBar.js`)
+- Implements navigation PIN checks
+- Sets facilitator section flag when navigating from session to facilitator
+- Prevents double PIN prompts
+
+### PIN Actions
+
+Each action type maps to a preference key that controls whether PIN is required:
+
+| Action | Preference Key | When Triggered | Sets Facilitator Flag? |
+|--------|---------------|----------------|----------------------|
+| `facilitator-page` | `facilitatorPage` | Entering any `/facilitator/*` page | YES |
+| `session-exit` | `activeSession` | Leaving active lesson session | NO (but sets flag if destination is facilitator) |
+| `download` | `downloads` | Worksheet/test downloads | NO |
+| `facilitator-key` | `facilitatorKey` | Combined answer key | NO |
+| `skip` / `timeline` | `skipTimeline` | Timeline jumps, skip buttons | NO |
+| `change-learner` | `changeLearner` | Switching learners | NO |
+| `refresh` | `refresh` | Re-generate worksheet/test | NO |
+| `timer` | `timer` | Pause/resume timer | NO |
+
+### 39. docs/brain/ingests/pack.planned-lessons-flow.md (155578c318bfa1c68504c39454f35d1dcfc25dd6e797a69bfbd7d4d8c9043962)
+- bm25: -9.0040 | relevance: 0.9000
+
+## Key Files
+
+- UI
+  - `src/app/facilitator/calendar/page.js` (header button + modal wiring)
+  - `src/app/facilitator/calendar/GeneratePortfolioModal.jsx` (overlay)
+  - `src/components/FacilitatorHelp/PageHeader.jsx` (adds optional `actions` slot)
+
+- API
+  - `src/app/api/portfolio/generate/route.js` (portfolio builder)
+  - `src/app/api/portfolio/list/route.js` (list saved portfolios)
+  - `src/app/api/portfolio/delete/route.js` (delete saved portfolios + files)
+  - `src/app/api/portfolio/lib.js` (HTML builder + helpers)
+
+### 34. src/app/facilitator/generator/counselor/MentorInterceptor.js (dd9fc7d0f63f857e45b48169025dafbb0d96182f685e4e93f894b4f372b1d6a0)
+- bm25: -12.9933 | relevance: 1.0000
+
+,
+
+lesson_plan: {
+    keywords: [
+      'lesson plan',
+      'lesson planner',
+      'planned lessons',
+      'curriculum preferences',
+      'curriculum',
+      'weekly pattern',
+      'schedule template',
+      'start date',
+      'duration',
+      'generate lesson plan',
+      'schedule a lesson plan'
+    ],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+
+// FAQ-style questions about the planner should defer to FAQ intent.
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0
       }
-      if (parts.length) out.push(...parts);
+
+return INTENT_PATTERNS.lesson_plan.keywords.some(kw => normalized.includes(kw)) ? 0.85 : 0
     }
-    // Second pass: merge any bare "N." fragments that ended up on their own entry
-    // (e.g. GPT puts "1.\nFirst item" — split by \n gives separate entries in out)
-    const merged = [];
-    for (let i = 0; i < out.length; i++) {
-      if (/^\d+\.$/.test(out[i].trim()) && i + 1 < out.length) {
-        merged.push(out[i].trim() + ' ' + out[i + 1].trim());
-        i++;
-      } else {
-        merged.push(out[i]);
-      }
-    }
-    return merged.le
-
-### 37. src/app/learn/lessons/page.js (937626e4e7c8e623ca81142b26f76a7f361556d9517a73c14b4bfa5a453d9c9b)
-- bm25: -6.0922 | relevance: 0.8590
-
-// Set up midnight refresh timer
-  useEffect(() => {
-    const scheduleNextMidnightRefresh = () => {
-      const now = new Date()
-      const tomorrow = new Date(now)
-      tomorrow.setDate(tomorrow.getDate() + 1)
-      tomorrow.setHours(0, 0, 0, 0)
-      const msUntilMidnight = tomorrow.getTime() - now.getTime()
-      
-      const timer = setTimeout(() => {
-        setRefreshTrigger(prev => prev + 1)
-        // Schedule next midnight refresh
-        scheduleNextMidnightRefresh()
-      }, msUntilMidnight)
-      
-      return timer
-    }
-    
-    const timer = scheduleNextMidnightRefresh()
-    return () => clearTimeout(timer)
-  }, [])
-
-### 38. src/app/session/assessment/assessmentStore.js (f42050735208892df91578ed98ec2f23643e51085a712f9d1dd52612d69cd9d6)
-- bm25: -6.0833 | relevance: 0.8588
-
-export async function clearAssessments(lessonId, { learnerId } = {}) {
-	if (typeof window === 'undefined') return;
-	try { localStorage.removeItem(buildKey(lessonId)); } catch (e) { }
-	// Best-effort remote delete
-	try {
-		const supabaseMod = await import('@/app/lib/supabaseClient');
-		const supabase = supabaseMod.getSupabaseClient?.();
-		const hasEnv = supabaseMod.hasSupabaseEnv?.();
-		if (supabase && hasEnv && learnerId) {
-			const { data: { session } } = await supabase.auth.getSession();
-			const token = session?.access_token;
-			if (token) {
-				const url = `/api/assessments?learner_id=${encodeURIComponent(learnerId)}&lesson_key=${encodeURIComponent(lessonId)}`;
-				await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
-			}
-		}
-	} catch (e) { /* ignore */ }
+  }
 }
 
-// Optional helper to nuke everything (not used yet)
-export function clearAllAssessments() {
-	if (typeof window === 'undefined') return;
-	try {
-		const keys = Object.keys(localStorage);
-		for (const k of keys) {
-			if (k.startsWith(KEY_PREFIX)) localStorage.removeItem(k);
-		}
-	} catch (e) {
-	}
-}
+### 40. sidekick_pack.md (838d24067808134cf08c96e92ef01cb7a31d6b4a2d9cbe2757f6914876e84133)
+- bm25: -8.9778 | relevance: 0.8998
 
-function normalizeShape(obj) {
-	const out = { worksheet: [], test: [], comprehension: [], exercise: [], savedAt: obj?.savedAt || new Date().toISOString() };
-	if (Array.isArray(obj?.worksheet)) out.worksheet = obj.worksheet;
-	if (Array.isArray(obj?.test)) out.test = obj.test;
-	if (Array.isArray(obj?.comprehension)) out.comprehension = obj.comprehension;
-	if (Array.isArray(obj?.exercise)) out.exercise = obj.exercise;
-	return out;
-}
+### 33. docs/brain/portfolio-generation.md (fe1e7ac464f2afc7d7f87532c21ef1729a468f8ae05052009b691a0e808f815e)
+- bm25: -22.2966 | relevance: 1.0000
 
-const assessmentStoreApi = { getStoredAssessments, saveAssessments, clearAssessments, clearAllAssessments };
-export default assessmentStoreApi;
+# Portfolio Generation System
 
-### 39. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (07be0f8e844476d585e0b9a612c9a69eb2b991dc54097caeb3fe8707349d30df)
-- bm25: -5.9860 | relevance: 0.8569
+**Last Updated**: 2026-01-30T15:25:06Z
+**Status**: Canonical
 
-math - Multiplication Basics:
-     "Struggles with times tables above 5x. Needs more practice with visual aids."
+## How It Works
 
-science - Solar System:
-     "Very interested in planets, completed ahead of schedule."
-   ```
-6. Mr. Mentor references notes in responses for data-informed, personalized counseling
+The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
 
-**Purpose**: Enables facilitators to document learner-specific observations that persist across lessons, providing Mr. Mentor with longitudinal context for better guidance.
+### UI Flow
 
-## Database Schema
+1. Facilitator opens Lesson Calendar.
+2. Clicks **Generate portfolio** (header button).
+3. Modal collects:
+   - Start date (YYYY-MM-DD)
+   - End date (YYYY-MM-DD)
+   - Include checkboxes: Visual aids, Notes, Images
+4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
+5. UI shows a public link to open the portfolio plus a manifest download link.
+6. UI also lists previously generated portfolios so they can be re-opened or deleted.
 
-**Learners table:**
-```sql
--- Column added to learners table
-lesson_notes jsonb default '{}'::jsonb
+### What Gets Included
 
--- Structure: { 'subject/lesson_file': 'note text', ... }
--- Example:
-{
-  "math/Multiplication_Basics.json": "Struggles with times tables above 5x",
-  "science/Solar_System.json": "Very interested in planets, completed ahead of schedule"
-}
-```
+The generator produces one portfolio index with per-lesson recap sections.
 
-## Mr. Mentor Integration
+Per lesson (completed scheduled lessons only):
+- **Title**: derived from `lesson_schedule.lesson_key`.
+- **Date**: the scheduled date.
+- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
+- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
+- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
 
-### 13. docs/brain/calendar-lesson-planning.md (edc4501d8cf5402f28f2f259c81317facde5d8c4d278692219fb856850a029d8)
-- bm25: -18.4355 | relevance: 1.0000
+### Completion Rule (Calendar parity)
 
-- `src/app/facilitator/calendar/LessonNotesModal.jsx`
-  - Minimal notes editor for `learners.lesson_notes[lesson_key]`
-  - Empty note deletes the key from the JSONB map
+Portfolio generation follows the Calendar history rule:
+- A scheduled lesson counts as completed if there is a `lesson_session_events` row with `event_type = 'completed'` for the same canonical lesson id either:
+  - on the scheduled date, or
+  - within 7 days after (make-up window).
 
-- `src/app/facilitator/calendar/VisualAidsManagerModal.jsx`
-  - Visual Aids manager for a lessonKey using `/api/visual-aids/load|generate|save`
-  - Uses `VisualAidsCarousel` for selection/upload/save UI
-
-- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
-  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
-
-### 40. src/app/session/page.js (16ce27ece239dc020dadf303ee030d956267e43c81b5aacb18f657b56d74a07a)
-- bm25: -5.9226 | relevance: 0.8555
-
-// Helper: record first interaction snapshot (prevents infinite play hack via refresh)
-  // Moved after useSnapshotPersistence to avoid TDZ error
-  const recordFirstInteraction = useCallback(() => {
-    if (!hasRecordedFirstInteraction) {
-      scheduleSaveSnapshot('first-interaction');
-      setHasRecordedFirstInteraction(true);
-    }
-  }, [hasRecordedFirstInteraction, scheduleSaveSnapshot]);
+Canonical lesson id is the normalized basename without `.json`.
 
 
 ---
