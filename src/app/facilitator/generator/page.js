@@ -10,6 +10,7 @@ import Toast from '@/components/Toast'
 import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/lessonValidation'
 import AIRewriteButton from '@/components/AIRewriteButton'
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
+import { listLearners } from '@/app/facilitator/learners/clientApi'
 
 const difficulties = ['beginner','intermediate','advanced']
 const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
@@ -31,7 +32,9 @@ export default function LessonMakerPage(){
   const [quotaLoading, setQuotaLoading] = useState(true)
   const [toast, setToast] = useState(null) // { message, type }
   const [generatedLessonKey, setGeneratedLessonKey] = useState(null) // Track last generated lesson
-  
+  const [learners, setLearners] = useState([])
+  const [makeActiveFor, setMakeActiveFor] = useState('none')
+
   // AI Rewrite loading states
   const [rewritingTitle, setRewritingTitle] = useState(false)
   const [rewritingDescription, setRewritingDescription] = useState(false)
@@ -113,6 +116,20 @@ export default function LessonMakerPage(){
         // Silent — leave quotaInfo null, quotaAllowed defaults to true
       } finally {
         if (!cancelled) setQuotaLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  // Load learners for "Make Active for" dropdown
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const list = await listLearners()
+        if (!cancelled) setLearners(list || [])
+      } catch {
+        // Silent — dropdown just stays empty
       }
     })()
     return () => { cancelled = true }
@@ -325,6 +342,31 @@ export default function LessonMakerPage(){
 
       setToast({ message: 'Lesson ready!', type: 'success' })
       setMessage('')
+
+      // Activate for selected learner(s)
+      const lessonKeyToActivate = js?.lessonKey || (generatedFile ? `generated/${generatedFile}` : null)
+      if (lessonKeyToActivate && makeActiveFor !== 'none') {
+        try {
+          const supabase = getSupabaseClient()
+          const targetIds = makeActiveFor === 'all'
+            ? learners.map(l => l.id)
+            : [makeActiveFor]
+          await Promise.all(targetIds.map(async (lid) => {
+            const { data: row } = await supabase
+              .from('learners')
+              .select('approved_lessons')
+              .eq('id', lid)
+              .maybeSingle()
+            const current = row?.approved_lessons || {}
+            await supabase
+              .from('learners')
+              .update({ approved_lessons: { ...current, [lessonKeyToActivate]: true } })
+              .eq('id', lid)
+          }))
+        } catch {
+          // Silent — generation succeeded; activation failure is non-critical
+        }
+      }
     } catch (err) {
       setMessage(`Generation error: ${err?.message || String(err) || 'Unknown error'}`)
       setToast({ message: 'Generation failed', type: 'error' })
@@ -507,6 +549,23 @@ export default function LessonMakerPage(){
         </div>
 
         <div style={{ marginTop: 14, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          {learners.length > 0 && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>Make Active for</span>
+              <select
+                value={makeActiveFor}
+                onChange={e => setMakeActiveFor(e.target.value)}
+                style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}
+              >
+                <option value="none">None</option>
+                {learners.map(l => (
+                  <option key={l.id} value={l.id}>{l.name}</option>
+                ))}
+                <option value="all">All learners</option>
+              </select>
+            </label>
+          )}
+
           <button
             type="submit"
             disabled={!canGenerate}
