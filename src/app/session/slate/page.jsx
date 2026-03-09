@@ -170,16 +170,27 @@ const WRONG_MSGS = [
 ]
 const TIMEOUT_MSGS = [
   'Time limit exceeded. No response.',
-  'Query timeout.',
+  'Query timeout. Moving on.',
   'Response not received in time.',
   'Time expired. Next query.',
-  'Timeout recorded.',
+  'Timeout recorded. Stay faster.',
   'Response window closed.',
-  'No input detected. Moving on.',
-  'Time is up.',
-  'Clock ran out. Advancing.',
-  'Your response was too slow.',
-  'Timeout. Next query loading.',
+  'No input detected. Advancing.',
+  'Time is up. Focus.',
+  'Clock ran out. Next query loading.',
+  'Too slow. Speed up your recall.',
+  'Timeout. We do not wait.',
+  'Response overdue. Proceeding.',
+  'Timer zeroed. No credit awarded.',
+  'You ran out of time on that one.',
+  'Processing halted. Time limit reached.',
+  'That one slipped by. Stay sharp.',
+  'No answer in time. Noted.',
+  'Timeout flagged. Keep your pace.',
+  'The clock does not lie. Moving on.',
+  'Speed and accuracy. Work on both.',
+  'Time penalty applied. Next.',
+  'Zero seconds remaining. Advancing.',
 ]
 const CONGRATS_MSGS = [
   'Mastery confirmed. Well done.',
@@ -336,26 +347,32 @@ const tfBtnBase = {
 
 // --- TTS helper ---------------------------------------------------------------
 
-async function playSlateAudio(text, audioEl, videoEl, onDone) {
+async function playSlateAudio(text, audioEl, videoEl, onDone, isSpeakingRef) {
   if (!text || !audioEl) { onDone?.(); return }
+  if (isSpeakingRef) isSpeakingRef.current = true
   try {
     const res = await fetch('/api/slate-tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
     })
-    if (!res.ok) { onDone?.(); return }
+    if (!res.ok) { if (isSpeakingRef) isSpeakingRef.current = false; onDone?.(); return }
     const { audio } = await res.json()
-    if (!audio) { onDone?.(); return }
+    if (!audio) { if (isSpeakingRef) isSpeakingRef.current = false; onDone?.(); return }
     audioEl.pause()
     audioEl.src = audio.startsWith('data:') ? audio : `data:audio/mp3;base64,${audio}`
     if (videoEl) { try { videoEl.play().catch(() => {}) } catch {} }
     audioEl.onended = () => {
+      if (isSpeakingRef) isSpeakingRef.current = false
       if (videoEl) { try { videoEl.pause() } catch {} }
       onDone?.()
     }
-    audioEl.play().catch(() => { onDone?.() })
-  } catch { onDone?.() }
+    audioEl.onerror = () => {
+      if (isSpeakingRef) isSpeakingRef.current = false
+      onDone?.()
+    }
+    audioEl.play().catch(() => { if (isSpeakingRef) isSpeakingRef.current = false; onDone?.() })
+  } catch { if (isSpeakingRef) isSpeakingRef.current = false; onDone?.() }
 }
 
 // --- Main inner component ----------------------------------------------------
@@ -400,6 +417,7 @@ function SlateDrillInner() {
   const audioEl = useRef(null)
   const inputEl = useRef(null)
   const slateVideoRef = useRef(null)
+  const slateIsSpeakingRef = useRef(false)
   const settingsRef = useRef(DEFAULT_SLATE_SETTINGS)
 
   // Keep fast refs in sync
@@ -487,8 +505,8 @@ function SlateDrillInner() {
       if (soundRef.current) {
         setTimeout(() => {
           playSlateAudio(pick(GREETING_MSGS), audioEl.current, slateVideoRef.current, () => {
-            playSlateAudio(q.question, audioEl.current, slateVideoRef.current)
-          })
+            playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef)
+          }, slateIsSpeakingRef)
         }, 120)
       }
     }
@@ -520,7 +538,7 @@ function SlateDrillInner() {
     phaseRef.current = 'asking'
     setPagePhase('asking')
     setTimeout(() => inputEl.current?.focus?.(), 80)
-    if (!skipAudio && soundRef.current) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current), 120)
+    if (!skipAudio && soundRef.current) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef), 120)
   }, [])
 
   // Start / restart the drill
@@ -539,8 +557,8 @@ function SlateDrillInner() {
       if (soundRef.current) {
         setTimeout(() => {
           playSlateAudio(pick(GREETING_MSGS), audioEl.current, slateVideoRef.current, () => {
-            playSlateAudio(q.question, audioEl.current, slateVideoRef.current)
-          })
+            playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef)
+          }, slateIsSpeakingRef)
         }, 120)
       }
     }
@@ -569,7 +587,15 @@ function SlateDrillInner() {
     setLastResult({ correct, timeout, text: feedbackText, correctAnswer })
     phaseRef.current = 'feedback'
     setPagePhase('feedback')
-    if (soundRef.current) playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current)
+    if (soundRef.current) {
+      if (correctAnswer) {
+        playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, () => {
+          playSlateAudio(`The correct answer was ${correctAnswer}.`, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef)
+        }, slateIsSpeakingRef)
+      } else {
+        playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef)
+      }
+    }
 
     if (!timeout && newScore >= settingsRef.current.scoreGoal) {
       feedbackTimeout.current = setTimeout(() => {
@@ -581,7 +607,7 @@ function SlateDrillInner() {
         }
         const doWon = () => { phaseRef.current = 'won'; setPagePhase('won') }
         if (soundRef.current) {
-          playSlateAudio(pick(CONGRATS_MSGS), audioEl.current, slateVideoRef.current, doWon)
+          playSlateAudio(pick(CONGRATS_MSGS), audioEl.current, slateVideoRef.current, doWon, slateIsSpeakingRef)
         } else {
           doWon()
         }
@@ -600,6 +626,7 @@ function SlateDrillInner() {
     if (pagePhase !== 'asking') return
     clearInterval(timerInterval.current)
     timerInterval.current = setInterval(() => {
+      if (slateIsSpeakingRef.current) return // pause while Mr. Slate is talking
       setSecondsLeft(s => {
         if (s <= 1) {
           clearInterval(timerInterval.current)
