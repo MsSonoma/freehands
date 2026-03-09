@@ -23,6 +23,10 @@
 2026-02-27T17:39:00Z | Fix: quota false-positives for premium/pro. Recon prompt: "Quota hit when generating lessons (calendar + lesson generator) even though account is premium; gating other accounts may have affected entitlement." Updated `/api/lessons/quota` to return `allowed` and updated `/api/usage/check-lesson-quota` to use `plan_tier` + `lessonsPerDay`; generator now computes allowance robustly. See `sidekick_pack.md`.
 
 # Cohere Investigations Changelog
+## 2025 — slate/page.jsx UX: remove ready screen, video talks-only
+- Prompt: "I don't think we need 2 screens before getting to the actual session. The screen with a list of lessons should just have the rules and description briefly at the very top. Also, I only want Mr. Slate to move while he is talking, the same as Ms. Sonoma."
+- Changes: deleted ready screen; selectLesson now goes directly to asking phase; rules panel added to top of list screen; SlateVideo converted to forwardRef (no autoPlay); playSlateAudio plays/pauses videoEl around TTS; small header icon videos made static; slateVideoRef wired to drill body avatar
+
 ## 2025 — slate/page.jsx responsive layout fix
 - Prompt: "page is too tall for the button to be seen at the bottom. responsive layout that looks right at all sizes"
 - Changes: added `overflowY: 'auto'` to loading/ready/won outer wrappers; reduced video size 180→120 on ready/won/drill screens, 140→100 on loading; drill main area changed to `justifyContent: flex-start` + `overflowY: auto`; ready card padding changed to `clamp(20px, 5vw, 40px)`

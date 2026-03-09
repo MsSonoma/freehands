@@ -20,7 +20,7 @@
  * generated, and Supabase-stored lessons uniformly). No URL params required.
  */
 
-import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
+import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { getMasteryForLearner, saveMastery } from '@/app/lib/masteryClient'
 
@@ -139,18 +139,18 @@ const TIMEOUT_MSGS = [
 
 // --- Sub-components ----------------------------------------------------------
 
-function SlateVideo({ size = 180 }) {
+const SlateVideo = forwardRef(function SlateVideo({ size = 180 }, ref) {
   return (
     <video
+      ref={ref}
       src={SLATE_VIDEO_SRC}
-      autoPlay
       loop
       muted
       playsInline
       style={{ width: size, height: size, objectFit: 'contain', display: 'block', margin: '0 auto' }}
     />
   )
-}
+})
 
 function TimerBar({ secondsLeft, total = QUESTION_SECONDS }) {
   const pct = Math.max(0, Math.min(100, (secondsLeft / total) * 100))
@@ -277,7 +277,7 @@ const tfBtnBase = {
 
 // --- TTS helper ---------------------------------------------------------------
 
-async function playSlateAudio(text, audioEl) {
+async function playSlateAudio(text, audioEl, videoEl) {
   if (!text || !audioEl) return
   try {
     const res = await fetch('/api/slate-tts', {
@@ -290,6 +290,10 @@ async function playSlateAudio(text, audioEl) {
     if (!audio) return
     audioEl.pause()
     audioEl.src = audio.startsWith('data:') ? audio : `data:audio/mp3;base64,${audio}`
+    if (videoEl) { try { videoEl.play().catch(() => {}) } catch {} }
+    audioEl.onended = () => {
+      if (videoEl) { try { videoEl.pause() } catch {} }
+    }
     audioEl.play().catch(() => {})
   } catch {}
 }
@@ -331,6 +335,7 @@ function SlateDrillInner() {
   const feedbackTimeout = useRef(null)
   const audioEl = useRef(null)
   const inputEl = useRef(null)
+  const slateVideoRef = useRef(null)
 
   // Keep fast refs in sync
   useEffect(() => { soundRef.current = soundOn }, [soundOn])
@@ -376,19 +381,35 @@ function SlateDrillInner() {
     if (audioEl.current) { audioEl.current.pause(); audioEl.current.src = '' }
   }, [])
 
-  // Select a lesson from the list
+  // Select a lesson from the list — skip the ready screen, go straight to drilling
   const selectLesson = useCallback((lesson) => {
+    clearInterval(timerInterval.current)
+    clearTimeout(feedbackTimeout.current)
     const p = buildPool(lesson)
     poolRef.current = p
     setPool(p)
-    const d = shuffleArr(p)
-    deckRef.current = d
-    deckIdxRef.current = 0
     const lk = lesson.lessonKey || `${lesson.subject || 'general'}/${lesson.file || ''}`
     lessonKeyRef.current = lk
     setLessonData(lesson)
-    phaseRef.current = 'ready'
-    setPagePhase('ready')
+    setScore(0)
+    scoreRef.current = 0
+    setQCount(0)
+    const newDeck = shuffleArr(p)
+    deckRef.current = newDeck
+    deckIdxRef.current = 0
+    const q = newDeck[0]
+    if (q) {
+      deckIdxRef.current = 1
+      currentQRef.current = q
+      setCurrentQ(q)
+      setUserAnswer('')
+      setLastResult(null)
+      setSecondsLeft(QUESTION_SECONDS)
+      phaseRef.current = 'asking'
+      setPagePhase('asking')
+      setTimeout(() => inputEl.current?.focus?.(), 80)
+      if (soundRef.current) playSlateAudio(q.question, audioEl.current, slateVideoRef.current)
+    }
   }, [])
 
   // Advance the deck, reshuffling when 80%+ has been used
@@ -417,7 +438,7 @@ function SlateDrillInner() {
     phaseRef.current = 'asking'
     setPagePhase('asking')
     setTimeout(() => inputEl.current?.focus?.(), 80)
-    if (soundRef.current) playSlateAudio(q.question, audioEl.current)
+    if (soundRef.current) playSlateAudio(q.question, audioEl.current, slateVideoRef.current)
   }, [])
 
   // Start / restart the drill
@@ -575,7 +596,7 @@ function SlateDrillInner() {
           gap: 12,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <video src={SLATE_VIDEO_SRC} autoPlay loop muted playsInline style={{ width: 36, height: 36, objectFit: 'contain' }} />
+            <video src={SLATE_VIDEO_SRC} muted playsInline style={{ width: 36, height: 36, objectFit: 'contain' }} />
             <div>
               <div style={{ color: C.accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>MR. SLATE V1</div>
               <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2 }}>SKILLS &amp; PRACTICE COACH</div>
@@ -596,8 +617,14 @@ function SlateDrillInner() {
             </div>
           ) : (
             <>
-              <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 16 }}>
+              <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 10 }}>
                 SELECT A LESSON TO DRILL — {availableLessons.length} AVAILABLE
+              </div>
+              <div style={{ color: C.muted, fontSize: 12, lineHeight: 1.8, marginBottom: 20, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px' }}>
+                <span style={{ color: C.text, fontWeight: 700 }}>GOAL:</span> Reach <span style={{ color: C.text, fontWeight: 700 }}>10 points</span> to earn mastery 🤖
+                {'  ·  '}<span style={{ color: C.green, fontWeight: 700 }}>+1</span> correct
+                {'  ·  '}<span style={{ color: C.red, fontWeight: 700 }}>−1</span> wrong
+                {'  ·  '}<span style={{ color: C.yellow, fontWeight: 700 }}>±0</span> timeout ({QUESTION_SECONDS}s)
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {availableLessons.map((lesson, i) => {
@@ -643,57 +670,6 @@ function SlateDrillInner() {
               </div>
             </>
           )}
-        </div>
-      </div>
-    )
-  }
-
-  // ===========================================================================
-  //  RENDER -- Ready (pre-drill intro screen)
-  // ===========================================================================
-  if (pagePhase === 'ready') {
-    const mastered = !!(masteryMap[lessonKeyRef.current]?.mastered)
-    return (
-      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
-        <div style={{ maxWidth: 500, width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 'clamp(20px, 5vw, 40px)', textAlign: 'center' }}>
-          <div style={{ marginBottom: 16 }}>
-            <SlateVideo size={120} />
-          </div>
-          <div style={{ color: C.accent, fontWeight: 800, fontSize: 22, letterSpacing: 3, marginBottom: 2 }}>MR. SLATE V1</div>
-          <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 28 }}>SKILLS &amp; PRACTICE COACH</div>
-
-          {/* Lesson info panel */}
-          <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: '14px 18px', marginBottom: 24, textAlign: 'left' }}>
-            <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2, marginBottom: 4 }}>LESSON LOADED</div>
-            <div style={{ color: C.text, fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{lessonTitle}</div>
-            <div style={{ color: C.muted, fontSize: 12 }}>{pool.length} DRILL QUESTIONS AVAILABLE IN POOL</div>
-          </div>
-
-          {/* Previous mastery badge */}
-          {mastered && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: C.greenDim, border: `1px solid ${C.green}`, borderRadius: 8, padding: '10px 16px', marginBottom: 20, color: C.green }}>
-              <span style={{ fontSize: 18 }}>🤖</span>
-              <span style={{ fontWeight: 700, fontSize: 12, letterSpacing: 1 }}>MASTERY PREVIOUSLY CONFIRMED</span>
-            </div>
-          )}
-
-          {/* Rules */}
-          <div style={{ color: C.muted, fontSize: 12, lineHeight: 1.9, marginBottom: 28, textAlign: 'left', background: C.bg, borderRadius: 8, padding: '12px 16px', border: `1px solid ${C.border}` }}>
-            <div style={{ color: C.text, fontWeight: 700, marginBottom: 6, letterSpacing: 1 }}>RULES:</div>
-            <div>Goal: reach <span style={{ color: C.text, fontWeight: 700 }}>10 points</span></div>
-            <div>Correct within timer → <span style={{ color: C.green, fontWeight: 700 }}>+1</span></div>
-            <div>Wrong answer → <span style={{ color: C.red, fontWeight: 700 }}>−1</span> (minimum 0)</div>
-            <div>Timeout ({QUESTION_SECONDS}s) → <span style={{ color: C.yellow, fontWeight: 700 }}>±0</span></div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={startDrill} style={primaryBtn}>
-              ▶ COMMENCE DRILL
-            </button>
-            <button onClick={backToList} style={ghostBtn}>
-              ← LESSON LIST
-            </button>
-          </div>
         </div>
       </div>
     )
@@ -760,7 +736,7 @@ function SlateDrillInner() {
         flexWrap: 'wrap',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <video src={SLATE_VIDEO_SRC} autoPlay loop muted playsInline style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }} />
+          <video src={SLATE_VIDEO_SRC} muted playsInline style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }} />
           <div style={{ minWidth: 0 }}>
             <div style={{ color: C.accent, fontWeight: 800, fontSize: 13, letterSpacing: 2 }}>MR. SLATE</div>
             <div style={{ color: C.muted, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '22ch' }}>{lessonTitle}</div>
@@ -788,7 +764,7 @@ function SlateDrillInner() {
 
           {/* Mr. Slate video avatar */}
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <SlateVideo size={120} />
+            <SlateVideo ref={slateVideoRef} size={120} />
           </div>
 
           {/* Question card */}
