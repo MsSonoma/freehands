@@ -129,28 +129,70 @@ function getCorrectText(q) {
 
 const pick = arr => arr[Math.floor(Math.random() * arr.length)]
 
+const GREETING_MSGS = [
+  'Time to run some drills.',
+  'Let the drill begin.',
+  'Drill sequence initiated.',
+  'Ready for your first query.',
+  'Systems online. First question loading.',
+  'Activating drill protocol.',
+  'Stand by. Loading first query.',
+  'Drill mode engaged. Let us begin.',
+  'Prepare for query processing.',
+  'Commencing drill sequence now.',
+  'Drill protocol active. Here we go.',
+]
 const CORRECT_MSGS = [
-  'AFFIRMATIVE. CORRECT RESPONSE.',
-  'CONFIRMED CORRECT.',
-  'ACCURATE. SCORE UPDATED.',
-  'CORRECT. PROCESSING NEXT QUERY.',
-  'RESPONSE ACCEPTED.',
-  'INPUT VALIDATED. CORRECT.',
+  'Affirmative. Correct response.',
+  'Confirmed correct.',
+  'Accurate. Score updated.',
+  'Correct. Processing next query.',
+  'Response accepted.',
+  'Input validated. Correct.',
+  'Excellent. Moving on.',
+  'That is correct.',
+  'Right answer confirmed.',
+  'Positive match detected.',
+  'Score increment registered.',
 ]
 const WRONG_MSGS = [
-  'NEGATIVE. INCORRECT RESPONSE.',
-  'ERROR: WRONG ANSWER DETECTED.',
-  'INCORRECT.',
-  'DOES NOT MATCH EXPECTED OUTPUT.',
-  'INCORRECT RESPONSE RECORDED.',
-  'MISMATCH DETECTED.',
+  'Negative. Incorrect response.',
+  'Error. Wrong answer detected.',
+  'Incorrect.',
+  'Does not match expected output.',
+  'Incorrect response recorded.',
+  'Mismatch detected.',
+  'Negative. Try harder next time.',
+  'That is not the correct answer.',
+  'Error code: wrong answer.',
+  'Recalibrate. The answer was wrong.',
+  'Wrong. Score deducted.',
 ]
 const TIMEOUT_MSGS = [
-  'TIME LIMIT EXCEEDED. NO RESPONSE.',
-  'QUERY TIMEOUT.',
-  'RESPONSE NOT RECEIVED IN TIME.',
-  'TIME EXPIRED. NEXT QUERY.',
-  'TIMEOUT RECORDED.',
+  'Time limit exceeded. No response.',
+  'Query timeout.',
+  'Response not received in time.',
+  'Time expired. Next query.',
+  'Timeout recorded.',
+  'Response window closed.',
+  'No input detected. Moving on.',
+  'Time is up.',
+  'Clock ran out. Advancing.',
+  'Your response was too slow.',
+  'Timeout. Next query loading.',
+]
+const CONGRATS_MSGS = [
+  'Mastery confirmed. Well done.',
+  'Drill sequence complete. Excellent work.',
+  'You have reached mastery level.',
+  'Outstanding. Mastery achieved.',
+  'All systems confirm mastery. Great job.',
+  'Target score reached. Drill complete.',
+  'Congratulations. Mastery unlocked.',
+  'You have passed the drill protocol.',
+  'Mission complete. Mastery confirmed.',
+  'Well done. You have earned the robot badge.',
+  'Impressive performance. Mastery achieved.',
 ]
 
 // --- Sub-components ----------------------------------------------------------
@@ -294,25 +336,26 @@ const tfBtnBase = {
 
 // --- TTS helper ---------------------------------------------------------------
 
-async function playSlateAudio(text, audioEl, videoEl) {
-  if (!text || !audioEl) return
+async function playSlateAudio(text, audioEl, videoEl, onDone) {
+  if (!text || !audioEl) { onDone?.(); return }
   try {
     const res = await fetch('/api/slate-tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
     })
-    if (!res.ok) return
+    if (!res.ok) { onDone?.(); return }
     const { audio } = await res.json()
-    if (!audio) return
+    if (!audio) { onDone?.(); return }
     audioEl.pause()
     audioEl.src = audio.startsWith('data:') ? audio : `data:audio/mp3;base64,${audio}`
     if (videoEl) { try { videoEl.play().catch(() => {}) } catch {} }
     audioEl.onended = () => {
       if (videoEl) { try { videoEl.pause() } catch {} }
+      onDone?.()
     }
-    audioEl.play().catch(() => {})
-  } catch {}
+    audioEl.play().catch(() => { onDone?.() })
+  } catch { onDone?.() }
 }
 
 // --- Main inner component ----------------------------------------------------
@@ -441,7 +484,13 @@ function SlateDrillInner() {
       phaseRef.current = 'asking'
       setPagePhase('asking')
       setTimeout(() => inputEl.current?.focus?.(), 80)
-      if (soundRef.current) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current), 120)
+      if (soundRef.current) {
+        setTimeout(() => {
+          playSlateAudio(pick(GREETING_MSGS), audioEl.current, slateVideoRef.current, () => {
+            playSlateAudio(q.question, audioEl.current, slateVideoRef.current)
+          })
+        }, 120)
+      }
     }
   }, [])
 
@@ -462,7 +511,7 @@ function SlateDrillInner() {
   }, [])
 
   // Display a question
-  const showQuestion = useCallback((q) => {
+  const showQuestion = useCallback((q, skipAudio = false) => {
     currentQRef.current = q
     setCurrentQ(q)
     setUserAnswer('')
@@ -471,7 +520,7 @@ function SlateDrillInner() {
     phaseRef.current = 'asking'
     setPagePhase('asking')
     setTimeout(() => inputEl.current?.focus?.(), 80)
-    if (soundRef.current) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current), 120)
+    if (!skipAudio && soundRef.current) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current), 120)
   }, [])
 
   // Start / restart the drill
@@ -485,7 +534,16 @@ function SlateDrillInner() {
     scoreRef.current = 0
     setQCount(0)
     const q = advanceDeck()
-    if (q) showQuestion(q)
+    if (q) {
+      showQuestion(q, true) // skipAudio — we chain greeting → question ourselves
+      if (soundRef.current) {
+        setTimeout(() => {
+          playSlateAudio(pick(GREETING_MSGS), audioEl.current, slateVideoRef.current, () => {
+            playSlateAudio(q.question, audioEl.current, slateVideoRef.current)
+          })
+        }, 120)
+      }
+    }
   }, [advanceDeck, showQuestion])
 
   // Handle answer result (correct / wrong / timeout)
@@ -506,10 +564,12 @@ function SlateDrillInner() {
     setQCount(c => c + 1)
 
     const msgs = timeout ? TIMEOUT_MSGS : correct ? CORRECT_MSGS : WRONG_MSGS
+    const feedbackText = pick(msgs)
     const correctAnswer = !correct && !timeout && q ? getCorrectText(q) : ''
-    setLastResult({ correct, timeout, text: pick(msgs), correctAnswer })
+    setLastResult({ correct, timeout, text: feedbackText, correctAnswer })
     phaseRef.current = 'feedback'
     setPagePhase('feedback')
+    if (soundRef.current) playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current)
 
     if (!timeout && newScore >= settingsRef.current.scoreGoal) {
       feedbackTimeout.current = setTimeout(() => {
@@ -519,8 +579,12 @@ function SlateDrillInner() {
           saveMastery(lid, lk)
           setMasteryMap(getMasteryForLearner(lid))
         }
-        phaseRef.current = 'won'
-        setPagePhase('won')
+        const doWon = () => { phaseRef.current = 'won'; setPagePhase('won') }
+        if (soundRef.current) {
+          playSlateAudio(pick(CONGRATS_MSGS), audioEl.current, slateVideoRef.current, doWon)
+        } else {
+          doWon()
+        }
       }, FEEDBACK_DELAY_MS)
     } else {
       feedbackTimeout.current = setTimeout(() => {
