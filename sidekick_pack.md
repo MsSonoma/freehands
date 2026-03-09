@@ -6,23 +6,23 @@ Mode: standard
 
 Prompt (original):
 ```text
-Flash Cards game difficulty scaling: value places (1-3=1 place, 4-6=2 places, 7-10=3 places), borrowing/carrying introduction timing, speed scaling too fast at high levels
+move Generate a Lesson button on /learn/lessons page to be right after Completed Lessons button, and add a new Mr. Slate button on the same row
 ```
 
 Filter terms used:
 ```text
-flash
-cards
-game
-difficulty
-scaling
-value
-places
-place
-borrowing
-carrying
-introduction
-timing
+/learn/lessons
+move
+generate
+lesson
+button
+learn
+lessons
+page
+right
+after
+completed
+add
 ```
 
 ---
@@ -31,13 +31,13 @@ timing
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-03-05 13:03` — session page refresh hangs times out eventually loads
 - `2026-03-07 19:37` — learn lessons page generate a lesson button pin request lesson generator
 - `2026-03-07 19:53` — lesson generator page generate button learner list make active approved lessons activate after generation
+- `2026-03-09 12:13` — Flash Cards game difficulty scaling: value places (1-3=1 place, 4-6=2 places, 7-10=3 places), borrowing/carrying introdu
 
 ---
 
-## [REMINDER] Copilot Self-Recon Obligation
+## [CRITICAL — this pack is thin or empty.] Copilot Self-Recon Obligation
 
 **THREAD FIRST, PACK SECOND.** This pack is supplementary repo knowledge. It does NOT replace the conversation thread. If the user refers to something discussed earlier (e.g. 'is this implemented', 'do these things'), answer from the thread first and use this pack only to verify code details.
 
@@ -54,7 +54,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 12. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 2. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -69,7 +69,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-flash cards game difficulty scaling value places place borrowing carrying introduction timing
+/learn/lessons move generate lesson button learn lessons page right after completed add
 
 ## Forced Context
 
@@ -77,1485 +77,1316 @@ flash cards game difficulty scaling value places place borrowing carrying introd
 
 ## Ranked Evidence
 
-### 1. cohere-changelog.md (f26244f921b2c10dd0795befe98a9f67b1d3469539c648695666e763531f0f9e)
-- bm25: -19.9812 | relevance: 0.9523
-
-Recon prompt (exact string):
-Flash Cards game: add gradual meter degradation over time on the card screen; decay rate increases with stage. Find current meter logic in FlashCards.jsx and implement an interval/timer consistent with existing patterns.
-
-### 2. cohere-changelog.md (853ad1fbee4b6ff2e2fb7abe38a8fdcde1995938478c77d3fcef8141190eb664)
-- bm25: -19.4043 | relevance: 0.9510
-
----
-
-Date (UTC): 2026-02-23T17:13:02.2543565Z
-
-Topic: Flash Cards progress sync across devices/browsers
-
-Recon prompt (exact string):
-Flash Cards progress across all devices and browsers: locate the existing Supabase learner-scoped persistence patterns (tables, RLS, upsert/read helpers) used by sessionSnapshotStore/SnapshotService, then outline how to implement the same for flashcards progress.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
-
-Result:
-- Decision: Reuse the existing `/api/snapshots` + `learner_snapshots` mechanism (Supabase auth token + learner_id + lesson_key) for flashcards progress, with localStorage as an instant cache and debounced remote sync.
-- Files changed: src/app/session/components/games/FlashCards.jsx, src/app/session/components/games/flashcardsProgressStore.js, cohere-changelog.md
-
-Follow-ups:
-- None (takeover enforces a single active session per account).
-
----
-
-Date (UTC): 2026-02-23T17:37:08.8912021Z
-
-Topic: Flash Cards visual polish (portrait card + slide animation)
-
-Recon prompt (exact string):
-Flash Cards game: make the card look like a real vertical flashcard and add a simple slide-in/slide-out animation between cards. Find existing animation/style patterns in the session UI and confirm where FlashCards is rendered.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-
-Result:
-- Updated the card UI to a tall portrait “flash card” and added a lightweight slide-out/slide-in transition when advancing cards.
-- Files changed: src/app/session/components/games/FlashCards.jsx, cohere-changelog.md
-
----
-
-Date (UTC): 2026-02-23T18:07:12.8146173Z
-
-Topic: Flash Cards meter decay (stage-scaled time pressure)
-
-### 3. cohere-changelog.md (238598086b89be712c98fef2c3ec8048ee179ecaeee31f00735a30dd45bea23d)
-- bm25: -18.3990 | relevance: 0.9485
-
-Follow-ups:
-- If the app still feels slow, instrument counts/latency of `/api/sonoma` calls per phase and consider parallelizing non-dependent prefetches.
-
----
-
-Date (UTC): 2026-02-23T16:53:49.2989770Z
-
-Topic: New Games overlay game — Flash Cards (math)
-
-Recon prompt (exact string):
-Build new Games overlay game 'Flash Cards': setup screen selects subject (math dropdown), topic, stage; 50 flashcards per topic per stage; 10 stages per topic; meter up/down with goal to advance; stage completion screen (Next); topic completion screen (more exciting, movement, shows next topic + Next). Persist per-learner progress across sessions.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
-
-Result:
-- Decision: Implement Flash Cards entirely client-side inside GamesOverlay, with deterministic per-learner math decks (50 cards per stage/topic) and localStorage persistence so progress resumes across sessions.
-- Files changed: src/app/session/components/games/GamesOverlay.jsx, src/app/session/components/games/FlashCards.jsx, src/app/session/components/games/flashcardsMathDeck.js, cohere-changelog.md
-
-Follow-ups:
-- If you want cross-device progress (not just same browser), add a Supabase-backed progress table and swap the storage adapter.
-
-### 2026-02-27 � Generation error: e.map is not a function
-- Recon prompt: `Generation Failed error from lesson generator API route - investigate callModel and storage upload`
-- Root cause: `buildValidationChangeRequest(validation)` passed whole `{ passed, issues, warnings }` object; function calls `.map()` directly on its argument
-- Fix: `src/app/facilitator/generator/page.js` � `buildValidationChangeRequest(validation)` ? `buildValidationChangeRequest(validation.issues)`
-
-### 4. src/app/session/components/games/flashcardsMathDeck.js (98d77454a2a281f4d12aa09da3d352cdf00128eb53a00357d727d9fb4706bd9d)
-- bm25: -17.2992 | relevance: 0.9454
-
-function makeDivisionCard(rng, stage) {
-  const [divMax, quotMax] = stageRange(stage, [
-    [5, 5],
-    [10, 5],
-    [12, 10],
-    [15, 12],
-    [20, 15],
-    [25, 20],
-    [50, 25],
-    [100, 50],
-    [200, 100],
-    [500, 200],
-  ]);
-  const divisor = randInt(rng, 1, divMax);
-  const quotient = randInt(rng, 0, quotMax);
-  const dividend = divisor * quotient;
-  return { prompt: `${dividend} ÷ ${divisor} = ?`, answer: String(quotient) };
-}
-
-function makePlaceValueCard(rng, stage) {
-  const digits = stageRange(stage, [
-    2, 2, 3, 3, 4, 4, 5, 5, 6, 6,
-  ]);
-  const places = ['ones', 'tens', 'hundreds', 'thousands', 'ten-thousands', 'hundred-thousands'];
-  const placeIndex = randInt(rng, 0, Math.min(digits - 1, places.length - 1));
-
-const nums = [];
-  for (let i = 0; i < digits; i++) {
-    nums.push(randInt(rng, 0, 9));
-  }
-  if (nums[0] === 0) nums[0] = randInt(rng, 1, 9);
-
-const n = Number(nums.join(''));
-  const power = digits - 1 - placeIndex;
-  const digit = nums[placeIndex];
-  const value = digit * Math.pow(10, power);
-
-return {
-    prompt: `In ${n.toLocaleString()}, what is the value of the ${digit} in the ${places[power]} place?`,
-    answer: String(value),
-  };
-}
-
-function makeDecimalAddSubCard(rng, stage, op) {
-  const places = stageRange(stage, [
-    1, 1, 1, 2, 2, 2, 2, 2, 2, 2,
-  ]);
-  const intMax = stageRange(stage, [
-    9, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000,
-  ]);
-
-### 5. src/app/session/components/games/GamesOverlay.jsx (57124ae743b1dbc4fd0131f8cd0de2cade0c51a4d51f4c9f14067219723d857a)
-- bm25: -17.0656 | relevance: 0.9446
-
-// Active game screen
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: '#fff',
-        zIndex: 20000,
-        overflow: 'auto',
-      }}
-    >
-      {/* Play timer in upper left */}
-      {playTimer && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 16,
-            left: 16,
-            zIndex: 10001,
-          }}
-        >
-          {playTimer}
-        </div>
-      )}
-
-{/* Render the selected game */}
-      {selectedGame === 'memory-match' && (
-        <MemoryMatch onExit={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'snake' && (
-        <Snake onExit={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'catch-collect' && (
-        <CatchCollect onBack={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'maze-runner' && (
-        <MazeRunner onBack={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'whack-a-mole' && (
-        <WhackAMole onBack={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'platform-jumper' && (
-        <PlatformJumper onBack={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'flood-climb' && (
-        <FloodClimbSpelling onBack={() => setSelectedGame(null)} />
-      )}
-      {selectedGame === 'flash-cards' && (
-        <FlashCards onBack={() => setSelectedGame(null)} />
-      )}
-    </div>
-  );
-}
-
-### 6. src/app/session/components/games/GamesOverlay.jsx (835f83b1895c0f50ade5bb65f94b08d4e654de2cf63794d46b3d7003112194d9)
-- bm25: -14.2106 | relevance: 0.9343
-
-const gamesList = [
-    {
-      id: 'memory-match',
-      name: 'Memory Match',
-      description: 'Find matching pairs of cards',
-      icon: '🎴',
-      color: '#10b981',
-    },
-    {
-      id: 'snake',
-      name: 'Snake',
-      description: 'Eat food and grow longer!',
-      icon: '🐍',
-      color: '#8b5cf6',
-    },
-    {
-      id: 'catch-collect',
-      name: 'Catch & Collect',
-      description: 'Catch falling items with your basket!',
-      icon: '🧺',
-      color: '#f59e0b',
-    },
-    {
-      id: 'maze-runner',
-      name: 'Maze Runner',
-      description: 'Navigate through the maze to the flag!',
-      icon: '🏁',
-      color: '#ef4444',
-    },
-    {
-      id: 'whack-a-mole',
-      name: 'Whack-a-Mole',
-      description: 'Click the moles before they hide!',
-      icon: '🦫',
-      color: '#06b6d4',
-    },
-    {
-      id: 'platform-jumper',
-      name: 'Platform Jumper',
-      description: 'Jump across platforms to reach the trophy!',
-      icon: '🏆',
-      color: '#ec4899',
-    },
-    {
-      id: 'flood-climb',
-      name: 'Flood Climb',
-      description: 'Spell the emoji word to climb to safety!',
-      icon: '🌊',
-      color: '#3b82f6',
-    },
-    {
-      id: 'flash-cards',
-      name: 'Flash Cards',
-      description: 'Answer cards to level up stages',
-      icon: '🃏',
-      color: '#111827',
-    },
-    // Future games will go here
-  ];
-
-### 7. cohere-changelog.md (9d2e1e013fb605e51fa366095fb5dc5183d367a706ae7834e7ac8e1bb84ef7c9)
-- bm25: -13.6170 | relevance: 0.9316
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-
-Result:
-- Added a meter decay interval while on the card screen; decay speeds up as stage increases, creating a variable time limit.
-- Smoothed meter width changes via a short CSS transition so the bar glides left.
-- Files changed: src/app/session/components/games/FlashCards.jsx, cohere-changelog.md
-
----
-
-Date (UTC): 2026-02-23T21:02:07.7947459Z
-
-Topic: Flash Cards meter decay fix (smooth tick-down + beatable)
-
-Issue:
-- Decay felt like it “waits then clears entirely” and made stages effectively unbeatable.
-
-Fix:
-- Changed decay from whole-point steps to a smooth fractional tick every 100ms.
-- Made the meter bar width continuous (removed rounding) so it visibly drifts left.
-- Removed stale-closure stage-complete check; compute the post-answer meter value and use it directly.
-
-Files changed:
-- src/app/session/components/games/FlashCards.jsx
-- cohere-changelog.md
-
----
-
-Date (UTC): 2026-02-23T21:05:30.6266490Z
-
-Topic: Flash Cards meter decay tuning
-
-Result:
-- Slowed the decay curve so Stage 1 feels forgiving and Stage 10 remains beatable (~25s/point → ~10s/point).
-- File changed: src/app/session/components/games/FlashCards.jsx
-
-Follow-ups:
-- If we want stronger detection, add optional `-Expect` anchors to the wrapper (manual list) for high-value prompts.
-
----
-
-Date (UTC): 2026-02-18T00:00:00Z
-
-Topic: Clean up Sidekick snapshot outputs in repo root
-
-Recon prompt (exact string):
-(none — housekeeping)
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl
-
-### 8. docs/brain/games-overlay.md (3d69f6755dd3a8792771418e6e2fe533bcaad2786166bfa293915f77a4ff8f9d)
-- bm25: -13.2531 | relevance: 0.9298
-
-# Games Overlay (#games-overlay)
-
-**Status**: Canonical  
-**Last Updated**: 2026-01-13T00:59:23Z
-
-## How It Works
-
-Games are launched from the in-session **Games overlay**.
-
-- The session pages (V1 and V2) open `GamesOverlay` during play time.
-- `GamesOverlay` renders a full-screen modal experience:
-  - A game picker menu (list of games)
-  - A full-screen active-game view
-- A play timer badge (rendered by `SessionTimer`) is optionally passed in and displayed at the top-left.
-
-**Click parity:** If the timer badge is present, it should remain interactive (cursor + click) so the facilitator can open `TimerControlOverlay` from within the Games overlay (PIN-gated), matching the rest of the session.
-
-### Difficulty and Grade
-
-The Games overlay does **not** own a global difficulty setting.
-
-- If a specific game needs grade-driven difficulty, that game should present its own grade selector (or other difficulty control) inside the game UI.
-- Games may optionally initialize their own difficulty from the currently selected learner profile (when the game is launched), but that choice must remain scoped to the game.
-
-### Props
-
-`GamesOverlay` accepts:
-- `onClose`: closes the overlay
-- `playTimer`: a React node (typically `SessionTimer`) rendered as a badge
-
-## What NOT To Do
-
-- Do not add an overlay-wide difficulty selector unless explicitly requested.
-- Do not store or persist Games settings to localStorage as a fallback.
-- Do not couple Games overlay state to Ms. Sonoma prompt/state; games are independent UI.
-
-## Key Files
-
-- `src/app/session/components/games/GamesOverlay.jsx`
-- `src/app/session/page.js` (V1 integration)
-- `src/app/session/v2/SessionPageV2.jsx` (V2 integration)
-
-### 9. docs/brain/platform-jumper.md (7caf44efa572f22fa67617302787b5bd0614f14c56a964f6bd0bce09734cca91)
-- bm25: -13.2068 | relevance: 0.9296
-
-# Platform Jumper (#platform-jumper)
-
-## How It Works
-
-Platform Jumper is a small in-session game rendered by a single client component.
-
-The player moves and jumps using a simple velocity + gravity loop:
-
-- `playerPos` holds the current position in game coordinates.
-- `playerVelocity` holds the current velocity.
-- Gravity (`GRAVITY`) accelerates downward each tick.
-- Jumping sets an immediate upward `y` velocity.
-
-Jump types:
-
-- Normal jump uses `JUMP_STRENGTH` (negative y velocity).
-- Trampoline jump uses `TRAMPOLINE_BOUNCE` when the current platform has `trampoline: true`.
-
-Practical beatability note:
-
-- With the current physics, trampoline bounce height is finite; avoid placing required landing platforms too close to the top of the screen unless there is an intermediate trampoline/platform.
-
-Level layouts:
-
-- Levels are declared in the `levels` object; keys are level numbers.
-- Each level has a `platforms` array (rectangles) plus `startPos` and `goalArea`.
-- Coordinates use game space: `x` increases to the right, `y` increases downward.
-- Reference size: `GAME_WIDTH = 800`, `GAME_HEIGHT = 500`.
-- A movement like "raise 15%" means subtract `0.15 * GAME_HEIGHT` from `y`.
-- A movement like "move left 20%" means subtract `0.20 * GAME_WIDTH` from `x`.
-- For beatability gaps between trampolines, prefer adding a single intermediate trampoline before changing global physics (example: Level 37 bridge).
-
-Input:
-
-- Keyboard: arrow keys move; Space jumps.
-- Touch: left/right controls set movement; jump uses the shared `performJump` logic.
-
-Scaling:
-
-- The game scales to fit available viewport space using a calculated `scale` based on `GAME_WIDTH`/`GAME_HEIGHT`.
-
-PIN-gated settings:
-
-### 10. src/app/session/components/games/FlashCards.jsx (13db057783d13c08379080f7f08d4236074303159439022681247d673c6eff7c)
-- bm25: -13.0795 | relevance: 0.9290
-
-<div>
-              <div style={label}>Topic</div>
-              <select style={select} value={topicId} onChange={(e) => setTopicId(e.target.value)}>
-                {MATH_FLASHCARD_TOPICS.map((t) => (
-                  <option key={t.id} value={t.id}>{t.label}</option>
-                ))}
-              </select>
-            </div>
-
-<div>
-              <div style={label}>Stage</div>
-              <select style={select} value={stage} onChange={(e) => setStage(clampStage(e.target.value))}>
-                {Array.from({ length: STAGES_TOTAL }).map((_, i) => (
-                  <option key={i + 1} value={i + 1}>Stage {i + 1}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-<div style={{ marginTop: 16 }}>
-            <button
-              type="button"
-              style={{ ...btn, width: '100%', padding: '14px 16px', fontSize: 18 }}
-              onClick={startStage}
-            >
-              Go
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-if (screen === 'stage-complete') {
-    return (
-      <div style={frame}>
-        <div style={headerRow}>
-          <button type="button" style={softBtn} onClick={onBack}>← Back</button>
-          <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
-          <div style={{ width: 90 }} />
-        </div>
-
-<div style={{ background: '#fff', border: '2px solid #e5e7eb', borderRadius: 16, padding: 18, textAlign: 'center' }}>
-          <div style={{ fontSize: 44, marginBottom: 8 }}>🎉</div>
-          <div style={{ fontWeight: 900, fontSize: 26, color: '#111827' }}>Stage {clampStage(stage)} complete!</div>
-          <div style={{ marginTop: 8, fontSize: 16, color: '#4b5563' }}>{topicLabel}</div>
-
-### 11. docs/brain/lesson-assessment-architecture.md (a96cb09aab85ea7d9f2a21d433f123aec2cf5e33e18cc9b10d421a7a57ee461e)
-- bm25: -12.8500 | relevance: 0.9278
-
-### ❌ Don't store arrays in multiple places
-localStorage is persistence layer. React state is runtime layer. No database storage of shuffled arrays (too much data, no value).
-
-### 12. src/app/session/components/games/FlashCards.jsx (66367d1ba95295c03bd3dba172cc8ff13ca562e885fba4458dde0131bf13810e)
-- bm25: -12.7528 | relevance: 0.9273
-
-{/* Header — hidden in compact (landscape + keyboard open) */}
-      {!compact && (
-        <div style={{ ...headerRow, flexShrink: 0 }}>
-          <button type="button" style={softBtn} onClick={onBack}>← Back</button>
-          <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
-          <button type="button" style={softBtn} onClick={() => setScreen('setup')}>Setup</button>
-        </div>
-      )}
-
-### 13. docs/brain/ms-sonoma-teaching-system.md (25924444b0a99e010e5adc790311b5b3a6f525223ee557909a969e29fbeb292d)
-- bm25: -11.5298 | relevance: 0.9202
-
-### Slot Policy
-
-- Build with templates in code
-- Substitute slots (e.g., {NAME}, {TITLE}) to literals before send
-- Never let placeholders reach Ms. Sonoma
-- Normalize quotes to straight ASCII before validation
-
-### Developer-Only Examples
-
-These are shapes for Copilot reference only - never emit to children:
-
-**Opening**:
-```
-Hello Emma. Today's lesson is 4th Multiplying with Zeros. You've got this. Let's start with a joke. Why did zero skip dessert? Because it was already nothing. If zero wore a tiny hat, what would it look like?
-```
-
-**Teaching Definitions**:
-```
-Zero property means any number times zero is zero. Identity property means any number times one stays the same. Place value means where a digit sits in a number. A placeholder zero holds a place and does not change digits. A trailing zero sits at the end and shifts place value. A leading zero is at the start and does not change value. Do you have any questions? You could ask questions like: What does zero property mean? Why is place value important? What is a trailing zero?
-```
-
-**Teaching Examples**:
-```
-Three times zero is zero because of the zero property. Ten times five is fifty; the trailing zero shifts place value. One times seven is seven because of the identity property. Do you have any questions? You could ask questions like: Can you show me another zero property example? What happens with twenty times two? How does the identity property work?
-```
-
-**Transition**:
-```
-Great. Let's move on to comprehension.
-```
-
-**Comprehension Ask**:
-```
-What is 9 times zero?
-```
-
-**Correct Feedback**:
-```
-Yes, great thinking. It is zero because anything times zero is zero. What is 20 times one?
-```
-
-**Hint Feedback**:
-```
-Let's go smaller. What is 1 times zero? Now try 9 times zero again.
-```
-
-### 14. src/app/facilitator/calendar/LessonGeneratorOverlay.jsx (c6e8f40c904e4d22c902d8f4ee65b8cd49953f1dea04af4209003bacd360333f)
-- bm25: -10.6137 | relevance: 0.9139
-
-<div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                Difficulty
-              </label>
-              <select
-                value={form.difficulty}
-                onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: 10,
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
-              >
-                {difficulties.map(d => (
-                  <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-### 15. src/app/session/components/games/flashcardsMathDeck.js (38a125b0f1c8df239731883f9361c1ccd408e37a91bac814a1cb454299721c09)
-- bm25: -10.5435 | relevance: 0.9134
-
-const scale = Math.pow(10, places);
-  const a = randInt(rng, 0, intMax * scale) / scale;
-  const b = randInt(rng, 0, intMax * scale) / scale;
-  if (op === '+') {
-    const ans = (a + b).toFixed(places);
-    return { prompt: `${a} + ${b} = ?`, answer: String(Number(ans)) };
-  }
-  const hi = Math.max(a, b);
-  const lo = Math.min(a, b);
-  const ans = (hi - lo).toFixed(places);
-  return { prompt: `${hi} − ${lo} = ?`, answer: String(Number(ans)) };
-}
-
-### 16. src/app/facilitator/generator/page.js (bb6a449ce36993b6b8cb3191b0cf40e8060d6376332a9ef8e4467e236c167ff8)
-- bm25: -10.1785 | relevance: 0.9105
-
-{toast && (
-        <div style={{ marginTop: 12 }}>
-          <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
-        </div>
-      )}
-
-<form onSubmit={handleGenerate} style={{ marginTop: 18 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12 }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Grade</span>
-            <select
-              value={form.grade}
-              onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}
-              style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}
-              required
-            >
-              <option value="">Select grade</option>
-              {grades.map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-          </label>
-
-<label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Difficulty</span>
-            <select
-              value={form.difficulty}
-              onChange={e => setForm(f => ({ ...f, difficulty: e.target.value }))}
-              style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}
-              required
-            >
-              {difficulties.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </label>
-
-### 17. docs/brain/ms-sonoma-teaching-system.md (d84431ede34e18d067e36c129d5276cdfb7faeb2aedf8b2b2cce67bfd573df38)
-- bm25: -10.0441 | relevance: 0.9095
-
-### Brand Signal Anchors
-
-**PRAISE** (correct answer):
-- Intent: Acknowledge effort and method, not just result
-- Tone: Calm, specific, non-hype
-- Lexicon: calm, clear, thinking, steps, focus
-- Avoid: amazing, awesome, crushed it
-- Shape: "Great [effort/thinking/focus]; [what they did well]."
-- Examples:
-  - Great thinking; you used the zero property correctly.
-  - Nice focus; you checked each place value.
-
-**HINT** (incorrect answer):
-- Intent: Soften redirect; guide without solving
-- Tone: Patient, collaborative
-- Lexicon: smaller step, notice, try, together
-- Avoid: Let me help you, That's wrong
-- Shape: "Let's [action]. [Guiding question]."
-- Examples:
-  - Let's try a smaller number. What is 1 times zero?
-  - Notice the place value here. What happens when we multiply by ten?
-
-**CLOSING**:
-- Intent: Celebrate process and learning, not achievement
-- Tone: Warm, grounded
-- Lexicon: learned, practiced, worked, steady, progress
-- Avoid: nailed it, perfect, genius
-- Shape: "[Effort observation]. [One thing learned]. [Goodbye]."
-- Examples:
-  - You worked steadily today. You practiced the zero property. See you next time.
-  - Great focus today. You learned how place value shifts with zeros. Talk soon.
-
-### Signal Drift Validation
-
-Before sending Ms. Sonoma content, validate:
-- Word count per sentence: 6-12
-- Preferred lexicon present: calm, clear, focus, steps, notice, practice, steady
-- Avoid list absent: amazing, awesome, epic, crushed, nailed, genius
-- Exclamation count: 0-1 per response
-- Hype pattern absent: stacked adjectives, intensity escalation
-
-If drift detected, rephrase using Signal Anchors before sending.
-
-### Canonical Cues (VERBATIM)
-
-These exact phrases must be used:
-
-**Opening - Joke Starters**:
-- "Wanna hear a joke?"
-- "Let's start with a joke."
-
-### 18. src/app/facilitator/generator/counselor/overlays/LessonMakerOverlay.jsx (c0af6658a9bd640d0c0a2212cafa1fcfdadb96ad9dfe70d3c6de66354a1a6667)
-- bm25: -9.9635 | relevance: 0.9088
-
-{/* Form */}
-      <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 12 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: '100%' }}>
-          {/* Grade, Difficulty & Subject */}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, marginBottom: 4, color: '#374151' }}>
-                Grade *
-              </label>
-              <input
-                type="text"
-                value={form.grade}
-                onChange={(e) => setForm({ ...form, grade: e.target.value })}
-                placeholder="e.g., 5th"
-                required
-                disabled={busy}
-                style={{
-                  width: '100%',
-                  padding: '6px 10px',
-                  fontSize: 12,
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  background: '#fff',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-            
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, marginBottom: 4, color: '#374151' }}>
-                Difficulty
-              </label>
-              <select
-                value={form.difficulty}
-                onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
-                disabled={busy}
-                style={{
-                  width: '100%',
-                  padding: '6px 10px',
-                  fontSize: 12,
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  background: '#fff',
-                  cursor: 'pointer
-
-### 19. docs/brain/flood-climb-spelling.md (632422d834fc3ead2e54d0c5f015a851978cc243800fcc58da233e1f9df54f46)
-- bm25: -9.5931 | relevance: 0.9056
-
-# Flood Climb Spelling Game (#flood-climb-spelling)
-
-**Status**: Canonical  
-**Last Updated**: 2026-01-13T03:35:15Z
-
-## How It Works
-
-Flood Climb is a time-pressure spelling game inside the Games overlay.
-
-- The player sees an emoji prompt (example: 🐮).
-- The game also shows a scrambled-letter hint for the target word.
-- The prompt is shown in-stage in the "sky" area (right of the rock wall).
-- The rock wall uses a non-repeating polygon SVG texture (asymmetrical facets; no round blobs) with a flat, cool stone palette to match the climber rock.
-- The rock wall uses the SVG palette directly (no CSS tint overlay).
-- The SVG URL is cache-busted so palette tweaks show up immediately during dev.
-- The "How to play" instructions are also shown in the sky area before Start.
-- Win/lose messaging and the "Play Again" / "Next Level" actions also render in that same sky area.
-- The player types the matching word (example: "cow") and submits (Enter or Submit).
-- The input placeholder reads "Type your answer and press Enter."
-- The standalone instruction line above the input is not shown.
-- Clicking in-game buttons should not steal focus from the input during play.
-- Score accumulates across levels and across runs during the session.
-- Correct answers move the climber upward.
-- Wrong answers cause the water level to jump upward.
-- The water also rises continuously over time.
-- The climber renders behind the water, so submerging looks underwater.
-- The climber is slightly inset from the rock wall for visibility.
-- The player loses when the water reaches the climber's head.
-- The player wins by reaching the top zone before the water catches them.
-
-### Level Progression (Game-Scoped)
-
-Difficulty is owned by this game (not by the Games overlay).
-
-### 20. docs/brain/flood-climb-spelling.md (cd2bc0ac77d08c2d99330dacc03e08685639e9ec766a374661ebb95c861ad2e9)
-- bm25: -9.5772 | relevance: 0.9055
-
-The level controls:
-- The word deck used for prompts (higher levels use harder-to-spell words)
-- Water rise rate (higher level = faster)
-- Climb amount per correct answer (higher level = smaller climb)
-- Water penalty on wrong answers (higher level = bigger penalty)
-
-Notes:
-- The game includes a short start delay before the water begins rising.
-- Starting positions provide a playable buffer so players are not forced to type instantly.
-
-## What NOT To Do
-
-- Do not add an overlay-wide difficulty selector to support this game.
-- Do not persist the level selection via localStorage as a fallback.
-- Do not require learner profile plumbing through `GamesOverlay` unless explicitly requested.
-
-## Key Files
-
-- `src/app/session/components/games/FloodClimbSpelling.jsx`
-- `src/app/session/components/games/GamesOverlay.jsx`
-- `public/media/flood-climb-rockwall.svg`
-
-### 21. src/app/session/components/games/flashcardsMathDeck.js (e06e10e66965b15c830fab9c78f33973c310c029f2415be17702aa4694782b00)
-- bm25: -9.5415 | relevance: 0.9051
-
-function makeFractionLikeDenCard(rng, stage) {
-  const den = stageRange(stage, [
-    2, 2, 3, 4, 4, 5, 6, 8, 10, 12,
-  ]);
-  const a = randInt(rng, 1, den - 1);
-  const b = randInt(rng, 1, den - 1);
-  const num = a + b;
-
-// Reduce
-  const gcd = (x, y) => {
-    let aa = Math.abs(x);
-    let bb = Math.abs(y);
-    while (bb) {
-      const t = bb;
-      bb = aa % bb;
-      aa = t;
-    }
-    return aa || 1;
-  };
-
-const g = gcd(num, den);
-  const rn = num / g;
-  const rd = den / g;
-
-return {
-    prompt: `${a}/${den} + ${b}/${den} = ?  (answer as a fraction like 1/2)`,
-    answer: `${rn}/${rd}`,
-  };
-}
-
-export const FLASHCARD_SUBJECTS = [
-  { id: 'math', label: 'Math' },
-];
-
-export const MATH_FLASHCARD_TOPICS = [
-  { id: 'addition', label: 'Addition', makeCard: makeAdditionCard },
-  { id: 'subtraction', label: 'Subtraction', makeCard: makeSubtractionCard },
-  { id: 'multiplication', label: 'Multiplication', makeCard: makeMultiplicationCard },
-  { id: 'division', label: 'Division', makeCard: makeDivisionCard },
-  { id: 'place-value', label: 'Place Value', makeCard: makePlaceValueCard },
-  { id: 'decimals-add', label: 'Decimals: Add', makeCard: (rng, stage) => makeDecimalAddSubCard(rng, stage, '+') },
-  { id: 'decimals-sub', label: 'Decimals: Subtract', makeCard: (rng, stage) => makeDecimalAddSubCard(rng, stage, '-') },
-  { id: 'fractions-add', label: 'Fractions: Add (like denominators)', makeCard: makeFractionLikeDenCard },
-];
-
-### 22. src/app/facilitator/calendar/LessonPlanner.jsx (7081b39120b7f702388f3884d3ff382491dd5f76f41fd970d9f65b4c8380789a)
-- bm25: -9.3290 | relevance: 0.9032
-
-// Calculate recommended difficulty based on recent performance
-      const recentCompleted = lessonContext
-        .filter(l => l.status === 'completed' && l.score !== null)
-        .slice(-6) // Last 6 completed lessons
+### 1. src/app/learn/lessons/page.js (6b3b9772961ee7423c241c7f4158b8602789e1ba26428e9ce203ee7e9224874d)
+- bm25: -20.7758 | relevance: 0.9541
+
+// CRITICAL: Don't treat 'congrats' or 'test' as meaningful progress
+  // Lesson is complete - no point resuming to "Complete Lesson" button
+  // Test phase includes both in-progress tests AND completed tests (testFinalPercent may be null)
+  if (phase === 'congrats' || phase === 'test') return false
+
+### 2. src/app/session/v2/SessionPageV2.jsx (9ee73d9a3cea915314c6e940bf0c12aa1afff4c8b90f3c9b5f771678087813b2)
+- bm25: -18.3657 | entity_overlap_w: 4.50 | adjusted: -19.4907 | relevance: 0.9512
+
+// End tracked session (so Calendar history can detect this completion).
+      try { stopSessionPolling?.(); } catch {}
+      try {
+        await endTrackedSession('completed', {
+          source: 'session-v2',
+          test_percentage: testGrade?.percentage ?? null,
+        });
+      } catch {}
       
-      let recommendedDifficulty = 'intermediate' // Safe default
-      
-      if (recentCompleted.length >= 3) {
-        const avgScore = recentCompleted.reduce((sum, l) => sum + l.score, 0) / recentCompleted.length
-        
-        // Detect current level from recent lesson keywords
-        const recentBeginner = recentCompleted.slice(-3).filter(l => 
-          l.name.toLowerCase().includes('beginner') || 
-          l.name.toLowerCase().includes('introduction') ||
-          l.name.toLowerCase().includes('basics')
-        ).length
-        
-        const recentAdvanced = recentCompleted.slice(-3).filter(l => 
-          l.name.toLowerCase().includes('advanced') || 
-          l.name.toLowerCase().includes('expert') ||
-          l.name.toLowerCase().includes('mastery')
-        ).length
-        
-        // Bidirectional adjustment based on performance
-        if (avgScore >= 85 && recentAdvanced >= 2) {
-          recommendedDifficulty = 'advanced' // Already advanced, doing great
-        } else if (avgScore >= 80 && recentBeginner === 0) {
-          recommendedDifficulty = 'advanced' // Ready to move up from intermediate
-        } else if (avgScore <= 65) {
-          recommendedDifficulty = 'beginner' // Struggling - move down
-        } else if (avgScore <= 70 && recentAdvanced >= 2) {
-          recommendedDifficulty = 'intermediate' // Struggling at advanced - move down
+      // Navigate to lessons page
+      console.log('[SessionPageV2] Attempting navigation to lessons page');
+      console.log('[SessionPageV2] router:', router);
+      console.log('[SessionPageV2] router.push type:', typeof router?.push);
+      try {
+        if (router && typeof router.push === 'function') {
+          console.log('[SessionPageV2] Using router.push');
+          router.push('/learn/lessons');
+        } else if (typeof window !== 'undefined') {
+          console.log('[SessionPageV2] Using window.location.href');
+          window.location.href = '/learn/lessons';
         }
-        // else stays at intermediate (safe middle ground)
+      } catch (err) {
+        console.error('[SessionPageV2] Navigation error:', err);
+        if (typeof window !== 'undefined') {
+          try { window.location.href = '/learn/lessons'; } catch {}
+        }
       }
-
-### 23. src/app/session/components/games/GamesOverlay.jsx (5ce3da6ed6af4051e5ebd39aeb0c7d1a8e14e384a714abeec4931ee40c21d346)
-- bm25: -8.7607 | relevance: 0.8975
-
-{/* Games list */}
-          <div
-            style={{
-              padding: 24,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 16,
-            }}
-          >
-            {gamesList.map((game) => (
-              <button
-                key={game.id}
-                onClick={() => setSelectedGame(game.id)}
-                style={{
-                  background: '#f9fafb',
-                  border: `2px solid ${game.color}`,
-                  borderRadius: 12,
-                  padding: 20,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 16,
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.12)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 48,
-                    lineHeight: 1,
-                  }}
-                >
-                  {game.icon}
-                </div>
-                <div style={{ flex: 1, textAlign: 'left' }}>
-                  <div
-                    style={{
-                      fontSize: 20,
-                      fontWeight: 700,
-                      color: '#1f2937',
-                      marginBottom: 4,
-                    }}
-                  >
-                    {game.name}
-
-### 24. src/app/facilitator/calendar/LessonGeneratorOverlay.jsx (e09bc19d95e214364a73e8cf4f6e27ee7f8e40426ed113a33412e600123b28b2)
-- bm25: -8.4991 | relevance: 0.8947
-
-<form onSubmit={handleGenerateAndSchedule} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Grade and Difficulty Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                Grade *
-              </label>
-              <select
-                value={form.grade}
-                onChange={(e) => setForm({ ...form, grade: e.target.value })}
-                required
-                style={{
-                  width: '100%',
-                  padding: 10,
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
-              >
-                <option value="">Select Grade</option>
-                {['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'].map(g => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </select>
-            </div>
-
-### 25. src/app/session/v2/OpeningActionsController.jsx (51c1629192972253c3170a3a832ffcd6ca03eb6a1f3a31767de88d31d50977f9)
-- bm25: -8.4202 | relevance: 0.8938
-
-/**
- * OpeningActionsController.jsx
- * 
- * Manages opening actions (Ask, Riddle, Poem, Story, Fill-in-Fun) in V2 architecture.
- * Available during play time in phases 2-5 (Comprehension, Exercise, Worksheet, Test).
- * 
- * V2 architectural patterns:
- * - Event-driven communication via EventBus
- * - Private fields for encapsulation (#)
- * - Single source of truth (no state duplication)
- * - Deterministic async/await chains
- * 
- * Events emitted:
- * - openingActionStart: { action, phase }
- * - openingActionComplete: { action, phase }
- * - openingActionCancel: { action, phase }
- * 
- * Events consumed:
- * - (none currently - self-contained controller)
- * 
- * Opening Actions:
- * 1. Ask: Learner asks Ms. Sonoma questions
- * 2. Riddle: Present riddle with hint/reveal
- * 3. Poem: Read subject-themed poem
- * 4. Story: Collaborative storytelling
- * 5. Fill-in-Fun: Mad Libs word game
- */
-
-import { pickNextRiddle, renderRiddle } from '@/app/lib/riddles';
-import { pickNextJoke, renderJoke } from '@/app/lib/jokes';
-import { fetchTTS } from './services';
-import { getGradeAndDifficultyStyle } from '../utils/constants';
-
-export class OpeningActionsController {
-  #eventBus;
-  #audioEngine;
-  #phase;
-  #subject;
-  #learnerGrade;
-  #difficulty;
-
-#actionNonce = 0;
-
-#fillInFunTemplatePromise = null;
-  
-  // Current action state
-  #currentAction = null; // 'ask' | 'riddle' | 'poem' | 'story' | 'fill-in-fun' | 'joke' | null
-  #actionState = {}; // Action-specific state
-  
-  constructor(eventBus, audioEngine, options = {}) {
-    this.#eventBus = eventBus;
-    this.#audioEngine = audioEngine;
-    this.#phase = options.phase || null;
-    this.#subject = options.subject || 'math';
-    this.#learnerGrade = options.learnerGrade || '';
-    this.#difficulty = options.difficulty || 'moderate';
-
-### 26. src/app/session/components/games/FlashCards.jsx (6806085209b35fdf433cfce31ca06659fc6d75ff307203113aa354341df958bd)
-- bm25: -8.1779 | relevance: 0.8910
-
-// Ensure fresh deterministic deck for the new topic/stage
-    queueMicrotask(() => {
-      const seedValue = makeSeed(learnerId, subjectId, nextTopicId, 1);
-      setSeed(seedValue);
     });
-  };
+    
+    return () => {
+      orchestrator.destroy();
+      orchestratorRef.current = null;
+    };
+  }, [lessonData]);
 
-const topicLabel = getTopicLabel(topicId);
-  const nextTopicId = pickNextTopicId(topicId);
-  const nextTopicLabel = nextTopicId ? getTopicLabel(nextTopicId) : null;
+// Initialize OpeningActionsController once audio is ready and lesson is loaded
+  useEffect(() => {
+    if (!lessonData || !audioReady || !audioEngineRef.current || !eventBusRef.current) return;
 
-const frame = {
-    padding: 24,
-    maxWidth: 720,
-    margin: '0 auto',
-  };
+const openingController = new OpeningActionsController(
+      eventBusRef.current,
+      audioEngineRef.current,
+      {
+        phase: currentPhase,
+        subject: lessonData.subject || 'math',
+        learnerGrade: lessonData.grade || '',
+        difficulty: lessonData.difficulty || 'moderate'
+      }
+    );
 
-const headerRow = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 16,
-  };
+### 3. src/app/learn/lessons/page.js (12090f0a310cdef5ac39fa8a9f88b9974cd0c43db2959b605ae40c51dfe1e617)
+- bm25: -19.2546 | relevance: 0.9506
 
-const btn = {
-    border: 'none',
-    borderRadius: 12,
-    padding: '10px 14px',
-    background: '#111827',
-    color: '#fff',
-    fontWeight: 800,
-    cursor: 'pointer',
-  };
+{/* Golden Key Counter */}
+      {goldenKeysEnabled === true && !loading && !lessonsLoading && (
+        <GoldenKeyCounter
+          learnerId={learnerId}
+          selected={goldenKeySelected}
+          onToggle={() => setGoldenKeySelected(prev => !prev)}
+        />
+      )}
 
-const softBtn = {
-    ...btn,
-    background: '#f3f4f6',
-    color: '#111827',
-    border: '2px solid #e5e7eb',
-  };
-
-const select = {
-    width: '100%',
-    padding: '12px 12px',
-    borderRadius: 12,
-    border: '2px solid #e5e7eb',
-    fontSize: 16,
-    background: '#fff',
-  };
-
-const label = {
-    fontSize: 14,
-    fontWeight: 800,
-    color: '#374151',
-    marginBottom: 6,
-  };
-
-if (screen === 'setup') {
-    return (
-      <div style={frame}>
-        <div style={headerRow}>
-          <button type="button" style={softBtn} onClick={onBack}>← Back</button>
-          <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
-          <div style={{ width: 90 }} />
+{learnerId && learnerId !== 'demo' && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, marginTop: 12 }}>
+          <button
+            onClick={() => setShowHistoryModal(true)}
+            style={{
+              padding: '10px 20px',
+              border: '1px solid #d1d5db',
+              borderRadius: 8,
+              background: '#fff',
+              color: '#111827',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: lessonHistoryLoading ? 'wait' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+            disabled={lessonHistoryLoading && !lessonHistorySessions.length}
+            title={lessonHistoryLoading ? 'Loading history…' : 'See completed lessons'}
+          >
+            ✅ Completed Lessons{completedLessonCount ? ` (${completedLessonCount})` : ''}
+            {activeLessonCount > 0 && (
+              <span style={{ fontSize: 12, color: '#d97706' }}>⏳ {activeLessonCount}</span>
+            )}
+          </button>
         </div>
+      )}
 
-<div style={{ background: '#fff', border: '2px solid #e5e7eb', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontWeight: 900, fontSize: 20, color: '#111827', marginBottom: 8 }}>Choose your deck</div>
+### 4. src/app/learn/lessons/page.js (d9d8b7e6103ba0f1234bef7d48a79b6fa3aac12ee31170e340c00d0da5be49c9)
+- bm25: -17.1342 | relevance: 0.9449
 
-### 27. src/app/session/components/games/FlashCards.jsx (cf8536979aff764a3a545717661c818fde05e52fa2f6637522b2313bf0a6e15c)
-- bm25: -7.9314 | relevance: 0.8880
+<p style={{ textAlign:'center', color:'#6b7280', marginTop:24 }}>
+        Daily lessons used: {Number.isFinite(todaysCount) ? todaysCount : 0} / {featuresForTier(planTier).lessonsPerDay === Infinity ? '' : featuresForTier(planTier).lessonsPerDay}
+      </p>
 
-if (screen === 'topic-complete') {
-    return (
-      <div style={frame}>
-        <style>{`
-          @keyframes flashcards-float {
-            0% { transform: translateY(0); opacity: 0.9; }
-            50% { transform: translateY(-14px); opacity: 1; }
-            100% { transform: translateY(0); opacity: 0.9; }
-          }
-          @keyframes flashcards-slide {
-            0% { transform: translateX(-20px); opacity: 0; }
-            15% { opacity: 1; }
-            50% { transform: translateX(0); opacity: 1; }
-            85% { opacity: 1; }
-            100% { transform: translateX(20px); opacity: 0; }
-          }
-        `}</style>
-
-<div style={headerRow}>
-          <button type="button" style={softBtn} onClick={onBack}>← Back</button>
-          <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
-          <div style={{ width: 90 }} />
-        </div>
-
-<div
+<div style={{ display:'flex', justifyContent:'center', marginTop:16, marginBottom:8 }}>
+        <button
+          onClick={() => setShowGeneratorPinPrompt(true)}
           style={{
-            background: '#fff',
-            border: '2px solid #e5e7eb',
-            borderRadius: 16,
-            padding: 18,
-            textAlign: 'center',
-            position: 'relative',
-            overflow: 'hidden',
+            padding:'12px 28px',
+            border:'1px solid #d1d5db',
+            borderRadius:10,
+            background:'#fff',
+            color:'#111827',
+            fontSize:15,
+            fontWeight:600,
+            cursor:'pointer',
+            display:'flex',
+            alignItems:'center',
+            gap:8,
           }}
         >
-          <div style={{ position: 'absolute', top: 14, left: 14, animation: 'flashcards-slide 1.2s ease-in-out infinite' }}>✨</div>
-          <div style={{ position: 'absolute', top: 14, right: 14, animation: 'flashcards-slide 1.2s ease-in-out infinite reverse' }}>✨</div>
+          ✨ Generate a Lesson
+        </button>
+      </div>
 
-<div style={{ fontSize: 52, marginBottom: 6, animation: 'flashcards-float 1.4s ease-in-out infinite' }}>🏁</div>
-          <div style={{ fontWeight: 900, fontSize: 28, color: '#111827' }}>Topic complete!</div>
-          <div style={{ marginTop: 8, fontSize: 18, fontWeight: 800, color: '#111827' }}>{topicLabel}</div>
+{showGeneratorPinPrompt && (
+        <FacilitatorPinPrompt
+          onSuccess={() => {
+            setShowGeneratorPinPrompt(false)
+            router.push('/facilitator/generator')
+          }}
+          onCancel={() => setShowGeneratorPinPrompt(false)}
+        />
+      )}
+      
+      <LoadingProgress
+        isLoading={sessionLoading}
+        onComplete={() => setSessionLoading(false)}
+      />
 
-### 28. src/app/session/components/games/GamesOverlay.jsx (ee78618201c2a56d0027bf3ba28f1106a7a40c5f138ad1a7e8d81578ab1ec3ba)
-- bm25: -7.8878 | relevance: 0.8875
+<LessonHistoryModal
+        open={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        sessions={lessonHistorySessions}
+        events={lessonHistoryEvents}
+        loading={lessonHistoryLoading}
+        error={lessonHistoryError}
+        onRefresh={refreshLessonHistory}
+        titleLookup={(lessonId) => lessonTitleLookup[lessonId]}
+      />
+    </main>
+  )
+}
 
-{/* Header */}
-          <div
-            style={{
-              padding: '24px 24px 16px',
-              borderBottom: '2px solid #e5e7eb',
-              textAlign: 'center',
-            }}
-          >
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 28,
-                fontWeight: 800,
-                color: '#1f2937',
-              }}
-            >
-              🎮 Choose a Game
-            </h2>
-            <p
-              style={{
-                margin: '8px 0 0',
-                fontSize: 16,
-                color: '#6b7280',
-              }}
-            >
-              Pick a game to play as your reward!
-            </p>
-          </div>
+### 5. src/app/learn/lessons/page.js (80c20da8812a02d82e69c5d029b350047c5d426ea980de147ca11ce60267ed02)
+- bm25: -16.2878 | relevance: 0.9422
 
-### 29. src/lib/faq/facilitator-pages.json (4b848d3bcb8fd074168f4bfd8805c4c4143f1f27948661b54e4fbba3e5eaf7e3)
-- bm25: -7.8532 | relevance: 0.8870
+const hasLessons = Object.keys(lessonsBySubject).length > 0
 
-{
-  "category": "Facilitator Pages",
-  "features": [
-    {
-      "id": "facilitator-page-hub",
-      "title": "Facilitator Hub (/facilitator)",
-      "keywords": [
-        "facilitator hub",
-        "facilitator home",
-        "facilitator dashboard page",
-        "/facilitator",
-        "account learners lessons calendar",
-        "talk to mr mentor"
-      ],
-      "description": "The Facilitator Hub is the entry point to adult tools. It shows quick links to Account, Learners, Lessons, Calendar, and Mr. Mentor.",
-      "howToUse": "Use the cards to open a section (Account/Learners/Lessons/Calendar). Use the Mr. Mentor button to open the facilitator chat experience.",
-      "relatedFeatures": ["facilitator-dashboard", "mr-mentor", "pin-security"]
-    },
-    {
-      "id": "facilitator-page-account",
-      "title": "Account (/facilitator/account)",
-      "keywords": [
-        "facilitator account",
-        "account page",
-        "profile",
-        "security",
-        "2fa",
-        "connected accounts",
-        "timezone",
-        "marketing emails",
-        "policies",
-        "danger zone",
-        "/facilitator/account"
-      ],
-      "description": "The Account page is the central place to manage facilitator profile and security settings, connections, hotkeys, timezone, and billing links.",
-      "howToUse": "Open a card to edit: Your Name; Email and Password; Two-Factor Auth; Facilitator PIN; Connected Accounts; Hotkeys; Timezone; Marketing Emails; Policies; Plan; Danger Zone. Notifications is also linked from here.",
-      "relatedFeatures": ["pin-security", "subscription-tiers"]
-    },
-    {
-      "id": "facilitator-page-account-settings-redirect",
-      "title": "Account Settings (Redirect) (/facilitator/account/settings)",
-      "keywords": [
-        "account se
+### 6. src/app/learn/lessons/page.js (40a9de9ef495632aa614487cca99eace626d3b025b6391c0f9ff574be1f1eb75)
+- bm25: -16.0756 | relevance: 0.9414
 
-### 30. src/app/session/v2/OpeningActionsController.jsx (e7f4693ec058de197924990621df30dff2e7873f587566d9e62dda2ba252c253)
-- bm25: -7.2073 | relevance: 0.8782
+export default function LessonsPage(){
+  return (
+    <Suspense fallback={<main style={{padding:24}}><p>Loading lessons</p></main>}>
+      <LessonsPageInner />
+    </Suspense>
+  )
+}
 
-const ensureTemplatePromise = () => {
-      if (!this.#fillInFunTemplatePromise) {
-        const instruction = [
-          `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
-          `Create ONE short Mad Libs template sentence about ${this.#subject}.`,
-          'The template MUST contain these blanks in this exact order:',
-          '[ADJECTIVE] then [VERB] then [PLACE] then [ADJECTIVE] then [NOUN] then [ADJECTIVE] then [NUMBER].',
-          'Return ONLY the template sentence. No intro. No explanation. No quotes. No markdown.',
-          'Do not put two blanks adjacent; ensure normal spaces/punctuation between blanks.'
-        ].join(' ');
+### 7. src/app/learn/lessons/page.js (d3434b0ebbe6a9e6f244acdc2d1c3aef5f3e241c8967c12d7da6644ff3229d98)
+- bm25: -16.0756 | relevance: 0.9414
 
-this.#fillInFunTemplatePromise = fetch('/api/sonoma', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ instruction, innertext: '', skipAudio: true })
-        })
-          .then(async (res) => {
-            if (!res.ok) throw new Error('Fill-in-Fun generation failed');
-            const data = await res.json();
-            return String(data?.reply || '').trim();
-          })
-          .catch((err) => {
-            console.error('[OpeningActionsController] Fill-in-Fun error:', err);
-            return '';
-          });
-      }
-      return this.#fillInFunTemplatePromise;
-    };
+const displaySubject = subject === 'generated' ? 'Generated Lessons' : 
+                                     subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
-// Start prefetch immediately, then speak the hardwired intro.
-    const templatePromise = ensureTemplatePromise();
-    await this.#audioEngine.speak(intro);
+### 8. docs/brain/homepage.md (17a708595f5926a1352d014293d26395401f846891deebe02f2c21ebf394db5b)
+- bm25: -15.7967 | relevance: 0.9405
 
-const templateRaw = await templatePromise;
-    this.#fillInFunTemplatePromise = null;
+# Homepage
 
-### 31. docs/brain/timer-system.md (42aa7c76a1e732a4ec83b46c76f7214efa5fa927819ed9a691f311cae452a2df)
-- bm25: -7.0521 | relevance: 0.8758
+**Status:** Canonical
+**Created:** 2026-01-10
+**Purpose:** Define what the landing page communicates and which outbound links it must include.
 
-**Rule (single instance):** Only one `SessionTimer` instance should be mounted at a time for a given `{lessonKey, phase, mode}`.
-- Mounting two `SessionTimer` components simultaneously can show brief 1-second drift when `SessionTimer` is in self-timing mode.
-- In Session V2, when the Games overlay is open, the on-video timer is not rendered; the Games overlay renders the timer instead.
+## How It Works
 
-**Rule (click parity):** Clicking the timer badge in the Games overlay must behave the same as clicking the timer during the rest of the session: it opens `TimerControlOverlay` (PIN-gated).
-- The timer badge must be a `SessionTimer` with `onTimerClick` wired to the same handler used by the main session timer.
+The homepage is the app landing page at `/`.
 
-### Overlay Stacking (V2)
+It uses a centered hero layout with:
+- Ms. Sonoma hero image
+- Primary CTAs: Learn, Facilitator
+- Supporting links:
+  - About page (AI safety/How it works)
+  - External site link to learn more about Ms. Sonoma
 
-Games and Visual Aids overlays must render above the timeline and timer overlays.
-- Timeline must not use an extremely high `zIndex`.
-- Full-screen overlays should use a higher `zIndex` than the on-video timer.
+### External Website Link
 
-**TimerControlOverlay vs GamesOverlay:** If the facilitator opens `TimerControlOverlay` while the Games overlay is open, `TimerControlOverlay` must render above `GamesOverlay` so it is visible and usable.
-
-**PlayTimeExpiredOverlay must be above GamesOverlay:**
-- `PlayTimeExpiredOverlay` is a full-screen, blocking overlay. It must have a higher `zIndex` than `GamesOverlay` so the 30-second countdown cannot appear behind a running game.
-
-### PIN Gating (V2)
-
-Timer controls that can change session pacing are PIN-gated:
-- Opening the TimerControlOverlay is gated by `ensurePinAllowed('timer')`.
-- Pause/resume toggles are gated by `ensurePinAllowed('timer')`.
-
-Timeline jumps are also PIN-gated (see pin-protection.md action `timeline`).
-
-### Play Time Expiration Flow
-
-When play timer reaches 00:00:
-
-### 32. docs/brain/flood-climb-spelling.md (236e3ac8a9612c32cbbd04f089b1ef7260b0e1cf276cd3200afd859af05644c4)
-- bm25: -7.0294 | relevance: 0.8755
-
-The game uses numbered levels (Level 1 .. Level 20). Levels are not labeled.
-The level selector defaults to Level 1 (no placeholder option).
-
-### 33. src/app/session/v2/OpeningActionsController.jsx (584cf2e3d7dc2cfd9a095b72323b0107fd0591aaca91cff6aa9fa810c0f7007e)
-- bm25: -6.9835 | relevance: 0.8747
-
-const fallbackTemplate = 'The [ADJECTIVE] calculator was [VERB]ing in the [PLACE] with a [ADJECTIVE] [NOUN] and [ADJECTIVE] [NUMBER].';
-    const template = templateRaw && templateRaw.includes('[') ? templateRaw : fallbackTemplate;
-    this.#actionState.template = template;
-
-### 34. src/app/session/page.js (ce378fe56d7afed39f8fa03809927b44d74dd280264c1dff09693769d883dcd7)
-- bm25: -6.7613 | relevance: 0.8712
-
-if (maxLabelWidth <= 0 || available <= 0) { setLabelFontSize('1rem'); return; }
-      const scale = Math.min(1, available / maxLabelWidth);
-  const next = Math.max(MIN, Math.min(MAX, Math.floor(BASE * scale)));
-  // Map px -> rem using current root font-size for consistent scaling
-  const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  const nextRem = Math.max(0.5, next / rootPx);
-  setLabelFontSize(`${nextRem}rem`);
-    };
-
-// Initial compute + observe container size changes
-    compute();
-    const ro = new ResizeObserver(() => compute());
-    try { ro.observe(el); } catch {}
-    // Recompute on window orientation changes
-    const onResize = () => compute();
-    window.addEventListener('resize', onResize);
-    return () => {
-      try { ro.disconnect(); } catch {}
-      window.removeEventListener('resize', onResize);
-    };
-  }, [timelinePhases, columns]);
-
-### 35. src/app/session/v2/SessionPageV2.jsx (d6612a37469e179158e42ef8ffb41be7a8996582dd3a291882bce908ab906b8d)
-- bm25: -6.7370 | relevance: 0.8708
-
-if (maxLabelWidth <= 0 || available <= 0) { setLabelFontSize('1rem'); return; }
-      const scale = Math.min(1, available / maxLabelWidth);
-      const next = Math.max(MIN, Math.min(MAX, Math.floor(BASE * scale)));
-      // Map px -> rem using current root font-size for consistent scaling
-      const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-      const nextRem = Math.max(0.5, next / rootPx);
-      setLabelFontSize(`${nextRem}rem`);
-    };
-
-// Initial compute + observe container size changes
-    compute();
-    const ro = new ResizeObserver(() => compute());
-    try { ro.observe(el); } catch {}
-    // Recompute on window orientation changes
-    const onResize = () => compute();
-    window.addEventListener('resize', onResize);
-    return () => {
-      try { ro.disconnect(); } catch {}
-      window.removeEventListener('resize', onResize);
-    };
-  }, [timelinePhases, columns]);
-
-### 36. src/app/facilitator/generator/counselor/MentorInterceptor.js (d47127f46d81208dce6ac192de405dae9c8996078ab7f775dd70f1896c912dbb)
-- bm25: -6.5717 | relevance: 0.8679
-
-// Extract lesson parameters from text
-function extractLessonParams(text) {
-  const normalized = normalizeText(text)
-  const params = {}
-  
-  // Extract grade with normalization
-  const gradeMatch = text.match(/\b(\d+)(st|nd|rd|th)?\s*(grade)?\b/i) || 
-                     text.match(/\b(k|kindergarten)\b/i)
-  if (gradeMatch) {
-    const gradeNum = gradeMatch[1].toLowerCase()
-    if (gradeNum === 'k' || gradeNum === 'kindergarten') {
-      params.grade = 'K'
-    } else {
-      // Normalize to format like "4th", "5th", etc
-      const num = parseInt(gradeNum)
-      if (num >= 1 && num <= 12) {
-        const suffix = num === 1 ? 'st' : num === 2 ? 'nd' : num === 3 ? 'rd' : 'th'
-        params.grade = `${num}${suffix}`
-      }
-    }
-  }
-  
-  // Extract subject with comprehensive topic-to-subject mapping
-  const subjectTopicMappings = {
-    'math': [
-      // Basic operations
-      'addition', 'subtraction', 'multiplication', 'division', 'multiply', 'divide', 'add', 'subtract',
-      // Advanced math
-      'algebra', 'geometry', 'calculus', 'trigonometry', 'statistics', 'probability',
-      // Number concepts
-      'fractions', 'decimals', 'percentages', 'ratios', 'proportions', 'integers', 'numbers',
-      // Math skills
-      'word problems', 'equations', 'graphing', 'measurement', 'estimation', 'rounding',
-      // Specific topics
-      'place value', 'prime numbers', 'factors', 'multiples', 'exponents', 'square roots',
-      'coordinates', 'angles', 'shapes', 'perimeter', 'area', 'volume', 'symmetry',
-      // General
-      'math', 'mathematics', 'arithmetic', 'counting', 'number sense'
-    ],
-    'science': [
-      // Life science
-      'biology', 'plants', 'animals', 'cells', 'organisms', 'ecosystems', 'habitats',
-      'photosynthesis', 'food chain', 'adaptations', '
-
-### 37. docs/brain/ingests/pack.planned-lessons-flow.md (157e7c9e5d630e22e0e36ec1fec8c24748c9ad7cb35726c79d502b480e853998)
-- bm25: -6.4545 | relevance: 0.8659
-
-### 35. docs/brain/v2-architecture.md (6b58472c0d17f41aea41b5c12dc7d85721f215fca1034c2dca60d8e04747ff7a)
-- bm25: -12.7953 | relevance: 1.0000
-
----
-
-## System Boundaries (Planned)
-
-### AudioEngine Component
-**Owns:**
-- Audio playback state (HTMLAudio vs WebAudio vs Synthetic)
-- Caption timing and synchronization
-- Video play/pause coordination
-- Mute state
-- Speech guard timer
-
-**Exposes:**
-- `playAudio(base64, sentences, options)`
-- `stopAudio()`
-- `pauseAudio()`
-- `resumeAudio()`
-- Events: `onAudioStart`, `onAudioEnd`, `onCaptionChange`
-
-**Does NOT:**
-- Know about teaching stages
-- Know about phase transitions
-- Mutate phase state
-
-### Video Playback Coordination
-
-### 38. docs/brain/README.md (a9d53428a66f32a8f0f0b034bee45fb77b0ac883ab99d0de9cdcabf09ef72d0a)
-- bm25: -6.4289 | relevance: 0.8654
-
-## Instruction Inventory
-| Area | Reference | Notes |
-| --- | --- | --- |
-| Beta program gating | `docs/BETA_PROGRAM_IMPLEMENTATION.md` | Contains flow and schema details; summarize key guardrails here after review. |
-| Universal gating overlays | `docs/UNIVERSAL_GATING_SYSTEM.md` | Track overlay patterns and migration status. |
-| Lesson approvals | `APPROVED_LESSONS_IMPLEMENTATION.md` | Record facilitator approval protocol highlights. |
-| Session timing | `docs/session-timer-system.md` | Capture timers, warnings, and dependencies. |
-| Profanity filtering | `docs/profanity-filter*.md` | Note vocabulary policies and testing steps. |
-
-### 39. docs/brain/snapshot-persistence.md (badceaa786b7fbed311c2f1cd972c7e88b2851d87beca33fa9784a499139749c)
-- bm25: -6.2633 | relevance: 0.8623
-
-### Version Gating
-- `snapshotVersion=2` marker prevents old v1 snapshots from loading
-- Old snapshots ignored, session starts fresh
+The homepage includes an external link to `https://mssonoma.com` with copy that explicitly tells users to learn about Ms. Sonoma there.
 
 ## What NOT To Do
 
-**DO NOT ADD:**
-- Polling/intervals for snapshot saves
-- Autosave on state change
-- Reconciliation after restore
-- Signature comparison
-- Debouncing (save immediately at checkpoints)
+- Do not remove the external `mssonoma.com` link without replacing it with an equivalent learn-more path.
+- Do not add device- or storage-related claims to homepage copy.
+- Do not add placeholder or environment-specific URLs.
 
-**DO NOT USE:**
-- Session takeover polling
-- checkSessionStatus intervals
-- SessionTakeoverDialog overlay
-- Device detection for sync
+## Key Files
 
-## Why Gates Not Polling
+- `src/app/page.js`
+- `src/app/home-hero.module.css`
 
-Gates are explicit, predictable, and testable:
-- Save happens exactly when we say
-- No drift from timing issues
-- No performance overhead
-- No race conditions
+### 9. src/app/learn/lessons/page.js (75876619fa042804a1d8f9f21ef69d60b06eb0084e7e6a728e4eabdbffa95cb5)
+- bm25: -15.6078 | relevance: 0.9398
 
-Polling causes:
-- Unpredictable save timing
-- Performance overhead
-- Race conditions with React state
-- Complexity in determining "what changed"
+// Poll for newly scheduled lessons every 30 seconds
+  useEffect(() => {
+    if (!learnerId) return
+    
+    // DISABLED: Polling causes too many reloads, schedule changes are rare
+    // Users can manually refresh if needed
+    // const pollInterval = setInterval(() => {
+    //   console.log('[Learn Lessons] Polling for schedule changes')
+    //   setRefreshTrigger(prev => prev + 1)
+    // }, 30 * 1000) // 30 seconds
+    
+    // return () => clearInterval(pollInterval)
+  }, [learnerId])
 
-## Device Switch Behavior
+// Check for golden key earned notification
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      // Only show or suppress the toast once we know the learner setting.
+      // (Avoid clearing it while the setting is still loading to prevent “missing toast” bugs.)
+      if (goldenKeysEnabled === false) {
+        sessionStorage.removeItem('just_earned_golden_key');
+        return;
+      }
+      if (goldenKeysEnabled !== true) return;
 
-When user switches devices:
-1. localStorage on new device is empty
-2. getStoredSnapshot falls back to database
-3. Database returns latest snapshot
-4. Snapshot written to new device's localStorage
-5. Subsequent saves/restores use localStorage (fast)
+const justEarned = sessionStorage.getItem('just_earned_golden_key');
+      if (justEarned !== 'true') return;
 
-**Session conflicts** (same learner+lesson on two devices simultaneously): Handled by session-takeover system, see [session-takeover.md](session-takeover.md). Takeover dialog appears at first gate when conflict detected, requires PIN validation.
-## V2 Assessment Print System
+sessionStorage.removeItem('just_earned_golden_key');
+      setShowGoldenKeyToast(true);
+      // Auto-hide after 5 seconds
+      const timer = setTimeout(() => setShowGoldenKeyToast(false), 5000);
+      return () => clearTimeout(timer);
+    } catch {}
+  }, [goldenKeysEnabled]);
 
-**Integration:** SessionPageV2 registers print handlers directly (no separate hook) and persists worksheet/test decks via `assessmentStore` (localStorage + Supabase) keyed by `lesson_assessments:{learnerId}:{lessonKey}`.
+### 10. src/app/learn/awards/page.js (4d8cce309e0f536106072dd471d5d29bbc535b069533182488b0980b7295cb15)
+- bm25: -15.5219 | relevance: 0.9395
 
-### Architecture
+{subjectsToRender.map(subject => {
+            const lessons = groupedMedals[subject]
+            if (!lessons || lessons.length === 0) return null
 
-### 40. docs/brain/ingests/pack-mentor-intercepts.md (ee64f00174c13b58457962dbc2cdb20aa52435a52a1fa39ebeca6ea8bf379fe2)
-- bm25: -6.2107 | relevance: 0.8613
+const displaySubject = customKeyToName.get(subject)
+              || subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
-- `src/app/facilitator/page.js` - Facilitator hub cards and subscription status display
-- `src/app/facilitator/account/page.js` - Account hub (settings overlays)
-- `src/app/facilitator/account/plan/page.js` - Plans & billing entry point
-- `src/app/billing/manage/*` - Billing portal UI
+### 11. src/app/learn/lessons/page.js (664cd537384c0de2892185e8fd2bf96de4209889afc7b7ce9a7a6cfed906f3fb)
+- bm25: -15.0711 | relevance: 0.9378
+
+;(async () => {
+      try {
+        // Just check for active session without PIN requirement
+        // The lessons page should be freely accessible
+        const active = await getActiveLessonSession(learnerId)
+        if (cancelled) return
+        // No PIN gate here - let learners view lessons freely
+        if (!cancelled) setSessionGateReady(true)
+      } catch (err) {
+        if (!cancelled) setSessionGateReady(true)
+      }
+    })()
+
+### 12. sidekick_pack.md (838d24067808134cf08c96e92ef01cb7a31d6b4a2d9cbe2757f6914876e84133)
+- bm25: -14.8932 | relevance: 0.9371
+
+### 33. docs/brain/portfolio-generation.md (fe1e7ac464f2afc7d7f87532c21ef1729a468f8ae05052009b691a0e808f815e)
+- bm25: -22.2966 | relevance: 1.0000
+
+# Portfolio Generation System
+
+**Last Updated**: 2026-01-30T15:25:06Z
+**Status**: Canonical
+
+## How It Works
+
+The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
+
+### UI Flow
+
+1. Facilitator opens Lesson Calendar.
+2. Clicks **Generate portfolio** (header button).
+3. Modal collects:
+   - Start date (YYYY-MM-DD)
+   - End date (YYYY-MM-DD)
+   - Include checkboxes: Visual aids, Notes, Images
+4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
+5. UI shows a public link to open the portfolio plus a manifest download link.
+6. UI also lists previously generated portfolios so they can be re-opened or deleted.
+
+### What Gets Included
+
+The generator produces one portfolio index with per-lesson recap sections.
+
+Per lesson (completed scheduled lessons only):
+- **Title**: derived from `lesson_schedule.lesson_key`.
+- **Date**: the scheduled date.
+- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
+- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
+- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
+
+### Completion Rule (Calendar parity)
+
+Portfolio generation follows the Calendar history rule:
+- A scheduled lesson counts as completed if there is a `lesson_session_events` row with `event_type = 'completed'` for the same canonical lesson id either:
+  - on the scheduled date, or
+  - within 7 days after (make-up window).
+
+Canonical lesson id is the normalized basename without `.json`.
+
+### 13. sidekick_pack.md (9c94af25c016ceba64bc640ba1250313117b47564e20b21e486a2383cf8e7b32)
+- bm25: -14.6806 | relevance: 0.9362
+
+Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
+
+### 34. docs/brain/ingests/pack.md (6a1e61007b9ff9c99519640f860bd4eb744925fbb659b58284221644f47027e9)
+- bm25: -22.2966 | relevance: 1.0000
+
+# Portfolio Generation System
+
+**Last Updated**: 2026-01-30T15:25:06Z
+**Status**: Canonical
+
+## How It Works
+
+The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
+
+### UI Flow
+
+1. Facilitator opens Lesson Calendar.
+2. Clicks **Generate portfolio** (header button).
+3. Modal collects:
+   - Start date (YYYY-MM-DD)
+   - End date (YYYY-MM-DD)
+   - Include checkboxes: Visual aids, Notes, Images
+4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
+5. UI shows a public link to open the portfolio plus a manifest download link.
+6. UI also lists previously generated portfolios so they can be re-opened or deleted.
+
+### What Gets Included
+
+The generator produces one portfolio index with per-lesson recap sections.
+
+Per lesson (completed scheduled lessons only):
+- **Title**: derived from `lesson_schedule.lesson_key`.
+- **Date**: the scheduled date.
+- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
+- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
+- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
+
+### Completion Rule (Calendar parity)
+
+Portfolio generation follows the Calendar history rule:
+- A scheduled lesson counts as completed if there is a `lesson_session_events` row with `event_type = 'completed'` for the same canonical lesson id either:
+  - on the scheduled date, or
+  - within 7 days after (make-up window).
+
+### 14. docs/brain/ingests/pack-mentor-intercepts.md (8b9f88cf49cb1a5d7b9d2e538fd2ba21fd123ce6d6948e9499a15591be0ec033)
+- bm25: -14.6474 | relevance: 0.9361
+
+After completing `assign_lesson`, Mr. Mentor must confirm in dialogue:
+
+### 12. docs/brain/mr-mentor-conversation-flows.md (702a9fd80a5cfdb20198851630f5bd2294e3590b38a912d5f7058ef0f693bf2f)
+- bm25: -19.3221 | relevance: 1.0000
+
+- **2025-12-31:** Appended multi-screen overlay system documentation (CalendarOverlay, LessonsOverlay, GeneratedLessonsOverlay, LessonMakerOverlay)
+- **2025-12-18:** Created brain file documenting recommendations vs generation decision logic and escape hatches (fix for locked-in generation flow)
+
+### 13. docs/brain/lesson-notes.md (ac258ad493dde9c766703881b36300ddf044039fc14bddb8ce88bf9914d1a3ef)
+- bm25: -18.7849 | relevance: 1.0000
+
+if (notesKeys.length > 0) {
+  lines.push(`FACILITATOR NOTES ON LESSONS:`);
+  notesKeys.sort().forEach(key => {
+    const [subject, lessonName] = key.split('/');
+    lines.push(`${subject} - ${lessonName}:`);
+    lines.push(`  "${lessonNotes[key]}"`);
+  });
+}
+```
+
+**Use cases:**
+- **Progress tracking**: "Completed with 95%. Ready for next level." → Mr. Mentor suggests advanced materials
+- **Challenge documentation**: "Struggles with word problems. Anxious during tests." → Suggests scaffolding/anxiety strategies
+- **Interest tracking**: "Loves hands-on experiments. Wants to learn chemistry." → Suggests enrichment resources
+- **Behavioral context**: "Easily distracted. Works better in morning sessions." → Suggests schedule optimization
+
+## Key Files
+
+- `src/app/facilitator/lessons/page.js` - Note UI (add/edit/save), state management, Supabase updates
+- `src/app/facilitator/calendar/LessonNotesModal.jsx` - Notes modal used from Calendar schedule lists
+- `src/app/lib/learnerTranscript.js` - Transcript builder, includes notes section
+- `src/app/api/counselor/route.js` - Receives transcript with notes
+
+## What NOT To Do
+
+### 15. docs/brain/ingests/pack.md (449969b4c519b1e04ae0f2ff5cdd6f65950ce2e104330fb9db2a7d480291f3c5)
+- bm25: -14.6217 | relevance: 0.9360
+
+**Owned-only rule:**
+- The picker shows ONLY facilitator-owned lessons.
+- It does not list public curriculum lessons from `public/lessons`.
+
+### 17. docs/brain/lesson-notes.md (ac258ad493dde9c766703881b36300ddf044039fc14bddb8ce88bf9914d1a3ef)
+- bm25: -21.9046 | relevance: 1.0000
+
+if (notesKeys.length > 0) {
+  lines.push(`FACILITATOR NOTES ON LESSONS:`);
+  notesKeys.sort().forEach(key => {
+    const [subject, lessonName] = key.split('/');
+    lines.push(`${subject} - ${lessonName}:`);
+    lines.push(`  "${lessonNotes[key]}"`);
+  });
+}
+```
+
+**Use cases:**
+- **Progress tracking**: "Completed with 95%. Ready for next level." → Mr. Mentor suggests advanced materials
+- **Challenge documentation**: "Struggles with word problems. Anxious during tests." → Suggests scaffolding/anxiety strategies
+- **Interest tracking**: "Loves hands-on experiments. Wants to learn chemistry." → Suggests enrichment resources
+- **Behavioral context**: "Easily distracted. Works better in morning sessions." → Suggests schedule optimization
+
+## Key Files
+
+- `src/app/facilitator/lessons/page.js` - Note UI (add/edit/save), state management, Supabase updates
+- `src/app/facilitator/calendar/LessonNotesModal.jsx` - Notes modal used from Calendar schedule lists
+- `src/app/lib/learnerTranscript.js` - Transcript builder, includes notes section
+- `src/app/api/counselor/route.js` - Receives transcript with notes
+
+## What NOT To Do
+
+**DON'T make notes too long** - No character limit enforced, but excessively long notes bloat Mr. Mentor's context window. Keep notes concise (1-3 sentences per lesson).
+
+**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
+
+### 16. docs/brain/ingests/pack.md (6a1e61007b9ff9c99519640f860bd4eb744925fbb659b58284221644f47027e9)
+- bm25: -14.6213 | relevance: 0.9360
+
+# Portfolio Generation System
+
+**Last Updated**: 2026-01-30T15:25:06Z
+**Status**: Canonical
+
+## How It Works
+
+The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
+
+### UI Flow
+
+1. Facilitator opens Lesson Calendar.
+2. Clicks **Generate portfolio** (header button).
+3. Modal collects:
+   - Start date (YYYY-MM-DD)
+   - End date (YYYY-MM-DD)
+   - Include checkboxes: Visual aids, Notes, Images
+4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
+5. UI shows a public link to open the portfolio plus a manifest download link.
+6. UI also lists previously generated portfolios so they can be re-opened or deleted.
+
+### What Gets Included
+
+The generator produces one portfolio index with per-lesson recap sections.
+
+Per lesson (completed scheduled lessons only):
+- **Title**: derived from `lesson_schedule.lesson_key`.
+- **Date**: the scheduled date.
+- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
+- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
+- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
+
+### Completion Rule (Calendar parity)
+
+Portfolio generation follows the Calendar history rule:
+- A scheduled lesson counts as completed if there is a `lesson_session_events` row with `event_type = 'completed'` for the same canonical lesson id either:
+  - on the scheduled date, or
+  - within 7 days after (make-up window).
+
+Canonical lesson id is the normalized basename without `.json`.
+
+### Storage + Public Access (No Login)
+
+Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
+
+### 17. docs/brain/portfolio-generation.md (fe1e7ac464f2afc7d7f87532c21ef1729a468f8ae05052009b691a0e808f815e)
+- bm25: -14.6213 | relevance: 0.9360
+
+# Portfolio Generation System
+
+**Last Updated**: 2026-01-30T15:25:06Z
+**Status**: Canonical
+
+## How It Works
+
+The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
+
+### UI Flow
+
+1. Facilitator opens Lesson Calendar.
+2. Clicks **Generate portfolio** (header button).
+3. Modal collects:
+   - Start date (YYYY-MM-DD)
+   - End date (YYYY-MM-DD)
+   - Include checkboxes: Visual aids, Notes, Images
+4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
+5. UI shows a public link to open the portfolio plus a manifest download link.
+6. UI also lists previously generated portfolios so they can be re-opened or deleted.
+
+### What Gets Included
+
+The generator produces one portfolio index with per-lesson recap sections.
+
+Per lesson (completed scheduled lessons only):
+- **Title**: derived from `lesson_schedule.lesson_key`.
+- **Date**: the scheduled date.
+- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
+- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
+- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
+
+### Completion Rule (Calendar parity)
+
+Portfolio generation follows the Calendar history rule:
+- A scheduled lesson counts as completed if there is a `lesson_session_events` row with `event_type = 'completed'` for the same canonical lesson id either:
+  - on the scheduled date, or
+  - within 7 days after (make-up window).
+
+Canonical lesson id is the normalized basename without `.json`.
+
+### Storage + Public Access (No Login)
+
+Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
+
+### 18. src/app/learn/lessons/page.js (25b55254646efb2209ccf7a1e3f09aa7ddfee06468a52e69e178b69e3df7a102)
+- bm25: -14.6120 | relevance: 0.9359
+
+const lessonsBySubject = useMemo(() => {
+    const grouped = {}
+    SUBJECTS.forEach(subject => {
+      const subjectLessons = allLessons[subject] || []
+      // Filter by available lessons - show lessons that are EITHER:
+      // 1. Marked available by facilitator (checkbox), OR
+      // 2. Scheduled for today (calendar)
+      const availableForSubject = subjectLessons.filter(lesson => {
+        const lessonKey = lesson.isGenerated 
+          ? `generated/${lesson.file}`
+          : `${subject}/${lesson.file}`
+        // Also check legacy facilitator/ key for general lessons
+        const legacyKey = lessonKey.replace('general/', 'facilitator/')
+        // Also check just the filename (no subject prefix) for backwards compatibility
+        const filenameOnly = lesson.file
+        const isAvailable = availableLessons[lessonKey] === true 
+          || availableLessons[legacyKey] === true 
+          || availableLessons[filenameOnly] === true
+          || scheduledLessons[lessonKey] === true 
+          || scheduledLessons[legacyKey] === true
+          || scheduledLessons[filenameOnly] === true
+        return isAvailable
+      }).map(lesson => {
+        // Add lessonKey to each lesson object for snapshot lookup
+        const lessonKey = lesson.isGenerated 
+          ? `generated/${lesson.file}`
+          : `${subject}/${lesson.file}`
+        return { ...lesson, lessonKey }
+      })
+      if (availableForSubject.length > 0) {
+        grouped[subject] = availableForSubject
+      }
+    })
+    return grouped
+  }, [allLessons, availableLessons, scheduledLessons])
+
+### 19. src/app/session/v2/SessionPageV2.jsx (5ce935b9f7970bb276d6ce60de9773519f10af660cbdb9dc181088fd811e905f)
+- bm25: -14.1655 | entity_overlap_w: 1.50 | adjusted: -14.5405 | relevance: 0.9357
+
+const handleCancelTakeover = useCallback(() => {
+    setShowTakeoverDialog(false);
+    setConflictingSession(null);
+    if (typeof window !== 'undefined') {
+      window.location.href = '/learn/lessons';
+    }
+  }, []);
+
+### 20. src/app/learn/lessons/page.js (c299a62e3241ccaa73c8d60450493ce760c2e5eb7b7810a9b148bcfe75f38a3f)
+- bm25: -14.2196 | relevance: 0.9343
+
+﻿'use client'
+import { useEffect, useMemo, useState, Suspense } from 'react'
+import { useRouter } from 'next/navigation'
+import { getSupabaseClient } from '@/app/lib/supabaseClient'
+import { featuresForTier } from '@/app/lib/entitlements'
+import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
+import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi'
+import { ensurePinAllowed } from '@/app/lib/pinGate'
+import LoadingProgress from '@/components/LoadingProgress'
+import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
+import { getStoredSnapshot } from '@/app/session/sessionSnapshotStore'
+import { getActiveLessonSession } from '@/app/lib/sessionTracking'
+import { useLessonHistory } from '@/app/hooks/useLessonHistory'
+import LessonHistoryModal from '@/app/components/LessonHistoryModal'
+import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
+import FacilitatorPinPrompt from '@/app/learn/FacilitatorPinPrompt'
+
+const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
+
+function normalizeApprovedLessonKeys(map = {}) {
+  const normalized = {}
+  let changed = false
+  Object.entries(map || {}).forEach(([key, value]) => {
+    if (typeof key === 'string' && key.startsWith('Facilitator Lessons/')) {
+      const suffix = key.slice('Facilitator Lessons/'.length)
+      normalized[`general/${suffix}`] = value
+      changed = true
+    } else if (key) {
+      normalized[key] = value
+    }
+  })
+  return { normalized, changed }
+}
+
+function snapshotHasMeaningfulProgress(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return false
+
+const phase = snapshot.phase || 'discussion'
+  const subPhase = snapshot.subPhase || 'greeting'
+  const resume = snapshot.resume || null
+
+### 21. src/app/learn/lessons/page.js (490f4fdffc9f453335e6667b11a18904aa44911b234751bfca2ba3559a55a9ae)
+- bm25: -14.1225 | relevance: 0.9339
+
+return () => {
+      cancelled = true
+    }
+  }, [learnerId, refreshTrigger, router])
+
+useEffect(() => {
+    (async () => {
+      try {
+        if (!learnerId) {
+          setMedals({})
+          return
+        }
+        const data = await getMedalsForLearner(learnerId)
+        setMedals(data || {})
+      } catch {
+        setMedals({})
+      }
+    })()
+  }, [learnerId])
+
+useEffect(() => {
+    if (!sessionGateReady) return
+
+let cancelled = false
+    ;(async () => {
+      if (!learnerId) {
+        setLessonsLoading(false)
+        return
+      }
+
+### 22. docs/brain/ingests/pack.planned-lessons-flow.md (88c29dc19b3f25ed0178c73764a3887f3532851fb2e1292ab2f58b31241fad00)
+- bm25: -13.4457 | relevance: 0.9308
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 23. docs/brain/lesson-notes.md (ac258ad493dde9c766703881b36300ddf044039fc14bddb8ce88bf9914d1a3ef)
+- bm25: -13.3273 | relevance: 0.9302
+
+if (notesKeys.length > 0) {
+  lines.push(`FACILITATOR NOTES ON LESSONS:`);
+  notesKeys.sort().forEach(key => {
+    const [subject, lessonName] = key.split('/');
+    lines.push(`${subject} - ${lessonName}:`);
+    lines.push(`  "${lessonNotes[key]}"`);
+  });
+}
+```
+
+**Use cases:**
+- **Progress tracking**: "Completed with 95%. Ready for next level." → Mr. Mentor suggests advanced materials
+- **Challenge documentation**: "Struggles with word problems. Anxious during tests." → Suggests scaffolding/anxiety strategies
+- **Interest tracking**: "Loves hands-on experiments. Wants to learn chemistry." → Suggests enrichment resources
+- **Behavioral context**: "Easily distracted. Works better in morning sessions." → Suggests schedule optimization
+
+## Key Files
+
+- `src/app/facilitator/lessons/page.js` - Note UI (add/edit/save), state management, Supabase updates
+- `src/app/facilitator/calendar/LessonNotesModal.jsx` - Notes modal used from Calendar schedule lists
+- `src/app/lib/learnerTranscript.js` - Transcript builder, includes notes section
+- `src/app/api/counselor/route.js` - Receives transcript with notes
+
+## What NOT To Do
+
+**DON'T make notes too long** - No character limit enforced, but excessively long notes bloat Mr. Mentor's context window. Keep notes concise (1-3 sentences per lesson).
+
+**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
+
+**DON'T fail to update notes** - Stale notes mislead Mr. Mentor. Encourage facilitators to update notes as learner progresses.
+
+**DON'T forget empty note deletion** - Save function correctly deletes empty notes from JSONB object (avoids storing null/empty values).
+
+### 24. sidekick_pack.md (1f28777aa00516f363d491420dfa6a99c690b1cfebadbd59af7be0334bd94883)
+- bm25: -13.3202 | relevance: 0.9302
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 25. sidekick_pack.md (a6a5a8402f60a32ae3f5331f3e88e3b679090d1e257e5157603316df1542732f)
+- bm25: -13.3202 | relevance: 0.9302
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 26. sidekick_pack.md (cad378213fd13855af53d533bd71221aed90460d4fbb4523573edc023e104f0e)
+- bm25: -13.3202 | relevance: 0.9302
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 27. sidekick_pack.md (ccac777c1db3eb879e26c94f4af62772b4cbecb113643c61a5bd1dd98c06a334)
+- bm25: -13.2877 | relevance: 0.9300
+
+### 5. docs/brain/ingests/pack.md (aa6ec106ec68e22bb817f61c01c25af4440948ba22e71ec40a50cad850d8b6d0)
+- bm25: -33.2332 | relevance: 1.0000
+
+### Portfolio Scan Uploads (Worksheet/Test Images)
+
+### 3. docs/brain/MentorInterceptor_Architecture.md (75fdb0fbddb1f0621d0ed4e1ec4faf69b33ecbed1888eb54a3d9f917aca04bee)
+- bm25: -34.9459 | relevance: 1.0000
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 4. docs/brain/calendar-lesson-planning.md (8fb5d6fd52eb343d38244e53af009c1d078e80740d159006615a9235e71a5585)
+- bm25: -34.0788 | relevance: 1.0000
+
+### 28. src/app/learn/lessons/page.js (34e4f895e0119e430fd485dde3b82e2a45a71c3b2596b651e5d58415762ce55a)
+- bm25: -13.2708 | relevance: 0.9299
+
+useEffect(() => {
+    if (!learnerId) {
+      setActiveGoldenKeys({})
+      // Keep golden key UI hidden until we know whether a learner is selected.
+      setGoldenKeysEnabled(null)
+      setLoading(false)
+      return
+    }
+    // Demo learner doesn't need database lookup
+    if (learnerId === 'demo') {
+      setActiveGoldenKeys({})
+      setGoldenKeysEnabled(true)
+      setLoading(false)
+      return
+    }
+
+// Hide Golden Key UI until we load the learner setting.
+    setGoldenKeysEnabled(null)
+
+### 29. docs/brain/MentorInterceptor_Architecture.md (b9af78a6a85babc29ee74ec9cf6073767b7a2e84a19456e1f96ab9a407cbd74d)
+- bm25: -13.2681 | relevance: 0.9299
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 30. src/app/learn/lessons/page.js (904d874c0383d97440da5ec302c9b09533d09f17ac42695a6fcbcfe578854f11)
+- bm25: -13.2139 | relevance: 0.9296
+
+// Listen for facilitator-side per-learner settings changes (no localStorage fallback)
+  useEffect(() => {
+    if (!learnerId || learnerId === 'demo') return;
+    return subscribeLearnerSettingsPatches((msg) => {
+      if (String(msg?.learnerId) !== String(learnerId)) return;
+      if (msg?.patch?.golden_keys_enabled === undefined) return;
+      const enabled = !!msg.patch.golden_keys_enabled;
+      setGoldenKeysEnabled(enabled);
+      if (!enabled) {
+        setGoldenKeySelected(false);
+        setShowGoldenKeyToast(false);
+      }
+    });
+  }, [learnerId]);
+
+### 31. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (6f33983453dfbb17ba0b015de6cc76fa071dc0e7a401f52396b7093115ac315c)
+- bm25: -13.1907 | relevance: 0.9295
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Loads scheduled lessons from /api/lesson-schedule
+  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
+  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 32. docs/brain/ingests/pack.md (aa6ec106ec68e22bb817f61c01c25af4440948ba22e71ec40a50cad850d8b6d0)
+- bm25: -13.0857 | relevance: 0.9290
+
+### Portfolio Scan Uploads (Worksheet/Test Images)
+
+### 3. docs/brain/MentorInterceptor_Architecture.md (75fdb0fbddb1f0621d0ed4e1ec4faf69b33ecbed1888eb54a3d9f917aca04bee)
+- bm25: -34.9459 | relevance: 1.0000
+
+- **overlays/CalendarOverlay.jsx**
+  - Compact, side-by-side calendar UI used inside Mr. Mentor
+  - Shows scheduled lessons for the selected learner
+  - Loads planned lessons from /api/planned-lessons
+  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
+  - Tabs under the calendar toggle BOTH:
+    - The selected-date list: Scheduled vs Planned
+    - The calendar date-cell markers/highlights (only the active tab is marked)
+  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
+  - The selected date label renders below the tabs (not above)
+  - Scheduled list actions:
+    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
+    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
+  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
+  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
+  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+
+### 4. docs/brain/calendar-lesson-planning.md (8fb5d6fd52eb343d38244e53af009c1d078e80740d159006615a9235e71a5585)
+- bm25: -34.0788 | relevance: 1.0000
+
+# Calendar Lesson Planning System - Ms. Sonoma Brain File
+
+**Last Updated**: 2026-02-05T03:28:35Z  
+**Status**: Canonical
+
+## How It Works
+
+### Automated Lesson Plan Generation
+
+### 33. src/app/learn/lessons/page.js (6599a83e881b81e8f78afde400183bd7b26f919ec5adc1b6e850cb9fc72dedd5)
+- bm25: -12.9910 | relevance: 0.9285
+
+// Set up midnight refresh timer
+  useEffect(() => {
+    const scheduleNextMidnightRefresh = () => {
+      const now = new Date()
+      const tomorrow = new Date(now)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      tomorrow.setHours(0, 0, 0, 0)
+      const msUntilMidnight = tomorrow.getTime() - now.getTime()
+      
+      const timer = setTimeout(() => {
+        setRefreshTrigger(prev => prev + 1)
+        // Schedule next midnight refresh
+        scheduleNextMidnightRefresh()
+      }, msUntilMidnight)
+      
+      return timer
+    }
+    
+    const timer = scheduleNextMidnightRefresh()
+    return () => clearTimeout(timer)
+  }, [])
+
+### 34. src/app/learn/awards/page.js (aae2328e0ee15a6065296a219b86c3ca49388cd1de1f170e826da26788d23a15)
+- bm25: -12.8464 | relevance: 0.9278
+
+return (
+              <div key={subject}>
+                <h2 style={subjectHeading}>
+                  {displaySubject}
+                  <span style={{ 
+                    fontSize: 14, 
+                    fontWeight: 400, 
+                    color: '#6b7280',
+                    background: '#f3f4f6',
+                    padding: '2px 8px',
+                    borderRadius: 12
+                  }}>
+                    {lessons.length} {lessons.length === 1 ? 'medal' : 'medals'}
+                  </span>
+                </h2>
+                
+                {lessons.map(lesson => {
+                  const medal = emojiForTier(lesson.medalTier)
+                  
+                  return (
+                    <div key={`${subject}-${lesson.file}`} style={card}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{ margin: '0 0 4px', fontSize: 16 }}>
+                            {lesson.title}
+                          </h3>
+                          {lesson.blurb && (
+                            <p style={{ margin: '4px 0', color: '#6b7280', fontSize: 14 }}>
+                              {lesson.blurb}
+                            </p>
+                          )}
+                          {(lesson.grade || lesson.difficulty) && (
+                            <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+                              {lesson.grade && `Grade ${lesson.grade}`}
+                              {lesson.grade && lesson.difficulty && ' • '}
+                              {lesson.difficulty && lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1)}
+                            </div>
+
+### 35. src/app/learn/lessons/page.js (248bb4af8d18ba3c896243bc949b805b5098ef8afabfaf373b5742217d0cc742)
+- bm25: -12.8032 | relevance: 0.9276
+
+{loading || lessonsLoading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: 12, marginTop: 32 }}>
+          <div style={{ 
+            width: 48, 
+            height: 48, 
+            border: '4px solid #e5e7eb', 
+            borderTop: '4px solid #111', 
+            borderRadius: '50%', 
+            animation: 'spin 1s linear infinite' 
+          }}></div>
+          <p style={{ textAlign:'center', color: '#6b7280', fontSize: 16 }}>Loading lessons...</p>
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      ) : !hasLessons ? (
+        <div style={{ textAlign:'center', marginTop:32 }}>
+          <p style={{ color:'#6b7280' }}>No lessons available yet.</p>
+          <p style={{ color:'#9ca3af', fontSize:14 }}>
+            Ask your facilitator to add lessons in the Facilitator portal.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div style={grid}>
+            {/* Show demo lessons first if they exist */}
+            {lessonsBySubject['demo'] && lessonsBySubject['demo'].map((l) => {
+              const ent = featuresForTier(planTier)
+              const cap = ent.lessonsPerDay
+              const capped = Number.isFinite(cap) && todaysCount >= cap
+              const lessonKey = `demo/${l.file}`
+              const medalTier = medals[lessonKey]?.medalTier || null
+              const medal = medalTier ? emojiForTier(medalTier) : ''
+              
+              return (
+                <div key={`demo-${l.file}`} style={card}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center',
+
+### 36. src/app/learn/awards/page.js (9b7b115c5d14e4d1b4f7ce9973b8e273d81cccc35f9535164fb84cc016b3f20a)
+- bm25: -12.7228 | relevance: 0.9271
+
+const lessonsMap = {}
+      for (const subject of subjectsToFetch) {
+        try {
+          const subjectKey = normalizeSubjectKey(subject)
+          const headers = subject === 'generated' && token 
+            ? { 'Authorization': `Bearer ${token}` }
+            : {}
+          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
+            cache: 'no-store',
+            headers
+          })
+          const list = res.ok ? await res.json() : []
+          lessonsMap[subjectKey] = Array.isArray(list) ? list : []
+        } catch {
+          lessonsMap[normalizeSubjectKey(subject)] = []
+        }
+      }
+      if (!cancelled) {
+        setAllLessons(lessonsMap)
+        setLessonsLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [customSubjectNames.join('|')])
+
+### 37. src/app/learn/lessons/page.js (55752f901ed559ca99ee1cfe4c833b71293e4421eb871ac05626244bce0a677d)
+- bm25: -12.6879 | relevance: 0.9269
+
+setLessonsLoading(true)
+      
+      const lessonsMap = {}
+      
+      // Load demo lessons if it's the demo learner
+      if (learnerId === 'demo') {
+        try {
+          const res = await fetch('/api/lessons/demo', { cache: 'no-store' })
+          const list = res.ok ? await res.json() : []
+          lessonsMap['demo'] = Array.isArray(list) ? list : []
+        } catch {
+          lessonsMap['demo'] = []
+        }
+      } else if (learnerId) {
+        // OPTIMIZED: Call single API that returns only checked/scheduled lessons
+        try {
+          const res = await fetch(`/api/learner/available-lessons?learner_id=${learnerId}`, {
+            cache: 'no-store'
+          })
+          
+          if (res.ok) {
+            const {
+              lessons,
+              scheduledKeys: serverScheduledKeys,
+              rawSchedule: serverRawSchedule,
+              approvedKeys: serverApprovedKeys,
+              staleApprovedKeys,
+              staleScheduledKeys
+            } = await res.json()
+            let cleanupTriggered = false
+            if (Array.isArray(staleApprovedKeys) && staleApprovedKeys.length > 0) {
+              cleanupTriggered = true
+            }
+            if (Array.isArray(staleScheduledKeys) && staleScheduledKeys.length > 0) {
+              cleanupTriggered = true
+            }
+            if (cleanupTriggered) {
+              setRefreshTrigger(prev => prev + 1)
+            }
+            
+            // Group by subject
+            for (const lesson of lessons) {
+              const subject = lesson.isGenerated ? 'generated' : (lesson.subject || 'general')
+              if (!lessonsMap[subject]) lessonsMap[subject] = []
+              lessonsMap[subject].push(lesson)
+            }
+          }
+        } catch (err) {
+        }
+      }
+      
+      i
+
+### 38. docs/brain/ingests/pack.lesson-schedule-debug.md (29249996be09c0693404295bc827d5da4c475eff693d707e837bdac9c49a7aa2)
+- bm25: -12.6598 | relevance: 0.9268
+
+Returns:
+```javascript
+{
+  handled: false,
+  apiForward: { 
+    message: userMessage, 
+    bypassInterceptor: true 
+  }
+}
+```
+
+## Data Structures
+
+### allLessons (from loadAllLessons)
+
+### 32. docs/brain/portfolio-generation.md (fe1e7ac464f2afc7d7f87532c21ef1729a468f8ae05052009b691a0e808f815e)
+- bm25: -17.3592 | relevance: 1.0000
+
+# Portfolio Generation System
+
+**Last Updated**: 2026-01-30T15:25:06Z
+**Status**: Canonical
+
+## How It Works
+
+The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
+
+### UI Flow
+
+1. Facilitator opens Lesson Calendar.
+2. Clicks **Generate portfolio** (header button).
+3. Modal collects:
+   - Start date (YYYY-MM-DD)
+   - End date (YYYY-MM-DD)
+   - Include checkboxes: Visual aids, Notes, Images
+4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
+5. UI shows a public link to open the portfolio plus a manifest download link.
+6. UI also lists previously generated portfolios so they can be re-opened or deleted.
+
+### What Gets Included
+
+The generator produces one portfolio index with per-lesson recap sections.
+
+Per lesson (completed scheduled lessons only):
+- **Title**: derived from `lesson_schedule.lesson_key`.
+- **Date**: the scheduled date.
+- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
+- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
+- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
+
+### Completion Rule (Calendar parity)
+
+### 39. docs/brain/ingests/pack.lesson-schedule-debug.md (aa9d6f023753d6f644c4d5d6421a16f93ab2cc9ecf966dc47d68ca9cd18a2570)
+- bm25: -12.6496 | relevance: 0.9267
+
+**Steps:**
+1. Detect search intent
+2. Extract parameters (grade, subject, difficulty)
+3. Search allLessons with scoring algorithm
+4. Present top 5 results with numbers
+5. Await lesson selection (number or name)
+6. Ask: "schedule, edit, or discuss?"
+
+**Scoring algorithm:**
+- Subject match: +10
+- Grade match: +10
+- Difficulty match: +5
+- Title match (fuzzy): +15
+
+**Selection handling:**
+- Number: "1" → first result
+- Name: "Multiplying with Zeros" → fuzzy match title
+
+**Action branching:**
+- Schedule → Enter schedule flow with lessonKey
+- Edit → Enter edit flow with lessonKey
+- Discuss → Forward to API with lesson context
+
+### 2. Generate Flow
+
+**Intent:** User wants to create a new lesson  
+**Examples:** "create a lesson on fractions", "generate 5th grade science"
+
+### 29. docs/brain/lesson-notes.md (ac258ad493dde9c766703881b36300ddf044039fc14bddb8ce88bf9914d1a3ef)
+- bm25: -17.9240 | relevance: 1.0000
+
+if (notesKeys.length > 0) {
+  lines.push(`FACILITATOR NOTES ON LESSONS:`);
+  notesKeys.sort().forEach(key => {
+    const [subject, lessonName] = key.split('/');
+    lines.push(`${subject} - ${lessonName}:`);
+    lines.push(`  "${lessonNotes[key]}"`);
+  });
+}
+```
+
+**Use cases:**
+- **Progress tracking**: "Completed with 95%. Ready for next level." → Mr. Mentor suggests advanced materials
+- **Challenge documentation**: "Struggles with word problems. Anxious during tests." → Suggests scaffolding/anxiety strategies
+- **Interest tracking**: "Loves hands-on experiments. Wants to learn chemistry." → Suggests enrichment resources
+- **Behavioral context**: "Easily distracted. Works better in morning sessions." → Suggests schedule optimization
+
+## Key Files
+
+### 40. docs/brain/ingests/pack.md (b7db843ee1cf3e6960f94dbc37cf05a90870bc341c1e61e9c94d94dc5ea1e78f)
+- bm25: -12.5622 | relevance: 0.9263
+
+WRONG: Continue asking for required parameters
+RIGHT: "Of course! Let me search for 4th grade Language Arts lessons instead..."
+```
+
+### ❌ DON'T Confuse Topic Mention with Generation Request
+```
+User: "I need something Christmas-themed"
+
+WRONG: Interpret as "generate a Christmas lesson"
+RIGHT: Interpret as "search for Christmas-themed lessons"
+```
+
+### ❌ DON'T Assume Grade from Context Unless Explicit
+```
+User: "I want you to recommend them to be generated."
+Mr. Mentor: "Is this lesson for Emma's grade (4)?"
+
+WRONG: Assume user wants generation just because they said "generated"
+RIGHT: Clarify intent first - "Would you like me to search for existing lessons 
+       or help you create a new one?"
+```
+
+---
+
+## Key Files
+
+### 32. docs/brain/api-routes.md (f1ee4af5914ccd9a2266616f7f17e803bc3681e9206331fe1c7a011816c5bc08)
+- bm25: -18.1363 | relevance: 1.0000
+
+### `/api/lesson-schedule`
+**Purpose**: Create/read/delete calendar entries for learner lessons  
+**Status**: Operational
+
+- **Location**: `src/app/api/lesson-schedule/route.js`
+
+### `/api/lesson-assign`
+**Purpose**: Assign/unassign lessons to a learner (availability via `learners.approved_lessons`)  
+**Status**: Operational
+
+- **Location**: `src/app/api/lesson-assign/route.js`
+- **Method**: POST
+- **Auth**: Bearer token required; learner ownership verified server-side
+- **Body**: `{ learnerId, lessonKey, assigned }`
+
+### `/api/generate-lesson-outline`
+**Purpose**: Generate a lightweight lesson outline (title + description) for planning/redo  
+**Status**: Operational
 
 
 ---

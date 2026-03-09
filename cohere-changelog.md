@@ -21,7 +21,9 @@
 2026-02-27T17:39:00Z | Fix: quota false-positives for premium/pro. Recon prompt: "Quota hit when generating lessons (calendar + lesson generator) even though account is premium; gating other accounts may have affected entitlement." Updated `/api/lessons/quota` to return `allowed` and updated `/api/usage/check-lesson-quota` to use `plan_tier` + `lessonsPerDay`; generator now computes allowance robustly. See `sidekick_pack.md`.
 
 # Cohere Investigations Changelog
-
+## 2026-03-09 — Move Generate a Lesson button; add Mr. Slate button
+- Recon prompt: "move Generate a Lesson button on /learn/lessons page to be right after Completed Lessons button, and add a new Mr. Slate button on the same row"
+- Changed `src/app/learn/lessons/page.js`: merged the standalone "Generate a Lesson" `<div>` (bottom of page) into the "Completed Lessons" button row; added gap/flexWrap to the row container; added a no-op "🪨 Mr. Slate" button as the third button in the row.
 Purpose: an append-only, human-readable log of *what was investigated*, the *exact recon prompt used*, and the *files/decisions* that resulted.
 
 Notes

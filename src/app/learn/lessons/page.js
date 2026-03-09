@@ -741,7 +741,7 @@ function LessonsPageInner(){
       )}
 
       {learnerId && learnerId !== 'demo' && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, marginTop: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, marginTop: 12, gap: 12, flexWrap: 'wrap' }}>
           <button
             onClick={() => setShowHistoryModal(true)}
             style={{
@@ -764,6 +764,45 @@ function LessonsPageInner(){
             {activeLessonCount > 0 && (
               <span style={{ fontSize: 12, color: '#d97706' }}>⏳ {activeLessonCount}</span>
             )}
+          </button>
+          <button
+            onClick={async () => {
+              const ok = await ensurePinAllowed('facilitator-page')
+              if (ok) router.push('/facilitator/generator')
+            }}
+            style={{
+              padding: '10px 20px',
+              border: '1px solid #d1d5db',
+              borderRadius: 8,
+              background: '#fff',
+              color: '#111827',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            ✨ Generate a Lesson
+          </button>
+          <button
+            onClick={() => {}}
+            style={{
+              padding: '10px 20px',
+              border: '1px solid #d1d5db',
+              borderRadius: 8,
+              background: '#fff',
+              color: '#111827',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            🪨 Mr. Slate
           </button>
         </div>
       )}
@@ -1085,29 +1124,7 @@ function LessonsPageInner(){
         Daily lessons used: {Number.isFinite(todaysCount) ? todaysCount : 0} / {featuresForTier(planTier).lessonsPerDay === Infinity ? '' : featuresForTier(planTier).lessonsPerDay}
       </p>
 
-      <div style={{ display:'flex', justifyContent:'center', marginTop:16, marginBottom:8 }}>
-        <button
-          onClick={async () => {
-            const ok = await ensurePinAllowed('facilitator-page')
-            if (ok) router.push('/facilitator/generator')
-          }}
-          style={{
-            padding:'12px 28px',
-            border:'1px solid #d1d5db',
-            borderRadius:10,
-            background:'#fff',
-            color:'#111827',
-            fontSize:15,
-            fontWeight:600,
-            cursor:'pointer',
-            display:'flex',
-            alignItems:'center',
-            gap:8,
-          }}
-        >
-          ✨ Generate a Lesson
-        </button>
-      </div>
+
       
       <LoadingProgress
         isLoading={sessionLoading}
