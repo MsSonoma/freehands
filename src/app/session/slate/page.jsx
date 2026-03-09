@@ -398,6 +398,8 @@ function SlateDrillInner() {
   const [learnerId, setLearnerId] = useState(null)
   const [masteryMap, setMasteryMap] = useState({})
   const [errorMsg, setErrorMsg] = useState('')
+  const [listTab, setListTab] = useState('active')
+  const [ownedFilters, setOwnedFilters] = useState({ subject: '', grade: '', difficulty: '' })
   const [settings, setSettings] = useState(DEFAULT_SLATE_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsDraft, setSettingsDraft] = useState(DEFAULT_SLATE_SETTINGS)
@@ -775,66 +777,194 @@ function SlateDrillInner() {
               <div style={{ color: C.muted, fontSize: 14, letterSpacing: 1 }}>NO DRILL LESSONS AVAILABLE</div>
               <div style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>Complete a lesson with Ms. Sonoma first, then come back to practice.</div>
             </div>
-          ) : (
-            <>
-              <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 10 }}>
-                SELECT A LESSON TO DRILL — {availableLessons.length} AVAILABLE
-              </div>
-              <button
-                onClick={() => { setSettingsDraft(settings); setSettingsOpen(true) }}
-                style={{ color: C.muted, fontSize: 12, lineHeight: 1.8, marginBottom: 20, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: C.mono, display: 'block' }}
-              >
-                <span style={{ color: C.text, fontWeight: 700 }}>GOAL:</span> Reach{' '}
-                <span style={{ color: C.text, fontWeight: 700 }}>{settings.scoreGoal} points</span> to earn mastery 🤖
-                {'  ·  '}<span style={{ color: C.green, fontWeight: 700 }}>+{settings.correctPts}</span> correct
-                {'  ·  '}<span style={{ color: C.red, fontWeight: 700 }}>−{settings.wrongPts}</span> wrong
-                {'  ·  '}<span style={{ color: C.yellow, fontWeight: 700 }}>{settings.timeoutPts === 0 ? '±0' : `−${settings.timeoutPts}`}</span> timeout ({settings.questionSecs}s)
-                {'  '}<span style={{ color: C.accent, fontSize: 10, letterSpacing: 1 }}>✎ EDIT</span>
-              </button>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {availableLessons.map((lesson, i) => {
-                  const lk = lesson.lessonKey || `${lesson.subject || 'general'}/${lesson.file || ''}`
-                  const mastered = !!(masteryMap[lk]?.mastered)
-                  const poolSize = buildPool(lesson).length
-                  const subjectLabel = (lesson.subject || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-                  const gradeLabel = lesson.grade ? `Grade ${lesson.grade}` : ''
-                  const diffLabel = lesson.difficulty ? lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1) : ''
-                  return (
-                    <button
-                      key={lk || i}
-                      onClick={() => selectLesson(lesson)}
-                      style={{
-                        background: C.surface,
-                        border: `1px solid ${mastered ? C.green : C.border}`,
-                        borderRadius: 10,
-                        padding: '14px 16px',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                        transition: 'border-color 0.2s',
-                      }}
-                    >
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ color: C.text, fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
-                          {mastered && <span style={{ color: C.green, marginRight: 6 }}>🤖</span>}
-                          {lesson.title || lk}
-                        </div>
-                        <div style={{ color: C.muted, fontSize: 11, letterSpacing: 1 }}>
-                          {[subjectLabel, gradeLabel, diffLabel].filter(Boolean).join(' · ')}
-                          {' · '}<span style={{ color: mastered ? C.green : C.accent }}>{poolSize} QUESTIONS</span>
-                          {mastered && <span style={{ color: C.green, marginLeft: 8 }}>✓ MASTERED</span>}
-                        </div>
+          ) : (() => {
+            // --- Derived lists for each tab ---
+            const getLk = l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`
+            const activeList = availableLessons.filter(l => !masteryMap[getLk(l)]?.mastered)
+            const recentList = availableLessons
+              .filter(l => masteryMap[getLk(l)]?.mastered)
+              .sort((a, b) => {
+                const ta = masteryMap[getLk(a)]?.masteredAt || ''
+                const tb = masteryMap[getLk(b)]?.masteredAt || ''
+                return ta < tb ? 1 : ta > tb ? -1 : 0
+              })
+            const allSubjects = [...new Set(availableLessons.map(l => l.subject).filter(Boolean))].sort()
+            const allGrades = [...new Set(availableLessons.map(l => l.grade).filter(v => v != null))].sort((a, b) => Number(a) - Number(b))
+            const allDiffs = [...new Set(availableLessons.map(l => l.difficulty).filter(Boolean))].sort()
+            const ownedList = availableLessons.filter(l => {
+              if (ownedFilters.subject && l.subject !== ownedFilters.subject) return false
+              if (ownedFilters.grade && String(l.grade) !== ownedFilters.grade) return false
+              if (ownedFilters.difficulty && l.difficulty !== ownedFilters.difficulty) return false
+              return true
+            })
+
+            // --- Tab styles ---
+            const tabStyle = active => ({
+              background: active ? C.accent : 'transparent',
+              color: active ? C.bg : C.muted,
+              border: `1px solid ${active ? C.accent : C.border}`,
+              borderRadius: 6,
+              padding: '6px 16px',
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: 2,
+              cursor: 'pointer',
+              fontFamily: C.mono,
+              transition: 'all 0.15s',
+            })
+
+            // --- Lesson card renderer ---
+            const LessonCard = ({ lesson }) => {
+              const lk = getLk(lesson)
+              const mastered = !!(masteryMap[lk]?.mastered)
+              const masteredAt = masteryMap[lk]?.masteredAt
+              const poolSize = buildPool(lesson).length
+              const subjectLabel = (lesson.subject || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+              const gradeLabel = lesson.grade ? `Grade ${lesson.grade}` : ''
+              const diffLabel = lesson.difficulty ? lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1) : ''
+              const dateLabel = masteredAt ? new Date(masteredAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : ''
+              return (
+                <button
+                  onClick={() => selectLesson(lesson)}
+                  style={{
+                    background: C.surface,
+                    border: `1px solid ${mastered ? C.green : C.border}`,
+                    borderRadius: 10,
+                    padding: '14px 16px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    width: '100%',
+                    transition: 'border-color 0.2s',
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ color: C.text, fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
+                      {mastered && <span style={{ color: C.green, marginRight: 6 }}>🤖</span>}
+                      {lesson.title || lk}
+                    </div>
+                    <div style={{ color: C.muted, fontSize: 11, letterSpacing: 1 }}>
+                      {[subjectLabel, gradeLabel, diffLabel].filter(Boolean).join(' · ')}
+                      {' · '}<span style={{ color: mastered ? C.green : C.accent }}>{poolSize} QUESTIONS</span>
+                      {mastered && <span style={{ color: C.green, marginLeft: 8 }}>✓ MASTERED</span>}
+                      {dateLabel && <span style={{ color: C.muted, marginLeft: 8 }}>{dateLabel}</span>}
+                    </div>
+                  </div>
+                  <div style={{ color: C.accent, fontWeight: 800, fontSize: 18, flexShrink: 0 }}>▶</div>
+                </button>
+              )
+            }
+
+            return (
+              <>
+                {/* Rules bar */}
+                <button
+                  onClick={() => { setSettingsDraft(settings); setSettingsOpen(true) }}
+                  style={{ color: C.muted, fontSize: 12, lineHeight: 1.8, marginBottom: 16, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: C.mono, display: 'block' }}
+                >
+                  <span style={{ color: C.text, fontWeight: 700 }}>GOAL:</span> Reach{' '}
+                  <span style={{ color: C.text, fontWeight: 700 }}>{settings.scoreGoal} points</span> to earn mastery 🤖
+                  {'  ·  '}<span style={{ color: C.green, fontWeight: 700 }}>+{settings.correctPts}</span> correct
+                  {'  ·  '}<span style={{ color: C.red, fontWeight: 700 }}>−{settings.wrongPts}</span> wrong
+                  {'  ·  '}<span style={{ color: C.yellow, fontWeight: 700 }}>{settings.timeoutPts === 0 ? '±0' : `−${settings.timeoutPts}`}</span> timeout ({settings.questionSecs}s)
+                  {'  '}<span style={{ color: C.accent, fontSize: 10, letterSpacing: 1 }}>✎ EDIT</span>
+                </button>
+
+                {/* Tabs */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  <button style={tabStyle(listTab === 'active')} onClick={() => setListTab('active')}>ACTIVE</button>
+                  <button style={tabStyle(listTab === 'recent')} onClick={() => setListTab('recent')}>
+                    RECENT {recentList.length > 0 && <span style={{ opacity: 0.7 }}>({recentList.length})</span>}
+                  </button>
+                  <button style={tabStyle(listTab === 'owned')} onClick={() => setListTab('owned')}>OWNED</button>
+                </div>
+
+                {/* Active tab */}
+                {listTab === 'active' && (
+                  activeList.length === 0 ? (
+                    <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>
+                      ALL LESSONS MASTERED — CHECK RECENT TAB 🤖
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
+                        {activeList.length} LESSON{activeList.length !== 1 ? 'S' : ''} AVAILABLE
                       </div>
-                      <div style={{ color: C.accent, fontWeight: 800, fontSize: 18, flexShrink: 0 }}>▶</div>
-                    </button>
+                      {activeList.map((l, i) => <LessonCard key={getLk(l) || i} lesson={l} />)}
+                    </div>
                   )
-                })}
-              </div>
-            </>
-          )}
+                )}
+
+                {/* Recent tab */}
+                {listTab === 'recent' && (
+                  recentList.length === 0 ? (
+                    <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>
+                      NO MASTERED LESSONS YET — COMPLETE A DRILL TO SEE RESULTS HERE
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
+                        {recentList.length} MASTERED LESSON{recentList.length !== 1 ? 'S' : ''}
+                      </div>
+                      {recentList.map((l, i) => <LessonCard key={getLk(l) || i} lesson={l} />)}
+                    </div>
+                  )
+                )}
+
+                {/* Owned tab */}
+                {listTab === 'owned' && (
+                  <div>
+                    {/* Filter row */}
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+                      <select
+                        value={ownedFilters.subject}
+                        onChange={e => setOwnedFilters(f => ({ ...f, subject: e.target.value }))}
+                        style={{ background: C.surface, color: ownedFilters.subject ? C.text : C.muted, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer', letterSpacing: 1 }}
+                      >
+                        <option value=''>ALL SUBJECTS</option>
+                        {allSubjects.map(s => <option key={s} value={s}>{s.replace(/-/g, ' ').toUpperCase()}</option>)}
+                      </select>
+                      <select
+                        value={ownedFilters.grade}
+                        onChange={e => setOwnedFilters(f => ({ ...f, grade: e.target.value }))}
+                        style={{ background: C.surface, color: ownedFilters.grade ? C.text : C.muted, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer', letterSpacing: 1 }}
+                      >
+                        <option value=''>ALL GRADES</option>
+                        {allGrades.map(g => <option key={g} value={String(g)}>GRADE {g}</option>)}
+                      </select>
+                      <select
+                        value={ownedFilters.difficulty}
+                        onChange={e => setOwnedFilters(f => ({ ...f, difficulty: e.target.value }))}
+                        style={{ background: C.surface, color: ownedFilters.difficulty ? C.text : C.muted, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer', letterSpacing: 1 }}
+                      >
+                        <option value=''>ALL DIFFICULTIES</option>
+                        {allDiffs.map(d => <option key={d} value={d}>{d.toUpperCase()}</option>)}
+                      </select>
+                      {(ownedFilters.subject || ownedFilters.grade || ownedFilters.difficulty) && (
+                        <button
+                          onClick={() => setOwnedFilters({ subject: '', grade: '', difficulty: '' })}
+                          style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, color: C.muted, fontSize: 11, fontFamily: C.mono, cursor: 'pointer', padding: '5px 10px', letterSpacing: 1 }}
+                        >✕ CLEAR</button>
+                      )}
+                    </div>
+                    {ownedList.length === 0 ? (
+                      <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>NO LESSONS MATCH FILTERS</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
+                          {ownedList.length} OF {availableLessons.length} LESSONS
+                        </div>
+                        {ownedList.map((l, i) => <LessonCard key={getLk(l) || i} lesson={l} />)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </div>
 
         {/* Settings overlay */}
