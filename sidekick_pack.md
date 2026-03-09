@@ -6,23 +6,19 @@ Mode: standard
 
 Prompt (original):
 ```text
-Mr. Slate quiz bot page - what is the V2 session page structure, lesson json format, TTS setup, avatar video, and learn/lessons page button routing?
+Mr. Slate drill settings save per learner supabase learner_preferences
 ```
 
 Filter terms used:
 ```text
-TTS
+learner_preferences
 slate
-quiz
-bot
-page
-session
-structure
-lesson
-json
-format
-setup
-avatar
+drill
+settings
+save
+per
+learner
+supabase
 ```
 
 ---
@@ -31,9 +27,9 @@ avatar
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-03-07 19:53` — lesson generator page generate button learner list make active approved lessons activate after generation
 - `2026-03-09 12:13` — Flash Cards game difficulty scaling: value places (1-3=1 place, 4-6=2 places, 7-10=3 places), borrowing/carrying introdu
 - `2026-03-09 13:40` — move Generate a Lesson button on /learn/lessons page to be right after Completed Lessons button, and add a new Mr. Slate
+- `2026-03-09 14:03` — Mr. Slate quiz bot page - what is the V2 session page structure, lesson json format, TTS setup, avatar video, and learn/
 
 ---
 
@@ -54,7 +50,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 6. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 56. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -69,7 +65,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-TTS slate quiz bot page session structure lesson json format setup avatar
+learner_preferences slate drill settings save per learner supabase
 
 ## Forced Context
 
@@ -77,1718 +73,1339 @@ TTS slate quiz bot page session structure lesson json format setup avatar
 
 ## Ranked Evidence
 
-### 1. docs/brain/MentorInterceptor_Architecture.md (5a800d762cfb3eeb6b7fb4cd6390e82c90ae5e6c592060e3295040464b2ebeda)
-- bm25: -13.7310 | relevance: 0.9321
+### 1. docs/brain/learner-settings-bus.md (8db87d7892f892e1d05b03a15e5bc10241fa72294dd8d44ea37bcc45f562351d)
+- bm25: -13.5908 | relevance: 0.9315
 
-**Parameter gathering Q&A:**
-```
-User: "create a lesson"
-Bot: "What topic should this lesson cover?"
-User: "fractions"
-Bot: "What grade level is this lesson for Emma?"
-User: "4th"
-Bot: "What subject is this lesson?"
-User: "math"
-Bot: "What difficulty level? (beginner, intermediate, or advanced)"
-User: "beginner"
-Bot: "Should I generate 'fractions' (4th math, beginner)?"
-User: "yes"
-Bot: "Generating fractions... This will take about 30-60 seconds."
-```
+# Learner Settings Bus
 
-**After generation completes:** Mr. Mentor should offer the next step:
-
-- "Would you like me to schedule this lesson, or assign it to [learner]?"
-- Scheduling requires a date (calendar event).
-- Assigning makes the lesson available to the learner without a date.
-
-**Action execution:**
-```javascript
-{
-  type: 'generate',
-  title: 'fractions',
-  subject: 'math',
-  grade: '4th',
-  difficulty: 'beginner',
-  description: 'Learn about fractions',
-  vocab: '',
-  notes: ''
-}
-```
-
-### 3. Schedule Flow
-
-**Intent:** User wants to schedule a lesson for a learner on a specific date  
-**Examples:** "schedule Multiplying with Zeros for Monday", "put 4th grade math on December 18th"
-
-**Steps:**
-1. Detect schedule intent
-2. Check for selected learner (required)
-3. Extract lesson info (grade, subject, title, or use selectedLesson from search)
-4. Extract date if present
-5. If lesson unknown, search and ask user to select
-6. If date unknown, ask for date
-7. Confirm with formatted details
-8. Execute scheduling or cancel
-
-**Confirmation format:**
-```
-"Should I schedule Multiplying with Zeros (4th math, beginner) 
-on Monday, December 18, 2025 for Emma?"
-```
-
-**Action execution:**
-```javascript
-{
-  type: 'schedule',
-  lessonKey: 'math/4th-multiplying-with-zeros.json',
-  scheduledDate: '2025-12-18'
-}
-```
-
-### 2. docs/brain/ingests/pack.lesson-schedule-debug.md (9db659bda6210041f03a9461a58e75e31db5164dab78ec9e4bdb137dc9418bb0)
-- bm25: -12.7292 | relevance: 0.9272
-
-### 4. docs/brain/MentorInterceptor_Architecture.md (5a800d762cfb3eeb6b7fb4cd6390e82c90ae5e6c592060e3295040464b2ebeda)
-- bm25: -23.1824 | relevance: 1.0000
-
-**Parameter gathering Q&A:**
-```
-User: "create a lesson"
-Bot: "What topic should this lesson cover?"
-User: "fractions"
-Bot: "What grade level is this lesson for Emma?"
-User: "4th"
-Bot: "What subject is this lesson?"
-User: "math"
-Bot: "What difficulty level? (beginner, intermediate, or advanced)"
-User: "beginner"
-Bot: "Should I generate 'fractions' (4th math, beginner)?"
-User: "yes"
-Bot: "Generating fractions... This will take about 30-60 seconds."
-```
-
-**After generation completes:** Mr. Mentor should offer the next step:
-
-- "Would you like me to schedule this lesson, or assign it to [learner]?"
-- Scheduling requires a date (calendar event).
-- Assigning makes the lesson available to the learner without a date.
-
-**Action execution:**
-```javascript
-{
-  type: 'generate',
-  title: 'fractions',
-  subject: 'math',
-  grade: '4th',
-  difficulty: 'beginner',
-  description: 'Learn about fractions',
-  vocab: '',
-  notes: ''
-}
-```
-
-### 3. Schedule Flow
-
-**Intent:** User wants to schedule a lesson for a learner on a specific date  
-**Examples:** "schedule Multiplying with Zeros for Monday", "put 4th grade math on December 18th"
-
-**Steps:**
-1. Detect schedule intent
-2. Check for selected learner (required)
-3. Extract lesson info (grade, subject, title, or use selectedLesson from search)
-4. Extract date if present
-5. If lesson unknown, search and ask user to select
-6. If date unknown, ask for date
-7. Confirm with formatted details
-8. Execute scheduling or cancel
-
-**Confirmation format:**
-```
-"Should I schedule Multiplying with Zeros (4th math, beginner) 
-on Monday, December 18, 2025 for Emma?"
-```
-
-### 3. docs/brain/api-routes.md (dd3378227a6324ce4a86f9e043ed13060e4abcc4a4fabc05a7854dad2c6ce68c)
-- bm25: -9.6883 | entity_overlap_w: 3.90 | adjusted: -10.6633 | relevance: 0.9143
-
-# API Routes
-
-## `/api/sonoma` - Core Ms. Sonoma Endpoint
-
-### Request Format
-
-**Method**: POST  
-**Content-Type**: application/json
-
-```json
-{
-  "instruction": "<string>",
-  "innertext": "<string>",
-  "skipAudio": true
-}
-```
-
-**Fields**:
-- `instruction`: The per-turn instruction string (server hardens it for safety).
-- `innertext`: Optional learner input for this turn.
-- `skipAudio`: Optional boolean; when `true`, the API will skip Google TTS and return `audio: null`.
-
-**Why `skipAudio` exists**:
-- Some callers (especially teaching definitions/examples generation) need text only.
-- Returning base64 audio for large responses can be slow on mobile devices.
-
-### Response Format
-
-```json
-{
-  "reply": "<string>",
-  "audio": "<base64 mp3>" 
-}
-```
-
-**Fields**:
-- `reply`: Ms. Sonoma response text from the configured LLM provider.
-- `audio`: Base64-encoded MP3 when TTS is enabled and available; `null` when `skipAudio=true` (or when TTS is not configured).
-
-### Implementation
-
-- **Location**: `src/app/api/sonoma/route.js`
-- **Providers**: OpenAI or Anthropic depending on env configuration
-- **Runtime**: Node.js (Google SDKs require Node, not Edge)
-- **Stateless**: Each call is independent; no DB writes from this endpoint
-
-### Health Check
-
-**Method**: GET
-
-Returns `200` with `{ ok: true, route: 'sonoma', runtime }`.
-
-### Logging Controls
-
-Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
-
-- `full`, `off`, `none`, or `0` — No truncation
-- Positive integer (e.g., `2000`) — Truncate after N characters
-- Default: Unlimited in development; 600 chars in production
-
----
-
-## Other Core Routes
-
-### `/api/counselor`
-**Purpose**: Mr. Mentor counselor chat endpoint (facilitator-facing)  
-**Status**: Operational
-
-### 4. docs/brain/MentorInterceptor_Architecture.md (002f07476a11a14f963028f7b806b02562191bf0e6a782a8ab90a3f25199abed)
-- bm25: -10.6444 | relevance: 0.9141
-
-**Event dispatch:**
-```javascript
-window.dispatchEvent(new Event('mr-mentor:lesson-scheduled'))
-```
-
-### 3b. Assign Flow
-
-**Intent:** User wants a lesson to show up as available to a learner (no date).  
-**Examples:** "assign this lesson to Emma", "make this lesson available", "show this lesson to her"
-
-**Steps:**
-1. Detect assign intent
-2. Check for selected learner (required)
-3. Resolve lesson (use selectedLesson from search/generation; otherwise search and ask user to select)
-4. Execute assignment immediately
-5. Confirm in dialogue: "I've assigned [lesson title] to [learner name]. Is that correct?"
-6. If user says "no", undo the assignment and ask what to do next
-
-**Action execution:**
-```javascript
-{
-  type: 'assign',
-  lessonKey: 'math/4th-multiplying-with-zeros.json'
-}
-```
-
-### 4. Edit Flow
-
-**Intent:** User wants to modify a lesson  
-**Examples:** "edit Multiplying with Zeros", "change the 4th grade fractions lesson"
-
-**Steps:**
-1. Detect edit intent
-2. Extract lesson info or use selectedLesson
-3. If lesson unknown, search and ask user to select
-4. Confirm lesson choice
-5. Ask: "What would you like me to change?"
-6. Capture edit instructions
-7. Confirm changes
-8. Execute edit or cancel
-
-**Edit instructions capture:**
-```
-User: "edit Multiplying with Zeros"
-Bot: "Do you want to edit Multiplying with Zeros (4th math, beginner)?"
-User: "yes"
-Bot: "What would you like me to change in Multiplying with Zeros?"
-User: "make the examples easier"
-Bot: "Should I make these changes to Multiplying with Zeros?"
-User: "yes"
-Bot: "I'm editing Multiplying with Zeros now..."
-```
-
-**Action execution:**
-```javascript
-{
-  type: 'edit',
-  lessonKey: 'math/4th-multiplying-with-zeros.json',
-  editInstructions: 'make the examples easier'
-}
-```
-
-### 5. docs/brain/ingests/pack-mentor-intercepts.md (35e76a89c7f5240f0e94cbd2877e930ae62cde56e079f99fd9382929f9faf2a0)
-- bm25: -9.6410 | entity_overlap_w: 3.90 | adjusted: -10.6160 | relevance: 0.9139
-
-### 15. docs/brain/api-routes.md (dd3378227a6324ce4a86f9e043ed13060e4abcc4a4fabc05a7854dad2c6ce68c)
-- bm25: -16.5866 | relevance: 1.0000
-
-# API Routes
-
-## `/api/sonoma` - Core Ms. Sonoma Endpoint
-
-### Request Format
-
-**Method**: POST  
-**Content-Type**: application/json
-
-```json
-{
-  "instruction": "<string>",
-  "innertext": "<string>",
-  "skipAudio": true
-}
-```
-
-**Fields**:
-- `instruction`: The per-turn instruction string (server hardens it for safety).
-- `innertext`: Optional learner input for this turn.
-- `skipAudio`: Optional boolean; when `true`, the API will skip Google TTS and return `audio: null`.
-
-**Why `skipAudio` exists**:
-- Some callers (especially teaching definitions/examples generation) need text only.
-- Returning base64 audio for large responses can be slow on mobile devices.
-
-### Response Format
-
-```json
-{
-  "reply": "<string>",
-  "audio": "<base64 mp3>" 
-}
-```
-
-**Fields**:
-- `reply`: Ms. Sonoma response text from the configured LLM provider.
-- `audio`: Base64-encoded MP3 when TTS is enabled and available; `null` when `skipAudio=true` (or when TTS is not configured).
-
-### Implementation
-
-- **Location**: `src/app/api/sonoma/route.js`
-- **Providers**: OpenAI or Anthropic depending on env configuration
-- **Runtime**: Node.js (Google SDKs require Node, not Edge)
-- **Stateless**: Each call is independent; no DB writes from this endpoint
-
-### Health Check
-
-**Method**: GET
-
-Returns `200` with `{ ok: true, route: 'sonoma', runtime }`.
-
-### Logging Controls
-
-Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
-
-- `full`, `off`, `none`, or `0` — No truncation
-- Positive integer (e.g., `2000`) — Truncate after N characters
-- Default: Unlimited in development; 600 chars in production
-
----
-
-## Other Core Routes
-
-### 6. sidekick_pack.md (ddb12ec6e90db828431d06cf91cbec70a84f5cea28c9be619c44aefe0ca22c23)
-- bm25: -10.1830 | entity_overlap_w: 1.30 | adjusted: -10.5080 | relevance: 0.9131
-
-```
-User types message
-    ↓
-CounselorClient.sendMessage()
-    ↓
-Load allLessons (subjects → lessons object)
-    ↓
-interceptor.process(message, { allLessons, selectedLearnerId, learnerName, conversationHistory })
-    ↓
-  interceptResult.handled?
-    ↓
-  YES → Handle front-end
-    ↓
-    Add user + bot messages to conversationHistory
-    Display response in captions
-    Play TTS audio
-    Execute action if present (schedule/generate/edit)
-    Return (skip API)
-    ↓
-  NO → Forward to API
-    ↓
-    Call /api/counselor with forwardMessage
-    Process tool calls, follow-ups, etc
-    Add messages to conversationHistory
-    Display response in captions
-    Play audio
-    Track tokens
-```
-
-### 7. docs/brain/MentorInterceptor_Architecture.md (ce3cd9684410622160fbad2779f03dd2313cb09bba1ed5ffcd42179724e742c6)
-- bm25: -10.1029 | entity_overlap_w: 1.30 | adjusted: -10.4279 | relevance: 0.9125
-
-```
-User types message
-    ↓
-CounselorClient.sendMessage()
-    ↓
-Load allLessons (subjects → lessons object)
-    ↓
-interceptor.process(message, { allLessons, selectedLearnerId, learnerName, conversationHistory })
-    ↓
-  interceptResult.handled?
-    ↓
-  YES → Handle front-end
-    ↓
-    Add user + bot messages to conversationHistory
-    Display response in captions
-    Play TTS audio
-    Execute action if present (schedule/generate/edit)
-    Return (skip API)
-    ↓
-  NO → Forward to API
-    ↓
-    Call /api/counselor with forwardMessage
-    Process tool calls, follow-ups, etc
-    Add messages to conversationHistory
-    Display response in captions
-    Play audio
-    Track tokens
-```
-
-### 8. docs/brain/ingests/pack.planned-lessons-flow.md (043acc5f96fad3732cebeb897f3edf1f5e317250beb4b58f69e73bcccf3e4b46)
-- bm25: -10.0972 | entity_overlap_w: 1.30 | adjusted: -10.4222 | relevance: 0.9125
-
-### Data/Key Rules
-
-### 31. docs/brain/MentorInterceptor_Architecture.md (ce3cd9684410622160fbad2779f03dd2313cb09bba1ed5ffcd42179724e742c6)
-- bm25: -13.9393 | relevance: 1.0000
-
-```
-User types message
-    ↓
-CounselorClient.sendMessage()
-    ↓
-Load allLessons (subjects → lessons object)
-    ↓
-interceptor.process(message, { allLessons, selectedLearnerId, learnerName, conversationHistory })
-    ↓
-  interceptResult.handled?
-    ↓
-  YES → Handle front-end
-    ↓
-    Add user + bot messages to conversationHistory
-    Display response in captions
-    Play TTS audio
-    Execute action if present (schedule/generate/edit)
-    Return (skip API)
-    ↓
-  NO → Forward to API
-    ↓
-    Call /api/counselor with forwardMessage
-    Process tool calls, follow-ups, etc
-    Add messages to conversationHistory
-    Display response in captions
-    Play audio
-    Track tokens
-```
-
-### 32. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
-- bm25: -13.5957 | relevance: 1.0000
-
-**Completion query rule (visibility > micro-optimization):**
-- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
-- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
-
-**Calendar date key rule (marker dots):**
-- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
-- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
-- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
-
-### 9. src/app/session/v2/services.js (9fd203ffa5e37711a590441c0c652aeb269232513e4f4c6b874bd29c9c481e00)
-- bm25: -8.0971 | entity_overlap_w: 9.10 | adjusted: -10.3721 | relevance: 0.9121
-
-/**
- * V2 Services - API integrations
- * 
- * Clean service layer for TTS and lesson loading.
- * Zero coupling to session state or components.
- */
-
-/**
- * Fetch TTS audio from Google Cloud TTS API
- * @param {string} text - Text to synthesize
- * @returns {Promise<string|null>} Base64-encoded MP3 audio or null on failure
- */
-export async function fetchTTS(text) {
-  if (!text?.trim()) return null;
-
-// Hard 12-second timeout so a stalled TTS response never blocks the answer flow.
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-try {
-    const response = await fetch('/api/tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text.trim() }),
-      signal: controller.signal,
-    });
-    
-    if (!response.ok) {
-      console.error('[TTS] API error:', response.status);
-      return null;
-    }
-    
-    const data = await response.json();
-    return data.audio || null;
-  } catch (err) {
-    if (err?.name !== 'AbortError') {
-      console.error('[TTS] Fetch error:', err);
-    }
-    return null;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-/**
- * Fetch TTS for multiple sentences and combine
- * @param {string[]} sentences - Array of sentences to synthesize
- * @returns {Promise<string|null>} Combined base64 audio or null
- */
-export async function fetchMultiSentenceTTS(sentences) {
-  if (!sentences?.length) return null;
-  
-  // Combine sentences with natural pauses
-  const combined = sentences.join(' ');
-  return fetchTTS(combined);
-}
-
-### 10. docs/brain/ingests/pack.md (237a2deb28c985f662915aee6871b40e583791a8102c8eddfaa3f706b1726b74)
-- bm25: -9.7190 | relevance: 0.9067
-
-**2025-12-14**: Fixed medals API 404 causing generation failure
-- Changed endpoint from `/api/learner/medals` to `/api/medals`
-- Decoupled medals loading from history processing
-- Added fallback to empty medals object when API fails
-- Generation now succeeds even without medal data
-
-**2025-12-14**: Fixed scheduled lessons API response structure
-- API returns `{schedule: [...]}` not raw array
-- Changed code to access `scheduledData.schedule` property
-- Prevents ".map is not a function" error during context building
-
-### 8. docs/brain/calendar-lesson-planning.md (b5fceec1ff172ff9be6e16676dfd040ac9bf511ccfa0190409ecada4fe8df328)
-- bm25: -27.5210 | relevance: 1.0000
-
-**Persistence Model:**
-- Planned lessons stored in `planned_lessons` table (facilitator_id, learner_id, scheduled_date, lesson_data JSONB)
-- Each row = one lesson outline for one date
-- Survives page refresh, long absences, logout/login
-- Tied to specific facilitator + learner combination
-- **POST uses date-specific overwrite**: only deletes/replaces dates included in new plan
-- **Multiple non-overlapping plans coexist**: schedule Jan + Mar separately, both persist
-- **Overlapping dates are replaced**: reschedule Jan 15-31 overwrites only those dates, Jan 1-14 untouched
-
-**Data Format:**
-```javascript
-// In-memory format (calendar page state)
-plannedLessons = {
-  '2025-12-15': [
-    { id: '...', title: '...', subject: 'math', grade: '3rd', difficulty: 'intermediate', ... },
-    { id: '...', title: '...', subject: 'science', ... }
-  ],
-  '2025-12-16': [ ... ]
-}
-
-// Database format (planned_lessons table)
-{
-  facilitator_id: 'uuid',
-  learner_id: 'uuid',
-  scheduled_date: '2025-12-15',
-  lesson_data: { id: '...', title: '...', subject: 'math', ... } // JSONB
-}
-```
-
-### API Endpoints
-
-### 11. src/app/session/page.js (5ebb57890543e4d8ccb0e22882d780a52de493e4676b5227b61c96cc2894bd8d)
-- bm25: -9.5564 | relevance: 0.9053
-
-// Story: awaiting-turn or awaiting-setup ? treat as Your Turn (handles both setup and continuation)
-    if (storyState === 'awaiting-turn' || storyState === 'awaiting-setup') {
-      // Prevent double-processing by checking if input is already cleared
-      if (!trimmed) return;
-      setLearnerInput('');
-      await handleStoryYourTurn(trimmed);
-      return;
-    }
-
-// Fill-in-Fun: collecting words
-    if (fillInFunState === 'collecting-words') {
-      if (!trimmed) return;
-      setLearnerInput('');
-      await handleFillInFunWordSubmit(trimmed);
-      return;
-    }
-
-### 12. docs/brain/MentorInterceptor_Architecture.md (17dcf012c47613eab74ca015b85a2a89e32d6728c284d3e2be34b3d430894fd9)
-- bm25: -8.9080 | relevance: 0.8991
-
-### 5. Recall Flow
-
-**Intent:** User wants to retrieve past conversation context  
-**Examples:** "remember when we discussed fractions?", "what did we talk about last time?"
-
-**Steps:**
-1. Detect recall intent
-2. Extract search terms (filter out recall keywords)
-3. Search conversationHistory for matches
-4. Return best match first
-5. If multiple matches, offer to show more
-6. "More" → Show next match
-7. Repeat until all matches shown or user stops
-
-**Search algorithm:**
-```javascript
-conversationHistory
-  .filter(turn => normalizedContent.includes(searchTerms) || 
-                  searchTerms.includes(normalizedContent))
-  .slice(0, 3)
-```
-
-**Multi-match handling:**
-```
-User: "remember when we talked about math?"
-Bot: "I recall we discussed: 'Create a 4th grade math lesson on fractions'"
-     
-     "I found 3 conversations about this. Would you like to hear more?"
-User: "yes"
-Bot: "I also recall: 'Schedule Multiplying with Zeros for Monday'"
-     
-     "Would you like to hear more?"
-User: "yes"
-Bot: "I also recall: 'Edit the fractions lesson to add more examples'"
-     
-     "That's everything I found."
-```
-
-**State management:**
-```javascript
-{
-  flow: 'recall',
-  context: {
-    recallMatches: [...],
-    recallIndex: 1
-  }
-}
-```
-
-## Integration with CounselorClient
-
-### Message Flow
-
-### 13. src/app/facilitator/calendar/page.js (1edff854e8911932da31c1b5fa179a159a5f501b4784240a22b574e8399dc693)
-- bm25: -8.8278 | relevance: 0.8982
-
-{/* Database Setup Warning */}
-        {!tableExists && (
-          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6">
-            <h3 className="text-yellow-800 font-semibold mb-2">⚠️ Database Setup Required</h3>
-            <p className="text-yellow-700 text-sm mb-3">
-              The lesson_schedule table hasn&apos;t been created yet. Please run the migration in your Supabase SQL Editor:
-            </p>
-            <code className="block bg-yellow-100 text-yellow-900 p-2 rounded text-xs mb-2">
-              scripts/add-lesson-schedule-table.sql
-            </code>
-            <p className="text-yellow-700 text-xs">
-              After running the migration, refresh this page.
-            </p>
-          </div>
-        )}
-
-### 14. docs/brain/riddle-system.md (3b9fcc9e9f0a42cb4d99fbb76628c81bc9b38324dff0b4de363a73b08f66db53)
-- bm25: -8.6640 | relevance: 0.8965
-
-# Riddle System Architecture
-
-**Status**: Implemented but **NOT integrated** into teaching flow  
-**Last Updated**: 2025-12-03  
-**Key Files**: `src/app/lib/riddles.js`
-
----
+**Status**: Canonical
+**Last Updated**: 2026-01-08T03:44:22Z
 
 ## How It Works
 
-### Storage Model
-Riddles are **hardcoded** in `src/app/lib/riddles.js` as a static export. Not generated via AI, not pulled from database, not loaded from JSON. This is intentional for:
-- **Performance**: No API calls or database queries
-- **Consistency**: Same riddles always available offline
-- **Control**: Curated content, not AI-generated randomness
+The Learner Settings Bus is a small, client-only pub/sub mechanism for propagating per-learner setting changes immediately across open pages and tabs.
 
-### Riddle Structure
-```javascript
-{
-  id: string,              // 'math-01', 'sci-15', etc.
-  subject: string,         // 'math' | 'science' | 'language arts' | 'social studies' | 'general'
-  lines: string[],         // 1-4 riddle lines (delivered with pauses)
-  pausesMs: number[],      // Pause after each line (0 = no pause)
-  answer: string           // Expected answer (lowercase, spaces allowed)
-}
-```
+It exists to support settings that must:
+- Be per-learner (not global)
+- React immediately without a refresh
+- Avoid local persistence fallbacks that could leak across learners or accounts on a shared device
 
-### Selection Algorithm
-`pickNextRiddle(subject)` uses **localStorage rotation**:
-1. Check localStorage for last riddle index for this subject
-2. Increment index (wrap to 0 at end)
-3. Return riddle at new index
-4. Store index for next call
+### Message Shape
 
-This ensures kids get **different riddles each time** without server-side state.
+Messages are plain JS objects:
 
-### Design Philosophy (December 2025 Transformation)
+- `type`: always `learner-settings-patch`
+- `learnerId`: string
+- `patch`: object containing the updated fields
 
-**Before**: 60% of riddles were quiz questions  
-**After**: All riddles use wordplay, metaphor, or lateral thinking
+Example:
 
-#### True Riddle Characteristics
-- **Misdirection**: Leads thinking one way, answer is another
-- **Wordplay**: Puns, double meanings, homonyms, visual tricks
-- **Surprise**: "Aha!" moment when solved
-- **Fair Clues**: Solvable with lateral thinking (not pure recall)
+- `{"type":"learner-settings-patch","learnerId":"<uuid>","patch":{"golden_keys_enabled":false}}`
 
-#### Transformation Patterns Applied
+Also used for play portion flags (phases 2-5 only):
 
-### 15. docs/brain/MentorInterceptor_Architecture.md (859736bab84d0ee834de1e1f0302bcc99fd52b2eaf052ec25b24ee572d9c187c)
-- bm25: -8.3294 | entity_overlap_w: 1.30 | adjusted: -8.6544 | relevance: 0.8964
+- `{"type":"learner-settings-patch","learnerId":"<uuid>","patch":{"play_test_enabled":false}}`
 
-### Lesson Keys
+### Transport
 
-**Standard lessons:**
-```
-"math/4th-multiplying-with-zeros.json"
-"science/5th-photosynthesis.json"
-```
+The bus uses two mechanisms:
 
-**Generated lessons:**
-```
-"generated/uuid-fractions.json"
-```
+1) `BroadcastChannel` (cross-tab)
+- Channel name: `ms-learner-settings`
 
-### interceptResult
+2) `window` event (same-tab)
+- Event name: `ms:learner-settings-patch`
 
-```javascript
-{
-  handled: boolean,           // Did interceptor handle this?
-  response?: string,          // Text response to user
-  action?: {                  // Action to execute
-    type: 'schedule' | 'generate' | 'edit',
-    // ... type-specific fields
-  },
-  apiForward?: {              // Forward to API
-    message: string,
-    context?: object,
-    bypassInterceptor?: boolean
-  }
-}
-```
+The broadcaster emits to both so the sender tab updates immediately and other tabs receive the patch.
 
-## Testing Strategy
+### Source of Truth
 
-**Not pushed to Vercel** - local testing only.
+The database is still the source of truth.
 
-**Test progression:**
-1. Test each flow independently
-2. Test parameter gathering Q&A
-3. Test confirmation flows (yes/no/unclear)
-4. Test lesson search with various queries
-5. Test action execution (schedule/generate/edit)
-6. Test recall with conversation history
-7. Test bypass commands
-8. Test API fallback for unhandled intents
-9. Test TTS synchronization
-10. Test conversation continuity across interceptor/API
+Flow:
+1) Facilitator UI writes the change to Supabase.
+2) On success, the UI broadcasts the patch via the bus.
+3) Pages currently open for that learner react immediately.
 
-**Rollback plan:**
-- Commits are waypointed
-- Can revert via: `git revert ab3fed4..6890d3b`
-- CounselorClient integration is isolated in sendMessage
-- Removing interceptor call returns to original API-only flow
+### Consumers
 
-## Commits
+Consumers should:
+- Filter by learner id (`msg.learnerId`).
+- Check for specific fields in `msg.patch`.
+- Update UI state immediately.
 
-**6890d3b:** WIP: Create MentorInterceptor foundation with intent detection and search flow  
-**6b5f2ea:** Complete all MentorInterceptor flows: generate, schedule, edit, recall with full parameter gathering  
-**a7a5055:** Integrate MentorInterceptor with CounselorClient for front-end conversation handling  
-**ab3fed4:** Add recall 'more' handling and fix allLessons structure for interceptor
+### 2. docs/brain/timer-system.md (6355eba6067a51d62874ca49d45f24550eeb025a19bc49ffbba423e27f5f7ec9)
+- bm25: -13.4911 | relevance: 0.9310
 
-## Next Steps
+❌ **Never use local persistence fallback for `golden_keys_enabled`**
+- Do not store a per-learner Golden Key enabled/disabled flag in localStorage.
+- The source of truth is Supabase; the Learner Settings Bus is for immediate UI reaction only.
 
-### 16. src/app/session/page.js (6953fd6530f7514ef3711ded36a2578c7911f2bf7a694282050b50a952ce740c)
-- bm25: -8.4073 | relevance: 0.8937
+### 3. src/app/session/slate/page.jsx (792ea0b3827eed42eb35aa164b5a08ac3dc51aff4b874a365a138c33b3448a95)
+- bm25: -13.4475 | relevance: 0.9308
 
-// Enforce step-specific reply hygiene
-      let replyText = data.reply || "";
-      try {
-        const stepKey = (session && session.step) || "";
-        const phaseKey = (session && session.phase) || "";
-        if (stepKey === "silly-question") {
-          // Keep only a single sentence that ends with a question mark
-          const qMatches = replyText.match(/[^?]*\?/g);
-          if (qMatches && qMatches.length) {
-            replyText = qMatches[qMatches.length - 1].trim();
-          } else {
-            // If no explicit question, append a question mark to the last sentence
-            replyText = (replyText.split(/(?<=[.!?])\s+/).pop() || replyText).trim();
-            if (!replyText.endsWith("?")) replyText += "?";
-          }
-          // No worksheet/test mention in discussion
-          replyText = replyText.replace(/\b(worksheet|test|exam|quiz)\b/gi, "");
-        } else if (stepKey === "greeting" || stepKey === "encouragement") {
-          // Remove any question sentences and keep it brief
-          if (replyText.includes("?")) {
-            replyText = replyText.slice(0, replyText.indexOf("?")).trim();
-          }
-          const parts = replyText
-            .replace(/\s+/g, " ")
-            .split(/(?<=[.!])\s+/)
-            .filter(Boolean);
-          const maxSentences = stepKey === "greeting" ? 2 : 1;
-          replyText = parts.slice(0, maxSentences).join(" ").trim();
-          // No worksheet/test mention in discussion
-          replyText = replyText.replace(/\b(worksheet|test|exam|quiz)\b/gi, "").replace(/\s{2,}/g, " ").trim();
-        } else if (stepKey === "joke") {
-          // Ensure required opener is present
-          const openers = [getJokePrompt(), getJokePrompt()]; // Get two options
-          const hasOpener = openers.some((o) => replyTe
-
-### 17. src/app/session/components/games/FlashCards.jsx (8dfdfc54a01ee7b71c8e5ee4228f52908a7fd112c07bdcc8613c66a8572b80ad)
-- bm25: -8.1467 | relevance: 0.8907
-
-const goNextTopic = () => {
-    const nextTopicId = pickNextTopicId(topicId);
-    if (!nextTopicId) {
-      // No more topics yet: return to setup.
-      setScreen('setup');
-      return;
-    }
-    setTopicId(nextTopicId);
-    setStage(1);
-    setSeed(null);
-    setCardIndex(0);
-    setMeter(0);
-    setAnswer('');
-    setPendingTopicComplete(false);
-    setScreen('card');
-
-### 18. src/app/session/page.js (9334f5c024e34cd6146f964fba491b094aa82226477c3b6451d30fb4ac05bcb5)
-- bm25: -7.8160 | entity_overlap_w: 1.30 | adjusted: -8.1410 | relevance: 0.8906
-
-// Request TTS for the local opening and play it using the same pipeline as API replies.
-      setLoading(true);
-      setTtsLoadingCount((c) => c + 1);
-  const replyStartIndex = prevLen; // we appended opening sentences at the end
-      let res;
-      try {
-        res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
-        var data = await res.json().catch(() => ({}));
-        var audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
-        // Dev warm-up: if route wasn't ready (404) or no audio returned, pre-warm and retry once
-        if ((!res.ok && res.status === 404) || !audioB64) {
-          try { await fetch('/api/tts', { method: 'GET', headers: { 'Accept': 'application/json' } }).catch(() => {}); } catch {}
-          try { await waitForBeat(400); } catch {}
-          res = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: replyText }) });
-          data = await res.json().catch(() => ({}));
-          audioB64 = (data && (data.audio || data.audioBase64 || data.audioContent || data.content || data.b64)) || '';
-        }
-      } finally {
-        setTtsLoadingCount((c) => Math.max(0, c - 1));
-      }
-      if (audioB64) audioB64 = normalizeBase64Audio(audioB64);
-      // Match API flow: stop showing loading before kicking off audio
-      setLoading(false);
-      if (audioB64) {
-        // Stash payload so gesture-based unlock can retry immediately if needed
-        try { lastAudioBase64Ref.current = audioB64; } catch {}
-        setIsSpeaking(true);
-        // CRITICAL: Also update the ref immediately to prevent double-playback in recovery timeout
-
-### 19. src/app/session/page.js (556557f55b488bef68b35361f248c882c1a8e94ced606307f9e1927748a3ad8f)
-- bm25: -8.1016 | relevance: 0.8901
-
-{/* Story back button: shows during story setup and continuation */}
-          {(() => {
-            try {
-              const active = (storyState === 'awaiting-setup' || storyState === 'awaiting-turn');
-              if (!active) return null;
-              const wrap = { display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'6px 12px', flexWrap:'wrap' };
-              const backBtn = { background:'#374151', color:'#fff', borderRadius:8, padding:'8px 12px', minHeight:40, fontWeight:800, border:'none', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', cursor:'pointer' };
-              return (
-                <div style={wrap} aria-label="Story actions">
-                  <button type="button" style={backBtn} onClick={handleStoryBack}>Back</button>
-                </div>
-              );
-            } catch {}
-            return null;
-          })()}
-
-### 20. src/app/session/v2/ComprehensionPhase.jsx (1e185575726eba6e53dfa74890a33cdcbdc7aaa2013557d0852702d26d84489d)
-- bm25: -7.1154 | entity_overlap_w: 3.90 | adjusted: -8.0904 | relevance: 0.8900
-
-// Public API: Recover from a stuck state (e.g. TTS/API timeout).
-  // Resets to awaiting-answer so the learner can re-submit without reloading.
-  recover() {
-    if (this.#state === 'complete' || this.#state === 'idle') return;
-    try { this.#audioEngine.stop(); } catch {}
-    this.#state = 'awaiting-answer';
-    this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
-  }
-  
-  // Getters
-  get state() {
-    return this.#state;
-  }
-  
-  get currentQuestion() {
-    if (this.#currentQuestionIndex >= this.#questions.length) return null;
-    return this.#questions[this.#currentQuestionIndex];
-  }
-  
-  get currentQuestionIndex() {
-    return this.#currentQuestionIndex;
-  }
-  
-  get totalQuestions() {
-    return this.#questions.length;
-  }
-  
-  get score() {
-    return this.#score;
-  }
-  
-  get answers() {
-    return [...this.#answers];
-  }
-  
-  // Private: Question playback
-  async #playCurrentQuestion() {
-    if (this.#currentQuestionIndex >= this.#questions.length) {
-      this.#complete();
-      return;
-    }
-    
-    const question = this.#questions[this.#currentQuestionIndex];
-    
-    this.#emit('questionStart', {
-      questionIndex: this.#currentQuestionIndex,
-      question: question,
-      totalQuestions: this.#questions.length
-    });
-    
-    // V1 Test pattern: Set awaiting-answer BEFORE TTS so buttons appear immediately
-    // User can answer while question is still being read aloud
-    this.#state = 'awaiting-answer';
-    this.#emit('questionReady', {
-      questionIndex: this.#currentQuestionIndex,
-      question: question
-    });
-    
-    // Format question for TTS (add "True/False:" prefix for TF, letter options for MC)
-    const formattedQuestion = formatQuestionForSpeech(question);
-    
-    // Check cache first (instant if pr
-
-### 21. src/app/session/v2/ExercisePhase.jsx (6b789cbbd663e70c5106bcbf156f38dfcdc1142ba3ad3b49bb497f6e65ca1de6)
-- bm25: -7.1154 | entity_overlap_w: 3.90 | adjusted: -8.0904 | relevance: 0.8900
-
-// Public API: Recover from a stuck state (e.g. TTS/API timeout).
-  // Resets to awaiting-answer so the learner can re-submit without reloading.
-  recover() {
-    if (this.#state === 'complete' || this.#state === 'idle') return;
-    try { this.#audioEngine.stop(); } catch {}
-    this.#state = 'awaiting-answer';
-    this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
-  }
-  
-  // Getters
-  get state() {
-    return this.#state;
-  }
-  
-  get currentQuestion() {
-    if (this.#currentQuestionIndex >= this.#questions.length) return null;
-    return this.#questions[this.#currentQuestionIndex];
-  }
-  
-  get currentQuestionIndex() {
-    return this.#currentQuestionIndex;
-  }
-  
-  get totalQuestions() {
-    return this.#questions.length;
-  }
-  
-  get score() {
-    return this.#score;
-  }
-  
-  get answers() {
-    return [...this.#answers];
-  }
-  
-  // Private: Question playback
-  async #playCurrentQuestion() {
-    if (this.#currentQuestionIndex >= this.#questions.length) {
-      this.#complete();
-      return;
-    }
-    
-    const question = this.#questions[this.#currentQuestionIndex];
-    
-    this.#emit('questionStart', {
-      questionIndex: this.#currentQuestionIndex,
-      question: question,
-      totalQuestions: this.#questions.length
-    });
-    
-    // V1 Test pattern: Set awaiting-answer BEFORE TTS so buttons appear immediately
-    // User can answer while question is still being read aloud
-    this.#state = 'awaiting-answer';
-    this.#emit('questionReady', {
-      questionIndex: this.#currentQuestionIndex,
-      question: question
-    });
-    
-    // Format question for TTS (add "True/False:" prefix for TF, letter options for MC)
-    const formattedQuestion = formatQuestionForSpeech(question);
-    
-    // Check cache first (instant if pr
-
-### 22. src/app/session/v2/WorksheetPhase.jsx (a7cffa3aefd8a6823c2a296e048abbed5cafc43a715784d9a4d912f2f2675760)
-- bm25: -7.1154 | entity_overlap_w: 3.90 | adjusted: -8.0904 | relevance: 0.8900
-
-// Public API: Recover from a stuck state (e.g. TTS/API timeout).
-  // Resets to awaiting-answer so the learner can re-submit without reloading.
-  recover() {
-    if (this.#state === 'complete' || this.#state === 'idle') return;
-    try { this.#audioEngine.stop(); } catch {}
-    this.#state = 'awaiting-answer';
-    this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
-  }
-  
-  // Getters
-  get state() {
-    return this.#state;
-  }
-  
-  get currentQuestion() {
-    if (this.#currentQuestionIndex >= this.#questions.length) return null;
-    return this.#questions[this.#currentQuestionIndex];
-  }
-  
-  get currentQuestionIndex() {
-    return this.#currentQuestionIndex;
-  }
-  
-  get totalQuestions() {
-    return this.#questions.length;
-  }
-  
-  get score() {
-    return this.#score;
-  }
-  
-  get answers() {
-    return [...this.#answers];
-  }
-  
-  // Private: Question playback
-  async #playCurrentQuestion() {
-    if (this.#currentQuestionIndex >= this.#questions.length) {
-      this.#complete();
-      return;
-    }
-    
-    const question = this.#questions[this.#currentQuestionIndex];
-    
-    this.#emit('questionStart', {
-      questionIndex: this.#currentQuestionIndex,
-      question: question,
-      totalQuestions: this.#questions.length
-    });
-    
-    // V1 Test pattern: Set awaiting-answer BEFORE TTS so input appears immediately
-    // User can answer while question is still being read aloud
-    this.#state = 'awaiting-answer';
-    this.#emit('questionReady', {
-      questionIndex: this.#currentQuestionIndex,
-      question: question
-    });
-    
-    // Format question for TTS (add "True/False:" prefix for TF, letter options for MC)
-    const formattedQuestion = formatQuestionForSpeech(question);
-    
-    // Check cache first (instant if pre
-
-### 23. src/app/session/page.js (d88d380ce5fc39f499f62a9422ce73dd0cb010fef13d02e528caf6a088b14695)
-- bm25: -7.7383 | entity_overlap_w: 1.30 | adjusted: -8.0633 | relevance: 0.8897
-
-// Disable sending when the UI is not ready or while Ms. Sonoma is speaking
-  const comprehensionAwaitingBegin = (phase === 'comprehension' && subPhase === 'comprehension-start');
-  // Allow answering Test items while TTS is still playing so buttons appear immediately
-  const speakingLock = (phase === 'test' && subPhase === 'test-active') ? false : !!isSpeaking;
-  // Derived gating: when Opening/Go buttons are visible, keep input inactive without mutating canSend
-  const discussionButtonsVisible = (
-    phase === 'discussion' &&
-    subPhase === 'awaiting-learner' &&
-    (!isSpeaking || captionsDone) &&
-    showOpeningActions &&
-    askState === 'inactive' &&
-    riddleState === 'inactive' &&
-    poemState === 'inactive' &&
-    fillInFunState === 'inactive'
-  );
-  const inQnAForButtons = (
-    (phase === 'comprehension' && subPhase === 'comprehension-active') ||
-    (phase === 'exercise' && (subPhase === 'exercise-start' || subPhase === 'exercise-active')) ||
-    (phase === 'worksheet' && subPhase === 'worksheet-active') ||
-    (phase === 'test' && subPhase === 'test-active')
-  );
-  const qnaButtonsVisible = (
-    inQnAForButtons && !isSpeaking && showOpeningActions &&
-    askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive' && fillInFunState === 'inactive'
-  );
-  const buttonsGating = discussionButtonsVisible || qnaButtonsVisible;
-  // Story and Fill-in-Fun input should also respect the speaking lock
-  const storyInputActive = (storyState === 'awaiting-turn' || storyState === 'awaiting-setup');
-  const fillInFunInputActive = (fillInFunState === 'collecting-words');
-  const sendDisabled = (storyInputActive || fillInFunInputActive) ? (!canSend || loading || speakingLock) : (!canSend || loading || comprehensionAwai
-
-### 24. src/app/session/components/games/FlashCards.jsx (ec94be9fd474a44aaa0e7fa05a024bb3eb8ffed9c7ee0d20bfb48debd13b38e8)
-- bm25: -7.8948 | relevance: 0.8876
-
-{/* Header — hidden in compact (landscape + keyboard open) */}
-      {!compact && (
-        <div style={{ ...headerRow, flexShrink: 0 }}>
-          <button type="button" style={softBtn} onClick={onBack}>← Back</button>
-          <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
-          <button type="button" style={softBtn} onClick={() => setScreen('setup')}>Setup</button>
+<div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={startDrill} style={ghostBtn}>DRILL AGAIN</button>
+            <button onClick={backToList} style={ghostBtn}>LESSON LIST</button>
+            <button onClick={exitToLessons} style={primaryBtn}>← BACK TO LESSONS</button>
+          </div>
         </div>
-      )}
-
-### 25. docs/brain/ingests/pack.lesson-schedule-debug.md (fc4e4de5650ee90da2a8b005fd31a195984e17de3bd73aa34ae24cafb3cc2b56)
-- bm25: -7.4929 | entity_overlap_w: 1.30 | adjusted: -7.8179 | relevance: 0.8866
-
-### 27. docs/brain/MentorInterceptor_Architecture.md (ce3cd9684410622160fbad2779f03dd2313cb09bba1ed5ffcd42179724e742c6)
-- bm25: -18.2995 | relevance: 1.0000
-
-```
-User types message
-    ↓
-CounselorClient.sendMessage()
-    ↓
-Load allLessons (subjects → lessons object)
-    ↓
-interceptor.process(message, { allLessons, selectedLearnerId, learnerName, conversationHistory })
-    ↓
-  interceptResult.handled?
-    ↓
-  YES → Handle front-end
-    ↓
-    Add user + bot messages to conversationHistory
-    Display response in captions
-    Play TTS audio
-    Execute action if present (schedule/generate/edit)
-    Return (skip API)
-    ↓
-  NO → Forward to API
-    ↓
-    Call /api/counselor with forwardMessage
-    Process tool calls, follow-ups, etc
-    Add messages to conversationHistory
-    Display response in captions
-    Play audio
-    Track tokens
-```
-
-### 28. docs/brain/MentorInterceptor_Architecture.md (dc556c7376cde3ba88cd25eb33ded16070fc7f857b6aa9cdc6f084406064936f)
-- bm25: -18.0216 | relevance: 1.0000
-
-**State transitions:**
-- Intent detected → Enter flow, gather params
-- Param missing → Ask question, set awaitingInput
-- All params present → Confirm, set awaitingConfirmation
-- Confirmed → Execute action, reset state
-- Declined → Reset state, ask how to help
-
-### Confirmation Detection
-
-**Yes patterns:**
-```javascript
-['yes', 'yep', 'yeah', 'yup', 'sure', 'ok', 'okay', 'confirm', 
- 'go ahead', 'do it', 'please', 'absolutely']
-```
-
-**No patterns:**
-```javascript
-['no', 'nope', 'nah', 'not now', 'cancel', 'stop', 'wait', 
- 'hold on', 'nevermind']
-```
-
-**Normalization:**
-- Single-token matching (no spaces)
-- Case-insensitive
-- Returns 'yes', 'no', or null (unclear)
-
-## Flow Implementations
-
-### 1. Search Flow
-
-### 26. src/app/api/tts/route.js (d93cecdec713c348f16222463b4ea44f88d56f49da5d9180865cc5c62e2ac630)
-- bm25: -7.1503 | entity_overlap_w: 2.60 | adjusted: -7.8003 | relevance: 0.8864
-
-// Simple TTS-only route: synthesize provided text to MP3 base64 using Google Cloud TTS
-// Reuses the same credential loading approach as /api/sonoma
-
-import { NextResponse } from 'next/server'
-import fs from 'node:fs'
-import path from 'node:path'
-import textToSpeech from '@google-cloud/text-to-speech'
-
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-
-const { TextToSpeechClient } = textToSpeech
-let ttsClientPromise
-
-const DEFAULT_VOICE = {
-  languageCode: 'en-GB',
-  name: 'en-GB-Neural2-F',
-  ssmlGender: 'FEMALE'
-}
-
-const AUDIO_CONFIG = {
-  audioEncoding: 'MP3',
-  speakingRate: 0.92
-}
-
-function decodeCredentials(raw) {
-  if (!raw) return null
-  try { return JSON.parse(raw) } catch {}
-  try { const decoded = Buffer.from(raw, 'base64').toString('utf8'); return JSON.parse(decoded) } catch {}
-  return null
-}
-
-function loadTtsCredentials() {
-  const inline = process.env.GOOGLE_TTS_CREDENTIALS
-  const inlineCreds = decodeCredentials(inline)
-  if (inlineCreds) return inlineCreds
-  const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(process.cwd(), 'google-tts-key.json')
-  try {
-    if (credentialPath && fs.existsSync(credentialPath)) {
-      const raw = fs.readFileSync(credentialPath, 'utf8').trim()
-      if (raw) return decodeCredentials(raw) || JSON.parse(raw)
-    }
-  } catch (err) {
-    // Failed to load Google credentials
+      </div>
+    )
   }
-  return null
+
+### 4. docs/brain/learner-settings-bus.md (b9605e778142d0a5b6b23fbb0be32d75ff6241842ee197d10f42c66a06cbd08d)
+- bm25: -13.1352 | relevance: 0.9293
+
+Keep behavior strict:
+- Do not create local fallback state that can diverge from Supabase.
+- Treat settings as **unknown until loaded**. For example, `golden_keys_enabled` should start as `null` (unknown), then become `true`/`false` once loaded.
+- Treat `play_*_enabled` the same way: required booleans loaded from Supabase (no local fallback).
+- Avoid UI flashes: do not render Golden Key UI until `golden_keys_enabled === true` and the page is done loading learner settings.
+- Hide per-lesson Golden Key indicators (like a "🔑 Active" badge) unless `golden_keys_enabled === true`.
+- Avoid toast loss: do not clear `sessionStorage.just_earned_golden_key` while `golden_keys_enabled` is unknown; only clear/suppress once it is explicitly `false`.
+
+### 5. src/app/session/slate/page.jsx (000d1538b75180def19f016c619c24986074166744c0a80c78f964c1041b4d71)
+- bm25: -12.7113 | relevance: 0.9271
+
+'use client'
+
+/**
+ * Mr. Slate -- Skills & Practice Coach
+ *
+ * A quiz-mode drill session. Questions are drawn from the same lesson JSON
+ * as Ms. Sonoma (sample, truefalse, multiplechoice, fillintheblank pools).
+ * The learner accumulates points (goal: 10) to earn the robot mastery icon.
+ *
+ * Rules:
+ *   - Correct answer within time limit  -> +1 (min 0, max 10)
+ *   - Wrong answer                      -> -1 (min 0)
+ *   - Timeout (15s default)             -> +/-0
+ *   - Reach 10 -> mastery confirmed
+ *
+ * Questions rotate through the full pool without repeats until ~80% have
+ * been asked, then the deck reshuffles.
+ *
+ * Lessons are loaded from /api/learner/available-lessons (handles static,
+ * generated, and Supabase-stored lessons uniformly). No URL params required.
+ */
+
+import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { getMasteryForLearner, saveMastery } from '@/app/lib/masteryClient'
+
+// --- Constants ---------------------------------------------------------------
+
+const QUESTION_SECONDS = 15
+const SCORE_GOAL = 10
+const FEEDBACK_DELAY_MS = 2000
+const RESHUFFLE_THRESHOLD = 0.2 // reshuffle when only 20% of deck remains
+const SLATE_VIDEO_SRC = '/media/Mr-%20Slate%20Loop.mp4'
+
+// --- Color palette (dark robot theme) ----------------------------------------
+
+const C = {
+  bg: '#0d1117',
+  surface: '#161b22',
+  surfaceElev: '#1c2128',
+  border: '#30363d',
+  text: '#e6edf3',
+  muted: '#8b949e',
+  accent: '#58a6ff',
+  green: '#3fb950',
+  greenDim: 'rgba(63,185,80,0.15)',
+  red: '#f85149',
+  redDim: 'rgba(248,81,73,0.15)',
+  yellow: '#d29922',
+  yellowDim: 'rgba(210,153,34,0.15)',
+  mono: '"ui-monospace","Cascadia Code","Source Code Pro",monospace',
 }
 
-### 27. src/app/facilitator/generator/counselor/CounselorClient.jsx (eeee8bf62119b0a3950c8ae02dfea3b24db32aa02bec35def65e5acb416bfe08)
-- bm25: -7.0812 | entity_overlap_w: 2.60 | adjusted: -7.7312 | relevance: 0.8855
+### 6. src/app/session/v2/SessionPageV2.jsx (d416704f3942ae0c8c5426703f30aa1b0e3790bf5198ed4db8244833bb09ea6a)
+- bm25: -12.0709 | relevance: 0.9235
 
-interceptResult.response = `Ok. I\'m opening the Lesson Planner and generating a ${action.durationMonths}-month plan starting ${action.startDate}.`
-          }
-        }
-        
-        // Add interceptor response to conversation
-        const finalHistory = [
-          ...updatedHistory,
-          { role: 'assistant', content: interceptResult.response }
-        ]
-        setConversationHistory(finalHistory)
-        
-        // Display interceptor response in captions
-        setCaptionText(interceptResult.response)
-        const sentences = splitIntoSentences(interceptResult.response)
-        setCaptionSentences(sentences)
-        setCaptionIndex(0)
-        
-        // Play TTS for interceptor response (Mr. Mentor's voice)
-        setLoadingThought("Preparing response...")
-        try {
-          const ttsResponse = await fetch('/api/mentor-tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: interceptResult.response })
-          })
-          
-          if (ttsResponse.ok) {
-            const ttsData = await ttsResponse.json()
-            if (ttsData.audio) {
-              // Never block the UI on audio playback.
-              void playAudio(ttsData.audio)
-            }
-          }
-        } catch (err) {
-          // Silent TTS error - don't block UX
-        }
-        
-        setLoading(false)
-        setLoadingThought(null)
-        return
+// Per-learner play-portion flags (phases 2-5). Source of truth: Supabase.
+  // These are required booleans and are live-updated via the Learner Settings Bus.
+  const [playPortionsEnabled, setPlayPortionsEnabled] = useState({
+    comprehension: true,
+    exercise: true,
+    worksheet: true,
+    test: true,
+  });
+  const playPortionsEnabledRef = useRef({
+    comprehension: true,
+    exercise: true,
+    worksheet: true,
+    test: true,
+  });
+  
+  // Learner profile state (REQUIRED - no defaults)
+  const [learnerProfile, setLearnerProfile] = useState(null);
+  const [learnerLoading, setLearnerLoading] = useState(true);
+  const [learnerError, setLearnerError] = useState(null);
+
+### 7. src/app/session/slate/page.jsx (182790a3a1195d9fd6b39cd9887e42551b56d346ea50f7af260f28a33ea4b12d)
+- bm25: -11.6608 | relevance: 0.9210
+
+// ===========================================================================
+  //  RENDER -- Asking / Feedback (main drill screen)
+  // ===========================================================================
+  const q = currentQ
+  const isAsking = pagePhase === 'asking'
+  const isFeedback = pagePhase === 'feedback'
+
+const borderColor = isFeedback && lastResult
+    ? (lastResult.correct ? C.green : lastResult.timeout ? C.yellow : C.red)
+    : C.border
+
+return (
+    <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+
+{/* Header bar */}
+      <div style={{
+        background: C.surface,
+        borderBottom: `1px solid ${C.border}`,
+        padding: '10px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        flexWrap: 'wrap',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <video src={SLATE_VIDEO_SRC} muted playsInline style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: C.accent, fontWeight: 800, fontSize: 13, letterSpacing: 2 }}>MR. SLATE</div>
+            <div style={{ color: C.muted, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '22ch' }}>{lessonTitle}</div>
+          </div>
+        </div>
+
+<ScorePips score={score} />
+
+### 8. src/app/session/slate/page.jsx (966b2f8f2f1f7041700f538b4461661bd351cf91b9d11269b535b3230183639e)
+- bm25: -11.3598 | relevance: 0.9191
+
+{/* Main drill area */}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '24px 16px' }}>
+        <div style={{ width: '100%', maxWidth: 600 }}>
+
+{/* Mr. Slate video avatar */}
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <SlateVideo ref={slateVideoRef} size={120} />
+          </div>
+
+{/* Question card */}
+          {q && (
+            <div style={{
+              background: C.surface,
+              border: `1px solid ${borderColor}`,
+              borderRadius: 12,
+              padding: 24,
+              transition: 'border-color 0.3s',
+            }}>
+              {/* Query label */}
+              <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2, marginBottom: 14 }}>
+                QUERY #{qCount + (isAsking ? 1 : 0)} · {q.type.toUpperCase()}
+              </div>
+
+{/* Question text */}
+              <div style={{ color: C.text, fontSize: 'clamp(15px,2.8vw,20px)', fontWeight: 600, marginBottom: 20, lineHeight: 1.55 }}>
+                {q.question}
+              </div>
+
+{/* Countdown timer -- only while asking */}
+              {isAsking && <TimerBar secondsLeft={secondsLeft} total={QUESTION_SECONDS} />}
+
+### 9. src/app/lib/masteryClient.js (eb09f70c0c6f6b1ae4708af3ee21b8f0b8e3c7391ec6773b7b0d8d7f00486047)
+- bm25: -11.1947 | relevance: 0.9180
+
+/**
+ * masteryClient.js
+ *
+ * Tracks Mr. Slate mastery status per learner per lesson.
+ * Stored in localStorage (key: slate_mastery_v1) so it persists
+ * across page reloads without requiring a DB migration.
+ *
+ * Schema: { [learnerId]: { [lessonKey]: { mastered: true, masteredAt: ISO } } }
+ *
+ * lessonKey format: "<subject>/<filename>.json"  e.g. "math/4th_Geometry_Angles_Classification_Beginner.json"
+ */
+
+const LS_KEY = 'slate_mastery_v1'
+
+function read() {
+  if (typeof window === 'undefined') return {}
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') } catch { return {} }
+}
+
+function write(obj) {
+  if (typeof window === 'undefined') return
+  try { localStorage.setItem(LS_KEY, JSON.stringify(obj)) } catch {}
+}
+
+/**
+ * Returns the mastery map for one learner: { [lessonKey]: { mastered, masteredAt } }
+ */
+export function getMasteryForLearner(learnerId) {
+  if (!learnerId) return {}
+  return read()[learnerId] || {}
+}
+
+/**
+ * Returns true if this learner has mastered this lesson.
+ */
+export function isMastered(learnerId, lessonKey) {
+  if (!learnerId || !lessonKey) return false
+  return !!(read()[learnerId]?.[lessonKey]?.mastered)
+}
+
+/**
+ * Records mastery for a learner + lesson. Idempotent — safe to call multiple times.
+ */
+export function saveMastery(learnerId, lessonKey) {
+  if (!learnerId || !lessonKey) return
+  const all = read()
+  if (!all[learnerId]) all[learnerId] = {}
+  all[learnerId][lessonKey] = { mastered: true, masteredAt: new Date().toISOString() }
+  write(all)
+}
+
+### 10. src/app/learn/lessons/page.js (49c86b4b78a10060b4edcadd4d610adfcdedd05b9d4d41e5362cac15ee14ad5d)
+- bm25: -9.9726 | relevance: 0.9089
+
+// Listen for facilitator-side per-learner settings changes (no localStorage fallback)
+  useEffect(() => {
+    if (!learnerId || learnerId === 'demo') return;
+    return subscribeLearnerSettingsPatches((msg) => {
+      if (String(msg?.learnerId) !== String(learnerId)) return;
+      if (msg?.patch?.golden_keys_enabled === undefined) return;
+      const enabled = !!msg.patch.golden_keys_enabled;
+      setGoldenKeysEnabled(enabled);
+      if (!enabled) {
+        setGoldenKeySelected(false);
+        setShowGoldenKeyToast(false);
       }
-      
-      // Interceptor didn't handle - forward to API
-      setLoadingThought("Consulting my knowledge base...")
-      const forwardMessage = interceptResult.apiForward?.message || message
-      const finalForwardMessage = declineNote ? `${forwardMessage}\n\n${declineNote}` : forwardMessage
-      const forwardContext = interceptResult
+    });
+  }, [learnerId]);
 
-### 28. docs/brain/story-feature.md (4603df0d8f12c8d9a3768664d12764d9c500ce470ef136e6ea6a98ef898e946f)
-- bm25: -7.6372 | relevance: 0.8842
+### 11. src/app/session/slate/page.jsx (5b1289885fcca9f077b682ebe3f5c20d206e4a30bbddd9f190be9aa7258b4432)
+- bm25: -9.9658 | relevance: 0.9088
 
-## State Variables
+{/* Body */}
+        <div style={{ flex: 1, padding: '24px 16px', maxWidth: 680, margin: '0 auto', width: '100%' }}>
+          {availableLessons.length === 0 ? (
+            <div style={{ textAlign: 'center', marginTop: 60 }}>
+              <div style={{ marginBottom: 16 }}>
+                <SlateVideo size={120} />
+              </div>
+              <div style={{ color: C.muted, fontSize: 14, letterSpacing: 1 }}>NO DRILL LESSONS AVAILABLE</div>
+              <div style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>Complete a lesson with Ms. Sonoma first, then come back to practice.</div>
+            </div>
+          ) : (
+            <>
+              <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 10 }}>
+                SELECT A LESSON TO DRILL — {availableLessons.length} AVAILABLE
+              </div>
+              <div style={{ color: C.muted, fontSize: 12, lineHeight: 1.8, marginBottom: 20, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px' }}>
+                <span style={{ color: C.text, fontWeight: 700 }}>GOAL:</span> Reach <span style={{ color: C.text, fontWeight: 700 }}>10 points</span> to earn mastery 🤖
+                {'  ·  '}<span style={{ color: C.green, fontWeight: 700 }}>+1</span> correct
+                {'  ·  '}<span style={{ color: C.red, fontWeight: 700 }}>−1</span> wrong
+                {'  ·  '}<span style={{ color: C.yellow, fontWeight: 700 }}>±0</span> timeout ({QUESTION_SECONDS}s)
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {availableLessons.map((lesson, i) => {
+                  const lk = lesson.lessonKey || `${lesson.subject || 'general'}/${lesson.file || ''}`
+                  const mastered = !!
 
-Location: `page.js`
+### 12. src/app/api/curriculum-preferences/route.js (c4f52c4517b01d486d67f398b4bfbcea7bd533f1904c023f48d2b75721bf6b05)
+- bm25: -9.7110 | relevance: 0.9066
 
-```javascript
-const [storySetupStep, setStorySetupStep] = useState('') // 'characters' | 'setting' | 'plot' | 'complete'
-const [storyCharacters, setStoryCharacters] = useState('')
-const [storySetting, setStorySetting] = useState('')
-const [storyPlot, setStoryPlot] = useState('')
-const [storyPhase, setStoryPhase] = useState('') // Tracks which phase story started in
-const [storyState, setStoryState] = useState('inactive') // 'inactive' | 'awaiting-setup' | 'awaiting-turn' | 'ending'
-const [storyTranscript, setStoryTranscript] = useState([]) // Full story history
-```
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } }
+    })
 
-## Handler Functions
+const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
 
-Location: `useDiscussionHandlers.js`
+const body = await request.json()
+    const { learnerId, subject = 'all', bannedWords, bannedTopics, bannedConcepts, focusTopics, focusConcepts, focusKeywords } = body
 
-### handleStoryStart
-- Checks if `storyTranscript` has content
-- **If continuing**: Reminds where story left off, asks for next part
-- **If new**: Initiates setup phase asking for characters
+if (!learnerId) {
+      return NextResponse.json({ error: 'Learner ID is required' }, { status: 400 })
+    }
 
-### handleStoryYourTurn
-- Handles all story input including setup and continuation
-- **Setup phase**: Collects characters → setting → plot → generates first part
-- **Continuation phase**: 
-  - Sends full transcript history to maintain context
-  - Generates next part with "To be continued."
-- **Test phase**: 
-  - Asks for ending preference
-  - Generates final part with "The end."
-  - Clears story data for next session
+const now = new Date().toISOString()
 
-## User Experience Flow
+if (subject === 'all') {
+      // Save global (all-subjects) preferences using the existing top-level columns
+      const { data, error } = await supabase
+        .from('curriculum_preferences')
+        .upsert({
+          facilitator_id: user.id,
+          learner_id: learnerId,
+          banned_words: bannedWords || [],
+          banned_topics: bannedTopics || [],
+          banned_concepts: bannedConcepts || [],
+          focus_topics: focusTopics || [],
+          focus_concepts: focusConcepts || [],
+          focus_keywords: focusKeywords || [],
+          updated_at: now
+        }, {
+          onConflict: 'facilitator_id,learner_id'
+        })
+        .select()
+        .single()
 
-### First Story Creation
-1. Child clicks "Story" button
-2. Ms. Sonoma: "Who are the characters in the story?"
-3. Child: "A dragon and a princess"
-4. Ms. Sonoma: "Where does the story take place?"
-5. Child: "In a castle"
-6. Ms. Sonoma: "What happens in the story?"
-7. Child: "The dragon helps the princess"
-8. Ms. Sonoma: *Tells first part* "Once upon a time, a dragon and a princess met in a castle. The dragon wanted to help the princess with her problem. To be continued."
+if (error) {
+        console.error('Error saving curriculum preferences:', error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
 
-### 29. src/app/session/page.js (6bd382b171112f0c2a572abcd8d43d23f4089c0a05bf7156e5d4954f778455fe)
-- bm25: -6.5542 | entity_overlap_w: 3.90 | adjusted: -7.5292 | relevance: 0.8828
+return NextResponse.json({ preferences: data }, { status: 200 })
+    }
 
-// isSpeaking/phase/subPhase defined earlier; do not redeclare here
-  const [transcript, setTranscript] = useState("");
-  // Start with loading=true so the existing overlay spinner shows during initial restore
-  const [loading, setLoading] = useState(true);
-  // TTS overlay: track TTS fetch activity separately; overlay shows when either API or TTS is loading
-  const [ttsLoadingCount, setTtsLoadingCount] = useState(0);
-  const overlayLoading = loading || (ttsLoadingCount > 0);
+// Save per-subject preferences into the subject_preferences JSONB column.
+    // Requires scripts/add-curriculum-subject-preferences.sql to have been run.
 
-### 30. docs/brain/MentorInterceptor_Architecture.md (7cfd131ea36bbee64c89e221bffc0ef04e7197b8816e1613bcb1dc1d431d339f)
-- bm25: -7.1668 | entity_overlap_w: 1.30 | adjusted: -7.4918 | relevance: 0.8822
+### 13. src/app/session/slate/page.jsx (e4653ef8696a05f1c112b10addf9123c52084760808b7d5371f86f2a07b345e5)
+- bm25: -9.0472 | relevance: 0.9005
 
-# MentorInterceptor Architecture
+const exitToLessons = useCallback(() => {
+    clearInterval(timerInterval.current)
+    clearTimeout(feedbackTimeout.current)
+    router.push('/learn/lessons')
+  }, [router])
 
-**Created:** November 17, 2025  
-**Status:** Deployed and active in Mr. Mentor counselor UI  
-**Commits:** 6890d3b → ab3fed4
+const lessonTitle = lessonData?.title || ''
 
-## Purpose
+// ===========================================================================
+  //  RENDER -- Loading
+  // ===========================================================================
+  if (pagePhase === 'loading') {
+    return (
+      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ marginBottom: 16 }}>
+            <SlateVideo size={100} />
+          </div>
+          <div style={{ fontSize: 13, letterSpacing: 2, marginBottom: 20 }}>INITIALIZING DRILL SYSTEM...</div>
+          <LoadingDots />
+        </div>
+      </div>
+    )
+  }
 
-Front-end conversation handler for Mr. Mentor that intercepts user messages to:
-- Provide instant responses without API calls where possible
-- Gather parameters through multi-turn Q&A before executing actions
-- Create confirmation flows for all actions (schedule, generate, edit)
-- Make front-end and back-end handling indistinguishable to users
-- Reduce API costs and improve responsiveness
+// ===========================================================================
+  //  RENDER -- Error
+  // ===========================================================================
+  if (pagePhase === 'error') {
+    return (
+      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ textAlign: 'center', maxWidth: 400 }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>⚠️</div>
+          <div style={{ color: C.red, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>SYSTEM ERROR</div>
+          <div style={{ color: C.muted, fontSize: 13, marginBottom: 24 }}>{errorMsg}</div>
+          <button onClick={exitToLessons} style={ghostBtn}>← RETURN TO LESSONS</button>
+        </div>
+      </div>
+    )
+  }
 
-## Architecture
+### 14. src/app/session/slate/page.jsx (b7ced9dd2f3a052415bd048fd2d5e2e427176366fa58df0f82b1f1f6f98a86fc)
+- bm25: -8.9650 | relevance: 0.8996
 
-### File Structure
+// ===========================================================================
+  //  RENDER -- Won
+  // ===========================================================================
+  if (pagePhase === 'won') {
+    return (
+      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+        <div style={{ maxWidth: 540, width: '100%', textAlign: 'center' }}>
+          <div style={{ marginBottom: 12 }}>
+            <SlateVideo size={120} />
+          </div>
+          <div style={{ color: C.green, fontWeight: 900, fontSize: 26, letterSpacing: 4, marginBottom: 4 }}>
+            MASTERY CONFIRMED
+          </div>
+          <div style={{ color: C.muted, fontSize: 12, letterSpacing: 2, marginBottom: 28 }}>DRILL SEQUENCE COMPLETE</div>
 
-- **MentorInterceptor.js** (995 lines)
-  - Intent detection engine with fuzzy matching
-  - Parameter extraction (grade, subject, difficulty, date)
-  - Conversation state machine
-  - Multi-turn parameter gathering
-  - Confirmation workflows
-  - Lesson search algorithm with scoring
-  - Action execution handlers
+<div style={{ background: C.surface, border: `1px solid ${C.green}`, borderRadius: 12, padding: 28, marginBottom: 24 }}>
+            <ScorePips score={SCORE_GOAL} goal={SCORE_GOAL} />
+            <div style={{ color: C.text, fontWeight: 700, fontSize: 16, marginTop: 14 }}>{lessonTitle}</div>
+            <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>{qCount} QUERIES PROCESSED TO REACH MASTERY</div>
+          </div>
 
-- **CounselorClient.jsx** (integration)
-  - Instantiates interceptor on mount
-  - Calls `interceptor.process()` before API
-  - Handles interceptor responses (TTS, captions, conversation history)
-  - Executes interceptor actions (schedule, generate, edit)
-  - Falls back to API when interceptor doesn't handle
+<div style={{ color: C.muted, fontSize: 12, letterSpacing: 1, marginBottom: 28 }}>
+            🤖 MASTERY ICON WILL APPEAR ON YOUR LESSON CARD.
+          </div>
 
-### 31. docs/brain/riddle-system.md (ae2321e7086261f3e5b2eaf607b46e848c65c93273f6674224f4718b92f00026)
-- bm25: -7.1466 | entity_overlap_w: 1.30 | adjusted: -7.4716 | relevance: 0.8820
+### 15. docs/brain/notifications-system.md (2d68facb9ef84811553c594d04831c5bab53537f01c38d56acdc06752047caaf)
+- bm25: -8.9098 | relevance: 0.8991
 
----
+# Notifications System
+
+**Last updated**: 2026-01-08T13:36:08Z  
+**Status**: Canonical
+
+## How It Works
+
+The Notifications system provides facilitator-facing alerts that persist across devices.
+
+### Data Model (Supabase)
+
+Notifications are stored per facilitator in Supabase (Postgres) under RLS.
+
+**Tables**:
+- `public.facilitator_notifications`
+  - Per-notification rows (title/body/type/category)
+  - `read_at` marks a notification as read
+  - `facilitator_id` is the owner and must equal `auth.uid()` under RLS
+
+- `public.facilitator_notification_prefs`
+  - Per-facilitator preferences that control which categories are enabled
+  - Includes a master `enabled` toggle
+
+### Current UI
+
+**Notifications page**: `/facilitator/notifications`
+- Shows a list of notifications
+- Each row can be marked read/unread via a checkmark button
+- A gear button opens a settings overlay to control notification preferences
+
+**Account page launcher**: `/facilitator/account`
+- Shows a Notifications card matching existing Account card styling
+- Clicking navigates to `/facilitator/notifications`
+
+**Header quick-link**:
+- The Facilitator hover dropdown includes a Notifications item that navigates to `/facilitator/notifications`
+
+### Placeholder Behavior
+
+The UI currently seeds a small set of demo notifications for a facilitator if they have zero notifications. This is intentionally temporary and exists only to make the manager usable before event producers are wired.
 
 ## What NOT To Do
 
-### ❌ Don't Generate Riddles via AI
-The system is **intentionally static**. Adding AI generation would:
-- Create quality inconsistencies
-- Risk inappropriate content slipping through
-- Add latency and API costs
-- Break offline functionality
+### 16. src/app/facilitator/calendar/CurriculumPreferencesOverlay.jsx (16899a2a4768c2fc7a04c8dbf6874b51ad78ce5b43b1bffe81134afc51de9304)
+- bm25: -8.6687 | relevance: 0.8966
 
-### ❌ Don't Use Riddles as Comprehension Tests
-Riddles are **warm-up fun**, not assessment. They:
-- Have single answers (not open-ended)
-- Reward lateral thinking (not lesson content mastery)
-- Are optional enrichment (not required learning)
+const result = await response.json()
+      if (!response.ok) {
+        if (result.migrationNeeded) {
+          alert(
+            'Per-subject preferences require a one-time database update.\n\n' +
+            'Run this SQL in Supabase:\n\n' +
+            'ALTER TABLE curriculum_preferences ADD COLUMN IF NOT EXISTS subject_preferences JSONB DEFAULT \'{}\'::jsonb;'
+          )
+        } else {
+          alert('Failed to save preferences: ' + (result.error || 'Unknown error'))
+        }
+        return
+      }
 
-### ❌ Don't Add Riddles Without Validation
-Every riddle must pass the checklist:
-- [ ] Wordplay or misdirection present
-- [ ] Single clear answer (no ambiguity)
-- [ ] Age-appropriate (6-12 year olds)
-- [ ] Subject-relevant (if not in 'general')
-- [ ] Fair clues (solvable without guessing)
-- [ ] Surprise factor (smile, groan, or "aha!")
+setFullRow(result.preferences)
+      if (onSaved) onSaved()
+    } catch (err) {
+      console.error('Error saving preferences:', err)
+      alert('Failed to save curriculum preferences: ' + (err.message || 'Unknown error'))
+    } finally {
+      setSaving(false)
+    }
+  }
 
-### ❌ Don't Mix Quiz Questions into Riddles
-**Bad**: "How many cents are in a quarter?" (factual recall)  
-**Good**: "I am a coin that is one fourth of a dollar, but I hold much more inside - count them all! How many pennies hide in me?" (wordplay + math)
+const isSubjectScope = selectedSubject !== 'all'
 
----
+### 17. docs/brain/snapshot-persistence.md (d0c180d8bcb4fd642c0ea1120fbe36eca9846e1c8cb4fc3b42aac706887cb1fd)
+- bm25: -8.5656 | relevance: 0.8955
 
-## Current Integration Status
+### Snapshot Save Guard
 
-### ✅ Riddles Are Active
+`saveSnapshot()` checks `window.__PREVENT_SNAPSHOT_SAVE__` flag and returns `{success: false, blocked: true}` if set. This prevents race conditions where:
+- User clicks Complete Lesson
+- Snapshot auto-save triggers before clearSnapshot completes
+- Snapshot persists with `phase: 'congrats'`
+- Next visit shows "Continue" and loads to congrats screen
 
-Riddles are fully integrated into the discussion phase opening actions:
+With guard in place, completion cleanup is atomic - either all persistence cleared or none.
 
-**User Flow:**
-1. Learner enters discussion phase
-2. Opening actions menu displays (Ask, Riddle, Poem, Story, Fill-in-Fun, Games)
-3. User clicks "Riddle" button
-4. `pickNextRiddle(subject)` selects riddle from localStorage rotation
-5. Riddle presents with TTS playback
-6. State machine handles: 'presented' → 'awaiting-solve' → 'inactive'
+## How It Works
 
-### 32. docs/brain/v2-architecture.md (bc99e4b71f540c7bf37fdef5f564161060387111ec7a1c9304f9cd3ccfe6fd49)
-- bm25: -6.4333 | entity_overlap_w: 3.90 | adjusted: -7.4083 | relevance: 0.8811
+### Save Strategy: Dual Write
+1. **localStorage** - Synchronous, instant (<1ms)
+   - Key: `atomic_snapshot:{learnerId}:{lessonKey}`
+   - One snapshot per learner+lesson (setItem replaces, doesn't stack)
+   - Same-browser restore is instant (no database lag)
 
-**Retry + Rate Limit Handling:**
-- If GPT returns 429, TeachingController enters a cooldown and produces a deterministic "wait then press Next" sentence
-- If GPT returns 500+ (or the fetch throws), TeachingController shows a generic server error message (not rate limit)
-- When a non-429 error message is shown, the next Next/Repeat/Restart action triggers an actual retry fetch (instead of advancing past the error sentence and effectively skipping the stage)
-- Next/Repeat/Restart must not spam GPT requests during cooldown
-- Public methods called without `await` (Repeat/Skip/Restart) must not generate unhandled promise rejections
+2. **Database/Storage** - Async backup (cross-device)
+  - Saved via `/api/snapshots` (server route)
+  - Primary storage: `learner_snapshots` table keyed by `user_id + learner_id + lesson_key`
+  - Fallback storage: Supabase Storage `learner-snapshots` bucket when DB table/columns are missing
+  - Used when localStorage is empty (new device, cleared storage)
 
-**Environment Variable Requirements:**
-- At least one LLM provider key must be configured: `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
-- Google TTS requires: `GOOGLE_APPLICATION_CREDENTIALS` (path to JSON file) or `GOOGLE_TTS_CREDENTIALS` (inline JSON or base64)
-- Dev server must be restarted after adding/changing `.env.local` to load new environment variables
-- Missing keys cause 500 errors (not 429s); TeachingController now distinguishes these in user-facing messages
+### Transcript Persistence (Captions + Answers)
+- Restore path pins the transcript scroller to the bottom after loading so the latest caption is visible immediately after refresh (no manual scroll needed).
+- Saves use the existing granular `saveProgress('transcript', ...)` gate; no polling/intervals added.
+- Restore path normalizes old string arrays to `{ text, role:'assistant' }` objects and seeds `currentCaption`/highlight before Begin/Resume is shown.
 
-**Gate Prompt Flow (uses prefetched content):**
-1. Speak "Do you have any questions?" (TTS prefetched)
-2. Await prefetched GPT result (usually instant)
-3. Speak GPT-generated sample questions (TTS prefetched)
-4. Fallback if GPT failed: deterministic questions using lesson title
+### Restore Strategy: localStorage First
+1. Try localStorage (instant)
+2. If not found, try database
+3. If database found, write to localStorage for next time
+4. Apply state exactly, no post-restore modifications
 
-**Exposes:**
-- `prefetchAll()` - start all background prefetches (call on Begin)
-- `startTeaching(lessonData)`
-- `advanceSentence()`
-- `repeatSentence()`
-- `skipToExamples()`
-- Events: `onStageChange`, `onSentenceAdvance`, `onTeachingComplete`
+### 18. docs/brain/learner-settings-bus.md (b7300c9e22d6512f30566d253d4b066121665795153995c1604d484c67d3c48f)
+- bm25: -8.5573 | relevance: 0.8954
 
-### 33. docs/brain/story-feature.md (7c541082fb751d8b6d7c2be9019d9fcda07911dd69b371791d357908ef1d85e5)
-- bm25: -7.2235 | relevance: 0.8784
+### UI Integration Gotcha (LearnerEditOverlay)
 
-### Story Ending
-1. Child clicks "Story" button
-2. Ms. Sonoma: **Briefly recounts** (first sentence only): "Together they spotted a sparkly treasure chest below."
-3. Ms. Sonoma: "How would you like the story to end?"
-4. Child describes ending
-5. Ms. Sonoma: *Concludes story* "...and they lived happily ever after. The end."
+The Learners page passes a cloned `learner` prop into `LearnerEditOverlay` (spread + `initialTab`). If the overlay initializes form state in a `useEffect` that depends on the whole `learner` object, the effect will run on every parent rerender and reset local state.
+
+Impact:
+- Optimistic toggles (like `golden_keys_enabled`) can appear to "flip back" immediately even when the Supabase update succeeded.
+
+Rule:
+- In `LearnerEditOverlay`, only re-initialize local form state when the overlay opens or the learner identity changes (e.g. depend on `isOpen`, `learner.id`, `learner.initialTab`), not on the entire object identity.
+
+This bus is intentionally "dumb": it does not do retries, persistence, or reconciliation.
+
+## What NOT To Do
+
+- Do not store the patches in `localStorage` (this can leak across facilitator accounts on a shared device).
+- Do not treat the bus as a database or long-lived state. It is only for immediate UI reaction.
+- Do not broadcast before Supabase writes succeed.
+- Do not rely on the bus for initial state; always load initial state from Supabase.
 
 ## Key Files
 
-- `page.js` - Story state variables
-- `useDiscussionHandlers.js` - Story handlers (handleStoryStart, handleStoryYourTurn)
-- `/api/sonoma/route.js` - Story generation API
+- `src/app/lib/learnerSettingsBus.js`
+  - `broadcastLearnerSettingsPatch(learnerId, patch)`
+  - `subscribeLearnerSettingsPatches(handler)`
+
+- `src/app/facilitator/learners/page.js`
+  - Broadcasts patches after updating learner settings.
+
+- `src/app/learn/lessons/page.js`
+  - Subscribes and hides Golden Key UI immediately when disabled.
+
+- `src/app/session/page.js`
+  - Subscribes in-session and disables Golden Key behavior/UI immediately when disabled.
+
+- `src/app/session/v2/SessionPageV2.jsx`
+  - Subscribes in-session and updates `TimerService` Golden Key gate immediately when disabled.
+
+### 19. src/app/facilitator/generator/counselor/CounselorClient.jsx (7d8453c9ba8b9febae99d9496cac05cd36787ea21fdf6e2bb27b787e3c556c4d)
+- bm25: -8.2999 | relevance: 0.8925
+
+const js = await res.json().catch(() => null)
+                if (!res.ok) {
+                  interceptResult.response = js?.error
+                    ? `I couldn't save curriculum preferences: ${js.error}`
+                    : "I couldn't save curriculum preferences. Please try again."
+                } else {
+                  interceptResult.response = `Saved curriculum preferences for ${learnerName || 'this learner'}.`
+                }
+              } catch {
+                interceptResult.response = "I couldn't save curriculum preferences. Please try again."
+              }
+            }
+          } else if (action.type === 'report_curriculum_preferences') {
+            setLoadingThought('Loading curriculum preferences...')
+
+const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+if (!token || !selectedLearnerId) {
+              interceptResult.response = 'Please select a learner first.'
+            } else {
+              try {
+                const res = await fetch(`/api/curriculum-preferences?learnerId=${selectedLearnerId}`, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                })
+
+### 20. docs/brain/mr-mentor-session-persistence.md (6926b398980c614b9057063b974d881fe043777735736221dc16ab8b05d24fbd)
+- bm25: -8.0033 | relevance: 0.8889
+
+#### **Layer 2: Working Draft Summary** (`conversation_drafts` table)
+- **Purpose:** Auto-generated synopsis updated incrementally during conversation
+- **Scope:** One draft per facilitator-learner pair
+- **Storage:** `draft_summary` TEXT + last 2 turns for context
+- **Lifecycle:** Created on first exchange → Updated after each exchange → Deleted on save/delete
+- **Update Frequency:** After EVERY assistant response (async, non-blocking)
+
+### 21. src/app/facilitator/learners/clientApi.js (e6a1235850c1481e736e9653e6950cb55f2254470a595b0b08d2bcb354d1db58)
+- bm25: -7.9849 | relevance: 0.8887
+
+function readLocal() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+    if (!Array.isArray(raw)) return [];
+    return raw.map(item => ({
+      ...item,
+      humor_level: resolveHumorLevel(item?.humor_level ?? null, DEFAULT_HUMOR_LEVEL),
+      auto_advance_phases: item?.auto_advance_phases !== false,
+    }));
+  } catch { return []; }
+}
+function writeLocal(list) {
+  // IMPORTANT: Do not persist certain per-learner settings to the local cache.
+  // This cache can leak across facilitator accounts on a shared device.
+  const sanitized = (Array.isArray(list) ? list : []).map((item) => {
+    if (!item || typeof item !== 'object') return item;
+    const {
+      golden_keys_enabled,
+      play_comprehension_enabled,
+      play_exercise_enabled,
+      play_worksheet_enabled,
+      play_test_enabled,
+      ...rest
+    } = item;
+    return rest;
+  });
+  localStorage.setItem(LS_KEY, JSON.stringify(sanitized));
+}
+
+### 22. src/app/session/slate/page.jsx (a2cdeadb99d03c46243fdd6d4f06fe8b5e0eb700b406a8752962ceff2283aa9b)
+- bm25: -7.9528 | relevance: 0.8883
+
+// Advance the deck, reshuffling when 80%+ has been used
+  const advanceDeck = useCallback(() => {
+    const cur = deckRef.current
+    const idx = deckIdxRef.current
+    const p = poolRef.current
+    if (!p.length) return null
+    if (idx >= cur.length - Math.max(1, Math.floor(cur.length * RESHUFFLE_THRESHOLD))) {
+      const newDeck = shuffleArr(p)
+      deckRef.current = newDeck
+      deckIdxRef.current = 1
+      return newDeck[0]
+    }
+    deckIdxRef.current = idx + 1
+    return cur[idx]
+  }, [])
+
+// Display a question
+  const showQuestion = useCallback((q) => {
+    currentQRef.current = q
+    setCurrentQ(q)
+    setUserAnswer('')
+    setLastResult(null)
+    setSecondsLeft(QUESTION_SECONDS)
+    phaseRef.current = 'asking'
+    setPagePhase('asking')
+    setTimeout(() => inputEl.current?.focus?.(), 80)
+    if (soundRef.current) playSlateAudio(q.question, audioEl.current, slateVideoRef.current)
+  }, [])
+
+// Start / restart the drill
+  const startDrill = useCallback(() => {
+    clearInterval(timerInterval.current)
+    clearTimeout(feedbackTimeout.current)
+    const newDeck = shuffleArr(poolRef.current)
+    deckRef.current = newDeck
+    deckIdxRef.current = 0
+    setScore(0)
+    scoreRef.current = 0
+    setQCount(0)
+    const q = advanceDeck()
+    if (q) showQuestion(q)
+  }, [advanceDeck, showQuestion])
+
+// Handle answer result (correct / wrong / timeout)
+  const handleResult = useCallback((correct, timeout = false) => {
+    clearInterval(timerInterval.current)
+    const q = currentQRef.current
+    const prev = scoreRef.current
+    let newScore = prev
+    if (!timeout) {
+      newScore = correct ? Math.min(SCORE_GOAL, prev + 1) : Math.max(0, prev - 1)
+    }
+    scoreRef.current = newScore
+    setScore(newScore)
+    setQCount(c => c + 1)
+
+### 23. src/app/facilitator/generator/counselor/CounselorClient.jsx (97b0a1875075b29d9197388695898ca419195f19656f81d895ec53bf4dc80998)
+- bm25: -7.7938 | relevance: 0.8863
+
+// Handle Enter key to send message
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      sendMessage()
+    }
+  }
+
+// Trigger new conversation flow (show clipboard first)
+  const startNewConversation = useCallback(async () => {
+    if (conversationHistory.length === 0) {
+      // No conversation to save, just start fresh
+      return
+    }
+
+// Show clipboard overlay immediately (skip audio instructions to avoid playback errors)
+    // The overlay itself provides clear UI instructions
+    setShowClipboard(true)
+  }, [conversationHistory])
+
+// Handle clipboard save (commit to permanent memory)
+  const handleClipboardSave = useCallback(async (editedSummary) => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      if (!token) {
+        alert('Unable to save: not authenticated')
+        return
+      }
+
+const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
+
+// Save to conversation_updates (permanent memory)
+      await fetch('/api/conversation-memory', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          learner_id: learnerId,
+          conversation_turns: conversationHistory,
+          summary_override: editedSummary // Use the user-edited summary
+        })
+      })
+
+// Delete the draft
+      await fetch(`/api/conversation-drafts?learner_id=${learnerId || ''}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+### 24. src/app/facilitator/generator/counselor/CounselorClient.jsx (bf592ddb56e9e8b317420ffbfbfa94f94ea40e6b0a431b867b3284a9a03c5087)
+- bm25: -7.4442 | relevance: 0.8816
+
+const method = activeTemplate?.id ? 'PUT' : 'POST'
+                const body = activeTemplate?.id
+                  ? { id: activeTemplate.id, pattern: action.pattern }
+                  : { learnerId: selectedLearnerId, name: 'Weekly Schedule', pattern: action.pattern, active: true }
+
+const saveRes = await fetch('/api/schedule-templates', {
+                  method,
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(body)
+                })
+
+const saveJs = await saveRes.json().catch(() => null)
+                if (!saveRes.ok) {
+                  interceptResult.response = saveJs?.error
+                    ? `I couldn't save the weekly pattern: ${saveJs.error}`
+                    : "I couldn't save the weekly pattern. Please try again."
+                } else {
+                  interceptResult.response = `Weekly pattern saved for ${learnerName || 'this learner'}.`
+                }
+              } catch {
+                interceptResult.response = "I couldn't save the weekly pattern. Please try again."
+              }
+            }
+          } else if (action.type === 'add_custom_subject') {
+            setLoadingThought('Adding custom subject...')
+
+const supabase = getSupabaseClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+### 25. src/app/api/slate-tts/route.js (b62be01756071ff4a3272fac6542ed5c2108c0b7ed5f0aa52e0fd04080b0767b)
+- bm25: -7.3850 | relevance: 0.8807
+
+const ssml = toSsml(text)
+    const [res] = await client.synthesizeSpeech({ input: { ssml }, voice: SLATE_VOICE, audioConfig: SLATE_AUDIO_CONFIG })
+    const base64 = res?.audioContent
+      ? (typeof res.audioContent === 'string' ? res.audioContent : Buffer.from(res.audioContent).toString('base64'))
+      : undefined
+    const dataUrl = base64 ? `data:audio/mp3;base64,${base64}` : undefined
+    return NextResponse.json({ reply: text, audio: dataUrl })
+  } catch {
+    return NextResponse.json({ error: 'tts_failed' }, { status: 500 })
+  }
+}
+
+### 26. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (d7e6fba823d7e0a82642c8cec9f66cefce42502a5634d23b209bc2f43c8443b7)
+- bm25: -7.2317 | relevance: 0.8785
+
+// Handle clipboard save (commit to permanent memory)
+  const handleClipboardSave = useCallback(async (editedSummary) => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      if (!token) {
+        alert('Unable to save: not authenticated')
+        return
+      }
+
+### 27. cohere-changelog.md (238598086b89be712c98fef2c3ec8048ee179ecaeee31f00735a30dd45bea23d)
+- bm25: -7.0765 | relevance: 0.8762
+
+Follow-ups:
+- If the app still feels slow, instrument counts/latency of `/api/sonoma` calls per phase and consider parallelizing non-dependent prefetches.
+
+---
+
+Date (UTC): 2026-02-23T16:53:49.2989770Z
+
+Topic: New Games overlay game — Flash Cards (math)
+
+Recon prompt (exact string):
+Build new Games overlay game 'Flash Cards': setup screen selects subject (math dropdown), topic, stage; 50 flashcards per topic per stage; 10 stages per topic; meter up/down with goal to advance; stage completion screen (Next); topic completion screen (more exciting, movement, shows next topic + Next). Persist per-learner progress across sessions.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Implement Flash Cards entirely client-side inside GamesOverlay, with deterministic per-learner math decks (50 cards per stage/topic) and localStorage persistence so progress resumes across sessions.
+- Files changed: src/app/session/components/games/GamesOverlay.jsx, src/app/session/components/games/FlashCards.jsx, src/app/session/components/games/flashcardsMathDeck.js, cohere-changelog.md
+
+Follow-ups:
+- If you want cross-device progress (not just same browser), add a Supabase-backed progress table and swap the storage adapter.
+
+### 2026-02-27 � Generation error: e.map is not a function
+- Recon prompt: `Generation Failed error from lesson generator API route - investigate callModel and storage upload`
+- Root cause: `buildValidationChangeRequest(validation)` passed whole `{ passed, issues, warnings }` object; function calls `.map()` directly on its argument
+- Fix: `src/app/facilitator/generator/page.js` � `buildValidationChangeRequest(validation)` ? `buildValidationChangeRequest(validation.issues)`
+
+### 28. docs/brain/timer-system.md (1f66fc9b2014880a4f602ba3a64aeb3037bbda3f80bafc5c833fb3aeea069133)
+- bm25: -7.0581 | relevance: 0.8759
+
+### Play Portion Enabled Flags (Per Learner)
+
+Phases 2-5 (Comprehension, Exercise, Worksheet, Test) each have a per-learner flag that can disable the "play portion" of that phase.
+
+Columns (boolean, default true):
+- `public.learners.play_comprehension_enabled`
+- `public.learners.play_exercise_enabled`
+- `public.learners.play_worksheet_enabled`
+- `public.learners.play_test_enabled`
+
+Definition:
+- "Play portion" means the intro + opening-actions gate + play timer.
+- When a play portion flag is `false`, the phase should begin directly in work mode.
+
+V2 behavior (implemented):
+- When play portion is disabled for a phase, "Begin" behaves like "Go": it skips intro/opening actions, skips starting the play timer, and starts the work timer immediately.
+- The session fails loudly if any `play_*_enabled` field is missing (not a boolean).
+- Live updates use the Learner Settings Bus; if a flag is turned off while sitting at the Go gate (`awaiting-go`), the session transitions to work immediately.
+
+V1 behavior:
+- V1 is not updated by this feature unless explicitly requested.
+
+### Timer Defaults
+
+Defined in `src/app/session/utils/phaseTimerDefaults.js`:
+- Discussion: 8 min play, 12 min work
+- Comprehension: 8 min play, 12 min work
+- Exercise: 8 min play, 12 min work
+- Worksheet: 8 min play, 12 min work
+- Test: 8 min play, 12 min work
+- Golden key bonus: +5 min to all play timers
 
 ## What NOT To Do
 
-- Never reset storyTranscript between phases (preserve continuity)
-- Never reset storyUsedThisGate between phases (one story per gate)
-- Never skip setup phase on first story creation
-- Never allow freeform story generation without setup (use template-based approach)
-- Never forget to clear story data after "The end." in Test phase
+❌ **Never describe Golden Keys as unlocking Poem/Story**
+- A Golden Key adds bonus minutes to play timers (extra play time)
+- Do not label it as unlocking specific activities (Poem/Story)
 
-### 34. docs/brain/ingests/pack.md (11dd454c999b4865481c24140fda5f8f8a6ef46b4cf3d0a70ba94921e7c2655c)
-- bm25: -7.1209 | relevance: 0.8769
+### 29. docs/brain/beta-program.md (02afe649ecd88e7bb71d68b5440a7cedd732c50ff157fdcfd8ba6fe61c7b228b)
+- bm25: -6.9621 | relevance: 0.8744
 
-**API Response Structure:**
-- `/api/medals` returns object directly: `{lessonId: {bestPercent: 85}, ...}`
-- `/api/lesson-schedule` returns wrapper: `{schedule: [...]}`
-- `/api/planned-lessons` returns wrapper: `{plannedLessons: {...}}`
+### Facilitator (Beta Mandatory)
 
-### 35. src/app/api/counselor/route.js (86a4ead5f24d3e066223ffc9afb48afe1a5b76912ee87576c502487a9e7cd4eb)
-- bm25: -6.4496 | entity_overlap_w: 2.60 | adjusted: -7.0996 | relevance: 0.8765
+1. **On first sign-in**: Must watch facilitator signup video to proceed
+2. **Before first use of facilitator tools**: Must complete facilitator tutorial
 
-function loadTtsCredentials() {
-  const inline = process.env.GOOGLE_TTS_CREDENTIALS
-  const inlineCreds = decodeCredentials(inline)
-  if (inlineCreds) return inlineCreds
+### Learner (Beta Mandatory)
 
-const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(process.cwd(), 'google-tts-key.json')
-  try {
-    if (credentialPath && fs.existsSync(credentialPath)) {
-      const raw = fs.readFileSync(credentialPath, 'utf8').trim()
-      if (raw) return decodeCredentials(raw) || JSON.parse(raw)
-    }
-  } catch (fileError) {
-    // Credentials load failed - TTS will be unavailable
-  }
-  return null
-}
+- **On first entry to any lesson** under each learner profile: Must complete learner tutorial once per `learner_id`
 
-async function getTtsClient() {
-  if (ttsClientPromise) return ttsClientPromise
+### Non-Beta Users
 
-const credentials = loadTtsCredentials()
-  if (!credentials) {
-    // No credentials - voice playback disabled
-    return null
-  }
+- Tutorials are available as optional guidance
+- Do not block access
 
-ttsClientPromise = (async () => {
-    try {
-      return new TextToSpeechClient({ credentials })
-    } catch (error) {
-      // TTS client init failed
-      ttsClientPromise = undefined
-      return null
-    }
-  })()
+### End-of-Lesson Gate (All Users When Enabled)
 
-ttsClientPromise.catch(() => { ttsClientPromise = undefined })
-  return ttsClientPromise
-}
+- Golden key is locked until facilitator completes post-lesson survey and successfully re-authenticates with full password
 
-function createCallId() {
-  const timePart = Date.now().toString(36)
-  const randomPart = Math.random().toString(36).slice(2, 8)
-  return `${timePart}-${randomPart}`
-}
+## Data Model (Supabase)
 
-function pushToolLog(toolLog, entry) {
-  if (!Array.isArray(toolLog)) return
-  const message = buildToolLogMessage(entry?.name, entry?.phase, entry?.context)
-  if (!message) return
-  toolLog.push({
-    id: entry?.id || createCallId(),
-    timestamp: Date.now(),
-    name: entry?.name,
-    phase: entry?.phase,
-    message,
-    context: entry?.context || {}
-  })
-}
+### profiles (existing)
 
-### 36. docs/brain/calendar-lesson-planning.md (b5fceec1ff172ff9be6e16676dfd040ac9bf511ccfa0190409ecada4fe8df328)
-- bm25: -7.0937 | relevance: 0.8764
+- `id` (uuid, PK)
+- `subscription_tier` (text or enum: 'Beta', 'Standard', null)
+- `fac_signup_video_completed_at` (timestamptz, null until done)
+- `fac_tutorial_completed_at` (timestamptz, null until done)
 
-**Persistence Model:**
-- Planned lessons stored in `planned_lessons` table (facilitator_id, learner_id, scheduled_date, lesson_data JSONB)
-- Each row = one lesson outline for one date
-- Survives page refresh, long absences, logout/login
-- Tied to specific facilitator + learner combination
-- **POST uses date-specific overwrite**: only deletes/replaces dates included in new plan
-- **Multiple non-overlapping plans coexist**: schedule Jan + Mar separately, both persist
-- **Overlapping dates are replaced**: reschedule Jan 15-31 overwrites only those dates, Jan 1-14 untouched
+### learner_tutorial_progress (new)
 
-**Data Format:**
-```javascript
-// In-memory format (calendar page state)
-plannedLessons = {
-  '2025-12-15': [
-    { id: '...', title: '...', subject: 'math', grade: '3rd', difficulty: 'intermediate', ... },
-    { id: '...', title: '...', subject: 'science', ... }
-  ],
-  '2025-12-16': [ ... ]
-}
+- `id` (uuid, PK)
+- `learner_id` (uuid, indexed)
+- `completed_at` (timestamptz)
+- **Uniqueness**: One row per `learner_id` (first-time only tutorial)
 
-// Database format (planned_lessons table)
-{
-  facilitator_id: 'uuid',
-  learner_id: 'uuid',
-  scheduled_date: '2025-12-15',
-  lesson_data: { id: '...', title: '...', subject: 'math', ... } // JSONB
+### lesson_sessions (new)
+
+- `id` (uuid, PK)
+- `learner_id` (uuid)
+- `lesson_id` (uuid or text key)
+- `started_at` (timestamptz)
+- `ended_at` (timestamptz, nullable until end)
+- **Derived duration**: `ended_at - started_at` for reporting
+
+### transcripts (existing or new)
+
+- Ensure each transcript line has event row with `ts` (timestamptz) and `text`
+- If transcripts stored as arrays, also persist per-line event feed for timestamped cross-reference
+
+### facilitator_notes (new)
+
+- `id` (uuid, PK)
+- `session_id` (uuid, FK to `lesson_sessions.id`)
+- `ts` (timestamptz, note timestamp)
+- `text` (text)
+
+### repeat_events (new)
+
+### 30. docs/brain/lesson-notes.md (ac258ad493dde9c766703881b36300ddf044039fc14bddb8ce88bf9914d1a3ef)
+- bm25: -6.9455 | relevance: 0.8741
+
+if (notesKeys.length > 0) {
+  lines.push(`FACILITATOR NOTES ON LESSONS:`);
+  notesKeys.sort().forEach(key => {
+    const [subject, lessonName] = key.split('/');
+    lines.push(`${subject} - ${lessonName}:`);
+    lines.push(`  "${lessonNotes[key]}"`);
+  });
 }
 ```
 
-### API Endpoints
+**Use cases:**
+- **Progress tracking**: "Completed with 95%. Ready for next level." → Mr. Mentor suggests advanced materials
+- **Challenge documentation**: "Struggles with word problems. Anxious during tests." → Suggests scaffolding/anxiety strategies
+- **Interest tracking**: "Loves hands-on experiments. Wants to learn chemistry." → Suggests enrichment resources
+- **Behavioral context**: "Easily distracted. Works better in morning sessions." → Suggests schedule optimization
 
-**`/api/planned-lessons`**
-- **GET** `?learnerId=X` - Load all planned lessons for learner, returns `{plannedLessons: {...}}`
-- **POST** - Save lesson plan with date-specific overwrite (only replaces dates in new plan), expects `{learnerId, plannedLessons}`
-- **DELETE** `?learnerId=X` - Clear all planned lessons for learner
+## Key Files
 
-### 37. docs/brain/portfolio-generation.md (b9f7c5628de9ac9db0e3cb746ff2ebf7c89b801b19c3dc93726e4878bdd3cebf)
-- bm25: -7.0862 | relevance: 0.8763
+- `src/app/facilitator/lessons/page.js` - Note UI (add/edit/save), state management, Supabase updates
+- `src/app/facilitator/calendar/LessonNotesModal.jsx` - Notes modal used from Calendar schedule lists
+- `src/app/lib/learnerTranscript.js` - Transcript builder, includes notes section
+- `src/app/api/counselor/route.js` - Receives transcript with notes
 
-- Bucket: `portfolios` (public read)
-- Path format:
-  - `portfolios/<facilitatorUserId>/<learnerId>/<portfolioId>/index.html`
-  - `portfolios/<facilitatorUserId>/<learnerId>/<portfolioId>/manifest.json`
-  - Assets (copied scans): `portfolios/<facilitatorUserId>/<learnerId>/<portfolioId>/assets/...`
+## What NOT To Do
 
-### 38. src/app/facilitator/calendar/page.js (e95f849f0714c0a8da156f25344f8de763a87688ba944119db66193a8682bfc9)
-- bm25: -7.0621 | relevance: 0.8760
+**DON'T make notes too long** - No character limit enforced, but excessively long notes bloat Mr. Mentor's context window. Keep notes concise (1-3 sentences per lesson).
 
-export default function CalendarPage() {
-  const router = useRouter()
-  const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
-  const [pinChecked, setPinChecked] = useState(false)
-  const [authToken, setAuthToken] = useState('')
-  const [learners, setLearners] = useState([])
-  const [selectedLearnerId, setSelectedLearnerId] = useState('')
-  const [selectedDate, setSelectedDate] = useState(null)
-  const [scheduledLessons, setScheduledLessons] = useState({}) // Format: { 'YYYY-MM-DD': [{...}] }
-  const [scheduledForSelectedDate, setScheduledForSelectedDate] = useState([])
-  const [plannedLessons, setPlannedLessons] = useState({}) // Format: { 'YYYY-MM-DD': [{...}] }
-  const [loading, setLoading] = useState(true)
-  const [tier, setTier] = useState('free')
-  const [canPlan, setCanPlan] = useState(false)
-  const [tableExists, setTableExists] = useState(true)
-  const [rescheduling, setRescheduling] = useState(null) // Track which lesson is being rescheduled
-  const [activeTab, setActiveTab] = useState('scheduler') // 'scheduler' or 'planner'
-  const [showDayView, setShowDayView] = useState(false)
-  const [noSchoolDates, setNoSchoolDates] = useState({}) // Format: { 'YYYY-MM-DD': 'reason' }
+**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
 
-### 39. docs/brain/ingests/pack.lesson-schedule-debug.md (56a6f88e611ad532dfc1606ac49942881cd6fd9766c2e6d8261e4538592b3a1a)
-- bm25: -6.6578 | entity_overlap_w: 1.30 | adjusted: -6.9828 | relevance: 0.8747
+**DON'T fail to update notes** - Stale notes mislead Mr. Mentor. Encourage facilitators to update notes as learner progresses.
 
-### 5. docs/brain/MentorInterceptor_Architecture.md (7cfd131ea36bbee64c89e221bffc0ef04e7197b8816e1613bcb1dc1d431d339f)
-- bm25: -23.0920 | relevance: 1.0000
+**DON'T forget empty note deletion** - Save function correctly deletes empty notes from JSONB object (avoids storing null/empty values).
 
-# MentorInterceptor Architecture
+### 31. docs/brain/session-takeover.md (db2a0821d0d2e9ec364a6eae8560f570fd8ce226d208ca199d72980db2ee6b57)
+- bm25: -6.9302 | relevance: 0.8739
 
-**Created:** November 17, 2025  
-**Status:** Deployed and active in Mr. Mentor counselor UI  
-**Commits:** 6890d3b → ab3fed4
+#### Teaching Flow
+- `begin-teaching-definitions`
+- `vocab-sentence-1` through `vocab-sentence-N`
+- `begin-teaching-examples`
+- `example-sentence-1` through `example-sentence-N`
 
-## Purpose
+#### Comprehension Flow
+- `comprehension-active` (after each answer)
 
-Front-end conversation handler for Mr. Mentor that intercepts user messages to:
-- Provide instant responses without API calls where possible
-- Gather parameters through multi-turn Q&A before executing actions
-- Create confirmation flows for all actions (schedule, generate, edit)
-- Make front-end and back-end handling indistinguishable to users
-- Reduce API costs and improve responsiveness
+#### Other Phases
+- `begin-discussion`
+- `begin-worksheet`
+- `begin-exercise`
+- `begin-test`
+- `skip-forward`
+- `skip-back`
 
-## Architecture
+### Session ID Generation and Storage
 
-### File Structure
+**Browser-side session ID:**
+```javascript
+// Generated once per browser tab, persists in sessionStorage
+let browserSessionId = sessionStorage.getItem('lesson_session_id');
+if (!browserSessionId) {
+  browserSessionId = crypto.randomUUID();
+  sessionStorage.setItem('lesson_session_id', browserSessionId);
+}
+```
 
-- **MentorInterceptor.js** (995 lines)
-  - Intent detection engine with fuzzy matching
-  - Parameter extraction (grade, subject, difficulty, date)
-  - Conversation state machine
-  - Multi-turn parameter gathering
-  - Confirmation workflows
-  - Lesson search algorithm with scoring
-  - Action execution handlers
+**Included in every snapshot save:**
+```javascript
+const payload = {
+  learner_id: learnerId,
+  lesson_key: lessonKey,
+  session_id: browserSessionId,
+  device_name: navigator.userAgent, // or user-friendly device name
+  last_activity_at: new Date().toISOString(),
+  snapshot: { /* state */ }
+};
+```
 
-- **CounselorClient.jsx** (integration)
-  - Instantiates interceptor on mount
-  - Calls `interceptor.process()` before API
-  - Handles interceptor responses (TTS, captions, conversation history)
-  - Executes interceptor actions (schedule, generate, edit)
-  - Falls back to API when interceptor doesn't handle
+**Database checks on save:**
+1. Look for active session with this `learner_id` + `lesson_id`
+2. If exists and `session_id` matches: update successful (same device)
+3. If exists and `session_id` differs: return conflict error with existing session details
+4. If none exists: create new session
 
-### 6. docs/brain/calendar-lesson-planning.md (edc4501d8cf5402f28f2f259c81317facde5d8c4d278692219fb856850a029d8)
-- bm25: -23.0310 | relevance: 1.0000
+## Key Files
 
-- `src/app/facilitator/calendar/LessonNotesModal.jsx`
-  - Minimal notes editor for `learners.lesson_notes[lesson_key]`
-  - Empty note deletes the key from the JSONB map
+### 32. src/app/session/page.js (c944a3d05366ae6752614849d2ed5d306adbde6b5ced4ef7fb7c574fcb58de04)
+- bm25: -6.8570 | relevance: 0.8727
 
-### 40. src/app/api/counselor/route.js (4b58708eb47ed1de9e7a26238dee9e62257fd2e2141f45a4217d285b84afd1b8)
-- bm25: -6.8440 | relevance: 0.8725
+// Session snapshot persistence (restore and save) � placed after state declarations to avoid TDZ
+  const restoredSnapshotRef = useRef(false);
+  const didRunRestoreRef = useRef(false); // ensure we attempt restore exactly once per mount
+  const restoreFoundRef = useRef(false);  // whether we actually applied a prior snapshot
+  const resumeAppliedRef = useRef(false); // track whether resume reconciliation has been applied
+  const snapshotSaveTimerRef = useRef(null);
+  // Track a logical per-restart session id for per-session transcript files
+  const [transcriptSessionId, setTranscriptSessionId] = useState(null);
+  // Used to coalesce redundant saves: store a compact signature of the last saved meaningful state
+  const lastSavedSigRef = useRef(null);
+  // Retry budget for labeled saves when key is not yet ready
+  const pendingSaveRetriesRef = useRef({});
 
-assign_lesson: {
-      name: 'assign_lesson',
-      purpose: 'Assign a lesson to a learner so it shows up as available (not scheduled on a date)',
-      when_to_use: 'When facilitator asks to assign a lesson, make it available, or show it to a learner without choosing a date',
-      parameters: {
-        learnerName: 'Required. The learner\'s name (e.g., "Emma"). The system will find the matching learner.',
-        lessonKey: 'Required. Format: "subject/filename.json" (from search results or after generating).',
-        lessonTitle: 'Optional. Human-readable title for confirmation (if known). If unknown, call get_lesson_details first.'
-      },
-      returns: 'Success confirmation with learner name and lesson key',
-      notes: 'Use assign_lesson when the user says "assign" and does not request a calendar date. For calendar placement, use schedule_lesson.',
-      example: 'Assign for Emma: {learnerName: "Emma", lessonKey: "math/Multiplication_Basics.json"}'
-    },
-    
-    edit_lesson: {
-      name: 'edit_lesson',
-      purpose: 'Modify an existing lesson (works on ALL lessons: installed subjects like math/science AND facilitator-created lessons)',
-      when_to_use: 'When facilitator asks to change/fix/update/edit a lesson, correct errors, add vocabulary, improve questions, etc.',
-      parameters: {
-        lessonKey: 'Required. Format: "subject/filename.json" (from search results)',
-        updates: 'Required. Object with fields to update. Can include: title, blurb, teachingNotes, vocab (array of {term, definition}), truefalse, multiplechoice, shortanswer, fillintheblank (arrays of questions)'
-      },
-      returns: 'Success confirmation that lesson was updated',
-      notes: 'Can edit ANY lesson - both pre-installed subject lessons AND custom facilitator lessons. G
+### 33. docs/brain/timer-system.md (1a32551b75194411e216ab6f0fbcffdadaea88e56bfce92ea654a731ce781ad7)
+- bm25: -6.8457 | relevance: 0.8725
+
+**Immediate updates (no local fallback):**
+- Pages subscribe to the Learner Settings Bus so facilitator-side toggles react immediately in already-open sessions/tabs.
+- If `golden_keys_enabled` is missing (not a boolean), session code fails loudly so migrations/schema drift are caught early.
+
+### 34. src/app/session/slate/page.jsx (86030aa9935f1a2c0575bbab7436c924791ba25b3b7ab9f469f5f6b24d479a3c)
+- bm25: -6.8364 | relevance: 0.8724
+
+// --- Question pool helpers ----------------------------------------------------
+
+### 35. src/app/api/curriculum-preferences/route.js (2d1b7c9e09af18554dad070e6f667a38daa3cdb4cd88f3005e9a6de8e066b791)
+- bm25: -6.8173 | relevance: 0.8721
+
+const { data: existing, error: fetchErr } = await supabase
+      .from('curriculum_preferences')
+      .select('id, subject_preferences')
+      .eq('facilitator_id', user.id)
+      .eq('learner_id', learnerId)
+      .maybeSingle()
+
+if (fetchErr) {
+      const isColMissing =
+        fetchErr.message?.includes('subject_preferences') ||
+        fetchErr.code === '42703' ||
+        fetchErr.code === 'PGRST204'
+      if (isColMissing) {
+        // Column not yet added — fall back to id-only fetch so we at least know row state
+        columnExists = false
+        const { data: idOnly } = await supabase
+          .from('curriculum_preferences')
+          .select('id')
+          .eq('facilitator_id', user.id)
+          .eq('learner_id', learnerId)
+          .maybeSingle()
+        existingId = idOnly?.id || null
+      } else {
+        console.error('Error fetching existing curriculum preferences:', fetchErr)
+        return NextResponse.json({ error: fetchErr.message }, { status: 500 })
+      }
+    } else {
+      existingId = existing?.id || null
+      existingSubjectPrefs = existing?.subject_preferences || {}
+    }
+
+if (!columnExists) {
+      return NextResponse.json({
+        error: 'Per-subject preferences require a one-time database update. Run scripts/add-curriculum-subject-preferences.sql in Supabase.',
+        migrationNeeded: true
+      }, { status: 500 })
+    }
+
+### 36. src/app/session/slate/page.jsx (8f0ba3db22072440890079cdacd73b3be9fda048a3515449eff5c6a6d5d1a155)
+- bm25: -6.7903 | relevance: 0.8716
+
+// ===========================================================================
+  //  RENDER -- Lesson list
+  // ===========================================================================
+  if (pagePhase === 'list') {
+    return (
+      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div style={{
+          background: C.surface,
+          borderBottom: `1px solid ${C.border}`,
+          padding: '14px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <video src={SLATE_VIDEO_SRC} muted playsInline style={{ width: 36, height: 36, objectFit: 'contain' }} />
+            <div>
+              <div style={{ color: C.accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>MR. SLATE V1</div>
+              <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2 }}>SKILLS &amp; PRACTICE COACH</div>
+            </div>
+          </div>
+          <button onClick={exitToLessons} style={ghostBtn}>← BACK</button>
+        </div>
+
+### 37. docs/brain/visual-aids.md (cebc247aea7732306cc21dca5d9099368c1fc836340141e4e727b10abb536b73)
+- bm25: -6.7576 | relevance: 0.8711
+
+**Never trust DALL-E URLs long-term:**
+- ❌ DALL-E temporary URLs expire after 1 hour
+- ❌ Never save expired DALL-E URLs to database
+- ❌ Never fall back to original URL if download fails
+- ✅ Always download and re-upload to Supabase permanent storage immediately
+- ✅ Display from permanent Supabase bucket URLs, not DALL-E URLs
+- ✅ Filter out images that fail all retry attempts (don't save broken URLs)
+
+### 38. src/app/facilitator/generator/counselor/CounselorClient.jsx (ff3c77b46a4cb848d78d08f99513b51a68aefa74a30014b6e136af50340bfd60)
+- bm25: -6.7226 | relevance: 0.8705
+
+// Get auth token for function calling
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      
+      const response = await fetch('/api/counselor', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          message: finalForwardMessage,
+          // ThoughtHub: chronograph + deterministic packs provide context; omit on-wire history to save tokens.
+          history: cohereChronographEnabled ? conversationHistory.slice(-8) : conversationHistory,
+          use_cohere_chronograph: cohereChronographEnabled,
+          use_thought_hub: cohereChronographEnabled,
+          subject_key: subjectKey,
+          cohere_mode: 'standard',
+          thought_hub_mode: 'standard',
+          // Include learner context if a learner is selected
+          learner_transcript: learnerTranscript || null,
+          // Include persistent goals notes
+          goals_notes: goalsNotes || null,
+          // Include any context from interceptor
+          interceptor_context: Object.keys(forwardContext).length > 0 ? forwardContext : undefined,
+          require_generation_confirmation: true,
+          generation_confirmed: generationConfirmed,
+          disableTools
+        })
+      })
+
+### 39. src/app/api/curriculum-preferences/route.js (aa6d9d785a8575d8060710b9c063d2a0c2c18ad4cf81ef22a7d11df61e3ce355)
+- bm25: -6.6329 | relevance: 0.8690
+
+let data, error
+    if (existingId) {
+      const res = await supabase
+        .from('curriculum_preferences')
+        .update({ subject_preferences: mergedSubjectPrefs, updated_at: now })
+        .eq('id', existingId)
+        .select()
+        .single()
+      data = res.data
+      error = res.error
+    } else {
+      const res = await supabase
+        .from('curriculum_preferences')
+        .upsert({
+          facilitator_id: user.id,
+          learner_id: learnerId,
+          banned_words: [],
+          banned_topics: [],
+          banned_concepts: [],
+          focus_topics: [],
+          focus_concepts: [],
+          focus_keywords: [],
+          subject_preferences: mergedSubjectPrefs,
+          updated_at: now
+        }, { onConflict: 'facilitator_id,learner_id' })
+        .select()
+        .single()
+      data = res.data
+      error = res.error
+    }
+
+if (error) {
+      const isMissingColumn =
+        error.message?.includes('subject_preferences') ||
+        error.code === '42703' ||
+        error.code === 'PGRST204'
+      if (isMissingColumn) {
+        console.error('subject_preferences column missing — run scripts/add-curriculum-subject-preferences.sql', error)
+        return NextResponse.json({
+          error: 'Per-subject preferences require a one-time database update. Run scripts/add-curriculum-subject-preferences.sql in Supabase.',
+          migrationNeeded: true
+        }, { status: 500 })
+      }
+      console.error('Error saving subject curriculum preferences:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+### 40. src/app/facilitator/calendar/CurriculumPreferencesOverlay.jsx (1903a28f329491b5a14b48c958effd7102ba8442e634aa403f2fcd0f4233bbe8)
+- bm25: -6.6150 | relevance: 0.8687
+
+const setField = (key, value) => setFields(prev => ({ ...prev, [key]: value }))
+
+const loadPreferences = async () => {
+    if (!learnerId) { setLoading(false); return }
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) { setLoading(false); return }
+
+const response = await fetch(`/api/curriculum-preferences?learnerId=${learnerId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (response.ok) {
+        const result = await response.json()
+        setFullRow(result.preferences || null)
+      }
+    } catch (err) {
+      console.error('Error loading preferences:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+const handleSave = async () => {
+    if (!learnerId) { alert('Please select a learner first'); return }
+    setSaving(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) { alert('Please sign in to save preferences'); return }
+
+const parseList = (str) =>
+        str.split(',').map(s => s.trim()).filter(s => s.length > 0)
 
 
 ---

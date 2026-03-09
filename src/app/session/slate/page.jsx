@@ -30,6 +30,22 @@ const QUESTION_SECONDS = 15
 const SCORE_GOAL = 10
 const FEEDBACK_DELAY_MS = 2000
 const RESHUFFLE_THRESHOLD = 0.2 // reshuffle when only 20% of deck remains
+
+const DEFAULT_SLATE_SETTINGS = {
+  scoreGoal: 10,
+  correctPts: 1,
+  wrongPts: 1,
+  timeoutPts: 0,
+  questionSecs: 15,
+}
+
+const SETTINGS_CONFIG = [
+  { label: 'SCORE GOAL',        key: 'scoreGoal',    min: 3,  max: 30,  fmt: v => `${v} pts` },
+  { label: 'CORRECT ANSWER',    key: 'correctPts',   min: 1,  max: 5,   fmt: v => `+${v} pt${v !== 1 ? 's' : ''}` },
+  { label: 'WRONG ANSWER',      key: 'wrongPts',     min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u22121${v} pt${v !== 1 ? 's' : ''}` },
+  { label: 'TIMEOUT PENALTY',   key: 'timeoutPts',   min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u22121${v} pt${v !== 1 ? 's' : ''}` },
+  { label: 'TIME PER QUESTION', key: 'questionSecs', min: 5,  max: 120, fmt: v => `${v}s` },
+]
 const SLATE_VIDEO_SRC = '/media/Mr-%20Slate%20Loop.mp4'
 
 // --- Color palette (dark robot theme) ----------------------------------------
@@ -319,6 +335,10 @@ function SlateDrillInner() {
   const [learnerId, setLearnerId] = useState(null)
   const [masteryMap, setMasteryMap] = useState({})
   const [errorMsg, setErrorMsg] = useState('')
+  const [settings, setSettings] = useState(DEFAULT_SLATE_SETTINGS)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsDraft, setSettingsDraft] = useState(DEFAULT_SLATE_SETTINGS)
+  const [settingsSaving, setSettingsSaving] = useState(false)
 
   // Refs for stale-closure-free use in timers/callbacks
   const phaseRef = useRef('loading')
@@ -336,10 +356,12 @@ function SlateDrillInner() {
   const audioEl = useRef(null)
   const inputEl = useRef(null)
   const slateVideoRef = useRef(null)
+  const settingsRef = useRef(DEFAULT_SLATE_SETTINGS)
 
   // Keep fast refs in sync
   useEffect(() => { soundRef.current = soundOn }, [soundOn])
   useEffect(() => { learnerIdRef.current = learnerId }, [learnerId])
+  useEffect(() => { settingsRef.current = settings }, [settings])
 
   // Load learner + mastery + available lessons
   useEffect(() => {
@@ -355,11 +377,21 @@ function SlateDrillInner() {
         setPagePhase('list')
         return
       }
-      fetch(`/api/learner/available-lessons?learner_id=${encodeURIComponent(id)}`)
-        .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load lessons')))
-        .then(({ lessons }) => {
+      Promise.all([
+        fetch(`/api/learner/available-lessons?learner_id=${encodeURIComponent(id)}`)
+          .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load lessons'))),
+        fetch(`/api/learner/slate-settings?learner_id=${encodeURIComponent(id)}`)
+          .then(r => r.ok ? r.json() : null).catch(() => null),
+      ])
+        .then(([{ lessons }, settingsRes]) => {
           const drillable = (lessons || []).filter(l => buildPool(l).length > 0)
           setAvailableLessons(drillable)
+          if (settingsRes?.settings) {
+            const merged = { ...DEFAULT_SLATE_SETTINGS, ...settingsRes.settings }
+            setSettings(merged)
+            setSettingsDraft(merged)
+            settingsRef.current = merged
+          }
           phaseRef.current = 'list'
           setPagePhase('list')
         })
@@ -404,7 +436,7 @@ function SlateDrillInner() {
       setCurrentQ(q)
       setUserAnswer('')
       setLastResult(null)
-      setSecondsLeft(QUESTION_SECONDS)
+      setSecondsLeft(settingsRef.current.questionSecs)
       phaseRef.current = 'asking'
       setPagePhase('asking')
       setTimeout(() => inputEl.current?.focus?.(), 80)
@@ -434,7 +466,7 @@ function SlateDrillInner() {
     setCurrentQ(q)
     setUserAnswer('')
     setLastResult(null)
-    setSecondsLeft(QUESTION_SECONDS)
+    setSecondsLeft(settingsRef.current.questionSecs)
     phaseRef.current = 'asking'
     setPagePhase('asking')
     setTimeout(() => inputEl.current?.focus?.(), 80)
@@ -462,7 +494,11 @@ function SlateDrillInner() {
     const prev = scoreRef.current
     let newScore = prev
     if (!timeout) {
-      newScore = correct ? Math.min(SCORE_GOAL, prev + 1) : Math.max(0, prev - 1)
+      const { scoreGoal, correctPts, wrongPts } = settingsRef.current
+      newScore = correct ? Math.min(scoreGoal, prev + correctPts) : Math.max(0, prev - wrongPts)
+    } else {
+      const { timeoutPts } = settingsRef.current
+      if (timeoutPts > 0) newScore = Math.max(0, prev - timeoutPts)
     }
     scoreRef.current = newScore
     setScore(newScore)
@@ -474,7 +510,7 @@ function SlateDrillInner() {
     phaseRef.current = 'feedback'
     setPagePhase('feedback')
 
-    if (!timeout && newScore >= SCORE_GOAL) {
+    if (!timeout && newScore >= settingsRef.current.scoreGoal) {
       feedbackTimeout.current = setTimeout(() => {
         const lid = learnerIdRef.current
         const lk = lessonKeyRef.current
@@ -524,6 +560,24 @@ function SlateDrillInner() {
   }, [handleResult])
 
   const onKeyDown = useCallback(e => { if (e.key === 'Enter') onTextSubmit() }, [onTextSubmit])
+
+  const saveSettings = useCallback(async (draft) => {
+    setSettings(draft)
+    settingsRef.current = draft
+    setSettingsOpen(false)
+    const lid = learnerIdRef.current
+    if (lid && lid !== 'demo') {
+      setSettingsSaving(true)
+      try {
+        await fetch('/api/learner/slate-settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ learner_id: lid, settings: draft }),
+        })
+      } catch {}
+      setSettingsSaving(false)
+    }
+  }, [])
 
   const backToList = useCallback(() => {
     clearInterval(timerInterval.current)
@@ -620,12 +674,17 @@ function SlateDrillInner() {
               <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 10 }}>
                 SELECT A LESSON TO DRILL — {availableLessons.length} AVAILABLE
               </div>
-              <div style={{ color: C.muted, fontSize: 12, lineHeight: 1.8, marginBottom: 20, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px' }}>
-                <span style={{ color: C.text, fontWeight: 700 }}>GOAL:</span> Reach <span style={{ color: C.text, fontWeight: 700 }}>10 points</span> to earn mastery 🤖
-                {'  ·  '}<span style={{ color: C.green, fontWeight: 700 }}>+1</span> correct
-                {'  ·  '}<span style={{ color: C.red, fontWeight: 700 }}>−1</span> wrong
-                {'  ·  '}<span style={{ color: C.yellow, fontWeight: 700 }}>±0</span> timeout ({QUESTION_SECONDS}s)
-              </div>
+              <button
+                onClick={() => { setSettingsDraft(settings); setSettingsOpen(true) }}
+                style={{ color: C.muted, fontSize: 12, lineHeight: 1.8, marginBottom: 20, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: C.mono, display: 'block' }}
+              >
+                <span style={{ color: C.text, fontWeight: 700 }}>GOAL:</span> Reach{' '}
+                <span style={{ color: C.text, fontWeight: 700 }}>{settings.scoreGoal} points</span> to earn mastery 🤖
+                {'  ·  '}<span style={{ color: C.green, fontWeight: 700 }}>+{settings.correctPts}</span> correct
+                {'  ·  '}<span style={{ color: C.red, fontWeight: 700 }}>−{settings.wrongPts}</span> wrong
+                {'  ·  '}<span style={{ color: C.yellow, fontWeight: 700 }}>{settings.timeoutPts === 0 ? '±0' : `−${settings.timeoutPts}`}</span> timeout ({settings.questionSecs}s)
+                {'  '}<span style={{ color: C.accent, fontSize: 10, letterSpacing: 1 }}>✎ EDIT</span>
+              </button>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {availableLessons.map((lesson, i) => {
                   const lk = lesson.lessonKey || `${lesson.subject || 'general'}/${lesson.file || ''}`
@@ -671,6 +730,50 @@ function SlateDrillInner() {
             </>
           )}
         </div>
+
+        {/* Settings overlay */}
+        {settingsOpen && (
+          <div
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 16 }}
+            onClick={e => { if (e.target === e.currentTarget) setSettingsOpen(false) }}
+          >
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: '28px 28px 24px', width: '100%', maxWidth: 420, fontFamily: C.mono }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <span style={{ color: C.accent, fontWeight: 800, fontSize: 15, letterSpacing: 3 }}>DRILL SETTINGS</span>
+                <button onClick={() => setSettingsOpen(false)} style={{ background: 'none', border: 'none', color: C.muted, fontSize: 20, cursor: 'pointer', padding: 0, lineHeight: 1 }}>✕</button>
+              </div>
+              {SETTINGS_CONFIG.map(({ label, key, min, max, fmt }) => (
+                <div key={key} style={{ marginBottom: 18 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ color: C.muted, fontSize: 11, letterSpacing: 1 }}>{label}</span>
+                    <span style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>{fmt(settingsDraft[key])}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={min}
+                    max={max}
+                    value={settingsDraft[key]}
+                    onChange={e => setSettingsDraft(d => ({ ...d, [key]: Number(e.target.value) }))}
+                    style={{ width: '100%', accentColor: C.accent, cursor: 'pointer' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: C.muted, fontSize: 10, marginTop: 2 }}>
+                    <span>{fmt(min)}</span><span>{fmt(max)}</span>
+                  </div>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
+                <button onClick={() => setSettingsOpen(false)} style={ghostBtn}>CANCEL</button>
+                <button
+                  onClick={() => saveSettings(settingsDraft)}
+                  style={{ ...primaryBtn, opacity: settingsSaving ? 0.6 : 1 }}
+                  disabled={settingsSaving}
+                >
+                  {settingsSaving ? 'SAVING...' : 'SAVE SETTINGS'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -691,7 +794,7 @@ function SlateDrillInner() {
           <div style={{ color: C.muted, fontSize: 12, letterSpacing: 2, marginBottom: 28 }}>DRILL SEQUENCE COMPLETE</div>
 
           <div style={{ background: C.surface, border: `1px solid ${C.green}`, borderRadius: 12, padding: 28, marginBottom: 24 }}>
-            <ScorePips score={SCORE_GOAL} goal={SCORE_GOAL} />
+            <ScorePips score={settings.scoreGoal} goal={settings.scoreGoal} />
             <div style={{ color: C.text, fontWeight: 700, fontSize: 16, marginTop: 14 }}>{lessonTitle}</div>
             <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>{qCount} QUERIES PROCESSED TO REACH MASTERY</div>
           </div>
@@ -743,7 +846,7 @@ function SlateDrillInner() {
           </div>
         </div>
 
-        <ScorePips score={score} />
+        <ScorePips score={score} goal={settings.scoreGoal} />
 
         <div style={{ display: 'flex', gap: 8 }}>
           <button
@@ -787,7 +890,7 @@ function SlateDrillInner() {
               </div>
 
               {/* Countdown timer -- only while asking */}
-              {isAsking && <TimerBar secondsLeft={secondsLeft} total={QUESTION_SECONDS} />}
+              {isAsking && <TimerBar secondsLeft={secondsLeft} total={settings.questionSecs} />}
 
               {/* Multiple choice */}
               {isAsking && q.type === 'multiplechoice' && (

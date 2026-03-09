@@ -23,7 +23,13 @@
 2026-02-27T17:39:00Z | Fix: quota false-positives for premium/pro. Recon prompt: "Quota hit when generating lessons (calendar + lesson generator) even though account is premium; gating other accounts may have affected entitlement." Updated `/api/lessons/quota` to return `allowed` and updated `/api/usage/check-lesson-quota` to use `plan_tier` + `lessonsPerDay`; generator now computes allowance robustly. See `sidekick_pack.md`.
 
 # Cohere Investigations Changelog
-## 2025 — slate/page.jsx UX: remove ready screen, video talks-only
+## 2026-03-09 — slate: configurable drill settings overlay + per-learner Supabase save
+- Prompt: "make clicking on this box open an overlay where all of these stats can be changed and make the changes reflect from the variables. This will also have to be saved to the supabase per learner."
+- New: `src/app/api/learner/slate-settings/route.js` (GET + PATCH, service-role, sanitizes ranges)
+- New: `scripts/add-slate-settings-column.sql` (ADD COLUMN IF NOT EXISTS slate_settings JSONB)
+- Changed: `slate/page.jsx` — DEFAULT_SLATE_SETTINGS + SETTINGS_CONFIG constants; settings/settingsDraft/settingsOpen/settingsSaving state; settingsRef; parallel load with lesson fetch; scoring uses settingsRef (correctPts/wrongPts/timeoutPts/scoreGoal); rules bar → clickable button with dynamic values + ✎ EDIT badge; settings overlay (sliders for all 5 params, live preview, save→PATCH API); saveSettings callback; ScorePips/TimerBar use settings state; won screen uses settings.scoreGoal
+
+## 2026-03-09 — slate/page.jsx UX: remove ready screen, video talks-only
 - Prompt: "I don't think we need 2 screens before getting to the actual session. The screen with a list of lessons should just have the rules and description briefly at the very top. Also, I only want Mr. Slate to move while he is talking, the same as Ms. Sonoma."
 - Changes: deleted ready screen; selectLesson now goes directly to asking phase; rules panel added to top of list screen; SlateVideo converted to forwardRef (no autoPlay); playSlateAudio plays/pauses videoEl around TTS; small header icon videos made static; slateVideoRef wired to drill body avatar
 
