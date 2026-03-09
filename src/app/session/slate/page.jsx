@@ -871,7 +871,7 @@ function SlateDrillInner() {
         </div>
 
         {/* Question card — anchored to bottom, scrolls internally if very tall */}
-        <div style={{ flexShrink: 0, overflowY: 'auto', maxHeight: '60vh', padding: '12px 16px 32px', width: '100%', maxWidth: 632, margin: '0 auto', boxSizing: 'border-box' }}>
+        <div style={{ flexShrink: 0, overflowY: 'auto', maxHeight: '60vh', padding: '12px 16px 56px', width: '100%', maxWidth: 632, margin: '0 auto', boxSizing: 'border-box' }}>
           {q && (
             <div style={{
               background: C.surface,
