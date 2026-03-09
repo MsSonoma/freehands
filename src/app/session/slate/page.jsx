@@ -594,17 +594,16 @@ function SlateDrillInner() {
     setLastResult({ correct, timeout, text: feedbackText, correctAnswer })
     phaseRef.current = 'feedback'
     setPagePhase('feedback')
-    if (soundRef.current) {
-      if (correctAnswer) {
-        playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, () => {
-          playSlateAudio(`The correct answer was ${correctAnswer}.`, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef)
-        }, slateIsSpeakingRef)
-      } else {
-        playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef)
-      }
+
+    // Helper: advance to next question (used both by timeout and audio onDone)
+    const doAdvance = () => {
+      if (phaseRef.current !== 'feedback') return
+      const next = advanceDeck()
+      if (next) showQuestion(next)
     }
 
     if (!timeout && newScore >= settingsRef.current.scoreGoal) {
+      // Won — fire after a short delay so the feedback text is visible briefly
       feedbackTimeout.current = setTimeout(() => {
         const lid = learnerIdRef.current
         const lk = lessonKeyRef.current
@@ -619,12 +618,20 @@ function SlateDrillInner() {
           doWon()
         }
       }, FEEDBACK_DELAY_MS)
+    } else if (soundRef.current && correctAnswer) {
+      // Wrong answer with sound: chain feedback → correct answer → advance
+      // No separate timeout — audio onDone drives the transition so nothing cuts it off
+      playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, () => {
+        playSlateAudio(`The correct answer was ${correctAnswer}.`, audioEl.current, slateVideoRef.current, () => {
+          feedbackTimeout.current = setTimeout(doAdvance, 600)
+        }, slateIsSpeakingRef)
+      }, slateIsSpeakingRef)
     } else {
-      feedbackTimeout.current = setTimeout(() => {
-        if (phaseRef.current !== 'feedback') return
-        const next = advanceDeck()
-        if (next) showQuestion(next)
-      }, FEEDBACK_DELAY_MS)
+      // Correct / timeout with sound, or sound off: use normal delay then advance
+      if (soundRef.current) {
+        playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef)
+      }
+      feedbackTimeout.current = setTimeout(doAdvance, FEEDBACK_DELAY_MS)
     }
   }, [advanceDeck, showQuestion])
 
