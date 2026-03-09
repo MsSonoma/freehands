@@ -441,11 +441,7 @@ function SlateDrillInner() {
       phaseRef.current = 'asking'
       setPagePhase('asking')
       setTimeout(() => inputEl.current?.focus?.(), 80)
-      if (soundRef.current) playSlateAudio(q.question, audioEl.current, slateVideoRef.current)
-    }
-  }, [])
-
-  // Advance the deck, reshuffling when 80%+ has been used
+      if (soundRef.current) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current), 120), reshuffling when 80%+ has been used
   const advanceDeck = useCallback(() => {
     const cur = deckRef.current
     const idx = deckIdxRef.current
@@ -471,10 +467,7 @@ function SlateDrillInner() {
     phaseRef.current = 'asking'
     setPagePhase('asking')
     setTimeout(() => inputEl.current?.focus?.(), 80)
-    if (soundRef.current) playSlateAudio(q.question, audioEl.current, slateVideoRef.current)
-  }, [])
-
-  // Start / restart the drill
+    if (soundRef.current) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current), 120)
   const startDrill = useCallback(() => {
     clearInterval(timerInterval.current)
     clearTimeout(feedbackTimeout.current)
