@@ -457,3 +457,13 @@ Files: src/app/session/components/games/flashcardsMathDeck.js, src/app/session/c
 Prompt: `vocab words bold captions TTS text display caption rendering`
 Fix: CaptionPanel.js ï¿½ (1) Added stripMarkdown() to remove **bold** markers from displayed text before render. (2) Removed phase==='discussion'||'teaching' restriction so vocab terms are bolded in all phases.
 File: src/app/session/components/CaptionPanel.js
+
+## 2026-03-09T14:39:32Z — Mr. Slate implementation
+
+**Prompt**: "Mr. Slate quiz bot page - what is the V2 session page structure, lesson json format, TTS setup, avatar video, and learn/lessons page button routing?"
+
+**Files created/modified**:
+- src/app/api/slate-tts/route.js — NEW: Google TTS route with male US Standard voice (en-US-Standard-B, rate 1.08, pitch -1.5) for robot character
+- src/app/lib/masteryClient.js — NEW: localStorage mastery tracker (slate_mastery_v1), getMasteryForLearner / isMastered / saveMastery
+- src/app/session/slate/page.jsx — NEW: Full Mr. Slate drill page. Dark terminal theme. Phases: loading|error|no-lesson|ready|asking|feedback|won. Question pool built from sample+truefalse+multiplechoice+fillintheblank. 15s per-question countdown. Score 0?10 with +1/-1/±0 logic. Question deck rotates, reshuffles at 80% exhaustion. On score=10: saves mastery to localStorage via masteryClient.
+- src/app/learn/lessons/page.js — MODIFIED: Import masteryClient, add masteryMap state, load mastery on learner init, wire "?? Mr. Slate" header button ? /session/slate, show ?? icon on mastered lesson titles, add "?? Practice / Mastered" button on each lesson card routed to /session/slate?lesson=<file>&subject=<subject>

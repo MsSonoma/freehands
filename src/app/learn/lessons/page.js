@@ -13,6 +13,7 @@ import { getActiveLessonSession } from '@/app/lib/sessionTracking'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
+import { getMasteryForLearner } from '@/app/lib/masteryClient'
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 
@@ -94,6 +95,7 @@ function LessonsPageInner(){
   const [showGoldenKeyToast, setShowGoldenKeyToast] = useState(false) // Show golden key earned notification
   // null = unknown (still loading learner settings); true/false = loaded value
   const [goldenKeysEnabled, setGoldenKeysEnabled] = useState(null)
+  const [masteryMap, setMasteryMap] = useState({}) // { 'subject/file.json': true } — Mr. Slate mastery
 
   const {
     sessions: lessonHistorySessions,
@@ -232,7 +234,10 @@ function LessonsPageInner(){
       const id = localStorage.getItem('learner_id')
       const n = localStorage.getItem('learner_name')
       if (n) setLearnerName(n)
-      if (id) setLearnerId(id)
+      if (id) {
+        setLearnerId(id)
+        setMasteryMap(getMasteryForLearner(id))
+      }
     } catch {}
     ;(async () => {
       try {
@@ -787,7 +792,7 @@ function LessonsPageInner(){
             ✨ Generate a Lesson
           </button>
           <button
-            onClick={() => {}}
+            onClick={() => router.push('/session/slate')}
             style={{
               padding: '10px 20px',
               border: '1px solid #d1d5db',
@@ -950,7 +955,7 @@ function LessonsPageInner(){
                         </div>
                       </div>
                       <h3 style={{ margin:'0 0 6px' }}>
-                            {l.title} {medal}
+                        {l.title} {medal}{masteryMap[lessonKey] ? ' 🤖' : ''}
                       </h3>
                       <p style={{ margin:0, color:'#4b5563', fontSize:14 }}>{l.blurb || ' '}</p>
                       {(l.grade || l.difficulty) && (
@@ -1110,6 +1115,28 @@ function LessonsPageInner(){
                         }}
                       >
                         {lessonSnapshots[lessonKey] ? 'Continue' : 'Start Lesson'}
+                      </button>
+
+                      {/* Mr. Slate Practice button */}
+                      <button
+                        onClick={() => router.push(`/session/slate?lesson=${encodeURIComponent(l.file)}&subject=${encodeURIComponent(subject)}`)}
+                        style={{
+                          padding: '6px 12px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: 8,
+                          background: masteryMap[lessonKey] ? '#f0fdf4' : '#fff',
+                          color: masteryMap[lessonKey] ? '#166534' : '#374151',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 5,
+                        }}
+                        title={masteryMap[lessonKey] ? 'Mastery confirmed — practice again' : 'Practice with Mr. Slate'}
+                      >
+                        🤖 {masteryMap[lessonKey] ? 'Mastered' : 'Practice'}
                       </button>
                     </div>
                   </div>
