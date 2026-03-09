@@ -444,7 +444,13 @@ Follow-ups:
 Prompt: `Timers overlay PIN check pause redundant already authenticated`
 Fix: Removed `ensurePinAllowed('timer')` from `handleTimerPauseToggle` in SessionPageV2.jsx. Opening the overlay is still PIN-gated via `handleTimerClick`. V1 page.js already had this correct.
 File: src/app/session/v2/SessionPageV2.jsx
-
+## 2026-03-09 — Flash Cards difficulty curve overhaul (places + carry/borrow + speed)
+Prompt: `Flash Cards game difficulty scaling: value places (1-3=1 place, 4-6=2 places, 7-10=3 places), borrowing/carrying introduction timing, speed scaling too fast at high levels`
+Changes:
+- `makeAdditionCard`: operands now capped to 1/2/3 digit places per stage band. No carry stages 1-2; carry introduced stage 3 (single-digit only); no carry stages 4-5; carry allowed stages 6-10.
+- `makeSubtractionCard`: same place bands. No borrow stages 1-5 (digit-column generation ensures hi_digit >= lo_digit); borrow allowed stages 6-10.
+- `getMeterDecayPerSecond`: stage 1 slowed to 400s drain (was 250s); stage 10 slowed to 200s drain (was 100s). Gradient compressed from 2.5× to 2× so speed pressure doesn't compound with harder math.
+Files: src/app/session/components/games/flashcardsMathDeck.js, src/app/session/components/games/FlashCards.jsx
 ## 2026-03-02 � Auto-bold vocab in captions; strip GPT markdown asterisks
 Prompt: `vocab words bold captions TTS text display caption rendering`
 Fix: CaptionPanel.js � (1) Added stripMarkdown() to remove **bold** markers from displayed text before render. (2) Removed phase==='discussion'||'teaching' restriction so vocab terms are bolded in all phases.

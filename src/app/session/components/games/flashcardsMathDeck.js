@@ -26,40 +26,54 @@ function stageRange(stage, ranges) {
 }
 
 function makeAdditionCard(rng, stage) {
-  const [min, max] = stageRange(stage, [
-    [0, 10],
-    [0, 20],
-    [0, 50],
-    [0, 100],
-    [0, 200],
-    [0, 500],
-    [0, 1000],
-    [0, 5000],
-    [0, 20000],
-    [0, 100000],
-  ]);
-  const a = randInt(rng, min, max);
-  const b = randInt(rng, min, max);
+  const s = clampInt(Number(stage) || 1, 1, 10);
+  // Value places: stages 1-3 → 1 place (0-9), 4-6 → 2 places (0-99), 7-10 → 3 places (0-999)
+  const places = s <= 3 ? 1 : s <= 6 ? 2 : 3;
+  const max = Math.pow(10, places) - 1;
+  // Carry rules: no carry at stages 1-2, introduce at stage 3 (single-digit), none at 4-5, allow 6-10
+  const allowCarry = s === 3 || s >= 6;
+
+  if (allowCarry) {
+    const a = randInt(rng, 0, max);
+    const b = randInt(rng, 0, max);
+    return { prompt: `${a} + ${b} = ?`, answer: String(a + b) };
+  }
+
+  // No carry: generate each digit column independently so digit_a + digit_b <= 9
+  let a = 0, b = 0;
+  for (let p = 0; p < places; p++) {
+    const dA = randInt(rng, 0, 9);
+    const dB = randInt(rng, 0, 9 - dA);
+    a += dA * Math.pow(10, p);
+    b += dB * Math.pow(10, p);
+  }
   return { prompt: `${a} + ${b} = ?`, answer: String(a + b) };
 }
 
 function makeSubtractionCard(rng, stage) {
-  const [min, max] = stageRange(stage, [
-    [0, 10],
-    [0, 20],
-    [0, 50],
-    [0, 100],
-    [0, 200],
-    [0, 500],
-    [0, 1000],
-    [0, 5000],
-    [0, 20000],
-    [0, 100000],
-  ]);
-  const a = randInt(rng, min, max);
-  const b = randInt(rng, min, max);
-  const hi = Math.max(a, b);
-  const lo = Math.min(a, b);
+  const s = clampInt(Number(stage) || 1, 1, 10);
+  // Value places: stages 1-3 → 1 place, 4-6 → 2 places, 7-10 → 3 places
+  const places = s <= 3 ? 1 : s <= 6 ? 2 : 3;
+  const max = Math.pow(10, places) - 1;
+  // Borrow rules: no borrow at stages 1-5 (carry introduces at 3 for addition; borrow re-enters at 6 for subtraction)
+  const allowBorrow = s >= 6;
+
+  if (allowBorrow) {
+    const a = randInt(rng, 0, max);
+    const b = randInt(rng, 0, max);
+    const hi = Math.max(a, b);
+    const lo = Math.min(a, b);
+    return { prompt: `${hi} − ${lo} = ?`, answer: String(hi - lo) };
+  }
+
+  // No borrow: ensure each digit of hi >= corresponding digit of lo (column by column)
+  let hi = 0, lo = 0;
+  for (let p = 0; p < places; p++) {
+    const hiD = randInt(rng, 0, 9);
+    const loD = randInt(rng, 0, hiD);
+    hi += hiD * Math.pow(10, p);
+    lo += loD * Math.pow(10, p);
+  }
   return { prompt: `${hi} − ${lo} = ?`, answer: String(hi - lo) };
 }
 

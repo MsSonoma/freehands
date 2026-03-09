@@ -45,11 +45,12 @@ function getMeterDecayIntervalMs(stage) {
 
 function getMeterDecayPerSecond(stage) {
   const s = clampStage(stage);
-  // Slow early, faster later, but still beatable.
-  // Stage 1 drains ~10 points in ~250s; Stage 10 drains ~10 points in ~100s.
-  // (Equivalently: ~25s/point at Stage 1 → ~10s/point at Stage 10)
-  const start = 10 / 250;
-  const end = 10 / 100;
+  // Difficulty already scales through harder math (more digit places + carry/borrow),
+  // so keep the speed gradient shallow to avoid double-punishing players at high stages.
+  // Stage 1 drains ~10 points in ~400s; Stage 10 drains ~10 points in ~150s.
+  // New stage ~7 ≈ old stage 3, so pressure starts meaningfully in the back half.
+  const start = 10 / 400;
+  const end = 10 / 150;
   const t = STAGES_TOTAL <= 1 ? 1 : (s - 1) / (STAGES_TOTAL - 1);
   return start + (end - start) * t;
 }
