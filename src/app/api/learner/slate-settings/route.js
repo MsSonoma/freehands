@@ -12,6 +12,7 @@ const DEFAULT_SETTINGS = {
   correctPts: 1,
   wrongPts: 1,
   timeoutPts: 0,
+  timeoutOffset: 0,
   questionSecs: 15,
 }
 
@@ -20,8 +21,9 @@ const ALLOWED = {
   scoreGoal:    { min: 3,  max: 30  },
   correctPts:   { min: 1,  max: 5   },
   wrongPts:     { min: 0,  max: 5   },
-  timeoutPts:   { min: 0,  max: 5   },
-  questionSecs: { min: 5,  max: 120 },
+  timeoutPts:    { min: 0, max: 5   },
+  timeoutOffset:  { min: 0, max: 5   },
+  questionSecs:  { min: 5, max: 120 },
 }
 
 function sanitize(raw) {

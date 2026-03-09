@@ -36,6 +36,7 @@ const DEFAULT_SLATE_SETTINGS = {
   correctPts: 1,
   wrongPts: 1,
   timeoutPts: 0,
+  timeoutOffset: 0,
   questionSecs: 15,
 }
 
@@ -43,8 +44,9 @@ const SETTINGS_CONFIG = [
   { label: 'SCORE GOAL',        key: 'scoreGoal',    min: 3,  max: 30,  fmt: v => `${v} pts` },
   { label: 'CORRECT ANSWER',    key: 'correctPts',   min: 1,  max: 5,   fmt: v => `+${v} pt${v !== 1 ? 's' : ''}` },
   { label: 'WRONG ANSWER',      key: 'wrongPts',     min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u2212${v} pt${v !== 1 ? 's' : ''}` },
-  { label: 'TIMEOUT PENALTY',   key: 'timeoutPts',   min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u2212${v} pt${v !== 1 ? 's' : ''}` },
-  { label: 'TIME PER QUESTION', key: 'questionSecs', min: 5,  max: 120, fmt: v => `${v}s` },
+  { label: 'TIMEOUT PENALTY',   key: 'timeoutPts',     min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u2212${v} pt${v !== 1 ? 's' : ''}` },
+  { label: 'TIMEOUT OFFSET',    key: 'timeoutOffset',  min: 0,  max: 5,   fmt: v => v === 0 ? 'none' : `${v} free` },
+  { label: 'TIME PER QUESTION', key: 'questionSecs',   min: 5,  max: 120, fmt: v => `${v}s` },
 ]
 const SLATE_VIDEO_SRC = '/media/Mr-%20Slate%20Loop.mp4'
 
@@ -418,6 +420,7 @@ function SlateDrillInner() {
   const inputEl = useRef(null)
   const slateVideoRef = useRef(null)
   const slateIsSpeakingRef = useRef(false)
+  const consecutiveTimeoutsRef = useRef(0)
   const settingsRef = useRef(DEFAULT_SLATE_SETTINGS)
 
   // Keep fast refs in sync
@@ -571,11 +574,15 @@ function SlateDrillInner() {
     const prev = scoreRef.current
     let newScore = prev
     if (!timeout) {
+      consecutiveTimeoutsRef.current = 0
       const { scoreGoal, correctPts, wrongPts } = settingsRef.current
       newScore = correct ? Math.min(scoreGoal, prev + correctPts) : Math.max(0, prev - wrongPts)
     } else {
-      const { timeoutPts } = settingsRef.current
-      if (timeoutPts > 0) newScore = Math.max(0, prev - timeoutPts)
+      consecutiveTimeoutsRef.current += 1
+      const { timeoutPts, timeoutOffset } = settingsRef.current
+      if (timeoutPts > 0 && consecutiveTimeoutsRef.current > timeoutOffset) {
+        newScore = Math.max(0, prev - timeoutPts)
+      }
     }
     scoreRef.current = newScore
     setScore(newScore)
