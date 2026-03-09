@@ -400,6 +400,8 @@ function SlateDrillInner() {
   const [errorMsg, setErrorMsg] = useState('')
   const [listTab, setListTab] = useState('active')
   const [ownedFilters, setOwnedFilters] = useState({ subject: '', grade: '', difficulty: '' })
+  const [allOwnedLessons, setAllOwnedLessons] = useState([])
+  const [recentSessions, setRecentSessions] = useState([])
   const [settings, setSettings] = useState(DEFAULT_SLATE_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsDraft, setSettingsDraft] = useState(DEFAULT_SLATE_SETTINGS)
@@ -449,15 +451,31 @@ function SlateDrillInner() {
           .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load lessons'))),
         fetch(`/api/learner/slate-settings?learner_id=${encodeURIComponent(id)}`)
           .then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`/api/learner/lesson-history?learner_id=${encodeURIComponent(id)}&limit=200`)
+          .then(r => r.ok ? r.json() : null).catch(() => null),
       ])
-        .then(([{ lessons }, settingsRes]) => {
+        .then(([{ lessons }, settingsRes, historyRes]) => {
           const drillable = (lessons || []).filter(l => buildPool(l).length > 0)
           setAvailableLessons(drillable)
+          setAllOwnedLessons(lessons || [])
           if (settingsRes?.settings) {
             const merged = { ...DEFAULT_SLATE_SETTINGS, ...settingsRes.settings }
             setSettings(merged)
             setSettingsDraft(merged)
             settingsRef.current = merged
+          }
+          if (historyRes?.sessions) {
+            const completed = historyRes.sessions
+              .filter(s => s.status === 'completed' && s.lesson_id && s.ended_at)
+            // Deduplicate by lesson_id keeping most-recent
+            const seen = new Map()
+            for (const s of completed) {
+              const existing = seen.get(s.lesson_id)
+              if (!existing || new Date(s.ended_at) > new Date(existing.ended_at)) {
+                seen.set(s.lesson_id, s)
+              }
+            }
+            setRecentSessions([...seen.values()].sort((a, b) => new Date(b.ended_at) - new Date(a.ended_at)))
           }
           phaseRef.current = 'list'
           setPagePhase('list')
@@ -769,7 +787,7 @@ function SlateDrillInner() {
 
         {/* Body */}
         <div style={{ flex: 1, padding: '24px 16px', maxWidth: 680, margin: '0 auto', width: '100%' }}>
-          {availableLessons.length === 0 ? (
+          {availableLessons.length === 0 && allOwnedLessons.length === 0 ? (
             <div style={{ textAlign: 'center', marginTop: 60 }}>
               <div style={{ marginBottom: 16 }}>
                 <SlateVideo size={120} />
@@ -780,18 +798,22 @@ function SlateDrillInner() {
           ) : (() => {
             // --- Derived lists for each tab ---
             const getLk = l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`
+
+            // Active: drillable lessons not yet Slate-mastered
             const activeList = availableLessons.filter(l => !masteryMap[getLk(l)]?.mastered)
-            const recentList = availableLessons
-              .filter(l => masteryMap[getLk(l)]?.mastered)
-              .sort((a, b) => {
-                const ta = masteryMap[getLk(a)]?.masteredAt || ''
-                const tb = masteryMap[getLk(b)]?.masteredAt || ''
-                return ta < tb ? 1 : ta > tb ? -1 : 0
-              })
-            const allSubjects = [...new Set(availableLessons.map(l => l.subject).filter(Boolean))].sort()
-            const allGrades = [...new Set(availableLessons.map(l => l.grade).filter(v => v != null))].sort((a, b) => Number(a) - Number(b))
-            const allDiffs = [...new Set(availableLessons.map(l => l.difficulty).filter(Boolean))].sort()
-            const ownedList = availableLessons.filter(l => {
+
+            // Recent: sessions completed in Ms. Sonoma, joined to allOwnedLessons for metadata
+            const ownedByKey = new Map(allOwnedLessons.map(l => [getLk(l), l]))
+            const recentList = recentSessions.map(s => {
+              const lesson = ownedByKey.get(s.lesson_id)
+              return { session: s, lesson }
+            })
+
+            // Owned: ALL owned lessons (drillable or not) with filters
+            const allSubjects = [...new Set(allOwnedLessons.map(l => l.subject).filter(Boolean))].sort()
+            const allGrades = [...new Set(allOwnedLessons.map(l => l.grade).filter(v => v != null))].sort((a, b) => Number(a) - Number(b))
+            const allDiffs = [...new Set(allOwnedLessons.map(l => l.difficulty).filter(Boolean))].sort()
+            const ownedList = allOwnedLessons.filter(l => {
               if (ownedFilters.subject && l.subject !== ownedFilters.subject) return false
               if (ownedFilters.grade && String(l.grade) !== ownedFilters.grade) return false
               if (ownedFilters.difficulty && l.difficulty !== ownedFilters.difficulty) return false
@@ -813,31 +835,31 @@ function SlateDrillInner() {
               transition: 'all 0.15s',
             })
 
-            // --- Lesson card renderer ---
-            const LessonCard = ({ lesson }) => {
+            // --- Lesson card renderer (drillable lessons) ---
+            const LessonCard = ({ lesson, dateLabel }) => {
               const lk = getLk(lesson)
               const mastered = !!(masteryMap[lk]?.mastered)
-              const masteredAt = masteryMap[lk]?.masteredAt
               const poolSize = buildPool(lesson).length
               const subjectLabel = (lesson.subject || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
               const gradeLabel = lesson.grade ? `Grade ${lesson.grade}` : ''
               const diffLabel = lesson.difficulty ? lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1) : ''
-              const dateLabel = masteredAt ? new Date(masteredAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : ''
+              const drillable = poolSize > 0
               return (
                 <button
-                  onClick={() => selectLesson(lesson)}
+                  onClick={() => drillable ? selectLesson(lesson) : null}
                   style={{
                     background: C.surface,
                     border: `1px solid ${mastered ? C.green : C.border}`,
                     borderRadius: 10,
                     padding: '14px 16px',
                     textAlign: 'left',
-                    cursor: 'pointer',
+                    cursor: drillable ? 'pointer' : 'default',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 12,
                     width: '100%',
+                    opacity: drillable ? 1 : 0.55,
                     transition: 'border-color 0.2s',
                   }}
                 >
@@ -848,13 +870,30 @@ function SlateDrillInner() {
                     </div>
                     <div style={{ color: C.muted, fontSize: 11, letterSpacing: 1 }}>
                       {[subjectLabel, gradeLabel, diffLabel].filter(Boolean).join(' · ')}
-                      {' · '}<span style={{ color: mastered ? C.green : C.accent }}>{poolSize} QUESTIONS</span>
+                      {drillable && <>{' · '}<span style={{ color: mastered ? C.green : C.accent }}>{poolSize} QUESTIONS</span></>}
+                      {!drillable && <span style={{ marginLeft: 4 }}>· NO DRILL QUESTIONS</span>}
                       {mastered && <span style={{ color: C.green, marginLeft: 8 }}>✓ MASTERED</span>}
                       {dateLabel && <span style={{ color: C.muted, marginLeft: 8 }}>{dateLabel}</span>}
                     </div>
                   </div>
-                  <div style={{ color: C.accent, fontWeight: 800, fontSize: 18, flexShrink: 0 }}>▶</div>
+                  {drillable && <div style={{ color: C.accent, fontWeight: 800, fontSize: 18, flexShrink: 0 }}>▶</div>}
                 </button>
+              )
+            }
+
+            // --- Recent row (session + optional lesson metadata) ---
+            const RecentRow = ({ session, lesson }) => {
+              const dateLabel = session.ended_at
+                ? new Date(session.ended_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                : ''
+              if (lesson) return <LessonCard lesson={lesson} dateLabel={dateLabel} />
+              // No lesson metadata (lesson may have been removed) — show raw session info
+              const lk = session.lesson_id || '—'
+              return (
+                <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 16px', opacity: 0.5 }}>
+                  <div style={{ color: C.muted, fontSize: 13 }}>{lk}</div>
+                  {dateLabel && <div style={{ color: C.muted, fontSize: 11, marginTop: 4 }}>{dateLabel}</div>}
+                </div>
               )
             }
 
@@ -877,9 +916,11 @@ function SlateDrillInner() {
                 <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                   <button style={tabStyle(listTab === 'active')} onClick={() => setListTab('active')}>ACTIVE</button>
                   <button style={tabStyle(listTab === 'recent')} onClick={() => setListTab('recent')}>
-                    RECENT {recentList.length > 0 && <span style={{ opacity: 0.7 }}>({recentList.length})</span>}
+                    RECENT{recentList.length > 0 ? ` (${recentList.length})` : ''}
                   </button>
-                  <button style={tabStyle(listTab === 'owned')} onClick={() => setListTab('owned')}>OWNED</button>
+                  <button style={tabStyle(listTab === 'owned')} onClick={() => setListTab('owned')}>
+                    OWNED{allOwnedLessons.length > 0 ? ` (${allOwnedLessons.length})` : ''}
+                  </button>
                 </div>
 
                 {/* Active tab */}
@@ -898,26 +939,25 @@ function SlateDrillInner() {
                   )
                 )}
 
-                {/* Recent tab */}
+                {/* Recent tab — completed Ms. Sonoma sessions, most recent first */}
                 {listTab === 'recent' && (
                   recentList.length === 0 ? (
                     <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>
-                      NO MASTERED LESSONS YET — COMPLETE A DRILL TO SEE RESULTS HERE
+                      NO COMPLETED LESSONS YET — FINISH A LESSON WITH MS. SONOMA TO SEE RESULTS HERE
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
-                        {recentList.length} MASTERED LESSON{recentList.length !== 1 ? 'S' : ''}
+                        {recentList.length} COMPLETED LESSON{recentList.length !== 1 ? 'S' : ''}
                       </div>
-                      {recentList.map((l, i) => <LessonCard key={getLk(l) || i} lesson={l} />)}
+                      {recentList.map((r, i) => <RecentRow key={r.session.id || i} session={r.session} lesson={r.lesson} />)}
                     </div>
                   )
                 )}
 
-                {/* Owned tab */}
+                {/* Owned tab — all owned/activated lessons with filters */}
                 {listTab === 'owned' && (
                   <div>
-                    {/* Filter row */}
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
                       <select
                         value={ownedFilters.subject}
@@ -955,7 +995,7 @@ function SlateDrillInner() {
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
-                          {ownedList.length} OF {availableLessons.length} LESSONS
+                          {ownedList.length} OF {allOwnedLessons.length} OWNED LESSON{allOwnedLessons.length !== 1 ? 'S' : ''}
                         </div>
                         {ownedList.map((l, i) => <LessonCard key={getLk(l) || i} lesson={l} />)}
                       </div>
