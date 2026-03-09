@@ -1117,27 +1117,7 @@ function LessonsPageInner(){
                         {lessonSnapshots[lessonKey] ? 'Continue' : 'Start Lesson'}
                       </button>
 
-                      {/* Mr. Slate Practice button */}
-                      <button
-                        onClick={() => router.push(`/session/slate?lesson=${encodeURIComponent(l.file)}&subject=${encodeURIComponent(subject)}`)}
-                        style={{
-                          padding: '6px 12px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: 8,
-                          background: masteryMap[lessonKey] ? '#f0fdf4' : '#fff',
-                          color: masteryMap[lessonKey] ? '#166534' : '#374151',
-                          fontSize: 13,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 5,
-                        }}
-                        title={masteryMap[lessonKey] ? 'Mastery confirmed — practice again' : 'Practice with Mr. Slate'}
-                      >
-                        🤖 {masteryMap[lessonKey] ? 'Mastered' : 'Practice'}
-                      </button>
+
                     </div>
                   </div>
                 )

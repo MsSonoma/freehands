@@ -1,35 +1,37 @@
-'use client'
+﻿'use client'
 
 /**
- * Mr. Slate — Skills & Practice Coach
+ * Mr. Slate â€” Skills & Practice Coach
  *
  * A quiz-mode drill session. Questions are drawn from the same lesson JSON
  * as Ms. Sonoma (sample, truefalse, multiplechoice, fillintheblank pools).
- * The learner accumulates points (goal: 10) to earn the 🤖 mastery icon.
+ * The learner accumulates points (goal: 10) to earn the ðŸ¤– mastery icon.
  *
  * Rules:
- *   - Correct answer within time limit  → +1 (min 0, max 10)
- *   - Wrong answer                      → -1 (min 0)
- *   - Timeout (15s default)             → ±0
- *   - Reach 10 → mastery confirmed
+ *   - Correct answer within time limit  â†’ +1 (min 0, max 10)
+ *   - Wrong answer                      â†’ -1 (min 0)
+ *   - Timeout (15s default)             â†’ Â±0
+ *   - Reach 10 â†’ mastery confirmed
  *
  * Questions rotate through the full pool without repeats until ~80% have
  * been asked, then the deck reshuffles.
+ *
+ * Lessons are loaded from /api/learner/available-lessons (handles static,
+ * generated, and Supabase-stored lessons uniformly). No URL params required.
  */
 
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { loadLesson } from '@/app/session/v2/services'
-import { isMastered, saveMastery } from '@/app/lib/masteryClient'
+import { useRouter } from 'next/navigation'
+import { getMasteryForLearner, saveMastery } from '@/app/lib/masteryClient'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const QUESTION_SECONDS = 15
 const SCORE_GOAL = 10
 const FEEDBACK_DELAY_MS = 2000
 const RESHUFFLE_THRESHOLD = 0.2 // reshuffle when only 20% of deck remains
 
-// ─── Color palette (dark robot theme) ────────────────────────────────────────
+// â”€â”€â”€ Color palette (dark robot theme) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const C = {
   bg: '#0d1117',
@@ -48,7 +50,7 @@ const C = {
   mono: '"ui-monospace","Cascadia Code","Source Code Pro",monospace',
 }
 
-// ─── Question pool helpers ────────────────────────────────────────────────────
+// â”€â”€â”€ Question pool helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function buildPool(lessonData) {
   const pool = []
@@ -84,7 +86,7 @@ function shuffleArr(arr) {
   return a
 }
 
-// ─── Answer evaluation ────────────────────────────────────────────────────────
+// â”€â”€â”€ Answer evaluation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function checkAnswer(q, raw) {
   if (!q) return false
@@ -106,7 +108,7 @@ function getCorrectText(q) {
   return (q.expectedAny || [])[0] || ''
 }
 
-// ─── Robot dialogue ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Robot dialogue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const pick = arr => arr[Math.floor(Math.random() * arr.length)]
 
@@ -134,7 +136,7 @@ const TIMEOUT_MSGS = [
   'TIMEOUT RECORDED.',
 ]
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function TimerBar({ secondsLeft, total = QUESTION_SECONDS }) {
   const pct = Math.max(0, Math.min(100, (secondsLeft / total) * 100))
@@ -190,7 +192,7 @@ function LoadingDots() {
   )
 }
 
-// ─── Style helpers ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Style helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const btnBase = {
   fontFamily: C.mono,
@@ -259,7 +261,7 @@ const tfBtnBase = {
   letterSpacing: 2,
 }
 
-// ─── TTS helper ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ TTS helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function playSlateAudio(text, audioEl) {
   if (!text || !audioEl) return
@@ -278,22 +280,16 @@ async function playSlateAudio(text, audioEl) {
   } catch {}
 }
 
-// ─── Main inner component ─────────────────────────────────────────────────────
+// â”€â”€â”€ Main inner component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SlateDrillInner() {
-  const searchParams = useSearchParams()
   const router = useRouter()
 
-  const lessonParam = searchParams?.get('lesson') || ''
-  const subjectParam = searchParams?.get('subject') || 'math'
-  const lessonFileBase = lessonParam.replace(/\.json$/i, '')
-  // Canonical key matches the format used in learn/lessons page and masteryClient
-  const lessonKey = lessonParam ? `${subjectParam}/${lessonFileBase}.json` : ''
-
-  // ── Page state ──────────────────────────────────────────────────────────────
-  // Phases: loading | error | no-lesson | ready | asking | feedback | won
+  // â”€â”€ Page state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Phases: loading | list | ready | asking | feedback | won | error
   const [pagePhase, setPagePhase] = useState('loading')
-  const [lessonData, setLessonData] = useState(null)
+  const [availableLessons, setAvailableLessons] = useState([])
+  const [lessonData, setLessonData] = useState(null)  // the chosen lesson object from the API
   const [pool, setPool] = useState([])
   const [score, setScore] = useState(0)
   const [qCount, setQCount] = useState(0)
@@ -303,10 +299,10 @@ function SlateDrillInner() {
   const [lastResult, setLastResult] = useState(null)
   const [soundOn, setSoundOn] = useState(true)
   const [learnerId, setLearnerId] = useState(null)
-  const [mastered, setMastered] = useState(false)
+  const [masteryMap, setMasteryMap] = useState({})
   const [errorMsg, setErrorMsg] = useState('')
 
-  // ── Refs for stale-closure-free use in timers/callbacks ─────────────────────
+  // â”€â”€ Refs for stale-closure-free use in timers/callbacks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const phaseRef = useRef('loading')
   const currentQRef = useRef(null)
   const deckRef = useRef([])
@@ -325,59 +321,72 @@ function SlateDrillInner() {
   // Keep fast refs in sync
   useEffect(() => { soundRef.current = soundOn }, [soundOn])
   useEffect(() => { learnerIdRef.current = learnerId }, [learnerId])
-  useEffect(() => { lessonKeyRef.current = lessonKey }, [lessonKey])
 
-  // ── Load learner ID + initial mastery check ──────────────────────────────────
+  // â”€â”€ Load learner + mastery + available lessons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (typeof window === 'undefined') return
     const id = localStorage.getItem('learner_id')
     setLearnerId(id)
-    if (id && lessonKey) setMastered(isMastered(id, lessonKey))
-  }, [lessonKey])
-
-  // ── Load lesson data from public/lessons ────────────────────────────────────
-  useEffect(() => {
-    if (!lessonParam) {
-      phaseRef.current = 'no-lesson'
-      setPagePhase('no-lesson')
-      return
+    if (id) {
+      const mm = getMasteryForLearner(id)
+      setMasteryMap(mm)
+      learnerIdRef.current = id
+      if (!id || id === 'demo') {
+        phaseRef.current = 'list'
+        setPagePhase('list')
+        return
+      }
+      fetch(`/api/learner/available-lessons?learner_id=${encodeURIComponent(id)}`)
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load lessons')))
+        .then(({ lessons }) => {
+          // Only list lessons that have at least one drill question
+          const drillable = (lessons || []).filter(l => {
+            const p = buildPool(l)
+            return p.length > 0
+          })
+          setAvailableLessons(drillable)
+          phaseRef.current = 'list'
+          setPagePhase('list')
+        })
+        .catch(e => {
+          setErrorMsg(e?.message || 'Could not load lessons.')
+          phaseRef.current = 'error'
+          setPagePhase('error')
+        })
+    } else {
+      phaseRef.current = 'list'
+      setPagePhase('list')
     }
-    phaseRef.current = 'loading'
-    setPagePhase('loading')
+  }, [])
 
-    loadLesson(lessonFileBase, subjectParam)
-      .then(data => {
-        setLessonData(data)
-        const p = buildPool(data)
-        poolRef.current = p
-        setPool(p)
-        const d = shuffleArr(p)
-        deckRef.current = d
-        deckIdxRef.current = 0
-        phaseRef.current = 'ready'
-        setPagePhase('ready')
-      })
-      .catch(e => {
-        setErrorMsg(e?.message || 'Failed to load lesson data.')
-        phaseRef.current = 'error'
-        setPagePhase('error')
-      })
-  }, [lessonParam, subjectParam, lessonFileBase])
-
-  // ── Cleanup ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Cleanup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => () => {
     clearInterval(timerInterval.current)
     clearTimeout(feedbackTimeout.current)
     if (audioEl.current) { audioEl.current.pause(); audioEl.current.src = '' }
   }, [])
 
-  // ── Advance the deck, reshuffling when 80%+ has been used ───────────────────
+  // â”€â”€ Select a lesson from the list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const selectLesson = useCallback((lesson) => {
+    const p = buildPool(lesson)
+    poolRef.current = p
+    setPool(p)
+    const d = shuffleArr(p)
+    deckRef.current = d
+    deckIdxRef.current = 0
+    const lk = lesson.lessonKey || `${lesson.subject || 'general'}/${lesson.file || ''}`
+    lessonKeyRef.current = lk
+    setLessonData(lesson)
+    phaseRef.current = 'ready'
+    setPagePhase('ready')
+  }, [])
+
+  // â”€â”€ Advance the deck, reshuffling when 80%+ has been used â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const advanceDeck = useCallback(() => {
     const cur = deckRef.current
     const idx = deckIdxRef.current
     const p = poolRef.current
     if (!p.length) return null
-    // Reshuffle when near the end of the deck
     if (idx >= cur.length - Math.max(1, Math.floor(cur.length * RESHUFFLE_THRESHOLD))) {
       const newDeck = shuffleArr(p)
       deckRef.current = newDeck
@@ -388,7 +397,7 @@ function SlateDrillInner() {
     return cur[idx]
   }, [])
 
-  // ── Display a question ──────────────────────────────────────────────────────
+  // â”€â”€ Display a question â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const showQuestion = useCallback((q) => {
     currentQRef.current = q
     setCurrentQ(q)
@@ -401,7 +410,7 @@ function SlateDrillInner() {
     if (soundRef.current) playSlateAudio(q.question, audioEl.current)
   }, [])
 
-  // ── Start / restart the drill ───────────────────────────────────────────────
+  // â”€â”€ Start / restart the drill â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const startDrill = useCallback(() => {
     clearInterval(timerInterval.current)
     clearTimeout(feedbackTimeout.current)
@@ -415,7 +424,7 @@ function SlateDrillInner() {
     if (q) showQuestion(q)
   }, [advanceDeck, showQuestion])
 
-  // ── Handle answer result (correct / wrong / timeout) ────────────────────────
+  // â”€â”€ Handle answer result (correct / wrong / timeout) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleResult = useCallback((correct, timeout = false) => {
     clearInterval(timerInterval.current)
     const q = currentQRef.current
@@ -438,7 +447,10 @@ function SlateDrillInner() {
       feedbackTimeout.current = setTimeout(() => {
         const lid = learnerIdRef.current
         const lk = lessonKeyRef.current
-        if (lid && lk) { saveMastery(lid, lk); setMastered(true) }
+        if (lid && lk) {
+          saveMastery(lid, lk)
+          setMasteryMap(getMasteryForLearner(lid))
+        }
         phaseRef.current = 'won'
         setPagePhase('won')
       }, FEEDBACK_DELAY_MS)
@@ -451,7 +463,7 @@ function SlateDrillInner() {
     }
   }, [advanceDeck, showQuestion])
 
-  // ── Countdown timer ──────────────────────────────────────────────────────────
+  // â”€â”€ Countdown timer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (pagePhase !== 'asking') return
     clearInterval(timerInterval.current)
@@ -468,13 +480,13 @@ function SlateDrillInner() {
     return () => clearInterval(timerInterval.current)
   }, [pagePhase, currentQ, handleResult])
 
-  // ── Text answer submission ───────────────────────────────────────────────────
+  // â”€â”€ Text answer submission â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const onTextSubmit = useCallback(() => {
     if (phaseRef.current !== 'asking') return
     handleResult(checkAnswer(currentQRef.current, userAnswer), false)
   }, [userAnswer, handleResult])
 
-  // ── Choice click (MC / TF) ───────────────────────────────────────────────────
+  // â”€â”€ Choice click (MC / TF) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const onChoiceClick = useCallback((value) => {
     if (phaseRef.current !== 'asking') return
     handleResult(checkAnswer(currentQRef.current, String(value)), false)
@@ -482,23 +494,36 @@ function SlateDrillInner() {
 
   const onKeyDown = useCallback(e => { if (e.key === 'Enter') onTextSubmit() }, [onTextSubmit])
 
+  const backToList = useCallback(() => {
+    clearInterval(timerInterval.current)
+    clearTimeout(feedbackTimeout.current)
+    setScore(0)
+    scoreRef.current = 0
+    setQCount(0)
+    setCurrentQ(null)
+    setLessonData(null)
+    lessonKeyRef.current = ''
+    phaseRef.current = 'list'
+    setPagePhase('list')
+  }, [])
+
   const exitToLessons = useCallback(() => {
     clearInterval(timerInterval.current)
     clearTimeout(feedbackTimeout.current)
     router.push('/learn/lessons')
   }, [router])
 
-  // ── Derived display values ────────────────────────────────────────────────────
-  const lessonTitle = lessonData?.title || lessonFileBase.replace(/_/g, ' ') || 'Lesson'
+  // â”€â”€ Derived display values â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const lessonTitle = lessonData?.title || ''
 
-  // ════════════════════════════════════════════════════════════════════════════
-  //  RENDER — Loading
-  // ════════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  //  RENDER â€” Loading
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   if (pagePhase === 'loading') {
     return (
       <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 56, marginBottom: 16 }}>🤖</div>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>ðŸ¤–</div>
           <div style={{ fontSize: 13, letterSpacing: 2, marginBottom: 20 }}>INITIALIZING DRILL SYSTEM...</div>
           <LoadingDots />
         </div>
@@ -506,52 +531,119 @@ function SlateDrillInner() {
     )
   }
 
-  // ════════════════════════════════════════════════════════════════════════════
-  //  RENDER — Error
-  // ════════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  //  RENDER â€” Error
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   if (pagePhase === 'error') {
     return (
       <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ textAlign: 'center', maxWidth: 400 }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>⚠️</div>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>âš ï¸</div>
           <div style={{ color: C.red, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>SYSTEM ERROR</div>
           <div style={{ color: C.muted, fontSize: 13, marginBottom: 24 }}>{errorMsg}</div>
-          <button onClick={exitToLessons} style={ghostBtn}>← RETURN TO LESSONS</button>
+          <button onClick={exitToLessons} style={ghostBtn}>â† RETURN TO LESSONS</button>
         </div>
       </div>
     )
   }
 
-  // ════════════════════════════════════════════════════════════════════════════
-  //  RENDER — No lesson selected
-  // ════════════════════════════════════════════════════════════════════════════
-  if (pagePhase === 'no-lesson') {
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  //  RENDER â€” Lesson list
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  if (pagePhase === 'list') {
     return (
-      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div style={{ maxWidth: 460, width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 40, textAlign: 'center' }}>
-          <div style={{ fontSize: 64, marginBottom: 16 }}>🤖</div>
-          <div style={{ color: C.accent, fontWeight: 800, fontSize: 20, letterSpacing: 3, marginBottom: 4 }}>MR. SLATE V1</div>
-          <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 24 }}>SKILLS &amp; PRACTICE COACH</div>
-          <div style={{ color: C.muted, fontSize: 14, lineHeight: 1.7, marginBottom: 28 }}>
-            No lesson loaded. Go to your lessons page, choose a lesson and tap the{' '}
-            <span style={{ color: C.accent, fontWeight: 700 }}>🤖 Practice</span> button to start a drill.
+      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div style={{
+          background: C.surface,
+          borderBottom: `1px solid ${C.border}`,
+          padding: '14px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 26 }}>ðŸ¤–</span>
+            <div>
+              <div style={{ color: C.accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>MR. SLATE V1</div>
+              <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2 }}>SKILLS &amp; PRACTICE COACH</div>
+            </div>
           </div>
-          <button onClick={() => router.push('/learn/lessons')} style={primaryBtn}>
-            GO TO LESSONS
-          </button>
+          <button onClick={exitToLessons} style={ghostBtn}>â† BACK</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, padding: '24px 16px', maxWidth: 680, margin: '0 auto', width: '100%' }}>
+          {availableLessons.length === 0 ? (
+            <div style={{ textAlign: 'center', marginTop: 60 }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>ðŸ“­</div>
+              <div style={{ color: C.muted, fontSize: 14, letterSpacing: 1 }}>NO DRILL LESSONS AVAILABLE</div>
+              <div style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>Complete a lesson with Ms. Sonoma first, then come back to practice.</div>
+            </div>
+          ) : (
+            <>
+              <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 16 }}>
+                SELECT A LESSON TO DRILL â€” {availableLessons.length} AVAILABLE
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {availableLessons.map((lesson, i) => {
+                  const lk = lesson.lessonKey || `${lesson.subject || 'general'}/${lesson.file || ''}`
+                  const mastered = !!(masteryMap[lk]?.mastered)
+                  const poolSize = buildPool(lesson).length
+                  const subjectLabel = (lesson.subject || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+                  const gradeLabel = lesson.grade ? `Grade ${lesson.grade}` : ''
+                  const diffLabel = lesson.difficulty ? lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1) : ''
+                  return (
+                    <button
+                      key={lk || i}
+                      onClick={() => selectLesson(lesson)}
+                      style={{
+                        background: C.surface,
+                        border: `1px solid ${mastered ? C.green : C.border}`,
+                        borderRadius: 10,
+                        padding: '14px 16px',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        transition: 'border-color 0.2s',
+                      }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ color: C.text, fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
+                          {mastered && <span style={{ color: C.green, marginRight: 6 }}>ðŸ¤–</span>}
+                          {lesson.title || lk}
+                        </div>
+                        <div style={{ color: C.muted, fontSize: 11, letterSpacing: 1 }}>
+                          {[subjectLabel, gradeLabel, diffLabel].filter(Boolean).join(' Â· ')}
+                          {' Â· '}<span style={{ color: mastered ? C.green : C.accent }}>{poolSize} QUESTIONS</span>
+                          {mastered && <span style={{ color: C.green, marginLeft: 8 }}>âœ“ MASTERED</span>}
+                        </div>
+                      </div>
+                      <div style={{ color: C.accent, fontWeight: 800, fontSize: 18, flexShrink: 0 }}>â–¶</div>
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </div>
       </div>
     )
   }
 
-  // ════════════════════════════════════════════════════════════════════════════
-  //  RENDER — Ready (pre-drill intro screen)
-  // ════════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  //  RENDER â€” Ready (pre-drill intro screen)
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   if (pagePhase === 'ready') {
+    const mastered = !!(masteryMap[lessonKeyRef.current]?.mastered)
     return (
       <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ maxWidth: 500, width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 40, textAlign: 'center' }}>
-          <div style={{ fontSize: 80, marginBottom: 8, lineHeight: 1 }}>🤖</div>
+          <div style={{ fontSize: 80, marginBottom: 8, lineHeight: 1 }}>ðŸ¤–</div>
           <div style={{ color: C.accent, fontWeight: 800, fontSize: 22, letterSpacing: 3, marginBottom: 2 }}>MR. SLATE V1</div>
           <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 28 }}>SKILLS &amp; PRACTICE COACH</div>
 
@@ -565,7 +657,7 @@ function SlateDrillInner() {
           {/* Previous mastery badge */}
           {mastered && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: C.greenDim, border: `1px solid ${C.green}`, borderRadius: 8, padding: '10px 16px', marginBottom: 20, color: C.green }}>
-              <span style={{ fontSize: 18 }}>🤖</span>
+              <span style={{ fontSize: 18 }}>ðŸ¤–</span>
               <span style={{ fontWeight: 700, fontSize: 12, letterSpacing: 1 }}>MASTERY PREVIOUSLY CONFIRMED</span>
             </div>
           )}
@@ -574,18 +666,17 @@ function SlateDrillInner() {
           <div style={{ color: C.muted, fontSize: 12, lineHeight: 1.9, marginBottom: 28, textAlign: 'left', background: C.bg, borderRadius: 8, padding: '12px 16px', border: `1px solid ${C.border}` }}>
             <div style={{ color: C.text, fontWeight: 700, marginBottom: 6, letterSpacing: 1 }}>RULES:</div>
             <div>Goal: reach <span style={{ color: C.text, fontWeight: 700 }}>10 points</span></div>
-            <div>Correct within timer → <span style={{ color: C.green, fontWeight: 700 }}>+1</span></div>
-            <div>Wrong answer → <span style={{ color: C.red, fontWeight: 700 }}>−1</span> (minimum 0)</div>
-            <div>Timeout ({QUESTION_SECONDS}s) → <span style={{ color: C.yellow, fontWeight: 700 }}>±0</span></div>
-            <div style={{ marginTop: 4, color: C.muted }}>Questions rotate without repeating until ~80% of the pool is exhausted, then reshuffle.</div>
+            <div>Correct within timer â†’ <span style={{ color: C.green, fontWeight: 700 }}>+1</span></div>
+            <div>Wrong answer â†’ <span style={{ color: C.red, fontWeight: 700 }}>âˆ’1</span> (minimum 0)</div>
+            <div>Timeout ({QUESTION_SECONDS}s) â†’ <span style={{ color: C.yellow, fontWeight: 700 }}>Â±0</span></div>
           </div>
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={startDrill} style={primaryBtn}>
-              ▶ COMMENCE DRILL
+              â–¶ COMMENCE DRILL
             </button>
-            <button onClick={exitToLessons} style={ghostBtn}>
-              ← BACK
+            <button onClick={backToList} style={ghostBtn}>
+              â† LESSON LIST
             </button>
           </div>
         </div>
@@ -593,14 +684,14 @@ function SlateDrillInner() {
     )
   }
 
-  // ════════════════════════════════════════════════════════════════════════════
-  //  RENDER — Won
-  // ════════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  //  RENDER â€” Won
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   if (pagePhase === 'won') {
     return (
       <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ maxWidth: 540, width: '100%', textAlign: 'center' }}>
-          <div style={{ fontSize: 96, lineHeight: 1, marginBottom: 12 }}>🤖</div>
+          <div style={{ fontSize: 96, lineHeight: 1, marginBottom: 12 }}>ðŸ¤–</div>
           <div style={{ color: C.green, fontWeight: 900, fontSize: 26, letterSpacing: 4, marginBottom: 4 }}>
             MASTERY CONFIRMED
           </div>
@@ -613,27 +704,26 @@ function SlateDrillInner() {
           </div>
 
           <div style={{ color: C.muted, fontSize: 12, letterSpacing: 1, marginBottom: 28 }}>
-            🤖 MASTERY ICON WILL APPEAR ON YOUR LESSON CARD.
+            ðŸ¤– MASTERY ICON WILL APPEAR ON YOUR LESSON CARD.
           </div>
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={startDrill} style={ghostBtn}>DRILL AGAIN</button>
-            <button onClick={exitToLessons} style={primaryBtn}>← BACK TO LESSONS</button>
+            <button onClick={backToList} style={ghostBtn}>LESSON LIST</button>
+            <button onClick={exitToLessons} style={primaryBtn}>â† BACK TO LESSONS</button>
           </div>
         </div>
-        <style>{`@keyframes slatewin { 0%,100%{transform:scale(1)} 30%{transform:scale(1.15)} }`}</style>
       </div>
     )
   }
 
-  // ════════════════════════════════════════════════════════════════════════════
-  //  RENDER — Asking / Feedback (main drill screen)
-  // ════════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  //  RENDER â€” Asking / Feedback (main drill screen)
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   const q = currentQ
   const isAsking = pagePhase === 'asking'
   const isFeedback = pagePhase === 'feedback'
 
-  // Feedback border color
   const borderColor = isFeedback && lastResult
     ? (lastResult.correct ? C.green : lastResult.timeout ? C.yellow : C.red)
     : C.border
@@ -641,7 +731,7 @@ function SlateDrillInner() {
   return (
     <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── Header bar ───────────────────────────────────────────────────────── */}
+      {/* â”€â”€ Header bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div style={{
         background: C.surface,
         borderBottom: `1px solid ${C.border}`,
@@ -653,7 +743,7 @@ function SlateDrillInner() {
         flexWrap: 'wrap',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <span style={{ fontSize: 22 }}>🤖</span>
+          <span style={{ fontSize: 22 }}>ðŸ¤–</span>
           <div style={{ minWidth: 0 }}>
             <div style={{ color: C.accent, fontWeight: 800, fontSize: 13, letterSpacing: 2 }}>MR. SLATE</div>
             <div style={{ color: C.muted, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '22ch' }}>{lessonTitle}</div>
@@ -668,20 +758,20 @@ function SlateDrillInner() {
             title={soundOn ? 'Mute voice' : 'Unmute voice'}
             style={soundBtn}
           >
-            {soundOn ? '🔊' : '🔇'}
+            {soundOn ? 'ðŸ”Š' : 'ðŸ”‡'}
           </button>
+          <button onClick={backToList} style={ghostBtn}>LIST</button>
           <button onClick={exitToLessons} style={dangerBtn}>EXIT</button>
         </div>
       </div>
 
-      {/* ── Main drill area ───────────────────────────────────────────────────── */}
+      {/* â”€â”€ Main drill area â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
         <div style={{ width: '100%', maxWidth: 600 }}>
 
           {/* Robot avatar */}
           <div style={{ textAlign: 'center', marginBottom: 20 }}>
-            {/* Placeholder — swap with looping <video> when Mr. Slate video asset is ready */}
-            <div style={{ fontSize: 72, lineHeight: 1, userSelect: 'none' }}>🤖</div>
+            <div style={{ fontSize: 72, lineHeight: 1, userSelect: 'none' }}>ðŸ¤–</div>
           </div>
 
           {/* Question card */}
@@ -695,7 +785,7 @@ function SlateDrillInner() {
             }}>
               {/* Query label */}
               <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2, marginBottom: 14 }}>
-                QUERY #{qCount + (isAsking ? 1 : 0)} · {q.type.toUpperCase()}
+                QUERY #{qCount + (isAsking ? 1 : 0)} Â· {q.type.toUpperCase()}
               </div>
 
               {/* Question text */}
@@ -703,10 +793,10 @@ function SlateDrillInner() {
                 {q.question}
               </div>
 
-              {/* Countdown timer — only while asking */}
+              {/* Countdown timer â€” only while asking */}
               {isAsking && <TimerBar secondsLeft={secondsLeft} total={QUESTION_SECONDS} />}
 
-              {/* ── Multiple choice ─────────────────────────────────────────── */}
+              {/* â”€â”€ Multiple choice â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
               {isAsking && q.type === 'multiplechoice' && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8, marginTop: 16 }}>
                   {(q.choices || []).map((choice, i) => (
@@ -724,7 +814,7 @@ function SlateDrillInner() {
                 </div>
               )}
 
-              {/* ── True / False ─────────────────────────────────────────────── */}
+              {/* â”€â”€ True / False â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
               {isAsking && q.type === 'truefalse' && (
                 <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
                   <button
@@ -742,7 +832,7 @@ function SlateDrillInner() {
                 </div>
               )}
 
-              {/* ── Short answer / Fill in the blank ─────────────────────────── */}
+              {/* â”€â”€ Short answer / Fill in the blank â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
               {isAsking && (q.type === 'shortanswer' || q.type === 'fillintheblank') && (
                 <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                   <input
@@ -773,7 +863,7 @@ function SlateDrillInner() {
                 </div>
               )}
 
-              {/* ── Feedback panel ────────────────────────────────────────────── */}
+              {/* â”€â”€ Feedback panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
               {isFeedback && lastResult && (
                 <div style={{
                   marginTop: 20,
@@ -788,7 +878,7 @@ function SlateDrillInner() {
                     letterSpacing: 1,
                     color: lastResult.correct ? C.green : lastResult.timeout ? C.yellow : C.red,
                   }}>
-                    {lastResult.correct ? '✓ ' : lastResult.timeout ? '⏰ ' : '✗ '}
+                    {lastResult.correct ? 'âœ“ ' : lastResult.timeout ? 'â° ' : 'âœ— '}
                     {lastResult.text}
                   </div>
                   {lastResult.correctAnswer && (
@@ -809,7 +899,7 @@ function SlateDrillInner() {
   )
 }
 
-// ─── Page root with Suspense ──────────────────────────────────────────────────
+// â”€â”€â”€ Page root with Suspense â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function SlateDrillPage() {
   return (
@@ -822,3 +912,4 @@ export default function SlateDrillPage() {
     </Suspense>
   )
 }
+
