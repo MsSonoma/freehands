@@ -155,7 +155,8 @@ const TIMEOUT_MSGS = [
 
 // --- Sub-components ----------------------------------------------------------
 
-const SlateVideo = forwardRef(function SlateVideo({ size = 180 }, ref) {
+const SlateVideo = forwardRef(function SlateVideo({ size = 180, style: extraStyle }, ref) {
+  const sizeStyle = extraStyle ? {} : { width: size, height: size }
   return (
     <video
       ref={ref}
@@ -163,7 +164,7 @@ const SlateVideo = forwardRef(function SlateVideo({ size = 180 }, ref) {
       loop
       muted
       playsInline
-      style={{ width: size, height: size, objectFit: 'contain', display: 'block', margin: '0 auto' }}
+      style={{ objectFit: 'contain', display: 'block', margin: '0 auto', ...sizeStyle, ...extraStyle }}
     />
   )
 })
@@ -825,7 +826,7 @@ function SlateDrillInner() {
     : C.border
 
   return (
-    <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ fontFamily: C.mono, background: C.bg, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header bar */}
       <div style={{
@@ -862,15 +863,15 @@ function SlateDrillInner() {
       </div>
 
       {/* Main drill area */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '24px 16px' }}>
-        <div style={{ width: '100%', maxWidth: 600 }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-          {/* Mr. Slate video avatar */}
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <SlateVideo ref={slateVideoRef} size={120} />
-          </div>
+        {/* Mr. Slate video — expands to fill all space above the card */}
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 16px 0' }}>
+          <SlateVideo ref={slateVideoRef} style={{ width: '100%', height: '100%', objectFit: 'contain', margin: 0 }} />
+        </div>
 
-          {/* Question card */}
+        {/* Question card — anchored to bottom, scrolls internally if very tall */}
+        <div style={{ flexShrink: 0, overflowY: 'auto', maxHeight: '60vh', padding: '12px 16px 20px', width: '100%', maxWidth: 632, margin: '0 auto', boxSizing: 'border-box' }}>
           {q && (
             <div style={{
               background: C.surface,
