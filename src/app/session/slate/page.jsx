@@ -530,10 +530,10 @@ function SlateDrillInner() {
   // ===========================================================================
   if (pagePhase === 'loading') {
     return (
-      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted }}>
+      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ marginBottom: 20 }}>
-            <SlateVideo size={140} />
+          <div style={{ marginBottom: 16 }}>
+            <SlateVideo size={100} />
           </div>
           <div style={{ fontSize: 13, letterSpacing: 2, marginBottom: 20 }}>INITIALIZING DRILL SYSTEM...</div>
           <LoadingDots />
@@ -654,10 +654,10 @@ function SlateDrillInner() {
   if (pagePhase === 'ready') {
     const mastered = !!(masteryMap[lessonKeyRef.current]?.mastered)
     return (
-      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div style={{ maxWidth: 500, width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 40, textAlign: 'center' }}>
+      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+        <div style={{ maxWidth: 500, width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 'clamp(20px, 5vw, 40px)', textAlign: 'center' }}>
           <div style={{ marginBottom: 16 }}>
-            <SlateVideo size={180} />
+            <SlateVideo size={120} />
           </div>
           <div style={{ color: C.accent, fontWeight: 800, fontSize: 22, letterSpacing: 3, marginBottom: 2 }}>MR. SLATE V1</div>
           <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 28 }}>SKILLS &amp; PRACTICE COACH</div>
@@ -704,10 +704,10 @@ function SlateDrillInner() {
   // ===========================================================================
   if (pagePhase === 'won') {
     return (
-      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
         <div style={{ maxWidth: 540, width: '100%', textAlign: 'center' }}>
           <div style={{ marginBottom: 12 }}>
-            <SlateVideo size={180} />
+            <SlateVideo size={120} />
           </div>
           <div style={{ color: C.green, fontWeight: 900, fontSize: 26, letterSpacing: 4, marginBottom: 4 }}>
             MASTERY CONFIRMED
@@ -783,12 +783,12 @@ function SlateDrillInner() {
       </div>
 
       {/* Main drill area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '24px 16px' }}>
         <div style={{ width: '100%', maxWidth: 600 }}>
 
           {/* Mr. Slate video avatar */}
-          <div style={{ textAlign: 'center', marginBottom: 20 }}>
-            <SlateVideo size={180} />
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <SlateVideo size={120} />
           </div>
 
           {/* Question card */}
