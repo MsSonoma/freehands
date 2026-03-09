@@ -42,8 +42,8 @@ const DEFAULT_SLATE_SETTINGS = {
 const SETTINGS_CONFIG = [
   { label: 'SCORE GOAL',        key: 'scoreGoal',    min: 3,  max: 30,  fmt: v => `${v} pts` },
   { label: 'CORRECT ANSWER',    key: 'correctPts',   min: 1,  max: 5,   fmt: v => `+${v} pt${v !== 1 ? 's' : ''}` },
-  { label: 'WRONG ANSWER',      key: 'wrongPts',     min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u22121${v} pt${v !== 1 ? 's' : ''}` },
-  { label: 'TIMEOUT PENALTY',   key: 'timeoutPts',   min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u22121${v} pt${v !== 1 ? 's' : ''}` },
+  { label: 'WRONG ANSWER',      key: 'wrongPts',     min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u2212${v} pt${v !== 1 ? 's' : ''}` },
+  { label: 'TIMEOUT PENALTY',   key: 'timeoutPts',   min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u2212${v} pt${v !== 1 ? 's' : ''}` },
   { label: 'TIME PER QUESTION', key: 'questionSecs', min: 5,  max: 120, fmt: v => `${v}s` },
 ]
 const SLATE_VIDEO_SRC = '/media/Mr-%20Slate%20Loop.mp4'
