@@ -861,7 +861,7 @@ function SlateDrillInner() {
   // ===========================================================================
   if (pagePhase === 'list') {
     return (
-      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ fontFamily: C.mono, background: C.bg, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <div style={{
           background: C.surface,
@@ -883,7 +883,7 @@ function SlateDrillInner() {
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, padding: '24px 16px', maxWidth: 680, margin: '0 auto', width: '100%' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 16px', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
           {availableLessons.length === 0 && allOwnedLessons.length === 0 ? (
             <div style={{ textAlign: 'center', marginTop: 60 }}>
               <div style={{ marginBottom: 16 }}>
