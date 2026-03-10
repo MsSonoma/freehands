@@ -24,7 +24,17 @@
 2026-02-27T17:39:00Z | Fix: quota false-positives for premium/pro. Recon prompt: "Quota hit when generating lessons (calendar + lesson generator) even though account is premium; gating other accounts may have affected entitlement." Updated `/api/lessons/quota` to return `allowed` and updated `/api/usage/check-lesson-quota` to use `plan_tier` + `lessonsPerDay`; generator now computes allowance robustly. See `sidekick_pack.md`.
 
 # Cohere Investigations Changelog
-## 2026-03-09 — slate: configurable drill settings overlay + per-learner Supabase save
+## 2025-01 — Mr. Slate: Recent/Owned tabs show greyed rows and only 2 lessons
+- **Recon prompt**: "Recent tab shows grey unclickable rows and Owned only shows two active lessons in Mr. Slate drill page"
+- **Root cause**: `allOwnedLessons` = currently approved lessons (≤2); session history references many more lesson_ids not in that set → Recent rows get `lesson: undefined` → grey; Owned constrained to same 2.
+- **Fix**:
+  1. Created `/api/lessons/meta/route.js` — POST `{keys: string[]}` → reads `public/lessons/{subject}/{file}` and returns lesson data for up to 300 keys (stock subjects only; skips missing files silently).
+  2. Added `historyLessons` state (`useState({})`) in slate/page.jsx — map of lessonKey→lessonData for sessions not in `allOwnedLessons`.
+  3. Init effect: after loading history, collects lesson_ids not in approved set and fetches `/api/lessons/meta`; stores result in `historyLessons`.
+  4. Tab render block: replaced `ownedByKey = new Map(allOwnedLessons...)` with `mergedMap` that merges `allOwnedLessons` + `historyLessons`; `recentList` and `ownedList` now derive from `mergedMap` so all cards are real and clickable.
+  5. OWNED tab count label updated from `allOwnedLessons.length` → `mergedMap.size`.
+- **Files**: `src/app/session/slate/page.jsx`, `src/app/api/lessons/meta/route.js` (new)
+- **Build**: ✓ clean## 2026-03-09 — slate: configurable drill settings overlay + per-learner Supabase save
 - Prompt: "make clicking on this box open an overlay where all of these stats can be changed and make the changes reflect from the variables. This will also have to be saved to the supabase per learner."
 - New: `src/app/api/learner/slate-settings/route.js` (GET + PATCH, service-role, sanitizes ranges)
 - New: `scripts/add-slate-settings-column.sql` (ADD COLUMN IF NOT EXISTS slate_settings JSONB)

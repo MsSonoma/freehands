@@ -407,6 +407,7 @@ function SlateDrillInner() {
   const [ownedFilters, setOwnedFilters] = useState({ subject: '', grade: '', difficulty: '' })
   const [allOwnedLessons, setAllOwnedLessons] = useState([])
   const [recentSessions, setRecentSessions] = useState([])
+  const [historyLessons, setHistoryLessons] = useState({})
   const [listError, setListError] = useState('')
   const [settings, setSettings] = useState(DEFAULT_SLATE_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -473,7 +474,6 @@ function SlateDrillInner() {
           if (historyRes?.sessions) {
             const completed = historyRes.sessions
               .filter(s => s.status === 'completed' && s.lesson_id && s.ended_at)
-            // Deduplicate by lesson_id keeping most-recent
             const seen = new Map()
             for (const s of completed) {
               const existing = seen.get(s.lesson_id)
@@ -482,6 +482,24 @@ function SlateDrillInner() {
               }
             }
             setRecentSessions([...seen.values()].sort((a, b) => new Date(b.ended_at) - new Date(a.ended_at)))
+
+            // Fetch metadata for lesson_ids not already in approved lessons
+            const approvedKeySet = new Set((lessons || []).map(l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`)
+            )
+            const missingKeys = [...seen.keys()].filter(k => !approvedKeySet.has(k))
+            if (missingKeys.length) {
+              fetch('/api/lessons/meta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keys: missingKeys }),
+              }).then(r => r.ok ? r.json() : null).then(res => {
+                if (res?.lessons?.length) {
+                  const map = {}
+                  for (const l of res.lessons) map[l.lessonKey] = l
+                  setHistoryLessons(map)
+                }
+              }).catch(() => {})
+            }
           }
           phaseRef.current = 'list'
           setPagePhase('list')
@@ -815,21 +833,22 @@ function SlateDrillInner() {
             // --- Derived lists for each tab ---
             const getLk = l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`
 
-            // Active: drillable lessons not yet Slate-mastered
+            // Merge approved lessons + history-fetched metadata into one map
+            const mergedMap = new Map(allOwnedLessons.map(l => [getLk(l), l]))
+            Object.entries(historyLessons).forEach(([k, l]) => { if (!mergedMap.has(k)) mergedMap.set(k, l) })
+
+            // Active: drillable lessons from approved set, not yet Slate-mastered
             const activeList = availableLessons.filter(l => !masteryMap[getLk(l)]?.mastered)
 
-            // Recent: sessions completed in Ms. Sonoma, joined to allOwnedLessons for metadata
-            const ownedByKey = new Map(allOwnedLessons.map(l => [getLk(l), l]))
-            const recentList = recentSessions.map(s => {
-              const lesson = ownedByKey.get(s.lesson_id)
-              return { session: s, lesson }
-            })
+            // Recent: sessions joined to merged lesson map so all cards are real
+            const recentList = recentSessions.map(s => ({ session: s, lesson: mergedMap.get(s.lesson_id) }))
 
-            // Owned: ALL owned lessons (drillable or not) with filters
-            const allSubjects = [...new Set(allOwnedLessons.map(l => l.subject).filter(Boolean))].sort()
-            const allGrades = [...new Set(allOwnedLessons.map(l => l.grade).filter(v => v != null))].sort((a, b) => Number(a) - Number(b))
-            const allDiffs = [...new Set(allOwnedLessons.map(l => l.difficulty).filter(Boolean))].sort()
-            const ownedList = allOwnedLessons.filter(l => {
+            // Owned: full merged set (approved + ever-completed) with filters
+            const fullOwnedLessons = [...mergedMap.values()]
+            const allSubjects = [...new Set(fullOwnedLessons.map(l => l.subject).filter(Boolean))].sort()
+            const allGrades = [...new Set(fullOwnedLessons.map(l => l.grade).filter(v => v != null))].sort((a, b) => Number(a) - Number(b))
+            const allDiffs = [...new Set(fullOwnedLessons.map(l => l.difficulty).filter(Boolean))].sort()
+            const ownedList = fullOwnedLessons.filter(l => {
               if (ownedFilters.subject && l.subject !== ownedFilters.subject) return false
               if (ownedFilters.grade && String(l.grade) !== ownedFilters.grade) return false
               if (ownedFilters.difficulty && l.difficulty !== ownedFilters.difficulty) return false
@@ -943,7 +962,7 @@ function SlateDrillInner() {
                     RECENT{recentList.length > 0 ? ` (${recentList.length})` : ''}
                   </button>
                   <button style={tabStyle(listTab === 'owned')} onClick={() => setListTab('owned')}>
-                    OWNED{allOwnedLessons.length > 0 ? ` (${allOwnedLessons.length})` : ''}
+                    OWNED{mergedMap.size > 0 ? ` (${mergedMap.size})` : ''}
                   </button>
                 </div>
 
@@ -1019,7 +1038,7 @@ function SlateDrillInner() {
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
-                          {ownedList.length} OF {allOwnedLessons.length} OWNED LESSON{allOwnedLessons.length !== 1 ? 'S' : ''}
+                          {ownedList.length} OF {mergedMap.size} OWNED LESSON{mergedMap.size !== 1 ? 'S' : ''}
                         </div>
                         {ownedList.map((l, i) => <LessonCard key={getLk(l) || i} lesson={l} />)}
                       </div>
