@@ -112,7 +112,8 @@ function shuffleArr(arr) {
 
 // --- Answer evaluation -------------------------------------------------------
 
-function checkAnswer(q, raw) {
+/** Sync local judge — used for MC/TF and as the SA/FIB fallback. */
+function checkAnswerLocal(q, raw) {
   if (!q) return false
   if (q.type === 'multiplechoice') return Number(raw) === Number(q.correct)
   if (q.type === 'truefalse') return (raw === 'true') === Boolean(q.answer)
@@ -123,6 +124,54 @@ function checkAnswer(q, raw) {
     const ne = norm(e)
     return ne.length > 0 && (ua.includes(ne) || ne.includes(ua))
   })
+}
+
+/**
+ * Async answer judge.
+ * MC/TF: local, synchronous.
+ * SA/FIB: calls /api/judge-short-answer (GPT, same as Ms. Sonoma).
+ *         Falls back to local judge if the API is unavailable.
+ */
+async function checkAnswer(q, raw) {
+  if (!q) return false
+  const type = (q.type || '').toLowerCase()
+  if (type === 'multiplechoice' || type === 'truefalse') return checkAnswerLocal(q, raw)
+
+  // Short-answer / fill-in-the-blank → GPT judge
+  const learnerAnswer = String(raw || '').trim()
+  if (!learnerAnswer) return false
+
+  const questionText = String(q.question || q.prompt || '').trim()
+  const expectedAny = Array.isArray(q.expectedAny) ? q.expectedAny : []
+  const expectedAnswer = String(expectedAny[0] || q.answer || q.expected || '').trim()
+  const keywords = Array.isArray(q.keywords) ? q.keywords : []
+  const minKeywords = Number.isInteger(q.minKeywords) ? q.minKeywords : (keywords.length > 0 ? 1 : 0)
+
+  const MAX_ATTEMPTS = 3
+  const TIMEOUT_MS = 5000
+  const RETRY_MS = 2000
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const ctrl = new AbortController()
+    const tid = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
+    try {
+      const res = await fetch('/api/judge-short-answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: questionText, learnerAnswer, expectedAnswer, expectedAny, keywords, minKeywords }),
+        signal: ctrl.signal,
+      })
+      clearTimeout(tid)
+      if (!res.ok) throw new Error(`judge ${res.status}`)
+      const data = await res.json()
+      if (typeof data?.correct === 'boolean') return data.correct
+      throw new Error('unexpected shape')
+    } catch {
+      clearTimeout(tid)
+      if (attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, RETRY_MS))
+    }
+  }
+  // API unavailable — fall back to local judge
+  return checkAnswerLocal(q, raw)
 }
 
 function getCorrectText(q) {
@@ -720,9 +769,11 @@ function SlateDrillInner() {
   }, [pagePhase, currentQ, handleResult])
 
   // Text answer submission
-  const onTextSubmit = useCallback(() => {
+  const onTextSubmit = useCallback(async () => {
     if (phaseRef.current !== 'asking') return
-    handleResult(checkAnswer(currentQRef.current, userAnswer), false)
+    const correct = await checkAnswer(currentQRef.current, userAnswer)
+    if (phaseRef.current !== 'asking') return  // guard: timed out while awaiting API
+    handleResult(correct, false)
   }, [userAnswer, handleResult])
 
   // Choice click (MC / TF)

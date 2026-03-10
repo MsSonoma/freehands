@@ -24,6 +24,12 @@
 2026-02-27T17:39:00Z | Fix: quota false-positives for premium/pro. Recon prompt: "Quota hit when generating lessons (calendar + lesson generator) even though account is premium; gating other accounts may have affected entitlement." Updated `/api/lessons/quota` to return `allowed` and updated `/api/usage/check-lesson-quota` to use `plan_tier` + `lessonsPerDay`; generator now computes allowance robustly. See `sidekick_pack.md`.
 
 # Cohere Investigations Changelog
+## 2026-03-10 — Mr. Slate: wire GPT judging for short-answer and fill-in-the-blank
+- **Recon prompt**: "How does Ms. Sonoma judge short answer and fill-in-the-blank answers? What API endpoint does she call? What is the request format, grading rules, and how is the result used in the session flow?"
+- **Change**: `checkAnswer` in `src/app/session/slate/page.jsx` was a sync local string-normalizer. Replaced with async version mirroring `src/app/session/v2/judging.js`: MC/TF stay local+sync; SA/FIB POST to `/api/judge-short-answer` (GPT-4o-mini, same leniency rules as Ms. Sonoma) with 3 attempts / 5s timeout / 2s retry. Falls back to local judge if API unavailable. `onTextSubmit` changed to `async` with phase-guard after `await`.
+- **Files**: `src/app/session/slate/page.jsx`
+- **Build**: ✓ clean
+
 ## 2025-01 — Mr. Slate: Owned tab only showing 5 instead of 80 lessons (Supabase Storage + stale cleanup)
 - **Recon prompt**: "Where are lessons stored in Supabase? What table holds lesson metadata and content? How does available-lessons API query lessons? What is the lesson_id / lessonKey format in lesson_sessions history?"
 - **Root cause A**: `available-lessons` has a stale cleanup that removes lesson keys from `approved_lessons` when files can't be loaded. Many lessons are `generated/` (stored in Supabase Storage at `facilitator-lessons/{facilitatorId}/{filename}`). If `facilitatorId` is missing or the download fails, the key is removed from `approved_lessons` over time → only stock lessons survive.
