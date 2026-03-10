@@ -461,7 +461,8 @@ function SlateDrillInner() {
         fetch(`/api/learner/lesson-history?learner_id=${encodeURIComponent(id)}&limit=200`)
           .then(r => r.ok ? r.json() : null).catch(() => null),
       ])
-        .then(([{ lessons }, settingsRes, historyRes]) => {
+        .then(([availRes, settingsRes, historyRes]) => {
+          const { lessons = [], staleApprovedKeys = [] } = availRes || {}
           const drillable = (lessons || []).filter(l => buildPool(l).length > 0)
           setAvailableLessons(drillable)
           setAllOwnedLessons(lessons || [])
@@ -471,10 +472,17 @@ function SlateDrillInner() {
             setSettingsDraft(merged)
             settingsRef.current = merged
           }
+
+          // Build the key set that available-lessons already resolved
+          const approvedKeySet = new Set(
+            (lessons || []).map(l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`)
+          )
+
+          // Collect history session lesson_ids
+          const seen = new Map()
           if (historyRes?.sessions) {
             const completed = historyRes.sessions
               .filter(s => s.status === 'completed' && s.lesson_id && s.ended_at)
-            const seen = new Map()
             for (const s of completed) {
               const existing = seen.get(s.lesson_id)
               if (!existing || new Date(s.ended_at) > new Date(existing.ended_at)) {
@@ -482,24 +490,28 @@ function SlateDrillInner() {
               }
             }
             setRecentSessions([...seen.values()].sort((a, b) => new Date(b.ended_at) - new Date(a.ended_at)))
+          }
 
-            // Fetch metadata for lesson_ids not already in approved lessons
-            const approvedKeySet = new Set((lessons || []).map(l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`)
-            )
-            const missingKeys = [...seen.keys()].filter(k => !approvedKeySet.has(k))
-            if (missingKeys.length) {
-              fetch('/api/lessons/meta', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ keys: missingKeys }),
-              }).then(r => r.ok ? r.json() : null).then(res => {
-                if (res?.lessons?.length) {
-                  const map = {}
-                  for (const l of res.lessons) map[l.lessonKey] = l
-                  setHistoryLessons(map)
-                }
-              }).catch(() => {})
-            }
+          // Fetch full lesson data for:
+          //   1. history lesson_ids not in the loaded approved set
+          //   2. staleApprovedKeys — keys that were in approved_lessons but files couldn't be
+          //      found by available-lessons (now we retry via /api/lessons/meta which handles
+          //      generated lessons stored in Supabase Storage)
+          const historyMissing = [...seen.keys()].filter(k => !approvedKeySet.has(k))
+          const staleSet = new Set(staleApprovedKeys || [])
+          const metaKeys = [...new Set([...historyMissing, ...staleSet])]
+          if (metaKeys.length) {
+            fetch('/api/lessons/meta', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keys: metaKeys, learner_id: id }),
+            }).then(r => r.ok ? r.json() : null).then(res => {
+              if (res?.lessons?.length) {
+                const map = {}
+                for (const l of res.lessons) map[l.lessonKey] = l
+                setHistoryLessons(map)
+              }
+            }).catch(() => {})
           }
           phaseRef.current = 'list'
           setPagePhase('list')

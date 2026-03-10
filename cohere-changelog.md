@@ -24,7 +24,16 @@
 2026-02-27T17:39:00Z | Fix: quota false-positives for premium/pro. Recon prompt: "Quota hit when generating lessons (calendar + lesson generator) even though account is premium; gating other accounts may have affected entitlement." Updated `/api/lessons/quota` to return `allowed` and updated `/api/usage/check-lesson-quota` to use `plan_tier` + `lessonsPerDay`; generator now computes allowance robustly. See `sidekick_pack.md`.
 
 # Cohere Investigations Changelog
-## 2025-01 — Mr. Slate: Recent/Owned tabs show greyed rows and only 2 lessons
+## 2025-01 — Mr. Slate: Owned tab only showing 5 instead of 80 lessons (Supabase Storage + stale cleanup)
+- **Recon prompt**: "Where are lessons stored in Supabase? What table holds lesson metadata and content? How does available-lessons API query lessons? What is the lesson_id / lessonKey format in lesson_sessions history?"
+- **Root cause A**: `available-lessons` has a stale cleanup that removes lesson keys from `approved_lessons` when files can't be loaded. Many lessons are `generated/` (stored in Supabase Storage at `facilitator-lessons/{facilitatorId}/{filename}`). If `facilitatorId` is missing or the download fails, the key is removed from `approved_lessons` over time → only stock lessons survive.
+- **Root cause B**: `/api/lessons/meta` route (created prior session) only read from local disk for stock subjects, silently skipping `generated/` keys → session history lesson_ids for generated lessons produced no cards.
+- **Fix 1** — `src/app/api/lessons/meta/route.js`: Rewrote to accept `learner_id` param, look up `facilitator_id` from Supabase `learners` table (service role), and download `generated/` lessons from Supabase Storage (`facilitator-lessons/{facilitatorId}/{filename}`). Also added `general/` (local Facilitator Lessons folder) support.
+- **Fix 2** — `src/app/session/slate/page.jsx` init effect: Changed destructuring `[{ lessons }]` → `[availRes]` to also capture `staleApprovedKeys` from `available-lessons` response. Now passes BOTH history-missing keys AND staleApprovedKeys (approved lessons that couldn't be loaded by available-lessons) into `/api/lessons/meta`. Also passes `learner_id` so generated lessons can be fetched from Storage.
+- **Files**: `src/app/api/lessons/meta/route.js`, `src/app/session/slate/page.jsx`
+- **Build**: ✓ clean
+
+
 - **Recon prompt**: "Recent tab shows grey unclickable rows and Owned only shows two active lessons in Mr. Slate drill page"
 - **Root cause**: `allOwnedLessons` = currently approved lessons (≤2); session history references many more lesson_ids not in that set → Recent rows get `lesson: undefined` → grey; Owned constrained to same 2.
 - **Fix**:
