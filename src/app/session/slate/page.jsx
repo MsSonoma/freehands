@@ -77,15 +77,20 @@ function buildPool(lessonData) {
     if (q?.question) pool.push({ type: 'shortanswer', question: q.question, expectedAny: q.expectedAny || [] })
   }
   for (const q of lessonData?.truefalse || []) {
-    if (q?.question != null) pool.push({ type: 'truefalse', question: q.question, answer: Boolean(q.answer) })
+    if (!q?.question) continue
+    if (typeof q.answer === 'boolean') {
+      pool.push({ type: 'truefalse', question: q.question, answer: q.answer })
+    } else if (q.expectedAny?.length) {
+      pool.push({ type: 'shortanswer', question: q.question, expectedAny: q.expectedAny })
+    }
   }
   for (const q of lessonData?.multiplechoice || []) {
-    if (q?.question) pool.push({
-      type: 'multiplechoice',
-      question: q.question,
-      choices: Array.isArray(q.choices) ? q.choices : [],
-      correct: q.correct ?? 0,
-    })
+    if (!q?.question) continue
+    if (Array.isArray(q.choices) && q.choices.length) {
+      pool.push({ type: 'multiplechoice', question: q.question, choices: q.choices, correct: q.correct ?? 0 })
+    } else if (q.expectedAny?.length) {
+      pool.push({ type: 'shortanswer', question: q.question, expectedAny: q.expectedAny })
+    }
   }
   for (const q of lessonData?.fillintheblank || []) {
     if (q?.question) pool.push({ type: 'fillintheblank', question: q.question, expectedAny: q.expectedAny || [] })
@@ -402,6 +407,7 @@ function SlateDrillInner() {
   const [ownedFilters, setOwnedFilters] = useState({ subject: '', grade: '', difficulty: '' })
   const [allOwnedLessons, setAllOwnedLessons] = useState([])
   const [recentSessions, setRecentSessions] = useState([])
+  const [listError, setListError] = useState('')
   const [settings, setSettings] = useState(DEFAULT_SLATE_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsDraft, setSettingsDraft] = useState(DEFAULT_SLATE_SETTINGS)
@@ -503,6 +509,16 @@ function SlateDrillInner() {
     clearInterval(timerInterval.current)
     clearTimeout(feedbackTimeout.current)
     const p = buildPool(lesson)
+    if (!p.length) {
+      setListError('This lesson has no drill questions. Ask your facilitator to add quiz questions to it.')
+      return
+    }
+    if (!p.length) {
+      setErrorMsg('This lesson has no drill questions. Try a different lesson, or ask your facilitator to add quiz questions to it.')
+      phaseRef.current = 'error'
+      setPagePhase('error')
+      return
+    }
     poolRef.current = p
     setPool(p)
     const lk = lesson.lessonKey || `${lesson.subject || 'general'}/${lesson.file || ''}`
@@ -835,7 +851,7 @@ function SlateDrillInner() {
               transition: 'all 0.15s',
             })
 
-            // --- Lesson card renderer (drillable lessons) ---
+            // --- Lesson card renderer (all owned lessons) ---
             const LessonCard = ({ lesson, dateLabel }) => {
               const lk = getLk(lesson)
               const mastered = !!(masteryMap[lk]?.mastered)
@@ -843,23 +859,21 @@ function SlateDrillInner() {
               const subjectLabel = (lesson.subject || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
               const gradeLabel = lesson.grade ? `Grade ${lesson.grade}` : ''
               const diffLabel = lesson.difficulty ? lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1) : ''
-              const drillable = poolSize > 0
               return (
                 <button
-                  onClick={() => drillable ? selectLesson(lesson) : null}
+                  onClick={() => selectLesson(lesson)}
                   style={{
                     background: C.surface,
                     border: `1px solid ${mastered ? C.green : C.border}`,
                     borderRadius: 10,
                     padding: '14px 16px',
                     textAlign: 'left',
-                    cursor: drillable ? 'pointer' : 'default',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 12,
                     width: '100%',
-                    opacity: drillable ? 1 : 0.55,
                     transition: 'border-color 0.2s',
                   }}
                 >
@@ -870,13 +884,15 @@ function SlateDrillInner() {
                     </div>
                     <div style={{ color: C.muted, fontSize: 11, letterSpacing: 1 }}>
                       {[subjectLabel, gradeLabel, diffLabel].filter(Boolean).join(' · ')}
-                      {drillable && <>{' · '}<span style={{ color: mastered ? C.green : C.accent }}>{poolSize} QUESTIONS</span></>}
-                      {!drillable && <span style={{ marginLeft: 4 }}>· NO DRILL QUESTIONS</span>}
+                      {poolSize > 0
+                        ? <>{' · '}<span style={{ color: mastered ? C.green : C.accent }}>{poolSize} QUESTIONS</span></>
+                        : <span style={{ color: C.muted, marginLeft: 4, opacity: 0.6 }}>· no drill questions</span>
+                      }
                       {mastered && <span style={{ color: C.green, marginLeft: 8 }}>✓ MASTERED</span>}
                       {dateLabel && <span style={{ color: C.muted, marginLeft: 8 }}>{dateLabel}</span>}
                     </div>
                   </div>
-                  {drillable && <div style={{ color: C.accent, fontWeight: 800, fontSize: 18, flexShrink: 0 }}>▶</div>}
+                  <div style={{ color: C.accent, fontWeight: 800, fontSize: 18, flexShrink: 0 }}>▶</div>
                 </button>
               )
             }
@@ -911,6 +927,14 @@ function SlateDrillInner() {
                   {'  ·  '}<span style={{ color: C.yellow, fontWeight: 700 }}>{settings.timeoutPts === 0 ? '±0' : `−${settings.timeoutPts}`}</span> timeout ({settings.questionSecs}s)
                   {'  '}<span style={{ color: C.accent, fontSize: 10, letterSpacing: 1 }}>✎ EDIT</span>
                 </button>
+
+                {/* Inline warning banner */}
+                {listError && (
+                  <div style={{ background: C.redDim, border: `1px solid ${C.red}`, borderRadius: 8, padding: '10px 14px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                    <span style={{ color: C.red, fontSize: 12 }}>{listError}</span>
+                    <button onClick={() => setListError('')} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>✕</button>
+                  </div>
+                )}
 
                 {/* Tabs */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
