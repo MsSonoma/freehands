@@ -181,7 +181,15 @@ export default function FacilitatorLessonsPage() {
           const { data: learnersData } = await supabase.from('learners').select('*').order('created_at', { ascending: false })
           if (!cancelled && learnersData) {
             setLearners(learnersData)
-            // Don't auto-select a learner - let user choose
+            // Auto-select the active learner from localStorage
+            const activeLearnerIdFromStorage = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null
+            if (activeLearnerIdFromStorage) {
+              const match = learnersData.find(l => l.id === activeLearnerIdFromStorage)
+              if (match) {
+                setSelectedLearnerId(match.id)
+                setSelectedLearner(match)
+              }
+            }
           }
         }
       } catch {}
