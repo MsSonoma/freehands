@@ -791,6 +791,27 @@ function LessonsPageInner(){
           >
             ✨ Generate a Lesson
           </button>
+          <button
+            onClick={async () => {
+              const ok = await ensurePinAllowed('facilitator-page')
+              if (ok) router.push('/facilitator/lessons')
+            }}
+            style={{
+              padding: '10px 20px',
+              border: '1px solid #d1d5db',
+              borderRadius: 8,
+              background: '#fff',
+              color: '#111827',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            📚 Lessons
+          </button>
 
         </div>
       )}
