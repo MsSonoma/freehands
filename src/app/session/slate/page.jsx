@@ -1030,7 +1030,50 @@ function SlateDrillInner() {
                     OWNED{mergedMap.size > 0 ? ` (${mergedMap.size})` : ''}
                   </button>
                 </div>
-                </div>{/* end controls strip */}
+
+                {/* Owned filters + count — non-scrolling, only on Owned tab */}
+                {listTab === 'owned' && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                      <select
+                        value={ownedFilters.subject}
+                        onChange={e => setOwnedFilters(f => ({ ...f, subject: e.target.value }))}
+                        style={{ background: C.surface, color: ownedFilters.subject ? C.text : C.muted, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer', letterSpacing: 1 }}
+                      >
+                        <option value=''>ALL SUBJECTS</option>
+                        {allSubjects.map(s => <option key={s} value={s}>{s.replace(/-/g, ' ').toUpperCase()}</option>)}
+                      </select>
+                      <select
+                        value={ownedFilters.grade}
+                        onChange={e => setOwnedFilters(f => ({ ...f, grade: e.target.value }))}
+                        style={{ background: C.surface, color: ownedFilters.grade ? C.text : C.muted, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer', letterSpacing: 1 }}
+                      >
+                        <option value=''>ALL GRADES</option>
+                        {allGrades.map(g => <option key={g} value={String(g)}>GRADE {g}</option>)}
+                      </select>
+                      <select
+                        value={ownedFilters.difficulty}
+                        onChange={e => setOwnedFilters(f => ({ ...f, difficulty: e.target.value }))}
+                        style={{ background: C.surface, color: ownedFilters.difficulty ? C.text : C.muted, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer', letterSpacing: 1 }}
+                      >
+                        <option value=''>ALL DIFFICULTIES</option>
+                        {allDiffs.map(d => <option key={d} value={d}>{d.toUpperCase()}</option>)}
+                      </select>
+                      {(ownedFilters.subject || ownedFilters.grade || ownedFilters.difficulty) && (
+                        <button
+                          onClick={() => setOwnedFilters({ subject: '', grade: '', difficulty: '' })}
+                          style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, color: C.muted, fontSize: 11, fontFamily: C.mono, cursor: 'pointer', padding: '5px 10px', letterSpacing: 1 }}
+                        >✕ CLEAR</button>
+                      )}
+                    </div>
+                    {mergedMap.size > 0 && (
+                      <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2 }}>
+                        {ownedList.length} OF {mergedMap.size} OWNED LESSON{mergedMap.size !== 1 ? 'S' : ''}
+                      </div>
+                    )}
+                  </div>
+                )}
+                </div>{/* end controls strip */
 
                 {/* ── Scrollable list ─────────────────────────────────── */}
                 <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 16px 24px', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
@@ -1065,52 +1108,15 @@ function SlateDrillInner() {
                   )
                 )}
 
-                {/* Owned tab — all owned/activated lessons with filters */}
+                {/* Owned tab — lesson cards only (filters/count are in controls strip) */}
                 {listTab === 'owned' && (
-                  <div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-                      <select
-                        value={ownedFilters.subject}
-                        onChange={e => setOwnedFilters(f => ({ ...f, subject: e.target.value }))}
-                        style={{ background: C.surface, color: ownedFilters.subject ? C.text : C.muted, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer', letterSpacing: 1 }}
-                      >
-                        <option value=''>ALL SUBJECTS</option>
-                        {allSubjects.map(s => <option key={s} value={s}>{s.replace(/-/g, ' ').toUpperCase()}</option>)}
-                      </select>
-                      <select
-                        value={ownedFilters.grade}
-                        onChange={e => setOwnedFilters(f => ({ ...f, grade: e.target.value }))}
-                        style={{ background: C.surface, color: ownedFilters.grade ? C.text : C.muted, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer', letterSpacing: 1 }}
-                      >
-                        <option value=''>ALL GRADES</option>
-                        {allGrades.map(g => <option key={g} value={String(g)}>GRADE {g}</option>)}
-                      </select>
-                      <select
-                        value={ownedFilters.difficulty}
-                        onChange={e => setOwnedFilters(f => ({ ...f, difficulty: e.target.value }))}
-                        style={{ background: C.surface, color: ownedFilters.difficulty ? C.text : C.muted, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer', letterSpacing: 1 }}
-                      >
-                        <option value=''>ALL DIFFICULTIES</option>
-                        {allDiffs.map(d => <option key={d} value={d}>{d.toUpperCase()}</option>)}
-                      </select>
-                      {(ownedFilters.subject || ownedFilters.grade || ownedFilters.difficulty) && (
-                        <button
-                          onClick={() => setOwnedFilters({ subject: '', grade: '', difficulty: '' })}
-                          style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, color: C.muted, fontSize: 11, fontFamily: C.mono, cursor: 'pointer', padding: '5px 10px', letterSpacing: 1 }}
-                        >✕ CLEAR</button>
-                      )}
+                  ownedList.length === 0 ? (
+                    <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>NO LESSONS MATCH FILTERS</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {ownedList.map((l, i) => <LessonCard key={getLk(l) || i} lesson={l} />)}
                     </div>
-                    {ownedList.length === 0 ? (
-                      <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>NO LESSONS MATCH FILTERS</div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
-                          {ownedList.length} OF {mergedMap.size} OWNED LESSON{mergedMap.size !== 1 ? 'S' : ''}
-                        </div>
-                        {ownedList.map((l, i) => <LessonCard key={getLk(l) || i} lesson={l} />)}
-                      </div>
-                    )}
-                  </div>
+                  )
                 )}
                 </div>{/* end scrollable list */}
               </>
