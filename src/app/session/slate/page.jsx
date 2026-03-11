@@ -1073,7 +1073,7 @@ function SlateDrillInner() {
                     )}
                   </div>
                 )}
-                </div>{/* end controls strip */
+                </div>{/* end controls strip */}
 
                 {/* ── Scrollable list ─────────────────────────────────── */}
                 <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 16px 24px', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
