@@ -109,11 +109,11 @@ export default function LearnPage() {
               onClick={goToLessons}
               style={{
                 padding:'14px 20px', 
-                border:'2px solid #111', 
+                border:'2px solid #c7442e', 
                 borderRadius:12,
                 fontSize:16, 
                 fontWeight:700,
-                background:'#111',
+                background:'#c7442e',
                 color:'#fff',
                 cursor:'pointer',
                 width:'100%', 
