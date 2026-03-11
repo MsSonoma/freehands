@@ -1393,6 +1393,7 @@ export default function FacilitatorLessonsPage() {
       )}
         </div>
 
+      <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
       <div
         onClick={() => router.push('/facilitator/calendar')}
         role="button"
@@ -1422,6 +1423,7 @@ export default function FacilitatorLessonsPage() {
         <div style={{ fontSize: 13, fontWeight: 600, color: '#2563eb', whiteSpace: 'nowrap' }}>
           Open Planner →
         </div>
+      </div>
       </div>
     </main>
 
