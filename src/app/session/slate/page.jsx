@@ -48,7 +48,7 @@ const SETTINGS_CONFIG = [
   { label: 'TIMEOUT OFFSET',    key: 'timeoutOffset',  min: 0,  max: 5,   fmt: v => v === 0 ? 'none' : `${v} free` },
   { label: 'TIME PER QUESTION', key: 'questionSecs',   min: 5,  max: 120, fmt: v => `${v}s` },
 ]
-const SLATE_VIDEO_SRC = '/media/Mr-%20Slate%20Loop.mp4'
+const SLATE_VIDEO_SRC = '/media/Mr.%20Slate%20Suit.mp4'
 
 // --- Color palette (dark robot theme) ----------------------------------------
 
