@@ -120,7 +120,7 @@ export default function LearnPage() {
                 maxWidth:320
               }}
             >
-              View Lessons
+              Ms. Sonoma
             </button>
             <button
               onClick={goToAwards}
@@ -138,6 +138,23 @@ export default function LearnPage() {
               }}
             >
               🏆 Awards
+            </button>
+            <button
+              onClick={() => r.push('/session/slate')}
+              style={{
+                padding:'14px 20px', 
+                border:'2px solid #6366f1', 
+                borderRadius:12,
+                fontSize:16, 
+                fontWeight:700,
+                background:'#6366f1',
+                color:'#fff',
+                cursor:'pointer',
+                width:'100%', 
+                maxWidth:320
+              }}
+            >
+              🤖 Mr. Slate
             </button>
           </div>
         )}

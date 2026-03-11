@@ -791,24 +791,7 @@ function LessonsPageInner(){
           >
             ✨ Generate a Lesson
           </button>
-          <button
-            onClick={() => router.push('/session/slate')}
-            style={{
-              padding: '10px 20px',
-              border: '1px solid #d1d5db',
-              borderRadius: 8,
-              background: '#fff',
-              color: '#111827',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            🪨 Mr. Slate
-          </button>
+
         </div>
       )}
 

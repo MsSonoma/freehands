@@ -6,23 +6,23 @@ Mode: standard
 
 Prompt (original):
 ```text
-Calendar scheduled lessons Edit Lesson button reschedule past lessons Notes Assigns Add Images Remove rescheduling calendar picker instant no refresh
+change view lessons to Ms. Sonoma on /learn page, move Mr. Slate button from learn/lessons page to /learn page below Awards, change emoji from rock to robot
 ```
 
 Filter terms used:
 ```text
-calendar
-scheduled
+change
+view
 lessons
-edit
-lesson
+sonoma
+learn
+page
+move
+slate
 button
-reschedule
-past
-notes
-assigns
-add
-images
+below
+awards
+emoji
 ```
 
 ---
@@ -31,13 +31,13 @@ images
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-03-10 18:55` — How does Ms. Sonoma judge short answer and fill-in-the-blank answers? What API endpoint does she call? What is the reque
 - `2026-03-11 10:29` — Calendar past scheduled lessons buttons Notes Visual Aids Add Images Remove - replace Visual Aids with Assigns dropdown 
 - `2026-03-11 10:41` — Lesson Planner Generate button opens lesson generator overlay says Generate on [date] change date calendar picker planne
+- `2026-03-11 11:30` — Calendar scheduled lessons Edit Lesson button reschedule past lessons Notes Assigns Add Images Remove rescheduling calen
 
 ---
 
-## [CRITICAL — this pack is thin or empty.] Copilot Self-Recon Obligation
+## [REMINDER] Copilot Self-Recon Obligation
 
 **THREAD FIRST, PACK SECOND.** This pack is supplementary repo knowledge. It does NOT replace the conversation thread. If the user refers to something discussed earlier (e.g. 'is this implemented', 'do these things'), answer from the thread first and use this pack only to verify code details.
 
@@ -54,7 +54,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 1. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 24. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -69,7 +69,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-calendar scheduled lessons edit lesson button reschedule past notes assigns add images
+change view lessons sonoma learn page move slate button below awards emoji
 
 ## Forced Context
 
@@ -77,39 +77,649 @@ calendar scheduled lessons edit lesson button reschedule past notes assigns add 
 
 ## Ranked Evidence
 
-### 1. sidekick_pack.md (ccac777c1db3eb879e26c94f4af62772b4cbecb113643c61a5bd1dd98c06a334)
-- bm25: -22.2673 | relevance: 0.9570
+### 1. src/app/learn/awards/page.js (4d8cce309e0f536106072dd471d5d29bbc535b069533182488b0980b7295cb15)
+- bm25: -15.4457 | relevance: 0.9392
 
-### 5. docs/brain/ingests/pack.md (aa6ec106ec68e22bb817f61c01c25af4440948ba22e71ec40a50cad850d8b6d0)
-- bm25: -33.2332 | relevance: 1.0000
+{subjectsToRender.map(subject => {
+            const lessons = groupedMedals[subject]
+            if (!lessons || lessons.length === 0) return null
 
-### Portfolio Scan Uploads (Worksheet/Test Images)
+const displaySubject = customKeyToName.get(subject)
+              || subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
-### 3. docs/brain/MentorInterceptor_Architecture.md (75fdb0fbddb1f0621d0ed4e1ec4faf69b33ecbed1888eb54a3d9f917aca04bee)
-- bm25: -34.9459 | relevance: 1.0000
+### 2. src/app/learn/awards/page.js (0499b864d98c5cc526cdd870d00a12f230da31563456ead2b5af1a35d52a5b28)
+- bm25: -14.6420 | relevance: 0.9361
 
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+const customKeyToName = new Map(customDisplayOrder.map((s) => [s.key, s.name]))
 
-### 4. docs/brain/calendar-lesson-planning.md (8fb5d6fd52eb343d38244e53af009c1d078e80740d159006615a9235e71a5585)
-- bm25: -34.0788 | relevance: 1.0000
+### 3. src/app/learn/awards/page.js (c65c1998a9dabde1a8764e963f6b0d48b40ab7e3e508d1f3983ad3e80c0473ed)
+- bm25: -13.9214 | relevance: 0.9330
 
-### 2. docs/brain/ingests/pack.md (aa6ec106ec68e22bb817f61c01c25af4440948ba22e71ec40a50cad850d8b6d0)
-- bm25: -21.9466 | relevance: 0.9564
+useEffect(() => {
+    if (!learnerId) {
+      setMedals({})
+      setMedalsLoading(false)
+      return
+    }
+    (async () => {
+      try {
+        const data = await getMedalsForLearner(learnerId)
+        setMedals(data || {})
+      } catch {
+        setMedals({})
+      }
+      setMedalsLoading(false)
+    })()
+  }, [learnerId])
+
+### 4. src/app/learn/awards/page.js (9b7b115c5d14e4d1b4f7ce9973b8e273d81cccc35f9535164fb84cc016b3f20a)
+- bm25: -13.1307 | relevance: 0.9292
+
+const lessonsMap = {}
+      for (const subject of subjectsToFetch) {
+        try {
+          const subjectKey = normalizeSubjectKey(subject)
+          const headers = subject === 'generated' && token 
+            ? { 'Authorization': `Bearer ${token}` }
+            : {}
+          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
+            cache: 'no-store',
+            headers
+          })
+          const list = res.ok ? await res.json() : []
+          lessonsMap[subjectKey] = Array.isArray(list) ? list : []
+        } catch {
+          lessonsMap[normalizeSubjectKey(subject)] = []
+        }
+      }
+      if (!cancelled) {
+        setAllLessons(lessonsMap)
+        setLessonsLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [customSubjectNames.join('|')])
+
+### 5. docs/brain/ms-sonoma-teaching-system.md (1f079cae33ff43ac4f14837a3de47b84b5b01b2e253899f9ec065dd2e8c8247d)
+- bm25: -13.0482 | relevance: 0.9288
+
+**Transition**:
+- "Great. Let's move on to comprehension."
+
+### Pre-Send Checklist
+
+Before shipping to Ms. Sonoma, verify:
+- Payload contains only speakable text
+- Child's name and lesson title are literal (no placeholders)
+- Exactly one phase represented
+- If Opening: final sentence is silly question
+- If Teaching/Repeat: ends with VERBATIM wrap line
+- If Transition: uses VERBATIM move-on line
+- If Comprehension: exactly one question, no definitions
+- No syntax or labels present: no [], {}, <>, no section labels, no [COPILOT]/[SONOMA]/[VERBATIM]/[SAMPLE]
+- Must pass placeholder scan: no {PLACEHOLDER}, [PLACEHOLDER], <PLACEHOLDER>, or stray ALLCAPS tokens
+
+### Turn Map
+
+**After Opening**: Teaching Definitions (developer-triggered, no teaching during opening)
+
+**After Teaching Definitions wrap**:
+- Repeat Vocab button → Definitions Repeat
+- Next button → Teaching Examples
+- Ask button → freeform questions, respond briefly, return to gate
+
+**After Teaching Examples wrap**:
+- Repeat Vocab button → Examples Repeat
+- Next button → Transition, then Comprehension Ask
+- Ask button → freeform questions, respond briefly, return to gate
+
+**Comprehension loop**: Ask → child reply → FeedbackCorrect or FeedbackHint → Ask again (or Closing when goal met)
+
+**Closing**: End of session
+
+### Opening Actions UI (V2)
+
+### 6. src/app/learn/awards/page.js (ebc1895801227375408072bd153c7c76812fe8756cfe668246876a991b78216e)
+- bm25: -12.6739 | relevance: 0.9269
+
+if (!bucket || bucket === 'generated') {
+        // If the lesson exists in any known subject folder, prefer that.
+        const knownSubjects = Object.keys(allLessons || {})
+        const foundInKnown = knownSubjects.find((s) => {
+          const list = allLessons[s] || []
+          return list.some((l) => ensureJsonFile(l?.file) === file)
+        })
+        if (foundInKnown) bucket = foundInKnown
+      }
+
+### 7. src/app/learn/lessons/page.js (5b763ff894b24c13b531c4442061b189657aff4bead8adde661c3b34d6eeee7e)
+- bm25: -12.2097 | relevance: 0.9243
+
+;(async () => {
+      try {
+        // Just check for active session without PIN requirement
+        // The lessons page should be freely accessible
+        const active = await getActiveLessonSession(learnerId)
+        if (cancelled) return
+        // No PIN gate here - let learners view lessons freely
+        if (!cancelled) setSessionGateReady(true)
+      } catch (err) {
+        if (!cancelled) setSessionGateReady(true)
+      }
+    })()
+
+### 8. src/app/facilitator/notifications/page.js (5ab254686e5c76680524212018ffefabefe9426758375ef028ff488370e51053)
+- bm25: -12.1946 | relevance: 0.9242
+
+<div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setPrefsOpen(false)}
+                disabled={prefsSaving}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: 10,
+                  border: '1px solid #e5e7eb',
+                  background: '#fff',
+                  cursor: prefsSaving ? 'not-allowed' : 'pointer',
+                  fontWeight: 700,
+                  opacity: prefsSaving ? 0.6 : 1
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={savePrefs}
+                disabled={prefsSaving}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: 10,
+                  border: '1px solid #111827',
+                  background: '#111827',
+                  color: '#fff',
+                  cursor: prefsSaving ? 'not-allowed' : 'pointer',
+                  fontWeight: 800,
+                  opacity: prefsSaving ? 0.7 : 1
+                }}
+              >
+                {prefsSaving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        )}
+      </SettingsOverlay>
+
+<GatedOverlay
+        show={!isAuthenticated}
+        gateType={gateType}
+        feature="Notifications"
+        emoji="🔔"
+        description="Sign in to view and manage facilitator notifications."
+        benefits={[
+          'See reminders about planning and scheduling',
+          'Track lesson expirations',
+          'Get subscription and limit alerts'
+        ]}
+      />
+    </>
+  );
+}
+
+### 9. docs/brain/story-feature.md (7c541082fb751d8b6d7c2be9019d9fcda07911dd69b371791d357908ef1d85e5)
+- bm25: -12.0801 | relevance: 0.9235
+
+### Story Ending
+1. Child clicks "Story" button
+2. Ms. Sonoma: **Briefly recounts** (first sentence only): "Together they spotted a sparkly treasure chest below."
+3. Ms. Sonoma: "How would you like the story to end?"
+4. Child describes ending
+5. Ms. Sonoma: *Concludes story* "...and they lived happily ever after. The end."
+
+## Key Files
+
+- `page.js` - Story state variables
+- `useDiscussionHandlers.js` - Story handlers (handleStoryStart, handleStoryYourTurn)
+- `/api/sonoma/route.js` - Story generation API
+
+## What NOT To Do
+
+- Never reset storyTranscript between phases (preserve continuity)
+- Never reset storyUsedThisGate between phases (one story per gate)
+- Never skip setup phase on first story creation
+- Never allow freeform story generation without setup (use template-based approach)
+- Never forget to clear story data after "The end." in Test phase
+
+### 10. docs/brain/story-feature.md (47b7112fa17bfb5f0221b18351895de13c106fd2c67fbfea01dda4cb32a9d469)
+- bm25: -12.0787 | relevance: 0.9235
+
+### Story Continuation
+1. Child clicks "Story" button
+2. Ms. Sonoma: **Briefly recounts** (first sentence only): "The dragon wanted to help the princess."
+3. Ms. Sonoma: "What would you like to happen next?"
+4. Ms. Sonoma: **Suggests possibilities** (AI-generated): "You could say: the dragon flies away, or they find a map, or a wizard appears."
+5. Child: "The dragon flies the princess to find treasure"
+6. Ms. Sonoma: *Continues story* "The dragon spread its wings and flew the princess high above the clouds. Together they spotted a sparkly treasure chest below. To be continued."
+
+### 11. src/app/facilitator/account/plan/page.js (70c2cb1bd1337b3a8b3034d268419b9f5371e7e9b583fc6bce07326e4be61dac)
+- bm25: -12.0037 | relevance: 0.9231
+
+<div style={{ marginTop: 40 }}>
+        <button
+          type="button"
+          onClick={() => openPortal(setPortalLoading)}
+          aria-label="Manage your subscription"
+          disabled={Boolean(loadingTier) || portalLoading}
+          aria-busy={portalLoading}
+          style={{
+            display: 'block',
+            width: '100%',
+            maxWidth: 560,
+            margin: '0 auto',
+            padding: '10px 14px',
+            borderRadius: 10,
+            border: '1px solid #ccc',
+            background: '#f7f7f7',
+            color: '#111',
+            fontWeight: 600,
+            cursor: Boolean(loadingTier) || portalLoading ? 'not-allowed' : 'pointer',
+            opacity: Boolean(loadingTier) || portalLoading ? 0.7 : 1,
+          }}
+        >
+          {portalLoading ? 'Opening…' : 'Manage subscription'}
+        </button>
+      </div>
+
+<style>{`
+        @media (max-width: 1100px) { [aria-label="Plan comparison"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 640px) { [aria-label="Plan comparison"] { grid-template-columns: 1fr; } }
+      `}</style>
+    </main>
+    
+    <GatedOverlay
+      show={!isAuthenticated}
+      gateType={gateType}
+      feature="Plans & Billing"
+      emoji="💳"
+      description="Sign in to view and manage your subscription plan."
+      benefits={[
+        'Compare Free, Trial, Standard, and Pro',
+        'Manage your subscription and billing details',
+        'View your current plan and usage',
+        'Cancel or upgrade anytime'
+      ]}
+    />
+    </>
+  );
+}
+
+### 12. src/app/session/slate/page.jsx (9aa0441e837627aa176ce619418a83df669b8d45ec48db0cf3c00ae3298c11e2)
+- bm25: -11.7286 | relevance: 0.9214
+
+<div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={startDrill} style={ghostBtn}>DRILL AGAIN</button>
+            <button onClick={backToList} style={ghostBtn}>LESSON LIST</button>
+            <button onClick={exitToLessons} style={primaryBtn}>← BACK TO LESSONS</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+### 13. src/app/learn/awards/page.js (9da90adda213b5392e247e96be4327d5e0f685988bc96b8e24be7300a9ad09d6)
+- bm25: -11.6430 | relevance: 0.9209
+
+'use client'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
+import { CORE_SUBJECTS, sortSubjectsForDropdown } from '@/app/lib/subjects'
+
+export default function AwardsPage() {
+  const router = useRouter()
+  const [learnerName, setLearnerName] = useState(null)
+  const [learnerId, setLearnerId] = useState(null)
+  const [medals, setMedals] = useState({})
+  const [allLessons, setAllLessons] = useState({})
+  const [medalsLoading, setMedalsLoading] = useState(true)
+  const [lessonsLoading, setLessonsLoading] = useState(true)
+  const [customSubjects, setCustomSubjects] = useState([])
+  const [customSubjectsLoading, setCustomSubjectsLoading] = useState(true)
+
+const normalizeSubjectKey = (value) => {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+  }
+
+const customSubjectNames = (customSubjects || [])
+    .map((s) => s?.name)
+    .filter(Boolean)
+
+// Fetch subjects includes generated so we can infer subject buckets for facilitator-created lessons.
+  // Include custom subjects so Awards can resolve titles/blurbs where available.
+  const subjectsToFetch = [
+    ...CORE_SUBJECTS,
+    ...customSubjectNames,
+    'generated',
+  ]
+
+useEffect(() => {
+    try {
+      const id = localStorage.getItem('learner_id')
+      const name = localStorage.getItem('learner_name')
+      if (name) setLearnerName(name)
+      if (id) setLearnerId(id)
+    } catch {}
+  }, [])
+
+### 14. docs/brain/homepage.md (17a708595f5926a1352d014293d26395401f846891deebe02f2c21ebf394db5b)
+- bm25: -11.5993 | relevance: 0.9206
+
+# Homepage
+
+**Status:** Canonical
+**Created:** 2026-01-10
+**Purpose:** Define what the landing page communicates and which outbound links it must include.
+
+## How It Works
+
+The homepage is the app landing page at `/`.
+
+It uses a centered hero layout with:
+- Ms. Sonoma hero image
+- Primary CTAs: Learn, Facilitator
+- Supporting links:
+  - About page (AI safety/How it works)
+  - External site link to learn more about Ms. Sonoma
+
+### External Website Link
+
+The homepage includes an external link to `https://mssonoma.com` with copy that explicitly tells users to learn about Ms. Sonoma there.
+
+## What NOT To Do
+
+- Do not remove the external `mssonoma.com` link without replacing it with an equivalent learn-more path.
+- Do not add device- or storage-related claims to homepage copy.
+- Do not add placeholder or environment-specific URLs.
+
+## Key Files
+
+- `src/app/page.js`
+- `src/app/home-hero.module.css`
+
+### 15. src/app/learn/awards/page.js (6cbf7bc567229771688329f236afb1c9dffbedd8fcb6f7d8cca57ce82fdb17d8)
+- bm25: -11.4955 | relevance: 0.9200
+
+const subjectOrder = CORE_SUBJECTS
+  const customOrderedKeys = customDisplayOrder.map((s) => s.key)
+
+const baseOrdered = [
+    ...subjectOrder,
+    ...customOrderedKeys,
+  ]
+
+const subjectsToRender = [
+    ...baseOrdered.filter((s) => Array.isArray(groupedMedals[s]) && groupedMedals[s].length > 0),
+    ...Object.keys(groupedMedals)
+      .filter((s) => !baseOrdered.includes(s))
+      .sort((a, b) => String(a).localeCompare(String(b), undefined, { sensitivity: 'base' }))
+  ]
+  const hasMedals = Object.keys(groupedMedals).length > 0
+  const totalMedals = Object.values(groupedMedals).reduce((sum, arr) => sum + arr.length, 0)
+
+// Count medals by tier
+  const medalCounts = { gold: 0, silver: 0, bronze: 0 }
+  Object.values(groupedMedals).forEach(lessons => {
+    lessons.forEach(lesson => {
+      if (lesson.medalTier) medalCounts[lesson.medalTier]++
+    })
+  })
+
+const card = { 
+    border: '1px solid #e5e7eb', 
+    borderRadius: 12, 
+    padding: 14, 
+    background: '#fff',
+    marginBottom: 8
+  }
+
+const subjectHeading = { 
+    margin: '24px 0 12px', 
+    fontSize: 18, 
+    fontWeight: 600,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8
+  }
+
+return (
+    <main style={{ padding: 24, maxWidth: 980, margin: '0 auto', minHeight: 'calc(100dvh - 56px)' }}>
+      <h1 style={{ margin: '8px 0 4px', textAlign: 'center' }}>
+        🏆 Awards
+      </h1>
+      
+      {learnerName && (
+        <div style={{ textAlign: 'center', marginBottom: 16, fontSize: 16, color: '#666' }}>
+          Earned by <strong style={{ color: '#111' }}>{learnerName}</strong>
+        </div>
+      )}
+
+### 16. src/app/session/slate/page.jsx (d158e94ac2ff56bef627c39345a7bd2be1b42aa42d16257281055b6f168a7e55)
+- bm25: -11.4522 | relevance: 0.9197
+
+const exitToLessons = useCallback(() => {
+    clearInterval(timerInterval.current)
+    clearTimeout(feedbackTimeout.current)
+    router.push('/learn/lessons')
+  }, [router])
+
+const lessonTitle = lessonData?.title || ''
+
+// ===========================================================================
+  //  RENDER -- Loading
+  // ===========================================================================
+  if (pagePhase === 'loading') {
+    return (
+      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ marginBottom: 16 }}>
+            <SlateVideo size={100} />
+          </div>
+          <div style={{ fontSize: 13, letterSpacing: 2, marginBottom: 20 }}>INITIALIZING DRILL SYSTEM...</div>
+          <LoadingDots />
+        </div>
+      </div>
+    )
+  }
+
+// ===========================================================================
+  //  RENDER -- Error
+  // ===========================================================================
+  if (pagePhase === 'error') {
+    return (
+      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ textAlign: 'center', maxWidth: 400 }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>⚠️</div>
+          <div style={{ color: C.red, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>SYSTEM ERROR</div>
+          <div style={{ color: C.muted, fontSize: 13, marginBottom: 24 }}>{errorMsg}</div>
+          <button onClick={exitToLessons} style={ghostBtn}>← RETURN TO LESSONS</button>
+        </div>
+      </div>
+    )
+  }
+
+### 17. docs/brain/facilitator-help-system.md (c249a4a4c879fc7d9f3e4681903d5145c69f2f495d6d5eddda5e805833c62e21)
+- bm25: -11.3598 | relevance: 0.9191
+
+**2026-01-10**: Added `PageHeader` dense mode.
+- Purpose: allow specific pages (e.g., Calendar) to reduce header vertical footprint without changing global facilitator layouts.
+- Implementation: `dense` reduces the default margins and slightly reduces title/subtitle sizing.
+- Tightness: `dense` is intentionally more compact than the default header; use it only where vertical space is at a premium.
+
+**2025-12-15**: Removed "Don't show again" functionality. Help is now fully voluntary - users click ❓ to view, click backdrop/X to close. No localStorage persistence needed. Simplified component state.
+
+**2025-12-15**: Fixed modal overlay rendering using React Portal and inline styles instead of Tailwind classes. Modals now properly display above page content with backdrop.
+
+**2025-12-15**: Unified both help components to use ❓ emoji. WorkflowGuide and InlineExplainer now use identical button styling for consistency. Both open centered modal overlays with backdrop on click.
+
+**2025-12-15**: Updated InlineExplainer to use modal overlay instead of positioned tooltip. Changed button from blue circle with SVG icon to ❓ emoji. Removed placement prop (no longer needed). Modal centers on screen with backdrop, preventing layout issues and overflow problems.
+
+**2025-12-15**: Initial implementation of help system. Added InlineExplainer, WorkflowGuide, PageHeader components. Deployed help content to calendar, learners, lessons pages. Created this brain file.
+
+---
+
+## Future Considerations
+
+### 18. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -11.2655 | relevance: 0.9185
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 19. src/app/facilitator/notifications/page.js (1ecb7897c0b092d3e5fdb5cb52f15534a36f4bab7d2dbc2d3bd4f1eef1b78eaf)
+- bm25: -11.2606 | relevance: 0.9184
+
+if (authLoading || loading) {
+    return (
+      <>
+        <main style={{ padding: 7 }}><p>Loading…</p></main>
+        <GatedOverlay
+          show={!isAuthenticated}
+          gateType={gateType}
+          feature="Notifications"
+          emoji="🔔"
+          description="Sign in to view and manage facilitator notifications."
+          benefits={[
+            'See reminders about planning and scheduling',
+            'Track lesson expirations',
+            'Get subscription and limit alerts'
+          ]}
+        />
+      </>
+    );
+  }
+
+### 20. src/app/learn/awards/page.js (aae2328e0ee15a6065296a219b86c3ca49388cd1de1f170e826da26788d23a15)
+- bm25: -11.2341 | relevance: 0.9183
+
+return (
+              <div key={subject}>
+                <h2 style={subjectHeading}>
+                  {displaySubject}
+                  <span style={{ 
+                    fontSize: 14, 
+                    fontWeight: 400, 
+                    color: '#6b7280',
+                    background: '#f3f4f6',
+                    padding: '2px 8px',
+                    borderRadius: 12
+                  }}>
+                    {lessons.length} {lessons.length === 1 ? 'medal' : 'medals'}
+                  </span>
+                </h2>
+                
+                {lessons.map(lesson => {
+                  const medal = emojiForTier(lesson.medalTier)
+                  
+                  return (
+                    <div key={`${subject}-${lesson.file}`} style={card}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{ margin: '0 0 4px', fontSize: 16 }}>
+                            {lesson.title}
+                          </h3>
+                          {lesson.blurb && (
+                            <p style={{ margin: '4px 0', color: '#6b7280', fontSize: 14 }}>
+                              {lesson.blurb}
+                            </p>
+                          )}
+                          {(lesson.grade || lesson.difficulty) && (
+                            <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+                              {lesson.grade && `Grade ${lesson.grade}`}
+                              {lesson.grade && lesson.difficulty && ' • '}
+                              {lesson.difficulty && lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1)}
+                            </div>
+
+### 21. src/app/learn/awards/page.js (f45cd535ba332cbf78616690eb559625eb2e7507931a9b3848baaee84ae648ba)
+- bm25: -11.1869 | relevance: 0.9179
+
+{loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: 12, marginTop: 32 }}>
+          <div style={{ 
+            width: 48, 
+            height: 48, 
+            border: '4px solid #e5e7eb', 
+            borderTop: '4px solid #111', 
+            borderRadius: '50%', 
+            animation: 'spin 1s linear infinite' 
+          }}></div>
+          <p style={{ textAlign:'center', color: '#6b7280', fontSize: 16 }}>Loading awards...</p>
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      ) : !hasMedals ? (
+        <div style={{ textAlign: 'center', marginTop: 32 }}>
+          <p style={{ fontSize: 48 }}>🎯</p>
+          <p style={{ color: '#6b7280', fontSize: 18 }}>No medals earned yet!</p>
+          <p style={{ color: '#9ca3af', fontSize: 14 }}>
+            Complete lessons to earn bronze (70%+), silver (80%+), or gold (90%+) medals.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div style={{ 
+            textAlign: 'center', 
+            marginBottom: 24, 
+            padding: 16, 
+            background: '#f9fafb', 
+            borderRadius: 12,
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 24,
+            flexWrap: 'wrap'
+          }}>
+            <div>
+              <div style={{ fontSize: 32 }}>🥇</div>
+              <div style={{ fontWeight: 600, fontSize: 20 }}>{medalCounts.gold}</div>
+              <div style={{ fontSize: 12, color: '#6b7280' }}>Gold</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 32 }}>🥈</div>
+              <div style={{ f
+
+### 22. docs/brain/ingests/pack.md (aa6ec106ec68e22bb817f61c01c25af4440948ba22e71ec40a50cad850d8b6d0)
+- bm25: -10.9577 | relevance: 0.9164
 
 ### Portfolio Scan Uploads (Worksheet/Test Images)
 
@@ -145,1013 +755,64 @@ calendar scheduled lessons edit lesson button reschedule past notes assigns add 
 
 ### Automated Lesson Plan Generation
 
-### 3. sidekick_pack.md (1b8d472e8d337a496fea4e2f89d70f9d674ba8099b9a98db4dd35f1003f58603)
-- bm25: -21.4648 | relevance: 0.9555
-
-**Calendar month focus rule (history discoverability):**
-- When a learner is selected on the Schedule tab, the calendar grid should auto-focus to the month containing the most recent scheduled date (preferably a past/completed date when available).
-- This prevents the calendar from looking "empty" on the current month when the learner's completed history is in earlier months.
-
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
-
-These actions are implemented on:
-- The main Calendar page schedule list
-- The Calendar Day View overlay schedule list
-- The Mr. Mentor Calendar overlay schedule list
-
-### Portfolio Scan Uploads (Worksheet/Test Images)
-
-### 2. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (6f33983453dfbb17ba0b015de6cc76fa071dc0e7a401f52396b7093115ac315c)
-- bm25: -36.0508 | relevance: 1.0000
-
-### 4. sidekick_pack.md (d66e1da129156d6bba9275eea9e1242dbd9dc3611f95401f842f0c993f41627b)
-- bm25: -21.3661 | relevance: 0.9553
-
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
-
-### 5. sidekick_pack.md (8d3f68810a223f0093360948579972365ee3e3b878ca2ff41ecef73ff997fe8f)
-- bm25: -21.3661 | relevance: 0.9553
-
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
-
-### 6. sidekick_pack.md (a6a5a8402f60a32ae3f5331f3e88e3b679090d1e257e5157603316df1542732f)
-- bm25: -21.2591 | relevance: 0.9551
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 7. sidekick_pack.md (cad378213fd13855af53d533bd71221aed90460d4fbb4523573edc023e104f0e)
-- bm25: -21.2591 | relevance: 0.9551
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 8. sidekick_pack.md (1f28777aa00516f363d491420dfa6a99c690b1cfebadbd59af7be0334bd94883)
-- bm25: -21.2591 | relevance: 0.9551
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 9. docs/brain/ingests/pack.planned-lessons-flow.md (88c29dc19b3f25ed0178c73764a3887f3532851fb2e1292ab2f58b31241fad00)
-- bm25: -21.1986 | relevance: 0.9550
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 10. docs/brain/MentorInterceptor_Architecture.md (b9af78a6a85babc29ee74ec9cf6073767b7a2e84a19456e1f96ab9a407cbd74d)
-- bm25: -21.1842 | relevance: 0.9549
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 11. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (6f33983453dfbb17ba0b015de6cc76fa071dc0e7a401f52396b7093115ac315c)
-- bm25: -21.1840 | relevance: 0.9549
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 12. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
-- bm25: -19.9653 | relevance: 0.9523
-
-**Completion query rule (visibility > micro-optimization):**
-- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
-- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
-
-**Calendar date key rule (marker dots):**
-- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
-- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
-- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
-
-**Calendar month focus rule (history discoverability):**
-- When a learner is selected on the Schedule tab, the calendar grid should auto-focus to the month containing the most recent scheduled date (preferably a past/completed date when available).
-- This prevents the calendar from looking "empty" on the current month when the learner's completed history is in earlier months.
-
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
-
-These actions are implemented on:
-- The main Calendar page schedule list
-- The Calendar Day View overlay schedule list
-- The Mr. Mentor Calendar overlay schedule list
-
-### Portfolio Scan Uploads (Worksheet/Test Images)
-
-### 13. sidekick_pack.md (838d24067808134cf08c96e92ef01cb7a31d6b4a2d9cbe2757f6914876e84133)
-- bm25: -19.5724 | relevance: 0.9514
-
-### 33. docs/brain/portfolio-generation.md (fe1e7ac464f2afc7d7f87532c21ef1729a468f8ae05052009b691a0e808f815e)
-- bm25: -22.2966 | relevance: 1.0000
-
-# Portfolio Generation System
-
-**Last Updated**: 2026-01-30T15:25:06Z
-**Status**: Canonical
-
-## How It Works
-
-The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
-
-### UI Flow
-
-1. Facilitator opens Lesson Calendar.
-2. Clicks **Generate portfolio** (header button).
-3. Modal collects:
-   - Start date (YYYY-MM-DD)
-   - End date (YYYY-MM-DD)
-   - Include checkboxes: Visual aids, Notes, Images
-4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
-5. UI shows a public link to open the portfolio plus a manifest download link.
-6. UI also lists previously generated portfolios so they can be re-opened or deleted.
-
-### What Gets Included
-
-The generator produces one portfolio index with per-lesson recap sections.
-
-Per lesson (completed scheduled lessons only):
-- **Title**: derived from `lesson_schedule.lesson_key`.
-- **Date**: the scheduled date.
-- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
-- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
-- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
-
-### Completion Rule (Calendar parity)
-
-Portfolio generation follows the Calendar history rule:
-- A scheduled lesson counts as completed if there is a `lesson_session_events` row with `event_type = 'completed'` for the same canonical lesson id either:
-  - on the scheduled date, or
-  - within 7 days after (make-up window).
-
-Canonical lesson id is the normalized basename without `.json`.
-
-### 14. sidekick_pack.md (a475ff22c1aa00a916e071e88692d18b86e76ca3a394e28c40ff6af3f80b6c05)
-- bm25: -19.5228 | relevance: 0.9513
-
-### 32. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
-- bm25: -13.5957 | relevance: 1.0000
-
-**Completion query rule (visibility > micro-optimization):**
-- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
-- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
-
-**Calendar date key rule (marker dots):**
-- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
-- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
-- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
-
-### 18. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (7be445ab882a8b5ec4eb6ddf2cb10f9ffe0b8ef65bcdb2d4fb2a0249ed86bb88)
-- bm25: -26.4754 | relevance: 1.0000
-
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
-
-These actions are implemented on:
-- The main Calendar page schedule list
-- The Calendar Day View overlay schedule list
-- The Mr. Mentor Calendar overlay schedule list
-
-### Portfolio Scan Uploads (Worksheet/Test Images)
-
-### 15. docs/brain/ingests/pack.lesson-schedule-debug.md (29249996be09c0693404295bc827d5da4c475eff693d707e837bdac9c49a7aa2)
-- bm25: -19.5081 | relevance: 0.9512
-
-Returns:
-```javascript
-{
-  handled: false,
-  apiForward: { 
-    message: userMessage, 
-    bypassInterceptor: true 
-  }
-}
-```
-
-## Data Structures
-
-### allLessons (from loadAllLessons)
-
-### 32. docs/brain/portfolio-generation.md (fe1e7ac464f2afc7d7f87532c21ef1729a468f8ae05052009b691a0e808f815e)
-- bm25: -17.3592 | relevance: 1.0000
-
-# Portfolio Generation System
-
-**Last Updated**: 2026-01-30T15:25:06Z
-**Status**: Canonical
-
-## How It Works
-
-The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
-
-### UI Flow
-
-1. Facilitator opens Lesson Calendar.
-2. Clicks **Generate portfolio** (header button).
-3. Modal collects:
-   - Start date (YYYY-MM-DD)
-   - End date (YYYY-MM-DD)
-   - Include checkboxes: Visual aids, Notes, Images
-4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
-5. UI shows a public link to open the portfolio plus a manifest download link.
-6. UI also lists previously generated portfolios so they can be re-opened or deleted.
-
-### What Gets Included
-
-The generator produces one portfolio index with per-lesson recap sections.
-
-Per lesson (completed scheduled lessons only):
-- **Title**: derived from `lesson_schedule.lesson_key`.
-- **Date**: the scheduled date.
-- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
-- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
-- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
-
-### Completion Rule (Calendar parity)
-
-### 16. sidekick_pack.md (9c94af25c016ceba64bc640ba1250313117b47564e20b21e486a2383cf8e7b32)
-- bm25: -19.3446 | relevance: 0.9508
-
-Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
-
-### 34. docs/brain/ingests/pack.md (6a1e61007b9ff9c99519640f860bd4eb744925fbb659b58284221644f47027e9)
-- bm25: -22.2966 | relevance: 1.0000
-
-# Portfolio Generation System
-
-**Last Updated**: 2026-01-30T15:25:06Z
-**Status**: Canonical
-
-## How It Works
-
-The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
-
-### UI Flow
-
-1. Facilitator opens Lesson Calendar.
-2. Clicks **Generate portfolio** (header button).
-3. Modal collects:
-   - Start date (YYYY-MM-DD)
-   - End date (YYYY-MM-DD)
-   - Include checkboxes: Visual aids, Notes, Images
-4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
-5. UI shows a public link to open the portfolio plus a manifest download link.
-6. UI also lists previously generated portfolios so they can be re-opened or deleted.
-
-### What Gets Included
-
-The generator produces one portfolio index with per-lesson recap sections.
-
-Per lesson (completed scheduled lessons only):
-- **Title**: derived from `lesson_schedule.lesson_key`.
-- **Date**: the scheduled date.
-- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
-- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
-- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
-
-### Completion Rule (Calendar parity)
-
-Portfolio generation follows the Calendar history rule:
-- A scheduled lesson counts as completed if there is a `lesson_session_events` row with `event_type = 'completed'` for the same canonical lesson id either:
-  - on the scheduled date, or
-  - within 7 days after (make-up window).
-
-### 17. docs/brain/portfolio-generation.md (fe1e7ac464f2afc7d7f87532c21ef1729a468f8ae05052009b691a0e808f815e)
-- bm25: -19.2797 | relevance: 0.9507
-
-# Portfolio Generation System
-
-**Last Updated**: 2026-01-30T15:25:06Z
-**Status**: Canonical
-
-## How It Works
-
-The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
-
-### UI Flow
-
-1. Facilitator opens Lesson Calendar.
-2. Clicks **Generate portfolio** (header button).
-3. Modal collects:
-   - Start date (YYYY-MM-DD)
-   - End date (YYYY-MM-DD)
-   - Include checkboxes: Visual aids, Notes, Images
-4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
-5. UI shows a public link to open the portfolio plus a manifest download link.
-6. UI also lists previously generated portfolios so they can be re-opened or deleted.
-
-### What Gets Included
-
-The generator produces one portfolio index with per-lesson recap sections.
-
-Per lesson (completed scheduled lessons only):
-- **Title**: derived from `lesson_schedule.lesson_key`.
-- **Date**: the scheduled date.
-- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
-- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
-- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
-
-### Completion Rule (Calendar parity)
-
-Portfolio generation follows the Calendar history rule:
-- A scheduled lesson counts as completed if there is a `lesson_session_events` row with `event_type = 'completed'` for the same canonical lesson id either:
-  - on the scheduled date, or
-  - within 7 days after (make-up window).
-
-Canonical lesson id is the normalized basename without `.json`.
+### 23. src/app/session/slate/page.jsx (dce69f4d5bbb94256045f88b11abb9dfc1799af639930316e6f68865471a1b37)
+- bm25: -10.6879 | relevance: 0.9144
+
+{/* Recent tab — completed Ms. Sonoma sessions, most recent first */}
+                {listTab === 'recent' && (
+                  recentList.length === 0 ? (
+                    <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>
+                      NO COMPLETED LESSONS YET — FINISH A LESSON WITH MS. SONOMA TO SEE RESULTS HERE
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
+                        {recentList.length} COMPLETED LESSON{recentList.length !== 1 ? 'S' : ''}
+                      </div>
+                      {recentList.map((r, i) => <RecentRow key={r.session.id || i} session={r.session} lesson={r.lesson} />)}
+                    </div>
+                  )
+                )}
+
+### 24. .github/copilot-instructions.md (64fe53fc4731798a8a516dad109cc4e32343c622892bac17c6f9bdf1a9f9bbf3)
+- bm25: -10.5570 | relevance: 0.9135
+
+If pack #1 doesn't contain the entrypoint you need:
+1. Re-pack with a tighter anchor (prefer an exact string, route, or filename).
+2. If still missing, ingest/sync the relevant subtree, then re-pack.
+
+When making code/doc changes “for real”:
+1. Ensure head is current for touched files (pick one):
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere ingest <file-or-folder> --project freehands [--recursive]`
+   - or `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere sync --project freehands` if the working tree may have drifted
+2. Prefer generating and applying a change pack linked to evidence:
+   - edit file(s) in working tree
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere change new --project freehands --file <relpath> --pack pack.md --out change.json --summary "..."`
+   - restore the base file(s) to match DB head (clean base), then:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere apply --project freehands change.json`
+3. If anything goes wrong, rollback by change id:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere rollback --project freehands --change-id <id>`
+4. Run integrity checks after non-trivial work:
+   - `$env:COHERE_HOME = "$env:USERPROFILE\.coherence_apps\ms_sonoma"; py -m cohere doctor --project freehands`
+
+Binary files:
+- Change packs are text-only (plus deletions). Binaries are preserved losslessly by ingest/sync, not by diffs.
+
+NOTE: `.github/instructions/*` are archived snapshots; do not edit them.
+
+## DOCUMENTATION POLICY (COHERE-CANONICAL)
+
+For this workspace, Cohere packs + Cohere change packs are the canonical record of system behavior and provenance.
+
+### 25. sidekick_pack.md (bba8c9d0a2ad1fcfae649c359a4219ed32e5a5913249044c89d6ec0d9ecb4d56)
+- bm25: -10.4925 | relevance: 0.9130
 
 ### Storage + Public Access (No Login)
 
 Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
-
-### 18. docs/brain/ingests/pack.md (6a1e61007b9ff9c99519640f860bd4eb744925fbb659b58284221644f47027e9)
-- bm25: -19.2797 | relevance: 0.9507
-
-# Portfolio Generation System
-
-**Last Updated**: 2026-01-30T15:25:06Z
-**Status**: Canonical
-
-## How It Works
-
-The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
-
-### UI Flow
-
-1. Facilitator opens Lesson Calendar.
-2. Clicks **Generate portfolio** (header button).
-3. Modal collects:
-   - Start date (YYYY-MM-DD)
-   - End date (YYYY-MM-DD)
-   - Include checkboxes: Visual aids, Notes, Images
-4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
-5. UI shows a public link to open the portfolio plus a manifest download link.
-6. UI also lists previously generated portfolios so they can be re-opened or deleted.
-
-### What Gets Included
-
-The generator produces one portfolio index with per-lesson recap sections.
-
-Per lesson (completed scheduled lessons only):
-- **Title**: derived from `lesson_schedule.lesson_key`.
-- **Date**: the scheduled date.
-- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
-- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
-- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
-
-### Completion Rule (Calendar parity)
-
-Portfolio generation follows the Calendar history rule:
-- A scheduled lesson counts as completed if there is a `lesson_session_events` row with `event_type = 'completed'` for the same canonical lesson id either:
-  - on the scheduled date, or
-  - within 7 days after (make-up window).
-
-Canonical lesson id is the normalized basename without `.json`.
-
-### Storage + Public Access (No Login)
-
-Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
-
-### 19. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (e47ddd04b34ab36279c5d316853898791919b110f8830092679f492ed463f28c)
-- bm25: -19.1326 | relevance: 0.9503
-
-**Flow (entry points):**
-1. Facilitator Lessons page: navigate to `facilitator/lessons`, select learner, expand subject
-2. Calendar schedule view (past completed lessons): click **Notes** on a scheduled lesson
-3. Mr. Mentor Calendar overlay (past completed lessons): click **Notes** on a scheduled lesson
-4. Type note text and save
-5. Empty note deletes the key from the JSONB map (no empty-string storage)
-5. When facilitator discusses learner with Mr. Mentor, notes appear in transcript:
-   ```
-   FACILITATOR NOTES ON LESSONS:
-
-### 20. docs/brain/ingests/pack.md (a838aa65e66cc882806bbd97ce6cd65ddb5dd60a2df471902da645af333bd942)
-- bm25: -19.0898 | relevance: 0.9502
-
-### 2. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
-- bm25: -35.1192 | relevance: 1.0000
-
-**Completion query rule (visibility > micro-optimization):**
-- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
-- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
-
-**Calendar date key rule (marker dots):**
-- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
-- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
-- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
-
-**Calendar month focus rule (history discoverability):**
-- When a learner is selected on the Schedule tab, the calendar grid should auto-focus to the month containing the most recent scheduled date (preferably a past/completed date when available).
-- This prevents the calendar from looking "empty" on the current month when the learner's completed history is in earlier months.
-
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
-
-### 21. docs/brain/ingests/pack.lesson-schedule-debug.md (43275361c85baceec81d8ab6835df496d5162a8f4cd178ae0c41a5029e83ffac)
-- bm25: -19.0296 | relevance: 0.9501
-
-### 19. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
-- bm25: -20.0203 | relevance: 1.0000
-
-**Completion query rule (visibility > micro-optimization):**
-- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
-- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
-
-**Calendar date key rule (marker dots):**
-- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
-- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
-- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
-
-**Calendar month focus rule (history discoverability):**
-- When a learner is selected on the Schedule tab, the calendar grid should auto-focus to the month containing the most recent scheduled date (preferably a past/completed date when available).
-- This prevents the calendar from looking "empty" on the current month when the learner's completed history is in earlier months.
-
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
-
-### 22. sidekick_pack.md (2bc7d589ac799e9924beb7e71177c39de367d4c740ef99fd5fec5a52072ad3eb)
-- bm25: -18.4996 | relevance: 0.9487
-
-// Handle clipboard delete (discard conversation)
-  const handleClipboardDelete = useCallback(async () => {
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      
-      if (!token) return
-
-const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
-
-// Delete the draft
-      await fetch(`/api/conversation-drafts?learner_id=${learnerId || ''}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-// Clear conversation
-      await clearConversationAfterSave()
-      
-      setShowClipboard(false)
-      setClipboardInstructions(false)
-      
-      alert('Conversation deleted.')
-    } catch (err) {
-      // Silent error handling
-      alert('Failed to delete conversation.')
-    }
-  }, [selectedLearnerId])
-
-### 19. docs/brain/ingests/pack.planned-lessons-flow.md (2046f8ed83efe371421b91cb16a7671c8ab761a39b24a8cf0b5c73dd86dac748)
-- bm25: -26.4300 | relevance: 1.0000
-
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
-
-These actions are implemented on:
-- The main Calendar page schedule list
-- The Calendar Day View overlay schedule list
-- The Mr. Mentor Calendar overlay schedule list
-
-### Portfolio Scan Uploads (Worksheet/Test Images)
-
-### 23. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (7be445ab882a8b5ec4eb6ddf2cb10f9ffe0b8ef65bcdb2d4fb2a0249ed86bb88)
-- bm25: -18.0869 | relevance: 0.9476
-
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
-
-These actions are implemented on:
-- The main Calendar page schedule list
-- The Calendar Day View overlay schedule list
-- The Mr. Mentor Calendar overlay schedule list
-
-### Portfolio Scan Uploads (Worksheet/Test Images)
-
-### 26. src/app/facilitator/generator/counselor/CounselorClient.jsx (41e17c24a556523149db2bc643c856816b23d9b78ec8fa7c213dafcfaee30536)
-- bm25: -14.9427 | relevance: 1.0000
-
-// Handle clipboard delete (discard conversation)
-  const handleClipboardDelete = useCallback(async () => {
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      
-      if (!token) return
-
-const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
-
-// Delete the draft
-      await fetch(`/api/conversation-drafts?learner_id=${learnerId || ''}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-// Clear conversation
-      await clearConversationAfterSave()
-      
-      setShowClipboard(false)
-      setClipboardInstructions(false)
-      
-      alert('Conversation deleted.')
-    } catch (err) {
-      // Silent error handling
-      alert('Failed to delete conversation.')
-    }
-  }, [selectedLearnerId])
-
-### 24. docs/brain/lesson-notes.md (ba1927d5f15444bd06ae20de79a25c5719c23ee58aaed5fda05b53a8bd35dbd8)
-- bm25: -17.6187 | relevance: 0.9463
-
-# Lesson Notes
-
-## How It Works
-
-Facilitators can add notes to any lesson in the `facilitator/lessons` page. These notes are stored per learner and automatically included in Mr. Mentor's learner transcript, providing context about specific challenges, progress, or needs.
-
-**Flow (entry points):**
-1. Facilitator Lessons page: navigate to `facilitator/lessons`, select learner, expand subject
-2. Calendar schedule view (past completed lessons): click **Notes** on a scheduled lesson
-3. Mr. Mentor Calendar overlay (past completed lessons): click **Notes** on a scheduled lesson
-4. Type note text and save
-5. Empty note deletes the key from the JSONB map (no empty-string storage)
-5. When facilitator discusses learner with Mr. Mentor, notes appear in transcript:
-   ```
-   FACILITATOR NOTES ON LESSONS:
-
-math - Multiplication Basics:
-     "Struggles with times tables above 5x. Needs more practice with visual aids."
-
-science - Solar System:
-     "Very interested in planets, completed ahead of schedule."
-   ```
-6. Mr. Mentor references notes in responses for data-informed, personalized counseling
-
-**Purpose**: Enables facilitators to document learner-specific observations that persist across lessons, providing Mr. Mentor with longitudinal context for better guidance.
-
-## Database Schema
-
-**Learners table:**
-```sql
--- Column added to learners table
-lesson_notes jsonb default '{}'::jsonb
-
--- Structure: { 'subject/lesson_file': 'note text', ... }
--- Example:
-{
-  "math/Multiplication_Basics.json": "Struggles with times tables above 5x",
-  "science/Solar_System.json": "Very interested in planets, completed ahead of schedule"
-}
-```
-
-## Mr. Mentor Integration
-
-### 25. docs/brain/ingests/pack.md (b5adbc57ffb081312d82eb41107cf88819855e985f0bde2dcc5c657df7a0f2a8)
-- bm25: -17.3303 | relevance: 0.9454
-
-## Ranked Evidence
-
-### 1. docs/brain/lesson-notes.md (ba1927d5f15444bd06ae20de79a25c5719c23ee58aaed5fda05b53a8bd35dbd8)
-- bm25: -36.2172 | relevance: 1.0000
-
-# Lesson Notes
-
-## How It Works
-
-Facilitators can add notes to any lesson in the `facilitator/lessons` page. These notes are stored per learner and automatically included in Mr. Mentor's learner transcript, providing context about specific challenges, progress, or needs.
-
-**Flow (entry points):**
-1. Facilitator Lessons page: navigate to `facilitator/lessons`, select learner, expand subject
-2. Calendar schedule view (past completed lessons): click **Notes** on a scheduled lesson
-3. Mr. Mentor Calendar overlay (past completed lessons): click **Notes** on a scheduled lesson
-4. Type note text and save
-5. Empty note deletes the key from the JSONB map (no empty-string storage)
-5. When facilitator discusses learner with Mr. Mentor, notes appear in transcript:
-   ```
-   FACILITATOR NOTES ON LESSONS:
-
-math - Multiplication Basics:
-     "Struggles with times tables above 5x. Needs more practice with visual aids."
-
-science - Solar System:
-     "Very interested in planets, completed ahead of schedule."
-   ```
-6. Mr. Mentor references notes in responses for data-informed, personalized counseling
-
-**Purpose**: Enables facilitators to document learner-specific observations that persist across lessons, providing Mr. Mentor with longitudinal context for better guidance.
-
-## Database Schema
-
-**Learners table:**
-```sql
--- Column added to learners table
-lesson_notes jsonb default '{}'::jsonb
-
--- Structure: { 'subject/lesson_file': 'note text', ... }
--- Example:
-{
-  "math/Multiplication_Basics.json": "Struggles with times tables above 5x",
-  "science/Solar_System.json": "Very interested in planets, completed ahead of schedule"
-}
-```
-
-### 26. src/app/api/counselor/route.js (a9d50bd79e5c7b7743013004d68e3a1aa190963beeb9defb3f390771f341d679)
-- bm25: -17.2276 | relevance: 0.9451
-
-4. SCHEDULE_LESSON - Add lessons to calendars
-   - When they say "schedule this" "add that to Monday" "put it on the calendar" → YOU MUST ACTUALLY CALL THIS FUNCTION
-   - You can use the learner's NAME (like "Emma") - the system will find them
-   - Need: learner name, lesson key from search/generate, date in YYYY-MM-DD format
-   - CRITICAL: DO NOT say you've scheduled something unless you ACTUALLY call the schedule_lesson function
-   - NEVER confirm scheduling without calling the function first
-
-5. ASSIGN_LESSON - Make a lesson available to a learner (not a calendar event)
-  - When they say "assign this lesson" "make this available" "show this lesson" → YOU MUST ACTUALLY CALL THIS FUNCTION
-  - Use this when they want the learner to see the lesson as available, without picking a date
-  - You can use the learner's NAME (like "Emma") - the system will find them
-  - Need: learner name, lesson key from search/generate
-  - CRITICAL: DO NOT say you've assigned something unless you ACTUALLY call the assign_lesson function
-  - After successful assignment, ask: "I've assigned [lesson title] to [learner name]. Is that correct?"
-
-6. EDIT_LESSON - Modify existing lessons (ALL lessons: installed subjects AND facilitator-created)
-   - When they ask to change/fix/update/edit a lesson → USE THIS TOOL
-   - Can edit: vocabulary, teaching notes, blurb, questions (all types)
-   - Works on both pre-installed lessons AND custom facilitator lessons
-
-7. GET_CONVERSATION_MEMORY - Retrieve past conversation summaries
-   - When you need context from previous sessions → USE THIS TOOL
-   - When they mention something discussed before → USE THIS TOOL
-   - Automatically loads at start of each conversation for continuity
-   - Can search across all past conversations with keywords
-
-### 27. docs/brain/ingests/pack.planned-lessons-flow.md (2046f8ed83efe371421b91cb16a7671c8ab761a39b24a8cf0b5c73dd86dac748)
-- bm25: -16.2889 | relevance: 0.9422
-
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
-
-These actions are implemented on:
-- The main Calendar page schedule list
-- The Calendar Day View overlay schedule list
-- The Mr. Mentor Calendar overlay schedule list
-
-### Portfolio Scan Uploads (Worksheet/Test Images)
-
-### 33. docs/brain/portfolio-generation.md (e083fdfcd6e4035528697e6c1609dd20b75c22e0849fc326d799b41cbb6a114a)
-- bm25: -13.4685 | relevance: 1.0000
-
-Portfolio scans originally live in the `transcripts` bucket and are private/signed-url only. For no-login review, the generator copies scan files into the public `portfolios` bucket and links them from the portfolio HTML.
-
-### Persistence + Management
-
-Each generated portfolio is also saved in the database so it can be revisited and deleted.
-
-- Table: `public.portfolio_exports`
-  - Stores: facilitator_id, learner_id, portfolio_id, date range, include flags, and Storage paths.
-- API endpoints:
-  - `GET /api/portfolio/list?learnerId=<uuid>`: returns the latest saved portfolios for that learner.
-  - `POST /api/portfolio/delete`: deletes the portfolio's Storage folder first (breaking the public link), then deletes the DB row.
-
-This management layer is required because reviewers may keep the public link, and facilitators need a way to revoke access later.
-
-## What NOT To Do
-
-### 28. docs/brain/calendar-lesson-planning.md (3b6e5c01846ed94e0fb9b182d52c90bb48e47f373bd8d63a82f0583a4583c4bb)
-- bm25: -16.1644 | relevance: 0.9417
-
-The Calendar “Add Images” action is for uploading **new** images (e.g., worksheet/test scans) to attach to a completed scheduled lesson for portfolio purposes.
-
-### 29. sidekick_pack.md (8d2d98c4a5e9802d9ffc48dd47d1b4ee95e3b624a0bcdde6bb2a6300794f51dd)
-- bm25: -15.7694 | relevance: 0.9404
-
-**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
-
-**DON'T fail to update notes** - Stale notes mislead Mr. Mentor. Encourage facilitators to update notes as learner progresses.
-
-**DON'T forget empty note deletion** - Save function correctly deletes empty notes from JSONB object (avoids storing null/empty values).
-
-### 14. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
-- bm25: -17.8102 | relevance: 1.0000
-
-- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
-  - Full-screen carousel during lesson
-  - "Explain" button triggers Ms. Sonoma TTS of description
-  - Read-only view (no editing)
-
-### Integration Points
-- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
-  - `handleGenerateVisualAids()` - initiates generation
-  - Manages visual aids state and save flow
-
-- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
-  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
-  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
-  - Renders `VisualAidsCarousel` above the inline editor modal
-
-- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
-  - `handleGenerateVisualAids()` - generation from counselor lesson creation
-
-- **`src/app/session/page.js`** - Learner session
-  - Loads visual aids by normalized `lessonKey`
-  - `onShowVisualAids()` - opens carousel
-  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
-
-### 30. docs/brain/ingests/pack.lesson-schedule-debug.md (fd1796cfe6b6c5842bd4b799eabaf2d2ce1a1088d7f98e72a10e49586317cb10)
-- bm25: -15.7490 | relevance: 0.9403
-
-- `src/app/facilitator/lessons/page.js` - Note UI (add/edit/save), state management, Supabase updates
-- `src/app/facilitator/calendar/LessonNotesModal.jsx` - Notes modal used from Calendar schedule lists
-- `src/app/lib/learnerTranscript.js` - Transcript builder, includes notes section
-- `src/app/api/counselor/route.js` - Receives transcript with notes
-
-### 31. docs/brain/ingests/pack-mentor-intercepts.md (ad9be28e3be4c170969fd8d3a91e2b0202957cc880842fc857610f9d7f8b194a)
-- bm25: -15.6465 | relevance: 0.9399
-
-**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
-
-**DON'T fail to update notes** - Stale notes mislead Mr. Mentor. Encourage facilitators to update notes as learner progresses.
-
-**DON'T forget empty note deletion** - Save function correctly deletes empty notes from JSONB object (avoids storing null/empty values).
-
-### 14. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
-- bm25: -17.8102 | relevance: 1.0000
-
-- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
-  - Full-screen carousel during lesson
-  - "Explain" button triggers Ms. Sonoma TTS of description
-  - Read-only view (no editing)
-
-### Integration Points
-- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
-  - `handleGenerateVisualAids()` - initiates generation
-  - Manages visual aids state and save flow
-
-- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
-  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
-  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
-  - Renders `VisualAidsCarousel` above the inline editor modal
-
-- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
-  - `handleGenerateVisualAids()` - generation from counselor lesson creation
-
-- **`src/app/session/page.js`** - Learner session
-  - Loads visual aids by normalized `lessonKey`
-  - `onShowVisualAids()` - opens carousel
-  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
-
-### 32. src/app/api/counselor/route.js (4b58708eb47ed1de9e7a26238dee9e62257fd2e2141f45a4217d285b84afd1b8)
-- bm25: -14.7926 | relevance: 0.9367
-
-assign_lesson: {
-      name: 'assign_lesson',
-      purpose: 'Assign a lesson to a learner so it shows up as available (not scheduled on a date)',
-      when_to_use: 'When facilitator asks to assign a lesson, make it available, or show it to a learner without choosing a date',
-      parameters: {
-        learnerName: 'Required. The learner\'s name (e.g., "Emma"). The system will find the matching learner.',
-        lessonKey: 'Required. Format: "subject/filename.json" (from search results or after generating).',
-        lessonTitle: 'Optional. Human-readable title for confirmation (if known). If unknown, call get_lesson_details first.'
-      },
-      returns: 'Success confirmation with learner name and lesson key',
-      notes: 'Use assign_lesson when the user says "assign" and does not request a calendar date. For calendar placement, use schedule_lesson.',
-      example: 'Assign for Emma: {learnerName: "Emma", lessonKey: "math/Multiplication_Basics.json"}'
-    },
-    
-    edit_lesson: {
-      name: 'edit_lesson',
-      purpose: 'Modify an existing lesson (works on ALL lessons: installed subjects like math/science AND facilitator-created lessons)',
-      when_to_use: 'When facilitator asks to change/fix/update/edit a lesson, correct errors, add vocabulary, improve questions, etc.',
-      parameters: {
-        lessonKey: 'Required. Format: "subject/filename.json" (from search results)',
-        updates: 'Required. Object with fields to update. Can include: title, blurb, teachingNotes, vocab (array of {term, definition}), truefalse, multiplechoice, shortanswer, fillintheblank (arrays of questions)'
-      },
-      returns: 'Success confirmation that lesson was updated',
-      notes: 'Can edit ANY lesson - both pre-installed subject lessons AND custom facilitator lessons. G
-
-### 33. src/app/facilitator/lessons/page.js (3ebc8e5a144233c36425689366f873ec7283a1590782a891bc651f66df154956)
-- bm25: -14.6670 | relevance: 0.9362
-
-{learnerSelected && !isDownloadableNotOwned && (
-                          <>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                setEditingNote(isEditingThisNote ? null : lessonKey)
-                              }}
-                              style={{
-                                padding: '4px 10px',
-                                border: '1px solid #d1d5db',
-                                borderRadius: 4,
-                                background: noteText ? '#fef3c7' : '#fff',
-                                color: '#6b7280',
-                                fontSize: 12,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 4
-                              }}
-                              title={noteText ? 'Edit note' : 'Add note'}
-                            >
-                              📝 <span className="button-text-tablet">{noteText ? 'Note' : 'Notes'}</span>
-                            </button>
-
-### 34. src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx (701fb407ed303bb2938f611c71a6241f38ababdbdff51df58a01100766d08bad)
-- bm25: -14.4134 | relevance: 0.9351
-
-{/* Compact action buttons */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        loadLessonForEditing(lessonKey)
-                      }}
-                      style={{
-                        padding: '3px 8px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: 4,
-                        background: '#fff',
-                        color: '#6b7280',
-                        fontSize: 11,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4
-                      }}
-                      title="Edit lesson"
-                    >
-                      ✏️ Edit
-                    </button>
-
-<button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setEditingNote(isEditingThisNote ? null : lessonKey)
-                      }}
-                      style={{
-                        padding: '3px 8px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: 4,
-                        background: noteText ? '#fef3c7' : '#fff',
-                        color: '#6b7280',
-                        fontSize: 11,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4
-                      }}
-                      title={noteText ? 'Edit note' : 'Add note'}
-                    >
-                      📝 {noteText ? 'Note' : 'Notes'}
-                    </button>
 
 ### 35. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
-- bm25: -14.3467 | relevance: 0.9348
+- bm25: -22.0390 | relevance: 1.0000
 
 - **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
   - Full-screen carousel during lesson
@@ -1181,225 +842,534 @@ assign_lesson: {
   - Video overlay includes a Visual Aids button when images exist
   - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
 
-### 36. src/app/facilitator/lessons/edit/page.js (81fa080d17e9cff139a908d1cce1d7f7fd0dc9ee4aa0d7e37abc9118d0a53f76)
-- bm25: -14.0224 | relevance: 0.9334
+### 26. sidekick_pack.md (df3b0d06c6e97315f9ac315d8fe85c1be37b146340873af631c44fae1bc3250f)
+- bm25: -10.4708 | relevance: 0.9128
 
-{showVisualAidsCarousel && (
-        <VisualAidsCarousel
-          images={visualAidsImages}
-          onClose={() => setShowVisualAidsCarousel(false)}
-          onSave={handleSaveVisualAids}
-          onGenerateMore={handleGenerateMore}
-          onUploadImage={handleUploadImage}
-          onRewriteDescription={handleRewriteDescription}
-          onGeneratePrompt={handleGeneratePrompt}
-          generating={generatingVisualAids}
-          teachingNotes={lesson?.teachingNotes || ''}
-          lessonTitle={lesson?.title || ''}
-          generationProgress={generationProgress}
-          generationCount={generationCount}
-          maxGenerations={MAX_GENERATIONS}
-        />
-      )}
+### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.4515 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
+- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
+
+### 27. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (86b60aae069b5e5cd6312d1188af36820d92ad5d50ac3acdfbcc0206a1059f7c)
+- bm25: -10.3637 | relevance: 0.9120
+
+### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.4515 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
+- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
+
+### 28. src/app/session/slate/page.jsx (13e1b143fc8c70835296875f2adb564c790e2794458a2ac07e5f1458ae2372e6)
+- bm25: -10.3558 | relevance: 0.9119
+
+'use client'
+
+/**
+ * Mr. Slate -- Skills & Practice Coach
+ *
+ * A quiz-mode drill session. Questions are drawn from the same lesson JSON
+ * as Ms. Sonoma (sample, truefalse, multiplechoice, fillintheblank pools).
+ * The learner accumulates points (goal: 10) to earn the robot mastery icon.
+ *
+ * Rules:
+ *   - Correct answer within time limit  -> +1 (min 0, max 10)
+ *   - Wrong answer                      -> -1 (min 0)
+ *   - Timeout (15s default)             -> +/-0
+ *   - Reach 10 -> mastery confirmed
+ *
+ * Questions rotate through the full pool without repeats until ~80% have
+ * been asked, then the deck reshuffles.
+ *
+ * Lessons are loaded from /api/learner/available-lessons (handles static,
+ * generated, and Supabase-stored lessons uniformly). No URL params required.
+ */
+
+import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { getMasteryForLearner, saveMastery } from '@/app/lib/masteryClient'
+
+// --- Constants ---------------------------------------------------------------
+
+const QUESTION_SECONDS = 15
+const SCORE_GOAL = 10
+const FEEDBACK_DELAY_MS = 2000
+const RESHUFFLE_THRESHOLD = 0.2 // reshuffle when only 20% of deck remains
+
+const DEFAULT_SLATE_SETTINGS = {
+  scoreGoal: 10,
+  correctPts: 1,
+  wrongPts: 1,
+  timeoutPts: 0,
+  timeoutOffset: 0,
+  questionSecs: 15,
+}
+
+### 29. src/app/session/slate/page.jsx (9ae74c652da3942f39651a542ca0bdfe34cebe289db1014f40417c12c325038a)
+- bm25: -10.1651 | relevance: 0.9104
+
+<div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => setSoundOn(v => !v)}
+            title={soundOn ? 'Mute voice' : 'Unmute voice'}
+            style={soundBtn}
+          >
+            {soundOn ? '🔊' : '🔇'}
+          </button>
+          <button onClick={backToList} style={ghostBtn}>LIST</button>
+          <button onClick={exitToLessons} style={dangerBtn}>EXIT</button>
+        </div>
+      </div>
+
+### 30. src/app/learn/lessons/page.js (94b9bc97db37d8e3df7ba866d7fc176a496473efabdad13295900e0115892d1c)
+- bm25: -10.0789 | relevance: 0.9097
+
+// CRITICAL: Don't treat 'congrats' or 'test' as meaningful progress
+  // Lesson is complete - no point resuming to "Complete Lesson" button
+  // Test phase includes both in-progress tests AND completed tests (testFinalPercent may be null)
+  if (phase === 'congrats' || phase === 'test') return false
+
+### 31. src/app/learn/awards/page.js (47bc6f3bfd7d509f8e841562bc9aedb6b081a5060920834a436575e17213e74a)
+- bm25: -10.0575 | relevance: 0.9096
+
+useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setCustomSubjectsLoading(true)
+      try {
+        const { getSupabaseClient } = await import('@/app/lib/supabaseClient')
+        const supabase = getSupabaseClient()
+        if (!supabase) {
+          if (!cancelled) setCustomSubjects([])
+          return
+        }
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token) {
+          if (!cancelled) setCustomSubjects([])
+          return
+        }
+
+const res = await fetch('/api/custom-subjects', {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store'
+        })
+        if (!res.ok) {
+          if (!cancelled) setCustomSubjects([])
+          return
+        }
+        const data = await res.json().catch(() => null)
+        const subjects = Array.isArray(data?.subjects) ? data.subjects : []
+        if (!cancelled) setCustomSubjects(subjects)
+      } catch {
+        if (!cancelled) setCustomSubjects([])
+      } finally {
+        if (!cancelled) setCustomSubjectsLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      // Get auth token for facilitator lessons
+      let token = null
+      try {
+        const { getSupabaseClient } = await import('@/app/lib/supabaseClient')
+        const supabase = getSupabaseClient()
+        if (supabase) {
+          const { data: { session } } = await supabase.auth.getSession()
+          token = session?.access_token || null
+        }
+      } catch {}
+
+### 32. sidekick_pack.md (8d2d98c4a5e9802d9ffc48dd47d1b4ee95e3b624a0bcdde6bb2a6300794f51dd)
+- bm25: -9.9557 | relevance: 0.9087
+
+**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
+
+**DON'T fail to update notes** - Stale notes mislead Mr. Mentor. Encourage facilitators to update notes as learner progresses.
+
+**DON'T forget empty note deletion** - Save function correctly deletes empty notes from JSONB object (avoids storing null/empty values).
+
+### 14. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -17.8102 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+### 33. src/app/learn/lessons/page.js (fd432b7dc2b939e1efff637173a80541b976276afa1b10837256fa7eb09710b2)
+- bm25: -9.9178 | relevance: 0.9084
+
+{learnerId && learnerId !== 'demo' && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, marginTop: 12, gap: 12, flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setShowHistoryModal(true)}
+            style={{
+              padding: '10px 20px',
+              border: '1px solid #d1d5db',
+              borderRadius: 8,
+              background: '#fff',
+              color: '#111827',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: lessonHistoryLoading ? 'wait' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+            disabled={lessonHistoryLoading && !lessonHistorySessions.length}
+            title={lessonHistoryLoading ? 'Loading history…' : 'See completed lessons'}
+          >
+            ✅ Completed Lessons{completedLessonCount ? ` (${completedLessonCount})` : ''}
+            {activeLessonCount > 0 && (
+              <span style={{ fontSize: 12, color: '#d97706' }}>⏳ {activeLessonCount}</span>
+            )}
+          </button>
+          <button
+            onClick={async () => {
+              const ok = await ensurePinAllowed('facilitator-page')
+              if (ok) router.push('/facilitator/generator')
+            }}
+            style={{
+              padding: '10px 20px',
+              border: '1px solid #d1d5db',
+              borderRadius: 8,
+              background: '#fff',
+              color: '#111827',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            ✨ Generate a Lesson
+          </button>
+          <button
+            onClick={() => rou
+
+### 34. docs/brain/ingests/pack-mentor-intercepts.md (ad9be28e3be4c170969fd8d3a91e2b0202957cc880842fc857610f9d7f8b194a)
+- bm25: -9.8703 | relevance: 0.9080
+
+**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
+
+**DON'T fail to update notes** - Stale notes mislead Mr. Mentor. Encourage facilitators to update notes as learner progresses.
+
+**DON'T forget empty note deletion** - Save function correctly deletes empty notes from JSONB object (avoids storing null/empty values).
+
+### 14. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -17.8102 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+### 35. src/app/learn/awards/page.js (7bc9f9a06897b38ad7fbcd7544a86dacb73aed6c6c4ea0e854e91c40036b1551)
+- bm25: -9.7768 | relevance: 0.9072
+
+const medalsBySubject = () => {
+    const normalizeSubject = (raw) => {
+      const s = String(raw || '').trim().toLowerCase()
+      if (!s) return null
+      if (s === 'language-arts' || s === 'language arts') return 'language arts'
+      if (s === 'social-studies' || s === 'social studies') return 'social studies'
+      if (s === 'facilitator' || s === 'facilitator-lessons' || s === 'facilitator lessons') return 'generated'
+      return s.replace(/\s+/g, ' ')
+    }
+
+const ensureJsonFile = (file) => {
+      const f = String(file || '').trim()
+      if (!f) return f
+      return f.toLowerCase().endsWith('.json') ? f : `${f}.json`
+    }
+
+const coreSubjects = CORE_SUBJECTS
+
+const grouped = {}
+    
+    Object.entries(medals).forEach(([lessonKey, medalData]) => {
+      if (!medalData.medalTier) return // Only show lessons with medals
       
-      {/* Learner Selection Dropdown */}
-      {showLearnerSelect && (
+      const parts = String(lessonKey || '').split('/')
+      const subjectRaw = parts[0]
+      const fileRaw = parts.slice(1).join('/')
+      if (!subjectRaw || !fileRaw) return
+
+const file = ensureJsonFile(fileRaw)
+      const subjectKey = normalizeSubject(subjectRaw)
+
+// Determine which subject bucket this medal belongs to.
+      // For facilitator-generated lessons, infer from the generated lesson's metadata subject.
+      let bucket = subjectKey
+
+const generatedList = allLessons.generated || []
+      const generatedLesson = generatedList.find(l => (ensureJsonFile(l?.file) === file)) || null
+      const generatedSubject = normalizeSubject(generatedLesson?.subject)
+
+if (!bucket || bucket === 'generated') {
+        // Allow generated lessons to bucket into core OR custom subjects.
+        if (generatedSubject) {
+          bucket = generatedSubject
+        }
+      }
+
+### 36. src/app/facilitator/lessons/page.js (8c55833cb4214a267daa8a171015ec8d5d740e71d62b27cace491e9fbf0e6a37)
+- bm25: -9.7240 | relevance: 0.9068
+
+{selectedLearnerId && showLessons && (
+                <button
+                  onClick={() => setShowHistoryModal(true)}
+                  style={{
+                    padding: '10px 18px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: 6,
+                    background: '#fff',
+                    color: '#374151',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: lessonHistoryLoading ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    whiteSpace: 'nowrap'
+                  }}
+                  disabled={lessonHistoryLoading && !lessonHistorySessions.length}
+                  title={lessonHistoryLoading ? 'Loading history…' : 'View recent completions'}
+                >
+                  ✅ Completed Lessons{completedLessonCount ? ` (${completedLessonCount})` : ''}
+                  {activeLessonCount > 0 && (
+                    <span style={{ fontSize: 12, color: '#d97706' }}>⏳ {activeLessonCount}</span>
+                  )}
+                </button>
+              )}
+
+### 37. src/app/session/slate/page.jsx (359e98d10d756fb84bd296d06d2bde2a81963f8018f92b2e5c94f7b392fbfaea)
+- bm25: -9.6136 | relevance: 0.9058
+
+// ===========================================================================
+  //  RENDER -- Lesson list
+  // ===========================================================================
+  if (pagePhase === 'list') {
+    return (
+      <div style={{ fontFamily: C.mono, background: C.bg, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
+          background: C.surface,
+          borderBottom: `1px solid ${C.border}`,
+          padding: '14px 20px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000
-        }}
-        onClick={() => setShowLearnerSelect(null)}
-        >
-          <div style={{
-            background: '#fff',
-            borderRadius: 8,
-            padding: 24,
-            maxWidth: 400,
-            width: '90%'
-          }}
-          onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ marginTop: 0 }}>Select Learner</h3>
-            <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 16 }}>
-              {showLearnerSelect === 'notes' && 'Choose a learner to add notes for this lesson'}
-              {showLearnerSelect === 'schedule' && 'Choose a learner to schedule this lesson for'}
-              {showLearnerSelect === 'assign' && 'Choose a learner to assign this lesson to'}
+          justifyContent: 'space-between',
+          gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <video src={SLATE_VIDEO_SRC} muted playsInline style={{ width: 36, height: 36, objectFit: 'contain' }} />
+            <div>
+              <div style={{ color: C.accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>MR. SLATE V1</div>
+              <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2 }}>SKILLS &amp; PRACTICE COACH</div>
+            </div>
+          </div>
+          <button onClick={exitToLessons} style={ghostBtn}>← BACK</button>
+        </div>
 
-### 37. sidekick_pack.md (81b308fed54410aa353557e8e7c03a6b83e6387201788a33cfd45dcbda1918df)
-- bm25: -13.9686 | relevance: 0.9332
+### 38. docs/brain/ingests/pack.md (2a2474c33e1886efce4e1ae36e6b3481cdfa631f2676d805eaab189c70153402)
+- bm25: -9.5820 | relevance: 0.9055
 
-The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
+// Incomplete lessons
+        const incomplete = (history.sessions || [])
+          .filter(s => s.status === 'incomplete')
+          .map(s => ({
+            name: s.lesson_id,
+            date: s.started_at,
+            status: 'incomplete'
+          }))
 
-### 38. docs/brain/ingests/pack.planned-lessons-flow.md (0a1e168264e4ffb7690341fafb963775753d01cf54c647920a52242e34956be9)
-- bm25: -13.8937 | relevance: 0.9329
+lessonContext = [...completed, ...incomplete]
+      }
 
-**Persistence Model:**
-- Planned lessons stored in `planned_lessons` table (facilitator_id, learner_id, scheduled_date, lesson_data JSONB)
-- Each row = one lesson outline for one date
-- Survives page refresh, long absences, logout/login
-- Tied to specific facilitator + learner combination
-- **POST uses date-specific overwrite**: only deletes/replaces dates included in new plan
-- **Multiple non-overlapping plans coexist**: schedule Jan + Mar separately, both persist
-- **Overlapping dates are replaced**: reschedule Jan 15-31 overwrites only those dates, Jan 1-14 untouched
+### 20. docs/brain/gating-system.md (cb1248e270a257df23ad524e2c2b63707ede02617183dccb7aecf99c85524a2b)
+- bm25: -20.4275 | relevance: 1.0000
 
-**Data Format:**
-```javascript
-// In-memory format (calendar page state)
-plannedLessons = {
-  '2025-12-15': [
-    { id: '...', title: '...', subject: 'math', grade: '3rd', difficulty: 'intermediate', ... },
-    { id: '...', title: '...', subject: 'science', ... }
-  ],
-  '2025-12-16': [ ... ]
-}
+- For in-session buttons (e.g., Games / Visual Aids), keep the UI visible and block only the action with a short, in-context notice.
+- For the Facilitator Calendar, do not use a tier overlay that blocks scrolling/clicking. Keep the page viewable and gate only write actions (view-only banner + guarded handlers).
+- For Mr. Mentor, keep the page viewable when signed in (no full-screen lock overlay). Load read-only context (e.g., learners, transcripts, notes) without requiring the paid entitlement.
+- For Mr. Mentor, gate write paths behind entitlements: sending messages, session initialization/persistence, and any mutations triggered from the Mr. Mentor surface.
+- Server routes must enforce the same entitlements (UI gating is not sufficient).
 
-// Database format (planned_lessons table)
-{
-  facilitator_id: 'uuid',
-  learner_id: 'uuid',
-  scheduled_date: '2025-12-15',
-  lesson_data: { id: '...', title: '...', subject: 'math', ... } // JSONB
-}
-```
+### 21. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -20.0228 | relevance: 1.0000
 
-### API Endpoints
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
 
-**`/api/planned-lessons`**
-- **GET** `?learnerId=X` - Load all planned lessons for learner, returns `{plannedLessons: {...}}`
-- **POST** - Save lesson plan with date-specific overwrite (only replaces dates in new plan), expects `{learnerId, plannedLessons}`
-- **DELETE** `?learnerId=X` - Clear all planned lessons for learner
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
 
-### 4. docs/brain/calendar-lesson-planning.md (edc4501d8cf5402f28f2f259c81317facde5d8c4d278692219fb856850a029d8)
-- bm25: -32.4309 | entity_overlap_w: 1.00 | adjusted: -32.6809 | relevance: 1.0000
+### 39. src/app/session/slate/page.jsx (b9c51c7a99463827e71c7398b2b5cda84c07ca75a7888e529f506c49f4504cb2)
+- bm25: -9.5334 | relevance: 0.9051
 
-- `src/app/facilitator/calendar/LessonNotesModal.jsx`
-  - Minimal notes editor for `learners.lesson_notes[lesson_key]`
-  - Empty note deletes the key from the JSONB map
+{/* True / False */}
+              {isAsking && q.type === 'truefalse' && (
+                <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                  <button
+                    onClick={() => onChoiceClick('true')}
+                    style={{ ...tfBtnBase, background: '#0d1117', border: `1px solid ${C.green}`, color: C.green }}
+                  >
+                    TRUE
+                  </button>
+                  <button
+                    onClick={() => onChoiceClick('false')}
+                    style={{ ...tfBtnBase, background: '#0d1117', border: `1px solid ${C.red}`, color: C.red }}
+                  >
+                    FALSE
+                  </button>
+                </div>
+              )}
 
-### 39. docs/brain/ingests/pack.planned-lessons-flow.md (043acc5f96fad3732cebeb897f3edf1f5e317250beb4b58f69e73bcccf3e4b46)
-- bm25: -13.8720 | relevance: 0.9328
+### 40. docs/brain/calendar-lesson-planning.md (508134b31ceac5379e6edf01fa6e367c144e9aac1f98d2a85cca866a2cb62f68)
+- bm25: -9.5141 | relevance: 0.9049
 
-### Data/Key Rules
+### Error Handling
 
-### 31. docs/brain/MentorInterceptor_Architecture.md (ce3cd9684410622160fbad2779f03dd2313cb09bba1ed5ffcd42179724e742c6)
-- bm25: -13.9393 | relevance: 1.0000
+**Graceful Degradation:**
+- Medals API failure → defaults to empty object, generation continues
+- History processing independent of medals availability
+- Individual outline generation failures logged but don't stop batch
+- Planned lessons load failure → defaults to empty object, page still usable
 
-```
-User types message
-    ↓
-CounselorClient.sendMessage()
-    ↓
-Load allLessons (subjects → lessons object)
-    ↓
-interceptor.process(message, { allLessons, selectedLearnerId, learnerName, conversationHistory })
-    ↓
-  interceptResult.handled?
-    ↓
-  YES → Handle front-end
-    ↓
-    Add user + bot messages to conversationHistory
-    Display response in captions
-    Play TTS audio
-    Execute action if present (schedule/generate/edit)
-    Return (skip API)
-    ↓
-  NO → Forward to API
-    ↓
-    Call /api/counselor with forwardMessage
-    Process tool calls, follow-ups, etc
-    Add messages to conversationHistory
-    Display response in captions
-    Play audio
-    Track tokens
-```
+**API Response Structure:**
+- `/api/medals` returns object directly: `{lessonId: {bestPercent: 85}, ...}`
+- `/api/lesson-schedule` returns wrapper: `{schedule: [...]}`
+- `/api/planned-lessons` returns wrapper: `{plannedLessons: {...}}`
 
-### 32. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
-- bm25: -13.5957 | relevance: 1.0000
+### Page Load Sequence
 
-**Completion query rule (visibility > micro-optimization):**
-- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
-- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
+**Calendar Page Mount:**
+1. Check PIN protection
+2. Resolve effective tier and entitlements (sets `canPlan` for write actions)
+3. Load learners list (always, once authenticated)
+4. Select first learner (if available)
+5. **Load scheduled lessons** (useEffect on selectedLearnerId)
+6. **Load planned lessons** (useEffect on selectedLearnerId)
+7. Load no-school dates
 
-**Calendar date key rule (marker dots):**
-- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
-- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
-- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
+**View-only rule (no hard locks):**
+- The calendar must remain viewable for authenticated users on all tiers.
+- When `canPlan` is false, scheduling/planning/no-school writes are blocked (view-only banner + action guards), but read data still loads.
 
-### 40. sidekick_pack.md (af53ecc19ee10a49a8b05a6d9667006979cd7d5f304dcfad57d5acde47312bea)
-- bm25: -13.4180 | relevance: 0.9306
+**Learner Change:**
+- Triggers reload of scheduled lessons, planned lessons, and no-school dates
 
-# Cohere Pack (Sidekick Recon) - MsSonoma
+**After Generation:**
+- `generatePlannedLessons()` completes → calls `onPlannedLessonsChange(lessons)`
+- `savePlannedLessons(lessons)` saves to database only when `canPlan` is true
+- Success message shows, lessons appear on calendar immediately
 
-Project: freehands
-Profile: MsSonoma
-Mode: standard
+### Manual Scheduling: "Add Lessons" Picker
 
-Prompt (original):
-```text
-Calendar day cell overlay opens generator, generates lesson, lesson appears in lessons list but not in calendar day cell or as scheduled lesson - investigate the flow from Generate on date button through to calendar state update
-```
-
-Filter terms used:
-```text
-Calendar
-day
-cell
-overlay
-opens
-generator
-generates
-lesson
-lesson
-appears
-in
-lessons
-list
-but
-not
-in
-calendar
-day
-cell
-or
-as
-scheduled
-lesson
-investigate
-```
-# Context Pack
-
-**Project**: freehands
-**Profile**: MsSonoma
-**Mode**: standard
-
-## Pack Contract
-
-This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
-
-## Question
-
-Calendar day cell overlay opens generator generates lesson lesson appears in lessons list but not in calendar day cell or as scheduled lesson investigate
-
-## Forced Context
-
-(none)
-
-## Ranked Evidence
-
-### 1. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
-- bm25: -37.0855 | relevance: 1.0000
-
-**Completion query rule (visibility > micro-optimization):**
-- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
-- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
+The Calendar page includes an "Add Lessons" panel for manually assigning lesson files to specific dates.
 
 
 ---
