@@ -383,7 +383,8 @@ export default function HeaderBar() {
 		if (pathname === '/about') return '/';
 
 		// Learner chain: / -> /learn -> /learn/lessons -> /session
-		// Awards viewer returns to learn page
+		// Mr. Slate has its own top bar; its back button goes to /learn
+		if (pathname.startsWith('/session/slate')) return '/learn';
 		if (pathname.startsWith('/session')) return '/learn/lessons';
 		if (pathname.startsWith('/learn/awards')) return '/learn';
 		if (pathname.startsWith('/learn/lessons')) return '/learn';
@@ -487,6 +488,9 @@ export default function HeaderBar() {
 			fontWeight: 600,
 			color: '#111'
 		};
+
+		// Mr. Slate has its own full-page top bar — hide the global header
+		if (pathname.startsWith('/session/slate')) return null;
 
 		return (
 			<>

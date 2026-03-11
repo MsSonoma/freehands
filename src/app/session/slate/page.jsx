@@ -837,7 +837,7 @@ function SlateDrillInner() {
   const exitToLessons = useCallback(() => {
     clearInterval(timerInterval.current)
     clearTimeout(feedbackTimeout.current)
-    router.push('/learn/lessons')
+    router.push('/learn')
   }, [router])
 
   const lessonTitle = lessonData?.title || ''
