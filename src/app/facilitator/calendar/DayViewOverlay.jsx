@@ -59,6 +59,9 @@ export default function DayViewOverlay({
   const [removeConfirmLesson, setRemoveConfirmLesson] = useState(null)
   const [assignsOpenKey, setAssignsOpenKey] = useState(null)
   const [assigning, setAssigning] = useState(false)
+  const [reschedulePickerKey, setReschedulePickerKey] = useState(null)
+  const [reschedulePickerMonth, setReschedulePickerMonth] = useState(() => { const n = new Date(); return { year: n.getFullYear(), month: n.getMonth() } })
+  const [reschedulingBusy, setReschedulingBusy] = useState(false)
 
   const MAX_GENERATIONS = 4
 
@@ -113,6 +116,41 @@ export default function DayViewOverlay({
     } finally {
       setAssigning(false)
       setAssignsOpenKey(null)
+    }
+  }
+
+  const PICKER_MONTHS_DV = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const buildPickerDaysDV = (year, month) => {
+    const fd = new Date(year, month, 1).getDay()
+    const dim = new Date(year, month + 1, 0).getDate()
+    const cells = []
+    for (let i = 0; i < fd; i++) cells.push(null)
+    for (let d = 1; d <= dim; d++) cells.push(d)
+    return cells
+  }
+
+  const handleRescheduleLesson = async (lesson, newDate) => {
+    if (!newDate) return
+    setReschedulingBusy(true)
+    try {
+      const token = await getAuthTokenOrThrow()
+      const del = await fetch(`/api/lesson-schedule?id=${lesson.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+      })
+      if (!del.ok) throw new Error('Failed to remove old schedule')
+      const add = await fetch('/api/lesson-schedule', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId, lessonKey: lesson.lesson_key, scheduledDate: newDate })
+      })
+      if (!add.ok) throw new Error('Failed to reschedule lesson')
+      setReschedulePickerKey(null)
+      if (onLessonGenerated) onLessonGenerated()
+    } catch (err) {
+      alert(err?.message || 'Failed to reschedule lesson')
+    } finally {
+      setReschedulingBusy(false)
     }
   }
 
@@ -1111,6 +1149,99 @@ export default function DayViewOverlay({
                         >
                           Add Images
                         </button>
+                        <div style={{ position: 'relative' }}>
+                          <button
+                            onClick={() => {
+                              const n = new Date()
+                              setReschedulePickerMonth({ year: n.getFullYear(), month: n.getMonth() })
+                              setReschedulePickerKey(reschedulePickerKey === lesson.lesson_key ? null : lesson.lesson_key)
+                            }}
+                            disabled={reschedulingBusy}
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              background: '#fff',
+                              color: '#1e40af',
+                              border: '1px solid #93c5fd',
+                              borderRadius: 4,
+                              cursor: reschedulingBusy ? 'wait' : 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                            title="Reschedule"
+                          >
+                            📅
+                          </button>
+                          {reschedulePickerKey === lesson.lesson_key && (
+                            <>
+                              <div
+                                style={{ position: 'fixed', inset: 0, zIndex: 9 }}
+                                onClick={() => setReschedulePickerKey(null)}
+                              />
+                              <div style={{
+                                position: 'absolute',
+                                bottom: '100%',
+                                right: 0,
+                                background: '#fff',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: 8,
+                                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                                zIndex: 10,
+                                padding: 10,
+                                width: 220,
+                                marginBottom: 4
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setReschedulePickerMonth(pm => { const d = new Date(pm.year, pm.month - 1, 1); return { year: d.getFullYear(), month: d.getMonth() } }) }}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px', color: '#374151' }}
+                                  >‹</button>
+                                  <span style={{ fontSize: 12, fontWeight: 600, color: '#1f2937' }}>
+                                    {PICKER_MONTHS_DV[reschedulePickerMonth.month]} {reschedulePickerMonth.year}
+                                  </span>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setReschedulePickerMonth(pm => { const d = new Date(pm.year, pm.month + 1, 1); return { year: d.getFullYear(), month: d.getMonth() } }) }}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px', color: '#374151' }}
+                                  >›</button>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
+                                  {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
+                                    <div key={d} style={{ fontSize: 9, fontWeight: 600, textAlign: 'center', color: '#9ca3af' }}>{d}</div>
+                                  ))}
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+                                  {buildPickerDaysDV(reschedulePickerMonth.year, reschedulePickerMonth.month).map((day, i) => (
+                                    <button
+                                      key={i}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        if (!day) return
+                                        const mm = String(reschedulePickerMonth.month + 1).padStart(2, '0')
+                                        const dd = String(day).padStart(2, '0')
+                                        handleRescheduleLesson(lesson, `${reschedulePickerMonth.year}-${mm}-${dd}`)
+                                      }}
+                                      disabled={!day}
+                                      style={{
+                                        padding: '3px 0',
+                                        fontSize: 11,
+                                        background: !day ? 'transparent' : '#f9fafb',
+                                        border: 'none',
+                                        borderRadius: 4,
+                                        cursor: day ? 'pointer' : 'default',
+                                        color: day ? '#1f2937' : 'transparent',
+                                        textAlign: 'center'
+                                      }}
+                                      onMouseEnter={(e) => { if (day) { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.color = '#fff' } }}
+                                      onMouseLeave={(e) => { if (day) { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.color = '#1f2937' } }}
+                                    >
+                                      {day || ''}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
                         <button
                           onClick={() => setRemoveConfirmLesson({ scheduleId: lesson.id, lessonTitle: lessonName })}
                           style={{
@@ -1125,26 +1256,120 @@ export default function DayViewOverlay({
                             whiteSpace: 'nowrap'
                           }}
                         >
-                          Remove
+                          🗑️
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => handleEditClick(lesson)}
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          background: '#fff',
-                          color: '#065f46',
-                          border: '1px solid #86efac',
-                          borderRadius: 4,
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        Edit Lesson
-                      </button>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          onClick={() => handleEditClick(lesson)}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            background: '#fff',
+                            color: '#065f46',
+                            border: '1px solid #86efac',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Edit Lesson
+                        </button>
+                        <div style={{ position: 'relative' }}>
+                          <button
+                            onClick={() => {
+                              const n = new Date()
+                              setReschedulePickerMonth({ year: n.getFullYear(), month: n.getMonth() })
+                              setReschedulePickerKey(reschedulePickerKey === lesson.lesson_key ? null : lesson.lesson_key)
+                            }}
+                            disabled={reschedulingBusy}
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              background: '#fff',
+                              color: '#1e40af',
+                              border: '1px solid #93c5fd',
+                              borderRadius: 4,
+                              cursor: reschedulingBusy ? 'wait' : 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            Reschedule
+                          </button>
+                          {reschedulePickerKey === lesson.lesson_key && (
+                            <>
+                              <div
+                                style={{ position: 'fixed', inset: 0, zIndex: 9 }}
+                                onClick={() => setReschedulePickerKey(null)}
+                              />
+                              <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                background: '#fff',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: 8,
+                                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                                zIndex: 10,
+                                padding: 10,
+                                width: 220,
+                                marginTop: 4
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setReschedulePickerMonth(pm => { const d = new Date(pm.year, pm.month - 1, 1); return { year: d.getFullYear(), month: d.getMonth() } }) }}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px', color: '#374151' }}
+                                  >‹</button>
+                                  <span style={{ fontSize: 12, fontWeight: 600, color: '#1f2937' }}>
+                                    {PICKER_MONTHS_DV[reschedulePickerMonth.month]} {reschedulePickerMonth.year}
+                                  </span>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setReschedulePickerMonth(pm => { const d = new Date(pm.year, pm.month + 1, 1); return { year: d.getFullYear(), month: d.getMonth() } }) }}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px', color: '#374151' }}
+                                  >›</button>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
+                                  {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
+                                    <div key={d} style={{ fontSize: 9, fontWeight: 600, textAlign: 'center', color: '#9ca3af' }}>{d}</div>
+                                  ))}
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+                                  {buildPickerDaysDV(reschedulePickerMonth.year, reschedulePickerMonth.month).map((day, i) => (
+                                    <button
+                                      key={i}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        if (!day) return
+                                        const mm = String(reschedulePickerMonth.month + 1).padStart(2, '0')
+                                        const dd = String(day).padStart(2, '0')
+                                        handleRescheduleLesson(lesson, `${reschedulePickerMonth.year}-${mm}-${dd}`)
+                                      }}
+                                      disabled={!day}
+                                      style={{
+                                        padding: '3px 0',
+                                        fontSize: 11,
+                                        background: !day ? 'transparent' : '#f9fafb',
+                                        border: 'none',
+                                        borderRadius: 4,
+                                        cursor: day ? 'pointer' : 'default',
+                                        color: day ? '#1f2937' : 'transparent',
+                                        textAlign: 'center'
+                                      }}
+                                      onMouseEnter={(e) => { if (day) { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.color = '#fff' } }}
+                                      onMouseLeave={(e) => { if (day) { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.color = '#1f2937' } }}
+                                    >
+                                      {day || ''}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

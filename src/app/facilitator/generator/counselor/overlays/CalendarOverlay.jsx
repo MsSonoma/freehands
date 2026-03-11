@@ -190,6 +190,8 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
   const [removeConfirmLesson, setRemoveConfirmLesson] = useState(null)
   const [assignsOpenKey, setAssignsOpenKey] = useState(null)
   const [assigning, setAssigning] = useState(false)
+  const [reschedulePickerKey, setReschedulePickerKey] = useState(null)
+  const [reschedulePickerMonth, setReschedulePickerMonth] = useState(() => { const n = new Date(); return { year: n.getFullYear(), month: n.getMonth() } })
 
   const [editingLesson, setEditingLesson] = useState(null)
   const [lessonEditorLoading, setLessonEditorLoading] = useState(false)
@@ -1110,6 +1112,16 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
       setAssigning(false)
       setAssignsOpenKey(null)
     }
+  }
+
+  const PICKER_MONTHS_CO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const buildPickerDaysCO = (year, month) => {
+    const fd = new Date(year, month, 1).getDay()
+    const dim = new Date(year, month + 1, 0).getDate()
+    const cells = []
+    for (let i = 0; i < fd; i++) cells.push(null)
+    for (let d = 1; d <= dim; d++) cells.push(d)
+    return cells
   }
 
   const handleRemoveScheduledLessonById = async (scheduleId, opts = {}) => {
@@ -2209,6 +2221,97 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
                         >
                           Add Images
                         </button>
+                        <div style={{ position: 'relative' }}>
+                          <button
+                            onClick={() => {
+                              const n = new Date()
+                              setReschedulePickerMonth({ year: n.getFullYear(), month: n.getMonth() })
+                              setReschedulePickerKey(reschedulePickerKey === lesson.lesson_key ? null : lesson.lesson_key)
+                            }}
+                            style={{
+                              padding: '2px 6px',
+                              fontSize: 10,
+                              fontWeight: 600,
+                              borderRadius: 4,
+                              border: 'none',
+                              cursor: 'pointer',
+                              background: '#eff6ff',
+                              color: '#1e40af'
+                            }}
+                            title="Reschedule"
+                          >
+                            📅
+                          </button>
+                          {reschedulePickerKey === lesson.lesson_key && (
+                            <>
+                              <div
+                                style={{ position: 'fixed', inset: 0, zIndex: 9 }}
+                                onClick={() => setReschedulePickerKey(null)}
+                              />
+                              <div style={{
+                                position: 'absolute',
+                                bottom: '100%',
+                                right: 0,
+                                background: '#fff',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: 8,
+                                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                                zIndex: 10,
+                                padding: 10,
+                                width: 220,
+                                marginBottom: 4
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setReschedulePickerMonth(pm => { const d = new Date(pm.year, pm.month - 1, 1); return { year: d.getFullYear(), month: d.getMonth() } }) }}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px', color: '#374151' }}
+                                  >‹</button>
+                                  <span style={{ fontSize: 12, fontWeight: 600, color: '#1f2937' }}>
+                                    {PICKER_MONTHS_CO[reschedulePickerMonth.month]} {reschedulePickerMonth.year}
+                                  </span>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setReschedulePickerMonth(pm => { const d = new Date(pm.year, pm.month + 1, 1); return { year: d.getFullYear(), month: d.getMonth() } }) }}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px', color: '#374151' }}
+                                  >›</button>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
+                                  {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
+                                    <div key={d} style={{ fontSize: 9, fontWeight: 600, textAlign: 'center', color: '#9ca3af' }}>{d}</div>
+                                  ))}
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+                                  {buildPickerDaysCO(reschedulePickerMonth.year, reschedulePickerMonth.month).map((day, i) => (
+                                    <button
+                                      key={i}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        if (!day) return
+                                        const mm = String(reschedulePickerMonth.month + 1).padStart(2, '0')
+                                        const dd = String(day).padStart(2, '0')
+                                        handleRescheduleLesson(lesson.lesson_key, selectedDate, `${reschedulePickerMonth.year}-${mm}-${dd}`)
+                                      }}
+                                      disabled={!day}
+                                      style={{
+                                        padding: '3px 0',
+                                        fontSize: 11,
+                                        background: !day ? 'transparent' : '#f9fafb',
+                                        border: 'none',
+                                        borderRadius: 4,
+                                        cursor: day ? 'pointer' : 'default',
+                                        color: day ? '#1f2937' : 'transparent',
+                                        textAlign: 'center'
+                                      }}
+                                      onMouseEnter={(e) => { if (day) { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.color = '#fff' } }}
+                                      onMouseLeave={(e) => { if (day) { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.color = '#1f2937' } }}
+                                    >
+                                      {day || ''}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
                         <button
                           onClick={() => setRemoveConfirmLesson({ scheduleId: lesson.id, lessonTitle: lesson.lesson_title })}
                           style={{
@@ -2222,7 +2325,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
                             color: '#991b1b'
                           }}
                         >
-                          Remove
+                          🗑️
                         </button>
                       </>
                     ) : (
