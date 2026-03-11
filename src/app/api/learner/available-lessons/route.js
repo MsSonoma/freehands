@@ -271,6 +271,49 @@ export async function GET(request) {
       return normalizedKey && !staleScheduledKeys.has(normalizedKey)
     })
 
+    // Also include ALL facilitator-owned lessons from Storage so Mr. Slate
+    // can drill any lesson the facilitator owns, not just approved ones.
+    if (facilitatorId) {
+      const alreadyLoaded = new Set(lessons.map(l => l.lessonKey).filter(Boolean))
+      const { data: ownedFiles } = await supabase.storage
+        .from('lessons')
+        .list(`facilitator-lessons/${facilitatorId}`, { limit: 1000 })
+
+      const toFetch = (ownedFiles || []).filter(fileObj => {
+        if (!fileObj.name.toLowerCase().endsWith('.json')) return false
+        const ownedKey = normalizeLessonKey(`generated/${fileObj.name}`)
+        return ownedKey && !alreadyLoaded.has(ownedKey)
+      })
+
+      // Fetch all missing lessons in parallel, in batches to avoid connection saturation
+      const BATCH = 20
+      for (let i = 0; i < toFetch.length; i += BATCH) {
+        const batch = toFetch.slice(i, i + BATCH)
+        const fetched = await Promise.all(
+          batch.map(async fileObj => {
+            try {
+              const { data, error } = await supabase.storage
+                .from('lessons')
+                .download(`facilitator-lessons/${facilitatorId}/${fileObj.name}`)
+              if (error || !data) return null
+              const text = await data.text()
+              const lessonData = JSON.parse(text)
+              lessonData.isGenerated = true
+              lessonData.subject = lessonData.subject || 'generated'
+              lessonData.file = fileObj.name
+              lessonData.lessonKey = normalizeLessonKey(`generated/${fileObj.name}`)
+              return lessonData
+            } catch {
+              return null
+            }
+          })
+        )
+        for (const l of fetched) {
+          if (l) lessons.push(l)
+        }
+      }
+    }
+
     const responseBody = {
       lessons,
       scheduledKeys: validScheduledKeys,
