@@ -3309,6 +3309,7 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
             <div style={{ display: activeScreen === 'calendar' ? 'block' : 'none', height: '100%' }}>
               <CalendarOverlay 
                 learnerId={selectedLearnerId}
+                learners={learners}
                 learnerGrade={learners.find(l => l.id === selectedLearnerId)?.grade}
                 accessToken={accessToken}
                 tier={tier}

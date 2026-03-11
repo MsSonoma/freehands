@@ -15,6 +15,7 @@ export default function DayViewOverlay({
   scheduledLessons = [], 
   plannedLessons = [], 
   learnerId,
+  learners = [],
   learnerGrade,
   tier,
   onClose,
@@ -56,6 +57,8 @@ export default function DayViewOverlay({
   const [visualAidsLesson, setVisualAidsLesson] = useState(null)
   const [portfolioScansLesson, setPortfolioScansLesson] = useState(null)
   const [removeConfirmLesson, setRemoveConfirmLesson] = useState(null)
+  const [assignsOpenKey, setAssignsOpenKey] = useState(null)
+  const [assigning, setAssigning] = useState(false)
 
   const MAX_GENERATIONS = 4
 
@@ -87,6 +90,30 @@ export default function DayViewOverlay({
     if (!token) throw new Error('Not authenticated')
     setAuthToken((prev) => (prev === token ? prev : token))
     return token
+  }
+
+  const handleAssignLesson = async (lessonKey, targetId) => {
+    if (!lessonKey) return
+    setAssigning(true)
+    try {
+      const supabase = getSupabaseClient()
+      const toAssign = targetId === 'all' ? learners : learners.filter(l => l.id === targetId)
+      for (const learner of toAssign) {
+        const { data: currentData } = await supabase
+          .from('learners')
+          .select('approved_lessons')
+          .eq('id', learner.id)
+          .maybeSingle()
+        const currentApproved = currentData?.approved_lessons || {}
+        const newApproved = { ...currentApproved, [lessonKey]: true }
+        await supabase.from('learners').update({ approved_lessons: newApproved }).eq('id', learner.id)
+      }
+    } catch {
+      // silent fail
+    } finally {
+      setAssigning(false)
+      setAssignsOpenKey(null)
+    }
   }
 
   const handleRemoveScheduledLessonById = async (scheduleId) => {
@@ -977,29 +1004,90 @@ export default function DayViewOverlay({
                         >
                           Notes
                         </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              await getAuthTokenOrThrow()
-                            } catch {
-                              return
-                            }
-                            setVisualAidsLesson({ lessonKey: lesson.lesson_key, lessonTitle: lessonName })
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            fontSize: 12,
-                            fontWeight: 600,
-                            background: '#fff',
-                            color: '#2563eb',
-                            border: '1px solid #93c5fd',
-                            borderRadius: 4,
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          Visual Aids
-                        </button>
+                        <div style={{ position: 'relative' }}>
+                          <button
+                            onClick={() => setAssignsOpenKey(assignsOpenKey === lesson.lesson_key ? null : lesson.lesson_key)}
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              background: '#fff',
+                              color: '#166534',
+                              border: '1px solid #86efac',
+                              borderRadius: 4,
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            Assigns
+                          </button>
+                          {assignsOpenKey === lesson.lesson_key && (
+                            <>
+                              <div
+                                style={{ position: 'fixed', inset: 0, zIndex: 9 }}
+                                onClick={() => setAssignsOpenKey(null)}
+                              />
+                              <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                background: '#fff',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '6px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                                zIndex: 10,
+                                minWidth: '150px',
+                                overflow: 'hidden'
+                              }}>
+                                {learners.map(l => (
+                                  <button
+                                    key={l.id}
+                                    onClick={() => handleAssignLesson(lesson.lesson_key, l.id)}
+                                    disabled={assigning}
+                                    style={{
+                                      display: 'block',
+                                      width: '100%',
+                                      textAlign: 'left',
+                                      padding: '7px 12px',
+                                      fontSize: '12px',
+                                      border: 'none',
+                                      background: 'transparent',
+                                      cursor: assigning ? 'wait' : 'pointer',
+                                      color: '#111827'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                  >
+                                    {l.name}
+                                  </button>
+                                ))}
+                                {learners.length > 1 && (
+                                  <button
+                                    onClick={() => handleAssignLesson(lesson.lesson_key, 'all')}
+                                    disabled={assigning}
+                                    style={{
+                                      display: 'block',
+                                      width: '100%',
+                                      textAlign: 'left',
+                                      padding: '7px 12px',
+                                      fontSize: '12px',
+                                      border: 'none',
+                                      borderTop: '1px solid #e5e7eb',
+                                      background: 'transparent',
+                                      cursor: assigning ? 'wait' : 'pointer',
+                                      color: '#166534',
+                                      fontWeight: '600'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#f0fdf4'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                  >
+                                    All Learners
+                                  </button>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
                         <button
                           onClick={async () => {
                             try {

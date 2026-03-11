@@ -44,6 +44,8 @@ export default function CalendarPage() {
   const [portfolioScansItem, setPortfolioScansItem] = useState(null)
   const [removeConfirmItem, setRemoveConfirmItem] = useState(null)
   const [showGeneratePortfolio, setShowGeneratePortfolio] = useState(false)
+  const [assignsOpenId, setAssignsOpenId] = useState(null)
+  const [assigning, setAssigning] = useState(false)
 
   const getLocalTodayStr = () => {
     const now = new Date()
@@ -218,6 +220,30 @@ export default function CalendarPage() {
     if (canPlan) return true
     showViewOnlyNotice()
     return false
+  }
+
+  const handleAssignLesson = async (lessonKey, targetId) => {
+    if (!lessonKey) return
+    setAssigning(true)
+    try {
+      const supabase = getSupabaseClient()
+      const toAssign = targetId === 'all' ? learners : learners.filter(l => l.id === targetId)
+      for (const learner of toAssign) {
+        const { data: currentData } = await supabase
+          .from('learners')
+          .select('approved_lessons')
+          .eq('id', learner.id)
+          .maybeSingle()
+        const currentApproved = currentData?.approved_lessons || {}
+        const newApproved = { ...currentApproved, [lessonKey]: true }
+        await supabase.from('learners').update({ approved_lessons: newApproved }).eq('id', learner.id)
+      }
+    } catch {
+      // silent fail
+    } finally {
+      setAssigning(false)
+      setAssignsOpenId(null)
+    }
   }
 
   const loadLearners = async () => {
@@ -906,24 +932,92 @@ export default function CalendarPage() {
                                   >
                                     Notes
                                   </button>
-                                  <button
-                                    onClick={() => setVisualAidsItem({ ...item, lessonTitle: lessonName })}
-                                    style={{
-                                      padding: '3px 10px',
-                                      fontSize: '11px',
-                                      fontWeight: '600',
-                                      borderRadius: '4px',
-                                      border: 'none',
-                                      cursor: 'pointer',
-                                      background: '#eff6ff',
-                                      color: '#1e40af',
-                                      transition: 'background 0.15s'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = '#eff6ff'}
-                                  >
-                                    Visual Aids
-                                  </button>
+                                  <div style={{ position: 'relative' }}>
+                                    <button
+                                      onClick={() => setAssignsOpenId(assignsOpenId === item.id ? null : item.id)}
+                                      style={{
+                                        padding: '3px 10px',
+                                        fontSize: '11px',
+                                        fontWeight: '600',
+                                        borderRadius: '4px',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        background: '#dcfce7',
+                                        color: '#166534',
+                                        transition: 'background 0.15s'
+                                      }}
+                                      onMouseEnter={(e) => e.currentTarget.style.background = '#bbf7d0'}
+                                      onMouseLeave={(e) => e.currentTarget.style.background = '#dcfce7'}
+                                    >
+                                      Assigns
+                                    </button>
+                                    {assignsOpenId === item.id && (
+                                      <>
+                                        <div
+                                          style={{ position: 'fixed', inset: 0, zIndex: 9 }}
+                                          onClick={() => setAssignsOpenId(null)}
+                                        />
+                                        <div style={{
+                                          position: 'absolute',
+                                          top: '100%',
+                                          right: 0,
+                                          background: '#fff',
+                                          border: '1px solid #e5e7eb',
+                                          borderRadius: '6px',
+                                          boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                                          zIndex: 10,
+                                          minWidth: '150px',
+                                          overflow: 'hidden'
+                                        }}>
+                                          {learners.map(l => (
+                                            <button
+                                              key={l.id}
+                                              onClick={() => handleAssignLesson(item.lesson_key, l.id)}
+                                              disabled={assigning}
+                                              style={{
+                                                display: 'block',
+                                                width: '100%',
+                                                textAlign: 'left',
+                                                padding: '6px 12px',
+                                                fontSize: '12px',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                cursor: assigning ? 'wait' : 'pointer',
+                                                color: '#111827'
+                                              }}
+                                              onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
+                                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                              {l.name}
+                                            </button>
+                                          ))}
+                                          {learners.length > 1 && (
+                                            <button
+                                              onClick={() => handleAssignLesson(item.lesson_key, 'all')}
+                                              disabled={assigning}
+                                              style={{
+                                                display: 'block',
+                                                width: '100%',
+                                                textAlign: 'left',
+                                                padding: '6px 12px',
+                                                fontSize: '12px',
+                                                border: 'none',
+                                                borderTop: '1px solid #e5e7eb',
+                                                background: 'transparent',
+                                                cursor: assigning ? 'wait' : 'pointer',
+                                                color: '#166534',
+                                                fontWeight: '600'
+                                              }}
+                                              onMouseEnter={(e) => e.currentTarget.style.background = '#f0fdf4'}
+                                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                              All Learners
+                                            </button>
+                                          )}
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
                                   <button
                                     onClick={() => setPortfolioScansItem({ ...item, lessonTitle: lessonName })}
                                     style={{
@@ -1194,6 +1288,7 @@ export default function CalendarPage() {
                 scheduledLessons={scheduledLessons[selectedDate] || []}
                 plannedLessons={plannedLessons[selectedDate] || []}
                 learnerId={selectedLearnerId}
+                learners={learners}
                 learnerGrade={learners.find(l => l.id === selectedLearnerId)?.grade || '3rd'}
                 tier={tier}
                 noSchoolReason={noSchoolDates[selectedDate] || null}

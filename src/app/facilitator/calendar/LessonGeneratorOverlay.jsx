@@ -67,6 +67,30 @@ export default function LessonGeneratorOverlay({
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [customSubjects, setCustomSubjects] = useState([])
+  const [activeDate, setActiveDate] = useState(scheduledDate || null)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [pickerMonth, setPickerMonth] = useState(() => {
+    const d = scheduledDate ? new Date(scheduledDate + 'T00:00:00') : new Date()
+    return { year: d.getFullYear(), month: d.getMonth() }
+  })
+
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const DAY_LABELS = ['Su','Mo','Tu','We','Th','Fr','Sa']
+
+  const buildCalendarDays = (year, month) => {
+    const firstDay = new Date(year, month, 1).getDay()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const cells = []
+    for (let i = 0; i < firstDay; i++) cells.push(null)
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+    return cells
+  }
+
+  const pickerDateStr = (day) => {
+    const mm = String(pickerMonth.month + 1).padStart(2, '0')
+    const dd = String(day).padStart(2, '0')
+    return `${pickerMonth.year}-${mm}-${dd}`
+  }
   
   // AI Rewrite loading states
   const [rewritingTitle, setRewritingTitle] = useState(false)
@@ -261,7 +285,7 @@ export default function LessonGeneratorOverlay({
       return
     }
 
-    if (!scheduledDate) {
+    if (!activeDate) {
       setMessage('No date selected for scheduling')
       return
     }
@@ -326,7 +350,7 @@ export default function LessonGeneratorOverlay({
         body: JSON.stringify({
           learnerId,
           lessonKey,
-          scheduledDate
+          scheduledDate: activeDate
         })
       })
 
@@ -337,7 +361,7 @@ export default function LessonGeneratorOverlay({
       }
 
       const scheduleJson = await scheduleRes.json().catch(() => null)
-      const newEntry = scheduleJson?.data || { lesson_key: lessonKey, scheduled_date: scheduledDate }
+      const newEntry = scheduleJson?.data || { lesson_key: lessonKey, scheduled_date: activeDate }
 
       setMessage('Lesson generated and scheduled successfully!')
       
@@ -410,7 +434,7 @@ export default function LessonGeneratorOverlay({
           color: '#6b7280', 
           marginBottom: 16 
         }}>
-          Customize and generate this lesson for <strong>{formatDate(scheduledDate)}</strong>
+          Customize and generate this lesson for <strong>{formatDate(activeDate)}</strong>
         </p>
 
         <form onSubmit={handleGenerateAndSchedule} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -661,22 +685,129 @@ export default function LessonGeneratorOverlay({
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={busy || !isFormValid}
-              style={{
-                padding: '10px 24px',
-                border: 'none',
-                borderRadius: 6,
-                background: busy || !isFormValid ? '#9ca3af' : '#2563eb',
-                color: '#fff',
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: busy || !isFormValid ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {busy ? 'Generating...' : `Generate on ${scheduledDate ? new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Selected Date'}`}
-            </button>
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <button
+                type="submit"
+                disabled={busy || !isFormValid}
+                style={{
+                  padding: '10px 24px',
+                  border: 'none',
+                  borderRadius: 6,
+                  background: busy || !isFormValid ? '#9ca3af' : '#2563eb',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: busy || !isFormValid ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {busy ? 'Generating...' : `Generate on ${activeDate ? new Date(activeDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Selected Date'}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDatePicker(v => !v)}
+                disabled={busy}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '1px 4px',
+                  fontSize: 11,
+                  color: '#6b7280',
+                  cursor: busy ? 'not-allowed' : 'pointer',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: 2
+                }}
+              >
+                change date
+              </button>
+              {showDatePicker && (
+                <>
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
+                    onClick={() => setShowDatePicker(false)}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 'calc(100% + 6px)',
+                      right: 0,
+                      zIndex: 9999,
+                      background: '#fff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: 8,
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                      padding: '10px 12px',
+                      width: 224,
+                      userSelect: 'none'
+                    }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {/* Month nav */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => setPickerMonth(pm => {
+                          const d = new Date(pm.year, pm.month - 1, 1)
+                          return { year: d.getFullYear(), month: d.getMonth() }
+                        })}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#374151', padding: '0 4px', lineHeight: 1 }}
+                      >
+                        ‹
+                      </button>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#1f2937' }}>
+                        {MONTH_NAMES[pickerMonth.month]} {pickerMonth.year}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPickerMonth(pm => {
+                          const d = new Date(pm.year, pm.month + 1, 1)
+                          return { year: d.getFullYear(), month: d.getMonth() }
+                        })}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#374151', padding: '0 4px', lineHeight: 1 }}
+                      >
+                        ›
+                      </button>
+                    </div>
+                    {/* Day-of-week labels */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, marginBottom: 2 }}>
+                      {DAY_LABELS.map(l => (
+                        <div key={l} style={{ textAlign: 'center', fontSize: 10, fontWeight: 600, color: '#9ca3af', padding: '2px 0' }}>{l}</div>
+                      ))}
+                    </div>
+                    {/* Day cells */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
+                      {buildCalendarDays(pickerMonth.year, pickerMonth.month).map((day, idx) => {
+                        if (!day) return <div key={`e-${idx}`} />
+                        const ds = pickerDateStr(day)
+                        const isSelected = ds === activeDate
+                        return (
+                          <button
+                            key={ds}
+                            type="button"
+                            onClick={() => { setActiveDate(ds); setShowDatePicker(false) }}
+                            style={{
+                              padding: '4px 0',
+                              fontSize: 12,
+                              border: 'none',
+                              borderRadius: 4,
+                              cursor: 'pointer',
+                              background: isSelected ? '#2563eb' : 'transparent',
+                              color: isSelected ? '#fff' : '#374151',
+                              fontWeight: isSelected ? 700 : 400,
+                              textAlign: 'center'
+                            }}
+                            onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#eff6ff' }}
+                            onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
+                          >
+                            {day}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </form>
       </div>
