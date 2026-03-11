@@ -882,8 +882,8 @@ function SlateDrillInner() {
           <button onClick={exitToLessons} style={ghostBtn}>← BACK</button>
         </div>
 
-        {/* Body */}
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 16px', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        {/* Body — flex column so controls stay fixed and only the list scrolls */}
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           {availableLessons.length === 0 && allOwnedLessons.length === 0 ? (
             <div style={{ textAlign: 'center', marginTop: 60 }}>
               <div style={{ marginBottom: 16 }}>
@@ -997,6 +997,8 @@ function SlateDrillInner() {
 
             return (
               <>
+                {/* ── Non-scrolling controls strip ───────────────────── */}
+                <div style={{ flexShrink: 0, padding: '16px 16px 0', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
                 {/* Rules bar */}
                 <button
                   onClick={() => { setSettingsDraft(settings); setSettingsOpen(true) }}
@@ -1019,7 +1021,7 @@ function SlateDrillInner() {
                 )}
 
                 {/* Tabs */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 0 }}>
                   <button style={tabStyle(listTab === 'active')} onClick={() => setListTab('active')}>ACTIVE</button>
                   <button style={tabStyle(listTab === 'recent')} onClick={() => setListTab('recent')}>
                     RECENT{recentList.length > 0 ? ` (${recentList.length})` : ''}
@@ -1028,8 +1030,10 @@ function SlateDrillInner() {
                     OWNED{mergedMap.size > 0 ? ` (${mergedMap.size})` : ''}
                   </button>
                 </div>
+                </div>{/* end controls strip */}
 
-                {/* Active tab */}
+                {/* ── Scrollable list ─────────────────────────────────── */}
+                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 16px 24px', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
                 {listTab === 'active' && (
                   activeList.length === 0 ? (
                     <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>
@@ -1108,6 +1112,7 @@ function SlateDrillInner() {
                     )}
                   </div>
                 )}
+                </div>{/* end scrollable list */}
               </>
             )
           })()}
