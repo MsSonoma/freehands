@@ -14,6 +14,7 @@ export default function AwardsPage() {
   const [lessonsLoading, setLessonsLoading] = useState(true)
   const [customSubjects, setCustomSubjects] = useState([])
   const [customSubjectsLoading, setCustomSubjectsLoading] = useState(true)
+  const [generatedMetaMap, setGeneratedMetaMap] = useState({}) // filename → real subject
 
   const normalizeSubjectKey = (value) => {
     return String(value || '')
@@ -33,6 +34,25 @@ export default function AwardsPage() {
     ...customSubjectNames,
     'generated',
   ]
+
+  useEffect(() => {
+    if (!learnerId || medalsLoading) return
+    const generatedKeys = Object.keys(medals).filter(k => k.startsWith('generated/'))
+    if (!generatedKeys.length) return
+    fetch('/api/lessons/meta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keys: generatedKeys, learner_id: learnerId })
+    }).then(r => r.ok ? r.json() : null).then(res => {
+      if (res?.lessons?.length) {
+        const map = {}
+        for (const l of res.lessons) {
+          if (l.file) map[l.file] = l.subject || null
+        }
+        setGeneratedMetaMap(map)
+      }
+    }).catch(() => {})
+  }, [learnerId, medals, medalsLoading])
 
   useEffect(() => {
     try {
@@ -175,11 +195,14 @@ export default function AwardsPage() {
       const generatedList = allLessons.generated || []
       const generatedLesson = generatedList.find(l => (ensureJsonFile(l?.file) === file)) || null
       const generatedSubject = normalizeSubject(generatedLesson?.subject)
+      // Also check the directly-fetched meta map (service-role, no cookie needed)
+      const metaSubject = normalizeSubject(generatedMetaMap[file])
 
       if (!bucket || bucket === 'generated') {
         // Allow generated lessons to bucket into core OR custom subjects.
-        if (generatedSubject) {
-          bucket = generatedSubject
+        const resolved = metaSubject || generatedSubject
+        if (resolved && resolved !== 'generated' && resolved !== 'unknown') {
+          bucket = resolved
         }
       }
 

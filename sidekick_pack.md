@@ -6,23 +6,20 @@ Mode: standard
 
 Prompt (original):
 ```text
-Mr. Slate not loading all lessons that facilitator/lessons page has in owned - available-lessons API slate page lesson list
+awards page classifying lessons as general subject instead of correct subject heading
 ```
 
 Filter terms used:
 ```text
-API
-slate
-not
-loading
-all
-lessons
-facilitator
+awards
 page
-owned
-available
-lesson
-list
+classifying
+lessons
+general
+subject
+instead
+correct
+heading
 ```
 
 ---
@@ -31,9 +28,9 @@ list
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-03-11 10:41` — Lesson Planner Generate button opens lesson generator overlay says Generate on [date] change date calendar picker planne
 - `2026-03-11 11:30` — Calendar scheduled lessons Edit Lesson button reschedule past lessons Notes Assigns Add Images Remove rescheduling calen
 - `2026-03-11 17:21` — change view lessons to Ms. Sonoma on /learn page, move Mr. Slate button from learn/lessons page to /learn page below Awa
+- `2026-03-11 17:49` — Mr. Slate not loading all lessons that facilitator/lessons page has in owned - available-lessons API slate page lesson l
 
 ---
 
@@ -54,7 +51,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 27. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 7. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -69,7 +66,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-API slate not loading all lessons facilitator page owned available lesson list
+awards page classifying lessons general subject instead correct heading
 
 ## Forced Context
 
@@ -77,499 +74,311 @@ API slate not loading all lessons facilitator page owned available lesson list
 
 ## Ranked Evidence
 
-### 1. src/app/session/slate/page.jsx (2ddbffc215161a104f365cc3b7817839f451a7295575f9a11ec248dde84574e3)
-- bm25: -19.4518 | relevance: 0.9511
+### 1. src/app/learn/awards/page.js (4d8cce309e0f536106072dd471d5d29bbc535b069533182488b0980b7295cb15)
+- bm25: -14.1744 | relevance: 0.9341
 
-// Load learner + mastery + available lessons
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const id = localStorage.getItem('learner_id')
-    setLearnerId(id)
-    if (id) {
-      const mm = getMasteryForLearner(id)
-      setMasteryMap(mm)
-      learnerIdRef.current = id
-      if (!id || id === 'demo') {
-        phaseRef.current = 'list'
-        setPagePhase('list')
-        return
+{subjectsToRender.map(subject => {
+            const lessons = groupedMedals[subject]
+            if (!lessons || lessons.length === 0) return null
+
+const displaySubject = customKeyToName.get(subject)
+              || subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+
+### 2. src/app/learn/awards/page.js (132205d5347106bc72f65a143af49b21c15f460f68553eece51f6cbf554793f7)
+- bm25: -13.8753 | relevance: 0.9328
+
+if (!bucket || bucket === 'generated') {
+        // Last resort: keep under general (never show "Facilitator" as a subject).
+        bucket = 'general'
       }
-      Promise.all([
-        fetch(`/api/learner/available-lessons?learner_id=${encodeURIComponent(id)}`)
-          .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load lessons'))),
-        fetch(`/api/learner/slate-settings?learner_id=${encodeURIComponent(id)}`)
-          .then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch(`/api/learner/lesson-history?learner_id=${encodeURIComponent(id)}&limit=200`)
-          .then(r => r.ok ? r.json() : null).catch(() => null),
-      ])
-        .then(([availRes, settingsRes, historyRes]) => {
-          const { lessons = [], staleApprovedKeys = [] } = availRes || {}
-          const drillable = (lessons || []).filter(l => buildPool(l).length > 0)
-          setAvailableLessons(drillable)
-          setAllOwnedLessons(lessons || [])
-          if (settingsRes?.settings) {
-            const merged = { ...DEFAULT_SLATE_SETTINGS, ...settingsRes.settings }
-            setSettings(merged)
-            setSettingsDraft(merged)
-            settingsRef.current = merged
-          }
+      
+      // Find best lesson metadata to display.
+      const bucketLessons = allLessons[bucket] || []
+      const bucketLesson = bucketLessons.find(l => ensureJsonFile(l?.file) === file) || null
+      const lesson = bucketLesson || generatedLesson || null
 
-### 2. docs/brain/lesson-library-downloads.md (b1b9e213db751b5765dbf2e696989c3293e61bd99e1db9d560a4332ae5c3532e)
-- bm25: -18.7970 | relevance: 0.9495
+const fallbackLesson = {
+        title: (file || '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() || file || 'Lesson',
+        blurb: '',
+        grade: null,
+        difficulty: null,
+        subject: bucket,
+        file
+      }
 
-# Lesson Library Downloads (Owned vs Downloadable)
+if (!grouped[bucket]) grouped[bucket] = []
+      grouped[bucket].push({
+        ...(lesson || fallbackLesson),
+        medalTier: medalData.medalTier,
+        bestPercent: medalData.bestPercent ?? 0,
+        file
+      })
+    })
+    
+    // Sort lessons within each subject by medal tier (gold > silver > bronze)
+    const tierOrder = { gold: 3, silver: 2, bronze: 1 }
+    Object.keys(grouped).forEach(subject => {
+      grouped[subject].sort((a, b) => {
+        const tierDiff = tierOrder[b.medalTier] - tierOrder[a.medalTier]
+        if (tierDiff !== 0) return tierDiff
+        return (a.title || '').localeCompare(b.title || '')
+      })
+    })
+    
+    return grouped
+  }
 
-**Status:** Canonical
-**Created:** 2026-01-10
-**Purpose:** Define how facilitator-visible "download" works without any device storage.
+const loading = medalsLoading || lessonsLoading
+  const groupedMedals = medalsBySubject()
 
-## How It Works
+const customDisplayOrder = (customSubjects || [])
+    .map((s) => ({
+      key: normalizeSubjectKey(s?.name),
+      name: String(s?.name || '').trim(),
+      order: Number(s?.display_order ?? 999),
+    }))
+    .filter((s) => s.key && s.name)
+    .sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
 
-### Concepts
-
-- **Downloadable lesson**: A built-in lesson JSON that exists on the server under `public/lessons/<subject>/...`.
-- **Owned lesson**: A facilitator-specific copy of a lesson stored in Supabase Storage under `lessons/facilitator-lessons/<facilitatorId>/<file>.json`.
-- **Download action**: Server-side copy from the built-in library into the facilitator's Storage folder (not a device download).
-
-### UX Rules (Facilitator Lessons Page)
-
-- Top-of-page actions:
-  - **📝 New Lesson** opens the lesson editor with a blank lesson (no Storage write until the user saves).
-  - **✨ Generate Lesson** opens the Lesson Maker flow (`/facilitator/generator`).
-
-- A dropdown filter controls which lessons are shown:
-  - **Owned** (default): show only owned lessons (Storage-backed).
-  - **Downloadable**: show only downloadable lessons that are not owned.
-  - **All Lessons**: show both.
-
-- **Gating**:
-  - Downloadable lessons that are not owned show exactly one action: **Download**.
-  - After Download succeeds, the owned copy exists and the regular lesson controls appear (Edit, per-learner availability, notes, schedule).
-
-### Prefetch Behavior
-
-- On page mount, the client prefetches built-in lesson lists immediately (no auth required) and loads subjects in parallel.
-- Owned lessons are then fetched after auth/session is available and merged into the list.
-- This keeps the UI responsive so clicking "Load Lessons" feels instant even if auth is slow.
-
-### Data/Key Rules
-
-### 3. src/app/facilitator/lessons/page.js (652a3b96f1eb02714520e12523a2705fb2cdd47f2309e1cb0facbc899260c7e3)
-- bm25: -17.5317 | relevance: 0.9460
+### 3. src/app/learn/awards/page.js (9b7b115c5d14e4d1b4f7ce9973b8e273d81cccc35f9535164fb84cc016b3f20a)
+- bm25: -12.4309 | relevance: 0.9255
 
 const lessonsMap = {}
-
-// Start loading public lesson lists immediately (no auth needed) and do it in parallel.
-      const publicSubjects = coreSubjects
-      await Promise.all(
-        publicSubjects.map(async (subject) => {
-          try {
-            const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { cache: 'no-store' })
-            if (!res.ok) {
-              lessonsMap[subject] = []
-              return
-            }
-            const list = await res.json()
-            lessonsMap[subject] = Array.isArray(list) ? list : []
-          } catch {
-            lessonsMap[subject] = []
-          }
-        })
-      )
-
-// Initialize generated bucket even if we haven't loaded owned lessons yet.
-      lessonsMap['generated'] = []
-
-// Publish public lessons ASAP so Load Lessons feels instant.
-      if (!cancelled) {
-        setAllLessons({ ...lessonsMap })
-        setLessonsLoading(false)
-      }
-
-// Now load owned lessons (requires auth) and merge them in.
-      try {
-        const supabase = getSupabaseClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        const token = session?.access_token
-
-if (token) {
-          const res = await fetch('/api/facilitator/lessons/list', {
+      for (const subject of subjectsToFetch) {
+        try {
+          const subjectKey = normalizeSubjectKey(subject)
+          const headers = subject === 'generated' && token 
+            ? { 'Authorization': `Bearer ${token}` }
+            : {}
+          const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { 
             cache: 'no-store',
-            headers: { Authorization: `Bearer ${token}` }
+            headers
           })
-
-if (res.ok) {
-            const generatedList = await res.json()
-            const sortedGeneratedList = (Array.isArray(generatedList) ? generatedList : []).sort((a, b) => {
-              const timeA = new Date(a?.created_at || 0).getTime()
-              const timeB = new Date(b?.created_at || 0).getTime()
-              return timeB - timeA
-            })
-
-### 4. docs/brain/ingests/pack.md (90a382c3781f765190781869790ccf18304821e4a8a147aac0b1f34bf9033e76)
-- bm25: -17.1940 | relevance: 0.9450
-
-- **Gating**:
-  - Downloadable lessons that are not owned show exactly one action: **Download**.
-  - After Download succeeds, the owned copy exists and the regular lesson controls appear (Edit, per-learner availability, notes, schedule).
-
-### Prefetch Behavior
-
-- On page mount, the client prefetches built-in lesson lists immediately (no auth required) and loads subjects in parallel.
-- Owned lessons are then fetched after auth/session is available and merged into the list.
-- This keeps the UI responsive so clicking "Load Lessons" feels instant even if auth is slow.
-
-### Data/Key Rules
-
-### 25. src/app/facilitator/calendar/LessonPlanner.jsx (fd591deb67440b85e69d10a8c0629a0abe24abd9a3d4d3f92016c00b9d8bf080)
-- bm25: -19.5330 | relevance: 1.0000
-
-const allSubjects = [...CORE_SUBJECTS, ...customSubjects.map(s => s.name)]
-
-### 5. src/app/session/slate/page.jsx (215300450fbe910ad2a77df56744c0c6320eef8d290c7edb22e8020d6c2338e9)
-- bm25: -16.9444 | relevance: 0.9443
-
-// Fetch full lesson data for:
-          //   1. history lesson_ids not in the loaded approved set
-          //   2. staleApprovedKeys — keys that were in approved_lessons but files couldn't be
-          //      found by available-lessons (now we retry via /api/lessons/meta which handles
-          //      generated lessons stored in Supabase Storage)
-          const historyMissing = [...seen.keys()].filter(k => !approvedKeySet.has(k))
-          const staleSet = new Set(staleApprovedKeys || [])
-          const metaKeys = [...new Set([...historyMissing, ...staleSet])]
-          if (metaKeys.length) {
-            fetch('/api/lessons/meta', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ keys: metaKeys, learner_id: id }),
-            }).then(r => r.ok ? r.json() : null).then(res => {
-              if (res?.lessons?.length) {
-                const map = {}
-                for (const l of res.lessons) map[l.lessonKey] = l
-                setHistoryLessons(map)
-              }
-            }).catch(() => {})
-          }
-          phaseRef.current = 'list'
-          setPagePhase('list')
-        })
-        .catch(e => {
-          setErrorMsg(e?.message || 'Could not load lessons.')
-          phaseRef.current = 'error'
-          setPagePhase('error')
-        })
-    } else {
-      phaseRef.current = 'list'
-      setPagePhase('list')
-    }
-  }, [])
-
-### 6. docs/brain/calendar-lesson-planning.md (bad918b02a71d06047328cb4b549e073ad8083ccb4d33488af50cae26e835d4c)
-- bm25: -16.2633 | relevance: 0.9421
-
-**Owned-only rule:**
-- The picker shows ONLY facilitator-owned lessons.
-- It does not list public curriculum lessons from `public/lessons`.
-
-### 7. docs/brain/ingests/pack.planned-lessons-flow.md (0c267f88511874e9aa926f255c08f624faee2b4e83d515c7f72f326776e0c3d2)
-- bm25: -16.1835 | relevance: 0.9418
-
-- On page mount, the client prefetches built-in lesson lists immediately (no auth required) and loads subjects in parallel.
-- Owned lessons are then fetched after auth/session is available and merged into the list.
-- This keeps the UI responsive so clicking "Load Lessons" feels instant even if auth is slow.
-
-### 8. src/app/session/slate/page.jsx (78a2752199a35b2d8534f7c4da7c1e305a5a3df4ed04356546777f1d78e74395)
-- bm25: -15.3515 | relevance: 0.9388
-
-{/* ── Scrollable list ─────────────────────────────────── */}
-                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 16px 24px', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-                {listTab === 'active' && (
-                  activeList.length === 0 ? (
-                    <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>
-                      ALL LESSONS MASTERED — CHECK RECENT TAB 🤖
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
-                        {activeList.length} LESSON{activeList.length !== 1 ? 'S' : ''} AVAILABLE
-                      </div>
-                      {activeList.map((l, i) => <LessonCard key={getLk(l) || i} lesson={l} />)}
-                    </div>
-                  )
-                )}
-
-### 9. src/app/session/slate/page.jsx (1fa657a448e1581db4210e6af458701832c57fba66a45d9d0d9c98394daff5ae)
-- bm25: -15.1802 | relevance: 0.9382
-
-{/* Body — flex column so controls stay fixed and only the list scrolls */}
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          {availableLessons.length === 0 && allOwnedLessons.length === 0 ? (
-            <div style={{ textAlign: 'center', marginTop: 60 }}>
-              <div style={{ marginBottom: 16 }}>
-                <SlateVideo size={120} />
-              </div>
-              <div style={{ color: C.muted, fontSize: 14, letterSpacing: 1 }}>NO DRILL LESSONS AVAILABLE</div>
-              <div style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>Complete a lesson with Ms. Sonoma first, then come back to practice.</div>
-            </div>
-          ) : (() => {
-            // --- Derived lists for each tab ---
-            const getLk = l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`
-
-// Merge approved lessons + history-fetched metadata into one map
-            const mergedMap = new Map(allOwnedLessons.map(l => [getLk(l), l]))
-            Object.entries(historyLessons).forEach(([k, l]) => { if (!mergedMap.has(k)) mergedMap.set(k, l) })
-
-// Active: drillable lessons from approved set, not yet Slate-mastered
-            const activeList = availableLessons.filter(l => !masteryMap[getLk(l)]?.mastered)
-
-// Recent: sessions joined to merged lesson map so all cards are real
-            const recentList = recentSessions.map(s => ({ session: s, lesson: mergedMap.get(s.lesson_id) }))
-
-### 10. docs/brain/ingests/pack.planned-lessons-flow.md (bb1ea8e97e97bc7a7cf0e595d4c2e295f2243bf8cb59b699da17b5cf5ee90289)
-- bm25: -14.9865 | relevance: 0.9374
-
-### 30. docs/brain/lesson-library-downloads.md (b1b9e213db751b5765dbf2e696989c3293e61bd99e1db9d560a4332ae5c3532e)
-- bm25: -13.9504 | relevance: 1.0000
-
-# Lesson Library Downloads (Owned vs Downloadable)
-
-**Status:** Canonical
-**Created:** 2026-01-10
-**Purpose:** Define how facilitator-visible "download" works without any device storage.
-
-## How It Works
-
-### Concepts
-
-- **Downloadable lesson**: A built-in lesson JSON that exists on the server under `public/lessons/<subject>/...`.
-- **Owned lesson**: A facilitator-specific copy of a lesson stored in Supabase Storage under `lessons/facilitator-lessons/<facilitatorId>/<file>.json`.
-- **Download action**: Server-side copy from the built-in library into the facilitator's Storage folder (not a device download).
-
-### UX Rules (Facilitator Lessons Page)
-
-- Top-of-page actions:
-  - **📝 New Lesson** opens the lesson editor with a blank lesson (no Storage write until the user saves).
-  - **✨ Generate Lesson** opens the Lesson Maker flow (`/facilitator/generator`).
-
-- A dropdown filter controls which lessons are shown:
-  - **Owned** (default): show only owned lessons (Storage-backed).
-  - **Downloadable**: show only downloadable lessons that are not owned.
-  - **All Lessons**: show both.
-
-- **Gating**:
-  - Downloadable lessons that are not owned show exactly one action: **Download**.
-  - After Download succeeds, the owned copy exists and the regular lesson controls appear (Edit, per-learner availability, notes, schedule).
-
-### Prefetch Behavior
-
-### 11. docs/brain/calendar-lesson-planning.md (1d396766db2440144971a1350400b34ef2799dc2339e2896f9d8c5a4a2c58fe0)
-- bm25: -14.6080 | relevance: 0.9359
-
-- `src/app/facilitator/calendar/LessonPicker.js`
-  - Manual scheduling UI ("Add Lessons")
-  - Loads ONLY facilitator-owned lessons via `/api/facilitator/lessons/list`
-  - Produces `generated/<filename>` keys for scheduling and for `/api/lesson-file`
-
-### 12. docs/brain/ingests/pack.planned-lessons-flow.md (0f7166c8532c44d946f304b21783d627e9b974887552cfc762d34feacecf6e85)
-- bm25: -14.3902 | relevance: 0.9350
-
-- `src/app/facilitator/calendar/LessonPicker.js`
-  - Manual scheduling UI ("Add Lessons")
-  - Loads ONLY facilitator-owned lessons via `/api/facilitator/lessons/list`
-  - Produces `generated/<filename>` keys for scheduling and for `/api/lesson-file`
-
-### 13. sidekick_pack.md (84b9eb66256455b459527b44b0d725e6b90511e2bf688251f44a08fbf12a8ce2)
-- bm25: -14.3637 | relevance: 0.9349
-
-**Data source and key format:**
-- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
-- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
-
-### 14. docs/brain/ingests/pack.md (e4dc0297c51db7b2d71be9de0406c24c615491ad333d110432ff2a8f5a2ec213)
-- bm25: -14.2549 | relevance: 0.9344
-
-- A dropdown filter controls which lessons are shown:
-  - **Owned** (default): show only owned lessons (Storage-backed).
-  - **Downloadable**: show only downloadable lessons that are not owned.
-  - **All Lessons**: show both.
-
-### 15. src/app/facilitator/lessons/page.js (fb4196aaceb4cb5f37a10f372c1d445db829e8fe181e20ad14318ff446fb609f)
-- bm25: -13.7058 | relevance: 0.9320
-
-export default function FacilitatorLessonsPage() {
-  const router = useRouter()
-  const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
-  const { coreSubjects, subjectsWithoutGenerated: subjectDropdownOptions } = useFacilitatorSubjects({ includeGenerated: true })
-  const [pinChecked, setPinChecked] = useState(false)
-  const [tier, setTier] = useState('free')
-  const [learners, setLearners] = useState([])
-  const [selectedLearnerId, setSelectedLearnerId] = useState(null)
-  const [allLessons, setAllLessons] = useState({}) // { subject: [lessons] }
-  const [lessonLibraryScope, setLessonLibraryScope] = useState('owned') // owned | downloadable | all
-  const [ownedLessonKeys, setOwnedLessonKeys] = useState({}) // { 'subject/file.json': true }
-  const [downloadingLesson, setDownloadingLesson] = useState(null) // `${subject}/${file}`
-  const [availableLessons, setAvailableLessons] = useState({}) // { 'subject/lesson_file': true } - lessons shown to learner
-  const [scheduledLessons, setScheduledLessons] = useState({}) // { 'subject/lesson_file': true } - lessons scheduled for today
-  const [futureScheduledLessons, setFutureScheduledLessons] = useState({}) // { 'subject/lesson_file': 'YYYY-MM-DD' } - lessons scheduled for future dates
-  const [activeGoldenKeys, setActiveGoldenKeys] = useState({}) // { 'subject/lesson_file': true }
-  const [lessonNotes, setLessonNotes] = useState({}) // { 'subject/lesson_file': 'note text' }
-  const [medals, setMedals] = useState({}) // { lesson_key: { bestPercent, medalTier } }
-  const [loading, setLoading] = useState(true)
-  const [lessonsLoading, setLessonsLoading] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedS
-
-### 16. src/app/session/slate/page.jsx (36719431fe7f3258f8a4d7604510f97529ca7d60507a7278cb51c2acaa757e28)
-- bm25: -13.6427 | relevance: 0.9317
-
-{/* Owned tab — all owned/activated lessons with filters */}
-                {listTab === 'owned' && (
-                  <div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-                      <select
-                        value={ownedFilters.subject}
-                        onChange={e => setOwnedFilters(f => ({ ...f, subject: e.target.value }))}
-                        style={{ background: C.surface, color: ownedFilters.subject ? C.text : C.muted, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer', letterSpacing: 1 }}
-                      >
-                        <option value=''>ALL SUBJECTS</option>
-                        {allSubjects.map(s => <option key={s} value={s}>{s.replace(/-/g, ' ').toUpperCase()}</option>)}
-                      </select>
-                      <select
-                        value={ownedFilters.grade}
-                        onChange={e => setOwnedFilters(f => ({ ...f, grade: e.target.value }))}
-                        style={{ background: C.surface, color: ownedFilters.grade ? C.text : C.muted, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 11, fontFamily: C.mono, cursor: 'pointer', letterSpacing: 1 }}
-                      >
-                        <option value=''>ALL GRADES</option>
-                        {allGrades.map(g => <option key={g} value={String(g)}>GRADE {g}</option>)}
-                      </select>
-                      <select
-                        value={ownedFilters.difficulty}
-                        onChange={e => setOwnedFilters(f => ({ ...f, difficulty: e.target.value }))}
-                        style={{ background: C.surface, color: ownedFilters.diffi
-
-### 17. src/app/facilitator/lessons/page.js (091b333030b7fa0b790d4abe79fdf6f8a31327df31aa89502ac14854e23bd94a)
-- bm25: -12.9147 | relevance: 0.9281
-
-const merged = { ...lessonsMap, generated: [] }
-            for (const lesson of sortedGeneratedList.slice().reverse()) {
-              const subject = lesson.subject || 'math'
-              const generatedLesson = { ...lesson, isGenerated: true }
-              if (!merged[subject]) merged[subject] = []
-              merged[subject].unshift(generatedLesson)
-              merged['generated'].push(generatedLesson)
-            }
-
-if (!cancelled) setAllLessons(merged)
-          }
+          const list = res.ok ? await res.json() : []
+          lessonsMap[subjectKey] = Array.isArray(list) ? list : []
+        } catch {
+          lessonsMap[normalizeSubjectKey(subject)] = []
         }
-      } catch {
-        // Silent fail
+      }
+      if (!cancelled) {
+        setAllLessons(lessonsMap)
+        setLessonsLoading(false)
       }
     })()
     return () => { cancelled = true }
-  }, []) // Load once on mount
+  }, [customSubjectNames.join('|')])
 
-async function refreshOwnedLessons() {
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      if (!token) return
+### 4. src/app/learn/lessons/page.js (7663fc91dee050ac32e1ff994e7709b16ae87d1a7d0af4a1b2f7a093238bc0c1)
+- bm25: -11.4792 | relevance: 0.9199
 
-const res = await fetch('/api/facilitator/lessons/list', {
-        cache: 'no-store',
-        headers: { Authorization: `Bearer ${token}` }
+const lessonsBySubject = useMemo(() => {
+    const grouped = {}
+    SUBJECTS.forEach(subject => {
+      const subjectLessons = allLessons[subject] || []
+      // Filter by available lessons - show lessons that are EITHER:
+      // 1. Marked available by facilitator (checkbox), OR
+      // 2. Scheduled for today (calendar)
+      const availableForSubject = subjectLessons.filter(lesson => {
+        const lessonKey = lesson.isGenerated 
+          ? `generated/${lesson.file}`
+          : `${subject}/${lesson.file}`
+        // Also check legacy facilitator/ key for general lessons
+        const legacyKey = lessonKey.replace('general/', 'facilitator/')
+        // Also check just the filename (no subject prefix) for backwards compatibility
+        const filenameOnly = lesson.file
+        const isAvailable = availableLessons[lessonKey] === true 
+          || availableLessons[legacyKey] === true 
+          || availableLessons[filenameOnly] === true
+          || scheduledLessons[lessonKey] === true 
+          || scheduledLessons[legacyKey] === true
+          || scheduledLessons[filenameOnly] === true
+        return isAvailable
+      }).map(lesson => {
+        // Add lessonKey to each lesson object for snapshot lookup
+        const lessonKey = lesson.isGenerated 
+          ? `generated/${lesson.file}`
+          : `${subject}/${lesson.file}`
+        return { ...lesson, lessonKey }
       })
-      if (!res.ok) return
-
-const generatedList = await res.json()
-      const sortedGeneratedList = (Array.isArray(generatedList) ? generatedList : []).sort((a, b) => {
-        const timeA = new Date(a?.created_at || 0).getTime()
-        const timeB = new Date(b?.created_at || 0).getTime()
-        return timeB - timeA
-      })
-
-const owned = {}
-      for (const lesson of sortedGeneratedList) {
-        const subj = (lesson?.subject || '').toString().toLowerCase() || 'math'
-        const file = lesson?.file
-        if (file) owned[`${subj}/${file}`] = true
+      if (availableForSubject.length > 0) {
+        grouped[subject] = availableForSubject
       }
-      setOwnedLessonKeys(owned)
+    })
+    return grouped
+  }, [allLessons, availableLessons, scheduledLessons])
 
-### 18. src/app/facilitator/lessons/page.js (121977b0b65b50a3f402b628076d1afc293340c46f229f4d92d0d00df893012b)
-- bm25: -12.4234 | relevance: 0.9255
+### 5. src/app/session/page.js (0ac5b6abe470e6dbddd69853ae1fed878c176ebe7f8d1891aaeda2cb9fb39c70)
+- bm25: -11.2896 | relevance: 0.9186
 
-<select
-                value={lessonLibraryScope}
-                onChange={(e) => setLessonLibraryScope(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  background: '#fff',
-                  cursor: 'pointer',
-                  minWidth: '150px'
-                }}
-              >
-                <option value="owned">Owned</option>
-                <option value="downloadable">Downloadable</option>
-                <option value="all">All Lessons</option>
-              </select>
+const subjectSegment = (subjectParam || "math").toLowerCase();
+  const subjectFolderSegment = subjectSegment === 'generated'
+    ? 'Generated Lessons'
+    : (subjectSegment === 'general' ? 'Facilitator Lessons' : subjectSegment);
+  // Preserve original casing of the lesson filename; only normalize subject segment
+  const lessonFilename = manifestInfo.file || "";
+  const lessonFilePath = lessonFilename
+    ? `/lessons/${encodeURIComponent(subjectFolderSegment)}/${encodeURIComponent(lessonFilename)}`
+    : "";
 
-<button
-                onClick={() => setShowLessons(true)}
-                disabled={showLessons}
-                style={{
-                  padding: '10px 24px',
-                  background: showLessons ? '#e5e7eb' : '#3b82f6',
-                  color: showLessons ? '#9ca3af' : '#fff',
-                  border: 'none',
-                  borderRadius: 6,
-                  fontWeight: 600,
-                  cursor: showLessons ? 'default' : 'pointer',
-                  fontSize: 14,
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Load Lessons
-              </button>
+### 6. src/app/api/learner/available-lessons/route.js (b877629796398bab4d849a69eb11be7f48bc33b16cc75514762831901183081c)
+- bm25: -11.1729 | relevance: 0.9179
 
-### 19. src/app/session/slate/page.jsx (6904ac8d681ef822ce6ac487589db141b2edd3e4f7592cadaf845fb8f55aea1b)
-- bm25: -12.3876 | relevance: 0.9253
+if (!error && data) {
+            const text = await data.text()
+            lessonData = JSON.parse(text)
+            lessonData.isGenerated = true
+            lessonData.subject = 'generated'
+            lessonData.file = filename
+          } else {
+            if (error?.status === 404) {
+              missingReason = 'not-found'
+            }
+            // Silent error logging
+          }
+        } else {
+          missingReason = 'missing-facilitator'
+          // Silent warning
+        }
+      } else if (subject === 'general') {
+        const facilitatorFilePath = path.join(LESSONS_ROOT, FACILITATOR_FOLDER, filename)
+        let diskMissing = false
+        let storageMissing = false
 
-// Page state
-  // Phases: loading | list | ready | asking | feedback | won | error
-  const [pagePhase, setPagePhase] = useState('loading')
-  const [availableLessons, setAvailableLessons] = useState([])
-  const [lessonData, setLessonData] = useState(null)
-  const [pool, setPool] = useState([])
-  const [score, setScore] = useState(0)
-  const [qCount, setQCount] = useState(0)
-  const [secondsLeft, setSecondsLeft] = useState(QUESTION_SECONDS)
-  const [currentQ, setCurrentQ] = useState(null)
-  const [userAnswer, setUserAnswer] = useState('')
-  const [lastResult, setLastResult] = useState(null)
-  const [soundOn, setSoundOn] = useState(true)
-  const [learnerId, setLearnerId] = useState(null)
-  const [masteryMap, setMasteryMap] = useState({})
-  const [errorMsg, setErrorMsg] = useState('')
-  const [listTab, setListTab] = useState('active')
-  const [ownedFilters, setOwnedFilters] = useState({ subject: '', grade: '', difficulty: '' })
-  const [allOwnedLessons, setAllOwnedLessons] = useState([])
-  const [recentSessions, setRecentSessions] = useState([])
-  const [historyLessons, setHistoryLessons] = useState({})
-  const [listError, setListError] = useState('')
-  const [settings, setSettings] = useState(DEFAULT_SLATE_SETTINGS)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [settingsDraft, setSettingsDraft] = useState(DEFAULT_SLATE_SETTINGS)
-  const [settingsSaving, setSettingsSaving] = useState(false)
+try {
+          const raw = await fs.promises.readFile(facilitatorFilePath, 'utf8')
+          lessonData = JSON.parse(raw)
+          lessonData.subject = 'general'
+          lessonData.file = filename
+        } catch (readErr) {
+          if (readErr.code === 'ENOENT') {
+            diskMissing = true
+          } else {
+            // Silent error
+          }
+        }
 
-### 20. src/app/learn/lessons/page.js (a496efb3e2ea9c79ee10f68c524874c9247e042a14ec501354b58b2525ea8bd8)
-- bm25: -12.0440 | entity_overlap_w: 1.30 | adjusted: -12.3690 | relevance: 0.9252
+if (!lessonData && facilitatorId) {
+          const { data, error } = await supabase.storage
+            .from('lessons')
+            .download(`facilitator-lessons/${facilitatorId}/${filename}`)
+
+if (!error && data) {
+            const text = await data.text()
+            lessonData = JSON.parse(text)
+            lessonData.subject = 'general'
+            lessonData.file = filename
+          } else if (error?.status === 404) {
+            storageMissing = true
+          } else if (error) {
+            // Silent error
+          }
+        }
+
+### 7. src/app/api/lessons/meta/route.js (967af4d63ced1cc4cebbe681ee77304d1566d9d96acaa421a1b818316c6be86a)
+- bm25: -10.7488 | relevance: 0.9149
+
+if (STOCK_SUBJECTS.has(subject)) {
+        // Stock lesson — read from local disk
+        try {
+          const filePath = path.join(LESSONS_ROOT, subject, filename)
+          const text = await fs.readFile(filePath, 'utf8')
+          data = JSON.parse(text)
+          data.lessonKey = `${subject}/${filename}`
+          data.subject = subject
+          data.file = filename
+        } catch {
+          // not found or bad JSON — skip
+        }
+      } else if (subject === 'general') {
+        // Facilitator lesson on local disk
+        try {
+          const filePath = path.join(LESSONS_ROOT, FACILITATOR_FOLDER, filename)
+          const text = await fs.readFile(filePath, 'utf8')
+          data = JSON.parse(text)
+          data.lessonKey = `${subject}/${filename}`
+          data.subject = 'general'
+          data.file = filename
+        } catch {
+          // not found — skip
+        }
+      } else if (subject === 'generated' && facilitatorId) {
+        // Facilitator-authored lesson stored in Supabase Storage
+        try {
+          const supabase = await getSupabaseAdmin()
+          if (supabase) {
+            const { data: fileData, error } = await supabase.storage
+              .from('lessons')
+              .download(`facilitator-lessons/${facilitatorId}/${filename}`)
+            if (!error && fileData) {
+              const text = await fileData.text()
+              data = JSON.parse(text)
+              data.lessonKey = `generated/${filename}`
+              data.subject = 'generated'
+              data.file = filename
+              data.isGenerated = true
+            }
+          }
+        } catch {
+          // Storage error — skip
+        }
+      }
+
+### 8. src/app/learn/awards/page.js (ebc1895801227375408072bd153c7c76812fe8756cfe668246876a991b78216e)
+- bm25: -10.4776 | relevance: 0.9129
+
+if (!bucket || bucket === 'generated') {
+        // If the lesson exists in any known subject folder, prefer that.
+        const knownSubjects = Object.keys(allLessons || {})
+        const foundInKnown = knownSubjects.find((s) => {
+          const list = allLessons[s] || []
+          return list.some((l) => ensureJsonFile(l?.file) === file)
+        })
+        if (foundInKnown) bucket = foundInKnown
+      }
+
+### 9. src/app/learn/awards/page.js (aae2328e0ee15a6065296a219b86c3ca49388cd1de1f170e826da26788d23a15)
+- bm25: -10.3366 | relevance: 0.9118
+
+return (
+              <div key={subject}>
+                <h2 style={subjectHeading}>
+                  {displaySubject}
+                  <span style={{ 
+                    fontSize: 14, 
+                    fontWeight: 400, 
+                    color: '#6b7280',
+                    background: '#f3f4f6',
+                    padding: '2px 8px',
+                    borderRadius: 12
+                  }}>
+                    {lessons.length} {lessons.length === 1 ? 'medal' : 'medals'}
+                  </span>
+                </h2>
+                
+                {lessons.map(lesson => {
+                  const medal = emojiForTier(lesson.medalTier)
+                  
+                  return (
+                    <div key={`${subject}-${lesson.file}`} style={card}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{ margin: '0 0 4px', fontSize: 16 }}>
+                            {lesson.title}
+                          </h3>
+                          {lesson.blurb && (
+                            <p style={{ margin: '4px 0', color: '#6b7280', fontSize: 14 }}>
+                              {lesson.blurb}
+                            </p>
+                          )}
+                          {(lesson.grade || lesson.difficulty) && (
+                            <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+                              {lesson.grade && `Grade ${lesson.grade}`}
+                              {lesson.grade && lesson.difficulty && ' • '}
+                              {lesson.difficulty && lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1)}
+                            </div>
+
+### 10. src/app/learn/lessons/page.js (a496efb3e2ea9c79ee10f68c524874c9247e042a14ec501354b58b2525ea8bd8)
+- bm25: -10.0985 | relevance: 0.9099
 
 setLessonsLoading(true)
       
@@ -624,755 +433,1100 @@ setLessonsLoading(true)
       
       i
 
-### 21. sidekick_pack.md (d62c6741ac395fbdad0b9d21b669ab12793639e264438a2e035c67198dec3016)
-- bm25: -12.0369 | entity_overlap_w: 1.30 | adjusted: -12.3619 | relevance: 0.9252
-
-**Within-run anti-repeat rule (important):**
-- The planner generates one outline per day/subject slot.
-- If the context sent to GPT does not include outlines generated earlier in the same batch, GPT can repeat topics week-to-week because it cannot "see" what it already created.
-- The planner must include a short list of already-generated outlines (especially for the same subject) in the context for subsequent outline requests.
-
-### 5. docs/brain/calendar-lesson-planning.md (508134b31ceac5379e6edf01fa6e367c144e9aac1f98d2a85cca866a2cb62f68)
-- bm25: -31.4009 | relevance: 1.0000
-
-### Error Handling
-
-**Graceful Degradation:**
-- Medals API failure → defaults to empty object, generation continues
-- History processing independent of medals availability
-- Individual outline generation failures logged but don't stop batch
-- Planned lessons load failure → defaults to empty object, page still usable
-
-### 14. docs/brain/ingests/pack.md (457324d43ea5d640d2143d6eabafb9637ff47ccee9bda121abde347baffba259)
-- bm25: -28.0365 | relevance: 1.0000
-
-**Data source and key format:**
-- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
-- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
-
-**Filtering behavior:**
-- Subject grouping uses each lesson's `subject` metadata.
-- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
-
-### Completed Past Scheduled Lessons (History View)
-
-The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
-
-### 22. docs/brain/ingests/pack.md (449969b4c519b1e04ae0f2ff5cdd6f65950ce2e104330fb9db2a7d480291f3c5)
-- bm25: -12.2931 | relevance: 0.9248
-
-**Owned-only rule:**
-- The picker shows ONLY facilitator-owned lessons.
-- It does not list public curriculum lessons from `public/lessons`.
-
-### 17. docs/brain/lesson-notes.md (ac258ad493dde9c766703881b36300ddf044039fc14bddb8ce88bf9914d1a3ef)
-- bm25: -21.9046 | relevance: 1.0000
-
-if (notesKeys.length > 0) {
-  lines.push(`FACILITATOR NOTES ON LESSONS:`);
-  notesKeys.sort().forEach(key => {
-    const [subject, lessonName] = key.split('/');
-    lines.push(`${subject} - ${lessonName}:`);
-    lines.push(`  "${lessonNotes[key]}"`);
-  });
-}
-```
-
-**Use cases:**
-- **Progress tracking**: "Completed with 95%. Ready for next level." → Mr. Mentor suggests advanced materials
-- **Challenge documentation**: "Struggles with word problems. Anxious during tests." → Suggests scaffolding/anxiety strategies
-- **Interest tracking**: "Loves hands-on experiments. Wants to learn chemistry." → Suggests enrichment resources
-- **Behavioral context**: "Easily distracted. Works better in morning sessions." → Suggests schedule optimization
-
-## Key Files
-
-- `src/app/facilitator/lessons/page.js` - Note UI (add/edit/save), state management, Supabase updates
-- `src/app/facilitator/calendar/LessonNotesModal.jsx` - Notes modal used from Calendar schedule lists
-- `src/app/lib/learnerTranscript.js` - Transcript builder, includes notes section
-- `src/app/api/counselor/route.js` - Receives transcript with notes
-
-## What NOT To Do
-
-**DON'T make notes too long** - No character limit enforced, but excessively long notes bloat Mr. Mentor's context window. Keep notes concise (1-3 sentences per lesson).
-
-**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
-
-### 23. src/app/session/slate/page.jsx (9aa0441e837627aa176ce619418a83df669b8d45ec48db0cf3c00ae3298c11e2)
-- bm25: -12.1992 | relevance: 0.9242
-
-<div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={startDrill} style={ghostBtn}>DRILL AGAIN</button>
-            <button onClick={backToList} style={ghostBtn}>LESSON LIST</button>
-            <button onClick={exitToLessons} style={primaryBtn}>← BACK TO LESSONS</button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-### 24. docs/brain/calendar-lesson-planning.md (508134b31ceac5379e6edf01fa6e367c144e9aac1f98d2a85cca866a2cb62f68)
-- bm25: -11.4773 | entity_overlap_w: 2.60 | adjusted: -12.1273 | relevance: 0.9238
-
-### Error Handling
-
-**Graceful Degradation:**
-- Medals API failure → defaults to empty object, generation continues
-- History processing independent of medals availability
-- Individual outline generation failures logged but don't stop batch
-- Planned lessons load failure → defaults to empty object, page still usable
-
-**API Response Structure:**
-- `/api/medals` returns object directly: `{lessonId: {bestPercent: 85}, ...}`
-- `/api/lesson-schedule` returns wrapper: `{schedule: [...]}`
-- `/api/planned-lessons` returns wrapper: `{plannedLessons: {...}}`
-
-### Page Load Sequence
-
-**Calendar Page Mount:**
-1. Check PIN protection
-2. Resolve effective tier and entitlements (sets `canPlan` for write actions)
-3. Load learners list (always, once authenticated)
-4. Select first learner (if available)
-5. **Load scheduled lessons** (useEffect on selectedLearnerId)
-6. **Load planned lessons** (useEffect on selectedLearnerId)
-7. Load no-school dates
-
-**View-only rule (no hard locks):**
-- The calendar must remain viewable for authenticated users on all tiers.
-- When `canPlan` is false, scheduling/planning/no-school writes are blocked (view-only banner + action guards), but read data still loads.
-
-**Learner Change:**
-- Triggers reload of scheduled lessons, planned lessons, and no-school dates
-
-**After Generation:**
-- `generatePlannedLessons()` completes → calls `onPlannedLessonsChange(lessons)`
-- `savePlannedLessons(lessons)` saves to database only when `canPlan` is true
-- Success message shows, lessons appear on calendar immediately
-
-### Manual Scheduling: "Add Lessons" Picker
-
-The Calendar page includes an "Add Lessons" panel for manually assigning lesson files to specific dates.
-
-### 25. docs/brain/ingests/pack.lesson-schedule-debug.md (e224d32488a2b06f9978abd8574e008f7dbf4babd4347e650e7fb5b4f94c5832)
-- bm25: -11.4553 | entity_overlap_w: 2.60 | adjusted: -12.1053 | relevance: 0.9237
-
-After completing `assign_lesson`, Mr. Mentor must confirm in dialogue:
-
-### 22. docs/brain/calendar-lesson-planning.md (508134b31ceac5379e6edf01fa6e367c144e9aac1f98d2a85cca866a2cb62f68)
-- bm25: -18.6847 | entity_overlap_w: 1.50 | adjusted: -19.0597 | relevance: 1.0000
-
-### Error Handling
-
-**Graceful Degradation:**
-- Medals API failure → defaults to empty object, generation continues
-- History processing independent of medals availability
-- Individual outline generation failures logged but don't stop batch
-- Planned lessons load failure → defaults to empty object, page still usable
-
-**API Response Structure:**
-- `/api/medals` returns object directly: `{lessonId: {bestPercent: 85}, ...}`
-- `/api/lesson-schedule` returns wrapper: `{schedule: [...]}`
-- `/api/planned-lessons` returns wrapper: `{plannedLessons: {...}}`
-
-### Page Load Sequence
-
-**Calendar Page Mount:**
-1. Check PIN protection
-2. Resolve effective tier and entitlements (sets `canPlan` for write actions)
-3. Load learners list (always, once authenticated)
-4. Select first learner (if available)
-5. **Load scheduled lessons** (useEffect on selectedLearnerId)
-6. **Load planned lessons** (useEffect on selectedLearnerId)
-7. Load no-school dates
-
-**View-only rule (no hard locks):**
-- The calendar must remain viewable for authenticated users on all tiers.
-- When `canPlan` is false, scheduling/planning/no-school writes are blocked (view-only banner + action guards), but read data still loads.
-
-**Learner Change:**
-- Triggers reload of scheduled lessons, planned lessons, and no-school dates
-
-### 26. src/app/session/slate/page.jsx (0877c7ac701b8020d4b42945c40e5b0f22bdb7963e45b61864038498f052e168)
-- bm25: -11.9661 | relevance: 0.9229
-
-// --- Lesson card renderer (all owned lessons) ---
-            const LessonCard = ({ lesson, dateLabel }) => {
-              const lk = getLk(lesson)
-              const mastered = !!(masteryMap[lk]?.mastered)
-              const poolSize = buildPool(lesson).length
-              const subjectLabel = (lesson.subject || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-              const gradeLabel = lesson.grade ? `Grade ${lesson.grade}` : ''
-              const diffLabel = lesson.difficulty ? lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1) : ''
-              return (
-                <button
-                  onClick={() => selectLesson(lesson)}
-                  style={{
-                    background: C.surface,
-                    border: `1px solid ${mastered ? C.green : C.border}`,
-                    borderRadius: 10,
-                    padding: '14px 16px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                    width: '100%',
-                    transition: 'border-color 0.2s',
-                  }}
-                >
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ color: C.text, fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
-                      {mastered && <span style={{ color: C.green, marginRight: 6 }}>🤖</span>}
-                      {lesson.title || lk}
-                    </div>
-                    <div style={{ color: C.muted, fontSize: 11, letterSpacing: 1 }}>
-                      {[subjectLabel, gradeLabel, diffLabel].filter(Boolean).join(' · ')}
-                      {poolSize >
-
-### 27. docs/brain/lesson-editor.md (38744ddc77ed5cd3e3f4d0f126e4a5cb059b0e9e1a27af60e154326b18e313ce)
-- bm25: -11.9034 | relevance: 0.9225
-
-### Validation & Safety
-
-**Pre-save Validation**
-- Required fields (title, grade, difficulty)
-- Question text presence
-- Answer completeness
-- Minimum choice counts for multiple choice
-- Blank presence for fill-in-blank
-
-**Auto-cleanup**
-- Empty questions removed
-- Empty answer fields filtered
-- Empty vocabulary terms removed
-- Empty choice options filtered
-- Maintains JSON structure integrity
-
-**Error Display**
-- Clear error messages before save
-- Specific field identification
-- Red error banner with checklist
-
-### Workflow
-
-**Edit existing owned lesson**
-1. Go to Lesson Library
-2. Click "Edit" on an owned lesson
-3. Edit any fields in the structured form
-4. Save Changes to update the Storage-backed JSON file
-5. Cancel to discard changes
-
-**Create a new lesson from scratch**
-1. Go to Lesson Library
-2. Click **📝 New Lesson**
-3. Fill in lesson fields (title, grade, difficulty, subject, etc.)
-4. Press Save to create the lesson in Storage
-5. Cancel to discard (no Storage file is created)
-
-## Integration with Existing Features
-
-**Compatible with:**
-- Text Preview (still available)
-- Request AI Changes (for AI-assisted editing)
-
-## Related Brain Files
-
-- **[lesson-validation.md](lesson-validation.md)** - Editor triggers automatic validation on save
-- **[ai-rewrite-system.md](ai-rewrite-system.md)** - AIRewriteButton improves lesson content quality
-
-## Key Files
-
-- Structured form UI: `src/components/LessonEditor.jsx`
-- Lesson editor page: `src/app/facilitator/lessons/edit/page.js`
-- Save existing lesson: `src/app/api/lesson-edit/route.js`
-- Create new lesson on first save: `src/app/api/facilitator/lessons/create/route.js`
-
-## What NOT To Do
-
-### 28. src/app/facilitator/lessons/page.js (bda39f95b86d69576d1597096edf6e7f48b83b6e3b8ea916f84cd925ea6ed2c4)
-- bm25: -11.8954 | relevance: 0.9225
-
-const owned = {}
-            for (const lesson of sortedGeneratedList) {
-              const subj = (lesson?.subject || '').toString().toLowerCase() || 'math'
-              const file = lesson?.file
-              if (file) owned[`${subj}/${file}`] = true
-            }
-            if (!cancelled) setOwnedLessonKeys(owned)
-
-### 29. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (a1dab0d14f0aec8a3d6ff1797043dccbc6f0c6bcd8dd35fda40e4485f4c57199)
-- bm25: -11.1839 | entity_overlap_w: 2.60 | adjusted: -11.8339 | relevance: 0.9221
-
-### 4. docs/brain/calendar-lesson-planning.md (508134b31ceac5379e6edf01fa6e367c144e9aac1f98d2a85cca866a2cb62f68)
-- bm25: -22.1947 | relevance: 1.0000
-
-### Error Handling
-
-**Graceful Degradation:**
-- Medals API failure → defaults to empty object, generation continues
-- History processing independent of medals availability
-- Individual outline generation failures logged but don't stop batch
-- Planned lessons load failure → defaults to empty object, page still usable
-
-**API Response Structure:**
-- `/api/medals` returns object directly: `{lessonId: {bestPercent: 85}, ...}`
-- `/api/lesson-schedule` returns wrapper: `{schedule: [...]}`
-- `/api/planned-lessons` returns wrapper: `{plannedLessons: {...}}`
-
-### Page Load Sequence
-
-**Calendar Page Mount:**
-1. Check PIN protection
-2. Resolve effective tier and entitlements (sets `canPlan` for write actions)
-3. Load learners list (always, once authenticated)
-4. Select first learner (if available)
-5. **Load scheduled lessons** (useEffect on selectedLearnerId)
-6. **Load planned lessons** (useEffect on selectedLearnerId)
-7. Load no-school dates
-
-**View-only rule (no hard locks):**
-- The calendar must remain viewable for authenticated users on all tiers.
-- When `canPlan` is false, scheduling/planning/no-school writes are blocked (view-only banner + action guards), but read data still loads.
-
-**Learner Change:**
-- Triggers reload of scheduled lessons, planned lessons, and no-school dates
-
-**After Generation:**
-- `generatePlannedLessons()` completes → calls `onPlannedLessonsChange(lessons)`
-- `savePlannedLessons(lessons)` saves to database only when `canPlan` is true
-- Success message shows, lessons appear on calendar immediately
-
-### Manual Scheduling: "Add Lessons" Picker
-
-### 30. docs/brain/ingests/pack.planned-lessons-flow.md (3ec4933909da7f7624f4da9086154847a7d90213bc6f8e1a8c7e751f80493f5e)
-- bm25: -11.0187 | entity_overlap_w: 2.60 | adjusted: -11.6687 | relevance: 0.9211
-
-## Ranked Evidence
-
-### 1. docs/brain/calendar-lesson-planning.md (508134b31ceac5379e6edf01fa6e367c144e9aac1f98d2a85cca866a2cb62f68)
-- bm25: -36.4616 | entity_overlap_w: 1.50 | adjusted: -36.8366 | relevance: 1.0000
-
-### Error Handling
-
-**Graceful Degradation:**
-- Medals API failure → defaults to empty object, generation continues
-- History processing independent of medals availability
-- Individual outline generation failures logged but don't stop batch
-- Planned lessons load failure → defaults to empty object, page still usable
-
-**API Response Structure:**
-- `/api/medals` returns object directly: `{lessonId: {bestPercent: 85}, ...}`
-- `/api/lesson-schedule` returns wrapper: `{schedule: [...]}`
-- `/api/planned-lessons` returns wrapper: `{plannedLessons: {...}}`
-
-### Page Load Sequence
-
-**Calendar Page Mount:**
-1. Check PIN protection
-2. Resolve effective tier and entitlements (sets `canPlan` for write actions)
-3. Load learners list (always, once authenticated)
-4. Select first learner (if available)
-5. **Load scheduled lessons** (useEffect on selectedLearnerId)
-6. **Load planned lessons** (useEffect on selectedLearnerId)
-7. Load no-school dates
-
-**View-only rule (no hard locks):**
-- The calendar must remain viewable for authenticated users on all tiers.
-- When `canPlan` is false, scheduling/planning/no-school writes are blocked (view-only banner + action guards), but read data still loads.
-
-**Learner Change:**
-- Triggers reload of scheduled lessons, planned lessons, and no-school dates
-
-**After Generation:**
-- `generatePlannedLessons()` completes → calls `onPlannedLessonsChange(lessons)`
-- `savePlannedLessons(lessons)` saves to database only when `canPlan` is true
-- Success message shows, lessons appear on calendar immediately
-
-### Manual Scheduling: "Add Lessons" Picker
-
-### 31. src/app/session/slate/page.jsx (13e1b143fc8c70835296875f2adb564c790e2794458a2ac07e5f1458ae2372e6)
-- bm25: -11.6480 | relevance: 0.9209
+### 11. src/app/learn/awards/page.js (9da90adda213b5392e247e96be4327d5e0f685988bc96b8e24be7300a9ad09d6)
+- bm25: -10.0910 | relevance: 0.9098
 
 'use client'
-
-/**
- * Mr. Slate -- Skills & Practice Coach
- *
- * A quiz-mode drill session. Questions are drawn from the same lesson JSON
- * as Ms. Sonoma (sample, truefalse, multiplechoice, fillintheblank pools).
- * The learner accumulates points (goal: 10) to earn the robot mastery icon.
- *
- * Rules:
- *   - Correct answer within time limit  -> +1 (min 0, max 10)
- *   - Wrong answer                      -> -1 (min 0)
- *   - Timeout (15s default)             -> +/-0
- *   - Reach 10 -> mastery confirmed
- *
- * Questions rotate through the full pool without repeats until ~80% have
- * been asked, then the deck reshuffles.
- *
- * Lessons are loaded from /api/learner/available-lessons (handles static,
- * generated, and Supabase-stored lessons uniformly). No URL params required.
- */
-
-import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getMasteryForLearner, saveMastery } from '@/app/lib/masteryClient'
+import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
+import { CORE_SUBJECTS, sortSubjectsForDropdown } from '@/app/lib/subjects'
 
-// --- Constants ---------------------------------------------------------------
+export default function AwardsPage() {
+  const router = useRouter()
+  const [learnerName, setLearnerName] = useState(null)
+  const [learnerId, setLearnerId] = useState(null)
+  const [medals, setMedals] = useState({})
+  const [allLessons, setAllLessons] = useState({})
+  const [medalsLoading, setMedalsLoading] = useState(true)
+  const [lessonsLoading, setLessonsLoading] = useState(true)
+  const [customSubjects, setCustomSubjects] = useState([])
+  const [customSubjectsLoading, setCustomSubjectsLoading] = useState(true)
 
-const QUESTION_SECONDS = 15
-const SCORE_GOAL = 10
-const FEEDBACK_DELAY_MS = 2000
-const RESHUFFLE_THRESHOLD = 0.2 // reshuffle when only 20% of deck remains
+const normalizeSubjectKey = (value) => {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+  }
 
-const DEFAULT_SLATE_SETTINGS = {
-  scoreGoal: 10,
-  correctPts: 1,
-  wrongPts: 1,
-  timeoutPts: 0,
-  timeoutOffset: 0,
-  questionSecs: 15,
-}
+const customSubjectNames = (customSubjects || [])
+    .map((s) => s?.name)
+    .filter(Boolean)
 
-### 32. src/app/facilitator/calendar/LessonPicker.js (f875aea1742fe41051db332a32ce08b233c98071266f27296c61cf8d1fb98417)
-- bm25: -11.4356 | relevance: 0.9196
+// Fetch subjects includes generated so we can infer subject buckets for facilitator-created lessons.
+  // Include custom subjects so Awards can resolve titles/blurbs where available.
+  const subjectsToFetch = [
+    ...CORE_SUBJECTS,
+    ...customSubjectNames,
+    'generated',
+  ]
 
-const loadAllLessons = async () => {
+useEffect(() => {
     try {
-      const { getSupabaseClient } = await import('@/app/lib/supabaseClient')
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      const id = localStorage.getItem('learner_id')
+      const name = localStorage.getItem('learner_name')
+      if (name) setLearnerName(name)
+      if (id) setLearnerId(id)
+    } catch {}
+  }, [])
 
-// Calendar "Add Lessons" should only show facilitator-owned lessons.
-      // These are served via /api/facilitator/lessons/list and scheduled via the "generated/<filename>" key format.
-      if (!token) {
-        setAllLessons({})
-        return
+### 12. src/app/learn/awards/page.js (7bc9f9a06897b38ad7fbcd7544a86dacb73aed6c6c4ea0e854e91c40036b1551)
+- bm25: -9.5764 | relevance: 0.9054
+
+const medalsBySubject = () => {
+    const normalizeSubject = (raw) => {
+      const s = String(raw || '').trim().toLowerCase()
+      if (!s) return null
+      if (s === 'language-arts' || s === 'language arts') return 'language arts'
+      if (s === 'social-studies' || s === 'social studies') return 'social studies'
+      if (s === 'facilitator' || s === 'facilitator-lessons' || s === 'facilitator lessons') return 'generated'
+      return s.replace(/\s+/g, ' ')
+    }
+
+const ensureJsonFile = (file) => {
+      const f = String(file || '').trim()
+      if (!f) return f
+      return f.toLowerCase().endsWith('.json') ? f : `${f}.json`
+    }
+
+const coreSubjects = CORE_SUBJECTS
+
+const grouped = {}
+    
+    Object.entries(medals).forEach(([lessonKey, medalData]) => {
+      if (!medalData.medalTier) return // Only show lessons with medals
+      
+      const parts = String(lessonKey || '').split('/')
+      const subjectRaw = parts[0]
+      const fileRaw = parts.slice(1).join('/')
+      if (!subjectRaw || !fileRaw) return
+
+const file = ensureJsonFile(fileRaw)
+      const subjectKey = normalizeSubject(subjectRaw)
+
+// Determine which subject bucket this medal belongs to.
+      // For facilitator-generated lessons, infer from the generated lesson's metadata subject.
+      let bucket = subjectKey
+
+const generatedList = allLessons.generated || []
+      const generatedLesson = generatedList.find(l => (ensureJsonFile(l?.file) === file)) || null
+      const generatedSubject = normalizeSubject(generatedLesson?.subject)
+
+if (!bucket || bucket === 'generated') {
+        // Allow generated lessons to bucket into core OR custom subjects.
+        if (generatedSubject) {
+          bucket = generatedSubject
+        }
       }
 
-const lessonsMap = {}
+### 13. docs/brain/ingests/pack.planned-lessons-flow.md (f46ea4f5bce7ce9ee608310f0870eaf09047dc77fb683a7266ff0986444650a6)
+- bm25: -9.3108 | relevance: 0.9030
 
-try {
+return response.json()
+  }, [learnerTranscript, goalsNotes])
+  
+  // Load all lessons for interceptor
+  const loadAllLessons = useCallback(async () => {
+    const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general']
+    const results = {}
+    
+    for (const subject of SUBJECTS) {
+      try {
+        const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, {
+          cache: 'no-store'
+        })
+        if (res.ok) {
+          const list = await res.json()
+          if (Array.isArray(list)) {
+            results[subject] = list
+          }
+        }
+      } catch (err) {
+        // Silent error - continue with other subjects
+      }
+    }
+    
+    // Load generated lessons
+    const supabase = getSupabaseClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    
+    if (token) {
+      try {
         const res = await fetch('/api/facilitator/lessons/list', {
           cache: 'no-store',
           headers: { Authorization: `Bearer ${token}` }
         })
-
-if (!res.ok) {
-          setAllLessons({})
-          return
-        }
-
-const ownedLessons = await res.json()
-        if (!Array.isArray(ownedLessons)) {
-          setAllLessons({})
-          return
-        }
-
-for (const lesson of ownedLessons) {
-          const subject = (lesson?.subject || 'math').toString().toLowerCase()
-          if (!lessonsMap[subject]) lessonsMap[subject] = []
-          lessonsMap[subject].push({ ...lesson, isGenerated: true })
-        }
-      } catch (err) {
-        setAllLessons({})
-        return
-      }
-
-setAllLessons(lessonsMap)
-    } catch (err) {
-      // Silent fail
-    }
-  }
-
-const handleSchedule = async (lessonKey) => {
-    if (!selectedDate) {
-      alert('Please select a date first')
-      return
-    }
-
-setLoading(true)
-    try {
-      await onScheduleLesson(lessonKey, selectedDate)
-      setSelectedLesson(null)
-      setLessonDetails(null)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-### 33. src/app/api/counselor/route.js (e0e087643d203754ad927bf3632d1e46b45bbf97fde6cfee3bd57de99811b895)
-- bm25: -11.2817 | relevance: 0.9186
-
-// Define available functions
-    let tools = [
-      {
-        type: 'function',
-        function: {
-          name: 'get_capabilities',
-          description: 'Get detailed information about your available actions and how to use them. Call this when you need to remember how to generate lessons, schedule them, search for lessons, or understand what parameters are required.',
-          parameters: {
-            type: 'object',
-            properties: {
-              action: {
-                type: 'string',
-                description: 'Specific action to get help with (optional). Options: generate_lesson, schedule_lesson, assign_lesson, search_lessons, get_lesson_details, or omit for all capabilities.',
-                enum: ['generate_lesson', 'schedule_lesson', 'assign_lesson', 'search_lessons', 'get_lesson_details', 'all']
-              }
-            }
+        if (res.ok) {
+          const generatedList = await res.json()
+          results['generated'] = generatedList.map(lesson => ({
+            ...lesson,
+            isGenerated: true
+          }))
+          
+          // Also add generated lessons to their subject buckets
+          for (const lesson of generatedList) {
+            const subject = lesson.subject || 'math'
+            if (!results[subject]) results[subject] = []
+            results[subject].push({
+              ...lesson,
+              isGenerated: true
+            })
           }
         }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'search_lessons',
-          description: 'Search for available lessons across all subjects (math, science, language arts, social studies) and facilitator-created lessons. Use this to find lessons by topic, grade, or subject. Returns lesson titles, grades, and keys for scheduling.',
-          parameters: {
-            type: 'object',
-            properties: {
-              subject: {
-                type: 'string',
-                description: 'Filter by subject (optional)',
-                enum: ['math', 'science', 'language arts', 'social studies', 'facilitator']
-              },
-              grade: {
-                type: 'string',
-                description: 'Filter by grade level like "3rd", "5th" (optional)'
-              },
-              searchTerm: {
-                type: 'string',
-                description:
-
-### 34. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (0b4b07dc8dc811d9aa6fcb14d7822a3b6dee590a016258d910f6837aedca0b6f)
-- bm25: -10.9476 | entity_overlap_w: 1.30 | adjusted: -11.2726 | relevance: 0.9185
-
-**LessonsOverlay** (`overlays/LessonsOverlay.jsx`)
-- Learner selector
-- Subject-based expandable sections
-- Grade filters per subject
-- Shows approved lessons, medals, progress
-- Fully scrollable list
-
-**GeneratedLessonsOverlay** (`overlays/GeneratedLessonsOverlay.jsx`)
-- Subject and grade filters
-- Status indicators (approved, needs update)
-- Scrollable lesson list
-- Color-coded by status
-
-**LessonMakerOverlay** (`overlays/LessonMakerOverlay.jsx`)
-- Compact lesson generation form
-- Quota display
-- All fields from full lesson maker
-- Inline success/error messages
-- Scrollable form
-
-### 7. docs/brain/mr-mentor-memory.md (cf9c484090fffba0ab1bf54c85953e0c43ba3831fa9fcbba4a42bd4607e87e54)
-- bm25: -21.1675 | relevance: 1.0000
-
-## Function Calling Tools
-
-**`get_conversation_memory` tool** (available to Mr. Mentor):
-- Loads summary for current facilitator+learner context
-- Returns summary + recent turns
-- Used automatically on first message of new session
-
-**`search_conversation_history` tool** (available to Mr. Mentor):
-- Searches past conversations with keywords
-- Parameters: `keywords` (string), `include_current_learner_only` (boolean)
-- Returns ranked results from current + archived memories
-- Example: User asks "What did we discuss about Emma last week?" → Mr. Mentor calls `search_conversation_history("Emma")`
-
-## Client Integration
-
-`src/app/counselor/CounselorClient.jsx`:
-- After each assistant response, calls `POST /api/conversation-memory` with conversation history
-- Debounced (1 second) to avoid excessive API calls during rapid exchanges
-- On learner switch, loads new memory via `GET /api/conversation-memory?learner_id={id}`
-- Search UI (planned) will call `GET /api/conversation-memory?search={keywords}`
-
-## Related Brain Files
-
-### 35. src/app/session/slate/page.jsx (359e98d10d756fb84bd296d06d2bde2a81963f8018f92b2e5c94f7b392fbfaea)
-- bm25: -11.1811 | relevance: 0.9179
-
-// ===========================================================================
-  //  RENDER -- Lesson list
-  // ===========================================================================
-  if (pagePhase === 'list') {
-    return (
-      <div style={{ fontFamily: C.mono, background: C.bg, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <div style={{
-          background: C.surface,
-          borderBottom: `1px solid ${C.border}`,
-          padding: '14px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <video src={SLATE_VIDEO_SRC} muted playsInline style={{ width: 36, height: 36, objectFit: 'contain' }} />
-            <div>
-              <div style={{ color: C.accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>MR. SLATE V1</div>
-              <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2 }}>SKILLS &amp; PRACTICE COACH</div>
-            </div>
-          </div>
-          <button onClick={exitToLessons} style={ghostBtn}>← BACK</button>
-        </div>
-
-### 36. src/app/api/counselor/route.js (a9d50bd79e5c7b7743013004d68e3a1aa190963beeb9defb3f390771f341d679)
-- bm25: -11.1442 | relevance: 0.9177
-
-4. SCHEDULE_LESSON - Add lessons to calendars
-   - When they say "schedule this" "add that to Monday" "put it on the calendar" → YOU MUST ACTUALLY CALL THIS FUNCTION
-   - You can use the learner's NAME (like "Emma") - the system will find them
-   - Need: learner name, lesson key from search/generate, date in YYYY-MM-DD format
-   - CRITICAL: DO NOT say you've scheduled something unless you ACTUALLY call the schedule_lesson function
-   - NEVER confirm scheduling without calling the function first
-
-5. ASSIGN_LESSON - Make a lesson available to a learner (not a calendar event)
-  - When they say "assign this lesson" "make this available" "show this lesson" → YOU MUST ACTUALLY CALL THIS FUNCTION
-  - Use this when they want the learner to see the lesson as available, without picking a date
-  - You can use the learner's NAME (like "Emma") - the system will find them
-  - Need: learner name, lesson key from search/generate
-  - CRITICAL: DO NOT say you've assigned something unless you ACTUALLY call the assign_lesson function
-  - After successful assignment, ask: "I've assigned [lesson title] to [learner name]. Is that correct?"
-
-6. EDIT_LESSON - Modify existing lessons (ALL lessons: installed subjects AND facilitator-created)
-   - When they ask to change/fix/update/edit a lesson → USE THIS TOOL
-   - Can edit: vocabulary, teaching notes, blurb, questions (all types)
-   - Works on both pre-installed lessons AND custom facilitator lessons
-
-7. GET_CONVERSATION_MEMORY - Retrieve past conversation summaries
-   - When you need context from previous sessions → USE THIS TOOL
-   - When they mention something discussed before → USE THIS TOOL
-   - Automatically loads at start of each conversation for continuity
-   - Can search across all past conversations with keywords
-
-### 37. src/app/session/slate/page.jsx (a330fbeb752b2de55385a68f75e4433226078d18cd2d13c5b7853345c6bba1c2)
-- bm25: -11.0760 | relevance: 0.9172
-
-const backToList = useCallback(() => {
-    clearInterval(timerInterval.current)
-    clearTimeout(feedbackTimeout.current)
-    setScore(0)
-    scoreRef.current = 0
-    setQCount(0)
-    setCurrentQ(null)
-    setLessonData(null)
-    lessonKeyRef.current = ''
-    phaseRef.current = 'list'
-    setPagePhase('list')
+      } catch (err) {
+        // Silent error
+      }
+    }
+    
+    return results
   }, [])
 
-### 38. src/app/session/slate/page.jsx (14314f913d9dee9b6a42b7ecfdef9e45b5487ade0b740878b2d929ce19f40c2f)
-- bm25: -11.0158 | relevance: 0.9168
+### 14. src/app/learn/awards/page.js (0499b864d98c5cc526cdd870d00a12f230da31563456ead2b5af1a35d52a5b28)
+- bm25: -9.0151 | relevance: 0.9002
 
-{/* Inline warning banner */}
-                {listError && (
-                  <div style={{ background: C.redDim, border: `1px solid ${C.red}`, borderRadius: 8, padding: '10px 14px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                    <span style={{ color: C.red, fontSize: 12 }}>{listError}</span>
-                    <button onClick={() => setListError('')} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>✕</button>
-                  </div>
-                )}
+const customKeyToName = new Map(customDisplayOrder.map((s) => [s.key, s.name]))
 
-{/* Tabs */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 0 }}>
-                  <button style={tabStyle(listTab === 'active')} onClick={() => setListTab('active')}>ACTIVE</button>
-                  <button style={tabStyle(listTab === 'recent')} onClick={() => setListTab('recent')}>
-                    RECENT{recentList.length > 0 ? ` (${recentList.length})` : ''}
-                  </button>
-                  <button style={tabStyle(listTab === 'owned')} onClick={() => setListTab('owned')}>
-                    OWNED{mergedMap.size > 0 ? ` (${mergedMap.size})` : ''}
-                  </button>
-                </div>
-                </div>{/* end controls strip */}
+### 15. docs/brain/mr-mentor-conversation-flows.md (958c9ac063b744328200ce6dc74910b7af60f847dfe7d0b4c07358dfdc1068a0)
+- bm25: -8.9428 | relevance: 0.8994
 
-### 39. src/app/api/counselor/route.js (4d2e160d3ab6aca791c2ec247367ff87eb38626c390c680fc8db625916e602c4)
-- bm25: -10.9825 | relevance: 0.9165
+### Function Schemas
+- **File:** `src/app/api/counselor/route.js`
+- **Location:** OpenAI tools array in POST handler
+- **Functions:**
+  - `search_lessons` - Broad, always available
+  - `generate_lesson` - Restricted, escape-aware
+  - `schedule_lesson` - Action-immediate
+       - `assign_lesson` - Make lesson available to learner (action-immediate)
 
-// Helper function to provide capability information
-function getCapabilitiesInfo(args) {
-  const { action } = args
-  
-  const capabilities = {
-    search_lessons: {
-      name: 'search_lessons',
-      purpose: 'Search for available lessons across ALL subjects including facilitator-created lessons. You have full access to everything in the library.',
-      when_to_use: 'When facilitator asks about available lessons, wants to find lessons on a topic, or needs to browse options. Use subject="facilitator" to find ONLY their custom-created lessons.',
-      parameters: {
-        subject: 'Optional. Filter by: math, science, language arts, social studies, or facilitator (their custom lessons)',
-        grade: 'Optional. Grade level like "3rd", "5th", "8th"',
-        searchTerm: 'Optional. Keywords to match in lesson titles'
-      },
-      returns: 'List of up to 30 matching lessons with title, grade, subject, difficulty, lessonKey (for scheduling), and blurb',
-      examples: [
-        'Search for 3rd grade multiplication: {subject: "math", grade: "3rd", searchTerm: "multiplication"}',
-        'Find facilitator-created lessons: {subject: "facilitator"}',
-        'Find their lessons on a topic: {subject: "facilitator", searchTerm: "fractions"}'
-      ]
+### Capabilities Info
+- **File:** `src/app/api/counselor/route.js`
+- **Function:** `getCapabilitiesInfo()`
+- **Provides:** Detailed guidance on when to use each function
+
+---
+
+## Edge Cases
+
+### User Says "Recommend Them to Be Generated"
+This is confusing language mixing "recommend" (advice) with "generated" (creation).
+
+**Interpretation Priority:**
+1. Dominant verb: "recommend" → advice mode
+2. Context: "Do you have suggestions?" preceded this → advice mode
+3. Action: Search and recommend, don't generate
+
+### User Says "Stop" During Parameter Collection
+Even if function calling started, model can produce conversational response abandoning the call.
+
+**Expected Behavior:**
+- Model reads escape signal in system prompt
+- Produces text response instead of function call
+- Response acknowledges user's preference: "Of course! Let me search instead..."
+
+### User Asks for "Christmas Themed" Without Learner Selected
+**Correct Flow:**
+1. Search for Christmas-themed lessons across grades
+2. Present options
+3. Offer to narrow by grade OR generate if nothing suitable
+4. DO NOT assume generation is wanted
+
+---
+
+## Testing Scenarios
+
+### Scenario 1: Ambiguous Generation Language
+```
+User: "Emma needs one more lesson and then Christmas vacation. Suggestions?"
+Expected: Search, recommend Christmas-themed language arts, ask questions
+Actual (before fix): Started asking for grade, subject, difficulty
+```
+
+### 16. src/app/session/slate/page.jsx (9445abbf85ded2166e70fce44a539fb7474506efaef47b71e3f00a0a5095eb8b)
+- bm25: -8.9353 | relevance: 0.8993
+
+// Build the key set that available-lessons already resolved
+          const approvedKeySet = new Set(
+            (lessons || []).map(l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`)
+          )
+
+// Collect history session lesson_ids
+          const seen = new Map()
+          if (historyRes?.sessions) {
+            const completed = historyRes.sessions
+              .filter(s => s.status === 'completed' && s.lesson_id && s.ended_at)
+            for (const s of completed) {
+              const existing = seen.get(s.lesson_id)
+              if (!existing || new Date(s.ended_at) > new Date(existing.ended_at)) {
+                seen.set(s.lesson_id, s)
+              }
+            }
+            setRecentSessions([...seen.values()].sort((a, b) => new Date(b.ended_at) - new Date(a.ended_at)))
+          }
+
+### 17. src/app/learn/awards/page.js (c65c1998a9dabde1a8764e963f6b0d48b40ab7e3e508d1f3983ad3e80c0473ed)
+- bm25: -8.5712 | relevance: 0.8955
+
+useEffect(() => {
+    if (!learnerId) {
+      setMedals({})
+      setMedalsLoading(false)
+      return
+    }
+    (async () => {
+      try {
+        const data = await getMedalsForLearner(learnerId)
+        setMedals(data || {})
+      } catch {
+        setMedals({})
+      }
+      setMedalsLoading(false)
+    })()
+  }, [learnerId])
+
+### 18. src/app/session/slate/page.jsx (dc855da2b5c2bf020b858e6102dcb4ff584345b97116866c3bb078e719d8ec40)
+- bm25: -8.5663 | relevance: 0.8955
+
+{/* Body — flex column so controls stay fixed and only the list scrolls */}
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          {availableLessons.length === 0 && allOwnedLessons.length === 0 ? (
+            <div style={{ textAlign: 'center', marginTop: 60 }}>
+              <div style={{ marginBottom: 16 }}>
+                <SlateVideo size={120} />
+              </div>
+              <div style={{ color: C.muted, fontSize: 14, letterSpacing: 1 }}>NO DRILL LESSONS AVAILABLE</div>
+              <div style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>Complete a lesson with Ms. Sonoma first, then come back to practice.</div>
+            </div>
+          ) : (() => {
+            // --- Derived lists for each tab ---
+            const getLk = l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`
+
+### 19. src/app/HeaderBar.js (c0297946bfcf7d9326733ee92bfb3242931cb7028b2a3bb7969e0175e957490a)
+- bm25: -8.4763 | relevance: 0.8945
+
+// Learner chain: / -> /learn -> /learn/lessons -> /session
+		// Mr. Slate has its own top bar; its back button goes to /learn
+		if (pathname.startsWith('/session/slate')) return '/learn';
+		if (pathname.startsWith('/session')) return '/learn/lessons';
+		if (pathname.startsWith('/learn/awards')) return '/learn';
+		if (pathname.startsWith('/learn/lessons')) return '/learn';
+		if (pathname.startsWith('/learn')) return '/';
+
+### 20. src/app/api/learner/available-lessons/route.js (b18e1ced4ab279558a2c10e5dfd05f4a4ba67ef458b3966031d1a91c6f002096)
+- bm25: -8.3793 | relevance: 0.8934
+
+if (lessonData) {
+        lessonData.lessonKey = normalizedKey
+        lessonData.subject = lessonData.subject || subject || rawSubject || 'general'
+        lessonData.file = lessonData.file || filename
+        lessons.push(lessonData)
+      } else {
+        if (approvedKeySet.has(normalizedKey) && missingReason) {
+          staleApprovedKeys.add(normalizedKey)
+        }
+        if (scheduledKeySet.has(normalizedKey) && missingReason) {
+          staleScheduledKeys.add(normalizedKey)
+        }
+      }
+    }
+
+const validApprovedKeys = approvedKeys.filter(key => !staleApprovedKeys.has(key))
+    const validScheduledKeys = scheduledKeys.filter(key => !staleScheduledKeys.has(key))
+    const cleanedApprovedMap = mapFromKeys(validApprovedKeys)
+
+if (staleApprovedKeys.size > 0) {
+      // Silent cleanup logging
+      const { error: cleanupError } = await supabase
+        .from('learners')
+        .update({ approved_lessons: cleanedApprovedMap })
+        .eq('id', learnerId)
+      if (cleanupError) {
+        // Silent error
+      }
+    }
+
+if (staleScheduledKeys.size > 0) {
+      // Silent cleanup logging
+      const staleList = Array.from(staleScheduledKeys)
+      const { error: scheduleCleanupError } = await supabase
+        .from('lesson_schedule')
+        .delete()
+        .eq('learner_id', learnerId)
+        .eq('scheduled_date', today)
+        .in('lesson_key', staleList)
+      if (scheduleCleanupError) {
+        // Silent error
+      }
+    }
+
+const filteredScheduleRows = scheduleRows.filter(item => {
+      const normalizedKey = item?.lesson_key ? normalizeLessonKey(item.lesson_key) : null
+      return normalizedKey && !staleScheduledKeys.has(normalizedKey)
+    })
+
+### 21. docs/brain/MentorInterceptor_Architecture.md (a5c2fda43af7b6c52facda016ac924884d9d4ad45fde74f003bffcb576c295dc)
+- bm25: -8.3364 | relevance: 0.8929
+
+```javascript
+{
+  'math': [
+    {
+      title: 'Multiplying with Zeros',
+      grade: '4th',
+      difficulty: 'beginner',
+      file: '4th-multiplying-with-zeros.json',
+      subject: 'math',
+      // ... other lesson metadata
     },
+    // ...
+  ],
+  'science': [...],
+  'language arts': [...],
+  'social studies': [...],
+  'general': [...],
+  'generated': [
+    {
+      title: 'Custom Fractions Lesson',
+      grade: '4th',
+      difficulty: 'beginner',
+      file: 'uuid-fractions.json',
+      subject: 'math',
+      isGenerated: true,
+      created_at: '2025-11-17T...',
+      // ...
+    },
+    // ...
+  ]
+}
+```
+
+### 22. src/app/learn/awards/page.js (6cbf7bc567229771688329f236afb1c9dffbedd8fcb6f7d8cca57ce82fdb17d8)
+- bm25: -8.3153 | relevance: 0.8926
+
+const subjectOrder = CORE_SUBJECTS
+  const customOrderedKeys = customDisplayOrder.map((s) => s.key)
+
+const baseOrdered = [
+    ...subjectOrder,
+    ...customOrderedKeys,
+  ]
+
+const subjectsToRender = [
+    ...baseOrdered.filter((s) => Array.isArray(groupedMedals[s]) && groupedMedals[s].length > 0),
+    ...Object.keys(groupedMedals)
+      .filter((s) => !baseOrdered.includes(s))
+      .sort((a, b) => String(a).localeCompare(String(b), undefined, { sensitivity: 'base' }))
+  ]
+  const hasMedals = Object.keys(groupedMedals).length > 0
+  const totalMedals = Object.values(groupedMedals).reduce((sum, arr) => sum + arr.length, 0)
+
+// Count medals by tier
+  const medalCounts = { gold: 0, silver: 0, bronze: 0 }
+  Object.values(groupedMedals).forEach(lessons => {
+    lessons.forEach(lesson => {
+      if (lesson.medalTier) medalCounts[lesson.medalTier]++
+    })
+  })
+
+const card = { 
+    border: '1px solid #e5e7eb', 
+    borderRadius: 12, 
+    padding: 14, 
+    background: '#fff',
+    marginBottom: 8
+  }
+
+const subjectHeading = { 
+    margin: '24px 0 12px', 
+    fontSize: 18, 
+    fontWeight: 600,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8
+  }
+
+return (
+    <main style={{ padding: 24, maxWidth: 980, margin: '0 auto', minHeight: 'calc(100dvh - 56px)' }}>
+      <h1 style={{ margin: '8px 0 4px', textAlign: 'center' }}>
+        🏆 Awards
+      </h1>
+      
+      {learnerName && (
+        <div style={{ textAlign: 'center', marginBottom: 16, fontSize: 16, color: '#666' }}>
+          Earned by <strong style={{ color: '#111' }}>{learnerName}</strong>
+        </div>
+      )}
+
+### 23. src/app/session/page.js (91c1cd72604e5fd4fba775609153bf5334ba64d54fc7aaab4a887e600a65a5b0)
+- bm25: -8.2728 | relevance: 0.8922
+
+// Ensure we have a current problem; if not, pick one and just ask it now
+      let problem = currentExerciseProblem;
+      if (!problem) {
+        let first = null;
+        if (Array.isArray(generatedExercise) && currentExIndex < generatedExercise.length) {
+          first = generatedExercise[currentExIndex];
+          setCurrentExIndex(currentExIndex + 1);
+        }
+        if (first) {
+          setCurrentExerciseProblem(first);
+          const q = ensureQuestionMark(formatQuestionForSpeech(first, { layout: 'multiline' }));
+          // Track first exercise question asked
+          activeQuestionBodyRef.current = q;
+          try { await speakFrontend(q, { mcLayout: 'multiline' }); } catch {}
+        } else {
+          // DEFENSIVE: Array exhausted - complete phase early instead of showing opening actions
+          console.error('[EXERCISE] Array exhausted at start - no questions available');
+          try { await speakFrontend('Great job! Moving to the worksheet.'); } catch {}
+          setPhase('worksheet');
+          setSubPhase('worksheet-awaiting-begin');
+          setCanSend(false);
+          return;
+        }
+        setCanSend(true);
+        return;
+      }
+
+const nextCount = ticker + 1;
+      const progressPhrase = nextCount === 1
+        ? `That makes ${nextCount} correct answer.`
+        : `That makes ${nextCount} correct answers.`;
+      const nearTarget = (ticker === EXERCISE_TARGET - 1);
+      const atTarget = (nextCount === EXERCISE_TARGET);
+
+### 24. src/app/facilitator/calendar/DayViewOverlay.jsx (4e8900a39e892658118ceac81ad426f664400f0acc10758bf3af34f97bfce1b5)
+- bm25: -8.1206 | relevance: 0.8904
+
+if (scheduledRes.ok) {
+        const scheduledData = await scheduledRes.json()
+        const schedule = Array.isArray(scheduledData?.schedule) ? scheduledData.schedule : []
+        if (schedule.length > 0) {
+          contextText += '\n\nScheduled lessons (do NOT reuse these topics):\n'
+          schedule
+            .slice()
+            .sort((a, b) => String(a.scheduled_date || '').localeCompare(String(b.scheduled_date || '')))
+            .slice(-60)
+            .forEach((s) => {
+              contextText += `- ${s.scheduled_date}: ${s.lesson_key}\n`
+            })
+        }
+      }
+
+if (plannedRes.ok) {
+        const plannedData = await plannedRes.json()
+        const allPlanned = plannedData?.plannedLessons || {}
+        const flattened = []
+        Object.entries(allPlanned).forEach(([date, arr]) => {
+          ;(Array.isArray(arr) ? arr : []).forEach((l) => {
+            flattened.push({ date, subject: l.subject, title: l.title, description: l.description })
+          })
+        })
+        if (flattened.length > 0) {
+          contextText += '\n\nPlanned lessons already in the calendar plan (do NOT repeat these topics):\n'
+          flattened
+            .slice()
+            .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+            .slice(-80)
+            .forEach((l) => {
+              contextText += `- ${l.date} (${l.subject || 'general'}): ${l.title || l.description || 'planned lesson'}\n`
+            })
+        }
+      }
+
+### 25. docs/brain/ingests/pack.md (67e8ce64a5e7ee8495cc5368db58c00abb752ab09059067d85f4641e5cc03677)
+- bm25: -8.0698 | relevance: 0.8897
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 22. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (67390ef01280b90390db5de84ee0efb99ee24b709eb07a67d2fca4755f97d83b)
+- bm25: -19.9002 | relevance: 1.0000
+
+const plannedFlat = []
+      Object.entries(plannedLessons || {}).forEach(([date, arr]) => {
+        ;(Array.isArray(arr) ? arr : []).forEach((l) => {
+          plannedFlat.push({ date, subject: l.subject, title: l.title, description: l.description })
+        })
+      })
+      if (plannedFlat.length > 0) {
+        contextText += '\n\nPlanned lessons already in the calendar plan (do NOT repeat these topics):\n'
+        plannedFlat
+          .slice()
+          .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+          .slice(-80)
+          .forEach((l) => {
+            contextText += `- ${l.date} (${l.subject || 'general'}): ${l.title || l.description || 'planned lesson'}\n`
+          })
+      }
+
+### 26. docs/brain/riddle-system.md (e7a77c2b835fc9efe745f2ea074fb5057af04a77723b4c711553604b5efdf2c5)
+- bm25: -8.0129 | relevance: 0.8890
+
+### Dead Imports (Not Currently Used)
+- `src/app/session/[sessionId]/page.js` - imports but never calls
+- Teaching system components - no riddle UI elements
+
+---
+
+## Design Decisions
+
+### Why Hardcoded?
+- **Performance**: Zero latency, works offline
+- **Quality Control**: Curated by humans, tested for age-appropriateness
+- **Simplicity**: No database schema, no API, no cache invalidation
+
+### Why localStorage Rotation?
+- **Stateless**: No server-side session tracking needed
+- **Fair**: Kids see all riddles eventually, not just favorites
+- **Simple**: One line of code, no edge cases
+
+### Why Subject Categories?
+- **Alignment**: Can match riddles to lesson subject
+- **Variety**: Prevents repetition within subject area
+- **Flexibility**: 'general' category for cross-subject riddles
+
+---
+
+**Remember**: Riddles are playful mysteries, not educational quizzes. Every riddle should make you smile, groan, or go "aha!" - not just "oh, I knew that fact."
+
+### 27. src/app/facilitator/generator/counselor/MentorInterceptor.js (a7782eec255590a78122476b30f38091ea203b79863da3ec7a7a3ecadfc2a537)
+- bm25: -8.0111 | relevance: 0.8890
+
+this.state.flow = 'lesson_plan'
+    this.state.awaitingInput = 'lesson_plan_choice'
+    return {
+      handled: true,
+      response: 'I can help with curriculum preferences, your weekly pattern, custom subjects, or scheduling a lesson plan. What would you like to do?'
+    }
+  }
+  
+  /**
+   * Handle lesson search flow
+   */
+  async handleSearch(userMessage, context) {
+    const { allLessons = {} } = context
+    const params = extractLessonParams(userMessage)
     
-    get_lesson_details: {
-      name: 'get_lesson_details',
-      purpose: 'Get full details of a specific lesson including vocabulary, teaching notes, and question counts',
-      when_to_use: 'When you need to understand lesson content to make recommendations or facilitator asks "tell me more about..."',
-      parameters: {
-        lessonKey: 'Required. Format: "subject/filename.json" (you get this from search_lessons results)'
-      },
-      returns: 'Lesson details: vocabulary (first 5 terms), teaching notes, ques
+    // Search lessons
+    const results = this.searchLessons(allLessons, params, userMessage)
+    
+    if (results.length === 0) {
+      return {
+        handled: true,
+        response: "I couldn't find any lessons matching that description. Would you like me to generate a custom lesson instead?"
+      }
+    }
+    
+    // Show top results
+    const lessonList = results.slice(0, 5).map((lesson, idx) => 
+      `${idx + 1}. ${lesson.title} - ${lesson.grade} ${lesson.subject} (${lesson.difficulty})`
+    ).join('\n')
+    
+    this.state.flow = 'search'
+    this.state.context.searchResults = results
+    this.state.awaitingInput = 'lesson_selection'
+    
+    return {
+      handled: true,
+      response: `It looks like you might be referring to one of these lessons:\n\n${lessonList}\n\nWhich lesson would you like to work with? You can say the number or the lesson name.`
+    }
+  }
+  
+  /**
+   * Search lessons based on parameters
+   */
+  searchLessons(allLessons, params, searchTerm) {
+    const results = []
+    const normalizedSearch = normalizeText(searchTerm)
+    
+    for (const [subject, lessons] of Object.entries(allLessons)) {
+      if (!Array.isArray(lessons)) continue
+      
+      for (const lesson of lessons) {
+        let score = 0
+        
+        // Match subject
+        if (params.subject && subject.toLowerC
 
-### 40. src/app/facilitator/calendar/LessonPicker.js (2fdcb49286c7afb546edec2ba2192209ebdcf821a39f1853c3dead2307e6edb9)
-- bm25: -10.9551 | relevance: 0.9164
+### 28. src/app/learn/awards/page.js (f45cd535ba332cbf78616690eb559625eb2e7507931a9b3848baaee84ae648ba)
+- bm25: -7.9660 | relevance: 0.8885
 
-{/* Compact Lessons List */}
-      <div style={{ height: '400px', overflowY: 'auto' }}>
-        {totalCount === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>
-            {Object.keys(allLessons).length === 0 ? 'Loading lessons...' : 'No lessons match your filters'}
+{loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: 12, marginTop: 32 }}>
+          <div style={{ 
+            width: 48, 
+            height: 48, 
+            border: '4px solid #e5e7eb', 
+            borderTop: '4px solid #111', 
+            borderRadius: '50%', 
+            animation: 'spin 1s linear infinite' 
+          }}></div>
+          <p style={{ textAlign:'center', color: '#6b7280', fontSize: 16 }}>Loading awards...</p>
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      ) : !hasMedals ? (
+        <div style={{ textAlign: 'center', marginTop: 32 }}>
+          <p style={{ fontSize: 48 }}>🎯</p>
+          <p style={{ color: '#6b7280', fontSize: 18 }}>No medals earned yet!</p>
+          <p style={{ color: '#9ca3af', fontSize: 14 }}>
+            Complete lessons to earn bronze (70%+), silver (80%+), or gold (90%+) medals.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div style={{ 
+            textAlign: 'center', 
+            marginBottom: 24, 
+            padding: 16, 
+            background: '#f9fafb', 
+            borderRadius: 12,
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 24,
+            flexWrap: 'wrap'
+          }}>
+            <div>
+              <div style={{ fontSize: 32 }}>🥇</div>
+              <div style={{ fontWeight: 600, fontSize: 20 }}>{medalCounts.gold}</div>
+              <div style={{ fontSize: 12, color: '#6b7280' }}>Gold</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 32 }}>🥈</div>
+              <div style={{ f
+
+### 29. src/app/session/hooks/useDiscussionHandlers.js (1431a8f61e6f011619e57af35a1f62ad495cbe7afbd57ef4f583c4460bf69fa6)
+- bm25: -7.9060 | relevance: 0.8877
+
+// Riddle handlers
+  const handleTellRiddle = useCallback(async () => {
+    try { setShowOpeningActions(false); } catch {}
+    // Use lessonData.subject if available, otherwise fall back to subjectParam
+    let subject = (lessonData?.subject || subjectParam || 'math').toLowerCase();
+    const validSubjects = ['math', 'science', 'language arts', 'social studies', 'general'];
+    if (!validSubjects.includes(subject)) {
+      subject = 'math';
+    }
+    const pick = pickNextRiddle(subject);
+    if (!pick) {
+      setShowOpeningActions(true);
+      return;
+    }
+    const text = renderRiddle(pick) || '';
+    setCurrentRiddle({ ...pick, text, answer: pick.answer });
+    setRiddleState('presented');
+    setCanSend(false);
+    try { setAbortKey((k) => k + 1); } catch {}
+    await speakFrontend(`Here is a riddle. ${text}`);
+    setRiddleState('awaiting-solve');
+  }, [subjectParam, lessonData, setShowOpeningActions, setCurrentRiddle, setRiddleState, setCanSend, setAbortKey, speakFrontend]);
+
+const judgeRiddleAttempt = useCallback(async (_attempt) => {
+    return { ok: false, text: '' };
+  }, []);
+
+### 30. docs/brain/custom-subjects.md (fd8a5ead4d8a64f78e034e3ca6a8d9b6dea9dbbdcd408f13f17042a7b16d3e24)
+- bm25: -7.8119 | relevance: 0.8865
+
+# Custom Subjects (Per Facilitator)
+
+## How It Works
+
+- Custom subjects are stored in the Supabase table `custom_subjects` and are scoped to a single facilitator via `facilitator_id`.
+- The canonical API surface is `GET/POST/DELETE /api/custom-subjects`.
+  - `GET` returns `{ subjects: [...] }` ordered by `display_order` then `name`.
+  - `POST` creates a subject for the authenticated facilitator.
+  - `DELETE` deletes a subject only if it belongs to the authenticated facilitator.
+- Client surfaces that need subject dropdown options should treat subjects as:
+  - Core subjects (universal): `math`, `science`, `language arts`, `social studies`, `general`.
+  - Custom subjects (per facilitator): fetched from `/api/custom-subjects` using the facilitator session token.
+  - Special subject `generated` is a UI bucket used in some facilitator/Mr. Mentor views (not a custom subject). In the Mr. Mentor lessons overlay, `generated` is intentionally not shown as a subject dropdown option.
+- Shared client hook:
+  - `useFacilitatorSubjects()` fetches custom subjects for the signed-in facilitator and returns merged dropdown-ready lists.
+
+## What NOT To Do
+
+- Do not make custom subjects global. They must remain per-facilitator (`custom_subjects.facilitator_id`).
+- Do not fetch public lesson lists for custom subjects. Only core subjects have public lesson endpoints (`/api/lessons/[subject]`).
+- Do not store custom subjects in browser storage as the source of truth.
+
+## Key Files
+
+### 31. docs/brain/lesson-editor.md (de3f63c653543c71b8eb83bab98dfcf5a33abb0293b6ad8f82e2d4d5052a29be)
+- bm25: -7.5668 | relevance: 0.8833
+
+# Lesson Editor
+
+## How It Works
+
+Facilitators edit owned lessons (Storage-backed) through a structured, form-based interface that maintains JSON integrity and prevents syntax errors.
+
+The editor also supports creating a brand-new lesson from scratch:
+- The Lesson Library page has a **📝 New Lesson** button.
+- This opens the Lesson Editor with a blank lesson.
+- No lesson file is created in Storage until the user presses Save.
+
+### Structured Editing Interface
+- Form-based editing instead of raw JSON manipulation
+- Each lesson component has its own editor section
+- Visual validation and error feedback
+- Accessed from the Lesson Library (Edit or New Lesson)
+
+### Dynamic Field Management
+- Add unlimited items to any section (vocab terms, questions, answer options)
+- Remove items individually with dedicated buttons
+- Leave fields blank - automatically cleaned before saving
+- Write custom questions/answers with complete control
+
+### Supported Lesson Components
+
+#### Basic Information
+- Title, Grade, Difficulty, Subject
+- Description/Blurb
+- Teaching Notes
+
+#### Vocabulary Terms
+- Add/remove terms dynamically
+- Term + Definition pairs
+- Empty terms filtered out on save
+
+#### Question Types
+
+**Multiple Choice**
+- Add/remove answer choices dynamically
+- Radio button to select correct answer
+- Minimum 2 choices required
+- Visual letter labels (A, B, C, D...)
+
+**True/False**
+- Simple true/false selection
+- Question text editor
+
+**Short Answer**
+- Multiple acceptable answers
+- Add/remove answer variants
+- Students only need to match one
+
+**Fill in the Blank**
+- Use `_____` to indicate blank position
+- Multiple acceptable answers
+- Validation ensures blank exists
+
+**Sample Q&A** (Teaching Examples)
+- Questions for teaching phase
+- Sample answers (not strictly validated)
+
+### 32. src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx (2990bedcafd564bd84277946067e6c2423b7f10e7c1014898477bdacce124315)
+- bm25: -7.4662 | relevance: 0.8819
+
+{/* Lessons List */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 20, color: '#9ca3af', fontSize: 12 }}>
+            Loading lessons...
+            {retryCount > 0 && <div style={{ marginTop: 8, fontSize: 11 }}>Retry {retryCount}/3...</div>}
+          </div>
+        ) : loadError && retryCount >= 3 ? (
+          <div style={{ textAlign: 'center', padding: 20 }}>
+            <div style={{ color: '#ef4444', fontSize: 13, marginBottom: 12 }}>
+              Failed to load lessons after {retryCount} attempts
+            </div>
+            <button
+              onClick={() => {
+                setRetryCount(0)
+                setLoadError(false)
+                loadLessons(true)
+              }}
+              style={{
+                background: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                padding: '8px 16px',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer'
+              }}
+            >
+              Retry Now
+            </button>
+          </div>
+        ) : filteredLessons.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 20, color: '#9ca3af', fontSize: 12 }}>
+            {Object.keys(allLessons).length === 0 
+              ? 'No lessons loaded' 
+              : 'No lessons match your filters'}
           </div>
         ) : (
           <div>
-            {Object.entries(filteredLessonsBySubject)
-              .sort(([subjectA], [subjectB]) => {
-                // Sort subjects alphabetically
-                return subjectA.localeCompare(subjectB)
-              })
-              .map(([subject, lessons]) => {
-              if (lessons.length === 0) return null
-              
-              return (
-                <div key={subject}>
-                  {/* Subject Header (only show when viewing all subjects) */}
-                  {selectedSubject === 'all' && (
-                    <div style={{ 
-                      padding: '6px 12px', 
-                      background: '#f9fafb', 
-                      borderBottom: '1px solid #e5e7eb',
-                      fontSize: '12px',
-                      fontWeight: '700',
-                      color: '#374151',
-                      textTransform: 'capitalize',
-                      position: 'sticky',
-                      top: 0,
-                      zIndex: 1
-                    }}>
-                      {subject}
-                    </div>
-                  )}
-                  
-                  {/* Lessons for this subject */}
-                  {lessons.map(lesson => {
-                    const scheduled = isScheduled(lesson.key)
-                    return (
-                      <div
-                        key={lesson.key}
-                        onClick={() => handleLessonClick(lesson)}
+            {filteredLessons.map(lesson => {
+              const { lessonKey, subject, displayGrade } = lesson
+              const legacyKey = lessonKey.replace('general/', 'facilitator/')
+              const isApproved = !!approvedLessons[lessonKey] || !!approvedLessons[legacyKey]
+              const isSchedu
+
+### 33. src/app/learn/page.js (91cd6eba3fb92510d66aeaccc2e8a7a5ba6e65b57d1eaf0ea5410137f7e5783b)
+- bm25: -7.4548 | relevance: 0.8817
+
+const noLearner = !learner.id
+
+function goToLessons() {
+    r.push('/learn/lessons')
+  }
+
+function goToAwards() {
+    r.push('/learn/awards')
+  }
+
+return (
+    <main style={{ padding:'16px 24px' }}>
+      <div style={{ width:'100%', maxWidth:560, textAlign:'center', margin:'0 auto' }}>
+        <h1 style={{ margin:'4px 0 8px' }}>{noLearner ? 'Learning Portal' : `Hi, ${learner.name}!`}</h1>
+        
+        {!noLearner && (
+          <div style={{ marginTop:4, marginBottom:12 }}>
+            <button
+              onClick={async ()=> {
+                const ok = await ensurePinAllowed('change-learner');
+                if (!ok) return;
+                try { localStorage.removeItem('learner_id'); localStorage.removeItem('learner_name'); localStorage.removeItem('learner_grade'); } catch {}
+                setLearner({ id: null, name: '' });
+              }}
+              style={{ padding:'6px 10px', border:'1px solid #e5e7eb', borderRadius:8, background:'#fff' }}
+            >
+              Change Learner
+            </button>
+          </div>
+        )}
+
+### 34. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (efa4e9e007e15e93a65af2609be18e7aaf16285d8d4909fbccc2337da1b66f0e)
+- bm25: -7.2766 | relevance: 0.8792
+
+const plannedFlat = []
+      Object.entries(plannedLessons || {}).forEach(([date, arr]) => {
+        ;(Array.isArray(arr) ? arr : []).forEach((l) => {
+          plannedFlat.push({ date, subject: l.subject, title: l.title, description: l.description })
+        })
+      })
+      if (plannedFlat.length > 0) {
+        contextText += '\n\nPlanned lessons already in the calendar plan (do NOT repeat these topics):\n'
+        plannedFlat
+          .slice()
+          .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+          .slice(-80)
+          .forEach((l) => {
+            contextText += `- ${l.date} (${l.subject || 'general'}): ${l.title || l.description || 'planned lesson'}\n`
+          })
+      }
+
+contextText += '\n\n=== REDO RULES: SAME AS PLANNER GENERATION ==='
+      contextText += '\nYou are regenerating a planned lesson outline.'
+      contextText += `\nPrefer NEW topics most of the time, but you MAY plan a rephrased Review for low scores (<= ${LOW_SCORE_REVIEW_THRESHOLD}%).`
+      contextText += `\nAvoid repeating high-score topics (>= ${HIGH_SCORE_AVOID_REPEAT_THRESHOLD}%) unless the facilitator explicitly requests it.`
+      contextText += "\nIf you choose a Review lesson, the title MUST start with 'Review:' and it must use different examples."
+      contextText += '\nDo NOT produce an exact duplicate of any scheduled/planned lesson above.'
+
+### 35. src/app/facilitator/lessons/page.js (b46a83e80e05f06717759a2d6cb85dc8ae50b209e95c3c1cac6b6beb4ac56384)
+- bm25: -7.2570 | relevance: 0.8789
+
+setAllLessons((prev) => {
+        const next = {}
+        for (const [subject, lessons] of Object.entries(prev || {})) {
+          if (!Array.isArray(lessons)) {
+            next[subject] = lessons
+            continue
+          }
+          next[subject] = lessons.filter((l) => !l?.isGenerated)
+        }
+
+### 36. docs/brain/ingests/pack.planned-lessons-flow.md (321cb6b94e0dc03acb8f7e0f32548ad23f076840542857688faf2e72988d90e1)
+- bm25: -7.2123 | relevance: 0.8782
+
+### 25. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (729242ae943c3b8f481fa5b12d46b37feb4a481ecbed5bcba067226e52184170)
+- bm25: -14.5304 | relevance: 1.0000
+
+const plannedFlat = []
+      Object.entries(plannedLessons || {}).forEach(([date, arr]) => {
+        ;(Array.isArray(arr) ? arr : []).forEach((l) => {
+          plannedFlat.push({ date, subject: l.subject, title: l.title, description: l.description })
+        })
+      })
+      if (plannedFlat.length > 0) {
+        contextText += '\n\nPlanned lessons already in the calendar plan (do NOT repeat these topics):\n'
+        plannedFlat
+          .slice()
+          .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+          .slice(-80)
+          .forEach((l) => {
+            contextText += `- ${l.date} (${l.subject || 'general'}): ${l.title || l.description || 'planned lesson'}\n`
+          })
+      }
+
+contextText += '\n\n=== REDO RULES: SAME AS PLANNER GENERATION ==='
+      contextText += '\nYou are regenerating a planned lesson outline.'
+      contextText += `\nPrefer NEW topics most of the time, but you MAY plan a rephrased Review for low scores (<= ${LOW_SCORE_REVIEW_THRESHOLD}%).`
+      contextText += `\nAvoid repeating high-score topics (>= ${HIGH_SCORE_AVOID_REPEAT_THRESHOLD}%) unless the facilitator explicitly requests it.`
+      contextText += "\nIf you choose a Review lesson, the title MUST start with 'Review:' and it must use different examples."
+      contextText += '\nDo NOT produce an exact duplicate of any scheduled/planned lesson above.'
+
+### 26. docs/brain/lesson-library-downloads.md (ea6c987f912e08a4811e52893de3701d5c14ec17ac6ba2a12fed4b2d9135d9b9)
+- bm25: -14.4910 | relevance: 1.0000
+
+### API
+
+### 37. src/app/facilitator/lessons/page.js (6ab7257115e538df9c83f35560a1a9ceba253300eeeabcb2d098252121bf6639)
+- bm25: -7.2069 | relevance: 0.8782
+
+async function toggleAvailability(lessonKey) {
+    if (!selectedLearnerId) return
+    
+    try {
+      setSaving(true)
+      const supabase = getSupabaseClient()
+      
+      const { data: currentData } = await supabase
+        .from('learners')
+        .select('approved_lessons')
+        .eq('id', selectedLearnerId)
+        .maybeSingle()
+      
+      const { normalized: currentApproved, changed } = normalizeApprovedLessonKeys(currentData?.approved_lessons || {})
+      const newApproved = { ...currentApproved }
+      
+      const legacyKey = lessonKey.replace('general/', 'facilitator/')
+      const isCurrentlyChecked = newApproved[lessonKey] || newApproved[legacyKey]
+      
+      if (isCurrentlyChecked) {
+        delete newApproved[lessonKey]
+        delete newApproved[legacyKey]
+      } else {
+        newApproved[lessonKey] = true
+      }
+      
+      const updatePayload = { approved_lessons: newApproved }
+      if (changed) {
+        updatePayload.approved_lessons = newApproved
+      }
+      const { error } = await supabase
+        .from('learners')
+        .update(updatePayload)
+        .eq('id', selectedLearnerId)
+      
+      if (error) throw error
+      
+      setAvailableLessons(newApproved)
+    } catch (err) {
+      // Silent fail
+    } finally {
+      setSaving(false)
+    }
+  }
+
+### 38. src/app/learn/lessons/page.js (0da5e86e8d428c68cee3579993ab660d4de8d84210b16f09b21d6cc87317337e)
+- bm25: -7.1376 | relevance: 0.8771
+
+﻿'use client'
+import { useEffect, useMemo, useState, Suspense } from 'react'
+import { useRouter } from 'next/navigation'
+import { getSupabaseClient } from '@/app/lib/supabaseClient'
+import { featuresForTier } from '@/app/lib/entitlements'
+import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
+import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi'
+import { ensurePinAllowed } from '@/app/lib/pinGate'
+import LoadingProgress from '@/components/LoadingProgress'
+import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
+import { getStoredSnapshot } from '@/app/session/sessionSnapshotStore'
+import { getActiveLessonSession } from '@/app/lib/sessionTracking'
+import { useLessonHistory } from '@/app/hooks/useLessonHistory'
+import LessonHistoryModal from '@/app/components/LessonHistoryModal'
+import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
+import { getMasteryForLearner } from '@/app/lib/masteryClient'
+
+const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
+
+function normalizeApprovedLessonKeys(map = {}) {
+  const normalized = {}
+  let changed = false
+  Object.entries(map || {}).forEach(([key, value]) => {
+    if (typeof key === 'string' && key.startsWith('Facilitator Lessons/')) {
+      const suffix = key.slice('Facilitator Lessons/'.length)
+      normalized[`general/${suffix}`] = value
+      changed = true
+    } else if (key) {
+      normalized[key] = value
+    }
+  })
+  return { normalized, changed }
+}
+
+function snapshotHasMeaningfulProgress(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return false
+
+const phase = snapshot.phase || 'discussion'
+  const subPhase = snapshot.subPhase || 'greeting'
+  const resume = snapshot.resume || null
+
+### 39. src/app/session/page.js (8f518b7c190a57f2892057f2d3cdba9e247a287f8dba921111bce68286e512f6)
+- bm25: -7.0275 | relevance: 0.8754
+
+// Local correctness using unified helper
+      let correct = false;
+      try { 
+        correct = await judgeAnswer(trimmed, acceptableE, problem); 
+        if (!correct) {
+          // Answer marked incorrect
+        }
+      } catch {}
+
+setLearnerInput('');
+
+### 40. src/app/facilitator/lessons/page.js (ce4e7e486b9ed80eac317146490da0bc10512ecce27a9d65932f87319abe8812)
+- bm25: -7.0079 | relevance: 0.8751
+
+function getFilteredLessons() {
+    const filtered = []
+    
+    Object.entries(allLessons).forEach(([subject, lessons]) => {
+      if (!Array.isArray(lessons)) return
+      
+      // Skip "generated" when "all subjects" is selected to avoid duplicates
+      if (selectedSubject === 'all' && subject === 'generated') return
+      
+      // Apply subject filter
+      if (selectedSubject !== 'all' && subject !== selectedSubject) return
+      
+      lessons.forEach(lesson => {
+        const isOwned = lesson?.isGenerated === true
+        const fileName = lesson?.file || null
+        const ownedKey = isOwned
+          ? `${(lesson?.subject || subject || '').toString().toLowerCase() || 'math'}/${fileName || ''}`
+          : `${(subject || '').toString().toLowerCase()}/${fileName || ''}`
+        const ownedByKey = Boolean(fileName && ownedLessonKeys?.[ownedKey])
 
 
 ---

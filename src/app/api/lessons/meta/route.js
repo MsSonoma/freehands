@@ -97,7 +97,9 @@ export async function POST(request) {
               const text = await fileData.text()
               data = JSON.parse(text)
               data.lessonKey = `generated/${filename}`
-              data.subject = 'generated'
+              // Preserve the real subject from the lesson JSON; only fall back to 'generated'
+              // if the field is missing so the awards page can bucket correctly.
+              data.subject = data.subject || 'generated'
               data.file = filename
               data.isGenerated = true
             }
