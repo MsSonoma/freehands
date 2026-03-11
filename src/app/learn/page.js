@@ -107,6 +107,7 @@ export default function LearnPage() {
           <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
             <button
               onClick={goToLessons}
+              title="Practice lessons guided by Ms. Sonoma"
               style={{
                 padding:'14px 20px', 
                 border:'2px solid #c7442e', 
@@ -124,6 +125,7 @@ export default function LearnPage() {
             </button>
             <button
               onClick={() => r.push('/session/slate')}
+              title="Drill questions with Mr. Slate"
               style={{
                 padding:'14px 20px', 
                 border:'2px solid #6366f1', 
@@ -141,6 +143,7 @@ export default function LearnPage() {
             </button>
             <button
               onClick={goToAwards}
+              title="View medals and achievements"
               style={{
                 padding:'14px 20px', 
                 border:'2px solid #059669', 
