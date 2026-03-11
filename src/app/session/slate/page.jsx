@@ -459,6 +459,7 @@ function SlateDrillInner() {
   const [historyLessons, setHistoryLessons] = useState({})
   const [listError, setListError] = useState('')
   const [settings, setSettings] = useState(DEFAULT_SLATE_SETTINGS)
+  const [isJudging, setIsJudging] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsDraft, setSettingsDraft] = useState(DEFAULT_SLATE_SETTINGS)
   const [settingsSaving, setSettingsSaving] = useState(false)
@@ -480,6 +481,7 @@ function SlateDrillInner() {
   const inputEl = useRef(null)
   const slateVideoRef = useRef(null)
   const slateIsSpeakingRef = useRef(false)
+  const isJudgingRef = useRef(false)
   const consecutiveTimeoutsRef = useRef(0)
   const settingsRef = useRef(DEFAULT_SLATE_SETTINGS)
 
@@ -648,6 +650,8 @@ function SlateDrillInner() {
 
   // Display a question
   const showQuestion = useCallback((q, skipAudio = false) => {
+    isJudgingRef.current = false
+    setIsJudging(false)
     currentQRef.current = q
     setCurrentQ(q)
     setUserAnswer('')
@@ -685,6 +689,8 @@ function SlateDrillInner() {
   // Handle answer result (correct / wrong / timeout)
   const handleResult = useCallback((correct, timeout = false) => {
     clearInterval(timerInterval.current)
+    isJudgingRef.current = false
+    setIsJudging(false)
     const q = currentQRef.current
     const prev = scoreRef.current
     let newScore = prev
@@ -755,7 +761,7 @@ function SlateDrillInner() {
     if (pagePhase !== 'asking') return
     clearInterval(timerInterval.current)
     timerInterval.current = setInterval(() => {
-      if (slateIsSpeakingRef.current) return // pause while Mr. Slate is talking
+      if (slateIsSpeakingRef.current || isJudgingRef.current) return // pause while Slate is talking or judging
       setSecondsLeft(s => {
         if (s <= 1) {
           clearInterval(timerInterval.current)
@@ -771,15 +777,26 @@ function SlateDrillInner() {
   // Text answer submission
   const onTextSubmit = useCallback(async () => {
     if (phaseRef.current !== 'asking') return
+    if (isJudgingRef.current) return  // prevent double-submit / spam
+    isJudgingRef.current = true
+    setIsJudging(true)
     const correct = await checkAnswer(currentQRef.current, userAnswer)
-    if (phaseRef.current !== 'asking') return  // guard: timed out while awaiting API
+    if (phaseRef.current !== 'asking') {
+      // timed out or navigated away while judge was in flight — abort silently
+      isJudgingRef.current = false
+      setIsJudging(false)
+      return
+    }
     handleResult(correct, false)
   }, [userAnswer, handleResult])
 
   // Choice click (MC / TF)
   const onChoiceClick = useCallback((value) => {
     if (phaseRef.current !== 'asking') return
-    handleResult(checkAnswer(currentQRef.current, String(value)), false)
+    if (isJudgingRef.current) return  // prevent double-fire
+    isJudgingRef.current = true
+    setIsJudging(true)
+    handleResult(checkAnswerLocal(currentQRef.current, String(value)), false)
   }, [handleResult])
 
   const onKeyDown = useCallback(e => { if (e.key === 'Enter') onTextSubmit() }, [onTextSubmit])
@@ -805,6 +822,8 @@ function SlateDrillInner() {
   const backToList = useCallback(() => {
     clearInterval(timerInterval.current)
     clearTimeout(feedbackTimeout.current)
+    isJudgingRef.current = false
+    setIsJudging(false)
     setScore(0)
     scoreRef.current = 0
     setQCount(0)
@@ -908,7 +927,7 @@ function SlateDrillInner() {
 
             // Owned: full merged set (approved + ever-completed) with filters
             const fullOwnedLessons = [...mergedMap.values()]
-            const allSubjects = [...new Set(fullOwnedLessons.map(l => l.subject).filter(Boolean))].sort()
+            const allSubjects = [...new Set(fullOwnedLessons.map(l => l.subject).filter(s => s && s !== 'generated'))].sort()
             const allGrades = [...new Set(fullOwnedLessons.map(l => l.grade).filter(v => v != null))].sort((a, b) => Number(a) - Number(b))
             const allDiffs = [...new Set(fullOwnedLessons.map(l => l.difficulty).filter(Boolean))].sort()
             const ownedList = fullOwnedLessons.filter(l => {
@@ -1292,7 +1311,8 @@ function SlateDrillInner() {
                     <button
                       key={i}
                       onClick={() => onChoiceClick(i)}
-                      style={choiceBtn}
+                      disabled={isJudging}
+                      style={{ ...choiceBtn, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
                     >
                       <span style={{ color: C.accent, marginRight: 8, fontWeight: 800 }}>
                         {String.fromCharCode(65 + i)}.
@@ -1308,13 +1328,15 @@ function SlateDrillInner() {
                 <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
                   <button
                     onClick={() => onChoiceClick('true')}
-                    style={{ ...tfBtnBase, background: '#0d1117', border: `1px solid ${C.green}`, color: C.green }}
+                    disabled={isJudging}
+                    style={{ ...tfBtnBase, background: '#0d1117', border: `1px solid ${C.green}`, color: C.green, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
                   >
                     TRUE
                   </button>
                   <button
                     onClick={() => onChoiceClick('false')}
-                    style={{ ...tfBtnBase, background: '#0d1117', border: `1px solid ${C.red}`, color: C.red }}
+                    disabled={isJudging}
+                    style={{ ...tfBtnBase, background: '#0d1117', border: `1px solid ${C.red}`, color: C.red, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
                   >
                     FALSE
                   </button>
@@ -1345,9 +1367,10 @@ function SlateDrillInner() {
                   />
                   <button
                     onClick={onTextSubmit}
-                    style={{ ...btnBase, background: C.accent, border: `1px solid ${C.accent}`, color: '#0d1117', borderRadius: 6, padding: '10px 18px', fontSize: 13, fontWeight: 800 }}
+                    disabled={isJudging}
+                    style={{ ...btnBase, background: C.accent, border: `1px solid ${C.accent}`, color: '#0d1117', borderRadius: 6, padding: '10px 18px', fontSize: 13, fontWeight: 800, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
                   >
-                    SUBMIT
+                    {isJudging ? '...' : 'SUBMIT'}
                   </button>
                 </div>
               )}
