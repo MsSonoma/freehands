@@ -6,18 +6,23 @@ Mode: standard
 
 Prompt (original):
 ```text
-When I remove planned lessons, they come back after a refresh.
+DayViewOverlay + button Schedule Lesson Plan Lesson owned lessons overlay LessonGeneratorOverlay subject picker auto-plan curriculum preferences
 ```
 
 Filter terms used:
 ```text
-remove
-planned
+DayViewOverlay
+LessonGeneratorOverlay
+button
+schedule
+lesson
+plan
+owned
 lessons
-come
-back
-after
-refresh
+overlay
+subject
+picker
+auto
 ```
 
 ---
@@ -26,13 +31,13 @@ refresh
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-03-11 19:39` — lessons completed but no medal showing in lesson list - medals missing for completed lessons
 - `2026-03-11 19:48` — lesson_key format mismatch between session page and lessons page - medals stored but not displaying, upsertMedal lessonK
 - `2026-03-11 19:56` — awards page medals display completed lessons learn/lessons page - all locations that show medals or completed lessons an
+- `2026-03-11 20:21` — When I remove planned lessons, they come back after a refresh.
 
 ---
 
-## [REMINDER] Copilot Self-Recon Obligation
+## [CRITICAL — this pack is thin or empty.] Copilot Self-Recon Obligation
 
 **THREAD FIRST, PACK SECOND.** This pack is supplementary repo knowledge. It does NOT replace the conversation thread. If the user refers to something discussed earlier (e.g. 'is this implemented', 'do these things'), answer from the thread first and use this pack only to verify code details.
 
@@ -49,7 +54,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 3. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 1. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -64,7 +69,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-remove planned lessons come back after refresh
+DayViewOverlay LessonGeneratorOverlay button schedule lesson plan owned lessons overlay subject picker auto
 
 ## Forced Context
 
@@ -72,216 +77,114 @@ remove planned lessons come back after refresh
 
 ## Ranked Evidence
 
-### 1. docs/brain/ingests/pack.planned-lessons-flow.md (88c29dc19b3f25ed0178c73764a3887f3532851fb2e1292ab2f58b31241fad00)
-- bm25: -17.6495 | relevance: 0.9464
+### 1. cohere-changelog.md (7dcae5cf5f70e4d8e5db11cedb97f4dc9992abed55b6a3545a7f0fd240f3ec1b)
+- bm25: -17.4200 | entity_overlap_w: 4.00 | adjusted: -18.4200 | relevance: 0.9485
 
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+### 2026-02-27 � Generated lesson not appearing in calendar after scheduling
+- Root cause (1): `loadSchedule` filtered out past-date+uncompleted lessons, hiding intentionally-scheduled entries for past/same-day dates
+- Root cause (2): `onGenerated` callback passed no data; calendar had to wait for `loadSchedule` to complete before showing the new lesson (race condition)
+- Fix (1): Removed `if (isPast && !completed && !completionLookupFailed) return` filter from `calendar/page.js`; all entries in `lesson_schedule` table now always display
+- Fix (2): `LessonGeneratorOverlay` now parses schedule POST response and passes `newEntry` to `onGenerated(newEntry)`; forwarded through `DayViewOverlay` to calendar page which immediately injects it into `scheduledLessons` state before `loadSchedule` completes
+- Files: `LessonGeneratorOverlay.jsx`, `DayViewOverlay.jsx`, `calendar/page.js`
 
-### 2. sidekick_pack.md (a6a5a8402f60a32ae3f5331f3e88e3b679090d1e257e5157603316df1542732f)
-- bm25: -17.4549 | relevance: 0.9458
+## 2026-03-02 � Remove redundant PIN on timer pause toggle (v2)
+Prompt: `Timers overlay PIN check pause redundant already authenticated`
+Fix: Removed `ensurePinAllowed('timer')` from `handleTimerPauseToggle` in SessionPageV2.jsx. Opening the overlay is still PIN-gated via `handleTimerClick`. V1 page.js already had this correct.
+File: src/app/session/v2/SessionPageV2.jsx
 
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+## 2026-03-02 � Auto-bold vocab in captions; strip GPT markdown asterisks
+Prompt: `vocab words bold captions TTS text display caption rendering`
+Fix: CaptionPanel.js � (1) Added stripMarkdown() to remove **bold** markers from displayed text before render. (2) Removed phase==='discussion'||'teaching' restriction so vocab terms are bolded in all phases.
+File: src/app/session/components/CaptionPanel.js
 
-### 3. sidekick_pack.md (cad378213fd13855af53d533bd71221aed90460d4fbb4523573edc023e104f0e)
-- bm25: -17.4549 | relevance: 0.9458
+### 2. docs/brain/calendar-lesson-planning.md (bad918b02a71d06047328cb4b549e073ad8083ccb4d33488af50cae26e835d4c)
+- bm25: -17.8248 | relevance: 0.9469
 
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+**Owned-only rule:**
+- The picker shows ONLY facilitator-owned lessons.
+- It does not list public curriculum lessons from `public/lessons`.
 
-### 4. sidekick_pack.md (1f28777aa00516f363d491420dfa6a99c690b1cfebadbd59af7be0334bd94883)
-- bm25: -17.4549 | relevance: 0.9458
+### 3. src/app/facilitator/calendar/DayViewOverlay.jsx (eed37ca8a7208b20854b0a40039e64098e151896c8b5aefc52a1142da8773026)
+- bm25: -15.0424 | entity_overlap_w: 3.00 | adjusted: -15.7924 | relevance: 0.9404
 
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+﻿// Day view overlay showing all scheduled and planned lessons for a selected date
+'use client'
+import { useEffect, useState } from 'react'
+import LessonGeneratorOverlay from './LessonGeneratorOverlay'
+import LessonEditor from '@/components/LessonEditor'
+import VisualAidsCarousel from '@/components/VisualAidsCarousel'
+import { getSupabaseClient } from '@/app/lib/supabaseClient'
+import LessonNotesModal from './LessonNotesModal'
+import VisualAidsManagerModal from './VisualAidsManagerModal'
+import PortfolioScansModal from './PortfolioScansModal'
+import TypedRemoveConfirmModal from './TypedRemoveConfirmModal'
 
-### 5. docs/brain/MentorInterceptor_Architecture.md (b9af78a6a85babc29ee74ec9cf6073767b7a2e84a19456e1f96ab9a407cbd74d)
-- bm25: -17.4020 | relevance: 0.9457
+export default function DayViewOverlay({ 
+  selectedDate, 
+  scheduledLessons = [], 
+  plannedLessons = [], 
+  learnerId,
+  learners = [],
+  learnerGrade,
+  tier,
+  onClose,
+  onLessonGenerated,
+  onNoSchoolSet,
+  onPlannedLessonUpdate,
+  onPlannedLessonRemove,
+  noSchoolReason = null
+}) {
+  const getLocalTodayStr = () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+const isPastSelectedDate = selectedDate < getLocalTodayStr()
 
-### 6. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (6f33983453dfbb17ba0b015de6cc76fa071dc0e7a401f52396b7093115ac315c)
-- bm25: -17.3233 | relevance: 0.9454
+### 4. docs/brain/ingests/pack.md (449969b4c519b1e04ae0f2ff5cdd6f65950ce2e104330fb9db2a7d480291f3c5)
+- bm25: -15.3584 | relevance: 0.9389
 
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+**Owned-only rule:**
+- The picker shows ONLY facilitator-owned lessons.
+- It does not list public curriculum lessons from `public/lessons`.
 
-### 7. sidekick_pack.md (ccac777c1db3eb879e26c94f4af62772b4cbecb113643c61a5bd1dd98c06a334)
-- bm25: -10.6524 | relevance: 0.9142
+### 17. docs/brain/lesson-notes.md (ac258ad493dde9c766703881b36300ddf044039fc14bddb8ce88bf9914d1a3ef)
+- bm25: -21.9046 | relevance: 1.0000
 
-### 5. docs/brain/ingests/pack.md (aa6ec106ec68e22bb817f61c01c25af4440948ba22e71ec40a50cad850d8b6d0)
-- bm25: -33.2332 | relevance: 1.0000
+if (notesKeys.length > 0) {
+  lines.push(`FACILITATOR NOTES ON LESSONS:`);
+  notesKeys.sort().forEach(key => {
+    const [subject, lessonName] = key.split('/');
+    lines.push(`${subject} - ${lessonName}:`);
+    lines.push(`  "${lessonNotes[key]}"`);
+  });
+}
+```
 
-### Portfolio Scan Uploads (Worksheet/Test Images)
+**Use cases:**
+- **Progress tracking**: "Completed with 95%. Ready for next level." → Mr. Mentor suggests advanced materials
+- **Challenge documentation**: "Struggles with word problems. Anxious during tests." → Suggests scaffolding/anxiety strategies
+- **Interest tracking**: "Loves hands-on experiments. Wants to learn chemistry." → Suggests enrichment resources
+- **Behavioral context**: "Easily distracted. Works better in morning sessions." → Suggests schedule optimization
 
-### 3. docs/brain/MentorInterceptor_Architecture.md (75fdb0fbddb1f0621d0ed4e1ec4faf69b33ecbed1888eb54a3d9f917aca04bee)
-- bm25: -34.9459 | relevance: 1.0000
+## Key Files
 
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+- `src/app/facilitator/lessons/page.js` - Note UI (add/edit/save), state management, Supabase updates
+- `src/app/facilitator/calendar/LessonNotesModal.jsx` - Notes modal used from Calendar schedule lists
+- `src/app/lib/learnerTranscript.js` - Transcript builder, includes notes section
+- `src/app/api/counselor/route.js` - Receives transcript with notes
 
-### 4. docs/brain/calendar-lesson-planning.md (8fb5d6fd52eb343d38244e53af009c1d078e80740d159006615a9235e71a5585)
-- bm25: -34.0788 | relevance: 1.0000
+## What NOT To Do
 
-### 8. docs/brain/ingests/pack.md (a75dabf7c5f4af9050331943d5c6616a091a133df20dc19bd7687dc816d7f101)
-- bm25: -10.6011 | relevance: 0.9138
+**DON'T make notes too long** - No character limit enforced, but excessively long notes bloat Mr. Mentor's context window. Keep notes concise (1-3 sentences per lesson).
 
-**2025-12-15**: Added database persistence for planned lessons
-- Created `planned_lessons` table with JSONB lesson_data column
-- Created `/api/planned-lessons` route (GET/POST/DELETE)
-- Modified calendar page to load planned lessons on mount/learner change
-- Added `savePlannedLessons()` that updates state AND persists to database
-- Wired `savePlannedLessons` as callback to LessonPlanner
-- Planned lessons now survive refresh, long absence, logout/login
-- Tied to specific facilitator + learner combination via foreign keys
+**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
 
-### 9. docs/brain/ingests/pack.md (aa6ec106ec68e22bb817f61c01c25af4440948ba22e71ec40a50cad850d8b6d0)
-- bm25: -10.4882 | relevance: 0.9130
-
-### Portfolio Scan Uploads (Worksheet/Test Images)
-
-### 3. docs/brain/MentorInterceptor_Architecture.md (75fdb0fbddb1f0621d0ed4e1ec4faf69b33ecbed1888eb54a3d9f917aca04bee)
-- bm25: -34.9459 | relevance: 1.0000
-
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
-
-### 4. docs/brain/calendar-lesson-planning.md (8fb5d6fd52eb343d38244e53af009c1d078e80740d159006615a9235e71a5585)
-- bm25: -34.0788 | relevance: 1.0000
-
-# Calendar Lesson Planning System - Ms. Sonoma Brain File
+### 5. sidekick_pack.md (1752b37d6124c9152e21b9d16bc65c88fe33f0886604147c28c18388987d6019)
+- bm25: -15.0590 | relevance: 0.9377
 
 **Last Updated**: 2026-02-05T03:28:35Z  
 **Status**: Canonical
@@ -290,254 +193,11 @@ remove planned lessons come back after refresh
 
 ### Automated Lesson Plan Generation
 
-### 10. src/app/session/slate/page.jsx (dc855da2b5c2bf020b858e6102dcb4ff584345b97116866c3bb078e719d8ec40)
-- bm25: -9.9059 | relevance: 0.9083
+### 6. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (7a42963d49cceba71f31be9d3d8d544fccccaaf4d62770d956e70416bd7e72ff)
+- bm25: -29.8352 | relevance: 1.0000
 
-{/* Body — flex column so controls stay fixed and only the list scrolls */}
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          {availableLessons.length === 0 && allOwnedLessons.length === 0 ? (
-            <div style={{ textAlign: 'center', marginTop: 60 }}>
-              <div style={{ marginBottom: 16 }}>
-                <SlateVideo size={120} />
-              </div>
-              <div style={{ color: C.muted, fontSize: 14, letterSpacing: 1 }}>NO DRILL LESSONS AVAILABLE</div>
-              <div style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>Complete a lesson with Ms. Sonoma first, then come back to practice.</div>
-            </div>
-          ) : (() => {
-            // --- Derived lists for each tab ---
-            const getLk = l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`
-
-### 11. docs/brain/ingests/pack.planned-lessons-flow.md (631320264e28f6aade98cea9e5e99c54c685ade70ba0ff5054efb444271c559d)
-- bm25: -9.5515 | relevance: 0.9052
-
-### 28. src/app/facilitator/generator/counselor/MentorInterceptor.js (61b589ea2c796b43b267ada5fafdf5815ea1989501e82bb17472e966f42c77c0)
-- bm25: -14.0785 | relevance: 1.0000
-
-const wantsCurriculum = normalized.includes('curriculum') || normalized.includes('preference') || normalized.includes('banned') || normalized.includes('avoid')
-    const wantsPattern = normalized.includes('weekly pattern') || (normalized.includes('pattern') && normalized.includes('week')) || normalized.includes('schedule template')
-    const wantsCustomSubjectAdd = (normalized.includes('add') || normalized.includes('create') || normalized.includes('new')) && normalized.includes('subject')
-    const wantsCustomSubjectDelete = (normalized.includes('delete') || normalized.includes('remove')) && normalized.includes('subject')
-    const wantsPlan = (normalized.includes('lesson plan') || normalized.includes('lesson planner') || normalized.includes('planned lessons')) &&
-      (normalized.includes('schedule') || normalized.includes('generate') || normalized.includes('make') || normalized.includes('start') || normalized.includes('duration'))
-
-if (wantsCustomSubjectAdd) {
-      this.state.flow = 'custom_subject_add'
-
-// Attempt to extract name after "subject"
-      const match = userMessage.match(/subject\s+(.+)$/i)
-      const maybeName = match?.[1] ? String(match[1]).trim() : ''
-      if (maybeName && maybeName.length <= 60) {
-        this.state.context.subjectName = maybeName
-        this.state.awaitingConfirmation = true
-        this.state.awaitingInput = null
-        return {
-          handled: true,
-          response: `Should I add a custom subject named "${maybeName}"?`
-        }
-      }
-
-### 12. docs/brain/ingests/pack.lesson-schedule-debug.md (6794ad7dd28f5e9a4145ae2d5cbdb92b6c0a4405e01ff31182a309420f726938)
-- bm25: -9.4587 | relevance: 0.9044
-
-### ❌ DON'T: Store planned lessons only in component state
-**Why**: Component state clears on refresh, logout, or navigation. User loses entire generated plan. Creates terrible UX where plans disappear unpredictably.
-
-### 13. docs/brain/ingests/pack.planned-lessons-flow.md (5b4ee1ee7eee7ecfb695d9ebf320c70acdd87942426643b5238b37d5f575f1a4)
-- bm25: -9.3300 | relevance: 0.9032
-
-const response = await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          learnerId,
-          plannedLessons: { [dateStr]: lessonsForDate }
-        })
-      })
-
-const js = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(js?.error || 'Failed to save planned lessons')
-      return true
-    } catch (err) {
-      alert('Failed to save planned lessons')
-      return false
-    }
-  }
-
-const savePlannedLessons = async (lessons) => {
-    setPlannedLessons(lessons)
-
-if (!learnerId || learnerId === 'none') return
-
-try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      if (!token) return
-
-await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          learnerId,
-          plannedLessons: lessons
-        })
-      })
-    } catch (err) {
-      alert('Failed to save planned lessons')
-    }
-  }
-
-const loadPlannedForLearner = useCallback(async (targetLearnerId, opts = {}) => {
-    if (!targetLearnerId || targetLearnerId === 'none') {
-      setPlannedLessons({})
-      plannedLoadedForLearnerRef.current = null
-      plannedLoadedAtRef.current = 0
-      return
-    }
-
-const force = !!opts?.force
-    if (plannedLoadInFlightRef.current) return
-    if (!force
-      && plannedLoadedForLearnerRef.current === targetLearnerId
-      && (Date.now() - (plannedLoadedAtRef.current || 0)) < MIN_REFRESH_INTERVAL_MS
-    ) {
-      return
-    }
-
-### 14. docs/brain/ingests/pack.planned-lessons-flow.md (575e83b0e4a0ed1667a2690633337b3755d2e4b69162a2c3fb4af6899807233d)
-- bm25: -9.1443 | relevance: 0.9014
-
-- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
-  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
-
-**API Routes:**
-- `src/app/api/planned-lessons/route.js`
-  - GET: load by learner, transform DB rows to `{date: [lessons]}` format
-  - POST: date-specific overwrite - extracts dates from new plan, deletes only those dates (.in filter), inserts new rows
-  - DELETE: clear all planned lessons for learner
-  - RLS policies ensure facilitator can only access own data
-
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
-
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
-
-## Recent Changes
-
-### 5. docs/brain/MentorInterceptor_Architecture.md (b9af78a6a85babc29ee74ec9cf6073767b7a2e84a19456e1f96ab9a407cbd74d)
-- bm25: -30.7151 | entity_overlap_w: 2.50 | adjusted: -31.3401 | relevance: 1.0000
-
-### 15. docs/brain/ingests/pack.planned-lessons-flow.md (22976d3d45f57b0ca0f251d436bae2dd3aff4c514a699692154bc470a2f754ca)
-- bm25: -9.0180 | relevance: 0.9002
-
-﻿2026-02-09T01:00:04Z | Copilot | Mr. Mentor Calendar overlay now force-refreshes planned/scheduled/completed markers; removes stale self-cache that blocked polling updates [#MentorInterceptor: CalendarOverlay, refresh, planned-lessons] 
-2026-02-05T03:28:35Z | Copilot | Fix Calendar LessonPlanner JSX parse error (Duration <select> tag) that broke Vercel Next build [#calendar-lesson-planning: LessonPlanner, JSX, build] 
-2026-02-05T00:30:46Z | Copilot | Entitlements: resolveEffectiveTier now considers subscription_tier + plan_tier (Premium->Pro in either) to prevent false lockouts [#gating-system: tier-normalization, resolveEffectiveTier, tier-gates]
-2026-02-05T00:25:09Z | Copilot | Mr. Mentor: remove blocking Pro overlay; signed-in view + read-only loads; gate session init and actions behind Pro [#gating-system: window-shopping, view-only, tier-gates] [#mr-mentor-sessions: realtime conflict detection, session takeover, heartbeat polling]
-2026-02-04T21:15:00Z | Copilot | Calendar: always viewable when signed in; gate only schedule/plan writes behind Pro (no tier-blocking overlay) [#calendar-lesson-planning: view-only, canPlan, manual-scheduling] [#gating-system: window-shopping, tier-gates, view-only]
-2026-02-04T20:59:14Z | Copilot | Normalize legacy plan_tier values (premium/plus/basic) so learner caps and entitlements resolve correctly [#gating-system: tier-gates, useAccessControl, universal-gating]
-2026-02-04T19:31:04Z | Copilot | Clean up remaining legacy tier refs (Basic/Plus/Premium) in UI copy, docs, tasks, and schema examples [#gating-system: requiredFeature, requiredTier, window-shopping] [#account-provisioning: provision wrapper, plan_tier values] [#lesson-quota: lessonsPerDay, quota overlay] [#calendar-lesson-planning: lessonPlanner, tier-gate]
-2026-02-04T18:14
-
-### 16. docs/brain/calendar-lesson-planning.md (b5fceec1ff172ff9be6e16676dfd040ac9bf511ccfa0190409ecada4fe8df328)
-- bm25: -8.9876 | relevance: 0.8999
-
-**Persistence Model:**
-- Planned lessons stored in `planned_lessons` table (facilitator_id, learner_id, scheduled_date, lesson_data JSONB)
-- Each row = one lesson outline for one date
-- Survives page refresh, long absences, logout/login
-- Tied to specific facilitator + learner combination
-- **POST uses date-specific overwrite**: only deletes/replaces dates included in new plan
-- **Multiple non-overlapping plans coexist**: schedule Jan + Mar separately, both persist
-- **Overlapping dates are replaced**: reschedule Jan 15-31 overwrites only those dates, Jan 1-14 untouched
-
-**Data Format:**
-```javascript
-// In-memory format (calendar page state)
-plannedLessons = {
-  '2025-12-15': [
-    { id: '...', title: '...', subject: 'math', grade: '3rd', difficulty: 'intermediate', ... },
-    { id: '...', title: '...', subject: 'science', ... }
-  ],
-  '2025-12-16': [ ... ]
-}
-
-// Database format (planned_lessons table)
-{
-  facilitator_id: 'uuid',
-  learner_id: 'uuid',
-  scheduled_date: '2025-12-15',
-  lesson_data: { id: '...', title: '...', subject: 'math', ... } // JSONB
-}
-```
-
-### API Endpoints
-
-**`/api/planned-lessons`**
-- **GET** `?learnerId=X` - Load all planned lessons for learner, returns `{plannedLessons: {...}}`
-- **POST** - Save lesson plan with date-specific overwrite (only replaces dates in new plan), expects `{learnerId, plannedLessons}`
-- **DELETE** `?learnerId=X` - Clear all planned lessons for learner
-
-### 17. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (927a36610f2e66911e7ea826ffa802962a757c0ec7b545a69c3fcf9244a1445d)
-- bm25: -8.9839 | relevance: 0.8998
-
-**2025-12-15**: Added database persistence for planned lessons
-- Created `planned_lessons` table with JSONB lesson_data column
-- Created `/api/planned-lessons` route (GET/POST/DELETE)
-- Modified calendar page to load planned lessons on mount/learner change
-- Added `savePlannedLessons()` that updates state AND persists to database
-- Wired `savePlannedLessons` as callback to LessonPlanner
-- Planned lessons now survive refresh, long absence, logout/login
-- Tied to specific facilitator + learner combination via foreign keys
-
-**2025-12-14**: Fixed medals API 404 causing generation failure
-- Changed endpoint from `/api/learner/medals` to `/api/medals`
-- Decoupled medals loading from history processing
-- Added fallback to empty medals object when API fails
-- Generation now succeeds even without medal data
-
-**2025-12-14**: Fixed scheduled lessons API response structure
-- API returns `{schedule: [...]}` not raw array
-- Changed code to access `scheduledData.schedule` property
-- Prevents ".map is not a function" error during context building
-
-### 21. src/app/facilitator/generator/counselor/CounselorClient.jsx (b6e6ebc1dbed05c56ca851c80bcd9e000659d12c23c8c859a044e2daec8d0991)
-- bm25: -15.7328 | relevance: 1.0000
-
-### 18. sidekick_pack.md (3f3c176dc6a1ced225717f1bd569e7abfe0dd3af095d1f4e365d6e563ed3fa37)
-- bm25: -8.7770 | relevance: 0.8977
-
-**Completion matching rule:**
-- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
-  - `event_type = 'completed'`
-  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
-  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
-    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
-    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
-
-**Make-up window rule (7 days):**
-- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
-- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
-
-### 11. docs/brain/calendar-lesson-planning.md (edc4501d8cf5402f28f2f259c81317facde5d8c4d278692219fb856850a029d8)
-- bm25: -26.0161 | relevance: 1.0000
-
-### 15. docs/brain/ingests/pack.planned-lessons-flow.md (c985a44d345e351fd61ade599be3e29e3e7386375d077fade62e6f02a4bdad24)
-- bm25: -27.9567 | relevance: 1.0000
+### 36. docs/brain/calendar-lesson-planning.md (de0b7e2265d9cfcb4b0c9cd0651ba3db1eb254c5334aa7a65a5b5a4fad4aba17)
+- bm25: -14.1234 | relevance: 1.0000
 
 **Data source and key format:**
 - Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
@@ -551,78 +211,509 @@ plannedLessons = {
 
 The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
 
-### 19. docs/brain/ingests/pack.md (8a535f1018b01bca63214b8dd441e8a6440e56eddd6d63a59123032e040c7111)
-- bm25: -8.6954 | relevance: 0.8969
+**Data rule:**
+- The schedule loader fetches the learner's schedule history.
+- For dates before "today" (local YYYY-MM-DD), scheduled lessons are included only if there is a matching completion event in `lesson_session_events`.
 
-- `src/app/facilitator/calendar/VisualAidsManagerModal.jsx`
-  - Visual Aids manager for a lessonKey using `/api/visual-aids/load|generate|save`
-  - Uses `VisualAidsCarousel` for selection/upload/save UI
+**Completion matching rule:**
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
 
-- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
-  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
+### 6. src/app/facilitator/calendar/DayViewOverlay.jsx (03746da986464685148f7b5b4f67e64b6fcf67443f5dbb030bd3352e60b8ead0)
+- bm25: -14.6143 | entity_overlap_w: 1.00 | adjusted: -14.8643 | relevance: 0.9370
 
-**API Routes:**
-- `src/app/api/planned-lessons/route.js`
-  - GET: load by learner, transform DB rows to `{date: [lessons]}` format
-  - POST: date-specific overwrite - extracts dates from new plan, deletes only those dates (.in filter), inserts new rows
-  - DELETE: clear all planned lessons for learner
-  - RLS policies ensure facilitator can only access own data
+// If generator overlay is open, show it
+  if (showGenerator) {
+    return (
+      <LessonGeneratorOverlay
+        learnerId={learnerId}
+        learnerGrade={learnerGrade}
+        tier={tier}
+        scheduledDate={selectedDate}
+        prefilledData={generatorData}
+        onClose={() => setShowGenerator(false)}
+        onGenerated={(entry) => {
+          setShowGenerator(false)
+          if (onLessonGenerated) onLessonGenerated(entry)
+        }}
+      />
+    )
+  }
 
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
+### 7. src/app/facilitator/calendar/DayViewOverlay.jsx (4e8900a39e892658118ceac81ad426f664400f0acc10758bf3af34f97bfce1b5)
+- bm25: -14.7601 | relevance: 0.9365
 
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
+if (scheduledRes.ok) {
+        const scheduledData = await scheduledRes.json()
+        const schedule = Array.isArray(scheduledData?.schedule) ? scheduledData.schedule : []
+        if (schedule.length > 0) {
+          contextText += '\n\nScheduled lessons (do NOT reuse these topics):\n'
+          schedule
+            .slice()
+            .sort((a, b) => String(a.scheduled_date || '').localeCompare(String(b.scheduled_date || '')))
+            .slice(-60)
+            .forEach((s) => {
+              contextText += `- ${s.scheduled_date}: ${s.lesson_key}\n`
+            })
+        }
+      }
 
-## Recent Changes
+if (plannedRes.ok) {
+        const plannedData = await plannedRes.json()
+        const allPlanned = plannedData?.plannedLessons || {}
+        const flattened = []
+        Object.entries(allPlanned).forEach(([date, arr]) => {
+          ;(Array.isArray(arr) ? arr : []).forEach((l) => {
+            flattened.push({ date, subject: l.subject, title: l.title, description: l.description })
+          })
+        })
+        if (flattened.length > 0) {
+          contextText += '\n\nPlanned lessons already in the calendar plan (do NOT repeat these topics):\n'
+          flattened
+            .slice()
+            .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+            .slice(-80)
+            .forEach((l) => {
+              contextText += `- ${l.date} (${l.subject || 'general'}): ${l.title || l.description || 'planned lesson'}\n`
+            })
+        }
+      }
 
-### 12. docs/brain/calendar-lesson-planning.md (9173fe378f56c3786b75c00e9b12c63312fc70bdcd188229f8dd2f7466567dc9)
-- bm25: -25.6308 | relevance: 1.0000
+### 8. docs/brain/ingests/pack.planned-lessons-flow.md (bb1ea8e97e97bc7a7cf0e595d4c2e295f2243bf8cb59b699da17b5cf5ee90289)
+- bm25: -13.6403 | relevance: 0.9317
 
-### 20. docs/brain/ingests/pack.lesson-schedule-debug.md (dd94434cb8c303004181882c8f4228c47f194f0b2bf6e5804d6698eafdab5d02)
-- bm25: -8.6445 | relevance: 0.8963
+### 30. docs/brain/lesson-library-downloads.md (b1b9e213db751b5765dbf2e696989c3293e61bd99e1db9d560a4332ae5c3532e)
+- bm25: -13.9504 | relevance: 1.0000
 
-- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
-  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
+# Lesson Library Downloads (Owned vs Downloadable)
 
-**API Routes:**
-- `src/app/api/planned-lessons/route.js`
-  - GET: load by learner, transform DB rows to `{date: [lessons]}` format
-  - POST: date-specific overwrite - extracts dates from new plan, deletes only those dates (.in filter), inserts new rows
-  - DELETE: clear all planned lessons for learner
-  - RLS policies ensure facilitator can only access own data
+**Status:** Canonical
+**Created:** 2026-01-10
+**Purpose:** Define how facilitator-visible "download" works without any device storage.
 
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
+## How It Works
 
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
+### Concepts
 
-## Recent Changes
+- **Downloadable lesson**: A built-in lesson JSON that exists on the server under `public/lessons/<subject>/...`.
+- **Owned lesson**: A facilitator-specific copy of a lesson stored in Supabase Storage under `lessons/facilitator-lessons/<facilitatorId>/<file>.json`.
+- **Download action**: Server-side copy from the built-in library into the facilitator's Storage folder (not a device download).
 
-### 7. docs/brain/calendar-lesson-planning.md (9deb51ba2dd90ddaeee2ec696cc923087de9a8728187af5d9b6f9c4fb5277d7d)
-- bm25: -22.9167 | relevance: 1.0000
+### UX Rules (Facilitator Lessons Page)
 
-This is separate from Visual Aids:
-- **Visual Aids** are lesson-level aids (generated or curated) used during instruction.
-- **Portfolio scans** are learner work artifacts (uploaded images/PDFs).
+- Top-of-page actions:
+  - **📝 New Lesson** opens the lesson editor with a blank lesson (no Storage write until the user saves).
+  - **✨ Generate Lesson** opens the Lesson Maker flow (`/facilitator/generator`).
 
-### 21. docs/brain/ingests/pack.planned-lessons-flow.md (0a1e168264e4ffb7690341fafb963775753d01cf54c647920a52242e34956be9)
-- bm25: -8.6126 | relevance: 0.8960
+- A dropdown filter controls which lessons are shown:
+  - **Owned** (default): show only owned lessons (Storage-backed).
+  - **Downloadable**: show only downloadable lessons that are not owned.
+  - **All Lessons**: show both.
+
+- **Gating**:
+  - Downloadable lessons that are not owned show exactly one action: **Download**.
+  - After Download succeeds, the owned copy exists and the regular lesson controls appear (Edit, per-learner availability, notes, schedule).
+
+### Prefetch Behavior
+
+### 9. docs/brain/lesson-library-downloads.md (b1b9e213db751b5765dbf2e696989c3293e61bd99e1db9d560a4332ae5c3532e)
+- bm25: -13.3209 | relevance: 0.9302
+
+# Lesson Library Downloads (Owned vs Downloadable)
+
+**Status:** Canonical
+**Created:** 2026-01-10
+**Purpose:** Define how facilitator-visible "download" works without any device storage.
+
+## How It Works
+
+### Concepts
+
+- **Downloadable lesson**: A built-in lesson JSON that exists on the server under `public/lessons/<subject>/...`.
+- **Owned lesson**: A facilitator-specific copy of a lesson stored in Supabase Storage under `lessons/facilitator-lessons/<facilitatorId>/<file>.json`.
+- **Download action**: Server-side copy from the built-in library into the facilitator's Storage folder (not a device download).
+
+### UX Rules (Facilitator Lessons Page)
+
+- Top-of-page actions:
+  - **📝 New Lesson** opens the lesson editor with a blank lesson (no Storage write until the user saves).
+  - **✨ Generate Lesson** opens the Lesson Maker flow (`/facilitator/generator`).
+
+- A dropdown filter controls which lessons are shown:
+  - **Owned** (default): show only owned lessons (Storage-backed).
+  - **Downloadable**: show only downloadable lessons that are not owned.
+  - **All Lessons**: show both.
+
+- **Gating**:
+  - Downloadable lessons that are not owned show exactly one action: **Download**.
+  - After Download succeeds, the owned copy exists and the regular lesson controls appear (Edit, per-learner availability, notes, schedule).
+
+### Prefetch Behavior
+
+- On page mount, the client prefetches built-in lesson lists immediately (no auth required) and loads subjects in parallel.
+- Owned lessons are then fetched after auth/session is available and merged into the list.
+- This keeps the UI responsive so clicking "Load Lessons" feels instant even if auth is slow.
+
+### Data/Key Rules
+
+### 10. src/app/facilitator/lessons/page.js (586445b2660fc915d4d28d1f17246a57e3924b58015c01aeef31074f8c00487f)
+- bm25: -13.2814 | relevance: 0.9300
+
+const owned = {}
+      for (const lesson of sortedGeneratedList) {
+        const subj = (lesson?.subject || '').toString().toLowerCase() || 'math'
+        const file = lesson?.file
+        if (file) owned[`${subj}/${file}`] = true
+      }
+      setOwnedLessonKeys(owned)
+
+### 11. docs/brain/ingests/pack.planned-lessons-flow.md (155578c318bfa1c68504c39454f35d1dcfc25dd6e797a69bfbd7d4d8c9043962)
+- bm25: -13.0100 | relevance: 0.9286
+
+## Key Files
+
+- UI
+  - `src/app/facilitator/calendar/page.js` (header button + modal wiring)
+  - `src/app/facilitator/calendar/GeneratePortfolioModal.jsx` (overlay)
+  - `src/components/FacilitatorHelp/PageHeader.jsx` (adds optional `actions` slot)
+
+- API
+  - `src/app/api/portfolio/generate/route.js` (portfolio builder)
+  - `src/app/api/portfolio/list/route.js` (list saved portfolios)
+  - `src/app/api/portfolio/delete/route.js` (delete saved portfolios + files)
+  - `src/app/api/portfolio/lib.js` (HTML builder + helpers)
+
+### 34. src/app/facilitator/generator/counselor/MentorInterceptor.js (dd9fc7d0f63f857e45b48169025dafbb0d96182f685e4e93f894b4f372b1d6a0)
+- bm25: -12.9933 | relevance: 1.0000
+
+,
+
+lesson_plan: {
+    keywords: [
+      'lesson plan',
+      'lesson planner',
+      'planned lessons',
+      'curriculum preferences',
+      'curriculum',
+      'weekly pattern',
+      'schedule template',
+      'start date',
+      'duration',
+      'generate lesson plan',
+      'schedule a lesson plan'
+    ],
+    confidence: (text) => {
+      const normalized = normalizeText(text)
+
+// FAQ-style questions about the planner should defer to FAQ intent.
+      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
+      if (faqPatterns.some(p => normalized.includes(p))) {
+        return 0
+      }
+
+return INTENT_PATTERNS.lesson_plan.keywords.some(kw => normalized.includes(kw)) ? 0.85 : 0
+    }
+  }
+}
+
+### 12. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (7a42963d49cceba71f31be9d3d8d544fccccaaf4d62770d956e70416bd7e72ff)
+- bm25: -12.8629 | relevance: 0.9279
+
+### 36. docs/brain/calendar-lesson-planning.md (de0b7e2265d9cfcb4b0c9cd0651ba3db1eb254c5334aa7a65a5b5a4fad4aba17)
+- bm25: -14.1234 | relevance: 1.0000
+
+**Data source and key format:**
+- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
+- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
+
+**Filtering behavior:**
+- Subject grouping uses each lesson's `subject` metadata.
+- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
+
+### Completed Past Scheduled Lessons (History View)
+
+The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
+
+**Data rule:**
+- The schedule loader fetches the learner's schedule history.
+- For dates before "today" (local YYYY-MM-DD), scheduled lessons are included only if there is a matching completion event in `lesson_session_events`.
+
+**Completion matching rule:**
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
+
+**Make-up window rule (7 days):**
+- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
+- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
+
+### 13. src/app/api/lesson-schedule/route.js (4e331f192a6c56a4cab8c5f7afbe0982981f3bd236880d62edeea56744dbb7e2)
+- bm25: -12.5295 | relevance: 0.9261
+
+// Default behavior: prefer facilitator-scoped schedule rows, plus safe legacy rows where facilitator_id is null.
+    // Overlay/debug callers can pass includeAll=1 to retrieve all schedule rows for an owned learner.
+    if (!includeAll) {
+      query = query.or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
+    }
+
+### 14. src/app/facilitator/lessons/page.js (ddcf0631a2f69aa8582e5b17c20193105567fe8a508a5e74cc93dc045fa6a48d)
+- bm25: -12.1317 | relevance: 0.9238
+
+const owned = {}
+            for (const lesson of sortedGeneratedList) {
+              const subj = (lesson?.subject || '').toString().toLowerCase() || 'math'
+              const file = lesson?.file
+              if (file) owned[`${subj}/${file}`] = true
+            }
+            if (!cancelled) setOwnedLessonKeys(owned)
+
+const merged = { ...lessonsMap, generated: [] }
+            for (const lesson of sortedGeneratedList.slice().reverse()) {
+              const subject = lesson.subject || 'math'
+              const generatedLesson = { ...lesson, isGenerated: true }
+              if (!merged[subject]) merged[subject] = []
+              merged[subject].unshift(generatedLesson)
+              merged['generated'].push(generatedLesson)
+            }
+
+if (!cancelled) setAllLessons(merged)
+          }
+        }
+      } catch {
+        // Silent fail
+      }
+    })()
+    return () => { cancelled = true }
+  }, []) // Load once on mount
+
+async function refreshOwnedLessons() {
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) return
+
+const res = await fetch('/api/facilitator/lessons/list', {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) return
+
+const generatedList = await res.json()
+      const sortedGeneratedList = (Array.isArray(generatedList) ? generatedList : []).sort((a, b) => {
+        const timeA = new Date(a?.created_at || 0).getTime()
+        const timeB = new Date(b?.created_at || 0).getTime()
+        return timeB - timeA
+      })
+
+### 15. docs/brain/ingests/pack.md (c4c8f100a25071abdd37e3a676ea7a188fe9fc86430b3f600c5879355aad4113)
+- bm25: -12.0163 | relevance: 0.9232
+
+**`/api/learner/lesson-history`** - completed/incomplete sessions  
+**`/api/medals`** - lesson scores (may 404 for new learners)  
+**`/api/lesson-schedule`** - scheduled lessons (returns `{schedule: [...]}`)  
+**`/api/curriculum-preferences`** - focus/banned content  
+**`/api/generate-lesson-outline`** - GPT outline generation per subject/date
+  - Supports `context` (planner-built history/schedule/plan context)
+  - Supports `promptUpdate` (facilitator-provided steering text, used heavily by Redo)
+
+### 16. docs/brain/calendar-lesson-planning.md (265bc11b6e14ebc78b549a5a598ef082eba677b6a58860236e1c61224231f8bf)
+- bm25: -12.0160 | relevance: 0.9232
+
+**`/api/learner/lesson-history`** - completed/incomplete sessions  
+**`/api/medals`** - lesson scores (may 404 for new learners)  
+**`/api/lesson-schedule`** - scheduled lessons (returns `{schedule: [...]}`)  
+**`/api/curriculum-preferences`** - focus/banned content  
+**`/api/generate-lesson-outline`** - GPT outline generation per subject/date
+  - Supports `context` (planner-built history/schedule/plan context)
+  - Supports `promptUpdate` (facilitator-provided steering text, used heavily by Redo)
+
+### 17. src/app/facilitator/lessons/page.js (3aeb618d125233610a882a3bd9ea8022d983ccf35e4587a427898672704269f2)
+- bm25: -11.9213 | relevance: 0.9226
+
+export default function FacilitatorLessonsPage() {
+  const router = useRouter()
+  const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
+  const { coreSubjects, subjectsWithoutGenerated: subjectDropdownOptions } = useFacilitatorSubjects({ includeGenerated: true })
+  const [pinChecked, setPinChecked] = useState(false)
+  const [tier, setTier] = useState('free')
+  const [learners, setLearners] = useState([])
+  const [selectedLearnerId, setSelectedLearnerId] = useState(null)
+  const [allLessons, setAllLessons] = useState({}) // { subject: [lessons] }
+  const [lessonLibraryScope, setLessonLibraryScope] = useState('owned') // owned | downloadable | all
+  const [ownedLessonKeys, setOwnedLessonKeys] = useState({}) // { 'subject/file.json': true }
+  const [downloadingLesson, setDownloadingLesson] = useState(null) // `${subject}/${file}`
+  const [availableLessons, setAvailableLessons] = useState({}) // { 'subject/lesson_file': true } - lessons shown to learner
+  const [scheduledLessons, setScheduledLessons] = useState({}) // { 'subject/lesson_file': true } - lessons scheduled for today
+  const [futureScheduledLessons, setFutureScheduledLessons] = useState({}) // { 'subject/lesson_file': 'YYYY-MM-DD' } - lessons scheduled for future dates
+  const [activeGoldenKeys, setActiveGoldenKeys] = useState({}) // { 'subject/lesson_file': true }
+  const [lessonNotes, setLessonNotes] = useState({}) // { 'subject/lesson_file': 'note text' }
+  const [medals, setMedals] = useState({}) // { lesson_key: { bestPercent, medalTier } }
+  const [loading, setLoading] = useState(true)
+  const [lessonsLoading, setLessonsLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedS
+
+### 18. docs/brain/ingests/pack.lesson-schedule-debug.md (e2b842c370bb0f99fc9f215cdd7f7ae8c892569b10dc1e4f04911b503e3c107c)
+- bm25: -11.1437 | entity_overlap_w: 3.00 | adjusted: -11.8937 | relevance: 0.9224
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 19. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (db752affeea2f66a776f276697741c41922e9f65f2dad265d123b0fd6b485abd)
+- bm25: -11.1364 | entity_overlap_w: 3.00 | adjusted: -11.8864 | relevance: 0.9224
+
+2025-12-15T01:20:00Z | Copilot | FIX: Build failure - incorrect Supabase import path. Import path '@/lib/supabase' does not exist in project. Corrected to '@/app/lib/supabaseClient' matching pattern used throughout codebase (TutorialGuard, PostLessonSurvey, session page, etc). Build now completes successfully. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (corrected getSupabaseClient import path).
+2025-12-15T01:15:00Z | Copilot | FIX: Redo button failing with 401 Unauthorized error. Redo button fetch call to /api/generate-lesson-outline did not include Authorization header with auth token. API endpoint requires Bearer token for authentication (checks request.headers.authorization). Added getSupabaseClient import to DayViewOverlay, modified handleRedoClick to fetch session token via supabase.auth.getSession() before API call, added 'Authorization': `Bearer ${token}` header to fetch request. Redo button now successfully regenerates lesson outlines. Files: src/app/facilitator/calendar/DayViewOverlay.jsx (imported getSupabaseClient, updated handleRedoClick to get auth token and include in headers).
+2025-12-15T01:00:00Z | Copilot | FEATURE: Implemented color differentiation for scheduled vs planned lessons in calendar. Scheduled lessons display in orange (#fef3c7 bg, #f59e0b indicator), planned lessons display in blue (#dbeafe bg, #3b82f6 indicator). Added isPlannedView prop to LessonCalendar component that determines which color scheme to use. Updated date cell background color logic and indicator dot color to conditionally apply blue for planned view or orange for scheduled view. Calendar page passes isPlannedView={activeTab === 'planner'} prop based on current tab. Visual distinction makes it immediately clear whether viewing scheduled curriculum or planning futu
+
+### 20. src/app/facilitator/calendar/DayViewOverlay.jsx (7577304e3892bf5e4c3fa4aed1b94cdf8d7dd088cc5d8d69899410aea5f9becc)
+- bm25: -11.8434 | relevance: 0.9221
+
+const PICKER_MONTHS_DV = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const buildPickerDaysDV = (year, month) => {
+    const fd = new Date(year, month, 1).getDay()
+    const dim = new Date(year, month + 1, 0).getDate()
+    const cells = []
+    for (let i = 0; i < fd; i++) cells.push(null)
+    for (let d = 1; d <= dim; d++) cells.push(d)
+    return cells
+  }
+
+const handleRescheduleLesson = async (lesson, newDate) => {
+    if (!newDate) return
+    setReschedulingBusy(true)
+    try {
+      const token = await getAuthTokenOrThrow()
+      const del = await fetch(`/api/lesson-schedule?id=${lesson.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+      })
+      if (!del.ok) throw new Error('Failed to remove old schedule')
+      const add = await fetch('/api/lesson-schedule', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId, lessonKey: lesson.lesson_key, scheduledDate: newDate })
+      })
+      if (!add.ok) throw new Error('Failed to reschedule lesson')
+      setReschedulePickerKey(null)
+      if (onLessonGenerated) onLessonGenerated()
+    } catch (err) {
+      alert(err?.message || 'Failed to reschedule lesson')
+    } finally {
+      setReschedulingBusy(false)
+    }
+  }
+
+### 21. docs/brain/ingests/pack.planned-lessons-flow.md (d9468c04764bd8e3c3053ded3e82ce932fe0cdc355425156b28e6a39d73b37c1)
+- bm25: -11.5772 | relevance: 0.9205
+
+// Sort chronologically
+      lessonContext.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+// Get curriculum preferences
+      if (preferencesRes.ok) {
+        curriculumPrefs = await preferencesRes.json()
+      }
+
+// Build context string for GPT
+      let contextText = ''
+      if (lessonContext.length > 0) {
+        contextText += '\n\nLearner Lesson History (chronological):\n'
+        lessonContext.forEach(l => {
+          if (l.status === 'completed' && l.score !== null) {
+            contextText += `- ${l.name} (${l.status}, score: ${l.score}%)\n`
+          } else {
+            contextText += `- ${l.name} (${l.status})\n`
+          }
+        })
+      }
+
+// Review policy thresholds (tuned for "repeat low scores, skip high scores")
+        const LOW_SCORE_REVIEW_THRESHOLD = 70
+        const HIGH_SCORE_AVOID_REPEAT_THRESHOLD = 85
+
+const lowScoreCompleted = lessonContext
+          .filter((l) => l.status === 'completed' && l.score !== null && l.score <= LOW_SCORE_REVIEW_THRESHOLD)
+          .slice(-20)
+
+const highScoreCompleted = lessonContext
+          .filter((l) => l.status === 'completed' && l.score !== null && l.score >= HIGH_SCORE_AVOID_REPEAT_THRESHOLD)
+          .slice(-30)
+
+### 19. docs/brain/calendar-lesson-planning.md (bad918b02a71d06047328cb4b549e073ad8083ccb4d33488af50cae26e835d4c)
+- bm25: -17.9746 | relevance: 1.0000
+
+**Owned-only rule:**
+- The picker shows ONLY facilitator-owned lessons.
+- It does not list public curriculum lessons from `public/lessons`.
+
+### 20. src/app/facilitator/generator/counselor/CounselorClient.jsx (b3bff12a4e114ccf499c988e1a221f45dc4b8dbaf9c141ebdeb90230b9b94c43)
+- bm25: -17.3723 | relevance: 1.0000
+
+### 22. docs/brain/calendar-lesson-planning.md (de0b7e2265d9cfcb4b0c9cd0651ba3db1eb254c5334aa7a65a5b5a4fad4aba17)
+- bm25: -11.5760 | relevance: 0.9205
+
+**Data source and key format:**
+- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
+- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
+
+**Filtering behavior:**
+- Subject grouping uses each lesson's `subject` metadata.
+- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
+
+### Completed Past Scheduled Lessons (History View)
+
+The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
+
+**Data rule:**
+- The schedule loader fetches the learner's schedule history.
+- For dates before "today" (local YYYY-MM-DD), scheduled lessons are included only if there is a matching completion event in `lesson_session_events`.
+
+**Completion matching rule:**
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
+
+**Make-up window rule (7 days):**
+- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
+- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
+
+### 23. src/app/facilitator/calendar/LessonGeneratorOverlay.jsx (e95cccf2122a8de30d54580c51d05d5d8fb83e6f819889c49553190971e84f1e)
+- bm25: -11.5201 | relevance: 0.9201
+
+// Generate the full lesson
+      const res = await fetch('/api/facilitator/lessons/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: form.title,
+          subject: form.subject,
+          difficulty: form.difficulty,
+          grade: form.grade,
+          description: form.description,
+          notes: form.notes,
+          vocab: form.vocab
+        })
+      })
+
+### 24. docs/brain/calendar-lesson-planning.md (b5fceec1ff172ff9be6e16676dfd040ac9bf511ccfa0190409ecada4fe8df328)
+- bm25: -11.4640 | relevance: 0.9198
 
 **Persistence Model:**
 - Planned lessons stored in `planned_lessons` table (facilitator_id, learner_id, scheduled_date, lesson_data JSONB)
@@ -660,135 +751,94 @@ plannedLessons = {
 - **POST** - Save lesson plan with date-specific overwrite (only replaces dates in new plan), expects `{learnerId, plannedLessons}`
 - **DELETE** `?learnerId=X` - Clear all planned lessons for learner
 
-### 4. docs/brain/calendar-lesson-planning.md (edc4501d8cf5402f28f2f259c81317facde5d8c4d278692219fb856850a029d8)
-- bm25: -32.4309 | entity_overlap_w: 1.00 | adjusted: -32.6809 | relevance: 1.0000
+### 25. docs/brain/ingests/pack.lesson-schedule-debug.md (70940359c629eb7191429b557e1c30bb4e172a7c5692b740c4eda364fd8808f7)
+- bm25: -11.4580 | relevance: 0.9197
 
-- `src/app/facilitator/calendar/LessonNotesModal.jsx`
-  - Minimal notes editor for `learners.lesson_notes[lesson_key]`
-  - Empty note deletes the key from the JSONB map
+## Ranked Evidence
 
-### 22. docs/brain/calendar-lesson-planning.md (edc4501d8cf5402f28f2f259c81317facde5d8c4d278692219fb856850a029d8)
-- bm25: -8.5571 | relevance: 0.8954
+### 1. docs/brain/calendar-lesson-planning.md (de0b7e2265d9cfcb4b0c9cd0651ba3db1eb254c5334aa7a65a5b5a4fad4aba17)
+- bm25: -26.6162 | relevance: 1.0000
 
-- `src/app/facilitator/calendar/LessonNotesModal.jsx`
-  - Minimal notes editor for `learners.lesson_notes[lesson_key]`
-  - Empty note deletes the key from the JSONB map
+**Data source and key format:**
+- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
+- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
 
-- `src/app/facilitator/calendar/VisualAidsManagerModal.jsx`
-  - Visual Aids manager for a lessonKey using `/api/visual-aids/load|generate|save`
-  - Uses `VisualAidsCarousel` for selection/upload/save UI
+**Filtering behavior:**
+- Subject grouping uses each lesson's `subject` metadata.
+- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
 
-- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
-  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
+### Completed Past Scheduled Lessons (History View)
 
-**API Routes:**
-- `src/app/api/planned-lessons/route.js`
-  - GET: load by learner, transform DB rows to `{date: [lessons]}` format
-  - POST: date-specific overwrite - extracts dates from new plan, deletes only those dates (.in filter), inserts new rows
-  - DELETE: clear all planned lessons for learner
-  - RLS policies ensure facilitator can only access own data
+The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
 
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
+**Data rule:**
+- The schedule loader fetches the learner's schedule history.
+- For dates before "today" (local YYYY-MM-DD), scheduled lessons are included only if there is a matching completion event in `lesson_session_events`.
 
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
+**Completion matching rule:**
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
 
-## Recent Changes
+**Make-up window rule (7 days):**
+- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
+- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
 
-### 23. docs/brain/calendar-lesson-planning.md (5099a67314b21b85fa6a8156e8fd0f3b3e8f5c4ec53943e5cc4e0d17890d9adb)
-- bm25: -8.4990 | relevance: 0.8947
+### 26. src/app/facilitator/lessons/page.js (8e1d0152023692ca3eaccc2c7316c55555b8511d45303d8f6dda4fa1614eead9)
+- bm25: -11.3921 | relevance: 0.9193
 
-**2025-12-15**: Added adaptive difficulty progression
-- Analyzes last 6 completed lessons to calculate recommended difficulty
-- Moves up to advanced if avg ≥80-85% and appropriate current level
-- Moves down to beginner if avg ≤65%, or to intermediate if avg ≤70% while at advanced
-- Defaults to intermediate with <3 completed lessons
-- Enhanced GPT instructions with "Curriculum Evolution Guidelines" and anti-repetition directives
+// Load all lessons from all subjects immediately on mount
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setLessonsLoading(true)
 
-**2025-12-15**: Added database persistence for planned lessons
-- Created `planned_lessons` table with JSONB lesson_data column
-- Created `/api/planned-lessons` route (GET/POST/DELETE)
-- Modified calendar page to load planned lessons on mount/learner change
-- Added `savePlannedLessons()` that updates state AND persists to database
-- Wired `savePlannedLessons` as callback to LessonPlanner
-- Planned lessons now survive refresh, long absence, logout/login
-- Tied to specific facilitator + learner combination via foreign keys
+const lessonsMap = {}
 
-**2025-12-14**: Fixed medals API 404 causing generation failure
-- Changed endpoint from `/api/learner/medals` to `/api/medals`
-- Decoupled medals loading from history processing
-- Added fallback to empty medals object when API fails
-- Generation now succeeds even without medal data
+// Start loading public lesson lists immediately (no auth needed) and do it in parallel.
+      const publicSubjects = coreSubjects
+      await Promise.all(
+        publicSubjects.map(async (subject) => {
+          try {
+            const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { cache: 'no-store' })
+            if (!res.ok) {
+              lessonsMap[subject] = []
+              return
+            }
+            const list = await res.json()
+            lessonsMap[subject] = Array.isArray(list) ? list : []
+          } catch {
+            lessonsMap[subject] = []
+          }
+        })
+      )
 
-**2025-12-14**: Fixed scheduled lessons API response structure
-- API returns `{schedule: [...]}` not raw array
-- Changed code to access `scheduledData.schedule` property
-- Prevents ".map is not a function" error during context building
+// Initialize generated bucket even if we haven't loaded owned lessons yet.
+      lessonsMap['generated'] = []
 
-### 24. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (c55d605a7ea96572ed8158511c12d142d3485cf43aa1b49aa8ec27278b74b53c)
-- bm25: -8.4944 | relevance: 0.8947
-
-const force = !!opts?.force
-    if (plannedLoadInFlightRef.current) {
-      const inFlightLearner = plannedInFlightLearnerRef.current
-      if (inFlightLearner && inFlightLearner !== targetLearnerId) {
-        abortInFlightLoad(plannedAbortRef, plannedInFlightLearnerRef, 'planned')
-      } else {
-        devWarn('planned: in-flight, skipping', { inFlightLearner })
-        return
+// Publish public lessons ASAP so Load Lessons feels instant.
+      if (!cancelled) {
+        setAllLessons({ ...lessonsMap })
+        setLessonsLoading(false)
       }
-    }
-    if (!force
-      && plannedLoadedForLearnerRef.current === targetLearnerId
-      && (Date.now() - (plannedLoadedAtRef.current || 0)) < MIN_REFRESH_INTERVAL_MS
-    ) {
-      devWarn('planned: throttled, skipping', { targetLearnerId })
-      return
-    }
 
-### 25. docs/brain/ingests/pack.planned-lessons-flow.md (e074ed398bef57bf4187388697ee43b3d448308b1f50fb9269c99a3bb6ab5e3c)
-- bm25: -8.4656 | relevance: 0.8944
+// Now load owned lessons (requires auth) and merge them in.
+      try {
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
 
-### 2. docs/brain/calendar-lesson-planning.md (5099a67314b21b85fa6a8156e8fd0f3b3e8f5c4ec53943e5cc4e0d17890d9adb)
-- bm25: -33.5881 | entity_overlap_w: 3.50 | adjusted: -34.4631 | relevance: 1.0000
+if (token) {
+          const res = await fetch('/api/facilitator/lessons/list', {
+            cache: 'no-store',
+            headers: { Authorization: `Bearer ${token}` }
+          })
 
-**2025-12-15**: Added adaptive difficulty progression
-- Analyzes last 6 completed lessons to calculate recommended difficulty
-- Moves up to advanced if avg ≥80-85% and appropriate current level
-- Moves down to beginner if avg ≤65%, or to intermediate if avg ≤70% while at advanced
-- Defaults to intermediate with <3 completed lessons
-- Enhanced GPT instructions with "Curriculum Evolution Guidelines" and anti-repetition directives
-
-**2025-12-15**: Added database persistence for planned lessons
-- Created `planned_lessons` table with JSONB lesson_data column
-- Created `/api/planned-lessons` route (GET/POST/DELETE)
-- Modified calendar page to load planned lessons on mount/learner change
-- Added `savePlannedLessons()` that updates state AND persists to database
-- Wired `savePlannedLessons` as callback to LessonPlanner
-- Planned lessons now survive refresh, long absence, logout/login
-- Tied to specific facilitator + learner combination via foreign keys
-
-**2025-12-14**: Fixed medals API 404 causing generation failure
-- Changed endpoint from `/api/learner/medals` to `/api/medals`
-- Decoupled medals loading from history processing
-- Added fallback to empty medals object when API fails
-- Generation now succeeds even without medal data
-
-**2025-12-14**: Fixed scheduled lessons API response structure
-- API returns `{schedule: [...]}` not raw array
-- Changed code to access `scheduledData.schedule` property
-- Prevents ".map is not a function" error during context building
-
-### 26. docs/brain/ingests/pack.planned-lessons-flow.md (c985a44d345e351fd61ade599be3e29e3e7386375d077fade62e6f02a4bdad24)
-- bm25: -8.4411 | relevance: 0.8941
+### 27. docs/brain/ingests/pack.planned-lessons-flow.md (c985a44d345e351fd61ade599be3e29e3e7386375d077fade62e6f02a4bdad24)
+- bm25: -11.3620 | relevance: 0.9191
 
 **Data source and key format:**
 - Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
@@ -821,425 +871,509 @@ The Calendar schedule view supports showing scheduled lessons on past dates, but
 ### 24. docs/brain/calendar-lesson-planning.md (1d396766db2440144971a1350400b34ef2799dc2339e2896f9d8c5a4a2c58fe0)
 - bm25: -16.2825 | relevance: 1.0000
 
-### 27. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (3791d1e919e7d0d04a786cad73f40617bcc8f00e86aa5967ab43da172a72991b)
-- bm25: -8.3647 | relevance: 0.8932
+### 28. docs/brain/ingests/pack.md (457324d43ea5d640d2143d6eabafb9637ff47ccee9bda121abde347baffba259)
+- bm25: -11.3620 | relevance: 0.9191
 
-### ✅ DO: Save planned lessons to database immediately after generation
-**Why**: Persistence must be automatic and immediate. User expects generated plan to "just work" across sessions.
+**Data source and key format:**
+- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
+- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
 
-### 28. sidekick_pack.md (a475ff22c1aa00a916e071e88692d18b86e76ca3a394e28c40ff6af3f80b6c05)
-- bm25: -8.2803 | relevance: 0.8922
+**Filtering behavior:**
+- Subject grouping uses each lesson's `subject` metadata.
+- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
 
-### 32. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
-- bm25: -13.5957 | relevance: 1.0000
+### Completed Past Scheduled Lessons (History View)
 
-**Completion query rule (visibility > micro-optimization):**
-- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
-- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
+The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
 
-**Calendar date key rule (marker dots):**
-- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
-- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
-- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
+**Data rule:**
+- The schedule loader fetches the learner's schedule history.
+- For dates before "today" (local YYYY-MM-DD), scheduled lessons are included only if there is a matching completion event in `lesson_session_events`.
 
-### 18. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (7be445ab882a8b5ec4eb6ddf2cb10f9ffe0b8ef65bcdb2d4fb2a0249ed86bb88)
-- bm25: -26.4754 | relevance: 1.0000
+**Completion matching rule:**
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
 
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
+**Make-up window rule (7 days):**
+- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
+- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
+
+### 11. docs/brain/calendar-lesson-planning.md (edc4501d8cf5402f28f2f259c81317facde5d8c4d278692219fb856850a029d8)
+- bm25: -26.0161 | relevance: 1.0000
+
+### 29. docs/brain/ingests/pack.planned-lessons-flow.md (977ea1fb41e88dbfb463ff963fab380938020371c08f2fc5257aaaaa42d3af4b)
+- bm25: -11.3015 | relevance: 0.9187
+
+{customSubjects.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {customSubjects.map(subject => (
+              <div
+                key={subject.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 10px',
+                  background: '#f3f4f6',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: '#374151'
+                }}
+              >
+                {subject.name}
+                <button
+                  onClick={() => handleDeleteCustomSubject(subject.id)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    padding: 0,
+                    lineHeight: 1
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+{/* Planned Lessons Info */}
+      {Object.keys(plannedLessons).length > 0 && (
+        <div style={{
+          background: '#eff6ff',
+          borderRadius: 8,
+          border: '1px solid #93c5fd',
+          padding: 12
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af' }}>
+            ✓ Lesson plan generated! Click on dates in the calendar to see planned lessons.
+          </div>
+        </div>
+      )}
+
+### 10. docs/brain/calendar-lesson-planning.md (db1b960e51971b06a27c642e674e9d2199de30b512b88c4bf9712f0b883539ff)
+- bm25: -23.9661 | relevance: 1.0000
+
+### 30. docs/brain/ingests/pack.md (90a382c3781f765190781869790ccf18304821e4a8a147aac0b1f34bf9033e76)
+- bm25: -11.2537 | relevance: 0.9184
+
+- **Gating**:
+  - Downloadable lessons that are not owned show exactly one action: **Download**.
+  - After Download succeeds, the owned copy exists and the regular lesson controls appear (Edit, per-learner availability, notes, schedule).
+
+### Prefetch Behavior
+
+- On page mount, the client prefetches built-in lesson lists immediately (no auth required) and loads subjects in parallel.
+- Owned lessons are then fetched after auth/session is available and merged into the list.
+- This keeps the UI responsive so clicking "Load Lessons" feels instant even if auth is slow.
+
+### Data/Key Rules
+
+### 25. src/app/facilitator/calendar/LessonPlanner.jsx (fd591deb67440b85e69d10a8c0629a0abe24abd9a3d4d3f92016c00b9d8bf080)
+- bm25: -19.5330 | relevance: 1.0000
+
+const allSubjects = [...CORE_SUBJECTS, ...customSubjects.map(s => s.name)]
+
+### 31. src/app/facilitator/calendar/LessonPlanner.jsx (6eb19de9b4a6b757548c4210ea1a87c087bd6b0056e991a180d330431ea006ea)
+- bm25: -11.2465 | relevance: 0.9183
+
+{customSubjects.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {customSubjects.map(subject => (
+              <div
+                key={subject.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 10px',
+                  background: '#f3f4f6',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: '#374151'
+                }}
+              >
+                {subject.name}
+                <button
+                  onClick={() => handleDeleteCustomSubject(subject.id)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    padding: 0,
+                    lineHeight: 1
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+{/* Planned Lessons Info */}
+      {Object.keys(plannedLessons).length > 0 && (
+        <div style={{
+          background: '#eff6ff',
+          borderRadius: 8,
+          border: '1px solid #93c5fd',
+          padding: 12
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af' }}>
+            ✓ Lesson plan generated! Click on dates in the calendar to see planned lessons.
+          </div>
+        </div>
+      )}
+
+### 32. sidekick_pack.md (64290ed97a847af4937b0a588896e436500fd857627efa1c162e556d74128b94)
+- bm25: -11.2022 | relevance: 0.9180
 
 These actions are implemented on:
 - The main Calendar page schedule list
 - The Calendar Day View overlay schedule list
 - The Mr. Mentor Calendar overlay schedule list
 
-### Portfolio Scan Uploads (Worksheet/Test Images)
+### 30. docs/brain/calendar-lesson-planning.md (4da551360e5a46cca2826bfe58a71289a036bb89df00313db4714021b4cc5eab)
+- bm25: -23.2351 | relevance: 1.0000
 
-### 29. src/app/facilitator/notifications/page.js (f289bb901acc1bf175420d9a5249e4ce233e1c8fb3995cd3564174ee08cd1f60)
-- bm25: -8.2256 | relevance: 0.8916
+**Usage:**
+- `node scripts/check-completions-for-keys.mjs --learner Emma --from 2026-01-05 --to 2026-01-08`
 
-useEffect(() => {
-    if (authLoading) return;
-    if (!isAuthenticated) return;
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, isAuthenticated]);
+### Scheduled Lessons Overlay: Built-in Lesson Editor
 
-const openPrefs = () => {
-    setPrefsDraft(prefs ? {
-      enabled: !!prefs.enabled,
-      planned_unscheduled_enabled: !!prefs.planned_unscheduled_enabled,
-      expired_lessons_enabled: !!prefs.expired_lessons_enabled,
-      subscription_enabled: !!prefs.subscription_enabled
-    } : {
-      enabled: true,
-      planned_unscheduled_enabled: true,
-      expired_lessons_enabled: true,
-      subscription_enabled: true
-    });
-    setPrefsOpen(true);
-  };
+The Calendar day overlay includes an inline lesson editor for scheduled lessons.
 
-const toggleRead = async (id, nextRead) => {
-    setBusyIds((prev) => {
-      const copy = new Set(prev);
-      copy.add(id);
-      return copy;
-    });
-    try {
-      const updated = await setNotificationRead(id, nextRead);
-      setNotifications((prev) => prev.map((n) => (n.id === id ? updated : n)));
-    } catch (e) {
-      setError(e?.message || 'Failed to update notification');
-    } finally {
-      setBusyIds((prev) => {
-        const copy = new Set(prev);
-        copy.delete(id);
-        return copy;
-      });
-    }
-  };
+This editor matches the regular lesson editor for Visual Aids (button + carousel + generation + persistence).
 
-const savePrefs = async () => {
-    if (!prefsDraft) return;
-    setPrefsSaving(true);
-    setError('');
-    try {
-      const facilitatorId = await getCurrentFacilitatorId();
-      const saved = await saveNotificationPrefs(facilitatorId, prefsDraft);
-      setPrefs(saved);
-      setPrefsOpen(false);
-    } catch (e) {
-      setError(e?.message || 'Failed to save preferences');
-    } finally {
-      setPrefsSaving(false);
-    }
-  };
+**Lesson load:**
+- Uses `GET /api/facilitator/lessons/get?file=<lesson_key>`
+- This endpoint requires an `Authorization: Bearer <access_token>` header.
+- The API derives the facilitator user id from the bearer token and loads from `facilitator-lessons/<userId>/...`.
+- Client code must not rely on a `userId` query param for this endpoint.
 
-### 30. docs/brain/ingests/pack.lesson-schedule-debug.md (12989ad8d07322ac9f6432c7f1b12df965613cda4dca19e643cdb09dba0e6e92)
-- bm25: -8.1677 | relevance: 0.8909
+**Lesson save:**
+- Uses `PUT /api/facilitator/lessons/update` with JSON body `{ file, lesson }` and `Authorization: Bearer <access_token>`.
+- The server enforces that the authenticated user can only edit their own lessons.
 
-### Manual Scheduling: "Add Lessons" Picker
+### 33. sidekick_pack.md (3f3c176dc6a1ced225717f1bd569e7abfe0dd3af095d1f4e365d6e563ed3fa37)
+- bm25: -11.1994 | relevance: 0.9180
 
-The Calendar page includes an "Add Lessons" panel for manually assigning lesson files to specific dates.
+**Completion matching rule:**
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
 
-### 23. docs/brain/calendar-lesson-planning.md (5099a67314b21b85fa6a8156e8fd0f3b3e8f5c4ec53943e5cc4e0d17890d9adb)
-- bm25: -18.7846 | relevance: 1.0000
+**Make-up window rule (7 days):**
+- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
+- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
 
-**2025-12-15**: Added adaptive difficulty progression
-- Analyzes last 6 completed lessons to calculate recommended difficulty
-- Moves up to advanced if avg ≥80-85% and appropriate current level
-- Moves down to beginner if avg ≤65%, or to intermediate if avg ≤70% while at advanced
-- Defaults to intermediate with <3 completed lessons
-- Enhanced GPT instructions with "Curriculum Evolution Guidelines" and anti-repetition directives
+### 11. docs/brain/calendar-lesson-planning.md (edc4501d8cf5402f28f2f259c81317facde5d8c4d278692219fb856850a029d8)
+- bm25: -26.0161 | relevance: 1.0000
 
-**2025-12-15**: Added database persistence for planned lessons
-- Created `planned_lessons` table with JSONB lesson_data column
-- Created `/api/planned-lessons` route (GET/POST/DELETE)
-- Modified calendar page to load planned lessons on mount/learner change
-- Added `savePlannedLessons()` that updates state AND persists to database
-- Wired `savePlannedLessons` as callback to LessonPlanner
-- Planned lessons now survive refresh, long absence, logout/login
-- Tied to specific facilitator + learner combination via foreign keys
+### 15. docs/brain/ingests/pack.planned-lessons-flow.md (c985a44d345e351fd61ade599be3e29e3e7386375d077fade62e6f02a4bdad24)
+- bm25: -27.9567 | relevance: 1.0000
 
-**2025-12-14**: Fixed medals API 404 causing generation failure
-- Changed endpoint from `/api/learner/medals` to `/api/medals`
-- Decoupled medals loading from history processing
-- Added fallback to empty medals object when API fails
-- Generation now succeeds even without medal data
+**Data source and key format:**
+- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
+- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
 
-**2025-12-14**: Fixed scheduled lessons API response structure
-- API returns `{schedule: [...]}` not raw array
-- Changed code to access `scheduledData.schedule` property
-- Prevents ".map is not a function" error during context building
+**Filtering behavior:**
+- Subject grouping uses each lesson's `subject` metadata.
+- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
 
-### 31. docs/brain/changelog.md (0e54fa3021f5880823f03c827371d24752fe976456e6c7bf9dc17b57ebbc36ed)
-- bm25: -8.1143 | relevance: 0.8903
+### Completed Past Scheduled Lessons (History View)
 
-﻿2026-02-09T01:00:04Z | Copilot | Mr. Mentor Calendar overlay now force-refreshes planned/scheduled/completed markers; removes stale self-cache that blocked polling updates [#MentorInterceptor: CalendarOverlay, refresh, planned-lessons] 
-2026-02-05T03:28:35Z | Copilot | Fix Calendar LessonPlanner JSX parse error (Duration <select> tag) that broke Vercel Next build [#calendar-lesson-planning: LessonPlanner, JSX, build] 
-2026-02-05T00:30:46Z | Copilot | Entitlements: resolveEffectiveTier now considers subscription_tier + plan_tier (Premium->Pro in either) to prevent false lockouts [#gating-system: tier-normalization, resolveEffectiveTier, tier-gates]
-2026-02-05T00:25:09Z | Copilot | Mr. Mentor: remove blocking Pro overlay; signed-in view + read-only loads; gate session init and actions behind Pro [#gating-system: window-shopping, view-only, tier-gates] [#mr-mentor-sessions: realtime conflict detection, session takeover, heartbeat polling]
-2026-02-04T21:15:00Z | Copilot | Calendar: always viewable when signed in; gate only schedule/plan writes behind Pro (no tier-blocking overlay) [#calendar-lesson-planning: view-only, canPlan, manual-scheduling] [#gating-system: window-shopping, tier-gates, view-only]
-2026-02-04T20:59:14Z | Copilot | Normalize legacy plan_tier values (premium/plus/basic) so learner caps and entitlements resolve correctly [#gating-system: tier-gates, useAccessControl, universal-gating]
-2026-02-04T19:31:04Z | Copilot | Clean up remaining legacy tier refs (Basic/Plus/Premium) in UI copy, docs, tasks, and schema examples [#gating-system: requiredFeature, requiredTier, window-shopping] [#account-provisioning: provision wrapper, plan_tier values] [#lesson-quota: lessonsPerDay, quota overlay] [#calendar-lesson-planning: lessonPlanner, tier-gate]
-2026-02-04T18:14
+The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
 
-### 32. docs/brain/tts-prefetching.md (edcb8c1a972c4e179c52dea1736883e05713d12c1179a797d2128f88803a9626)
-- bm25: -8.0966 | relevance: 0.8901
+### 34. sidekick_pack.md (1f6274a84a55ab7a17f92e611febefdaec3e2da83bb2ddc88fe58c6e23404ae4)
+- bm25: -11.1256 | relevance: 0.9175
 
-**API**:
-- `src/app/api/tts/route.js`: TTS endpoint that returns `{ audio: base64 }`
+**Completion matching rule:**
+- A scheduled lesson is considered completed when there is a `lesson_session_events` row with:
+  - `event_type = 'completed'`
+  - `lesson_id` matching the scheduled `lesson_key` after canonicalization
+  - `occurred_at` (converted to local YYYY-MM-DD) matching **either**:
+    - the same `lesson_schedule.scheduled_date` (on-time / same-day), **or**
+    - a date within **7 days after** `lesson_schedule.scheduled_date` (make-up completion)
 
-## Performance Impact
+**Make-up window rule (7 days):**
+- The Calendar treats “completed later than scheduled” as completed for the scheduled day only within a short window.
+- This is specifically to support common homeschool workflows where Monday/Tuesday lessons are completed on Wednesday/Thursday.
 
-**Before**: 2-3 second wait between questions (TTS generation time)
-**After**: Questions 2+ load instantly (cache hit), only Q1 shows loading
+### 24. docs/brain/calendar-lesson-planning.md (1d396766db2440144971a1350400b34ef2799dc2339e2896f9d8c5a4a2c58fe0)
+- bm25: -16.2825 | relevance: 1.0000
 
-**Cache stats during 5-question comprehension**:
-- Q1: Cache miss (no prefetch yet) - 2-3s wait
-- Q2: Cache hit (prefetched during Q1) - instant
-- Q3: Cache hit (prefetched during Q2) - instant
-- Q4: Cache hit (prefetched during Q3) - instant
-- Q5: Cache hit (prefetched during Q4) - instant
+### 16. docs/brain/ingests/pack.lesson-schedule-debug.md (70940359c629eb7191429b557e1c30bb4e172a7c5692b740c4eda364fd8808f7)
+- bm25: -27.8640 | relevance: 1.0000
 
-**Total time saved**: 8-12 seconds per 5-question phase.
+## Ranked Evidence
 
-## Edge Cases
+### 1. docs/brain/calendar-lesson-planning.md (de0b7e2265d9cfcb4b0c9cd0651ba3db1eb254c5334aa7a65a5b5a4fad4aba17)
+- bm25: -26.6162 | relevance: 1.0000
 
-**Skip During Prefetch**:
-- Prefetch continues in background (silent)
-- Cache stores result even if not used
-- Worst case: slight network waste, no user impact
+**Data source and key format:**
+- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
+- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
 
-**Failed Prefetch**:
-- Silent catch, no cache entry
-- Next question falls back to normal fetch (shows loading)
-- User sees 2-3s wait but flow works normally
+**Filtering behavior:**
+- Subject grouping uses each lesson's `subject` metadata.
+- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
 
-**Concurrent Prefetches**:
-- Each prefetch gets unique AbortController
-- Multiple pending fetches tracked in Map
-- Phase transition aborts ALL pending
+### Completed Past Scheduled Lessons (History View)
 
-**Resume from Refresh**:
-- Cache doesn't persist (memory only)
-- First question after refresh shows loading
-- Subsequent questions prefetch normally
+### 35. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (6f21e8c53d45aa7cb79771bb3c67723de5b861fd8aff799b290e1cbc7f251295)
+- bm25: -11.1097 | relevance: 0.9174
 
-**Celebration Text Variations**:
-```javascript
-// WRONG - prefetch won't match actual spoken text
-ttsCache.prefetch(nextQ); // Just the question
-await speakFrontend(`${celebration}. ${nextQ}`); // Celebration + question
+<div style={{ marginTop: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowPlannerOverlay(true)}
+                    disabled={!learnerId || learnerId === 'none'}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      fontSize: 12,
+                      fontWeight: 800,
+                      borderRadius: 8,
+                      border: '1px solid #d1d5db',
+                      background: (!learnerId || learnerId === 'none') ? '#f3f4f6' : '#111827',
+                      color: (!learnerId || learnerId === 'none') ? '#9ca3af' : '#fff',
+                      cursor: (!learnerId || learnerId === 'none') ? 'not-allowed' : 'pointer'
+                    }}
+                    title={(!learnerId || learnerId === 'none') ? 'Select a learner first' : 'Open the full Lesson Planner'}
+                  >
+                    Create a Lesson Plan
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 12, color: '#9ca3af', fontStyle: 'italic' }}>
+                  {(!learnerId || learnerId === 'none')
+                    ? 'Select a learner to view planned lessons'
+                    : (selectedDate ? 'No planned lessons' : 'Select a date to view planned lessons')}
+                </div>
 
-// RIGHT - prefetch exact text that will be spoken
-const prefetchText = `${CELEBRATE_CORRECT[0]}. ${nextQ}`;
-ttsCache.prefetch(prefetchText);
-```
+### 36. src/lib/faq/facilitator-tools.json (01d1775600d96190823d9a009a124babf1c8c002bd0016694f7f2e5a685b8241)
+- bm25: -11.0923 | relevance: 0.9173
 
-Uses first celebration variant for prefetch since we can't predict random selection.
+{
+  "category": "Facilitator Settings & Tools",
+  "features": [
+    {
+      "id": "facilitator-dashboard",
+      "title": "Facilitator Dashboard",
+      "keywords": [
+        "facilitator dashboard",
+        "dashboard",
+        "facilitator tools",
+        "adult tools",
+        "teacher tools"
+      ],
+      "description": "The Facilitator Dashboard is where you manage learners, lessons, scheduling, and account-level facilitator tools.",
+      "howToUse": "Open the facilitator area and use the Learners and Lessons sections to manage your work. Mr. Mentor can also open key overlays for you.",
+      "relatedFeatures": ["learner-profiles", "lesson-library", "mr-mentor"]
+    },
+    {
+      "id": "goals-clipboard",
+      "title": "Goals Clipboard",
+      "keywords": [
+        "goals clipboard",
+        "goals button",
+        "notes clipboard",
+        "open goals"
+      ],
+      "description": "The Goals clipboard is the UI where you view and edit Goals and Notes for the selected learner (or facilitator).",
+      "howToUse": "Click the 'Goals' button to open it. Mr. Mentor can also help you review what’s saved (report) or suggest what to write (describe/advice).",
+      "relatedFeatures": ["goals-notes"]
+    },
+    {
+      "id": "lessons-overlay",
+      "title": "Lessons Overlay",
+      "keywords": [
+        "lessons overlay",
+        "lessons button",
+        "open lessons",
+        "show my lessons",
+        "lesson list"
+      ],
+      "description": "The Lessons overlay is a quick way to browse, search, and act on lessons (schedule, assign/approve, edit, or review).",
+      "howToUse": "Click the 'Lessons' button, or ask Mr. Mentor to show lessons and help you find the one you want.",
+      "relatedFeatures": ["lesson-library", "lesson-scheduling", "lesson-editing"]
 
-## Debug Helpers
+### 37. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (e47ddd04b34ab36279c5d316853898791919b110f8830092679f492ed463f28c)
+- bm25: -10.9551 | relevance: 0.9164
 
-### 33. docs/brain/ingests/pack.md (a838aa65e66cc882806bbd97ce6cd65ddb5dd60a2df471902da645af333bd942)
-- bm25: -8.0524 | relevance: 0.8895
+**Flow (entry points):**
+1. Facilitator Lessons page: navigate to `facilitator/lessons`, select learner, expand subject
+2. Calendar schedule view (past completed lessons): click **Notes** on a scheduled lesson
+3. Mr. Mentor Calendar overlay (past completed lessons): click **Notes** on a scheduled lesson
+4. Type note text and save
+5. Empty note deletes the key from the JSONB map (no empty-string storage)
+5. When facilitator discusses learner with Mr. Mentor, notes appear in transcript:
+   ```
+   FACILITATOR NOTES ON LESSONS:
 
-### 2. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
-- bm25: -35.1192 | relevance: 1.0000
+### 38. src/app/facilitator/generator/counselor/MentorInterceptor.js (f4ac7b7c15763423d23bed0191b3efd98dee41efb20a528414769c1fba0e90bb)
+- bm25: -10.9247 | relevance: 0.9161
 
-**Completion query rule (visibility > micro-optimization):**
-- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
-- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
+// Escape hatch for any structured flow.
+    if (this.state.flow && this.state.awaitingInput && this.isEscapeMessage(userMessage)) {
+      const normalized = normalizeText(userMessage)
 
-**Calendar date key rule (marker dots):**
-- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
-- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
-- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
-
-**Calendar month focus rule (history discoverability):**
-- When a learner is selected on the Schedule tab, the calendar grid should auto-focus to the month containing the most recent scheduled date (preferably a past/completed date when available).
-- This prevents the calendar from looking "empty" on the current month when the learner's completed history is in earlier months.
-
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
-
-### 34. docs/brain/ingests/pack.planned-lessons-flow.md (0c267f88511874e9aa926f255c08f624faee2b4e83d515c7f72f326776e0c3d2)
-- bm25: -8.0494 | relevance: 0.8895
-
-- On page mount, the client prefetches built-in lesson lists immediately (no auth required) and loads subjects in parallel.
-- Owned lessons are then fetched after auth/session is available and merged into the list.
-- This keeps the UI responsive so clicking "Load Lessons" feels instant even if auth is slow.
-
-### 35. docs/brain/ingests/pack.lesson-schedule-debug.md (7b6a5ae27f0b9bafc01effbfbe0540f8869c9f810eb899dbca033e71d05ebe01)
-- bm25: -8.0448 | relevance: 0.8894
-
-﻿2026-02-09T01:00:04Z | Copilot | Mr. Mentor Calendar overlay now force-refreshes planned/scheduled/completed markers; removes stale self-cache that blocked polling updates [#MentorInterceptor: CalendarOverlay, refresh, planned-lessons] 
-2026-02-05T03:28:35Z | Copilot | Fix Calendar LessonPlanner JSX parse error (Duration <select> tag) that broke Vercel Next build [#calendar-lesson-planning: LessonPlanner, JSX, build] 
-2026-02-05T00:30:46Z | Copilot | Entitlements: resolveEffectiveTier now considers subscription_tier + plan_tier (Premium->Pro in either) to prevent false lockouts [#gating-system: tier-normalization, resolveEffectiveTier, tier-gates]
-2026-02-05T00:25:09Z | Copilot | Mr. Mentor: remove blocking Pro overlay; signed-in view + read-only loads; gate session init and actions behind Pro [#gating-system: window-shopping, view-only, tier-gates] [#mr-mentor-sessions: realtime conflict detection, session takeover, heartbeat polling]
-2026-02-04T21:15:00Z | Copilot | Calendar: always viewable when signed in; gate only schedule/plan writes behind Pro (no tier-blocking overlay) [#calendar-lesson-planning: view-only, canPlan, manual-scheduling] [#gating-system: window-shopping, tier-gates, view-only]
-2026-02-04T20:59:14Z | Copilot | Normalize legacy plan_tier values (premium/plus/basic) so learner caps and entitlements resolve correctly [#gating-system: tier-gates, useAccessControl, universal-gating]
-2026-02-04T19:31:04Z | Copilot | Clean up remaining legacy tier refs (Basic/Plus/Premium) in UI copy, docs, tasks, and schema examples [#gating-system: requiredFeature, requiredTier, window-shopping] [#account-provisioning: provision wrapper, plan_tier values] [#lesson-quota: lessonsPerDay, quota overlay] [#calendar-lesson-planning: lessonPlanner, tier-gate]
-2026-02-04T18:14
-
-### 36. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (1da55e732affaa214805f19e9609c30a8abd65c5572b458ab7795f4208a304be)
-- bm25: -8.0448 | relevance: 0.8894
-
-﻿2026-02-09T01:00:04Z | Copilot | Mr. Mentor Calendar overlay now force-refreshes planned/scheduled/completed markers; removes stale self-cache that blocked polling updates [#MentorInterceptor: CalendarOverlay, refresh, planned-lessons] 
-2026-02-05T03:28:35Z | Copilot | Fix Calendar LessonPlanner JSX parse error (Duration <select> tag) that broke Vercel Next build [#calendar-lesson-planning: LessonPlanner, JSX, build] 
-2026-02-05T00:30:46Z | Copilot | Entitlements: resolveEffectiveTier now considers subscription_tier + plan_tier (Premium->Pro in either) to prevent false lockouts [#gating-system: tier-normalization, resolveEffectiveTier, tier-gates]
-2026-02-05T00:25:09Z | Copilot | Mr. Mentor: remove blocking Pro overlay; signed-in view + read-only loads; gate session init and actions behind Pro [#gating-system: window-shopping, view-only, tier-gates] [#mr-mentor-sessions: realtime conflict detection, session takeover, heartbeat polling]
-2026-02-04T21:15:00Z | Copilot | Calendar: always viewable when signed in; gate only schedule/plan writes behind Pro (no tier-blocking overlay) [#calendar-lesson-planning: view-only, canPlan, manual-scheduling] [#gating-system: window-shopping, tier-gates, view-only]
-2026-02-04T20:59:14Z | Copilot | Normalize legacy plan_tier values (premium/plus/basic) so learner caps and entitlements resolve correctly [#gating-system: tier-gates, useAccessControl, universal-gating]
-2026-02-04T19:31:04Z | Copilot | Clean up remaining legacy tier refs (Basic/Plus/Premium) in UI copy, docs, tasks, and schema examples [#gating-system: requiredFeature, requiredTier, window-shopping] [#account-provisioning: provision wrapper, plan_tier values] [#lesson-quota: lessonsPerDay, quota overlay] [#calendar-lesson-planning: lessonPlanner, tier-gate]
-2026-02-04T18:14
-
-### 37. docs/brain/ingests/pack.lesson-schedule-debug.md (43275361c85baceec81d8ab6835df496d5162a8f4cd178ae0c41a5029e83ffac)
-- bm25: -8.0016 | relevance: 0.8889
-
-### 19. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
-- bm25: -20.0203 | relevance: 1.0000
-
-**Completion query rule (visibility > micro-optimization):**
-- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
-- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
-
-**Calendar date key rule (marker dots):**
-- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
-- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
-- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
-
-**Calendar month focus rule (history discoverability):**
-- When a learner is selected on the Schedule tab, the calendar grid should auto-focus to the month containing the most recent scheduled date (preferably a past/completed date when available).
-- This prevents the calendar from looking "empty" on the current month when the learner's completed history is in earlier months.
-
-**UI rule (Schedule tab only):**
-- For past (completed) scheduled lessons, actions change to:
-  - **Notes**: edits `learners.lesson_notes[lesson_key]`.
-  - **Visual Aids**: opens Visual Aids manager (load/generate/save) for that `lessonKey`.
-  - **Add Images**: uploads new worksheet/test scan files for the learner+lesson (portfolio artifacts; separate from Visual Aids).
-  - **Remove**: requires typing `remove` and warns it cannot be undone.
-
-### 38. docs/brain/ingests/pack.planned-lessons-flow.md (828367e4a4701d8a92e8f5ed6dc2fed533e1ef01494bf7f003ff042bef82a559)
-- bm25: -7.9781 | relevance: 0.8886
-
-### 22. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (260bb5af0a56cc92d5644d5052871273cbaaa8688deaae8b50bc28a03eb49591)
-- bm25: -16.9634 | entity_overlap_w: 1.50 | adjusted: -17.3384 | relevance: 1.0000
-
-try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-
-if (!token) {
-        setPlannedLessons({})
-        return
-      }
-
-const response = await fetch(`/api/planned-lessons?learnerId=${targetLearnerId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-if (!response.ok) {
-        setPlannedLessons({})
-        return
-      }
-
-const result = await response.json()
-      setPlannedLessons(result.plannedLessons || {})
-      plannedLoadedForLearnerRef.current = targetLearnerId
-      plannedLoadedAtRef.current = Date.now()
-    } catch (err) {
-      setPlannedLessons({})
-    } finally {
-      plannedLoadInFlightRef.current = false
-    }
-  }, [])
-
-const loadSchedule = useCallback(async (opts = {}) => {
-    return loadScheduleForLearner(learnerId, opts)
-  }, [learnerId, loadScheduleForLearner])
-
-const loadPlanned = useCallback(async (opts = {}) => {
-    return loadPlannedForLearner(learnerId, opts)
-  }, [learnerId, loadPlannedForLearner])
-
-const loadCalendarData = useCallback(async (opts = {}) => {
-    await Promise.all([loadSchedule(opts), loadPlanned(opts)])
-  }, [loadPlanned, loadSchedule])
-
-const handleRemoveScheduledLessonById = async (scheduleId, opts = {}) => {
-    if (!scheduleId) return
-    if (!opts?.skipConfirm) {
-      if (!confirm('Remove this lesson from the schedule?')) return
-    }
-
-### 39. src/app/facilitator/generator/counselor/MentorInterceptor.js (05f7901106371bb7dbec724cb4d1e8394aaf456b5e4692ccb481d88f19f65109)
-- bm25: -7.9164 | relevance: 0.8878
-
-const wantsCurriculum = normalized.includes('curriculum') || normalized.includes('preference') || normalized.includes('banned') || normalized.includes('avoid')
-    const wantsPattern = normalized.includes('weekly pattern') || (normalized.includes('pattern') && normalized.includes('week')) || normalized.includes('schedule template')
-    const wantsCustomSubjectAdd = (normalized.includes('add') || normalized.includes('create') || normalized.includes('new')) && normalized.includes('subject')
-    const wantsCustomSubjectDelete = (normalized.includes('delete') || normalized.includes('remove')) && normalized.includes('subject')
-    const wantsPlan = (normalized.includes('lesson plan') || normalized.includes('lesson planner') || normalized.includes('planned lessons')) &&
-      (normalized.includes('schedule') || normalized.includes('generate') || normalized.includes('make') || normalized.includes('start') || normalized.includes('duration'))
-
-if (wantsCustomSubjectAdd) {
-      this.state.flow = 'custom_subject_add'
-
-// Attempt to extract name after "subject"
-      const match = userMessage.match(/subject\s+(.+)$/i)
-      const maybeName = match?.[1] ? String(match[1]).trim() : ''
-      if (maybeName && maybeName.length <= 60) {
-        this.state.context.subjectName = maybeName
-        this.state.awaitingConfirmation = true
-        this.state.awaitingInput = null
+if (normalized.includes('different issue') || normalized.includes('something else')) {
+        this.reset()
         return {
-          handled: true,
-          response: `Should I add a custom subject named "${maybeName}"?`
+          handled: false,
+          apiForward: { message: userMessage, bypassInterceptor: true }
         }
       }
 
-this.state.awaitingInput = 'custom_subject_name'
+this.reset()
       return {
         handled: true,
-        response: 'What custom subject would you like me to add?'
+        response: 'No problem. What would you like to do instead?'
       }
     }
 
-if (wantsCustomSubjectDelete) {
-      this.state.flow = 'custom_subject_delete'
+// Lesson plan chooser (routes into subflows)
+    if (this.state.awaitingInput === 'lesson_plan_choice') {
+      const normalized = normalizeText(userMessage)
+      if (normalized.includes('curriculum') || normalized.includes('preference') || normalized.includes('avoid')) {
+        return await this.handleLessonPlan('curriculum preferences', context)
+      }
+      if (normalized.includes('pattern') || normalized.includes('weekly')) {
+        return await this.handleLessonPlan('weekly pattern', context)
+      }
+      if (normalized.includes('subject')) {
+        // Ask clarifier for add vs delete.
+        this.state.awaitingInput = 'lesson_plan_subject_action'
+        return {
+          handled: true,
+          response: 'Do you want to add a new custom subject, or delete an existing one?'
+        }
+      }
+      if (normalized.includes('schedule') || normalized.includes('generate') || normalized.includes('plan')) {
+        return await this.handleLessonPlan('schedule a lesson plan', context)
+      }
 
-### 40. docs/brain/ingests/pack-mentor-intercepts.md (8a7301d0500f96c08aa055fafd78dfff6d432220ac856186ec0fc23816f67eb4)
-- bm25: -7.7917 | relevance: 0.8863
+return {
+        handled: true,
+        response: 'Would you like to work on curriculum preferences, weekly pattern, custom subjects, or scheduling a lesson plan?'
+      }
+    }
 
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
+### 39. src/app/facilitator/lessons/page.js (5999d823a6da00cc3e4b1c9c307b57ae0784d513c746865011370f6ae142f5a3)
+- bm25: -10.9066 | relevance: 0.9160
 
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
+// If a public lesson has been downloaded (owned copy exists), hide the public entry.
+        if (!isOwned && ownedByKey) return
 
-## Recent Changes
+if (lessonLibraryScope === 'owned' && !isOwned) return
+        if (lessonLibraryScope === 'downloadable' && isOwned) return
 
-### 19. docs/brain/MentorInterceptor_Architecture.md (b30a12376305295c1ddcb75bee3d82a3ed8acd72d64038cfbc7e8c026aea67e9)
-- bm25: -14.6288 | relevance: 1.0000
+const lessonKey = lesson.isGenerated 
+          ? `generated/${lesson.file}` 
+          : `${subject}/${lesson.file}`
+        
+        const hasMetalData = medals[lessonKey]
+        
+        // Normalize lesson grade
+        let lessonGrade = null
+        if (lesson.grade) {
+          lessonGrade = String(lesson.grade).trim().replace(/(?:st|nd|rd|th)$/i, '').toUpperCase()
+        }
+        
+        // Apply grade filter
+        if (selectedGrade !== 'all' && lessonGrade !== selectedGrade) return
+        
+        // Apply search filter
+        const searchLower = searchTerm.toLowerCase()
+        if (searchTerm && !lesson.title.toLowerCase().includes(searchLower)) return
+        
+        filtered.push({
+          ...lesson,
+          subject,
+          lessonKey,
+          displayGrade: lessonGrade
+        })
+      })
+    })
+    
+    // Sort by subject, then grade, then title
+    filtered.sort((a, b) => {
+      if (a.subject !== b.subject) {
+        return a.subject.localeCompare(b.subject)
+      }
+      if (a.displayGrade !== b.displayGrade) {
+        // Handle K specially
+        if (a.displayGrade === 'K') return -1
+        if (b.displayGrade === 'K') return 1
+        const numA = parseInt(a.displayGrade) || 0
+        const numB = parseInt(b.displayGrade) || 0
+        return numA - numB
+      }
+      return a.title.localeCompare(b.title)
+    })
+    
+    return filtered
+  }
 
-# MentorInterceptor Architecture
+### 40. src/app/facilitator/lessons/page.js (80a9b04c22e05f3fcb2bfbd98ed2dcbe69ef4ba0143cf2e3c524445144e7b241)
+- bm25: -10.8836 | relevance: 0.9159
 
-**Created:** November 17, 2025  
-**Status:** Deployed and active in Mr. Mentor counselor UI  
-**Commits:** 6890d3b → ab3fed4
+<select
+                value={lessonLibraryScope}
+                onChange={(e) => setLessonLibraryScope(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  background: '#fff',
+                  cursor: 'pointer',
+                  minWidth: '150px'
+                }}
+              >
+                <option value="owned">Owned</option>
+                <option value="downloadable">Downloadable</option>
+                <option value="all">All Lessons</option>
+              </select>
 
-## Purpose
-
-Front-end conversation handler for Mr. Mentor that intercepts user messages to:
-- Provide instant responses without API calls where possible
-- Gather parameters through multi-turn Q&A before executing actions
-- Create confirmation flows for all actions (schedule, generate, edit)
-- Make front-end and back-end handling indistinguishable to users
-- Reduce API costs and improve responsiveness
-
-## Architecture
-
-### File Structure
+<button
+                onClick={() => setShowLessons(true)}
+                disabled={showLessons}
+                style={{
+                  padding: '10px 24px',
+                  background: showLessons ? '#e5e7eb' : '#3b82f6',
+                  color: showLessons ? '#9ca3af' : '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  cursor: showLessons ? 'default' : 'pointer',
+                  fontSize: 14,
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Load Lessons
+              </button>
 
 
 ---

@@ -537,6 +537,14 @@ export default function CalendarPage() {
     }
   }
 
+  const handlePlannedLessonAdd = (date, lesson) => {
+    if (!requirePlannerAccess()) return
+    const updated = { ...plannedLessons }
+    if (!updated[date]) updated[date] = []
+    updated[date] = [...updated[date], lesson]
+    savePlannedLessons(updated)
+  }
+
   const handleScheduleLesson = async (lessonKey, date) => {
     if (!requirePlannerAccess()) return
     try {
@@ -1421,6 +1429,7 @@ export default function CalendarPage() {
                 onNoSchoolSet={handleNoSchoolSet}
                 onPlannedLessonUpdate={handlePlannedLessonUpdate}
                 onPlannedLessonRemove={handlePlannedLessonRemove}
+                onPlannedLessonAdd={handlePlannedLessonAdd}
               />
             )}
           </>

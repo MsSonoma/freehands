@@ -10,6 +10,8 @@ import VisualAidsManagerModal from './VisualAidsManagerModal'
 import PortfolioScansModal from './PortfolioScansModal'
 import TypedRemoveConfirmModal from './TypedRemoveConfirmModal'
 
+const CORE_SUBJECTS_DV = ['math', 'language arts', 'science', 'social studies', 'general']
+
 export default function DayViewOverlay({ 
   selectedDate, 
   scheduledLessons = [], 
@@ -23,6 +25,7 @@ export default function DayViewOverlay({
   onNoSchoolSet,
   onPlannedLessonUpdate,
   onPlannedLessonRemove,
+  onPlannedLessonAdd,
   noSchoolReason = null
 }) {
   const getLocalTodayStr = () => {
@@ -62,6 +65,15 @@ export default function DayViewOverlay({
   const [reschedulePickerKey, setReschedulePickerKey] = useState(null)
   const [reschedulePickerMonth, setReschedulePickerMonth] = useState(() => { const n = new Date(); return { year: n.getFullYear(), month: n.getMonth() } })
   const [reschedulingBusy, setReschedulingBusy] = useState(false)
+
+  // + Add menu state
+  const [addMenuStep, setAddMenuStep] = useState(null) // null | 'top' | 'schedule' | 'own' | 'plan'
+  const [ownedLessons, setOwnedLessons] = useState([])
+  const [loadingOwned, setLoadingOwned] = useState(false)
+  const [schedulingOwned, setSchedulingOwned] = useState(null)
+  const [planningSubject, setPlanningSubject] = useState(null)
+  const [dvCustomSubjects, setDvCustomSubjects] = useState([])
+  const [dvCustomSubjectsLoaded, setDvCustomSubjectsLoaded] = useState(false)
 
   const MAX_GENERATIONS = 4
 
@@ -706,6 +718,147 @@ export default function DayViewOverlay({
     }
   }
 
+  // ── + Add menu helpers ──────────────────────────────────────────────────────
+
+  const loadOwnedLessons = async () => {
+    if (loadingOwned) return
+    setLoadingOwned(true)
+    try {
+      const token = await getAuthTokenOrThrow()
+      const res = await fetch('/api/facilitator/lessons/list', {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('Failed to load lessons')
+      const list = await res.json()
+      setOwnedLessons(Array.isArray(list) ? list.sort((a, b) => (a.title || '').localeCompare(b.title || '')) : [])
+    } catch {
+      setOwnedLessons([])
+    } finally {
+      setLoadingOwned(false)
+    }
+  }
+
+  const handleScheduleOwned = async (lesson) => {
+    if (!learnerId || !selectedDate) return
+    const lessonKey = `generated/${lesson.file}`
+    setSchedulingOwned(lessonKey)
+    try {
+      const token = await getAuthTokenOrThrow()
+      const res = await fetch('/api/lesson-schedule', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId, lessonKey, scheduledDate: selectedDate })
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        throw new Error(err?.error || 'Failed to schedule lesson')
+      }
+      const data = await res.json().catch(() => null)
+      setAddMenuStep(null)
+      if (onLessonGenerated) onLessonGenerated(data?.schedule || null)
+    } catch (err) {
+      alert(err?.message || 'Failed to schedule lesson')
+    } finally {
+      setSchedulingOwned(null)
+    }
+  }
+
+  const loadCustomSubjectsDV = async () => {
+    if (dvCustomSubjectsLoaded) return
+    try {
+      const token = await getAuthTokenOrThrow()
+      const res = await fetch('/api/custom-subjects', { headers: { Authorization: `Bearer ${token}` } })
+      if (res.ok) {
+        const result = await res.json()
+        setDvCustomSubjects(result.subjects || [])
+      }
+    } catch {
+      // silent
+    } finally {
+      setDvCustomSubjectsLoaded(true)
+    }
+  }
+
+  const handleAutoGeneratePlan = async (subject) => {
+    if (!onPlannedLessonAdd) return
+    if (!learnerId || !selectedDate) return
+    setPlanningSubject(subject)
+    try {
+      const token = await getAuthTokenOrThrow()
+
+      // Build lightweight context (history + scheduled + planned)
+      const [historyRes, medalsRes, scheduledRes, plannedRes] = await Promise.all([
+        fetch(`/api/learner/lesson-history?learner_id=${learnerId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`/api/medals?learnerId=${learnerId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`/api/lesson-schedule?learnerId=${learnerId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`/api/planned-lessons?learnerId=${learnerId}`, { headers: { Authorization: `Bearer ${token}` } })
+      ])
+
+      let contextText = ''
+      let medals = {}
+      if (medalsRes.ok) medals = (await medalsRes.json().catch(() => ({}))) || {}
+
+      if (historyRes.ok) {
+        const history = await historyRes.json().catch(() => ({}))
+        const sessions = Array.isArray(history?.sessions) ? history.sessions : []
+        if (sessions.length > 0) {
+          contextText += '\nLearner lesson history:\n'
+          sessions.slice(-40).forEach((s) => {
+            const best = s.status === 'completed' ? medals?.[s.lesson_id]?.bestPercent : null
+            contextText += `- ${s.lesson_id} (${s.status}${Number.isFinite(best) ? `, score: ${best}%` : ''})\n`
+          })
+        }
+      }
+      if (scheduledRes.ok) {
+        const sd = await scheduledRes.json().catch(() => ({}))
+        const sched = Array.isArray(sd?.schedule) ? sd.schedule : []
+        if (sched.length > 0) {
+          contextText += '\nScheduled lessons (do not reuse these topics):\n'
+          sched.slice(-40).forEach((s) => { contextText += `- ${s.scheduled_date}: ${s.lesson_key}\n` })
+        }
+      }
+      if (plannedRes.ok) {
+        const pd = await plannedRes.json().catch(() => ({}))
+        const allP = pd?.plannedLessons || {}
+        const flat = []
+        Object.entries(allP).forEach(([d, arr]) => {
+          ;(Array.isArray(arr) ? arr : []).forEach((l) => flat.push({ d, subject: l.subject, title: l.title }))
+        })
+        if (flat.length > 0) {
+          contextText += '\nAlready planned (do not repeat):\n'
+          flat.slice(-60).forEach((l) => { contextText += `- ${l.d} (${l.subject || 'general'}): ${l.title || 'planned'}\n` })
+        }
+      }
+
+      const res = await fetch('/api/generate-lesson-outline', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject,
+          grade: learnerGrade || '3rd',
+          difficulty: 'intermediate',
+          learnerId,
+          context: contextText
+        })
+      })
+      if (!res.ok) throw new Error('Failed to generate lesson outline')
+      const result = await res.json()
+      const outline = result.outline
+      const newLesson = {
+        ...outline,
+        id: `${selectedDate}-${subject}-${Date.now()}`,
+        subject
+      }
+      onPlannedLessonAdd(selectedDate, newLesson)
+      setAddMenuStep(null)
+    } catch (err) {
+      alert(err?.message || 'Failed to generate planned lesson')
+    } finally {
+      setPlanningSubject(null)
+    }
+  }
+
   // If generator overlay is open, show it
   if (showGenerator) {
     return (
@@ -844,18 +997,193 @@ export default function DayViewOverlay({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ marginBottom: 20 }}>
-          <h2 style={{ 
-            fontSize: 20, 
-            fontWeight: 700, 
-            color: '#1f2937',
-            marginBottom: 4
-          }}>
-            {formattedDate}
-          </h2>
-          <p style={{ fontSize: 13, color: '#6b7280' }}>
-            {scheduledLessons.length} scheduled  {plannedLessons.length} planned
-          </p>
+        <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <h2 style={{ 
+              fontSize: 20, 
+              fontWeight: 700, 
+              color: '#1f2937',
+              marginBottom: 4
+            }}>
+              {formattedDate}
+            </h2>
+            <p style={{ fontSize: 13, color: '#6b7280' }}>
+              {scheduledLessons.length} scheduled &nbsp; {plannedLessons.length} planned
+            </p>
+          </div>
+
+          {/* + Add lesson menu */}
+          {learnerId && (
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                onClick={() => { if (addMenuStep) { setAddMenuStep(null) } else { setAddMenuStep('top') } }}
+                style={{
+                  padding: '7px 14px',
+                  fontSize: 18,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  background: '#2563eb',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer'
+                }}
+                title="Add lesson"
+              >
+                +
+              </button>
+
+              {addMenuStep && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 9 }} onClick={() => setAddMenuStep(null)} />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      right: 0,
+                      background: '#fff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: 8,
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.14)',
+                      zIndex: 10,
+                      minWidth: 200,
+                      overflow: 'hidden'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* ── top level ── */}
+                    {addMenuStep === 'top' && (
+                      <>
+                        <div style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', borderBottom: '1px solid #f3f4f6' }}>
+                          Add to {selectedDate}
+                        </div>
+                        {[
+                          { label: '📅  Schedule Lesson', step: 'schedule' },
+                          { label: '📝  Plan Lesson', step: 'plan' }
+                        ].map(({ label, step }) => (
+                          <button
+                            key={step}
+                            onClick={() => {
+                              if (step === 'plan') loadCustomSubjectsDV()
+                              setAddMenuStep(step)
+                            }}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 14px', fontSize: 13, fontWeight: 500, border: 'none', background: 'transparent', cursor: 'pointer', color: '#111827', textAlign: 'left' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6' }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                          >
+                            {label} <span style={{ color: '#9ca3af', fontSize: 12 }}>›</span>
+                          </button>
+                        ))}
+                      </>
+                    )}
+
+                    {/* ── schedule level ── */}
+                    {addMenuStep === 'schedule' && (
+                      <>
+                        <button
+                          onClick={() => setAddMenuStep('top')}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '8px 12px', fontSize: 12, fontWeight: 600, border: 'none', borderBottom: '1px solid #f3f4f6', background: 'transparent', cursor: 'pointer', color: '#6b7280' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6' }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                        >
+                          ‹ Schedule Lesson
+                        </button>
+                        {[
+                          { label: '🗂  Owned', next: 'own' },
+                          { label: '✨  Generate', next: 'generate' }
+                        ].map(({ label, next }) => (
+                          <button
+                            key={next}
+                            onClick={() => {
+                              if (next === 'own') { loadOwnedLessons(); setAddMenuStep('own') }
+                              else { setAddMenuStep(null); setShowGenerator(true) }
+                            }}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 14px', fontSize: 13, fontWeight: 500, border: 'none', background: 'transparent', cursor: 'pointer', color: '#111827', textAlign: 'left' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6' }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                          >
+                            {label} {next === 'own' && <span style={{ color: '#9ca3af', fontSize: 12 }}>›</span>}
+                          </button>
+                        ))}
+                      </>
+                    )}
+
+                    {/* ── owned lessons panel ── */}
+                    {addMenuStep === 'own' && (
+                      <>
+                        <button
+                          onClick={() => setAddMenuStep('schedule')}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '8px 12px', fontSize: 12, fontWeight: 600, border: 'none', borderBottom: '1px solid #f3f4f6', background: 'transparent', cursor: 'pointer', color: '#6b7280' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6' }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                        >
+                          ‹ Owned Lessons
+                        </button>
+                        <div style={{ maxHeight: 320, overflowY: 'auto', minWidth: 280 }}>
+                          {loadingOwned ? (
+                            <div style={{ padding: '20px 14px', fontSize: 13, color: '#9ca3af', textAlign: 'center' }}>Loading…</div>
+                          ) : ownedLessons.length === 0 ? (
+                            <div style={{ padding: '20px 14px', fontSize: 13, color: '#9ca3af', textAlign: 'center' }}>No owned lessons found</div>
+                          ) : (
+                            ownedLessons.map((lesson) => {
+                              const key = `generated/${lesson.file}`
+                              const busy = schedulingOwned === key
+                              return (
+                                <button
+                                  key={lesson.file}
+                                  disabled={busy}
+                                  onClick={() => handleScheduleOwned(lesson)}
+                                  style={{ display: 'block', width: '100%', padding: '9px 14px', fontSize: 13, border: 'none', background: 'transparent', cursor: busy ? 'wait' : 'pointer', textAlign: 'left', opacity: busy ? 0.6 : 1 }}
+                                  onMouseEnter={(e) => { if (!busy) e.currentTarget.style.background = '#f3f4f6' }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                                >
+                                  <div style={{ fontWeight: 500, color: '#111827', fontSize: 13 }}>{busy ? 'Scheduling…' : lesson.title}</div>
+                                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{lesson.subject} · {lesson.grade}</div>
+                                </button>
+                              )
+                            })
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* ── plan lesson — subject picker ── */}
+                    {addMenuStep === 'plan' && (
+                      <>
+                        <button
+                          onClick={() => setAddMenuStep('top')}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '8px 12px', fontSize: 12, fontWeight: 600, border: 'none', borderBottom: '1px solid #f3f4f6', background: 'transparent', cursor: 'pointer', color: '#6b7280' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6' }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                        >
+                          ‹ Choose Subject
+                        </button>
+                        <div style={{ maxHeight: 320, overflowY: 'auto', minWidth: 220 }}>
+                          {[...CORE_SUBJECTS_DV, ...dvCustomSubjects.map((s) => s.name)].map((subject) => {
+                            const busy = planningSubject === subject
+                            const anyBusy = planningSubject !== null
+                            return (
+                              <button
+                                key={subject}
+                                disabled={anyBusy}
+                                onClick={() => handleAutoGeneratePlan(subject)}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 14px', fontSize: 13, fontWeight: 500, border: 'none', background: 'transparent', cursor: anyBusy ? 'wait' : 'pointer', color: '#111827', textAlign: 'left', opacity: anyBusy && !busy ? 0.5 : 1 }}
+                                onMouseEnter={(e) => { if (!anyBusy) e.currentTarget.style.background = '#f3f4f6' }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                              >
+                                <span>{busy ? `Generating ${subject}…` : subject}</span>
+                                {busy && <span style={{ fontSize: 11, color: '#6b7280' }}>⏳</span>}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* No School Section */}
