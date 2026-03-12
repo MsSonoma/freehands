@@ -1698,7 +1698,11 @@ export default function DayViewOverlay({
                           )}
                         </div>
                         <button
-                          onClick={() => setRemoveConfirmLesson({ scheduleId: lesson.id, lessonTitle: lessonName })}
+                          onClick={() => {
+                            if (confirm(`Remove "${lessonName}" from this day?`)) {
+                              handleRemoveScheduledLessonById(lesson.id)
+                            }
+                          }}
                           style={{
                             padding: '6px 12px',
                             fontSize: 12,
