@@ -1697,14 +1697,28 @@ export default function DayViewOverlay({
                             </>
                           )}
                         </div>
+                        <button
+                          onClick={() => setRemoveConfirmLesson({ scheduleId: lesson.id, lessonTitle: lessonName })}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            background: '#fff',
+                            color: '#dc2626',
+                            border: '1px solid #fca5a5',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Remove
+                        </button>
                       </div>
                     )}
                   </div>
                 </div>
               )
             })}
-
-            {/* Planned Lessons */}
             {plannedLessons.map(lesson => (
               <div
                 key={lesson.id}
