@@ -787,17 +787,48 @@ export default function DayViewOverlay({
     try {
       const token = await getAuthTokenOrThrow()
 
-      // Build lightweight context (history + scheduled + planned)
-      const [historyRes, medalsRes, scheduledRes, plannedRes] = await Promise.all([
+      // Build lightweight context (history + scheduled + planned + curriculum prefs)
+      const [historyRes, medalsRes, scheduledRes, plannedRes, preferencesRes] = await Promise.all([
         fetch(`/api/learner/lesson-history?learner_id=${learnerId}`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`/api/medals?learnerId=${learnerId}`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`/api/lesson-schedule?learnerId=${learnerId}`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`/api/planned-lessons?learnerId=${learnerId}`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`/api/planned-lessons?learnerId=${learnerId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`/api/curriculum-preferences?learnerId=${learnerId}`, { headers: { Authorization: `Bearer ${token}` } })
       ])
 
       let contextText = ''
       let medals = {}
+      let prefsRow = null
       if (medalsRes.ok) medals = (await medalsRes.json().catch(() => ({}))) || {}
+      if (preferencesRes.ok) {
+        const prefsJson = await preferencesRes.json().catch(() => ({}))
+        prefsRow = prefsJson.preferences || null
+      }
+
+      const getSubjectContextAdditions = (subject) => {
+        if (!prefsRow) return ''
+        const globalFocusConcepts = prefsRow.focus_concepts || []
+        const globalFocusTopics = prefsRow.focus_topics || []
+        const globalFocusKeywords = prefsRow.focus_keywords || []
+        const globalBannedConcepts = prefsRow.banned_concepts || []
+        const globalBannedTopics = prefsRow.banned_topics || []
+        const globalBannedWords = prefsRow.banned_words || []
+        const subPrefs = prefsRow.subject_preferences?.[subject] || {}
+        const focusConcepts = [...globalFocusConcepts, ...(subPrefs.focusConcepts || [])]
+        const focusTopics = [...globalFocusTopics, ...(subPrefs.focusTopics || [])]
+        const focusKeywords = [...globalFocusKeywords, ...(subPrefs.focusKeywords || [])]
+        const bannedConcepts = [...globalBannedConcepts, ...(subPrefs.bannedConcepts || [])]
+        const bannedTopics = [...globalBannedTopics, ...(subPrefs.bannedTopics || [])]
+        const bannedWords = [...globalBannedWords, ...(subPrefs.bannedWords || [])]
+        let additions = ''
+        if (focusConcepts.length) additions += `\n\nFocus Concepts (this subject): ${focusConcepts.join(', ')}`
+        if (focusTopics.length) additions += `\n\nFocus Topics (this subject): ${focusTopics.join(', ')}`
+        if (focusKeywords.length) additions += `\n\nFocus Keywords (this subject): ${focusKeywords.join(', ')}`
+        if (bannedConcepts.length) additions += `\n\nBanned Concepts (this subject): ${bannedConcepts.join(', ')}`
+        if (bannedTopics.length) additions += `\n\nBanned Topics (this subject): ${bannedTopics.join(', ')}`
+        if (bannedWords.length) additions += `\n\nBanned Words (this subject): ${bannedWords.join(', ')}`
+        return additions
+      }
 
       if (historyRes.ok) {
         const history = await historyRes.json().catch(() => ({}))
@@ -839,7 +870,7 @@ export default function DayViewOverlay({
           grade: learnerGrade || '3rd',
           difficulty: 'intermediate',
           learnerId,
-          context: contextText
+          context: contextText + getSubjectContextAdditions(subject)
         })
       })
       if (!res.ok) throw new Error('Failed to generate lesson outline')

@@ -818,7 +818,7 @@ export default function LessonPlanner({
             </label>
             <select
               value={planDuration}
-              onChange={(e) => setPlanDuration(Number(e.target.value))}
+              onChange={(e) => setPlanDuration(e.target.value)}
               style={{
                 width: '100%',
                 padding: '8px',
