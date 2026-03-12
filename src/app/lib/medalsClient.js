@@ -118,7 +118,31 @@ export async function getMedalsForLearner(learnerId) {
         const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
         if (resp.ok) {
           const json = await resp.json().catch(() => null);
-          if (json && typeof json.medals === 'object') return json.medals;
+          if (json && typeof json.medals === 'object') {
+            // Merge localStorage entries: if a lesson has a higher bestPercent locally than
+            // what DB returned (or is missing from DB entirely), keep the local value and
+            // re-push it to DB so it isn't permanently lost.
+            const dbMedals = json.medals;
+            const local = (readLocal()[learnerId]) || {};
+            const merged = { ...dbMedals };
+            const repush = [];
+            for (const [key, localVal] of Object.entries(local)) {
+              const db = dbMedals[key];
+              const localPct = Number(localVal?.bestPercent) || 0;
+              const dbPct = Number(db?.bestPercent) || 0;
+              if (localPct > dbPct) {
+                merged[key] = localVal;
+                repush.push({ key, pct: localPct });
+              }
+            }
+            // Fire-and-forget re-push for any locally-higher entries.
+            if (repush.length > 0) {
+              for (const { key, pct } of repush) {
+                upsertMedal(learnerId, key, pct).catch(() => {});
+              }
+            }
+            return merged;
+          }
         }
       }
     } catch (e) {
@@ -132,7 +156,20 @@ export async function getMedalsForLearner(learnerId) {
 export async function upsertMedal(learnerId, lessonKey, percent) {
   if (!learnerId || !lessonKey) return false;
   const newTier = tierForPercent(percent);
-  // Below 70%: record best percent locally but no tier; do not downgrade existing tier
+  // Always write to localStorage first as a belt-and-suspenders backup.
+  // If the API soft-fails (returns ok:true but didn't actually write to DB),
+  // the grade is preserved here and getMedalsForLearner will merge it back in.
+  const all = readLocal();
+  const byLearner = all[learnerId] || {};
+  const current = byLearner[lessonKey] || { bestPercent: 0, medalTier: null };
+  const currentRank = TIER_RANK[current.medalTier || 'none'] || 0;
+  const newRank = TIER_RANK[newTier || 'none'] || 0;
+  const nextTier = newRank > currentRank ? newTier : current.medalTier;
+  const bestPercent = Math.max(Number(current.bestPercent) || 0, Number(percent) || 0);
+  byLearner[lessonKey] = { bestPercent, medalTier: nextTier || null };
+  all[learnerId] = byLearner;
+  writeLocal(all);
+  // Then push to DB via API.
   const supabase = getSupabaseClient();
   if (supabase && hasSupabaseEnv()) {
     try {
@@ -147,20 +184,9 @@ export async function upsertMedal(learnerId, lessonKey, percent) {
         if (resp.ok) return true;
       }
     } catch (e) {
-      // fall back to local storage if table/columns missing or other errors
+      // API unavailable — grade is safely in localStorage, getMedalsForLearner will merge it.
     }
   }
-  // local fallback
-  const all = readLocal();
-  const byLearner = all[learnerId] || {};
-  const current = byLearner[lessonKey] || { bestPercent: 0, medalTier: null };
-  const currentRank = TIER_RANK[current.medalTier || 'none'] || 0;
-  const newRank = TIER_RANK[newTier || 'none'] || 0;
-  const nextTier = newRank > currentRank ? newTier : current.medalTier;
-  const bestPercent = Math.max(Number(current.bestPercent) || 0, Number(percent) || 0);
-  byLearner[lessonKey] = { bestPercent, medalTier: nextTier || null };
-  all[learnerId] = byLearner;
-  writeLocal(all);
   return true;
 }
 

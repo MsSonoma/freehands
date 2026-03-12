@@ -7236,6 +7236,7 @@ function SessionPageInner_LEGACY_SESSION_V1_DISCONTINUED() {
         try {
           await endTrackedSession('completed', {
             earned_key: earnedKey,
+            test_percentage: typeof testFinalPercent === 'number' ? testFinalPercent : null,
           });
         } catch {}
       }
