@@ -483,7 +483,12 @@ export default function CalendarPage() {
 
   const savePlannedLessons = async (lessons) => {
     if (!requirePlannerAccess()) return
-    setPlannedLessons(lessons)
+    // Strip empty date arrays from local state, but send the full object (including
+    // empty arrays) to the API so it knows to delete DB records for those dates.
+    const cleanedForState = Object.fromEntries(
+      Object.entries(lessons).filter(([, v]) => Array.isArray(v) && v.length > 0)
+    )
+    setPlannedLessons(cleanedForState)
     
     if (!selectedLearnerId) return
     
@@ -526,9 +531,8 @@ export default function CalendarPage() {
     const updated = { ...plannedLessons }
     if (updated[date]) {
       updated[date] = updated[date].filter(l => l.id !== lessonId)
-      if (updated[date].length === 0) {
-        delete updated[date]
-      }
+      // Do NOT delete the key when the array is empty — savePlannedLessons sends
+      // the empty array to the API so it deletes the DB records for that date.
       savePlannedLessons(updated)
     }
   }
