@@ -1379,6 +1379,31 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
     const ok = await persistPlannedForDate(selectedDate, next)
     if (!ok) return
 
+    // Compute the new full planned map (strip empty arrays so loadPlannedForLearner
+    // sees an honest existingCount and does not block the empty API result).
+    const updatedFull = { ...plannedLessons, [selectedDate]: next }
+    const writableNext = Object.fromEntries(
+      Object.entries(updatedFull).filter(([, v]) => Array.isArray(v) && v.length > 0)
+    )
+    try {
+      // Update in-memory cache immediately.
+      plannedCacheByLearnerRef.current = {
+        ...(plannedCacheByLearnerRef.current || {}),
+        [learnerId]: writableNext
+      }
+      if (Object.keys(writableNext).length > 0) {
+        writeSessionCache('planned', learnerId, writableNext)
+      } else {
+        // writeSessionCache refuses to write empty maps; explicitly clear both stores.
+        const key = `CalendarOverlay.v1.planned.${String(learnerId)}`
+        const lastGoodKey = `CalendarOverlay.v1.planned.lastGood.${String(learnerId)}`
+        if (typeof window !== 'undefined') {
+          window.sessionStorage?.removeItem?.(key)
+          window.localStorage?.removeItem?.(lastGoodKey)
+        }
+      }
+    } catch {}
+
     setPlannedLessons((prev) => ({ ...prev, [selectedDate]: next }))
   }
 

@@ -498,7 +498,7 @@ export default function CalendarPage() {
       
       if (!session?.access_token) return
 
-      await fetch('/api/planned-lessons', {
+      const res = await fetch('/api/planned-lessons', {
         method: 'POST',
         headers: {
           'authorization': `Bearer ${session.access_token}`,
@@ -509,8 +509,14 @@ export default function CalendarPage() {
           plannedLessons: lessons
         })
       })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null)
+        throw new Error(errData?.error || `Failed to save planned lessons (${res.status})`)
+      }
     } catch (err) {
       console.error('Error saving planned lessons:', err)
+      // Re-load from DB so local state stays in sync with what was actually persisted.
+      loadPlannedLessons()
     }
   }
 
