@@ -13,7 +13,7 @@ if (typeof document !== 'undefined' && !document.getElementById('webb-spin-style
   document.head.appendChild(s)
 }
 
-// -- Color tokens --------------------------------------------------------------
+// ── Color tokens ──────────────────────────────────────────────────────────────
 const C = {
   accent:      '#0d9488',
   accentDark:  '#0f766e',
@@ -27,11 +27,11 @@ const C = {
 
 const PHASE = { LIST: 'list', STARTING: 'starting', CHATTING: 'chatting' }
 
-// -- Root page -----------------------------------------------------------------
+// ── Root page ─────────────────────────────────────────────────────────────────
 export default function WebbPage() {
   const router = useRouter()
 
-  // -- Lesson browser state ---------------------------------------------
+  // ── Lesson browser state ─────────────────────────────────────────────
   const [phase, setPhase]                       = useState(PHASE.LIST)
   const [availableLessons, setAvailableLessons] = useState([])
   const [allOwnedLessons, setAllOwnedLessons]   = useState([])
@@ -43,7 +43,7 @@ export default function WebbPage() {
   const [learnerId, setLearnerId]               = useState(null)
   const [pageError, setPageError]               = useState('')
 
-  // -- Active lesson ----------------------------------------------------
+  // ── Active lesson ────────────────────────────────────────────────────
   const [selectedLesson, setSelectedLesson] = useState(null)
   const [chatMessages, setChatMessages]     = useState([]) // [{role,content}] for API
   const [transcript, setTranscript]         = useState([]) // [{text,role}] for CaptionPanel
@@ -51,15 +51,15 @@ export default function WebbPage() {
   const [chatLoading, setChatLoading]       = useState(false)
   const transcriptRef                       = useRef(null)
 
-  // -- Media resources --------------------------------------------------
+  // ── Media resources ──────────────────────────────────────────────────
   const [videoResource, setVideoResource]       = useState(null) // {embedUrl,title,channel} or {unavailable:true}
-  const [articleResource, setArticleResource]   = useState(null) // {html, source, title} � HTML fetched server-side
+  const [articleResource, setArticleResource]   = useState(null) // {html, source, title} — HTML fetched server-side
   const [videoLoading, setVideoLoading]         = useState(false)
   const [articleLoading, setArticleLoading]     = useState(false)
   const [mediaOverlay, setMediaOverlay]         = useState(null) // 'video'|'article'|null
   const [refreshingMedia, setRefreshingMedia]   = useState(false)
 
-  // -- Video / TTS ------------------------------------------------------
+  // ── Video / TTS ──────────────────────────────────────────────────────
   const videoRef      = useRef(null)
   const ttsQueueRef   = useRef([])
   const ttsBusyRef    = useRef(false)
@@ -68,7 +68,7 @@ export default function WebbPage() {
   const [isMuted, setIsMuted]         = useState(false)
   const isMutedRef                    = useRef(false)
 
-  // -- Chat scroll -----------------------------------------------------
+  // ── Chat scroll ─────────────────────────────────────────────────────
   const chatEndRef = useRef(null)
 
   // Auto-scroll to newest message
@@ -76,7 +76,7 @@ export default function WebbPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [transcript.length, chatLoading])
 
-  // -- Layout -----------------------------------------------------------
+  // ── Layout ───────────────────────────────────────────────────────────
   const videoColRef                         = useRef(null)
   const [isMobileLandscape, setIsLandscape] = useState(false)
   const [videoMaxHeight, setVideoMaxHeight] = useState(null)
@@ -85,7 +85,7 @@ export default function WebbPage() {
 
   const learnerName = useRef('')
 
-  // -- Init -------------------------------------------------------------
+  // ── Init ─────────────────────────────────────────────────────────────
   useEffect(() => {
     try { learnerName.current = localStorage.getItem('learner_name') || '' } catch {}
     const id = (() => { try { return localStorage.getItem('learner_id') || null } catch { return null } })()
@@ -95,7 +95,7 @@ export default function WebbPage() {
 
   useEffect(() => { isMutedRef.current = isMuted }, [isMuted])
 
-  // -- Orientation detection ---------------------------------------------
+  // ── Orientation detection ─────────────────────────────────────────────
   useEffect(() => {
     const calc = () => {
       const w = window.innerWidth
@@ -149,7 +149,7 @@ export default function WebbPage() {
     }
   }, [isMobileLandscape, videoMaxHeight])
 
-  // -- TTS queue ---------------------------------------------------------
+  // ── TTS queue ─────────────────────────────────────────────────────────
   async function drainTTSQueue() {
     if (ttsBusyRef.current) return
     const text = ttsQueueRef.current.shift()
@@ -224,7 +224,7 @@ export default function WebbPage() {
     })
   }
 
-  // -- Transcript helpers ------------------------------------------------
+  // ── Transcript helpers ────────────────────────────────────────────────
   function addMsg(text) {
     const t = String(text || '').trim()
     if (!t) return
@@ -242,7 +242,7 @@ export default function WebbPage() {
     setTranscript(prev => [...prev, { text: t, role: 'user' }])
   }
 
-  // -- Lesson list -------------------------------------------------------
+  // ── Lesson list ───────────────────────────────────────────────────────
   async function loadLessons(id) {
     const lid = id ?? learnerId
     setPageError('')
@@ -286,7 +286,7 @@ export default function WebbPage() {
     }
   }
 
-  // -- Preload resources for lesson --------------------------------------
+  // ── Preload resources for lesson ──────────────────────────────────────
   // Video and article are fetched in parallel but independently so each
   // resolves as soon as it's ready (video ~3s, article ~4s).
   const preloadResources = useCallback((lesson) => {
@@ -316,7 +316,7 @@ export default function WebbPage() {
       .finally(() => setArticleLoading(false))
   }, [])
 
-  // -- Select lesson ? start AI chat -------------------------------------
+  // ── Select lesson → start AI chat ─────────────────────────────────────
   const selectLesson = useCallback(async (lesson) => {
     setPhase(PHASE.STARTING)
     setSelectedLesson(lesson)
@@ -352,7 +352,7 @@ export default function WebbPage() {
     preloadResources(lesson)
   }, [preloadResources])
 
-  // -- Send chat message -------------------------------------------------
+  // ── Send chat message ─────────────────────────────────────────────────
   const sendMessage = useCallback(async (text) => {
     if (!text.trim() || chatLoading) return
     addStudentLine(text)
@@ -379,7 +379,7 @@ export default function WebbPage() {
     setChatLoading(false)
   }, [chatLoading, chatMessages, selectedLesson])
 
-  // -- Refresh a media resource (context-aware) --------------------------
+  // ── Refresh a media resource (context-aware) ──────────────────────────
   async function refreshMedia(type) {
     setRefreshingMedia(true)
     const recentContext = chatMessages.slice(-6)
@@ -405,7 +405,7 @@ export default function WebbPage() {
     setRefreshingMedia(false)
   }
 
-  // -- Exit --------------------------------------------------------------
+  // ── Exit ──────────────────────────────────────────────────────────────
   async function handleExit() {
     const { ensurePinAllowed } = await import('@/app/lib/pinGate')
     if (!await ensurePinAllowed('session-exit')) return
@@ -420,7 +420,7 @@ export default function WebbPage() {
     setMediaOverlay(null)
   }
 
-  // -- Layout styles -----------------------------------------------------
+  // ── Layout styles ─────────────────────────────────────────────────────
   const videoEffH = videoMaxHeight && Number.isFinite(videoMaxHeight) ? videoMaxHeight : null
   const msSBSH    = videoEffH ? `${videoEffH}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')
 
@@ -444,7 +444,7 @@ export default function WebbPage() {
 
   const isChatting = phase === PHASE.CHATTING
 
-  // -- Render ------------------------------------------------------------
+  // ── Render ────────────────────────────────────────────────────────────
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
 
@@ -480,7 +480,7 @@ export default function WebbPage() {
         </div>
       )}
 
-      {/* Main two-panel layout � always visible */}
+      {/* Main two-panel layout — always visible */}
       <div style={mainLayoutStyle}>
 
         {/* Video column */}
@@ -507,9 +507,9 @@ export default function WebbPage() {
                 {/* Overlay toolbar */}
                 <div style={{ background: 'rgba(15,118,110,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', flexShrink: 0 }}>
                   <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 0.5 }}>
-                    {mediaOverlay === 'video' ? '? VIDEO' : '?? ARTICLE'}
+                    {mediaOverlay === 'video' ? '▶ VIDEO' : '📖 ARTICLE'}
                     {mediaOverlay === 'article' && articleResource?.source && (
-                      <span style={{ opacity: 0.75, fontWeight: 400, marginLeft: 4 }}>� {articleResource.source}</span>
+                      <span style={{ opacity: 0.75, fontWeight: 400, marginLeft: 4 }}>· {articleResource.source}</span>
                     )}
                   </span>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -520,21 +520,21 @@ export default function WebbPage() {
                       title="Load a different one"
                       style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 12, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}
                     >
-                      {refreshingMedia ? '�' : '?'}
+                      {refreshingMedia ? '…' : '↻'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setMediaOverlay(null)}
                       title="Close"
                       style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
-                    >?</button>
+                    >✕</button>
                   </div>
                 </div>
 
                 {/* Content */}
                 <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
 
-                  {/* -- VIDEO -- */}
+                  {/* ── VIDEO ── */}
                   {mediaOverlay === 'video' && videoResource?.embedUrl && (
                     <iframe
                       src={videoResource.embedUrl}
@@ -544,12 +544,12 @@ export default function WebbPage() {
                       style={{ width: '100%', height: '100%', border: 'none' }}
                     />
                   )}
-                  {/* Fallback: no YT API key � show a friendly retry prompt */}
+                  {/* Fallback: no YT API key — show a friendly retry prompt */}
                   {mediaOverlay === 'video' && videoResource?.unavailable && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, padding: 20, background: '#0f0f0f', boxSizing: 'border-box', textAlign: 'center' }}>
                       <svg viewBox="0 0 24 24" style={{ width: 44, height: 44 }} fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8l4 4-4 4"/></svg>
                       <div style={{ color: '#9ca3af', fontSize: 13, lineHeight: 1.6, maxWidth: 220 }}>
-                        Video not available right now.<br/>Tap <strong style={{ color: '#fff' }}>?</strong> above to try a different one.
+                        Video not available right now.<br/>Tap <strong style={{ color: '#fff' }}>↻</strong> above to try a different one.
                       </div>
                       <button
                         type="button"
@@ -557,12 +557,12 @@ export default function WebbPage() {
                         disabled={refreshingMedia}
                         style={{ background: C.accent, border: 'none', color: '#fff', borderRadius: 6, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}
                       >
-                        {refreshingMedia ? '�' : '? Try another'}
+                        {refreshingMedia ? '…' : '↻ Try another'}
                       </button>
                     </div>
                   )}
 
-                  {/* -- ARTICLE / WEBPAGE (HTML fetched server-side from green list) -- */}
+                  {/* ── ARTICLE / WEBPAGE (HTML fetched server-side from green list) ── */}
                   {mediaOverlay === 'article' && articleResource?.html && (
                     <iframe
                       srcDoc={articleResource.html}
@@ -575,7 +575,7 @@ export default function WebbPage() {
                   {mediaOverlay === 'article' && articleLoading && !articleResource && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, color: '#9ca3af', fontSize: 13, background: '#fff' }}>
                       <svg viewBox="0 0 24 24" style={{ width: 32, height: 32, animation: 'spin 1s linear infinite' }} fill="none" stroke="#0d9488" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
-                      Finding an article�
+                      Finding an article…
                     </div>
                   )}
                   {/* Fallback: article came back but HTML could not be fetched */}
@@ -589,7 +589,7 @@ export default function WebbPage() {
                         disabled={refreshingMedia}
                         style={{ ...primaryBtn, opacity: refreshingMedia ? 0.6 : 1, cursor: refreshingMedia ? 'wait' : 'pointer' }}
                       >
-                        {refreshingMedia ? '�' : '? Try another article'}
+                        {refreshingMedia ? '…' : '↻ Try another article'}
                       </button>
                     </div>
                   )}
@@ -598,14 +598,14 @@ export default function WebbPage() {
                   {((mediaOverlay === 'video' && !videoResource) ||
                     (mediaOverlay === 'article' && !articleResource)) && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af', fontSize: 13 }}>
-                      Generating�
+                      Generating…
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Overlay buttons � bottom right: Skip + Mute (always) */}
+            {/* Overlay buttons — bottom right: Skip + Mute (always) */}
             <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', gap: 10, zIndex: 10 }}>
               {engineState === 'playing' && (
                 <button type="button" onClick={skipTTS} aria-label="Skip" style={overlayBtnStyle}>
@@ -622,14 +622,14 @@ export default function WebbPage() {
               </button>
             </div>
 
-            {/* Overlay buttons � bottom left: Video + Article (chatting phase) */}
+            {/* Overlay buttons — bottom left: Video + Article (chatting phase) */}
             {isChatting && (
               <div style={{ position: 'absolute', bottom: 14, left: 14, display: 'flex', gap: 10, zIndex: 10 }}>
                 <button
                   type="button"
                   onClick={() => { setMediaOverlay(v => v === 'video' ? null : 'video') }}
                   aria-label="Watch a video"
-                  title={videoLoading ? 'Loading video�' : videoResource ? 'Watch a video' : 'Loading video�'}
+                  title={videoLoading ? 'Loading video…' : videoResource ? 'Watch a video' : 'Loading video…'}
                   style={{ ...overlayBtnStyle, background: mediaOverlay === 'video' ? C.accent : '#1f2937', opacity: videoLoading ? 0.55 : 1 }}
                 >
                   {videoLoading
@@ -641,7 +641,7 @@ export default function WebbPage() {
                   type="button"
                   onClick={() => { setMediaOverlay(v => v === 'article' ? null : 'article') }}
                   aria-label="Read Wikipedia article"
-                  title={articleLoading ? 'Finding Wikipedia article�' : articleResource ? `Wikipedia: ${articleResource.wikiTitle}` : 'Finding Wikipedia article�'}
+                  title={articleLoading ? 'Finding Wikipedia article…' : articleResource ? `Wikipedia: ${articleResource.wikiTitle}` : 'Finding Wikipedia article…'}
                   style={{ ...overlayBtnStyle, background: mediaOverlay === 'article' ? C.accent : '#1f2937', opacity: articleLoading ? 0.55 : 1 }}
                 >
                   {articleLoading
@@ -676,7 +676,7 @@ export default function WebbPage() {
             />
           )}
 
-          {/* Chat thread � iMessage-style bubbles */}
+          {/* Chat thread — iMessage-style bubbles */}
           {isChatting && (
             <div
               ref={transcriptRef}
@@ -744,7 +744,7 @@ export default function WebbPage() {
   )
 }
 
-// -- Shared styles -------------------------------------------------------------
+// ── Shared styles ─────────────────────────────────────────────────────────────
 const overlayBtnStyle = {
   background: '#1f2937', color: '#fff', border: 'none',
   width: 'clamp(34px, 6.2vw, 52px)', height: 'clamp(34px, 6.2vw, 52px)',
@@ -774,7 +774,7 @@ const footerStyle = {
   paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
 }
 
-// -- WebbLessonBrowser ---------------------------------------------------------
+// ── WebbLessonBrowser ─────────────────────────────────────────────────────────
 function WebbLessonBrowser({
   availableLessons, allOwnedLessons, recentSessions, historyLessons,
   listTab, setListTab, ownedFilters, setOwnedFilters,
@@ -947,7 +947,7 @@ function WebbLessonBrowser({
   )
 }
 
-// -- StudentInput --------------------------------------------------------------
+// ── StudentInput ──────────────────────────────────────────────────────────────
 function StudentInput({ onSend, loading }) {
   const [value, setValue] = useState('')
   const ref = useRef(null)
