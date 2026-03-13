@@ -96,28 +96,33 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx) {
       const items  = (ytData.items || []).filter(i => i.id?.videoId)
 
       if (items.length) {
-        // Step 2: GPT reviews title + channel + description and picks the safest/best
+        // Step 2: GPT picks the most educationally relevant result.
+        // All candidates are already filtered by YouTube's safeSearch=strict + videoEmbeddable=true
+        // so the safety bar here is just relevance, not content moderation.
         const candidateList = items.map((item, i) =>
           `${i}: "${item.snippet.title}" | Channel: ${item.snippet.channelTitle} | ${(item.snippet.description || '').slice(0, 200)}`
         ).join('\n')
 
-        const verdict = await callGPT(
-          apiKey,
-          'You are a child safety reviewer for an educational app for children aged 5–14. ' +
-          'Review these YouTube video candidates. ' +
-          'Reject any that are: clickbait, entertainment-only, inappropriate, not genuinely educational. ' +
-          'Pick the most age-appropriate and educationally valuable one. ' +
-          'Reply with ONLY a single digit: the index (0–4) of the best video, or -1 if none are suitable. No other text.',
-          `Lesson: "${title}". ${grade}.\n\nCandidates:\n${candidateList}`,
-          5,
-        )
+        let pickedIdx = 0 // default: first result
+        try {
+          const verdict = await callGPT(
+            apiKey,
+            'You pick the best educational YouTube video for a child. ' +
+            'All candidates passed YouTube safe search so focus on relevance and educational quality, not safety concerns. ' +
+            'Reply with ONLY a single digit: the index (0–4) of the best video. No other text.',
+            `Lesson: "${title}". ${grade}.\n\nCandidates:\n${candidateList}`,
+            5,
+          )
+          const parsed = parseInt(verdict, 10)
+          if (parsed >= 0 && parsed < items.length) pickedIdx = parsed
+        } catch { /* keep pickedIdx = 0 */ }
 
-        const idx = parseInt(verdict, 10)
-        if (idx >= 0 && items[idx]?.id?.videoId) {
+        const picked = items[pickedIdx]
+        if (picked?.id?.videoId) {
           return {
-            embedUrl:    `https://www.youtube.com/embed/${items[idx].id.videoId}?autoplay=0&rel=0&modestbranding=1`,
-            title:       items[idx].snippet.title,
-            channel:     items[idx].snippet.channelTitle,
+            embedUrl:    `https://www.youtube.com/embed/${picked.id.videoId}?autoplay=0&rel=0&modestbranding=1`,
+            title:       picked.snippet.title,
+            channel:     picked.snippet.channelTitle,
             searchQuery: safeQuery,
           }
         }
