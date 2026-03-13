@@ -6,23 +6,23 @@ Mode: standard
 
 Prompt (original):
 ```text
-Mrs. Webb chat teacher button on learn page, like Ms Sonoma and Mr Slate, with validator layers, OpenAI moderation, stateless Cohere context
+Ms. Sonoma session page layout video transcript TTS responsive landscape portrait side by side stacked mute skip buttons overlay video looping speaking animation
 ```
 
 Filter terms used:
 ```text
-mrs
-webb
-chat
-teacher
-button
-learn
-page
-like
+TTS
 sonoma
-slate
-validator
-layers
+session
+page
+layout
+video
+transcript
+responsive
+landscape
+portrait
+side
+stacked
 ```
 
 ---
@@ -31,9 +31,9 @@ layers
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-03-11 20:21` — When I remove planned lessons, they come back after a refresh.
-- `2026-03-11 20:28` — DayViewOverlay + button Schedule Lesson Plan Lesson owned lessons overlay LessonGeneratorOverlay subject picker auto-pla
 - `2026-03-11 21:39` — curriculum preferences generate-lesson-outline context generation one day lesson planner single day broken
+- `2026-03-13 10:15` — Mrs. Webb chat teacher button on learn page, like Ms Sonoma and Mr Slate, with validator layers, OpenAI moderation, stat
+- `2026-03-13 11:54` — Mrs. Webb lesson flow session page ContentViewer VideoPlayer TextReader RemediationPanel RewardVideo state machine prese
 
 ---
 
@@ -54,7 +54,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 50. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 8. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -69,7 +69,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-mrs webb chat teacher button learn page like sonoma slate validator layers
+TTS sonoma session page layout video transcript responsive landscape portrait side stacked
 
 ## Forced Context
 
@@ -77,306 +77,1169 @@ mrs webb chat teacher button learn page like sonoma slate validator layers
 
 ## Ranked Evidence
 
-### 1. src/app/learn/page.js (8fcc256043386d9c071865f87a7f5dc1157a6a83f40959e8cd4ebc695f528728)
-- bm25: -16.3433 | relevance: 0.9423
+### 1. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (436abd2849ed684231f855b140a6a43a13ebb5b23c13a9c6e1584430eaae8307)
+- bm25: -26.7546 | relevance: 0.9640
 
-{noLearner ? (
-          <div style={{ margin:'8px auto 16px', maxWidth:420 }}>
-            <p style={{ marginTop:0 }}>Pick a Learner to continue:</p>
-            <LearnerSelector onSelect={(l)=> {
-              setLearner({ id: l.id, name: l.name })
-              try {
-                localStorage.setItem('learner_id', l.id)
-                localStorage.setItem('learner_name', l.name)
-                if (l.grade) localStorage.setItem('learner_grade', l.grade)
-              } catch {}
-            }} />
-          </div>
-        ) : (
-          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-            <button
-              onClick={goToLessons}
-              title="Practice lessons guided by Ms. Sonoma"
-              style={{
-                padding:'14px 20px', 
-                border:'2px solid #c7442e', 
-                borderRadius:12,
-                fontSize:16, 
-                fontWeight:700,
-                background:'#c7442e',
-                color:'#fff',
-                cursor:'pointer',
-                width:'100%', 
-                maxWidth:320
-              }}
-            >
-              👩🏻‍🦰 Ms. Sonoma
-            </button>
-            <button
-              onClick={() => r.push('/session/slate')}
-              title="Drill questions with Mr. Slate"
-              style={{
-                padding:'14px 20px', 
-                border:'2px solid #6366f1', 
-                borderRadius:12,
-                fontSize:16, 
-                fontWeight:700,
-                background:'#6366f1',
-                color:'#fff',
-                cursor:'pointer',
-                width:'100%', 
-                maxWidth:320
-              }}
-            >
-              🤖 Mr. Slate
-            </button>
-            <b
+### Responsive Behavior
+- Overlays fill entire video panel area
+- Scrollable content areas for long lists
+- Compact headers to maximize content space
+- Works in both portrait and landscape modes
 
-### 2. src/app/HeaderBar.js (c0297946bfcf7d9326733ee92bfb3242931cb7028b2a3bb7969e0175e957490a)
-- bm25: -15.4613 | relevance: 0.9393
+### 2. docs/brain/v2-architecture.md (9e3f7f5485b078bc0f697f558e7d5c7c4af4b80f825295f92e79000c602b22d0)
+- bm25: -22.7943 | relevance: 0.9580
 
-// Learner chain: / -> /learn -> /learn/lessons -> /session
-		// Mr. Slate has its own top bar; its back button goes to /learn
-		if (pathname.startsWith('/session/slate')) return '/learn';
-		if (pathname.startsWith('/session')) return '/learn/lessons';
-		if (pathname.startsWith('/learn/awards')) return '/learn';
-		if (pathname.startsWith('/learn/lessons')) return '/learn';
-		if (pathname.startsWith('/learn')) return '/';
+**Timeline layout (landscape overlap rule) (2026-01-27)**
+- In mobile landscape, the phase timeline is positioned absolutely to preserve vertical space.
+- The main landscape layout must reserve vertical space for the timeline (via top padding or an explicit spacer). Otherwise the timeline will overlap the video and transcript columns.
+- Reserve space by pushing the content BELOW the timeline down; do not push the timeline down (HeaderBar already reserves its own height in the document flow).
 
-### 3. docs/brain/homepage.md (17a708595f5926a1352d014293d26395401f846891deebe02f2c21ebf394db5b)
-- bm25: -11.4460 | relevance: 0.9197
+### 3. src/app/facilitator/calendar/page.js (fc05561dc2e33df29ce6438ead2cac890b91b893716a38c9123badafded102df)
+- bm25: -20.2853 | relevance: 0.9530
 
-# Homepage
-
-**Status:** Canonical
-**Created:** 2026-01-10
-**Purpose:** Define what the landing page communicates and which outbound links it must include.
-
-## How It Works
-
-The homepage is the app landing page at `/`.
-
-It uses a centered hero layout with:
-- Ms. Sonoma hero image
-- Primary CTAs: Learn, Facilitator
-- Supporting links:
-  - About page (AI safety/How it works)
-  - External site link to learn more about Ms. Sonoma
-
-### External Website Link
-
-The homepage includes an external link to `https://mssonoma.com` with copy that explicitly tells users to learn about Ms. Sonoma there.
-
-## What NOT To Do
-
-- Do not remove the external `mssonoma.com` link without replacing it with an equivalent learn-more path.
-- Do not add device- or storage-related claims to homepage copy.
-- Do not add placeholder or environment-specific URLs.
-
-## Key Files
-
-- `src/app/page.js`
-- `src/app/home-hero.module.css`
-
-### 4. docs/brain/story-feature.md (7c541082fb751d8b6d7c2be9019d9fcda07911dd69b371791d357908ef1d85e5)
-- bm25: -10.5869 | relevance: 0.9137
-
-### Story Ending
-1. Child clicks "Story" button
-2. Ms. Sonoma: **Briefly recounts** (first sentence only): "Together they spotted a sparkly treasure chest below."
-3. Ms. Sonoma: "How would you like the story to end?"
-4. Child describes ending
-5. Ms. Sonoma: *Concludes story* "...and they lived happily ever after. The end."
-
-## Key Files
-
-- `page.js` - Story state variables
-- `useDiscussionHandlers.js` - Story handlers (handleStoryStart, handleStoryYourTurn)
-- `/api/sonoma/route.js` - Story generation API
-
-## What NOT To Do
-
-- Never reset storyTranscript between phases (preserve continuity)
-- Never reset storyUsedThisGate between phases (one story per gate)
-- Never skip setup phase on first story creation
-- Never allow freeform story generation without setup (use template-based approach)
-- Never forget to clear story data after "The end." in Test phase
-
-### 5. docs/brain/story-feature.md (47b7112fa17bfb5f0221b18351895de13c106fd2c67fbfea01dda4cb32a9d469)
-- bm25: -10.4362 | relevance: 0.9126
-
-### Story Continuation
-1. Child clicks "Story" button
-2. Ms. Sonoma: **Briefly recounts** (first sentence only): "The dragon wanted to help the princess."
-3. Ms. Sonoma: "What would you like to happen next?"
-4. Ms. Sonoma: **Suggests possibilities** (AI-generated): "You could say: the dragon flies away, or they find a map, or a wizard appears."
-5. Child: "The dragon flies the princess to find treasure"
-6. Ms. Sonoma: *Continues story* "The dragon spread its wings and flew the princess high above the clouds. Together they spotted a sparkly treasure chest below. To be continued."
-
-### 6. src/app/session/slate/page.jsx (55d4dda89362e6bff0a50dbb9b96f1fbd4822ba14a84a32f44c27dee046e7094)
-- bm25: -10.0102 | relevance: 0.9092
-
-<div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={() => setSoundOn(v => !v)}
-            title={soundOn ? 'Mute voice' : 'Unmute voice'}
-            style={soundBtn}
-          >
-            {soundOn ? '🔊' : '🔇'}
-          </button>
-          <button onClick={backToList} style={ghostBtn}>LIST</button>
-          <button onClick={exitToLessons} style={dangerBtn}>EXIT</button>
-        </div>
-      </div>
-
-### 7. src/app/session/slate/page.jsx (924829cd036376fd6a6e7c284bfb13dc311315d840edfd5f118ff28e01d735c0)
-- bm25: -9.9781 | relevance: 0.9089
-
-<div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={startDrill} style={ghostBtn}>DRILL AGAIN</button>
-            <button onClick={backToList} style={ghostBtn}>LESSON LIST</button>
-            <button onClick={exitToLessons} style={primaryBtn}>← BACK TO LESSONS</button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-### 8. src/app/facilitator/calendar/DayViewOverlay.jsx (a8ee1e4b4407f358391e79ef3abe860b77ef4d680cf23f35fb1bbe9de25cafb4)
-- bm25: -9.5437 | relevance: 0.9052
-
-{/* No School Section */}
-        <div style={{ 
-          marginBottom: 20,
-          padding: 12,
-          background: noSchoolReason ? '#fef3c7' : '#f9fafb',
-          borderRadius: 8,
-          border: `1px solid ${noSchoolReason ? '#fbbf24' : '#e5e7eb'}`
-        }}>
-          {noSchoolReason ? (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#92400e' }}>
-                   No School
-                </span>
-                <button
-                  onClick={() => {
-                    setNoSchoolInputValue('')
-                    handleNoSchoolSave()
-                  }}
-                  style={{
-                    marginLeft: 'auto',
-                    padding: '2px 8px',
-                    fontSize: 11,
-                    background: 'transparent',
-                    border: '1px solid #d97706',
-                    borderRadius: 4,
-                    color: '#92400e',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Clear
-                </button>
+{learners.length > 0 ? (
+          <>
+            {/* Two-panel layout: Stack on portrait, side-by-side on landscape */}
+            <style jsx>{`
+              .calendar-container {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+              }
+              
+              @media (min-aspect-ratio: 1/1) {
+                .calendar-container {
+                  flex-direction: row;
+                  align-items: flex-start;
+                  height: calc(100vh - 100px);
+                  gap: 0.75rem;
+                }
+                .calendar-container > .calendar-panel {
+                  flex: 1;
+                  min-width: 0;
+                  position: sticky;
+                  top: 12px;
+                  align-self: flex-start;
+                }
+                .calendar-container > .content-panel {
+                  flex: 1;
+                  min-width: 0;
+                  overflow-y: auto;
+                  max-height: calc(100vh - 100px);
+                }
+              }
+            `}</style>
+            <div className="calendar-container">
+              {/* Left Panel: Calendar */}
+              <div className="calendar-panel">
+                <LessonCalendar
+                  learnerId={selectedLearnerId}
+                  onDateSelect={handleDateSelect}
+                  scheduledLessons={activeTab === 'scheduler' ? scheduledLessons : plannedLessons}
+                  noSchoolDates={noSchoolDates}
+                  learners={learners}
+                  selectedLearnerId={selectedLearnerId}
+                  onLearnerChange={setSelectedLearnerId}
+                  isPlannedView={activeTab === 'planner'}
+                />
               </div>
-              <p style={{ fontSize: 13, color: '#78350f', margin: 0 }}>
-                {noSchoolReason}
-              </p>
-            </div>
-          ) : showNoSchoolInput ? (
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
-                Reason (optional)
-              </label>
-              <input
-                type="text"
-                value={noSchoolInputValue}
-                onChange={(e) => setNoSchoolInputValue(e.target.value)}
-                placeholder="e.g., Holiday, Field Trip, Teacher Planning Day"
 
-### 9. src/app/session/slate/page.jsx (f6cfc01c640e88a6ba4f0f8e1a7b736d873d88e1d30705ae3d1bbfdeac4c3d0c)
-- bm25: -9.4576 | relevance: 0.9044
+### 4. docs/brain/mr-mentor-conversation-flows.md (bb04765302248e45513f25a1ec923d2f1e43ca671594a8c000ee0ab9d9d67fac)
+- bm25: -19.6759 | relevance: 0.9516
 
-// ===========================================================================
-  //  RENDER -- Lesson list
-  // ===========================================================================
-  if (pagePhase === 'list') {
-    return (
-      <div style={{ fontFamily: C.mono, background: C.bg, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <div style={{
-          background: C.surface,
-          borderBottom: `1px solid ${C.border}`,
-          padding: '14px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <video src={SLATE_VIDEO_SRC} muted playsInline style={{ width: 36, height: 36, objectFit: 'contain' }} />
-            <div>
-              <div style={{ color: C.accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>MR. SLATE V1</div>
-              <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2 }}>SKILLS &amp; PRACTICE COACH</div>
-            </div>
-          </div>
-          <button onClick={exitToLessons} style={ghostBtn}>← BACK</button>
-        </div>
+### Visual Design
+- Buttons use emoji icons for quick recognition
+- Active button has blue border and light blue background
+- Inactive buttons have gray border and white background
+- All overlays use consistent styling with gradient headers
+- Fully responsive and scrollable
 
-### 10. src/app/session/slate/page.jsx (92318ab447c2e7d85a7777de55db74ff7e73b4a663f20bfb688b148c2f665af1)
-- bm25: -9.3088 | relevance: 0.9030
+### File Structure
+```
+src/app/facilitator/tools/counselor/
+├── CounselorClient.jsx (main component - updated)
+├── ClipboardOverlay.jsx (existing)
+└── overlays/
+    ├── CalendarOverlay.jsx
+    ├── LessonsOverlay.jsx
+    ├── GeneratedLessonsOverlay.jsx
+    └── LessonMakerOverlay.jsx
+```
 
-{/* Recent tab — completed Ms. Sonoma sessions, most recent first */}
-                {listTab === 'recent' && (
-                  recentList.length === 0 ? (
-                    <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>
-                      NO COMPLETED LESSONS YET — FINISH A LESSON WITH MS. SONOMA TO SEE RESULTS HERE
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
-                        {recentList.length} COMPLETED LESSON{recentList.length !== 1 ? 'S' : ''}
-                      </div>
-                      {recentList.map((r, i) => <RecentRow key={r.session.id || i} session={r.session} lesson={r.lesson} />)}
-                    </div>
-                  )
-                )}
+### Usage
+1. **Viewing Different Screens**: Click emoji buttons to switch views
+2. **Learner Selection**: Available in most overlays; syncs with main dropdown
+3. **Returning to Video**: Click 👨‍🏫 button to return to Mr. Mentor video
 
-### 11. src/app/learn/page.js (9c0763c0605b15666fd2ad19a7fcbda8971b9ac3322d96bcabcc062eb2fcbde0)
-- bm25: -9.2805 | relevance: 0.9027
+### Props Flow
+- `learners` array passed from parent to overlays
+- `selectedLearnerId` synced across all components
+- `tier` passed to LessonMaker for quota checks
+- All overlays handle their own data fetching
 
-const noLearner = !learner.id
+### Responsive Behavior
+- Overlays fill entire video panel area
+- Scrollable content areas for long lists
+- Compact headers to maximize content space
+- Works in both portrait and landscape modes
 
-function goToLessons() {
-    r.push('/learn/lessons')
+---
+
+## Related Brain Files
+
+- **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Session ownership, device takeover, conversation persistence
+- **[MentorInterceptor_Architecture.md](MentorInterceptor_Architecture.md)** - Mr. Mentor counselor system architecture
+
+---
+
+## Changelog
+
+### 5. docs/brain/ingests/pack-mentor-intercepts.md (e689276539b692ff809a50362f350e4cc88bb016f4e9f20c3d43ef447cea218d)
+- bm25: -19.0467 | relevance: 0.9501
+
+### 16. docs/brain/mr-mentor-conversation-flows.md (bb04765302248e45513f25a1ec923d2f1e43ca671594a8c000ee0ab9d9d67fac)
+- bm25: -16.1975 | relevance: 1.0000
+
+### Visual Design
+- Buttons use emoji icons for quick recognition
+- Active button has blue border and light blue background
+- Inactive buttons have gray border and white background
+- All overlays use consistent styling with gradient headers
+- Fully responsive and scrollable
+
+### File Structure
+```
+src/app/facilitator/tools/counselor/
+├── CounselorClient.jsx (main component - updated)
+├── ClipboardOverlay.jsx (existing)
+└── overlays/
+    ├── CalendarOverlay.jsx
+    ├── LessonsOverlay.jsx
+    ├── GeneratedLessonsOverlay.jsx
+    └── LessonMakerOverlay.jsx
+```
+
+### Usage
+1. **Viewing Different Screens**: Click emoji buttons to switch views
+2. **Learner Selection**: Available in most overlays; syncs with main dropdown
+3. **Returning to Video**: Click 👨‍🏫 button to return to Mr. Mentor video
+
+### Props Flow
+- `learners` array passed from parent to overlays
+- `selectedLearnerId` synced across all components
+- `tier` passed to LessonMaker for quota checks
+- All overlays handle their own data fetching
+
+### Responsive Behavior
+- Overlays fill entire video panel area
+- Scrollable content areas for long lists
+- Compact headers to maximize content space
+- Works in both portrait and landscape modes
+
+---
+
+## Related Brain Files
+
+- **[mr-mentor-session-persistence.md](mr-mentor-session-persistence.md)** - Session ownership, device takeover, conversation persistence
+- **[MentorInterceptor_Architecture.md](MentorInterceptor_Architecture.md)** - Mr. Mentor counselor system architecture
+
+---
+
+## Changelog
+
+### 6. src/app/HeaderBar.js (524a1fc8b45f569b609c61fc4c8f84eab7c91ae895477cfb4224d30824ce6e97)
+- bm25: -17.7926 | relevance: 0.9468
+
+const [sessionTitle, setSessionTitle] = useState('');
+	const [isMobileLandscape, setIsMobileLandscape] = useState(false);
+	const [isSmallWidth, setIsSmallWidth] = useState(false); // <= 600px viewport width/height min
+	const [viewportWidth, setViewportWidth] = useState(1024); // track width explicitly for brand visibility
+	// Collapse header navigation into hamburger menu at 900px or below
+	const showHamburger = useMemo(() => viewportWidth <= 900, [viewportWidth]);
+	// State for nested dropdowns in hamburger menu
+	const [hamburgerPrintOpen, setHamburgerPrintOpen] = useState(false);
+	const [hamburgerFacilitatorOpen, setHamburgerFacilitatorOpen] = useState(false);
+	// Header sizing: responsive heights using clamp so it scales by screen size
+	const DEFAULT_HEADER_HEIGHT = 'clamp(56px, 9svh, 72px)';
+	const COMPACT_HEADER_HEIGHT = 'clamp(48px, 8svh, 60px)';
+	const TALL_HEADER_HEIGHT = 'clamp(72px, 12svh, 104px)'; // for stacked brand/title on very small screens
+	const headerHeight = useMemo(() => {
+		if (pathname.startsWith('/session')) {
+			if (isMobileLandscape) return COMPACT_HEADER_HEIGHT;
+			if (isSmallWidth && sessionTitle) return TALL_HEADER_HEIGHT;
+		}
+		return DEFAULT_HEADER_HEIGHT;
+	}, [pathname, isMobileLandscape, isSmallWidth, sessionTitle]);
+
+// Use video-aligned gutters on Session in portrait
+	const headerPadLeft = useMemo(() => (
+		pathname.startsWith('/session') && !isMobileLandscape ? '4%' : PAD_LEFT
+	), [pathname, isMobileLandscape]);
+	const headerPadRight = useMemo(() => (
+		pathname.startsWith('/session') && !isMobileLandscape ? '4%' : PAD_RIGHT
+	), [pathname, isMobileLandscape]);
+
+### 7. src/app/session/page.js (bdf32f1635b89234ce58ccd9c70cd3ae2f5c4d19a40986f9aed6dd9a2004c92a)
+- bm25: -16.1735 | entity_overlap_w: 1.30 | adjusted: -16.4985 | relevance: 0.9429
+
+// (moved lower originally) placeholder: title dispatch effect defined after manifestInfo/effectiveLessonTitle
+  // Fixed scale factor to avoid any auto-shrinking behavior
+  const snappedScale = 1;
+  // (footer height measurement moved above stacked caption sizing effect)
+  // Media & caption refs (restored after refactor removal)
+  const videoRef = useRef(null); // controls lesson video playback synchrony with TTS
+  const videoPlayingRef = useRef(false); // track if video is currently playing to avoid duplicate play calls
+  const audioRef = useRef(null); // active Audio element for synthesized speech
+  const captionTimersRef = useRef([]); // active timers advancing captionIndex
+  const captionSentencesRef = useRef([]); // accumulated caption sentences for full transcript persistence
+  // Track re-joins: begin timestamp when the user hits Begin
+  useEffect(() => {
+    if (showBegin === false && !sessionStartRef.current) {
+      sessionStartRef.current = new Date().toISOString();
+      // Start a fresh transcript segment at the current caption length
+      try { transcriptSegmentStartIndexRef.current = Array.isArray(captionSentencesRef.current) ? captionSentencesRef.current.length : 0; } catch {}
+    }
+  }, [showBegin]);
+  // Track current caption batch boundaries for accurate resume scheduling
+  const captionBatchStartRef = useRef(0);
+  const captionBatchEndRef = useRef(0);
+  // Playback controls
+  const [muted, setMuted] = useState(false);
+  const isSpeakingRef = useRef(false);
+  useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
+  // Mirror latest mute state for async callbacks (prevents stale closures)
+  const mutedRef = useRef(false);
+  // When true, the next play attempt ignores gating (used for Opening begin)
+  const forceNextPlaybackRef = use
+
+### 8. src/app/session/page.js (120001aa0a58fb32657c5aa4d463eab5eee1ff92788c8e3a2c08614d4f754ccc)
+- bm25: -14.0500 | relevance: 0.9336
+
+{/* Video + captions: stack normally; side-by-side on mobile landscape */}
+  <div style={isMobileLandscape ? { display:'flex', alignItems:'stretch', width:'100%', paddingBottom:4, '--msSideBySideH': (videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')) } : {}}>
+    <div ref={videoColRef} style={isMobileLandscape ? { flex:`0 0 ${videoColPercent}%`, display:'flex', flexDirection:'column', minWidth:0, minHeight:0, height: 'var(--msSideBySideH)' } : {}}>
+  {/* Shared Complete Lesson handler */}
+  { /* define once; stable ref for consumers */ }
+  <VideoPanel
+        isMobileLandscape={isMobileLandscape}
+        isShortHeight={isShortHeight}
+  videoMaxHeight={videoEffectiveHeight || videoMaxHeight}
+        videoRef={videoRef}
+        showBegin={showBegin}
+        isSpeaking={isSpeaking}
+        phase={phase}
+  ticker={ticker}
+    currentWorksheetIndex={currentWorksheetIndex}
+        onBegin={beginSession}
+        onBeginComprehension={beginComprehensionPhase}
+        onBeginWorksheet={beginWorksheetPhase}
+        onBeginTest={beginTestPhase}
+        onBeginSkippedExercise={beginSkippedExercise}
+        subPhase={subPhase}
+        testCorrectCount={testCorrectCount}
+        testFinalPercent={testFinalPercent}
+        lessonParam={lessonParam}
+        lessonKey={lessonKey}
+        muted={muted}
+        onToggleMute={toggleMute}
+        onSkip={handleSkipSpeech}
+  loading={loading}
+  overlayLoading={overlayLoading}
+        exerciseSkippedAwaitBegin={exerciseSkippedAwaitBegin}
+        skipPendingLessonLoad={skipPendingLessonLoad}
+  currentCompProblem={currentCompProblem}
+  testActiveIndex={testActiveIndex}
+  testList={Array.isArray(generatedTest) ? generatedTest : []}
+        onCompleteLesson={onCompleteLesson}
+        sessio
+
+### 9. src/app/session/v2/AudioEngine.jsx (ce6ec3c237da7fda484e81f453ff96ce26d922425f2b876d0b9d2f831b2e41f1)
+- bm25: -13.0632 | entity_overlap_w: 2.60 | adjusted: -13.7132 | relevance: 0.9320
+
+// Pause as soon as playback actually starts (playing event), so we end in a paused state
+    // while still getting the autoplay "unlock" side effect from play().
+    // IMPORTANT: If unlock playback never starts during the gesture, do not leave a stale
+    // 'playing' handler around — it can pause the first real TTS video playback later.
+    this.#videoUnlockPlayingHandler = () => {
+      // Never pause the real TTS video playback.
+      if (this.#isPlaying) {
+        clearUnlockHandler();
+        return;
+      }
+      try { video.pause(); } catch {}
+      try { video.currentTime = 0; } catch {}
+      clearUnlockHandler();
+    };
+
+try {
+      video.addEventListener('playing', this.#videoUnlockPlayingHandler);
+    } catch {}
+
+// Cleanup even if 'playing' never fires (e.g., autoplay blocked).
+    try {
+      this.#videoUnlockCleanupTimer = setTimeout(() => {
+        clearUnlockHandler();
+      }, 1500);
+    } catch {}
+
+try {
+      const p = video.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => {
+          clearUnlockHandler();
+        });
+      }
+    } catch {
+      clearUnlockHandler();
+    }
   }
+  
+  // Public API: Playback control
+  async playAudio(base64Audio, sentences = [], startIndex = 0, options = {}) {
+    this.#lastAudioBase64 = base64Audio;
+    this.#lastSentences = sentences;
+    
+    // Stop any existing playback
+    this.stop();
+    
+    // Validate
+    if (!Array.isArray(sentences) || sentences.length === 0) {
+      console.warn('[AudioEngine] No sentences provided');
+      return;
+    }
 
-function goToAwards() {
-    r.push('/learn/awards')
+### 10. cohere-changelog.md (7758fb5b3d7153c3ed377199460ee9379a6fb2a7e52f8fa5d69104e848061642)
+- bm25: -13.1279 | entity_overlap_w: 1.30 | adjusted: -13.4529 | relevance: 0.9308
+
+Result:
+- Decision: Add `skipAudio: true` to `/api/sonoma` calls that only need text (story summaries/suggestions/poems/story generation in Opening Actions), since speech is performed separately via `/api/tts` (`speakFrontend` / `audioEngine.speak`). This avoids server-side TTS + large base64 audio responses on the critical path.
+- Files changed: src/app/session/hooks/useDiscussionHandlers.js, src/app/session/v2/OpeningActionsController.jsx, cohere-changelog.md
+
+### 11. docs/brain/beta-program.md (0df295c9aac10a86f520afffb4cee7e74e389ccb8d9e620f6df9df6ae0bfbca2)
+- bm25: -13.1063 | relevance: 0.9291
+
+### post_lesson_surveys (new)
+
+- `id` (uuid, PK)
+- `session_id` (uuid)
+- `submitted_at` (timestamptz)
+- `environment` (jsonb)
+- `learning_style` (jsonb)
+- `fatigue_moments` (jsonb)
+- `struggles` (jsonb)
+- `notes_freeform` (text)
+
+## Route Guards and Flows (Server-Side)
+
+### Guard Utility
+
+Add reusable guard utility `requireTutorialsAndSurvey(user, context)` that returns actionable state:
+
+**For Beta facilitators**:
+- Block if `fac_signup_video_completed_at` is null → require video
+- Else block if `fac_tutorial_completed_at` is null → require tutorial
+- Else allow
+
+**For Beta learners**:
+- On first lesson entry per `learner_id`, block if no row in `learner_tutorial_progress`
+
+**For golden key routes**:
+- Require matching `post_lesson_surveys.submitted_at` for active `session_id`
+- Require recent successful re-auth
+
+### Integration
+
+- Apply guards in server actions and page loaders for facilitator and learner routes
+- Redirect to appropriate tutorial/video screen when blocked
+
+## Security (Password Re-Auth for Survey Unlock)
+
+- Require full password re-entry immediately before showing post-lesson survey
+- Implement via Supabase server-side re-auth (`signInWithPassword` against current email)
+- Discard password; never store plaintext
+- Gate survey access and golden key unlock on short-lived, server-tracked re-auth token (e.g., expiry ~10 minutes)
+- Log only success/failure events; never log password
+
+## Event Instrumentation
+
+### Lesson Session Tracking
+
+- Start `lesson_sessions` row on lesson entry
+- Set `ended_at` on lesson exit
+
+### Transcript Events
+
+- For each transcript line emitted, persist `{ session_id, ts, text }`
+
+### Facilitator Notes
+
+- For each facilitator note, persist `{ session_id, ts, text }`
+
+### Repeat Events
+
+### 12. src/app/session/page.js (e7508f7a76ffbef711ee18a8f1e096ec8b7577b3ed1b1d260f17e19c7a2ffc80)
+- bm25: -13.0406 | relevance: 0.9288
+
+// Measure to size stacked caption panel. When not side-by-side, cap captions to visible viewport minus footer and current top offset.
+  useEffect(() => {
+    if (isMobileLandscape) { setStackedCaptionHeight(null); return; }
+    const measureTarget = videoColRef.current; // video defines canonical reflow triggers
+    const widthTarget = captionColRef.current || videoColRef.current;
+    const topTarget = captionColRef.current || widthTarget || measureTarget;
+    if (!measureTarget || !widthTarget || !topTarget) return;
+    const measure = () => {
+      try {
+        const vRect = measureTarget.getBoundingClientRect();
+        const wRect = widthTarget.getBoundingClientRect();
+        const tRect = topTarget.getBoundingClientRect();
+        const videoH = vRect.height;
+        const w = wRect.width;
+        const vh = window.innerHeight;
+        const colTop = Math.max(0, tRect.top);
+        // Keep a small gap above the footer to avoid visual collision
+        const footerGap = 8;
+        const available = Math.max(220, Math.floor(vh - footerHeight - footerGap - colTop));
+        // Prefer not to exceed column width to keep a square-ish feel
+        if (Number.isFinite(w) && w > 0) {
+          const target = Math.max(220, Math.min(Math.round(w), available));
+          setStackedCaptionHeight(target);
+        } else if (Number.isFinite(videoH) && videoH > 0) {
+          const target = Math.max(220, Math.min(Math.round(videoH), available));
+          setStackedCaptionHeight(target);
+        }
+      } catch {}
+    };
+    measure();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => measure());
+      try { ro.observe(measureTarget); } catch {}
+      if (widthTarget && widthTarget !== measureTarget) { try { ro.observe(widthTarget)
+
+### 13. src/app/session/page.js (66a96363eabb9a44caf7b7e67cd95b77abd1caa10dbf08c2e80821db3aec272b)
+- bm25: -12.9844 | relevance: 0.9285
+
+function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, lessonKey, muted, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, sessionTimerMinutes, timerPaused, calculateLessonProgress, handleTimeUp, handleTimerPauseToggle, handleTimerClick, phaseTimers, currentTimerMode, getCurrentPhaseName, getCurrentPhaseTimerDuration, goldenKeyBonus, showPlayTimeExpired, playExpiredPhase, handlePlayExpiredComplete, handlePhaseTimerTimeUp, showRepeatButton, handleRepeatSpeech, visualAids, onShowVisualAids, showGames, setShowGames, timerRefreshKey, showTakeoverDialog, conflictingSession, handleSessionTakeover, handleCancelTakeover, askState, setAskState, setAskOriginalQuestion, setShowOpeningActions, setCanSend }) {
+  // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)
+  // Remove horizontal clamp: let the video occupy the full available width of its column
+  const containerMaxWidth = 'none';
+  const dynamicHeightStyle = (isMobileLandscape && videoMaxHeight) ? { maxHeight: videoMaxHeight, height: videoMaxHeight, minHeight: 0 } : {};
+  // Responsive control sizing: derive a target size from container width via CSS clamp.
+  // We'll expose a CSS variable --ctrlSize and reuse for skip + play/pause/mute for symmetry.
+  const controlClusterStyle = {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    display: 'flex',
+    gap: 12,
+    zIndex: 10,
+    // size calculation moved
+
+### 14. src/app/session/page.js (126ecd956af2344724e7d8c7eb07146cb0d90ebf99e3c289e6acc7d5c2322b07)
+- bm25: -12.5743 | relevance: 0.9263
+
+// Dynamic target height for video in landscape (computed from viewport)
+  const [videoMaxHeight, setVideoMaxHeight] = useState(null);
+  // Dynamic video column width in landscape (percent of row width)
+  // Maps viewport height 600 -> 50% down to height 400 -> 30% (clamped)
+  const [videoColPercent, setVideoColPercent] = useState(50);
+  // Ultra-short screen handling: when viewport height <= 500px, relocate overlay controls to footer
+  const [isShortHeight, setIsShortHeight] = useState(false);
+  // Extra-tight landscape handling: when viewport height <= 450px in landscape, remove timeline vertical padding
+  const [isVeryShortLandscape, setIsVeryShortLandscape] = useState(false);
+  useEffect(() => {
+    const calcVideoHeight = () => {
+      try {
+        const w = window.innerWidth; const h = window.innerHeight;
+        // Track short height regardless of orientation
+        setIsShortHeight(h <= 500);
+        // Extra-tight landscape flag
+        setIsVeryShortLandscape((w > h) && (h <= 450));
+        const isLandscape = w > h;
+        if (!isLandscape) { setVideoMaxHeight(null); setVideoColPercent(50); return; }
+        // Multi-stage smooth ramp: 40% at 375px -> 65% at 600px -> 70% at 700px -> 75% at 1000px
+        // clamped to [0.40, 0.75]. Applies to all landscape viewports.
+        let frac;
+        if (h <= 375) {
+          frac = 0.40;
+        } else if (h <= 600) {
+          // Ramp from 40% at 375px to 65% at 600px
+          const t = (h - 375) / (600 - 375);
+          frac = 0.40 + t * (0.65 - 0.40);
+        } else if (h <= 700) {
+          // Ramp from 65% at 600px to 70% at 700px
+          const t = (h - 600) / (700 - 600);
+          frac = 0.65 + t * (0.70 - 0.65);
+        } else if (h <= 1000) {
+          // Ramp from 70% at 700px to 75% at 1000px
+
+### 15. docs/brain/v2-architecture.md (8ec1e8e7ff11b868bda1adcbf7227de9eee5ed57674484e751d290fd80163f9f)
+- bm25: -12.2251 | entity_overlap_w: 1.30 | adjusted: -12.5501 | relevance: 0.9262
+
+**Post-audit UX/telemetry fixes (2026-01-01)**
+- Teaching controls (Next/Repeat/Restart/Skip) are anchored in the fixed footer instead of overlaid on the video to match V1 footer placement and avoid covering the video.
+- All Q&A phase controls (Comprehension, Exercise, Worksheet, Test) are anchored in the fixed footer (answer input or MC/TF quick buttons + submit/skip) and must not render as on-video overlays.
+- `captionChange` payloads from HTMLAudio now emit `{ index, text }`, keeping transcript rendering consistent with WebAudio/Synthetic paths.
+- Session timer interval is bound to the TimerService instance, ensuring `sessionTimerTick` events fire and the on-screen timer advances.
+- HTMLAudio path emits the first caption immediately so transcripts populate as soon as playback starts (no blank transcript on first line).
+- AudioEngine replays the current caption immediately on `captionChange` subscription so the transcript works even if playback starts before the UI attaches listeners.
+- AudioEngine falls back to Synthetic playback (caption scheduling only) when both HTMLAudio and WebAudio playback fail (e.g., invalid base64, decode errors), so transcripts still populate and sessions can proceed even when TTS audio cannot be decoded.
+- Captions/transcripts are rendered only in the transcript panel (no on-video caption overlay).
+- Fixed AudioEngine initialization race: AudioEngine now retries initialization until the video element ref is available, preventing the Discussion phase Begin button from getting stuck on "Loading..." due to a one-shot effect returning early.
+- Teaching phase no longer auto-plays the first sentence; audio waits for the learner's first Next/Repeat click (V1 pacing gate).
+- SnapshotService now automatically falls back to localStorage when Supabas
+
+### 16. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -11.5698 | entity_overlap_w: 2.60 | adjusted: -12.2198 | relevance: 0.9244
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 17. src/app/session/page.js (0ffb6df94dbcf3090e71cf988e12be79c78dfd8a2249ff741cf62f72ee558834)
+- bm25: -10.9327 | entity_overlap_w: 3.90 | adjusted: -11.9077 | relevance: 0.9225
+
+// isSpeaking/phase/subPhase defined earlier; do not redeclare here
+  const [transcript, setTranscript] = useState("");
+  // Start with loading=true so the existing overlay spinner shows during initial restore
+  const [loading, setLoading] = useState(true);
+  // TTS overlay: track TTS fetch activity separately; overlay shows when either API or TTS is loading
+  const [ttsLoadingCount, setTtsLoadingCount] = useState(0);
+  const overlayLoading = loading || (ttsLoadingCount > 0);
+
+### 18. sidekick_pack.md (bba8c9d0a2ad1fcfae649c359a4219ed32e5a5913249044c89d6ec0d9ecb4d56)
+- bm25: -10.7654 | entity_overlap_w: 2.60 | adjusted: -11.4154 | relevance: 0.9195
+
+### Storage + Public Access (No Login)
+
+Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
+
+### 35. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.0390 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 19. sidekick_pack.md (df3b0d06c6e97315f9ac315d8fe85c1be37b146340873af631c44fae1bc3250f)
+- bm25: -10.7428 | entity_overlap_w: 2.60 | adjusted: -11.3928 | relevance: 0.9193
+
+### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.4515 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
+- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
+
+### 20. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (86b60aae069b5e5cd6312d1188af36820d92ad5d50ac3acdfbcc0206a1059f7c)
+- bm25: -10.6313 | entity_overlap_w: 2.60 | adjusted: -11.2813 | relevance: 0.9186
+
+### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.4515 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
+- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
+
+### 21. src/app/session/page.js (c30c2f63551fa4c9f8f01a3c1efd4a1ff1a0c5938a832ab444251f9a96fa392f)
+- bm25: -11.2420 | relevance: 0.9183
+
+// Centralized abort/cleanup: stop audio, captions, mic/STT, and in-flight requests
+  // keepCaptions: when true, do NOT wipe captionSentences so on-screen transcript remains continuous across handoffs
+  const abortAllActivity = useCallback((keepCaptions = false) => {
+    // Abort in-flight Ms. Sonoma
+    try { if (sonomaAbortRef.current) sonomaAbortRef.current.abort('skip'); } catch {}
+    // Stop audio playback
+    if (audioRef.current) {
+      try { audioRef.current.pause(); } catch {}
+      try { audioRef.current.src = ''; } catch {}
+      audioRef.current = null;
+    }
+    // Pause video as well on abort
+    if (videoRef.current) {
+      try { videoRef.current.pause(); } catch {}
+    }
+    // Stop synthetic playback timers/state
+    try { clearSynthetic(); } catch {}
+    // Clear any deferred playback intent so it does not apply after abort
+    try { setPlaybackIntent(null); } catch {}
+    // Clear captions timers and optionally content
+    try {
+      clearCaptionTimers();
+      captionBatchStartRef.current = 0;
+      captionBatchEndRef.current = 0;
+      if (!keepCaptions) {
+        captionSentencesRef.current = [];
+        setCaptionSentences([]);
+        setCaptionIndex(0);
+      }
+    } catch {}
+    // Reset transcript, speaking state, and input
+    setTranscript('');
+    setIsSpeaking(false);
+    setLearnerInput('');
+    // Notify children (InputPanel) to stop mic and cancel STT
+    setAbortKey((k) => k + 1);
+  }, []);
+
+### 22. src/app/session/page.js (5656ab58736dcc864a2fc850d5e0813fa2cc574c83c9ea75e4d851c8d7a67ecf)
+- bm25: -11.2017 | relevance: 0.9180
+
+// No portrait spacer: timeline should sit directly under the header in portrait mode.
+
+### 23. src/app/session/page.js (0b40a1aaa17fa961fa99e8d176b727a925136b5cff2fa7bb95c60ca6c9373af3)
+- bm25: -11.1098 | relevance: 0.9174
+
+const choiceCount = Array.isArray(active.choices) && active.choices.length
+                ? active.choices.length
+                : (Array.isArray(active.options) ? active.options.length : 0);
+
+const containerStyle = {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                gap: 8,
+                // Align with video gutters in portrait
+                paddingLeft: isMobileLandscape ? 12 : '4%',
+                paddingRight: isMobileLandscape ? 12 : '4%',
+                marginBottom: 6,
+              };
+              const btnBase = {
+                background: '#1f2937',
+                color: '#fff',
+                borderRadius: 8,
+                padding: '8px 12px',
+                minHeight: 40,
+                minWidth: 56,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.18)'
+              };
+
+### 24. src/app/session/page.js (92f388d9bc5e5ff4e48e752a71b894e2c1fc466812b0f350dfb950e75dbb92a8)
+- bm25: -10.5587 | entity_overlap_w: 1.30 | adjusted: -10.8837 | relevance: 0.9159
+
+// Skip speech: stop TTS, video, captions and jump to end of current response turn
+  const skipJustFiredRef = useRef(false);
+
+const handleSkipSpeech = useCallback(() => {
+    // Mark that skip just fired to prevent Begin hotkey from auto-triggering
+    skipJustFiredRef.current = true;
+    setTimeout(() => { skipJustFiredRef.current = false; }, 300);
+
+// Abort everything but keep existing transcript/captions on screen
+    abortAllActivity(true);
+
+// Explicitly stop any pending WebAudio source and guard timers
+    try {
+      if (webAudioSourceRef.current) {
+        try { webAudioSourceRef.current.stop(); } catch {}
+        try { webAudioSourceRef.current.disconnect(); } catch {}
+        webAudioSourceRef.current = null;
+      }
+      clearSpeechGuard();
+    } catch {}
+
+// Hide repeat button during the skip action
+    try { setShowRepeatButton(false); } catch {}
+
+// Enable input immediately when skipping
+    try { setCanSend(true); } catch {}
+
+// Scroll transcript to bottom
+    try {
+      if (captionBoxRef.current) {
+        captionBoxRef.current.scrollTop = captionBoxRef.current.scrollHeight;
+      }
+    } catch {}
+
+// Show opening actions if in the right phase/state
+    try {
+      if (
+        phase === 'discussion' &&
+        subPhase === 'awaiting-learner' &&
+        askState === 'inactive' &&
+        riddleState === 'inactive' &&
+        poemState === 'inactive'
+      ) {
+        setShowOpeningActions(true);
+      }
+    } catch {}
+
+// Reset playback state refs
+    webAudioStartedAtRef.current = 0;
+    webAudioPausedAtRef.current = 0;
+    htmlAudioPausedAtRef.current = 0;
+
+// Restore repeat button so the learner can hear the last line again
+    try {
+      if (lastAudioBase64Ref.current) {
+        setShowRepeatButton(true);
+      }
+    } catch {}
+
+### 25. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (52b38273b4be3a627da84bb6e3b56d5bc4bb1b0f992a03be87823a7d7f649aff)
+- bm25: -10.8451 | relevance: 0.9156
+
+## Key Files
+
+- `src/app/api/conversation-memory/route.js` - GET/POST endpoints, summarization logic, archival
+- `src/app/counselor/CounselorClient.jsx` - Client-side memory updates, loading
+- `src/app/api/counselor/route.js` - Function calling tools, automatic memory loading
+
+## What NOT To Do
+
+**DON'T regenerate summaries from scratch** - Use incremental updates. Regenerating loses nuance and wastes tokens. Only use `force_regenerate: true` for debugging.
+
+### 8. docs/brain/mr-mentor-conversation-flows.md (bb04765302248e45513f25a1ec923d2f1e43ca671594a8c000ee0ab9d9d67fac)
+- bm25: -20.3998 | relevance: 1.0000
+
+### Visual Design
+- Buttons use emoji icons for quick recognition
+- Active button has blue border and light blue background
+- Inactive buttons have gray border and white background
+- All overlays use consistent styling with gradient headers
+- Fully responsive and scrollable
+
+### File Structure
+```
+src/app/facilitator/tools/counselor/
+├── CounselorClient.jsx (main component - updated)
+├── ClipboardOverlay.jsx (existing)
+└── overlays/
+    ├── CalendarOverlay.jsx
+    ├── LessonsOverlay.jsx
+    ├── GeneratedLessonsOverlay.jsx
+    └── LessonMakerOverlay.jsx
+```
+
+### Usage
+1. **Viewing Different Screens**: Click emoji buttons to switch views
+2. **Learner Selection**: Available in most overlays; syncs with main dropdown
+3. **Returning to Video**: Click 👨‍🏫 button to return to Mr. Mentor video
+
+### Props Flow
+- `learners` array passed from parent to overlays
+- `selectedLearnerId` synced across all components
+- `tier` passed to LessonMaker for quota checks
+- All overlays handle their own data fetching
+
+### 26. docs/brain/v2-architecture.md (6a7b91ff6e8e0570e3cb0b8ab750c6e9a442924b2edcc946c2ebed47715132c1)
+- bm25: -10.6202 | relevance: 0.9139
+
+**Idle Begin CTA loading feedback (2026-01-07)**
+- When the learner clicks the initial "Begin" (idle phase) or "Resume", the CTA must immediately flip to "Loading..." and disable until `startSession()` returns.
+- The Begin CTA must never hang indefinitely.
+  - Any awaited Begin-start steps must be time-boxed.
+  - On timeout/failure, the CTA must re-enable and show a user-facing error so the learner can retry.
+- When the CTA is disabled because prerequisites are still initializing (e.g., snapshot load), the label must not misleadingly show "Loading..." without context.
+
+**Complete Lesson farewell sequencing (2026-01-07)**
+- The Test review "Complete Lesson" click plays a short congrats line to hide end-of-lesson load.
+- The Closing phase farewell must NOT interrupt that congrats line.
+- If congrats audio is playing when Closing begins, defer `ClosingPhase.start()` until the AudioEngine emits `end`.
+- Transcript now uses V1's `CaptionPanel` (assistant/user styling, MC stack, vocab highlighting) and saves `{ lines:[{text,role}], activeIndex }` into snapshots. Caption changes and learner submissions append lines with duplicate detection; active caption highlights are restored on load for cross-device continuity. The caption panel auto-scrolls to the newest line; on iOS Safari this must use an end-of-list sentinel + `scrollIntoView` with multi-tick retries (direct `scrollTop` writes can be ignored during layout). Transcript state resets when Start Over ignores resume so captions do not accumulate across restarts. In portrait mode, the caption panel height is set to 35vh.
+
+### 27. src/app/session/v2/AudioEngine.jsx (0d7421d5cd44a8a2cb1880c1039972455ad45068cae38a5500b443646a1030ec)
+- bm25: -9.6060 | entity_overlap_w: 3.90 | adjusted: -10.5810 | relevance: 0.9137
+
+// If a video-unlock handler is still attached (e.g., autoplay was blocked during
+    // initialize()), clear it so it cannot pause the first real TTS playback.
+    // Track whether the unlock play() was still in-flight BEFORE clearing, so we can
+    // issue a pause() to settle it before starting the real TTS play(). This prevents
+    // the race where the unlock play() resolves after playVideoWithRetry() starts and
+    // the (now-removed) handler would have paused the video mid-TTS.
+    const unlockWasActive = !!(this.#videoUnlockPlayingHandler);
+    try {
+      if (this.#videoUnlockCleanupTimer) {
+        clearTimeout(this.#videoUnlockCleanupTimer);
+        this.#videoUnlockCleanupTimer = null;
+      }
+    } catch {}
+    try {
+      if (this.#videoUnlockPlayingHandler) {
+        this.#videoElement.removeEventListener('playing', this.#videoUnlockPlayingHandler);
+        this.#videoUnlockPlayingHandler = null;
+      }
+    } catch {}
+
+### 28. src/app/session/v2/SessionPageV2.jsx (d751e8c311508905d65a6c403620c13d2ecc6491a68fbdf86b3cddafe7b2e65c)
+- bm25: -10.4262 | relevance: 0.9125
+
+// Measure the fixed footer height so portrait caption sizing can reserve exact space (V1 parity)
+  useEffect(() => {
+    const el = footerRef.current;
+    if (!el) return;
+    const measure = () => {
+      try {
+        const h = Math.ceil(el.getBoundingClientRect().height);
+        if (Number.isFinite(h) && h >= 0) setFooterHeight(h);
+      } catch {}
+    };
+    measure();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => measure());
+      try { ro.observe(el); } catch {}
+    } else if (typeof window !== 'undefined') {
+      window.addEventListener('resize', measure);
+    }
+    return () => {
+      try { ro && ro.disconnect(); } catch {}
+      if (typeof window !== 'undefined') window.removeEventListener('resize', measure);
+    };
+  }, []);
+
+// Set portrait caption height to 35vh
+  useEffect(() => {
+    if (isMobileLandscape) {
+      setStackedCaptionHeight(null);
+    } else {
+      // 35vh for portrait mode
+      const vh = window.innerHeight;
+      const targetHeight = Math.floor(vh * 0.35);
+      setStackedCaptionHeight(targetHeight);
+    }
+  }, [isMobileLandscape]);
+  
+  // Initialize AudioEngine
+  useEffect(() => {
+    let cancelled = false;
+    let retryTimer = null;
+
+const tryInit = () => {
+      if (cancelled) return;
+
+const videoEl = videoRef.current;
+      if (!videoEl) {
+        // videoRef is a ref, so changes won't retrigger this effect.
+        // Retry until the video element is mounted so the Begin button
+        // doesn't get stuck in "Loading...".
+        console.log('[SessionPageV2] VideoRef not ready yet');
+        retryTimer = setTimeout(tryInit, 50);
+        return;
+      }
+
+if (audioEngineRef.current) {
+        console.log('[SessionPageV2] AudioEngine already initialized');
+        return;
+      }
+
+### 29. src/app/session/v2/OpeningActionsController.jsx (4f63ae80d1733e3aa9eb309b4033193bdeadb12ca59a894843dda5ba4bb25092)
+- bm25: -10.0364 | entity_overlap_w: 1.30 | adjusted: -10.3614 | relevance: 0.9120
+
+const lessonTitle = (ctxLessonTitle || this.#subject || 'this topic').toString();
+    const subject = (ctxSubject || this.#subject || 'math').toString();
+    const gradeLevel = ctxGradeLevel || this.#learnerGrade;
+    const difficulty = ctxDifficulty || this.#difficulty;
+    
+    // Call Ms. Sonoma API
+    try {
+      const instruction = [
+        `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(gradeLevel, difficulty)}`,
+        `Lesson title: "${lessonTitle}".`,
+        subject ? `Subject: ${subject}.` : '',
+        question ? `The learner asked: "${question}".` : '',
+        vocabChunk || '',
+        problemChunk || '',
+        'Answer their question in 2-3 short sentences.',
+        'Use the provided vocab meanings when relevant so words with multiple definitions stay on-topic.',
+        'Be warm, encouraging, and age-appropriate.',
+        'Do not ask the learner any questions in your reply.',
+        'If the question is off-topic or inappropriate, gently redirect.'
+      ].filter(Boolean).join(' ');
+      
+      const response = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Ask uses the frontend audio engine for speech; skip server-side TTS to
+        // avoid large base64 payloads and reduce failure risk.
+        body: JSON.stringify({ instruction, innertext: question, skipAudio: true })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Sonoma API request failed (status ${response.status})`);
+      }
+      
+      const data = await response.json();
+      const answer = data.reply || data.text || 'That\'s an interesting question! Let me think about that.';
+      
+      this.#actionState.answer = answer;
+      this.#actionState.stage = 'complete';
+
+### 30. docs/brain/api-routes.md (1a9909aa92e1849ef1e916a1eb98c4a6450cf230d4dcc814fde247b23fff87a0)
+- bm25: -10.1912 | relevance: 0.9106
+
+---
+
+## API Architecture Principles
+
+1. **Stateless**: Each `/api/sonoma` call is independent; session state passed in request body
+2. **Instruction-driven**: Behavior controlled by `instructions` field, not hardcoded logic
+3. **LLM-agnostic**: Provider/model configured via `SONOMA_PROVIDER` and `SONOMA_MODEL` env vars
+4. **Closed-world**: API responses are text-only; no side effects, no file access, no database writes from Ms. Sonoma
+
+### 31. src/app/HeaderBar.js (d30bb13740b4f787c1b156da5c17ef30e5029d6a6f591ee0294b771a240f9db3)
+- bm25: -10.1364 | relevance: 0.9102
+
+"use client";
+
+import Link from 'next/link';
+import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
+import { useMemo, useCallback, useEffect, useState, useRef } from 'react';
+import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
+import { ensurePinAllowed, setInFacilitatorSection } from '@/app/lib/pinGate';
+
+export default function HeaderBar() {
+	const pathname = usePathname() || '/';
+	const router = useRouter();
+	// Reserved left/right widths; keep smaller on session so center gets more space
+	const navWidth = useMemo(() => {
+		// On the session page, especially in portrait, reclaim width for the title
+		if (pathname.startsWith('/session')) {
+			return 'clamp(64px, 12vw, 120px)';
+		}
+		return 'clamp(84px, 14vw, 160px)';
+	}, [pathname]);
+	// Let the left padding breathe based on viewport so branding does not get pushed too far right
+	const PAD_LEFT = 'clamp(4px, 1vw, 6px)';
+	const PAD_RIGHT = 'clamp(8px, 3vw, 20px)';
+	// Responsive brand text sizing in rem/vw (no px)
+	const BRAND_FONT = 'clamp(1.125rem, 3vw, 1.375rem)';
+	const BRAND_MIN = 14; // px, emergency shrink if space is tight
+	const BRAND_MAX = 22; // px, visual cap
+	const BRAND_GAP = 'clamp(6px, 2vw, 10px)';
+
+### 32. docs/brain/tts-prefetching.md (d4d48f07f7f9a11e80b3ef68e048d4c9b4038755fe3b6610d8d8f62094649b0b)
+- bm25: -10.0655 | relevance: 0.9096
+
+// Prefetch second question while student answers first
+try {
+  if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
+    const prefetchProblem = generatedComprehension[currentCompIndex];
+    const prefetchQ = ensureQuestionMark(formatQuestionForSpeech(prefetchProblem, { layout: 'multiline' }));
+    ttsCache.prefetch(prefetchQ);
   }
+} catch {}
+```
 
-return (
-    <main style={{ padding:'16px 24px' }}>
-      <div style={{ width:'100%', maxWidth:560, textAlign:'center', margin:'0 auto' }}>
-        <h1 style={{ margin:'4px 0 8px' }}>{noLearner ? 'Learning Portal' : `Hi, ${learner.name}!`}</h1>
-        
-        {!noLearner && (
-          <div style={{ marginTop:4, marginBottom:12 }}>
-            <button
-              onClick={async ()=> {
-                const ok = await ensurePinAllowed('change-learner');
-                if (!ok) return;
-                try { localStorage.removeItem('learner_id'); localStorage.removeItem('learner_name'); localStorage.removeItem('learner_grade'); } catch {}
-                setLearner({ id: null, name: '' });
-              }}
-              style={{ padding:'6px 10px', border:'1px solid #e5e7eb', borderRadius:8, background:'#fff' }}
-            >
-              Change Learner
-            </button>
-          </div>
-        )}
+### 33. sidekick_pack.md (8d2d98c4a5e9802d9ffc48dd47d1b4ee95e3b624a0bcdde6bb2a6300794f51dd)
+- bm25: -9.7355 | entity_overlap_w: 1.30 | adjusted: -10.0605 | relevance: 0.9096
 
-### 12. docs/brain/api-routes.md (dd3378227a6324ce4a86f9e043ed13060e4abcc4a4fabc05a7854dad2c6ce68c)
-- bm25: -9.1994 | relevance: 0.9020
+**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
+
+**DON'T fail to update notes** - Stale notes mislead Mr. Mentor. Encourage facilitators to update notes as learner progresses.
+
+**DON'T forget empty note deletion** - Save function correctly deletes empty notes from JSONB object (avoids storing null/empty values).
+
+### 14. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -17.8102 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+### 34. docs/brain/ms-sonoma-teaching-system.md (cede03814a8e282c9f02f9885e01f2a1ed833b57c04cd2aef304bf98f2d7f4ba)
+- bm25: -9.6792 | entity_overlap_w: 1.30 | adjusted: -10.0042 | relevance: 0.9091
+
+## Related Brain Files
+
+- **[tts-prefetching.md](tts-prefetching.md)** - TTS powers audio playback for Ms. Sonoma speech
+- **[visual-aids.md](visual-aids.md)** - Visual aids displayed during teaching phase
+
+## Key Files
+
+### Core API
+- `src/app/api/sonoma/route.js` - Main Ms. Sonoma API endpoint, integrates content safety validation
+
+### Content Safety
+- `src/lib/contentSafety.js` - Lenient validation system: prompt injection detection (always), banned keywords (reduced list, skipped for creative features), instruction hardening (primary defense), output validation with skipModeration=true (OpenAI Moderation API bypassed to prevent false positives like "pajamas" flagged as sexual)
+
+### Teaching Flow Hooks
+- `src/app/session/hooks/useTeachingFlow.js` - Orchestrates teaching definitions and examples stages
+
+### Phase Handlers
+- `src/app/session/hooks/usePhaseHandlers.js` - Manages phase transitions (comprehension, exercise, worksheet, test)
+
+### Session Page
+- `src/app/session/page.js` - Main session orchestration, phase state management
+
+### Brand Signal Sources (Read-Only)
+- `.github/Signals/MsSonoma_Voice_and_Vocabulary_Guide.pdf`
+- `.github/Signals/MsSonoma_Messaging_Matrix_Text.pdf`
+- `.github/Signals/MsSonoma_OnePage_Brand_Story.pdf`
+- `.github/Signals/MsSonoma_Homepage_Copy_Framework.pdf`
+- `.github/Signals/MsSonoma_Launch_Deck_The_Calm_Revolution.pdf`
+- `.github/Signals/MsSonoma_SignalFlow_Full_Report.pdf`
+
+### Data Schema
+- Supabase tables for lesson content, vocab terms, comprehension items
+- Content safety incidents logging table
+
+## Notes
+
+### 35. docs/brain/ingests/pack-mentor-intercepts.md (ad9be28e3be4c170969fd8d3a91e2b0202957cc880842fc857610f9d7f8b194a)
+- bm25: -9.6475 | entity_overlap_w: 1.30 | adjusted: -9.9725 | relevance: 0.9089
+
+**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
+
+**DON'T fail to update notes** - Stale notes mislead Mr. Mentor. Encourage facilitators to update notes as learner progresses.
+
+**DON'T forget empty note deletion** - Save function correctly deletes empty notes from JSONB object (avoids storing null/empty values).
+
+### 14. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -17.8102 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+### 36. docs/brain/api-routes.md (dd3378227a6324ce4a86f9e043ed13060e4abcc4a4fabc05a7854dad2c6ce68c)
+- bm25: -8.7942 | entity_overlap_w: 3.90 | adjusted: -9.7692 | relevance: 0.9071
 
 # API Routes
 
@@ -446,916 +1309,157 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 **Purpose**: Mr. Mentor counselor chat endpoint (facilitator-facing)  
 **Status**: Operational
 
-### 13. docs/brain/ingests/pack-mentor-intercepts.md (4f9e0b0ea016fdcc924708636e88c7e8e9e69881ad4c0b8c62096c1f4a407ac7)
-- bm25: -8.9331 | relevance: 0.8993
+### 37. docs/brain/ingests/pack-mentor-intercepts.md (35e76a89c7f5240f0e94cbd2877e930ae62cde56e079f99fd9382929f9faf2a0)
+- bm25: -8.7633 | entity_overlap_w: 3.90 | adjusted: -9.7383 | relevance: 0.9069
 
-### `/api/counselor`
-**Purpose**: Mr. Mentor counselor chat endpoint (facilitator-facing)  
-**Status**: Operational
+### 15. docs/brain/api-routes.md (dd3378227a6324ce4a86f9e043ed13060e4abcc4a4fabc05a7854dad2c6ce68c)
+- bm25: -16.5866 | relevance: 1.0000
 
-### 14. docs/brain/ms-sonoma-teaching-system.md (34f290e583cfdbb0a6f759d1d3958b96b90cb88109f221b9858fa59b52a619ba)
-- bm25: -8.8870 | relevance: 0.8989
+# API Routes
 
-**Teaching/Repeat - Wrap Line**:
-- "Do you have any questions?"
-- "You could ask questions like..."
+## `/api/sonoma` - Core Ms. Sonoma Endpoint
 
-### 15. src/app/api/slate-tts/route.js (7b8ef6980e896ad0d7892d92873c28d84ff4c37b2f38f83c4fcc29acab5fce64)
-- bm25: -8.8490 | relevance: 0.8985
+### Request Format
 
-// Mr. Slate TTS route — uses a male, Standard US voice for a robotic quality
-// Intentionally distinct from /api/tts (Ms. Sonoma) which uses a Neural GB female voice
+**Method**: POST  
+**Content-Type**: application/json
 
-import { NextResponse } from 'next/server'
-import fs from 'node:fs'
-import path from 'node:path'
-import textToSpeech from '@google-cloud/text-to-speech'
-
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-
-const { TextToSpeechClient } = textToSpeech
-let ttsClientPromise
-
-// Standard US male voice — Standard (not Neural) gives a more robotic character
-const SLATE_VOICE = {
-  languageCode: 'en-US',
-  name: 'en-US-Standard-B',
-  ssmlGender: 'MALE',
-}
-
-const SLATE_AUDIO_CONFIG = {
-  audioEncoding: 'MP3',
-  speakingRate: 1.08, // slightly faster/crisper than Sonoma
-  pitch: -1.5,        // slightly lower pitch for mechanical feel
-}
-
-function decodeCredentials(raw) {
-  if (!raw) return null
-  try { return JSON.parse(raw) } catch {}
-  try { const decoded = Buffer.from(raw, 'base64').toString('utf8'); return JSON.parse(decoded) } catch {}
-  return null
-}
-
-function loadTtsCredentials() {
-  const inline = process.env.GOOGLE_TTS_CREDENTIALS
-  const inlineCreds = decodeCredentials(inline)
-  if (inlineCreds) return inlineCreds
-  const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(process.cwd(), 'google-tts-key.json')
-  try {
-    if (credentialPath && fs.existsSync(credentialPath)) {
-      const raw = fs.readFileSync(credentialPath, 'utf8').trim()
-      if (raw) return decodeCredentials(raw) || JSON.parse(raw)
-    }
-  } catch {}
-  return null
-}
-
-### 16. src/app/session/slate/page.jsx (ef2f7e53115c13905856bd2ef2123f8f786821c012fe08193d292e81ae4daefc)
-- bm25: -8.7205 | relevance: 0.8971
-
-{/* True / False */}
-              {isAsking && q.type === 'truefalse' && (
-                <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-                  <button
-                    onClick={() => onChoiceClick('true')}
-                    disabled={isJudging}
-                    style={{ ...tfBtnBase, background: '#0d1117', border: `1px solid ${C.green}`, color: C.green, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
-                  >
-                    TRUE
-                  </button>
-                  <button
-                    onClick={() => onChoiceClick('false')}
-                    disabled={isJudging}
-                    style={{ ...tfBtnBase, background: '#0d1117', border: `1px solid ${C.red}`, color: C.red, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
-                  >
-                    FALSE
-                  </button>
-                </div>
-              )}
-
-### 17. docs/brain/visual-aids.md (a746ede503458c98a6a056626ef0f02dcbea89574b9e6353af925d0c66b1c77a)
-- bm25: -8.6899 | relevance: 0.8968
-
-### Critical Constraint: NO TEXT IN IMAGES
-
-**Problem**: DALL-E cannot reliably render legible text. Any attempt to include words, labels, diagrams with text, or written language results in gibberish that looks like text but is completely illegible.
-
-**Solution**: Prompt engineering enforces visual-only content at 3 layers:
-
-1. **System prompt** (GPT-4o-mini prompt creation):
-   - "NEVER include text, words, letters, labels, captions, signs, writing, numbers, or any written language"
-   - "Describe only visual elements like colors, shapes, objects, people, animals, and scenery"
-  - "Use phrases like 'a cartoon scene showing' or 'an illustration of' rather than 'diagram' or 'chart'"
-
-2. **User prompt** (GPT-4o-mini prompt creation):
-   - "Describe a visual scene with objects and actions only - absolutely no text or labels in the image"
-   - "Use only visual elements - no text, labels, or words anywhere in the image"
-
-3. **DALL-E prompt enhancement**:
-   - Every prompt sent to DALL-E gets suffix appended: "IMPORTANT: This image must contain absolutely NO text, words, letters, numbers, labels, captions, signs, or any written language of any kind. Show only visual elements."
-
-### Rewrite System Integration
-
-`/api/ai/rewrite-text` has two visual-aid-specific purposes:
-
-**`visual-aid-prompt-from-notes`**:
-- Converts teaching notes into guidance for generating 3 varied images
-- System prompt: "You understand that AI-generated images with text are illegible and must be avoided"
-- Suggests "visual scenes, objects, and actions (not text or labels)"
-
-### 18. src/app/session/slate/page.jsx (fda166c1c53018c52ce3c468054ceccadabc3f5fff85762deafc001605c39346)
-- bm25: -8.5456 | relevance: 0.8952
-
-'use client'
-
-/**
- * Mr. Slate -- Skills & Practice Coach
- *
- * A quiz-mode drill session. Questions are drawn from the same lesson JSON
- * as Ms. Sonoma (sample, truefalse, multiplechoice, fillintheblank pools).
- * The learner accumulates points (goal: 10) to earn the robot mastery icon.
- *
- * Rules:
- *   - Correct answer within time limit  -> +1 (min 0, max 10)
- *   - Wrong answer                      -> -1 (min 0)
- *   - Timeout (15s default)             -> +/-0
- *   - Reach 10 -> mastery confirmed
- *
- * Questions rotate through the full pool without repeats until ~80% have
- * been asked, then the deck reshuffles.
- *
- * Lessons are loaded from /api/learner/available-lessons (handles static,
- * generated, and Supabase-stored lessons uniformly). No URL params required.
- */
-
-import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
-import { useRouter } from 'next/navigation'
-import { getMasteryForLearner, saveMastery } from '@/app/lib/masteryClient'
-
-// --- Constants ---------------------------------------------------------------
-
-const QUESTION_SECONDS = 15
-const SCORE_GOAL = 10
-const FEEDBACK_DELAY_MS = 2000
-const RESHUFFLE_THRESHOLD = 0.2 // reshuffle when only 20% of deck remains
-
-const DEFAULT_SLATE_SETTINGS = {
-  scoreGoal: 10,
-  correctPts: 1,
-  wrongPts: 1,
-  timeoutPts: 0,
-  timeoutOffset: 0,
-  questionSecs: 15,
-}
-
-### 19. src/app/session/slate/page.jsx (c0648f5e28a10bdbf95a1aa926a46154c9b4b98b746e77f4b802b033e1608bd7)
-- bm25: -8.5264 | relevance: 0.8950
-
-{/* Multiple choice */}
-              {isAsking && q.type === 'multiplechoice' && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8, marginTop: 16 }}>
-                  {(q.choices || []).map((choice, i) => (
-                    <button
-                      key={i}
-                      onClick={() => onChoiceClick(i)}
-                      disabled={isJudging}
-                      style={{ ...choiceBtn, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
-                    >
-                      <span style={{ color: C.accent, marginRight: 8, fontWeight: 800 }}>
-                        {String.fromCharCode(65 + i)}.
-                      </span>
-                      {choice}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-### 20. src/lib/faq/facilitator-tools.json (01d1775600d96190823d9a009a124babf1c8c002bd0016694f7f2e5a685b8241)
-- bm25: -8.3718 | relevance: 0.8933
-
+```json
 {
-  "category": "Facilitator Settings & Tools",
-  "features": [
-    {
-      "id": "facilitator-dashboard",
-      "title": "Facilitator Dashboard",
-      "keywords": [
-        "facilitator dashboard",
-        "dashboard",
-        "facilitator tools",
-        "adult tools",
-        "teacher tools"
-      ],
-      "description": "The Facilitator Dashboard is where you manage learners, lessons, scheduling, and account-level facilitator tools.",
-      "howToUse": "Open the facilitator area and use the Learners and Lessons sections to manage your work. Mr. Mentor can also open key overlays for you.",
-      "relatedFeatures": ["learner-profiles", "lesson-library", "mr-mentor"]
-    },
-    {
-      "id": "goals-clipboard",
-      "title": "Goals Clipboard",
-      "keywords": [
-        "goals clipboard",
-        "goals button",
-        "notes clipboard",
-        "open goals"
-      ],
-      "description": "The Goals clipboard is the UI where you view and edit Goals and Notes for the selected learner (or facilitator).",
-      "howToUse": "Click the 'Goals' button to open it. Mr. Mentor can also help you review what’s saved (report) or suggest what to write (describe/advice).",
-      "relatedFeatures": ["goals-notes"]
-    },
-    {
-      "id": "lessons-overlay",
-      "title": "Lessons Overlay",
-      "keywords": [
-        "lessons overlay",
-        "lessons button",
-        "open lessons",
-        "show my lessons",
-        "lesson list"
-      ],
-      "description": "The Lessons overlay is a quick way to browse, search, and act on lessons (schedule, assign/approve, edit, or review).",
-      "howToUse": "Click the 'Lessons' button, or ask Mr. Mentor to show lessons and help you find the one you want.",
-      "relatedFeatures": ["lesson-library", "lesson-scheduling", "lesson-editing"]
+  "instruction": "<string>",
+  "innertext": "<string>",
+  "skipAudio": true
+}
+```
 
-### 21. src/app/session/slate/page.jsx (579467186e14a637f4e20c7b1dadc6c02f04ee34edea6442b4728521cc05f4fe)
-- bm25: -8.3406 | relevance: 0.8929
+**Fields**:
+- `instruction`: The per-turn instruction string (server hardens it for safety).
+- `innertext`: Optional learner input for this turn.
+- `skipAudio`: Optional boolean; when `true`, the API will skip Google TTS and return `audio: null`.
 
-{/* Inline warning banner */}
-                {listError && (
-                  <div style={{ background: C.redDim, border: `1px solid ${C.red}`, borderRadius: 8, padding: '10px 14px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                    <span style={{ color: C.red, fontSize: 12 }}>{listError}</span>
-                    <button onClick={() => setListError('')} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>✕</button>
-                  </div>
-                )}
+**Why `skipAudio` exists**:
+- Some callers (especially teaching definitions/examples generation) need text only.
+- Returning base64 audio for large responses can be slow on mobile devices.
 
-{/* Tabs */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 0 }}>
-                  <button style={tabStyle(listTab === 'active')} onClick={() => setListTab('active')}>ACTIVE</button>
-                  <button style={tabStyle(listTab === 'recent')} onClick={() => setListTab('recent')}>
-                    RECENT{recentList.length > 0 ? ` (${recentList.length})` : ''}
-                  </button>
-                  <button style={tabStyle(listTab === 'owned')} onClick={() => setListTab('owned')}>
-                    OWNED{mergedMap.size > 0 ? ` (${mergedMap.size})` : ''}
-                  </button>
-                </div>
+### Response Format
 
-### 22. src/app/learn/lessons/page.js (f74f2619a760ffcb67e8f47dc07a0dc7642e38373e1d9de4ff67a4368b97c709)
-- bm25: -8.3365 | relevance: 0.8929
-
-// CRITICAL: Don't treat 'congrats' or 'test' as meaningful progress
-  // Lesson is complete - no point resuming to "Complete Lesson" button
-  // Test phase includes both in-progress tests AND completed tests (testFinalPercent may be null)
-  if (phase === 'congrats' || phase === 'test') return false
-
-### 23. src/app/session/slate/page.jsx (f80d011880985255c6624e744cda3013d06cfaf2cbaf2ca48a16b9b7d3e58e04)
-- bm25: -8.2949 | relevance: 0.8924
-
-const backToList = useCallback(() => {
-    clearInterval(timerInterval.current)
-    clearTimeout(feedbackTimeout.current)
-    isJudgingRef.current = false
-    setIsJudging(false)
-    setScore(0)
-    scoreRef.current = 0
-    setQCount(0)
-    setCurrentQ(null)
-    setLessonData(null)
-    lessonKeyRef.current = ''
-    phaseRef.current = 'list'
-    setPagePhase('list')
-  }, [])
-
-const exitToLessons = useCallback(() => {
-    clearInterval(timerInterval.current)
-    clearTimeout(feedbackTimeout.current)
-    router.push('/learn')
-  }, [router])
-
-const lessonTitle = lessonData?.title || ''
-
-// ===========================================================================
-  //  RENDER -- Loading
-  // ===========================================================================
-  if (pagePhase === 'loading') {
-    return (
-      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ marginBottom: 16 }}>
-            <SlateVideo size={100} />
-          </div>
-          <div style={{ fontSize: 13, letterSpacing: 2, marginBottom: 20 }}>INITIALIZING DRILL SYSTEM...</div>
-          <LoadingDots />
-        </div>
-      </div>
-    )
-  }
-
-### 24. src/app/session/slate/page.jsx (761aaf23aacdeceb801141e4c5a4eff19a0df1e5ea961a38fc0286c251cdb661)
-- bm25: -8.2340 | relevance: 0.8917
-
-// ===========================================================================
-  //  RENDER -- Error
-  // ===========================================================================
-  if (pagePhase === 'error') {
-    return (
-      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div style={{ textAlign: 'center', maxWidth: 400 }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>⚠️</div>
-          <div style={{ color: C.red, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>SYSTEM ERROR</div>
-          <div style={{ color: C.muted, fontSize: 13, marginBottom: 24 }}>{errorMsg}</div>
-          <button onClick={exitToLessons} style={ghostBtn}>← RETURN TO LESSONS</button>
-        </div>
-      </div>
-    )
-  }
-
-### 25. src/app/session/slate/page.jsx (dc855da2b5c2bf020b858e6102dcb4ff584345b97116866c3bb078e719d8ec40)
-- bm25: -8.0268 | relevance: 0.8892
-
-{/* Body — flex column so controls stay fixed and only the list scrolls */}
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          {availableLessons.length === 0 && allOwnedLessons.length === 0 ? (
-            <div style={{ textAlign: 'center', marginTop: 60 }}>
-              <div style={{ marginBottom: 16 }}>
-                <SlateVideo size={120} />
-              </div>
-              <div style={{ color: C.muted, fontSize: 14, letterSpacing: 1 }}>NO DRILL LESSONS AVAILABLE</div>
-              <div style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>Complete a lesson with Ms. Sonoma first, then come back to practice.</div>
-            </div>
-          ) : (() => {
-            // --- Derived lists for each tab ---
-            const getLk = l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`
-
-### 26. docs/brain/ms-sonoma-teaching-system.md (cd6c370212fe57073614171258183f8f54ee47488fd75e43802bef4df904d65c)
-- bm25: -7.9463 | relevance: 0.8882
-
-- OpeningActionsController spins up only after audioReady is true and eventBus/audioEngine exist (dedicated effect rechecks when audio initializes so buttons never point at a null controller); controller and listeners are destroyed on unmount to prevent dead buttons or duplicate handlers. State resets on timeline jumps and play timer expiry.
-- AudioEngine shim adds speak(text) when missing (calls fetchTTS + playAudio with captions) so Ask/Joke/Riddle/Poem/Story/Fill-in-Fun can speak via a single helper like V1.
-- Buttons (Joke, Riddle, Poem, Story, Fill-in-Fun, Games) show in the play-time awaiting-go bar for Q&A phases; Go/work transitions, play-time expiry, or timeline jumps clear inputs/errors/busy flags and hide the Games overlay. Ask Ms. Sonoma lives only as a circular video overlay button (raised-hand icon) on the bottom-left of the video, paired with the Visual Aids button. Skip/Repeat is treated as a single-slot toggle and lives on the bottom-right with Mute.
-- Ask is hidden during the Test phase.
-- Ask replies carry the learner question plus the on-screen Q&A prompt (if one is active) and the lesson vocab terms/definitions so answers stay on-topic and use the correct meaning for multi-sense words.
-- Ask includes a quick action button, "What's the answer?", that submits a canned Ask prompt to get the answer for the currently displayed learner question. It is single-shot while loading: the button becomes disabled, reads "Loading...", and ignores re-press until the response completes.
-- After any Ask response (including the answer shortcut), Ms. Sonoma always follows up with: "Do you have any more questions?"
-- Ask exit re-anchor is hardened: Done/Cancel force-stops current audio, cancels the current opening action, then speaks the captured in-flow question under
-
-### 27. src/app/learn/lessons/page.js (4a3bf18df1c3678bf076cbd160492bcfb899e97d9330a40f2aa36dd1a5ff2f9d)
-- bm25: -7.9453 | relevance: 0.8882
-
-{learnerId && learnerId !== 'demo' && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, marginTop: 12, gap: 12, flexWrap: 'wrap' }}>
-          <button
-            onClick={() => setShowHistoryModal(true)}
-            style={{
-              padding: '10px 20px',
-              border: '1px solid #d1d5db',
-              borderRadius: 8,
-              background: '#fff',
-              color: '#111827',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: lessonHistoryLoading ? 'wait' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-            disabled={lessonHistoryLoading && !lessonHistorySessions.length}
-            title={lessonHistoryLoading ? 'Loading history…' : 'See completed lessons'}
-          >
-            ✅ Completed Lessons{completedLessonCount ? ` (${completedLessonCount})` : ''}
-            {activeLessonCount > 0 && (
-              <span style={{ fontSize: 12, color: '#d97706' }}>⏳ {activeLessonCount}</span>
-            )}
-          </button>
-          <button
-            onClick={async () => {
-              const ok = await ensurePinAllowed('facilitator-page')
-              if (ok) router.push('/facilitator/generator')
-            }}
-            style={{
-              padding: '10px 20px',
-              border: '1px solid #d1d5db',
-              borderRadius: 8,
-              background: '#fff',
-              color: '#111827',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            ✨ Generate a Lesson
-          </button>
-          <button
-            onClick={async ()
-
-### 28. src/lib/faq/facilitator-pages.json (4b848d3bcb8fd074168f4bfd8805c4c4143f1f27948661b54e4fbba3e5eaf7e3)
-- bm25: -7.8573 | relevance: 0.8871
-
+```json
 {
-  "category": "Facilitator Pages",
-  "features": [
-    {
-      "id": "facilitator-page-hub",
-      "title": "Facilitator Hub (/facilitator)",
-      "keywords": [
-        "facilitator hub",
-        "facilitator home",
-        "facilitator dashboard page",
-        "/facilitator",
-        "account learners lessons calendar",
-        "talk to mr mentor"
-      ],
-      "description": "The Facilitator Hub is the entry point to adult tools. It shows quick links to Account, Learners, Lessons, Calendar, and Mr. Mentor.",
-      "howToUse": "Use the cards to open a section (Account/Learners/Lessons/Calendar). Use the Mr. Mentor button to open the facilitator chat experience.",
-      "relatedFeatures": ["facilitator-dashboard", "mr-mentor", "pin-security"]
-    },
-    {
-      "id": "facilitator-page-account",
-      "title": "Account (/facilitator/account)",
-      "keywords": [
-        "facilitator account",
-        "account page",
-        "profile",
-        "security",
-        "2fa",
-        "connected accounts",
-        "timezone",
-        "marketing emails",
-        "policies",
-        "danger zone",
-        "/facilitator/account"
-      ],
-      "description": "The Account page is the central place to manage facilitator profile and security settings, connections, hotkeys, timezone, and billing links.",
-      "howToUse": "Open a card to edit: Your Name; Email and Password; Two-Factor Auth; Facilitator PIN; Connected Accounts; Hotkeys; Timezone; Marketing Emails; Policies; Plan; Danger Zone. Notifications is also linked from here.",
-      "relatedFeatures": ["pin-security", "subscription-tiers"]
-    },
-    {
-      "id": "facilitator-page-account-settings-redirect",
-      "title": "Account Settings (Redirect) (/facilitator/account/settings)",
-      "keywords": [
-        "account se
+  "reply": "<string>",
+  "audio": "<base64 mp3>" 
+}
+```
 
-### 29. docs/brain/story-feature.md (18412a469aaf571ad2790e5068e6ed053af12472994adfc7e85b37d3931d6288)
-- bm25: -7.7556 | relevance: 0.8858
+**Fields**:
+- `reply`: Ms. Sonoma response text from the configured LLM provider.
+- `audio`: Base64-encoded MP3 when TTS is enabled and available; `null` when `skipAudio=true` (or when TTS is not configured).
 
-# Story Feature (Continuous Narrative)
+### Implementation
+
+- **Location**: `src/app/api/sonoma/route.js`
+- **Providers**: OpenAI or Anthropic depending on env configuration
+- **Runtime**: Node.js (Google SDKs require Node, not Edge)
+- **Stateless**: Each call is independent; no DB writes from this endpoint
+
+### Health Check
+
+**Method**: GET
+
+Returns `200` with `{ ok: true, route: 'sonoma', runtime }`.
+
+### Logging Controls
+
+Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
+
+- `full`, `off`, `none`, or `0` — No truncation
+- Positive integer (e.g., `2000`) — Truncate after N characters
+- Default: Unlimited in development; 600 chars in production
+
+---
+
+## Other Core Routes
+
+### 38. docs/brain/v2-architecture.md (c7863e1410f4c287352ee79a9ea8fa9cfa8f6dc2f33d4653981cbb5f7690accc)
+- bm25: -9.7258 | relevance: 0.9068
+
+**Key Files:**
+- `SessionPageV2.jsx` lines 1304-1340: `startSession()` function with video unlock
+- `SessionPageV2.jsx` lines 1495-1507: Video element with preload settings and onLoadedMetadata handler
+- `AudioEngine.jsx` lines 617-626: `#startVideo()` method using `playVideoWithRetry()`
+- `utils/audioUtils.js` lines 10-68: `playVideoWithRetry()` utility with iOS edge case handling
+
+**What NOT To Do:**
+- ❌ Don't add `autoPlay` prop - violates Chrome policy and defeats unlock pattern
+- ❌ Don't pause video when audio stops - video loops continuously (brand immersion)
+- ❌ Don't try to sync video play/pause with isSpeaking state - video always loops once unlocked
+- ❌ Don't use simple `video.play()` without retry logic - breaks on iOS Safari
+
+### TeachingController Component
+**Owns:**
+- Teaching stage machine (idle → definitions → examples)
+- Sentence navigation state (current index, total count)
+- Gate button state (Repeat/Next visibility)
+- Vocabulary and example sentences
+- **GPT-based content generation** (definitions, examples, gate prompts)
+- **Background prefetching** (zero-latency teaching flow)
+
+**Architecture (matches V1 `useTeachingFlow.js`):**
+- Definitions and examples are **NOT read from JSON** - they are generated by GPT
+- Vocab terms are extracted from `lessonData.vocab` (just the terms, not definitions)
+- `#fetchDefinitionsFromGPT()` calls `/api/sonoma` with kid-friendly instruction
+- `#fetchExamplesFromGPT()` calls `/api/sonoma` for real-world usage examples
+- `#fetchGatePromptFromGPT(stage)` calls `/api/sonoma` for sample questions
+- GPT responses are split into sentences via `#splitIntoSentences()` for pacing
+- Constructor accepts `lessonMeta: { subject, difficulty, lessonId, lessonTitle }`
+
+### 39. docs/brain/tts-prefetching.md (82573e35d3de76ccd7683dbceabb9c66fd6c3d9cbf8e7438464c4c6ee0808e45)
+- bm25: -9.6982 | relevance: 0.9065
+
+// Prefetch the question after this one while student answers
+try {
+  if (Array.isArray(generatedComprehension) && currentCompIndex < generatedComprehension.length) {
+    const prefetchProblem = generatedComprehension[currentCompIndex];
+    const prefetchQ = ensureQuestionMark(formatQuestionForSpeech(prefetchProblem, { layout: 'multiline' }));
+    const prefetchText = `${CELEBRATE_CORRECT[0]}. ${prefetchQ}`;
+    ttsCache.prefetch(prefetchText);
+  }
+} catch {}
+```
+
+### 40. docs/brain/homepage.md (17a708595f5926a1352d014293d26395401f846891deebe02f2c21ebf394db5b)
+- bm25: -9.6892 | relevance: 0.9064
+
+# Homepage
+
+**Status:** Canonical
+**Created:** 2026-01-10
+**Purpose:** Define what the landing page communicates and which outbound links it must include.
 
 ## How It Works
 
-The story feature creates a continuous narrative that progresses across all four phases (Teaching, Comprehension, Exercise, Worksheet, and Test). Instead of starting fresh each time, the story builds on itself throughout the session.
+The homepage is the app landing page at `/`.
 
-### Story Setup Phase (Initial Creation)
+It uses a centered hero layout with:
+- Ms. Sonoma hero image
+- Primary CTAs: Learn, Facilitator
+- Supporting links:
+  - About page (AI safety/How it works)
+  - External site link to learn more about Ms. Sonoma
 
-When a child first clicks "Story" in any phase, Ms. Sonoma asks three setup questions:
-1. **"Who are the characters in the story?"** - Child responds with characters
-2. **"Where does the story take place?"** - Child responds with setting
-3. **"What happens in the story?"** - Child responds with plot elements
+### External Website Link
 
-After collecting all three pieces, Ms. Sonoma tells the **first part** of the story using all setup information, ending with **"To be continued."**
+The homepage includes an external link to `https://mssonoma.com` with copy that explicitly tells users to learn about Ms. Sonoma there.
 
-### Story Continuation Across Phases
+## What NOT To Do
 
-- Story transcript is **preserved** across phase changes
-- Each time child clicks "Story" in subsequent phase:
-  - Ms. Sonoma **reminds them where story left off** (first sentence only)
-  - Asks **"What would you like to happen next?"**
-  - Suggests possibilities (AI-generated)
-  - Continues story based on their input
-  - Ends with **"To be continued."**
-
-### Story Ending in Test Phase
-
-- In Test phase specifically, prompt changes
-- Ms. Sonoma asks: **"How would you like the story to end?"**
-- Child describes desired ending
-- Ms. Sonoma ends story based on their idea, concluding with **"The end."**
-- Happy Ending and Funny Ending buttons removed
-
-### Story Direction Following
-
-- API instructions emphasize: **"Follow the child's ideas closely and make the story about what they want unless it's inappropriate."**
-- Ms. Sonoma stays on track with child's vision instead of redirecting
-- Only inappropriate content triggers redirection
-
-### Story Availability
-
-### 30. docs/brain/ms-sonoma-teaching-system.md (cede03814a8e282c9f02f9885e01f2a1ed833b57c04cd2aef304bf98f2d7f4ba)
-- bm25: -7.6943 | relevance: 0.8850
-
-## Related Brain Files
-
-- **[tts-prefetching.md](tts-prefetching.md)** - TTS powers audio playback for Ms. Sonoma speech
-- **[visual-aids.md](visual-aids.md)** - Visual aids displayed during teaching phase
+- Do not remove the external `mssonoma.com` link without replacing it with an equivalent learn-more path.
+- Do not add device- or storage-related claims to homepage copy.
+- Do not add placeholder or environment-specific URLs.
 
 ## Key Files
 
-### Core API
-- `src/app/api/sonoma/route.js` - Main Ms. Sonoma API endpoint, integrates content safety validation
-
-### Content Safety
-- `src/lib/contentSafety.js` - Lenient validation system: prompt injection detection (always), banned keywords (reduced list, skipped for creative features), instruction hardening (primary defense), output validation with skipModeration=true (OpenAI Moderation API bypassed to prevent false positives like "pajamas" flagged as sexual)
-
-### Teaching Flow Hooks
-- `src/app/session/hooks/useTeachingFlow.js` - Orchestrates teaching definitions and examples stages
-
-### Phase Handlers
-- `src/app/session/hooks/usePhaseHandlers.js` - Manages phase transitions (comprehension, exercise, worksheet, test)
-
-### Session Page
-- `src/app/session/page.js` - Main session orchestration, phase state management
-
-### Brand Signal Sources (Read-Only)
-- `.github/Signals/MsSonoma_Voice_and_Vocabulary_Guide.pdf`
-- `.github/Signals/MsSonoma_Messaging_Matrix_Text.pdf`
-- `.github/Signals/MsSonoma_OnePage_Brand_Story.pdf`
-- `.github/Signals/MsSonoma_Homepage_Copy_Framework.pdf`
-- `.github/Signals/MsSonoma_Launch_Deck_The_Calm_Revolution.pdf`
-- `.github/Signals/MsSonoma_SignalFlow_Full_Report.pdf`
-
-### Data Schema
-- Supabase tables for lesson content, vocab terms, comprehension items
-- Content safety incidents logging table
-
-## Notes
-
-### 31. docs/brain/ms-sonoma-teaching-system.md (1f079cae33ff43ac4f14837a3de47b84b5b01b2e253899f9ec065dd2e8c8247d)
-- bm25: -7.5702 | relevance: 0.8833
-
-**Transition**:
-- "Great. Let's move on to comprehension."
-
-### Pre-Send Checklist
-
-Before shipping to Ms. Sonoma, verify:
-- Payload contains only speakable text
-- Child's name and lesson title are literal (no placeholders)
-- Exactly one phase represented
-- If Opening: final sentence is silly question
-- If Teaching/Repeat: ends with VERBATIM wrap line
-- If Transition: uses VERBATIM move-on line
-- If Comprehension: exactly one question, no definitions
-- No syntax or labels present: no [], {}, <>, no section labels, no [COPILOT]/[SONOMA]/[VERBATIM]/[SAMPLE]
-- Must pass placeholder scan: no {PLACEHOLDER}, [PLACEHOLDER], <PLACEHOLDER>, or stray ALLCAPS tokens
-
-### Turn Map
-
-**After Opening**: Teaching Definitions (developer-triggered, no teaching during opening)
-
-**After Teaching Definitions wrap**:
-- Repeat Vocab button → Definitions Repeat
-- Next button → Teaching Examples
-- Ask button → freeform questions, respond briefly, return to gate
-
-**After Teaching Examples wrap**:
-- Repeat Vocab button → Examples Repeat
-- Next button → Transition, then Comprehension Ask
-- Ask button → freeform questions, respond briefly, return to gate
-
-**Comprehension loop**: Ask → child reply → FeedbackCorrect or FeedbackHint → Ask again (or Closing when goal met)
-
-**Closing**: End of session
-
-### Opening Actions UI (V2)
-
-### 32. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
-- bm25: -7.5637 | relevance: 0.8832
-
-- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
-  - Full-screen carousel during lesson
-  - "Explain" button triggers Ms. Sonoma TTS of description
-  - Read-only view (no editing)
-
-### Integration Points
-- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
-  - `handleGenerateVisualAids()` - initiates generation
-  - Manages visual aids state and save flow
-
-- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
-  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
-  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
-  - Renders `VisualAidsCarousel` above the inline editor modal
-
-- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
-  - `handleGenerateVisualAids()` - generation from counselor lesson creation
-
-- **`src/app/session/page.js`** - Learner session
-  - Loads visual aids by normalized `lessonKey`
-  - `onShowVisualAids()` - opens carousel
-  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
-
-- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
-  - Loads visual aids by normalized `lessonKey`
-  - Video overlay includes a Visual Aids button when images exist
-  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
-
-### 33. docs/brain/ingests/pack.md (84a96ac150f2135d31aa9bfe9cd8ac1e61d8f40743bcb440da0563dd1f1c1bb2)
-- bm25: -7.5224 | relevance: 0.8827
-
-### 13. docs/brain/header-navigation.md (17596087776b8a8510ebd6fdda83503d40ccdb8376bc76c97583cafb2888e681)
-- bm25: -23.7972 | relevance: 1.0000
-
-# Header Navigation
-
-## How It Works
-
-The global header (HeaderBar) is rendered across pages and provides:
-
-- Brand link to home
-- Back button on pages that define a back chain
-- Top-level navigation links (About, Learn, Facilitator)
-- Session-specific print menu actions
-
-### Session Print Menu
-
-On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions.
-
-**Trigger behavior (desktop):** Open on hover (mouseenter) with a short grace period on mouseleave so it does not flicker closed while moving from the icon into the menu.
-
-**Trigger behavior (touch / fallback):** The icon should also toggle the dropdown on click.
-
-The dropdown includes print actions:
-
-- Worksheet
-- Test
-- Facilitator Key
-- Refresh
-
-On narrow layouts, these same actions live inside the hamburger menu under a nested "Print" section.
-
-Important: header buttons (including the print icon) must explicitly set `type="button"` so they never behave like submit buttons when a page happens to include a form.
-
-Also: header dropdown trigger buttons must call `e.stopPropagation()` in their onClick handlers to prevent the opening click from bubbling to document and immediately triggering the outside-click-close listener.
-
-### Facilitator Dropdown
-
-On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
-
-- ⚙️ Account -> `/facilitator/account`
-- 🔔 Notifications -> `/facilitator/notifications`
-- 👥 Learners -> `/facilitator/learners`
-- 📚 Lessons -> `/facilitator/lessons`
-- 📅 Calendar -> `/facilitator/calendar`
-- 🧠 Mr. Mentor -> `/facilitator/mr-mentor`
-
-### 34. src/app/HeaderBar.js (eefad67bd26a53517fea9b94c7fe836a30ab3d1bba2c3374028104085f74dd87)
-- bm25: -7.4852 | relevance: 0.8821
-
-const handleBack = useCallback(async () => {
-		if (backHref) {
-			await goWithPin(backHref);
-		} else {
-			await goWithPin(null);
-		}
-	}, [backHref, goWithPin]);
-
-// Branded back button style (match Session button color)
-		const BRAND_ACCENT = '#c7442e';
-		const BRAND_ACCENT_HOVER = '#b23b2a';
-		const fancyButtonStyle = {
-			background: BRAND_ACCENT,
-			border: `1px solid ${BRAND_ACCENT}`,
-			color: '#fff',
-			fontSize: 'clamp(0.95rem, 1.4vw, 1.125rem)',
-			fontWeight: 600,
-			letterSpacing: '.25px',
-			padding: 'clamp(6px, 0.9vw, 8px) clamp(12px, 1.8vw, 18px)',
-			borderRadius: 999,
-			cursor: 'pointer',
-			display: 'inline-flex',
-			alignItems: 'center',
-			gap: 'clamp(6px, 1vw, 8px)',
-			boxShadow: '0 2px 4px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
-			transition: 'background .2s, transform .15s, box-shadow .2s, border-color .2s',
-			position: 'relative'
-		};
-
-// Standardized sizing for all hamburger dropdown items (buttons and links)
-		const MOBILE_MENU_ITEM_STYLE = {
-			display: 'flex',
-			alignItems: 'center',
-			width: '100%',
-			textAlign: 'left',
-			height: 44,
-			padding: '0 16px',
-			fontSize: '14px',
-			lineHeight: '20px',
-			textDecoration: 'none',
-			background: 'transparent',
-			border: 'none',
-			cursor: 'pointer',
-			fontWeight: 600,
-			color: '#111'
-		};
-
-// Mr. Slate has its own full-page top bar — hide the global header
-		if (pathname.startsWith('/session/slate')) return null;
-
-### 35. src/app/session/slate/page.jsx (4581feed5f69742590ede150b9b0ce0057e00760691a0f1a63b59d14635da67b)
-- bm25: -7.4006 | relevance: 0.8810
-
-{/* Short answer / Fill in the blank */}
-              {isAsking && (q.type === 'shortanswer' || q.type === 'fillintheblank') && (
-                <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                  <input
-                    ref={inputEl}
-                    type="text"
-                    value={userAnswer}
-                    onChange={e => setUserAnswer(e.target.value)}
-                    onKeyDown={onKeyDown}
-                    placeholder="TYPE YOUR ANSWER..."
-                    style={{
-                      flex: 1,
-                      background: C.bg,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 6,
-                      padding: '10px 14px',
-                      color: C.text,
-                      fontSize: 15,
-                      fontFamily: C.mono,
-                      outline: 'none',
-                    }}
-                  />
-                  <button
-                    onClick={onTextSubmit}
-                    disabled={isJudging}
-                    style={{ ...btnBase, background: C.accent, border: `1px solid ${C.accent}`, color: '#0d1117', borderRadius: 6, padding: '10px 18px', fontSize: 13, fontWeight: 800, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
-                  >
-                    {isJudging ? '...' : 'SUBMIT'}
-                  </button>
-                </div>
-              )}
-
-### 36. docs/brain/header-navigation.md (17596087776b8a8510ebd6fdda83503d40ccdb8376bc76c97583cafb2888e681)
-- bm25: -7.3187 | relevance: 0.8798
-
-# Header Navigation
-
-## How It Works
-
-The global header (HeaderBar) is rendered across pages and provides:
-
-- Brand link to home
-- Back button on pages that define a back chain
-- Top-level navigation links (About, Learn, Facilitator)
-- Session-specific print menu actions
-
-### Session Print Menu
-
-On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions.
-
-**Trigger behavior (desktop):** Open on hover (mouseenter) with a short grace period on mouseleave so it does not flicker closed while moving from the icon into the menu.
-
-**Trigger behavior (touch / fallback):** The icon should also toggle the dropdown on click.
-
-The dropdown includes print actions:
-
-- Worksheet
-- Test
-- Facilitator Key
-- Refresh
-
-On narrow layouts, these same actions live inside the hamburger menu under a nested "Print" section.
-
-Important: header buttons (including the print icon) must explicitly set `type="button"` so they never behave like submit buttons when a page happens to include a form.
-
-Also: header dropdown trigger buttons must call `e.stopPropagation()` in their onClick handlers to prevent the opening click from bubbling to document and immediately triggering the outside-click-close listener.
-
-### Facilitator Dropdown
-
-On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
-
-- ⚙️ Account -> `/facilitator/account`
-- 🔔 Notifications -> `/facilitator/notifications`
-- 👥 Learners -> `/facilitator/learners`
-- 📚 Lessons -> `/facilitator/lessons`
-- 📅 Calendar -> `/facilitator/calendar`
-- 🧠 Mr. Mentor -> `/facilitator/mr-mentor`
-
-The dropdown uses a short hover grace period on mouseleave so it does not flicker closed while moving from the header link down into the menu.
-
-### 37. src/app/session/slate/page.jsx (c25c579301047f2651b9a05d65a6122fead1287c293a6b8346b13882939e3add)
-- bm25: -7.2826 | relevance: 0.8793
-
-// --- TTS helper ---------------------------------------------------------------
-
-### 38. cohere-changelog.md (1dbfb38aafacd119ec5d69f9e13cb5c7b4cb9531d833f9ba21f1ec59f39c0aa3)
-- bm25: -7.2729 | relevance: 0.8791
-
-Result:
-- Decision: Add new FAQ categories (AI Safety & Trust, Facilitator Settings & Tools) and load them via faqLoader. Update mentor feature registry merge so report capability layers onto FAQ text rather than replacing it.
-- Files changed: src/lib/faq/faqLoader.js, src/lib/faq/safety.json, src/lib/faq/facilitator-tools.json, src/lib/mentor/featureRegistry.js, cohere-changelog.md
-
----
-
-Date (UTC): 2026-02-18T17:04:01.722Z
-
-Topic: Deterministic descriptions for all facilitator child pages
-
-Recon prompt (exact string):
-Explain everything on each of the pages that are children of the facilitator page (/src/app/facilitator/**/page.js). List routes, purpose, and user-facing controls/sections for each.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
-
-Result:
-- Decision: Add a route-level FAQ category (one entry per facilitator page under `/facilitator/**`) so Mr. Mentor can describe each page deterministically without guessing UI details.
-- Files changed: src/lib/faq/facilitator-pages.json, src/lib/faq/faqLoader.js, cohere-changelog.md
-
-Follow-ups:
-- If you want deeper per-page explainers (exact button labels/flows), we can tighten entries by scanning each page’s render tree for visible strings and modal names.
-
----
-
-Date (UTC): 2026-02-18T17:06:43.820Z
-
-Topic: Improve recon by retroactive knowledge ingestion + gap notes
-
-Recon prompt (exact string):
-Explain everything on each of the pages that are children of the facilitator page (/src/app/facilitator/**/page.js). List routes, purpose, and user-facing controls/sections for each.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
-
-### 39. sidekick_pack.md (bba8c9d0a2ad1fcfae649c359a4219ed32e5a5913249044c89d6ec0d9ecb4d56)
-- bm25: -7.1145 | relevance: 0.8768
-
-### Storage + Public Access (No Login)
-
-Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
-
-### 35. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
-- bm25: -22.0390 | relevance: 1.0000
-
-- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
-  - Full-screen carousel during lesson
-  - "Explain" button triggers Ms. Sonoma TTS of description
-  - Read-only view (no editing)
-
-### Integration Points
-- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
-  - `handleGenerateVisualAids()` - initiates generation
-  - Manages visual aids state and save flow
-
-- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
-  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
-  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
-  - Renders `VisualAidsCarousel` above the inline editor modal
-
-- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
-  - `handleGenerateVisualAids()` - generation from counselor lesson creation
-
-- **`src/app/session/page.js`** - Learner session
-  - Loads visual aids by normalized `lessonKey`
-  - `onShowVisualAids()` - opens carousel
-  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
-
-- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
-  - Loads visual aids by normalized `lessonKey`
-  - Video overlay includes a Visual Aids button when images exist
-  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
-
-### 40. sidekick_pack.md (df3b0d06c6e97315f9ac315d8fe85c1be37b146340873af631c44fae1bc3250f)
-- bm25: -7.1017 | relevance: 0.8766
-
-### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
-- bm25: -22.4515 | relevance: 1.0000
-
-- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
-  - Full-screen carousel during lesson
-  - "Explain" button triggers Ms. Sonoma TTS of description
-  - Read-only view (no editing)
-
-### Integration Points
-- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
-  - `handleGenerateVisualAids()` - initiates generation
-  - Manages visual aids state and save flow
-
-- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
-  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
-  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
-  - Renders `VisualAidsCarousel` above the inline editor modal
-
-- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
-  - `handleGenerateVisualAids()` - generation from counselor lesson creation
-
-- **`src/app/session/page.js`** - Learner session
-  - Loads visual aids by normalized `lessonKey`
-  - `onShowVisualAids()` - opens carousel
-  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
-
-- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
-  - Loads visual aids by normalized `lessonKey`
-  - Video overlay includes a Visual Aids button when images exist
-  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
-
-### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
-- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
+- `src/app/page.js`
+- `src/app/home-hero.module.css`
 
 
 ---

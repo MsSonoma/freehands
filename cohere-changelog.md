@@ -1,3 +1,4 @@
+2026-03-13T01:00:00Z | Rebuild: Mrs. Webb — replaced freeform chat design with full Cohere lesson-flow state machine per `C:\Users\atari\Cohere\docs\mrs_webb_ms_sonoma_design.md`. New architecture: (1) `src/app/api/webb/[...path]/route.js` — Next.js catch-all proxy to local Cohere server at `http://127.0.0.1:7720` (configurable via `WEBB_SERVER_URL` env). Forwards all Cohere API paths (`/health`, `/mrs-webb/lesson/*`). Safety layer: `validateInput` on student `text` in `/lesson/respond`; blocked replies return a safe Mrs. Webb nudge (HTTP 200) instead of hard error. (2) `src/app/session/webb/page.jsx` — Full state machine: `list → starting → presenting → probing → remediating → complete`. Components: `LessonList` (fetches `/lesson/list`), `WebbBubbles` (animated teacher speech bubbles), `ContentViewer` (routes to `VideoPlayer` or `TextReader` by `content_type`), `StudentInput` (`/lesson/respond`), `RemediationPanel` (3 options: rewatch/explain/read_aloud; respects `rewatch_blocked`; inline video re-mount on rewatch), `RewardVideo` (reward on lesson complete), progress bar in header. Session close via `/lesson/close` on exit. Old freeform OpenAI-based route removed. Recon prompt: "Mrs. Webb lesson flow session page ContentViewer VideoPlayer TextReader RemediationPanel RewardVideo state machine presenting probing remediating complete Cohere API proxy".
 2026-03-13T00:00:00Z | Feature: Mrs. Webb — chat-style educational AI teacher. New button on `/learn` page (teal, 👩‍🏫, navigates to `/session/webb`). Full-page chat UI at `src/app/session/webb/page.jsx`: header with own back button + teal palette; chat bubble list (webb left / student right); textarea + Send; safety notice banner; typing indicator; char-limit guard (400 chars). API at `src/app/api/webb/route.js`: POST accepts `{ messages, learnerName, grade }`, enforces all 4 contentSafety layers (validateInput on every student message in history, hardenInstructions builds system prompt, validateOutput blocks unsafe replies), stateless (client sends full window of last 20 messages), Cohere context stub `getWebberContext()` clearly marked TODO for user to complete. HeaderBar updated: `/session/webb` hides global header (own top bar) + back-path resolves to `/learn`. Files: `src/app/api/webb/route.js` (new), `src/app/session/webb/page.jsx` (new), `src/app/learn/page.js`, `src/app/HeaderBar.js`. Recon prompt: "Mrs. Webb chat teacher button learn page like sonoma slate validator layers OpenAI moderation stateless Cohere context".
 2026-03-12T00:00:00Z | Fix (2): (1) LessonPlanner Duration select onChange called `Number(e.target.value)` on strings like `"1d"`, `"2w"` — `Number("1d") === NaN`, which `parseDurationToDays` passed through as `NaN * 7 = NaN`, making the generation loop run 0 times (single-day / 2-day options always produced nothing). Fix: removed `Number()` wrapper, pass raw string. (2) `handleAutoGeneratePlan` in DayViewOverlay did not fetch `/api/curriculum-preferences`, so focus/banned concepts were never included in the context sent to `generate-lesson-outline`. Fix: added `preferencesRes` to the `Promise.all`, extracted `prefsRow = prefsJson.preferences`, added `getSubjectContextAdditions(subject)` helper (mirrors LessonPlanner logic), appended its output to `contextText` before POST. Build: ✓ clean. Files: `src/app/facilitator/calendar/LessonPlanner.jsx`, `src/app/facilitator/calendar/DayViewOverlay.jsx`. Recon prompt: "curriculum preferences generate-lesson-outline context generation one day lesson planner single day broken".
  | Fix: planned lessons deleted from CalendarOverlay (Mr. Mentor) reappear after refresh. Two root causes: (1) `loadPlannedForLearner` has a guard "if API returns empty but cache has data, preserve old data" — after a deletion the API correctly returns `{}` but sessionStorage/localStorage still held stale lesson data, so `existingCount > 0` fired and discarded the correct empty result. (2) `writeSessionCache` has a "never write empty maps" guard (`if (count === 0) return`) so it could never clear itself. Fix: in `handleRemoveClick` (CalendarOverlay.jsx), after `persistPlannedForDate` succeeds, immediately compute the new planned map (stripping empty arrays), update `plannedCacheByLearnerRef`, call `writeSessionCache` if non-empty, or explicitly `removeItem` from both `sessionStorage` and `localStorage` if empty. This ensures subsequent calls to `loadPlannedForLearner` see `existingCount === 0` and apply the empty result correctly. ALSO: `savePlannedLessons` in `page.js` now checks the API response and re-loads from DB on failure so local state stays in sync. Build: ✓ Compiled successfully. Files: `src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx`, `src/app/facilitator/calendar/page.js`. Recon prompt: "When a Planned Lesson is deleted, it still comes back after refresh."
@@ -477,6 +478,27 @@ Result:
 
 Follow-ups:
 - If you want cross-device progress (not just same browser), add a Supabase-backed progress table and swap the storage adapter.
+
+---
+
+## 2025 — Mrs. Webb: Sonoma-style UI rebuild (session/webb/page.jsx)
+
+**Prompt used for recon:** "Mrs. Webb UI — match Ms. Sonoma video layout: teacher looping video with Skip/Mute overlay, CaptionPanel transcript, landscape/portrait responsive exactly like SessionPageV2"
+
+**Summary:**
+- Complete rewrite of `src/app/session/webb/page.jsx` to match Ms. Sonoma's visual layout
+- Teacher video (`/media/webb-teacher.mp4`) loops, plays only when TTS audio is playing, pauses when idle
+- TTS uses new `/api/webb-tts` endpoint with `en-US-Neural2-F` voice (distinct US English female)
+- CaptionPanel from `../components/CaptionPanel` — `{text, role}` message array, `role='user'` renders red
+- Sequential TTS queue → `ttsQueueRef`/`ttsBusyRef`/`ttsCurrentRef` pattern with `drainTTSQueue()`
+- Skip + Mute overlay buttons (bottom-right of video), same `clamp(34px,6.2vw,52px)` sizing as Sonoma
+- Responsive: landscape = side-by-side (video left, transcript right, heights synced via ResizeObserver); portrait = stacked
+- All Cohere state machine phases preserved: LIST → STARTING → PRESENTING → PROBING → REMEDIATING → COMPLETE
+- Build: compiled successfully, zero errors
+
+**Files changed:**
+- src/app/session/webb/page.jsx (complete rewrite)
+- src/app/api/webb-tts/route.js (created, en-US-Neural2-F voice)
 
 ### 2026-02-27 � Generation error: e.map is not a function
 - Recon prompt: `Generation Failed error from lesson generator API route - investigate callModel and storage upload`
