@@ -277,24 +277,33 @@ export default function WebbPage() {
   }
 
   // ── Preload resources for lesson ──────────────────────────────────────
-  const preloadResources = useCallback(async (lesson) => {
+  // Video and article are fetched in parallel but independently so each
+  // resolves as soon as it's ready (video ~3s, article ~4s).
+  const preloadResources = useCallback((lesson) => {
     setVideoResource(null)
     setArticleResource(null)
     setVideoLoading(true)
     setArticleLoading(true)
-    try {
-      const res = await fetch('/api/webb-resources', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lesson, type: 'both' }),
-      })
-      const data = await res.json()
-      if (data.video)   { setVideoResource(data.video);   setVideoLoading(false) }
-      if (data.article) { setArticleResource(data.article); setArticleLoading(false) }
-    } catch {
-      setVideoLoading(false)
-      setArticleLoading(false)
-    }
+
+    const post = (type) => fetch('/api/webb-resources', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lesson, type }),
+    })
+
+    // Video
+    post('video')
+      .then(r => r.json())
+      .then(data => { if (data.video) setVideoResource(data.video) })
+      .catch(() => {})
+      .finally(() => setVideoLoading(false))
+
+    // Article
+    post('article')
+      .then(r => r.json())
+      .then(data => { if (data.article) setArticleResource(data.article) })
+      .catch(() => {})
+      .finally(() => setArticleLoading(false))
   }, [])
 
   // ── Select lesson → start AI chat ─────────────────────────────────────

@@ -28,12 +28,14 @@ const GREEN_SOURCES = [
     name: 'Simple English Wikipedia',
     desc: 'Best for most topics. Written at a 4th–6th grade reading level. Covers science, history, geography, nature, people.',
     fetchUrl: a => `https://simple.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(a.replace(/\s+/g, '_'))}`,
+    baseHref: 'https://simple.wikipedia.org',
   },
   {
     id: 'wikijunior',
     name: 'Wikijunior',
     desc: 'Best for science topics written for children ages 8–12: animals, solar system, human body, chemistry, ancient history.',
     fetchUrl: a => `https://en.wikibooks.org/api/rest_v1/page/mobile-html/${encodeURIComponent(('Wikijunior:' + a).replace(/\s+/g, '_'))}`,
+    baseHref: 'https://en.wikibooks.org',
   },
   {
     id: 'ducksters',
@@ -47,6 +49,7 @@ const GREEN_SOURCES = [
     name: 'Wikipedia',
     desc: 'Best for complex or technical topics when other sources lack depth. Use exact article title.',
     fetchUrl: a => `https://en.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(a.replace(/\s+/g, '_'))}`,
+    baseHref: 'https://en.wikipedia.org',
   },
 ]
 
@@ -177,7 +180,11 @@ async function generateArticle(apiKey, title, subject, grade, ctx) {
         { headers: { 'Api-User-Agent': 'EducationApp/1.0' }, signal: AbortSignal.timeout(7000) },
       )
       if (r.ok) {
-        html         = await r.text()
+        let rawHtml = await r.text()
+        rawHtml = rawHtml.includes('<head>')
+          ? rawHtml.replace('<head>', '<head><base href="https://simple.wikipedia.org">')
+          : `<base href="https://simple.wikipedia.org">${rawHtml}`
+        html         = rawHtml
         chosenSource = 'Simple English Wikipedia'
         chosenTitle  = title
       }
@@ -193,7 +200,11 @@ async function generateArticle(apiKey, title, subject, grade, ctx) {
         { headers: { 'Api-User-Agent': 'EducationApp/1.0' }, signal: AbortSignal.timeout(7000) },
       )
       if (r.ok) {
-        html         = await r.text()
+        let rawHtml = await r.text()
+        rawHtml = rawHtml.includes('<head>')
+          ? rawHtml.replace('<head>', '<head><base href="https://en.wikipedia.org">')
+          : `<base href="https://en.wikipedia.org">${rawHtml}`
+        html         = rawHtml
         chosenSource = 'Wikipedia'
         chosenTitle  = title
       }
