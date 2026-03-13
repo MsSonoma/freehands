@@ -6,23 +6,23 @@ Mode: standard
 
 Prompt (original):
 ```text
-curriculum preferences generate-lesson-outline context generation one day lesson planner single day broken
+Mrs. Webb chat teacher button on learn page, like Ms Sonoma and Mr Slate, with validator layers, OpenAI moderation, stateless Cohere context
 ```
 
 Filter terms used:
 ```text
-curriculum
-preferences
-generate
-lesson
-outline
-context
-generation
-one
-day
-planner
-single
-broken
+mrs
+webb
+chat
+teacher
+button
+learn
+page
+like
+sonoma
+slate
+validator
+layers
 ```
 
 ---
@@ -31,9 +31,9 @@ broken
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-03-11 19:56` — awards page medals display completed lessons learn/lessons page - all locations that show medals or completed lessons an
 - `2026-03-11 20:21` — When I remove planned lessons, they come back after a refresh.
 - `2026-03-11 20:28` — DayViewOverlay + button Schedule Lesson Plan Lesson owned lessons overlay LessonGeneratorOverlay subject picker auto-pla
+- `2026-03-11 21:39` — curriculum preferences generate-lesson-outline context generation one day lesson planner single day broken
 
 ---
 
@@ -54,7 +54,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 6. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 50. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -69,7 +69,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-curriculum preferences generate lesson outline context generation one day planner single broken
+mrs webb chat teacher button learn page like sonoma slate validator layers
 
 ## Forced Context
 
@@ -77,1439 +77,1285 @@ curriculum preferences generate lesson outline context generation one day planne
 
 ## Ranked Evidence
 
-### 1. docs/brain/ingests/pack.md (c4c8f100a25071abdd37e3a676ea7a188fe9fc86430b3f600c5879355aad4113)
-- bm25: -29.3724 | relevance: 0.9671
+### 1. src/app/learn/page.js (8fcc256043386d9c071865f87a7f5dc1157a6a83f40959e8cd4ebc695f528728)
+- bm25: -16.3433 | relevance: 0.9423
 
-**`/api/learner/lesson-history`** - completed/incomplete sessions  
-**`/api/medals`** - lesson scores (may 404 for new learners)  
-**`/api/lesson-schedule`** - scheduled lessons (returns `{schedule: [...]}`)  
-**`/api/curriculum-preferences`** - focus/banned content  
-**`/api/generate-lesson-outline`** - GPT outline generation per subject/date
-  - Supports `context` (planner-built history/schedule/plan context)
-  - Supports `promptUpdate` (facilitator-provided steering text, used heavily by Redo)
+{noLearner ? (
+          <div style={{ margin:'8px auto 16px', maxWidth:420 }}>
+            <p style={{ marginTop:0 }}>Pick a Learner to continue:</p>
+            <LearnerSelector onSelect={(l)=> {
+              setLearner({ id: l.id, name: l.name })
+              try {
+                localStorage.setItem('learner_id', l.id)
+                localStorage.setItem('learner_name', l.name)
+                if (l.grade) localStorage.setItem('learner_grade', l.grade)
+              } catch {}
+            }} />
+          </div>
+        ) : (
+          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+            <button
+              onClick={goToLessons}
+              title="Practice lessons guided by Ms. Sonoma"
+              style={{
+                padding:'14px 20px', 
+                border:'2px solid #c7442e', 
+                borderRadius:12,
+                fontSize:16, 
+                fontWeight:700,
+                background:'#c7442e',
+                color:'#fff',
+                cursor:'pointer',
+                width:'100%', 
+                maxWidth:320
+              }}
+            >
+              👩🏻‍🦰 Ms. Sonoma
+            </button>
+            <button
+              onClick={() => r.push('/session/slate')}
+              title="Drill questions with Mr. Slate"
+              style={{
+                padding:'14px 20px', 
+                border:'2px solid #6366f1', 
+                borderRadius:12,
+                fontSize:16, 
+                fontWeight:700,
+                background:'#6366f1',
+                color:'#fff',
+                cursor:'pointer',
+                width:'100%', 
+                maxWidth:320
+              }}
+            >
+              🤖 Mr. Slate
+            </button>
+            <b
 
-### 2. docs/brain/calendar-lesson-planning.md (265bc11b6e14ebc78b549a5a598ef082eba677b6a58860236e1c61224231f8bf)
-- bm25: -29.3061 | relevance: 0.9670
+### 2. src/app/HeaderBar.js (c0297946bfcf7d9326733ee92bfb3242931cb7028b2a3bb7969e0175e957490a)
+- bm25: -15.4613 | relevance: 0.9393
 
-**`/api/learner/lesson-history`** - completed/incomplete sessions  
-**`/api/medals`** - lesson scores (may 404 for new learners)  
-**`/api/lesson-schedule`** - scheduled lessons (returns `{schedule: [...]}`)  
-**`/api/curriculum-preferences`** - focus/banned content  
-**`/api/generate-lesson-outline`** - GPT outline generation per subject/date
-  - Supports `context` (planner-built history/schedule/plan context)
-  - Supports `promptUpdate` (facilitator-provided steering text, used heavily by Redo)
+// Learner chain: / -> /learn -> /learn/lessons -> /session
+		// Mr. Slate has its own top bar; its back button goes to /learn
+		if (pathname.startsWith('/session/slate')) return '/learn';
+		if (pathname.startsWith('/session')) return '/learn/lessons';
+		if (pathname.startsWith('/learn/awards')) return '/learn';
+		if (pathname.startsWith('/learn/lessons')) return '/learn';
+		if (pathname.startsWith('/learn')) return '/';
 
-### 3. docs/brain/calendar-lesson-planning.md (8fb5d6fd52eb343d38244e53af009c1d078e80740d159006615a9235e71a5585)
-- bm25: -28.2682 | relevance: 0.9658
+### 3. docs/brain/homepage.md (17a708595f5926a1352d014293d26395401f846891deebe02f2c21ebf394db5b)
+- bm25: -11.4460 | relevance: 0.9197
 
-# Calendar Lesson Planning System - Ms. Sonoma Brain File
+# Homepage
 
-**Last Updated**: 2026-02-05T03:28:35Z  
-**Status**: Canonical
-
-## How It Works
-
-### Automated Lesson Plan Generation
-
-The Calendar page includes an automated lesson planner that generates lesson outlines for multiple weeks based on a weekly subject pattern.
-
-**Flow:**
-1. Facilitator sets up weekly pattern (which subjects on which days)
-2. Selects start date and duration (in months)
-3. Clicks "Generate Lesson Plan" 
-4. System generates outline for each subject/day combination across specified timeframe
-5. **Planned lessons automatically save to database**
-6. Planned lessons load from database on page mount or learner change
-
-**Context Integration:**
-- Fetches learner's lesson history (completed, incomplete sessions)
-- Loads medals/scores for completed lessons
-- Gets scheduled lessons
-- Retrieves curriculum preferences (focus/banned concepts/topics/words)
-- Combines into context string sent to GPT for smarter lesson planning
-- Prevents repetition of already-completed topics
-- Prevents repetition within the same generation run by adding "generated so far" lessons into later GPT calls
-
-**Within-run anti-repeat rule (important):**
-- The planner generates one outline per day/subject slot.
-- If the context sent to GPT does not include outlines generated earlier in the same batch, GPT can repeat topics week-to-week because it cannot "see" what it already created.
-- The planner must include a short list of already-generated outlines (especially for the same subject) in the context for subsequent outline requests.
-
-### 4. docs/brain/ingests/pack.planned-lessons-flow.md (9b8bb379fb9f858bf16466497e23ae36c4229766bf0ff9306908e1c67f953e68)
-- bm25: -28.1377 | relevance: 0.9657
-
-# Calendar Lesson Planning System - Ms. Sonoma Brain File
-
-**Last Updated**: 2026-02-05T03:28:35Z  
-**Status**: Canonical
-
-## How It Works
-
-### Automated Lesson Plan Generation
-
-The Calendar page includes an automated lesson planner that generates lesson outlines for multiple weeks based on a weekly subject pattern.
-
-**Flow:**
-1. Facilitator sets up weekly pattern (which subjects on which days)
-2. Selects start date and duration (in months)
-3. Clicks "Generate Lesson Plan" 
-4. System generates outline for each subject/day combination across specified timeframe
-5. **Planned lessons automatically save to database**
-6. Planned lessons load from database on page mount or learner change
-
-**Context Integration:**
-- Fetches learner's lesson history (completed, incomplete sessions)
-- Loads medals/scores for completed lessons
-- Gets scheduled lessons
-- Retrieves curriculum preferences (focus/banned concepts/topics/words)
-- Combines into context string sent to GPT for smarter lesson planning
-- Prevents repetition of already-completed topics
-- Prevents repetition within the same generation run by adding "generated so far" lessons into later GPT calls
-
-**Within-run anti-repeat rule (important):**
-- The planner generates one outline per day/subject slot.
-- If the context sent to GPT does not include outlines generated earlier in the same batch, GPT can repeat topics week-to-week because it cannot "see" what it already created.
-- The planner must include a short list of already-generated outlines (especially for the same subject) in the context for subsequent outline requests.
-
-### 5. docs/brain/ingests/pack.md (5fd0b2319691b60c2ab2d7c6a9650ea9f00741ed6e601d04079fc31a2701cf61)
-- bm25: -28.0390 | relevance: 0.9656
-
-**Flow:**
-1. Facilitator sets up weekly pattern (which subjects on which days)
-2. Selects start date and duration (in months)
-3. Clicks "Generate Lesson Plan" 
-4. System generates outline for each subject/day combination across specified timeframe
-5. **Planned lessons automatically save to database**
-6. Planned lessons load from database on page mount or learner change
-
-**Context Integration:**
-- Fetches learner's lesson history (completed, incomplete sessions)
-- Loads medals/scores for completed lessons
-- Gets scheduled lessons
-- Retrieves curriculum preferences (focus/banned concepts/topics/words)
-- Combines into context string sent to GPT for smarter lesson planning
-- Prevents repetition of already-completed topics
-- Prevents repetition within the same generation run by adding "generated so far" lessons into later GPT calls
-
-**Within-run anti-repeat rule (important):**
-- The planner generates one outline per day/subject slot.
-- If the context sent to GPT does not include outlines generated earlier in the same batch, GPT can repeat topics week-to-week because it cannot "see" what it already created.
-- The planner must include a short list of already-generated outlines (especially for the same subject) in the context for subsequent outline requests.
-
-### 5. docs/brain/calendar-lesson-planning.md (508134b31ceac5379e6edf01fa6e367c144e9aac1f98d2a85cca866a2cb62f68)
-- bm25: -31.4009 | relevance: 1.0000
-
-### Error Handling
-
-**Graceful Degradation:**
-- Medals API failure → defaults to empty object, generation continues
-- History processing independent of medals availability
-- Individual outline generation failures logged but don't stop batch
-- Planned lessons load failure → defaults to empty object, page still usable
-
-### 6. sidekick_pack.md (abb89cc2d6ea14313372a56663b0976a0234db712b9cbde62805394db4d66f42)
-- bm25: -27.7318 | relevance: 0.9652
-
-### 9. docs/brain/calendar-lesson-planning.md (8fb5d6fd52eb343d38244e53af009c1d078e80740d159006615a9235e71a5585)
-- bm25: -29.6044 | relevance: 1.0000
-
-# Calendar Lesson Planning System - Ms. Sonoma Brain File
-
-**Last Updated**: 2026-02-05T03:28:35Z  
-**Status**: Canonical
+**Status:** Canonical
+**Created:** 2026-01-10
+**Purpose:** Define what the landing page communicates and which outbound links it must include.
 
 ## How It Works
 
-### Automated Lesson Plan Generation
+The homepage is the app landing page at `/`.
 
-The Calendar page includes an automated lesson planner that generates lesson outlines for multiple weeks based on a weekly subject pattern.
+It uses a centered hero layout with:
+- Ms. Sonoma hero image
+- Primary CTAs: Learn, Facilitator
+- Supporting links:
+  - About page (AI safety/How it works)
+  - External site link to learn more about Ms. Sonoma
 
-**Flow:**
-1. Facilitator sets up weekly pattern (which subjects on which days)
-2. Selects start date and duration (in months)
-3. Clicks "Generate Lesson Plan" 
-4. System generates outline for each subject/day combination across specified timeframe
-5. **Planned lessons automatically save to database**
-6. Planned lessons load from database on page mount or learner change
+### External Website Link
 
-**Context Integration:**
-- Fetches learner's lesson history (completed, incomplete sessions)
-- Loads medals/scores for completed lessons
-- Gets scheduled lessons
-- Retrieves curriculum preferences (focus/banned concepts/topics/words)
-- Combines into context string sent to GPT for smarter lesson planning
-- Prevents repetition of already-completed topics
-- Prevents repetition within the same generation run by adding "generated so far" lessons into later GPT calls
+The homepage includes an external link to `https://mssonoma.com` with copy that explicitly tells users to learn about Ms. Sonoma there.
 
-**Within-run anti-repeat rule (important):**
-- The planner generates one outline per day/subject slot.
-- If the context sent to GPT does not include outlines generated earlier in the same batch, GPT can repeat topics week-to-week because it cannot "see" what it already created.
-- The planner must include a short list of already-generated outlines (especially for the same subject) in the context for subsequent outline requests.
+## What NOT To Do
 
-### 7. sidekick_pack.md (4c5b8bc8077b109c8c99a1196a375108c0227ae6411557a1522b11641918a2df)
-- bm25: -27.7318 | relevance: 0.9652
-
-# Calendar Lesson Planning System - Ms. Sonoma Brain File
-
-**Last Updated**: 2026-02-05T03:28:35Z  
-**Status**: Canonical
-
-## How It Works
-
-### Automated Lesson Plan Generation
-
-The Calendar page includes an automated lesson planner that generates lesson outlines for multiple weeks based on a weekly subject pattern.
-
-**Flow:**
-1. Facilitator sets up weekly pattern (which subjects on which days)
-2. Selects start date and duration (in months)
-3. Clicks "Generate Lesson Plan" 
-4. System generates outline for each subject/day combination across specified timeframe
-5. **Planned lessons automatically save to database**
-6. Planned lessons load from database on page mount or learner change
-
-**Context Integration:**
-- Fetches learner's lesson history (completed, incomplete sessions)
-- Loads medals/scores for completed lessons
-- Gets scheduled lessons
-- Retrieves curriculum preferences (focus/banned concepts/topics/words)
-- Combines into context string sent to GPT for smarter lesson planning
-- Prevents repetition of already-completed topics
-- Prevents repetition within the same generation run by adding "generated so far" lessons into later GPT calls
-
-**Within-run anti-repeat rule (important):**
-- The planner generates one outline per day/subject slot.
-- If the context sent to GPT does not include outlines generated earlier in the same batch, GPT can repeat topics week-to-week because it cannot "see" what it already created.
-- The planner must include a short list of already-generated outlines (especially for the same subject) in the context for subsequent outline requests.
-
-### 11. docs/brain/calendar-lesson-planning.md (de0b7e2265d9cfcb4b0c9cd0651ba3db1eb254c5334aa7a65a5b5a4fad4aba17)
-- bm25: -28.6058 | relevance: 1.0000
-
-### 8. cohere-changelog.md (75f8edfef6769a25cd296bfa345d54f7faf6c69179342ecb8e9b779a224350a7)
-- bm25: -23.6122 | relevance: 0.9594
-
-2026-03-03T00:00:00Z | Feature: per-subject curriculum preferences + Lesson Planner duration options redesign. (1) CurriculumPreferencesOverlay: full rewrite — added subject dropdown listing Global, core subjects (math, language arts, science, social studies, general), and custom subjects passed as `customSubjects` prop from LessonPlanner. Selecting a subject loads/saves that subject's focus/ban lists. Global subject maps to existing top-level columns; per-subject data stored in new `subject_preferences` JSONB column (scripts/add-curriculum-subject-preferences.sql). (2) API route `/api/curriculum-preferences`: POST now accepts `subject` field (defaults 'all'). 'all' saves global columns via upsert (unchanged). Any other subject does a read-merge-write on `subject_preferences` JSONB blob. GET unchanged. (3) LessonPlanner: duration dropdown changed from "1–4 Months" to day/week options (1d, 2d, 3d, 4d, 1w, 2w, 3w, 4w) using `parseDurationToDays()` helper; old numeric values treated as weeks for backward compat. Generation loop refactored from week×dayIndex nested loops to single dayOffset loop over totalDays. Preferences context bug fixed (was referencing `curriculumPrefs.focus_concepts` on the raw response envelope — was always undefined). Per-subject context now injected per-slot in `getSubjectContextAdditions(subject)` merging global + subject-specific. Partial results on outer error preserved via `onPlannedLessonsChange` in catch block. `customSubjects` now passed to CurriculumPreferencesOverlay. Files: CurriculumPreferencesOverlay.jsx, LessonPlanner.jsx, src/app/api/curriculum-preferences/route.js, scripts/add-curriculum-subject-preferences.sql. DB: run scripts/add-curriculum-subject-preferences.sql. Recon prompt: "Curriculum Preferences focuses and bans per subject
-
-### 9. src/app/facilitator/calendar/LessonPlanner.jsx (bddbac2b757dd8ab8d0f63a15be69e1a60397f253e6c940a93fdd1dca85cf2c7)
-- bm25: -21.6588 | relevance: 0.9559
-
-const dayName = DAYS[currentDate.getDay()]
-        const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`
-        const daySubjects = weeklyPattern[dayName] || []
-
-for (const subjectInfo of daySubjects) {
-          // Generate outline for each subject on this day
-          try {
-            const dynamicContextText = `${contextText}${getSubjectContextAdditions(subjectInfo.subject)}${buildGenerationSoFarText(subjectInfo.subject)}`
-
-const response = await fetch('/api/generate-lesson-outline', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  subject: subjectInfo.subject,
-                  grade: learnerGrade || '3rd',
-                  difficulty: recommendedDifficulty,
-                  learnerId,
-                  context: dynamicContextText  // Include lesson history, preferences, and generation-so-far
-                })
-              })
-
-if (response.ok) {
-                const result = await response.json()
-                const outline = result.outline
-
-if (!lessons[dateStr]) {
-                  lessons[dateStr] = []
-                }
-
-lessons[dateStr].push({
-                  ...outline,
-                  id: `${dateStr}-${subjectInfo.subject}`,
-                  subject: subjectInfo.subject
-                })
-
-### 10. sidekick_pack.md (d62c6741ac395fbdad0b9d21b669ab12793639e264438a2e035c67198dec3016)
-- bm25: -19.4923 | relevance: 0.9512
-
-**Within-run anti-repeat rule (important):**
-- The planner generates one outline per day/subject slot.
-- If the context sent to GPT does not include outlines generated earlier in the same batch, GPT can repeat topics week-to-week because it cannot "see" what it already created.
-- The planner must include a short list of already-generated outlines (especially for the same subject) in the context for subsequent outline requests.
-
-### 5. docs/brain/calendar-lesson-planning.md (508134b31ceac5379e6edf01fa6e367c144e9aac1f98d2a85cca866a2cb62f68)
-- bm25: -31.4009 | relevance: 1.0000
-
-### Error Handling
-
-**Graceful Degradation:**
-- Medals API failure → defaults to empty object, generation continues
-- History processing independent of medals availability
-- Individual outline generation failures logged but don't stop batch
-- Planned lessons load failure → defaults to empty object, page still usable
-
-### 14. docs/brain/ingests/pack.md (457324d43ea5d640d2143d6eabafb9637ff47ccee9bda121abde347baffba259)
-- bm25: -28.0365 | relevance: 1.0000
-
-**Data source and key format:**
-- Loads owned lessons via `GET /api/facilitator/lessons/list` (Bearer token required).
-- Schedules lessons using `generated/<filename>` keys so `GET /api/lesson-file?key=generated/<filename>` loads from `facilitator-lessons/<userId>/<filename>`.
-
-**Filtering behavior:**
-- Subject grouping uses each lesson's `subject` metadata.
-- Grade filtering prefers lesson `grade` metadata; falls back to filename conventions when needed.
-
-### Completed Past Scheduled Lessons (History View)
-
-The Calendar schedule view supports showing scheduled lessons on past dates, but only when the lesson was completed.
-
-### 11. docs/brain/ingests/pack.lesson-schedule-debug.md (0d46f7c2216ba778232cac583e98e29806e63b730e0971657fcc9c8e8208a89c)
-- bm25: -19.3598 | relevance: 0.9509
-
-### 9. docs/brain/calendar-lesson-planning.md (265bc11b6e14ebc78b549a5a598ef082eba677b6a58860236e1c61224231f8bf)
-- bm25: -21.9514 | entity_overlap_w: 1.50 | adjusted: -22.3264 | relevance: 1.0000
-
-**`/api/learner/lesson-history`** - completed/incomplete sessions  
-**`/api/medals`** - lesson scores (may 404 for new learners)  
-**`/api/lesson-schedule`** - scheduled lessons (returns `{schedule: [...]}`)  
-**`/api/curriculum-preferences`** - focus/banned content  
-**`/api/generate-lesson-outline`** - GPT outline generation per subject/date
-  - Supports `context` (planner-built history/schedule/plan context)
-  - Supports `promptUpdate` (facilitator-provided steering text, used heavily by Redo)
-
-### 10. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (fc6eb29feb3e755d70c6300159228b4f7282977bd0446373cf200186fead2fdb)
-- bm25: -21.6674 | entity_overlap_w: 1.50 | adjusted: -22.0424 | relevance: 1.0000
-
-// Get all scheduled lessons for this learner
-      const response = await fetch(`/api/lesson-schedule?learnerId=${targetLearnerId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-### 11. src/app/facilitator/generator/counselor/CounselorClient.jsx (edd66a96cc6adc70cd1a3eda1a4e179bb1df29fe026d97215ecd7272c65998b1)
-- bm25: -21.7073 | relevance: 1.0000
-
-- Title: ${genData.lesson.title}
-- Grade: ${genData.lesson.grade}
-- Difficulty: ${genData.lesson.difficulty}
-- Vocabulary: ${vocab}
-- Teaching Notes: ${notes}
-
-As a next step, you might consider adding this lesson to your learner's plan. You can either schedule it on a specific date, or assign it so it shows up as available for ${learnerName || 'this learner'}.
-
-Would you like me to schedule this lesson, or assign it to ${learnerName || 'this learner'}?`
-
-### 12. src/app/api/curriculum-preferences/route.js (aa6d9d785a8575d8060710b9c063d2a0c2c18ad4cf81ef22a7d11df61e3ce355)
-- bm25: -19.1597 | relevance: 0.9504
-
-let data, error
-    if (existingId) {
-      const res = await supabase
-        .from('curriculum_preferences')
-        .update({ subject_preferences: mergedSubjectPrefs, updated_at: now })
-        .eq('id', existingId)
-        .select()
-        .single()
-      data = res.data
-      error = res.error
-    } else {
-      const res = await supabase
-        .from('curriculum_preferences')
-        .upsert({
-          facilitator_id: user.id,
-          learner_id: learnerId,
-          banned_words: [],
-          banned_topics: [],
-          banned_concepts: [],
-          focus_topics: [],
-          focus_concepts: [],
-          focus_keywords: [],
-          subject_preferences: mergedSubjectPrefs,
-          updated_at: now
-        }, { onConflict: 'facilitator_id,learner_id' })
-        .select()
-        .single()
-      data = res.data
-      error = res.error
-    }
-
-if (error) {
-      const isMissingColumn =
-        error.message?.includes('subject_preferences') ||
-        error.code === '42703' ||
-        error.code === 'PGRST204'
-      if (isMissingColumn) {
-        console.error('subject_preferences column missing — run scripts/add-curriculum-subject-preferences.sql', error)
-        return NextResponse.json({
-          error: 'Per-subject preferences require a one-time database update. Run scripts/add-curriculum-subject-preferences.sql in Supabase.',
-          migrationNeeded: true
-        }, { status: 500 })
-      }
-      console.error('Error saving subject curriculum preferences:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-### 13. docs/brain/ingests/pack.lesson-schedule-debug.md (9f379726dc01ad3380a3b439e9f96ec15fa0e460570337171051caa5a5d09ee8)
-- bm25: -18.4551 | relevance: 0.9486
-
-// Set state to await schedule vs assign
-                    interceptorRef.current.state.awaitingInput = 'post_generation_action'
-                    
-                    // Dispatch event to refresh lessons overlay
-                    window.dispatchEvent(new CustomEvent('mr-mentor:lesson-generated'))
-                  }
-                }
-              } catch (err) {
-                // Generation failed - will show in response
-              }
-            }
-          } else if (action.type === 'edit') {
-            // Trigger lesson editor
-            setActiveScreen('lessons')
-            // Could pass edit instructions as context
-          } else if (action.type === 'save_curriculum_preferences') {
-            setLoadingThought('Saving curriculum preferences...')
-
-### 14. docs/brain/calendar-lesson-planning.md (1855144ade44b43a78489cf3246c6df30aa1531fdb5dbb9a20f4fe3d2898703f)
-- bm25: -17.9697 | relevance: 0.9473
-
-### Redo for Planned Lessons (Pre-Scheduling)
-
-Planned lessons (outlines) shown in the day view have a **Redo** action that regenerates the outline before scheduling.
-
-**Redo prompt update:**
-- Each planned lesson can optionally store a `promptUpdate` string.
-- The UI exposes a "Redo prompt update" field.
-- When Redo is clicked, this text is appended to the GPT prompt so the facilitator can steer what changes (e.g., "different topic", "more reading comprehension", "avoid fractions").
-
-**Redo context rule:**
-- Redo must include learner history (with scores when available) + current scheduled lessons + planned lessons in the prompt context.
-- This prevents Redo from returning the same two outlines repeatedly.
-
-**Redo rule (matches planner):**
-- Redo should follow the same score-aware repeat policy as planner generation (new topics preferred; review allowed for low scores; avoid repeating high-score topics).
-- Redo additionally supports `promptUpdate` to let the facilitator steer the regeneration.
-- Redo should not force every regeneration to be a review; instead, only label as `Review:` when a review is actually chosen.
-
-**Grade source of truth:**
-- Planned-lesson outlines must use the selected learner's grade as the default `grade` sent to `/api/generate-lesson-outline`.
-- Do not hardcode a default grade like "3rd" at the planner layer; that will leak into every planned lesson and any downstream generator that uses the outline.
-
-**Grade type normalization:**
-- Treat `grade` as a string in generator UIs.
-- Some data sources store grade as a number (e.g., `3`), which will crash code that assumes `.trim()` exists.
-
-### 15. src/app/facilitator/generator/counselor/MentorInterceptor.js (431919c0bcf8badb71978139f17c822c3bb7798fe0a6495afa6258667486b491)
-- bm25: -17.6643 | relevance: 0.9464
-
-// Curriculum preferences (single-shot preferred)
-    if (this.state.awaitingInput === 'curriculum_prefs_focus_and_avoid') {
-      const text = String(userMessage || '').trim()
-      const lower = text.toLowerCase()
-
-const focusMatch = text.match(/\bfocus\s*:\s*([^\n;]+)(?:[;\n]|$)/i)
-      const avoidMatch = text.match(/\bavoid\s*:\s*([^\n;]+)(?:[;\n]|$)/i)
-
-const focusRaw = focusMatch?.[1] || ''
-      const avoidRaw = avoidMatch?.[1] || ''
-
-if (focusRaw) {
-        this.state.context.curriculum.focusTopics = this.parseListFromText(focusRaw)
-      }
-      if (avoidRaw) {
-        this.state.context.curriculum.bannedTopics = this.parseListFromText(avoidRaw)
-      }
-
-// If they didn't use Focus/Avoid labels, treat their message as focus and ask for avoid.
-      if (!focusRaw && !avoidRaw) {
-        if (lower === 'skip') {
-          this.state.context.curriculum.focusTopics = []
-        } else {
-          this.state.context.curriculum.focusTopics = this.parseListFromText(text)
-        }
-      }
-
-if (!this.state.context.curriculum.bannedTopics) {
-        this.state.awaitingInput = 'curriculum_prefs_avoid'
-        return {
-          handled: true,
-          response: `What topics should we avoid for ${learnerName || 'this learner'}? (comma-separated, or say "skip")`
-        }
-      }
-
-this.state.awaitingConfirmation = true
-      this.state.awaitingInput = null
-      return {
-        handled: true,
-        response: `Should I save these curriculum preferences for ${learnerName || 'this learner'}?\n\nFocus: ${(this.state.context.curriculum.focusTopics || []).join(', ') || '(none)'}\nAvoid: ${(this.state.context.curriculum.bannedTopics || []).join(', ') || '(none)'}`
-      }
-    }
-
-### 16. sidekick_pack.md (bcd88c0b1d1b124721ff79f4c0d812bba5b7bee99ff66ccb3d3fbd27ef226395)
-- bm25: -17.5949 | relevance: 0.9462
-
-### Redo for Planned Lessons (Pre-Scheduling)
-
-Planned lessons (outlines) shown in the day view have a **Redo** action that regenerates the outline before scheduling.
-
-**Redo prompt update:**
-- Each planned lesson can optionally store a `promptUpdate` string.
-- The UI exposes a "Redo prompt update" field.
-- When Redo is clicked, this text is appended to the GPT prompt so the facilitator can steer what changes (e.g., "different topic", "more reading comprehension", "avoid fractions").
-
-**Redo context rule:**
-- Redo must include learner history (with scores when available) + current scheduled lessons + planned lessons in the prompt context.
-- This prevents Redo from returning the same two outlines repeatedly.
-
-**Redo rule (matches planner):**
-- Redo should follow the same score-aware repeat policy as planner generation (new topics preferred; review allowed for low scores; avoid repeating high-score topics).
-- Redo additionally supports `promptUpdate` to let the facilitator steer the regeneration.
-- Redo should not force every regeneration to be a review; instead, only label as `Review:` when a review is actually chosen.
-
-**Grade source of truth:**
-- Planned-lesson outlines must use the selected learner's grade as the default `grade` sent to `/api/generate-lesson-outline`.
-- Do not hardcode a default grade like "3rd" at the planner layer; that will leak into every planned lesson and any downstream generator that uses the outline.
-
-**Grade type normalization:**
-- Treat `grade` as a string in generator UIs.
-- Some data sources store grade as a number (e.g., `3`), which will crash code that assumes `.trim()` exists.
-
-### 40. docs/brain/ingests/pack.md (8553ec4a96cb35a36453f5c28d63fd06cec584d5e5726093793930c77128e5d0)
-- bm25: -20.6530 | relevance: 1.0000
-
-### 17. docs/brain/ingests/pack.md (c9661f9dcd74df3cde9a29ba506ce65af935aaaefd2b314837236b771df3e7fd)
-- bm25: -17.5737 | relevance: 0.9462
-
-### 26. docs/brain/calendar-lesson-planning.md (1855144ade44b43a78489cf3246c6df30aa1531fdb5dbb9a20f4fe3d2898703f)
-- bm25: -19.5214 | relevance: 1.0000
-
-### Redo for Planned Lessons (Pre-Scheduling)
-
-Planned lessons (outlines) shown in the day view have a **Redo** action that regenerates the outline before scheduling.
-
-**Redo prompt update:**
-- Each planned lesson can optionally store a `promptUpdate` string.
-- The UI exposes a "Redo prompt update" field.
-- When Redo is clicked, this text is appended to the GPT prompt so the facilitator can steer what changes (e.g., "different topic", "more reading comprehension", "avoid fractions").
-
-**Redo context rule:**
-- Redo must include learner history (with scores when available) + current scheduled lessons + planned lessons in the prompt context.
-- This prevents Redo from returning the same two outlines repeatedly.
-
-**Redo rule (matches planner):**
-- Redo should follow the same score-aware repeat policy as planner generation (new topics preferred; review allowed for low scores; avoid repeating high-score topics).
-- Redo additionally supports `promptUpdate` to let the facilitator steer the regeneration.
-- Redo should not force every regeneration to be a review; instead, only label as `Review:` when a review is actually chosen.
-
-**Grade source of truth:**
-- Planned-lesson outlines must use the selected learner's grade as the default `grade` sent to `/api/generate-lesson-outline`.
-- Do not hardcode a default grade like "3rd" at the planner layer; that will leak into every planned lesson and any downstream generator that uses the outline.
-
-**Grade type normalization:**
-- Treat `grade` as a string in generator UIs.
-- Some data sources store grade as a number (e.g., `3`), which will crash code that assumes `.trim()` exists.
-
-### 18. docs/brain/ingests/pack.lesson-schedule-debug.md (19e83f394456a0f4b2f8e0cd451128d789d6216b029b3b4a64a4b74d645bc394)
-- bm25: -17.5720 | relevance: 0.9462
-
-- **Location**: `src/app/api/generate-lesson-outline/route.js`
-- **Method**: POST
-- **Auth**: Bearer token required
-- **Body**: `{ subject, grade, difficulty, learnerId?, context?, promptUpdate? }`
-  - `context`: planner-provided history/scheduled/planned context to prevent repeats
-  - `promptUpdate`: facilitator-provided steering text (used by Redo on planned lessons)
-
-### 19. docs/brain/ingests/pack.md (e1dee79b45583e9ff75bdb216cfbbde5bf6caba4575234ac0b81fd1cb170d071)
-- bm25: -17.5620 | relevance: 0.9461
-
-- **Location**: `src/app/api/generate-lesson-outline/route.js`
-- **Method**: POST
-- **Auth**: Bearer token required
-- **Body**: `{ subject, grade, difficulty, learnerId?, context?, promptUpdate? }`
-  - `context`: planner-provided history/scheduled/planned context to prevent repeats
-  - `promptUpdate`: facilitator-provided steering text (used by Redo on planned lessons)
-
-### 20. docs/brain/ingests/pack.planned-lessons-flow.md (b7a980085f6bc8e1ca16fde88940d8b9b190529334412446a3b7827aec14d21d)
-- bm25: -17.4850 | relevance: 0.9459
-
-### 11. docs/brain/calendar-lesson-planning.md (1855144ade44b43a78489cf3246c6df30aa1531fdb5dbb9a20f4fe3d2898703f)
-- bm25: -23.9232 | relevance: 1.0000
-
-### Redo for Planned Lessons (Pre-Scheduling)
-
-Planned lessons (outlines) shown in the day view have a **Redo** action that regenerates the outline before scheduling.
-
-**Redo prompt update:**
-- Each planned lesson can optionally store a `promptUpdate` string.
-- The UI exposes a "Redo prompt update" field.
-- When Redo is clicked, this text is appended to the GPT prompt so the facilitator can steer what changes (e.g., "different topic", "more reading comprehension", "avoid fractions").
-
-**Redo context rule:**
-- Redo must include learner history (with scores when available) + current scheduled lessons + planned lessons in the prompt context.
-- This prevents Redo from returning the same two outlines repeatedly.
-
-**Redo rule (matches planner):**
-- Redo should follow the same score-aware repeat policy as planner generation (new topics preferred; review allowed for low scores; avoid repeating high-score topics).
-- Redo additionally supports `promptUpdate` to let the facilitator steer the regeneration.
-- Redo should not force every regeneration to be a review; instead, only label as `Review:` when a review is actually chosen.
-
-**Grade source of truth:**
-- Planned-lesson outlines must use the selected learner's grade as the default `grade` sent to `/api/generate-lesson-outline`.
-- Do not hardcode a default grade like "3rd" at the planner layer; that will leak into every planned lesson and any downstream generator that uses the outline.
-
-**Grade type normalization:**
-- Treat `grade` as a string in generator UIs.
-- Some data sources store grade as a number (e.g., `3`), which will crash code that assumes `.trim()` exists.
-
-### 21. src/app/facilitator/generator/counselor/MentorInterceptor.js (f4ac7b7c15763423d23bed0191b3efd98dee41efb20a528414769c1fba0e90bb)
-- bm25: -17.3961 | relevance: 0.9456
-
-// Escape hatch for any structured flow.
-    if (this.state.flow && this.state.awaitingInput && this.isEscapeMessage(userMessage)) {
-      const normalized = normalizeText(userMessage)
-
-if (normalized.includes('different issue') || normalized.includes('something else')) {
-        this.reset()
-        return {
-          handled: false,
-          apiForward: { message: userMessage, bypassInterceptor: true }
-        }
-      }
-
-this.reset()
-      return {
-        handled: true,
-        response: 'No problem. What would you like to do instead?'
-      }
-    }
-
-// Lesson plan chooser (routes into subflows)
-    if (this.state.awaitingInput === 'lesson_plan_choice') {
-      const normalized = normalizeText(userMessage)
-      if (normalized.includes('curriculum') || normalized.includes('preference') || normalized.includes('avoid')) {
-        return await this.handleLessonPlan('curriculum preferences', context)
-      }
-      if (normalized.includes('pattern') || normalized.includes('weekly')) {
-        return await this.handleLessonPlan('weekly pattern', context)
-      }
-      if (normalized.includes('subject')) {
-        // Ask clarifier for add vs delete.
-        this.state.awaitingInput = 'lesson_plan_subject_action'
-        return {
-          handled: true,
-          response: 'Do you want to add a new custom subject, or delete an existing one?'
-        }
-      }
-      if (normalized.includes('schedule') || normalized.includes('generate') || normalized.includes('plan')) {
-        return await this.handleLessonPlan('schedule a lesson plan', context)
-      }
-
-return {
-        handled: true,
-        response: 'Would you like to work on curriculum preferences, weekly pattern, custom subjects, or scheduling a lesson plan?'
-      }
-    }
-
-### 22. src/lib/mentor/featureRegistry.js (dde9f8ffd6b150af84621cde7ebb083c7b481740cfea0878428c295294e39ba2)
-- bm25: -16.4346 | relevance: 0.9426
-
-function getReportableFeatures() {
-  return [
-    {
-      id: 'goals-notes',
-      title: 'Goals and Notes',
-      category: 'Learners',
-      keywords: [
-        'goals',
-        'notes',
-        'goals and notes',
-        'learner goals',
-        'learner notes',
-        'my goals',
-        'goals clipboard'
-      ],
-      description:
-        'Goals and Notes are persistent observations you save about a learner (or yourself as facilitator). They help keep context across sessions and let Mr. Mentor tailor guidance.',
-      howToUse:
-        "To review what's saved, ask 'show my goals and notes'. To update them, open the Goals clipboard or tell me what you'd like to add/change.",
-      relatedFeatures: ['learner-profiles', 'mr-mentor'],
-      report: {
-        actionType: 'report_goals_notes',
-        requiresLearner: false
-      }
-    },
-    {
-      id: 'curriculum-preferences',
-      title: 'Curriculum Preferences',
-      category: 'Facilitator',
-      keywords: [
-        'curriculum preferences',
-        'curriculum',
-        'learning preferences',
-        'focus topics',
-        'avoid topics'
-      ],
-      description:
-        "Curriculum preferences are learner-specific guardrails for lesson planning. They let you set topics to focus on and topics to avoid, and Mr. Mentor will use them to guide lesson generation and planning.",
-      howToUse:
-        "To set them, tell me focus topics and avoid topics for a selected learner, and I can save them. To review what's saved, ask 'show my curriculum preferences'.",
-      relatedFeatures: [],
-      report: {
-        actionType: 'report_curriculum_preferences',
-        requiresLearner: true
-      }
-    },
-    {
-      id: 'weekly-pattern',
-      title: 'Weekly Pattern',
-      category: 'Facilitator',
-      keywords: [
-
-### 23. sidekick_pack.md (bf63051019c4e3768336c09c25c02f91dadf884b80fad6f3b289ccad0c2f7139)
-- bm25: -16.4240 | relevance: 0.9426
-
-**Context Integration:**
-- Fetches learner's lesson history (completed, incomplete sessions)
-- Loads medals/scores for completed lessons
-- Gets scheduled lessons
-- Retrieves curriculum preferences (focus/banned concepts/topics/words)
-- Combines into context string sent to GPT for smarter lesson planning
-- Prevents repetition of already-completed topics
-- Prevents repetition within the same generation run by adding "generated so far" lessons into later GPT calls
-
-### 24. docs/brain/api-routes.md (f1ee4af5914ccd9a2266616f7f17e803bc3681e9206331fe1c7a011816c5bc08)
-- bm25: -16.4179 | relevance: 0.9426
-
-### `/api/lesson-schedule`
-**Purpose**: Create/read/delete calendar entries for learner lessons  
-**Status**: Operational
-
-- **Location**: `src/app/api/lesson-schedule/route.js`
-
-### `/api/lesson-assign`
-**Purpose**: Assign/unassign lessons to a learner (availability via `learners.approved_lessons`)  
-**Status**: Operational
-
-- **Location**: `src/app/api/lesson-assign/route.js`
-- **Method**: POST
-- **Auth**: Bearer token required; learner ownership verified server-side
-- **Body**: `{ learnerId, lessonKey, assigned }`
-
-### `/api/generate-lesson-outline`
-**Purpose**: Generate a lightweight lesson outline (title + description) for planning/redo  
-**Status**: Operational
-
-- **Location**: `src/app/api/generate-lesson-outline/route.js`
-- **Method**: POST
-- **Auth**: Bearer token required
-- **Body**: `{ subject, grade, difficulty, learnerId?, context?, promptUpdate? }`
-  - `context`: planner-provided history/scheduled/planned context to prevent repeats
-  - `promptUpdate`: facilitator-provided steering text (used by Redo on planned lessons)
-
-**Response**:
-- Returns `{ outline: { kind, title, description, subject, grade, difficulty } }`
-- `kind` is `new` or `review`
-- When `kind=review`, the title is prefixed with `Review:` for clarity
-
-### `/api/generate-lesson`
-**Purpose**: Generate new lesson content via LLM  
-**Status**: Legacy route, may be superseded by facilitator lesson editor
-
-### `/api/tts`
-**Purpose**: Text-to-speech conversion (Google TTS)  
-**Status**: Operational, used for all Ms. Sonoma audio
-
-### `/api/visual-aids/generate`
-**Purpose**: Generate visual aid images via DALL-E 3  
-**Status**: Operational, see `docs/brain/visual-aids.md`
-
-### 25. docs/brain/ingests/pack.planned-lessons-flow.md (04858a7aa2cfe9fef82092e5a258005d9958e21a4600d83a7b00f9e45c943318)
-- bm25: -16.3503 | relevance: 0.9424
-
-### `/api/lesson-schedule`
-**Purpose**: Create/read/delete calendar entries for learner lessons  
-**Status**: Operational
-
-- **Location**: `src/app/api/lesson-schedule/route.js`
-
-### `/api/lesson-assign`
-**Purpose**: Assign/unassign lessons to a learner (availability via `learners.approved_lessons`)  
-**Status**: Operational
-
-- **Location**: `src/app/api/lesson-assign/route.js`
-- **Method**: POST
-- **Auth**: Bearer token required; learner ownership verified server-side
-- **Body**: `{ learnerId, lessonKey, assigned }`
-
-### `/api/generate-lesson-outline`
-**Purpose**: Generate a lightweight lesson outline (title + description) for planning/redo  
-**Status**: Operational
-
-- **Location**: `src/app/api/generate-lesson-outline/route.js`
-- **Method**: POST
-- **Auth**: Bearer token required
-- **Body**: `{ subject, grade, difficulty, learnerId?, context?, promptUpdate? }`
-  - `context`: planner-provided history/scheduled/planned context to prevent repeats
-  - `promptUpdate`: facilitator-provided steering text (used by Redo on planned lessons)
-
-**Response**:
-- Returns `{ outline: { kind, title, description, subject, grade, difficulty } }`
-- `kind` is `new` or `review`
-- When `kind=review`, the title is prefixed with `Review:` for clarity
-
-### `/api/generate-lesson`
-**Purpose**: Generate new lesson content via LLM  
-**Status**: Legacy route, may be superseded by facilitator lesson editor
-
-### `/api/tts`
-**Purpose**: Text-to-speech conversion (Google TTS)  
-**Status**: Operational, used for all Ms. Sonoma audio
-
-### `/api/visual-aids/generate`
-**Purpose**: Generate visual aid images via DALL-E 3  
-**Status**: Operational, see `docs/brain/visual-aids.md`
-
-### 26. docs/brain/ingests/pack-mentor-intercepts.md (97d64271b68bc6d4053092bc5752ec3b3bb5424024dd6610da4c6c6a7d49c541)
-- bm25: -16.2648 | relevance: 0.9421
-
-### 26. docs/brain/api-routes.md (f1ee4af5914ccd9a2266616f7f17e803bc3681e9206331fe1c7a011816c5bc08)
-- bm25: -12.8678 | relevance: 1.0000
-
-### `/api/lesson-schedule`
-**Purpose**: Create/read/delete calendar entries for learner lessons  
-**Status**: Operational
-
-- **Location**: `src/app/api/lesson-schedule/route.js`
-
-### `/api/lesson-assign`
-**Purpose**: Assign/unassign lessons to a learner (availability via `learners.approved_lessons`)  
-**Status**: Operational
-
-- **Location**: `src/app/api/lesson-assign/route.js`
-- **Method**: POST
-- **Auth**: Bearer token required; learner ownership verified server-side
-- **Body**: `{ learnerId, lessonKey, assigned }`
-
-### `/api/generate-lesson-outline`
-**Purpose**: Generate a lightweight lesson outline (title + description) for planning/redo  
-**Status**: Operational
-
-- **Location**: `src/app/api/generate-lesson-outline/route.js`
-- **Method**: POST
-- **Auth**: Bearer token required
-- **Body**: `{ subject, grade, difficulty, learnerId?, context?, promptUpdate? }`
-  - `context`: planner-provided history/scheduled/planned context to prevent repeats
-  - `promptUpdate`: facilitator-provided steering text (used by Redo on planned lessons)
-
-**Response**:
-- Returns `{ outline: { kind, title, description, subject, grade, difficulty } }`
-- `kind` is `new` or `review`
-- When `kind=review`, the title is prefixed with `Review:` for clarity
-
-### `/api/generate-lesson`
-**Purpose**: Generate new lesson content via LLM  
-**Status**: Legacy route, may be superseded by facilitator lesson editor
-
-### `/api/tts`
-**Purpose**: Text-to-speech conversion (Google TTS)  
-**Status**: Operational, used for all Ms. Sonoma audio
-
-### 27. src/app/facilitator/calendar/LessonPlanner.jsx (e4bd80e253b70ad52be4a0ef35114eb245f76d7e7065a42dd554e3fc7c08e7db)
-- bm25: -16.1313 | relevance: 0.9416
-
-const generatePlannedLessons = async (startDate, totalDays = 7) => {
-    if (!requirePlannerAccess()) return
-    if (!learnerId) {
-      alert('Please select a learner first')
-      return
-    }
-
-const hasAnySubjects = DAYS.some(day => weeklyPattern[day]?.length > 0)
-    if (!hasAnySubjects) {
-      alert('Please assign subjects to at least one day of the week')
-      return
-    }
-
-setGenerating(true)
-    const lessons = {}
-
-// Track what we generate during this run so later prompts can avoid repeats
-    const generatedSoFar = []
-
-try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-
-if (!token) {
-        setGenerating(false)
-        return
-      }
-
-// Fetch lesson history (completed, scheduled, planned)
-      const [historyRes, medalsRes, scheduledRes, preferencesRes] = await Promise.all([
-        fetch(`/api/learner/lesson-history?learner_id=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/medals?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/lesson-schedule?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`/api/curriculum-preferences?learnerId=${learnerId}`, { headers: { 'Authorization': `Bearer ${token}` } })
-      ])
-
-let lessonContext = []
-      let prefsRow = null
-
-### 28. docs/brain/ingests/pack.md (b7db843ee1cf3e6960f94dbc37cf05a90870bc341c1e61e9c94d94dc5ea1e78f)
-- bm25: -15.3285 | relevance: 0.9388
-
-WRONG: Continue asking for required parameters
-RIGHT: "Of course! Let me search for 4th grade Language Arts lessons instead..."
-```
-
-### ❌ DON'T Confuse Topic Mention with Generation Request
-```
-User: "I need something Christmas-themed"
-
-WRONG: Interpret as "generate a Christmas lesson"
-RIGHT: Interpret as "search for Christmas-themed lessons"
-```
-
-### ❌ DON'T Assume Grade from Context Unless Explicit
-```
-User: "I want you to recommend them to be generated."
-Mr. Mentor: "Is this lesson for Emma's grade (4)?"
-
-WRONG: Assume user wants generation just because they said "generated"
-RIGHT: Clarify intent first - "Would you like me to search for existing lessons 
-       or help you create a new one?"
-```
-
----
+- Do not remove the external `mssonoma.com` link without replacing it with an equivalent learn-more path.
+- Do not add device- or storage-related claims to homepage copy.
+- Do not add placeholder or environment-specific URLs.
 
 ## Key Files
 
-### 32. docs/brain/api-routes.md (f1ee4af5914ccd9a2266616f7f17e803bc3681e9206331fe1c7a011816c5bc08)
-- bm25: -18.1363 | relevance: 1.0000
-
-### `/api/lesson-schedule`
-**Purpose**: Create/read/delete calendar entries for learner lessons  
-**Status**: Operational
-
-- **Location**: `src/app/api/lesson-schedule/route.js`
-
-### `/api/lesson-assign`
-**Purpose**: Assign/unassign lessons to a learner (availability via `learners.approved_lessons`)  
-**Status**: Operational
-
-- **Location**: `src/app/api/lesson-assign/route.js`
-- **Method**: POST
-- **Auth**: Bearer token required; learner ownership verified server-side
-- **Body**: `{ learnerId, lessonKey, assigned }`
-
-### `/api/generate-lesson-outline`
-**Purpose**: Generate a lightweight lesson outline (title + description) for planning/redo  
-**Status**: Operational
-
-### 29. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (a116a0fe94aaefaf16c53814abf544636c96f392c721d41892382725b7ddddf9)
-- bm25: -15.3136 | relevance: 0.9387
-
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
-
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
-
-## Recent Changes
-
-### 14. src/app/facilitator/generator/counselor/CounselorClient.jsx (f32cfa001a67b85c4fb1d68c1bfa6fbcf521a00fdd53aac77ad4d47c1948a374)
-- bm25: -18.0843 | relevance: 1.0000
-
-// Load learners list
-  useEffect(() => {
-    if (!tierChecked || !accessToken) return
-    let cancelled = false
-    ;(async () => {
-      try {
-        const supabase = getSupabaseClient()
-        if (supabase) {
-          const { data } = await supabase.from('learners').select('*').order('created_at', { ascending: false })
-          if (!cancelled && data) {
-            setLearners(data)
-          }
-        }
-      } catch (err) {
-        // Silent error handling
-      }
-    })()
-    return () => { cancelled = true }
-  }, [accessToken, tierChecked])
-
-### 30. docs/brain/ingests/pack.lesson-schedule-debug.md (fc18c4ad0ce8de2f0921d5cc14c58d4e4c3beab9ea79e7d6928e61b1cc0b4a95)
-- bm25: -15.2481 | relevance: 0.9385
-
-### Why Not Just Add Text to Pages?
-
-Beta testers wanted **on-demand** help, not always-visible instructions. Static text:
-- Clutters UI for experienced users
-- Increases cognitive load
-- Doesn't respect dismissal preferences
-
-Collapsible/dismissible components give power users clean interface while supporting new users.
-
----
-
-## Help Content Guidelines
-
-### Writing Style
-- **Short sentences** (6-12 words per sentence, matching Ms. Sonoma style)
-- **One idea per sentence** - Don't combine concepts
-- **Active voice** - "Click the calendar icon" not "The calendar icon can be clicked"
-- **Concrete examples** - "Check Math on Monday, Wednesday, Friday" not "Select subjects for days"
-- **No jargon** - "Lesson outlines" not "Curriculum data structures"
-
-### Content Structure
-- **Title**: 2-5 words describing the feature
-- **First sentence**: What it does (outcome)
-- **Second sentence**: When/why to use it (context)
-- **Optional third**: Example or caveat
-
-Example:
-```jsx
-<InlineExplainer title="Weekly Pattern">
-  <p>Check the subjects you want to teach on each day.</p>
-  <p>This pattern repeats every week for the duration you specify.</p>
-  <p>Example: Check "Math" on Monday, Wednesday, Friday to schedule 3 math lessons per week.</p>
-</InlineExplainer>
-```
-
-### What to Explain
-
-**Explain:**
-- Workflows spanning multiple actions (plan → review → generate → schedule)
-- Differences between similar features (Scheduler vs Planner, Play vs Work timers)
-- Non-obvious consequences (editing scheduled lesson affects all dates)
-- Technical concepts users must understand (phases, timers, targets)
-
-**Don't explain:**
-- Standard UI patterns (dropdowns, checkboxes, buttons)
-- Self-evident actions ("Click Save to save")
-- Features with external documentation linked elsewhere
-
----
-
-### 31. src/app/facilitator/generator/counselor/CounselorClient.jsx (1a524896d65039d810d20436047df237522a2b34344e4525e5015522a5bf877f)
-- bm25: -15.2011 | relevance: 0.9383
-
-- Title: ${genData.lesson.title}
-- Grade: ${genData.lesson.grade}
-- Difficulty: ${genData.lesson.difficulty}
-- Vocabulary: ${vocab}
-- Teaching Notes: ${notes}
-
-As a next step, you might consider adding this lesson to your learner's plan. You can either schedule it on a specific date, or assign it so it shows up as available for ${learnerName || 'this learner'}.
-
-Would you like me to schedule this lesson, or assign it to ${learnerName || 'this learner'}?`
-
-// Set state to await schedule vs assign
-                    interceptorRef.current.state.awaitingInput = 'post_generation_action'
-                    
-                    // Dispatch event to refresh lessons overlay
-                    window.dispatchEvent(new CustomEvent('mr-mentor:lesson-generated'))
-                  }
-                }
-              } catch (err) {
-                // Generation failed - will show in response
-              }
-            }
-          } else if (action.type === 'edit') {
-            // Trigger lesson editor
-            setActiveScreen('lessons')
-            // Could pass edit instructions as context
-          } else if (action.type === 'save_curriculum_preferences') {
-            setLoadingThought('Saving curriculum preferences...')
-
-const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-### 32. docs/brain/facilitator-help-system.md (8c85fd8c620a30ce27d8f5b1a2c1456f132eca5ca12c7325ed760169a9d9da7d)
-- bm25: -15.1797 | relevance: 0.9382
-
-### Why Not Just Add Text to Pages?
-
-Beta testers wanted **on-demand** help, not always-visible instructions. Static text:
-- Clutters UI for experienced users
-- Increases cognitive load
-- Doesn't respect dismissal preferences
-
-Collapsible/dismissible components give power users clean interface while supporting new users.
-
----
-
-## Help Content Guidelines
-
-### Writing Style
-- **Short sentences** (6-12 words per sentence, matching Ms. Sonoma style)
-- **One idea per sentence** - Don't combine concepts
-- **Active voice** - "Click the calendar icon" not "The calendar icon can be clicked"
-- **Concrete examples** - "Check Math on Monday, Wednesday, Friday" not "Select subjects for days"
-- **No jargon** - "Lesson outlines" not "Curriculum data structures"
-
-### Content Structure
-- **Title**: 2-5 words describing the feature
-- **First sentence**: What it does (outcome)
-- **Second sentence**: When/why to use it (context)
-- **Optional third**: Example or caveat
-
-Example:
-```jsx
-<InlineExplainer title="Weekly Pattern">
-  <p>Check the subjects you want to teach on each day.</p>
-  <p>This pattern repeats every week for the duration you specify.</p>
-  <p>Example: Check "Math" on Monday, Wednesday, Friday to schedule 3 math lessons per week.</p>
-</InlineExplainer>
-```
-
-### What to Explain
-
-**Explain:**
-- Workflows spanning multiple actions (plan → review → generate → schedule)
-- Differences between similar features (Scheduler vs Planner, Play vs Work timers)
-- Non-obvious consequences (editing scheduled lesson affects all dates)
-- Technical concepts users must understand (phases, timers, targets)
-
-**Don't explain:**
-- Standard UI patterns (dropdowns, checkboxes, buttons)
-- Self-evident actions ("Click Save to save")
-- Features with external documentation linked elsewhere
-
----
-
-### 33. docs/brain/ingests/pack-mentor-intercepts.md (8a7301d0500f96c08aa055fafd78dfff6d432220ac856186ec0fc23816f67eb4)
-- bm25: -15.0752 | relevance: 0.9378
-
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
-
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
-
-## Recent Changes
-
-### 19. docs/brain/MentorInterceptor_Architecture.md (b30a12376305295c1ddcb75bee3d82a3ed8acd72d64038cfbc7e8c026aea67e9)
-- bm25: -14.6288 | relevance: 1.0000
-
-# MentorInterceptor Architecture
-
-**Created:** November 17, 2025  
-**Status:** Deployed and active in Mr. Mentor counselor UI  
-**Commits:** 6890d3b → ab3fed4
-
-## Purpose
-
-Front-end conversation handler for Mr. Mentor that intercepts user messages to:
-- Provide instant responses without API calls where possible
-- Gather parameters through multi-turn Q&A before executing actions
-- Create confirmation flows for all actions (schedule, generate, edit)
-- Make front-end and back-end handling indistinguishable to users
-- Reduce API costs and improve responsiveness
-
-## Architecture
-
-### File Structure
-
-### 34. src/app/facilitator/generator/counselor/MentorInterceptor.js (1bb798378d483e27811a87b9038eb22293dcb0b8136ed8c0206b479c564f4d94)
-- bm25: -14.9210 | relevance: 0.9372
-
-this.state.awaitingInput = 'custom_subject_delete_name'
-      return {
-        handled: true,
-        response: 'Which custom subject would you like me to delete?'
-      }
-    }
-
-if (wantsCurriculum) {
-      this.state.flow = 'curriculum_prefs'
-      this.state.context = { learnerId: selectedLearnerId, curriculum: {} }
-      this.state.awaitingInput = 'curriculum_prefs_focus_and_avoid'
-      return {
-        handled: true,
-        response: `Tell me what you want ${learnerName || 'this learner'} to focus on, and what you want to avoid. You can reply like: "Focus: fractions, reading comprehension. Avoid: scary war topics."`
-      }
-    }
-
-if (wantsPattern) {
-      this.state.flow = 'weekly_pattern'
-      this.state.context = {
-        learnerId: selectedLearnerId,
-        weeklyPatternDraft: this.state.context.weeklyPatternDraft || {
-          sunday: [], monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: []
-        }
-      }
-      this.state.awaitingInput = 'pattern_day'
-      return {
-        handled: true,
-        response: `Which day would you like to update in the weekly pattern for ${learnerName || 'this learner'}? (Sunday through Saturday)`
-      }
-    }
-
-if (wantsPlan) {
-      this.state.flow = 'lesson_plan_generate'
-      this.state.context = { learnerId: selectedLearnerId }
-      this.state.awaitingInput = 'plan_start_date'
-      return {
-        handled: true,
-        response: `When should the lesson plan start for ${learnerName || 'this learner'}? You can say a date like 2026-02-10 or something like "next Monday".`
-      }
-    }
-
-### 35. src/app/facilitator/generator/counselor/MentorInterceptor.js (c12d51a1a8a168edcd71aaedcd1ddeb0bbad4ec93e34852ef627b1922a575d90)
-- bm25: -14.8780 | relevance: 0.9370
-
-,
-
-lesson_plan: {
-    keywords: [
-      'lesson plan',
-      'lesson planner',
-      'planned lessons',
-      'curriculum preferences',
-      'curriculum',
-      'weekly pattern',
-      'schedule template',
-      'start date',
-      'duration',
-      'generate lesson plan',
-      'schedule a lesson plan'
-    ],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
-
-// FAQ-style questions about the planner should defer to FAQ intent.
-      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
-      if (faqPatterns.some(p => normalized.includes(p))) {
-        return 0
-      }
-
-return INTENT_PATTERNS.lesson_plan.keywords.some(kw => normalized.includes(kw)) ? 0.85 : 0
-    }
+- `src/app/page.js`
+- `src/app/home-hero.module.css`
+
+### 4. docs/brain/story-feature.md (7c541082fb751d8b6d7c2be9019d9fcda07911dd69b371791d357908ef1d85e5)
+- bm25: -10.5869 | relevance: 0.9137
+
+### Story Ending
+1. Child clicks "Story" button
+2. Ms. Sonoma: **Briefly recounts** (first sentence only): "Together they spotted a sparkly treasure chest below."
+3. Ms. Sonoma: "How would you like the story to end?"
+4. Child describes ending
+5. Ms. Sonoma: *Concludes story* "...and they lived happily ever after. The end."
+
+## Key Files
+
+- `page.js` - Story state variables
+- `useDiscussionHandlers.js` - Story handlers (handleStoryStart, handleStoryYourTurn)
+- `/api/sonoma/route.js` - Story generation API
+
+## What NOT To Do
+
+- Never reset storyTranscript between phases (preserve continuity)
+- Never reset storyUsedThisGate between phases (one story per gate)
+- Never skip setup phase on first story creation
+- Never allow freeform story generation without setup (use template-based approach)
+- Never forget to clear story data after "The end." in Test phase
+
+### 5. docs/brain/story-feature.md (47b7112fa17bfb5f0221b18351895de13c106fd2c67fbfea01dda4cb32a9d469)
+- bm25: -10.4362 | relevance: 0.9126
+
+### Story Continuation
+1. Child clicks "Story" button
+2. Ms. Sonoma: **Briefly recounts** (first sentence only): "The dragon wanted to help the princess."
+3. Ms. Sonoma: "What would you like to happen next?"
+4. Ms. Sonoma: **Suggests possibilities** (AI-generated): "You could say: the dragon flies away, or they find a map, or a wizard appears."
+5. Child: "The dragon flies the princess to find treasure"
+6. Ms. Sonoma: *Continues story* "The dragon spread its wings and flew the princess high above the clouds. Together they spotted a sparkly treasure chest below. To be continued."
+
+### 6. src/app/session/slate/page.jsx (55d4dda89362e6bff0a50dbb9b96f1fbd4822ba14a84a32f44c27dee046e7094)
+- bm25: -10.0102 | relevance: 0.9092
+
+<div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => setSoundOn(v => !v)}
+            title={soundOn ? 'Mute voice' : 'Unmute voice'}
+            style={soundBtn}
+          >
+            {soundOn ? '🔊' : '🔇'}
+          </button>
+          <button onClick={backToList} style={ghostBtn}>LIST</button>
+          <button onClick={exitToLessons} style={dangerBtn}>EXIT</button>
+        </div>
+      </div>
+
+### 7. src/app/session/slate/page.jsx (924829cd036376fd6a6e7c284bfb13dc311315d840edfd5f118ff28e01d735c0)
+- bm25: -9.9781 | relevance: 0.9089
+
+<div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={startDrill} style={ghostBtn}>DRILL AGAIN</button>
+            <button onClick={backToList} style={ghostBtn}>LESSON LIST</button>
+            <button onClick={exitToLessons} style={primaryBtn}>← BACK TO LESSONS</button>
+          </div>
+        </div>
+      </div>
+    )
   }
+
+### 8. src/app/facilitator/calendar/DayViewOverlay.jsx (a8ee1e4b4407f358391e79ef3abe860b77ef4d680cf23f35fb1bbe9de25cafb4)
+- bm25: -9.5437 | relevance: 0.9052
+
+{/* No School Section */}
+        <div style={{ 
+          marginBottom: 20,
+          padding: 12,
+          background: noSchoolReason ? '#fef3c7' : '#f9fafb',
+          borderRadius: 8,
+          border: `1px solid ${noSchoolReason ? '#fbbf24' : '#e5e7eb'}`
+        }}>
+          {noSchoolReason ? (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#92400e' }}>
+                   No School
+                </span>
+                <button
+                  onClick={() => {
+                    setNoSchoolInputValue('')
+                    handleNoSchoolSave()
+                  }}
+                  style={{
+                    marginLeft: 'auto',
+                    padding: '2px 8px',
+                    fontSize: 11,
+                    background: 'transparent',
+                    border: '1px solid #d97706',
+                    borderRadius: 4,
+                    color: '#92400e',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Clear
+                </button>
+              </div>
+              <p style={{ fontSize: 13, color: '#78350f', margin: 0 }}>
+                {noSchoolReason}
+              </p>
+            </div>
+          ) : showNoSchoolInput ? (
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
+                Reason (optional)
+              </label>
+              <input
+                type="text"
+                value={noSchoolInputValue}
+                onChange={(e) => setNoSchoolInputValue(e.target.value)}
+                placeholder="e.g., Holiday, Field Trip, Teacher Planning Day"
+
+### 9. src/app/session/slate/page.jsx (f6cfc01c640e88a6ba4f0f8e1a7b736d873d88e1d30705ae3d1bbfdeac4c3d0c)
+- bm25: -9.4576 | relevance: 0.9044
+
+// ===========================================================================
+  //  RENDER -- Lesson list
+  // ===========================================================================
+  if (pagePhase === 'list') {
+    return (
+      <div style={{ fontFamily: C.mono, background: C.bg, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div style={{
+          background: C.surface,
+          borderBottom: `1px solid ${C.border}`,
+          padding: '14px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <video src={SLATE_VIDEO_SRC} muted playsInline style={{ width: 36, height: 36, objectFit: 'contain' }} />
+            <div>
+              <div style={{ color: C.accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>MR. SLATE V1</div>
+              <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2 }}>SKILLS &amp; PRACTICE COACH</div>
+            </div>
+          </div>
+          <button onClick={exitToLessons} style={ghostBtn}>← BACK</button>
+        </div>
+
+### 10. src/app/session/slate/page.jsx (92318ab447c2e7d85a7777de55db74ff7e73b4a663f20bfb688b148c2f665af1)
+- bm25: -9.3088 | relevance: 0.9030
+
+{/* Recent tab — completed Ms. Sonoma sessions, most recent first */}
+                {listTab === 'recent' && (
+                  recentList.length === 0 ? (
+                    <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>
+                      NO COMPLETED LESSONS YET — FINISH A LESSON WITH MS. SONOMA TO SEE RESULTS HERE
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
+                        {recentList.length} COMPLETED LESSON{recentList.length !== 1 ? 'S' : ''}
+                      </div>
+                      {recentList.map((r, i) => <RecentRow key={r.session.id || i} session={r.session} lesson={r.lesson} />)}
+                    </div>
+                  )
+                )}
+
+### 11. src/app/learn/page.js (9c0763c0605b15666fd2ad19a7fcbda8971b9ac3322d96bcabcc062eb2fcbde0)
+- bm25: -9.2805 | relevance: 0.9027
+
+const noLearner = !learner.id
+
+function goToLessons() {
+    r.push('/learn/lessons')
+  }
+
+function goToAwards() {
+    r.push('/learn/awards')
+  }
+
+return (
+    <main style={{ padding:'16px 24px' }}>
+      <div style={{ width:'100%', maxWidth:560, textAlign:'center', margin:'0 auto' }}>
+        <h1 style={{ margin:'4px 0 8px' }}>{noLearner ? 'Learning Portal' : `Hi, ${learner.name}!`}</h1>
+        
+        {!noLearner && (
+          <div style={{ marginTop:4, marginBottom:12 }}>
+            <button
+              onClick={async ()=> {
+                const ok = await ensurePinAllowed('change-learner');
+                if (!ok) return;
+                try { localStorage.removeItem('learner_id'); localStorage.removeItem('learner_name'); localStorage.removeItem('learner_grade'); } catch {}
+                setLearner({ id: null, name: '' });
+              }}
+              style={{ padding:'6px 10px', border:'1px solid #e5e7eb', borderRadius:8, background:'#fff' }}
+            >
+              Change Learner
+            </button>
+          </div>
+        )}
+
+### 12. docs/brain/api-routes.md (dd3378227a6324ce4a86f9e043ed13060e4abcc4a4fabc05a7854dad2c6ce68c)
+- bm25: -9.1994 | relevance: 0.9020
+
+# API Routes
+
+## `/api/sonoma` - Core Ms. Sonoma Endpoint
+
+### Request Format
+
+**Method**: POST  
+**Content-Type**: application/json
+
+```json
+{
+  "instruction": "<string>",
+  "innertext": "<string>",
+  "skipAudio": true
+}
+```
+
+**Fields**:
+- `instruction`: The per-turn instruction string (server hardens it for safety).
+- `innertext`: Optional learner input for this turn.
+- `skipAudio`: Optional boolean; when `true`, the API will skip Google TTS and return `audio: null`.
+
+**Why `skipAudio` exists**:
+- Some callers (especially teaching definitions/examples generation) need text only.
+- Returning base64 audio for large responses can be slow on mobile devices.
+
+### Response Format
+
+```json
+{
+  "reply": "<string>",
+  "audio": "<base64 mp3>" 
+}
+```
+
+**Fields**:
+- `reply`: Ms. Sonoma response text from the configured LLM provider.
+- `audio`: Base64-encoded MP3 when TTS is enabled and available; `null` when `skipAudio=true` (or when TTS is not configured).
+
+### Implementation
+
+- **Location**: `src/app/api/sonoma/route.js`
+- **Providers**: OpenAI or Anthropic depending on env configuration
+- **Runtime**: Node.js (Google SDKs require Node, not Edge)
+- **Stateless**: Each call is independent; no DB writes from this endpoint
+
+### Health Check
+
+**Method**: GET
+
+Returns `200` with `{ ok: true, route: 'sonoma', runtime }`.
+
+### Logging Controls
+
+Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
+
+- `full`, `off`, `none`, or `0` — No truncation
+- Positive integer (e.g., `2000`) — Truncate after N characters
+- Default: Unlimited in development; 600 chars in production
+
+---
+
+## Other Core Routes
+
+### `/api/counselor`
+**Purpose**: Mr. Mentor counselor chat endpoint (facilitator-facing)  
+**Status**: Operational
+
+### 13. docs/brain/ingests/pack-mentor-intercepts.md (4f9e0b0ea016fdcc924708636e88c7e8e9e69881ad4c0b8c62096c1f4a407ac7)
+- bm25: -8.9331 | relevance: 0.8993
+
+### `/api/counselor`
+**Purpose**: Mr. Mentor counselor chat endpoint (facilitator-facing)  
+**Status**: Operational
+
+### 14. docs/brain/ms-sonoma-teaching-system.md (34f290e583cfdbb0a6f759d1d3958b96b90cb88109f221b9858fa59b52a619ba)
+- bm25: -8.8870 | relevance: 0.8989
+
+**Teaching/Repeat - Wrap Line**:
+- "Do you have any questions?"
+- "You could ask questions like..."
+
+### 15. src/app/api/slate-tts/route.js (7b8ef6980e896ad0d7892d92873c28d84ff4c37b2f38f83c4fcc29acab5fce64)
+- bm25: -8.8490 | relevance: 0.8985
+
+// Mr. Slate TTS route — uses a male, Standard US voice for a robotic quality
+// Intentionally distinct from /api/tts (Ms. Sonoma) which uses a Neural GB female voice
+
+import { NextResponse } from 'next/server'
+import fs from 'node:fs'
+import path from 'node:path'
+import textToSpeech from '@google-cloud/text-to-speech'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+const { TextToSpeechClient } = textToSpeech
+let ttsClientPromise
+
+// Standard US male voice — Standard (not Neural) gives a more robotic character
+const SLATE_VOICE = {
+  languageCode: 'en-US',
+  name: 'en-US-Standard-B',
+  ssmlGender: 'MALE',
 }
 
-// Confirmation detection (yes/no)
-function detectConfirmation(text) {
-  const normalized = normalizeText(text)
-  
-  const yesPatterns = ['yes', 'yep', 'yeah', 'sure', 'ok', 'okay', 'correct', 'right', 'confirm', 'go ahead', 'do it']
-  const noPatterns = ['no', 'nope', 'nah', 'cancel', 'stop', 'nevermind', 'never mind', 'dont', 'not']
-  
-  if (yesPatterns.some(p => normalized.includes(p))) return 'yes'
-  if (noPatterns.some(p => normalized.includes(p))) return 'no'
-  
+const SLATE_AUDIO_CONFIG = {
+  audioEncoding: 'MP3',
+  speakingRate: 1.08, // slightly faster/crisper than Sonoma
+  pitch: -1.5,        // slightly lower pitch for mechanical feel
+}
+
+function decodeCredentials(raw) {
+  if (!raw) return null
+  try { return JSON.parse(raw) } catch {}
+  try { const decoded = Buffer.from(raw, 'base64').toString('utf8'); return JSON.parse(decoded) } catch {}
   return null
 }
 
-### 36. docs/brain/ingests/pack.planned-lessons-flow.md (155578c318bfa1c68504c39454f35d1dcfc25dd6e797a69bfbd7d4d8c9043962)
-- bm25: -14.7990 | relevance: 0.9367
+function loadTtsCredentials() {
+  const inline = process.env.GOOGLE_TTS_CREDENTIALS
+  const inlineCreds = decodeCredentials(inline)
+  if (inlineCreds) return inlineCreds
+  const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(process.cwd(), 'google-tts-key.json')
+  try {
+    if (credentialPath && fs.existsSync(credentialPath)) {
+      const raw = fs.readFileSync(credentialPath, 'utf8').trim()
+      if (raw) return decodeCredentials(raw) || JSON.parse(raw)
+    }
+  } catch {}
+  return null
+}
+
+### 16. src/app/session/slate/page.jsx (ef2f7e53115c13905856bd2ef2123f8f786821c012fe08193d292e81ae4daefc)
+- bm25: -8.7205 | relevance: 0.8971
+
+{/* True / False */}
+              {isAsking && q.type === 'truefalse' && (
+                <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                  <button
+                    onClick={() => onChoiceClick('true')}
+                    disabled={isJudging}
+                    style={{ ...tfBtnBase, background: '#0d1117', border: `1px solid ${C.green}`, color: C.green, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
+                  >
+                    TRUE
+                  </button>
+                  <button
+                    onClick={() => onChoiceClick('false')}
+                    disabled={isJudging}
+                    style={{ ...tfBtnBase, background: '#0d1117', border: `1px solid ${C.red}`, color: C.red, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
+                  >
+                    FALSE
+                  </button>
+                </div>
+              )}
+
+### 17. docs/brain/visual-aids.md (a746ede503458c98a6a056626ef0f02dcbea89574b9e6353af925d0c66b1c77a)
+- bm25: -8.6899 | relevance: 0.8968
+
+### Critical Constraint: NO TEXT IN IMAGES
+
+**Problem**: DALL-E cannot reliably render legible text. Any attempt to include words, labels, diagrams with text, or written language results in gibberish that looks like text but is completely illegible.
+
+**Solution**: Prompt engineering enforces visual-only content at 3 layers:
+
+1. **System prompt** (GPT-4o-mini prompt creation):
+   - "NEVER include text, words, letters, labels, captions, signs, writing, numbers, or any written language"
+   - "Describe only visual elements like colors, shapes, objects, people, animals, and scenery"
+  - "Use phrases like 'a cartoon scene showing' or 'an illustration of' rather than 'diagram' or 'chart'"
+
+2. **User prompt** (GPT-4o-mini prompt creation):
+   - "Describe a visual scene with objects and actions only - absolutely no text or labels in the image"
+   - "Use only visual elements - no text, labels, or words anywhere in the image"
+
+3. **DALL-E prompt enhancement**:
+   - Every prompt sent to DALL-E gets suffix appended: "IMPORTANT: This image must contain absolutely NO text, words, letters, numbers, labels, captions, signs, or any written language of any kind. Show only visual elements."
+
+### Rewrite System Integration
+
+`/api/ai/rewrite-text` has two visual-aid-specific purposes:
+
+**`visual-aid-prompt-from-notes`**:
+- Converts teaching notes into guidance for generating 3 varied images
+- System prompt: "You understand that AI-generated images with text are illegible and must be avoided"
+- Suggests "visual scenes, objects, and actions (not text or labels)"
+
+### 18. src/app/session/slate/page.jsx (fda166c1c53018c52ce3c468054ceccadabc3f5fff85762deafc001605c39346)
+- bm25: -8.5456 | relevance: 0.8952
+
+'use client'
+
+/**
+ * Mr. Slate -- Skills & Practice Coach
+ *
+ * A quiz-mode drill session. Questions are drawn from the same lesson JSON
+ * as Ms. Sonoma (sample, truefalse, multiplechoice, fillintheblank pools).
+ * The learner accumulates points (goal: 10) to earn the robot mastery icon.
+ *
+ * Rules:
+ *   - Correct answer within time limit  -> +1 (min 0, max 10)
+ *   - Wrong answer                      -> -1 (min 0)
+ *   - Timeout (15s default)             -> +/-0
+ *   - Reach 10 -> mastery confirmed
+ *
+ * Questions rotate through the full pool without repeats until ~80% have
+ * been asked, then the deck reshuffles.
+ *
+ * Lessons are loaded from /api/learner/available-lessons (handles static,
+ * generated, and Supabase-stored lessons uniformly). No URL params required.
+ */
+
+import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { getMasteryForLearner, saveMastery } from '@/app/lib/masteryClient'
+
+// --- Constants ---------------------------------------------------------------
+
+const QUESTION_SECONDS = 15
+const SCORE_GOAL = 10
+const FEEDBACK_DELAY_MS = 2000
+const RESHUFFLE_THRESHOLD = 0.2 // reshuffle when only 20% of deck remains
+
+const DEFAULT_SLATE_SETTINGS = {
+  scoreGoal: 10,
+  correctPts: 1,
+  wrongPts: 1,
+  timeoutPts: 0,
+  timeoutOffset: 0,
+  questionSecs: 15,
+}
+
+### 19. src/app/session/slate/page.jsx (c0648f5e28a10bdbf95a1aa926a46154c9b4b98b746e77f4b802b033e1608bd7)
+- bm25: -8.5264 | relevance: 0.8950
+
+{/* Multiple choice */}
+              {isAsking && q.type === 'multiplechoice' && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8, marginTop: 16 }}>
+                  {(q.choices || []).map((choice, i) => (
+                    <button
+                      key={i}
+                      onClick={() => onChoiceClick(i)}
+                      disabled={isJudging}
+                      style={{ ...choiceBtn, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
+                    >
+                      <span style={{ color: C.accent, marginRight: 8, fontWeight: 800 }}>
+                        {String.fromCharCode(65 + i)}.
+                      </span>
+                      {choice}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+### 20. src/lib/faq/facilitator-tools.json (01d1775600d96190823d9a009a124babf1c8c002bd0016694f7f2e5a685b8241)
+- bm25: -8.3718 | relevance: 0.8933
+
+{
+  "category": "Facilitator Settings & Tools",
+  "features": [
+    {
+      "id": "facilitator-dashboard",
+      "title": "Facilitator Dashboard",
+      "keywords": [
+        "facilitator dashboard",
+        "dashboard",
+        "facilitator tools",
+        "adult tools",
+        "teacher tools"
+      ],
+      "description": "The Facilitator Dashboard is where you manage learners, lessons, scheduling, and account-level facilitator tools.",
+      "howToUse": "Open the facilitator area and use the Learners and Lessons sections to manage your work. Mr. Mentor can also open key overlays for you.",
+      "relatedFeatures": ["learner-profiles", "lesson-library", "mr-mentor"]
+    },
+    {
+      "id": "goals-clipboard",
+      "title": "Goals Clipboard",
+      "keywords": [
+        "goals clipboard",
+        "goals button",
+        "notes clipboard",
+        "open goals"
+      ],
+      "description": "The Goals clipboard is the UI where you view and edit Goals and Notes for the selected learner (or facilitator).",
+      "howToUse": "Click the 'Goals' button to open it. Mr. Mentor can also help you review what’s saved (report) or suggest what to write (describe/advice).",
+      "relatedFeatures": ["goals-notes"]
+    },
+    {
+      "id": "lessons-overlay",
+      "title": "Lessons Overlay",
+      "keywords": [
+        "lessons overlay",
+        "lessons button",
+        "open lessons",
+        "show my lessons",
+        "lesson list"
+      ],
+      "description": "The Lessons overlay is a quick way to browse, search, and act on lessons (schedule, assign/approve, edit, or review).",
+      "howToUse": "Click the 'Lessons' button, or ask Mr. Mentor to show lessons and help you find the one you want.",
+      "relatedFeatures": ["lesson-library", "lesson-scheduling", "lesson-editing"]
+
+### 21. src/app/session/slate/page.jsx (579467186e14a637f4e20c7b1dadc6c02f04ee34edea6442b4728521cc05f4fe)
+- bm25: -8.3406 | relevance: 0.8929
+
+{/* Inline warning banner */}
+                {listError && (
+                  <div style={{ background: C.redDim, border: `1px solid ${C.red}`, borderRadius: 8, padding: '10px 14px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                    <span style={{ color: C.red, fontSize: 12 }}>{listError}</span>
+                    <button onClick={() => setListError('')} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>✕</button>
+                  </div>
+                )}
+
+{/* Tabs */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 0 }}>
+                  <button style={tabStyle(listTab === 'active')} onClick={() => setListTab('active')}>ACTIVE</button>
+                  <button style={tabStyle(listTab === 'recent')} onClick={() => setListTab('recent')}>
+                    RECENT{recentList.length > 0 ? ` (${recentList.length})` : ''}
+                  </button>
+                  <button style={tabStyle(listTab === 'owned')} onClick={() => setListTab('owned')}>
+                    OWNED{mergedMap.size > 0 ? ` (${mergedMap.size})` : ''}
+                  </button>
+                </div>
+
+### 22. src/app/learn/lessons/page.js (f74f2619a760ffcb67e8f47dc07a0dc7642e38373e1d9de4ff67a4368b97c709)
+- bm25: -8.3365 | relevance: 0.8929
+
+// CRITICAL: Don't treat 'congrats' or 'test' as meaningful progress
+  // Lesson is complete - no point resuming to "Complete Lesson" button
+  // Test phase includes both in-progress tests AND completed tests (testFinalPercent may be null)
+  if (phase === 'congrats' || phase === 'test') return false
+
+### 23. src/app/session/slate/page.jsx (f80d011880985255c6624e744cda3013d06cfaf2cbaf2ca48a16b9b7d3e58e04)
+- bm25: -8.2949 | relevance: 0.8924
+
+const backToList = useCallback(() => {
+    clearInterval(timerInterval.current)
+    clearTimeout(feedbackTimeout.current)
+    isJudgingRef.current = false
+    setIsJudging(false)
+    setScore(0)
+    scoreRef.current = 0
+    setQCount(0)
+    setCurrentQ(null)
+    setLessonData(null)
+    lessonKeyRef.current = ''
+    phaseRef.current = 'list'
+    setPagePhase('list')
+  }, [])
+
+const exitToLessons = useCallback(() => {
+    clearInterval(timerInterval.current)
+    clearTimeout(feedbackTimeout.current)
+    router.push('/learn')
+  }, [router])
+
+const lessonTitle = lessonData?.title || ''
+
+// ===========================================================================
+  //  RENDER -- Loading
+  // ===========================================================================
+  if (pagePhase === 'loading') {
+    return (
+      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ marginBottom: 16 }}>
+            <SlateVideo size={100} />
+          </div>
+          <div style={{ fontSize: 13, letterSpacing: 2, marginBottom: 20 }}>INITIALIZING DRILL SYSTEM...</div>
+          <LoadingDots />
+        </div>
+      </div>
+    )
+  }
+
+### 24. src/app/session/slate/page.jsx (761aaf23aacdeceb801141e4c5a4eff19a0df1e5ea961a38fc0286c251cdb661)
+- bm25: -8.2340 | relevance: 0.8917
+
+// ===========================================================================
+  //  RENDER -- Error
+  // ===========================================================================
+  if (pagePhase === 'error') {
+    return (
+      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ textAlign: 'center', maxWidth: 400 }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>⚠️</div>
+          <div style={{ color: C.red, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>SYSTEM ERROR</div>
+          <div style={{ color: C.muted, fontSize: 13, marginBottom: 24 }}>{errorMsg}</div>
+          <button onClick={exitToLessons} style={ghostBtn}>← RETURN TO LESSONS</button>
+        </div>
+      </div>
+    )
+  }
+
+### 25. src/app/session/slate/page.jsx (dc855da2b5c2bf020b858e6102dcb4ff584345b97116866c3bb078e719d8ec40)
+- bm25: -8.0268 | relevance: 0.8892
+
+{/* Body — flex column so controls stay fixed and only the list scrolls */}
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          {availableLessons.length === 0 && allOwnedLessons.length === 0 ? (
+            <div style={{ textAlign: 'center', marginTop: 60 }}>
+              <div style={{ marginBottom: 16 }}>
+                <SlateVideo size={120} />
+              </div>
+              <div style={{ color: C.muted, fontSize: 14, letterSpacing: 1 }}>NO DRILL LESSONS AVAILABLE</div>
+              <div style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>Complete a lesson with Ms. Sonoma first, then come back to practice.</div>
+            </div>
+          ) : (() => {
+            // --- Derived lists for each tab ---
+            const getLk = l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`
+
+### 26. docs/brain/ms-sonoma-teaching-system.md (cd6c370212fe57073614171258183f8f54ee47488fd75e43802bef4df904d65c)
+- bm25: -7.9463 | relevance: 0.8882
+
+- OpeningActionsController spins up only after audioReady is true and eventBus/audioEngine exist (dedicated effect rechecks when audio initializes so buttons never point at a null controller); controller and listeners are destroyed on unmount to prevent dead buttons or duplicate handlers. State resets on timeline jumps and play timer expiry.
+- AudioEngine shim adds speak(text) when missing (calls fetchTTS + playAudio with captions) so Ask/Joke/Riddle/Poem/Story/Fill-in-Fun can speak via a single helper like V1.
+- Buttons (Joke, Riddle, Poem, Story, Fill-in-Fun, Games) show in the play-time awaiting-go bar for Q&A phases; Go/work transitions, play-time expiry, or timeline jumps clear inputs/errors/busy flags and hide the Games overlay. Ask Ms. Sonoma lives only as a circular video overlay button (raised-hand icon) on the bottom-left of the video, paired with the Visual Aids button. Skip/Repeat is treated as a single-slot toggle and lives on the bottom-right with Mute.
+- Ask is hidden during the Test phase.
+- Ask replies carry the learner question plus the on-screen Q&A prompt (if one is active) and the lesson vocab terms/definitions so answers stay on-topic and use the correct meaning for multi-sense words.
+- Ask includes a quick action button, "What's the answer?", that submits a canned Ask prompt to get the answer for the currently displayed learner question. It is single-shot while loading: the button becomes disabled, reads "Loading...", and ignores re-press until the response completes.
+- After any Ask response (including the answer shortcut), Ms. Sonoma always follows up with: "Do you have any more questions?"
+- Ask exit re-anchor is hardened: Done/Cancel force-stops current audio, cancels the current opening action, then speaks the captured in-flow question under
+
+### 27. src/app/learn/lessons/page.js (4a3bf18df1c3678bf076cbd160492bcfb899e97d9330a40f2aa36dd1a5ff2f9d)
+- bm25: -7.9453 | relevance: 0.8882
+
+{learnerId && learnerId !== 'demo' && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, marginTop: 12, gap: 12, flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setShowHistoryModal(true)}
+            style={{
+              padding: '10px 20px',
+              border: '1px solid #d1d5db',
+              borderRadius: 8,
+              background: '#fff',
+              color: '#111827',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: lessonHistoryLoading ? 'wait' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+            disabled={lessonHistoryLoading && !lessonHistorySessions.length}
+            title={lessonHistoryLoading ? 'Loading history…' : 'See completed lessons'}
+          >
+            ✅ Completed Lessons{completedLessonCount ? ` (${completedLessonCount})` : ''}
+            {activeLessonCount > 0 && (
+              <span style={{ fontSize: 12, color: '#d97706' }}>⏳ {activeLessonCount}</span>
+            )}
+          </button>
+          <button
+            onClick={async () => {
+              const ok = await ensurePinAllowed('facilitator-page')
+              if (ok) router.push('/facilitator/generator')
+            }}
+            style={{
+              padding: '10px 20px',
+              border: '1px solid #d1d5db',
+              borderRadius: 8,
+              background: '#fff',
+              color: '#111827',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            ✨ Generate a Lesson
+          </button>
+          <button
+            onClick={async ()
+
+### 28. src/lib/faq/facilitator-pages.json (4b848d3bcb8fd074168f4bfd8805c4c4143f1f27948661b54e4fbba3e5eaf7e3)
+- bm25: -7.8573 | relevance: 0.8871
+
+{
+  "category": "Facilitator Pages",
+  "features": [
+    {
+      "id": "facilitator-page-hub",
+      "title": "Facilitator Hub (/facilitator)",
+      "keywords": [
+        "facilitator hub",
+        "facilitator home",
+        "facilitator dashboard page",
+        "/facilitator",
+        "account learners lessons calendar",
+        "talk to mr mentor"
+      ],
+      "description": "The Facilitator Hub is the entry point to adult tools. It shows quick links to Account, Learners, Lessons, Calendar, and Mr. Mentor.",
+      "howToUse": "Use the cards to open a section (Account/Learners/Lessons/Calendar). Use the Mr. Mentor button to open the facilitator chat experience.",
+      "relatedFeatures": ["facilitator-dashboard", "mr-mentor", "pin-security"]
+    },
+    {
+      "id": "facilitator-page-account",
+      "title": "Account (/facilitator/account)",
+      "keywords": [
+        "facilitator account",
+        "account page",
+        "profile",
+        "security",
+        "2fa",
+        "connected accounts",
+        "timezone",
+        "marketing emails",
+        "policies",
+        "danger zone",
+        "/facilitator/account"
+      ],
+      "description": "The Account page is the central place to manage facilitator profile and security settings, connections, hotkeys, timezone, and billing links.",
+      "howToUse": "Open a card to edit: Your Name; Email and Password; Two-Factor Auth; Facilitator PIN; Connected Accounts; Hotkeys; Timezone; Marketing Emails; Policies; Plan; Danger Zone. Notifications is also linked from here.",
+      "relatedFeatures": ["pin-security", "subscription-tiers"]
+    },
+    {
+      "id": "facilitator-page-account-settings-redirect",
+      "title": "Account Settings (Redirect) (/facilitator/account/settings)",
+      "keywords": [
+        "account se
+
+### 29. docs/brain/story-feature.md (18412a469aaf571ad2790e5068e6ed053af12472994adfc7e85b37d3931d6288)
+- bm25: -7.7556 | relevance: 0.8858
+
+# Story Feature (Continuous Narrative)
+
+## How It Works
+
+The story feature creates a continuous narrative that progresses across all four phases (Teaching, Comprehension, Exercise, Worksheet, and Test). Instead of starting fresh each time, the story builds on itself throughout the session.
+
+### Story Setup Phase (Initial Creation)
+
+When a child first clicks "Story" in any phase, Ms. Sonoma asks three setup questions:
+1. **"Who are the characters in the story?"** - Child responds with characters
+2. **"Where does the story take place?"** - Child responds with setting
+3. **"What happens in the story?"** - Child responds with plot elements
+
+After collecting all three pieces, Ms. Sonoma tells the **first part** of the story using all setup information, ending with **"To be continued."**
+
+### Story Continuation Across Phases
+
+- Story transcript is **preserved** across phase changes
+- Each time child clicks "Story" in subsequent phase:
+  - Ms. Sonoma **reminds them where story left off** (first sentence only)
+  - Asks **"What would you like to happen next?"**
+  - Suggests possibilities (AI-generated)
+  - Continues story based on their input
+  - Ends with **"To be continued."**
+
+### Story Ending in Test Phase
+
+- In Test phase specifically, prompt changes
+- Ms. Sonoma asks: **"How would you like the story to end?"**
+- Child describes desired ending
+- Ms. Sonoma ends story based on their idea, concluding with **"The end."**
+- Happy Ending and Funny Ending buttons removed
+
+### Story Direction Following
+
+- API instructions emphasize: **"Follow the child's ideas closely and make the story about what they want unless it's inappropriate."**
+- Ms. Sonoma stays on track with child's vision instead of redirecting
+- Only inappropriate content triggers redirection
+
+### Story Availability
+
+### 30. docs/brain/ms-sonoma-teaching-system.md (cede03814a8e282c9f02f9885e01f2a1ed833b57c04cd2aef304bf98f2d7f4ba)
+- bm25: -7.6943 | relevance: 0.8850
+
+## Related Brain Files
+
+- **[tts-prefetching.md](tts-prefetching.md)** - TTS powers audio playback for Ms. Sonoma speech
+- **[visual-aids.md](visual-aids.md)** - Visual aids displayed during teaching phase
 
 ## Key Files
 
-- UI
-  - `src/app/facilitator/calendar/page.js` (header button + modal wiring)
-  - `src/app/facilitator/calendar/GeneratePortfolioModal.jsx` (overlay)
-  - `src/components/FacilitatorHelp/PageHeader.jsx` (adds optional `actions` slot)
+### Core API
+- `src/app/api/sonoma/route.js` - Main Ms. Sonoma API endpoint, integrates content safety validation
 
-- API
-  - `src/app/api/portfolio/generate/route.js` (portfolio builder)
-  - `src/app/api/portfolio/list/route.js` (list saved portfolios)
-  - `src/app/api/portfolio/delete/route.js` (delete saved portfolios + files)
-  - `src/app/api/portfolio/lib.js` (HTML builder + helpers)
+### Content Safety
+- `src/lib/contentSafety.js` - Lenient validation system: prompt injection detection (always), banned keywords (reduced list, skipped for creative features), instruction hardening (primary defense), output validation with skipModeration=true (OpenAI Moderation API bypassed to prevent false positives like "pajamas" flagged as sexual)
 
-### 34. src/app/facilitator/generator/counselor/MentorInterceptor.js (dd9fc7d0f63f857e45b48169025dafbb0d96182f685e4e93f894b4f372b1d6a0)
-- bm25: -12.9933 | relevance: 1.0000
+### Teaching Flow Hooks
+- `src/app/session/hooks/useTeachingFlow.js` - Orchestrates teaching definitions and examples stages
 
-,
+### Phase Handlers
+- `src/app/session/hooks/usePhaseHandlers.js` - Manages phase transitions (comprehension, exercise, worksheet, test)
 
-lesson_plan: {
-    keywords: [
-      'lesson plan',
-      'lesson planner',
-      'planned lessons',
-      'curriculum preferences',
-      'curriculum',
-      'weekly pattern',
-      'schedule template',
-      'start date',
-      'duration',
-      'generate lesson plan',
-      'schedule a lesson plan'
-    ],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
+### Session Page
+- `src/app/session/page.js` - Main session orchestration, phase state management
 
-// FAQ-style questions about the planner should defer to FAQ intent.
-      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
-      if (faqPatterns.some(p => normalized.includes(p))) {
-        return 0
-      }
+### Brand Signal Sources (Read-Only)
+- `.github/Signals/MsSonoma_Voice_and_Vocabulary_Guide.pdf`
+- `.github/Signals/MsSonoma_Messaging_Matrix_Text.pdf`
+- `.github/Signals/MsSonoma_OnePage_Brand_Story.pdf`
+- `.github/Signals/MsSonoma_Homepage_Copy_Framework.pdf`
+- `.github/Signals/MsSonoma_Launch_Deck_The_Calm_Revolution.pdf`
+- `.github/Signals/MsSonoma_SignalFlow_Full_Report.pdf`
 
-return INTENT_PATTERNS.lesson_plan.keywords.some(kw => normalized.includes(kw)) ? 0.85 : 0
-    }
-  }
-}
+### Data Schema
+- Supabase tables for lesson content, vocab terms, comprehension items
+- Content safety incidents logging table
 
-### 37. src/app/facilitator/generator/counselor/MentorInterceptor.js (daa1944a5977b52d5acc836973ecd29147f51122f230d0007ecdaa23ff258203)
-- bm25: -14.6782 | relevance: 0.9362
+## Notes
 
-if (this.state.awaitingInput === 'curriculum_prefs_avoid') {
-      const text = String(userMessage || '').trim()
-      this.state.context.curriculum.bannedTopics = text.toLowerCase() === 'skip' ? [] : this.parseListFromText(text)
-      this.state.awaitingConfirmation = true
-      this.state.awaitingInput = null
-      return {
-        handled: true,
-        response: `Should I save these curriculum preferences for ${learnerName || 'this learner'}?\n\nFocus: ${(this.state.context.curriculum.focusTopics || []).join(', ') || '(none)'}\nAvoid: ${(this.state.context.curriculum.bannedTopics || []).join(', ') || '(none)'}`
-      }
-    }
+### 31. docs/brain/ms-sonoma-teaching-system.md (1f079cae33ff43ac4f14837a3de47b84b5b01b2e253899f9ec065dd2e8c8247d)
+- bm25: -7.5702 | relevance: 0.8833
 
-### 38. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (300693ad7db2922e5dbf8403cbb489b142c9cd437056e734c2fc71d74f7d0fe5)
-- bm25: -14.6243 | relevance: 0.9360
+**Transition**:
+- "Great. Let's move on to comprehension."
 
-// Set state to await schedule vs assign
-                    interceptorRef.current.state.awaitingInput = 'post_generation_action'
-                    
-                    // Dispatch event to refresh lessons overlay
-                    window.dispatchEvent(new CustomEvent('mr-mentor:lesson-generated'))
-                  }
-                }
-              } catch (err) {
-                // Generation failed - will show in response
-              }
-            }
-          } else if (action.type === 'edit') {
-            // Trigger lesson editor
-            setActiveScreen('lessons')
-            // Could pass edit instructions as context
-          } else if (action.type === 'save_curriculum_preferences') {
-            setLoadingThought('Saving curriculum preferences...')
+### Pre-Send Checklist
 
-const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
+Before shipping to Ms. Sonoma, verify:
+- Payload contains only speakable text
+- Child's name and lesson title are literal (no placeholders)
+- Exactly one phase represented
+- If Opening: final sentence is silly question
+- If Teaching/Repeat: ends with VERBATIM wrap line
+- If Transition: uses VERBATIM move-on line
+- If Comprehension: exactly one question, no definitions
+- No syntax or labels present: no [], {}, <>, no section labels, no [COPILOT]/[SONOMA]/[VERBATIM]/[SAMPLE]
+- Must pass placeholder scan: no {PLACEHOLDER}, [PLACEHOLDER], <PLACEHOLDER>, or stray ALLCAPS tokens
 
-### 30. src/app/facilitator/generator/counselor/CounselorClient.jsx (410f29dc3fd0bf06c0fa6c768965509b32ed02741d5c932c54e3a1cb44fcb9bd)
-- bm25: -14.6613 | relevance: 1.0000
+### Turn Map
 
-// Handle Enter key to send message
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      sendMessage()
-    }
-  }
+**After Opening**: Teaching Definitions (developer-triggered, no teaching during opening)
 
-// Trigger new conversation flow (show clipboard first)
-  const startNewConversation = useCallback(async () => {
-    if (conversationHistory.length === 0) {
-      // No conversation to save, just start fresh
-      return
-    }
+**After Teaching Definitions wrap**:
+- Repeat Vocab button → Definitions Repeat
+- Next button → Teaching Examples
+- Ask button → freeform questions, respond briefly, return to gate
 
-// Show clipboard overlay immediately (skip audio instructions to avoid playback errors)
-    // The overlay itself provides clear UI instructions
-    setShowClipboard(true)
-  }, [conversationHistory])
+**After Teaching Examples wrap**:
+- Repeat Vocab button → Examples Repeat
+- Next button → Transition, then Comprehension Ask
+- Ask button → freeform questions, respond briefly, return to gate
 
-### 39. src/app/api/curriculum-preferences/route.js (2d1b7c9e09af18554dad070e6f667a38daa3cdb4cd88f3005e9a6de8e066b791)
-- bm25: -14.6151 | relevance: 0.9360
+**Comprehension loop**: Ask → child reply → FeedbackCorrect or FeedbackHint → Ask again (or Closing when goal met)
 
-const { data: existing, error: fetchErr } = await supabase
-      .from('curriculum_preferences')
-      .select('id, subject_preferences')
-      .eq('facilitator_id', user.id)
-      .eq('learner_id', learnerId)
-      .maybeSingle()
+**Closing**: End of session
 
-if (fetchErr) {
-      const isColMissing =
-        fetchErr.message?.includes('subject_preferences') ||
-        fetchErr.code === '42703' ||
-        fetchErr.code === 'PGRST204'
-      if (isColMissing) {
-        // Column not yet added — fall back to id-only fetch so we at least know row state
-        columnExists = false
-        const { data: idOnly } = await supabase
-          .from('curriculum_preferences')
-          .select('id')
-          .eq('facilitator_id', user.id)
-          .eq('learner_id', learnerId)
-          .maybeSingle()
-        existingId = idOnly?.id || null
-      } else {
-        console.error('Error fetching existing curriculum preferences:', fetchErr)
-        return NextResponse.json({ error: fetchErr.message }, { status: 500 })
-      }
-    } else {
-      existingId = existing?.id || null
-      existingSubjectPrefs = existing?.subject_preferences || {}
-    }
+### Opening Actions UI (V2)
 
-if (!columnExists) {
-      return NextResponse.json({
-        error: 'Per-subject preferences require a one-time database update. Run scripts/add-curriculum-subject-preferences.sql in Supabase.',
-        migrationNeeded: true
-      }, { status: 500 })
-    }
+### 32. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -7.5637 | relevance: 0.8832
 
-### 40. docs/brain/ingests/pack.md (8a535f1018b01bca63214b8dd441e8a6440e56eddd6d63a59123032e040c7111)
-- bm25: -14.5806 | relevance: 0.9358
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
 
-- `src/app/facilitator/calendar/VisualAidsManagerModal.jsx`
-  - Visual Aids manager for a lessonKey using `/api/visual-aids/load|generate|save`
-  - Uses `VisualAidsCarousel` for selection/upload/save UI
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
 
-- `src/app/facilitator/calendar/TypedRemoveConfirmModal.jsx`
-  - Typed confirmation dialog (requires `remove`) for irreversible schedule deletion
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
 
-**API Routes:**
-- `src/app/api/planned-lessons/route.js`
-  - GET: load by learner, transform DB rows to `{date: [lessons]}` format
-  - POST: date-specific overwrite - extracts dates from new plan, deletes only those dates (.in filter), inserts new rows
-  - DELETE: clear all planned lessons for learner
-  - RLS policies ensure facilitator can only access own data
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
 
-- `src/app/api/medals/route.js` - GET medals by learnerId
-- `src/app/api/learner/lesson-history/route.js` - session history
-- `src/app/api/lesson-schedule/route.js` - scheduled lessons (returns `{schedule: [...]}`)
-- `src/app/api/curriculum-preferences/route.js` - focus/banned content
-- `src/app/api/generate-lesson-outline/route.js` - GPT outline generation
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
 
-**Database:**
-- `supabase/migrations/20251214000000_add_planned_lessons_table.sql` (NEW)
-  - `planned_lessons` table: id, facilitator_id, learner_id, scheduled_date, lesson_data (JSONB), timestamps
-  - Indexes on facilitator_learner, date, facilitator_learner_date
-  - RLS policies: facilitators access only their own planned lessons
-  - UNIQUE constraint prevents exact duplicates
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
 
-## Recent Changes
+### 33. docs/brain/ingests/pack.md (84a96ac150f2135d31aa9bfe9cd8ac1e61d8f40743bcb440da0563dd1f1c1bb2)
+- bm25: -7.5224 | relevance: 0.8827
 
-### 12. docs/brain/calendar-lesson-planning.md (9173fe378f56c3786b75c00e9b12c63312fc70bdcd188229f8dd2f7466567dc9)
-- bm25: -25.6308 | relevance: 1.0000
+### 13. docs/brain/header-navigation.md (17596087776b8a8510ebd6fdda83503d40ccdb8376bc76c97583cafb2888e681)
+- bm25: -23.7972 | relevance: 1.0000
+
+# Header Navigation
+
+## How It Works
+
+The global header (HeaderBar) is rendered across pages and provides:
+
+- Brand link to home
+- Back button on pages that define a back chain
+- Top-level navigation links (About, Learn, Facilitator)
+- Session-specific print menu actions
+
+### Session Print Menu
+
+On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions.
+
+**Trigger behavior (desktop):** Open on hover (mouseenter) with a short grace period on mouseleave so it does not flicker closed while moving from the icon into the menu.
+
+**Trigger behavior (touch / fallback):** The icon should also toggle the dropdown on click.
+
+The dropdown includes print actions:
+
+- Worksheet
+- Test
+- Facilitator Key
+- Refresh
+
+On narrow layouts, these same actions live inside the hamburger menu under a nested "Print" section.
+
+Important: header buttons (including the print icon) must explicitly set `type="button"` so they never behave like submit buttons when a page happens to include a form.
+
+Also: header dropdown trigger buttons must call `e.stopPropagation()` in their onClick handlers to prevent the opening click from bubbling to document and immediately triggering the outside-click-close listener.
+
+### Facilitator Dropdown
+
+On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
+
+- ⚙️ Account -> `/facilitator/account`
+- 🔔 Notifications -> `/facilitator/notifications`
+- 👥 Learners -> `/facilitator/learners`
+- 📚 Lessons -> `/facilitator/lessons`
+- 📅 Calendar -> `/facilitator/calendar`
+- 🧠 Mr. Mentor -> `/facilitator/mr-mentor`
+
+### 34. src/app/HeaderBar.js (eefad67bd26a53517fea9b94c7fe836a30ab3d1bba2c3374028104085f74dd87)
+- bm25: -7.4852 | relevance: 0.8821
+
+const handleBack = useCallback(async () => {
+		if (backHref) {
+			await goWithPin(backHref);
+		} else {
+			await goWithPin(null);
+		}
+	}, [backHref, goWithPin]);
+
+// Branded back button style (match Session button color)
+		const BRAND_ACCENT = '#c7442e';
+		const BRAND_ACCENT_HOVER = '#b23b2a';
+		const fancyButtonStyle = {
+			background: BRAND_ACCENT,
+			border: `1px solid ${BRAND_ACCENT}`,
+			color: '#fff',
+			fontSize: 'clamp(0.95rem, 1.4vw, 1.125rem)',
+			fontWeight: 600,
+			letterSpacing: '.25px',
+			padding: 'clamp(6px, 0.9vw, 8px) clamp(12px, 1.8vw, 18px)',
+			borderRadius: 999,
+			cursor: 'pointer',
+			display: 'inline-flex',
+			alignItems: 'center',
+			gap: 'clamp(6px, 1vw, 8px)',
+			boxShadow: '0 2px 4px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
+			transition: 'background .2s, transform .15s, box-shadow .2s, border-color .2s',
+			position: 'relative'
+		};
+
+// Standardized sizing for all hamburger dropdown items (buttons and links)
+		const MOBILE_MENU_ITEM_STYLE = {
+			display: 'flex',
+			alignItems: 'center',
+			width: '100%',
+			textAlign: 'left',
+			height: 44,
+			padding: '0 16px',
+			fontSize: '14px',
+			lineHeight: '20px',
+			textDecoration: 'none',
+			background: 'transparent',
+			border: 'none',
+			cursor: 'pointer',
+			fontWeight: 600,
+			color: '#111'
+		};
+
+// Mr. Slate has its own full-page top bar — hide the global header
+		if (pathname.startsWith('/session/slate')) return null;
+
+### 35. src/app/session/slate/page.jsx (4581feed5f69742590ede150b9b0ce0057e00760691a0f1a63b59d14635da67b)
+- bm25: -7.4006 | relevance: 0.8810
+
+{/* Short answer / Fill in the blank */}
+              {isAsking && (q.type === 'shortanswer' || q.type === 'fillintheblank') && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                  <input
+                    ref={inputEl}
+                    type="text"
+                    value={userAnswer}
+                    onChange={e => setUserAnswer(e.target.value)}
+                    onKeyDown={onKeyDown}
+                    placeholder="TYPE YOUR ANSWER..."
+                    style={{
+                      flex: 1,
+                      background: C.bg,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 6,
+                      padding: '10px 14px',
+                      color: C.text,
+                      fontSize: 15,
+                      fontFamily: C.mono,
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    onClick={onTextSubmit}
+                    disabled={isJudging}
+                    style={{ ...btnBase, background: C.accent, border: `1px solid ${C.accent}`, color: '#0d1117', borderRadius: 6, padding: '10px 18px', fontSize: 13, fontWeight: 800, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
+                  >
+                    {isJudging ? '...' : 'SUBMIT'}
+                  </button>
+                </div>
+              )}
+
+### 36. docs/brain/header-navigation.md (17596087776b8a8510ebd6fdda83503d40ccdb8376bc76c97583cafb2888e681)
+- bm25: -7.3187 | relevance: 0.8798
+
+# Header Navigation
+
+## How It Works
+
+The global header (HeaderBar) is rendered across pages and provides:
+
+- Brand link to home
+- Back button on pages that define a back chain
+- Top-level navigation links (About, Learn, Facilitator)
+- Session-specific print menu actions
+
+### Session Print Menu
+
+On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions.
+
+**Trigger behavior (desktop):** Open on hover (mouseenter) with a short grace period on mouseleave so it does not flicker closed while moving from the icon into the menu.
+
+**Trigger behavior (touch / fallback):** The icon should also toggle the dropdown on click.
+
+The dropdown includes print actions:
+
+- Worksheet
+- Test
+- Facilitator Key
+- Refresh
+
+On narrow layouts, these same actions live inside the hamburger menu under a nested "Print" section.
+
+Important: header buttons (including the print icon) must explicitly set `type="button"` so they never behave like submit buttons when a page happens to include a form.
+
+Also: header dropdown trigger buttons must call `e.stopPropagation()` in their onClick handlers to prevent the opening click from bubbling to document and immediately triggering the outside-click-close listener.
+
+### Facilitator Dropdown
+
+On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
+
+- ⚙️ Account -> `/facilitator/account`
+- 🔔 Notifications -> `/facilitator/notifications`
+- 👥 Learners -> `/facilitator/learners`
+- 📚 Lessons -> `/facilitator/lessons`
+- 📅 Calendar -> `/facilitator/calendar`
+- 🧠 Mr. Mentor -> `/facilitator/mr-mentor`
+
+The dropdown uses a short hover grace period on mouseleave so it does not flicker closed while moving from the header link down into the menu.
+
+### 37. src/app/session/slate/page.jsx (c25c579301047f2651b9a05d65a6122fead1287c293a6b8346b13882939e3add)
+- bm25: -7.2826 | relevance: 0.8793
+
+// --- TTS helper ---------------------------------------------------------------
+
+### 38. cohere-changelog.md (1dbfb38aafacd119ec5d69f9e13cb5c7b4cb9531d833f9ba21f1ec59f39c0aa3)
+- bm25: -7.2729 | relevance: 0.8791
+
+Result:
+- Decision: Add new FAQ categories (AI Safety & Trust, Facilitator Settings & Tools) and load them via faqLoader. Update mentor feature registry merge so report capability layers onto FAQ text rather than replacing it.
+- Files changed: src/lib/faq/faqLoader.js, src/lib/faq/safety.json, src/lib/faq/facilitator-tools.json, src/lib/mentor/featureRegistry.js, cohere-changelog.md
+
+---
+
+Date (UTC): 2026-02-18T17:04:01.722Z
+
+Topic: Deterministic descriptions for all facilitator child pages
+
+Recon prompt (exact string):
+Explain everything on each of the pages that are children of the facilitator page (/src/app/facilitator/**/page.js). List routes, purpose, and user-facing controls/sections for each.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+Result:
+- Decision: Add a route-level FAQ category (one entry per facilitator page under `/facilitator/**`) so Mr. Mentor can describe each page deterministically without guessing UI details.
+- Files changed: src/lib/faq/facilitator-pages.json, src/lib/faq/faqLoader.js, cohere-changelog.md
+
+Follow-ups:
+- If you want deeper per-page explainers (exact button labels/flows), we can tighten entries by scanning each page’s render tree for visible strings and modal names.
+
+---
+
+Date (UTC): 2026-02-18T17:06:43.820Z
+
+Topic: Improve recon by retroactive knowledge ingestion + gap notes
+
+Recon prompt (exact string):
+Explain everything on each of the pages that are children of the facilitator page (/src/app/facilitator/**/page.js). List routes, purpose, and user-facing controls/sections for each.
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl (search by prompt)
+
+### 39. sidekick_pack.md (bba8c9d0a2ad1fcfae649c359a4219ed32e5a5913249044c89d6ec0d9ecb4d56)
+- bm25: -7.1145 | relevance: 0.8768
+
+### Storage + Public Access (No Login)
+
+Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
+
+### 35. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.0390 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 40. sidekick_pack.md (df3b0d06c6e97315f9ac315d8fe85c1be37b146340873af631c44fae1bc3250f)
+- bm25: -7.1017 | relevance: 0.8766
+
+### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.4515 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
+- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
 
 
 ---

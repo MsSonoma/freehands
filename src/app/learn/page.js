@@ -142,6 +142,24 @@ export default function LearnPage() {
               🤖 Mr. Slate
             </button>
             <button
+              onClick={() => r.push('/session/webb')}
+              title="Chat with Mrs. Webb, your educational AI teacher"
+              style={{
+                padding:'14px 20px',
+                border:'2px solid #0d9488',
+                borderRadius:12,
+                fontSize:16,
+                fontWeight:700,
+                background:'#0d9488',
+                color:'#fff',
+                cursor:'pointer',
+                width:'100%',
+                maxWidth:320
+              }}
+            >
+              👩‍🏫 Mrs. Webb
+            </button>
+            <button
               onClick={goToAwards}
               title="View medals and achievements"
               style={{
