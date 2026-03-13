@@ -476,6 +476,7 @@ export default function WebbPage() {
   const activeSession =
     phase === PHASE.PRESENTING || phase === PHASE.PROBING ||
     phase === PHASE.REMEDIATING || phase === PHASE.COMPLETE
+  const inSession = phase !== PHASE.LIST && phase !== PHASE.STARTING
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
@@ -546,34 +547,8 @@ export default function WebbPage() {
         </div>
       )}
 
-      {/* ── LIST phase: full-width lesson browser ── */}
-      {phase === PHASE.LIST && (
-        <WebbLessonBrowser
-          availableLessons={availableLessons}
-          allOwnedLessons={allOwnedLessons}
-          recentSessions={recentSessions}
-          historyLessons={historyLessons}
-          listTab={listTab}
-          setListTab={setListTab}
-          ownedFilters={ownedFilters}
-          setOwnedFilters={setOwnedFilters}
-          listError={listError}
-          setListError={setListError}
-          onStart={startLesson}
-          learnerName={learnerName.current}
-        />
-      )}
-
-      {/* ── STARTING phase ── */}
-      {phase === PHASE.STARTING && (
-        <div style={{ flex: '1 1 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ color: C.muted, fontSize: 14, textAlign: 'center' }}>Starting lesson&hellip;</div>
-        </div>
-      )}
-
-      {/* ── Main two-panel layout (active session) ── */}
-      {activeSession && (
-        <div style={mainLayoutStyle}>
+      {/* ── Always-visible two-panel layout ── */}
+      <div style={mainLayoutStyle}>
 
         {/* ── Video column ── */}
         <div ref={videoColRef} style={videoWrapperStyle}>
@@ -632,6 +607,25 @@ export default function WebbPage() {
 
         {/* ── Transcript column ── */}
         <div style={transcriptWrapperStyle}>
+
+          {/* Lesson browser — visible in LIST and STARTING phases */}
+          {(phase === PHASE.LIST || phase === PHASE.STARTING) && (
+            <WebbLessonBrowser
+              availableLessons={availableLessons}
+              allOwnedLessons={allOwnedLessons}
+              recentSessions={recentSessions}
+              historyLessons={historyLessons}
+              listTab={listTab}
+              setListTab={setListTab}
+              ownedFilters={ownedFilters}
+              setOwnedFilters={setOwnedFilters}
+              listError={listError}
+              setListError={setListError}
+              onStart={startLesson}
+              learnerName={learnerName.current}
+              starting={phase === PHASE.STARTING}
+            />
+          )}
 
           {activeSession && (
             <CaptionPanel
@@ -692,7 +686,6 @@ export default function WebbPage() {
           )}
         </div>
       </div>
-      )}
 
       {/* ── Footer: PRESENTING ── */}
       {phase === PHASE.PRESENTING && currentItem && (
@@ -749,7 +742,7 @@ const footerStyle = {
 function WebbLessonBrowser({
   availableLessons, allOwnedLessons, recentSessions, historyLessons,
   listTab, setListTab, ownedFilters, setOwnedFilters,
-  listError, setListError, onStart, learnerName,
+  listError, setListError, onStart, learnerName, starting = false,
 }) {
   const getLk = l => l.lessonKey || l.lesson_id || `${l.subject || 'general'}/${l.file || ''}`
 
@@ -831,7 +824,13 @@ function WebbLessonBrowser({
   }
 
   return (
-    <div style={{ flex: '1 1 0', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ flex: '1 1 0', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+      {/* Starting overlay */}
+      {starting && (
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+          <div style={{ color: C.accentDark, fontSize: 14, fontWeight: 600 }}>Starting lesson&hellip;</div>
+        </div>
+      )}
 
       {/* Non-scrolling controls strip */}
       <div style={{ flexShrink: 0, padding: '16px 16px 0', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
