@@ -500,6 +500,26 @@ Follow-ups:
 - src/app/session/webb/page.jsx (complete rewrite)
 - src/app/api/webb-tts/route.js (created, en-US-Neural2-F voice)
 
+---
+
+## 2026-03-13 — Mrs. Webb: match Mr. Slate lesson browser (3-tab ACTIVE/RECENT/OWNED)
+
+**Prompt used for recon:** "Mr. Slate lesson browser — how lessons are listed, filtered, selected, what data is shown per lesson card, what API routes are called"
+
+**Summary:**
+- Replaced Webb's simple Cohere-server lesson list (`/api/webb/lesson/list`) with the full Slate-style 3-tab browser
+- Lessons now loaded from `/api/learner/available-lessons?learner_id=...` (same source as Mr. Slate)
+- History loaded from `/api/learner/lesson-history` to populate RECENT tab and completed status
+- ACTIVE tab: all lessons not yet completed in history
+- RECENT tab: completed sessions joined to lesson metadata, most recent first
+- OWNED tab: full merged set (available + history-only) with subject/grade dropdown filters
+- Lesson cards show title, subject/grade/difficulty meta, green ✓ if previously completed
+- `startLesson()` now accepts full lesson object; passes `lesson.lessonKey` as `lesson_id` to Cohere server
+- Browser uses full page width (no video column during list phase)
+- Build: compiled successfully, zero errors
+
+**Files changed:** src/app/session/webb/page.jsx
+
 ### 2026-02-27 � Generation error: e.map is not a function
 - Recon prompt: `Generation Failed error from lesson generator API route - investigate callModel and storage upload`
 - Root cause: `buildValidationChangeRequest(validation)` passed whole `{ passed, issues, warnings }` object; function calls `.map()` directly on its argument

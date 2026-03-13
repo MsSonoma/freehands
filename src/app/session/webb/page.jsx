@@ -48,9 +48,15 @@ export default function WebbPage() {
 
   // Phase state machine
   const [phase, setPhase]              = useState(PHASE.LIST)
-  const [lessons, setLessons]          = useState([])
-  const [fetchingLessons, setFetching] = useState(false)
-  const [pageError, setPageError]      = useState('')
+  const [availableLessons, setAvailableLessons] = useState([])
+  const [allOwnedLessons, setAllOwnedLessons]   = useState([])
+  const [recentSessions, setRecentSessions]     = useState([])
+  const [historyLessons, setHistoryLessons]     = useState({})
+  const [listTab, setListTab]                   = useState('active')
+  const [ownedFilters, setOwnedFilters]         = useState({ subject: '', grade: '', difficulty: '' })
+  const [listError, setListError]               = useState('')
+  const [learnerId, setLearnerId]               = useState(null)
+  const [pageError, setPageError]               = useState('')
 
   // Active session
   const [sessionId, setSessionId]      = useState(null)
@@ -93,7 +99,9 @@ export default function WebbPage() {
   // ── Init ────────────────────────────────────────────────────────────────
   useEffect(() => {
     try { learnerName.current = localStorage.getItem('learner_name') || '' } catch {}
-    loadLessons()
+    const id = (() => { try { return localStorage.getItem('learner_id') || null } catch { return null } })()
+    setLearnerId(id)
+    loadLessons(id)
   }, [])
 
   useEffect(() => { isMutedRef.current = isMuted }, [isMuted])
@@ -251,21 +259,52 @@ export default function WebbPage() {
   }
 
   // ── Lesson list ────────────────────────────────────────────────────────
-  async function loadLessons() {
-    setFetching(true)
+  async function loadLessons(id) {
+    const lid = id ?? learnerId
     setPageError('')
-    const { ok, data } = await webbGet('lesson/list')
-    setFetching(false)
-    if (!ok || !Array.isArray(data.lessons)) {
-      setPageError("Couldn't reach Mrs. Webb's server. Make sure it's running on port 7720.")
-      setLessons([])
-      return
+    if (!lid) return
+    try {
+      const [availRes, historyRes] = await Promise.all([
+        fetch(`/api/learner/available-lessons?learner_id=${encodeURIComponent(lid)}`)
+          .then(r => r.ok ? r.json() : Promise.reject(new Error('Could not load lessons.'))),
+        fetch(`/api/learner/lesson-history?learner_id=${encodeURIComponent(lid)}&limit=200`)
+          .then(r => r.ok ? r.json() : null).catch(() => null),
+      ])
+      const { lessons = [] } = availRes || {}
+      setAvailableLessons(lessons)
+      setAllOwnedLessons(lessons)
+      const seen = new Map()
+      if (historyRes?.sessions) {
+        const completed = historyRes.sessions.filter(s => s.status === 'completed' && s.lesson_id && s.ended_at)
+        for (const s of completed) {
+          const existing = seen.get(s.lesson_id)
+          if (!existing || new Date(s.ended_at) > new Date(existing.ended_at)) seen.set(s.lesson_id, s)
+        }
+        setRecentSessions([...seen.values()].sort((a, b) => new Date(b.ended_at) - new Date(a.ended_at)))
+      }
+      const approvedKeySet = new Set(lessons.map(l => l.lessonKey || l.lesson_id || ''))
+      const historyMissing = [...seen.keys()].filter(k => !approvedKeySet.has(k))
+      if (historyMissing.length) {
+        fetch('/api/lessons/meta', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keys: historyMissing, learner_id: lid }),
+        }).then(r => r.ok ? r.json() : null).then(res => {
+          if (res?.lessons?.length) {
+            const map = {}
+            for (const l of res.lessons) map[l.lessonKey] = l
+            setHistoryLessons(map)
+          }
+        }).catch(() => {})
+      }
+    } catch (e) {
+      setPageError(e?.message || 'Could not load lessons.')
     }
-    setLessons(data.lessons)
   }
 
   // ── Start lesson ───────────────────────────────────────────────────────
-  async function startLesson(lessonId) {
+  async function startLesson(lesson) {
+    const lessonId = lesson.lessonKey || lesson.lesson_id || lesson.file || ''
     setPhase(PHASE.STARTING)
     setPageError('')
     const { ok, data } = await webbPost('lesson/start', { lesson_id: lessonId })
@@ -275,7 +314,7 @@ export default function WebbPage() {
       return
     }
     setSessionId(data.session_id)
-    setLessonTitle(data.lesson_title || '')
+    setLessonTitle(data.lesson_title || lesson.title || '')
     setTotalItems(data.total_items ?? 0)
     setItemIdx(1)
     setCurrentItem(data.current_item)
@@ -507,8 +546,34 @@ export default function WebbPage() {
         </div>
       )}
 
-      {/* ── Main two-panel layout ── */}
-      <div style={mainLayoutStyle}>
+      {/* ── LIST phase: full-width lesson browser ── */}
+      {phase === PHASE.LIST && (
+        <WebbLessonBrowser
+          availableLessons={availableLessons}
+          allOwnedLessons={allOwnedLessons}
+          recentSessions={recentSessions}
+          historyLessons={historyLessons}
+          listTab={listTab}
+          setListTab={setListTab}
+          ownedFilters={ownedFilters}
+          setOwnedFilters={setOwnedFilters}
+          listError={listError}
+          setListError={setListError}
+          onStart={startLesson}
+          learnerName={learnerName.current}
+        />
+      )}
+
+      {/* ── STARTING phase ── */}
+      {phase === PHASE.STARTING && (
+        <div style={{ flex: '1 1 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ color: C.muted, fontSize: 14, textAlign: 'center' }}>Starting lesson&hellip;</div>
+        </div>
+      )}
+
+      {/* ── Main two-panel layout (active session) ── */}
+      {activeSession && (
+        <div style={mainLayoutStyle}>
 
         {/* ── Video column ── */}
         <div ref={videoColRef} style={videoWrapperStyle}>
@@ -567,24 +632,6 @@ export default function WebbPage() {
 
         {/* ── Transcript column ── */}
         <div style={transcriptWrapperStyle}>
-
-          {phase === PHASE.LIST && (
-            <div style={{ flex: '1 1 0', overflowY: 'auto', padding: '12px 8px' }}>
-              <LessonList
-                lessons={lessons}
-                loading={fetchingLessons}
-                onStart={startLesson}
-                onReload={loadLessons}
-                learnerName={learnerName.current}
-              />
-            </div>
-          )}
-
-          {phase === PHASE.STARTING && (
-            <div style={{ flex: '1 1 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ color: C.muted, fontSize: 14, textAlign: 'center' }}>Starting lesson&hellip;</div>
-            </div>
-          )}
 
           {activeSession && (
             <CaptionPanel
@@ -645,6 +692,7 @@ export default function WebbPage() {
           )}
         </div>
       </div>
+      )}
 
       {/* ── Footer: PRESENTING ── */}
       {phase === PHASE.PRESENTING && currentItem && (
@@ -697,39 +745,201 @@ const footerStyle = {
   display: 'flex', alignItems: 'center', gap: 10,
 }
 
-// ── LessonList ────────────────────────────────────────────────────────────────
-function LessonList({ lessons, loading, onStart, onReload, learnerName }) {
-  return (
-    <div style={{ maxWidth: 560, margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <h2 style={{ margin: '0 0 4px', color: '#0f766e', fontSize: 20 }}>
-          {learnerName ? `Hi, ${learnerName}! &#128075;` : 'Welcome to Mrs. Webb!'}
-        </h2>
-        <p style={{ color: '#6b7280', margin: 0, fontSize: 14 }}>Pick a lesson to start learning.</p>
-      </div>
-      {loading && <div style={{ textAlign: 'center', padding: '32px 0', color: '#6b7280', fontSize: 14 }}>Loading lessons&hellip;</div>}
-      {!loading && lessons.length === 0 && (
-        <div style={{ textAlign: 'center', padding: 32, color: '#6b7280' }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>&#128218;</div>
-          <p style={{ marginBottom: 16 }}>No lessons available yet.</p>
-          <button type="button" onClick={onReload} style={{ ...primaryBtn, background: 'transparent', color: '#0d9488', border: '1.5px solid #0d9488' }}>Retry</button>
-        </div>
-      )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {lessons.map(lesson => (
-          <div key={lesson.lesson_id} style={{ background: '#fff', border: '1.5px solid #99f6e4', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, color: '#111827', marginBottom: 2 }}>{lesson.title}</div>
-              {lesson.description && <div style={{ fontSize: 13, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lesson.description}</div>}
-              <div style={{ marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {lesson.subject && <Tag>{lesson.subject}</Tag>}
-                {lesson.grade_range && <Tag>Grade {lesson.grade_range}</Tag>}
-                {lesson.item_count != null && <Tag>{lesson.item_count} part{lesson.item_count !== 1 ? 's' : ''}</Tag>}
-              </div>
-            </div>
-            <button type="button" onClick={() => onStart(lesson.lesson_id)} style={{ ...primaryBtn, flexShrink: 0 }}>Start &rarr;</button>
+// ── WebbLessonBrowser ────────────────────────────────────────────────────────
+function WebbLessonBrowser({
+  availableLessons, allOwnedLessons, recentSessions, historyLessons,
+  listTab, setListTab, ownedFilters, setOwnedFilters,
+  listError, setListError, onStart, learnerName,
+}) {
+  const getLk = l => l.lessonKey || l.lesson_id || `${l.subject || 'general'}/${l.file || ''}`
+
+  const mergedMap = new Map(allOwnedLessons.map(l => [getLk(l), l]))
+  Object.entries(historyLessons).forEach(([k, l]) => { if (!mergedMap.has(k)) mergedMap.set(k, l) })
+
+  const completedKeys = new Set(recentSessions.map(s => s.lesson_id))
+  const activeList = availableLessons.filter(l => !completedKeys.has(getLk(l)))
+  const recentList = recentSessions.map(s => ({ session: s, lesson: mergedMap.get(s.lesson_id) }))
+
+  const fullOwnedLessons = [...mergedMap.values()]
+  const allSubjects = [...new Set(fullOwnedLessons.map(l => l.subject).filter(s => s && s !== 'generated'))].sort()
+  const allGrades = [...new Set(fullOwnedLessons.map(l => l.grade).filter(v => v != null))].sort((a, b) => Number(a) - Number(b))
+  const ownedList = fullOwnedLessons.filter(l => {
+    if (ownedFilters.subject && l.subject !== ownedFilters.subject) return false
+    if (ownedFilters.grade && String(l.grade) !== ownedFilters.grade) return false
+    return true
+  })
+
+  const tabStyle = active => ({
+    background: active ? C.accent : 'transparent',
+    color: active ? '#fff' : C.muted,
+    border: `1.5px solid ${active ? C.accent : C.border}`,
+    borderRadius: 8, padding: '6px 16px',
+    fontSize: 12, fontWeight: 700, cursor: 'pointer',
+    fontFamily: 'inherit', letterSpacing: 0.5,
+    transition: 'all 0.15s',
+  })
+
+  const LessonCard = ({ lesson, dateLabel }) => {
+    const lk = getLk(lesson)
+    const completed = completedKeys.has(lk)
+    const subjectLabel = (lesson.subject || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    const gradeLabel = lesson.grade ? `Grade ${lesson.grade}` : ''
+    const diffLabel = lesson.difficulty ? lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1) : ''
+    return (
+      <button
+        type="button"
+        onClick={() => onStart(lesson)}
+        style={{
+          background: '#fff', borderRadius: 12,
+          border: `1.5px solid ${completed ? C.success : C.border}`,
+          padding: '14px 16px', textAlign: 'left',
+          cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'space-between',
+          gap: 12, width: '100%',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          transition: 'border-color 0.2s',
+          fontFamily: 'inherit',
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: C.text, fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
+            {completed && <span style={{ color: C.success, marginRight: 6 }}>&#10003;</span>}
+            {lesson.title || lk}
           </div>
-        ))}
+          <div style={{ color: C.muted, fontSize: 12 }}>
+            {[subjectLabel, gradeLabel, diffLabel].filter(Boolean).join(' \u00b7 ')}
+            {completed && <span style={{ color: C.success, marginLeft: 8 }}>Completed</span>}
+            {dateLabel && <span style={{ color: C.muted, marginLeft: 8 }}>{dateLabel}</span>}
+          </div>
+        </div>
+        <div style={{ color: C.accent, fontWeight: 800, fontSize: 20, flexShrink: 0 }}>&#9654;</div>
+      </button>
+    )
+  }
+
+  const RecentRow = ({ session, lesson }) => {
+    const dateLabel = session.ended_at
+      ? new Date(session.ended_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+      : ''
+    if (lesson) return <LessonCard lesson={lesson} dateLabel={dateLabel} />
+    return (
+      <div style={{ background: '#f9fafb', border: `1.5px solid ${C.border}`, borderRadius: 12, padding: '14px 16px', opacity: 0.6 }}>
+        <div style={{ color: C.muted, fontSize: 13 }}>{session.lesson_id || '\u2014'}</div>
+        {dateLabel && <div style={{ color: C.muted, fontSize: 11, marginTop: 4 }}>{dateLabel}</div>}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ flex: '1 1 0', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+      {/* Non-scrolling controls strip */}
+      <div style={{ flexShrink: 0, padding: '16px 16px 0', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontWeight: 800, color: C.accentDark, fontSize: 16 }}>
+            {learnerName ? `Hi, ${learnerName}! \uD83D\uDC4B` : 'Welcome to Mrs. Webb!'}
+          </div>
+          <div style={{ color: C.muted, fontSize: 13, marginTop: 2 }}>Choose a lesson to begin.</div>
+        </div>
+
+        {listError && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <span style={{ color: C.danger, fontSize: 12 }}>{listError}</span>
+            <button type="button" onClick={() => setListError('')} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>&#10005;</button>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 0 }}>
+          <button type="button" style={tabStyle(listTab === 'active')} onClick={() => setListTab('active')}>ACTIVE</button>
+          <button type="button" style={tabStyle(listTab === 'recent')} onClick={() => setListTab('recent')}>
+            RECENT{recentList.length > 0 ? ` (${recentList.length})` : ''}
+          </button>
+          <button type="button" style={tabStyle(listTab === 'owned')} onClick={() => setListTab('owned')}>
+            OWNED{mergedMap.size > 0 ? ` (${mergedMap.size})` : ''}
+          </button>
+        </div>
+
+        {listTab === 'owned' && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+              <select
+                value={ownedFilters.subject}
+                onChange={e => setOwnedFilters(f => ({ ...f, subject: e.target.value }))}
+                style={{ background: '#fff', color: ownedFilters.subject ? C.text : C.muted, border: `1.5px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                <option value=''>ALL SUBJECTS</option>
+                {allSubjects.map(s => <option key={s} value={s}>{s.replace(/-/g, ' ').toUpperCase()}</option>)}
+              </select>
+              <select
+                value={ownedFilters.grade}
+                onChange={e => setOwnedFilters(f => ({ ...f, grade: e.target.value }))}
+                style={{ background: '#fff', color: ownedFilters.grade ? C.text : C.muted, border: `1.5px solid ${C.border}`, borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                <option value=''>ALL GRADES</option>
+                {allGrades.map(g => <option key={g} value={String(g)}>GRADE {g}</option>)}
+              </select>
+              {(ownedFilters.subject || ownedFilters.grade) && (
+                <button
+                  type="button"
+                  onClick={() => setOwnedFilters({ subject: '', grade: '', difficulty: '' })}
+                  style={{ background: 'none', border: `1.5px solid ${C.border}`, borderRadius: 6, color: C.muted, fontSize: 12, cursor: 'pointer', padding: '5px 10px', fontFamily: 'inherit' }}
+                >&#10005; CLEAR</button>
+              )}
+            </div>
+            {mergedMap.size > 0 && (
+              <div style={{ color: C.muted, fontSize: 11, letterSpacing: 1 }}>
+                {ownedList.length} OF {mergedMap.size} OWNED LESSON{mergedMap.size !== 1 ? 'S' : ''}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Scrollable list */}
+      <div style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', padding: '14px 16px 24px', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        {listTab === 'active' && (
+          availableLessons.length === 0 ? (
+            <div style={{ textAlign: 'center', marginTop: 40, color: C.muted, fontSize: 14 }}>
+              No lessons available yet.
+            </div>
+          ) : activeList.length === 0 ? (
+            <div style={{ textAlign: 'center', marginTop: 40, color: C.success, fontSize: 14 }}>
+              All lessons completed! Check the RECENT or OWNED tabs. &#10003;
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ color: C.muted, fontSize: 11, letterSpacing: 1, marginBottom: 4 }}>
+                {activeList.length} LESSON{activeList.length !== 1 ? 'S' : ''} AVAILABLE
+              </div>
+              {activeList.map((l, i) => <LessonCard key={getLk(l) || i} lesson={l} />)}
+            </div>
+          )
+        )}
+
+        {listTab === 'recent' && (
+          recentList.length === 0 ? (
+            <div style={{ textAlign: 'center', marginTop: 40, color: C.muted, fontSize: 14 }}>
+              No completed lessons yet &mdash; finish a lesson with Ms. Sonoma to see results here.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ color: C.muted, fontSize: 11, letterSpacing: 1, marginBottom: 4 }}>
+                {recentList.length} COMPLETED LESSON{recentList.length !== 1 ? 'S' : ''}
+              </div>
+              {recentList.map((r, i) => <RecentRow key={r.session.id || i} session={r.session} lesson={r.lesson} />)}
+            </div>
+          )
+        )}
+
+        {listTab === 'owned' && (
+          ownedList.length === 0 ? (
+            <div style={{ textAlign: 'center', marginTop: 40, color: C.muted, fontSize: 14 }}>NO LESSONS MATCH FILTERS</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {ownedList.map((l, i) => <LessonCard key={getLk(l) || i} lesson={l} />)}
+            </div>
+          )
+        )}
       </div>
     </div>
   )
