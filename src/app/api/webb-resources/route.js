@@ -1,21 +1,54 @@
-/**
+﻿/**
  * /api/webb-resources
- * Generates curated media resources for a lesson:
- *   type=video   → YouTube search embed URL
- *   type=article → Short educational reading passage (plain text)
- *   type=both    → Both in one call (used for preloading)
+ * Generates curated, child-safe media resources for a lesson.
  *
- * POST body:
- *   { lesson: { title, subject, grade }, type: 'video'|'article'|'both', context?: string }
- *   context = recent conversation snippet (for on-demand refresh)
+ * Video:   YouTube Data API v3 + GPT safety review of title/channel/description
+ * Article: GPT picks best source from child-safe GREEN_LIST → fetches HTML server-side
+ *          (srcdoc approach bypasses X-Frame-Options; no client-side fetching needed)
  *
+ * POST { lesson, type: 'video'|'article'|'both', context? }
  * Returns:
- *   { video?: { embedUrl, searchQuery }, article?: { title, text } }
+ *   video?:   { embedUrl, title, channel, searchQuery }  — real playable embed
+ *          OR { unavailable: true, searchQuery }          — no key / all rejected
+ *   article?: { html, source, title }                    — ready for srcdoc iframe
+ *          OR { html: null, source: null, title }        — all fetches failed
  */
 import { NextResponse } from 'next/server'
 
 const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+const YT_SEARCH    = 'https://www.googleapis.com/youtube/v3/search'
+
+// ── Green list of child-safe educational web sources ─────────────────────────
+// All sources are either (a) Wikipedia REST API (CORS open, no auth) or
+// (b) well-known children's educational sites fetchable server-to-server.
+const GREEN_SOURCES = [
+  {
+    id: 'simple-wiki',
+    name: 'Simple English Wikipedia',
+    desc: 'Best for most topics. Written at a 4th–6th grade reading level. Covers science, history, geography, nature, people.',
+    fetchUrl: a => `https://simple.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(a.replace(/\s+/g, '_'))}`,
+  },
+  {
+    id: 'wikijunior',
+    name: 'Wikijunior',
+    desc: 'Best for science topics written for children ages 8–12: animals, solar system, human body, chemistry, ancient history.',
+    fetchUrl: a => `https://en.wikibooks.org/api/rest_v1/page/mobile-html/${encodeURIComponent(('Wikijunior:' + a).replace(/\s+/g, '_'))}`,
+  },
+  {
+    id: 'ducksters',
+    name: 'Ducksters',
+    desc: 'Best for US history, American geography, science facts, and biography of famous people. Article must be a valid Ducksters.com path such as "science/photosynthesis.php" or "history/american_revolution.php" or "biography/george_washington.php" or "geography/us_states/california.php".',
+    fetchUrl: a => `https://www.ducksters.com/${a.replace(/^\//, '')}`,
+    baseHref: 'https://www.ducksters.com/',
+  },
+  {
+    id: 'wiki',
+    name: 'Wikipedia',
+    desc: 'Best for complex or technical topics when other sources lack depth. Use exact article title.',
+    fetchUrl: a => `https://en.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(a.replace(/\s+/g, '_'))}`,
+  },
+]
 
 async function callGPT(apiKey, systemPrompt, userPrompt, maxTokens = 60) {
   const res = await fetch(OPENAI_URL, {
@@ -25,10 +58,10 @@ async function callGPT(apiKey, systemPrompt, userPrompt, maxTokens = 60) {
       model: OPENAI_MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
+        { role: 'user',   content: userPrompt   },
       ],
       max_tokens: maxTokens,
-      temperature: 0.5,
+      temperature: 0.3,
     }),
   })
   if (!res.ok) throw new Error('OpenAI error ' + res.status)
@@ -36,55 +69,166 @@ async function callGPT(apiKey, systemPrompt, userPrompt, maxTokens = 60) {
   return data.choices?.[0]?.message?.content?.trim() || ''
 }
 
+// ── Generate video resource ───────────────────────────────────────────────────
+async function generateVideo(apiKey, ytKey, title, subject, grade, ctx) {
+  // Step 1: GPT builds the best educational search query
+  const query = await callGPT(
+    apiKey,
+    'You create YouTube search queries for educational videos for children. ' +
+    'Return ONLY the search query — 4 to 7 words, no punctuation at the end, no quotes.',
+    `Lesson: "${title}". Subject: ${subject}. ${grade}.${ctx}`,
+    40,
+  )
+  const safeQuery = (query || `educational ${title}`).slice(0, 120)
+
+  if (ytKey) {
+    try {
+      const ytUrl =
+        `${YT_SEARCH}?part=snippet` +
+        `&q=${encodeURIComponent(safeQuery)}` +
+        `&type=video&safeSearch=strict&videoEmbeddable=true&maxResults=5` +
+        `&key=${ytKey}`
+      const ytRes  = await fetch(ytUrl)
+      const ytData = await ytRes.json()
+      const items  = (ytData.items || []).filter(i => i.id?.videoId)
+
+      if (items.length) {
+        // Step 2: GPT reviews title + channel + description and picks the safest/best
+        const candidateList = items.map((item, i) =>
+          `${i}: "${item.snippet.title}" | Channel: ${item.snippet.channelTitle} | ${(item.snippet.description || '').slice(0, 200)}`
+        ).join('\n')
+
+        const verdict = await callGPT(
+          apiKey,
+          'You are a child safety reviewer for an educational app for children aged 5–14. ' +
+          'Review these YouTube video candidates. ' +
+          'Reject any that are: clickbait, entertainment-only, inappropriate, not genuinely educational. ' +
+          'Pick the most age-appropriate and educationally valuable one. ' +
+          'Reply with ONLY a single digit: the index (0–4) of the best video, or -1 if none are suitable. No other text.',
+          `Lesson: "${title}". ${grade}.\n\nCandidates:\n${candidateList}`,
+          5,
+        )
+
+        const idx = parseInt(verdict, 10)
+        if (idx >= 0 && items[idx]?.id?.videoId) {
+          return {
+            embedUrl:    `https://www.youtube.com/embed/${items[idx].id.videoId}?autoplay=0&rel=0&modestbranding=1`,
+            title:       items[idx].snippet.title,
+            channel:     items[idx].snippet.channelTitle,
+            searchQuery: safeQuery,
+          }
+        }
+      }
+    } catch { /* fall through */ }
+  }
+
+  return { unavailable: true, searchQuery: safeQuery }
+}
+
+// ── Generate article resource ─────────────────────────────────────────────────
+async function generateArticle(apiKey, title, subject, grade, ctx) {
+  const sourceMenu = GREEN_SOURCES.map(s => `- "${s.id}": ${s.name} — ${s.desc}`).join('\n')
+
+  // Step 1: GPT picks best source + article from green list
+  let chosenSource = null
+  let chosenTitle  = null
+  let html         = null
+
+  try {
+    const raw = await callGPT(
+      apiKey,
+      `You select the best educational web article for a child from this approved green list:\n${sourceMenu}\n\n` +
+      'Reply with ONLY valid JSON on one line, no markdown: {"source":"<id>","article":"<title or path>"}',
+      `Topic: "${title}". Subject: ${subject}. ${grade}.${ctx}`,
+      80,
+    )
+    const pick = JSON.parse(raw.replace(/```json?\s*/g, '').replace(/```/g, '').trim())
+    const src  = GREEN_SOURCES.find(s => s.id === pick.source) || GREEN_SOURCES[0]
+    const ref  = (pick.article || title).trim()
+
+    const pageRes = await fetch(src.fetchUrl(ref), {
+      headers: {
+        'Api-User-Agent': 'EducationApp/1.0 (freehands)',
+        'User-Agent':     'Mozilla/5.0 (compatible; EducationBot/1.0)',
+      },
+      signal: AbortSignal.timeout(9000),
+    })
+
+    if (pageRes.ok) {
+      let rawHtml = await pageRes.text()
+      // Inject <base href> so relative URLs (images, CSS) resolve properly
+      if (src.baseHref) {
+        rawHtml = rawHtml.includes('<head>')
+          ? rawHtml.replace('<head>', `<head><base href="${src.baseHref}">`)
+          : `<base href="${src.baseHref}">${rawHtml}`
+      }
+      html         = rawHtml
+      chosenSource = src.name
+      chosenTitle  = ref
+    }
+  } catch { /* fall through to fallbacks */ }
+
+  // Fallback 1: Simple English Wikipedia on the lesson title
+  if (!html) {
+    try {
+      const encoded = encodeURIComponent(title.replace(/\s+/g, '_'))
+      const r = await fetch(
+        `https://simple.wikipedia.org/api/rest_v1/page/mobile-html/${encoded}`,
+        { headers: { 'Api-User-Agent': 'EducationApp/1.0' }, signal: AbortSignal.timeout(7000) },
+      )
+      if (r.ok) {
+        html         = await r.text()
+        chosenSource = 'Simple English Wikipedia'
+        chosenTitle  = title
+      }
+    } catch {}
+  }
+
+  // Fallback 2: Regular English Wikipedia
+  if (!html) {
+    try {
+      const encoded = encodeURIComponent(title.replace(/\s+/g, '_'))
+      const r = await fetch(
+        `https://en.wikipedia.org/api/rest_v1/page/mobile-html/${encoded}`,
+        { headers: { 'Api-User-Agent': 'EducationApp/1.0' }, signal: AbortSignal.timeout(7000) },
+      )
+      if (r.ok) {
+        html         = await r.text()
+        chosenSource = 'Wikipedia'
+        chosenTitle  = title
+      }
+    } catch {}
+  }
+
+  return { html: html || null, source: chosenSource, title: chosenTitle || title }
+}
+
+// ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req) {
   try {
     const { lesson = {}, type = 'both', context = '' } = await req.json()
     const apiKey = process.env.OPENAI_API_KEY
+    const ytKey  = process.env.YOUTUBE_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
 
     const title   = lesson.title   || 'general topic'
     const subject = lesson.subject || 'general'
     const grade   = lesson.grade   ? `Grade ${lesson.grade}` : 'elementary'
-    const ctx     = context ? ` The student discussion so far touches on: ${context.slice(0, 300)}` : ''
+    const ctx     = context ? ` Student discussion context: ${context.slice(0, 300)}` : ''
 
-    const result = {}
+    const needVideo   = type === 'video'   || type === 'both'
+    const needArticle = type === 'article' || type === 'both'
 
-    // ── Video: generate a tight YouTube search query ─────────────────────
-    if (type === 'video' || type === 'both') {
-      const query = await callGPT(
-        apiKey,
-        'You create YouTube search queries for educational videos aimed at children. ' +
-        'Return ONLY the search query — 4 to 7 words — that would find the best educational video. ' +
-        'Prefix with "educational" or a relevant domain word. No quotes, no punctuation at the end.',
-        `Lesson: "${title}". Subject: ${subject}. ${grade}.${ctx}`,
-        40,
-      )
-      const safeQuery = query || `educational ${title}`
-      result.video = {
-        searchQuery: safeQuery,
-        // YouTube iframe with listType=search shows search results inline
-        embedUrl: `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(safeQuery)}&rel=0&modestbranding=1`,
-      }
-    }
+    // Run video and article generation in parallel
+    const [videoResult, articleResult] = await Promise.all([
+      needVideo   ? generateVideo(apiKey, ytKey, title, subject, grade, ctx)   : null,
+      needArticle ? generateArticle(apiKey, title, subject, grade, ctx)        : null,
+    ])
 
-    // ── Article: generate a short reading passage ─────────────────────────
-    if (type === 'article' || type === 'both') {
-      const text = await callGPT(
-        apiKey,
-        'You are an educational content writer for children. ' +
-        'Write a short, friendly reading passage — 150 to 200 words — in plain paragraphs. ' +
-        'No lists, no markdown, no headers. Age-appropriate, engaging, factually accurate. ' +
-        'The passage should read like a mini article a student would enjoy.',
-        `Topic: "${title}". Subject: ${subject}. ${grade}.${ctx} Write the passage now:`,
-        380,
-      )
-      result.article = {
-        title,
-        text: text || `Let's explore ${title}! This is a fascinating topic in ${subject}.`,
-      }
-    }
-
-    return NextResponse.json(result)
+    return NextResponse.json({
+      ...(videoResult   ? { video:   videoResult   } : {}),
+      ...(articleResult ? { article: articleResult } : {}),
+    })
   } catch (e) {
     console.error('webb-resources error:', e)
     return NextResponse.json({ error: 'Resource generation failed' }, { status: 500 })
@@ -93,5 +237,9 @@ export async function POST(req) {
 
 // Health check
 export async function GET() {
-  return NextResponse.json({ ok: true, endpoint: 'webb-resources' })
+  return NextResponse.json({
+    ok: true,
+    endpoint: 'webb-resources',
+    greenList: GREEN_SOURCES.map(s => ({ id: s.id, name: s.name })),
+  })
 }

@@ -3,6 +3,14 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import CaptionPanel from '../components/CaptionPanel'
 
+// CSS animation for loading spinner
+if (typeof document !== 'undefined' && !document.getElementById('webb-spin-style')) {
+  const s = document.createElement('style')
+  s.id = 'webb-spin-style'
+  s.textContent = '@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }'
+  document.head.appendChild(s)
+}
+
 // ── Color tokens ──────────────────────────────────────────────────────────────
 const C = {
   accent:      '#0d9488',
@@ -42,8 +50,8 @@ export default function WebbPage() {
   const transcriptRef                       = useRef(null)
 
   // ── Media resources ──────────────────────────────────────────────────
-  const [videoResource, setVideoResource]       = useState(null) // {embedUrl, searchQuery}
-  const [articleResource, setArticleResource]   = useState(null) // {title, text}
+  const [videoResource, setVideoResource]       = useState(null) // {embedUrl,title,channel} or {unavailable:true}
+  const [articleResource, setArticleResource]   = useState(null) // {html, source, title} — HTML fetched server-side
   const [videoLoading, setVideoLoading]         = useState(false)
   const [articleLoading, setArticleLoading]     = useState(false)
   const [mediaOverlay, setMediaOverlay]         = useState(null) // 'video'|'article'|null
@@ -355,7 +363,6 @@ export default function WebbPage() {
   // ── Refresh a media resource (context-aware) ──────────────────────────
   async function refreshMedia(type) {
     setRefreshingMedia(true)
-    // Summarize recent conversation for context
     const recentContext = chatMessages.slice(-6)
       .filter(m => m.role === 'user')
       .map(m => m.content)
@@ -475,7 +482,10 @@ export default function WebbPage() {
                 {/* Overlay toolbar */}
                 <div style={{ background: 'rgba(15,118,110,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', flexShrink: 0 }}>
                   <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 0.5 }}>
-                    {mediaOverlay === 'video' ? '▶ VIDEO' : '📖 READING'}
+                    {mediaOverlay === 'video' ? '▶ VIDEO' : '📖 ARTICLE'}
+                    {mediaOverlay === 'article' && articleResource?.source && (
+                      <span style={{ opacity: 0.75, fontWeight: 400, marginLeft: 4 }}>· {articleResource.source}</span>
+                    )}
                   </span>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button
@@ -497,24 +507,71 @@ export default function WebbPage() {
                 </div>
 
                 {/* Content */}
-                <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                  {mediaOverlay === 'video' && videoResource && (
+                <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
+
+                  {/* ── VIDEO ── */}
+                  {mediaOverlay === 'video' && videoResource?.embedUrl && (
                     <iframe
                       src={videoResource.embedUrl}
-                      title="Educational video"
+                      title={videoResource.title || 'Educational video'}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                       style={{ width: '100%', height: '100%', border: 'none' }}
                     />
                   )}
-                  {mediaOverlay === 'article' && articleResource && (
-                    <div style={{ padding: '10px 12px', overflowY: 'auto', height: '100%', background: '#fffbf7', boxSizing: 'border-box' }}>
-                      <div style={{ fontWeight: 800, fontSize: 13, color: C.accentDark, marginBottom: 8 }}>{articleResource.title}</div>
-                      <div style={{ fontSize: 13, lineHeight: 1.7, color: C.text, whiteSpace: 'pre-wrap' }}>{articleResource.text}</div>
+                  {/* Fallback: no YT API key — show a friendly retry prompt */}
+                  {mediaOverlay === 'video' && videoResource?.unavailable && (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, padding: 20, background: '#0f0f0f', boxSizing: 'border-box', textAlign: 'center' }}>
+                      <svg viewBox="0 0 24 24" style={{ width: 44, height: 44 }} fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8l4 4-4 4"/></svg>
+                      <div style={{ color: '#9ca3af', fontSize: 13, lineHeight: 1.6, maxWidth: 220 }}>
+                        Video not available right now.<br/>Tap <strong style={{ color: '#fff' }}>↻</strong> above to try a different one.
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => refreshMedia('video')}
+                        disabled={refreshingMedia}
+                        style={{ background: C.accent, border: 'none', color: '#fff', borderRadius: 6, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}
+                      >
+                        {refreshingMedia ? '…' : '↻ Try another'}
+                      </button>
                     </div>
                   )}
-                  {/* Loading state inside overlay */}
-                  {((mediaOverlay === 'video' && !videoResource) || (mediaOverlay === 'article' && !articleResource)) && (
+
+                  {/* ── ARTICLE / WEBPAGE (HTML fetched server-side from green list) ── */}
+                  {mediaOverlay === 'article' && articleResource?.html && (
+                    <iframe
+                      srcDoc={articleResource.html}
+                      title={articleResource.title || 'Educational article'}
+                      sandbox="allow-same-origin allow-scripts"
+                      style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
+                    />
+                  )}
+                  {/* Loading: preload still in flight */}
+                  {mediaOverlay === 'article' && articleLoading && !articleResource && (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, color: '#9ca3af', fontSize: 13, background: '#fff' }}>
+                      <svg viewBox="0 0 24 24" style={{ width: 32, height: 32, animation: 'spin 1s linear infinite' }} fill="none" stroke="#0d9488" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
+                      Finding an article…
+                    </div>
+                  )}
+                  {/* Fallback: article came back but HTML could not be fetched */}
+                  {mediaOverlay === 'article' && !articleLoading && articleResource && !articleResource.html && (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, padding: 20, background: '#fff', boxSizing: 'border-box', textAlign: 'center' }}>
+                      <svg viewBox="0 0 24 24" style={{ width: 40, height: 40 }} fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6 }}>Couldn&apos;t load the article.<br/>Tap below to try a different one.</div>
+                      <button
+                        type="button"
+                        onClick={() => refreshMedia('article')}
+                        disabled={refreshingMedia}
+                        style={{ ...primaryBtn, opacity: refreshingMedia ? 0.6 : 1, cursor: refreshingMedia ? 'wait' : 'pointer' }}
+                      >
+                        {refreshingMedia ? '…' : '↻ Try another article'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Spinner: button pressed but preload not yet done */}
+                  {((mediaOverlay === 'video' && !videoResource) ||
+                    (mediaOverlay === 'article' && !articleResource)) && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af', fontSize: 13 }}>
                       Generating…
                     </div>
@@ -558,8 +615,8 @@ export default function WebbPage() {
                 <button
                   type="button"
                   onClick={() => { setMediaOverlay(v => v === 'article' ? null : 'article') }}
-                  aria-label="Read an article"
-                  title={articleLoading ? 'Writing article…' : articleResource ? 'Read an article' : 'Writing article…'}
+                  aria-label="Read Wikipedia article"
+                  title={articleLoading ? 'Finding Wikipedia article…' : articleResource ? `Wikipedia: ${articleResource.wikiTitle}` : 'Finding Wikipedia article…'}
                   style={{ ...overlayBtnStyle, background: mediaOverlay === 'article' ? C.accent : '#1f2937', opacity: articleLoading ? 0.55 : 1 }}
                 >
                   {articleLoading
