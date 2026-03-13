@@ -1,13 +1,15 @@
 ﻿'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import CaptionPanel from '../components/CaptionPanel'
 
-// CSS animation for loading spinner
+// CSS animations
 if (typeof document !== 'undefined' && !document.getElementById('webb-spin-style')) {
   const s = document.createElement('style')
   s.id = 'webb-spin-style'
-  s.textContent = '@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }'
+  s.textContent = [
+    '@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }',
+    '@keyframes webb-bounce { 0%,80%,100% { transform:translateY(0) } 40% { transform:translateY(-5px) } }',
+  ].join(' ')
   document.head.appendChild(s)
 }
 
@@ -65,6 +67,14 @@ export default function WebbPage() {
   const [engineState, setEngineState] = useState('idle')
   const [isMuted, setIsMuted]         = useState(false)
   const isMutedRef                    = useRef(false)
+
+  // ── Chat scroll ─────────────────────────────────────────────────────
+  const chatEndRef = useRef(null)
+
+  // Auto-scroll to newest message
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [transcript.length, chatLoading])
 
   // ── Layout ───────────────────────────────────────────────────────────
   const videoColRef                         = useRef(null)
@@ -380,7 +390,13 @@ export default function WebbPage() {
       const res = await fetch('/api/webb-resources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lesson: selectedLesson, type, context: recentContext }),
+        body: JSON.stringify({
+          lesson: selectedLesson,
+          type,
+          context: recentContext,
+          // Tell the picker to avoid the previously shown source
+          previousSource: type === 'article' ? (articleResource?.source || '') : '',
+        }),
       })
       const data = await res.json()
       if (type === 'video' && data.video)     setVideoResource(data.video)
@@ -660,14 +676,57 @@ export default function WebbPage() {
             />
           )}
 
-          {/* Chat CaptionPanel */}
+          {/* Chat thread — iMessage-style bubbles */}
           {isChatting && (
-            <CaptionPanel
-              sentences={transcript}
-              activeIndex={activeIndex}
-              boxRef={transcriptRef}
-              fullHeight
-            />
+            <div
+              ref={transcriptRef}
+              style={{
+                flex: '1 1 0', minHeight: 0,
+                overflowY: 'auto', overflowX: 'hidden',
+                padding: '16px 12px 8px',
+                display: 'flex', flexDirection: 'column', gap: 8,
+                background: '#f9fafb',
+                WebkitOverflowScrolling: 'touch',
+              }}
+            >
+              {transcript.map((msg, i) => {
+                const isUser = msg.role === 'user'
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-end', gap: 7, flexDirection: isUser ? 'row-reverse' : 'row', padding: '0 2px' }}>
+                    {!isUser && (
+                      <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0, marginBottom: 1 }} aria-hidden>&#128105;&#8205;&#127979;</span>
+                    )}
+                    <div style={{
+                      maxWidth: 'min(78%, 360px)',
+                      background: isUser ? C.accent : '#ffffff',
+                      color: isUser ? '#ffffff' : C.text,
+                      borderRadius: isUser ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
+                      padding: '9px 13px',
+                      fontSize: 14, lineHeight: 1.55,
+                      wordBreak: 'break-word',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.09)',
+                      border: isUser ? 'none' : '1px solid #e5e7eb',
+                    }}>
+                      {msg.text}
+                    </div>
+                  </div>
+                )
+              })}
+              {/* Typing indicator */}
+              {chatLoading && (
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 7, padding: '0 2px' }}>
+                  <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0, marginBottom: 1 }} aria-hidden>&#128105;&#8205;&#127979;</span>
+                  <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '4px 18px 18px 18px', padding: '10px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.09)' }}>
+                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                      {[0, 160, 320].map(d => (
+                        <span key={d} style={{ display: 'block', width: 7, height: 7, borderRadius: '50%', background: '#9ca3af', animation: `webb-bounce 1s ease-in-out ${d}ms infinite` }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} style={{ height: 1 }} />
+            </div>
           )}
         </div>
       </div>

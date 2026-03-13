@@ -120,7 +120,7 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx) {
         const picked = items[pickedIdx]
         if (picked?.id?.videoId) {
           return {
-            embedUrl:    `https://www.youtube.com/embed/${picked.id.videoId}?autoplay=0&rel=0&modestbranding=1`,
+            embedUrl:    `https://www.youtube-nocookie.com/embed/${picked.id.videoId}?autoplay=0&rel=0&modestbranding=1`,
             title:       picked.snippet.title,
             channel:     picked.snippet.channelTitle,
             searchQuery: safeQuery,
@@ -134,7 +134,7 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx) {
 }
 
 // ── Generate article resource ─────────────────────────────────────────────────
-async function generateArticle(apiKey, title, subject, grade, ctx) {
+async function generateArticle(apiKey, title, subject, grade, ctx, prevSrc = '') {
   const sourceMenu = GREEN_SOURCES.map(s => `- "${s.id}": ${s.name} — ${s.desc}`).join('\n')
 
   // Step 1: GPT picks best source + article from green list
@@ -143,9 +143,10 @@ async function generateArticle(apiKey, title, subject, grade, ctx) {
   let html         = null
 
   try {
+    const avoidLine = prevSrc ? `The student already read an article from "${prevSrc}" — pick a DIFFERENT source this time.\n\n` : ''
     const raw = await callGPT(
       apiKey,
-      `You select the best educational web article for a child from this approved green list:\n${sourceMenu}\n\n` +
+      `You select the best educational web article for a child from this approved green list:\n${sourceMenu}\n\n${avoidLine}` +
       'Reply with ONLY valid JSON on one line, no markdown: {"source":"<id>","article":"<title or path>"}',
       `Topic: "${title}". Subject: ${subject}. ${grade}.${ctx}`,
       80,
@@ -222,7 +223,7 @@ async function generateArticle(apiKey, title, subject, grade, ctx) {
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req) {
   try {
-    const { lesson = {}, type = 'both', context = '' } = await req.json()
+    const { lesson = {}, type = 'both', context = '', previousSource = '' } = await req.json()
     const apiKey = process.env.OPENAI_API_KEY
     const ytKey  = process.env.YOUTUBE_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
@@ -231,6 +232,7 @@ export async function POST(req) {
     const subject = lesson.subject || 'general'
     const grade   = lesson.grade   ? `Grade ${lesson.grade}` : 'elementary'
     const ctx     = context ? ` Student discussion context: ${context.slice(0, 300)}` : ''
+    const prevSrc = String(previousSource || '').slice(0, 60)
 
     const needVideo   = type === 'video'   || type === 'both'
     const needArticle = type === 'article' || type === 'both'
@@ -238,7 +240,7 @@ export async function POST(req) {
     // Run video and article generation in parallel
     const [videoResult, articleResult] = await Promise.all([
       needVideo   ? generateVideo(apiKey, ytKey, title, subject, grade, ctx)   : null,
-      needArticle ? generateArticle(apiKey, title, subject, grade, ctx)        : null,
+      needArticle ? generateArticle(apiKey, title, subject, grade, ctx, prevSrc) : null,
     ])
 
     return NextResponse.json({
