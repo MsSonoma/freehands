@@ -3,7 +3,7 @@
  * Generates curated, child-safe media resources for a lesson.
  *
  * Video:   YouTube Data API v3 + GPT safety review of title/channel/description
- * Article: GPT picks best source from child-safe GREEN_LIST → fetches HTML server-side
+ * Article: Fetches directly from Wikipedia REST APIs (Simple English first, then English)
  *          (srcdoc approach bypasses X-Frame-Options; no client-side fetching needed)
  *
  * POST { lesson, type: 'video'|'article'|'both', context? }
@@ -19,37 +19,17 @@ const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 const YT_SEARCH    = 'https://www.googleapis.com/youtube/v3/search'
 
-// ── Green list of child-safe educational web sources ─────────────────────────
-// All sources are either (a) Wikipedia REST API (CORS open, no auth) or
-// (b) well-known children's educational sites fetchable server-to-server.
-const GREEN_SOURCES = [
+// ── Wikipedia REST API sources (open, no-auth, work from cloud hosting) ───────
+const WIKI_SOURCES = [
   {
-    id: 'simple-wiki',
     name: 'Simple English Wikipedia',
-    desc: 'Best for most topics. Written at a 4th–6th grade reading level. Covers science, history, geography, nature, people.',
-    fetchUrl: a => `https://simple.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(a.replace(/\s+/g, '_'))}`,
-    baseHref: 'https://simple.wikipedia.org',
+    url:  t => `https://simple.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(t.replace(/\s+/g, '_'))}`,
+    base: 'https://simple.wikipedia.org',
   },
   {
-    id: 'wikijunior',
-    name: 'Wikijunior',
-    desc: 'Best for science topics written for children ages 8–12: animals, solar system, human body, chemistry, ancient history.',
-    fetchUrl: a => `https://en.wikibooks.org/api/rest_v1/page/mobile-html/${encodeURIComponent(('Wikijunior:' + a).replace(/\s+/g, '_'))}`,
-    baseHref: 'https://en.wikibooks.org',
-  },
-  {
-    id: 'ducksters',
-    name: 'Ducksters',
-    desc: 'Best for US history, American geography, science facts, and biography of famous people. Article must be a valid Ducksters.com path such as "science/photosynthesis.php" or "history/american_revolution.php" or "biography/george_washington.php" or "geography/us_states/california.php".',
-    fetchUrl: a => `https://www.ducksters.com/${a.replace(/^\//, '')}`,
-    baseHref: 'https://www.ducksters.com/',
-  },
-  {
-    id: 'wiki',
     name: 'Wikipedia',
-    desc: 'Best for complex or technical topics when other sources lack depth. Use exact article title.',
-    fetchUrl: a => `https://en.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(a.replace(/\s+/g, '_'))}`,
-    baseHref: 'https://en.wikipedia.org',
+    url:  t => `https://en.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(t.replace(/\s+/g, '_'))}`,
+    base: 'https://en.wikipedia.org',
   },
 ]
 
@@ -134,90 +114,34 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx) {
 }
 
 // ── Generate article resource ─────────────────────────────────────────────────
-async function generateArticle(apiKey, title, subject, grade, ctx, prevSrc = '') {
-  const sourceMenu = GREEN_SOURCES.map(s => `- "${s.id}": ${s.name} — ${s.desc}`).join('\n')
+// Directly fetches from Wikipedia REST APIs — no GPT call needed since the
+// lesson title IS the Wikipedia article title. Tries Simple English Wikipedia
+// first (4th–6th grade level), falls back to regular Wikipedia.
+// Alternates which source comes first based on previousSource so refreshes
+// show a genuinely different article.
+async function generateArticle(title, prevSrc = '') {
+  // If we just showed Simple Wikipedia, try regular Wikipedia first this time
+  const sources = (prevSrc === 'Simple English Wikipedia')
+    ? [WIKI_SOURCES[1], WIKI_SOURCES[0]]
+    : WIKI_SOURCES
 
-  // Step 1: GPT picks best source + article from green list
-  let chosenSource = null
-  let chosenTitle  = null
-  let html         = null
-
-  try {
-    const avoidLine = prevSrc ? `The student already read an article from "${prevSrc}" — pick a DIFFERENT source this time.\n\n` : ''
-    const raw = await callGPT(
-      apiKey,
-      `You select the best educational web article for a child from this approved green list:\n${sourceMenu}\n\n${avoidLine}` +
-      'Reply with ONLY valid JSON on one line, no markdown: {"source":"<id>","article":"<title or path>"}',
-      `Topic: "${title}". Subject: ${subject}. ${grade}.${ctx}`,
-      80,
-    )
-    const pick = JSON.parse(raw.replace(/```json?\s*/g, '').replace(/```/g, '').trim())
-    const src  = GREEN_SOURCES.find(s => s.id === pick.source) || GREEN_SOURCES[0]
-    const ref  = (pick.article || title).trim()
-
-    const pageRes = await fetch(src.fetchUrl(ref), {
-      headers: {
-        'Api-User-Agent': 'EducationApp/1.0 (freehands)',
-        'User-Agent':     'Mozilla/5.0 (compatible; EducationBot/1.0)',
-      },
-      signal: AbortSignal.timeout(9000),
-    })
-
-    if (pageRes.ok) {
-      let rawHtml = await pageRes.text()
-      // Inject <base href> so relative URLs (images, CSS) resolve properly
-      if (src.baseHref) {
-        rawHtml = rawHtml.includes('<head>')
-          ? rawHtml.replace('<head>', `<head><base href="${src.baseHref}">`)
-          : `<base href="${src.baseHref}">${rawHtml}`
-      }
-      html         = rawHtml
-      chosenSource = src.name
-      chosenTitle  = ref
-    }
-  } catch { /* fall through to fallbacks */ }
-
-  // Fallback 1: Simple English Wikipedia on the lesson title
-  if (!html) {
+  for (const src of sources) {
     try {
-      const encoded = encodeURIComponent(title.replace(/\s+/g, '_'))
-      const r = await fetch(
-        `https://simple.wikipedia.org/api/rest_v1/page/mobile-html/${encoded}`,
-        { headers: { 'Api-User-Agent': 'EducationApp/1.0' }, signal: AbortSignal.timeout(7000) },
-      )
+      const r = await fetch(src.url(title), {
+        headers: { 'Api-User-Agent': 'EducationApp/1.0 (freehands; educational-app)' },
+        signal: AbortSignal.timeout(8000),
+      })
       if (r.ok) {
-        let rawHtml = await r.text()
-        rawHtml = rawHtml.includes('<head>')
-          ? rawHtml.replace('<head>', '<head><base href="https://simple.wikipedia.org">')
-          : `<base href="https://simple.wikipedia.org">${rawHtml}`
-        html         = rawHtml
-        chosenSource = 'Simple English Wikipedia'
-        chosenTitle  = title
+        let html = await r.text()
+        html = html.includes('<head>')
+          ? html.replace('<head>', `<head><base href="${src.base}">`)
+          : `<base href="${src.base}">${html}`
+        return { html, source: src.name, title }
       }
-    } catch {}
+    } catch { /* try next source */ }
   }
 
-  // Fallback 2: Regular English Wikipedia
-  if (!html) {
-    try {
-      const encoded = encodeURIComponent(title.replace(/\s+/g, '_'))
-      const r = await fetch(
-        `https://en.wikipedia.org/api/rest_v1/page/mobile-html/${encoded}`,
-        { headers: { 'Api-User-Agent': 'EducationApp/1.0' }, signal: AbortSignal.timeout(7000) },
-      )
-      if (r.ok) {
-        let rawHtml = await r.text()
-        rawHtml = rawHtml.includes('<head>')
-          ? rawHtml.replace('<head>', '<head><base href="https://en.wikipedia.org">')
-          : `<base href="https://en.wikipedia.org">${rawHtml}`
-        html         = rawHtml
-        chosenSource = 'Wikipedia'
-        chosenTitle  = title
-      }
-    } catch {}
-  }
-
-  return { html: html || null, source: chosenSource, title: chosenTitle || title }
+  return { html: null, source: null, title }
 }
 
 // ── Route handler ─────────────────────────────────────────────────────────────
@@ -240,7 +164,7 @@ export async function POST(req) {
     // Run video and article generation in parallel
     const [videoResult, articleResult] = await Promise.all([
       needVideo   ? generateVideo(apiKey, ytKey, title, subject, grade, ctx)   : null,
-      needArticle ? generateArticle(apiKey, title, subject, grade, ctx, prevSrc) : null,
+      needArticle ? generateArticle(title, prevSrc) : null,
     ])
 
     return NextResponse.json({
@@ -258,6 +182,6 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     endpoint: 'webb-resources',
-    greenList: GREEN_SOURCES.map(s => ({ id: s.id, name: s.name })),
+    sources: WIKI_SOURCES.map(s => s.name),
   })
 }
