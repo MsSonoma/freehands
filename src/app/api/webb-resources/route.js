@@ -118,33 +118,48 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeV
 }
 
 // ── Generate article resource ─────────────────────────────────────────────────
-// Directly fetches from Wikipedia REST APIs — no GPT call needed since the
-// lesson title IS the Wikipedia article title. Tries Simple English Wikipedia
-// first (4th–6th grade level), falls back to regular Wikipedia.
-// Alternates which source comes first based on previousSource so refreshes
-// show a genuinely different article.
-async function generateArticle(title, prevSrc = '') {
-  // Alternate sources on refresh so the student sees genuinely different content.
-  // Simple English Wikipedia: 4th–6th grade reading level, concise.
-  // Wikipedia:                full depth, more detail.
+// Uses GPT to translate the lesson title into the best Wikipedia article slug,
+// then fetches from Simple English Wikipedia (grade-appropriate) or English Wikipedia.
+async function generateArticle(apiKey, title, grade, prevSrc = '') {
+  // Ask GPT for the best Wikipedia article title for this lesson.
+  // Falls back to the raw lesson title if GPT fails.
+  let wikiTitle = title
+  try {
+    const raw = await callGPT(
+      apiKey,
+      'You find Wikipedia article titles for school lessons. ' +
+      'Return ONLY the Wikipedia article title — 1 to 5 words, exact Wikipedia capitalisation, nothing else.',
+      `Lesson: "${title.slice(0, 120)}". Grade: ${grade}.`,
+      30,
+    )
+    if (raw && raw.length > 1 && raw.length < 80) wikiTitle = raw
+  } catch { /* use raw title */ }
+
   const sources = (prevSrc === 'Simple English Wikipedia')
     ? [WIKI_SOURCES[1], WIKI_SOURCES[0]]
     : WIKI_SOURCES
 
-  for (const src of sources) {
-    try {
-      const r = await fetch(src.url(title), {
-        headers: { 'Api-User-Agent': 'EducationApp/1.0 (freehands; educational-app)' },
-        signal: AbortSignal.timeout(8000),
-      })
-      if (r.ok) {
-        let html = await r.text()
-        html = html.includes('<head>')
-          ? html.replace('<head>', `<head><base href="${src.base}">`)
-          : `<base href="${src.base}">${html}`
-        return { html, source: src.name, title }
-      }
-    } catch { /* try next source */ }
+  // Try GPT-resolved title first, then the original lesson title as a safety net.
+  const titlesToTry = wikiTitle.toLowerCase() !== title.toLowerCase()
+    ? [wikiTitle, title]
+    : [wikiTitle]
+
+  for (const term of titlesToTry) {
+    for (const src of sources) {
+      try {
+        const r = await fetch(src.url(term), {
+          headers: { 'Api-User-Agent': 'EducationApp/1.0 (freehands; educational-app)' },
+          signal: AbortSignal.timeout(8000),
+        })
+        if (r.ok) {
+          let html = await r.text()
+          html = html.includes('<head>')
+            ? html.replace('<head>', `<head><base href="${src.base}">`)
+            : `<base href="${src.base}">${html}`
+          return { html, source: src.name, title }
+        }
+      } catch { /* try next */ }
+    }
   }
 
   return { html: null, source: null, title }
@@ -171,7 +186,7 @@ export async function POST(req) {
     const safeExcludeVids = Array.isArray(excludeVideoIds) ? excludeVideoIds.slice(0, 20) : []
     const [videoResult, articleResult] = await Promise.all([
       needVideo   ? generateVideo(apiKey, ytKey, title, subject, grade, ctx, safeExcludeVids) : null,
-      needArticle ? generateArticle(title, prevSrc) : null,
+      needArticle ? generateArticle(apiKey, title, grade, prevSrc) : null,
     ])
 
     return NextResponse.json({
