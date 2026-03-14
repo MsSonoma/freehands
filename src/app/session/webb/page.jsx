@@ -804,13 +804,31 @@ export default function WebbPage() {
 
       const excerpts = passages.map(p => p.excerpt).filter(Boolean)
 
-      // Wait for the iframe to be fully loaded before injecting highlights
+      // Wait for (a) React to flush setMediaOverlay and mount the iframe,
+      // and (b) the iframe to finish loading its srcdoc content.
+      // We poll for the ref because setState is async — the ref won't be set
+      // until after the next React render cycle commits.
       await new Promise(resolve => {
-        const iframe = articleIframeRef.current
-        if (!iframe) { resolve(); return }
-        if (iframe.contentDocument?.readyState === 'complete') { resolve(); return }
-        iframe.addEventListener('load', resolve, { once: true })
-        setTimeout(resolve, 3000) // safety timeout
+        let tries = 0
+        const check = () => {
+          const iframe = articleIframeRef.current
+          if (iframe) {
+            if (iframe.contentDocument?.readyState === 'complete') {
+              resolve()
+            } else {
+              // Register once-listener AND a safety timeout
+              let settled = false
+              const done = () => { if (!settled) { settled = true; resolve() } }
+              iframe.addEventListener('load', done, { once: true })
+              setTimeout(done, 3000)
+            }
+          } else if (tries++ < 40) {
+            setTimeout(check, 100) // wait for React to commit the render
+          } else {
+            resolve() // give up after 4 s
+          }
+        }
+        check()
       })
 
       // Highlight all passages and persist excerpts for remount re-apply
@@ -870,6 +888,17 @@ export default function WebbPage() {
       el.removeAttribute('id')
     })
 
+    // Wikipedia textContent includes inline citation markers like [1], [2].
+    // GPT excerpts don't include them, so we strip them before matching.
+    const normText = s => (s || '')
+      .replace(/\[\d+\]/g, '')           // [1], [23] …
+      .replace(/\[[a-zA-Z]\]/g, '')      // [a], [B] …
+      .replace(/\[note\s*\d*\]/gi, '')   // [note 1] …
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201c\u201d]/g, '"')
+      .replace(/\s+/g, ' ')
+      .trim()
+
     // All block-level candidates in document order
     const candidates = Array.from(
       doc.querySelectorAll('p,li,dt,dd,h2,h3,h4,h5,blockquote,td,th')
@@ -877,14 +906,14 @@ export default function WebbPage() {
 
     const results = []
     for (let i = 0; i < excerpts.length; i++) {
-      const needle = excerpts[i].replace(/\s+/g, ' ').trim()
+      const needle = normText(excerpts[i])
       let found = null
-      // Try progressively shorter anchors to tolerate minor whitespace/citation diffs
+      // Try progressively shorter anchors to tolerate minor text diffs
       for (const len of [40, 25, 15]) {
         const anchor = needle.slice(0, len)
         if (!anchor) continue
         for (const el of candidates) {
-          if ((el.textContent || '').replace(/\s+/g, ' ').includes(anchor)) {
+          if (normText(el.textContent).includes(anchor)) {
             found = el
             break
           }
