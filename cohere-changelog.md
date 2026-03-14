@@ -579,3 +579,9 @@ File: src/app/session/components/CaptionPanel.js
 - src/app/lib/masteryClient.js ï¿½ NEW: localStorage mastery tracker (slate_mastery_v1), getMasteryForLearner / isMastered / saveMastery
 - src/app/session/slate/page.jsx ï¿½ NEW: Full Mr. Slate drill page. Dark terminal theme. Phases: loading|error|no-lesson|ready|asking|feedback|won. Question pool built from sample+truefalse+multiplechoice+fillintheblank. 15s per-question countdown. Score 0?10 with +1/-1/ï¿½0 logic. Question deck rotates, reshuffles at 80% exhaustion. On score=10: saves mastery to localStorage via masteryClient.
 - src/app/learn/lessons/page.js ï¿½ MODIFIED: Import masteryClient, add masteryMap state, load mastery on learner init, wire "?? Mr. Slate" header button ? /session/slate, show ?? icon on mastered lesson titles, add "?? Practice / Mastered" button on each lesson card routed to /session/slate?lesson=<file>&subject=<subject>
+
+## 2026-03-14 14:27 — FAQ unrecognized response fall-through
+- Fixed Phase 1 and Phase 2 of UI FAQ state machine in `sendMessage`
+- If input matches neither `isYes` nor `isNo`, refs cleared and execution falls through to normal AI chat
+- Recon prompt: 'FAQ yes/no intercept unrecognized response fall through to AI chat'
+

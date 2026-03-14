@@ -541,36 +541,46 @@ export default function WebbPage() {
     // ── UI FAQ intercept ──────────────────────────────────────────────────
     // Phase 2: action yes/no ("Want me to open it?")
     if (uiFaqActionPendingRef.current && uiFaqPendingRef.current) {
-      const slug = uiFaqPendingRef.current
-      uiFaqPendingRef.current = null
-      uiFaqActionPendingRef.current = false
-      if (isYes(text)) {
-        addMsg('Sure thing! Opening it for you now.')
-        if (slug === 'video')   setMediaOverlay('video')
-        if (slug === 'article') setMediaOverlay('article')
+      if (!isYes(text) && !isNo(text)) {
+        // Unrecognized — clear FAQ state and fall through to AI chat
+        uiFaqPendingRef.current = null
+        uiFaqActionPendingRef.current = false
       } else {
-        addMsg("No problem! Just let me know if you need anything else.")
+        const slug = uiFaqPendingRef.current
+        uiFaqPendingRef.current = null
+        uiFaqActionPendingRef.current = false
+        if (isYes(text)) {
+          addMsg('Sure thing! Opening it for you now.')
+          if (slug === 'video')   setMediaOverlay('video')
+          if (slug === 'article') setMediaOverlay('article')
+        } else {
+          addMsg("No problem! Just let me know if you need anything else.")
+        }
+        return
       }
-      return
     }
     // Phase 1: feature confirmation yes/no ("Are you wondering about X?")
     if (uiFaqPendingRef.current) {
-      const slug = uiFaqPendingRef.current
-      const cfg  = UI_FAQ[slug]
-      if (isNo(text)) {
+      if (!isYes(text) && !isNo(text)) {
+        // Unrecognized — clear FAQ state and fall through to AI chat
         uiFaqPendingRef.current = null
-        addMsg("No problem! Ask me anything else about our lesson.")
       } else {
-        // Yes or anything else → give the answer
-        addMsg(cfg.answer)
-        if (cfg.actionSlug && cfg.actionPrompt) {
-          uiFaqActionPendingRef.current = true
-          setTimeout(() => addMsg(cfg.actionPrompt), 150)
-        } else {
+        const slug = uiFaqPendingRef.current
+        const cfg  = UI_FAQ[slug]
+        if (isNo(text)) {
           uiFaqPendingRef.current = null
+          addMsg("No problem! Ask me anything else about our lesson.")
+        } else {
+          addMsg(cfg.answer)
+          if (cfg.actionSlug && cfg.actionPrompt) {
+            uiFaqActionPendingRef.current = true
+            setTimeout(() => addMsg(cfg.actionPrompt), 150)
+          } else {
+            uiFaqPendingRef.current = null
+          }
         }
+        return
       }
-      return
     }
     // Phase 0: detect a UI question
     const uiSlug = detectUiQuestion(text)
