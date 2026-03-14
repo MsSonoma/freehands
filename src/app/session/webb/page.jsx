@@ -34,6 +34,7 @@ const UI_FAQ = {
     keywords: ['video', 'watch', 'play', 'movie', 'film', 'youtube', 'player'],
     confirm: 'Are you wondering about the video feature?',
     answer: 'To watch a video, just tap the video button — it looks like ▶ — at the bottom of my screen. That opens a little video player with play, pause, and a timeline. The video is picked specially for your lesson!',
+    location: 'tap the ▶ button at the bottom of my screen',
     actionPrompt: 'Want me to open the video for you right now?',
     actionSlug: 'video',
   },
@@ -41,6 +42,7 @@ const UI_FAQ = {
     keywords: ['article', 'read', 'wiki', 'wikipedia', 'reading', 'text', 'page'],
     confirm: 'Are you wondering about the article feature?',
     answer: 'The article button — it looks like 📖 — opens a Wikipedia article about your lesson right inside this screen. It is a great way to read a bit more about what we are studying!',
+    location: 'tap the 📖 button at the bottom of my screen',
     actionPrompt: 'Would you like me to open the article for you?',
     actionSlug: 'article',
   },
@@ -113,7 +115,7 @@ function detectUiQuestion(text) {
   const lower = text.toLowerCase()
   const isQuestion =
     lower.includes('?') ||
-    /\b(how|what|where|why|which|explain|describe|tell me|show me|can i|can you|do i|does|help|what is|what's|button|feature|work|use)\b/.test(lower)
+    /\b(how|what|where|why|which|explain|describe|tell me|show me|can i|can we|can you|do i|does|help|what is|what's|button|feature|work|use|want to|would like|wanna|i'd like|let me|let's|i need)\b/.test(lower)
   if (!isQuestion) return null
   for (const [slug, cfg] of Object.entries(UI_FAQ)) {
     if (cfg.keywords.some(kw => lower.includes(kw))) return slug
@@ -582,11 +584,35 @@ export default function WebbPage() {
         return
       }
     }
-    // Phase 0: detect a UI question
+    // Phase 0: detect a UI question / feature intent
     const uiSlug = detectUiQuestion(text)
     if (uiSlug) {
+      const cfg = UI_FAQ[uiSlug]
       uiFaqPendingRef.current = uiSlug
-      addMsg(UI_FAQ[uiSlug].confirm)
+      if (cfg.actionSlug) {
+        // Action-capable feature: name the resource, give button location, ask to open
+        // Jump straight to action-pending phase (skip the generic confirm → answer steps)
+        uiFaqActionPendingRef.current = true
+        let intro
+        if (uiSlug === 'video') {
+          const title = videoResource?.title && !videoResource?.unavailable
+            ? `"${videoResource.title}"`
+            : 'one picked just for your lesson'
+          intro = `There's a video for you — ${title}! To watch it, ${cfg.location}. Want me to open it for you right now?`
+        } else if (uiSlug === 'article') {
+          const title = articleResource?.title
+            ? `"${articleResource.title}"`
+            : 'one about your lesson topic'
+          intro = `There's a Wikipedia article ready for you — ${title}! To read it, ${cfg.location}. Would you like me to open it for you?`
+        } else {
+          // Generic fallback for any future actionSlug entries
+          intro = `${cfg.answer} ${cfg.actionPrompt}`
+        }
+        addMsg(intro)
+      } else {
+        // Non-action feature: standard confirm → answer flow
+        addMsg(cfg.confirm)
+      }
       return
     }
     // ── Normal API call ───────────────────────────────────────────────────
@@ -618,7 +644,7 @@ export default function WebbPage() {
       addMsg(err)
     }
     setChatLoading(false)
-  }, [chatLoading, chatMessages, selectedLesson])
+  }, [chatLoading, chatMessages, selectedLesson, videoResource, articleResource])
 
   // ── Refresh a media resource (context-aware) ──────────────────────────
   async function refreshMedia(type) {
