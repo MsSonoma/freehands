@@ -545,7 +545,9 @@ export default function WebbPage() {
       })
       const data = await res.json()
       if (data.error === 'transcript_unavailable') {
-        addMsg("I'd love to show you the key moments, but this video doesn't have captions available. You can still watch it and ask me questions!")
+        // This video's captions aren't accessible — silently swap it out
+        addMsg("Let me find a better video for this lesson!")
+        refreshMedia('video')
         return
       }
       const moments = data.moments || []
@@ -647,8 +649,14 @@ export default function WebbPage() {
     post('article')
       .then(r => r.json())
       .then(data => {
-        if (data.article) {
+        if (data.article?.html) {
           setArticleResource(data.article)
+        } else {
+          // Retry once after a short pause (handles transient Wikipedia timeouts)
+          return new Promise(res => setTimeout(res, 2000))
+            .then(() => post('article'))
+            .then(r => r.json())
+            .then(data2 => { if (data2.article?.html) setArticleResource(data2.article) })
         }
       })
       .catch(() => {})

@@ -68,7 +68,7 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeV
       const ytUrl =
         `${YT_SEARCH}?part=snippet` +
         `&q=${encodeURIComponent(safeQuery)}` +
-        `&type=video&safeSearch=strict&videoEmbeddable=true&videoCaption=closedCaption&maxResults=5` +
+        `&type=video&safeSearch=strict&videoEmbeddable=true&videoCaption=closedCaption&relevanceLanguage=en&maxResults=5` +
         `&key=${ytKey}`
       const ytRes  = await fetch(ytUrl)
       const ytData = await ytRes.json()

@@ -29,7 +29,12 @@ export async function POST(req) {
     // ── Fetch transcript ───────────────────────────────────────────────────
     let entries
     try {
-      entries = await YoutubeTranscript.fetchTranscript(videoId)
+      // Prefer English captions; fall back to any available language
+      try {
+        entries = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'en' })
+      } catch {
+        entries = await YoutubeTranscript.fetchTranscript(videoId)
+      }
     } catch {
       return NextResponse.json({ error: 'transcript_unavailable' })
     }
