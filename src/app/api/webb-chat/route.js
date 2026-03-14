@@ -10,11 +10,12 @@ import { validateInput } from '@/lib/contentSafety'
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 
-function buildSystem(lesson) {
+function buildSystem(lesson, media) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
-  return [
+
+  const lines = [
     `You are Mrs. Webb, a warm, encouraging, and knowledgeable teacher.`,
     `You are currently helping a student explore: "${title}" (${subject}, ${grade}).`,
     `Your style:`,
@@ -24,12 +25,31 @@ function buildSystem(lesson) {
     `- Write in natural spoken language: no markdown, no bullet points.`,
     `- Gently redirect off-topic questions back to the lesson.`,
     `- Celebrate curiosity and effort.`,
-  ].join('\n')
+  ]
+
+  if (media?.video && !media.video.unavailable) {
+    lines.push(`\nA video is available for this lesson:`,
+      `- Title: "${media.video.title || 'Educational video'}"`,
+      `- Channel: ${media.video.channel || 'unknown'}`,
+      media.video.searchQuery ? `- Search query used: "${media.video.searchQuery}"` : '',
+      `If the student asks about the video, explain what it is likely about based on its title and the lesson topic.`,
+    )
+  }
+
+  if (media?.article && media.article.source) {
+    lines.push(`\nA Wikipedia article is available:`,
+      `- Title: "${media.article.title || title}"`,
+      `- Source: ${media.article.source}`,
+      `If the student asks about the article, you can explain what it covers based on the lesson topic and this title.`,
+    )
+  }
+
+  return lines.filter(Boolean).join('\n')
 }
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {} } = await req.json()
+    const { messages = [], lesson = {}, media = {} } = await req.json()
 
     // Safety-check the last user message
     const lastUser = [...messages].reverse().find(m => m.role === 'user')
@@ -48,7 +68,7 @@ export async function POST(req) {
     }
 
     const oaiMessages = [
-      { role: 'system', content: buildSystem(lesson) },
+      { role: 'system', content: buildSystem(lesson, media) },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 

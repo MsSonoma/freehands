@@ -441,7 +441,14 @@ export default function WebbPage() {
       const res = await fetch('/api/webb-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextHistory, lesson: selectedLesson }),
+        body: JSON.stringify({
+          messages: nextHistory,
+          lesson: selectedLesson,
+          media: {
+            video:   videoResource   || null,
+            article: articleResource ? { title: articleResource.title, source: articleResource.source } : null,
+          },
+        }),
       })
       const data = await res.json()
       const reply = data.reply || "That's great! Keep exploring this topic with me."
