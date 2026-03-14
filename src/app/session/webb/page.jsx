@@ -523,6 +523,52 @@ export default function WebbPage() {
     ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', paddingLeft: 8, boxSizing: 'border-box' }
     : { flex: '1 1 0', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', marginTop: 8 }
 
+  // ── Media overlay effects ─────────────────────────────────────────────
+
+  // 1. Reset position + fullscreen state when overlay is closed
+  useEffect(() => {
+    if (!mediaOverlay) {
+      setMediaPos('video')
+      setMediaIsFullscreen(false)
+      if (typeof document !== 'undefined' && document.fullscreenElement)
+        document.exitFullscreen?.().catch(() => {})
+    }
+  }, [mediaOverlay])
+
+  // 2. Sync mediaIsFullscreen with the browser fullscreen API
+  useEffect(() => {
+    const onFSChange = () => setMediaIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onFSChange)
+    return () => document.removeEventListener('fullscreenchange', onFSChange)
+  }, [])
+
+  // 3. Measure the target element rect and keep it updated via ResizeObserver.
+  //    Runs whenever mediaPos or mediaOverlay changes so the rect is current
+  //    immediately after the user opens or moves the overlay.
+  useEffect(() => {
+    if (!mediaOverlay) { setOverlayRect(null); return }
+    const target = (mediaPos === 'video' ? videoInnerRef : chatColRef).current
+    if (!target) return
+    const measure = () => {
+      const r = target.getBoundingClientRect()
+      if (r.width > 0 && r.height > 0)
+        setOverlayRect({ top: r.top, left: r.left, width: r.width, height: r.height })
+    }
+    measure()
+    let ro
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measure)
+      ro.observe(target)
+    }
+    window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, { passive: true })
+    return () => {
+      ro?.disconnect()
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure)
+    }
+  }, [mediaPos, mediaOverlay])
+
   // ── Media overlay helpers ─────────────────────────────────────────────
   function toggleMediaFullscreen() {
     if (!mediaIsFullscreen) mediaOverlayRef.current?.requestFullscreen?.().catch(() => {})
