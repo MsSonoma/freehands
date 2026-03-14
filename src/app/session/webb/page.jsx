@@ -803,7 +803,6 @@ export default function WebbPage() {
       if (!passages.length) return
 
       const excerpts = passages.map(p => p.excerpt).filter(Boolean)
-      console.log('[webb] passages from API:', passages.length, excerpts.map(e => e.slice(0,40)))
 
       // Wait for (a) React to flush setMediaOverlay and mount the iframe,
       // and (b) the iframe to finish loading its srcdoc content.
@@ -834,11 +833,9 @@ export default function WebbPage() {
 
       // Highlight all passages and persist excerpts for remount re-apply
       const iframeEl = articleIframeRef.current
-      console.log('[webb] after poll — iframe ref:', !!iframeEl, '| readyState:', iframeEl?.contentDocument?.readyState, '| body:', !!iframeEl?.contentDocument?.body)
       setArticlePassageExcerpts(excerpts)
       const els = highlightPassages(excerpts)
       passageEls.current = els
-      console.log('[webb] highlightPassages results:', els.map((e,i) => e ? `passage-${i} OK` : `passage-${i} null`))
 
       // Speak intro, then for each passage: wait for TTS → activate + scroll → speak
       if (data.intro) addMsg(data.intro)
@@ -873,11 +870,7 @@ export default function WebbPage() {
   // can use getElementById, which survives iframe remounts.
   function highlightPassages(excerpts) {
     const doc = articleIframeRef.current?.contentDocument
-    console.log('[webb-hl] doc:', !!doc, '| body:', !!doc?.body)
     if (!doc?.body) return excerpts.map(() => null)
-
-    // Sanity-test: can we write to the document at all?
-    try { doc.body.dataset.webbTest = '1' } catch(e) { console.warn('[webb-hl] DOM write blocked:', e) }
 
     // Inject a <style> block for highlight rules (once per document load)
     if (!doc.getElementById('webb-hl-style')) {
@@ -904,6 +897,8 @@ export default function WebbPage() {
       .replace(/\[note\s*\d*\]/gi, '')   // [note 1] …
       .replace(/[\u2018\u2019]/g, "'")
       .replace(/[\u201c\u201d]/g, '"')
+      .replace(/^["'\u201c\u201d\u2018\u2019]+/, '') // strip GPT leading quotes
+      .replace(/["'\u201c\u201d\u2018\u2019]+$/, '') // strip GPT trailing quotes
       .replace(/\s+/g, ' ')
       .trim()
 
@@ -911,13 +906,11 @@ export default function WebbPage() {
     const candidates = Array.from(
       doc.querySelectorAll('p,li,dt,dd,h2,h3,h4,h5,blockquote,td,th')
     )
-    console.log('[webb-hl] candidates:', candidates.length, '| first text:', candidates[0] ? normText(candidates[0].textContent).slice(0,60) : 'n/a')
 
     const results = []
     for (let i = 0; i < excerpts.length; i++) {
       const needle = normText(excerpts[i])
       let found = null
-      console.log(`[webb-hl] excerpt-${i} anchor:`, needle.slice(0,40))
       // Try progressively shorter anchors to tolerate minor text diffs
       for (const len of [40, 25, 15]) {
         const anchor = needle.slice(0, len)
