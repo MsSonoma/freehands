@@ -181,6 +181,10 @@ export default function WebbPage() {
   const [videoCurrentTime, setVideoCurrentTime] = useState(0)
   const [videoVolumeMuted, setVideoVolumeMuted] = useState(false)
   const videoIframeRef = useRef(null)
+  // Passage citation — highlight els + scroll-override tracking
+  const passageEls             = useRef([])     // highlight <span>s created by interpretArticle
+  const userScrolledArticleRef = useRef(false)  // true after a manual scroll in the article
+  const programmaticScrollRef  = useRef(false)  // true during our own scrollIntoView calls
   // UI FAQ intercept state
   const uiFaqPendingRef       = useRef(null)  // slug of feature being confirmed
   const uiFaqActionPendingRef = useRef(false) // waiting for action yes/no
@@ -413,6 +417,32 @@ export default function WebbPage() {
     const t = String(text || '').trim()
     if (!t) return
     setTranscript(prev => [...prev, { text: t, role: 'user' }])
+  }
+
+  // Like addMsg but tags the transcript entry with a passage index so the
+  // bubble renderer can show a citation link back to the article highlight.
+  function addPassageMsg(text, passageIdx) {
+    const t = String(text || '').trim()
+    if (!t) return
+    setTranscript(prev => {
+      const next = [...prev, { text: t, role: 'assistant', passageIdx }]
+      setActiveIndex(next.length - 1)
+      return next
+    })
+    speakText(t)
+  }
+
+  // Scroll the article iframe to passage[idx]. isProgrammatic suppresses the
+  // manual-scroll flag so auto-scroll continues working after our own scrolls.
+  function scrollToPassage(idx, isProgrammatic = false) {
+    const el = passageEls.current[idx]
+    if (!el) return
+    if (!isProgrammatic && userScrolledArticleRef.current) return
+    if (isProgrammatic) {
+      programmaticScrollRef.current = true
+      setTimeout(() => { programmaticScrollRef.current = false }, 800)
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
   // ── Lesson list ───────────────────────────────────────────────────────
@@ -678,10 +708,45 @@ export default function WebbPage() {
     setRefreshingMedia(false)
   }
 
+  // ── Article passage scroll detector ─────────────────────────────────
+  // Attaches a scroll listener to the article iframe so we can detect when
+  // the user has scrolled manually and stop overriding their position.
+  useEffect(() => {
+    if (mediaOverlay !== 'article') return
+    const iframeEl = articleIframeRef.current
+    if (!iframeEl) return
+    userScrolledArticleRef.current = false // fresh slate for each article view
+    let removeListener = () => {}
+    const attach = () => {
+      const win = iframeEl.contentWindow
+      if (!win) return
+      const onScroll = () => {
+        if (!programmaticScrollRef.current) userScrolledArticleRef.current = true
+      }
+      win.addEventListener('scroll', onScroll, { passive: true })
+      removeListener = () => win.removeEventListener('scroll', onScroll)
+    }
+    if (iframeEl.contentDocument?.readyState === 'complete') {
+      attach()
+    } else {
+      const onLoad = () => attach()
+      iframeEl.addEventListener('load', onLoad)
+      return () => {
+        iframeEl.removeEventListener('load', onLoad)
+        removeListener()
+      }
+    }
+    return () => removeListener()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaOverlay, articleResource])
+
   // ── Article interpret: highlight all passages and read each one in order ──
   async function interpretArticle() {
     if (!articleResource?.html || interpretingArticle) return
     setInterpretingArticle(true)
+    // Reset so auto-scroll works cleanly on each new interpret run
+    passageEls.current = []
+    userScrolledArticleRef.current = false
     try {
       const res = await fetch('/api/webb-interpret', {
         method: 'POST',
@@ -700,13 +765,14 @@ export default function WebbPage() {
       // Highlight all passages immediately so the student can see them
       const excerpts = passages.map(p => p.excerpt).filter(Boolean)
       const els = highlightPassages(excerpts)
+      passageEls.current = els
 
-      // Speak intro, then for each passage: wait for TTS to finish → scroll → speak
+      // Speak intro, then for each passage: wait for TTS → auto-scroll → speak (with citation)
       if (data.intro) addMsg(data.intro)
       for (let i = 0; i < excerpts.length; i++) {
         await waitForTTSIdle()
-        els[i]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        addMsg(excerpts[i])
+        scrollToPassage(i, true)   // programmatic — won't set userScrolled flag
+        addPassageMsg(excerpts[i], i)
       }
     } catch { /* non-critical */ }
     setInterpretingArticle(false)
@@ -1046,7 +1112,26 @@ export default function WebbPage() {
                       boxShadow: '0 1px 3px rgba(0,0,0,0.09)',
                       border: isUser ? 'none' : '1px solid #e5e7eb',
                     }}>
-                      {msg.text}
+                      {msg.passageIdx != null ? (
+                        <>
+                          {msg.text}
+                          {' '}
+                          <button
+                            type="button"
+                            onClick={() => scrollToPassage(msg.passageIdx)}
+                            title="Jump to this passage in the article"
+                            style={{
+                              display: 'inline',
+                              background: 'none', border: 'none',
+                              padding: '0 1px', margin: 0,
+                              cursor: 'pointer', fontSize: 13,
+                              color: '#0d9488', textDecoration: 'underline',
+                              fontFamily: 'inherit', verticalAlign: 'baseline',
+                              lineHeight: 'inherit',
+                            }}
+                          >&#128205;</button>
+                        </>
+                      ) : msg.text}
                     </div>
                   </div>
                 )
