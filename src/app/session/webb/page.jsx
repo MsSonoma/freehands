@@ -163,6 +163,10 @@ export default function WebbPage() {
   const [mediaOverlay, setMediaOverlay]         = useState(null) // 'video'|'article'|null
   const [refreshingMedia, setRefreshingMedia]       = useState(false)
   const [interpretingArticle, setInterpretingArticle] = useState(false)
+  const [interpretingVideo,   setInterpretingVideo]   = useState(false)
+  const [videoMoments,        setVideoMoments]         = useState([])
+  const segmentEndRef       = useRef(null) // endSeconds of active playback segment
+  const videoCurrentTimeRef = useRef(0)    // mirrors videoCurrentTime for async polling
   // Passage excerpts are stored so highlights can be re-applied if the iframe remounts
   const [articlePassageExcerpts, setArticlePassageExcerpts] = useState([])
   // Tracks video IDs already shown so refresh never repeats
@@ -198,6 +202,8 @@ export default function WebbPage() {
     setVideoDuration(0)
     setVideoCurrentTime(0)
     setVideoVolumeMuted(false)
+    setVideoMoments([])
+    segmentEndRef.current = null
   }, [videoResource?.videoId])
 
   // YouTube IFrame API posts postMessage events when enablejsapi=1.
@@ -213,7 +219,7 @@ export default function WebbPage() {
           setVideoPlaying(s === 1)
         }
         if ((msg.event === 'infoDelivery' || msg.event === 'initialDelivery') && msg.info) {
-          if (typeof msg.info.currentTime === 'number') setVideoCurrentTime(msg.info.currentTime)
+          if (typeof msg.info.currentTime === 'number') { setVideoCurrentTime(msg.info.currentTime); videoCurrentTimeRef.current = msg.info.currentTime }
           if (typeof msg.info.duration    === 'number' && msg.info.duration > 0) setVideoDuration(msg.info.duration)
           if (typeof msg.info.muted       === 'boolean') setVideoVolumeMuted(msg.info.muted)
           if (typeof msg.info.playerState === 'number') {
@@ -226,6 +232,14 @@ export default function WebbPage() {
     window.addEventListener('message', handleYTMessage)
     return () => window.removeEventListener('message', handleYTMessage)
   }, [])
+
+  // Auto-pause when videoCurrentTime reaches the end of the active segment
+  useEffect(() => {
+    if (segmentEndRef.current !== null && videoCurrentTime >= segmentEndRef.current) {
+      ytCmd('pauseVideo')
+      segmentEndRef.current = null
+    }
+  }, [videoCurrentTime]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Video / TTS ──────────────────────────────────────────────────────
   const videoRef      = useRef(null)
@@ -459,6 +473,93 @@ export default function WebbPage() {
       }
     }
     setTimeout(() => tryScroll(8), 50)
+  }
+
+  // Seek to a segment and auto-play; useEffect above auto-pauses at endSec.
+  function playSegment(startSec, endSec) {
+    setMediaOverlay('video')
+    segmentEndRef.current = typeof endSec === 'number' ? endSec : null
+    // Poll for iframe mount in case the overlay was just opened
+    const doCmd = (left) => {
+      if (videoIframeRef.current?.contentWindow) {
+        ytCmd('seekTo', [startSec, true])
+        ytCmd('playVideo')
+      } else if (left > 0) {
+        setTimeout(() => doCmd(left - 1), 120)
+      }
+    }
+    setTimeout(() => doCmd(10), 60)
+  }
+
+  // Add a transcript bubble tagged with momentIdx so it shows a ▶ replay button
+  function addMomentMsg(text, momentIdx) {
+    const t = String(text || '').trim()
+    if (!t) return
+    setTranscript(prev => {
+      const next = [...prev, { text: t, role: 'assistant', momentIdx }]
+      setActiveIndex(next.length - 1)
+      return next
+    })
+  }
+
+  // Resolves once the segment auto-pause fires or the deadline is reached
+  function waitForSegmentEnd(endSec, maxWaitMs) {
+    return new Promise(resolve => {
+      const startedAt = Date.now()
+      const deadline  = startedAt + (maxWaitMs ?? 90000)
+      const check = () => {
+        if (Date.now() - startedAt < 1500) { setTimeout(check, 400); return }
+        if (segmentEndRef.current === null ||
+            videoCurrentTimeRef.current >= endSec ||
+            Date.now() > deadline) resolve()
+        else setTimeout(check, 400)
+      }
+      setTimeout(check, 200)
+    })
+  }
+
+  async function interpretVideo() {
+    const vid = videoResource?.videoId
+    if (!vid || interpretingVideo) return
+    setInterpretingVideo(true)
+    setMediaOverlay('video')
+    setVideoMoments([])
+    try {
+      const res = await fetch('/api/webb-video-interpret', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoId:     vid,
+          lessonTitle: selectedLesson?.title || '',
+          grade:       selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
+          learnerName: learnerName.current || '',
+        }),
+      })
+      const data = await res.json()
+      if (data.error === 'transcript_unavailable') {
+        addMsg("I'd love to show you the key moments, but this video doesn't have captions available. You can still watch it and ask me questions!")
+        return
+      }
+      const moments = data.moments || []
+      if (!moments.length) {
+        addMsg("I couldn't identify the key moments in this video. Try watching it and ask me about anything interesting!")
+        return
+      }
+      setVideoMoments(moments)
+      for (let i = 0; i < moments.length; i++) {
+        const m = moments[i]
+        if (m.intro) addMsg(m.intro)
+        await waitForTTSIdle()
+        addMomentMsg(`\uD83C\uDFA5 ${m.title} \u00B7 ${formatVideoTime(m.startSeconds)}`, i)
+        const segMs = Math.max(10, m.endSeconds - m.startSeconds) * 1000
+        playSegment(m.startSeconds, m.endSeconds)
+        await waitForSegmentEnd(m.endSeconds, segMs + 8000)
+        await new Promise(r => setTimeout(r, 600))
+      }
+      addMsg('Those were the key moments! What questions do you have?')
+      await waitForTTSIdle()
+    } catch (e) { console.error('[webb] interpretVideo error:', e) }
+    setInterpretingVideo(false)
   }
 
   // ── Lesson list ───────────────────────────────────────────────────────
@@ -1206,7 +1307,26 @@ export default function WebbPage() {
                       boxShadow: '0 1px 3px rgba(0,0,0,0.09)',
                       border: isUser ? 'none' : '1px solid #e5e7eb',
                     }}>
-                      {msg.passageIdx != null ? (
+                      {msg.momentIdx != null ? (
+                        <>
+                          {msg.text}
+                          {' '}
+                          <button
+                            type="button"
+                            onClick={() => { const m = videoMoments[msg.momentIdx]; if (m) playSegment(m.startSeconds, m.endSeconds) }}
+                            title="Replay this moment in the video"
+                            style={{
+                              display: 'inline',
+                              background: 'none', border: 'none',
+                              padding: '0 1px', margin: 0,
+                              cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                              color: '#0d9488',
+                              fontFamily: 'inherit', verticalAlign: 'baseline',
+                              lineHeight: 'inherit',
+                            }}
+                          >&#9654;</button>
+                        </>
+                      ) : msg.passageIdx != null ? (
                         <>
                           {msg.text}
                           {' '}
@@ -1277,6 +1397,17 @@ export default function WebbPage() {
                 style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 12, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
                 {refreshingMedia ? '\u2026' : '\u21BB'}
               </button>
+              {/* Interpret: play key moments (video only) */}
+              {mediaOverlay === 'video' && videoResource?.videoId && !videoResource?.unavailable && (
+                <button type="button" onClick={interpretVideo} disabled={interpretingVideo} title="Mrs. Webb plays the key moments"
+                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '3px 6px', cursor: interpretingVideo ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}>
+                  {interpretingVideo
+                    ? <svg style={{ width: 12, height: 12, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
+                    : <svg style={{ width: 12, height: 12 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  }
+                  <span>Key part</span>
+                </button>
+              )}
               {/* Interpret: find + highlight + read key passage (article only) */}
               {mediaOverlay === 'article' && articleResource?.html && (
                 <button type="button" onClick={interpretArticle} disabled={interpretingArticle} title="Mrs. Webb reads the key part"
