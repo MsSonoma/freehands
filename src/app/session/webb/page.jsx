@@ -547,6 +547,7 @@ export default function WebbPage() {
       if (data.error === 'transcript_unavailable') {
         // This video's captions aren't accessible — silently swap it out
         addMsg("Let me find a better video for this lesson!")
+        setInterpretingVideo(false)
         refreshMedia('video')
         return
       }
