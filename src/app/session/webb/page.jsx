@@ -167,6 +167,7 @@ export default function WebbPage() {
   const [objectives,         setObjectives]        = useState([])  // string[]
   const [completedObj,       setCompletedObj]      = useState([])  // number[] of completed indices
   const [newlyCompletedObj,  setNewlyCompletedObj] = useState(null) // {idx, text} — drives tablet toast
+  const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
   const checkingObjRef = useRef(false) // debounce concurrent checks
 
   // ── Media resources ──────────────────────────────────────────────────
@@ -1360,7 +1361,24 @@ export default function WebbPage() {
               }
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {isChatting && objectives.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowObjectives(true)}
+                title="View learning objectives"
+                style={{
+                  ...headerBtn,
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  background: completedObj.length === objectives.length
+                    ? 'rgba(13,148,136,0.45)'
+                    : 'rgba(255,255,255,0.15)',
+                }}
+              >
+                <span style={{ fontSize: 14 }}>&#9989;</span>
+                <span style={{ fontSize: 12 }}>{completedObj.length}/{objectives.length}</span>
+              </button>
+            )}
             {isChatting && (
               <button type="button" onClick={handleBack} style={headerBtn}>
                 &#8592; Lessons
@@ -1740,6 +1758,84 @@ export default function WebbPage() {
       )}
 
       {/* ── Objective tablet toast ──────────────────────────────────── */}
+      {showObjectives && createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.65)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+          }}
+          onClick={() => setShowObjectives(false)}
+        >
+          <div
+            style={{
+              background: '#0f172a',
+              borderRadius: 18,
+              width: 'min(92vw, 400px)',
+              maxHeight: '80dvh',
+              display: 'flex', flexDirection: 'column',
+              boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 2px #0d9488',
+              overflow: 'hidden',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Panel header */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px 12px',
+              borderBottom: '1px solid #1e293b',
+            }}>
+              <div>
+                <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Learning Goals</div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>{completedObj.length} of {objectives.length} completed</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowObjectives(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8',
+                  borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
+                  display: 'grid', placeItems: 'center', fontSize: 18, fontFamily: 'inherit',
+                }}
+                aria-label="Close"
+              >&#215;</button>
+            </div>
+            {/* Progress bar */}
+            <div style={{ height: 4, background: '#1e293b', flexShrink: 0 }}>
+              <div style={{
+                height: '100%',
+                width: `${objectives.length ? (completedObj.length / objectives.length) * 100 : 0}%`,
+                background: '#0d9488',
+                transition: 'width 0.4s ease',
+                borderRadius: '0 2px 2px 0',
+              }} />
+            </div>
+            {/* Objectives list */}
+            <div style={{ overflowY: 'auto', padding: '12px 20px 20px' }}>
+              {objectives.map((obj, i) => {
+                const done = completedObj.includes(i)
+                return (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 12,
+                    padding: '10px 0',
+                    borderBottom: i < objectives.length - 1 ? '1px solid #1e293b' : 'none',
+                  }}>
+                    <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{done ? '✅' : '⬜'}</span>
+                    <span style={{
+                      color: done ? '#e2e8f0' : '#64748b',
+                      fontSize: 13, lineHeight: 1.55,
+                      transition: 'color 0.3s',
+                    }}>{obj}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {newlyCompletedObj && createPortal(
         <div style={{
           position: 'fixed',
