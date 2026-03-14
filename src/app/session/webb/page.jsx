@@ -500,6 +500,7 @@ export default function WebbPage() {
           html: articleResource.html,
           lessonTitle: selectedLesson?.title || '',
           grade: selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
+          learnerName: learnerName.current || '',
         }),
       })
       const data = await res.json()

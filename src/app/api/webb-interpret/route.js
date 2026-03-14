@@ -3,9 +3,9 @@
  * Finds the most educationally relevant passage in a Wikipedia article
  * for a given lesson, so Mrs. Webb can highlight and read it aloud.
  *
- * POST { html, lessonTitle, grade }
+ * POST { html, lessonTitle, grade, learnerName? }
  * Returns { excerpt, intro }
- *   excerpt — 2–3 verbatim sentences from the article text
+ *   excerpt — 2–3 verbatim sentences from the article body text
  *   intro   — friendly 1-sentence lead-in for Mrs. Webb to speak first
  */
 import { NextResponse } from 'next/server'
@@ -17,6 +17,14 @@ function stripHtml(html) {
   return html
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    // Remove figure captions, image descriptions, table headers, nav, footer
+    .replace(/<figure[^>]*>[\s\S]*?<\/figure>/gi, '')
+    .replace(/<figcaption[^>]*>[\s\S]*?<\/figcaption>/gi, '')
+    .replace(/<caption[^>]*>[\s\S]*?<\/caption>/gi, '')
+    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+    .replace(/<table[^>]*>[\s\S]*?<\/table>/gi, '')
+    // Strip remaining tags
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
@@ -30,13 +38,15 @@ function stripHtml(html) {
 
 export async function POST(req) {
   try {
-    const { html = '', lessonTitle = '', grade = 'elementary' } = await req.json()
+    const { html = '', lessonTitle = '', grade = 'elementary', learnerName = '' } = await req.json()
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
     if (!html)   return NextResponse.json({ error: 'No html'        }, { status: 400 })
 
-    // Strip to plain text, limit to 4000 chars to keep token cost low
-    const plainText = stripHtml(html).slice(0, 4000)
+    // Strip to plain text, limit to 6000 chars so GPT can look past the intro
+    const plainText = stripHtml(html).slice(0, 6000)
+    const nameClause = learnerName ? `The student's name is ${learnerName}.` : ''
+    const addressAs  = learnerName ? learnerName : 'you'
 
     const res = await fetch(OPENAI_URL, {
       method: 'POST',
@@ -47,20 +57,27 @@ export async function POST(req) {
           {
             role: 'system',
             content:
-              'You are a teacher\'s assistant. You find the most educationally important ' +
-              'passage in an article for a student, then write a warm introduction for the teacher to say.',
+              `You help Mrs. Webb, an AI teacher, guide a student through an article. ` +
+              `${nameClause} ` +
+              `Your job is to pick the single most interesting and educational passage from the ` +
+              `article body — NOT the opening sentence, NOT a photo caption or image description, ` +
+              `NOT a table entry. Pick a passage from the middle or later in the article that ` +
+              `teaches something concrete, surprising, or important about the topic. ` +
+              `Then write a warm one-sentence intro Mrs. Webb says before reading it — ` +
+              `address the student as "${addressAs}" (not "class", not "students", not "everyone").`,
           },
           {
             role: 'user',
             content:
-              `The student is in ${grade} and learning about "${lessonTitle}".\n\n` +
-              `From the article text below, copy 2–3 consecutive sentences that best explain ` +
-              `the core concept. The sentences must appear VERBATIM in the text — do not paraphrase.\n\n` +
-              `Then on a new line write: INTRO: [one friendly sentence Mrs. Webb says before reading it]\n\n` +
+              `Grade: ${grade}. Lesson: "${lessonTitle}".\n\n` +
+              `Copy 2–3 consecutive sentences verbatim from the article body that best teach ` +
+              `a concrete fact or concept about this topic. Skip the very first paragraph. ` +
+              `Do NOT include photo captions, image descriptions, or table content.\n\n` +
+              `Then on a new line: INTRO: [Mrs. Webb's one-sentence lead-in]\n\n` +
               `Article text:\n${plainText}`,
           },
         ],
-        max_tokens: 300,
+        max_tokens: 350,
         temperature: 0.2,
       }),
     })
