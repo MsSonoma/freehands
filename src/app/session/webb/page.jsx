@@ -898,24 +898,26 @@ export default function WebbPage() {
               <iframe srcDoc={articleResource.html} title={articleResource.title || 'Educational article'}
                 sandbox="allow-same-origin allow-scripts" style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }} />
             )}
-            {mediaOverlay === 'article' && articleLoading && !articleResource && (
+            {/* Loading: preload in-flight OR refresh in-progress */}
+            {mediaOverlay === 'article' && (articleLoading || refreshingMedia) && !articleResource?.html && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, color: '#9ca3af', fontSize: 13, background: '#fff' }}>
                 <svg viewBox="0 0 24 24" style={{ width: 32, height: 32, animation: 'spin 1s linear infinite' }} fill="none" stroke="#0d9488" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
-                Finding an article\u2026
+                Finding an article&hellip;
               </div>
             )}
-            {mediaOverlay === 'article' && !articleLoading && articleResource && !articleResource.html && (
+            {/* Fallback: no article (or failed html) and not currently loading */}
+            {mediaOverlay === 'article' && !articleLoading && !refreshingMedia && !articleResource?.html && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, padding: 20, background: '#fff', boxSizing: 'border-box', textAlign: 'center' }}>
                 <svg viewBox="0 0 24 24" style={{ width: 40, height: 40 }} fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6 }}>Couldn&apos;t load the article.<br/>Tap below to try a different one.</div>
-                <button type="button" onClick={() => refreshMedia('article')} disabled={refreshingMedia}
-                  style={{ ...primaryBtn, opacity: refreshingMedia ? 0.6 : 1, cursor: refreshingMedia ? 'wait' : 'pointer' }}>
-                  {refreshingMedia ? '\u2026' : '\u21BB Try another article'}
+                <button type="button" onClick={() => refreshMedia('article')}
+                  style={{ ...primaryBtn }}>
+                  {'\u21BB'} Try another article
                 </button>
               </div>
             )}
-            {((mediaOverlay === 'video' && !videoResource) || (mediaOverlay === 'article' && !articleResource)) && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af', fontSize: 13 }}>Generating\u2026</div>
+            {mediaOverlay === 'video' && !videoResource && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af', fontSize: 13 }}>{'Generating\u2026'}</div>
             )}
           </div>
         </div>,
