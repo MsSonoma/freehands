@@ -1036,9 +1036,9 @@ export default function WebbPage() {
     ? {
         position: 'fixed',
         top:    mediaIsFullscreen ? overlayRect.top    : overlayRect.top    + overlayRect.height * 0.04,
-        left:   mediaIsFullscreen ? overlayRect.left   : overlayRect.left   + overlayRect.width  * 0.06,
-        width:  mediaIsFullscreen ? overlayRect.width  : overlayRect.width  * 0.88,
-        height: mediaIsFullscreen ? overlayRect.height : overlayRect.height * 0.86,
+        left:   mediaIsFullscreen ? overlayRect.left   : overlayRect.left   + overlayRect.width  * 0.03,
+        width:  mediaIsFullscreen ? overlayRect.width  : overlayRect.width  * 0.94,
+        height: mediaIsFullscreen ? overlayRect.height : overlayRect.height * 0.80,
         background: '#000',
         borderRadius: mediaIsFullscreen ? 0 : 10,
         display: 'flex', flexDirection: 'column',
