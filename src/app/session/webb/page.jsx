@@ -60,6 +60,29 @@ export default function WebbPage() {
   const [refreshingMedia, setRefreshingMedia]   = useState(false)
   // Tracks video IDs already shown so refresh never repeats
   const shownVideoIdsRef = useRef([])
+  // YouTube end-screen: true once the player posts a 'ended' state message
+  const [videoEnded, setVideoEnded] = useState(false)
+
+  // Reset ended flag whenever a new video arrives
+  useEffect(() => { setVideoEnded(false) }, [videoResource?.videoId])
+
+  // YouTube IFrame API posts postMessage events when enablejsapi=1.
+  // State 0 = ended. We catch it here (works with our sandbox attribute
+  // because postMessage is cross-origin by design).
+  useEffect(() => {
+    function handleYTMessage(e) {
+      if (!e.data) return
+      try {
+        const msg = typeof e.data === 'string' ? JSON.parse(e.data) : e.data
+        if (
+          (msg.event === 'onStateChange' && msg.info === 0) ||
+          (msg.event === 'infoDelivery'  && msg.info?.playerState === 0)
+        ) setVideoEnded(true)
+      } catch { /* non-JSON messages — ignore */ }
+    }
+    window.addEventListener('message', handleYTMessage)
+    return () => window.removeEventListener('message', handleYTMessage)
+  }, [])
 
   // ── Video / TTS ──────────────────────────────────────────────────────
   const videoRef      = useRef(null)
@@ -554,14 +577,52 @@ export default function WebbPage() {
 
                   {/* ── VIDEO ── */}
                   {mediaOverlay === 'video' && videoResource?.embedUrl && (
-                    <iframe
-                      src={videoResource.embedUrl}
-                      title={videoResource.title || 'Educational video'}
-                      allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      sandbox="allow-scripts allow-same-origin allow-presentation"
-                      style={{ width: '100%', height: '100%', border: 'none' }}
-                    />
+                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                      <iframe
+                        src={videoResource.embedUrl}
+                        title={videoResource.title || 'Educational video'}
+                        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        sandbox="allow-scripts allow-same-origin allow-presentation"
+                        style={{ width: '100%', height: '100%', border: 'none' }}
+                      />
+                      {/* ── Our end-screen overlay — replaces YouTube's "More Videos" panel ── */}
+                      {videoEnded && (
+                        <div style={{
+                          position: 'absolute', inset: 0,
+                          background: 'rgba(0,0,0,0.92)',
+                          display: 'flex', flexDirection: 'column',
+                          alignItems: 'center', justifyContent: 'center',
+                          gap: 18, padding: 24, boxSizing: 'border-box',
+                        }}>
+                          <div style={{ fontSize: 38 }}>&#127881;</div>
+                          <div style={{ color: '#fff', fontSize: 16, fontWeight: 700, textAlign: 'center' }}>
+                            Great job watching!<br/>
+                            <span style={{ fontSize: 13, fontWeight: 400, color: '#9ca3af' }}>
+                              {videoResource.title}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => setVideoEnded(false)}
+                              style={{ background: '#374151', border: 'none', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                            >&#8635; Replay</button>
+                            <button
+                              type="button"
+                              onClick={() => { setVideoEnded(false); refreshMedia('video') }}
+                              disabled={refreshingMedia}
+                              style={{ background: C.accent, border: 'none', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}
+                            >{refreshingMedia ? '…' : '&#9654; Watch another'}</button>
+                            <button
+                              type="button"
+                              onClick={() => setMediaOverlay(null)}
+                              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#9ca3af', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
+                            >&#10005; Close</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                   {/* Fallback: no YT API key — show a friendly retry prompt */}
                   {mediaOverlay === 'video' && videoResource?.unavailable && (
