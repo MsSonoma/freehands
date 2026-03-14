@@ -59,8 +59,10 @@ export default function WebbPage() {
   const [articleLoading, setArticleLoading]     = useState(false)
   const [mediaOverlay, setMediaOverlay]         = useState(null) // 'video'|'article'|null
   const [refreshingMedia, setRefreshingMedia]   = useState(false)
+  const [interpretingArticle, setInterpretingArticle] = useState(false)
   // Tracks video IDs already shown so refresh never repeats
   const shownVideoIdsRef = useRef([])
+  const articleIframeRef = useRef(null)
   // Media overlay position + fullscreen
   const [mediaPos, setMediaPos]               = useState('video') // 'video'|'chat'
   const [mediaIsFullscreen, setMediaIsFullscreen] = useState(false)
@@ -486,6 +488,71 @@ export default function WebbPage() {
     setRefreshingMedia(false)
   }
 
+  // ── Article interpret: find + highlight + read key passage ────────────
+  async function interpretArticle() {
+    if (!articleResource?.html || interpretingArticle) return
+    setInterpretingArticle(true)
+    try {
+      const res = await fetch('/api/webb-interpret', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          html: articleResource.html,
+          lessonTitle: selectedLesson?.title || '',
+          grade: selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
+        }),
+      })
+      const data = await res.json()
+      if (data.excerpt) {
+        highlightInArticleIframe(data.excerpt)
+        // Mrs. Webb speaks the intro then the excerpt
+        addMsg(`${data.intro} ${data.excerpt}`)
+      }
+    } catch { /* non-critical */ }
+    setInterpretingArticle(false)
+  }
+
+  function highlightInArticleIframe(text) {
+    const win = articleIframeRef.current?.contentWindow
+    const doc = articleIframeRef.current?.contentDocument
+    if (!win || !doc?.body) return
+    // Remove any previous highlight
+    doc.querySelectorAll('.webb-hl').forEach(el => {
+      const p = el.parentNode
+      if (p) { while (el.firstChild) p.insertBefore(el.firstChild, el); el.remove() }
+    })
+    // Find the first ~40 chars of the excerpt — window.find() is supported in
+    // all modern browsers (Chrome, Firefox, Safari, Edge) and works cross-frame
+    // when allow-same-origin is set.
+    const anchor = text.replace(/\s+/g, ' ').trim().slice(0, 40)
+    try {
+      const found = win.find(anchor, false, false, true, false, false, false)
+      if (found) {
+        const sel = win.getSelection()
+        if (sel?.rangeCount) {
+          const range = sel.getRangeAt(0)
+          const mark = doc.createElement('span')
+          mark.className = 'webb-hl'
+          mark.style.cssText = 'background:#fef08a;outline:2px solid #ca8a04;border-radius:3px;padding:1px 2px'
+          try {
+            range.surroundContents(mark)
+            mark.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          } catch {
+            // surroundContents fails when range crosses element boundaries;
+            // fall back to scrolling the nearest ancestor into view
+            const node = sel.anchorNode
+            if (node?.parentElement) {
+              node.parentElement.style.background = '#fef08a'
+              node.parentElement.classList.add('webb-hl')
+              node.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }
+          }
+          sel.removeAllRanges()
+        }
+      }
+    } catch { /* ignore — non-critical visual feature */ }
+  }
+
   // ── Exit ──────────────────────────────────────────────────────────────
   async function handleExit() {
     const { ensurePinAllowed } = await import('@/app/lib/pinGate')
@@ -802,6 +869,17 @@ export default function WebbPage() {
                 style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 12, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
                 {refreshingMedia ? '\u2026' : '\u21BB'}
               </button>
+              {/* Interpret: find + highlight + read key passage (article only) */}
+              {mediaOverlay === 'article' && articleResource?.html && (
+                <button type="button" onClick={interpretArticle} disabled={interpretingArticle} title="Mrs. Webb reads the key part"
+                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '3px 6px', cursor: interpretingArticle ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}>
+                  {interpretingArticle
+                    ? <svg style={{ width: 12, height: 12, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
+                    : <svg style={{ width: 12, height: 12 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                  }
+                  <span>Key part</span>
+                </button>
+              )}
               {/* Move arrow — hidden in fullscreen */}
               {!mediaIsFullscreen && (
                 <button type="button"
@@ -895,7 +973,7 @@ export default function WebbPage() {
 
             {/* ── ARTICLE ── */}
             {mediaOverlay === 'article' && articleResource?.html && (
-              <iframe srcDoc={articleResource.html} title={articleResource.title || 'Educational article'}
+              <iframe ref={articleIframeRef} srcDoc={articleResource.html} title={articleResource.title || 'Educational article'}
                 sandbox="allow-same-origin allow-scripts" style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }} />
             )}
             {/* Loading: preload in-flight OR refresh in-progress */}
