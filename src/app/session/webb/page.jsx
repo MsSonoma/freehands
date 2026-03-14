@@ -28,6 +28,107 @@ const C = {
 
 const PHASE = { LIST: 'list', STARTING: 'starting', CHATTING: 'chatting' }
 
+// ── UI FAQ: feature explanations in Mrs. Webb's voice ─────────────────────────
+const UI_FAQ = {
+  video: {
+    keywords: ['video', 'watch', 'play', 'movie', 'film', 'youtube', 'player'],
+    confirm: 'Are you wondering about the video feature?',
+    answer: 'To watch a video, just tap the video button — it looks like ▶ — at the bottom of my screen. That opens a little video player with play, pause, and a timeline. The video is picked specially for your lesson!',
+    actionPrompt: 'Want me to open the video for you right now?',
+    actionSlug: 'video',
+  },
+  article: {
+    keywords: ['article', 'read', 'wiki', 'wikipedia', 'reading', 'text', 'page'],
+    confirm: 'Are you wondering about the article feature?',
+    answer: 'The article button — it looks like 📖 — opens a Wikipedia article about your lesson right inside this screen. It is a great way to read a bit more about what we are studying!',
+    actionPrompt: 'Would you like me to open the article for you?',
+    actionSlug: 'article',
+  },
+  keypart: {
+    keywords: ['key part', 'highlight', 'important part', 'read aloud', 'interpret', 'magnify', 'underline', 'find the'],
+    confirm: 'Are you wondering about the Key part feature?',
+    answer: 'The Key part button — it looks like a magnifying glass with a plus sign — lives in the article toolbar. Tap it and I will find the most important sentences, highlight them in yellow, and read them to you one by one. It is like having me point to the page!',
+    actionPrompt: null,
+    actionSlug: null,
+  },
+  move: {
+    keywords: ['move', 'arrow', 'switch side', 'other side', 'reposition', 'swap', 'slide'],
+    confirm: 'Are you wondering how to move the video or article window?',
+    answer: 'The arrow button in the toolbar slides the video or article window between two spots — over my camera or over our chat. Just tap the arrow and it jumps to the other side!',
+    actionPrompt: null,
+    actionSlug: null,
+  },
+  fullscreen: {
+    keywords: ['fullscreen', 'full screen', 'bigger', 'expand', 'large', 'maximize', 'enlarge'],
+    confirm: 'Are you wondering how to make the video or article bigger?',
+    answer: 'The expand icon in the toolbar — four little arrows pointing outward — makes the video or article fill the whole screen. Tap it again to go back to normal.',
+    actionPrompt: null,
+    actionSlug: null,
+  },
+  refresh: {
+    keywords: ['refresh', 'different video', 'different article', 'try another', 'new video', 'new article', 'change video', 'change article'],
+    confirm: 'Are you wondering how to get a different video or article?',
+    answer: 'The little ↻ button in the top-left of the toolbar loads a brand-new video or article for your lesson. Just tap it and I will find something different!',
+    actionPrompt: null,
+    actionSlug: null,
+  },
+  mute: {
+    keywords: ['mute', 'volume', 'sound', 'quiet', 'loud', 'speaker', 'audio', 'hear me', 'voice'],
+    confirm: 'Are you wondering about the sound or mute feature?',
+    answer: 'There is a speaker icon at the bottom right of the screen that mutes or unmutes my voice. Inside the video player there is a separate mute button just for the video. So you can control each one independently!',
+    actionPrompt: null,
+    actionSlug: null,
+  },
+  close: {
+    keywords: ['close', 'hide', 'get rid of', 'remove', 'dismiss', 'go away', 'shut'],
+    confirm: 'Are you wondering how to close the video or article?',
+    answer: 'The ✕ button in the top-right corner of the toolbar closes the video or article window. You can reopen it any time by tapping the ▶ or 📖 button again!',
+    actionPrompt: null,
+    actionSlug: null,
+  },
+  skip: {
+    keywords: ['skip', 'skip question', 'next question', 'pass', 'skip button'],
+    confirm: 'Are you wondering about the Skip button?',
+    answer: 'The Skip button at the bottom right of the screen lets you move past a question if you are stuck or want to come back to it later. It is totally okay to skip — curiosity goes at your own pace!',
+    actionPrompt: null,
+    actionSlug: null,
+  },
+  exit: {
+    keywords: ['exit', 'go back', 'leave', 'quit', 'finish', 'end session', 'stop session', 'how do i leave'],
+    confirm: 'Are you wondering how to exit or go back?',
+    answer: 'The back arrow at the very top-left takes you back to the lesson list. There is also an Exit button that will check for a PIN before closing — that is just so a lesson does not end by accident!',
+    actionPrompt: null,
+    actionSlug: null,
+  },
+  help: {
+    keywords: ['help', 'what can i do', 'what buttons', 'features', 'how does this work', 'what is this', 'how do i use'],
+    confirm: 'Are you asking for a quick tour of what I can do?',
+    answer: 'Sure! At the bottom of my screen you will find a ▶ video button and a 📖 article button — those pull up extra learning materials just for your lesson. Once open, the toolbar has a ↻ refresh for new content, an arrow to move the window around, a fullscreen button, and a ✕ to close it. The article even has a Key part button that highlights the most important sentences and reads them to you. And the speaker icon in the corner mutes my voice. What would you like to try first?',
+    actionPrompt: null,
+    actionSlug: null,
+  },
+}
+
+function detectUiQuestion(text) {
+  const lower = text.toLowerCase()
+  const isQuestion =
+    lower.includes('?') ||
+    /\b(how|what|where|why|which|explain|describe|tell me|show me|can i|can you|do i|does|help|what is|what's|button|feature|work|use)\b/.test(lower)
+  if (!isQuestion) return null
+  for (const [slug, cfg] of Object.entries(UI_FAQ)) {
+    if (cfg.keywords.some(kw => lower.includes(kw))) return slug
+  }
+  return null
+}
+
+function isYes(text) {
+  return /^\s*(yes|yeah|yep|yup|sure|ok|okay|please|do it|go ahead|open it|show me|definitely|of course|affirmative|sounds good|great|cool|alright|why not|let'?s go|uh huh|mhm|yea|ya|k|👍)\b/i.test(text)
+}
+
+function isNo(text) {
+  return /^\s*(no|nope|nah|never ?mind|not now|don'?t|that'?s ok|i'?m good|no thanks|no thank you|skip it|forget it|it'?s fine|cancel|nvm|👎)\b/i.test(text)
+}
+
 // ── Root page ─────────────────────────────────────────────────────────────────
 export default function WebbPage() {
   const router = useRouter()
@@ -78,6 +179,9 @@ export default function WebbPage() {
   const [videoCurrentTime, setVideoCurrentTime] = useState(0)
   const [videoVolumeMuted, setVideoVolumeMuted] = useState(false)
   const videoIframeRef = useRef(null)
+  // UI FAQ intercept state
+  const uiFaqPendingRef       = useRef(null)  // slug of feature being confirmed
+  const uiFaqActionPendingRef = useRef(false) // waiting for action yes/no
 
   // Reset all player state whenever a new video arrives
   useEffect(() => {
@@ -433,6 +537,49 @@ export default function WebbPage() {
   const sendMessage = useCallback(async (text) => {
     if (!text.trim() || chatLoading) return
     addStudentLine(text)
+
+    // ── UI FAQ intercept ──────────────────────────────────────────────────
+    // Phase 2: action yes/no ("Want me to open it?")
+    if (uiFaqActionPendingRef.current && uiFaqPendingRef.current) {
+      const slug = uiFaqPendingRef.current
+      uiFaqPendingRef.current = null
+      uiFaqActionPendingRef.current = false
+      if (isYes(text)) {
+        addMsg('Sure thing! Opening it for you now.')
+        if (slug === 'video')   setMediaOverlay('video')
+        if (slug === 'article') setMediaOverlay('article')
+      } else {
+        addMsg("No problem! Just let me know if you need anything else.")
+      }
+      return
+    }
+    // Phase 1: feature confirmation yes/no ("Are you wondering about X?")
+    if (uiFaqPendingRef.current) {
+      const slug = uiFaqPendingRef.current
+      const cfg  = UI_FAQ[slug]
+      if (isNo(text)) {
+        uiFaqPendingRef.current = null
+        addMsg("No problem! Ask me anything else about our lesson.")
+      } else {
+        // Yes or anything else → give the answer
+        addMsg(cfg.answer)
+        if (cfg.actionSlug && cfg.actionPrompt) {
+          uiFaqActionPendingRef.current = true
+          setTimeout(() => addMsg(cfg.actionPrompt), 150)
+        } else {
+          uiFaqPendingRef.current = null
+        }
+      }
+      return
+    }
+    // Phase 0: detect a UI question
+    const uiSlug = detectUiQuestion(text)
+    if (uiSlug) {
+      uiFaqPendingRef.current = uiSlug
+      addMsg(UI_FAQ[uiSlug].confirm)
+      return
+    }
+    // ── Normal API call ───────────────────────────────────────────────────
     const userMsg = { role: 'user', content: text }
     const nextHistory = [...chatMessages, userMsg]
     setChatMessages(nextHistory)
