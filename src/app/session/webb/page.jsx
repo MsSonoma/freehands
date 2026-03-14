@@ -539,8 +539,9 @@ export default function WebbPage() {
                     <iframe
                       src={videoResource.embedUrl}
                       title={videoResource.title || 'Educational video'}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
+                      sandbox="allow-scripts allow-same-origin allow-presentation"
                       style={{ width: '100%', height: '100%', border: 'none' }}
                     />
                   )}
