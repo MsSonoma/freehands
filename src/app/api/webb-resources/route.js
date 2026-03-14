@@ -53,7 +53,7 @@ async function callGPT(apiKey, systemPrompt, userPrompt, maxTokens = 60) {
 }
 
 // ── Generate video resource ───────────────────────────────────────────────────
-async function generateVideo(apiKey, ytKey, title, subject, grade, ctx) {
+async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeVideoIds = []) {
   // Step 1: GPT builds the best educational search query
   const query = await callGPT(
     apiKey,
@@ -73,7 +73,10 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx) {
         `&key=${ytKey}`
       const ytRes  = await fetch(ytUrl)
       const ytData = await ytRes.json()
-      const items  = (ytData.items || []).filter(i => i.id?.videoId)
+      let items  = (ytData.items || []).filter(i => i.id?.videoId)
+      // Filter out previously-shown videos so refresh always gives something new
+      const fresh = items.filter(i => !excludeVideoIds.includes(i.id.videoId))
+      if (fresh.length) items = fresh
 
       if (items.length) {
         // Step 2: GPT picks the most educationally relevant result.
@@ -100,6 +103,7 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx) {
         const picked = items[pickedIdx]
         if (picked?.id?.videoId) {
           return {
+            videoId:     picked.id.videoId,
             embedUrl:    `https://www.youtube-nocookie.com/embed/${picked.id.videoId}?autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1`,
             title:       picked.snippet.title,
             channel:     picked.snippet.channelTitle,
@@ -120,7 +124,9 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx) {
 // Alternates which source comes first based on previousSource so refreshes
 // show a genuinely different article.
 async function generateArticle(title, prevSrc = '') {
-  // If we just showed Simple Wikipedia, try regular Wikipedia first this time
+  // Alternate sources on refresh so the student sees genuinely different content.
+  // Simple English Wikipedia: 4th–6th grade reading level, concise.
+  // Wikipedia:                full depth, more detail.
   const sources = (prevSrc === 'Simple English Wikipedia')
     ? [WIKI_SOURCES[1], WIKI_SOURCES[0]]
     : WIKI_SOURCES
@@ -147,7 +153,7 @@ async function generateArticle(title, prevSrc = '') {
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req) {
   try {
-    const { lesson = {}, type = 'both', context = '', previousSource = '' } = await req.json()
+    const { lesson = {}, type = 'both', context = '', previousSource = '', excludeVideoIds = [] } = await req.json()
     const apiKey = process.env.OPENAI_API_KEY
     const ytKey  = process.env.YOUTUBE_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
@@ -162,8 +168,9 @@ export async function POST(req) {
     const needArticle = type === 'article' || type === 'both'
 
     // Run video and article generation in parallel
+    const safeExcludeVids = Array.isArray(excludeVideoIds) ? excludeVideoIds.slice(0, 20) : []
     const [videoResult, articleResult] = await Promise.all([
-      needVideo   ? generateVideo(apiKey, ytKey, title, subject, grade, ctx)   : null,
+      needVideo   ? generateVideo(apiKey, ytKey, title, subject, grade, ctx, safeExcludeVids) : null,
       needArticle ? generateArticle(title, prevSrc) : null,
     ])
 

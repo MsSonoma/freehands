@@ -52,12 +52,14 @@ export default function WebbPage() {
   const transcriptRef                       = useRef(null)
 
   // ── Media resources ──────────────────────────────────────────────────
-  const [videoResource, setVideoResource]       = useState(null) // {embedUrl,title,channel} or {unavailable:true}
+  const [videoResource, setVideoResource]       = useState(null) // {videoId,embedUrl,title,channel} or {unavailable:true}
   const [articleResource, setArticleResource]   = useState(null) // {html, source, title} — HTML fetched server-side
   const [videoLoading, setVideoLoading]         = useState(false)
   const [articleLoading, setArticleLoading]     = useState(false)
   const [mediaOverlay, setMediaOverlay]         = useState(null) // 'video'|'article'|null
   const [refreshingMedia, setRefreshingMedia]   = useState(false)
+  // Tracks video IDs already shown so refresh never repeats
+  const shownVideoIdsRef = useRef([])
 
   // ── Video / TTS ──────────────────────────────────────────────────────
   const videoRef      = useRef(null)
@@ -294,6 +296,7 @@ export default function WebbPage() {
     setArticleResource(null)
     setVideoLoading(true)
     setArticleLoading(true)
+    shownVideoIdsRef.current = []
 
     const post = (type) => fetch('/api/webb-resources', {
       method: 'POST',
@@ -304,14 +307,23 @@ export default function WebbPage() {
     // Video
     post('video')
       .then(r => r.json())
-      .then(data => { if (data.video) setVideoResource(data.video) })
+      .then(data => {
+        if (data.video) {
+          setVideoResource(data.video)
+          if (data.video.videoId) shownVideoIdsRef.current = [data.video.videoId]
+        }
+      })
       .catch(() => {})
       .finally(() => setVideoLoading(false))
 
     // Article
     post('article')
       .then(r => r.json())
-      .then(data => { if (data.article) setArticleResource(data.article) })
+      .then(data => {
+        if (data.article) {
+          setArticleResource(data.article)
+        }
+      })
       .catch(() => {})
       .finally(() => setArticleLoading(false))
   }, [])
@@ -394,13 +406,19 @@ export default function WebbPage() {
           lesson: selectedLesson,
           type,
           context: recentContext,
-          // Tell the picker to avoid the previously shown source
-          previousSource: type === 'article' ? (articleResource?.source || '') : '',
+          previousSource:         type === 'article' ? (articleResource?.source || '') : '',
+          excludeVideoIds:        type === 'video'   ? shownVideoIdsRef.current      : [],
         }),
       })
       const data = await res.json()
-      if (type === 'video' && data.video)     setVideoResource(data.video)
-      if (type === 'article' && data.article) setArticleResource(data.article)
+      if (type === 'video' && data.video) {
+        setVideoResource(data.video)
+        if (data.video.videoId)
+          shownVideoIdsRef.current = [...new Set([...shownVideoIdsRef.current, data.video.videoId])]
+      }
+      if (type === 'article' && data.article) {
+        setArticleResource(data.article)
+      }
     } catch {}
     setRefreshingMedia(false)
   }
