@@ -569,8 +569,45 @@ export default function WebbPage() {
         await waitForSegmentEnd(m.endSeconds, segMs + 8000)
         await new Promise(r => setTimeout(r, 600))
       }
-      addMsg('Those were the key moments! What questions do you have?')
-      await waitForTTSIdle()
+
+      // ── Assessment push: ask the student to demonstrate objective comprehension ──
+      // Build snapshot of remaining objectives at the moment the tour ends
+      const remaining = objectives.filter((_, i) => !completedObj.includes(i))
+      try {
+        const assessRes = await fetch('/api/webb-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages:            chatMessages,
+            lesson:              selectedLesson,
+            media:               { video: videoResource || null, article: articleResource ? { title: articleResource.title, source: articleResource.source } : null },
+            remainingObjectives: remaining,
+            assessmentPush:      true,
+          }),
+        })
+        const assessData = await assessRes.json()
+        const assessReply = assessData.reply
+        if (assessReply) {
+          const aMsg = { role: 'assistant', content: assessReply }
+          setChatMessages(prev => [...prev, aMsg])
+          addMsg(assessReply)
+          await waitForTTSIdle()
+          // Check if the student's previous responses already covered anything
+          setObjectives(obj => {
+            setCompletedObj(comp => {
+              checkObjectivesAfterTurn([...chatMessages, aMsg], obj, comp)
+              return comp
+            })
+            return obj
+          })
+        } else {
+          addMsg('Great job watching those key moments! Tell me: what\'s the most interesting thing you just learned?')
+          await waitForTTSIdle()
+        }
+      } catch {
+        addMsg('Those were the key moments! What was the most interesting part for you?')
+        await waitForTTSIdle()
+      }
     } catch (e) { console.error('[webb] interpretVideo error:', e) }
     setInterpretingVideo(false)
   }

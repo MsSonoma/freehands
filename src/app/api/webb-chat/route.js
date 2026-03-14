@@ -10,7 +10,7 @@ import { validateInput } from '@/lib/contentSafety'
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 
-function buildSystem(lesson, media, remainingObjectives) {
+function buildSystem(lesson, media, remainingObjectives, assessmentPush = false) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
@@ -54,12 +54,21 @@ function buildSystem(lesson, media, remainingObjectives) {
     )
   }
 
+  if (assessmentPush) {
+    lines.push(
+      `\nYou just finished showing the student key moments from the video. Now is the time to draw out their understanding.`,
+      `Write 2-3 sentences: briefly celebrate that they watched the key moments, then ask ONE specific question that requires them to explain something from the lesson in their own words.`,
+      `The question should target the most important undemonstrated objective (listed above) if any remain, otherwise ask about the most important concept from the lesson.`,
+      `Be warm and conversational — this should feel like natural curiosity, not a quiz. No markdown. No bullet points.`,
+    )
+  }
+
   return lines.filter(Boolean).join('\n')
 }
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [] } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false } = await req.json()
 
     // Safety-check the last user message
     const lastUser = [...messages].reverse().find(m => m.role === 'user')
@@ -78,7 +87,7 @@ export async function POST(req) {
     }
 
     const oaiMessages = [
-      { role: 'system', content: buildSystem(lesson, media, remainingObjectives) },
+      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush) },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 
