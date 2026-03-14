@@ -259,7 +259,7 @@ export default function WebbPage() {
   const videoColRef                         = useRef(null)
   const [isMobileLandscape, setIsLandscape] = useState(false)
   const [videoMaxHeight, setVideoMaxHeight] = useState(null)
-  const [videoColPercent, setVideoColPct]   = useState(45)
+  const [videoColPercent, setVideoColPct]   = useState(50)
   const [sideBySideHeight, setSBSH]         = useState(null)
 
   const learnerName = useRef('')
@@ -289,8 +289,7 @@ export default function WebbPage() {
       else if (h <= 1000) frac = 0.70 + ((h - 700) / 300) * 0.05
       else                frac = 0.75
       setVideoMaxHeight(Math.round(h * frac))
-      const pct = h <= 500 ? 40 : h >= 700 ? 45 : 40 + ((h - 500) / 200) * 5
-      setVideoColPct(Math.round(pct * 10) / 10)
+      setVideoColPct(50)
     }
     calc()
     window.addEventListener('resize', calc)
@@ -966,17 +965,17 @@ export default function WebbPage() {
 
   const videoWrapperStyle = isMobileLandscape
     ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'hidden', minWidth: 0, height: 'var(--msSideBySideH)', display: 'flex', flexDirection: 'column' }
-    : { position: 'relative', width: '100%', flexShrink: 0 }
+    : { flex: '0 0 50%', position: 'relative', width: '100%', overflow: 'hidden', minHeight: 0, boxSizing: 'border-box' }
 
   const dynH = (isMobileLandscape && videoEffH) ? { height: videoEffH, maxHeight: videoEffH, minHeight: 0 } : {}
 
   const videoInnerStyle = isMobileLandscape
     ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', background: '#000', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', ...dynH }
-    : { position: 'relative', overflow: 'hidden', height: '35vh', minHeight: 120, width: '92%', margin: '8px auto 0', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000' }
+    : { position: 'relative', overflow: 'hidden', height: 'calc(100% - 4px)', width: '92%', margin: '4px auto 0', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000' }
 
   const transcriptWrapperStyle = isMobileLandscape
     ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', paddingLeft: 8, boxSizing: 'border-box' }
-    : { flex: '1 1 0', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', marginTop: 8 }
+    : { flex: '0 0 50%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', minHeight: 0 }
 
   // ── Media overlay effects ─────────────────────────────────────────────
 
@@ -1036,10 +1035,12 @@ export default function WebbPage() {
   const overlayPanelStyle = overlayRect
     ? {
         position: 'fixed',
-        top: overlayRect.top, left: overlayRect.left,
-        width: overlayRect.width, height: overlayRect.height,
+        top:    mediaIsFullscreen ? overlayRect.top    : overlayRect.top    + overlayRect.height * 0.04,
+        left:   mediaIsFullscreen ? overlayRect.left   : overlayRect.left   + overlayRect.width  * 0.06,
+        width:  mediaIsFullscreen ? overlayRect.width  : overlayRect.width  * 0.88,
+        height: mediaIsFullscreen ? overlayRect.height : overlayRect.height * 0.86,
         background: '#000',
-        borderRadius: (mediaIsFullscreen || mediaPos === 'chat') ? 0 : 8,
+        borderRadius: mediaIsFullscreen ? 0 : 10,
         display: 'flex', flexDirection: 'column',
         overflow: 'hidden', zIndex: 20,
         boxShadow: mediaIsFullscreen ? 'none' : '0 0 0 2px rgba(13,148,136,0.6)',
