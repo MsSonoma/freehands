@@ -10,6 +10,8 @@ if (typeof document !== 'undefined' && !document.getElementById('webb-spin-style
   s.textContent = [
     '@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }',
     '@keyframes webb-bounce { 0%,80%,100% { transform:translateY(0) } 40% { transform:translateY(-5px) } }',
+    '@keyframes webb-tablet-in { 0% { opacity:0; transform:translateX(-50%) scale(0.88) } 100% { opacity:1; transform:translateX(-50%) scale(1) } }',
+    '@keyframes webb-tablet-out { 0% { opacity:1; transform:translateX(-50%) scale(1) } 100% { opacity:0; transform:translateX(-50%) scale(0.92) } }',
   ].join(' ')
   document.head.appendChild(s)
 }
@@ -154,6 +156,12 @@ export default function WebbPage() {
   const [activeIndex, setActiveIndex]       = useState(-1)
   const [chatLoading, setChatLoading]       = useState(false)
   const transcriptRef                       = useRef(null)
+
+  // ── Research objectives ──────────────────────────────────────────────
+  const [objectives,         setObjectives]        = useState([])  // string[]
+  const [completedObj,       setCompletedObj]      = useState([])  // number[] of completed indices
+  const [newlyCompletedObj,  setNewlyCompletedObj] = useState(null) // {idx, text} — drives tablet toast
+  const checkingObjRef = useRef(false) // debounce concurrent checks
 
   // ── Media resources ──────────────────────────────────────────────────
   const [videoResource, setVideoResource]       = useState(null) // {videoId,embedUrl,title,channel} or {unavailable:true}
@@ -609,7 +617,8 @@ export default function WebbPage() {
   // ── Preload resources for lesson ──────────────────────────────────────
   // Video and article are fetched in parallel but independently so each
   // resolves as soon as it's ready (video ~3s, article ~4s).
-  const preloadResources = useCallback((lesson) => {
+  // `objContext` is a hint string of remaining objectives used to shape the search.
+  const preloadResources = useCallback((lesson, objContext = '') => {
     setVideoResource(null)
     setArticleResource(null)
     setVideoLoading(true)
@@ -619,7 +628,7 @@ export default function WebbPage() {
     const post = (type) => fetch('/api/webb-resources', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lesson, type }),
+      body: JSON.stringify({ lesson, type, context: objContext }),
     })
 
     // Video
@@ -646,6 +655,67 @@ export default function WebbPage() {
       .finally(() => setArticleLoading(false))
   }, [])
 
+  // ── Objectives: generate when lesson starts ──────────────────────────
+  // Generate objectives from the lesson question bank (fired once per lesson).
+  // Fall back silently if the API is unavailable.
+  const generateObjectives = useCallback(async (lesson) => {
+    setObjectives([])
+    setCompletedObj([])
+    setNewlyCompletedObj(null)
+    try {
+      const res  = await fetch('/api/webb-objectives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', lesson }),
+      })
+      const data = await res.json()
+      if (Array.isArray(data.objectives) && data.objectives.length) {
+        setObjectives(data.objectives)
+      }
+    } catch { /* objectives are optional — fail silently */ }
+  }, [])
+
+  // ── Objectives: check after each student turn ─────────────────────────
+  // Runs in the background after a normal chat turn; never blocks the UI.
+  const checkObjectivesAfterTurn = useCallback(async (updatedMessages, currentObjectives, currentCompleted) => {
+    if (!currentObjectives.length || checkingObjRef.current) return
+    if (currentCompleted.length >= currentObjectives.length) return
+    checkingObjRef.current = true
+    try {
+      const res  = await fetch('/api/webb-objectives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action:           'check',
+          objectives:       currentObjectives,
+          completedIndices: currentCompleted,
+          conversation:     updatedMessages,
+        }),
+      })
+      const data = await res.json()
+      const newly = data.newlyCompleted || []
+      if (newly.length) {
+        setCompletedObj(prev => {
+          const next = [...new Set([...prev, ...newly])]
+          // Show the tablet toast for the first newly completed objective
+          const firstIdx = newly.find(i => !prev.includes(i))
+          if (firstIdx !== undefined) {
+            setNewlyCompletedObj({ idx: firstIdx, text: currentObjectives[firstIdx] })
+          }
+          return next
+        })
+      }
+    } catch { /* fail silently */ }
+    checkingObjRef.current = false
+  }, [])
+
+  // Auto-dismiss the tablet toast after 3.5 s
+  useEffect(() => {
+    if (!newlyCompletedObj) return
+    const t = setTimeout(() => setNewlyCompletedObj(null), 3500)
+    return () => clearTimeout(t)
+  }, [newlyCompletedObj])
+
   // ── Select lesson → start AI chat ─────────────────────────────────────
   const selectLesson = useCallback(async (lesson) => {
     setPhase(PHASE.STARTING)
@@ -657,6 +727,9 @@ export default function WebbPage() {
     setArticleResource(null)
     setMediaOverlay(null)
     setPageError('')
+    setObjectives([])
+    setCompletedObj([])
+    setNewlyCompletedObj(null)
 
     // Get Mrs. Webb's opening greeting
     try {
@@ -678,9 +751,10 @@ export default function WebbPage() {
 
     setPhase(PHASE.CHATTING)
 
-    // Preload media in background (don't await)
+    // Preload media + generate objectives in background
     preloadResources(lesson)
-  }, [preloadResources])
+    generateObjectives(lesson)
+  }, [preloadResources, generateObjectives])
 
   // ── Send chat message ─────────────────────────────────────────────────
   const sendMessage = useCallback(async (text) => {
@@ -778,20 +852,31 @@ export default function WebbPage() {
             video:   videoResource   || null,
             article: articleResource ? { title: articleResource.title, source: articleResource.source } : null,
           },
+          // Pass remaining objectives so Mrs. Webb can weave in a probe question
+          remainingObjectives: objectives.filter((_, i) => !completedObj.includes(i)),
         }),
       })
       const data = await res.json()
       const reply = data.reply || "That's great! Keep exploring this topic with me."
       const assistantMsg = { role: 'assistant', content: reply }
-      setChatMessages(prev => [...prev, assistantMsg])
+      const finalHistory = [...nextHistory, assistantMsg]
+      setChatMessages(finalHistory)
       addMsg(reply)
+      // Background: check if the student demonstrated any objectives
+      setObjectives(obj => {
+        setCompletedObj(comp => {
+          checkObjectivesAfterTurn(finalHistory, obj, comp)
+          return comp
+        })
+        return obj
+      })
     } catch {
       const err = "I had a little trouble thinking. Can you say that again?"
       setChatMessages(prev => [...prev, { role: 'assistant', content: err }])
       addMsg(err)
     }
     setChatLoading(false)
-  }, [chatLoading, chatMessages, selectedLesson, videoResource, articleResource])
+  }, [chatLoading, chatMessages, selectedLesson, videoResource, articleResource, checkObjectivesAfterTurn])
 
   // ── Refresh a media resource (context-aware) ──────────────────────────
   async function refreshMedia(type) {
@@ -800,6 +885,11 @@ export default function WebbPage() {
       .filter(m => m.role === 'user')
       .map(m => m.content)
       .join('. ')
+    // Narrow search to remaining (incomplete) objectives
+    const remaining = objectives
+      .filter((_, i) => !completedObj.includes(i))
+      .join('; ')
+    const contextWithObj = [remaining, recentContext].filter(Boolean).join('. ')
     try {
       const res = await fetch('/api/webb-resources', {
         method: 'POST',
@@ -807,7 +897,7 @@ export default function WebbPage() {
         body: JSON.stringify({
           lesson: selectedLesson,
           type,
-          context: recentContext,
+          context: contextWithObj,
           previousSource:         type === 'article' ? (articleResource?.source || '') : '',
           excludeVideoIds:        type === 'video'   ? shownVideoIdsRef.current      : [],
         }),
@@ -1536,6 +1626,63 @@ export default function WebbPage() {
             {mediaOverlay === 'video' && !videoResource && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af', fontSize: 13 }}>{'Generating\u2026'}</div>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Objective tablet toast ──────────────────────────────────── */}
+      {newlyCompletedObj && createPortal(
+        <div style={{
+          position: 'fixed',
+          bottom: 80, left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 999,
+          width: 'min(88vw, 360px)',
+          animation: 'webb-tablet-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards',
+          pointerEvents: 'none',
+        }}>
+          {/* tablet frame */}
+          <div style={{
+            background: '#1a1a2e',
+            borderRadius: 22,
+            padding: '6px 8px 10px',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.55), 0 0 0 2px #0d9488',
+          }}>
+            {/* camera notch */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+              <div style={{ width: 40, height: 6, borderRadius: 3, background: '#2d2d4e' }} />
+            </div>
+            {/* screen area */}
+            <div style={{
+              background: '#0f172a',
+              borderRadius: 14,
+              padding: '18px 20px 16px',
+              border: '1px solid #1e40af',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <span style={{ fontSize: 22 }}>✅</span>
+                <span style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>Objective Complete</span>
+              </div>
+              <p style={{
+                color: '#e2e8f0', fontSize: 13, lineHeight: 1.6,
+                margin: 0, fontStyle: 'italic',
+              }}>“{newlyCompletedObj.text}”</p>
+              {/* completed tally */}
+              <div style={{ marginTop: 12, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                {objectives.map((_, i) => (
+                  <div key={i} style={{
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: completedObj.includes(i) ? '#0d9488' : '#374151',
+                    transition: 'background 0.3s',
+                  }} />
+                ))}
+              </div>
+            </div>
+            {/* home button row */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid #374151', background: '#1a1a2e' }} />
+            </div>
           </div>
         </div>,
         document.body
