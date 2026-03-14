@@ -161,8 +161,10 @@ export default function WebbPage() {
   const [videoLoading, setVideoLoading]         = useState(false)
   const [articleLoading, setArticleLoading]     = useState(false)
   const [mediaOverlay, setMediaOverlay]         = useState(null) // 'video'|'article'|null
-  const [refreshingMedia, setRefreshingMedia]   = useState(false)
+  const [refreshingMedia, setRefreshingMedia]       = useState(false)
   const [interpretingArticle, setInterpretingArticle] = useState(false)
+  // Passage excerpts are stored so highlights can be re-applied if the iframe remounts
+  const [articlePassageExcerpts, setArticlePassageExcerpts] = useState([])
   // Tracks video IDs already shown so refresh never repeats
   const shownVideoIdsRef = useRef([])
   const articleIframeRef = useRef(null)
@@ -435,21 +437,29 @@ export default function WebbPage() {
   // Scroll the article iframe to passage[idx]. isProgrammatic suppresses the
   // manual-scroll flag so auto-scroll continues working after our own scrolls.
   function scrollToPassage(idx, isProgrammatic = false) {
-    const el = passageEls.current[idx]
-    if (!el) return
-    // Auto-scroll (TTS) is skipped once the user has scrolled manually.
-    // Manual pin-clicks always scroll unconditionally.
+    // Auto-scroll (TTS) honours the user's manual scroll position; pin clicks always go.
     if (isProgrammatic && userScrolledArticleRef.current) return
-    if (!isProgrammatic) {
-      // Pin click — ensure article overlay is open so the scroll is visible
-      setMediaOverlay('article')
-    }
     if (isProgrammatic) {
       programmaticScrollRef.current = true
       setTimeout(() => { programmaticScrollRef.current = false }, 800)
     }
-    // Defer by one tick so the iframe is visible before we call scrollIntoView
-    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
+    if (!isProgrammatic) {
+      // Pin click — make sure article overlay is visible
+      setMediaOverlay('article')
+    }
+    // Use getElementById so we are never relying on stale DOM refs from before
+    // a potential iframe remount. Retry up to 8 times × 250 ms to allow the
+    // re-apply-highlights effect enough time to re-inject the spans after remount.
+    const tryScroll = (left) => {
+      const doc = articleIframeRef.current?.contentDocument
+      const el  = doc?.getElementById(`webb-passage-${idx}`) ?? passageEls.current[idx]
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      } else if (left > 0) {
+        setTimeout(() => tryScroll(left - 1), 250)
+      }
+    }
+    setTimeout(() => tryScroll(8), 50)
   }
 
   // ── Lesson list ───────────────────────────────────────────────────────
@@ -716,13 +726,12 @@ export default function WebbPage() {
   }
 
   // ── Article passage scroll detector ─────────────────────────────────
-  // Attaches a scroll listener to the article iframe so we can detect when
-  // the user has scrolled manually and stop overriding their position.
+  // Attaches a scroll listener so we know when the user has scrolled manually.
   useEffect(() => {
     if (mediaOverlay !== 'article') return
     const iframeEl = articleIframeRef.current
     if (!iframeEl) return
-    userScrolledArticleRef.current = false // fresh slate for each article view
+    userScrolledArticleRef.current = false
     let removeListener = () => {}
     const attach = () => {
       const win = iframeEl.contentWindow
@@ -738,14 +747,36 @@ export default function WebbPage() {
     } else {
       const onLoad = () => attach()
       iframeEl.addEventListener('load', onLoad)
-      return () => {
-        iframeEl.removeEventListener('load', onLoad)
-        removeListener()
-      }
+      return () => { iframeEl.removeEventListener('load', onLoad); removeListener() }
     }
     return () => removeListener()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mediaOverlay, articleResource])
+
+  // ── Re-apply passage highlights every time the article overlay opens ──
+  // The iframe unmounts when the overlay closes, destroying injected <span>s.
+  // Stored excerpts let us re-highlight as soon as the iframe is ready again.
+  useEffect(() => {
+    if (mediaOverlay !== 'article' || !articlePassageExcerpts.length) return
+    const iframeEl = articleIframeRef.current
+    if (!iframeEl) return
+    const apply = () => {
+      const els = highlightPassages(articlePassageExcerpts)
+      passageEls.current = els
+    }
+    if (iframeEl.contentDocument?.readyState === 'complete') {
+      apply()
+    } else {
+      iframeEl.addEventListener('load', apply, { once: true })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaOverlay, articlePassageExcerpts])
+
+  // Clear stored passage excerpts whenever the article content changes
+  useEffect(() => {
+    setArticlePassageExcerpts([])
+    passageEls.current = []
+  }, [articleResource])
 
   // ── Article interpret: highlight all passages and read each one in order ──
   async function interpretArticle() {
@@ -769,8 +800,10 @@ export default function WebbPage() {
       const passages = data.passages || (data.excerpt ? [{ excerpt: data.excerpt }] : [])
       if (!passages.length) return
 
-      // Highlight all passages immediately so the student can see them
+      // Highlight all passages immediately so the student can see them.
+      // Also persist excerpts so they survive iframe remounts.
       const excerpts = passages.map(p => p.excerpt).filter(Boolean)
+      setArticlePassageExcerpts(excerpts)
       const els = highlightPassages(excerpts)
       passageEls.current = els
 
@@ -797,8 +830,8 @@ export default function WebbPage() {
   }
 
   // Highlights an array of text excerpts in the article iframe.
-  // Returns an array of the highlight <span> elements (null if not found) so
-  // callers can scroll to each one individually.
+  // Assigns id="webb-passage-{i}" to each span so scrollToPassage can use
+  // getElementById (DOM ref-free, survives iframe remounts).
   function highlightPassages(excerpts) {
     const win = articleIframeRef.current?.contentWindow
     const doc = articleIframeRef.current?.contentDocument
@@ -810,47 +843,61 @@ export default function WebbPage() {
       if (p) { while (el.firstChild) p.insertBefore(el.firstChild, el); el.remove() }
     })
 
-    const results = []
-    for (const text of excerpts) {
-      // Use the first 50 chars as a reliable anchor for window.find()
-      const anchor = text.replace(/\s+/g, ' ').trim().slice(0, 50)
-      try {
-        // window.find searches forward from the previous match position,
-        // so passages must be in document order (GPT is instructed to do this)
-        const found = win.find(anchor, false, false, false, false, false, false)
-        if (found) {
-          const sel = win.getSelection()
-          if (sel?.rangeCount) {
-            const range = sel.getRangeAt(0)
-            const mark = doc.createElement('span')
-            mark.className = 'webb-hl'
-            mark.style.cssText =
-              'background:#fef08a;outline:2px solid #ca8a04;border-radius:3px;padding:1px 2px'
-            try {
-              range.surroundContents(mark)
-              results.push(mark)
-            } catch {
-              // surroundContents fails across element boundaries — highlight ancestor
-              const node = sel.anchorNode
-              const parent = node?.parentElement
-              if (parent) {
-                parent.style.background = '#fef08a'
-                parent.classList.add('webb-hl')
-                results.push(parent)
-              } else {
-                results.push(null)
-              }
-            }
-            sel.removeAllRanges()
-          } else {
-            results.push(null)
-          }
-        } else {
-          results.push(null)
-        }
-      } catch {
-        results.push(null)
+    // Reset selection to document start so window.find() always scans from the top
+    try {
+      const sel = win.getSelection()
+      if (sel) {
+        sel.removeAllRanges()
+        const r = doc.createRange()
+        r.setStart(doc.body, 0)
+        r.collapse(true)
+        sel.addRange(r)
       }
+    } catch { /* ignore */ }
+
+    const HL_STYLE = 'background:#fef08a;outline:2px solid #ca8a04;border-radius:3px;padding:1px 2px'
+    const results = []
+
+    for (let i = 0; i < excerpts.length; i++) {
+      const normalized = excerpts[i].replace(/\s+/g, ' ').trim()
+      let pushed = false
+      // Try progressively shorter anchors in case the page breaks text differently
+      for (const len of [55, 35, 20]) {
+        const anchor = normalized.slice(0, len)
+        if (!anchor) continue
+        try {
+          const found = win.find(anchor, false, false, false, false, false, false)
+          if (found) {
+            const sel = win.getSelection()
+            if (sel?.rangeCount) {
+              const range = sel.getRangeAt(0)
+              const mark = doc.createElement('span')
+              mark.id    = `webb-passage-${i}`
+              mark.className  = 'webb-hl'
+              mark.style.cssText = HL_STYLE
+              try {
+                range.surroundContents(mark)
+                results.push(mark)
+              } catch {
+                // surroundContents fails across element boundaries — brand the ancestor
+                const parent = sel.anchorNode?.parentElement
+                if (parent) {
+                  parent.style.background = '#fef08a'
+                  parent.id = `webb-passage-${i}`
+                  parent.classList.add('webb-hl')
+                  results.push(parent)
+                } else {
+                  results.push(null)
+                }
+              }
+              sel.removeAllRanges()
+              pushed = true
+              break
+            }
+          }
+        } catch { /* ignore */ }
+      }
+      if (!pushed) results.push(null)
     }
     return results
   }
