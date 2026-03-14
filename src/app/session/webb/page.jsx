@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 
 // CSS animations
@@ -60,6 +61,13 @@ export default function WebbPage() {
   const [refreshingMedia, setRefreshingMedia]   = useState(false)
   // Tracks video IDs already shown so refresh never repeats
   const shownVideoIdsRef = useRef([])
+  // Media overlay position + fullscreen
+  const [mediaPos, setMediaPos]               = useState('video') // 'video'|'chat'
+  const [mediaIsFullscreen, setMediaIsFullscreen] = useState(false)
+  const mediaOverlayRef = useRef(null)
+  const chatColRef      = useRef(null)
+  const videoInnerRef   = useRef(null)
+  const [overlayRect, setOverlayRect]         = useState(null)
   // YouTube end-screen: true once the player posts a 'ended' state message
   const [videoEnded, setVideoEnded]           = useState(false)
   // Custom player controls state
@@ -515,6 +523,30 @@ export default function WebbPage() {
     ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', paddingLeft: 8, boxSizing: 'border-box' }
     : { flex: '1 1 0', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', marginTop: 8 }
 
+  // ── Media overlay helpers ─────────────────────────────────────────────
+  function toggleMediaFullscreen() {
+    if (!mediaIsFullscreen) mediaOverlayRef.current?.requestFullscreen?.().catch(() => {})
+    else document.exitFullscreen?.().catch(() => {})
+  }
+  const mediaMoveToChat = mediaPos === 'video'
+  const arrowGlyph = isMobileLandscape
+    ? (mediaMoveToChat ? '\u2192' : '\u2190')  // → or ←
+    : (mediaMoveToChat ? '\u2193' : '\u2191')  // ↓ or ↑
+  const overlayPanelStyle = overlayRect
+    ? {
+        position: 'fixed',
+        top: overlayRect.top, left: overlayRect.left,
+        width: overlayRect.width, height: overlayRect.height,
+        background: '#000',
+        borderRadius: (mediaIsFullscreen || mediaPos === 'chat') ? 0 : 8,
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden', zIndex: 20,
+        boxShadow: mediaIsFullscreen ? 'none' : '0 0 0 2px rgba(13,148,136,0.6)',
+      }
+    : mediaIsFullscreen
+      ? { position: 'fixed', inset: 0, background: '#000', display: 'flex', flexDirection: 'column', overflow: 'hidden', zIndex: 20 }
+      : null
+
   const isChatting = phase === PHASE.CHATTING
 
   // ── Render ────────────────────────────────────────────────────────────
@@ -558,7 +590,7 @@ export default function WebbPage() {
 
         {/* Video column */}
         <div ref={videoColRef} style={videoWrapperStyle}>
-          <div style={videoInnerStyle}>
+          <div ref={videoInnerRef} style={videoInnerStyle}>
 
             {/* Teacher video */}
             <video
@@ -568,194 +600,7 @@ export default function WebbPage() {
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
             />
 
-            {/* Media overlay (sits on top of teacher video, inset so video borders show) */}
-            {isChatting && mediaOverlay && (
-              <div style={{
-                position: 'absolute', inset: 10,
-                background: '#000', borderRadius: 8,
-                display: 'flex', flexDirection: 'column',
-                overflow: 'hidden', zIndex: 5,
-                boxShadow: '0 0 0 2px rgba(13,148,136,0.6)',
-              }}>
-                {/* Overlay toolbar */}
-                <div style={{ background: 'rgba(15,118,110,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', flexShrink: 0 }}>
-                  <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 0.5 }}>
-                    {mediaOverlay === 'video' ? '▶ VIDEO' : '📖 ARTICLE'}
-                    {mediaOverlay === 'article' && articleResource?.source && (
-                      <span style={{ opacity: 0.75, fontWeight: 400, marginLeft: 4 }}>· {articleResource.source}</span>
-                    )}
-                  </span>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button
-                      type="button"
-                      onClick={() => refreshMedia(mediaOverlay)}
-                      disabled={refreshingMedia}
-                      title="Load a different one"
-                      style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 12, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}
-                    >
-                      {refreshingMedia ? '…' : '↻'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMediaOverlay(null)}
-                      title="Close"
-                      style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
-                    >✕</button>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
-
-                  {/* ── VIDEO ── */}
-                  {mediaOverlay === 'video' && videoResource?.embedUrl && (
-                    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#000' }}>
-
-                      {/* Iframe + end overlay */}
-                      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-                        <iframe
-                          ref={videoIframeRef}
-                          src={videoResource.embedUrl}
-                          title={videoResource.title || 'Educational video'}
-                          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          sandbox="allow-scripts allow-same-origin allow-presentation"
-                          style={{ width: '100%', height: '100%', border: 'none' }}
-                        />
-                        {/* End-screen overlay — replaces YouTube's "More Videos" panel */}
-                        {videoEnded && (
-                          <div style={{
-                            position: 'absolute', inset: 0,
-                            background: 'rgba(0,0,0,0.92)',
-                            display: 'flex', flexDirection: 'column',
-                            alignItems: 'center', justifyContent: 'center',
-                            gap: 18, padding: 24, boxSizing: 'border-box',
-                          }}>
-                            <div style={{ fontSize: 38 }}>&#127881;</div>
-                            <div style={{ color: '#fff', fontSize: 16, fontWeight: 700, textAlign: 'center' }}>
-                              Great job watching!<br/>
-                              <span style={{ fontSize: 13, fontWeight: 400, color: '#9ca3af' }}>{videoResource.title}</span>
-                            </div>
-                            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-                              <button type="button"
-                                onClick={() => { setVideoEnded(false); ytCmd('seekTo', [0, true]); ytCmd('playVideo') }}
-                                style={{ background: '#374151', border: 'none', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-                              >&#8635; Replay</button>
-                              <button type="button"
-                                onClick={() => { setVideoEnded(false); refreshMedia('video') }}
-                                disabled={refreshingMedia}
-                                style={{ background: C.accent, border: 'none', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}
-                              >{refreshingMedia ? '…' : '▶ Watch another'}</button>
-                              <button type="button"
-                                onClick={() => setMediaOverlay(null)}
-                                style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#9ca3af', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
-                              >&#10005; Close</button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* ── Custom controls bar — completely replaces YouTube chrome ── */}
-                      {!videoEnded && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px', background: '#111', flexShrink: 0, userSelect: 'none' }}>
-                          {/* Play / Pause */}
-                          <button
-                            type="button"
-                            onClick={() => videoPlaying ? ytCmd('pauseVideo') : ytCmd('playVideo')}
-                            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', padding: '2px 4px', lineHeight: 1 }}
-                            title={videoPlaying ? 'Pause' : 'Play'}
-                          >{videoPlaying ? '\u23F8' : '\u25B6'}</button>
-
-                          {/* Current time */}
-                          <span style={{ color: '#9ca3af', fontSize: 11, minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                            {formatVideoTime(videoCurrentTime)}
-                          </span>
-
-                          {/* Progress / seek */}
-                          <input
-                            type="range" min={0} max={videoDuration || 100}
-                            value={videoCurrentTime}
-                            step={1}
-                            onChange={e => { const t = Number(e.target.value); setVideoCurrentTime(t); ytCmd('seekTo', [t, true]) }}
-                            style={{ flex: 1, accentColor: C.accent, cursor: 'pointer', height: 4 }}
-                          />
-
-                          {/* Duration */}
-                          <span style={{ color: '#9ca3af', fontSize: 11, minWidth: 36, fontVariantNumeric: 'tabular-nums' }}>
-                            {formatVideoTime(videoDuration)}
-                          </span>
-
-                          {/* Mute / Unmute */}
-                          <button
-                            type="button"
-                            onClick={() => { videoVolumeMuted ? ytCmd('unMute') : ytCmd('mute'); setVideoVolumeMuted(m => !m) }}
-                            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer', padding: '2px 4px', lineHeight: 1 }}
-                            title={videoVolumeMuted ? 'Unmute' : 'Mute'}
-                          >{videoVolumeMuted ? '\uD83D\uDD07' : '\uD83D\uDD0A'}</button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {/* Fallback: no YT API key — show a friendly retry prompt */}
-                  {mediaOverlay === 'video' && videoResource?.unavailable && (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, padding: 20, background: '#0f0f0f', boxSizing: 'border-box', textAlign: 'center' }}>
-                      <svg viewBox="0 0 24 24" style={{ width: 44, height: 44 }} fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8l4 4-4 4"/></svg>
-                      <div style={{ color: '#9ca3af', fontSize: 13, lineHeight: 1.6, maxWidth: 220 }}>
-                        Video not available right now.<br/>Tap <strong style={{ color: '#fff' }}>↻</strong> above to try a different one.
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => refreshMedia('video')}
-                        disabled={refreshingMedia}
-                        style={{ background: C.accent, border: 'none', color: '#fff', borderRadius: 6, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}
-                      >
-                        {refreshingMedia ? '…' : '↻ Try another'}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* ── ARTICLE / WEBPAGE (HTML fetched server-side from green list) ── */}
-                  {mediaOverlay === 'article' && articleResource?.html && (
-                    <iframe
-                      srcDoc={articleResource.html}
-                      title={articleResource.title || 'Educational article'}
-                      sandbox="allow-same-origin allow-scripts"
-                      style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
-                    />
-                  )}
-                  {/* Loading: preload still in flight */}
-                  {mediaOverlay === 'article' && articleLoading && !articleResource && (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, color: '#9ca3af', fontSize: 13, background: '#fff' }}>
-                      <svg viewBox="0 0 24 24" style={{ width: 32, height: 32, animation: 'spin 1s linear infinite' }} fill="none" stroke="#0d9488" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
-                      Finding an article…
-                    </div>
-                  )}
-                  {/* Fallback: article came back but HTML could not be fetched */}
-                  {mediaOverlay === 'article' && !articleLoading && articleResource && !articleResource.html && (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, padding: 20, background: '#fff', boxSizing: 'border-box', textAlign: 'center' }}>
-                      <svg viewBox="0 0 24 24" style={{ width: 40, height: 40 }} fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                      <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6 }}>Couldn&apos;t load the article.<br/>Tap below to try a different one.</div>
-                      <button
-                        type="button"
-                        onClick={() => refreshMedia('article')}
-                        disabled={refreshingMedia}
-                        style={{ ...primaryBtn, opacity: refreshingMedia ? 0.6 : 1, cursor: refreshingMedia ? 'wait' : 'pointer' }}
-                      >
-                        {refreshingMedia ? '…' : '↻ Try another article'}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Spinner: button pressed but preload not yet done */}
-                  {((mediaOverlay === 'video' && !videoResource) ||
-                    (mediaOverlay === 'article' && !articleResource)) && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af', fontSize: 13 }}>
-                      Generating…
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Media overlay: rendered as portal — see createPortal block near end of return */}
 
             {/* Overlay buttons — bottom right: Skip + Mute (always) */}
             <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', gap: 10, zIndex: 10 }}>
@@ -807,7 +652,7 @@ export default function WebbPage() {
         </div>
 
         {/* Transcript / browser column */}
-        <div style={transcriptWrapperStyle}>
+        <div ref={chatColRef} style={transcriptWrapperStyle}>
 
           {/* Lesson browser (LIST and STARTING phases) */}
           {(phase === PHASE.LIST || phase === PHASE.STARTING) && (
@@ -891,6 +736,144 @@ export default function WebbPage() {
             loading={chatLoading}
           />
         </div>
+      )}
+
+      {/* ── Portaled media overlay — position:fixed, moves between video/chat cols ── */}
+      {isChatting && mediaOverlay && overlayPanelStyle && createPortal(
+        <div ref={mediaOverlayRef} style={overlayPanelStyle}>
+
+          {/* Toolbar */}
+          <div style={{ background: 'rgba(15,118,110,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', flexShrink: 0 }}>
+            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 0.5 }}>
+              {mediaOverlay === 'video' ? '\u25B6 VIDEO' : '\uD83D\uDCD6 ARTICLE'}
+              {mediaOverlay === 'article' && articleResource?.source && (
+                <span style={{ opacity: 0.75, fontWeight: 400, marginLeft: 4 }}>\u00B7 {articleResource.source}</span>
+              )}
+            </span>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {/* Refresh */}
+              <button type="button" onClick={() => refreshMedia(mediaOverlay)} disabled={refreshingMedia} title="Load a different one"
+                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 12, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                {refreshingMedia ? '\u2026' : '\u21BB'}
+              </button>
+              {/* Move arrow — hidden in fullscreen */}
+              {!mediaIsFullscreen && (
+                <button type="button"
+                  onClick={() => setMediaPos(p => p === 'video' ? 'chat' : 'video')}
+                  title={mediaMoveToChat ? 'Move to conversation' : 'Move to video'}
+                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>
+                  {arrowGlyph}
+                </button>
+              )}
+              {/* Fullscreen toggle */}
+              <button type="button" onClick={toggleMediaFullscreen} title={mediaIsFullscreen ? 'Exit fullscreen' : 'Full screen'}
+                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '3px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                {mediaIsFullscreen
+                  ? <svg style={{ width: 12, height: 12 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
+                  : <svg style={{ width: 12, height: 12 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                }
+              </button>
+              {/* Close */}
+              <button type="button" onClick={() => setMediaOverlay(null)} title="Close"
+                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                \u2715
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
+
+            {/* ── VIDEO ── */}
+            {mediaOverlay === 'video' && videoResource?.embedUrl && (
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#000' }}>
+                <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                  <iframe
+                    ref={videoIframeRef}
+                    src={videoResource.embedUrl}
+                    title={videoResource.title || 'Educational video'}
+                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    sandbox="allow-scripts allow-same-origin allow-presentation"
+                    style={{ width: '100%', height: '100%', border: 'none' }}
+                  />
+                  {videoEnded && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 24, boxSizing: 'border-box' }}>
+                      <div style={{ fontSize: 38 }}>&#127881;</div>
+                      <div style={{ color: '#fff', fontSize: 16, fontWeight: 700, textAlign: 'center' }}>
+                        Great job watching!<br/>
+                        <span style={{ fontSize: 13, fontWeight: 400, color: '#9ca3af' }}>{videoResource.title}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+                        <button type="button" onClick={() => { setVideoEnded(false); ytCmd('seekTo', [0, true]); ytCmd('playVideo') }}
+                          style={{ background: '#374151', border: 'none', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >&#8635; Replay</button>
+                        <button type="button" onClick={() => { setVideoEnded(false); refreshMedia('video') }} disabled={refreshingMedia}
+                          style={{ background: C.accent, border: 'none', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}
+                        >{refreshingMedia ? '\u2026' : '\u25B6 Watch another'}</button>
+                        <button type="button" onClick={() => setMediaOverlay(null)}
+                          style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#9ca3af', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >&#10005; Close</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {!videoEnded && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px', background: '#111', flexShrink: 0, userSelect: 'none' }}>
+                    <button type="button" onClick={() => videoPlaying ? ytCmd('pauseVideo') : ytCmd('playVideo')}
+                      style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', padding: '2px 4px', lineHeight: 1 }}
+                      title={videoPlaying ? 'Pause' : 'Play'}>{videoPlaying ? '\u23F8' : '\u25B6'}</button>
+                    <span style={{ color: '#9ca3af', fontSize: 11, minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatVideoTime(videoCurrentTime)}</span>
+                    <input type="range" min={0} max={videoDuration || 100} value={videoCurrentTime} step={1}
+                      onChange={e => { const t = Number(e.target.value); setVideoCurrentTime(t); ytCmd('seekTo', [t, true]) }}
+                      style={{ flex: 1, accentColor: C.accent, cursor: 'pointer', height: 4 }} />
+                    <span style={{ color: '#9ca3af', fontSize: 11, minWidth: 36, fontVariantNumeric: 'tabular-nums' }}>{formatVideoTime(videoDuration)}</span>
+                    <button type="button" onClick={() => { videoVolumeMuted ? ytCmd('unMute') : ytCmd('mute'); setVideoVolumeMuted(m => !m) }}
+                      style={{ background: 'none', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer', padding: '2px 4px', lineHeight: 1 }}
+                      title={videoVolumeMuted ? 'Unmute' : 'Mute'}>{videoVolumeMuted ? '\uD83D\uDD07' : '\uD83D\uDD0A'}</button>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Fallback: no YT key */}
+            {mediaOverlay === 'video' && videoResource?.unavailable && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, padding: 20, background: '#0f0f0f', boxSizing: 'border-box', textAlign: 'center' }}>
+                <svg viewBox="0 0 24 24" style={{ width: 44, height: 44 }} fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8l4 4-4 4"/></svg>
+                <div style={{ color: '#9ca3af', fontSize: 13, lineHeight: 1.6, maxWidth: 220 }}>Video not available right now.<br/>Tap <strong style={{ color: '#fff' }}>\u21BB</strong> above to try a different one.</div>
+                <button type="button" onClick={() => refreshMedia('video')} disabled={refreshingMedia}
+                  style={{ background: C.accent, border: 'none', color: '#fff', borderRadius: 6, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                  {refreshingMedia ? '\u2026' : '\u21BB Try another'}
+                </button>
+              </div>
+            )}
+
+            {/* ── ARTICLE ── */}
+            {mediaOverlay === 'article' && articleResource?.html && (
+              <iframe srcDoc={articleResource.html} title={articleResource.title || 'Educational article'}
+                sandbox="allow-same-origin allow-scripts" style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }} />
+            )}
+            {mediaOverlay === 'article' && articleLoading && !articleResource && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, color: '#9ca3af', fontSize: 13, background: '#fff' }}>
+                <svg viewBox="0 0 24 24" style={{ width: 32, height: 32, animation: 'spin 1s linear infinite' }} fill="none" stroke="#0d9488" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
+                Finding an article\u2026
+              </div>
+            )}
+            {mediaOverlay === 'article' && !articleLoading && articleResource && !articleResource.html && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, padding: 20, background: '#fff', boxSizing: 'border-box', textAlign: 'center' }}>
+                <svg viewBox="0 0 24 24" style={{ width: 40, height: 40 }} fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6 }}>Couldn&apos;t load the article.<br/>Tap below to try a different one.</div>
+                <button type="button" onClick={() => refreshMedia('article')} disabled={refreshingMedia}
+                  style={{ ...primaryBtn, opacity: refreshingMedia ? 0.6 : 1, cursor: refreshingMedia ? 'wait' : 'pointer' }}>
+                  {refreshingMedia ? '\u2026' : '\u21BB Try another article'}
+                </button>
+              </div>
+            )}
+            {((mediaOverlay === 'video' && !videoResource) || (mediaOverlay === 'article' && !articleResource)) && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af', fontSize: 13 }}>Generating\u2026</div>
+            )}
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   )
