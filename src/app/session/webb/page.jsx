@@ -437,12 +437,19 @@ export default function WebbPage() {
   function scrollToPassage(idx, isProgrammatic = false) {
     const el = passageEls.current[idx]
     if (!el) return
-    if (!isProgrammatic && userScrolledArticleRef.current) return
+    // Auto-scroll (TTS) is skipped once the user has scrolled manually.
+    // Manual pin-clicks always scroll unconditionally.
+    if (isProgrammatic && userScrolledArticleRef.current) return
+    if (!isProgrammatic) {
+      // Pin click — ensure article overlay is open so the scroll is visible
+      setMediaOverlay('article')
+    }
     if (isProgrammatic) {
       programmaticScrollRef.current = true
       setTimeout(() => { programmaticScrollRef.current = false }, 800)
     }
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // Defer by one tick so the iframe is visible before we call scrollIntoView
+    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
   }
 
   // ── Lesson list ───────────────────────────────────────────────────────
