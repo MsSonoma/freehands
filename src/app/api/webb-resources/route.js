@@ -104,7 +104,7 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeV
         if (picked?.id?.videoId) {
           return {
             videoId:     picked.id.videoId,
-            embedUrl:    `https://www.youtube-nocookie.com/embed/${picked.id.videoId}?autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1`,
+            embedUrl:    `https://www.youtube-nocookie.com/embed/${picked.id.videoId}?autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&controls=0&playsinline=1`,
             title:       picked.snippet.title,
             channel:     picked.snippet.channelTitle,
             searchQuery: safeQuery,

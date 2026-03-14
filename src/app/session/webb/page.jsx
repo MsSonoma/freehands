@@ -61,23 +61,44 @@ export default function WebbPage() {
   // Tracks video IDs already shown so refresh never repeats
   const shownVideoIdsRef = useRef([])
   // YouTube end-screen: true once the player posts a 'ended' state message
-  const [videoEnded, setVideoEnded] = useState(false)
+  const [videoEnded, setVideoEnded]           = useState(false)
+  // Custom player controls state
+  const [videoPlaying, setVideoPlaying]       = useState(false)
+  const [videoDuration, setVideoDuration]     = useState(0)
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0)
+  const [videoVolumeMuted, setVideoVolumeMuted] = useState(false)
+  const videoIframeRef = useRef(null)
 
-  // Reset ended flag whenever a new video arrives
-  useEffect(() => { setVideoEnded(false) }, [videoResource?.videoId])
+  // Reset all player state whenever a new video arrives
+  useEffect(() => {
+    setVideoEnded(false)
+    setVideoPlaying(false)
+    setVideoDuration(0)
+    setVideoCurrentTime(0)
+    setVideoVolumeMuted(false)
+  }, [videoResource?.videoId])
 
   // YouTube IFrame API posts postMessage events when enablejsapi=1.
-  // State 0 = ended. We catch it here (works with our sandbox attribute
-  // because postMessage is cross-origin by design).
+  // We receive state changes and periodic time/duration info here.
   useEffect(() => {
     function handleYTMessage(e) {
       if (!e.data) return
       try {
         const msg = typeof e.data === 'string' ? JSON.parse(e.data) : e.data
-        if (
-          (msg.event === 'onStateChange' && msg.info === 0) ||
-          (msg.event === 'infoDelivery'  && msg.info?.playerState === 0)
-        ) setVideoEnded(true)
+        if (msg.event === 'onStateChange') {
+          const s = msg.info
+          if (s === 0) setVideoEnded(true)
+          setVideoPlaying(s === 1)
+        }
+        if ((msg.event === 'infoDelivery' || msg.event === 'initialDelivery') && msg.info) {
+          if (typeof msg.info.currentTime === 'number') setVideoCurrentTime(msg.info.currentTime)
+          if (typeof msg.info.duration    === 'number' && msg.info.duration > 0) setVideoDuration(msg.info.duration)
+          if (typeof msg.info.muted       === 'boolean') setVideoVolumeMuted(msg.info.muted)
+          if (typeof msg.info.playerState === 'number') {
+            if (msg.info.playerState === 0) setVideoEnded(true)
+            setVideoPlaying(msg.info.playerState === 1)
+          }
+        }
       } catch { /* non-JSON messages — ignore */ }
     }
     window.addEventListener('message', handleYTMessage)
@@ -92,6 +113,17 @@ export default function WebbPage() {
   const [engineState, setEngineState] = useState('idle')
   const [isMuted, setIsMuted]         = useState(false)
   const isMutedRef                    = useRef(false)
+
+  // ── YouTube player commands (via IFrame API postMessage) ──────────────
+  function ytCmd(func, args = []) {
+    videoIframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: 'command', func, args }), '*'
+    )
+  }
+  function formatVideoTime(s) {
+    if (!s || !isFinite(s)) return '0:00'
+    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`
+  }
 
   // ── Chat scroll ─────────────────────────────────────────────────────
   const chatEndRef = useRef(null)
@@ -577,49 +609,89 @@ export default function WebbPage() {
 
                   {/* ── VIDEO ── */}
                   {mediaOverlay === 'video' && videoResource?.embedUrl && (
-                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                      <iframe
-                        src={videoResource.embedUrl}
-                        title={videoResource.title || 'Educational video'}
-                        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        sandbox="allow-scripts allow-same-origin allow-presentation"
-                        style={{ width: '100%', height: '100%', border: 'none' }}
-                      />
-                      {/* ── Our end-screen overlay — replaces YouTube's "More Videos" panel ── */}
-                      {videoEnded && (
-                        <div style={{
-                          position: 'absolute', inset: 0,
-                          background: 'rgba(0,0,0,0.92)',
-                          display: 'flex', flexDirection: 'column',
-                          alignItems: 'center', justifyContent: 'center',
-                          gap: 18, padding: 24, boxSizing: 'border-box',
-                        }}>
-                          <div style={{ fontSize: 38 }}>&#127881;</div>
-                          <div style={{ color: '#fff', fontSize: 16, fontWeight: 700, textAlign: 'center' }}>
-                            Great job watching!<br/>
-                            <span style={{ fontSize: 13, fontWeight: 400, color: '#9ca3af' }}>
-                              {videoResource.title}
-                            </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#000' }}>
+
+                      {/* Iframe + end overlay */}
+                      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                        <iframe
+                          ref={videoIframeRef}
+                          src={videoResource.embedUrl}
+                          title={videoResource.title || 'Educational video'}
+                          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          sandbox="allow-scripts allow-same-origin allow-presentation"
+                          style={{ width: '100%', height: '100%', border: 'none' }}
+                        />
+                        {/* End-screen overlay — replaces YouTube's "More Videos" panel */}
+                        {videoEnded && (
+                          <div style={{
+                            position: 'absolute', inset: 0,
+                            background: 'rgba(0,0,0,0.92)',
+                            display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', justifyContent: 'center',
+                            gap: 18, padding: 24, boxSizing: 'border-box',
+                          }}>
+                            <div style={{ fontSize: 38 }}>&#127881;</div>
+                            <div style={{ color: '#fff', fontSize: 16, fontWeight: 700, textAlign: 'center' }}>
+                              Great job watching!<br/>
+                              <span style={{ fontSize: 13, fontWeight: 400, color: '#9ca3af' }}>{videoResource.title}</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+                              <button type="button"
+                                onClick={() => { setVideoEnded(false); ytCmd('seekTo', [0, true]); ytCmd('playVideo') }}
+                                style={{ background: '#374151', border: 'none', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                              >&#8635; Replay</button>
+                              <button type="button"
+                                onClick={() => { setVideoEnded(false); refreshMedia('video') }}
+                                disabled={refreshingMedia}
+                                style={{ background: C.accent, border: 'none', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}
+                              >{refreshingMedia ? '…' : '▶ Watch another'}</button>
+                              <button type="button"
+                                onClick={() => setMediaOverlay(null)}
+                                style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#9ca3af', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
+                              >&#10005; Close</button>
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-                            <button
-                              type="button"
-                              onClick={() => setVideoEnded(false)}
-                              style={{ background: '#374151', border: 'none', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-                            >&#8635; Replay</button>
-                            <button
-                              type="button"
-                              onClick={() => { setVideoEnded(false); refreshMedia('video') }}
-                              disabled={refreshingMedia}
-                              style={{ background: C.accent, border: 'none', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}
-                            >{refreshingMedia ? '…' : '&#9654; Watch another'}</button>
-                            <button
-                              type="button"
-                              onClick={() => setMediaOverlay(null)}
-                              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#9ca3af', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
-                            >&#10005; Close</button>
-                          </div>
+                        )}
+                      </div>
+
+                      {/* ── Custom controls bar — completely replaces YouTube chrome ── */}
+                      {!videoEnded && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px', background: '#111', flexShrink: 0, userSelect: 'none' }}>
+                          {/* Play / Pause */}
+                          <button
+                            type="button"
+                            onClick={() => videoPlaying ? ytCmd('pauseVideo') : ytCmd('playVideo')}
+                            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', padding: '2px 4px', lineHeight: 1 }}
+                            title={videoPlaying ? 'Pause' : 'Play'}
+                          >{videoPlaying ? '\u23F8' : '\u25B6'}</button>
+
+                          {/* Current time */}
+                          <span style={{ color: '#9ca3af', fontSize: 11, minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                            {formatVideoTime(videoCurrentTime)}
+                          </span>
+
+                          {/* Progress / seek */}
+                          <input
+                            type="range" min={0} max={videoDuration || 100}
+                            value={videoCurrentTime}
+                            step={1}
+                            onChange={e => { const t = Number(e.target.value); setVideoCurrentTime(t); ytCmd('seekTo', [t, true]) }}
+                            style={{ flex: 1, accentColor: C.accent, cursor: 'pointer', height: 4 }}
+                          />
+
+                          {/* Duration */}
+                          <span style={{ color: '#9ca3af', fontSize: 11, minWidth: 36, fontVariantNumeric: 'tabular-nums' }}>
+                            {formatVideoTime(videoDuration)}
+                          </span>
+
+                          {/* Mute / Unmute */}
+                          <button
+                            type="button"
+                            onClick={() => { videoVolumeMuted ? ytCmd('unMute') : ytCmd('mute'); setVideoVolumeMuted(m => !m) }}
+                            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer', padding: '2px 4px', lineHeight: 1 }}
+                            title={videoVolumeMuted ? 'Unmute' : 'Mute'}
+                          >{videoVolumeMuted ? '\uD83D\uDD07' : '\uD83D\uDD0A'}</button>
                         </div>
                       )}
                     </div>
