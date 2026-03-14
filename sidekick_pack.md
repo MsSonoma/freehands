@@ -6,23 +6,23 @@ Mode: standard
 
 Prompt (original):
 ```text
-Mr. Slate lesson browser — how lessons are listed, filtered, selected, what data is shown per lesson card, what API routes are called
+media overlay does not appear when video or article button is pressed webb page.jsx portal createPortal overlayPanelStyle overlayRect
 ```
 
 Filter terms used:
 ```text
-API
-slate
-lesson
-browser
-lessons
-listed
-filtered
-selected
-data
-shown
-per
-card
+page.jsx
+media
+overlay
+not
+appear
+video
+article
+button
+pressed
+webb
+page
+jsx
 ```
 
 ---
@@ -31,9 +31,9 @@ card
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-03-13 10:15` — Mrs. Webb chat teacher button on learn page, like Ms Sonoma and Mr Slate, with validator layers, OpenAI moderation, stat
 - `2026-03-13 11:54` — Mrs. Webb lesson flow session page ContentViewer VideoPlayer TextReader RemediationPanel RewardVideo state machine prese
 - `2026-03-13 12:26` — Ms. Sonoma session page layout video transcript TTS responsive landscape portrait side by side stacked mute skip buttons
+- `2026-03-13 13:01` — Mr. Slate lesson browser — how lessons are listed, filtered, selected, what data is shown per lesson card, what API rout
 
 ---
 
@@ -54,7 +54,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 30. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 5. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -69,7 +69,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-API slate lesson browser lessons listed filtered selected data shown per card
+page.jsx media overlay not appear video article button pressed webb page jsx
 
 ## Forced Context
 
@@ -77,1509 +77,1368 @@ API slate lesson browser lessons listed filtered selected data shown per card
 
 ## Ranked Evidence
 
-### 1. docs/brain/custom-subjects.md (fd8a5ead4d8a64f78e034e3ca6a8d9b6dea9dbbdcd408f13f17042a7b16d3e24)
-- bm25: -14.4904 | entity_overlap_w: 1.30 | adjusted: -14.8154 | relevance: 0.9368
+### 1. src/app/session/webb/page.jsx (84895a0d1eefe59a8675fd38023ffe2d8ccfc03176653e5a97f48d4fbb309797)
+- bm25: -28.7395 | relevance: 0.9664
 
-# Custom Subjects (Per Facilitator)
-
-## How It Works
-
-- Custom subjects are stored in the Supabase table `custom_subjects` and are scoped to a single facilitator via `facilitator_id`.
-- The canonical API surface is `GET/POST/DELETE /api/custom-subjects`.
-  - `GET` returns `{ subjects: [...] }` ordered by `display_order` then `name`.
-  - `POST` creates a subject for the authenticated facilitator.
-  - `DELETE` deletes a subject only if it belongs to the authenticated facilitator.
-- Client surfaces that need subject dropdown options should treat subjects as:
-  - Core subjects (universal): `math`, `science`, `language arts`, `social studies`, `general`.
-  - Custom subjects (per facilitator): fetched from `/api/custom-subjects` using the facilitator session token.
-  - Special subject `generated` is a UI bucket used in some facilitator/Mr. Mentor views (not a custom subject). In the Mr. Mentor lessons overlay, `generated` is intentionally not shown as a subject dropdown option.
-- Shared client hook:
-  - `useFacilitatorSubjects()` fetches custom subjects for the signed-in facilitator and returns merged dropdown-ready lists.
-
-## What NOT To Do
-
-- Do not make custom subjects global. They must remain per-facilitator (`custom_subjects.facilitator_id`).
-- Do not fetch public lesson lists for custom subjects. Only core subjects have public lesson endpoints (`/api/lessons/[subject]`).
-- Do not store custom subjects in browser storage as the source of truth.
-
-## Key Files
-
-### 2. src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx (37da6da473f5e6cfac5295b38dde93aa4bcb967279962c2f8f71566200961de1)
-- bm25: -13.6727 | relevance: 0.9318
-
-const getFilteredLessons = () => {
-    const filtered = []
-    
-    Object.entries(allLessons).forEach(([subject, lessons]) => {
-      if (!Array.isArray(lessons)) return
-      
-      // Skip 'generated' when 'all subjects' is selected to avoid duplicates
-      if (selectedSubject === 'all' && subject === 'generated') return
-      
-      // Apply subject filter
-      if (selectedSubject !== 'all' && subject !== selectedSubject) return
-      
-      lessons.forEach(lesson => {
-        const lessonKey = lesson.isGenerated 
-          ? `generated/${lesson.file}` 
-          : `${subject}/${lesson.file}`
-        
-        // Normalize lesson grade
-        let lessonGrade = null
-        if (lesson.grade) {
-          lessonGrade = String(lesson.grade).trim().replace(/(?:st|nd|rd|th)$/i, '').toUpperCase()
-        }
-        
-        // Apply grade filter
-        if (selectedGrade !== 'all' && lessonGrade !== selectedGrade) return
-        
-        // Apply search filter
-        const searchLower = searchTerm.toLowerCase()
-        if (searchTerm && !lesson.title.toLowerCase().includes(searchLower)) return
-        
-        filtered.push({
-          ...lesson,
-          subject,
-          lessonKey,
-          displayGrade: lessonGrade
-        })
+// ── Refresh a media resource (context-aware) ──────────────────────────
+  async function refreshMedia(type) {
+    setRefreshingMedia(true)
+    const recentContext = chatMessages.slice(-6)
+      .filter(m => m.role === 'user')
+      .map(m => m.content)
+      .join('. ')
+    try {
+      const res = await fetch('/api/webb-resources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lesson: selectedLesson,
+          type,
+          context: recentContext,
+          previousSource:         type === 'article' ? (articleResource?.source || '') : '',
+          excludeVideoIds:        type === 'video'   ? shownVideoIdsRef.current      : [],
+        }),
       })
-    })
-    
-    // Sort: by subject first, then generated lessons at top of each subject (by creation date, newest first), then other lessons (by grade, title)
-    filtered.sort((a, b) => {
-      // First, sort by subject
-      if (a.subject !== b.subject) {
-        return a.subject.localeCompare(b.subject)
+      const data = await res.json()
+      if (type === 'video' && data.video) {
+        setVideoResource(data.video)
+        if (data.video.videoId)
+          shownVideoIdsRef.current = [...new Set([...shownVideoIdsRef.current, data.video.videoId])]
       }
-      
-      // Within same subject: generated lessons come first
-      if (a.isGenerated && !b.isGenerated) return -1
-      if (!a.isGenerated && b.isGenerated) return 1
-      
-      // Both are generated: sort by creation
-
-### 3. src/app/facilitator/lessons/page.js (88da3aa53931f573b040c00f147c10405ee157bcadc7e4b5331bdd371fc8fe89)
-- bm25: -13.4560 | relevance: 0.9308
-
-function getFilteredLessons() {
-    const filtered = []
-    
-    Object.entries(allLessons).forEach(([subject, lessons]) => {
-      if (!Array.isArray(lessons)) return
-      
-      // Skip "generated" when "all subjects" is selected to avoid duplicates
-      if (selectedSubject === 'all' && subject === 'generated') return
-      
-      // Apply subject filter
-      if (selectedSubject !== 'all' && subject !== selectedSubject) return
-      
-      lessons.forEach(lesson => {
-        const isOwned = lesson?.isGenerated === true
-        const fileName = lesson?.file || null
-        const ownedKey = isOwned
-          ? `${(lesson?.subject || subject || '').toString().toLowerCase() || 'math'}/${fileName || ''}`
-          : `${(subject || '').toString().toLowerCase()}/${fileName || ''}`
-        const ownedByKey = Boolean(fileName && ownedLessonKeys?.[ownedKey])
-
-### 4. src/app/api/counselor/route.js (fa6b75c4aa3af9457c4257dc915ebdb529af6fee88832fc268041fbe457dd5cd)
-- bm25: -11.4510 | entity_overlap_w: 1.30 | adjusted: -11.7760 | relevance: 0.9217
-
-// Helper function to search for lessons
-async function executeSearchLessons(args, request, toolLog) {
-  try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return { error: 'Authentication required' }
-    }
-    
-    const { subject, grade, searchTerm } = args
-  const baseUrl = resolveBaseUrl(request)
-    pushToolLog(toolLog, {
-      name: 'search_lessons',
-      phase: 'start',
-      context: { subject, grade, searchTerm }
-    })
-    
-  // Get lessons from all subjects
-  const subjects = subject ? [subject] : ['math', 'science', 'language arts', 'social studies', 'facilitator']
-  const allLessons = []
-    
-    for (const subj of subjects) {
-      try {
-  const lessonEndpoint = new URL(`/api/lessons/${encodeURIComponent(subj)}`, baseUrl)
-  const lessonResponse = await fetch(lessonEndpoint, {
-          method: 'GET',
-          headers: {
-            'Authorization': authHeader
-          }
-        })
-        
-        if (lessonResponse.ok) {
-          const lessonData = await lessonResponse.json()
-          // API returns array directly for most subjects, or {lessons: [...]} for some
-          const lessons = Array.isArray(lessonData) ? lessonData : (lessonData.lessons || [])
-          
-          // Filter by grade if specified
-          let filtered = lessons
-          if (grade) {
-            filtered = filtered.filter(l => {
-              const lessonGrade = l.grade || l.gradeLevel || ''
-              return lessonGrade.toLowerCase().includes(grade.toLowerCase())
-            })
-          }
-          
-          // Filter by search term if specified (fuzzy matching)
-          if (searchTerm) {
-            const normalizedSearch = searchTerm.toLowerCase()
-              .replace(/[_-]/g, ' ')  // Replace underscores and hyphens wit
-
-### 5. src/app/session/page.js (c7d89c5ccba7553c8f6424b14c32af9af8335266b151dc5a534e70a99ef5c77d)
-- bm25: -10.9644 | entity_overlap_w: 1.30 | adjusted: -11.2894 | relevance: 0.9186
-
-load();
-    return () => {
-      cancelled = true;
-    };
-  }, [lessonFilePath]);
-
-// Load visual aids separately from database (facilitator-specific)
-  useEffect(() => {
-    if (!visualAidsLessonKey) {
-      return;
-    }
-    
-    let cancelled = false;
-    (async () => {
-      try {
-        const supabase = getSupabaseClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        
-        if (!token) {
-          if (!cancelled) setVisualAidsData(null);
-          return;
-        }
-        
-        const res = await fetch(`/api/visual-aids/load?lessonKey=${encodeURIComponent(visualAidsLessonKey)}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (!res.ok) {
-          if (!cancelled) setVisualAidsData(null);
-          return;
-        }
-        
-        const data = await res.json();
-        if (!cancelled) {
-          const images = data.selectedImages || [];
-          setVisualAidsData(images);
-        }
-      } catch (err) {
-        if (!cancelled) setVisualAidsData(null);
+      if (type === 'article' && data.article) {
+        setArticleResource(data.article)
       }
-    })();
-    
-    return () => { cancelled = true; };
-  }, [visualAidsLessonKey]);
-
-const waitForBeat = (ms = 240) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const clearCaptionTimers = () => clearCaptionTimersUtil(captionTimersRef);
-
-// Web Speech API fallback removed per requirement: absolutely no browser Web Speech usage.
-
-### 6. src/app/api/learner/available-lessons/route.js (68db9ae8b6d1e7d6619f8003ff4678149c645101d6804a0b2e6b434b075bf5fa)
-- bm25: -10.7499 | relevance: 0.9149
-
-// Also include ALL facilitator-owned lessons from Storage so Mr. Slate
-    // can drill any lesson the facilitator owns, not just approved ones.
-    if (facilitatorId) {
-      const alreadyLoaded = new Set(lessons.map(l => l.lessonKey).filter(Boolean))
-      const { data: ownedFiles } = await supabase.storage
-        .from('lessons')
-        .list(`facilitator-lessons/${facilitatorId}`, { limit: 1000 })
-
-### 7. src/app/facilitator/lessons/page.js (21596a2c22199b19e385eff590a9063b8cdd394144bf2fd0c005ec8b06ba04cb)
-- bm25: -10.4216 | relevance: 0.9124
-
-// Load data for selected learner - as soon as learner is selected (not waiting for button)
-  useEffect(() => {
-    if (!selectedLearnerId) {
-      setActiveGoldenKeys({})
-      setMedals({})
-      setAvailableLessons({})
-      setScheduledLessons({})
-      setFutureScheduledLessons({})
-      setLessonNotes({})
-      return
-    }
-    let cancelled = false
-    ;(async () => {
-      setLearnerDataLoading(true)
-      try {
-        const supabase = getSupabaseClient()
-        // Load active_golden_keys, lesson_notes, approved_lessons, and grade
-        let data, error
-        const result = await supabase.from('learners').select('active_golden_keys, lesson_notes, approved_lessons, grade').eq('id', selectedLearnerId).maybeSingle()
-        data = result.data
-        error = result.error
-        
-        if (error) {
-          const fallbackResult = await supabase.from('learners').select('grade').eq('id', selectedLearnerId).maybeSingle()
-          data = fallbackResult.data
-          error = fallbackResult.error
-          if (error) {
-            throw error
-          }
-        }
-        
-        let scheduled = {}
-        let futureScheduled = {}
-        try {
-          const today = new Date().toISOString().split('T')[0]
-          const { data: { session } } = await supabase.auth.getSession()
-          const token = session?.access_token
-          
-          if (token) {
-            const scheduleResponse = await fetch(`/api/lesson-schedule?learnerId=${selectedLearnerId}&action=active`, {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            })
-            if (scheduleResponse.ok) {
-              const scheduleData = await scheduleResponse.json()
-              const scheduledLessons = scheduleData.lessons || []
-
-### 8. docs/brain/snapshot-persistence.md (d0c180d8bcb4fd642c0ea1120fbe36eca9846e1c8cb4fc3b42aac706887cb1fd)
-- bm25: -10.2426 | relevance: 0.9111
-
-### Snapshot Save Guard
-
-`saveSnapshot()` checks `window.__PREVENT_SNAPSHOT_SAVE__` flag and returns `{success: false, blocked: true}` if set. This prevents race conditions where:
-- User clicks Complete Lesson
-- Snapshot auto-save triggers before clearSnapshot completes
-- Snapshot persists with `phase: 'congrats'`
-- Next visit shows "Continue" and loads to congrats screen
-
-With guard in place, completion cleanup is atomic - either all persistence cleared or none.
-
-## How It Works
-
-### Save Strategy: Dual Write
-1. **localStorage** - Synchronous, instant (<1ms)
-   - Key: `atomic_snapshot:{learnerId}:{lessonKey}`
-   - One snapshot per learner+lesson (setItem replaces, doesn't stack)
-   - Same-browser restore is instant (no database lag)
-
-2. **Database/Storage** - Async backup (cross-device)
-  - Saved via `/api/snapshots` (server route)
-  - Primary storage: `learner_snapshots` table keyed by `user_id + learner_id + lesson_key`
-  - Fallback storage: Supabase Storage `learner-snapshots` bucket when DB table/columns are missing
-  - Used when localStorage is empty (new device, cleared storage)
-
-### Transcript Persistence (Captions + Answers)
-- Restore path pins the transcript scroller to the bottom after loading so the latest caption is visible immediately after refresh (no manual scroll needed).
-- Saves use the existing granular `saveProgress('transcript', ...)` gate; no polling/intervals added.
-- Restore path normalizes old string arrays to `{ text, role:'assistant' }` objects and seeds `currentCaption`/highlight before Begin/Resume is shown.
-
-### Restore Strategy: localStorage First
-1. Try localStorage (instant)
-2. If not found, try database
-3. If database found, write to localStorage for next time
-4. Apply state exactly, no post-restore modifications
-
-### 9. src/app/facilitator/lessons/page.js (5999d823a6da00cc3e4b1c9c307b57ae0784d513c746865011370f6ae142f5a3)
-- bm25: -10.1562 | relevance: 0.9104
-
-// If a public lesson has been downloaded (owned copy exists), hide the public entry.
-        if (!isOwned && ownedByKey) return
-
-if (lessonLibraryScope === 'owned' && !isOwned) return
-        if (lessonLibraryScope === 'downloadable' && isOwned) return
-
-const lessonKey = lesson.isGenerated 
-          ? `generated/${lesson.file}` 
-          : `${subject}/${lesson.file}`
-        
-        const hasMetalData = medals[lessonKey]
-        
-        // Normalize lesson grade
-        let lessonGrade = null
-        if (lesson.grade) {
-          lessonGrade = String(lesson.grade).trim().replace(/(?:st|nd|rd|th)$/i, '').toUpperCase()
-        }
-        
-        // Apply grade filter
-        if (selectedGrade !== 'all' && lessonGrade !== selectedGrade) return
-        
-        // Apply search filter
-        const searchLower = searchTerm.toLowerCase()
-        if (searchTerm && !lesson.title.toLowerCase().includes(searchLower)) return
-        
-        filtered.push({
-          ...lesson,
-          subject,
-          lessonKey,
-          displayGrade: lessonGrade
-        })
-      })
-    })
-    
-    // Sort by subject, then grade, then title
-    filtered.sort((a, b) => {
-      if (a.subject !== b.subject) {
-        return a.subject.localeCompare(b.subject)
-      }
-      if (a.displayGrade !== b.displayGrade) {
-        // Handle K specially
-        if (a.displayGrade === 'K') return -1
-        if (b.displayGrade === 'K') return 1
-        const numA = parseInt(a.displayGrade) || 0
-        const numB = parseInt(b.displayGrade) || 0
-        return numA - numB
-      }
-      return a.title.localeCompare(b.title)
-    })
-    
-    return filtered
+    } catch {}
+    setRefreshingMedia(false)
   }
 
-### 10. src/app/session/slate/page.jsx (4c09f5ce980efaec3cb49230d614dbbfb7aed42797e8bb52bd28f5794186cfaa)
-- bm25: -10.0230 | relevance: 0.9093
-
-{/* Main drill area */}
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
-{/* Mr. Slate video — expands to fill all space above the card */}
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 16px 0' }}>
-          <SlateVideo ref={slateVideoRef} style={{ width: '100%', height: '100%', objectFit: 'contain', margin: 0 }} />
-        </div>
-
-{/* Question card — anchored to bottom, scrolls internally if very tall */}
-        <div style={{ flexShrink: 0, overflowY: 'auto', maxHeight: '60vh', padding: '12px 16px 56px', width: '100%', maxWidth: 632, margin: '0 auto', boxSizing: 'border-box' }}>
-          {q && (
-            <div style={{
-              background: C.surface,
-              border: `1px solid ${borderColor}`,
-              borderRadius: 12,
-              padding: 24,
-              transition: 'border-color 0.3s',
-            }}>
-              {/* Query label */}
-              <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2, marginBottom: 14 }}>
-                QUERY #{qCount + (isAsking ? 1 : 0)} · {q.type.toUpperCase()}
-              </div>
-
-{/* Question text */}
-              <div style={{ color: C.text, fontSize: 'clamp(15px,2.8vw,20px)', fontWeight: 600, marginBottom: 20, lineHeight: 1.55 }}>
-                {q.question}
-              </div>
-
-{/* Countdown timer -- only while asking */}
-              {isAsking && <TimerBar secondsLeft={secondsLeft} total={settings.questionSecs} />}
-
-### 11. docs/brain/notifications-system.md (2d68facb9ef84811553c594d04831c5bab53537f01c38d56acdc06752047caaf)
-- bm25: -9.9860 | relevance: 0.9090
-
-# Notifications System
-
-**Last updated**: 2026-01-08T13:36:08Z  
-**Status**: Canonical
-
-## How It Works
-
-The Notifications system provides facilitator-facing alerts that persist across devices.
-
-### Data Model (Supabase)
-
-Notifications are stored per facilitator in Supabase (Postgres) under RLS.
-
-**Tables**:
-- `public.facilitator_notifications`
-  - Per-notification rows (title/body/type/category)
-  - `read_at` marks a notification as read
-  - `facilitator_id` is the owner and must equal `auth.uid()` under RLS
-
-- `public.facilitator_notification_prefs`
-  - Per-facilitator preferences that control which categories are enabled
-  - Includes a master `enabled` toggle
-
-### Current UI
-
-**Notifications page**: `/facilitator/notifications`
-- Shows a list of notifications
-- Each row can be marked read/unread via a checkmark button
-- A gear button opens a settings overlay to control notification preferences
-
-**Account page launcher**: `/facilitator/account`
-- Shows a Notifications card matching existing Account card styling
-- Clicking navigates to `/facilitator/notifications`
-
-**Header quick-link**:
-- The Facilitator hover dropdown includes a Notifications item that navigates to `/facilitator/notifications`
-
-### Placeholder Behavior
-
-The UI currently seeds a small set of demo notifications for a facilitator if they have zero notifications. This is intentionally temporary and exists only to make the manager usable before event producers are wired.
-
-## What NOT To Do
-
-### 12. docs/brain/calendar-lesson-planning.md (1855144ade44b43a78489cf3246c6df30aa1531fdb5dbb9a20f4fe3d2898703f)
-- bm25: -9.9470 | relevance: 0.9087
-
-### Redo for Planned Lessons (Pre-Scheduling)
-
-Planned lessons (outlines) shown in the day view have a **Redo** action that regenerates the outline before scheduling.
-
-**Redo prompt update:**
-- Each planned lesson can optionally store a `promptUpdate` string.
-- The UI exposes a "Redo prompt update" field.
-- When Redo is clicked, this text is appended to the GPT prompt so the facilitator can steer what changes (e.g., "different topic", "more reading comprehension", "avoid fractions").
-
-**Redo context rule:**
-- Redo must include learner history (with scores when available) + current scheduled lessons + planned lessons in the prompt context.
-- This prevents Redo from returning the same two outlines repeatedly.
-
-**Redo rule (matches planner):**
-- Redo should follow the same score-aware repeat policy as planner generation (new topics preferred; review allowed for low scores; avoid repeating high-score topics).
-- Redo additionally supports `promptUpdate` to let the facilitator steer the regeneration.
-- Redo should not force every regeneration to be a review; instead, only label as `Review:` when a review is actually chosen.
-
-**Grade source of truth:**
-- Planned-lesson outlines must use the selected learner's grade as the default `grade` sent to `/api/generate-lesson-outline`.
-- Do not hardcode a default grade like "3rd" at the planner layer; that will leak into every planned lesson and any downstream generator that uses the outline.
-
-**Grade type normalization:**
-- Treat `grade` as a string in generator UIs.
-- Some data sources store grade as a number (e.g., `3`), which will crash code that assumes `.trim()` exists.
-
-### 13. src/app/api/counselor/route.js (4dadf97ca1471e06a48cf63d88839cd735ae4a57493e1a056510bed2ca39dc6e)
-- bm25: -9.8099 | relevance: 0.9075
-
-// Build system prompt with learner context and goals if available
-    let systemPrompt = MENTOR_SYSTEM_PROMPT
-    
-    if (goalsNotes) {
-      systemPrompt += `\n\n=== PERSISTENT GOALS & PRIORITIES ===\nThe facilitator has set these persistent goals that should guide all conversations:\n\nPersistent Goals:\n${goalsNotes}\n\n=== END PERSISTENT GOALS ===\n\nIMPORTANT: These goals persist across all conversations. Reference them when relevant, and help the facilitator work toward them. The facilitator can update these goals anytime using the Goals clipboard button (📋) on screen.`
-    }
-    
-    if (learnerTranscript) {
-      systemPrompt += `\n\n=== CURRENT LEARNER CONTEXT ===\nThe facilitator has selected a specific learner to discuss. Here is their profile and progress:\n\n${learnerTranscript}\n\n=== END LEARNER CONTEXT ===\n\nIMPORTANT INSTRUCTIONS FOR THIS LEARNER:\n- When generating lessons, ALWAYS use the grade level shown in the learner profile above\n- When scheduling lessons, you can use the learner's name (e.g., "Emma", "John") and the system will find them\n- When searching for lessons, consider their current grade level and adjust difficulty accordingly\n\nUse this information to provide personalized, data-informed guidance. Reference specific achievements, struggles, or patterns you notice. Ask questions that help the facilitator reflect on this learner's unique needs and progress.`
-    }
-
-### 14. docs/brain/lesson-library-downloads.md (b1b9e213db751b5765dbf2e696989c3293e61bd99e1db9d560a4332ae5c3532e)
-- bm25: -9.7647 | relevance: 0.9071
-
-# Lesson Library Downloads (Owned vs Downloadable)
-
-**Status:** Canonical
-**Created:** 2026-01-10
-**Purpose:** Define how facilitator-visible "download" works without any device storage.
-
-## How It Works
-
-### Concepts
-
-- **Downloadable lesson**: A built-in lesson JSON that exists on the server under `public/lessons/<subject>/...`.
-- **Owned lesson**: A facilitator-specific copy of a lesson stored in Supabase Storage under `lessons/facilitator-lessons/<facilitatorId>/<file>.json`.
-- **Download action**: Server-side copy from the built-in library into the facilitator's Storage folder (not a device download).
-
-### UX Rules (Facilitator Lessons Page)
-
-- Top-of-page actions:
-  - **📝 New Lesson** opens the lesson editor with a blank lesson (no Storage write until the user saves).
-  - **✨ Generate Lesson** opens the Lesson Maker flow (`/facilitator/generator`).
-
-- A dropdown filter controls which lessons are shown:
-  - **Owned** (default): show only owned lessons (Storage-backed).
-  - **Downloadable**: show only downloadable lessons that are not owned.
-  - **All Lessons**: show both.
-
-- **Gating**:
-  - Downloadable lessons that are not owned show exactly one action: **Download**.
-  - After Download succeeds, the owned copy exists and the regular lesson controls appear (Edit, per-learner availability, notes, schedule).
-
-### Prefetch Behavior
-
-- On page mount, the client prefetches built-in lesson lists immediately (no auth required) and loads subjects in parallel.
-- Owned lessons are then fetched after auth/session is available and merged into the list.
-- This keeps the UI responsive so clicking "Load Lessons" feels instant even if auth is slow.
-
-### Data/Key Rules
-
-### 15. docs/brain/ingests/pack.planned-lessons-flow.md (b7a980085f6bc8e1ca16fde88940d8b9b190529334412446a3b7827aec14d21d)
-- bm25: -9.7646 | relevance: 0.9071
-
-### 11. docs/brain/calendar-lesson-planning.md (1855144ade44b43a78489cf3246c6df30aa1531fdb5dbb9a20f4fe3d2898703f)
-- bm25: -23.9232 | relevance: 1.0000
-
-### Redo for Planned Lessons (Pre-Scheduling)
-
-Planned lessons (outlines) shown in the day view have a **Redo** action that regenerates the outline before scheduling.
-
-**Redo prompt update:**
-- Each planned lesson can optionally store a `promptUpdate` string.
-- The UI exposes a "Redo prompt update" field.
-- When Redo is clicked, this text is appended to the GPT prompt so the facilitator can steer what changes (e.g., "different topic", "more reading comprehension", "avoid fractions").
-
-**Redo context rule:**
-- Redo must include learner history (with scores when available) + current scheduled lessons + planned lessons in the prompt context.
-- This prevents Redo from returning the same two outlines repeatedly.
-
-**Redo rule (matches planner):**
-- Redo should follow the same score-aware repeat policy as planner generation (new topics preferred; review allowed for low scores; avoid repeating high-score topics).
-- Redo additionally supports `promptUpdate` to let the facilitator steer the regeneration.
-- Redo should not force every regeneration to be a review; instead, only label as `Review:` when a review is actually chosen.
-
-**Grade source of truth:**
-- Planned-lesson outlines must use the selected learner's grade as the default `grade` sent to `/api/generate-lesson-outline`.
-- Do not hardcode a default grade like "3rd" at the planner layer; that will leak into every planned lesson and any downstream generator that uses the outline.
-
-**Grade type normalization:**
-- Treat `grade` as a string in generator UIs.
-- Some data sources store grade as a number (e.g., `3`), which will crash code that assumes `.trim()` exists.
-
-### 16. cohere-changelog.md (238598086b89be712c98fef2c3ec8048ee179ecaeee31f00735a30dd45bea23d)
-- bm25: -9.3820 | entity_overlap_w: 1.30 | adjusted: -9.7070 | relevance: 0.9066
-
-Follow-ups:
-- If the app still feels slow, instrument counts/latency of `/api/sonoma` calls per phase and consider parallelizing non-dependent prefetches.
-
----
-
-Date (UTC): 2026-02-23T16:53:49.2989770Z
-
-Topic: New Games overlay game — Flash Cards (math)
-
-Recon prompt (exact string):
-Build new Games overlay game 'Flash Cards': setup screen selects subject (math dropdown), topic, stage; 50 flashcards per topic per stage; 10 stages per topic; meter up/down with goal to advance; stage completion screen (Next); topic completion screen (more exciting, movement, shows next topic + Next). Persist per-learner progress across sessions.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
-
-Result:
-- Decision: Implement Flash Cards entirely client-side inside GamesOverlay, with deterministic per-learner math decks (50 cards per stage/topic) and localStorage persistence so progress resumes across sessions.
-- Files changed: src/app/session/components/games/GamesOverlay.jsx, src/app/session/components/games/FlashCards.jsx, src/app/session/components/games/flashcardsMathDeck.js, cohere-changelog.md
-
-Follow-ups:
-- If you want cross-device progress (not just same browser), add a Supabase-backed progress table and swap the storage adapter.
-
-### 2026-02-27 � Generation error: e.map is not a function
-- Recon prompt: `Generation Failed error from lesson generator API route - investigate callModel and storage upload`
-- Root cause: `buildValidationChangeRequest(validation)` passed whole `{ passed, issues, warnings }` object; function calls `.map()` directly on its argument
-- Fix: `src/app/facilitator/generator/page.js` � `buildValidationChangeRequest(validation)` ? `buildValidationChangeRequest(validation.issues)`
-
-### 17. src/app/session/slate/page.jsx (341aa55acc99610457e52d3ba175e495d09673233a887438a3cfa0530ba9eff6)
-- bm25: -9.7024 | relevance: 0.9066
-
-// --- Lesson card renderer (all owned lessons) ---
-            const LessonCard = ({ lesson, dateLabel }) => {
-              const lk = getLk(lesson)
-              const mastered = !!(masteryMap[lk]?.mastered)
-              const poolSize = buildPool(lesson).length
-              const subjectLabel = (lesson.subject || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-              const gradeLabel = lesson.grade ? `Grade ${lesson.grade}` : ''
-              const diffLabel = lesson.difficulty ? lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1) : ''
-              return (
+### 2. src/app/session/webb/page.jsx (f85ebe6d03e14606a895127137a516342f1c8af9f5d46af83fac19f9ba104ed1)
+- bm25: -26.0219 | relevance: 0.9630
+
+{/* Overlay buttons — bottom left: Video + Article (chatting phase) */}
+            {isChatting && (
+              <div style={{ position: 'absolute', bottom: 14, left: 14, display: 'flex', gap: 10, zIndex: 10 }}>
                 <button
-                  onClick={() => selectLesson(lesson)}
-                  style={{
-                    background: C.surface,
-                    border: `1px solid ${mastered ? C.green : C.border}`,
-                    borderRadius: 10,
-                    padding: '14px 16px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                    width: '100%',
-                    transition: 'border-color 0.2s',
-                  }}
+                  type="button"
+                  onClick={() => { setMediaOverlay(v => v === 'video' ? null : 'video') }}
+                  aria-label="Watch a video"
+                  title={videoLoading ? 'Loading video…' : videoResource ? 'Watch a video' : 'Loading video…'}
+                  style={{ ...overlayBtnStyle, background: mediaOverlay === 'video' ? C.accent : '#1f2937', opacity: videoLoading ? 0.55 : 1 }}
                 >
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ color: C.text, fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
-                      {mastered && <span style={{ color: C.green, marginRight: 6 }}>🤖</span>}
-                      {lesson.title || lk}
-                    </div>
-                    <div style={{ color: C.muted, fontSize: 11, letterSpacing: 1 }}>
-                      {[subjectLabel, gradeLabel, diffLabel].filter(Boolean).join(' · ')}
-                      {poolSize >
+                  {videoLoading
+                    ? <svg style={{ width: '55%', height: '55%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
+                    : <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                  }
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMediaOverlay(v => v === 'article' ? null : 'article') }}
+                  aria-label="Read Wikipedia article"
+                  title={articleLoading ? 'Finding Wikipedia article…' : articleResource ? `Wikipedia: ${articleResource.wikiTitle}` : 'Finding Wikipedia article…'}
+                  style={{ ...overlayBtnStyle, background: mediaOverlay === 'article' ? C.accent : '#1f2937', opacity: articleLoading ? 0.55 : 1 }}
+                >
+                  {articleLoading
+                    ? <svg style={{ width: '55%', height: '55%
 
-### 18. docs/brain/ingests/pack.md (c9661f9dcd74df3cde9a29ba506ce65af935aaaefd2b314837236b771df3e7fd)
-- bm25: -9.6929 | relevance: 0.9065
+### 3. src/app/session/webb/page.jsx (15f979bbfbb35cc32e66b4a91f94dfb5ba6c54f085bcf6e19bd6be07472bae5d)
+- bm25: -24.5461 | relevance: 0.9609
 
-### 26. docs/brain/calendar-lesson-planning.md (1855144ade44b43a78489cf3246c6df30aa1531fdb5dbb9a20f4fe3d2898703f)
-- bm25: -19.5214 | relevance: 1.0000
+// ── Media resources ──────────────────────────────────────────────────
+  const [videoResource, setVideoResource]       = useState(null) // {videoId,embedUrl,title,channel} or {unavailable:true}
+  const [articleResource, setArticleResource]   = useState(null) // {html, source, title} — HTML fetched server-side
+  const [videoLoading, setVideoLoading]         = useState(false)
+  const [articleLoading, setArticleLoading]     = useState(false)
+  const [mediaOverlay, setMediaOverlay]         = useState(null) // 'video'|'article'|null
+  const [refreshingMedia, setRefreshingMedia]   = useState(false)
+  // Tracks video IDs already shown so refresh never repeats
+  const shownVideoIdsRef = useRef([])
+  // Media overlay position + fullscreen
+  const [mediaPos, setMediaPos]               = useState('video') // 'video'|'chat'
+  const [mediaIsFullscreen, setMediaIsFullscreen] = useState(false)
+  const mediaOverlayRef = useRef(null)
+  const chatColRef      = useRef(null)
+  const videoInnerRef   = useRef(null)
+  const [overlayRect, setOverlayRect]         = useState(null)
+  // YouTube end-screen: true once the player posts a 'ended' state message
+  const [videoEnded, setVideoEnded]           = useState(false)
+  // Custom player controls state
+  const [videoPlaying, setVideoPlaying]       = useState(false)
+  const [videoDuration, setVideoDuration]     = useState(0)
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0)
+  const [videoVolumeMuted, setVideoVolumeMuted] = useState(false)
+  const videoIframeRef = useRef(null)
 
-### Redo for Planned Lessons (Pre-Scheduling)
+### 4. src/app/session/webb/page.jsx (30752c5f94fed3af2fc1ea6e9b401601ee602f7a42eaaec9719427125f744232)
+- bm25: -23.1616 | relevance: 0.9586
 
-Planned lessons (outlines) shown in the day view have a **Redo** action that regenerates the outline before scheduling.
+// ── Preload resources for lesson ──────────────────────────────────────
+  // Video and article are fetched in parallel but independently so each
+  // resolves as soon as it's ready (video ~3s, article ~4s).
+  const preloadResources = useCallback((lesson) => {
+    setVideoResource(null)
+    setArticleResource(null)
+    setVideoLoading(true)
+    setArticleLoading(true)
+    shownVideoIdsRef.current = []
 
-**Redo prompt update:**
-- Each planned lesson can optionally store a `promptUpdate` string.
-- The UI exposes a "Redo prompt update" field.
-- When Redo is clicked, this text is appended to the GPT prompt so the facilitator can steer what changes (e.g., "different topic", "more reading comprehension", "avoid fractions").
+const post = (type) => fetch('/api/webb-resources', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lesson, type }),
+    })
 
-**Redo context rule:**
-- Redo must include learner history (with scores when available) + current scheduled lessons + planned lessons in the prompt context.
-- This prevents Redo from returning the same two outlines repeatedly.
-
-**Redo rule (matches planner):**
-- Redo should follow the same score-aware repeat policy as planner generation (new topics preferred; review allowed for low scores; avoid repeating high-score topics).
-- Redo additionally supports `promptUpdate` to let the facilitator steer the regeneration.
-- Redo should not force every regeneration to be a review; instead, only label as `Review:` when a review is actually chosen.
-
-**Grade source of truth:**
-- Planned-lesson outlines must use the selected learner's grade as the default `grade` sent to `/api/generate-lesson-outline`.
-- Do not hardcode a default grade like "3rd" at the planner layer; that will leak into every planned lesson and any downstream generator that uses the outline.
-
-**Grade type normalization:**
-- Treat `grade` as a string in generator UIs.
-- Some data sources store grade as a number (e.g., `3`), which will crash code that assumes `.trim()` exists.
-
-### 19. sidekick_pack.md (bcd88c0b1d1b124721ff79f4c0d812bba5b7bee99ff66ccb3d3fbd27ef226395)
-- bm25: -9.6815 | relevance: 0.9064
-
-### Redo for Planned Lessons (Pre-Scheduling)
-
-Planned lessons (outlines) shown in the day view have a **Redo** action that regenerates the outline before scheduling.
-
-**Redo prompt update:**
-- Each planned lesson can optionally store a `promptUpdate` string.
-- The UI exposes a "Redo prompt update" field.
-- When Redo is clicked, this text is appended to the GPT prompt so the facilitator can steer what changes (e.g., "different topic", "more reading comprehension", "avoid fractions").
-
-**Redo context rule:**
-- Redo must include learner history (with scores when available) + current scheduled lessons + planned lessons in the prompt context.
-- This prevents Redo from returning the same two outlines repeatedly.
-
-**Redo rule (matches planner):**
-- Redo should follow the same score-aware repeat policy as planner generation (new topics preferred; review allowed for low scores; avoid repeating high-score topics).
-- Redo additionally supports `promptUpdate` to let the facilitator steer the regeneration.
-- Redo should not force every regeneration to be a review; instead, only label as `Review:` when a review is actually chosen.
-
-**Grade source of truth:**
-- Planned-lesson outlines must use the selected learner's grade as the default `grade` sent to `/api/generate-lesson-outline`.
-- Do not hardcode a default grade like "3rd" at the planner layer; that will leak into every planned lesson and any downstream generator that uses the outline.
-
-**Grade type normalization:**
-- Treat `grade` as a string in generator UIs.
-- Some data sources store grade as a number (e.g., `3`), which will crash code that assumes `.trim()` exists.
-
-### 40. docs/brain/ingests/pack.md (8553ec4a96cb35a36453f5c28d63fd06cec584d5e5726093793930c77128e5d0)
-- bm25: -20.6530 | relevance: 1.0000
-
-### 20. src/app/api/planned-lessons/route.js (7f4030d9bf7a1414ad7d0582b42b03e4f7424290402ad9566f507a6ded607bdf)
-- bm25: -9.6259 | relevance: 0.9059
-
-// Verify the learner belongs to this facilitator/owner.
-    // Planned lessons are treated as per-learner data (not per-facilitator), but still require authorization.
-    const { data: learner, error: learnerError } = await adminSupabase
-      .from('learners')
-      .select('id')
-      .eq('id', learnerId)
-      .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
-      .maybeSingle()
-
-### 21. src/app/session/slate/page.jsx (01e0d645ab70ec35705147ded18c0e7ece1747fc020330f05cfa4cafcdadc74a)
-- bm25: -9.6221 | relevance: 0.9059
-
-// Load learner + mastery + available lessons
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const id = localStorage.getItem('learner_id')
-    setLearnerId(id)
-    if (id) {
-      const mm = getMasteryForLearner(id)
-      setMasteryMap(mm)
-      learnerIdRef.current = id
-      if (!id || id === 'demo') {
-        phaseRef.current = 'list'
-        setPagePhase('list')
-        return
-      }
-      Promise.all([
-        fetch(`/api/learner/available-lessons?learner_id=${encodeURIComponent(id)}`)
-          .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load lessons'))),
-        fetch(`/api/learner/slate-settings?learner_id=${encodeURIComponent(id)}`)
-          .then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch(`/api/learner/lesson-history?learner_id=${encodeURIComponent(id)}&limit=200`)
-          .then(r => r.ok ? r.json() : null).catch(() => null),
-      ])
-        .then(([availRes, settingsRes, historyRes]) => {
-          const { lessons = [], staleApprovedKeys = [] } = availRes || {}
-          const drillable = (lessons || []).filter(l => buildPool(l).length > 0)
-          setAvailableLessons(drillable)
-          setAllOwnedLessons(lessons || [])
-          if (settingsRes?.settings) {
-            const merged = { ...DEFAULT_SLATE_SETTINGS, ...settingsRes.settings }
-            setSettings(merged)
-            setSettingsDraft(merged)
-            settingsRef.current = merged
-          }
-
-### 22. src/app/api/learner/slate-settings/route.js (0e234c8a70be8c0acd4b54db8396389ebceb5a68d82ef1fcd380e5f5dfa438d9)
-- bm25: -9.5510 | relevance: 0.9052
-
-// Mr. Slate drill settings — per-learner configurable drill parameters
-// Stored in learners.slate_settings (JSONB). Run scripts/add-slate-settings-column.sql first.
-
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
-
-const DEFAULT_SETTINGS = {
-  scoreGoal: 10,
-  correctPts: 1,
-  wrongPts: 1,
-  timeoutPts: 0,
-  questionSecs: 15,
-}
-
-// Allowed keys and their valid ranges (guards against arbitrary writes)
-const ALLOWED = {
-  scoreGoal:    { min: 3,  max: 30  },
-  correctPts:   { min: 1,  max: 5   },
-  wrongPts:     { min: 0,  max: 5   },
-  timeoutPts:   { min: 0,  max: 5   },
-  questionSecs: { min: 5,  max: 120 },
-}
-
-function sanitize(raw) {
-  const out = {}
-  for (const [key, { min, max }] of Object.entries(ALLOWED)) {
-    const v = Number(raw?.[key])
-    out[key] = Number.isFinite(v) ? Math.min(max, Math.max(min, Math.round(v))) : DEFAULT_SETTINGS[key]
-  }
-  return out
-}
-
-async function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) return null
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
-}
-
-export async function GET(request) {
-  const { searchParams } = new URL(request.url)
-  const learnerId = searchParams.get('learner_id')
-
-if (!learnerId) return NextResponse.json({ settings: DEFAULT_SETTINGS })
-
-try {
-    const supabase = await getSupabaseAdmin()
-    if (!supabase) return NextResponse.json({ settings: DEFAULT_SETTINGS })
-
-const { data, error } = await supabase
-      .from('learners')
-      .select('slate_settings')
-      .eq('id', learnerId)
-      .maybeSingle()
-
-### 23. docs/brain/ingests/pack.lesson-schedule-debug.md (29249996be09c0693404295bc827d5da4c475eff693d707e837bdac9c49a7aa2)
-- bm25: -9.4420 | relevance: 0.9042
-
-Returns:
-```javascript
-{
-  handled: false,
-  apiForward: { 
-    message: userMessage, 
-    bypassInterceptor: true 
-  }
-}
-```
-
-## Data Structures
-
-### allLessons (from loadAllLessons)
-
-### 32. docs/brain/portfolio-generation.md (fe1e7ac464f2afc7d7f87532c21ef1729a468f8ae05052009b691a0e808f815e)
-- bm25: -17.3592 | relevance: 1.0000
-
-# Portfolio Generation System
-
-**Last Updated**: 2026-01-30T15:25:06Z
-**Status**: Canonical
-
-## How It Works
-
-The Lesson Calendar page provides a **Generate portfolio** button that builds a shareable, no-login portfolio for a learner across a date range.
-
-### UI Flow
-
-1. Facilitator opens Lesson Calendar.
-2. Clicks **Generate portfolio** (header button).
-3. Modal collects:
-   - Start date (YYYY-MM-DD)
-   - End date (YYYY-MM-DD)
-   - Include checkboxes: Visual aids, Notes, Images
-4. Clicking **Generate Portfolio** calls `POST /api/portfolio/generate`.
-5. UI shows a public link to open the portfolio plus a manifest download link.
-6. UI also lists previously generated portfolios so they can be re-opened or deleted.
-
-### What Gets Included
-
-The generator produces one portfolio index with per-lesson recap sections.
-
-Per lesson (completed scheduled lessons only):
-- **Title**: derived from `lesson_schedule.lesson_key`.
-- **Date**: the scheduled date.
-- **Notes** (optional): from `learners.lesson_notes[lesson_key]`.
-- **Visual aids** (optional): `visual_aids.selected_images` for the facilitator and that lesson.
-- **Images / scans** (optional): worksheet/test/other scans uploaded via the Calendar "Add Images" feature.
-
-### Completion Rule (Calendar parity)
-
-### 24. src/app/lib/masteryClient.js (eb09f70c0c6f6b1ae4708af3ee21b8f0b8e3c7391ec6773b7b0d8d7f00486047)
-- bm25: -9.4065 | relevance: 0.9039
-
-/**
- * masteryClient.js
- *
- * Tracks Mr. Slate mastery status per learner per lesson.
- * Stored in localStorage (key: slate_mastery_v1) so it persists
- * across page reloads without requiring a DB migration.
- *
- * Schema: { [learnerId]: { [lessonKey]: { mastered: true, masteredAt: ISO } } }
- *
- * lessonKey format: "<subject>/<filename>.json"  e.g. "math/4th_Geometry_Angles_Classification_Beginner.json"
- */
-
-const LS_KEY = 'slate_mastery_v1'
-
-function read() {
-  if (typeof window === 'undefined') return {}
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') } catch { return {} }
-}
-
-function write(obj) {
-  if (typeof window === 'undefined') return
-  try { localStorage.setItem(LS_KEY, JSON.stringify(obj)) } catch {}
-}
-
-/**
- * Returns the mastery map for one learner: { [lessonKey]: { mastered, masteredAt } }
- */
-export function getMasteryForLearner(learnerId) {
-  if (!learnerId) return {}
-  return read()[learnerId] || {}
-}
-
-/**
- * Returns true if this learner has mastered this lesson.
- */
-export function isMastered(learnerId, lessonKey) {
-  if (!learnerId || !lessonKey) return false
-  return !!(read()[learnerId]?.[lessonKey]?.mastered)
-}
-
-/**
- * Records mastery for a learner + lesson. Idempotent — safe to call multiple times.
- */
-export function saveMastery(learnerId, lessonKey) {
-  if (!learnerId || !lessonKey) return
-  const all = read()
-  if (!all[learnerId]) all[learnerId] = {}
-  all[learnerId][lessonKey] = { mastered: true, masteredAt: new Date().toISOString() }
-  write(all)
-}
-
-### 25. src/app/api/facilitator/lessons/list/route.js (812a61970219f7a0aa8d2d6fe316dc1438ebab642a181655be3404ec0d38613b)
-- bm25: -9.0465 | entity_overlap_w: 1.30 | adjusted: -9.3715 | relevance: 0.9036
-
-if (debug) {
-      // eslint-disable-next-line no-console
-      console.log('[api/facilitator/lessons/list]', 'listed', { count: (files || []).length, ms: Date.now() - startedAt })
-    }
-    
-    const out = []
-    
-    // Process each file in the user's folder
-    for (const fileObj of files || []) {
-      if (!fileObj.name.toLowerCase().endsWith('.json')) continue
-      
-      // OPTIMIZATION: Skip files not in the requested list
-      if (requestedFiles && !requestedFiles.includes(fileObj.name)) {
-        continue
-      }
-      
-      try {
-        const oneStartedAt = Date.now()
-        // Bypass storage SDK and use direct REST API with service role
-        const filePath = `facilitator-lessons/${userId}/${fileObj.name}`
-        const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/lessons/${filePath}`
-        
-        const response = await fetchWithTimeout(storageUrl, {
-          headers: {
-            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-            'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY
-          }
-        }, 15000)
-        
-        if (!response.ok) {
-          if (debug) {
-            // eslint-disable-next-line no-console
-            console.log('[api/facilitator/lessons/list]', 'skip file (status)', {
-              name: fileObj.name,
-              status: response.status,
-              ms: Date.now() - oneStartedAt,
-            })
-          }
-          // Silent error - skip this file
-          continue
+// Video
+    post('video')
+      .then(r => r.json())
+      .then(data => {
+        if (data.video) {
+          setVideoResource(data.video)
+          if (data.video.videoId) shownVideoIdsRef.current = [data.video.videoId]
         }
-        
-        const raw = await response.text()
-        const js = JSON.parse(raw)
-        const subj = (js.subject || '').toString().toLowerCase()
-        const approved = js.approved === true
-        const needsUpdate = js.needsUpdate === true
-        out.push({ 
-          file: f
-
-### 26. docs/brain/lesson-editor.md (38744ddc77ed5cd3e3f4d0f126e4a5cb059b0e9e1a27af60e154326b18e313ce)
-- bm25: -9.3580 | relevance: 0.9035
-
-### Validation & Safety
-
-**Pre-save Validation**
-- Required fields (title, grade, difficulty)
-- Question text presence
-- Answer completeness
-- Minimum choice counts for multiple choice
-- Blank presence for fill-in-blank
-
-**Auto-cleanup**
-- Empty questions removed
-- Empty answer fields filtered
-- Empty vocabulary terms removed
-- Empty choice options filtered
-- Maintains JSON structure integrity
-
-**Error Display**
-- Clear error messages before save
-- Specific field identification
-- Red error banner with checklist
-
-### Workflow
-
-**Edit existing owned lesson**
-1. Go to Lesson Library
-2. Click "Edit" on an owned lesson
-3. Edit any fields in the structured form
-4. Save Changes to update the Storage-backed JSON file
-5. Cancel to discard changes
-
-**Create a new lesson from scratch**
-1. Go to Lesson Library
-2. Click **📝 New Lesson**
-3. Fill in lesson fields (title, grade, difficulty, subject, etc.)
-4. Press Save to create the lesson in Storage
-5. Cancel to discard (no Storage file is created)
-
-## Integration with Existing Features
-
-**Compatible with:**
-- Text Preview (still available)
-- Request AI Changes (for AI-assisted editing)
-
-## Related Brain Files
-
-- **[lesson-validation.md](lesson-validation.md)** - Editor triggers automatic validation on save
-- **[ai-rewrite-system.md](ai-rewrite-system.md)** - AIRewriteButton improves lesson content quality
-
-## Key Files
-
-- Structured form UI: `src/components/LessonEditor.jsx`
-- Lesson editor page: `src/app/facilitator/lessons/edit/page.js`
-- Save existing lesson: `src/app/api/lesson-edit/route.js`
-- Create new lesson on first save: `src/app/api/facilitator/lessons/create/route.js`
-
-## What NOT To Do
-
-### 27. docs/brain/ingests/pack.planned-lessons-flow.md (bb1ea8e97e97bc7a7cf0e595d4c2e295f2243bf8cb59b699da17b5cf5ee90289)
-- bm25: -9.3126 | relevance: 0.9030
-
-### 30. docs/brain/lesson-library-downloads.md (b1b9e213db751b5765dbf2e696989c3293e61bd99e1db9d560a4332ae5c3532e)
-- bm25: -13.9504 | relevance: 1.0000
-
-# Lesson Library Downloads (Owned vs Downloadable)
-
-**Status:** Canonical
-**Created:** 2026-01-10
-**Purpose:** Define how facilitator-visible "download" works without any device storage.
-
-## How It Works
-
-### Concepts
-
-- **Downloadable lesson**: A built-in lesson JSON that exists on the server under `public/lessons/<subject>/...`.
-- **Owned lesson**: A facilitator-specific copy of a lesson stored in Supabase Storage under `lessons/facilitator-lessons/<facilitatorId>/<file>.json`.
-- **Download action**: Server-side copy from the built-in library into the facilitator's Storage folder (not a device download).
-
-### UX Rules (Facilitator Lessons Page)
-
-- Top-of-page actions:
-  - **📝 New Lesson** opens the lesson editor with a blank lesson (no Storage write until the user saves).
-  - **✨ Generate Lesson** opens the Lesson Maker flow (`/facilitator/generator`).
-
-- A dropdown filter controls which lessons are shown:
-  - **Owned** (default): show only owned lessons (Storage-backed).
-  - **Downloadable**: show only downloadable lessons that are not owned.
-  - **All Lessons**: show both.
-
-- **Gating**:
-  - Downloadable lessons that are not owned show exactly one action: **Download**.
-  - After Download succeeds, the owned copy exists and the regular lesson controls appear (Edit, per-learner availability, notes, schedule).
-
-### Prefetch Behavior
-
-### 28. cohere-changelog.md (853ad1fbee4b6ff2e2fb7abe38a8fdcde1995938478c77d3fcef8141190eb664)
-- bm25: -9.3109 | relevance: 0.9030
-
----
-
-Date (UTC): 2026-02-23T17:13:02.2543565Z
-
-Topic: Flash Cards progress sync across devices/browsers
-
-Recon prompt (exact string):
-Flash Cards progress across all devices and browsers: locate the existing Supabase learner-scoped persistence patterns (tables, RLS, upsert/read helpers) used by sessionSnapshotStore/SnapshotService, then outline how to implement the same for flashcards progress.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-- rounds journal: sidekick_rounds.jsonl (search by prompt)
-
-Result:
-- Decision: Reuse the existing `/api/snapshots` + `learner_snapshots` mechanism (Supabase auth token + learner_id + lesson_key) for flashcards progress, with localStorage as an instant cache and debounced remote sync.
-- Files changed: src/app/session/components/games/FlashCards.jsx, src/app/session/components/games/flashcardsProgressStore.js, cohere-changelog.md
-
-Follow-ups:
-- None (takeover enforces a single active session per account).
-
----
-
-Date (UTC): 2026-02-23T17:37:08.8912021Z
-
-Topic: Flash Cards visual polish (portrait card + slide animation)
-
-Recon prompt (exact string):
-Flash Cards game: make the card look like a real vertical flashcard and add a simple slide-in/slide-out animation between cards. Find existing animation/style patterns in the session UI and confirm where FlashCards is rendered.
-
-Key evidence:
-- sidekick_pack: sidekick_pack.md
-
-Result:
-- Updated the card UI to a tall portrait “flash card” and added a lightweight slide-out/slide-in transition when advancing cards.
-- Files changed: src/app/session/components/games/FlashCards.jsx, cohere-changelog.md
-
----
-
-Date (UTC): 2026-02-23T18:07:12.8146173Z
-
-Topic: Flash Cards meter decay (stage-scaled time pressure)
-
-### 29. src/app/api/learner/slate-settings/route.js (b435d074411bd65efef2a6467d962f32adf1fef4e87c9813df5f6ec221b55a31)
-- bm25: -9.2787 | relevance: 0.9027
-
-if (error || !data) return NextResponse.json({ settings: DEFAULT_SETTINGS })
-
-### 30. docs/brain/session-takeover.md (db2a0821d0d2e9ec364a6eae8560f570fd8ce226d208ca199d72980db2ee6b57)
-- bm25: -9.2777 | relevance: 0.9027
-
-#### Teaching Flow
-- `begin-teaching-definitions`
-- `vocab-sentence-1` through `vocab-sentence-N`
-- `begin-teaching-examples`
-- `example-sentence-1` through `example-sentence-N`
-
-#### Comprehension Flow
-- `comprehension-active` (after each answer)
-
-#### Other Phases
-- `begin-discussion`
-- `begin-worksheet`
-- `begin-exercise`
-- `begin-test`
-- `skip-forward`
-- `skip-back`
-
-### Session ID Generation and Storage
-
-**Browser-side session ID:**
-```javascript
-// Generated once per browser tab, persists in sessionStorage
-let browserSessionId = sessionStorage.getItem('lesson_session_id');
-if (!browserSessionId) {
-  browserSessionId = crypto.randomUUID();
-  sessionStorage.setItem('lesson_session_id', browserSessionId);
-}
-```
-
-**Included in every snapshot save:**
-```javascript
-const payload = {
-  learner_id: learnerId,
-  lesson_key: lessonKey,
-  session_id: browserSessionId,
-  device_name: navigator.userAgent, // or user-friendly device name
-  last_activity_at: new Date().toISOString(),
-  snapshot: { /* state */ }
-};
-```
-
-**Database checks on save:**
-1. Look for active session with this `learner_id` + `lesson_id`
-2. If exists and `session_id` matches: update successful (same device)
-3. If exists and `session_id` differs: return conflict error with existing session details
-4. If none exists: create new session
-
-## Key Files
-
-### 31. src/app/api/slate-tts/route.js (b62be01756071ff4a3272fac6542ed5c2108c0b7ed5f0aa52e0fd04080b0767b)
-- bm25: -9.2496 | relevance: 0.9024
-
-const ssml = toSsml(text)
-    const [res] = await client.synthesizeSpeech({ input: { ssml }, voice: SLATE_VOICE, audioConfig: SLATE_AUDIO_CONFIG })
-    const base64 = res?.audioContent
-      ? (typeof res.audioContent === 'string' ? res.audioContent : Buffer.from(res.audioContent).toString('base64'))
-      : undefined
-    const dataUrl = base64 ? `data:audio/mp3;base64,${base64}` : undefined
-    return NextResponse.json({ reply: text, audio: dataUrl })
-  } catch {
-    return NextResponse.json({ error: 'tts_failed' }, { status: 500 })
-  }
-}
-
-### 32. docs/brain/v2-architecture.md (afffb9d44c9d9d5e9aee21cef0911b2f58779289d8122262e1045a2a4c0d3206)
-- bm25: -9.2180 | relevance: 0.9021
-
-### 🚧 In Progress
-- None (all critical issues fixed, ready for testing)
-
-### 📋 Next Steps
-1. Browser test: Full session flow with EventBus event coordination
-2. Browser test: Verify Supabase snapshot persistence
-3. Browser test: Verify audio initialization on iOS
-4. Browser test: Verify timer events update UI correctly
-5. Browser test: Verify golden key award persistence (3 on-time completions increments `learners.golden_keys`)
-6. Browser test: Verify generated lesson loading
-7. Production deployment with feature flag
-
----
-
-## Related Brain Files
-
-- **[snapshot-persistence.md](snapshot-persistence.md)** - V2 reimplements snapshot system with SnapshotService
-- **[timer-system.md](timer-system.md)** - V2 reimplements timers with TimerService
-- **[tts-prefetching.md](tts-prefetching.md)** - V2 reimplements TTS with AudioEngine
-- **[ms-sonoma-teaching-system.md](ms-sonoma-teaching-system.md)** - V2 reimplements teaching flow with TeachingController
-
-## Key Files
-
-### 33. docs/brain/ingests/pack.md (e4dc0297c51db7b2d71be9de0406c24c615491ad333d110432ff2a8f5a2ec213)
-- bm25: -9.0848 | relevance: 0.9008
-
-- A dropdown filter controls which lessons are shown:
-  - **Owned** (default): show only owned lessons (Storage-backed).
-  - **Downloadable**: show only downloadable lessons that are not owned.
-  - **All Lessons**: show both.
-
-### 34. src/app/session/slate/page.jsx (f118b5885e602f1642d7921a329191ab51568d7faa6eb9d848b0dd72e904c9ec)
-- bm25: -8.9060 | relevance: 0.8991
-
-// Fetch full lesson data for:
-          //   1. history lesson_ids not in the loaded approved set
-          //   2. staleApprovedKeys — keys that were in approved_lessons but files couldn't be
-          //      found by available-lessons (now we retry via /api/lessons/meta which handles
-          //      generated lessons stored in Supabase Storage)
-          const historyMissing = [...seen.keys()].filter(k => !approvedKeySet.has(k))
-          const staleSet = new Set(staleApprovedKeys || [])
-          const metaKeys = [...new Set([...historyMissing, ...staleSet])]
-          if (metaKeys.length) {
-            fetch('/api/lessons/meta', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ keys: metaKeys, learner_id: id }),
-            }).then(r => r.ok ? r.json() : null).then(res => {
-              if (res?.lessons?.length) {
-                const map = {}
-                for (const l of res.lessons) map[l.lessonKey] = l
-                setHistoryLessons(map)
-              }
-            }).catch(() => {})
-          }
-          phaseRef.current = 'list'
-          setPagePhase('list')
-        })
-        .catch(e => {
-          setErrorMsg(e?.message || 'Could not load lessons.')
-          phaseRef.current = 'error'
-          setPagePhase('error')
-        })
-    } else {
-      phaseRef.current = 'list'
-      setPagePhase('list')
-    }
+      })
+      .catch(() => {})
+      .finally(() => setVideoLoading(false))
+
+// Article
+    post('article')
+      .then(r => r.json())
+      .then(data => {
+        if (data.article) {
+          setArticleResource(data.article)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setArticleLoading(false))
   }, [])
 
-### 35. src/app/api/learner/slate-settings/route.js (953e15d774dce97d3784301534f5ceda9e0e42cd19fe43b3be4067f8bfabdd29)
-- bm25: -8.5818 | relevance: 0.8956
+// ── Select lesson → start AI chat ─────────────────────────────────────
+  const selectLesson = useCallback(async (lesson) => {
+    setPhase(PHASE.STARTING)
+    setSelectedLesson(lesson)
+    setTranscript([])
+    setActiveIndex(-1)
+    setChatMessages([])
+    setVideoResource(null)
+    setArticleResource(null)
+    setMediaOverlay(null)
+    setPageError('')
 
-return NextResponse.json({ settings: { ...DEFAULT_SETTINGS, ...(data.slate_settings || {}) } })
-  } catch {
-    return NextResponse.json({ settings: DEFAULT_SETTINGS })
-  }
-}
+### 5. src/app/session/webb/page.jsx (bd8984679af9a6081644d0b53498eabb4aba623f68cf5265f537556bfb6dd67d)
+- bm25: -22.8701 | relevance: 0.9581
 
-export async function PATCH(request) {
-  try {
-    const body = await request.json()
-    const { learner_id, settings: raw } = body
+{/* Footer: chat input */}
+      {isChatting && (
+        <div style={footerStyle}>
+          <StudentInput
+            onSend={sendMessage}
+            loading={chatLoading}
+          />
+        </div>
+      )}
 
-if (!learner_id) return NextResponse.json({ error: 'learner_id required' }, { status: 400 })
-    if (!raw || typeof raw !== 'object') return NextResponse.json({ error: 'settings required' }, { status: 400 })
+{/* ── Portaled media overlay — position:fixed, moves between video/chat cols ── */}
+      {isChatting && mediaOverlay && overlayPanelStyle && createPortal(
+        <div ref={mediaOverlayRef} style={overlayPanelStyle}>
 
-const supabase = await getSupabaseAdmin()
-    if (!supabase) return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+### 6. src/app/api/webb-resources/route.js (646fc5525bc8ce35812dd96b483f22b47f860ce91463d76fe1e7f8ea4da5d51a)
+- bm25: -22.4327 | relevance: 0.9573
 
-const safe = sanitize(raw)
+﻿/**
+ * /api/webb-resources
+ * Generates curated, child-safe media resources for a lesson.
+ *
+ * Video:   YouTube Data API v3 + GPT safety review of title/channel/description
+ * Article: Fetches directly from Wikipedia REST APIs (Simple English first, then English)
+ *          (srcdoc approach bypasses X-Frame-Options; no client-side fetching needed)
+ *
+ * POST { lesson, type: 'video'|'article'|'both', context? }
+ * Returns:
+ *   video?:   { embedUrl, title, channel, searchQuery }  — real playable embed
+ *          OR { unavailable: true, searchQuery }          — no key / all rejected
+ *   article?: { html, source, title }                    — ready for srcdoc iframe
+ *          OR { html: null, source: null, title }        — all fetches failed
+ */
+import { NextResponse } from 'next/server'
 
-const { error } = await supabase
-      .from('learners')
-      .update({ slate_settings: safe })
-      .eq('id', learner_id)
+const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+const YT_SEARCH    = 'https://www.googleapis.com/youtube/v3/search'
 
-if (error) {
-      if (error.message?.includes('slate_settings') || error.code === '42703') {
-        return NextResponse.json(
-          { error: 'Column slate_settings not found. Run scripts/add-slate-settings-column.sql in Supabase.' },
-          { status: 422 }
-        )
-      }
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
+// ── Wikipedia REST API sources (open, no-auth, work from cloud hosting) ───────
+const WIKI_SOURCES = [
+  {
+    name: 'Simple English Wikipedia',
+    url:  t => `https://simple.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(t.replace(/\s+/g, '_'))}`,
+    base: 'https://simple.wikipedia.org',
+  },
+  {
+    name: 'Wikipedia',
+    url:  t => `https://en.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(t.replace(/\s+/g, '_'))}`,
+    base: 'https://en.wikipedia.org',
+  },
+]
 
-return NextResponse.json({ ok: true, settings: safe })
+### 7. src/app/session/webb/page.jsx (52d7a4839fe0aec749cafb2e5ee7a05216218e3f09eee846474db9b73e9d098b)
+- bm25: -22.1919 | relevance: 0.9569
+
+{/* Teacher video */}
+            <video
+              ref={videoRef}
+              src="/media/webb-teacher.mp4"
+              muted loop playsInline preload="auto"
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+            />
+
+### 8. src/app/session/webb/page.jsx (f623e1b80cfe5c445a4bb1d9bd91a4bf9e9525019f0d8184b1cbeb71a39770e2)
+- bm25: -20.8641 | relevance: 0.9543
+
+{/* Toolbar */}
+          <div style={{ background: 'rgba(15,118,110,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', flexShrink: 0 }}>
+            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 0.5 }}>
+              {mediaOverlay === 'video' ? '\u25B6 VIDEO' : '\uD83D\uDCD6 ARTICLE'}
+              {mediaOverlay === 'article' && articleResource?.source && (
+                <span style={{ opacity: 0.75, fontWeight: 400, marginLeft: 4 }}>\u00B7 {articleResource.source}</span>
+              )}
+            </span>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {/* Refresh */}
+              <button type="button" onClick={() => refreshMedia(mediaOverlay)} disabled={refreshingMedia} title="Load a different one"
+                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 12, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                {refreshingMedia ? '\u2026' : '\u21BB'}
+              </button>
+              {/* Move arrow — hidden in fullscreen */}
+              {!mediaIsFullscreen && (
+                <button type="button"
+                  onClick={() => setMediaPos(p => p === 'video' ? 'chat' : 'video')}
+                  title={mediaMoveToChat ? 'Move to conversation' : 'Move to video'}
+                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>
+                  {arrowGlyph}
+                </button>
+              )}
+              {/* Fullscreen toggle */}
+              <button typ
+
+### 9. src/app/api/webb-resources/route.js (f50d22a7d55acd7696a13a93c2acce3b188807ada628c2474c7a7096405f6cb4)
+- bm25: -19.2457 | relevance: 0.9506
+
+const title   = lesson.title   || 'general topic'
+    const subject = lesson.subject || 'general'
+    const grade   = lesson.grade   ? `Grade ${lesson.grade}` : 'elementary'
+    const ctx     = context ? ` Student discussion context: ${context.slice(0, 300)}` : ''
+    const prevSrc = String(previousSource || '').slice(0, 60)
+
+const needVideo   = type === 'video'   || type === 'both'
+    const needArticle = type === 'article' || type === 'both'
+
+// Run video and article generation in parallel
+    const [videoResult, articleResult] = await Promise.all([
+      needVideo   ? generateVideo(apiKey, ytKey, title, subject, grade, ctx)   : null,
+      needArticle ? generateArticle(title, prevSrc) : null,
+    ])
+
+return NextResponse.json({
+      ...(videoResult   ? { video:   videoResult   } : {}),
+      ...(articleResult ? { article: articleResult } : {}),
+    })
   } catch (e) {
-    return NextResponse.json({ error: e?.message || 'Unknown error' }, { status: 500 })
+    console.error('webb-resources error:', e)
+    return NextResponse.json({ error: 'Resource generation failed' }, { status: 500 })
   }
 }
 
-### 36. src/app/facilitator/generator/generated/page.js (c0089ce90f50a13a728f5e6e6f05b548d425913b45c4d02e25db4f807e07d072)
-- bm25: -8.5186 | relevance: 0.8949
+// Health check
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    endpoint: 'webb-resources',
+    sources: WIKI_SOURCES.map(s => s.name),
+  })
+}
 
-﻿// Redirect to lessons page (Generated lessons are now shown in Lessons)
-"use client";
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+### 10. src/app/session/webb/page.jsx (2de38be8131465ed3b88c15b372710f5c7810f2ab560c27ab63eb2444870c55f)
+- bm25: -16.9928 | relevance: 0.9444
 
-export default function GeneratedLessonsPage() {
-  const router = useRouter();
-  
-  useEffect(() => {
-    router.replace('/facilitator/lessons');
-  }, [router]);
-  
-  return (
-    <main style={{ padding: 24 }}>
-      <p>Redirecting to Lessons...</p>
-    </main>
+{/* ── ARTICLE ── */}
+            {mediaOverlay === 'article' && articleResource?.html && (
+              <iframe srcDoc={articleResource.html} title={articleResource.title || 'Educational article'}
+                sandbox="allow-same-origin allow-scripts" style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }} />
+            )}
+            {mediaOverlay === 'article' && articleLoading && !articleResource && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, color: '#9ca3af', fontSize: 13, background: '#fff' }}>
+                <svg viewBox="0 0 24 24" style={{ width: 32, height: 32, animation: 'spin 1s linear infinite' }} fill="none" stroke="#0d9488" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
+                Finding an article\u2026
+              </div>
+            )}
+            {mediaOverlay === 'article' && !articleLoading && articleResource && !articleResource.html && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, padding: 20, background: '#fff', boxSizing: 'border-box', textAlign: 'center' }}>
+                <svg viewBox="0 0 24 24" style={{ width: 40, height: 40 }} fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6 }}>Couldn&apos;t load the article.<br/>Tap below to try a different one.</div>
+                <button type="button" onClick={() => refreshMedia('article')} disabled={refreshingMedia}
+                  style={{ ...primaryBtn,
+
+### 11. src/app/session/webb/page.jsx (1ae68a85e04693eff001099b19593cedafc4a48425b6531a4ba990cbfc59c523)
+- bm25: -16.9067 | relevance: 0.9442
+
+{/* ── VIDEO ── */}
+            {mediaOverlay === 'video' && videoResource?.embedUrl && (
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#000' }}>
+                <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                  <iframe
+                    ref={videoIframeRef}
+                    src={videoResource.embedUrl}
+                    title={videoResource.title || 'Educational video'}
+                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    sandbox="allow-scripts allow-same-origin allow-presentation"
+                    style={{ width: '100%', height: '100%', border: 'none' }}
+                  />
+                  {videoEnded && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 24, boxSizing: 'border-box' }}>
+                      <div style={{ fontSize: 38 }}>&#127881;</div>
+                      <div style={{ color: '#fff', fontSize: 16, fontWeight: 700, textAlign: 'center' }}>
+                        Great job watching!<br/>
+                        <span style={{ fontSize: 13, fontWeight: 400, color: '#9ca3af' }}>{videoResource.title}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+                        <button type="button" onClick={() => { setVideoEnded(false); ytCmd('seekTo', [0, true]); ytCmd('playVideo') }}
+                          style={{ background: '#374151', border: 'none', color: '#fff', borderRadius: 8, padding: '1
+
+### 12. src/app/session/webb/page.jsx (dcb58ed483aaa5e5c774d7d7c24db1e3ef4c9a7d138753763e4bb683490a6a1f)
+- bm25: -15.3004 | relevance: 0.9387
+
+const transcriptWrapperStyle = isMobileLandscape
+    ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', paddingLeft: 8, boxSizing: 'border-box' }
+    : { flex: '1 1 0', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', marginTop: 8 }
+
+// ── Media overlay helpers ─────────────────────────────────────────────
+  function toggleMediaFullscreen() {
+    if (!mediaIsFullscreen) mediaOverlayRef.current?.requestFullscreen?.().catch(() => {})
+    else document.exitFullscreen?.().catch(() => {})
+  }
+  const mediaMoveToChat = mediaPos === 'video'
+  const arrowGlyph = isMobileLandscape
+    ? (mediaMoveToChat ? '\u2192' : '\u2190')  // → or ←
+    : (mediaMoveToChat ? '\u2193' : '\u2191')  // ↓ or ↑
+  const overlayPanelStyle = overlayRect
+    ? {
+        position: 'fixed',
+        top: overlayRect.top, left: overlayRect.left,
+        width: overlayRect.width, height: overlayRect.height,
+        background: '#000',
+        borderRadius: (mediaIsFullscreen || mediaPos === 'chat') ? 0 : 8,
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden', zIndex: 20,
+        boxShadow: mediaIsFullscreen ? 'none' : '0 0 0 2px rgba(13,148,136,0.6)',
+      }
+    : mediaIsFullscreen
+      ? { position: 'fixed', inset: 0, background: '#000', display: 'flex', flexDirection: 'column', overflow: 'hidden', zIndex: 20 }
+      : null
+
+const isChatting = phase === PHASE.CHATTING
+
+### 13. src/app/session/webb/page.jsx (e27917160ddb1c162b57e0810a7f57080f156879a1a186dc99c10b7202601d5f)
+- bm25: -14.8825 | relevance: 0.9370
+
+{/* Media overlay: rendered as portal — see createPortal block near end of return */}
+
+{/* Overlay buttons — bottom right: Skip + Mute (always) */}
+            <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', gap: 10, zIndex: 10 }}>
+              {engineState === 'playing' && (
+                <button type="button" onClick={skipTTS} aria-label="Skip" style={overlayBtnStyle}>
+                  <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="5 4 15 12 5 20 5 4" /><line x1="19" y1="5" x2="19" y2="19" />
+                  </svg>
+                </button>
+              )}
+              <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'} style={overlayBtnStyle}>
+                {isMuted
+                  ? <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
+                  : <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
+                }
+              </button>
+            </div>
+
+### 14. src/app/facilitator/page.js (f609a23f9906dd59a74b8a61361ff9d335c01b28cecf8002b6053ee9113be590)
+- bm25: -13.0316 | relevance: 0.9287
+
+{/* Mr. Mentor video button */}
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+          <Link 
+            href="/facilitator/mr-mentor"
+            title="Mr. Mentor"
+            style={{
+              display: 'block',
+              width: 80,
+              height: 80,
+              border: '2px solid #111',
+              borderRadius: 12,
+              overflow: 'hidden',
+              padding: 0,
+              textDecoration: 'none',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            }}
+          >
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block'
+              }}
+            >
+              <source src="/media/Mr Mentor.mp4" type="video/mp4" />
+            </video>
+          </Link>
+        </div>
+        <p style={{ textAlign: 'center', color: '#555', fontSize: 14, marginTop: 8 }}>
+          Talk to Mr. Mentor
+        </p>
+      </div>
+    </div>
   );
 }
 
-### 37. src/app/session/slate/page.jsx (fda166c1c53018c52ce3c468054ceccadabc3f5fff85762deafc001605c39346)
-- bm25: -8.3677 | relevance: 0.8933
+### 15. src/app/session/webb/page.jsx (b35d9ca7ea1c192b4293b387124ddccc2f80fc97acc7ecb4fafc63dbf971f073)
+- bm25: -12.9448 | relevance: 0.9283
 
-'use client'
+// ── Video / TTS ──────────────────────────────────────────────────────
+  const videoRef      = useRef(null)
+  const ttsQueueRef   = useRef([])
+  const ttsBusyRef    = useRef(false)
+  const ttsCurrentRef = useRef(null)
+  const [engineState, setEngineState] = useState('idle')
+  const [isMuted, setIsMuted]         = useState(false)
+  const isMutedRef                    = useRef(false)
 
-/**
- * Mr. Slate -- Skills & Practice Coach
- *
- * A quiz-mode drill session. Questions are drawn from the same lesson JSON
- * as Ms. Sonoma (sample, truefalse, multiplechoice, fillintheblank pools).
- * The learner accumulates points (goal: 10) to earn the robot mastery icon.
- *
- * Rules:
- *   - Correct answer within time limit  -> +1 (min 0, max 10)
- *   - Wrong answer                      -> -1 (min 0)
- *   - Timeout (15s default)             -> +/-0
- *   - Reach 10 -> mastery confirmed
- *
- * Questions rotate through the full pool without repeats until ~80% have
- * been asked, then the deck reshuffles.
- *
- * Lessons are loaded from /api/learner/available-lessons (handles static,
- * generated, and Supabase-stored lessons uniformly). No URL params required.
- */
+### 16. src/app/session/webb/page.jsx (80e7256f767f0801a327ea071c89b619ae8ff65ff6a40ba3bf1ca046a8bda4b6)
+- bm25: -12.5547 | relevance: 0.9262
 
-import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
-import { useRouter } from 'next/navigation'
-import { getMasteryForLearner, saveMastery } from '@/app/lib/masteryClient'
+{/* Header */}
+      <div style={{ background: C.accentDark, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 24 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: 0.5 }}>MRS. WEBB</div>
+              {selectedLesson
+                ? <div style={{ fontSize: 11, opacity: 0.85, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedLesson.title}</div>
+                : <div style={{ fontSize: 11, opacity: 0.75, letterSpacing: 1 }}>LESSON TEACHER</div>
+              }
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {isChatting && (
+              <button type="button" onClick={handleBack} style={headerBtn}>
+                &#8592; Lessons
+              </button>
+            )}
+            <button type="button" onClick={handleExit} style={headerBtn}>
+              &#8592; BACK
+            </button>
+          </div>
+        </div>
+      </div>
 
-// --- Constants ---------------------------------------------------------------
+{pageError && (
+        <div style={{ background: '#fef2f2', borderBottom: '1px solid #fca5a5', color: C.danger, padding: '8px 16px', fontSize: 13, textAlign: 'center', flexShrink: 0 }}>
+          {pageError}
+        </div>
+      )}
 
-const QUESTION_SECONDS = 15
-const SCORE_GOAL = 10
-const FEEDBACK_DELAY_MS = 2000
-const RESHUFFLE_THRESHOLD = 0.2 // reshuffle when only 20% of deck remains
+{/* Main two-panel layout — always visible */}
+      <div style={mainLayoutStyle}>
 
-const DEFAULT_SLATE_SETTINGS = {
-  scoreGoal: 10,
-  correctPts: 1,
-  wrongPts: 1,
-  timeoutPts: 0,
-  timeoutOffset: 0,
-  questionSecs: 15,
+{/* Video column */}
+        <div ref={videoColRef} style={videoWrapperStyle}>
+          <div ref={videoInnerRef} style={videoInnerStyle}>
+
+### 17. src/app/session/webb/page.jsx (fb1684d449bb31f4e0ead6f050bfddb547a1d126f6646fe08aba5f193ddf9cf3)
+- bm25: -12.1661 | relevance: 0.9240
+
+setPhase(PHASE.CHATTING)
+
+// Preload media in background (don't await)
+    preloadResources(lesson)
+  }, [preloadResources])
+
+// ── Send chat message ─────────────────────────────────────────────────
+  const sendMessage = useCallback(async (text) => {
+    if (!text.trim() || chatLoading) return
+    addStudentLine(text)
+    const userMsg = { role: 'user', content: text }
+    const nextHistory = [...chatMessages, userMsg]
+    setChatMessages(nextHistory)
+    setChatLoading(true)
+    try {
+      const res = await fetch('/api/webb-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: nextHistory, lesson: selectedLesson }),
+      })
+      const data = await res.json()
+      const reply = data.reply || "That's great! Keep exploring this topic with me."
+      const assistantMsg = { role: 'assistant', content: reply }
+      setChatMessages(prev => [...prev, assistantMsg])
+      addMsg(reply)
+    } catch {
+      const err = "I had a little trouble thinking. Can you say that again?"
+      setChatMessages(prev => [...prev, { role: 'assistant', content: err }])
+      addMsg(err)
+    }
+    setChatLoading(false)
+  }, [chatLoading, chatMessages, selectedLesson])
+
+### 18. docs/brain/visual-aids.md (52bdee378ececf892f44b6d02f54fc7d2f60dcc53c55107dbdde3f19b29b9faa)
+- bm25: -12.0453 | relevance: 0.9233
+
+Both purposes reinforce the no-text constraint at the prompt improvement layer.
+
+### Session Display
+
+During lesson sessions, visual aids appear in `SessionVisualAidsCarousel`:
+
+- Session loads visual aids from `/api/visual-aids/load?lessonKey=...` using a Supabase access token (Bearer)
+- The `lessonKey` is normalized to strip folder prefixes; session typically uses the filename key with a `.json` suffix
+- UI shows a Visual Aids button (picture icon) only when `selectedImages` is non-empty
+- Clicking the button opens a full-screen carousel with left/right navigation
+- "Explain" triggers Ms. Sonoma TTS for the selected image description
+
+V1 integration lives in `src/app/session/page.js` (via `VideoPanel`).
+V2 integration lives in `src/app/session/v2/SessionPageV2.jsx` (button in the video overlay controls).
+
+## What NOT To Do
+
+**Never use these terms in prompts or prompt instructions:**
+- ❌ "diagram"
+- ❌ "chart" 
+- ❌ "visual aid" (ironically, this phrase implies labeled diagrams)
+- ❌ "infographic"
+- ❌ "labeled illustration"
+- ❌ "with text explaining"
+- ❌ "include words for"
+
+**Instead use:**
+- ✅ "a cartoon scene showing"
+- ✅ "an illustration of"
+- ✅ "a photograph of"
+- ✅ "objects and people demonstrating"
+- ✅ "a real-world example with"
+
+**Never request text/labels:**
+- ❌ Don't ask DALL-E to include labels, captions, signs, writing, letters, numbers
+- ❌ Don't describe "a poster with the word X"
+- ❌ Don't ask for "step-by-step instructions with text"
+- ❌ Don't include teaching notes verbatim in prompts (often contain text-heavy concepts)
+
+### 19. src/app/facilitator/account/plan/page.js (70c2cb1bd1337b3a8b3034d268419b9f5371e7e9b583fc6bce07326e4be61dac)
+- bm25: -11.9673 | relevance: 0.9229
+
+<div style={{ marginTop: 40 }}>
+        <button
+          type="button"
+          onClick={() => openPortal(setPortalLoading)}
+          aria-label="Manage your subscription"
+          disabled={Boolean(loadingTier) || portalLoading}
+          aria-busy={portalLoading}
+          style={{
+            display: 'block',
+            width: '100%',
+            maxWidth: 560,
+            margin: '0 auto',
+            padding: '10px 14px',
+            borderRadius: 10,
+            border: '1px solid #ccc',
+            background: '#f7f7f7',
+            color: '#111',
+            fontWeight: 600,
+            cursor: Boolean(loadingTier) || portalLoading ? 'not-allowed' : 'pointer',
+            opacity: Boolean(loadingTier) || portalLoading ? 0.7 : 1,
+          }}
+        >
+          {portalLoading ? 'Opening…' : 'Manage subscription'}
+        </button>
+      </div>
+
+<style>{`
+        @media (max-width: 1100px) { [aria-label="Plan comparison"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 640px) { [aria-label="Plan comparison"] { grid-template-columns: 1fr; } }
+      `}</style>
+    </main>
+    
+    <GatedOverlay
+      show={!isAuthenticated}
+      gateType={gateType}
+      feature="Plans & Billing"
+      emoji="💳"
+      description="Sign in to view and manage your subscription plan."
+      benefits={[
+        'Compare Free, Trial, Standard, and Pro',
+        'Manage your subscription and billing details',
+        'View your current plan and usage',
+        'Cancel or upgrade anytime'
+      ]}
+    />
+    </>
+  );
 }
 
-### 38. docs/brain/ingests/pack.planned-lessons-flow.md (88c29dc19b3f25ed0178c73764a3887f3532851fb2e1292ab2f58b31241fad00)
-- bm25: -8.1956 | relevance: 0.8913
+### 20. src/app/session/webb/page.jsx (0310a8d5ca879f7929f57505a928e1f7eeac9eae53330da89bf66a08c41a9091)
+- bm25: -11.6090 | relevance: 0.9207
 
-- **overlays/CalendarOverlay.jsx**
-  - Compact, side-by-side calendar UI used inside Mr. Mentor
-  - Shows scheduled lessons for the selected learner
-  - Loads planned lessons from /api/planned-lessons
-  - Loads scheduled lessons from /api/lesson-schedule
-  - Past scheduled dates: completion markers come from /api/learner/lesson-history (not direct client DB queries) so RLS cannot silently hide history
-  - Refresh behavior: overlay force-refreshes on open (and every ~2 minutes) so it stays in sync with changes made in the main Calendar; refresh is throttled to avoid duplicate fetches on mount
-  - Month navigation: month/year dropdowns plus adjacent < and > buttons to move one month backward/forward
-  - Tabs under the calendar toggle BOTH:
-    - The selected-date list: Scheduled vs Planned
-    - The calendar date-cell markers/highlights (only the active tab is marked)
-  - Tabs remain visible even before selecting a date; list shows a select-a-date hint
-  - The selected date label renders below the tabs (not above)
-  - Scheduled list actions:
-    - Today/future: Edit (full-page editor overlay), Reschedule, Remove
-    - Past (completed-only): Notes, Add Image, Remove (typed `remove` confirmation; irreversible warning)
-  - Planned list actions: Generate (opens generator overlay for that date), Redo, Remove
-  - Overlay stacking rule: full-screen overlays/modals are rendered via React portal to document.body so they are not trapped by spill-suppression/stacking contexts; z-index alone is not sufficient
-  - Planned tab CTA: Create a Lesson Plan opens a full-screen Lesson Planner overlay (reuses the Calendar page LessonPlanner)
+<div style={{ display: 'flex', gap: 8 }}>
+          <button type="button" style={tabStyle(listTab === 'active')} onClick={() => setListTab('active')}>ACTIVE</button>
+          <button type="button" style={tabStyle(listTab === 'recent')} onClick={() => setListTab('recent')}>
+            RECENT{recentList.length > 0 ? ` (${recentList.length})` : ''}
+          </button>
+          <button type="button" style={tabStyle(listTab === 'owned')} onClick={() => setListTab('owned')}>
+            OWNED{mergedMap.size > 0 ? ` (${mergedMap.size})` : ''}
+          </button>
+        </div>
 
-### 39. src/app/facilitator/generator/counselor/CounselorClient.jsx (8519aa228e5fd7bf11329bf281aafc48dcbbd061f1fa60e4bd260e2f07f0370b)
-- bm25: -8.1511 | relevance: 0.8907
+### 21. src/app/session/page.js (48c05b7e5d89f8f29f2baf689aa0960cac95b682464684d93332661ce55fb813)
+- bm25: -11.3242 | relevance: 0.9189
 
-// Stop polling on unmount
-  useEffect(() => {
-    return () => {
-      if (sessionPollInterval.current) {
-        clearInterval(sessionPollInterval.current)
-        sessionPollInterval.current = null
-      }
-    }
-  }, [])
+const innerVideoWrapperStyle = isMobileLandscape
+    ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000', '--ctrlSize': 'clamp(34px, 6.2vw, 52px)', ...dynamicHeightStyle }
+    : { position: 'relative', overflow: 'hidden', height: `${portraitSvH}svh`, width: '92%', margin: '0 auto', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000', '--ctrlSize': 'clamp(34px, 6.2vw, 52px)' };
+  return (
+    <div style={outerWrapperStyle}>
+      <div style={innerVideoWrapperStyle}>
+        <video
+          ref={videoRef}
+          src="/media/ms-sonoma-3.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          webkit-playsinline="true"
+          preload="auto"
+          onLoadedMetadata={() => {
+            try {
+              // Seek to first frame without pausing to keep video ready for immediate playback
+              if (videoRef.current && videoRef.current.paused) {
+                try { videoRef.current.currentTime = 0; } catch {}
+              }
+            } catch {}
+          }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+        />
+        {/* Session Timer - overlay in top left */}
+        {/* Phase-based timer: Show when phaseTimers loaded and in an active phase */}
+        {phaseTimers && !showBegin && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] && (
+          <div style={{ 
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            zIndex: 10001
+          }}>
+            <SessionTimer
+              key={(() => {
+                const phaseName = getCurre
 
-// Handle session takeover
-  const handleSessionTakeover = async (pinCode) => {
-    if (!accessToken) {
-      throw new Error('Session not initialized')
-    }
-    
-    try {
-      const deviceName = `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`
-      
-      console.log('[Takeover Client] Requesting takeover for subject:', subjectKey)
-      
-      const res = await fetch('/api/mentor-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: JSON.stringify({
-          deviceName,
-          pinCode,
-          action: 'takeover',
-          subjectKey
-        })
-      })
-      
-      const data = await res.json()
-      
-      console.log('[Takeover Client] Takeover response:', {
-        ok: res.ok,
-        status: data.status,
-        conversationLength: data.session?.conversation_history?.length || 0,
-        hasDraft: !!data.session?.draft_summary
-      })
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to take over session')
-      }
+### 22. src/app/session/webb/page.jsx (9aa2865509aed9f8f1f0c821a882bb127117533d991d3dfadc3d8bcb66b6c6c7)
+- bm25: -11.3121 | relevance: 0.9188
 
-### 40. src/app/facilitator/calendar/LessonGeneratorOverlay.jsx (836d11c1e005785e3d32fe1b392df0985ebf0e8f8ff1a5aa1412c7eff21cfc71)
-- bm25: -8.1366 | relevance: 0.8905
+// ── StudentInput ──────────────────────────────────────────────────────────────
+function StudentInput({ onSend, loading }) {
+  const [value, setValue] = useState('')
+  const ref = useRef(null)
 
-const handleRewriteNotes = async () => {
-    if (!form.notes.trim()) return
-    setRewritingNotes(true)
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+useEffect(() => { ref.current?.focus() }, [])
 
-const res = await fetch('/api/ai/rewrite-text', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
-        },
-        body: JSON.stringify({
-          text: form.notes,
-          context: form.title || 'additional notes',
-          purpose: 'lesson-notes'
-        })
-      })
-
-if (res.ok) {
-        const data = await res.json()
-        if (data.rewritten) {
-          setForm({ ...form, notes: data.rewritten })
-        }
-      }
-    } catch (err) {
-      // Rewrite failed - user can retry
-    } finally {
-      setRewritingNotes(false)
-    }
+function submit() {
+    const t = value.trim()
+    if (!t || loading) return
+    onSend(t)
+    setValue('')
   }
 
-const handleGenerateAndSchedule = async (e) => {
-    e.preventDefault()
-    
-    if (!isFormValid) {
-      setMessage('Please fill in all required fields (Grade, Title, Description)')
-      return
-    }
+return (
+    <div style={{ display: 'flex', gap: 8, width: '100%', alignItems: 'flex-end' }}>
+      <textarea
+        ref={ref}
+        rows={2}
+        value={value}
+        disabled={loading}
+        onChange={e => setValue(e.target.value.slice(0, 400))}
+        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() } }}
+        placeholder={loading ? 'Mrs. Webb is thinking\u2026' : 'Type a message\u2026'}
+        aria-label="Chat with Mrs. Webb"
+        style={{
+          flex: 1, border: `1.5px solid ${C.border}`, borderRadius: 10,
+          padding: '8px 12px', fontSize: 15, resize: 'none', outline: 'none',
+          fontFamily: 'inherit', background: loading ? '#f9fafb' : '#fff',
+          color: C.text, WebkitAppearance: 'none',
+        }}
+      />
+      <button
+        type="button"
+        onClick={submit}
+        disabled={loading || !value.trim()}
+        style={{
+          ...primaryBtn,
+          opacity: (loading || !value.trim()) ? 0.5 : 1,
+          cursor: (loading || !value.trim()) ? 'not-allowed' : 'pointer',
+          padding: '10px 16px', alignSelf: 'stretch',
+          display: 'flex', alignItems: 'center',
+        }}
+      >
+        {loading ? '\u2026' : '\u2192'}
+      </button>
+    </div>
+  )
+}
 
-if (!activeDate) {
-      setMessage('No date selected for scheduling')
-      return
+### 23. docs/brain/ingests/pack-mentor-intercepts.md (d5ddc893728a86d159bcf5ff419f02c5ace96e1133048d430ac99ee743f074bd)
+- bm25: -11.1454 | relevance: 0.9177
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 24. src/app/session/webb/page.jsx (0c8783492cc3f932ebf195f24a3df8f7e6376866eb1b33feb429d576a06157ed)
+- bm25: -10.8983 | relevance: 0.9160
+
+{listError && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <span style={{ color: C.danger, fontSize: 12 }}>{listError}</span>
+            <button type="button" onClick={() => setListError('')} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}>&#10005;</button>
+          </div>
+        )}
+
+### 25. sidekick_pack.md (305262c426dc85f8c66cb888e4b25f01697fac656a8656c69c3ded6fe8880d06)
+- bm25: -10.8766 | relevance: 0.9158
+
+### 32. docs/brain/mr-mentor-conversation-flows.md (ec792e77787419d1b45a207c4f316b72a0b239666251a1dadd891ad81666a1ed)
+- bm25: -22.3963 | relevance: 1.0000
+
+### Scenario 3: Recommendation After Search
+```
+User: "Do you have lessons on fractions?"
+Mr. Mentor: [searches, finds 5 lessons]
+Mr. Mentor: "I found 5 fraction lessons. Here are the top 3..."
+Expected: Offer to generate ONLY if search yields poor results
+```
+
+---
+
+## Multi-Screen Overlay System
+
+The Mr. Mentor interface includes a multi-screen overlay system allowing users to switch between video and different tool views without leaving the counselor page.
+
+### Screen Toggle Buttons
+Located on same row as "Discussing learner" dropdown, five buttons for switching views:
+- **👨‍🏫 Mr. Mentor**: Default video view
+- **📚 Lessons**: Facilitator lessons list (scrollable)
+- **📅 Calendar**: Lesson calendar panel
+- **✨ Generated**: Generated lessons list (scrollable)
+- **🎨 Maker**: Lesson creation form
+
+### Overlay Components
+
+All overlay components fit in video screen area, match half-screen format:
+
+**CalendarOverlay** (`overlays/CalendarOverlay.jsx`)
+- Shows only calendar panel (not scheduling panel)
+- Learner selector at top
+- Month/year navigation
+- Visual indicators for scheduled lessons
+- Shows scheduled lessons for selected date
+
+**LessonsOverlay** (`overlays/LessonsOverlay.jsx`)
+- Learner selector
+- Subject-based expandable sections
+- Grade filters per subject
+- Shows approved lessons, medals, progress
+- Fully scrollable list
+
+**GeneratedLessonsOverlay** (`overlays/GeneratedLessonsOverlay.jsx`)
+- Subject and grade filters
+- Status indicators (approved, needs update)
+- Scrollable lesson list
+- Color-coded by status
+
+### 26. sidekick_pack.md (bba8c9d0a2ad1fcfae649c359a4219ed32e5a5913249044c89d6ec0d9ecb4d56)
+- bm25: -10.8617 | relevance: 0.9157
+
+### Storage + Public Access (No Login)
+
+Portfolios are stored as static files in Supabase Storage so reviewers do not need to log in.
+
+### 35. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.0390 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 27. src/app/session/page.js (3bbe590f36df39f0a8d6cf5d7a822b3a7bb652d3fc05fcd983d0a9686f65eeaf)
+- bm25: -10.8292 | relevance: 0.9155
+
+const beginWorksheetPhase = async () => {
+    // Mark exercise work phase as completed (user finished exercise work)
+    markWorkPhaseComplete('exercise');
+    // End any prior API/audio/mic activity before starting fresh
+    try { abortAllActivity(true); } catch {}
+    // Ensure audio/mic unlocked via Begin
+  // mic permission will be requested only when user starts recording
+    // Ensure assessments exist if user arrived here via skip before they were generated
+    if (!generatedWorksheet) {
+      ensureBaseSessionSetup();
     }
+    // No standalone unlock prompt: Begin handles permissions
+    if (!generatedWorksheet || !generatedWorksheet.length) {
+      // Nothing to run
+      setSubPhase('worksheet-empty');
+      setCanSend(false);
+      return;
+    }
+  // Ensure the initial Begin button is never shown once worksheet starts
+    setShowBegin(false);
+    // Gate quick-answer buttons until the learner presses Go button
+    setQaAnswersUnlocked(false);
     
-    setBusy(true)
-    setMessage('Generating lesson...')
+    // Immediately advance subPhase so the "Begin Worksheet" button disappears
+    setSubPhase('worksheet-active');
+    worksheetIndexRef.current = 0;
+    setCurrentWorksheetIndex(0);
+    setTicker(0);
+    setCanSend(false);
     
+    // Start the worksheet play timer
+    startPhasePlayTimer('worksheet');
+    // Do NOT speak the first question here - it will be spoken when Go is pressed
+    // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
+    const opener = WORKSHEET_INTROS[Math.floor(Math.random() * WORKSHEET_INTROS.length)];
     try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      await speakFrontend(opener);
+    } catch {}
+    // After intro, reveal Opening actions row
+    try { setShowOpeningActions(true); } catch {}
+    // Keep input disabled until Go is pressed
+    setCanSend(false);
+    if (worksheet
 
-if (!token) {
-        setMessage('Please sign in to generate lessons')
-        setBusy(false)
-        return
+### 28. docs/brain/mr-mentor-conversation-flows.md (ec792e77787419d1b45a207c4f316b72a0b239666251a1dadd891ad81666a1ed)
+- bm25: -10.7932 | relevance: 0.9152
+
+### Scenario 3: Recommendation After Search
+```
+User: "Do you have lessons on fractions?"
+Mr. Mentor: [searches, finds 5 lessons]
+Mr. Mentor: "I found 5 fraction lessons. Here are the top 3..."
+Expected: Offer to generate ONLY if search yields poor results
+```
+
+---
+
+## Multi-Screen Overlay System
+
+The Mr. Mentor interface includes a multi-screen overlay system allowing users to switch between video and different tool views without leaving the counselor page.
+
+### Screen Toggle Buttons
+Located on same row as "Discussing learner" dropdown, five buttons for switching views:
+- **👨‍🏫 Mr. Mentor**: Default video view
+- **📚 Lessons**: Facilitator lessons list (scrollable)
+- **📅 Calendar**: Lesson calendar panel
+- **✨ Generated**: Generated lessons list (scrollable)
+- **🎨 Maker**: Lesson creation form
+
+### Overlay Components
+
+All overlay components fit in video screen area, match half-screen format:
+
+**CalendarOverlay** (`overlays/CalendarOverlay.jsx`)
+- Shows only calendar panel (not scheduling panel)
+- Learner selector at top
+- Month/year navigation
+- Visual indicators for scheduled lessons
+- Shows scheduled lessons for selected date
+
+**LessonsOverlay** (`overlays/LessonsOverlay.jsx`)
+- Learner selector
+- Subject-based expandable sections
+- Grade filters per subject
+- Shows approved lessons, medals, progress
+- Fully scrollable list
+
+**GeneratedLessonsOverlay** (`overlays/GeneratedLessonsOverlay.jsx`)
+- Subject and grade filters
+- Status indicators (approved, needs update)
+- Scrollable lesson list
+- Color-coded by status
+
+**LessonMakerOverlay** (`overlays/LessonMakerOverlay.jsx`)
+- Compact lesson generation form
+- Quota display
+- All fields from full lesson maker
+- Inline success/error messages
+- Scrollable form
+
+### 29. src/app/session/webb/page.jsx (0c15baa2e5749f971cba748d563b5cc54ae196668d602d830343fe69bbc2e033)
+- bm25: -10.7726 | relevance: 0.9151
+
+// Measure video column height
+  useEffect(() => {
+    if (!isMobileLandscape) { setSBSH(null); return }
+    const v = videoColRef.current
+    if (!v) return
+    const measure = () => {
+      try {
+        const h = v.getBoundingClientRect().height
+        if (Number.isFinite(h) && h > 0) setSBSH(prev => prev !== Math.round(h) ? Math.round(h) : prev)
+      } catch {}
+    }
+    measure()
+    let ro
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measure)
+      try { ro.observe(v) } catch {}
+    } else { window.addEventListener('resize', measure) }
+    return () => {
+      try { ro?.disconnect() } catch {}
+      window.removeEventListener('resize', measure)
+    }
+  }, [isMobileLandscape, videoMaxHeight])
+
+### 30. src/app/session/slate/page.jsx (41fedca065b23791dd7d422312a92c45d4728f43c56ff68c9d2967de8ea22e58)
+- bm25: -10.7490 | relevance: 0.9149
+
+const SETTINGS_CONFIG = [
+  { label: 'SCORE GOAL',        key: 'scoreGoal',    min: 3,  max: 30,  fmt: v => `${v} pts` },
+  { label: 'CORRECT ANSWER',    key: 'correctPts',   min: 1,  max: 5,   fmt: v => `+${v} pt${v !== 1 ? 's' : ''}` },
+  { label: 'WRONG ANSWER',      key: 'wrongPts',     min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u2212${v} pt${v !== 1 ? 's' : ''}` },
+  { label: 'TIMEOUT PENALTY',   key: 'timeoutPts',     min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u2212${v} pt${v !== 1 ? 's' : ''}` },
+  { label: 'TIMEOUT OFFSET',    key: 'timeoutOffset',  min: 0,  max: 5,   fmt: v => v === 0 ? 'none' : `${v} free` },
+  { label: 'TIME PER QUESTION', key: 'questionSecs',   min: 5,  max: 120, fmt: v => `${v}s` },
+]
+const SLATE_VIDEO_SRC = '/media/Mr.%20Slate%20Suit.mp4'
+
+### 31. sidekick_pack.md (e6a8550c4046e0c6f0024ee9ef0d6e28d4adccf7c75426888d2214fc3c46db44)
+- bm25: -10.7349 | relevance: 0.9148
+
+if (wantsCustomSubjectDelete) {
+      this.state.flow = 'custom_subject_delete'
+
+### 29. docs/brain/mr-mentor-conversation-flows.md (ec792e77787419d1b45a207c4f316b72a0b239666251a1dadd891ad81666a1ed)
+- bm25: -14.0179 | relevance: 1.0000
+
+### Scenario 3: Recommendation After Search
+```
+User: "Do you have lessons on fractions?"
+Mr. Mentor: [searches, finds 5 lessons]
+Mr. Mentor: "I found 5 fraction lessons. Here are the top 3..."
+Expected: Offer to generate ONLY if search yields poor results
+```
+
+---
+
+## Multi-Screen Overlay System
+
+The Mr. Mentor interface includes a multi-screen overlay system allowing users to switch between video and different tool views without leaving the counselor page.
+
+### Screen Toggle Buttons
+Located on same row as "Discussing learner" dropdown, five buttons for switching views:
+- **👨‍🏫 Mr. Mentor**: Default video view
+- **📚 Lessons**: Facilitator lessons list (scrollable)
+- **📅 Calendar**: Lesson calendar panel
+- **✨ Generated**: Generated lessons list (scrollable)
+- **🎨 Maker**: Lesson creation form
+
+### Overlay Components
+
+All overlay components fit in video screen area, match half-screen format:
+
+**CalendarOverlay** (`overlays/CalendarOverlay.jsx`)
+- Shows only calendar panel (not scheduling panel)
+- Learner selector at top
+- Month/year navigation
+- Visual indicators for scheduled lessons
+- Shows scheduled lessons for selected date
+
+**LessonsOverlay** (`overlays/LessonsOverlay.jsx`)
+- Learner selector
+- Subject-based expandable sections
+- Grade filters per subject
+- Shows approved lessons, medals, progress
+- Fully scrollable list
+
+**GeneratedLessonsOverlay** (`overlays/GeneratedLessonsOverlay.jsx`)
+- Subject and grade filters
+- Status indicators (approved, needs update)
+- Scrollable lesson list
+- Color-coded by status
+
+### 32. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (86b60aae069b5e5cd6312d1188af36820d92ad5d50ac3acdfbcc0206a1059f7c)
+- bm25: -10.7346 | relevance: 0.9148
+
+### 2. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -22.4515 | relevance: 1.0000
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 3. src/app/facilitator/generator/counselor/CounselorClient.jsx (29fd22a6b836f2b375b277653c9ce728dd6250112309eb2eb1dd4cae49f9327a)
+- bm25: -22.0646 | entity_overlap_w: 1.00 | adjusted: -22.3146 | relevance: 1.0000
+
+### 33. docs/brain/timer-system.md (42aa7c76a1e732a4ec83b46c76f7214efa5fa927819ed9a691f311cae452a2df)
+- bm25: -10.7251 | relevance: 0.9147
+
+**Rule (single instance):** Only one `SessionTimer` instance should be mounted at a time for a given `{lessonKey, phase, mode}`.
+- Mounting two `SessionTimer` components simultaneously can show brief 1-second drift when `SessionTimer` is in self-timing mode.
+- In Session V2, when the Games overlay is open, the on-video timer is not rendered; the Games overlay renders the timer instead.
+
+**Rule (click parity):** Clicking the timer badge in the Games overlay must behave the same as clicking the timer during the rest of the session: it opens `TimerControlOverlay` (PIN-gated).
+- The timer badge must be a `SessionTimer` with `onTimerClick` wired to the same handler used by the main session timer.
+
+### Overlay Stacking (V2)
+
+Games and Visual Aids overlays must render above the timeline and timer overlays.
+- Timeline must not use an extremely high `zIndex`.
+- Full-screen overlays should use a higher `zIndex` than the on-video timer.
+
+**TimerControlOverlay vs GamesOverlay:** If the facilitator opens `TimerControlOverlay` while the Games overlay is open, `TimerControlOverlay` must render above `GamesOverlay` so it is visible and usable.
+
+**PlayTimeExpiredOverlay must be above GamesOverlay:**
+- `PlayTimeExpiredOverlay` is a full-screen, blocking overlay. It must have a higher `zIndex` than `GamesOverlay` so the 30-second countdown cannot appear behind a running game.
+
+### PIN Gating (V2)
+
+Timer controls that can change session pacing are PIN-gated:
+- Opening the TimerControlOverlay is gated by `ensurePinAllowed('timer')`.
+- Pause/resume toggles are gated by `ensurePinAllowed('timer')`.
+
+Timeline jumps are also PIN-gated (see pin-protection.md action `timeline`).
+
+### Play Time Expiration Flow
+
+When play timer reaches 00:00:
+
+### 34. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -10.6739 | relevance: 0.9143
+
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
+
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
+
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
+
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
+
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
+
+- **`src/app/session/v2/SessionPageV2.jsx`** - Learner session (V2)
+  - Loads visual aids by normalized `lessonKey`
+  - Video overlay includes a Visual Aids button when images exist
+  - Renders `SessionVisualAidsCarousel` and uses AudioEngine-backed TTS for Explain
+
+### 35. docs/brain/ingests/pack.planned-lessons-flow.md (adc19afdea7bdf534f71a846ee6f87a9d438ef3a8b85594268dd0260c3715b64)
+- bm25: -10.6484 | relevance: 0.9142
+
+if (wantsCustomSubjectDelete) {
+      this.state.flow = 'custom_subject_delete'
+
+### 29. docs/brain/mr-mentor-conversation-flows.md (ec792e77787419d1b45a207c4f316b72a0b239666251a1dadd891ad81666a1ed)
+- bm25: -14.0179 | relevance: 1.0000
+
+### Scenario 3: Recommendation After Search
+```
+User: "Do you have lessons on fractions?"
+Mr. Mentor: [searches, finds 5 lessons]
+Mr. Mentor: "I found 5 fraction lessons. Here are the top 3..."
+Expected: Offer to generate ONLY if search yields poor results
+```
+
+---
+
+## Multi-Screen Overlay System
+
+The Mr. Mentor interface includes a multi-screen overlay system allowing users to switch between video and different tool views without leaving the counselor page.
+
+### Screen Toggle Buttons
+Located on same row as "Discussing learner" dropdown, five buttons for switching views:
+- **👨‍🏫 Mr. Mentor**: Default video view
+- **📚 Lessons**: Facilitator lessons list (scrollable)
+- **📅 Calendar**: Lesson calendar panel
+- **✨ Generated**: Generated lessons list (scrollable)
+- **🎨 Maker**: Lesson creation form
+
+### Overlay Components
+
+All overlay components fit in video screen area, match half-screen format:
+
+**CalendarOverlay** (`overlays/CalendarOverlay.jsx`)
+- Shows only calendar panel (not scheduling panel)
+- Learner selector at top
+- Month/year navigation
+- Visual indicators for scheduled lessons
+- Shows scheduled lessons for selected date
+
+**LessonsOverlay** (`overlays/LessonsOverlay.jsx`)
+- Learner selector
+- Subject-based expandable sections
+- Grade filters per subject
+- Shows approved lessons, medals, progress
+- Fully scrollable list
+
+**GeneratedLessonsOverlay** (`overlays/GeneratedLessonsOverlay.jsx`)
+- Subject and grade filters
+- Status indicators (approved, needs update)
+- Scrollable lesson list
+- Color-coded by status
+
+### 36. src/app/session/page.js (99e2695e71faa1b80dede9611bf40b231ec577bcade0f1874fa22dcdf2e0cefc)
+- bm25: -10.6000 | relevance: 0.9138
+
+// Begin Comprehension manually when arriving at comprehension-start (e.g., via skip)
+  const beginComprehensionPhase = async () => {
+    // End any prior API/audio/mic activity before starting fresh
+    try { abortAllActivity(true); } catch {}
+    // Ensure audio/mic unlocked via Begin
+  // mic permission will be requested only when user starts recording
+    // Ensure session scaffolding exists
+    ensureBaseSessionSetup();
+    // No standalone unlock prompt
+    // Only act in comprehension phase
+    if (phase !== 'comprehension') return;
+  if (subPhase !== 'comprehension-start' && subPhase !== 'comprehension-active') setSubPhase('comprehension-start');
+  // Gate quick-answer buttons until Start the lesson
+  setQaAnswersUnlocked(false);
+  
+  // Start the comprehension play timer
+  startPhasePlayTimer('comprehension');
+  
+  setCanSend(false);
+    // Do NOT arm the first question here - it will be armed when Go is pressed
+    // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
+    // Immediately enter active subPhase so the Begin button disappears right away
+    setSubPhase('comprehension-active');
+  // Persist the transition to comprehension-active so resume lands on the five-button view
+  // Delay save to ensure state update has flushed
+  setTimeout(() => {
+    try { scheduleSaveSnapshot('comprehension-active'); } catch {}
+  }, 0);
+    // New: Phase intro (random from pool); first question is gated behind Go button
+    const intro = COMPREHENSION_INTROS[Math.floor(Math.random() * COMPREHENSION_INTROS.length)];
+    try {
+      await speakFrontend(intro);
+    } catch {}
+    // After intro, reveal Opening actions row
+    try { setShowOpeningActions(true); } catch {}
+    // Keep input disabled until Go is pressed
+    setCanSen
+
+### 37. src/app/api/webb-resources/route.js (0111c5f2319b3aefb51eb0badfbe0ef11254fb7617fca39ce1dfa0b31c3d392e)
+- bm25: -10.5448 | relevance: 0.9134
+
+const picked = items[pickedIdx]
+        if (picked?.id?.videoId) {
+          return {
+            embedUrl:    `https://www.youtube-nocookie.com/embed/${picked.id.videoId}?autoplay=0&rel=0&modestbranding=1`,
+            title:       picked.snippet.title,
+            channel:     picked.snippet.channelTitle,
+            searchQuery: safeQuery,
+          }
+        }
       }
+    } catch { /* fall through */ }
+  }
+
+return { unavailable: true, searchQuery: safeQuery }
+}
+
+// ── Generate article resource ─────────────────────────────────────────────────
+// Directly fetches from Wikipedia REST APIs — no GPT call needed since the
+// lesson title IS the Wikipedia article title. Tries Simple English Wikipedia
+// first (4th–6th grade level), falls back to regular Wikipedia.
+// Alternates which source comes first based on previousSource so refreshes
+// show a genuinely different article.
+async function generateArticle(title, prevSrc = '') {
+  // If we just showed Simple Wikipedia, try regular Wikipedia first this time
+  const sources = (prevSrc === 'Simple English Wikipedia')
+    ? [WIKI_SOURCES[1], WIKI_SOURCES[0]]
+    : WIKI_SOURCES
+
+for (const src of sources) {
+    try {
+      const r = await fetch(src.url(title), {
+        headers: { 'Api-User-Agent': 'EducationApp/1.0 (freehands; educational-app)' },
+        signal: AbortSignal.timeout(8000),
+      })
+      if (r.ok) {
+        let html = await r.text()
+        html = html.includes('<head>')
+          ? html.replace('<head>', `<head><base href="${src.base}">`)
+          : `<base href="${src.base}">${html}`
+        return { html, source: src.name, title }
+      }
+    } catch { /* try next source */ }
+  }
+
+return { html: null, source: null, title }
+}
+
+### 38. src/app/session/page.js (6b7af45fd9c22af8d395a8e7581f5bbe6127909af860acf43ec1f99ce342cf70)
+- bm25: -10.3657 | relevance: 0.9120
+
+// Begin Exercise manually when awaiting begin (either skipped or auto-transitioned)
+  const beginSkippedExercise = async () => {
+    if (phase !== 'exercise' || subPhase !== 'exercise-awaiting-begin') return;
+    // Mark comprehension work phase as completed (user finished comprehension work)
+    markWorkPhaseComplete('comprehension');
+    // End any prior API/audio/mic activity before starting fresh
+    try { abortAllActivity(true); } catch {}
+    // Ensure audio/mic unlocked via Begin
+  // mic permission will be requested only when user starts recording
+    // Clear any temporary awaiting lock now that the user is explicitly starting
+    try { exerciseAwaitingLockRef.current = false; } catch {}
+    // Ensure pools/assessments exist if we arrived here via skip before setup
+    ensureBaseSessionSetup();
+    // No standalone unlock prompt
+    // Do NOT arm the first question here - it will be armed when Go is pressed
+    // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
+  setExerciseSkippedAwaitBegin(false);
+  // Gate quick-answer buttons until Start the lesson
+  setQaAnswersUnlocked(false);
+  
+    // Start the exercise play timer
+    startPhasePlayTimer('exercise');
+    
+  setCanSend(false);
+  setTicker(0);
+    // Do NOT arm the first question here - it will be armed when Go is pressed
+    // This prevents the question buttons from interfering with Ask/Joke/Riddle/Poem/Story/Fill-in-fun
+    // Immediately enter active subPhase so the Begin button disappears right away
+    setSubPhase('exercise-active');
+  // Persist the transition to exercise-active so resume lands on the five-button view
+  // Delay save to ensure state update has flushed
+  setTimeout(() => {
+    try { scheduleSaveSnapshot('begin-exercise'); } catch {}
+
+### 39. src/app/facilitator/generator/counselor/CounselorClient.jsx (9254c47473bee1321afc145389f39fd141fff91a0e1c9bb2b4d9a1cc021e993c)
+- bm25: -10.2809 | relevance: 0.9114
+
+{/* Overlay buttons - positioned relative to video panel container */}
+          {activeScreen === 'mentor' && (
+            <>
+              {/* Goals clipboard button (top-left) */}
+              <button
+                onClick={() => setShowGoalsClipboard(true)}
+                aria-label="Goals"
+                title="Set persistent goals"
+                style={{
+                  position: 'absolute',
+                  top: 16,
+                  left: 16,
+                  background: goalsNotes ? '#fef3c7' : '#1f2937',
+                  color: goalsNotes ? '#92400e' : '#fff',
+                  border: 'none',
+                  width: 'clamp(48px, 10vw, 64px)',
+                  height: 'clamp(48px, 10vw, 64px)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                  zIndex: 10,
+                  fontSize: 'clamp(22px, 5vw, 32px)'
+                }}
+              >
+                📋
+              </button>
+
+### 40. src/app/api/webb-resources/route.js (7bc623e6c16169c62cc56aa50fd4dbd1c9709744fd9027887969143986cf49b9)
+- bm25: -10.2729 | relevance: 0.9113
+
+let pickedIdx = 0 // default: first result
+        try {
+          const verdict = await callGPT(
+            apiKey,
+            'You pick the best educational YouTube video for a child. ' +
+            'All candidates passed YouTube safe search so focus on relevance and educational quality, not safety concerns. ' +
+            'Reply with ONLY a single digit: the index (0–4) of the best video. No other text.',
+            `Lesson: "${title}". ${grade}.\n\nCandidates:\n${candidateList}`,
+            5,
+          )
+          const parsed = parseInt(verdict, 10)
+          if (parsed >= 0 && parsed < items.length) pickedIdx = parsed
+        } catch { /* keep pickedIdx = 0 */ }
 
 
 ---

@@ -822,7 +822,7 @@ export default function WebbPage() {
               {/* Close */}
               <button type="button" onClick={() => setMediaOverlay(null)} title="Close"
                 style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-                \u2715
+                {'\u2715'}
               </button>
             </div>
           </div>
