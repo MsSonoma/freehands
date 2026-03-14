@@ -68,7 +68,53 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false)
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, seekRequest = null } = await req.json()
+
+    // ── Seek request: "show me the part where..." ─────────────────────────
+    // Client sends { seekRequest: { momentList }, messages } instead of going through
+    // the normal chat path. We ask GPT to pick the best matching moment index.
+    if (seekRequest?.momentList) {
+      const apiKey = process.env.OPENAI_API_KEY
+      if (!apiKey) return NextResponse.json({ error: 'OpenAI not configured' }, { status: 503 })
+
+      const lastUser = [...messages].reverse().find(m => m.role === 'user')
+      const userRequest = lastUser?.content || ''
+
+      const raw = await (async () => {
+        const r = await fetch(OPENAI_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+          body: JSON.stringify({
+            model: OPENAI_MODEL,
+            messages: [
+              {
+                role: 'system',
+                content:
+                  'You are Mrs. Webb, a warm teacher. The student wants to jump to a specific part of the video. ' +
+                  'Given the list of chapter moments, pick the ONE that best matches what they asked for. ' +
+                  'Reply ONLY in this exact format, no other text:\n' +
+                  'INDEX: <number>\n' +
+                  'REPLY: <one warm sentence introducing that moment, e.g. "Sure! Let me take you to the part about...">',
+              },
+              {
+                role: 'user',
+                content: `Student request: "${userRequest}"\n\nAvailable moments:\n${seekRequest.momentList}`,
+              },
+            ],
+            max_tokens: 80,
+            temperature: 0.4,
+          }),
+        })
+        const j = await r.json()
+        return j.choices?.[0]?.message?.content?.trim() || ''
+      })()
+
+      const idxMatch   = raw.match(/INDEX:\s*(\d+)/)
+      const replyMatch = raw.match(/REPLY:\s*(.+)/)
+      const idx        = idxMatch ? parseInt(idxMatch[1], 10) : -1
+      const reply      = replyMatch?.[1]?.trim() || ''
+      return NextResponse.json({ reply, seekMomentIdx: idx >= 0 ? idx : undefined })
+    }
 
     // Safety-check the last user message
     const lastUser = [...messages].reverse().find(m => m.role === 'user')

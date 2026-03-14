@@ -125,6 +125,12 @@ function detectUiQuestion(text) {
   return null
 }
 
+function detectSeekIntent(text) {
+  return /\b(show me|play|jump to|skip to|go to|take me to|find|rewind to|fast forward to|seek to)\b.{0,60}\b(part|section|moment|clip|bit|where|when|about|with|that shows|that explains|on|of)\b/i.test(text)
+    || /\b(show me|play)\s+the\s+(part|section|bit|moment|clip)\b/i.test(text)
+    || /\bwhere (it|they|he|she|the video)\s+(talks?|explains?|shows?|says?|mentions?|covers?|discusses?)/i.test(text)
+}
+
 function isYes(text) {
   return /^\s*(yes|yeah|yep|yup|sure|ok|okay|please|do it|go ahead|open it|show me|definitely|of course|affirmative|sounds good|great|cool|alright|why not|let'?s go|uh huh|mhm|yea|ya|k|👍)\b/i.test(text)
 }
@@ -853,6 +859,53 @@ export default function WebbPage() {
         return
       }
     }
+    // ── Seek intent: "show me the part where..." ─────────────────────────
+    if (detectSeekIntent(text) && mediaOverlay === 'video') {
+      if (!videoMoments.length) {
+        // Moments not loaded yet — suggest Key Part
+        addMsg("I'd love to show you a specific part! First, tap the \"Key part\" button above the video so I can learn the chapters — then just tell me which part you want!")
+        return
+      }
+      // Match the request against loaded moment titles using GPT
+      setChatLoading(true)
+      try {
+        const momentList = videoMoments.map((m, i) => `${i}: [${formatVideoTime(m.startSeconds)}] ${m.title}`).join('\n')
+        const res = await fetch('/api/webb-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [...chatMessages, { role: 'user', content: text }],
+            lesson:   selectedLesson,
+            seekRequest: { momentList },
+          }),
+        })
+        const data = await res.json()
+        // Expected: { reply: "Sure! Let me show you...", seekMomentIdx: 1 }
+        const reply = data.reply || ''
+        const idx   = typeof data.seekMomentIdx === 'number' ? data.seekMomentIdx : -1
+        if (reply) {
+          setChatMessages(prev => [...prev, { role: 'user', content: text }, { role: 'assistant', content: reply }])
+          addMsg(reply)
+          await waitForTTSIdle()
+        }
+        if (idx >= 0 && idx < videoMoments.length) {
+          const m = videoMoments[idx]
+          setMediaOverlay('video')
+          addMomentMsg(`\uD83C\uDFA5 ${m.title} \u00B7 ${formatVideoTime(m.startSeconds)}`, idx)
+          playSegment(m.startSeconds, m.endSeconds)
+        } else if (!reply) {
+          // GPT couldn't find a match — fall through to normal chat
+          setChatLoading(false)
+          // eslint-disable-next-line no-use-before-define
+          const userMsg = { role: 'user', content: text }
+          const nextHistory = [...chatMessages, userMsg]
+          setChatMessages(nextHistory)
+        }
+      } catch { /* fall through */ }
+      setChatLoading(false)
+      return
+    }
+
     // Phase 0: detect a UI question / feature intent
     const uiSlug = detectUiQuestion(text)
     if (uiSlug) {
