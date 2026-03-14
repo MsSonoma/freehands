@@ -13,8 +13,7 @@
  *   article?: { html, source, title }                    — ready for srcdoc iframe
  *          OR { html: null, source: null, title }        — all fetches failed
  */
-import { NextResponse }      from 'next/server'
-import { YoutubeTranscript } from 'youtube-transcript'
+import { NextResponse } from 'next/server'
 
 const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
@@ -52,14 +51,6 @@ async function callGPT(apiKey, systemPrompt, userPrompt, maxTokens = 60) {
   const data = await res.json()
   return data.choices?.[0]?.message?.content?.trim() || ''
 }
-async function hasTranscript(videoId) {
-  try {
-    const entries = await YoutubeTranscript.fetchTranscript(videoId)
-    return Array.isArray(entries) && entries.length > 0
-  } catch {
-    return false
-  }
-}
 // ── Generate video resource ───────────────────────────────────────────────────
 async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeVideoIds = []) {
   // Step 1: GPT builds the best educational search query
@@ -77,7 +68,7 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeV
       const ytUrl =
         `${YT_SEARCH}?part=snippet` +
         `&q=${encodeURIComponent(safeQuery)}` +
-        `&type=video&safeSearch=strict&videoEmbeddable=true&maxResults=5` +
+        `&type=video&safeSearch=strict&videoEmbeddable=true&videoCaption=closedCaption&maxResults=5` +
         `&key=${ytKey}`
       const ytRes  = await fetch(ytUrl)
       const ytData = await ytRes.json()
@@ -110,26 +101,13 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeV
 
         const picked = items[pickedIdx]
         if (picked?.id?.videoId) {
-          // Build a ranked order: GPT pick first, then the rest
-          const ordered = [
-            picked,
-            ...items.filter((_, i) => i !== pickedIdx),
-          ]
-          // Walk candidates until we find one with captions
-          for (const candidate of ordered) {
-            const vid = candidate.id.videoId
-            if (excludeVideoIds.includes(vid)) continue
-            if (await hasTranscript(vid)) {
-              return {
-                videoId:     vid,
-                embedUrl:    `https://www.youtube-nocookie.com/embed/${vid}?autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&controls=0&playsinline=1`,
-                title:       candidate.snippet.title,
-                channel:     candidate.snippet.channelTitle,
-                searchQuery: safeQuery,
-              }
-            }
+          return {
+            videoId:     picked.id.videoId,
+            embedUrl:    `https://www.youtube-nocookie.com/embed/${picked.id.videoId}?autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&controls=0&playsinline=1`,
+            title:       picked.snippet.title,
+            channel:     picked.snippet.channelTitle,
+            searchQuery: safeQuery,
           }
-          // All candidates lacked captions — fall through to unavailable
         }
       }
     } catch { /* fall through */ }
