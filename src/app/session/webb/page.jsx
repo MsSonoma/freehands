@@ -782,6 +782,8 @@ export default function WebbPage() {
   async function interpretArticle() {
     if (!articleResource?.html || interpretingArticle) return
     setInterpretingArticle(true)
+    // Ensure article overlay is open so the iframe exists in the DOM
+    setMediaOverlay('article')
     // Reset so auto-scroll works cleanly on each new interpret run
     passageEls.current = []
     userScrolledArticleRef.current = false
@@ -800,20 +802,34 @@ export default function WebbPage() {
       const passages = data.passages || (data.excerpt ? [{ excerpt: data.excerpt }] : [])
       if (!passages.length) return
 
-      // Highlight all passages immediately so the student can see them.
-      // Also persist excerpts so they survive iframe remounts.
       const excerpts = passages.map(p => p.excerpt).filter(Boolean)
+
+      // Wait for the iframe to be fully loaded before injecting highlights
+      await new Promise(resolve => {
+        const iframe = articleIframeRef.current
+        if (!iframe) { resolve(); return }
+        if (iframe.contentDocument?.readyState === 'complete') { resolve(); return }
+        iframe.addEventListener('load', resolve, { once: true })
+        setTimeout(resolve, 3000) // safety timeout
+      })
+
+      // Highlight all passages and persist excerpts for remount re-apply
       setArticlePassageExcerpts(excerpts)
       const els = highlightPassages(excerpts)
       passageEls.current = els
 
-      // Speak intro, then for each passage: wait for TTS → auto-scroll → speak (with citation)
+      // Speak intro, then for each passage: wait for TTS → activate + scroll → speak
       if (data.intro) addMsg(data.intro)
       for (let i = 0; i < excerpts.length; i++) {
         await waitForTTSIdle()
-        scrollToPassage(i, true)   // programmatic — won't set userScrolled flag
+        activatePassage(i)
+        scrollToPassage(i, true)
         addPassageMsg(excerpts[i], i)
       }
+      // Clear active highlight when done
+      await waitForTTSIdle()
+      const doc = articleIframeRef.current?.contentDocument
+      doc?.querySelectorAll('.webb-hl-active').forEach(el => el.classList.remove('webb-hl-active'))
     } catch { /* non-critical */ }
     setInterpretingArticle(false)
   }
@@ -829,77 +845,68 @@ export default function WebbPage() {
     })
   }
 
-  // Highlights an array of text excerpts in the article iframe.
-  // Assigns id="webb-passage-{i}" to each span so scrollToPassage can use
-  // getElementById (DOM ref-free, survives iframe remounts).
+  // Highlights an array of text excerpts in the article iframe by searching
+  // element textContent (not window.find — which is broken in sandboxed iframes).
+  // Assigns id="webb-passage-{i}" to each matched element so scrollToPassage
+  // can use getElementById, which survives iframe remounts.
   function highlightPassages(excerpts) {
-    const win = articleIframeRef.current?.contentWindow
     const doc = articleIframeRef.current?.contentDocument
-    if (!win || !doc?.body) return excerpts.map(() => null)
+    if (!doc?.body) return excerpts.map(() => null)
 
-    // Remove any previous highlights
-    doc.querySelectorAll('.webb-hl').forEach(el => {
-      const p = el.parentNode
-      if (p) { while (el.firstChild) p.insertBefore(el.firstChild, el); el.remove() }
+    // Inject a <style> block for highlight rules (once per document load)
+    if (!doc.getElementById('webb-hl-style')) {
+      const s = doc.createElement('style')
+      s.id = 'webb-hl-style'
+      s.textContent =
+        '.webb-hl{background:#fef08a!important;outline:2px solid #ca8a04!important;' +
+        'border-radius:3px;scroll-margin-top:80px}' +
+        '.webb-hl-active{background:#fbbf24!important;outline:2px solid #b45309!important}'
+      try { doc.head?.appendChild(s) } catch { /* ignore */ }
+    }
+
+    // Clear previous highlights (class + id only — never alter inline styles)
+    doc.querySelectorAll('.webb-hl,.webb-hl-active').forEach(el => {
+      el.classList.remove('webb-hl', 'webb-hl-active')
+      el.removeAttribute('id')
     })
 
-    // Reset selection to document start so window.find() always scans from the top
-    try {
-      const sel = win.getSelection()
-      if (sel) {
-        sel.removeAllRanges()
-        const r = doc.createRange()
-        r.setStart(doc.body, 0)
-        r.collapse(true)
-        sel.addRange(r)
-      }
-    } catch { /* ignore */ }
+    // All block-level candidates in document order
+    const candidates = Array.from(
+      doc.querySelectorAll('p,li,dt,dd,h2,h3,h4,h5,blockquote,td,th')
+    )
 
-    const HL_STYLE = 'background:#fef08a;outline:2px solid #ca8a04;border-radius:3px;padding:1px 2px'
     const results = []
-
     for (let i = 0; i < excerpts.length; i++) {
-      const normalized = excerpts[i].replace(/\s+/g, ' ').trim()
-      let pushed = false
-      // Try progressively shorter anchors in case the page breaks text differently
-      for (const len of [55, 35, 20]) {
-        const anchor = normalized.slice(0, len)
+      const needle = excerpts[i].replace(/\s+/g, ' ').trim()
+      let found = null
+      // Try progressively shorter anchors to tolerate minor whitespace/citation diffs
+      for (const len of [40, 25, 15]) {
+        const anchor = needle.slice(0, len)
         if (!anchor) continue
-        try {
-          const found = win.find(anchor, false, false, false, false, false, false)
-          if (found) {
-            const sel = win.getSelection()
-            if (sel?.rangeCount) {
-              const range = sel.getRangeAt(0)
-              const mark = doc.createElement('span')
-              mark.id    = `webb-passage-${i}`
-              mark.className  = 'webb-hl'
-              mark.style.cssText = HL_STYLE
-              try {
-                range.surroundContents(mark)
-                results.push(mark)
-              } catch {
-                // surroundContents fails across element boundaries — brand the ancestor
-                const parent = sel.anchorNode?.parentElement
-                if (parent) {
-                  parent.style.background = '#fef08a'
-                  parent.id = `webb-passage-${i}`
-                  parent.classList.add('webb-hl')
-                  results.push(parent)
-                } else {
-                  results.push(null)
-                }
-              }
-              sel.removeAllRanges()
-              pushed = true
-              break
-            }
+        for (const el of candidates) {
+          if ((el.textContent || '').replace(/\s+/g, ' ').includes(anchor)) {
+            found = el
+            break
           }
-        } catch { /* ignore */ }
+        }
+        if (found) break
       }
-      if (!pushed) results.push(null)
+      if (found) {
+        found.id = `webb-passage-${i}`
+        found.classList.add('webb-hl')
+      }
+      results.push(found || null)
     }
     return results
+  }
+
+  // Briefly adds the .webb-hl-active class to the passage being spoken
+  function activatePassage(idx) {
+    const doc = articleIframeRef.current?.contentDocument
+    if (!doc) return
+    doc.querySelectorAll('.webb-hl-active').forEach(el => el.classList.remove('webb-hl-active'))
+    const el = doc.getElementById(`webb-passage-${idx}`)
+    if (el) el.classList.add('webb-hl-active')
   }
 
   // ── Exit ──────────────────────────────────────────────────────────────
