@@ -545,8 +545,10 @@ export default function WebbPage() {
       })
       const data = await res.json()
       if (data.error === 'transcript_unavailable') {
-        // This video's captions aren't accessible — silently swap it out
+        // Clear current video so Key Part button disappears while the new one loads.
+        // This prevents rapid re-pressing on the same captionless video.
         addMsg("Let me find a better video for this lesson!")
+        setVideoResource(null)
         setInterpretingVideo(false)
         refreshMedia('video')
         return
