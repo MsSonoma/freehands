@@ -488,7 +488,7 @@ export default function WebbPage() {
     setRefreshingMedia(false)
   }
 
-  // ── Article interpret: find + highlight + read key passage ────────────
+  // ── Article interpret: highlight all passages and read each one in order ──
   async function interpretArticle() {
     if (!articleResource?.html || interpretingArticle) return
     setInterpretingArticle(true)
@@ -504,54 +504,92 @@ export default function WebbPage() {
         }),
       })
       const data = await res.json()
-      if (data.excerpt) {
-        highlightInArticleIframe(data.excerpt)
-        // Mrs. Webb speaks the intro then the excerpt
-        addMsg(`${data.intro} ${data.excerpt}`)
+      const passages = data.passages || (data.excerpt ? [{ excerpt: data.excerpt }] : [])
+      if (!passages.length) return
+
+      // Highlight all passages immediately so the student can see them
+      const excerpts = passages.map(p => p.excerpt).filter(Boolean)
+      const els = highlightPassages(excerpts)
+
+      // Speak intro, then for each passage: wait for TTS to finish → scroll → speak
+      if (data.intro) addMsg(data.intro)
+      for (let i = 0; i < excerpts.length; i++) {
+        await waitForTTSIdle()
+        els[i]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        addMsg(excerpts[i])
       }
     } catch { /* non-critical */ }
     setInterpretingArticle(false)
   }
 
-  function highlightInArticleIframe(text) {
+  // Returns a Promise that resolves when TTS has finished its current queue
+  function waitForTTSIdle() {
+    return new Promise(resolve => {
+      const check = () => {
+        if (!ttsBusyRef.current && ttsQueueRef.current.length === 0) resolve()
+        else setTimeout(check, 150)
+      }
+      setTimeout(check, 400) // give TTS time to actually start before first check
+    })
+  }
+
+  // Highlights an array of text excerpts in the article iframe.
+  // Returns an array of the highlight <span> elements (null if not found) so
+  // callers can scroll to each one individually.
+  function highlightPassages(excerpts) {
     const win = articleIframeRef.current?.contentWindow
     const doc = articleIframeRef.current?.contentDocument
-    if (!win || !doc?.body) return
-    // Remove any previous highlight
+    if (!win || !doc?.body) return excerpts.map(() => null)
+
+    // Remove any previous highlights
     doc.querySelectorAll('.webb-hl').forEach(el => {
       const p = el.parentNode
       if (p) { while (el.firstChild) p.insertBefore(el.firstChild, el); el.remove() }
     })
-    // Find the first ~40 chars of the excerpt — window.find() is supported in
-    // all modern browsers (Chrome, Firefox, Safari, Edge) and works cross-frame
-    // when allow-same-origin is set.
-    const anchor = text.replace(/\s+/g, ' ').trim().slice(0, 40)
-    try {
-      const found = win.find(anchor, false, false, true, false, false, false)
-      if (found) {
-        const sel = win.getSelection()
-        if (sel?.rangeCount) {
-          const range = sel.getRangeAt(0)
-          const mark = doc.createElement('span')
-          mark.className = 'webb-hl'
-          mark.style.cssText = 'background:#fef08a;outline:2px solid #ca8a04;border-radius:3px;padding:1px 2px'
-          try {
-            range.surroundContents(mark)
-            mark.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          } catch {
-            // surroundContents fails when range crosses element boundaries;
-            // fall back to scrolling the nearest ancestor into view
-            const node = sel.anchorNode
-            if (node?.parentElement) {
-              node.parentElement.style.background = '#fef08a'
-              node.parentElement.classList.add('webb-hl')
-              node.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+    const results = []
+    for (const text of excerpts) {
+      // Use the first 50 chars as a reliable anchor for window.find()
+      const anchor = text.replace(/\s+/g, ' ').trim().slice(0, 50)
+      try {
+        // window.find searches forward from the previous match position,
+        // so passages must be in document order (GPT is instructed to do this)
+        const found = win.find(anchor, false, false, false, false, false, false)
+        if (found) {
+          const sel = win.getSelection()
+          if (sel?.rangeCount) {
+            const range = sel.getRangeAt(0)
+            const mark = doc.createElement('span')
+            mark.className = 'webb-hl'
+            mark.style.cssText =
+              'background:#fef08a;outline:2px solid #ca8a04;border-radius:3px;padding:1px 2px'
+            try {
+              range.surroundContents(mark)
+              results.push(mark)
+            } catch {
+              // surroundContents fails across element boundaries — highlight ancestor
+              const node = sel.anchorNode
+              const parent = node?.parentElement
+              if (parent) {
+                parent.style.background = '#fef08a'
+                parent.classList.add('webb-hl')
+                results.push(parent)
+              } else {
+                results.push(null)
+              }
             }
+            sel.removeAllRanges()
+          } else {
+            results.push(null)
           }
-          sel.removeAllRanges()
+        } else {
+          results.push(null)
         }
+      } catch {
+        results.push(null)
       }
-    } catch { /* ignore — non-critical visual feature */ }
+    }
+    return results
   }
 
   // ── Exit ──────────────────────────────────────────────────────────────

@@ -59,25 +59,28 @@ export async function POST(req) {
             content:
               `You help Mrs. Webb, an AI teacher, guide a student through an article. ` +
               `${nameClause} ` +
-              `Your job is to pick the single most interesting and educational passage from the ` +
-              `article body — NOT the opening sentence, NOT a photo caption or image description, ` +
-              `NOT a table entry. Pick a passage from the middle or later in the article that ` +
-              `teaches something concrete, surprising, or important about the topic. ` +
-              `Then write a warm one-sentence intro Mrs. Webb says before reading it — ` +
-              `address the student as "${addressAs}" (not "class", not "students", not "everyone").`,
+              `Pick 2–3 passages from DIFFERENT sections of the article body — NOT the opening ` +
+              `paragraph, NOT photo captions, NOT image descriptions, NOT table entries. ` +
+              `Each passage must be 2 consecutive verbatim sentences from the article. ` +
+              `Choose passages that together tell a great educational story about the topic — ` +
+              `concrete facts, surprising details, important causes or effects. ` +
+              `List them in the order they appear in the article (top to bottom). ` +
+              `Then write ONE warm intro sentence Mrs. Webb says before starting — ` +
+              `address the student as "${addressAs}" (never "class", "students", or "everyone").`,
           },
           {
             role: 'user',
             content:
               `Grade: ${grade}. Lesson: "${lessonTitle}".\n\n` +
-              `Copy 2–3 consecutive sentences verbatim from the article body that best teach ` +
-              `a concrete fact or concept about this topic. Skip the very first paragraph. ` +
-              `Do NOT include photo captions, image descriptions, or table content.\n\n` +
-              `Then on a new line: INTRO: [Mrs. Webb's one-sentence lead-in]\n\n` +
+              `Return exactly this format:\n` +
+              `EXCERPT 1: [2 verbatim sentences from somewhere past the first paragraph]\n` +
+              `EXCERPT 2: [2 verbatim sentences from a different section]\n` +
+              `EXCERPT 3: [2 verbatim sentences from a different section]\n` +
+              `INTRO: [Mrs. Webb's one warm lead-in sentence]\n\n` +
               `Article text:\n${plainText}`,
           },
         ],
-        max_tokens: 350,
+        max_tokens: 500,
         temperature: 0.2,
       }),
     })
@@ -86,10 +89,23 @@ export async function POST(req) {
     const raw = (data.choices?.[0]?.message?.content || '').trim()
 
     const introMatch = raw.match(/INTRO:\s*(.+)/i)
-    const intro  = introMatch ? introMatch[1].trim() : `Here's an important part about ${lessonTitle}!`
-    const excerpt = raw.replace(/INTRO:[\s\S]*/i, '').trim()
+    const intro = introMatch ? introMatch[1].trim() : `Let me show you some key parts about ${lessonTitle}!`
 
-    return NextResponse.json({ excerpt, intro })
+    const passages = []
+    const excerptRe = /EXCERPT\s*\d+:\s*([^\n]+(?:\n(?!EXCERPT|INTRO)[^\n]+)*)/gi
+    let m
+    while ((m = excerptRe.exec(raw)) !== null) {
+      const excerpt = m[1].trim()
+      if (excerpt) passages.push({ excerpt })
+    }
+
+    // Fallback: if parsing fails, treat everything before INTRO as one passage
+    if (!passages.length) {
+      const fallback = raw.replace(/INTRO:[\s\S]*/i, '').trim()
+      if (fallback) passages.push({ excerpt: fallback })
+    }
+
+    return NextResponse.json({ passages, intro })
   } catch (e) {
     console.error('webb-interpret error:', e)
     return NextResponse.json({ error: 'Failed' }, { status: 500 })
