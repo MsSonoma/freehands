@@ -6,23 +6,23 @@ Mode: standard
 
 Prompt (original):
 ```text
-research objectives derived from lesson questions checklist comprehension tracking GPT check resource search narrowing Webb
+objectives completion tracking user response text accordion research mode essay generation webb session page.jsx
 ```
 
 Filter terms used:
 ```text
-GPT
-research
+page.jsx
 objectives
-derived
-lesson
-questions
-checklist
-comprehension
+completion
 tracking
-check
-resource
-search
+user
+response
+text
+accordion
+research
+mode
+essay
+generation
 ```
 
 ---
@@ -31,9 +31,9 @@ search
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-03-14 13:10` — media overlay does not appear when video or article button is pressed webb page.jsx portal createPortal overlayPanelStyl
 - `2026-03-14 17:03` — video and conversation 50/50 split landscape 50% width portrait 50% height media overlay smaller inset positioned toward
 - `2026-03-14 17:15` — YouTube video transcript captions for Mrs Webb to use in chat context
+- `2026-03-14 17:45` — research objectives derived from lesson questions checklist comprehension tracking GPT check resource search narrowing W
 
 ---
 
@@ -54,7 +54,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 10. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 9. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -69,7 +69,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-GPT research objectives derived lesson questions checklist comprehension tracking check resource search
+page.jsx objectives completion tracking user response text accordion research mode essay generation
 
 ## Forced Context
 
@@ -77,744 +77,827 @@ GPT research objectives derived lesson questions checklist comprehension trackin
 
 ## Ranked Evidence
 
-### 1. src/app/api/webb-resources/route.js (9893d37300479d3177417e92a2e57a61af59f58d538e4b565e2879bb790066dd)
-- bm25: -15.0635 | entity_overlap_w: 2.60 | adjusted: -15.7135 | relevance: 0.9402
+### 1. src/app/session/webb/page.jsx (e4f81025b7de8eea3530506be1f98524d18a4fb3b59d1700a8adf22f88dee2d1)
+- bm25: -17.9578 | relevance: 0.9473
 
-// ── Generate video resource ───────────────────────────────────────────────────
-async function generateVideo(apiKey, ytKey, title, subject, grade, ctx) {
-  // Step 1: GPT builds the best educational search query
-  const query = await callGPT(
-    apiKey,
-    'You create YouTube search queries for educational videos for children. ' +
-    'Return ONLY the search query — 4 to 7 words, no punctuation at the end, no quotes.',
-    `Lesson: "${title}". Subject: ${subject}. ${grade}.${ctx}`,
-    40,
-  )
-  const safeQuery = (query || `educational ${title}`).slice(0, 120)
+// ── Active lesson ────────────────────────────────────────────────────
+  const [selectedLesson, setSelectedLesson] = useState(null)
+  const [chatMessages, setChatMessages]     = useState([]) // [{role,content}] for API
+  const [transcript, setTranscript]         = useState([]) // [{text,role}] for CaptionPanel
+  const [activeIndex, setActiveIndex]       = useState(-1)
+  const [chatLoading, setChatLoading]       = useState(false)
+  const transcriptRef                       = useRef(null)
 
-if (ytKey) {
+// ── Research objectives ──────────────────────────────────────────────
+  const [objectives,         setObjectives]        = useState([])  // string[]
+  const [completedObj,       setCompletedObj]      = useState([])  // number[] of completed indices
+  const [newlyCompletedObj,  setNewlyCompletedObj] = useState(null) // {idx, text} — drives tablet toast
+  const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
+  const [showSourceSettings, setShowSourceSettings] = useState(false) // article source settings
+  const [articleSources,     setArticleSources]    = useState(() => {
+    const ALL = ['simple-wikipedia','wikipedia','kiddle','ducksters','wikijunior']
+    if (typeof window === 'undefined') return ALL
     try {
-      const ytUrl =
-        `${YT_SEARCH}?part=snippet` +
-        `&q=${encodeURIComponent(safeQuery)}` +
-        `&type=video&safeSearch=strict&videoEmbeddable=true&maxResults=5` +
-        `&key=${ytKey}`
-      const ytRes  = await fetch(ytUrl)
-      const ytData = await ytRes.json()
-      const items  = (ytData.items || []).filter(i => i.id?.videoId)
+      const stored = JSON.parse(localStorage.getItem('webb_article_sources') || 'null')
+      if (Array.isArray(stored) && stored.length) return stored
+    } catch {}
+    return ALL
+  })
+  const checkingObjRef = useRef(false) // debounce concurrent checks
 
-if (items.length) {
-        // Step 2: GPT picks the most educationally relevant result.
-        // All candidates are already filtered by YouTube's safeSearch=strict + videoEmbeddable=true
-        // so the safety bar here is just relevance, not content moderation.
-        const candidateList = items.map((item, i) =>
-          `${i}: "${item.snippet.title}" | Channel: ${item.snippet.channelTitle} | ${(item.snippet.description || '').slice(0, 200)}`
-        ).join('\n')
+### 2. docs/brain/mr-mentor-conversation-flows.md (958c9ac063b744328200ce6dc74910b7af60f847dfe7d0b4c07358dfdc1068a0)
+- bm25: -13.4591 | relevance: 0.9308
 
-### 2. src/app/session/v2/ComprehensionPhase.jsx (d01e99ca2a3e724b74eb7e7aee04c05db031eb947b5bbc97b333bb194696ab85)
-- bm25: -13.7357 | relevance: 0.9321
+### Function Schemas
+- **File:** `src/app/api/counselor/route.js`
+- **Location:** OpenAI tools array in POST handler
+- **Functions:**
+  - `search_lessons` - Broad, always available
+  - `generate_lesson` - Restricted, escape-aware
+  - `schedule_lesson` - Action-immediate
+       - `assign_lesson` - Make lesson available to learner (action-immediate)
 
-/**
- * ComprehensionPhase - Multiple comprehension questions with scoring
- * 
- * Consumes AudioEngine for question playback.
- * Manages question progression and score tracking.
- * Zero coupling to session state or other phases.
- * 
- * Architecture:
- * - Loads comprehension questions from lesson data
- * - Plays each question with TTS
- * - Prefetches N+1 question during N playback (eliminates wait times)
- * - Presents short-answer or fill-in-blank questions
- * - Validates answers and tracks score
- * - Opening actions (play timer) before work mode
- * - Emits comprehensionComplete with results
- * 
- * Usage:
- *   const phase = new ComprehensionPhase({ audioEngine, eventBus, timerService, questions });
- *   phase.on('comprehensionComplete', (results) => saveScore(results));
- *   await phase.start();
- *   await phase.go(); // After opening actions
- */
+### Capabilities Info
+- **File:** `src/app/api/counselor/route.js`
+- **Function:** `getCapabilitiesInfo()`
+- **Provides:** Detailed guidance on when to use each function
 
-import { fetchTTS } from './services';
-import { ttsCache } from '../utils/ttsCache';
-import { buildAcceptableList, judgeAnswer } from './judging';
-import { deriveCorrectAnswerText, formatQuestionForSpeech } from '../utils/questionFormatting';
-import { HINT_FIRST, HINT_SECOND, pickHint } from '../utils/feedbackMessages';
+---
 
-// V1 praise phrases for correct answers
-const PRAISE_PHRASES = [
-  'Great job!',
-  'Excellent!',
-  'You got it!',
-  'Nice work!',
-  'Well done!',
-  'Perfect!',
-  'Awesome!',
-  'Fantastic!'
-];
+## Edge Cases
 
-// Intro phrases for phase start (V1 pacing pattern)
-const INTRO_PHRASES = [
-  "Now let's check your understanding.",
-  "Time to see what you learned.",
-  "Let's test your knowledge.",
-  "Ready for a question?"
-];
+### User Says "Recommend Them to Be Generated"
+This is confusing language mixing "recommend" (advice) with "generated" (creation).
 
-### 3. docs/brain/ms-sonoma-teaching-system.md (1f079cae33ff43ac4f14837a3de47b84b5b01b2e253899f9ec065dd2e8c8247d)
-- bm25: -12.7164 | relevance: 0.9271
+**Interpretation Priority:**
+1. Dominant verb: "recommend" → advice mode
+2. Context: "Do you have suggestions?" preceded this → advice mode
+3. Action: Search and recommend, don't generate
 
-**Transition**:
-- "Great. Let's move on to comprehension."
+### User Says "Stop" During Parameter Collection
+Even if function calling started, model can produce conversational response abandoning the call.
 
-### Pre-Send Checklist
+**Expected Behavior:**
+- Model reads escape signal in system prompt
+- Produces text response instead of function call
+- Response acknowledges user's preference: "Of course! Let me search instead..."
 
-Before shipping to Ms. Sonoma, verify:
-- Payload contains only speakable text
-- Child's name and lesson title are literal (no placeholders)
-- Exactly one phase represented
-- If Opening: final sentence is silly question
-- If Teaching/Repeat: ends with VERBATIM wrap line
-- If Transition: uses VERBATIM move-on line
-- If Comprehension: exactly one question, no definitions
-- No syntax or labels present: no [], {}, <>, no section labels, no [COPILOT]/[SONOMA]/[VERBATIM]/[SAMPLE]
-- Must pass placeholder scan: no {PLACEHOLDER}, [PLACEHOLDER], <PLACEHOLDER>, or stray ALLCAPS tokens
+### User Asks for "Christmas Themed" Without Learner Selected
+**Correct Flow:**
+1. Search for Christmas-themed lessons across grades
+2. Present options
+3. Offer to narrow by grade OR generate if nothing suitable
+4. DO NOT assume generation is wanted
 
-### Turn Map
+---
 
-**After Opening**: Teaching Definitions (developer-triggered, no teaching during opening)
+## Testing Scenarios
 
-**After Teaching Definitions wrap**:
-- Repeat Vocab button → Definitions Repeat
-- Next button → Teaching Examples
-- Ask button → freeform questions, respond briefly, return to gate
+### Scenario 1: Ambiguous Generation Language
+```
+User: "Emma needs one more lesson and then Christmas vacation. Suggestions?"
+Expected: Search, recommend Christmas-themed language arts, ask questions
+Actual (before fix): Started asking for grade, subject, difficulty
+```
 
-**After Teaching Examples wrap**:
-- Repeat Vocab button → Examples Repeat
-- Next button → Transition, then Comprehension Ask
-- Ask button → freeform questions, respond briefly, return to gate
+### 3. docs/brain/ingests/pack-mentor-intercepts.md (3e231008a05445b5759eef203b600a852bd9520ce71072cb95d474a484742b29)
+- bm25: -12.1720 | relevance: 0.9241
 
-**Comprehension loop**: Ask → child reply → FeedbackCorrect or FeedbackHint → Ask again (or Closing when goal met)
+**❌ DON'T** use `ensurePinAllowed` for non-gated features
+- Only call it when you genuinely need to gate an action
+- Unnecessary calls degrade user experience
 
-**Closing**: End of session
+## Key Files
 
-### Opening Actions UI (V2)
+**Core Logic**:
+- `src/app/lib/pinGate.js` - PIN validation, section tracking, preferences
+- `src/app/api/facilitator/pin/route.js` - Get PIN state, preferences
+- `src/app/api/facilitator/pin/verify/route.js` - Server PIN verification
 
-### 4. docs/brain/v2-architecture.md (bc99e4b71f540c7bf37fdef5f564161060387111ec7a1c9304f9cd3ccfe6fd49)
-- bm25: -10.0207 | entity_overlap_w: 7.80 | adjusted: -11.9707 | relevance: 0.9229
+**Navigation Integration**:
+- `src/app/HeaderBar.js` - Navigation PIN checks, facilitator flag setting
+- `src/components/FacilitatorSectionTracker.jsx` - Section flag lifecycle
 
-**Retry + Rate Limit Handling:**
-- If GPT returns 429, TeachingController enters a cooldown and produces a deterministic "wait then press Next" sentence
-- If GPT returns 500+ (or the fetch throws), TeachingController shows a generic server error message (not rate limit)
-- When a non-429 error message is shown, the next Next/Repeat/Restart action triggers an actual retry fetch (instead of advancing past the error sentence and effectively skipping the stage)
-- Next/Repeat/Restart must not spam GPT requests during cooldown
-- Public methods called without `await` (Repeat/Skip/Restart) must not generate unhandled promise rejections
+### 34. docs/brain/session-takeover.md (1f835d163bf68929a4e5f34cd5f4cffe3ef482a5e6b64ab8f8d4977332da7266)
+- bm25: -12.0329 | relevance: 1.0000
 
-**Environment Variable Requirements:**
-- At least one LLM provider key must be configured: `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
-- Google TTS requires: `GOOGLE_APPLICATION_CREDENTIALS` (path to JSON file) or `GOOGLE_TTS_CREDENTIALS` (inline JSON or base64)
-- Dev server must be restarted after adding/changing `.env.local` to load new environment variables
-- Missing keys cause 500 errors (not 429s); TeachingController now distinguishes these in user-facing messages
+**Result**: When play timer expires with page closed, restore automatically:
+1. Sets countdown completed flag (blocks countdown)
+2. Transitions timer to work mode
+3. Triggers phase handler to start work phase
+4. User lands directly in work phase entrance, can click Go to begin
 
-**Gate Prompt Flow (uses prefetched content):**
-1. Speak "Do you have any questions?" (TTS prefetched)
-2. Await prefetched GPT result (usually instant)
-3. Speak GPT-generated sample questions (TTS prefetched)
-4. Fallback if GPT failed: deterministic questions using lesson title
+**Key Files:**
+- `src/app/session/page.js`: Flag setting in completion handlers, not in handlePlayTimeUp
+- `src/app/session/hooks/useSnapshotPersistence.js`: Detect expired timer on restore, auto-transition
+- `src/app/session/sessionSnapshotStore.js`: Persist flag in snapshot
 
-**Exposes:**
-- `prefetchAll()` - start all background prefetches (call on Begin)
-- `startTeaching(lessonData)`
-- `advanceSentence()`
-- `repeatSentence()`
-- `skipToExamples()`
-- Events: `onStageChange`, `onSentenceAdvance`, `onTeachingComplete`
+### Database Schema
 
-### 5. src/app/session/v2/SessionPageV2.jsx (a7a58085ca7398c2feecb75c3e009eb01bdc6fa8c004ed4ac13177d8287f65c8)
-- bm25: -11.1254 | relevance: 0.9175
+#### `lesson_sessions` Table Extensions
 
-// Play portion flags (required - no defaults or fallback)
-        const playFlags = {
-          comprehension: learner.play_comprehension_enabled,
-          exercise: learner.play_exercise_enabled,
-          worksheet: learner.play_worksheet_enabled,
-          test: learner.play_test_enabled,
-        };
-        for (const [k, v] of Object.entries(playFlags)) {
-          if (typeof v !== 'boolean') {
-            throw new Error(`Learner profile missing play_${k}_enabled flag. Please run migrations.`);
-          }
-        }
-        setPlayPortionsEnabled(playFlags);
-        playPortionsEnabledRef.current = playFlags;
-        
-        // Load phase timer settings from learner profile
-        const timers = loadPhaseTimersForLearner(learner);
-        setPhaseTimers(timers);
-        
-        // Initialize currentTimerMode (null = not started yet), but do not clobber
-        // any existing restore/resume-derived modes.
-        setCurrentTimerMode((prev) => {
-          const hasExistingMode = prev && Object.values(prev).some((mode) => mode === 'play' || mode === 'work');
-          if (hasExistingMode) return prev;
-          return {
-            discussion: null,
-            comprehension: null,
-            exercise: null,
-            worksheet: null,
-            test: null
-          };
-        });
-        
-        // Check for active golden key on this lesson (only affects play timers when Golden Keys are enabled)
-        // Key format must match V1 + /learn/lessons: `${subject}/${lesson}`.
-        if (!goldenKeyLessonKey) {
-          throw new Error('Missing lesson key for golden key lookup.');
-        }
-        const activeKeys = learner.active_golden_keys || {};
-        if (learner.golden_keys_enabled && activeKeys[goldenKeyLessonKey]) {
-          setHasGoldenKey(true);
+**New columns:**
+```sql
+ALTER TABLE lesson_sessions
+  ADD COLUMN session_id UUID NOT NULL DEFAULT gen_random_uuid(),
+  ADD COLUMN device_name TEXT,
+  ADD COLUMN last_activity_at TIMESTAMPTZ DEFAULT NOW();
 
-### 6. src/app/api/webb-chat/route.js (db5fbda60609d4446cdf895d725273be488cea6e615845b8a2033815e96971fd)
-- bm25: -10.7914 | entity_overlap_w: 1.30 | adjusted: -11.1164 | relevance: 0.9175
+CREATE UNIQUE INDEX unique_active_lesson_session 
+  ON lesson_sessions (learner_id, lesson_id) 
+  WHERE ended_at IS NULL;
+```
+
+### 4. docs/brain/visual-aids.md (c3fb6c81339e5a5f3a4c953b263a19d62a9e74dfcc98126689b6811e52abff79)
+- bm25: -11.8531 | relevance: 0.9222
+
+### Database
+- **Table**: `visual_aids`
+  - `lesson_key` (text) - normalized lesson identifier (prefix-stripped, typically ends with `.json`)
+  - `facilitator_id` (uuid) - owner
+  - `generated_images` (jsonb) - array of saved images (permanent URLs only)
+  - `selected_images` (jsonb) - array of images used in-session (permanent URLs only)
+  - `generation_count` (int) - generation limit tracking
+  - `max_generations` (int) - configured max generations
+
+### 5. src/app/api/webb-objectives/route.js (c36e55d68984e187b2c6ee57f5738229baa493ad7a5ae8d373850a60d47cf77f)
+- bm25: -11.4314 | relevance: 0.9196
 
 /**
- * /api/webb-chat
- * Mrs. Webb – AI conversation endpoint.
- * Maintains freeform chat about a lesson topic using GPT-4o-mini.
- * Safety-validates student input before forwarding.
+ * /api/webb-objectives
+ *
+ * Two actions, one endpoint:
+ *
+ * POST { action: 'generate', lesson }
+ *   → { objectives: string[] }   — 5-8 comprehension objectives derived from lesson questions
+ *
+ * POST { action: 'check', objectives: string[], completedIndices: number[], conversation: {role,content}[] }
+ *   → { newlyCompleted: number[] }   — indices of objectives the student just demonstrated
  */
 import { NextResponse } from 'next/server'
-import { validateInput } from '@/lib/contentSafety'
 
-const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
+const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 
-function buildSystem(lesson) {
+async function callGPT(apiKey, system, user, maxTokens = 500) {
+  const res = await fetch(OPENAI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+      max_tokens: maxTokens,
+      temperature: 0.3,
+    }),
+  })
+  const json = await res.json()
+  return json.choices?.[0]?.message?.content?.trim() || ''
+}
+
+// ── Generate objectives from a lesson's question bank ────────────────────────
+async function generateObjectives(apiKey, lesson) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
-  const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
-  return [
-    `You are Mrs. Webb, a warm, encouraging, and knowledgeable teacher.`,
-    `You are currently helping a student explore: "${title}" (${subject}, ${grade}).`,
-    `Your style:`,
-    `- Friendly, patient, and age-appropriate.`,
-    `- Ask what the student already knows; build on it.`,
-    `- Keep replies short — 2 to 4 sentences — they are read aloud.`,
-    `- Write in natural spoken language: no markdown, no bullet points.`,
-    `- Gently redirect off-topic questions back to the lesson.`,
-    `- Celebrate curiosity and effort.`,
-  ].join('\n')
+  const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary'
+
+### 6. docs/brain/ai-rewrite-system.md (35a8a6775add282434752ed4c19bb6c38e5828f05d19689f0af7b1943e0b76fa)
+- bm25: -11.4234 | relevance: 0.9195
+
+# AI Rewrite System
+
+## How It Works
+
+Reusable AI-powered text rewriting system used throughout the application to improve and enhance user-written text.
+
+### AIRewriteButton Component
+- Location: `src/components/AIRewriteButton.jsx`
+- Props: `text`, `onRewrite`, `disabled`, `loading`, `size`, `style`
+- Button sizes: 'small', 'medium', 'large'
+- Shows loading state during rewrite
+
+### AI Rewrite API
+- Location: `src/app/api/ai/rewrite-text/route.js`
+- Endpoint: `POST /api/ai/rewrite-text`
+- Request body: `{ text, context?, purpose }`
+- Response: `{ rewritten }`
+
+### Rewrite Purposes
+
+**visual-aid-description**
+- Rewrites image descriptions for kid-friendly educational content (ages 6-12)
+- Simple, age-appropriate language
+- Warm and encouraging tone
+- 2-3 short sentences
+- Natural spoken tone for Ms. Sonoma
+
+**generation-prompt**
+- Improves AI image generation prompts for DALL-E 3
+- Specific and descriptive
+- Includes style guidance
+- Educational clarity focus
+- Concise but detailed
+
+**general**
+- General text improvement
+- Clear and concise
+- Maintains original meaning
+- Improved grammar and flow
+- Professional polish
+
+## Current Usage
+
+### Visual Aids Carousel
+- Location: `src/components/VisualAidsCarousel.jsx`
+- Two rewrite buttons:
+  1. **Image Description**: Rewrites user's basic description into kid-friendly language
+     - Purpose: `visual-aid-description`
+     - Context: Lesson title
+  2. **Generation Prompt**: Improves custom prompt for "Generate More"
+     - Purpose: `generation-prompt`
+     - Context: Lesson title
+
+### 7. src/app/api/webb-objectives/route.js (ad8f73af2b1297bd6b6064b63c0a481970028fc76c92fd415227f8e57bd3bf5e)
+- bm25: -11.1551 | relevance: 0.9177
+
+const system =
+    `You are a curriculum designer. Given a list of assessment questions for a school lesson, ` +
+    `derive 5 to 8 core comprehension objectives. Each objective should be a clear, ` +
+    `student-facing statement of what the learner needs to understand — written as ` +
+    `"The learner can explain..." or "The learner understands...". ` +
+    `Consolidate overlapping questions into a single objective. ` +
+    `Do NOT number them. Return one objective per line, nothing else.`
+
+const user =
+    `Lesson: "${title}" — ${subject}, ${grade}.\n\n` +
+    `Assessment questions:\n${allQ.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
+
+const raw = await callGPT(apiKey, system, user, 400)
+  const objectives = raw.split('\n').map(l => l.replace(/^[-•*]\s*/, '').trim()).filter(Boolean)
+  return objectives
+}
+
+// ── Check whether the student just demonstrated any uncompleted objectives ────
+async function checkObjectives(apiKey, objectives, completedIndices, conversation) {
+  const incomplete = objectives
+    .map((obj, i) => ({ obj, i }))
+    .filter(({ i }) => !completedIndices.includes(i))
+
+if (!incomplete.length) return []
+
+// Only look at the last 4 turns to keep this fast + cheap
+  const recentTurns = conversation.slice(-4)
+    .filter(m => m.role === 'user')
+    .map(m => String(m.content || '').trim())
+    .filter(Boolean)
+
+if (!recentTurns.length) return []
+
+### 8. src/app/session/webb/page.jsx (6ff7232539ceed43c45bacea4435ff282c7e9eda5531d3e4cea71a871d4c7f7e)
+- bm25: -10.9615 | relevance: 0.9164
+
+// ── Objectives: generate when lesson starts ──────────────────────────
+  // Generate objectives from the lesson question bank (fired once per lesson).
+  // Fall back silently if the API is unavailable.
+  const generateObjectives = useCallback(async (lesson) => {
+    setObjectives([])
+    setCompletedObj([])
+    setNewlyCompletedObj(null)
+    try {
+      const res  = await fetch('/api/webb-objectives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate', lesson }),
+      })
+      const data = await res.json()
+      if (Array.isArray(data.objectives) && data.objectives.length) {
+        setObjectives(data.objectives)
+      }
+    } catch { /* objectives are optional — fail silently */ }
+  }, [])
+
+### 9. docs/brain/content-safety.md (93d61090b2a879fb2b21f888024bf4fae5fd67db358043f695a5c3433a258b65)
+- bm25: -10.8840 | relevance: 0.9159
+
+## What NOT To Do
+
+- Never remove profanity filter checks before LLM calls
+- Never skip output validation (scan responses before frontend)
+- Never allow freeform story/poem generation without templates
+- Never relax SAFETY RULE directives in prompts
+- Never disable moderation API checks
+
+## Template-Based Features
+
+### Poem Feature (Template Mode)
+- Pre-written templates: Acrostic, Haiku, Rhyming Couplet
+- User selects vocab term from dropdown
+- User selects template from list
+- System substitutes vocab term into template
+- No LLM call for poem generation
+
+### Story Feature (Choice-Based)
+- Dropdown choices for characters, settings, plots
+- Predefined safe lists only
+- Limited LLM for narrative generation with strict guardrails
+- Maximum story length: 5 exchanges
+
+## AI Rewrite Safety
+- Located: `src/app/api/ai/rewrite-text/route.js`
+- Purpose-specific prompts: visual-aid-description, generation-prompt, general
+- Kid-friendly language (ages 6-12) for visual-aid-description
+- Warm and encouraging tone enforcement
+- Context-aware rewrites with lesson title
+
+### 10. src/app/api/webb-objectives/route.js (cea713c644fae1889818a47363b3a28510c9dd12ca530ecf325fbfdd8beacb2e)
+- bm25: -10.4822 | relevance: 0.9129
+
+const objList = incomplete.map(({ obj, i }) => `${i}: ${obj}`).join('\n')
+  const studentSaid = recentTurns.map(t => `Student: "${t}"`).join('\n')
+
+const raw = await callGPT(apiKey, system,
+    `Remaining objectives (number: text):\n${objList}\n\nRecent student messages:\n${studentSaid}`,
+    80)
+
+if (raw.toLowerCase().includes('none')) return []
+  const newly = []
+  for (const part of raw.split(',')) {
+    const n = parseInt(part.trim(), 10)
+    if (!isNaN(n) && !completedIndices.includes(n) && objectives[n]) newly.push(n)
+  }
+  return newly
 }
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {} } = await req.json()
+    const body   = await req.json()
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
 
-// Safety-check the last user message
-    const lastUser = [...messages].reverse().find(m => m.role === 'user')
-    if (lastUser) {
-      const check = validateInput(String(lastUser.content || ''), 'general')
-      if (!check.safe) {
-        return NextResponse.json({
-          reply: "Let's keep our conversation focused on the lesson! What would you like to know?",
+if (body.action === 'generate') {
+      const objectives = await generateObjectives(apiKey, body.lesson || {})
+      return NextResponse.json({ objectives })
+    }
+
+if (body.action === 'check') {
+      const newly = await checkObjectives(
+        apiKey,
+        body.objectives    || [],
+        body.completedIndices || [],
+        body.conversation  || [],
+      )
+      return NextResponse.json({ newlyCompleted: newly })
+    }
+
+return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
+  } catch (e) {
+    console.error('[webb-objectives]', e)
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+  }
+}
+
+### 11. src/app/facilitator/generator/counselor/CounselorClient.jsx (cf1b46eb6bc2fd7c8ff2571d5249c17bb3439661a6224cfc088fea6132771898)
+- bm25: -10.4103 | relevance: 0.9124
+
+// Get auth token for function calling
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      
+      const response = await fetch('/api/counselor', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          message: finalForwardMessage,
+          // ThoughtHub: chronograph + deterministic packs provide context; omit on-wire history to save tokens.
+          history: cohereChronographEnabled ? conversationHistory.slice(-8) : conversationHistory,
+          use_cohere_chronograph: cohereChronographEnabled,
+          use_thought_hub: cohereChronographEnabled,
+          subject_key: subjectKey,
+          cohere_mode: 'standard',
+          thought_hub_mode: 'standard',
+          // Include learner context if a learner is selected
+          learner_transcript: learnerTranscript || null,
+          // Include persistent goals notes
+          goals_notes: goalsNotes || null,
+          // Include any context from interceptor
+          interceptor_context: Object.keys(forwardContext).length > 0 ? forwardContext : undefined,
+          require_generation_confirmation: true,
+          generation_confirmed: generationConfirmed,
+          disableTools
+        })
+      })
+
+### 12. src/app/session/webb/page.jsx (afda4de30c18bfbd07256fa275dcff38af1033472ccfcf7baec1f8faceb9f1ea)
+- bm25: -10.0660 | relevance: 0.9096
+
+// ── Objectives: check after each student turn ─────────────────────────
+  // Runs in the background after a normal chat turn; never blocks the UI.
+  const checkObjectivesAfterTurn = useCallback(async (updatedMessages, currentObjectives, currentCompleted) => {
+    if (!currentObjectives.length || checkingObjRef.current) return
+    if (currentCompleted.length >= currentObjectives.length) return
+    checkingObjRef.current = true
+    try {
+      const res  = await fetch('/api/webb-objectives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action:           'check',
+          objectives:       currentObjectives,
+          completedIndices: currentCompleted,
+          conversation:     updatedMessages,
+        }),
+      })
+      const data = await res.json()
+      const newly = data.newlyCompleted || []
+      if (newly.length) {
+        setCompletedObj(prev => {
+          const next = [...new Set([...prev, ...newly])]
+          // Show the tablet toast for the first newly completed objective
+          const firstIdx = newly.find(i => !prev.includes(i))
+          if (firstIdx !== undefined) {
+            setNewlyCompletedObj({ idx: firstIdx, text: currentObjectives[firstIdx] })
+          }
+          return next
         })
       }
-    }
+    } catch { /* fail silently */ }
+    checkingObjRef.current = false
+  }, [])
 
-### 7. docs/brain/lesson-quota.md (667668f994e6639c835e761aecd5152eb6f331cdb22b15442f025701e70ba167)
-- bm25: -10.4283 | relevance: 0.9125
+// Auto-dismiss the tablet toast after 3.5 s
+  useEffect(() => {
+    if (!newlyCompletedObj) return
+    const t = setTimeout(() => setNewlyCompletedObj(null), 3500)
+    return () => clearTimeout(t)
+  }, [newlyCompletedObj])
 
-## Key Files
+### 13. sidekick_pack.md (af53ecc19ee10a49a8b05a6d9667006979cd7d5f304dcfad57d5acde47312bea)
+- bm25: -10.0567 | relevance: 0.9096
 
-- `/api/lessons/quota` - Quota check and enforcement
-- `lesson_unique_starts` table - Daily lesson tracking
-- `src/app/lib/entitlements.js` - Tier limits
+# Cohere Pack (Sidekick Recon) - MsSonoma
 
-## What NOT To Do
+Project: freehands
+Profile: MsSonoma
+Mode: standard
 
-- Never allow unlimited lesson starts (enforced by API)
-- Never trust client-side quota counting (server is source of truth)
-- Never skip timezone parameter (day boundary matters)
-- Never allow quota bypass without tier check
-- Never delete lesson_unique_starts records (historical data)
+Prompt (original):
+```text
+Calendar day cell overlay opens generator, generates lesson, lesson appears in lessons list but not in calendar day cell or as scheduled lesson - investigate the flow from Generate on date button through to calendar state update
+```
 
-### 8. src/app/session/v2/TeachingController.jsx (29ce558fe0e8453a40bac315c7861bb3a52455c5e8c239c572702e28b01f7999)
-- bm25: -9.7245 | entity_overlap_w: 2.60 | adjusted: -10.3745 | relevance: 0.9121
+Filter terms used:
+```text
+Calendar
+day
+cell
+overlay
+opens
+generator
+generates
+lesson
+lesson
+appears
+in
+lessons
+list
+but
+not
+in
+calendar
+day
+cell
+or
+as
+scheduled
+lesson
+investigate
+```
+# Context Pack
 
-this.#playCurrentExample();
-  }
+**Project**: freehands
+**Profile**: MsSonoma
+**Mode**: standard
+
+## Pack Contract
+
+This pack is mechanically assembled: forced canonical context first, then ranked evidence until relevance saturates.
+
+## Question
+
+Calendar day cell overlay opens generator generates lesson lesson appears in lessons list but not in calendar day cell or as scheduled lesson investigate
+
+## Forced Context
+
+(none)
+
+## Ranked Evidence
+
+### 1. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
+- bm25: -37.0855 | relevance: 1.0000
+
+**Completion query rule (visibility > micro-optimization):**
+- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
+- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
+
+### 14. docs/brain/session-takeover.md (67d6f1cc34af6fd217783490d4f011c8cef30e9a03ac7f4e9f0c5692245348e3)
+- bm25: -10.0551 | relevance: 0.9095
+
+## Timer Continuity Details
+
+**Timer state components:**
+- `currentTimerMode`: 'play' (Begin to Go) or 'work' (Go to next phase)
+- `workPhaseCompletions`: object tracking which phases completed work timer
+- `elapsedSeconds`: current countdown value
+- `targetSeconds`: phase-specific target (from runtime config)
+- `capturedAt`: ISO timestamp when snapshot saved
+
+**Snapshot capture (every gate):**
+```javascript
+timerSnapshot: {
+  phase: phase,
+  mode: currentTimerModeRef.current || currentTimerMode,
+  capturedAt: new Date().toISOString(),
+  elapsedSeconds: getElapsedFromSessionStorage(phase, currentTimerMode),
+  targetSeconds: getTargetForPhase(phase, currentTimerMode)
+}
+```
+
+**Restore logic:**
+```javascript
+const { timerSnapshot } = restoredSnapshot;
+if (timerSnapshot) {
+  const drift = Math.floor((Date.now() - new Date(timerSnapshot.capturedAt)) / 1000);
+  const adjustedElapsed = Math.min(
+    timerSnapshot.elapsedSeconds + drift,
+    timerSnapshot.targetSeconds
+  );
   
-  // Private: Completion
-  #completeTeaching() {
-    this.#stage = 'complete';
-    
-    if (this.#audioEndListener) {
-      this.#audioEngine.off('end', this.#audioEndListener);
-      this.#audioEndListener = null;
-    }
-    
-    this.#emit('teachingComplete', {
-      vocabCount: this.#vocabSentences.length,
-      exampleCount: this.#exampleSentences.length
-    });
-  }
-  
-  // Private: Gate prompt - uses prefetched GPT content for zero latency
-  // 1. Speak "Do you have any questions?"
-  // 2. Speak prefetched GPT sample questions (or fallback)
-  async #playGatePrompt(stage) {
-    const lessonTitle = this.#lessonMeta?.lessonTitle || this.#lessonData?.title || 'this topic';
-
-### 9. docs/brain/MentorInterceptor_Architecture.md (e4265fa26ec7826d8e1370392b693965e4e387b487bf5b0cf9b7c9cf516b6867)
-- bm25: -10.1672 | relevance: 0.9105
-
-1. **Test locally** - verify all flows work as expected
-2. **Refine edge cases** - handle ambiguous inputs gracefully
-3. **Add FAQ responses** - common questions without API
-4. **Improve search scoring** - tune weights, add keyword boosts
-5. **Add validation** - check for required data before actions
-6. **Error handling** - graceful degradation when actions fail
-7. **Telemetry** - track interceptor hit rate, which flows used most
-8. **Push to Vercel** - only after thorough local testing
-
-### 10. docs/brain/ZOMBIE-CODE-PREVENTION.md (68762748dd4662631d92c25af07d0be38c24bb4550bc61d5729a22dd06a4ae6d)
-- bm25: -9.8693 | relevance: 0.9080
-
-**Do NOT commit until ALL checkboxes verified.**
-
-### RULE 3: Build + Test After Removal
-
-After claiming to remove code:
-```powershell
-npm run build  # Must pass
-# Manual test: Does the removed system's behavior still occur?
-```
-
-If removed pool fallback, test: Does exercise run out of questions?
-If yes, pool fallback still runs (not actually removed).
-
-### RULE 4: Changelog Honesty
-
-**Never write:**
-> "Removed compPool/exercisePool state"
-
-**When only some references were removed.**
-
-**Instead write:**
-> "Removed pool fallback from handleGoComprehension (lines 82-103)"
-
-Be specific about WHAT was removed WHERE, not aspirational claims.
-
-### RULE 5: Tag Before Large Removals
-
-Before removing any system:
-```powershell
-git tag before-removal-YYYYMMDD-HHMM
-```
-
-If removal incomplete, revert and try again:
-```powershell
-git reset --hard before-removal-YYYYMMDD-HHMM
-```
-
----
-
-## How Complete Removal Was Actually Done (Dec 8)
-
-**Step 1: Research** - Grep found all pool references
-**Step 2: List every location:**
-- Line 1217-1218: State declarations
-- Line 1896-1903: Dependencies in useEffect
-- Line 4306: Persistence
-- Lines 5751-5759: Comprehension fallback
-- Lines 5924-5933: Exercise fallback
-
-**Step 3: Remove ALL in one atomic commit**
-**Step 4: Add defensive handling** (array exhaustion completes phase instead of showing buttons)
-**Step 5: Build test** (passed)
-**Step 6: Update changelog** with what was ACTUALLY done
-
----
-
-## Red Flags of Zombie Code
-
-### 11. src/app/session/v2/SessionPageV2.jsx (a070d80cae8d7efa70c6291e28abc614478b3aee6d02fcec421c5fc5f5d4eb27)
-- bm25: -9.8437 | relevance: 0.9078
-
-const forceFresh = timelineJumpForceFreshPhaseRef.current === 'comprehension';
-
-const snapshot = snapshotServiceRef.current?.snapshot;
-    const savedComp = forceFresh ? null : (snapshot?.phaseData?.comprehension || null);
-    const savedCompQuestions = !forceFresh && Array.isArray(savedComp?.questions) && savedComp.questions.length ? savedComp.questions : null;
-    if (savedCompQuestions && savedCompQuestions.length && (!generatedComprehension || !generatedComprehension.length)) {
-      setGeneratedComprehension(savedCompQuestions);
-    }
-    const storedCompQuestions = !forceFresh && Array.isArray(generatedComprehension) && generatedComprehension.length ? generatedComprehension : null;
-    
-    // Build comprehension questions with 80/20 MC+TF vs SA+FIB blend (all types allowed)
-    const compTarget = savedCompQuestions ? savedCompQuestions.length : (storedCompQuestions ? storedCompQuestions.length : getLearnerTarget('comprehension'));
-    if (!compTarget) return false;
-    const questions = savedCompQuestions || storedCompQuestions || buildQuestionPool(compTarget, []); // target-driven, no exclusions
-    console.log('[SessionPageV2] startComprehensionPhase built questions:', questions.length);
-
-### 12. src/app/api/webb-resources/route.js (f50d22a7d55acd7696a13a93c2acce3b188807ada628c2474c7a7096405f6cb4)
-- bm25: -9.7011 | relevance: 0.9066
-
-const title   = lesson.title   || 'general topic'
-    const subject = lesson.subject || 'general'
-    const grade   = lesson.grade   ? `Grade ${lesson.grade}` : 'elementary'
-    const ctx     = context ? ` Student discussion context: ${context.slice(0, 300)}` : ''
-    const prevSrc = String(previousSource || '').slice(0, 60)
-
-const needVideo   = type === 'video'   || type === 'both'
-    const needArticle = type === 'article' || type === 'both'
-
-// Run video and article generation in parallel
-    const [videoResult, articleResult] = await Promise.all([
-      needVideo   ? generateVideo(apiKey, ytKey, title, subject, grade, ctx)   : null,
-      needArticle ? generateArticle(title, prevSrc) : null,
-    ])
-
-return NextResponse.json({
-      ...(videoResult   ? { video:   videoResult   } : {}),
-      ...(articleResult ? { article: articleResult } : {}),
+  // Write to sessionStorage (source for timer component)
+  sessionStorage.setItem(
+    `timer_${timerSnapshot.phase}_${timerSnapshot.mode}`,
+    JSON.stringify({
+      elapsedSeconds: adjustedElapsed,
+      startTimestamp: Date.now() - (adjustedElapsed * 1000)
     })
-  } catch (e) {
-    console.error('webb-resources error:', e)
-    return NextResponse.json({ error: 'Resource generation failed' }, { status: 500 })
-  }
-}
-
-// Health check
-export async function GET() {
-  return NextResponse.json({
-    ok: true,
-    endpoint: 'webb-resources',
-    sources: WIKI_SOURCES.map(s => s.name),
-  })
-}
-
-### 13. docs/brain/ZOMBIE-CODE-PREVENTION.md (7ecf86135777229fc44882def5c1f342fc03b5c3cbc93601cf5ec0c5f4bab410)
-- bm25: -9.6742 | relevance: 0.9063
-
-# Zombie Code Prevention Protocol
-
-**Created**: 2025-12-08  
-**Purpose**: Prevent incomplete removals that create zombie code causing recurring breakage
-
----
-
-## What Happened (Dec 2-8, 2025)
-
-**Changelog claimed:**
-- Dec 2: "POOLS ELIMINATED - Removed compPool/exercisePool state"
-- Dec 5: "removed zombie pool fallback"
-
-**Reality:**
-- compPool/exercisePool state still existed (lines 1217-1218)
-- Pool fallback logic still ran (lines 5751-5759, 5924-5933)
-- Pool persistence still saved empty arrays (line 4306)
-
-**Result:**
-- Dual architecture: new array-based system fell back to old empty pools
-- Exercise phase ran out of questions at Q8 repeatedly
-- Opening actions buttons appeared during Q&A phases repeatedly
-- Every "fix" only addressed symptoms, not root cause
-
----
-
-## Zombie Code Definition
-
-**Zombie code** = Code that changelog claims was removed but still exists and executes
-
-**Why it's dangerous:**
-1. Creates dual architectures (new + old systems coexist)
-2. Produces unpredictable behavior (falls back to broken legacy code)
-3. Breaks repeatedly (symptom fixes don't address root cause)
-4. Wastes development time (same bugs resurface)
-
----
-
-## Prevention Protocol
-
-### RULE 1: Grep Before Claiming Removal
-
-Before writing changelog entry claiming code was removed:
-```powershell
-# Search for the supposedly removed code
-rg "compPool" src/
-rg "exercisePool" src/
-```
-
-If search returns results, **the code is NOT removed** - changelog must not claim it is.
-
-### RULE 2: Complete Removal Checklist
-
-When removing a system (like pools), verify ALL these are removed:
-
-### 14. docs/brain/ingests/pack.lesson-schedule-debug.md (aa9d6f023753d6f644c4d5d6421a16f93ab2cc9ecf966dc47d68ca9cd18a2570)
-- bm25: -9.5039 | relevance: 0.9048
-
-**Steps:**
-1. Detect search intent
-2. Extract parameters (grade, subject, difficulty)
-3. Search allLessons with scoring algorithm
-4. Present top 5 results with numbers
-5. Await lesson selection (number or name)
-6. Ask: "schedule, edit, or discuss?"
-
-**Scoring algorithm:**
-- Subject match: +10
-- Grade match: +10
-- Difficulty match: +5
-- Title match (fuzzy): +15
-
-**Selection handling:**
-- Number: "1" → first result
-- Name: "Multiplying with Zeros" → fuzzy match title
-
-**Action branching:**
-- Schedule → Enter schedule flow with lessonKey
-- Edit → Enter edit flow with lessonKey
-- Discuss → Forward to API with lesson context
-
-### 2. Generate Flow
-
-**Intent:** User wants to create a new lesson  
-**Examples:** "create a lesson on fractions", "generate 5th grade science"
-
-### 29. docs/brain/lesson-notes.md (ac258ad493dde9c766703881b36300ddf044039fc14bddb8ce88bf9914d1a3ef)
-- bm25: -17.9240 | relevance: 1.0000
-
-if (notesKeys.length > 0) {
-  lines.push(`FACILITATOR NOTES ON LESSONS:`);
-  notesKeys.sort().forEach(key => {
-    const [subject, lessonName] = key.split('/');
-    lines.push(`${subject} - ${lessonName}:`);
-    lines.push(`  "${lessonNotes[key]}"`);
-  });
+  );
+  
+  setCurrentTimerMode(timerSnapshot.mode);
 }
 ```
 
-**Use cases:**
-- **Progress tracking**: "Completed with 95%. Ready for next level." → Mr. Mentor suggests advanced materials
-- **Challenge documentation**: "Struggles with word problems. Anxious during tests." → Suggests scaffolding/anxiety strategies
-- **Interest tracking**: "Loves hands-on experiments. Wants to learn chemistry." → Suggests enrichment resources
-- **Behavioral context**: "Easily distracted. Works better in morning sessions." → Suggests schedule optimization
+**Result:** Timer continues within ±2 seconds of where old device left off (gate save latency + network round-trip).
 
-## Key Files
+## PIN Validation Security
 
-### 15. src/app/session/v2/SessionPageV2.jsx (165372c7a3407e15ba0bb26c2d8d66bb5459089af4189d45d3bfb41cc4ad60ce)
-- bm25: -9.4479 | relevance: 0.9043
+**Already implemented** in `page.js` lines 286-314:
+- Client calls `ensurePinAllowed(pinCode)` from `src/app/lib/pinAuth.js`
+- Server validates PIN hash against learner's stored scrypt hash
+- Only correct PIN allows session takeover
+- Failed PIN shows error, user can retry
 
-const resumeIndex = (!forceFresh && savedComp) ? (savedComp.nextQuestionIndex ?? savedComp.questionIndex ?? 0) : 0;
-    const clampedIndex = Math.min(Math.max(resumeIndex, 0), Math.max(questions.length - 1, 0));
-    setComprehensionTotalQuestions(questions.length);
-    setComprehensionScore(savedComp?.score || 0);
-    if (questions[clampedIndex]) {
-      setCurrentComprehensionQuestion(questions[clampedIndex]);
-    }
-    if ((!comprehensionState || comprehensionState === 'idle') && savedComp) {
-      setComprehensionState('awaiting-answer');
-    }
-    
-    if (questions.length === 0) {
-      // If no comprehension questions, skip to exercise
-      addEvent('⚠️ No comprehension questions - skipping to exercise');
-      if (orchestratorRef.current) {
-        orchestratorRef.current.onComprehensionComplete();
-      }
-      return false;
-    }
+### 15. docs/brain/beta-program.md (5851e8ee0d8c3d076d02ce2aecabd28c163260fe51544b7be54a3cb74934ed85)
+- bm25: -9.7800 | relevance: 0.9072
 
-### 16. docs/brain/ms-sonoma-teaching-system.md (1b4ee06cf283a5924fd938a14c5f34054fb5fb5d3352ab28382727abf1ae0b21)
-- bm25: -8.4557 | entity_overlap_w: 3.90 | adjusted: -9.4307 | relevance: 0.9041
+# Beta Program: Tutorial Gating, Survey, and Tracking
 
-- After "Do you have any questions?" Ms. Sonoma explicitly speaks the generated "You could ask questions like..." follow-ups; if GPT is empty or errors, a deterministic three-question fallback is spoken.
-- Snapshot triggers stay stage-specific: definitions use teaching-definition / teaching-definition-gate, examples use teaching-example / teaching-example-gate, and they fire before gate playback so resume hits the correct gate/audio without falling back to definitions labels.
-- If the examples GPT call returns no text, the stage ends (no deterministic fallback injected); rely on GPT output only.
-- Gate controls (Repeat/Next and the PageDown hotkey) stay hidden/blocked while the gate prompt or sample questions load/play under a dedicated lock so learners hear the three suggestions before moving on.
-- If Skip is pressed during this locked sequence, skipGatePrompt stops audio, emits gatePromptComplete, and snaps back to awaiting-gate so controls/hotkey surface instead of hanging; captions already contain the sample questions even when TTS is skipped.
-- Frontend safety: teaching gate state lives before the skip handler to avoid TDZ ReferenceError crashes in minified builds when Skip fires during the gate.
-- Teaching CTAs (Start Definitions / Next Sentence) render as soon as teaching begins, even during the loading-definitions intro, allowing immediate advance into definitions; Next triggers nextSentence which stops intro audio and begins definitions playback.
-- Discussion screen shows a Start Definitions button; it calls skipDiscussion to stop the greeting audio and emit discussionComplete immediately so orchestrator enters teaching without waiting for the greeting to finish.
+**Status**: Canonical  
+**Last Updated**: 2025-11-25
 
-### 17. docs/brain/ms-sonoma-teaching-system.md (6a2edee4e3cfc75ce3af218db8d3ad5077d743885a3415aa675b5984f9edc421)
-- bm25: -9.3479 | relevance: 0.9034
+## How It Works
 
-**Allowed Phases**:
+The Beta program provides tutorial-style toggles for all users while enforcing mandatory first-time completion for Beta-tier users. It requires facilitator post-lesson survey (with password re-auth) to unlock the golden key, records timestamps for transcripts and notes, counts repeat usage by sentence, and measures lesson time.
 
-1. **Opening** (V2: greeting only, no activities)
-   - **V1**: Greeting with child's exact name and lesson title (1-2 sentences) + encouragement + joke + silly question
-   - **V2**: Greeting with child's exact name and lesson title (1-2 sentences) only. No joke, no silly question. "Begin" button advances to teaching immediately.
-   - **Rationale**: V2 removes opening actions from discussion phase to eliminate play timer exploit. Opening actions (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games) moved to play time in phases 2-5.
+### Goal
 
-2. **Teaching Definitions** (first stage)
-   - One short kid-friendly definition per vocab term (one sentence each)
-   - End with [VERBATIM]: "Do you have any questions? You could ask questions like..." + 2-3 example questions
+- Provide tutorial-style toggles for all users
+- Enforce mandatory first-time completion for Beta-tier users
+- Require facilitator post-lesson survey with password re-auth to unlock golden key
+- Record timestamps for transcripts and notes
+- Count repeat usage by sentence
+- Measure lesson time
 
-3. **Teaching Examples** (second stage)
-   - Inputs: the examples prompt receives the full lesson JSON (including all generated questions used for assessment)
-   - Goal: reverse-engineer the assessment questions back into the teaching examples
-   - Coverage requirement (CRITICAL): examples must teach all knowledge needed to answer every lesson question (comprehension, exercise, worksheet, test), even when multiple questions overlap
-   - Output shape: 2-3 tiny worked examples by default; may use up to 5 tiny examples when needed to cover all question content
-   - End with [VERBATIM]: "Do you have any questions? You could ask questions like..." + 2-3 example questions
+### Scope
 
-4. **Repeat** (when Repeat Vocab clicked)
-   - Shorter recap of current stage
-   - End with [VERBATIM]: "Do you have any questions? You could ask questions like..." + 2-3 example questions
+- Back-end gating
+- Supabase fields/tables
+- Route guards
+- Event logging
+- Survey + re-auth flow
+- Feature toggles
+- Uninstall plan
 
-5. **Transition to Comprehension** (when Next clicked after examples)
-   - [VERBATIM]: "Great. Let's move on to comprehension."
+### Invariants
 
-### 18. src/app/session/v2/SessionPageV2.jsx (31453943746f5eb818aac44b53d49494a054da08dd593dc769449e043b7b8e6d)
-- bm25: -9.3432 | relevance: 0.9033
+- Ms. Sonoma remains stateless and instruction-only
+- Placeholders never reach Ms. Sonoma
+- ASCII-only punctuation
+- No UI/tool mentions in Ms. Sonoma payloads
+- Developer-only rules live in Copilot instructions
 
-const withTimeout = async (promise, ms, label) => {
-      let timeoutId;
-      const timeout = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
-      });
-      try {
-        return await Promise.race([promise, timeout]);
-      } finally {
-        clearTimeout(timeoutId);
-      }
-    };
+## Targeting and Flags
 
-// Ensure audio is unlocked during this user gesture (V1 parity).
-    // The auto "first interaction" listener can fire after React onClick.
-    try {
-      await withTimeout(audioEngineRef.current.initialize(), 2500, 'Audio unlock');
-    } catch {
-      // Ignore - browsers may block resume/play outside strict gesture contexts.
-    }
+### Subscription Tier
 
-// Start (or conflict-check) session tracking before the orchestrator begins.
-    // This is required for Calendar history to detect completions reliably.
-    try {
-      const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
-      const trackingLessonId = lessonKey || null;
-      if (trackingLearnerId && trackingLearnerId !== 'demo' && trackingLessonId && browserSessionId) {
-        const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
-        const sessionResult = await withTimeout(
-          startTrackedSession(browserSessionId, deviceName),
-          12000,
-          'Session tracking'
-        );
-        if (sessionResult?.conflict) {
-          setConflictingSession(sessionResult.existingSession);
-          setShowTakeoverDialog(true);
-          return;
-        }
-        try { startSessionPolling?.(); } catch {}
-      }
-    } catch {
-      // Tracking failures should not block the lesson.
-    }
+- Add `subscription_tier` to `profiles` table (nullable text or enum)
+- Valid values include `Beta`
+- Only admins set this in Supabase
 
-### 19. src/app/session/v2/SessionPageV2.jsx (43b3375f6634d3d631ebe5b551dbaa759e3bc66541ca26f1fe817e96a8d5df53)
-- bm25: -9.2934 | relevance: 0.9029
+### Feature Flags
 
-// Persist question order immediately so mid-phase resume has deterministic pools.
-    if (snapshotServiceRef.current) {
-      snapshotServiceRef.current.saveProgress('comprehension-init', {
-        phaseOverride: 'comprehension',
-        questions,
-        nextQuestionIndex: forceFresh ? 0 : (savedComp?.nextQuestionIndex || 0),
-        score: forceFresh ? 0 : (savedComp?.score || 0),
-        answers: forceFresh ? [] : (savedComp?.answers || []),
-        timerMode: forceFresh ? 'play' : (savedComp?.timerMode || 'play')
-      });
-    }
-    if (!savedCompQuestions && !storedCompQuestions) {
-      setGeneratedComprehension(questions);
-      persistAssessments(generatedWorksheet, generatedTest, questions, generatedExercise);
-    }
-    
-    const phase = new ComprehensionPhase({
-      audioEngine: audioEngineRef.current,
-      eventBus: eventBusRef.current,
-      timerService: timerServiceRef.current,
-      questions: questions,
-      resumeState: (!forceFresh && savedComp) ? {
-        questions,
-        nextQuestionIndex: savedComp.nextQuestionIndex ?? savedComp.questionIndex ?? 0,
-        score: savedComp.score || 0,
-        answers: savedComp.answers || [],
-        timerMode: savedComp.timerMode || 'work'
-      } : null
-    });
-    
-    comprehensionPhaseRef.current = phase;
-    
-    // Subscribe to state changes
-    phase.on('stateChange', (data) => {
-      setComprehensionState(data.state);
-      if (data.timerMode) {
-        setComprehensionTimerMode(data.timerMode);
-        if (data.timerMode === 'play' || data.timerMode === 'work') {
-          const prevMode = currentTimerModeRef.current?.comprehension ?? null;
-          if (prevMode !== data.timerMode) {
-            setCurrentTimerMode((prev) => ({ ...prev, comprehension: data.timerMode }));
-            setTimerRefr
+**FORCE_TUTORIALS_FOR_BETA** (default: true)
+- If user profile has `subscription_tier == 'Beta'`, tutorial completion gates access
 
-### 20. src/app/session/v2/TeachingController.jsx (da357ae03f3e5c1bc91b8663283532500e522c30f2d048273f0b96eec8beb0e8)
-- bm25: -8.6360 | entity_overlap_w: 2.60 | adjusted: -9.2860 | relevance: 0.9028
+**SURVEY_GOLDEN_KEY_ENABLED** (default: true)
+- Golden key remains locked until required survey is submitted
 
-this.#gatePromptActive = true;
-    this.#gatePromptStage = stage;
-    this.#gatePromptSkipped = false;
-    this.#emit('gatePromptStart', { stage });
-    let gateError = null;
-    try {
-    
-    // 1. Speak "Do you have any questions?"
-    const questionText = 'Do you have any questions?';
-    let questionAudio = ttsCache.get(questionText);
-    if (!questionAudio) {
-      questionAudio = await fetchTTS(questionText);
-      if (questionAudio) ttsCache.set(questionText, questionAudio);
-    }
-    await this.#audioEngine.playAudio(questionAudio || '', [questionText]);
-    
-    // 2. Get prefetched GPT content (should already be ready)
-    let sampleText = null;
-    const prefetchPromise = stage === 'definitions' 
-      ? this.#definitionsGatePromptPromise 
-      : this.#examplesGatePromptPromise;
-    
-    if (prefetchPromise) {
-      try {
-        sampleText = await prefetchPromise;
-        console.log('[TeachingController] Using prefetched gate prompt for', stage);
-      } catch (err) {
-        console.error('[TeachingController] Prefetched gate prompt error:', err);
-      }
-      // Clear the promise
-      if (stage === 'definitions') {
-        this.#definitionsGatePromptPromise = null;
-      } else {
-        this.#examplesGatePromptPromise = null;
-      }
-    }
-    
-    // 3. Fallback if prefetch failed or returned empty
-    const cleanTitle = (lessonTitle || 'this topic').trim();
-    if (!sampleText) {
-      sampleText = `You could ask questions like... What does ${cleanTitle} mean in simple words? How would we use ${cleanTitle} in real life? Could you show one more example?`;
-    }
-    
-    // 4. Speak GPT-generated (or fallback) sample questions
-    let sampleAudio = ttsCache.get(sampleText);
-    if (!sampleAudio) {
-      sampleAudio = await fetchTTS(sampleText);
+**TUTORIALS_AVAILABLE_FOR_ALL** (default: true)
+- Non-Beta users may optionally use tutorials but are not blocked
 
-### 21. docs/brain/timer-system.md (b7aa6681ad045e85a58422ec46641d948683a8b9be9eb4e041d2b6d83bd36742)
-- bm25: -9.1581 | relevance: 0.9016
+**Uninstall Toggle**: Turning both flags off fully disables gates without data loss
+
+### 16. docs/brain/mr-mentor-conversation-flows.md (47a7f1d23cc6ab836950913552c45a69e0bbfb20cccb99e80ebdf542e7e579c2)
+- bm25: -9.5112 | relevance: 0.9049
+
+# Mr. Mentor Conversation Flows
+
+**Last Updated:** 2025-12-18  
+**Status:** Canonical  
+**Systems:** Conversation decision logic, lesson generation vs recommendations, escape hatches, function calling triggers
+
+---
+
+## How It Works
+
+### Frontend Confirmation Gate
+
+- Every counselor request sets `require_generation_confirmation: true`.
+- If GPT tries to call `generate_lesson`, the API now returns a confirmation prompt instead of executing.
+- The frontend marks `pendingConfirmationTool = 'generate_lesson'` and asks the user.
+- If the user declines, the next request disables `generate_lesson` (`disableTools: ['generate_lesson']`) and appends a decline note to the user message: "(User declined generation. Respond by providing assistance with the user's problem.)" so GPT assists instead of forcing generation.
+- If the user confirms, the next request sets `generation_confirmed: true` and allows the tool call.
+
+### Recommendations vs Generation Decision Logic
+
+Mr. Mentor must distinguish between two fundamentally different user intents:
+
+1. **Seeking Recommendations/Advice** - User wants suggestions from existing lessons
+2. **Requesting Generation** - User wants to create a new custom lesson
+
+#### Recognition Patterns
+
+**Recommendation Intent (DO NOT trigger generation):**
+- "Do you have suggestions?"
+- "What do you recommend?"
+- "Any ideas for lessons?"
+- "Give me advice"
+- "What lessons are good for X?"
+- "Do you have lessons on X?"
+- Mentioning a topic without imperative verbs
+
+**Generation Intent (ONLY time to trigger generation):**
+- "Create a lesson about X"
+- "Generate a lesson for X"
+- "Make me a lesson on X"
+- Explicit imperative verbs requesting creation
+
+#### Response Flow
+
+### 17. docs/brain/ingests/pack.md (3e4733180e642ec829b4887f07abf0a470a782c4ade262bf7f23ad16482acc7f)
+- bm25: -9.2278 | relevance: 0.9022
+
+**Implementation:** OpenAI model reads these signals and produces conversational response instead of continuing function call.
+
+---
+
+### Function Calling Triggers
+
+#### `search_lessons` - Always Available
+- When user asks about lessons on a topic
+- When user mentions a subject area
+- Before considering generation
+- Default action for lesson-related queries
+
+#### `generate_lesson` - Highly Restricted
+- ONLY when explicit imperative generation language detected
+- ONLY after searching doesn't find suitable match
+- NEVER for "suggestions", "recommendations", "ideas", "advice"
+- Must honor escape signals if user backs out
+
+#### `schedule_lesson` - Immediate Action
+- When user says "schedule this", "add to calendar", "put it on Monday"
+- Must ALWAYS call function (never confirm without actually calling)
+- Requires lessonKey from prior search/generation
+
+#### `assign_lesson` - Immediate Action
+- When user says "assign this lesson", "make it available", "show this lesson to [learner]"
+- This is NOT scheduling. It updates learner availability (approved lessons) without picking a date.
+- Must ALWAYS call function (never confirm assignment without actually calling)
+- Requires lessonKey from prior search/generation
+
+### Post-Lesson Next Step (Schedule vs Assign)
+
+When Mr. Mentor has identified a specific lesson (from search or generation) and the facilitator has a learner selected, he should offer both options:
+
+- Ask: "Would you like me to schedule this lesson, or assign it to [learner]?"
+- Judge the response:
+       - If they clearly want scheduling, proceed with `schedule_lesson` (and collect a date if needed)
+       - If they clearly want assignment/availability, proceed with `assign_lesson`
+
+After completing `assign_lesson`, Mr. Mentor must confirm in dialogue:
+
+### 18. docs/brain/mr-mentor-conversation-flows.md (32af0ce972bc228b72cbaab4e488efca4dd9a1c0df0c93e692c10279247cf66f)
+- bm25: -9.2048 | relevance: 0.9020
+
+**Implementation:** OpenAI model reads these signals and produces conversational response instead of continuing function call.
+
+---
+
+### Function Calling Triggers
+
+#### `search_lessons` - Always Available
+- When user asks about lessons on a topic
+- When user mentions a subject area
+- Before considering generation
+- Default action for lesson-related queries
+
+#### `generate_lesson` - Highly Restricted
+- ONLY when explicit imperative generation language detected
+- ONLY after searching doesn't find suitable match
+- NEVER for "suggestions", "recommendations", "ideas", "advice"
+- Must honor escape signals if user backs out
+
+#### `schedule_lesson` - Immediate Action
+- When user says "schedule this", "add to calendar", "put it on Monday"
+- Must ALWAYS call function (never confirm without actually calling)
+- Requires lessonKey from prior search/generation
+
+#### `assign_lesson` - Immediate Action
+- When user says "assign this lesson", "make it available", "show this lesson to [learner]"
+- This is NOT scheduling. It updates learner availability (approved lessons) without picking a date.
+- Must ALWAYS call function (never confirm assignment without actually calling)
+- Requires lessonKey from prior search/generation
+
+### Post-Lesson Next Step (Schedule vs Assign)
+
+When Mr. Mentor has identified a specific lesson (from search or generation) and the facilitator has a learner selected, he should offer both options:
+
+- Ask: "Would you like me to schedule this lesson, or assign it to [learner]?"
+- Judge the response:
+       - If they clearly want scheduling, proceed with `schedule_lesson` (and collect a date if needed)
+       - If they clearly want assignment/availability, proceed with `assign_lesson`
+
+After completing `assign_lesson`, Mr. Mentor must confirm in dialogue:
+
+### 19. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (851519f892d949891704ef037fbce8e2b24ad89f33bed54eec889978127580c6)
+- bm25: -9.1933 | relevance: 0.9019
+
+**Implementation:** OpenAI model reads these signals and produces conversational response instead of continuing function call.
+
+---
+
+### Function Calling Triggers
+
+#### `search_lessons` - Always Available
+- When user asks about lessons on a topic
+- When user mentions a subject area
+- Before considering generation
+- Default action for lesson-related queries
+
+#### `generate_lesson` - Highly Restricted
+- ONLY when explicit imperative generation language detected
+- ONLY after searching doesn't find suitable match
+- NEVER for "suggestions", "recommendations", "ideas", "advice"
+- Must honor escape signals if user backs out
+
+#### `schedule_lesson` - Immediate Action
+- When user says "schedule this", "add to calendar", "put it on Monday"
+- Must ALWAYS call function (never confirm without actually calling)
+- Requires lessonKey from prior search/generation
+
+#### `assign_lesson` - Immediate Action
+- When user says "assign this lesson", "make it available", "show this lesson to [learner]"
+- This is NOT scheduling. It updates learner availability (approved lessons) without picking a date.
+- Must ALWAYS call function (never confirm assignment without actually calling)
+- Requires lessonKey from prior search/generation
+
+### Post-Lesson Next Step (Schedule vs Assign)
+
+When Mr. Mentor has identified a specific lesson (from search or generation) and the facilitator has a learner selected, he should offer both options:
+
+- Ask: "Would you like me to schedule this lesson, or assign it to [learner]?"
+- Judge the response:
+       - If they clearly want scheduling, proceed with `schedule_lesson` (and collect a date if needed)
+       - If they clearly want assignment/availability, proceed with `assign_lesson`
+
+After completing `assign_lesson`, Mr. Mentor must confirm in dialogue:
+
+### 20. docs/brain/timer-system.md (b7aa6681ad045e85a58422ec46641d948683a8b9be9eb4e041d2b6d83bd36742)
+- bm25: -9.1595 | relevance: 0.9016
 
 2. **PlayTimeExpiredOverlay** displays:
    - Shows "Time to Get Back to Work!" message
@@ -841,515 +924,32 @@ If user clicks Go button during the 30-second countdown:
 
 ### Work Time Completion Tracking
 
-### 22. src/app/facilitator/generator/counselor/MentorThoughtBubble.jsx (7610893120095be9058a4544b09f487e55aedfefd17541089e3f2fed953b2499)
-- bm25: -9.1350 | relevance: 0.9013
-
-'use client'
-
-import { useEffect, useState, useMemo } from 'react'
-
-const PHASE_STYLES = {
-  start: {
-    bg: '#eef2ff',
-    border: '#c7d2fe',
-    text: '#312e81',
-    dot: '#4338ca'
-  },
-  success: {
-    bg: '#ecfdf5',
-    border: '#a7f3d0',
-    text: '#064e3b',
-    dot: '#10b981'
-  },
-  error: {
-    bg: '#fef2f2',
-    border: '#fecaca',
-    text: '#7f1d1d',
-    dot: '#ef4444'
-  },
-  default: {
-    bg: '#f3f4f6',
-    border: '#e5e7eb',
-    text: '#1f2937',
-    dot: '#4b5563'
-  }
-}
-
-const TOOL_LABELS = {
-  search_lessons: 'Lesson Search',
-  get_lesson_details: 'Lesson Review',
-  generate_lesson: 'Lesson Generator',
-  validate_lesson: 'Quality Check',
-  improve_lesson: 'Lesson Polish',
-  schedule_lesson: 'Calendar Update',
-  edit_lesson: 'Lesson Editing',
-  get_capabilities: 'Tool Check',
-  get_conversation_memory: 'Memory Review',
-  search_conversation_history: 'Conversation Search'
-}
-
-function formatLabel(name) {
-  if (!name) return 'Mr. Mentor'
-  return TOOL_LABELS[name] || name.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())
-}
-
-/**
- * Floating thought bubble for Mr. Mentor status updates
- * @param {{ thought?: { id: string, message: string, name?: string, phase?: string } }} props
- */
-export default function MentorThoughtBubble({ thought }) {
-  const [visible, setVisible] = useState(false)
-
-useEffect(() => {
-    if (thought) {
-      setVisible(true)
-      return () => setVisible(false)
-    }
-    setVisible(false)
-  }, [thought])
-
-const style = useMemo(() => {
-    if (!thought) return PHASE_STYLES.default
-    return PHASE_STYLES[thought.phase] || PHASE_STYLES.default
-  }, [thought])
-
-const label = useMemo(() => formatLabel(thought?.name), [thought])
-
-if (!thought) return null
-
-### 23. docs/brain/tts-prefetching.md (05e6eff1863500855ddc6c183a5ac48103c48804c8f4dbabf875f31ef1a1e1db)
-- bm25: -9.0451 | relevance: 0.9004
-
-# TTS Prefetching System
-
-## Overview
-
-TTS (text-to-speech) prefetching eliminates 2-3 second waits between questions by loading question N+1 in the background while student answers question N. This was the main performance bottleneck identified by user after zombie code cleanup.
-
-## How It Works
-
-### Cache Architecture
-
-**Module**: `src/app/session/utils/ttsCache.js` (212 lines)
-
-**Core Components**:
-- `TTSCache` class: Singleton instance exported as `ttsCache`
-- LRU cache: Map-based storage with timestamp tracking
-- MAX_CACHE_SIZE: 10 items (prevents memory issues during long sessions)
-- Eviction: Oldest by timestamp when cache full
-
-**Cache API**:
-```javascript
-ttsCache.get(text)           // Returns cached base64 audio or null
-ttsCache.set(text, audio)    // Stores audio, evicts oldest if full
-ttsCache.prefetch(text)      // Background fetch, fire-and-forget
-ttsCache.clear()             // Cancels pending fetches, clears cache
-ttsCache.cancelPrefetch(text) // Aborts specific pending request
-```
-
-### Integration Points
-
-**1. speakFrontendImpl (page.js line ~2927)**
-```javascript
-// Check cache first
-let b64 = ttsCache.get(text);
-
-if (!b64) {
-  // Cache miss - fetch from API
-  setTtsLoadingCount((c) => c + 1);
-  // ... fetch logic ...
-  if (b64) {
-    b64 = normalizeBase64Audio(b64);
-    // Store successful fetch in cache
-    ttsCache.set(text, b64);
-  }
-  setTtsLoadingCount((c) => Math.max(0, c - 1));
-}
-// else: cache hit - b64 already set, no loading indicator
-```
-
-Cache hits skip loading indicator entirely since audio is instant.
-
-**2. Prefetch Triggers**
-
-**After Comprehension Answer (page.js line ~5895)**:
-```javascript
-try { await speakFrontend(`${celebration}. ${progressPhrase} ${nextQ}`, { mcLayout: 'multiline' }); } catch {}
-
-### 24. src/app/api/webb-resources/route.js (646fc5525bc8ce35812dd96b483f22b47f860ce91463d76fe1e7f8ea4da5d51a)
-- bm25: -8.5318 | entity_overlap_w: 1.30 | adjusted: -8.8568 | relevance: 0.8985
-
-﻿/**
- * /api/webb-resources
- * Generates curated, child-safe media resources for a lesson.
- *
- * Video:   YouTube Data API v3 + GPT safety review of title/channel/description
- * Article: Fetches directly from Wikipedia REST APIs (Simple English first, then English)
- *          (srcdoc approach bypasses X-Frame-Options; no client-side fetching needed)
- *
- * POST { lesson, type: 'video'|'article'|'both', context? }
- * Returns:
- *   video?:   { embedUrl, title, channel, searchQuery }  — real playable embed
- *          OR { unavailable: true, searchQuery }          — no key / all rejected
- *   article?: { html, source, title }                    — ready for srcdoc iframe
- *          OR { html: null, source: null, title }        — all fetches failed
- */
-import { NextResponse } from 'next/server'
-
-const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-const YT_SEARCH    = 'https://www.googleapis.com/youtube/v3/search'
-
-// ── Wikipedia REST API sources (open, no-auth, work from cloud hosting) ───────
-const WIKI_SOURCES = [
-  {
-    name: 'Simple English Wikipedia',
-    url:  t => `https://simple.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(t.replace(/\s+/g, '_'))}`,
-    base: 'https://simple.wikipedia.org',
-  },
-  {
-    name: 'Wikipedia',
-    url:  t => `https://en.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(t.replace(/\s+/g, '_'))}`,
-    base: 'https://en.wikipedia.org',
-  },
-]
-
-### 25. docs/brain/v2-architecture.md (fe3b9f85fd0c2ac0ea1bdb0dfecc4270568d1cd9a3aba24a6abf59dde77c0f05)
-- bm25: -8.8029 | relevance: 0.8980
-
-### ✅ Completed
-- Feature flag check in `page.js` (lines 65-69)
-- V2 stub component (`SessionPageV2.jsx`)
-- Brain file documentation (this file)
-- Manifest entry
-- Changelog entry
-- Q&A judging parity: Comprehension now matches V1 retry flow (hint, hint, reveal on 3rd) and does NOT advance on incorrect answers; Exercise/Worksheet match the same retry + reveal behavior; Test remains single-attempt grading with correct-answer reveal. SA/FIB route through `/api/judge-short-answer` with local fallback; MC/TF use V1-style local leniency (letters, TF synonyms).
-- **AudioEngine component** (`src/app/session/v2/AudioEngine.jsx`) - 600 lines
-  - Three playback paths: HTMLAudio (preferred), WebAudio (iOS), Synthetic (no audio)
-  - Event-driven architecture (start, end, captionChange, captionsDone, error)
-  - Single source of truth (no ref/state duplication)
-  - Deterministic caption timing (one timer system)
-  - Self-contained video coordination
-  - Pause/resume support
-  - Speech guard timeout
-- **AudioEngine tests** (`AudioEngine.test.jsx`) - Unit tests + manual browser test helpers
-- **PhaseOrchestrator component** (`src/app/session/v2/PhaseOrchestrator.jsx`) - 150 lines
-  - Manages session phase flow: teaching → comprehension → closing
-  - Owns phase state machine
-  - Emits phaseChange, sessionComplete events
-  - Consumes phase completion events
-  - Zero knowledge of phase implementation details
-- **ComprehensionPhase** - DEPRECATED (2026-01-03)
-  - **No longer used** - comprehension is now handled inline in SessionPageV2
-  - V2 uses V1's multi-question pattern instead of single-question class
-  - Questions loaded from lesson pools: truefalse, multiplechoice, fillintheblank, shortanswer
-  - Questions shuffled and limited to the learner's configured target
-    - Source of trut
-
-### 26. docs/brain/ZOMBIE-CODE-PREVENTION.md (ffbfcb380d918610c90bcd626a83877ab986646224bc1827192bdbf377449c31)
-- bm25: -8.7612 | relevance: 0.8976
-
----
-
-## Emergency Zombie Hunting
-
-If bug keeps recurring despite fixes:
-
-```powershell
-# 1. Check what changelog claims was removed
-cat docs/brain/changelog.md | Select-String "REMOVED"
-
-# 2. Grep for supposedly removed code
-rg "compPool|exercisePool" src/
-
-# 3. If found, zombie code exists - do complete removal
-```
-
----
-
-## Commitment
-
-**Future removals will:**
-- Grep before claiming removal
-- Use complete removal checklist
-- Test that removed behavior actually gone
-- Write honest changelog (specific locations, not aspirational claims)
-- Tag before removal for safe revert
-
-**This prevents:**
-- Recurring bugs from incomplete removals
-- Dual architectures from zombie fallback
-- Wasted time re-fixing "solved" issues
-- Changelog lying about what was done
-
-### 27. docs/brain/lesson-assessment-architecture.md (5dccca68690e76ebf6304c04031b2247c3147c808c00cf493f371dc78369dad1)
-- bm25: -8.7295 | relevance: 0.8972
-
-No fallbacks. No pool slicing. No refill logic. If index exceeds array length, phase is complete.
-
-### Test Phase Responsiveness
-
-- `handleGoTest` keeps `canSend` true while the first question TTS plays, so MC/TF buttons render immediately even during audio playback.
-- `speakingLock` is bypassed when `phase === 'test' && subPhase === 'test-active'`, allowing quick-answer controls to stay visible while Ms. Sonoma is speaking.
-- After each test answer, `testActiveIndex` advances and `canSend` is re-enabled before feedback/next-question TTS finishes, so learners can answer the next item without waiting for audio to end.
-
-### Storage Keys
-
-localStorage uses lesson-specific keys:
-- `session_comprehension_${lessonParam}` - Comprehension questions
-- `session_exercise_${lessonParam}` - Exercise questions  
-- `session_worksheet_${lessonParam}` - Worksheet questions
-- `session_test_${lessonParam}` - Test questions
-- `session_comprehension_index_${lessonParam}` - Progress in Comprehension
-- `session_exercise_index_${lessonParam}` - Progress in Exercise
-
-When lesson changes, new keys are used automatically (old lesson arrays stay in storage but are not loaded).
-
-## What NOT To Do
-
-### ❌ Don't add pool states
-Arrays are the only source. No backup buckets.
-
-### ❌ Don't add fallback logic to question selection
-If array[index] is undefined, phase is complete. Don't try to refill from anywhere.
-
-### ❌ Don't regenerate arrays on every render
-Arrays are generated ONCE per lesson load (either fresh or restored from localStorage). Only refresh button triggers regeneration.
-
-### ❌ Don't do partial localStorage restore
-Either restore all 4 arrays (full match) or regenerate all 4 (any mismatch). Never restore some arrays and regenerate others.
-
-### 28. src/app/session/v2/ExercisePhase.jsx (c340edc107843e2e2f6afbcb8783da97fdfabf58588ce778365df1a7a63c3252)
-- bm25: -8.6989 | relevance: 0.8969
-
-/**
- * ExercisePhase - Multiple choice and true/false questions with scoring
- * 
- * Consumes AudioEngine for question playback.
- * Manages question progression and score tracking.
- * Zero coupling to session state or other phases.
- * 
- * Architecture:
- * - Loads exercise questions from lesson data
- * - Plays each question with TTS
- * - Prefetches N+1 question during N playback (eliminates wait times)
- * - Presents multiple choice or true/false options
- * - Validates answers and tracks score
- * - Emits exerciseComplete with results
- * 
- * Usage:
- *   const phase = new ExercisePhase({ audioEngine, questions });
- *   phase.on('exerciseComplete', (results) => saveScore(results));
- *   await phase.start();
- */
-
-import { fetchTTS } from './services';
-import { ttsCache } from '../utils/ttsCache';
-import { buildAcceptableList, judgeAnswer } from './judging';
-import { deriveCorrectAnswerText, formatQuestionForSpeech } from '../utils/questionFormatting';
-import { HINT_FIRST, HINT_SECOND, pickHint } from '../utils/feedbackMessages';
-
-// V1 praise phrases for correct answers
-const PRAISE_PHRASES = [
-  'Great job!',
-  'Excellent!',
-  'You got it!',
-  'Nice work!',
-  'Well done!',
-  'Perfect!',
-  'Awesome!',
-  'Fantastic!'
-];
-
-// Intro phrases for phase start (V1 pacing pattern)
-const INTRO_PHRASES = [
-  "Time for some practice questions.",
-  "Let's try some exercises.",
-  "Ready to practice?",
-  "Let's see how much you know."
-];
-
-### 29. scripts/add-cohere-style-chronograph.sql (2ecda6479662dc71f15f2404518b13c1ace4c06325e94532b2386c1966e16536)
-- bm25: -8.6985 | relevance: 0.8969
-
--- 4) Derived, versioned memory
-create table if not exists public.user_goal_versions (
-  goal_version_id uuid primary key default gen_random_uuid(),
-  tenant_id uuid not null references public.tenants(tenant_id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  sector text not null check (sector in ('child','adult','both')),
-  ts timestamptz not null default now(),
-  goals_json jsonb not null,
-  source_event_ids uuid[] not null default '{}'::uuid[],
-  supersedes_goal_version_id uuid null
-);
-
-### 30. src/app/session/v2/TeachingController.jsx (bec95c63e9b269e3320bea2e6ac038932dc35bbf46baf90975e74fdfe6ed0ec0)
-- bm25: -8.6910 | relevance: 0.8968
-
-const fullLessonJson = (() => {
-      try {
-        return JSON.stringify(this.#lessonData || {});
-      } catch {
-        return '';
-      }
-    })();
-    
-    const vocabContext = terms.length > 0 
-      ? `Use these vocabulary words naturally in your examples: ${terms.join(', ')}.`
-      : '';
-    
-    const instruction = [
-      `Grade: ${grade}`,
-      `Lesson (do not read aloud): "${lessonTitle}"`,
-      '',
-      'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
-      `Examples: Show 2-3 tiny worked examples appropriate for this lesson. If needed to cover all question content, you may show up to 5 tiny examples. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations. Give only the examples.`,
-      '',
-      teachingNotes ? `Teaching notes: ${teachingNotes}` : '',
-      '',
-      'Full lesson JSON (internal; do not read aloud). This includes the questions used for assessment:',
-      fullLessonJson ? fullLessonJson : '(missing lesson json)',
-      '',
-      'Assessment linkage (CRITICAL): The learner will be assessed using the questions in the lesson JSON (comprehension, exercise, worksheet, and test).',
-      'Reverse-engineer those questions into your examples so the learner is prepared to answer every question.',
-      'Internal self-check (do not output): mentally map every lesson question to at least one example. If any question is not covered, revise the examples until it is.',
-      '',
-      'CRITICAL ACCURACY: All examples must be correct. Verify accuracy before presenting.',
-      '',
-      'Kid-friendly: Use simple everyday words. Keep sentences short (about 6-12 words). One idea per sentence.',
-      '',
-      'Always respond with natural spoken text only.
-
-### 31. src/app/session/page.js (2423470dcc1c27a7695d8ae0bc68bc217353b138a764c3921090fa04db9af017)
-- bm25: -8.6612 | relevance: 0.8965
-
-// Disable sending when the UI is not ready or while Ms. Sonoma is speaking
-  const comprehensionAwaitingBegin = (phase === 'comprehension' && subPhase === 'comprehension-start');
-  // Allow answering Test items while TTS is still playing so buttons appear immediately
-  const speakingLock = (phase === 'test' && subPhase === 'test-active') ? false : !!isSpeaking;
-  // Derived gating: when Opening/Go buttons are visible, keep input inactive without mutating canSend
-  const discussionButtonsVisible = (
-    phase === 'discussion' &&
-    subPhase === 'awaiting-learner' &&
-    (!isSpeaking || captionsDone) &&
-    showOpeningActions &&
-    askState === 'inactive' &&
-    riddleState === 'inactive' &&
-    poemState === 'inactive' &&
-    fillInFunState === 'inactive'
-  );
-  const inQnAForButtons = (
-    (phase === 'comprehension' && subPhase === 'comprehension-active') ||
-    (phase === 'exercise' && (subPhase === 'exercise-start' || subPhase === 'exercise-active')) ||
-    (phase === 'worksheet' && subPhase === 'worksheet-active') ||
-    (phase === 'test' && subPhase === 'test-active')
-  );
-  const qnaButtonsVisible = (
-    inQnAForButtons && !isSpeaking && showOpeningActions &&
-    askState === 'inactive' && riddleState === 'inactive' && poemState === 'inactive' && storyState === 'inactive' && fillInFunState === 'inactive'
-  );
-  const buttonsGating = discussionButtonsVisible || qnaButtonsVisible;
-  // Story and Fill-in-Fun input should also respect the speaking lock
-  const storyInputActive = (storyState === 'awaiting-turn' || storyState === 'awaiting-setup');
-  const fillInFunInputActive = (fillInFunState === 'collecting-words');
-  const sendDisabled = (storyInputActive || fillInFunInputActive) ? (!canSend || loading || speakingLock) : (!canSend || loading || comprehensionAwai
-
-### 32. docs/brain/riddle-system.md (ae2321e7086261f3e5b2eaf607b46e848c65c93273f6674224f4718b92f00026)
-- bm25: -8.6285 | relevance: 0.8961
-
----
-
-## What NOT To Do
-
-### ❌ Don't Generate Riddles via AI
-The system is **intentionally static**. Adding AI generation would:
-- Create quality inconsistencies
-- Risk inappropriate content slipping through
-- Add latency and API costs
-- Break offline functionality
-
-### ❌ Don't Use Riddles as Comprehension Tests
-Riddles are **warm-up fun**, not assessment. They:
-- Have single answers (not open-ended)
-- Reward lateral thinking (not lesson content mastery)
-- Are optional enrichment (not required learning)
-
-### ❌ Don't Add Riddles Without Validation
-Every riddle must pass the checklist:
-- [ ] Wordplay or misdirection present
-- [ ] Single clear answer (no ambiguity)
-- [ ] Age-appropriate (6-12 year olds)
-- [ ] Subject-relevant (if not in 'general')
-- [ ] Fair clues (solvable without guessing)
-- [ ] Surprise factor (smile, groan, or "aha!")
-
-### ❌ Don't Mix Quiz Questions into Riddles
-**Bad**: "How many cents are in a quarter?" (factual recall)  
-**Good**: "I am a coin that is one fourth of a dollar, but I hold much more inside - count them all! How many pennies hide in me?" (wordplay + math)
-
----
-
-## Current Integration Status
-
-### ✅ Riddles Are Active
-
-Riddles are fully integrated into the discussion phase opening actions:
-
-**User Flow:**
-1. Learner enters discussion phase
-2. Opening actions menu displays (Ask, Riddle, Poem, Story, Fill-in-Fun, Games)
-3. User clicks "Riddle" button
-4. `pickNextRiddle(subject)` selects riddle from localStorage rotation
-5. Riddle presents with TTS playback
-6. State machine handles: 'presented' → 'awaiting-solve' → 'inactive'
-
-### 33. docs/brain/lesson-assessment-architecture.md (c2bb45b2d56241d3d8fd623e8d666b181907464ee2958f4c3fb8e62fc0a646d7)
-- bm25: -8.6225 | relevance: 0.8961
-
-# Lesson Assessment Architecture
-
-## How It Works
-
-### Core Design: Arrays as Source of Truth
-
-When a student loads a lesson, the system generates 4 shuffled question arrays that represent their progress through that lesson:
-
-1. **generatedComprehension** - Questions for Comprehension phase (Ask/Feedback)
-2. **generatedExercise** - Questions for Exercise phase (interactive practice)
-3. **generatedWorksheet** - Questions for Worksheet phase (PDF printable)
-4. **generatedTest** - Questions for Test phase (final assessment)
-
-These arrays are **the canonical source of progress**. They persist across browser sessions via localStorage, ensuring:
-- Same shuffled order when student returns to lesson
-- Student picks up right where they left off
-- Consistent question sequence across all 4 phases unless refresh button clicked
-
-### Data Flow
-
-```
-Supabase lesson file (questions array)
-  ↓
-buildQAPool (shuffle with crypto-random)
-  ↓
-4 generated arrays (ONE TIME on lesson load)
-  ↓
-localStorage (persist after generation/restore on load)
-  ↓
-Phase rendering (use arrays[phaseIndex])
-
-### Question Mix (80/20)
-
-- Each phase array targets roughly 80% Multiple Choice/True-False (primary) and 20% Fill-in-the-Blank/Short Answer (secondary).
-- Comprehension is blended first, then Exercise is blended from the remainder to avoid duplicate questions between the two phases.
-- Worksheet and Test arrays each blend independently using the same 80/20 rule.
-- If a category is short (e.g., not enough MC/TF), the blender backfills from whatever remains so targets are still met.
-```
-
-### Lesson Data State
-
-### 34. src/app/session/v2/TimerService.jsx (ed20e524fb391c98e412107adfaaf937c32ebd58a07e4cce4980ec297dcee03b)
-- bm25: -8.5916 | relevance: 0.8957
+### 21. src/app/api/counselor/route.js (d3671345983e3da2c721351005b396361b5dc74b8114b589bca081e0fbc86ff5)
+- bm25: -9.1239 | relevance: 0.9012
+
+CRITICAL DISTINCTION - Recommendations vs Generation:
+- If user asks "do you have suggestions?", "what lessons do you recommend?", "any ideas?", "give me advice" → SEARCH existing lessons and recommend them. DO NOT start lesson generation.
+- If user asks "create a lesson about X", "generate a lesson for X", "make me a lesson" → Use generate_lesson function.
+- NEVER assume they want generation just because they mention a topic. Default to searching and recommending.
+
+CRITICAL CONFIRMATION STEP - Before Collecting Generation Parameters:
+- NEVER start collecting generation parameters (grade, subject, difficulty) without explicit confirmation first
+- Even if user says "I need a lesson not in the library" or "recommend lessons to create", they are asking for IDEAS not actual generation
+- You MUST ask: "Would you like me to generate a custom lesson?" and wait for their response
+- Only start collecting generation parameters if they explicitly confirm they want generation ("yes", "yes, generate", "create one", "make a lesson")
+- If they say "no", "search", "recommend", "I'm not sure", "not yet", "I want ideas first" → SEARCH existing lessons and provide recommendations
+- This confirmation prevents accidentally entering generation flow when they just want suggestions
+
+### 22. docs/brain/ingests/pack-mentor-intercepts.md (f5d69e0c87050a310ae8df7bb0dbd6ff7af0b77776de5dc44d0f8289b56be3ab)
+- bm25: -9.1233 | relevance: 0.9012
+
+**Expected Behavior:**
+- Model reads escape signal in system prompt
+- Produces text response instead of function call
+- Response acknowledges user's preference: "Of course! Let me search instead..."
+
+### 23. src/app/session/v2/TimerService.jsx (ed20e524fb391c98e412107adfaaf937c32ebd58a07e4cce4980ec297dcee03b)
+- bm25: -9.0592 | relevance: 0.9006
 
 // Sticky completion records for Golden Key + end-of-test reporting.
     // Once a phase has been completed on time, it retains credit until explicit reset.
@@ -1369,293 +969,539 @@ Phase rendering (use arrays[phaseIndex])
     this.onTimeCompletions = 0;
     this.goldenKeyAwarded = false;
 
-### 35. src/app/api/webb-resources/route.js (0111c5f2319b3aefb51eb0badfbe0ef11254fb7617fca39ce1dfa0b31c3d392e)
-- bm25: -8.1835 | entity_overlap_w: 1.30 | adjusted: -8.5085 | relevance: 0.8948
+### 24. src/app/api/counselor/route.js (9a307250303ca681aaf2a751152eb9d7dc5d7d694b24887d3a1ca16f658a641f)
+- bm25: -8.9355 | relevance: 0.8994
 
-const picked = items[pickedIdx]
-        if (picked?.id?.videoId) {
-          return {
-            embedUrl:    `https://www.youtube-nocookie.com/embed/${picked.id.videoId}?autoplay=0&rel=0&modestbranding=1`,
-            title:       picked.snippet.title,
-            channel:     picked.snippet.channelTitle,
-            searchQuery: safeQuery,
-          }
-        }
-      }
-    } catch { /* fall through */ }
-  }
+3. GENERATE_LESSON - Create new custom lessons (ONLY when user wants actual generation)
+   - ONLY use when user explicitly says: "create a lesson", "generate a lesson", "make me a lesson"
+   - DO NOT use when user asks: "do you have suggestions?", "what do you recommend?", "any ideas?", "give me advice"
+   - If they ask for recommendations/suggestions/advice: search existing lessons and recommend, don't generate
+   - CONFIRMATION REQUIRED: If uncertain whether they want generation vs recommendations, ASK FIRST: "Would you like me to generate a custom lesson?"
+   - Only collect parameters after they confirm they want generation
+   - ALWAYS search first to avoid duplicates
+   - Takes 30-60 seconds to complete
+   - ESCAPE HATCH: If during parameter collection user gives ANY response that isn't the parameter you asked for (you ask "What grade?" they say anything OTHER than a grade), abandon and give recommendations instead
 
-return { unavailable: true, searchQuery: safeQuery }
-}
+### 25. scripts/add-cohere-style-rls-and-rpcs.sql (dfbc5f7ea25ac73242f59b3997b3485225df253d8babbf43c4b2a75ed1ff6525)
+- bm25: -8.9343 | relevance: 0.8993
 
-// ── Generate article resource ─────────────────────────────────────────────────
-// Directly fetches from Wikipedia REST APIs — no GPT call needed since the
-// lesson title IS the Wikipedia article title. Tries Simple English Wikipedia
-// first (4th–6th grade level), falls back to regular Wikipedia.
-// Alternates which source comes first based on previousSource so refreshes
-// show a genuinely different article.
-async function generateArticle(title, prevSrc = '') {
-  // If we just showed Simple Wikipedia, try regular Wikipedia first this time
-  const sources = (prevSrc === 'Simple English Wikipedia')
-    ? [WIKI_SOURCES[1], WIKI_SOURCES[0]]
-    : WIKI_SOURCES
+return out_json;
+end;
+$$;
 
-for (const src of sources) {
+revoke all on function public.rpc_gate_suggest(uuid,text,text,int) from public;
+grant execute on function public.rpc_gate_suggest(uuid,text,text,int) to authenticated;
+
+-- 3) Pack builder (deterministic caps)
+create or replace function public.rpc_pack(
+  p_tenant_id uuid,
+  p_thread_id uuid,
+  p_sector text,
+  p_question text,
+  p_mode text default 'standard'
+) returns jsonb
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  recent_n int;
+  recall_k int;
+  out_json jsonb;
+  q tsquery;
+  latest_goals jsonb;
+  latest_summary jsonb;
+  recent_events jsonb;
+  recall_snippets jsonb;
+begin
+  if p_mode = 'minimal' then
+    recent_n := 12;
+    recall_k := 4;
+  elsif p_mode = 'deep' then
+    recent_n := 30;
+    recall_k := 12;
+  else
+    recent_n := 20;
+    recall_k := 8;
+  end if;
+
+-- Latest goals (may be null)
+  select ug.goals_json into latest_goals
+  from public.user_goal_versions ug
+  where ug.tenant_id = p_tenant_id
+    and ug.user_id = auth.uid()
+    and (ug.sector = 'both' or ug.sector = p_sector)
+  order by ug.ts desc, ug.goal_version_id desc
+  limit 1;
+
+-- Latest summary (may be null)
+  select jsonb_build_object('title', s.title, 'summary', s.summary, 'ts', s.ts) into latest_summary
+  from public.thread_summary_versions s
+  where s.tenant_id = p_tenant_id
+    and s.thread_id = p_thread_id
+  order by s.ts desc, s.summary_version_id desc
+  limit 1;
+
+### 26. src/app/session/webb/page.jsx (46c9b322b6504e227a98acb2b46b246c50fe11868f5e5a39a595405d869d14d0)
+- bm25: -8.7984 | relevance: 0.8979
+
+// Get Mrs. Webb's opening greeting
     try {
-      const r = await fetch(src.url(title), {
-        headers: { 'Api-User-Agent': 'EducationApp/1.0 (freehands; educational-app)' },
-        signal: AbortSignal.timeout(8000),
+      const res = await fetch('/api/webb-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [], lesson }),
       })
-      if (r.ok) {
-        let html = await r.text()
-        html = html.includes('<head>')
-          ? html.replace('<head>', `<head><base href="${src.base}">`)
-          : `<base href="${src.base}">${html}`
-        return { html, source: src.name, title }
+      const data = await res.json()
+      const reply = data.reply || `Hi! I'm Mrs. Webb. Today we're exploring "${lesson.title}". What do you already know about this topic?`
+      const firstMsg = { role: 'assistant', content: reply }
+      setChatMessages([firstMsg])
+      addMsg(reply)
+    } catch {
+      const fallback = `Hi! I'm Mrs. Webb. Let's explore "${lesson.title}" together! What do you already know?`
+      setChatMessages([{ role: 'assistant', content: fallback }])
+      addMsg(fallback)
+    }
+
+setPhase(PHASE.CHATTING)
+
+// Preload media + generate objectives in background
+    preloadResources(lesson)
+    generateObjectives(lesson)
+  }, [preloadResources, generateObjectives])
+
+// ── Send chat message ─────────────────────────────────────────────────
+  const sendMessage = useCallback(async (text) => {
+    if (!text.trim() || chatLoading) return
+    addStudentLine(text)
+
+### 27. src/app/session/webb/page.jsx (74292eb7dee7f0da473f100a8b6a50564561b292cf9b6367aba953f15e0ecca4)
+- bm25: -8.7755 | relevance: 0.8977
+
+{/* Header */}
+      <div style={{ background: C.accentDark, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 24 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: 0.5 }}>MRS. WEBB</div>
+              {selectedLesson
+                ? <div style={{ fontSize: 11, opacity: 0.85, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedLesson.title}</div>
+                : <div style={{ fontSize: 11, opacity: 0.75, letterSpacing: 1 }}>LESSON TEACHER</div>
+              }
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {isChatting && objectives.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowObjectives(true)}
+                title="View learning objectives"
+                style={{
+                  ...headerBtn,
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  background: completedObj.length === objectives.length
+                    ? 'rgba(13,148,136,0.45)'
+                    : 'rgba(255,255,255,0.15)',
+                }}
+              >
+                <span style={{ fontSize: 14 }}>&#9989;</span>
+                <span style={{ fontSize: 12 }}>{completedObj.length}/{objectives.length}</span>
+              </button>
+            )}
+            {isChatting && (
+              <button type="button" onClick={handleBack} style={he
+
+### 28. src/app/facilitator/generator/counselor/CounselorClient.jsx (560a97dabeb3d69552560641479a25e42d1b318d87c2de0553f727de27f8aff3)
+- bm25: -8.7548 | relevance: 0.8975
+
+const continueLessonFollowUp = useCallback(async ({ followUpPayload, validationSummaries, toolResults, token, history }) => {
+    const headers = { 'Content-Type': 'application/json' }
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
+const body = {
+      history,
+      use_cohere_chronograph: cohereChronographEnabled,
+      use_thought_hub: cohereChronographEnabled,
+      subject_key: subjectKey,
+      cohere_mode: 'standard',
+      thought_hub_mode: 'standard',
+      followup: {
+        assistantMessage: followUpPayload.assistantMessage,
+        functionResults: followUpPayload.functionResults,
+        toolResults,
+        validationSummaries
+      },
+      learner_transcript: learnerTranscript || null,
+      goals_notes: goalsNotes || null
+    }
+
+const response = await fetch('/api/counselor', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body)
+    })
+
+if (!response.ok) {
+      let errorMessage = `Follow-up failed with status ${response.status}`
+      try {
+        const errorData = await response.json()
+        // Silent error handling
+        if (errorData.error) {
+          errorMessage += `: ${errorData.error}`
+        }
+      } catch (parseErr) {
+        // Silent error handling
       }
-    } catch { /* try next source */ }
+      throw new Error(errorMessage)
+    }
+
+return response.json()
+  }, [learnerTranscript, goalsNotes, subjectKey, cohereChronographEnabled])
+  
+  // Load all lessons for interceptor
+  const loadAllLessons = useCallback(async () => {
+    const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general']
+    const results = {}
+
+### 29. docs/brain/ingests/pack-mentor-intercepts.md (332dce4bc318eac57f8b4ce424647323b49ebb36a87c624bea0b8af2f6256077)
+- bm25: -8.7455 | relevance: 0.8974
+
+### 11. docs/brain/mr-mentor-conversation-flows.md (32af0ce972bc228b72cbaab4e488efca4dd9a1c0df0c93e692c10279247cf66f)
+- bm25: -21.1368 | relevance: 1.0000
+
+**Implementation:** OpenAI model reads these signals and produces conversational response instead of continuing function call.
+
+---
+
+### Function Calling Triggers
+
+#### `search_lessons` - Always Available
+- When user asks about lessons on a topic
+- When user mentions a subject area
+- Before considering generation
+- Default action for lesson-related queries
+
+#### `generate_lesson` - Highly Restricted
+- ONLY when explicit imperative generation language detected
+- ONLY after searching doesn't find suitable match
+- NEVER for "suggestions", "recommendations", "ideas", "advice"
+- Must honor escape signals if user backs out
+
+#### `schedule_lesson` - Immediate Action
+- When user says "schedule this", "add to calendar", "put it on Monday"
+- Must ALWAYS call function (never confirm without actually calling)
+- Requires lessonKey from prior search/generation
+
+#### `assign_lesson` - Immediate Action
+- When user says "assign this lesson", "make it available", "show this lesson to [learner]"
+- This is NOT scheduling. It updates learner availability (approved lessons) without picking a date.
+- Must ALWAYS call function (never confirm assignment without actually calling)
+- Requires lessonKey from prior search/generation
+
+### Post-Lesson Next Step (Schedule vs Assign)
+
+When Mr. Mentor has identified a specific lesson (from search or generation) and the facilitator has a learner selected, he should offer both options:
+
+### 30. docs/brain/ingests/pack.lesson-schedule-debug.md (74199fe96afe81da686db95f9093e9ea134a0430d1c72ed364e7f1224c8410bc)
+- bm25: -8.7333 | relevance: 0.8973
+
+### 21. docs/brain/mr-mentor-conversation-flows.md (32af0ce972bc228b72cbaab4e488efca4dd9a1c0df0c93e692c10279247cf66f)
+- bm25: -19.5862 | relevance: 1.0000
+
+**Implementation:** OpenAI model reads these signals and produces conversational response instead of continuing function call.
+
+---
+
+### Function Calling Triggers
+
+#### `search_lessons` - Always Available
+- When user asks about lessons on a topic
+- When user mentions a subject area
+- Before considering generation
+- Default action for lesson-related queries
+
+#### `generate_lesson` - Highly Restricted
+- ONLY when explicit imperative generation language detected
+- ONLY after searching doesn't find suitable match
+- NEVER for "suggestions", "recommendations", "ideas", "advice"
+- Must honor escape signals if user backs out
+
+#### `schedule_lesson` - Immediate Action
+- When user says "schedule this", "add to calendar", "put it on Monday"
+- Must ALWAYS call function (never confirm without actually calling)
+- Requires lessonKey from prior search/generation
+
+#### `assign_lesson` - Immediate Action
+- When user says "assign this lesson", "make it available", "show this lesson to [learner]"
+- This is NOT scheduling. It updates learner availability (approved lessons) without picking a date.
+- Must ALWAYS call function (never confirm assignment without actually calling)
+- Requires lessonKey from prior search/generation
+
+### Post-Lesson Next Step (Schedule vs Assign)
+
+When Mr. Mentor has identified a specific lesson (from search or generation) and the facilitator has a learner selected, he should offer both options:
+
+### 31. docs/brain/ingests/pack-mentor-intercepts.md (8b9f88cf49cb1a5d7b9d2e538fd2ba21fd123ce6d6948e9499a15591be0ec033)
+- bm25: -8.7086 | relevance: 0.8970
+
+After completing `assign_lesson`, Mr. Mentor must confirm in dialogue:
+
+### 12. docs/brain/mr-mentor-conversation-flows.md (702a9fd80a5cfdb20198851630f5bd2294e3590b38a912d5f7058ef0f693bf2f)
+- bm25: -19.3221 | relevance: 1.0000
+
+- **2025-12-31:** Appended multi-screen overlay system documentation (CalendarOverlay, LessonsOverlay, GeneratedLessonsOverlay, LessonMakerOverlay)
+- **2025-12-18:** Created brain file documenting recommendations vs generation decision logic and escape hatches (fix for locked-in generation flow)
+
+### 13. docs/brain/lesson-notes.md (ac258ad493dde9c766703881b36300ddf044039fc14bddb8ce88bf9914d1a3ef)
+- bm25: -18.7849 | relevance: 1.0000
+
+if (notesKeys.length > 0) {
+  lines.push(`FACILITATOR NOTES ON LESSONS:`);
+  notesKeys.sort().forEach(key => {
+    const [subject, lessonName] = key.split('/');
+    lines.push(`${subject} - ${lessonName}:`);
+    lines.push(`  "${lessonNotes[key]}"`);
+  });
+}
+```
+
+**Use cases:**
+- **Progress tracking**: "Completed with 95%. Ready for next level." → Mr. Mentor suggests advanced materials
+- **Challenge documentation**: "Struggles with word problems. Anxious during tests." → Suggests scaffolding/anxiety strategies
+- **Interest tracking**: "Loves hands-on experiments. Wants to learn chemistry." → Suggests enrichment resources
+- **Behavioral context**: "Easily distracted. Works better in morning sessions." → Suggests schedule optimization
+
+## Key Files
+
+- `src/app/facilitator/lessons/page.js` - Note UI (add/edit/save), state management, Supabase updates
+- `src/app/facilitator/calendar/LessonNotesModal.jsx` - Notes modal used from Calendar schedule lists
+- `src/app/lib/learnerTranscript.js` - Transcript builder, includes notes section
+- `src/app/api/counselor/route.js` - Receives transcript with notes
+
+## What NOT To Do
+
+### 32. docs/brain/visual-aids.md (b6180cc574e71342b23d8180360005d2dd8c5c31a49c9ab086c82f07dbd9a747)
+- bm25: -8.6856 | relevance: 0.8968
+
+**`generation-prompt`**:
+- Improves existing image prompts for DALL-E 3
+- System prompt: "You know that AI-generated text in images is gibberish and must be completely avoided"
+- User prompt: "Suggest visual metaphors or real-world examples instead of diagrams with text"
+
+### 33. src/app/api/webb-chat/route.js (5cb503cf904008ea1863c1a8258b6b2e38b9ac95b8406b88bbc302fb777a40b2)
+- bm25: -8.6669 | relevance: 0.8966
+
+if (Array.isArray(remainingObjectives) && remainingObjectives.length) {
+    lines.push(
+      `\nResearch objectives the student has NOT yet demonstrated (they must explain these in their own words):`,
+      remainingObjectives.slice(0, 6).map((o, i) => `${i + 1}. ${o}`).join('\n'),
+      `After discussing the video or article, casually end your response with ONE natural question that would lead the student to demonstrate one of these objectives - as if you are just curious, not testing them.`,
+      `Never mention "objectives", never say you are checking comprehension.`,
+    )
   }
 
-return { html: null, source: null, title }
+if (assessmentPush) {
+    lines.push(
+      `\nYou just finished showing the student key moments from the video. Now is the time to draw out their understanding.`,
+      `Write 2-3 sentences: briefly celebrate that they watched the key moments, then ask ONE specific question that requires them to explain something from the lesson in their own words.`,
+      `The question should target the most important undemonstrated objective (listed above) if any remain, otherwise ask about the most important concept from the lesson.`,
+      `Be warm and conversational — this should feel like natural curiosity, not a quiz. No markdown. No bullet points.`,
+    )
+  }
+
+return lines.filter(Boolean).join('\n')
 }
 
-### 36. docs/brain/ingests/pack.lesson-schedule-debug.md (ad20eff4e904d8995eccbb946f2672066064415df69faa51d33c27ceb72261bb)
-- bm25: -8.4884 | relevance: 0.8946
+export async function POST(req) {
+  try {
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, seekRequest = null } = await req.json()
 
-return {
-        handled: true,
-        response: `Would you like me to schedule this lesson, or assign it to ${learnerName || 'this learner'}?`
-      }
-    }
-    
-    // Handle lesson selection from search results
-    if (this.state.awaitingInput === 'lesson_selection') {
-      const results = this.state.context.searchResults || []
-      
-      // Check if user wants to abandon selection and do something else
-      const normalized = normalizeText(userMessage)
-      const isRejection = normalized.includes('none') || 
-                         normalized.includes('neither') || 
-                         normalized.includes('not those') ||
-                         normalized.includes('different') ||
-                         detectConfirmation(userMessage) === 'no'
-      
-      if (isRejection) {
-        // User doesn't want any of the search results
-        // Reset state and check if they're making a new request
-        this.reset()
-        
-        // Check if message contains a new intent (generate, schedule, edit, etc.)
-        const intents = {}
-        for (const [intentName, pattern] of Object.entries(INTENT_PATTERNS)) {
-          intents[intentName] = pattern.confidence(userMessage)
-        }
-        
-        const topIntent = Object.entries(intents)
-          .filter(([_, score]) => score > 0)
-          .sort((a, b) => b[1] - a[1])[0]
-        
-        if (topIntent) {
-          const [intent] = topIntent
-          
-          // Route to the new intent handler
-          switch (intent) {
-            case 'generate':
-              return await this.handleGenerate(userMessage, context)
-            case 'schedule':
-              return await this.handleSchedule(userMessage, context)
-            case 'assign':
-              return await this.handleAssign(userMessage, c
+### 34. docs/brain/ms-sonoma-teaching-system.md (bb2e5650adf33de142eec6654c834c9ab6ebe9a82e653095f13ee9f099763fd4)
+- bm25: -8.6517 | relevance: 0.8964
 
-### 37. src/app/session/v2/TeachingController.jsx (f0ec284303c6d7b6a0da9176f085aa73c6e42dd010180ec67bc10060b513279c)
-- bm25: -8.1023 | entity_overlap_w: 1.30 | adjusted: -8.4273 | relevance: 0.8939
+- Ms. Sonoma is stateless by design - each call is independent
+- Snapshot persistence is a separate system (see snapshot-persistence.md)
+- Session tracking and device conflicts are separate (see session-takeover.md)
+- Visual aids generation is separate (see visual-aids.md)
+- Beta program tutorials/surveys are separate (see Beta program section in copilot-instructions.md)
 
-return ['I had trouble loading the examples.'];
-  }
-  
-  // Private: Fetch gate prompt sample questions from GPT
-  async #fetchGatePromptFromGPT(stage) {
-    const lessonTitle = this.#lessonMeta?.lessonTitle || this.#lessonData?.title || 'this topic';
-    const subject = this.#lessonMeta?.subject || 'math';
-    const difficulty = this.#lessonMeta?.difficulty || 'medium';
-    
-    const stageLabel = stage === 'definitions' ? 'vocabulary definitions' : 'examples';
-    
-    const instruction = [
-      `The lesson is "${lessonTitle}".`,
-      `We just covered ${stageLabel}.`,
-      'Generate 2-3 short example questions a child might ask about this topic.',
-      'Start with: "You could ask questions like..."',
-      'Then list the questions briefly and naturally.',
-      'Keep it very short and friendly.',
-      'Do not answer the questions.',
-      'Kid-friendly style rules: Use simple everyday words a 5-7 year old can understand. Keep sentences short (about 6-12 words).',
-      'Always respond with natural spoken text only. Do not use emojis, decorative characters, repeated punctuation, or symbols.'
-    ].join(' ');
-    
+### 35. docs/brain/ingests/pack.planned-lessons-flow.md (043acc5f96fad3732cebeb897f3edf1f5e317250beb4b58f69e73bcccf3e4b46)
+- bm25: -8.5640 | relevance: 0.8954
+
+### Data/Key Rules
+
+### 31. docs/brain/MentorInterceptor_Architecture.md (ce3cd9684410622160fbad2779f03dd2313cb09bba1ed5ffcd42179724e742c6)
+- bm25: -13.9393 | relevance: 1.0000
+
+```
+User types message
+    ↓
+CounselorClient.sendMessage()
+    ↓
+Load allLessons (subjects → lessons object)
+    ↓
+interceptor.process(message, { allLessons, selectedLearnerId, learnerName, conversationHistory })
+    ↓
+  interceptResult.handled?
+    ↓
+  YES → Handle front-end
+    ↓
+    Add user + bot messages to conversationHistory
+    Display response in captions
+    Play TTS audio
+    Execute action if present (schedule/generate/edit)
+    Return (skip API)
+    ↓
+  NO → Forward to API
+    ↓
+    Call /api/counselor with forwardMessage
+    Process tool calls, follow-ups, etc
+    Add messages to conversationHistory
+    Display response in captions
+    Play audio
+    Track tokens
+```
+
+### 32. docs/brain/calendar-lesson-planning.md (3fa72b30c4a36a0855e8b5e9c7f63b5cb1e38fd2725c7bcf9389c3fa8d2b81ed)
+- bm25: -13.5957 | relevance: 1.0000
+
+**Completion query rule (visibility > micro-optimization):**
+- Do not rely on `.in('lesson_id', [...scheduledKeys])` when loading completion events.
+- Because `lesson_id` formats vary, strict filtering can miss valid completions and make past calendar history appear empty.
+
+**Calendar date key rule (marker dots):**
+- Calendar grid cells must compute their `YYYY-MM-DD` date keys using local time.
+- Do not use `Date.toISOString().split('T')[0]` to build calendar cell keys, because it is UTC-based and can shift the day relative to local dates.
+- The schedule grouping keys come from `lesson_schedule.scheduled_date` (already `YYYY-MM-DD`). The calendar grid must use the same format.
+
+### 36. src/app/session/webb/page.jsx (d5a43d97cf3510e12efece39e320344b022894dd41169dbbdbd9607253df0e52)
+- bm25: -8.5183 | relevance: 0.8949
+
+// ── Refresh a media resource (context-aware) ──────────────────────────
+  async function refreshMedia(type) {
+    setRefreshingMedia(true)
+    // Save current article so we can restore it if the refresh fails/returns nothing
+    const savedArticle = articleResource
+    // Clear immediately so the "Finding an article…" spinner appears while loading
+    if (type === 'article') setArticleResource(null)
+    const recentContext = chatMessages.slice(-6)
+      .filter(m => m.role === 'user')
+      .map(m => m.content)
+      .join('. ')
+    // Narrow search to remaining (incomplete) objectives
+    const remaining = objectives
+      .filter((_, i) => !completedObj.includes(i))
+      .join('; ')
+    const contextWithObj = [remaining, recentContext].filter(Boolean).join('. ')
     try {
-      const response = await fetch('/api/sonoma', {
+      const res = await fetch('/api/webb-resources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instruction,
-          input: '',
-          context: {
-            phase: 'teaching',
-            subject,
-            difficulty,
-            lessonTitle,
-            step: 'gate-example-questions',
-            stage
-          },
-          skipAudio: true
-        })
-      });
-      
-      if (!response.ok) return null;
-      const data = await response.json();
-      return data.reply || data.text || null;
-    } catch (err) {
-      console.error('[TeachingController] Gate pr
-
-### 38. src/app/facilitator/generator/counselor/MentorInterceptor.js (4d53e26a5bb1e862edb14db504e81f475e0fe906b3f0532c196c7549595adb20)
-- bm25: -8.4157 | relevance: 0.8938
-
-return {
-        handled: true,
-        response: `Would you like me to schedule this lesson, or assign it to ${learnerName || 'this learner'}?`
+          lesson: selectedLesson,
+          type,
+          context: contextWithObj,
+          excludeSourceId:        type === 'article' ? (articleResource?.sourceId || '') : undefined,
+          preferredSources:       type === 'article' ? articleSources : undefined,
+          excludeVideoIds:        type === 'video'   ? shownVideoIdsRef.current      : [],
+        }),
+      })
+      const data = await res.json()
+      if (type === 'video' && data.video) {
+        setVideoResource(data.video)
+        if (data.video.videoId)
+          shownVideoIdsRef.current = [...new Set([...shownVideoIdsRef.current, data.video.videoId])]
       }
-    }
-    
-    // Handle lesson selection from search results
-    if (this.state.awaitingInput === 'lesson_selection') {
-      const results = this.state.context.searchResults || []
-      
-      // Check if user wants to abandon selection and do something else
-      const normalized = normalizeText(userMessage)
-      const isRejection = normalized.includes('none') || 
-                         normalized.includes('neither') || 
-                         normalized.includes('not those') ||
-                         normalized.includes('different') ||
-                         detectConfirmation(userMessage) === 'no'
-      
-      if (isRejection) {
-        // User doesn't want any of the search results
-        // Reset state and check if they're making a new request
-        this.reset()
-        
-        // Check if message contains a new intent (generate, schedule, edit, etc.)
-        const intents = {}
-        for (const [intentName, pattern] of Object.entries(INTENT_PATTERNS)) {
-          intents[intentName] = pattern.confidence(userMessage)
-        }
-        
-        const topIntent = Object.entries(intents)
-          .filter(([_, score]) => score > 0)
-          .sort((a, b) => b[1] - a[1])[0]
-        
-        if (topIntent) {
-          const [intent] = topIntent
-          
-          // Route to the new intent handler
-          switch (intent) {
-            case 'generate':
-              return await this.handleGenerate(userMessage, context)
-            case 'schedule':
-              return await this.handleSchedule(userMessage, context)
-            case 'assign':
-              return await this.handleAssign(userMessage, c
+      if (type === 'article') {
+        if (data.article?.html) {
+          setArticleKey(k => k + 1)
+          setArticleResource(data.article)
+        } else {
+          // Nothing usable came back — res
 
-### 39. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (9dd93d6c47df89070d11415ad0908937088b52245fa78b48942a20a9ef02bd8f)
-- bm25: -8.4007 | relevance: 0.8936
+### 37. docs/brain/timer-system.md (c62159a4b77af10506a6b386b1ff0e79f36692314fd70902b4807c54c34fc560)
+- bm25: -8.5146 | relevance: 0.8949
 
-return {
-        handled: true,
-        response: `Would you like me to schedule this lesson, or assign it to ${learnerName || 'this learner'}?`
-      }
-    }
-    
-    // Handle lesson selection from search results
-    if (this.state.awaitingInput === 'lesson_selection') {
-      const results = this.state.context.searchResults || []
-      
-      // Check if user wants to abandon selection and do something else
-      const normalized = normalizeText(userMessage)
-      const isRejection = normalized.includes('none') || 
-                         normalized.includes('neither') || 
-                         normalized.includes('not those') ||
-                         normalized.includes('different') ||
-                         detectConfirmation(userMessage) === 'no'
-      
-      if (isRejection) {
-        // User doesn't want any of the search results
-        // Reset state and check if they're making a new request
-        this.reset()
-        
-        // Check if message contains a new intent (generate, schedule, edit, etc.)
-        const intents = {}
-        for (const [intentName, pattern] of Object.entries(INTENT_PATTERNS)) {
-          intents[intentName] = pattern.confidence(userMessage)
-        }
-        
-        const topIntent = Object.entries(intents)
-          .filter(([_, score]) => score > 0)
-          .sort((a, b) => b[1] - a[1])[0]
-        
-        if (topIntent) {
-          const [intent] = topIntent
-          
-          // Route to the new intent handler
-          switch (intent) {
-            case 'generate':
-              return await this.handleGenerate(userMessage, context)
-            case 'schedule':
-              return await this.handleSchedule(userMessage, context)
-            case 'assign':
-              return await this.handleAssign(userMessage, c
+**Work timer startup for phases 2-5**: Work timers start immediately when the awaiting-go gate appears, whether in play mode or work mode:
+- **Play mode flow**: Play timer starts when the **Begin gate** appears (phase entry) → user clicks Begin → Opening Actions + Go gate appear (play timer already running) → user clicks Go → play timer transitions to work timer
+- **Work mode flow (skipPlayPortion)**: Work timer starts when the awaiting-go gate appears → user clicks Go → questions begin (timer already running)
 
-### 40. docs/brain/ingests/pack.lesson-schedule-debug.md (7aa4377a1d4f413b238ad3c2127d6ba606c78ec83ed2cf7a396b5b8ca335c91b)
-- bm25: -8.3187 | relevance: 0.8927
+### 38. docs/brain/ingests/pack-mentor-intercepts.md (08191c1e946bc63bc45a43254cb2accc0e9eef97fc1d5a13ecd50fc3089f0a45)
+- bm25: -8.4728 | relevance: 0.8944
 
-// Intent detection patterns
-const INTENT_PATTERNS = {
-  search: {
-    keywords: ['find', 'search', 'look for', 'show me', 'do you have', 'what lessons'],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
-      return INTENT_PATTERNS.search.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
-    }
-  },
+### 25. docs/brain/session-takeover.md (67d6f1cc34af6fd217783490d4f011c8cef30e9a03ac7f4e9f0c5692245348e3)
+- bm25: -13.0742 | relevance: 1.0000
+
+## Timer Continuity Details
+
+**Timer state components:**
+- `currentTimerMode`: 'play' (Begin to Go) or 'work' (Go to next phase)
+- `workPhaseCompletions`: object tracking which phases completed work timer
+- `elapsedSeconds`: current countdown value
+- `targetSeconds`: phase-specific target (from runtime config)
+- `capturedAt`: ISO timestamp when snapshot saved
+
+**Snapshot capture (every gate):**
+```javascript
+timerSnapshot: {
+  phase: phase,
+  mode: currentTimerModeRef.current || currentTimerMode,
+  capturedAt: new Date().toISOString(),
+  elapsedSeconds: getElapsedFromSessionStorage(phase, currentTimerMode),
+  targetSeconds: getTargetForPhase(phase, currentTimerMode)
+}
+```
+
+**Restore logic:**
+```javascript
+const { timerSnapshot } = restoredSnapshot;
+if (timerSnapshot) {
+  const drift = Math.floor((Date.now() - new Date(timerSnapshot.capturedAt)) / 1000);
+  const adjustedElapsed = Math.min(
+    timerSnapshot.elapsedSeconds + drift,
+    timerSnapshot.targetSeconds
+  );
   
-  generate: {
-    keywords: ['generate', 'create', 'make', 'build', 'new lesson'],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
-      
-      // Check if it's an FAQ-style question about generation (how to)
-      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
-      if (faqPatterns.some(p => normalized.includes(p))) {
-        return 0 // Defer to FAQ intent
-      }
-      
-      return INTENT_PATTERNS.generate.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
-    }
-  },
+  // Write to sessionStorage (source for timer component)
+  sessionStorage.setItem(
+    `timer_${timerSnapshot.phase}_${timerSnapshot.mode}`,
+    JSON.stringify({
+      elapsedSeconds: adjustedElapsed,
+      startTimestamp: Date.now() - (adjustedElapsed * 1000)
+    })
+  );
   
-  schedule: {
-    keywords: ['schedule', 'add to calendar', 'put on', 'assign for', 'plan for'],
-    confidence: (text) => {
-      const normalized = normalizeText(text)
-      
-      // Check if it's an FAQ-style question about scheduling (how to)
-      const faqPatterns = ['how do i', 'how can i', 'how to', 'what is', 'explain', 'tell me about']
-      if (faqPatterns.some(p => normalized.includes(p))) {
-        return 0 // Defer to FAQ intent
-      }
-      
-      return INTENT_PATTERNS.schedule.keywords.some(kw => normalized.includes(kw)) ? 0.8 : 0
-    }
-  },
+  setCurrentTimerMode(timerSnapshot.mode);
+}
+```
+
+**Result:** Timer continues within ±2 seconds of where old device left off (gate save latency + network round-trip).
+
+## PIN Validation Security
+
+### 39. src/app/api/webb-objectives/route.js (25c272eefede9bc6f7be0cf21108fcf0d9c392ef9e97ff974cb0646619faeca2)
+- bm25: -8.4159 | relevance: 0.8938
+
+const system =
+    `You evaluate whether a student has demonstrated understanding of specific objectives ` +
+    `in their own words — NOT just from hearing the teacher say it. ` +
+    `The student must use their own words, paraphrase, or give an example. ` +
+    `They do NOT need to use exact terminology — a clear conceptual demonstration counts. ` +
+    `Return ONLY the numbers of objectives that are clearly demonstrated, e.g. "2,5". ` +
+    `If none are demonstrated, return "none".`
+
+### 40. docs/brain/mr-mentor-conversation-flows.md (438f465a3284f676ab4056be1792de3b147ffeb85a21cf84b1439ef3e3b6b724)
+- bm25: -8.4000 | relevance: 0.8936
+
+### ❌ DON'T 
+Then: ABANDON generation flow immediately
+- Stop asking for parameters
+- Switch to recommendation mode
+- Search existing lessons and suggest them
+```
 
 
 ---

@@ -166,9 +166,14 @@ export default function WebbPage() {
   // ── Research objectives ──────────────────────────────────────────────
   const [objectives,         setObjectives]        = useState([])  // string[]
   const [completedObj,       setCompletedObj]      = useState([])  // number[] of completed indices
+  const [objResponses,       setObjResponses]      = useState({})  // Record<idx, studentText> — what they said
   const [newlyCompletedObj,  setNewlyCompletedObj] = useState(null) // {idx, text} — drives tablet toast
+  const [expandedObj,        setExpandedObj]       = useState(null) // number|null — accordion open index
   const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
   const [showSourceSettings, setShowSourceSettings] = useState(false) // article source settings
+  const [essayMode,          setEssayMode]         = useState(false) // essay copy-down screen
+  const [essay,              setEssay]             = useState(null)  // generated essay string
+  const [generatingEssay,    setGeneratingEssay]   = useState(false)
   const [articleSources,     setArticleSources]    = useState(() => {
     const ALL = ['simple-wikipedia','wikipedia','kiddle','ducksters','wikijunior']
     if (typeof window === 'undefined') return ALL
@@ -728,6 +733,10 @@ export default function WebbPage() {
     setObjectives([])
     setCompletedObj([])
     setNewlyCompletedObj(null)
+    setObjResponses({})
+    setExpandedObj(null)
+    setEssayMode(false)
+    setEssay(null)
     try {
       const res  = await fetch('/api/webb-objectives', {
         method: 'POST',
@@ -760,10 +769,11 @@ export default function WebbPage() {
       })
       const data = await res.json()
       const newly = data.newlyCompleted || []
+      const qualifyingText = data.qualifyingText || {}
       if (newly.length) {
+        setObjResponses(prev => ({ ...prev, ...qualifyingText }))
         setCompletedObj(prev => {
           const next = [...new Set([...prev, ...newly])]
-          // Show the tablet toast for the first newly completed objective
           const firstIdx = newly.find(i => !prev.includes(i))
           if (firstIdx !== undefined) {
             setNewlyCompletedObj({ idx: firstIdx, text: currentObjectives[firstIdx] })
@@ -796,6 +806,10 @@ export default function WebbPage() {
     setObjectives([])
     setCompletedObj([])
     setNewlyCompletedObj(null)
+    setObjResponses({})
+    setExpandedObj(null)
+    setEssayMode(false)
+    setEssay(null)
 
     // Get Mrs. Webb's opening greeting
     try {
@@ -1039,6 +1053,63 @@ export default function WebbPage() {
       if (type === 'article') setArticleResource(savedArticle)
     }
     setRefreshingMedia(false)
+  }
+
+  // ── Research mode: close overlay, Webb teaches a specific objective ──
+  async function startResearch(objIdx) {
+    setShowObjectives(false)
+    setMediaOverlay(null)
+    const obj = objectives[objIdx]
+    setChatLoading(true)
+    try {
+      const res = await fetch('/api/webb-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: chatMessages,
+          lesson: selectedLesson,
+          media: {
+            video:   videoResource   || null,
+            article: articleResource ? { title: articleResource.title, source: articleResource.source } : null,
+          },
+          researchMode:    true,
+          targetObjective: obj,
+        }),
+      })
+      const data = await res.json()
+      const reply = data.reply || `Let's learn about: ${obj}. Can you explain what you know about it?`
+      const assistantMsg = { role: 'assistant', content: reply }
+      const finalHistory = [...chatMessages, assistantMsg]
+      setChatMessages(finalHistory)
+      addMsg(reply)
+    } catch {
+      addMsg(`Let's think about this objective together: "${obj}". What do you already know about it?`)
+    }
+    setChatLoading(false)
+  }
+
+  // ── Generate essay from all objective responses ───────────────────────
+  async function handleGenerateEssay() {
+    if (generatingEssay) return
+    setGeneratingEssay(true)
+    try {
+      const res = await fetch('/api/webb-objectives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action:    'generate-essay',
+          objectives,
+          responses: objResponses,
+          lesson:    selectedLesson,
+        }),
+      })
+      const data = await res.json()
+      if (data.essay) {
+        setEssay(data.essay)
+        setEssayMode(true)
+      }
+    } catch { /* fail silently */ }
+    setGeneratingEssay(false)
   }
 
   // ── Article passage scroll detector ─────────────────────────────────
@@ -1932,25 +2003,149 @@ export default function WebbPage() {
                 borderRadius: '0 2px 2px 0',
               }} />
             </div>
-            {/* Objectives list */}
-            <div style={{ overflowY: 'auto', padding: '12px 20px 20px' }}>
+            {/* Objectives list — accordion */}
+            <div style={{ overflowY: 'auto', padding: '8px 0 16px' }}>
               {objectives.map((obj, i) => {
                 const done = completedObj.includes(i)
+                const open = expandedObj === i
                 return (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'flex-start', gap: 12,
-                    padding: '10px 0',
-                    borderBottom: i < objectives.length - 1 ? '1px solid #1e293b' : 'none',
-                  }}>
-                    <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{done ? '✅' : '⬜'}</span>
-                    <span style={{
-                      color: done ? '#e2e8f0' : '#64748b',
-                      fontSize: 13, lineHeight: 1.55,
-                      transition: 'color 0.3s',
-                    }}>{obj}</span>
+                  <div key={i} style={{ borderBottom: '1px solid #1e293b' }}>
+                    {/* Header row */}
+                    <button
+                      type="button"
+                      onClick={() => setExpandedObj(open ? null : i)}
+                      style={{
+                        width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'flex-start', gap: 10,
+                        padding: '11px 20px',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{done ? '✅' : '⬜'}</span>
+                      <span style={{
+                        color: done ? '#e2e8f0' : '#64748b',
+                        fontSize: 13, lineHeight: 1.5, flex: 1,
+                        transition: 'color 0.3s',
+                      }}>{obj}</span>
+                      <span style={{ color: '#475569', fontSize: 11, flexShrink: 0, marginTop: 2 }}>{open ? '▲' : '▼'}</span>
+                    </button>
+                    {/* Expanded content */}
+                    {open && (
+                      <div style={{ padding: '0 20px 14px', paddingLeft: 46 }}>
+                        {done ? (
+                          <blockquote style={{
+                            margin: 0,
+                            borderLeft: '3px solid #0d9488',
+                            paddingLeft: 12,
+                            color: '#94a3b8',
+                            fontStyle: 'italic',
+                            fontSize: 13,
+                            lineHeight: 1.6,
+                          }}>
+                            &ldquo;{objResponses[i] || '...'}&rdquo;
+                          </blockquote>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => startResearch(i)}
+                            style={{
+                              background: '#0d9488', color: '#fff', border: 'none',
+                              borderRadius: 8, padding: '7px 16px', cursor: 'pointer',
+                              fontWeight: 700, fontSize: 13, fontFamily: 'inherit',
+                            }}
+                          >
+                            📚 Research
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}
+              {/* Generate essay button — appears when all objectives complete */}
+              {objectives.length > 0 && completedObj.length === objectives.length && (
+                <div style={{ padding: '16px 20px 4px' }}>
+                  <button
+                    type="button"
+                    onClick={handleGenerateEssay}
+                    disabled={generatingEssay}
+                    style={{
+                      width: '100%', background: generatingEssay ? '#1e293b' : '#0d9488',
+                      color: '#fff', border: 'none', borderRadius: 10,
+                      padding: '11px 20px', cursor: generatingEssay ? 'default' : 'pointer',
+                      fontWeight: 800, fontSize: 14, fontFamily: 'inherit',
+                    }}
+                  >
+                    {generatingEssay ? '✍️ Writing your essay…' : '✨ Make my essay'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Essay full-screen overlay */}
+      {essayMode && essay && createPortal(
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1100,
+          background: '#0f172a',
+          overflowY: 'auto',
+          padding: '28px 20px 48px',
+        }}>
+          <div style={{ maxWidth: 640, margin: '0 auto' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <button
+                type="button"
+                onClick={() => setEssayMode(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8',
+                  borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+                  fontSize: 13, fontFamily: 'inherit',
+                }}
+              >← Back</button>
+              <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                Your Essay
+              </div>
+              <div style={{ width: 60 }} />
+            </div>
+            {/* Headline */}
+            <h2 style={{ color: '#e2e8f0', fontSize: 22, fontWeight: 800, margin: '0 0 6px' }}>
+              🎉 You did it!
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, margin: '0 0 24px' }}>
+              These are <em>your</em> words, put together into an essay.
+              Copy it onto paper in your own handwriting!
+            </p>
+            {/* Essay text */}
+            <div style={{
+              background: '#1e293b',
+              borderRadius: 16,
+              padding: '24px 28px',
+              fontSize: 16,
+              lineHeight: 2,
+              color: '#e2e8f0',
+              whiteSpace: 'pre-wrap',
+              boxShadow: '0 0 0 2px #0d9488',
+              marginBottom: 28,
+            }}>
+              {essay}
+            </div>
+            {/* Copy-down instruction */}
+            <div style={{
+              background: '#0f2438',
+              border: '1px dashed #0d9488',
+              borderRadius: 12,
+              padding: '16px 20px',
+              color: '#94a3b8',
+              fontSize: 13,
+              lineHeight: 1.7,
+            }}>
+              ✏️ <strong style={{ color: '#e2e8f0' }}>Copy It Down!</strong><br />
+              Write every word on lined paper — this helps your brain remember it!
+              You can decorate the margins and add a title when you&apos;re done.
             </div>
           </div>
         </div>,

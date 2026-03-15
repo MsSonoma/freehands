@@ -10,6 +10,29 @@ import { validateInput } from '@/lib/contentSafety'
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 
+function buildResearchSystem(lesson, targetObjective, media) {
+  const title   = lesson?.title   || 'this topic'
+  const subject = lesson?.subject || 'general'
+  const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
+  const lines = [
+    `You are Mrs. Webb, a warm and encouraging teacher.`,
+    `You are helping a student learn specifically about this objective: "${targetObjective}"`,
+    `Lesson: "${title}" (${subject}, ${grade}).`,
+    `Your task:`,
+    `1. In 2-3 sentences, explain that objective in simple, age-appropriate language.`,
+    `2. If a video or article is available, tell the student it can help them learn more about this.`,
+    `3. End with a single open-ended question like "Can you tell me, in your own words, what ${targetObjective.toLowerCase().trim().replace(/[.?!]+$/, '')} means?" — phrased naturally and warmly.`,
+    `Keep it to 3-5 sentences total. Write in natural spoken language. No markdown, no bullet points.`,
+  ]
+  if (media?.video && !media.video.unavailable) {
+    lines.push(`\nA video titled "${media.video.title || 'Educational video'}" is available and likely covers this objective.`)
+  }
+  if (media?.article?.title) {
+    lines.push(`\nA Wikipedia article titled "${media.article.title}" is available and may explain this concept.`)
+  }
+  return lines.join('\n')
+}
+
 function buildSystem(lesson, media, remainingObjectives, assessmentPush = false) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
@@ -68,7 +91,7 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false)
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, seekRequest = null } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, seekRequest = null, researchMode = false, targetObjective = '' } = await req.json()
 
     // ── Seek request: "show me the part where..." ─────────────────────────
     // Client sends { seekRequest: { momentList }, messages } instead of going through
@@ -114,6 +137,29 @@ export async function POST(req) {
       const idx        = idxMatch ? parseInt(idxMatch[1], 10) : -1
       const reply      = replyMatch?.[1]?.trim() || ''
       return NextResponse.json({ reply, seekMomentIdx: idx >= 0 ? idx : undefined })
+    }
+
+    // ── Research mode: teach a specific objective ─────────────────────────
+    // Client sends { researchMode: true, targetObjective: string }.
+    // Webb explains the objective and ends with a "say it in your own words" prompt.
+    if (researchMode && targetObjective) {
+      const apiKey = process.env.OPENAI_API_KEY
+      if (!apiKey) return NextResponse.json({ error: 'OpenAI not configured' }, { status: 503 })
+      const sysContent = buildResearchSystem(lesson, targetObjective, media)
+      const r = await fetch(OPENAI_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          messages: [{ role: 'system', content: sysContent }],
+          max_tokens: 180,
+          temperature: 0.7,
+        }),
+      })
+      if (!r.ok) return NextResponse.json({ error: 'AI unavailable' }, { status: 502 })
+      const d = await r.json()
+      const reply = d.choices?.[0]?.message?.content?.trim() || `Let me tell you about: ${targetObjective}. Can you explain it back to me in your own words?`
+      return NextResponse.json({ reply })
     }
 
     // Safety-check the last user message

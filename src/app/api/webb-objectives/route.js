@@ -1,13 +1,14 @@
 /**
  * /api/webb-objectives
  *
- * Two actions, one endpoint:
- *
  * POST { action: 'generate', lesson }
- *   → { objectives: string[] }   — 5-8 comprehension objectives derived from lesson questions
+ *   → { objectives: string[] }
  *
- * POST { action: 'check', objectives: string[], completedIndices: number[], conversation: {role,content}[] }
- *   → { newlyCompleted: number[] }   — indices of objectives the student just demonstrated
+ * POST { action: 'check', objectives, completedIndices, conversation }
+ *   → { newlyCompleted: number[], qualifyingText: Record<number,string> }
+ *
+ * POST { action: 'generate-essay', objectives: string[], responses: Record<number,string>, lesson }
+ *   → { essay: string }   — student's own words woven into a short essay
  */
 import { NextResponse } from 'next/server'
 
@@ -63,43 +64,74 @@ async function generateObjectives(apiKey, lesson) {
 }
 
 // ── Check whether the student just demonstrated any uncompleted objectives ────
+// Returns: { newlyCompleted: number[], qualifyingText: Record<number, string> }
 async function checkObjectives(apiKey, objectives, completedIndices, conversation) {
   const incomplete = objectives
     .map((obj, i) => ({ obj, i }))
     .filter(({ i }) => !completedIndices.includes(i))
 
-  if (!incomplete.length) return []
+  if (!incomplete.length) return { newlyCompleted: [], qualifyingText: {} }
 
   // Only look at the last 4 turns to keep this fast + cheap
   const recentTurns = conversation.slice(-4)
     .filter(m => m.role === 'user')
-    .map(m => String(m.content || '').trim())
-    .filter(Boolean)
+    .map(m => ({ idx: conversation.indexOf(m), text: String(m.content || '').trim() }))
+    .filter(t => t.text)
 
-  if (!recentTurns.length) return []
+  if (!recentTurns.length) return { newlyCompleted: [], qualifyingText: {} }
 
   const system =
     `You evaluate whether a student has demonstrated understanding of specific objectives ` +
     `in their own words — NOT just from hearing the teacher say it. ` +
     `The student must use their own words, paraphrase, or give an example. ` +
     `They do NOT need to use exact terminology — a clear conceptual demonstration counts. ` +
-    `Return ONLY the numbers of objectives that are clearly demonstrated, e.g. "2,5". ` +
-    `If none are demonstrated, return "none".`
+    `For each demonstrated objective, output one line: INDEX|STUDENT_QUOTE ` +
+    `where STUDENT_QUOTE is the verbatim student sentence(s) that best demonstrate it. ` +
+    `If no objectives are demonstrated, return "none".`
 
   const objList = incomplete.map(({ obj, i }) => `${i}: ${obj}`).join('\n')
-  const studentSaid = recentTurns.map(t => `Student: "${t}"`).join('\n')
+  const studentSaid = recentTurns.map(t => `Student: "${t.text}"`).join('\n')
 
   const raw = await callGPT(apiKey, system,
     `Remaining objectives (number: text):\n${objList}\n\nRecent student messages:\n${studentSaid}`,
-    80)
+    200)
 
-  if (raw.toLowerCase().includes('none')) return []
-  const newly = []
-  for (const part of raw.split(',')) {
-    const n = parseInt(part.trim(), 10)
-    if (!isNaN(n) && !completedIndices.includes(n) && objectives[n]) newly.push(n)
+  if (raw.toLowerCase().startsWith('none')) return { newlyCompleted: [], qualifyingText: {} }
+
+  const newlyCompleted = []
+  const qualifyingText = {}
+  for (const line of raw.split('\n')) {
+    const [indexPart, ...quoteParts] = line.split('|')
+    const n = parseInt(indexPart?.trim(), 10)
+    const quote = quoteParts.join('|').trim()
+    if (!isNaN(n) && !completedIndices.includes(n) && objectives[n]) {
+      newlyCompleted.push(n)
+      if (quote) qualifyingText[n] = quote
+    }
   }
-  return newly
+  return { newlyCompleted, qualifyingText }
+}
+
+// ── Generate essay from the student's own responses ──────────────────────────
+async function generateEssay(apiKey, objectives, responses, lesson) {
+  const title = lesson?.title || 'this topic'
+  const pairs = objectives
+    .map((obj, i) => responses[i] ? `Objective: ${obj}\nStudent said: "${responses[i]}"` : null)
+    .filter(Boolean)
+  if (!pairs.length) return null
+
+  const system =
+    `You are a teacher helping a student write an essay in their own words. ` +
+    `The student answered questions about a lesson. Their answers are shown below. ` +
+    `Combine them into a short, coherent essay of 3-5 paragraphs. ` +
+    `Rules: (1) Keep the student's own words as much as possible — only make the minimum edits needed for flow and grammar. ` +
+    `(2) Add a simple introduction sentence and a simple conclusion sentence. ` +
+    `(3) Do NOT add new facts the student didn't say. ` +
+    `(4) Write it plainly — this is a student essay, not a textbook. ` +
+    `(5) Return ONLY the essay text, no title, no labels.`
+
+  const user = `Lesson topic: "${title}"\n\n${pairs.join('\n\n')}`
+  return callGPT(apiKey, system, user, 700)
 }
 
 export async function POST(req) {
@@ -114,13 +146,23 @@ export async function POST(req) {
     }
 
     if (body.action === 'check') {
-      const newly = await checkObjectives(
+      const { newlyCompleted, qualifyingText } = await checkObjectives(
         apiKey,
         body.objectives    || [],
         body.completedIndices || [],
         body.conversation  || [],
       )
-      return NextResponse.json({ newlyCompleted: newly })
+      return NextResponse.json({ newlyCompleted, qualifyingText })
+    }
+
+    if (body.action === 'generate-essay') {
+      const essay = await generateEssay(
+        apiKey,
+        body.objectives || [],
+        body.responses  || {},
+        body.lesson     || {},
+      )
+      return NextResponse.json({ essay: essay || '' })
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
