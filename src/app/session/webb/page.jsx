@@ -51,7 +51,7 @@ const UI_FAQ = {
   keypart: {
     keywords: ['key part', 'highlight', 'important part', 'read aloud', 'interpret', 'magnify', 'underline', 'find the'],
     confirm: 'Are you wondering about the Key part feature?',
-    answer: 'The Key part button — it looks like a magnifying glass with a plus sign — lives in the article toolbar. Tap it and I will find the most important sentences, highlight them in yellow, and read them to you one by one. It is like having me point to the page!',
+    answer: 'The Key part button — it looks like a magnifying glass — lives in the video and article toolbar. Tap it and I will find the most important parts, highlight them, and walk you through them one by one. It is like having me point to the page!',
     actionPrompt: null,
     actionSlug: null,
   },
@@ -1600,7 +1600,7 @@ export default function WebbPage() {
         <div ref={mediaOverlayRef} style={overlayPanelStyle}>
 
           {/* Toolbar */}
-          <div style={{ background: 'rgba(15,118,110,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', flexShrink: 0 }}>
+          <div style={{ background: 'rgba(15,118,110,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', flexShrink: 0 }}>
             <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 0.5 }}>
               {mediaOverlay === 'video' ? '\u25B6 VIDEO' : '\uD83D\uDCD6 ARTICLE'}
               {mediaOverlay === 'article' && articleResource?.source && (
@@ -1610,29 +1610,27 @@ export default function WebbPage() {
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               {/* Refresh */}
               <button type="button" onClick={() => refreshMedia(mediaOverlay)} disabled={refreshingMedia} title="Load a different one"
-                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 12, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 10px', fontSize: 16, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {refreshingMedia ? '\u2026' : '\u21BB'}
               </button>
-              {/* Interpret: play key moments (video only) */}
+              {/* Interpret: play key moments (video only) — magnifying glass icon only */}
               {mediaOverlay === 'video' && videoResource?.videoId && !videoResource?.unavailable && (
-                <button type="button" onClick={interpretVideo} disabled={interpretingVideo} title="Mrs. Webb plays the key moments"
-                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '3px 6px', cursor: interpretingVideo ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}>
+                <button type="button" onClick={interpretVideo} disabled={interpretingVideo} title="Key part — play key moments"
+                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 8px', cursor: interpretingVideo ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {interpretingVideo
-                    ? <svg style={{ width: 12, height: 12, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
-                    : <svg style={{ width: 12, height: 12 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    ? <svg style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
+                    : <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
                   }
-                  <span>Key part</span>
                 </button>
               )}
-              {/* Interpret: find + highlight + read key passage (article only) */}
+              {/* Interpret: find + highlight + read key passage (article only) — magnifying glass + plus icon only */}
               {mediaOverlay === 'article' && articleResource?.html && (
-                <button type="button" onClick={interpretArticle} disabled={interpretingArticle} title="Mrs. Webb reads the key part"
-                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '3px 6px', cursor: interpretingArticle ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}>
+                <button type="button" onClick={interpretArticle} disabled={interpretingArticle} title="Key part — highlights key sentences"
+                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 8px', cursor: interpretingArticle ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {interpretingArticle
-                    ? <svg style={{ width: 12, height: 12, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
-                    : <svg style={{ width: 12, height: 12 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                    ? <svg style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
+                    : <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                   }
-                  <span>Key part</span>
                 </button>
               )}
               {/* Move arrow — hidden in fullscreen */}
@@ -1640,21 +1638,21 @@ export default function WebbPage() {
                 <button type="button"
                   onClick={() => setMediaPos(p => p === 'video' ? 'chat' : 'video')}
                   title={mediaMoveToChat ? 'Move to conversation' : 'Move to video'}
-                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>
+                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 10px', fontSize: 16, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {arrowGlyph}
                 </button>
               )}
               {/* Fullscreen toggle */}
               <button type="button" onClick={toggleMediaFullscreen} title={mediaIsFullscreen ? 'Exit fullscreen' : 'Full screen'}
-                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '3px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {mediaIsFullscreen
-                  ? <svg style={{ width: 12, height: 12 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
-                  : <svg style={{ width: 12, height: 12 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                  ? <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
+                  : <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
                 }
               </button>
               {/* Close */}
               <button type="button" onClick={() => setMediaOverlay(null)} title="Close"
-                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 10px', fontSize: 16, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {'\u2715'}
               </button>
             </div>
