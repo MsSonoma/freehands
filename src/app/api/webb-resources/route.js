@@ -252,7 +252,7 @@ async function generateArticle(apiKey, title, grade, preferredSources) {
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req) {
   try {
-    const { lesson = {}, type = 'both', context = '', preferredSources, excludeVideoIds = [] } = await req.json()
+    const { lesson = {}, type = 'both', context = '', preferredSources, excludeSource, excludeVideoIds = [] } = await req.json()
     const apiKey = process.env.OPENAI_API_KEY
     const ytKey  = process.env.YOUTUBE_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
@@ -269,7 +269,7 @@ export async function POST(req) {
     const safeExcludeVids = Array.isArray(excludeVideoIds) ? excludeVideoIds.slice(0, 20) : []
     const [videoResult, articleResult] = await Promise.all([
       needVideo   ? generateVideo(apiKey, ytKey, title, subject, grade, ctx, safeExcludeVids) : null,
-      needArticle ? generateArticle(apiKey, title, grade, preferredSources) : null,
+      needArticle ? generateArticle(apiKey, title, grade, preferredSources, excludeSource) : null,
     ])
 
     return NextResponse.json({

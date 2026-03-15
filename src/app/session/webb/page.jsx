@@ -183,6 +183,7 @@ export default function WebbPage() {
   // ── Media resources ──────────────────────────────────────────────────
   const [videoResource, setVideoResource]       = useState(null) // {videoId,embedUrl,title,channel} or {unavailable:true}
   const [articleResource, setArticleResource]   = useState(null) // {html, source, title} — HTML fetched server-side
+  const [articleKey,      setArticleKey]        = useState(0)   // increments to force iframe remount on new article
   const [videoLoading, setVideoLoading]         = useState(false)
   const [articleLoading, setArticleLoading]     = useState(false)
   const [mediaOverlay, setMediaOverlay]         = useState(null) // 'video'|'article'|null
@@ -1010,6 +1011,7 @@ export default function WebbPage() {
           lesson: selectedLesson,
           type,
           context: contextWithObj,
+      excludeSource:          type === 'article' ? (articleResource?.source || '') : undefined,
           preferredSources:       type === 'article' ? articleSources : undefined,
           excludeVideoIds:        type === 'video'   ? shownVideoIdsRef.current      : [],
         }),
@@ -1021,6 +1023,7 @@ export default function WebbPage() {
           shownVideoIdsRef.current = [...new Set([...shownVideoIdsRef.current, data.video.videoId])]
       }
       if (type === 'article' && data.article) {
+        setArticleKey(k => k + 1)
         setArticleResource(data.article)
       }
     } catch {}
@@ -1736,7 +1739,7 @@ export default function WebbPage() {
 
             {/* ── ARTICLE ── */}
             {mediaOverlay === 'article' && articleResource?.html && (
-              <iframe ref={articleIframeRef} srcDoc={articleResource.html} title={articleResource.title || 'Educational article'}
+              <iframe key={articleKey} ref={articleIframeRef} srcDoc={articleResource.html} title={articleResource.title || 'Educational article'}
                 sandbox="allow-same-origin allow-scripts" style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }} />
             )}
             {/* Loading: preload in-flight OR refresh in-progress */}
