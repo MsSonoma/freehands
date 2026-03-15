@@ -994,6 +994,10 @@ export default function WebbPage() {
   // ── Refresh a media resource (context-aware) ──────────────────────────
   async function refreshMedia(type) {
     setRefreshingMedia(true)
+    // Save current article so we can restore it if the refresh fails/returns nothing
+    const savedArticle = articleResource
+    // Clear immediately so the "Finding an article…" spinner appears while loading
+    if (type === 'article') setArticleResource(null)
     const recentContext = chatMessages.slice(-6)
       .filter(m => m.role === 'user')
       .map(m => m.content)
@@ -1022,11 +1026,18 @@ export default function WebbPage() {
         if (data.video.videoId)
           shownVideoIdsRef.current = [...new Set([...shownVideoIdsRef.current, data.video.videoId])]
       }
-      if (type === 'article' && data.article) {
-        setArticleKey(k => k + 1)
-        setArticleResource(data.article)
+      if (type === 'article') {
+        if (data.article?.html) {
+          setArticleKey(k => k + 1)
+          setArticleResource(data.article)
+        } else {
+          // Nothing usable came back — restore the old article so it doesn't disappear
+          setArticleResource(savedArticle)
+        }
       }
-    } catch {}
+    } catch {
+      if (type === 'article') setArticleResource(savedArticle)
+    }
     setRefreshingMedia(false)
   }
 
