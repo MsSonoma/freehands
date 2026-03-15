@@ -246,20 +246,30 @@ async function generateArticle(apiKey, title, grade, preferredSources, excludeSo
     if (raw && raw.length > 1 && raw.length < 60) searchTerm = raw
   } catch { /* use raw title */ }
 
-  // Build the try-list:
-  //   1. shuffle preferred sources (minus simple-wikipedia guaranteed fallback) that are NOT the excluded one
-  //   2. append the excluded source so it's tried last if everything else fails
-  //   3. always end with simple-wikipedia as the final fallback
+  // Build the try-list with source diversity:
+  //   - `wikipedia` and `simple-wikipedia` are treated as a family: if the currently
+  //     shown article is either one, push BOTH to the back so the non-wiki sources
+  //     are always tried first (they look different; wiki variants look identical).
+  //   - The explicitly excluded sourceId is tried last within its group.
+  //   - simple-wikipedia is always the absolute last-resort fallback.
   const preferred = Array.isArray(preferredSources) && preferredSources.length
     ? preferredSources
     : DEFAULT_ARTICLE_SOURCE_IDS
+  const WIKI_FAMILY = new Set(['wikipedia', 'simple-wikipedia'])
+  const excludeIsWiki = WIKI_FAMILY.has(excludeSourceId)
+  // eligible = all preferred sources except simple-wikipedia (it's the guaranteed fallback)
   const eligible = ARTICLE_SOURCES.filter(
     s => preferred.includes(s.id) && s.id !== 'simple-wikipedia',
   )
-  const shuffled  = shuffle(eligible.filter(s => s.id !== excludeSourceId))
+  // "deferred" = sources pushed to back: the excluded one, plus the whole wiki family
+  // if we're currently showing a wiki-family article
+  const isDeferredSrc = (s) => s.id === excludeSourceId || (excludeIsWiki && WIKI_FAMILY.has(s.id))
+  const shuffled  = shuffle(eligible.filter(s => !isDeferredSrc(s)))
+  const deferred  = eligible.filter(s => isDeferredSrc(s) && s.id !== excludeSourceId)
   const excluded  = eligible.filter(s => s.id === excludeSourceId)
   const fallback  = ARTICLE_SOURCES.find(s => s.id === 'simple-wikipedia')
-  const toTry     = [...shuffled, ...excluded, ...(fallback ? [fallback] : [])]
+  // Order: non-wiki sources → deferred wiki (not the excluded) → excluded source → simple-wikipedia
+  const toTry     = [...shuffled, ...deferred, ...excluded, ...(fallback ? [fallback] : [])]
 
   // Also try with the raw lesson title as alternate term
   const terms = searchTerm.toLowerCase() !== title.toLowerCase()
