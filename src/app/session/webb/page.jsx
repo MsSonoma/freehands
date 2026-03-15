@@ -170,7 +170,7 @@ export default function WebbPage() {
   const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
   const [showSourceSettings, setShowSourceSettings] = useState(false) // article source settings
   const [articleSources,     setArticleSources]    = useState(() => {
-    const ALL = ['simple-wikipedia','wikipedia','britannica-kids','national-geographic-kids','ducksters','wikijunior']
+    const ALL = ['simple-wikipedia','wikipedia','kiddle','ducksters','wikijunior']
     if (typeof window === 'undefined') return ALL
     try {
       const stored = JSON.parse(localStorage.getItem('webb_article_sources') || 'null')
@@ -1812,12 +1812,11 @@ export default function WebbPage() {
             </div>
             {/* Source list */}
             {[
-              { id: 'simple-wikipedia',         label: 'Simple Wikipedia',  note: 'Simple English — always works' },
-              { id: 'wikipedia',                label: 'Wikipedia',          note: 'Full English encyclopedia' },
-              { id: 'britannica-kids',          label: 'Britannica Kids',    note: 'Child-friendly encyclopedia' },
-              { id: 'national-geographic-kids', label: 'Nat Geo Kids',       note: 'Science & nature articles' },
-              { id: 'ducksters',                label: 'Ducksters',          note: 'Kid-focused history & science' },
-              { id: 'wikijunior',               label: 'Wikijunior',         note: 'Wikibooks for young readers' },
+              { id: 'simple-wikipedia', label: 'Simple Wikipedia', note: 'Simple English — always works' },
+              { id: 'wikipedia',        label: 'Wikipedia',        note: 'Full English encyclopedia' },
+              { id: 'kiddle',          label: 'Kiddle',           note: 'Kid-safe encyclopedia' },
+              { id: 'ducksters',       label: 'Ducksters',        note: 'Kid-focused history & science' },
+              { id: 'wikijunior',      label: 'Wikijunior',       note: 'Wikibooks for young readers' },
             ].map(src => {
               const checked = articleSources.includes(src.id)
               const toggle = () => {

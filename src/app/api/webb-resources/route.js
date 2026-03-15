@@ -106,24 +106,26 @@ export const ARTICLE_SOURCES = [
     },
   },
   {
-    id: 'britannica-kids',
-    label: 'Britannica Kids',
+    id: 'kiddle',
+    label: 'Kiddle',
+    // Kiddle (kids.kiddle.co) is a kid-safe encyclopedia using Wikipedia article titles.
+    // We resolve the best-matching title via Wikipedia's search API, then fetch from Kiddle.
     async fetch(term) {
-      const slug = term.toLowerCase().replace(/\s+/g, '-')
+      let slug = term.replace(/\s+/g, '_')
+      try {
+        const sr = await fetch(
+          `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(term)}&srlimit=1&format=json`,
+          { headers: { 'User-Agent': 'EducationalApp/1.0' }, signal: AbortSignal.timeout(5000) },
+        )
+        if (sr.ok) {
+          const sd = await sr.json()
+          const found = sd?.query?.search?.[0]?.title
+          if (found) slug = found.replace(/\s+/g, '_')
+        }
+      } catch { /* fall back to raw term */ }
       return _fetchHtml(
-        `https://kids.britannica.com/kids/article/${encodeURIComponent(slug)}`,
-        'https://kids.britannica.com', 'britannica-kids', 'Britannica Kids',
-      )
-    },
-  },
-  {
-    id: 'national-geographic-kids',
-    label: 'Nat Geo Kids',
-    async fetch(term) {
-      const slug = term.toLowerCase().replace(/\s+/g, '-')
-      return _fetchHtml(
-        `https://kids.nationalgeographic.com/nature/article/${encodeURIComponent(slug)}`,
-        'https://kids.nationalgeographic.com', 'national-geographic-kids', 'Nat Geo Kids',
+        `https://kids.kiddle.co/${encodeURIComponent(slug)}`,
+        'https://kids.kiddle.co', 'kiddle', 'Kiddle',
       )
     },
   },
