@@ -62,7 +62,20 @@ export const ARTICLE_SOURCES = [
     id: 'simple-wikipedia',
     label: 'Simple Wikipedia',
     async fetch(term) {
-      const slug = term.replace(/\s+/g, '_')
+      // Use the search API first so any lesson topic resolves to a real article
+      // (exact-title lookup 404s for topics like "Story Elements" or "Adding Fractions")
+      let slug = term.replace(/\s+/g, '_')
+      try {
+        const sr = await fetch(
+          `https://simple.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(term)}&srlimit=1&format=json`,
+          { headers: { 'User-Agent': 'EducationalApp/1.0' }, signal: AbortSignal.timeout(5000) },
+        )
+        if (sr.ok) {
+          const sd = await sr.json()
+          const found = sd?.query?.search?.[0]?.title
+          if (found) slug = found.replace(/\s+/g, '_')
+        }
+      } catch { /* fall back to raw term */ }
       return _fetchHtml(
         `https://simple.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(slug)}`,
         'https://simple.wikipedia.org', 'simple-wikipedia', 'Simple Wikipedia',
@@ -73,7 +86,19 @@ export const ARTICLE_SOURCES = [
     id: 'wikipedia',
     label: 'Wikipedia',
     async fetch(term) {
-      const slug = term.replace(/\s+/g, '_')
+      // Use the search API first so any lesson topic resolves to a real article
+      let slug = term.replace(/\s+/g, '_')
+      try {
+        const sr = await fetch(
+          `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(term)}&srlimit=1&format=json`,
+          { headers: { 'User-Agent': 'EducationalApp/1.0' }, signal: AbortSignal.timeout(5000) },
+        )
+        if (sr.ok) {
+          const sd = await sr.json()
+          const found = sd?.query?.search?.[0]?.title
+          if (found) slug = found.replace(/\s+/g, '_')
+        }
+      } catch { /* fall back to raw term */ }
       return _fetchHtml(
         `https://en.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(slug)}`,
         'https://en.wikipedia.org', 'wikipedia', 'Wikipedia',
