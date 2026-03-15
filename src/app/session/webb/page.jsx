@@ -1011,7 +1011,7 @@ export default function WebbPage() {
           lesson: selectedLesson,
           type,
           context: contextWithObj,
-      excludeSource:          type === 'article' ? (articleResource?.source || '') : undefined,
+          excludeSourceId:        type === 'article' ? (articleResource?.sourceId || '') : undefined,
           preferredSources:       type === 'article' ? articleSources : undefined,
           excludeVideoIds:        type === 'video'   ? shownVideoIdsRef.current      : [],
         }),

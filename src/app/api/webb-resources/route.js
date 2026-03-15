@@ -6,8 +6,10 @@
  * Article: Fetches from child-friendly internet sources. Caller passes
  *          `preferredSources` (array of source IDs); server shuffles those,
  *          tries each until one succeeds, then falls back to Simple Wikipedia.
+ *          `excludeSourceId` = source ID last shown; rotated to last so refresh
+ *          always picks a different source first.
  *
- * POST { lesson, type, context?, preferredSources?, excludeVideoIds? }
+ * POST { lesson, type, context?, preferredSources?, excludeSourceId?, excludeVideoIds? }
  */
 import { NextResponse } from 'next/server'
 
@@ -25,7 +27,7 @@ function shuffle(arr) {
   return a
 }
 
-async function _fetchHtml(url, baseHref, sourceName) {
+async function _fetchHtml(url, baseHref, sourceId, sourceLabel) {
   try {
     const r = await fetch(url, {
       headers: {
@@ -49,7 +51,9 @@ async function _fetchHtml(url, baseHref, sourceName) {
     html = html.includes('<head>')
       ? html.replace('<head>', `<head><base href="${baseHref}">${styleOverride}`)
       : `<base href="${baseHref}">${styleOverride}${html}`
-    return { html, source: sourceName }
+    // Return BOTH the human-readable label AND the stable ID so clients can
+    // compare by ID for excludeSourceId rotation (label ≠ id).
+    return { html, source: sourceLabel, sourceId }
   } catch { return null }
 }
 
@@ -61,7 +65,7 @@ export const ARTICLE_SOURCES = [
       const slug = term.replace(/\s+/g, '_')
       return _fetchHtml(
         `https://simple.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(slug)}`,
-        'https://simple.wikipedia.org', 'Simple Wikipedia',
+        'https://simple.wikipedia.org', 'simple-wikipedia', 'Simple Wikipedia',
       )
     },
   },
@@ -72,38 +76,60 @@ export const ARTICLE_SOURCES = [
       const slug = term.replace(/\s+/g, '_')
       return _fetchHtml(
         `https://en.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(slug)}`,
-        'https://en.wikipedia.org', 'Wikipedia',
+        'https://en.wikipedia.org', 'wikipedia', 'Wikipedia',
       )
     },
   },
   {
     id: 'britannica-kids',
     label: 'Britannica Kids',
-    async fetch(term, slug) {
+    async fetch(term) {
+      const slug = term.toLowerCase().replace(/\s+/g, '-')
       return _fetchHtml(
-        `https://kids.britannica.com/kids/article/${encodeURIComponent(slug || term.toLowerCase().replace(/\s+/g, '-'))}`,
-        'https://kids.britannica.com', 'Britannica Kids',
+        `https://kids.britannica.com/kids/article/${encodeURIComponent(slug)}`,
+        'https://kids.britannica.com', 'britannica-kids', 'Britannica Kids',
       )
     },
   },
   {
     id: 'national-geographic-kids',
     label: 'Nat Geo Kids',
-    async fetch(term, slug) {
+    async fetch(term) {
+      const slug = term.toLowerCase().replace(/\s+/g, '-')
       return _fetchHtml(
-        `https://kids.nationalgeographic.com/nature/article/${encodeURIComponent(slug || term.toLowerCase().replace(/\s+/g, '-'))}`,
-        'https://kids.nationalgeographic.com', 'Nat Geo Kids',
+        `https://kids.nationalgeographic.com/nature/article/${encodeURIComponent(slug)}`,
+        'https://kids.nationalgeographic.com', 'national-geographic-kids', 'Nat Geo Kids',
       )
     },
   },
   {
     id: 'ducksters',
     label: 'Ducksters',
-    async fetch(term, slug) {
-      const path = slug || term.toLowerCase().replace(/\s+/g, '_')
+    // Ducksters URLs are section-based (e.g. /science/, /history/, /geography/).
+    // Ask GPT for the correct full path rather than guessing /science/.
+    async fetch(term, _slug, apiKey) {
+      let path = null
+      if (apiKey) {
+        try {
+          const raw = await callGPT(
+            apiKey,
+            'You generate Ducksters.com article URL paths for school topics. ' +
+            'Format: section/topic_filename with underscores and lowercase only ' +
+            '(e.g. "science/photosynthesis", "history/american_revolution", "geography/amazon_river"). ' +
+            'Return ONLY the path — no .php extension, no domain, no extra text.',
+            `Topic: "${term}"`,
+            30,
+          )
+          if (raw && /^[a-z][a-z0-9_/]*$/.test(raw) && raw.includes('/')) path = raw.trim()
+        } catch { /* ignore */ }
+      }
+      if (!path) {
+        // Fallback: guess /science/ section
+        path = `science/${term.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}`
+      }
       return _fetchHtml(
-        `https://www.ducksters.com/science/${encodeURIComponent(path)}.php`,
-        'https://www.ducksters.com', 'Ducksters',
+        `https://www.ducksters.com/${path}.php`,
+        'https://www.ducksters.com', 'ducksters', 'Ducksters',
       )
     },
   },
@@ -114,7 +140,7 @@ export const ARTICLE_SOURCES = [
       const slug = term.replace(/\s+/g, '_')
       return _fetchHtml(
         `https://en.wikibooks.org/api/rest_v1/page/mobile-html/Wikijunior%3A${encodeURIComponent(slug)}`,
-        'https://en.wikibooks.org', 'Wikijunior',
+        'https://en.wikibooks.org', 'wikijunior', 'Wikijunior',
       )
     },
   },
@@ -206,7 +232,7 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeV
 }
 
 // ── Generate article resource ─────────────────────────────────────────────────
-async function generateArticle(apiKey, title, grade, preferredSources) {
+async function generateArticle(apiKey, title, grade, preferredSources, excludeSourceId) {
   // Resolve the best search term for this lesson (used as slug base)
   let searchTerm = title
   try {
@@ -220,16 +246,20 @@ async function generateArticle(apiKey, title, grade, preferredSources) {
     if (raw && raw.length > 1 && raw.length < 60) searchTerm = raw
   } catch { /* use raw title */ }
 
-  // Pick sources to try — shuffle for variety — always end with Simple Wikipedia as guaranteed fallback
+  // Build the try-list:
+  //   1. shuffle preferred sources (minus simple-wikipedia guaranteed fallback) that are NOT the excluded one
+  //   2. append the excluded source so it's tried last if everything else fails
+  //   3. always end with simple-wikipedia as the final fallback
   const preferred = Array.isArray(preferredSources) && preferredSources.length
     ? preferredSources
     : DEFAULT_ARTICLE_SOURCE_IDS
-  const sourceObjs = shuffle(
-    ARTICLE_SOURCES.filter(s => preferred.includes(s.id) && s.id !== 'simple-wikipedia'),
+  const eligible = ARTICLE_SOURCES.filter(
+    s => preferred.includes(s.id) && s.id !== 'simple-wikipedia',
   )
-  // Always put simple-wikipedia as the final fallback if not already in list
-  const fallback = ARTICLE_SOURCES.find(s => s.id === 'simple-wikipedia')
-  const toTry = [...sourceObjs, ...(fallback ? [fallback] : [])]
+  const shuffled  = shuffle(eligible.filter(s => s.id !== excludeSourceId))
+  const excluded  = eligible.filter(s => s.id === excludeSourceId)
+  const fallback  = ARTICLE_SOURCES.find(s => s.id === 'simple-wikipedia')
+  const toTry     = [...shuffled, ...excluded, ...(fallback ? [fallback] : [])]
 
   // Also try with the raw lesson title as alternate term
   const terms = searchTerm.toLowerCase() !== title.toLowerCase()
@@ -239,20 +269,19 @@ async function generateArticle(apiKey, title, grade, preferredSources) {
   for (const src of toTry) {
     for (const term of terms) {
       try {
-        const slug = term.toLowerCase().replace(/[^a-z0-9]+/g, src.id === 'ducksters' ? '_' : '-').replace(/^[-_]|[-_]$/g, '')
-        const result = await src.fetch(term, slug)
+        const result = await src.fetch(term, null, apiKey)
         if (result?.html) return { ...result, title }
       } catch { /* try next */ }
     }
   }
 
-  return { html: null, source: null, title }
+  return { html: null, source: null, sourceId: null, title }
 }
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req) {
   try {
-    const { lesson = {}, type = 'both', context = '', preferredSources, excludeSource, excludeVideoIds = [] } = await req.json()
+    const { lesson = {}, type = 'both', context = '', preferredSources, excludeSourceId, excludeVideoIds = [] } = await req.json()
     const apiKey = process.env.OPENAI_API_KEY
     const ytKey  = process.env.YOUTUBE_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
@@ -269,7 +298,7 @@ export async function POST(req) {
     const safeExcludeVids = Array.isArray(excludeVideoIds) ? excludeVideoIds.slice(0, 20) : []
     const [videoResult, articleResult] = await Promise.all([
       needVideo   ? generateVideo(apiKey, ytKey, title, subject, grade, ctx, safeExcludeVids) : null,
-      needArticle ? generateArticle(apiKey, title, grade, preferredSources, excludeSource) : null,
+      needArticle ? generateArticle(apiKey, title, grade, preferredSources, excludeSourceId) : null,
     ])
 
     return NextResponse.json({
