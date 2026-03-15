@@ -2103,7 +2103,7 @@ function StudentInput({ onSend, loading }) {
   const [value, setValue] = useState('')
   const ref = useRef(null)
 
-  useEffect(() => { ref.current?.focus() }, [])
+  useEffect(() => { if (!loading) ref.current?.focus() }, [loading])
 
   function submit() {
     const t = value.trim()
