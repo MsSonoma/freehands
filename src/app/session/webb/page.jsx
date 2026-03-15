@@ -168,6 +168,16 @@ export default function WebbPage() {
   const [completedObj,       setCompletedObj]      = useState([])  // number[] of completed indices
   const [newlyCompletedObj,  setNewlyCompletedObj] = useState(null) // {idx, text} — drives tablet toast
   const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
+  const [showSourceSettings, setShowSourceSettings] = useState(false) // article source settings
+  const [articleSources,     setArticleSources]    = useState(() => {
+    const ALL = ['simple-wikipedia','wikipedia','britannica-kids','national-geographic-kids','ducksters','wikijunior']
+    if (typeof window === 'undefined') return ALL
+    try {
+      const stored = JSON.parse(localStorage.getItem('webb_article_sources') || 'null')
+      if (Array.isArray(stored) && stored.length) return stored
+    } catch {}
+    return ALL
+  })
   const checkingObjRef = useRef(false) // debounce concurrent checks
 
   // ── Media resources ──────────────────────────────────────────────────
@@ -677,7 +687,7 @@ export default function WebbPage() {
     const post = (type) => fetch('/api/webb-resources', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lesson, type, context: objContext }),
+      body: JSON.stringify({ lesson, type, context: objContext, preferredSources: articleSources }),
     })
 
     // Video
@@ -1000,7 +1010,7 @@ export default function WebbPage() {
           lesson: selectedLesson,
           type,
           context: contextWithObj,
-          previousSource:         type === 'article' ? (articleResource?.source || '') : '',
+          preferredSources:       type === 'article' ? articleSources : undefined,
           excludeVideoIds:        type === 'video'   ? shownVideoIdsRef.current      : [],
         }),
       })
@@ -1755,6 +1765,87 @@ export default function WebbPage() {
         document.body
       )}
 
+      {/* ── Article source settings overlay ──────────────────────────── */}
+      {showSourceSettings && createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1001,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+          }}
+          onClick={() => setShowSourceSettings(false)}
+        >
+          <div
+            style={{
+              background: '#0f172a',
+              borderRadius: 18,
+              width: 'min(92vw, 380px)',
+              boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 2px #0d9488',
+              overflow: 'hidden',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 12px', borderBottom: '1px solid #1e293b' }}>
+              <div>
+                <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Article Sources</div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>Choose which sources to use when refreshing</div>
+              </div>
+              <button type="button" onClick={() => setShowSourceSettings(false)}
+                style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: 18, fontFamily: 'inherit' }}
+                aria-label="Close">&#215;</button>
+            </div>
+            {/* Source list */}
+            {[
+              { id: 'simple-wikipedia',         label: 'Simple Wikipedia',  note: 'Simple English — always works' },
+              { id: 'wikipedia',                label: 'Wikipedia',          note: 'Full English encyclopedia' },
+              { id: 'britannica-kids',          label: 'Britannica Kids',    note: 'Child-friendly encyclopedia' },
+              { id: 'national-geographic-kids', label: 'Nat Geo Kids',       note: 'Science & nature articles' },
+              { id: 'ducksters',                label: 'Ducksters',          note: 'Kid-focused history & science' },
+              { id: 'wikijunior',               label: 'Wikijunior',         note: 'Wikibooks for young readers' },
+            ].map(src => {
+              const checked = articleSources.includes(src.id)
+              const toggle = () => {
+                setArticleSources(prev => {
+                  const next = checked
+                    ? prev.filter(id => id !== src.id)
+                    : [...prev, src.id]
+                  const safe = next.length ? next : [src.id]
+                  try { localStorage.setItem('webb_article_sources', JSON.stringify(safe)) } catch {}
+                  return safe
+                })
+              }
+              return (
+                <div key={src.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '13px 20px',
+                  borderBottom: '1px solid #1e293b',
+                  cursor: 'pointer',
+                }} onClick={toggle}>
+                  <div style={{
+                    width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                    background: checked ? '#0d9488' : 'transparent',
+                    border: `2px solid ${checked ? '#0d9488' : '#475569'}`,
+                    display: 'grid', placeItems: 'center', transition: 'all 0.15s',
+                  }}>
+                    {checked && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                  </div>
+                  <div>
+                    <div style={{ color: checked ? '#e2e8f0' : '#64748b', fontSize: 14, fontWeight: 600, transition: 'color 0.15s' }}>{src.label}</div>
+                    <div style={{ color: '#475569', fontSize: 11, marginTop: 1 }}>{src.note}</div>
+                  </div>
+                </div>
+              )
+            })}
+            <div style={{ padding: '12px 20px', color: '#475569', fontSize: 11, lineHeight: 1.5 }}>
+              Selected sources are tried in random order when you tap ↻ refresh on the article.
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* ── Objective tablet toast ──────────────────────────────────── */}
       {showObjectives && createPortal(
         <div
@@ -1788,16 +1879,35 @@ export default function WebbPage() {
                 <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Learning Goals</div>
                 <div style={{ color: '#94a3b8', fontSize: 12 }}>{completedObj.length} of {objectives.length} completed</div>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowObjectives(false)}
-                style={{
-                  background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8',
-                  borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
-                  display: 'grid', placeItems: 'center', fontSize: 18, fontFamily: 'inherit',
-                }}
-                aria-label="Close"
-              >&#215;</button>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                {/* Gear button — article source settings */}
+                <button
+                  type="button"
+                  onClick={e => { e.stopPropagation(); setShowSourceSettings(true) }}
+                  title="Article source settings"
+                  style={{
+                    background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8',
+                    borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
+                    display: 'grid', placeItems: 'center',
+                  }}
+                  aria-label="Article source settings"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowObjectives(false)}
+                  style={{
+                    background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8',
+                    borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
+                    display: 'grid', placeItems: 'center', fontSize: 18, fontFamily: 'inherit',
+                  }}
+                  aria-label="Close"
+                >&#215;</button>
+              </div>
             </div>
             {/* Progress bar */}
             <div style={{ height: 4, background: '#1e293b', flexShrink: 0 }}>

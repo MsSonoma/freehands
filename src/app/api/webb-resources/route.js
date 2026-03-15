@@ -2,16 +2,12 @@
  * /api/webb-resources
  * Generates curated, child-safe media resources for a lesson.
  *
- * Video:   YouTube Data API v3 + GPT safety review of title/channel/description
- * Article: Fetches directly from Wikipedia REST APIs (Simple English first, then English)
- *          (srcdoc approach bypasses X-Frame-Options; no client-side fetching needed)
+ * Video:   YouTube Data API v3 + GPT picks best result.
+ * Article: Fetches from child-friendly internet sources. Caller passes
+ *          `preferredSources` (array of source IDs); server shuffles those,
+ *          tries each until one succeeds, then falls back to Simple Wikipedia.
  *
- * POST { lesson, type: 'video'|'article'|'both', context? }
- * Returns:
- *   video?:   { embedUrl, title, channel, searchQuery }  — real playable embed
- *          OR { unavailable: true, searchQuery }          — no key / all rejected
- *   article?: { html, source, title }                    — ready for srcdoc iframe
- *          OR { html: null, source: null, title }        — all fetches failed
+ * POST { lesson, type, context?, preferredSources?, excludeVideoIds? }
  */
 import { NextResponse } from 'next/server'
 
@@ -19,19 +15,112 @@ const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 const YT_SEARCH    = 'https://www.googleapis.com/youtube/v3/search'
 
-// ── Wikipedia REST API sources (open, no-auth, work from cloud hosting) ───────
-const WIKI_SOURCES = [
+// ── Article sources catalogue ─────────────────────────────────────────────────
+
+function shuffle(arr) {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+async function _fetchHtml(url, baseHref, sourceName) {
+  try {
+    const r = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(9000),
+    })
+    if (!r.ok) return null
+    let html = await r.text()
+    if (!html.includes('<')) return null
+    const styleOverride = `<style>
+      header,nav,footer,.nav,.header,.footer,.sidebar,.ad,.ads,.advertisement,
+      .site-nav,.breadcrumb,.breadcrumbs,[class*="navigation"],[class*="menu"],
+      [id*="navigation"],[id*="header"],[id*="footer"],[id*="menu"],
+      [class*="social"],[class*="share"]{display:none!important}
+      body{font-size:15px!important;line-height:1.75!important;max-width:700px!important;margin:0 auto!important;padding:14px 18px!important}
+      img{max-width:100%!important;height:auto!important}
+    </style>`
+    html = html.includes('<head>')
+      ? html.replace('<head>', `<head><base href="${baseHref}">${styleOverride}`)
+      : `<base href="${baseHref}">${styleOverride}${html}`
+    return { html, source: sourceName }
+  } catch { return null }
+}
+
+export const ARTICLE_SOURCES = [
   {
-    name: 'Simple English Wikipedia',
-    url:  t => `https://simple.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(t.replace(/\s+/g, '_'))}`,
-    base: 'https://simple.wikipedia.org',
+    id: 'simple-wikipedia',
+    label: 'Simple Wikipedia',
+    async fetch(term) {
+      const slug = term.replace(/\s+/g, '_')
+      return _fetchHtml(
+        `https://simple.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(slug)}`,
+        'https://simple.wikipedia.org', 'Simple Wikipedia',
+      )
+    },
   },
   {
-    name: 'Wikipedia',
-    url:  t => `https://en.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(t.replace(/\s+/g, '_'))}`,
-    base: 'https://en.wikipedia.org',
+    id: 'wikipedia',
+    label: 'Wikipedia',
+    async fetch(term) {
+      const slug = term.replace(/\s+/g, '_')
+      return _fetchHtml(
+        `https://en.wikipedia.org/api/rest_v1/page/mobile-html/${encodeURIComponent(slug)}`,
+        'https://en.wikipedia.org', 'Wikipedia',
+      )
+    },
+  },
+  {
+    id: 'britannica-kids',
+    label: 'Britannica Kids',
+    async fetch(term, slug) {
+      return _fetchHtml(
+        `https://kids.britannica.com/kids/article/${encodeURIComponent(slug || term.toLowerCase().replace(/\s+/g, '-'))}`,
+        'https://kids.britannica.com', 'Britannica Kids',
+      )
+    },
+  },
+  {
+    id: 'national-geographic-kids',
+    label: 'Nat Geo Kids',
+    async fetch(term, slug) {
+      return _fetchHtml(
+        `https://kids.nationalgeographic.com/nature/article/${encodeURIComponent(slug || term.toLowerCase().replace(/\s+/g, '-'))}`,
+        'https://kids.nationalgeographic.com', 'Nat Geo Kids',
+      )
+    },
+  },
+  {
+    id: 'ducksters',
+    label: 'Ducksters',
+    async fetch(term, slug) {
+      const path = slug || term.toLowerCase().replace(/\s+/g, '_')
+      return _fetchHtml(
+        `https://www.ducksters.com/science/${encodeURIComponent(path)}.php`,
+        'https://www.ducksters.com', 'Ducksters',
+      )
+    },
+  },
+  {
+    id: 'wikijunior',
+    label: 'Wikijunior',
+    async fetch(term) {
+      const slug = term.replace(/\s+/g, '_')
+      return _fetchHtml(
+        `https://en.wikibooks.org/api/rest_v1/page/mobile-html/Wikijunior%3A${encodeURIComponent(slug)}`,
+        'https://en.wikibooks.org', 'Wikijunior',
+      )
+    },
   },
 ]
+
+export const DEFAULT_ARTICLE_SOURCE_IDS = ARTICLE_SOURCES.map(s => s.id)
 
 async function callGPT(apiKey, systemPrompt, userPrompt, maxTokens = 60) {
   const res = await fetch(OPENAI_URL, {
@@ -117,46 +206,42 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeV
 }
 
 // ── Generate article resource ─────────────────────────────────────────────────
-// Uses GPT to translate the lesson title into the best Wikipedia article slug,
-// then fetches from Simple English Wikipedia (grade-appropriate) or English Wikipedia.
-async function generateArticle(apiKey, title, grade, prevSrc = '') {
-  // Ask GPT for the best Wikipedia article title for this lesson.
-  // Falls back to the raw lesson title if GPT fails.
-  let wikiTitle = title
+async function generateArticle(apiKey, title, grade, preferredSources) {
+  // Resolve the best search term for this lesson (used as slug base)
+  let searchTerm = title
   try {
     const raw = await callGPT(
       apiKey,
-      'You find Wikipedia article titles for school lessons. ' +
-      'Return ONLY the Wikipedia article title — 1 to 5 words, exact Wikipedia capitalisation, nothing else.',
+      'You find the best short search term for a school lesson topic. ' +
+      'Return ONLY 1–4 words, lowercase, no punctuation, no extra text.',
       `Lesson: "${title.slice(0, 120)}". Grade: ${grade}.`,
-      30,
+      20,
     )
-    if (raw && raw.length > 1 && raw.length < 80) wikiTitle = raw
+    if (raw && raw.length > 1 && raw.length < 60) searchTerm = raw
   } catch { /* use raw title */ }
 
-  const sources = (prevSrc === 'Simple English Wikipedia')
-    ? [WIKI_SOURCES[1], WIKI_SOURCES[0]]
-    : WIKI_SOURCES
+  // Pick sources to try — shuffle for variety — always end with Simple Wikipedia as guaranteed fallback
+  const preferred = Array.isArray(preferredSources) && preferredSources.length
+    ? preferredSources
+    : DEFAULT_ARTICLE_SOURCE_IDS
+  const sourceObjs = shuffle(
+    ARTICLE_SOURCES.filter(s => preferred.includes(s.id) && s.id !== 'simple-wikipedia'),
+  )
+  // Always put simple-wikipedia as the final fallback if not already in list
+  const fallback = ARTICLE_SOURCES.find(s => s.id === 'simple-wikipedia')
+  const toTry = [...sourceObjs, ...(fallback ? [fallback] : [])]
 
-  // Try GPT-resolved title first, then the original lesson title as a safety net.
-  const titlesToTry = wikiTitle.toLowerCase() !== title.toLowerCase()
-    ? [wikiTitle, title]
-    : [wikiTitle]
+  // Also try with the raw lesson title as alternate term
+  const terms = searchTerm.toLowerCase() !== title.toLowerCase()
+    ? [searchTerm, title]
+    : [searchTerm]
 
-  for (const term of titlesToTry) {
-    for (const src of sources) {
+  for (const src of toTry) {
+    for (const term of terms) {
       try {
-        const r = await fetch(src.url(term), {
-          headers: { 'Api-User-Agent': 'EducationApp/1.0 (freehands; educational-app)' },
-          signal: AbortSignal.timeout(8000),
-        })
-        if (r.ok) {
-          let html = await r.text()
-          html = html.includes('<head>')
-            ? html.replace('<head>', `<head><base href="${src.base}">`)
-            : `<base href="${src.base}">${html}`
-          return { html, source: src.name, title }
-        }
+        const slug = term.toLowerCase().replace(/[^a-z0-9]+/g, src.id === 'ducksters' ? '_' : '-').replace(/^[-_]|[-_]$/g, '')
+        const result = await src.fetch(term, slug)
+        if (result?.html) return { ...result, title }
       } catch { /* try next */ }
     }
   }
@@ -167,7 +252,7 @@ async function generateArticle(apiKey, title, grade, prevSrc = '') {
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req) {
   try {
-    const { lesson = {}, type = 'both', context = '', previousSource = '', excludeVideoIds = [] } = await req.json()
+    const { lesson = {}, type = 'both', context = '', preferredSources, excludeVideoIds = [] } = await req.json()
     const apiKey = process.env.OPENAI_API_KEY
     const ytKey  = process.env.YOUTUBE_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
@@ -176,7 +261,6 @@ export async function POST(req) {
     const subject = lesson.subject || 'general'
     const grade   = lesson.grade   ? `Grade ${lesson.grade}` : 'elementary'
     const ctx     = context ? ` Student discussion context: ${context.slice(0, 300)}` : ''
-    const prevSrc = String(previousSource || '').slice(0, 60)
 
     const needVideo   = type === 'video'   || type === 'both'
     const needArticle = type === 'article' || type === 'both'
@@ -185,7 +269,7 @@ export async function POST(req) {
     const safeExcludeVids = Array.isArray(excludeVideoIds) ? excludeVideoIds.slice(0, 20) : []
     const [videoResult, articleResult] = await Promise.all([
       needVideo   ? generateVideo(apiKey, ytKey, title, subject, grade, ctx, safeExcludeVids) : null,
-      needArticle ? generateArticle(apiKey, title, grade, prevSrc) : null,
+      needArticle ? generateArticle(apiKey, title, grade, preferredSources) : null,
     ])
 
     return NextResponse.json({
@@ -203,6 +287,6 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     endpoint: 'webb-resources',
-    sources: WIKI_SOURCES.map(s => s.name),
+    articleSources: ARTICLE_SOURCES.map(s => ({ id: s.id, label: s.label })),
   })
 }
