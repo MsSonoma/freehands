@@ -172,7 +172,13 @@ export default function WebbPage() {
   const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
   const [showSourceSettings, setShowSourceSettings] = useState(false) // settings overlay
   const [settingsTab,        setSettingsTab]        = useState('settings') // 'settings' | 'article'
-  const [offerResume,        setOfferResume]        = useState(false) // resume/restart prompt on refresh
+  const [offerResume,        setOfferResume]        = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const raw = sessionStorage.getItem('webb_session')
+      return !!(raw && JSON.parse(raw)?.selectedLesson)
+    } catch { return false }
+  }) // resume/restart prompt on refresh
   const [essayMode,          setEssayMode]         = useState(false) // essay copy-down screen
   const [essay,              setEssay]             = useState(null)  // generated essay string
   const [generatingEssay,    setGeneratingEssay]   = useState(false)
@@ -207,7 +213,6 @@ export default function WebbPage() {
   const lowTierMsgSentRef  = useRef(false) // true once the "limited results" message has been said for the current video
   const noVideoMsgSentRef  = useRef(false) // true once the "no relevant video" message has been said for the current lesson
   const essayAbortRef      = useRef(null)  // AbortController for in-flight essay generation
-  const savedSessionRef    = useRef(null)  // holds parsed saved session while showing resume/restart prompt
   const articleIframeRef   = useRef(null)
   // Media overlay position + fullscreen
   const [mediaPos, setMediaPos]               = useState('video') // 'video'|'chat'
@@ -324,42 +329,34 @@ export default function WebbPage() {
   }, [])
 
   // ── Session persistence: restore on refresh ──────────────────────────
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem('webb_session')
-      if (!raw) return
-      const saved = JSON.parse(raw)
-      if (!saved?.selectedLesson) return
-      savedSessionRef.current = saved
-      setOfferResume(true)
-    } catch { /* ignore */ }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // (offerResume is initialized synchronously above, so no effect needed for that)
 
   function handleResume() {
-    const saved = savedSessionRef.current
-    if (!saved) return
-    setSelectedLesson(saved.selectedLesson)
-    setChatMessages(saved.chatMessages || [])
-    setTranscript(saved.transcript || [])
-    setObjectives(saved.objectives || [])
-    setCompletedObj(saved.completedObj || [])
-    setObjResponses(saved.objResponses || {})
-    if (saved.essay) setEssay(saved.essay)
-    if (saved.essayMode) setEssayMode(saved.essayMode)
-    setPhase(PHASE.CHATTING)
-    setOfferResume(false)
-    savedSessionRef.current = null
-    preloadResources(saved.selectedLesson)
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('webb_session') || 'null')
+      if (!saved?.selectedLesson) { setOfferResume(false); return }
+      setSelectedLesson(saved.selectedLesson)
+      setChatMessages(saved.chatMessages || [])
+      setTranscript(saved.transcript || [])
+      setObjectives(saved.objectives || [])
+      setCompletedObj(saved.completedObj || [])
+      setObjResponses(saved.objResponses || {})
+      if (saved.essay) setEssay(saved.essay)
+      if (saved.essayMode) setEssayMode(saved.essayMode)
+      setPhase(PHASE.CHATTING)
+      setOfferResume(false)
+      preloadResources(saved.selectedLesson)
+    } catch { setOfferResume(false) }
   }
 
   function handleRestartFromPrompt() {
-    savedSessionRef.current = null
     try { sessionStorage.removeItem('webb_session') } catch {}
     setOfferResume(false)
   }
 
   // ── Session persistence: save on state change ─────────────────────────
   useEffect(() => {
+    if (offerResume) return // never wipe storage while the resume prompt is visible
     if (phase !== PHASE.CHATTING || !selectedLesson) {
       sessionStorage.removeItem('webb_session')
       return
@@ -369,7 +366,7 @@ export default function WebbPage() {
         selectedLesson, chatMessages, transcript, objectives, completedObj, objResponses, essay, essayMode,
       }))
     } catch { /* ignore quota errors */ }
-  }, [phase, selectedLesson, chatMessages, transcript, objectives, completedObj, objResponses, essay, essayMode])
+  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, completedObj, objResponses, essay, essayMode])
 
   useEffect(() => { isMutedRef.current = isMuted }, [isMuted])
 
