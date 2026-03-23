@@ -121,14 +121,15 @@ async function generateEssay(apiKey, objectives, responses, lesson) {
   if (!pairs.length) return null
 
   const system =
-    `You are a teacher helping a student write an essay in their own words. ` +
-    `The student answered questions about a lesson. Their answers are shown below. ` +
-    `Combine them into a short, coherent essay of 3-5 paragraphs. ` +
-    `Rules: (1) Keep the student's own words as much as possible — only make the minimum edits needed for flow and grammar. ` +
-    `(2) Add a simple introduction sentence and a simple conclusion sentence. ` +
-    `(3) Do NOT add new facts the student didn't say. ` +
-    `(4) Write it plainly — this is a student essay, not a textbook. ` +
-    `(5) Return ONLY the essay text, no title, no labels.`
+    `You are assembling a child's essay using ONLY the exact words the student said. ` +
+    `The student's answers are shown below. Your job is to stitch them together — nothing more. ` +
+    `STRICT RULES — violating any of these is an error: ` +
+    `(1) COPY the student's words verbatim. Do NOT change, upgrade, or paraphrase any word they used. If they said "stuff", keep "stuff". If they said "I think", keep "I think". ` +
+    `(2) You may ONLY add: one short intro sentence and one short closing sentence, plus minimal connective words (like "also", "and", "because") needed to join sentences together. ` +
+    `(3) Do NOT improve their vocabulary. Do NOT make their sentences sound more educated or sophisticated. ` +
+    `(4) Do NOT add any fact, idea, or word that did not come directly from the student's own answers. ` +
+    `(5) If the student used simple or awkward words, keep them exactly. Do not adjust the sophistication level up or down — preserve their natural voice as-is. ` +
+    `(6) Return ONLY the essay text, no title, no labels.`
 
   const user = `Lesson topic: "${title}"\n\n${pairs.join('\n\n')}`
   return callGPT(apiKey, system, user, 700)
