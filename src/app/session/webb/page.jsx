@@ -340,6 +340,7 @@ export default function WebbPage() {
     if (!saved) return
     setSelectedLesson(saved.selectedLesson)
     setChatMessages(saved.chatMessages || [])
+    setTranscript(saved.transcript || [])
     setObjectives(saved.objectives || [])
     setCompletedObj(saved.completedObj || [])
     setObjResponses(saved.objResponses || {})
@@ -365,10 +366,10 @@ export default function WebbPage() {
     }
     try {
       sessionStorage.setItem('webb_session', JSON.stringify({
-        selectedLesson, chatMessages, objectives, completedObj, objResponses, essay, essayMode,
+        selectedLesson, chatMessages, transcript, objectives, completedObj, objResponses, essay, essayMode,
       }))
     } catch { /* ignore quota errors */ }
-  }, [phase, selectedLesson, chatMessages, objectives, completedObj, objResponses, essay, essayMode])
+  }, [phase, selectedLesson, chatMessages, transcript, objectives, completedObj, objResponses, essay, essayMode])
 
   useEffect(() => { isMutedRef.current = isMuted }, [isMuted])
 
