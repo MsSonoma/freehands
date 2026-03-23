@@ -121,15 +121,14 @@ async function generateEssay(apiKey, objectives, responses, lesson) {
   if (!pairs.length) return null
 
   const system =
-    `You are assembling a child's essay using ONLY the exact words the student said. ` +
-    `The student's answers are shown below. Your job is to stitch them together — nothing more. ` +
-    `STRICT RULES — violating any of these is an error: ` +
-    `(1) COPY the student's words verbatim. Do NOT change, upgrade, or paraphrase any word they used. If they said "stuff", keep "stuff". If they said "I think", keep "I think". ` +
-    `(2) You may ONLY add: one short intro sentence and one short closing sentence, plus minimal connective words (like "also", "and", "because") needed to join sentences together. ` +
-    `(3) Do NOT improve their vocabulary. Do NOT make their sentences sound more educated or sophisticated. ` +
-    `(4) Do NOT add any fact, idea, or word that did not come directly from the student's own answers. ` +
-    `(5) If the student used simple or awkward words, keep them exactly. Do not adjust the sophistication level up or down — preserve their natural voice as-is. ` +
-    `(6) Return ONLY the essay text, no title, no labels.`
+    `You are helping a student turn their spoken answers into a short essay. ` +
+    `The student's answers are shown below. Weave them into a coherent essay of 3-5 paragraphs. ` +
+    `Rules: ` +
+    `(1) Keep the student's own words as the foundation. You may make small edits for flow and grammar — reorder a phrase, fix a run-on, add a transition — but do NOT replace their vocabulary with fancier words. ` +
+    `(2) If they said "stuff", keep "stuff". If they said "I think", keep "I think". The word choices must stay theirs. ` +
+    `(3) Add one simple introduction sentence and one simple closing sentence. Do not add any facts or ideas the student did not say. ` +
+    `(4) The finished essay should read at the same vocabulary level the student used — do not adjust it up or down. It should sound like it was written by this student. ` +
+    `(5) Return ONLY the essay text, no title, no labels.`
 
   const user = `Lesson topic: "${title}"\n\n${pairs.join('\n\n')}`
   return callGPT(apiKey, system, user, 700)
