@@ -10,7 +10,7 @@
  *     Most educational videos include chapter markers.
  *  3. { error: 'transcript_unavailable' } — only reached if both paths fail.
  *
- * POST { videoId, lessonTitle, grade, learnerName? }
+ * POST { videoId, lessonTitle, grade, learnerName?, objectives?, completedIndices? }
  * Returns { moments: [{ title, startSeconds, endSeconds, intro }] }
  *       | { error: 'transcript_unavailable' }
  */
@@ -66,7 +66,7 @@ function parseChapters(description, totalSec) {
 }
 
 // ── Path 2: chapter-based key moments ────────────────────────────────────────
-async function momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs, apiKey) {
+async function momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs, apiKey, objClause) {
   if (!ytKey) return null
   try {
     const r    = await fetch(`${YT_VIDEOS}?part=snippet,contentDetails&id=${videoId}&key=${ytKey}`)
@@ -89,12 +89,13 @@ async function momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs
     const raw = await callGPT(
       apiKey,
       `You help Mrs. Webb pick 3 chapter sections from a YouTube video that best illustrate a lesson. ` +
+      `${objClause || ''}` +
       `Reply ONLY in this exact format — 3 picks, no other text:\n\n` +
       `PICK 1:\nINDEX: <number>\nINTRO: <one warm sentence Mrs. Webb says to ${addressAs}>\n\n` +
       `PICK 2:\nINDEX: <number>\nINTRO: <one warm sentence Mrs. Webb says to ${addressAs}>\n\n` +
       `PICK 3:\nINDEX: <number>\nINTRO: <one warm sentence Mrs. Webb says to ${addressAs}>`,
       `Grade: ${grade}. Lesson: "${lessonTitle}".\n\nChapters:\n${chapterList}`,
-      320,
+      400,
     )
 
     const moments = []
@@ -122,10 +123,12 @@ async function momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs
 export async function POST(req) {
   try {
     const {
-      videoId     = '',
-      lessonTitle = '',
-      grade       = 'elementary',
-      learnerName = '',
+      videoId          = '',
+      lessonTitle      = '',
+      grade            = 'elementary',
+      learnerName      = '',
+      objectives       = [],
+      completedIndices = [],
     } = await req.json()
 
     const apiKey = process.env.OPENAI_API_KEY
@@ -134,6 +137,13 @@ export async function POST(req) {
     if (!videoId) return NextResponse.json({ error: 'No videoId'    }, { status: 400 })
 
     const addressAs = learnerName || 'you'
+
+    const uncompleted = objectives.filter((_, i) => !completedIndices.includes(i))
+    const objClause = uncompleted.length
+      ? `The lesson has these uncompleted learning objectives:\n${uncompleted.map((o, i) => `${i + 1}. ${o}`).join('\n')}\n` +
+        `Pick moments that directly address one or more of these objectives. ` +
+        `Only choose moments where the content visibly teaches or demonstrates an objective. `
+      : ''
 
     // ── Path 1: youtube-transcript (full caption text) ────────────────────
     let transcriptMoments = null
@@ -161,6 +171,7 @@ export async function POST(req) {
         const raw = await callGPT(
           apiKey,
           `You help Mrs. Webb guide a student through a YouTube video. ${nameClause} ` +
+          `${objClause}` +
           `Identify 3 key moments from the transcript that best illustrate the lesson topic. ` +
           `Choose moments spread across the video — not all from the beginning. ` +
           `Each moment should be 15–45 seconds long. ` +
@@ -197,7 +208,7 @@ export async function POST(req) {
     if (transcriptMoments) return NextResponse.json({ moments: transcriptMoments })
 
     // ── Path 2: YouTube chapter markers (official Data API, never blocked) ─
-    const chapterMoments = await momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs, apiKey)
+    const chapterMoments = await momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs, apiKey, objClause)
     if (chapterMoments) return NextResponse.json({ moments: chapterMoments })
 
     // ── Neither path worked ───────────────────────────────────────────────

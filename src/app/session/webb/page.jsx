@@ -644,10 +644,12 @@ export default function WebbPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          videoId:     vid,
-          lessonTitle: selectedLesson?.title || '',
-          grade:       selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
-          learnerName: learnerName.current || '',
+          videoId:          vid,
+          lessonTitle:      selectedLesson?.title || '',
+          grade:            selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
+          learnerName:      learnerName.current || '',
+          objectives,
+          completedIndices: completedObj,
         }),
       })
       const data = await res.json()
@@ -1283,10 +1285,12 @@ export default function WebbPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          html: articleResource.html,
-          lessonTitle: selectedLesson?.title || '',
-          grade: selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
-          learnerName: learnerName.current || '',
+          html:             articleResource.html,
+          lessonTitle:      selectedLesson?.title || '',
+          grade:            selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
+          learnerName:      learnerName.current || '',
+          objectives,
+          completedIndices: completedObj,
         }),
       })
       const data = await res.json()

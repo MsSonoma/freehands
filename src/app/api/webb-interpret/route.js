@@ -3,8 +3,8 @@
  * Finds the most educationally relevant passage in a Wikipedia article
  * for a given lesson, so Mrs. Webb can highlight and read it aloud.
  *
- * POST { html, lessonTitle, grade, learnerName? }
- * Returns { excerpt, intro }
+ * POST { html, lessonTitle, grade, learnerName?, objectives?, completedIndices? }
+ * Returns { passages: [{ excerpt }], intro }
  *   excerpt — 2–3 verbatim sentences from the article body text
  *   intro   — friendly 1-sentence lead-in for Mrs. Webb to speak first
  */
@@ -38,7 +38,7 @@ function stripHtml(html) {
 
 export async function POST(req) {
   try {
-    const { html = '', lessonTitle = '', grade = 'elementary', learnerName = '' } = await req.json()
+    const { html = '', lessonTitle = '', grade = 'elementary', learnerName = '', objectives = [], completedIndices = [] } = await req.json()
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
     if (!html)   return NextResponse.json({ error: 'No html'        }, { status: 400 })
@@ -47,6 +47,13 @@ export async function POST(req) {
     const plainText = stripHtml(html).slice(0, 6000)
     const nameClause = learnerName ? `The student's name is ${learnerName}.` : ''
     const addressAs  = learnerName ? learnerName : 'you'
+
+    const uncompleted = objectives.filter((_, i) => !completedIndices.includes(i))
+    const objClause = uncompleted.length
+      ? `The lesson has these uncompleted learning objectives:\n${uncompleted.map((o, i) => `${i + 1}. ${o}`).join('\n')}\n` +
+        `You MUST choose passages that directly address one or more of these objectives. ` +
+        `Each passage should visibly teach or demonstrate an objective — not just mention the topic in passing. `
+      : ''
 
     const res = await fetch(OPENAI_URL, {
       method: 'POST',
@@ -59,10 +66,12 @@ export async function POST(req) {
             content:
               `You help Mrs. Webb, an AI teacher, guide a student through an article. ` +
               `${nameClause} ` +
+              `${objClause}` +
               `Pick 2–3 passages from DIFFERENT sections of the article body — NOT the opening ` +
               `paragraph, NOT photo captions, NOT image descriptions, NOT table entries. ` +
               `Each passage must be 2 consecutive verbatim sentences from the article. ` +
-              `Choose passages that together tell a great educational story about the topic — ` +
+              `Choose passages that together directly address the learning objectives above ` +
+              `(or tell a great educational story about the topic if no objectives are listed) — ` +
               `concrete facts, surprising details, important causes or effects. ` +
               `List them in the order they appear in the article (top to bottom). ` +
               `Then write ONE warm intro sentence Mrs. Webb says before starting — ` +
