@@ -204,6 +204,7 @@ export default function WebbPage() {
   const shownVideoIdsRef    = useRef([])
   const lowTierMsgSentRef  = useRef(false) // true once the "limited results" message has been said for the current video
   const noVideoMsgSentRef  = useRef(false) // true once the "no relevant video" message has been said for the current lesson
+  const essayAbortRef      = useRef(null)  // AbortController for in-flight essay generation
   const articleIframeRef   = useRef(null)
   // Media overlay position + fullscreen
   const [mediaPos, setMediaPos]               = useState('video') // 'video'|'chat'
@@ -318,6 +319,38 @@ export default function WebbPage() {
     setLearnerId(id)
     loadLessons(id)
   }, [])
+
+  // ── Session persistence: restore on refresh ──────────────────────────
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('webb_session')
+      if (!raw) return
+      const saved = JSON.parse(raw)
+      if (!saved?.selectedLesson) return
+      setSelectedLesson(saved.selectedLesson)
+      setChatMessages(saved.chatMessages || [])
+      setObjectives(saved.objectives || [])
+      setCompletedObj(saved.completedObj || [])
+      setObjResponses(saved.objResponses || {})
+      if (saved.essay) setEssay(saved.essay)
+      if (saved.essayMode) setEssayMode(saved.essayMode)
+      setPhase(PHASE.CHATTING)
+      preloadResources(saved.selectedLesson)
+    } catch { /* ignore */ }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Session persistence: save on state change ─────────────────────────
+  useEffect(() => {
+    if (phase !== PHASE.CHATTING || !selectedLesson) {
+      sessionStorage.removeItem('webb_session')
+      return
+    }
+    try {
+      sessionStorage.setItem('webb_session', JSON.stringify({
+        selectedLesson, chatMessages, objectives, completedObj, objResponses, essay, essayMode,
+      }))
+    } catch { /* ignore quota errors */ }
+  }, [phase, selectedLesson, chatMessages, objectives, completedObj, objResponses, essay, essayMode])
 
   useEffect(() => { isMutedRef.current = isMuted }, [isMuted])
 
@@ -1094,9 +1127,19 @@ export default function WebbPage() {
     setRefreshingMedia(false)
   }
 
+  // ── Close objectives panel (aborts essay generation if in progress) ───
+  function closeObjectivesPanel() {
+    if (generatingEssay && essayAbortRef.current) {
+      essayAbortRef.current.abort()
+      essayAbortRef.current = null
+      setGeneratingEssay(false)
+    }
+    setShowObjectives(false)
+  }
+
   // ── Research mode: close overlay, Webb teaches a specific objective ──
   async function startResearch(objIdx) {
-    setShowObjectives(false)
+    closeObjectivesPanel()
     setMediaOverlay(null)
     const obj = objectives[objIdx]
     setChatLoading(true)
@@ -1130,6 +1173,8 @@ export default function WebbPage() {
   // ── Generate essay from all objective responses ───────────────────────
   async function handleGenerateEssay() {
     if (generatingEssay) return
+    const ctrl = new AbortController()
+    essayAbortRef.current = ctrl
     setGeneratingEssay(true)
     try {
       const res = await fetch('/api/webb-objectives', {
@@ -1141,13 +1186,17 @@ export default function WebbPage() {
           responses: objResponses,
           lesson:    selectedLesson,
         }),
+        signal: ctrl.signal,
       })
       const data = await res.json()
       if (data.essay) {
         setEssay(data.essay)
         setEssayMode(true)
       }
-    } catch { /* fail silently */ }
+    } catch (e) {
+      if (e?.name !== 'AbortError') { /* fail silently */ }
+    }
+    essayAbortRef.current = null
     setGeneratingEssay(false)
   }
 
@@ -1978,7 +2027,7 @@ export default function WebbPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: 20,
           }}
-          onClick={() => setShowObjectives(false)}
+          onClick={() => closeObjectivesPanel()}
         >
           <div
             style={{
@@ -2022,7 +2071,7 @@ export default function WebbPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowObjectives(false)}
+                  onClick={() => closeObjectivesPanel()}
                   style={{
                     background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8',
                     borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
