@@ -16,6 +16,7 @@ import { NextResponse } from 'next/server'
 const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 const YT_SEARCH    = 'https://www.googleapis.com/youtube/v3/search'
+const YT_VIDEOS    = 'https://www.googleapis.com/youtube/v3/videos'
 
 // ── Article sources catalogue ─────────────────────────────────────────────────
 
@@ -193,7 +194,20 @@ async function callGPT(apiKey, systemPrompt, userPrompt, maxTokens = 60) {
   const data = await res.json()
   return data.choices?.[0]?.message?.content?.trim() || ''
 }
+// Detect whether a YouTube description contains ≥2 chapter timestamp markers.
+function hasChapterMarkers(description) {
+  let count = 0
+  for (const line of (description || '').split('\n')) {
+    if (/^\d+:\d{2}(?::\d{2})?\s+\S{3,}/.test(line) && ++count >= 2) return true
+  }
+  return false
+}
+
 // ── Generate video resource ───────────────────────────────────────────────────
+// Returns a tiered result so page.jsx can tune Mrs. Webb's dialogue:
+//   relevanceTier: 'high' (score ≥ 7) | 'low' (score 3–6)
+//   hasChapters / hasCaptions: drive Key Part behaviour
+//   unavailable: true + reason → don't show the video at all
 async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeVideoIds = []) {
   // Step 1: GPT builds the best educational search query
   const query = await callGPT(
@@ -205,60 +219,98 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeV
   )
   const safeQuery = (query || `educational ${title}`).slice(0, 120)
 
-  if (ytKey) {
+  if (!ytKey) return { unavailable: true, reason: 'no_key', searchQuery: safeQuery }
+
+  try {
+    // ── 1. Broad search — no caption filter so the pool stays rich ───────
+    const ytUrl =
+      `${YT_SEARCH}?part=snippet` +
+      `&q=${encodeURIComponent(safeQuery)}` +
+      `&type=video&safeSearch=strict&videoEmbeddable=true&relevanceLanguage=en&maxResults=10` +
+      `&key=${ytKey}`
+    const ytRes  = await fetch(ytUrl)
+    const ytData = await ytRes.json()
+    if (ytData.error) {
+      console.error('[webb-resources] YouTube search error:', ytData.error.code, ytData.error.message)
+      return { unavailable: true, reason: 'api_error', searchQuery: safeQuery }
+    }
+    let items = (ytData.items || []).filter(i => i.id?.videoId)
+    const fresh = items.filter(i => !excludeVideoIds.includes(i.id.videoId))
+    if (fresh.length) items = fresh
+    if (!items.length) return { unavailable: true, reason: 'no_results', searchQuery: safeQuery }
+
+    // ── 2. GPT scores each candidate for direct lesson relevance (0–10) ──
+    // 8–10 = directly teaches the topic; 5–7 = related context;
+    // 2–4 = loosely related; 0–1 = unrelated → dropped below.
+    const candidateList = items.map((item, i) =>
+      `${i}: "${item.snippet.title}" | Channel: ${item.snippet.channelTitle} | ${(item.snippet.description || '').slice(0, 150)}`
+    ).join('\n')
+    let scoreMap = {}
     try {
-      const ytUrl =
-        `${YT_SEARCH}?part=snippet` +
-        `&q=${encodeURIComponent(safeQuery)}` +
-        `&type=video&safeSearch=strict&videoEmbeddable=true&relevanceLanguage=en&maxResults=5` +
-        `&key=${ytKey}`
-      const ytRes  = await fetch(ytUrl)
-      const ytData = await ytRes.json()
-      if (ytData.error) {
-        console.error('[webb-resources] YouTube API error:', ytData.error.code, ytData.error.message)
-      }
-      let items  = (ytData.items || []).filter(i => i.id?.videoId)
-      // Filter out previously-shown videos so refresh always gives something new
-      const fresh = items.filter(i => !excludeVideoIds.includes(i.id.videoId))
-      if (fresh.length) items = fresh
+      const raw = await callGPT(
+        apiKey,
+        'You score YouTube video candidates for educational relevance to a lesson topic. ' +
+        'Score each 0–10: 8–10 = directly teaches the exact topic, 5–7 = related context, ' +
+        '2–4 = loosely related, 0–1 = unrelated. ' +
+        'Reply ONLY with a JSON array — no other text: [{"idx":0,"score":8},{"idx":1,"score":3},...]',
+        `Lesson: "${title}". Subject: ${subject}. ${grade}.\n\nCandidates:\n${candidateList}`,
+        200,
+      )
+      const arr = JSON.parse(raw.match(/\[[\s\S]*?\]/)?.[0] || '[]')
+      if (Array.isArray(arr)) arr.forEach(e => { if (typeof e.idx === 'number') scoreMap[e.idx] = e.score ?? 5 })
+    } catch { /* default scores used below */ }
 
-      if (items.length) {
-        // Step 2: GPT picks the most educationally relevant result.
-        // All candidates are already filtered by YouTube's safeSearch=strict + videoEmbeddable=true
-        // so the safety bar here is just relevance, not content moderation.
-        const candidateList = items.map((item, i) =>
-          `${i}: "${item.snippet.title}" | Channel: ${item.snippet.channelTitle} | ${(item.snippet.description || '').slice(0, 200)}`
-        ).join('\n')
+    // Treat unscored candidates as mid-range (5); drop score < 3 (completely irrelevant)
+    const scored = items
+      .map((item, i) => ({ item, relevanceScore: scoreMap[i] ?? 5 }))
+      .filter(c => c.relevanceScore >= 3)
+    if (!scored.length) return { unavailable: true, reason: 'irrelevant', searchQuery: safeQuery }
 
-        let pickedIdx = 0 // default: first result
-        try {
-          const verdict = await callGPT(
-            apiKey,
-            'You pick the best educational YouTube video for a child. ' +
-            'All candidates passed YouTube safe search so focus on relevance and educational quality, not safety concerns. ' +
-            'Reply with ONLY a single digit: the index (0–4) of the best video. No other text.',
-            `Lesson: "${title}". ${grade}.\n\nCandidates:\n${candidateList}`,
-            5,
-          )
-          const parsed = parseInt(verdict, 10)
-          if (parsed >= 0 && parsed < items.length) pickedIdx = parsed
-        } catch { /* keep pickedIdx = 0 */ }
-
-        const picked = items[pickedIdx]
-        if (picked?.id?.videoId) {
-          return {
-            videoId:     picked.id.videoId,
-            embedUrl:    `https://www.youtube-nocookie.com/embed/${picked.id.videoId}?autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&controls=0&playsinline=1`,
-            title:       picked.snippet.title,
-            channel:     picked.snippet.channelTitle,
-            searchQuery: safeQuery,
-          }
+    // ── 3. Batch-fetch chapters + caption metadata for the top candidates ─
+    const topN      = scored.slice(0, 6)
+    const vidIds    = topN.map(c => c.item.id.videoId).join(',')
+    const detailMap = {}
+    try {
+      const dr = await fetch(`${YT_VIDEOS}?part=snippet,contentDetails&id=${vidIds}&key=${ytKey}`)
+      const dj = await dr.json()
+      for (const v of (dj.items || [])) {
+        detailMap[v.id] = {
+          hasCaptions: v.contentDetails?.caption === 'true',
+          hasChapters: hasChapterMarkers(v.snippet?.description || ''),
         }
       }
-    } catch { /* fall through */ }
-  }
+    } catch { /* omit detail bonuses if this fails */ }
 
-  return { unavailable: true, searchQuery: safeQuery }
+    // ── 4. Composite rank: relevance × 10 + captions bonus + chapters bonus
+    // Captions are weighted higher than chapters (both add value; neither blocks).
+    const ranked = topN.map(c => {
+      const vid = c.item.id.videoId
+      const det = detailMap[vid] || {}
+      return {
+        vid,
+        item:           c.item,
+        relevanceScore: c.relevanceScore,
+        hasCaptions:    det.hasCaptions || false,
+        hasChapters:    det.hasChapters || false,
+        composite:      c.relevanceScore * 10 + (det.hasCaptions ? 20 : 0) + (det.hasChapters ? 15 : 0),
+      }
+    }).sort((a, b) => b.composite - a.composite)
+
+    const best = ranked[0]
+    return {
+      videoId:       best.vid,
+      embedUrl:      `https://www.youtube-nocookie.com/embed/${best.vid}?autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&controls=0&playsinline=1`,
+      title:         best.item.snippet.title,
+      channel:       best.item.snippet.channelTitle,
+      searchQuery:   safeQuery,
+      relevanceTier: best.relevanceScore >= 7 ? 'high' : 'low',
+      hasChapters:   best.hasChapters,
+      hasCaptions:   best.hasCaptions,
+    }
+  } catch (e) {
+    console.error('[webb-resources generateVideo]', e)
+    return { unavailable: true, reason: 'error', searchQuery: safeQuery }
+  }
 }
 
 // ── Generate article resource ─────────────────────────────────────────────────

@@ -201,8 +201,10 @@ export default function WebbPage() {
   // Passage excerpts are stored so highlights can be re-applied if the iframe remounts
   const [articlePassageExcerpts, setArticlePassageExcerpts] = useState([])
   // Tracks video IDs already shown so refresh never repeats
-  const shownVideoIdsRef = useRef([])
-  const articleIframeRef = useRef(null)
+  const shownVideoIdsRef    = useRef([])
+  const lowTierMsgSentRef  = useRef(false) // true once the "limited results" message has been said for the current video
+  const noVideoMsgSentRef  = useRef(false) // true once the "no relevant video" message has been said for the current lesson
+  const articleIframeRef   = useRef(null)
   // Media overlay position + fullscreen
   const [mediaPos, setMediaPos]               = useState('video') // 'video'|'chat'
   const [mediaIsFullscreen, setMediaIsFullscreen] = useState(false)
@@ -549,9 +551,42 @@ export default function WebbPage() {
     })
   }
 
+  // Open/close the video overlay with tier-aware Mrs. Webb messages.
+  function handleVideoButtonClick() {
+    if (mediaOverlay === 'video') { setMediaOverlay(null); return }
+    // Still loading or resource not yet resolved — open overlay to show spinner
+    if (videoLoading || !videoResource) { setMediaOverlay('video'); return }
+    // No relevant video was found — say something once, then don't open
+    if (videoResource.unavailable) {
+      if (!noVideoMsgSentRef.current) {
+        noVideoMsgSentRef.current = true
+        addMsg("I searched for a video to go with this lesson but the results just weren't helpful — nothing came up that would actually teach the material. Let's keep talking — there's plenty we can dig into together!")
+      }
+      return
+    }
+    // Low-relevance video — say something once, then open
+    if (videoResource.relevanceTier === 'low' && !lowTierMsgSentRef.current) {
+      lowTierMsgSentRef.current = true
+      addMsg("I searched hard but couldn't find a perfect video for this lesson. I found one that covers some related ideas — it might still be worth watching!")
+    }
+    setMediaOverlay('video')
+  }
+
   async function interpretVideo() {
     const vid = videoResource?.videoId
     if (!vid || interpretingVideo) return
+
+    // Fast path: we already know this video has neither captions nor chapters.
+    // Skip the API round-trip and tell the student up front.
+    if (videoResource.hasCaptions === false && videoResource.hasChapters === false) {
+      const isHigh = videoResource.relevanceTier !== 'low'
+      addMsg(isHigh
+        ? "This video is a great match, but it doesn't have chapters so I can't jump to specific moments. Go ahead and watch it — ask me about anything that pops up!"
+        : "I found this video because it covers some related ideas, but without chapters I can't take you to specific parts. Give it a watch and bring any questions my way!"
+      )
+      return
+    }
+
     setInterpretingVideo(true)
     setMediaOverlay('video')
     setVideoMoments([])
@@ -568,9 +603,11 @@ export default function WebbPage() {
       })
       const data = await res.json()
       if (data.error === 'transcript_unavailable') {
-        // This video has no chapter markers and transcripts are unavailable.
-        // Keep the current video — don't refresh — just let the student watch and ask questions.
-        addMsg("This video doesn't have chapter markers, so I can't jump to specific parts. Go ahead and watch it — ask me anything that comes up!")
+        const isHigh = videoResource?.relevanceTier !== 'low'
+        addMsg(isHigh
+          ? "This video looks like a great match, but it doesn't have chapters so I can't take you to specific moments. Go ahead and watch — ask me anything that comes up!"
+          : "I found this video because it relates to some of our ideas, but it doesn't have chapters so I can't jump to key parts. Feel free to watch what's here — bring any questions my way!"
+        )
         setInterpretingVideo(false)
         return
       }
@@ -686,7 +723,9 @@ export default function WebbPage() {
     setArticleResource(null)
     setVideoLoading(true)
     setArticleLoading(true)
-    shownVideoIdsRef.current = []
+    shownVideoIdsRef.current   = []
+    lowTierMsgSentRef.current  = false
+    noVideoMsgSentRef.current  = false
 
     const post = (type) => fetch('/api/webb-resources', {
       method: 'POST',
@@ -1006,6 +1045,8 @@ export default function WebbPage() {
   // ── Refresh a media resource (context-aware) ──────────────────────────
   async function refreshMedia(type) {
     setRefreshingMedia(true)
+    // Reset tier-message flags so a newly fetched video can say its own message
+    if (type === 'video') { lowTierMsgSentRef.current = false; noVideoMsgSentRef.current = false }
     // Save current article so we can restore it if the refresh fails/returns nothing
     const savedArticle = articleResource
     // Clear immediately so the "Finding an article…" spinner appears while loading
@@ -1535,7 +1576,7 @@ export default function WebbPage() {
                 <div style={{ display: 'flex', gap: 10 }}>
                 <button
                   type="button"
-                  onClick={() => { setMediaOverlay(v => v === 'video' ? null : 'video') }}
+                  onClick={handleVideoButtonClick}
                   aria-label="Watch a video"
                   title={videoLoading ? 'Loading video…' : videoResource ? 'Watch a video' : 'Loading video…'}
                   style={{ ...overlayBtnStyle, background: mediaOverlay === 'video' ? C.accent : '#1f2937', opacity: videoLoading ? 0.55 : 1 }}
