@@ -210,10 +210,13 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeV
       const ytUrl =
         `${YT_SEARCH}?part=snippet` +
         `&q=${encodeURIComponent(safeQuery)}` +
-        `&type=video&safeSearch=strict&videoEmbeddable=true&videoCaption=closedCaption&relevanceLanguage=en&maxResults=5` +
+        `&type=video&safeSearch=strict&videoEmbeddable=true&relevanceLanguage=en&maxResults=5` +
         `&key=${ytKey}`
       const ytRes  = await fetch(ytUrl)
       const ytData = await ytRes.json()
+      if (ytData.error) {
+        console.error('[webb-resources] YouTube API error:', ytData.error.code, ytData.error.message)
+      }
       let items  = (ytData.items || []).filter(i => i.id?.videoId)
       // Filter out previously-shown videos so refresh always gives something new
       const fresh = items.filter(i => !excludeVideoIds.includes(i.id.videoId))

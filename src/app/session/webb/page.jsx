@@ -568,12 +568,10 @@ export default function WebbPage() {
       })
       const data = await res.json()
       if (data.error === 'transcript_unavailable') {
-        // Clear current video so Key Part button disappears while the new one loads.
-        // This prevents rapid re-pressing on the same captionless video.
-        addMsg("Let me find a better video for this lesson!")
-        setVideoResource(null)
+        // This video has no chapter markers and transcripts are unavailable.
+        // Keep the current video — don't refresh — just let the student watch and ask questions.
+        addMsg("This video doesn't have chapter markers, so I can't jump to specific parts. Go ahead and watch it — ask me anything that comes up!")
         setInterpretingVideo(false)
-        refreshMedia('video')
         return
       }
       const moments = data.moments || []
