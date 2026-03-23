@@ -170,7 +170,9 @@ export default function WebbPage() {
   const [newlyCompletedObj,  setNewlyCompletedObj] = useState(null) // {idx, text} — drives tablet toast
   const [expandedObj,        setExpandedObj]       = useState(null) // number|null — accordion open index
   const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
-  const [showSourceSettings, setShowSourceSettings] = useState(false) // article source settings
+  const [showSourceSettings, setShowSourceSettings] = useState(false) // settings overlay
+  const [settingsTab,        setSettingsTab]        = useState('settings') // 'settings' | 'article'
+  const [offerResume,        setOfferResume]        = useState(false) // resume/restart prompt on refresh
   const [essayMode,          setEssayMode]         = useState(false) // essay copy-down screen
   const [essay,              setEssay]             = useState(null)  // generated essay string
   const [generatingEssay,    setGeneratingEssay]   = useState(false)
@@ -205,6 +207,7 @@ export default function WebbPage() {
   const lowTierMsgSentRef  = useRef(false) // true once the "limited results" message has been said for the current video
   const noVideoMsgSentRef  = useRef(false) // true once the "no relevant video" message has been said for the current lesson
   const essayAbortRef      = useRef(null)  // AbortController for in-flight essay generation
+  const savedSessionRef    = useRef(null)  // holds parsed saved session while showing resume/restart prompt
   const articleIframeRef   = useRef(null)
   // Media overlay position + fullscreen
   const [mediaPos, setMediaPos]               = useState('video') // 'video'|'chat'
@@ -327,17 +330,32 @@ export default function WebbPage() {
       if (!raw) return
       const saved = JSON.parse(raw)
       if (!saved?.selectedLesson) return
-      setSelectedLesson(saved.selectedLesson)
-      setChatMessages(saved.chatMessages || [])
-      setObjectives(saved.objectives || [])
-      setCompletedObj(saved.completedObj || [])
-      setObjResponses(saved.objResponses || {})
-      if (saved.essay) setEssay(saved.essay)
-      if (saved.essayMode) setEssayMode(saved.essayMode)
-      setPhase(PHASE.CHATTING)
-      preloadResources(saved.selectedLesson)
+      savedSessionRef.current = saved
+      setOfferResume(true)
     } catch { /* ignore */ }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleResume() {
+    const saved = savedSessionRef.current
+    if (!saved) return
+    setSelectedLesson(saved.selectedLesson)
+    setChatMessages(saved.chatMessages || [])
+    setObjectives(saved.objectives || [])
+    setCompletedObj(saved.completedObj || [])
+    setObjResponses(saved.objResponses || {})
+    if (saved.essay) setEssay(saved.essay)
+    if (saved.essayMode) setEssayMode(saved.essayMode)
+    setPhase(PHASE.CHATTING)
+    setOfferResume(false)
+    savedSessionRef.current = null
+    preloadResources(saved.selectedLesson)
+  }
+
+  function handleRestartFromPrompt() {
+    savedSessionRef.current = null
+    try { sessionStorage.removeItem('webb_session') } catch {}
+    setOfferResume(false)
+  }
 
   // ── Session persistence: save on state change ─────────────────────────
   useEffect(() => {
@@ -1938,7 +1956,7 @@ export default function WebbPage() {
         document.body
       )}
 
-      {/* ── Article source settings overlay ──────────────────────────── */}
+      {/* ── Settings overlay (tabbed: Settings | Article) ───────────── */}
       {showSourceSettings && createPortal(
         <div
           style={{
@@ -1956,62 +1974,150 @@ export default function WebbPage() {
               width: 'min(92vw, 380px)',
               boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 2px #0d9488',
               overflow: 'hidden',
+              display: 'flex', flexDirection: 'column',
+              maxHeight: '80dvh',
             }}
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 12px', borderBottom: '1px solid #1e293b' }}>
-              <div>
-                <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Article Sources</div>
-                <div style={{ color: '#94a3b8', fontSize: 12 }}>Choose which sources to use when refreshing</div>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 10px', borderBottom: '1px solid #1e293b', flexShrink: 0 }}>
+              <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>Settings</div>
               <button type="button" onClick={() => setShowSourceSettings(false)}
                 style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: 18, fontFamily: 'inherit' }}
                 aria-label="Close">&#215;</button>
             </div>
-            {/* Source list */}
-            {[
-              { id: 'simple-wikipedia', label: 'Simple Wikipedia', note: 'Simple English — always works' },
-              { id: 'wikipedia',        label: 'Wikipedia',        note: 'Full English encyclopedia' },
-              { id: 'kiddle',          label: 'Kiddle',           note: 'Kid-safe encyclopedia' },
-              { id: 'ducksters',       label: 'Ducksters',        note: 'Kid-focused history & science' },
-              { id: 'wikijunior',      label: 'Wikijunior',       note: 'Wikibooks for young readers' },
-            ].map(src => {
-              const checked = articleSources.includes(src.id)
-              const toggle = () => {
-                setArticleSources(prev => {
-                  const next = checked
-                    ? prev.filter(id => id !== src.id)
-                    : [...prev, src.id]
-                  const safe = next.length ? next : [src.id]
-                  try { localStorage.setItem('webb_article_sources', JSON.stringify(safe)) } catch {}
-                  return safe
-                })
-              }
-              return (
-                <div key={src.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '13px 20px',
-                  borderBottom: '1px solid #1e293b',
-                  cursor: 'pointer',
-                }} onClick={toggle}>
-                  <div style={{
-                    width: 20, height: 20, borderRadius: 5, flexShrink: 0,
-                    background: checked ? '#0d9488' : 'transparent',
-                    border: `2px solid ${checked ? '#0d9488' : '#475569'}`,
-                    display: 'grid', placeItems: 'center', transition: 'all 0.15s',
-                  }}>
-                    {checked && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                  </div>
-                  <div>
-                    <div style={{ color: checked ? '#e2e8f0' : '#64748b', fontSize: 14, fontWeight: 600, transition: 'color 0.15s' }}>{src.label}</div>
-                    <div style={{ color: '#475569', fontSize: 11, marginTop: 1 }}>{src.note}</div>
+            {/* Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid #1e293b', flexShrink: 0 }}>
+              {['settings', 'article'].map(tab => (
+                <button key={tab} type="button"
+                  onClick={() => setSettingsTab(tab)}
+                  style={{
+                    flex: 1, background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '10px 0',
+                    fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+                    color: settingsTab === tab ? '#0d9488' : '#475569',
+                    borderBottom: `2px solid ${settingsTab === tab ? '#0d9488' : 'transparent'}`,
+                    textTransform: 'capitalize',
+                    transition: 'color 0.15s',
+                  }}
+                >{tab === 'settings' ? 'Settings' : 'Article'}</button>
+              ))}
+            </div>
+            {/* Tab body */}
+            <div style={{ overflowY: 'auto' }}>
+              {settingsTab === 'settings' && (
+                <div>
+                  {/* Restart Lesson */}
+                  <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e293b' }}>
+                    <div style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Restart Lesson</div>
+                    <div style={{ color: '#64748b', fontSize: 12, lineHeight: 1.5, marginBottom: 12 }}>Go back to the lesson list and start fresh. Your current conversation will be cleared.</div>
+                    <button type="button"
+                      onClick={() => {
+                        setShowSourceSettings(false)
+                        try { sessionStorage.removeItem('webb_session') } catch {}
+                        handleBack()
+                      }}
+                      style={{
+                        background: '#be123c', color: '#fff', border: 'none',
+                        borderRadius: 8, padding: '8px 18px', cursor: 'pointer',
+                        fontWeight: 700, fontSize: 13, fontFamily: 'inherit',
+                      }}
+                    >↺ Restart Lesson</button>
                   </div>
                 </div>
-              )
-            })}
-            <div style={{ padding: '12px 20px', color: '#475569', fontSize: 11, lineHeight: 1.5 }}>
-              Selected sources are tried in random order when you tap ↻ refresh on the article.
+              )}
+              {settingsTab === 'article' && (
+                <div>
+                  {/* Source list */}
+                  {[
+                    { id: 'simple-wikipedia', label: 'Simple Wikipedia', note: 'Simple English — always works' },
+                    { id: 'wikipedia',        label: 'Wikipedia',        note: 'Full English encyclopedia' },
+                    { id: 'kiddle',          label: 'Kiddle',           note: 'Kid-safe encyclopedia' },
+                    { id: 'ducksters',       label: 'Ducksters',        note: 'Kid-focused history & science' },
+                    { id: 'wikijunior',      label: 'Wikijunior',       note: 'Wikibooks for young readers' },
+                  ].map(src => {
+                    const checked = articleSources.includes(src.id)
+                    const toggle = () => {
+                      setArticleSources(prev => {
+                        const next = checked
+                          ? prev.filter(id => id !== src.id)
+                          : [...prev, src.id]
+                        const safe = next.length ? next : [src.id]
+                        try { localStorage.setItem('webb_article_sources', JSON.stringify(safe)) } catch {}
+                        return safe
+                      })
+                    }
+                    return (
+                      <div key={src.id} style={{
+                        display: 'flex', alignItems: 'center', gap: 14,
+                        padding: '13px 20px',
+                        borderBottom: '1px solid #1e293b',
+                        cursor: 'pointer',
+                      }} onClick={toggle}>
+                        <div style={{
+                          width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                          background: checked ? '#0d9488' : 'transparent',
+                          border: `2px solid ${checked ? '#0d9488' : '#475569'}`,
+                          display: 'grid', placeItems: 'center', transition: 'all 0.15s',
+                        }}>
+                          {checked && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                        </div>
+                        <div>
+                          <div style={{ color: checked ? '#e2e8f0' : '#64748b', fontSize: 14, fontWeight: 600, transition: 'color 0.15s' }}>{src.label}</div>
+                          <div style={{ color: '#475569', fontSize: 11, marginTop: 1 }}>{src.note}</div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  <div style={{ padding: '12px 20px', color: '#475569', fontSize: 11, lineHeight: 1.5 }}>
+                    Selected sources are tried in random order when you tap ↻ refresh on the article.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Resume / Restart overlay ─────────────────────────────────── */}
+      {offerResume && createPortal(
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1200,
+          background: 'rgba(0,0,0,0.75)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 20,
+        }}>
+          <div style={{
+            background: '#0f172a',
+            borderRadius: 18,
+            width: 'min(92vw, 360px)',
+            boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 2px #0d9488',
+            padding: '28px 24px',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>👋</div>
+            <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Welcome back!</div>
+            <div style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+              You were in the middle of a lesson with Mrs. Webb.<br/>
+              Would you like to pick up where you left off?
+            </div>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button type="button" onClick={handleResume}
+                style={{
+                  flex: 1, background: '#0d9488', color: '#fff', border: 'none',
+                  borderRadius: 10, padding: '11px 0', cursor: 'pointer',
+                  fontWeight: 800, fontSize: 15, fontFamily: 'inherit',
+                }}
+              >▶ Resume</button>
+              <button type="button" onClick={handleRestartFromPrompt}
+                style={{
+                  flex: 1, background: 'rgba(255,255,255,0.07)', color: '#94a3b8',
+                  border: '1px solid #334155',
+                  borderRadius: 10, padding: '11px 0', cursor: 'pointer',
+                  fontWeight: 700, fontSize: 15, fontFamily: 'inherit',
+                }}
+              >↺ Restart</button>
             </div>
           </div>
         </div>,
@@ -2052,17 +2158,17 @@ export default function WebbPage() {
                 <div style={{ color: '#94a3b8', fontSize: 12 }}>{completedObj.length} of {objectives.length} completed</div>
               </div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                {/* Gear button — article source settings */}
+                {/* Gear button — settings */}
                 <button
                   type="button"
-                  onClick={e => { e.stopPropagation(); setShowSourceSettings(true) }}
-                  title="Article source settings"
+                  onClick={e => { e.stopPropagation(); setSettingsTab('settings'); setShowSourceSettings(true) }}
+                  title="Settings"
                   style={{
                     background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8',
                     borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
                     display: 'grid', placeItems: 'center',
                   }}
-                  aria-label="Article source settings"
+                  aria-label="Settings"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="3"/>
