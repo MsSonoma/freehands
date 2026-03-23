@@ -1803,9 +1803,9 @@ export default function WebbPage() {
                     ref={videoIframeRef}
                     src={videoResource.embedUrl}
                     title={videoResource.title || 'Educational video'}
-                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     allowFullScreen
-                    sandbox="allow-scripts allow-same-origin allow-presentation"
+                    sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox allow-forms"
                     style={{ width: '100%', height: '100%', border: 'none' }}
                   />
                   {videoEnded && (
