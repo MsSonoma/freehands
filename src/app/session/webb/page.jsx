@@ -228,7 +228,8 @@ export default function WebbPage() {
   const [videoDuration, setVideoDuration]     = useState(0)
   const [videoCurrentTime, setVideoCurrentTime] = useState(0)
   const [videoVolumeMuted, setVideoVolumeMuted] = useState(false)
-  const videoIframeRef = useRef(null)
+  const videoIframeRef     = useRef(null)
+  const videoPlayingRef    = useRef(false) // mirrors videoPlaying; used for optimistic toggle on mobile
   // Passage citation — highlight els + scroll-override tracking
   const passageEls             = useRef([])     // highlight <span>s created by interpretArticle
   const userScrolledArticleRef = useRef(false)  // true after a manual scroll in the article
@@ -246,6 +247,7 @@ export default function WebbPage() {
     setVideoVolumeMuted(false)
     setVideoMoments([])
     segmentEndRef.current = null
+    videoPlayingRef.current = false
   }, [videoResource?.videoId])
 
   // YouTube IFrame API posts postMessage events when enablejsapi=1.
@@ -258,6 +260,7 @@ export default function WebbPage() {
         if (msg.event === 'onStateChange') {
           const s = msg.info
           if (s === 0) setVideoEnded(true)
+          videoPlayingRef.current = s === 1
           setVideoPlaying(s === 1)
         }
         if ((msg.event === 'infoDelivery' || msg.event === 'initialDelivery') && msg.info) {
@@ -266,6 +269,7 @@ export default function WebbPage() {
           if (typeof msg.info.muted       === 'boolean') setVideoVolumeMuted(msg.info.muted)
           if (typeof msg.info.playerState === 'number') {
             if (msg.info.playerState === 0) setVideoEnded(true)
+            videoPlayingRef.current = msg.info.playerState === 1
             setVideoPlaying(msg.info.playerState === 1)
           }
         }
@@ -1485,9 +1489,14 @@ export default function WebbPage() {
     }
   }, [mediaOverlay])
 
-  // 2. Sync mediaIsFullscreen with the browser fullscreen API (standard + webkit for iOS Safari)
+  // 2. Sync mediaIsFullscreen when native fullscreen exits (e.g. Escape key on desktop).
+  //    We do NOT set true from here — toggleMediaFullscreen does that directly via setMediaIsFullscreen.
   useEffect(() => {
-    const onFSChange = () => setMediaIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement))
+    const onFSChange = () => {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        setMediaIsFullscreen(false)
+      }
+    }
     document.addEventListener('fullscreenchange', onFSChange)
     document.addEventListener('webkitfullscreenchange', onFSChange)
     return () => {
@@ -1525,42 +1534,37 @@ export default function WebbPage() {
 
   // ── Media overlay helpers ─────────────────────────────────────────────
   function toggleMediaFullscreen() {
-    if (!mediaIsFullscreen) {
-      // iOS Safari doesn't support requestFullscreen on a div — fall back to
-      // webkitRequestFullscreen on the iframe element itself.
-      const el = mediaOverlayRef.current
-      const iframe = videoIframeRef.current
-      if (el?.requestFullscreen) {
-        el.requestFullscreen().catch(() => {})
-      } else if (iframe?.webkitRequestFullscreen) {
-        iframe.webkitRequestFullscreen()
-      } else if (iframe?.webkitEnterFullscreen) {
-        iframe.webkitEnterFullscreen()
-      }
+    const goingFullscreen = !mediaIsFullscreen
+    // Primary: directly toggle CSS fullscreen — works on all devices including iOS Safari.
+    // requestFullscreen is attempted as a bonus on desktop Chrome/Firefox but is not relied upon.
+    setMediaIsFullscreen(goingFullscreen)
+    if (goingFullscreen) {
+      mediaOverlayRef.current?.requestFullscreen?.()?.catch?.(() => {})
     } else {
-      if (document.exitFullscreen) document.exitFullscreen().catch(() => {})
-      else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
+      if (document.fullscreenElement) document.exitFullscreen?.()?.catch?.(() => {})
+      else if (document.webkitFullscreenElement) document.webkitExitFullscreen?.()
     }
   }
   const mediaMoveToChat = mediaPos === 'video'
   const arrowGlyph = isMobileLandscape
     ? (mediaMoveToChat ? '\u2192' : '\u2190')  // → or ←
     : (mediaMoveToChat ? '\u2193' : '\u2191')  // ↓ or ↑
-  const overlayPanelStyle = overlayRect
-    ? {
-        position: 'fixed',
-        top:    mediaIsFullscreen ? overlayRect.top    : overlayRect.top    + overlayRect.height * 0.04,
-        left:   mediaIsFullscreen ? overlayRect.left   : overlayRect.left   + overlayRect.width  * 0.03,
-        width:  mediaIsFullscreen ? overlayRect.width  : overlayRect.width  * 0.94,
-        height: mediaIsFullscreen ? overlayRect.height : overlayRect.height * 0.80,
-        background: '#000',
-        borderRadius: mediaIsFullscreen ? 0 : 10,
-        display: 'flex', flexDirection: 'column',
-        overflow: 'hidden', zIndex: 20,
-        boxShadow: mediaIsFullscreen ? 'none' : '0 0 0 2px rgba(13,148,136,0.6)',
-      }
-    : mediaIsFullscreen
-      ? { position: 'fixed', inset: 0, background: '#000', display: 'flex', flexDirection: 'column', overflow: 'hidden', zIndex: 20 }
+  const overlayPanelStyle = mediaIsFullscreen
+    // CSS fullscreen: cover the entire viewport — works on all devices including iOS Safari.
+    ? { position: 'fixed', inset: 0, background: '#000', display: 'flex', flexDirection: 'column', overflow: 'hidden', zIndex: 20 }
+    : overlayRect
+      ? {
+          position: 'fixed',
+          top:    overlayRect.top    + overlayRect.height * 0.04,
+          left:   overlayRect.left   + overlayRect.width  * 0.03,
+          width:  overlayRect.width  * 0.94,
+          height: overlayRect.height * 0.80,
+          background: '#000',
+          borderRadius: 10,
+          display: 'flex', flexDirection: 'column',
+          overflow: 'hidden', zIndex: 20,
+          boxShadow: '0 0 0 2px rgba(13,148,136,0.6)',
+        }
       : null
 
   const isChatting = phase === PHASE.CHATTING
@@ -1895,10 +1899,16 @@ export default function WebbPage() {
                     style={{ width: '100%', height: '100%', border: 'none' }}
                   />
                   {/* Intercept overlay — always blocks YouTube's native UI (links, recommendations).
-                      Tapping anywhere on the video toggles play/pause. */}
+                      Tapping anywhere on the video toggles play/pause. Uses a ref so the toggle
+                      works even when iOS doesn't deliver IFrame API state-change messages. */}
                   {!videoEnded && (
                     <div
-                      onClick={() => videoPlaying ? ytCmd('pauseVideo') : ytCmd('playVideo')}
+                      onClick={() => {
+                        const wasPlaying = videoPlayingRef.current
+                        videoPlayingRef.current = !wasPlaying
+                        setVideoPlaying(!wasPlaying)
+                        ytCmd(wasPlaying ? 'pauseVideo' : 'playVideo')
+                      }}
                       style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'transparent', cursor: 'pointer' }}
                       aria-label={videoPlaying ? 'Pause' : 'Play'}
                     />
@@ -1928,7 +1938,12 @@ export default function WebbPage() {
                 {/* Custom controls — replaces YouTube's native bar so children only see our UI */}
                 {!videoEnded && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px', background: '#111', flexShrink: 0, userSelect: 'none' }}>
-                    <button type="button" onClick={() => videoPlaying ? ytCmd('pauseVideo') : ytCmd('playVideo')}
+                    <button type="button" onClick={() => {
+                        const wasPlaying = videoPlayingRef.current
+                        videoPlayingRef.current = !wasPlaying
+                        setVideoPlaying(!wasPlaying)
+                        ytCmd(wasPlaying ? 'pauseVideo' : 'playVideo')
+                      }}
                       style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', padding: '2px 4px', lineHeight: 1 }}
                       title={videoPlaying ? 'Pause' : 'Play'}>{videoPlaying ? '\u23F8' : '\u25B6'}</button>
                     <span style={{ color: '#9ca3af', fontSize: 11, minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatVideoTime(videoCurrentTime)}</span>
