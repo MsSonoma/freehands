@@ -299,7 +299,7 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeV
     const best = ranked[0]
     return {
       videoId:       best.vid,
-      embedUrl:      `https://www.youtube.com/embed/${best.vid}?autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&controls=0&playsinline=1`,
+      embedUrl:      `https://www.youtube.com/embed/${best.vid}?autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&controls=1&playsinline=1`,
       title:         best.item.snippet.title,
       channel:       best.item.snippet.channelTitle,
       searchQuery:   safeQuery,

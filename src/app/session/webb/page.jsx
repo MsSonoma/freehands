@@ -1874,9 +1874,18 @@ export default function WebbPage() {
                     title={videoResource.title || 'Educational video'}
                     allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     allowFullScreen
-                    sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+                    sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-forms"
                     style={{ width: '100%', height: '100%', border: 'none' }}
                   />
+                  {/* Transparent intercept overlay — blocks YouTube's native UI (recommendations,
+                      channel links, search) so children can't navigate away. Tap to play/pause. */}
+                  {!videoEnded && (
+                    <div
+                      onClick={() => videoPlaying ? ytCmd('pauseVideo') : ytCmd('playVideo')}
+                      style={{ position: 'absolute', inset: 0, cursor: 'pointer', background: 'transparent', zIndex: 1 }}
+                      aria-label={videoPlaying ? 'Pause' : 'Play'}
+                    />
+                  )}
                   {videoEnded && (
                     <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 24, boxSizing: 'border-box' }}>
                       <div style={{ fontSize: 38 }}>&#127881;</div>
@@ -1898,6 +1907,8 @@ export default function WebbPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Custom controls — replaces YouTube's native bar so children only see our UI */}
                 {!videoEnded && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px', background: '#111', flexShrink: 0, userSelect: 'none' }}>
                     <button type="button" onClick={() => videoPlaying ? ytCmd('pauseVideo') : ytCmd('playVideo')}
