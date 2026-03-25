@@ -131,6 +131,20 @@ function detectSeekIntent(text) {
     || /\bwhere (it|they|he|she|the video)\s+(talks?|explains?|shows?|says?|mentions?|covers?|discusses?)/i.test(text)
 }
 
+function detectVideoTrouble(text) {
+  const t = text.toLowerCase()
+  // Explicit black / blank / dark screen
+  if (/black\s*screen|blank\s*screen|screen\s*(is\s*)?(black|blank|dark|empty|nothing)|all\s*black/.test(t)) return true
+  // Video not loading / not working / not playing
+  if (/video.{0,35}(not|won'?t|can'?t|doesn'?t|isn'?t|never).{0,20}(work|load|play|show|appear|open|start|run)/i.test(t)) return true
+  if (/(not|won'?t|can'?t).{0,20}(see|view|watch|play|load).{0,25}video/i.test(t)) return true
+  if (/video.{0,25}(broken|stuck|freeze|froze|missing|gone|disappeared|nothing|empty|not (there|showing))/i.test(t)) return true
+  if (/video\s*(is\s*)?(just\s*)?(black|blank|dark|empty|gone|broken|not showing)/i.test(t)) return true
+  return false
+}
+
+const VIDEO_TROUBLE_MSG = "Oh, I think I might know what's happening! 📺 A black or empty space where the video should be usually means YouTube is blocked on your device. This can happen when Screen Time or parental controls are turned on \u2014 those settings block YouTube everywhere, including here. To fix it, a parent or guardian can go to Screen Time (on iPhone or iPad), find the content restrictions, and add \u2018youtube.com\u2019 and \u2018youtube-nocookie.com\u2019 to the allowed websites list. Once that's updated, close this page, come back, and the video should work! In the meantime we can keep going with our lesson. 😊"
+
 function isYes(text) {
   return /^\s*(yes|yeah|yep|yup|sure|ok|okay|please|do it|go ahead|open it|show me|definitely|of course|affirmative|sounds good|great|cool|alright|why not|let'?s go|uh huh|mhm|yea|ya|k|👍)\b/i.test(text)
 }
@@ -932,6 +946,14 @@ export default function WebbPage() {
   const sendMessage = useCallback(async (text) => {
     if (!text.trim() || chatLoading) return
     addStudentLine(text)
+
+    // ── Video trouble intercept ───────────────────────────────────────────
+    // Catches "black screen", "video not working", etc. and gives a canned
+    // explanation about YouTube being blocked by Screen Time / parental controls.
+    if (detectVideoTrouble(text)) {
+      addMsg(VIDEO_TROUBLE_MSG)
+      return
+    }
 
     // ── UI FAQ intercept ──────────────────────────────────────────────────
     // Phase 2: action yes/no ("Want me to open it?")
