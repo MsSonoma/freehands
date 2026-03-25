@@ -1870,7 +1870,7 @@ export default function WebbPage() {
                 <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
                   <iframe
                     ref={videoIframeRef}
-                    src={videoResource.embedUrl}
+                    src={videoResource.embedUrl + '&origin=' + encodeURIComponent(window.location.origin)}
                     title={videoResource.title || 'Educational video'}
                     allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     allowFullScreen
