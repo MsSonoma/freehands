@@ -1866,7 +1866,7 @@ export default function WebbPage() {
 
             {/* ── VIDEO ── */}
             {mediaOverlay === 'video' && videoResource?.embedUrl && (
-              <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#000' }}>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#000' }}>
                 <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
                   <iframe
                     ref={videoIframeRef}
@@ -1874,7 +1874,7 @@ export default function WebbPage() {
                     title={videoResource.title || 'Educational video'}
                     allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     allowFullScreen
-                    style={{ width: '100%', height: '100%', border: 'none' }}
+                    style={{ position: 'absolute', inset: 0, border: 'none' }}
                   />
                   {/* Transparent intercept overlay — blocks YouTube's native UI (recommendations,
                       channel links, search) so children can't navigate away. Tap to play/pause. */}
