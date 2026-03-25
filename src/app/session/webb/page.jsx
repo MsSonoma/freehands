@@ -1876,13 +1876,19 @@ export default function WebbPage() {
                     allowFullScreen
                     style={{ position: 'absolute', inset: 0, border: 'none' }}
                   />
-                  {/* Transparent intercept overlay — blocks YouTube's native UI (recommendations,
-                      channel links, search) so children can't navigate away. Tap to play/pause. */}
+                  {/* Intercept overlay — blocks YouTube navigation links while video is playing.
+                      When paused/unstarted, pointer-events:none lets the tap fall through to
+                      YouTube's own play button inside the iframe, satisfying iOS Safari's
+                      user-gesture requirement (postMessage from a parent frame does not). */}
                   {!videoEnded && (
                     <div
-                      onClick={() => videoPlaying ? ytCmd('pauseVideo') : ytCmd('playVideo')}
-                      style={{ position: 'absolute', inset: 0, cursor: 'pointer', background: 'transparent', zIndex: 1 }}
-                      aria-label={videoPlaying ? 'Pause' : 'Play'}
+                      onClick={() => videoPlaying ? ytCmd('pauseVideo') : undefined}
+                      style={{
+                        position: 'absolute', inset: 0, zIndex: 1, background: 'transparent',
+                        pointerEvents: videoPlaying ? 'all' : 'none',
+                        cursor: videoPlaying ? 'pointer' : 'default',
+                      }}
+                      aria-label="Pause"
                     />
                   )}
                   {videoEnded && (
