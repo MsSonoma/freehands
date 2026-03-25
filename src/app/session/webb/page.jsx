@@ -1485,11 +1485,15 @@ export default function WebbPage() {
     }
   }, [mediaOverlay])
 
-  // 2. Sync mediaIsFullscreen with the browser fullscreen API
+  // 2. Sync mediaIsFullscreen with the browser fullscreen API (standard + webkit for iOS Safari)
   useEffect(() => {
-    const onFSChange = () => setMediaIsFullscreen(!!document.fullscreenElement)
+    const onFSChange = () => setMediaIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement))
     document.addEventListener('fullscreenchange', onFSChange)
-    return () => document.removeEventListener('fullscreenchange', onFSChange)
+    document.addEventListener('webkitfullscreenchange', onFSChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', onFSChange)
+      document.removeEventListener('webkitfullscreenchange', onFSChange)
+    }
   }, [])
 
   // 3. Measure the target element rect and keep it updated via ResizeObserver.
@@ -1521,8 +1525,22 @@ export default function WebbPage() {
 
   // ── Media overlay helpers ─────────────────────────────────────────────
   function toggleMediaFullscreen() {
-    if (!mediaIsFullscreen) mediaOverlayRef.current?.requestFullscreen?.().catch(() => {})
-    else document.exitFullscreen?.().catch(() => {})
+    if (!mediaIsFullscreen) {
+      // iOS Safari doesn't support requestFullscreen on a div — fall back to
+      // webkitRequestFullscreen on the iframe element itself.
+      const el = mediaOverlayRef.current
+      const iframe = videoIframeRef.current
+      if (el?.requestFullscreen) {
+        el.requestFullscreen().catch(() => {})
+      } else if (iframe?.webkitRequestFullscreen) {
+        iframe.webkitRequestFullscreen()
+      } else if (iframe?.webkitEnterFullscreen) {
+        iframe.webkitEnterFullscreen()
+      }
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen().catch(() => {})
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
+    }
   }
   const mediaMoveToChat = mediaPos === 'video'
   const arrowGlyph = isMobileLandscape
@@ -1876,19 +1894,13 @@ export default function WebbPage() {
                     allowFullScreen
                     style={{ width: '100%', height: '100%', border: 'none' }}
                   />
-                  {/* Intercept overlay — blocks YouTube navigation links while video is playing.
-                      When paused/unstarted, pointer-events:none lets the tap fall through to
-                      YouTube's own play button inside the iframe, satisfying iOS Safari's
-                      user-gesture requirement (postMessage from a parent frame does not). */}
+                  {/* Intercept overlay — always blocks YouTube's native UI (links, recommendations).
+                      Tapping anywhere on the video toggles play/pause. */}
                   {!videoEnded && (
                     <div
-                      onClick={() => videoPlaying ? ytCmd('pauseVideo') : undefined}
-                      style={{
-                        position: 'absolute', inset: 0, zIndex: 1, background: 'transparent',
-                        pointerEvents: videoPlaying ? 'all' : 'none',
-                        cursor: videoPlaying ? 'pointer' : 'default',
-                      }}
-                      aria-label="Pause"
+                      onClick={() => videoPlaying ? ytCmd('pauseVideo') : ytCmd('playVideo')}
+                      style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'transparent', cursor: 'pointer' }}
+                      aria-label={videoPlaying ? 'Pause' : 'Play'}
                     />
                   )}
                   {videoEnded && (
