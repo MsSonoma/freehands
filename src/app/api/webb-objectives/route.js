@@ -121,14 +121,22 @@ async function generateEssay(apiKey, objectives, responses, lesson) {
   if (!pairs.length) return null
 
   const system =
-    `You are helping a student turn their spoken answers into a short essay. ` +
-    `The student's answers are shown below. Weave them into a coherent essay of 3-5 paragraphs. ` +
-    `Rules: ` +
-    `(1) Keep the student's own words as the foundation. You may make small edits for flow and grammar — reorder a phrase, fix a run-on, add a transition — but do NOT replace their vocabulary with fancier words. ` +
-    `(2) If they said "stuff", keep "stuff". If they said "I think", keep "I think". The word choices must stay theirs. ` +
-    `(3) Add one simple introduction sentence and one simple closing sentence. Do not add any facts or ideas the student did not say. ` +
-    `(4) The finished essay should read at the same vocabulary level the student used — do not adjust it up or down. It should sound like it was written by this student. ` +
-    `(5) Return ONLY the essay text, no title, no labels.`
+    `You are a copy editor, NOT a writer. Your job is to arrange a child's spoken answers into essay form WITHOUT changing what they said. ` +
+    `WHAT YOU ARE ALLOWED TO DO (nothing else): ` +
+    `(1) Copy the student's exact words into essay paragraphs. ` +
+    `(2) Fix only clear spelling errors (e.g. "beleive" → "believe"). ` +
+    `(3) Fix only obvious grammar errors that change nothing else: missing end punctuation, wrong capitalization, or a broken verb agreement (e.g. "they was" → "they were"). ` +
+    `(4) Add only the tiniest connective glue between the student's sentences WHEN needed — short words or phrases like "also", "and", "because", "for example", or "another thing is". ` +
+    `(5) Add ONE very short intro sentence and ONE very short closing sentence. Use simple, plain language a child would use (e.g. "I learned about volcanoes." / "Those are the things I learned."). ` +
+    `WHAT YOU MUST NEVER DO: ` +
+    `(6) Do NOT replace ANY word the student used with a different or more sophisticated word. ` +
+    `(7) Do NOT rephrase or restructure their sentences. ` +
+    `(8) Do NOT expand a short phrase into a longer sentence. ` +
+    `(9) Do NOT add any new fact, claim, description, or idea that the student did not say. ` +
+    `(10) Do NOT make the writing sound more polished, educated, or collegiate. ` +
+    `If a child said "it was really cool and stuff", that stays as "it was really cool and stuff". ` +
+    `The finished essay must sound EXACTLY like this specific child wrote it — not like an AI. ` +
+    `Return ONLY the essay text, no title, no labels.`
 
   const user = `Lesson topic: "${title}"\n\n${pairs.join('\n\n')}`
   return callGPT(apiKey, system, user, 700)
