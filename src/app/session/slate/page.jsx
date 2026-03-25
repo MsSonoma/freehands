@@ -711,7 +711,7 @@ function SlateDrillInner() {
 
     const msgs = timeout ? TIMEOUT_MSGS : correct ? CORRECT_MSGS : WRONG_MSGS
     const feedbackText = pick(msgs)
-    const correctAnswer = !correct && !timeout && q ? getCorrectText(q) : ''
+    const correctAnswer = !correct && q ? getCorrectText(q) : ''
     setLastResult({ correct, timeout, text: feedbackText, correctAnswer })
     phaseRef.current = 'feedback'
     setPagePhase('feedback')
