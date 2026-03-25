@@ -1874,7 +1874,6 @@ export default function WebbPage() {
                     title={videoResource.title || 'Educational video'}
                     allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     allowFullScreen
-                    sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-forms"
                     style={{ width: '100%', height: '100%', border: 'none' }}
                   />
                   {/* Transparent intercept overlay — blocks YouTube's native UI (recommendations,
