@@ -6,19 +6,22 @@ Mode: standard
 
 Prompt (original):
 ```text
-youtube iframe black screen iPad iOS sandbox allow
+Mr Slate print page at end of lesson with answers and transcript of right and wrong answers, similar to Ms. Sonoma print
 ```
 
 Filter terms used:
 ```text
-youtube
-iframe
-black
-screen
-ipad
-ios
-sandbox
-allow
+slate
+print
+page
+end
+lesson
+answers
+transcript
+right
+wrong
+similar
+sonoma
 ```
 
 ---
@@ -27,9 +30,9 @@ allow
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-03-15 16:17` — objectives completion tracking user response text accordion research mode essay generation webb session page.jsx
-- `2026-03-23 12:57` — video not working Mrs Webb YouTube API
-- `2026-03-23 13:22` — video tiering relevance chapters captions Key Part dialogue Mrs Webb webb-resources generateVideo
+- `2026-03-25 09:49` — Mrs Webb intercept user message black screen video doesn't play YouTube blocked screen time parental controls -- where d
+- `2026-03-25 11:03` — Mrs Webb essay creation verbatim child writing polish editing prompt
+- `2026-03-25 12:45` — Mr. Slate page - give correct answer on timeout, currently only does on incorrect answer
 
 ---
 
@@ -50,7 +53,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 5. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 50. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -65,7 +68,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-youtube iframe black screen ipad ios sandbox allow
+slate print page end lesson answers transcript right wrong similar sonoma
 
 ## Forced Context
 
@@ -73,1230 +76,1557 @@ youtube iframe black screen ipad ios sandbox allow
 
 ## Ranked Evidence
 
-### 1. src/app/session/webb/page.jsx (de591041e5b5f0da98304183b08f1e72a516fd8fa1ac169e6b05f671e3b33ba9)
-- bm25: -17.3197 | relevance: 0.9454
+### 1. src/app/session/page.js (3751cb5a7052e63d8809b5bb81651728cf2c1a9914282c18d95eb237281a6f1d)
+- bm25: -14.0686 | relevance: 0.9336
 
-{/* ── VIDEO ── */}
-            {mediaOverlay === 'video' && videoResource?.embedUrl && (
-              <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#000' }}>
-                <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-                  <iframe
-                    ref={videoIframeRef}
-                    src={videoResource.embedUrl}
-                    title={videoResource.title || 'Educational video'}
-                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    sandbox="allow-scripts allow-same-origin allow-presentation"
-                    style={{ width: '100%', height: '100%', border: 'none' }}
-                  />
-                  {videoEnded && (
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 24, boxSizing: 'border-box' }}>
-                      <div style={{ fontSize: 38 }}>&#127881;</div>
-                      <div style={{ color: '#fff', fontSize: 16, fontWeight: 700, textAlign: 'center' }}>
-                        Great job watching!<br/>
-                        <span style={{ fontSize: 13, fontWeight: 400, color: '#9ca3af' }}>{videoResource.title}</span>
-                      </div>
-                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-                        <button type="button" onClick={() => { setVideoEnded(false); ytCmd('seekTo', [0, true]); ytCmd('playVideo') }}
-                          style={{ background: '#374151', border: 'none', color: '#fff', borderRadius: 8, padding: '1
+function PhaseDetail({
+  phase,
+  subPhase,
+  subPhaseStatus,
+  onDiscussionAction,
+  onTeachingAction,
+  learnerInput,
+  setLearnerInput,
+  worksheetAnswers,
+  setWorksheetAnswers,
+  testAnswers,
+  setTestAnswers,
+  callMsSonoma,
+  subjectParam,
+  difficultyParam,
+  lessonParam,
+  setPhase,
+  setSubPhase,
+  ticker,
+  setTicker,
+  setCanSend,
+  waitForBeat,
+  transcript,
+}) {
+  const renderSection = () => {
+    switch (phase) {
+      case "discussion":
+        // Controls and status for discussion are handled elsewhere; render nothing here.
+        return null;
+      case "teaching":
+        // Controls and status for teaching are handled elsewhere; render nothing here.
+        return null;
+      case "comprehension":
+        return (
+          <div style={{ marginBottom: 24 }}>
+            <p style={{ margin: 0 }}>Correct Answers: {ticker}</p>
+            <p style={{ fontSize: 13, color: '#374151', marginTop: 6 }}>
+              Continue responding in the input; Ms. Sonoma will ask the next question automatically until the target is met.
+            </p>
+          </div>
+        );
+      case "worksheet":
+        return (
+          <div style={{ marginBottom: 24 }}>
+            <p>Worksheet progress: {worksheetAnswers.length}</p>
+            <button
+              type="button"
+              style={primaryButtonStyle}
+              onClick={async () => {
+                const nextTicker = ticker + 1;
+                setTicker(nextTicker);
+                setWorksheetAnswers([...worksheetAnswers, learnerInput]);
+                const result = await callMsSonoma(
+                  "Worksheet: Remind to print, give hints if incorrect, cue next phase at target count.",
+                  learnerInput,
+                    {
+                    phase: "worksheet",
 
-### 2. src/app/session/webb/page.jsx (d812677db0c9fe322fae388eb15c488f533e940d9b8d2344e3c41dbe8783ed7e)
-- bm25: -14.4650 | relevance: 0.9353
+### 2. src/app/session/slate/page.jsx (ba7c0227cd70ec91b8fe4df6a1987559e149451f5cef862a2121df7583bba8b0)
+- bm25: -12.7483 | relevance: 0.9273
 
-{/* ── ARTICLE ── */}
-            {mediaOverlay === 'article' && articleResource?.html && (
-              <iframe key={articleKey} ref={articleIframeRef} srcDoc={articleResource.html} title={articleResource.title || 'Educational article'}
-                sandbox="allow-same-origin allow-scripts" style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }} />
-            )}
-            {/* Loading: preload in-flight OR refresh in-progress */}
-            {mediaOverlay === 'article' && (articleLoading || refreshingMedia) && !articleResource?.html && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, color: '#9ca3af', fontSize: 13, background: '#fff' }}>
-                <svg viewBox="0 0 24 24" style={{ width: 32, height: 32, animation: 'spin 1s linear infinite' }} fill="none" stroke="#0d9488" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
-                Finding an article&hellip;
-              </div>
-            )}
-            {/* Fallback: no article (or failed html) and not currently loading */}
-            {mediaOverlay === 'article' && !articleLoading && !refreshingMedia && !articleResource?.html && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, padding: 20, background: '#fff', boxSizing: 'border-box', textAlign: 'center' }}>
-                <svg viewBox="0 0 24 24" style={{ width: 40, height: 40 }} fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6
-
-### 3. docs/brain/session-takeover.md (f547b8a84945c079f4753cfc178e83afd5ab0d6acc67018afbe877b3d81da9b9)
-- bm25: -12.4850 | relevance: 0.9258
-
-## Why We Use Gates (and Sometimes Polling)
-
-**Gates are the primary mechanism:**
-- Conflict is detected exactly at meaningful checkpoints (Begin and snapshot saves).
-- This aligns with persistence writes and avoids background chatter.
-
-**Polling is secondary and optional:**
-- Polling can improve UX by discovering a takeover/end even when the learner is idle.
-- Keep it low-frequency and read-only, and only while a session is active.
-
-## Device Switch Flow Example
-
-**Scenario:** Learner starts lesson on iPad, switches to laptop mid-teaching
-
-1. **iPad - Teaching vocab sentence 3**
-   - User clicks Next
-   - Gate: `scheduleSaveSnapshot('vocab-sentence-3')`
-   - Snapshot saved with `session_id: "abc-123-ipad"`, timer at 45 seconds
-   - Success
-
-2. **Laptop - Opens same lesson**
-   - Page loads, generates new `session_id: "xyz-789-laptop"`
-   - User clicks Begin
-   - Gate: `scheduleSaveSnapshot('begin-discussion')`
-   - Database detects conflict (iPad session "abc-123-ipad" still active)
-   - Returns conflict error with iPad session details
-
-3. **Laptop - Takeover dialog shows**
-   - "A session for this lesson is active on another device (iPad)"
-   - "Last activity: 2 minutes ago"
-   - "Enter 4-digit PIN to take over"
-   - User enters PIN
-
-4. **Laptop - PIN validated**
-   - Clear localStorage (force database restore)
-   - Deactivate iPad session "abc-123-ipad" (set ended_at)
-   - Create new session "xyz-789-laptop"
-   - Restore snapshot from database (vocab-sentence-3 checkpoint)
-   - Extract timer state: 45 seconds + (now - capturedAt) = ~47 seconds
-   - Set timer to 47 seconds, mode 'work'
-   - Resume teaching at vocab sentence 3
-   - Apply teaching flow snapshot (vocab index, stage, etc.)
-
-### 4. src/app/session/webb/page.jsx (c82b7ed74620555d9d287e9f548f3b39df793c5d7cf18d3026315de928c20d2b)
-- bm25: -10.5736 | relevance: 0.9136
-
-// Scroll the article iframe to passage[idx]. isProgrammatic suppresses the
-  // manual-scroll flag so auto-scroll continues working after our own scrolls.
-  function scrollToPassage(idx, isProgrammatic = false) {
-    // Auto-scroll (TTS) honours the user's manual scroll position; pin clicks always go.
-    if (isProgrammatic && userScrolledArticleRef.current) return
-    if (isProgrammatic) {
-      programmaticScrollRef.current = true
-      setTimeout(() => { programmaticScrollRef.current = false }, 800)
-    }
-    if (!isProgrammatic) {
-      // Pin click — make sure article overlay is visible
-      setMediaOverlay('article')
-    }
-    // Use getElementById so we are never relying on stale DOM refs from before
-    // a potential iframe remount. Retry up to 8 times × 250 ms to allow the
-    // re-apply-highlights effect enough time to re-inject the spans after remount.
-    const tryScroll = (left) => {
-      const doc = articleIframeRef.current?.contentDocument
-      const el  = doc?.getElementById(`webb-passage-${idx}`) ?? passageEls.current[idx]
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      } else if (left > 0) {
-        setTimeout(() => tryScroll(left - 1), 250)
-      }
-    }
-    setTimeout(() => tryScroll(8), 50)
-  }
-
-### 5. src/app/session/components/games/FlashCards.jsx (fa21db0d563fa2cbf608e8611c2f8e79e4c103245181c6a0a575983ae9bbed88)
-- bm25: -10.3513 | relevance: 0.9119
-
-// Track the actual visible-viewport height so the card screen resizes when the
-  // iOS keyboard opens (visualViewport.height shrinks; layout viewport / dvh do not).
-  // Also track offsetTop: on iOS, position:fixed is relative to the layout viewport;
-  // visualViewport.offsetTop tells us how far the visual viewport has scrolled/panned.
-  const [vpHeight, setVpHeight] = useState(() =>
-    typeof window !== 'undefined' ? (window.visualViewport?.height ?? window.innerHeight) : 800
-  );
-  const [vpOffsetTop, setVpOffsetTop] = useState(0);
-  useEffect(() => {
-    const vp = window.visualViewport;
-    if (!vp) return;
-    const onResize = () => {
-      setVpHeight(vp.height);
-      setVpOffsetTop(vp.offsetTop);
-    };
-    vp.addEventListener('resize', onResize);
-    vp.addEventListener('scroll', onResize);
-    return () => {
-      vp.removeEventListener('resize', onResize);
-      vp.removeEventListener('scroll', onResize);
-    };
-  }, []);
-
-### 6. src/app/session/webb/page.jsx (44ac013116d05b6c78f731cd97fa15db6958c61e5517065636e9600b40aeef64)
-- bm25: -10.2760 | relevance: 0.9113
-
-// ── Video / TTS ──────────────────────────────────────────────────────
-  const videoRef      = useRef(null)
-  const ttsQueueRef   = useRef([])
-  const ttsBusyRef    = useRef(false)
-  const ttsCurrentRef = useRef(null)
-  const [engineState, setEngineState] = useState('idle')
-  const [isMuted, setIsMuted]         = useState(false)
-  const isMutedRef                    = useRef(false)
-
-// ── YouTube player commands (via IFrame API postMessage) ──────────────
-  function ytCmd(func, args = []) {
-    videoIframeRef.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: 'command', func, args }), '*'
-    )
-  }
-  function formatVideoTime(s) {
-    if (!s || !isFinite(s)) return '0:00'
-    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`
-  }
-
-// ── Chat scroll ─────────────────────────────────────────────────────
-  const chatEndRef = useRef(null)
-
-// Auto-scroll to newest message
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [transcript.length, chatLoading])
-
-// ── Layout ───────────────────────────────────────────────────────────
-  const videoColRef                         = useRef(null)
-  const [isMobileLandscape, setIsLandscape] = useState(false)
-  const [videoMaxHeight, setVideoMaxHeight] = useState(null)
-  const [videoColPercent, setVideoColPct]   = useState(50)
-  const [sideBySideHeight, setSBSH]         = useState(null)
-
-const learnerName = useRef('')
-
-### 7. src/app/session/webb/page.jsx (8a84ec31046e832818ae99999459add1784e262439124bb23b6f9c0bd9afdd13)
-- bm25: -10.0451 | relevance: 0.9095
-
-// Wait for (a) React to flush setMediaOverlay and mount the iframe,
-      // and (b) the iframe to finish loading its srcdoc content.
-      // We poll for the ref because setState is async — the ref won't be set
-      // until after the next React render cycle commits.
-      await new Promise(resolve => {
-        let tries = 0
-        const check = () => {
-          const iframe = articleIframeRef.current
-          if (iframe) {
-            if (iframe.contentDocument?.readyState === 'complete') {
-              resolve()
-            } else {
-              // Register once-listener AND a safety timeout
-              let settled = false
-              const done = () => { if (!settled) { settled = true; resolve() } }
-              iframe.addEventListener('load', done, { once: true })
-              setTimeout(done, 3000)
-            }
-          } else if (tries++ < 40) {
-            setTimeout(check, 100) // wait for React to commit the render
-          } else {
-            resolve() // give up after 4 s
-          }
-        }
-        check()
-      })
-
-### 8. docs/brain/session-takeover.md (60c9d4cd0ab0fea91764faad1891a96fb7c304045c5c530242436be8f9fdd5f4)
-- bm25: -9.4797 | relevance: 0.9046
-
-5. **iPad - Next gate attempt**
-   - User clicks Next (or any action triggering gate)
-   - Gate: `scheduleSaveSnapshot('vocab-sentence-4')`
-   - Database returns "session ended" error
-   - Show notification: "Lesson continued on laptop"
-   - Redirect to learner dashboard (or show Resume option for laptop)
-
-### 9. src/app/session/webb/page.jsx (8ffd5b93646515db3f8c349dbadfa55de1f981c970b45ea2b44e036e7c449031)
-- bm25: -9.1738 | relevance: 0.9017
-
-// Reset all player state whenever a new video arrives
-  useEffect(() => {
-    setVideoEnded(false)
-    setVideoPlaying(false)
-    setVideoDuration(0)
-    setVideoCurrentTime(0)
-    setVideoVolumeMuted(false)
-    setVideoMoments([])
-    segmentEndRef.current = null
-  }, [videoResource?.videoId])
-
-// YouTube IFrame API posts postMessage events when enablejsapi=1.
-  // We receive state changes and periodic time/duration info here.
-  useEffect(() => {
-    function handleYTMessage(e) {
-      if (!e.data) return
-      try {
-        const msg = typeof e.data === 'string' ? JSON.parse(e.data) : e.data
-        if (msg.event === 'onStateChange') {
-          const s = msg.info
-          if (s === 0) setVideoEnded(true)
-          setVideoPlaying(s === 1)
-        }
-        if ((msg.event === 'infoDelivery' || msg.event === 'initialDelivery') && msg.info) {
-          if (typeof msg.info.currentTime === 'number') { setVideoCurrentTime(msg.info.currentTime); videoCurrentTimeRef.current = msg.info.currentTime }
-          if (typeof msg.info.duration    === 'number' && msg.info.duration > 0) setVideoDuration(msg.info.duration)
-          if (typeof msg.info.muted       === 'boolean') setVideoVolumeMuted(msg.info.muted)
-          if (typeof msg.info.playerState === 'number') {
-            if (msg.info.playerState === 0) setVideoEnded(true)
-            setVideoPlaying(msg.info.playerState === 1)
-          }
-        }
-      } catch { /* non-JSON messages — ignore */ }
-    }
-    window.addEventListener('message', handleYTMessage)
-    return () => window.removeEventListener('message', handleYTMessage)
-  }, [])
-
-### 10. src/app/api/webb-video-interpret/route.js (827f326a868d6f6e8db27263011970ece21bb644f4d3c3cd6aad312481c20bd0)
-- bm25: -8.9154 | relevance: 0.8991
+'use client'
 
 /**
- * /api/webb-video-interpret
- * Identifies 3 key moments from a YouTube video for Mrs. Webb to guide the student through.
+ * Mr. Slate -- Skills & Practice Coach
  *
- * Strategy (in order):
- *  1. youtube-transcript — full caption text, best quality. Often blocked by YouTube
- *     from datacenter/cloud IPs (intentional anti-bot IP filtering).
- *  2. YouTube Data API v3 chapters — parses chapter timestamps from the video description.
- *     Uses the existing YOUTUBE_API_KEY. Works reliably because it uses the official API.
- *     Most educational videos include chapter markers.
- *  3. { error: 'transcript_unavailable' } — only reached if both paths fail.
+ * A quiz-mode drill session. Questions are drawn from the same lesson JSON
+ * as Ms. Sonoma (sample, truefalse, multiplechoice, fillintheblank pools).
+ * The learner accumulates points (goal: 10) to earn the robot mastery icon.
  *
- * POST { videoId, lessonTitle, grade, learnerName? }
- * Returns { moments: [{ title, startSeconds, endSeconds, intro }] }
- *       | { error: 'transcript_unavailable' }
+ * Rules:
+ *   - Correct answer within time limit  -> +1 (min 0, max 10)
+ *   - Wrong answer                      -> -1 (min 0)
+ *   - Timeout (15s default)             -> +/-0
+ *   - Reach 10 -> mastery confirmed
+ *
+ * Questions rotate through the full pool without repeats until ~80% have
+ * been asked, then the deck reshuffles.
+ *
+ * Lessons are loaded from /api/learner/available-lessons (handles static,
+ * generated, and Supabase-stored lessons uniformly). No URL params required.
  */
-import { NextResponse }      from 'next/server'
-import { YoutubeTranscript } from 'youtube-transcript'
 
-const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-const YT_VIDEOS    = 'https://www.googleapis.com/youtube/v3/videos'
+import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { getMasteryForLearner, saveMastery } from '@/app/lib/masteryClient'
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// --- Constants ---------------------------------------------------------------
 
-async function callGPT(apiKey, system, user, maxTokens) {
-  const r = await fetch(OPENAI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-      max_tokens: maxTokens,
-      temperature: 0.3,
-    }),
-  })
-  const j = await r.json()
-  return j.choices?.[0]?.message?.content?.trim() || ''
+const QUESTION_SECONDS = 15
+const SCORE_GOAL = 10
+const FEEDBACK_DELAY_MS = 2000
+const RESHUFFLE_THRESHOLD = 0.2 // reshuffle when only 20% of deck remains
+
+const DEFAULT_SLATE_SETTINGS = {
+  scoreGoal: 10,
+  correctPts: 1,
+  wrongPts: 1,
+  timeoutPts: 0,
+  timeoutOffset: 0,
+  questionSecs: 15,
 }
 
-### 11. src/app/session/webb/page.jsx (60a2719a37c80d42b8d370e3a807a9b86984d17bb5fe9ecf32bcec60237a8e71)
-- bm25: -8.3119 | relevance: 0.8926
+### 3. src/app/session/slate/page.jsx (6d4f0be027b99894c72b4cbc67d18d41f49bae41e5ca2346179172eb2a457752)
+- bm25: -12.2240 | relevance: 0.9244
 
-// ── UI FAQ: feature explanations in Mrs. Webb's voice ─────────────────────────
-const UI_FAQ = {
-  video: {
-    keywords: ['video', 'watch', 'play', 'movie', 'film', 'youtube', 'player'],
-    confirm: 'Are you wondering about the video feature?',
-    answer: 'To watch a video, just tap the video button — it looks like ▶ — at the bottom of my screen. That opens a little video player with play, pause, and a timeline. The video is picked specially for your lesson!',
-    location: 'tap the ▶ button at the bottom of my screen',
-    actionPrompt: 'Want me to open the video for you right now?',
-    actionSlug: 'video',
-  },
-  article: {
-    keywords: ['article', 'read', 'wiki', 'wikipedia', 'reading', 'text', 'page'],
-    confirm: 'Are you wondering about the article feature?',
-    answer: 'The article button — it looks like 📖 — opens a Wikipedia article about your lesson right inside this screen. It is a great way to read a bit more about what we are studying!',
-    location: 'tap the 📖 button at the bottom of my screen',
-    actionPrompt: 'Would you like me to open the article for you?',
-    actionSlug: 'article',
-  },
-  keypart: {
-    keywords: ['key part', 'highlight', 'important part', 'read aloud', 'interpret', 'magnify', 'underline', 'find the'],
-    confirm: 'Are you wondering about the Key part feature?',
-    answer: 'The Key part button — it looks like a magnifying glass — lives in the video and article toolbar. Tap it and I will find the most important parts, highlight them, and walk you through them one by one. It is like having me point to the page!',
-    actionPrompt: null,
-    actionSlug: null,
-  },
-  move: {
-    keywords: ['move', 'arrow', 'switch side', 'other side', 'reposition', 'swap', 'slide'],
-    confirm: 'Are you wondering how to move the video or art
+const GREETING_MSGS = [
+  'Time to run some drills.',
+  'Let the drill begin.',
+  'Drill sequence initiated.',
+  'Ready for your first query.',
+  'Systems online. First question loading.',
+  'Activating drill protocol.',
+  'Stand by. Loading first query.',
+  'Drill mode engaged. Let us begin.',
+  'Prepare for query processing.',
+  'Commencing drill sequence now.',
+  'Drill protocol active. Here we go.',
+]
+const CORRECT_MSGS = [
+  'Affirmative. Correct response.',
+  'Confirmed correct.',
+  'Accurate. Score updated.',
+  'Correct. Processing next query.',
+  'Response accepted.',
+  'Input validated. Correct.',
+  'Excellent. Moving on.',
+  'That is correct.',
+  'Right answer confirmed.',
+  'Positive match detected.',
+  'Score increment registered.',
+]
+const WRONG_MSGS = [
+  'Negative. Incorrect response.',
+  'Error. Wrong answer detected.',
+  'Incorrect.',
+  'Does not match expected output.',
+  'Incorrect response recorded.',
+  'Mismatch detected.',
+  'Negative. Try harder next time.',
+  'That is not the correct answer.',
+  'Error code: wrong answer.',
+  'Recalibrate. The answer was wrong.',
+  'Wrong. Score deducted.',
+]
+const TIMEOUT_MSGS = [
+  'Time limit exceeded. No response.',
+  'Query timeout. Moving on.',
+  'Response not received in time.',
+  'Time expired. Next query.',
+  'Timeout recorded. Stay faster.',
+  'Response window closed.',
+  'No input detected. Advancing.',
+  'Time is up. Focus.',
+  'Clock ran out. Next query loading.',
+  'Too slow. Speed up your recall.',
+  'Timeout. We do not wait.',
+  'Response overdue. Proceeding.',
+  'Timer zeroed. No credit awarded.',
+  'You ran out of time on that one.',
+  'Processing halted. Time limit reached.',
+  'That one slipped by. Stay sharp.',
+  'No answer in time. Noted.',
+  'Timeout flagged. Keep your pace.',
+  'The clock
 
-### 12. src/app/session/components/games/FlashCards.jsx (788a41bbde7925f19a60a45b2e9b7a97e8af209ac7403f8a88537522ed55c9a5)
-- bm25: -8.3025 | relevance: 0.8925
+### 4. docs/brain/mr-mentor-conversation-flows.md (8d38642aa37f8b8a7e6bd2d6e130151a77c5668c362ce9ff98a5f6a237c14f91)
+- bm25: -12.1303 | relevance: 0.9238
 
-const clearCardAnimTimers = () => {
-    try {
-      const timers = Array.isArray(cardAnimTimersRef.current) ? cardAnimTimersRef.current : [];
-      timers.forEach((t) => {
-        try { clearTimeout(t); } catch {}
-      });
-    } catch {}
-    cardAnimTimersRef.current = [];
-  };
-
-const applyProgress = (saved) => {
-    if (!saved || typeof saved !== 'object') return;
-
-try {
-      if (saved.subjectId) setSubjectId(String(saved.subjectId));
-      if (saved.topicId) setTopicId(String(saved.topicId));
-      if (saved.stage) setStage(clampStage(saved.stage));
-      if (saved.seed != null) setSeed(Number(saved.seed));
-      if (saved.cardIndex != null) setCardIndex(Math.max(0, Number(saved.cardIndex) || 0));
-      if (saved.meter != null) setMeter(Math.max(0, Number(saved.meter) || 0));
-      if (saved.screen && typeof saved.screen === 'string') {
-        const s = saved.screen;
-        if (s === 'setup' || s === 'card' || s === 'stage-complete' || s === 'topic-complete') {
-          setScreen(s);
-        }
-      }
-      if (saved.pendingTopicComplete != null) {
-        setPendingTopicComplete(!!saved.pendingTopicComplete);
-      }
-    } catch {
-      // ignore
-    }
-  };
-
-// Hydrate from local + remote progress.
-  // - Local is instant (works offline)
-  // - Remote syncs progress across devices/browsers (when authenticated)
-  useEffect(() => {
-    let cancelled = false;
-    setHydrationComplete(false);
-    setRemoteHydrationDone(false);
-
-const local = loadFlashcardsProgressLocal(learnerId);
-    if (local) applyProgress(local);
-
-// Allow local persistence after initial local hydration.
-    // Remote persistence stays disabled until remote hydration completes.
-    setHydrationComplete(true);
-
-### 13. src/app/session/webb/page.jsx (2535ebe017206a11b6ea2b55001cb415ca67d70e97b74d894f6e8b2c69a514fb)
-- bm25: -8.1815 | relevance: 0.8911
-
-// ── Re-apply passage highlights every time the article overlay opens ──
-  // The iframe unmounts when the overlay closes, destroying injected <span>s.
-  // Stored excerpts let us re-highlight as soon as the iframe is ready again.
-  useEffect(() => {
-    if (mediaOverlay !== 'article' || !articlePassageExcerpts.length) return
-    const iframeEl = articleIframeRef.current
-    if (!iframeEl) return
-    const apply = () => {
-      const els = highlightPassages(articlePassageExcerpts)
-      passageEls.current = els
-    }
-    if (iframeEl.contentDocument?.readyState === 'complete') {
-      apply()
-    } else {
-      iframeEl.addEventListener('load', apply, { once: true })
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mediaOverlay, articlePassageExcerpts])
-
-### 14. docs/brain/v2-architecture.md (a87ef400ff795498308ebcdd18673e906385513ee36eb8eeccc0b1d6f8454ead)
-- bm25: -7.9345 | relevance: 0.8881
-
-**1. AudioEngine.initialize() Method Added** ✅
-- Added missing initialize() method with iOS audio unlock
-- Creates AudioContext during user gesture
-- Plays silent audio to unlock HTMLAudio on iOS (best-effort; do not await `play()`)
-- Resumes suspended AudioContext (time-boxed)
-
-### 15. src/app/api/webb-resources/route.js (19a6699a32398fd91aa530c7183cd62778c4eeb09570e670ef624a5007a69cd2)
-- bm25: -7.5244 | relevance: 0.8827
-
-﻿/**
- * /api/webb-resources
- * Generates curated, child-safe media resources for a lesson.
- *
- * Video:   YouTube Data API v3 + GPT picks best result.
- * Article: Fetches from child-friendly internet sources. Caller passes
- *          `preferredSources` (array of source IDs); server shuffles those,
- *          tries each until one succeeds, then falls back to Simple Wikipedia.
- *          `excludeSourceId` = source ID last shown; rotated to last so refresh
- *          always picks a different source first.
- *
- * POST { lesson, type, context?, preferredSources?, excludeSourceId?, excludeVideoIds? }
- */
-import { NextResponse } from 'next/server'
-
-const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-const YT_SEARCH    = 'https://www.googleapis.com/youtube/v3/search'
-const YT_VIDEOS    = 'https://www.googleapis.com/youtube/v3/videos'
-
-// ── Article sources catalogue ─────────────────────────────────────────────────
-
-function shuffle(arr) {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-### 16. docs/brain/v2-architecture.md (3d6deeea7413ba8d5ec80a646a5ab3757279dfc8d115ea5d84fa0dfa384dc114)
-- bm25: -7.2411 | relevance: 0.8787
-
-**Why This Pattern:**
-- Chrome autoplay policy requires user gesture before video/audio can play
-- V2 matches V1's exact behavior: preload → user gesture unlock → continuous loop
-- Preloading during page load ensures smooth playback start
-- Fallback pattern (play→pause→play) handles edge cases where first play() is blocked
-- **iOS Safari is finicky with video.play()** - requires readyState checks, event listeners, and retries
-- V1's `playVideoWithRetry()` function proven reliable across iOS/Chrome/Safari
-
-### 17. src/app/session/v2/AudioEngine.jsx (f628d221f67ccc6bf3874e7df8c720244929d8430b4679d2c6ae0de980a4bca3)
-- bm25: -6.6953 | relevance: 0.8701
-
-// Resume AudioContext, but never let this hang indefinitely on mobile browsers.
-      if (this.#audioContext && this.#audioContext.state === 'suspended') {
-        try {
-          await withTimeout(this.#audioContext.resume(), 1000, 'AudioContext.resume');
-        } catch {
-          // Ignore - some browsers will reject/resume later; initialization should not deadlock.
-        }
-      }
-
-// Play silent audio to unlock HTMLAudio on iOS.
-      // IMPORTANT: do not await play(); on iOS/Safari it can remain pending and deadlock UI.
-      try {
-        const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
-        silentAudio.muted = true;
-        silentAudio.volume = 0;
-        const p = silentAudio.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
-      } catch {
-        // Ignore errors from silent audio
-      }
-
-// Video unlock (must happen inside user gesture; pause can happen later).
-      // IMPORTANT: Do NOT play-and-immediately-pause in the same tick; on some browsers
-      // (notably iOS Safari) that can prevent the play() call from "unlocking" future playback.
-      this.#requestVideoUnlock();
-
-this.#initialized = true;
-    })().finally(() => {
-      this.#initializePromise = null;
-    });
-
-return this.#initializePromise;
-  }
-
-#requestVideoUnlock() {
-    if (this.#videoUnlockRequested) return;
-    this.#videoUnlockRequested = true;
-
-const video = this.#videoElement;
-    if (!video) return;
-
-try { video.muted = true; } catch {}
-    try { video.playsInline = true; } catch {}
-    try { video.preload = 'auto'; } catch {}
-
-### 18. src/app/session/webb/page.jsx (da467bf00d67371c172fadf42d5bed44165f43d84f8d11199900d567bfdb6699)
-- bm25: -6.6115 | relevance: 0.8686
-
-// ── Media resources ──────────────────────────────────────────────────
-  const [videoResource, setVideoResource]       = useState(null) // {videoId,embedUrl,title,channel} or {unavailable:true}
-  const [articleResource, setArticleResource]   = useState(null) // {html, source, title} — HTML fetched server-side
-  const [articleKey,      setArticleKey]        = useState(0)   // increments to force iframe remount on new article
-  const [videoLoading, setVideoLoading]         = useState(false)
-  const [articleLoading, setArticleLoading]     = useState(false)
-  const [mediaOverlay, setMediaOverlay]         = useState(null) // 'video'|'article'|null
-  const [refreshingMedia, setRefreshingMedia]       = useState(false)
-  const [interpretingArticle, setInterpretingArticle] = useState(false)
-  const [interpretingVideo,   setInterpretingVideo]   = useState(false)
-  const [videoMoments,        setVideoMoments]         = useState([])
-  const segmentEndRef       = useRef(null) // endSeconds of active playback segment
-  const videoCurrentTimeRef = useRef(0)    // mirrors videoCurrentTime for async polling
-  // Passage excerpts are stored so highlights can be re-applied if the iframe remounts
-  const [articlePassageExcerpts, setArticlePassageExcerpts] = useState([])
-  // Tracks video IDs already shown so refresh never repeats
-  const shownVideoIdsRef    = useRef([])
-  const lowTierMsgSentRef  = useRef(false) // true once the "limited results" message has been said for the current video
-  const noVideoMsgSentRef  = useRef(false) // true once the "no relevant video" message has been said for the current lesson
-  const articleIframeRef   = useRef(null)
-  // Media overlay position + fullscreen
-  const [mediaPos, setMediaPos]               = useState('video') // 'video'|'chat'
-  const [me
-
-### 19. docs/brain/device-leases.md (ba373234d525661a33f1b2dacf624a96b342d91876062915a50c1874d7e91ded)
-- bm25: -6.5804 | relevance: 0.8681
+---
 
 ## What NOT To Do
 
-- Never allow unlimited concurrent devices (enforced by API)
-- Never skip lease expiration checks (auto-expire required)
-- Never trust client-side device counting (server is source of truth)
-- Never allow device claiming without auth token
+### ❌ DON'T Skip Confirmation When Intent Is Ambiguous
+```
+User: "I need a language arts lesson but I don't want one of the ones we have in 
+       the library. It should have a Christmas theme, please make some recommendations."
 
-### 20. src/app/session/v2/AudioEngine.jsx (63bcab86a4131edfc0ff8de85e9808e88deeb487f336a6162fb8f36baadb2582)
-- bm25: -6.5356 | relevance: 0.8673
+WRONG: "Is this lesson for Emma's grade (4)?"
+RIGHT: "Would you like me to generate a custom lesson?"
+       (If they say no: "Let me search for Christmas-themed language arts lessons...")
+```
 
-// If the unlock video.play() was still in-flight, pause the element first so that
-    // pending play() promise settles (typically aborts with AbortError) before we
-    // call playVideoWithRetry(). Without this, iOS Safari can have two overlapping
-    // play() calls which race and leave the video stuck.
-    if (unlockWasActive) {
-      try { this.#videoElement.pause(); } catch {}
-    }
-    
-    // Use robust retry mechanism from audioUtils (handles iOS edge cases)
-    playVideoWithRetry(this.#videoElement, 3, 100).catch(() => {
-      // Log silently if all retries fail to avoid breaking session
-    });
-  }
-  
-  // Private: Cleanup
-  #cleanup() {
-    this.#isPlaying = false;
-    
-    // Pause video when audio ends (video syncs with TTS)
-    if (this.#videoElement) {
-      try {
-        this.#videoElement.pause();
-      } catch {}
-    }
-    
-    this.#clearCaptionTimers();
-    this.#clearSpeechGuard();
-  }
-  
-  // Private: Utilities
-  #parseAudioInput(rawInput) {
-    if (!rawInput) return null;
+### ❌ DON'T Trigger Generation on Advice-Seeking Language
+```
+User: "Emma has one more Language Arts lesson and then it's Christmas vacation. 
+       Do you have any suggestions?"
 
-### 21. docs/brain/v2-architecture.md (6d41c8bd7bbddf488478e62f549f16e448b5a44a4ebc16ca5f9e6dc331503e04)
-- bm25: -6.3818 | relevance: 0.8645
+WRONG: Start asking for grade, subject, difficulty
+RIGHT: Search language arts lessons, recommend Christmas-themed options
+```
 
-**Video priming + audio unlock (2026-01-07)**
-- V2 must not start the looping video as an "autoplay unlock" step.
-- On the Begin click (`startSession`), V2 must preload/seek the video AND request a video unlock during the trusted user gesture.
-- iOS Safari can fail to unlock if the app calls `play()` and then immediately `pause()` in the same tick. The reliable approach is: call `video.play()` inside the gesture, then `pause()` when the `playing` event fires.
-- The video must still end in a paused state after priming/unlock.
-- Audio unlock must be performed during the Begin click by calling `AudioEngine.initialize()`; relying only on a document-level "first interaction" listener is not sufficient because React `onClick` can run before the listener fires.
-- `AudioEngine.initialize()` must be retry-safe and iOS-safe:
-  - It must be idempotent and coalesce concurrent calls (auto unlock listener + Begin click can both call it).
-  - It must time-box `AudioContext.resume()` so a suspended context cannot deadlock the Begin CTA.
-  - It must NOT await the `HTMLAudioElement.play()` promise for the silent unlock clip. On iOS Safari that promise can remain pending; the unlock should be best-effort.
-- AudioEngine remains the sole owner of video play/pause during TTS (`#startVideo` on start, `#cleanup` pause on end).
+### ❌ DON'T Lock Users Into Parameter Collection
+```
+User: "4th grade Language Arts"
+Mr. Mentor: "What difficulty level?"
+User: "I don't know that yet. Stop trying to generate the lesson and give me advice."
+Mr. Mentor: "Please choose: beginner, intermediate, or advanced."
 
-### 22. src/app/session/webb/page.jsx (b26a8e9eafe4323760cfb260a9df5a681a601c1c62f130a1a609fb4cd6295272)
-- bm25: -6.3672 | relevance: 0.8643
+WRONG: Continue asking for required parameters
+RIGHT: "Of course! Let me search for 4th grade Language Arts lessons instead..."
+```
 
-// Highlight all passages and persist excerpts for remount re-apply
-      const iframeEl = articleIframeRef.current
-      setArticlePassageExcerpts(excerpts)
-      const els = highlightPassages(excerpts)
-      passageEls.current = els
+### ❌ DON'T Confuse Topic Mention with Generation Request
+```
+User: "I need something Christmas-themed"
 
-// Speak intro, then for each passage: wait for TTS → activate + scroll → speak
-      if (data.intro) addMsg(data.intro)
-      for (let i = 0; i < excerpts.length; i++) {
-        await waitForTTSIdle()
-        activatePassage(i)
-        scrollToPassage(i, true)
-        addPassageMsg(excerpts[i], i)
-      }
-      // Clear active highlight when done
-      await waitForTTSIdle()
-      const doc = articleIframeRef.current?.contentDocument
-      doc?.querySelectorAll('.webb-hl-active').forEach(el => el.classList.remove('webb-hl-active'))
-    } catch (e) { console.error('[webb] interpretArticle error:', e) }
-    setInterpretingArticle(false)
-  }
+WRONG: Interpret as "generate a Christmas lesson"
+RIGHT: Interpret as "search for Christmas-themed lessons"
+```
 
-// Returns a Promise that resolves when TTS has finished its current queue
-  function waitForTTSIdle() {
-    return new Promise(resolve => {
-      const check = () => {
-        if (!ttsBusyRef.current && ttsQueueRef.current.length === 0) resolve()
-        else setTimeout(check, 150)
-      }
-      setTimeout(check, 400) // give TTS time to actually start before first check
-    })
-  }
+### ❌ DON'T Assume Grade from Context Unless Explicit
+```
+User: "I want you to recommend them to be generated."
+Mr. Mentor: "Is this lesson for Emma's grade (4)?"
 
-// Highlights an array of text excerpts in the article iframe by searching
-  // element textContent (not window.find — which is broken in sandboxed iframes).
-  // Assigns id="webb-passage-{i}" to each matched element so scrollToPassage
-  // can use getElementById, which survives iframe remounts.
-  function highlightPassages(excerpts) {
-    const doc = articleIframeRef.current?.contentDocument
-    if (!doc?.body) return excerpts.map(() => null)
+WRONG: Assume user wants generation just because they said "generated"
+RIGHT: Clarify intent first - "Would you like me to search for existing lessons 
+       or help you create a new one?"
+```
 
-### 23. src/app/session/v2/SessionPageV2.jsx (edda1e757c8c08a62a03385b26d54492221408f8685e53f95fca461efba063bf)
-- bm25: -6.3411 | relevance: 0.8638
-
-// Allow early-declared callbacks to invoke startSession without TDZ issues.
-  startSessionRef.current = startSession;
-  
-  const startTeaching = async (options = {}) => {
-    if (!teachingControllerRef.current) return;
-    await teachingControllerRef.current.startTeaching(options);
-  };
-  
-  const nextSentence = async () => {
-    if (!teachingControllerRef.current) return;
-    
-    // Show loading if GPT content isn't ready
-    setTeachingLoading(true);
-    try {
-      await teachingControllerRef.current.nextSentence();
-    } finally {
-      setTeachingLoading(false);
-    }
-  };
-  
-  const repeatSentence = () => {
-    if (!teachingControllerRef.current) return;
-    teachingControllerRef.current.repeatSentence();
-  };
-  
-  const skipToExamples = () => {
-    if (!teachingControllerRef.current) return;
-    teachingControllerRef.current.skipToExamples();
-  };
-  
-  const restartStage = () => {
-    if (!teachingControllerRef.current) return;
-    teachingControllerRef.current.restartStage();
-  };
-  
-  const stopAudio = () => {
-    if (!audioEngineRef.current) return;
-    stopAudioSafe();
-  };
-  
-  const pauseAudio = () => {
-    if (!audioEngineRef.current) return;
-    audioEngineRef.current.pause();
-  };
-  
-  const resumeAudio = () => {
-    if (!audioEngineRef.current) return;
-    audioEngineRef.current.resume();
-  };
-  
-  const toggleMute = () => {
-    if (!audioEngineRef.current) return;
-    const newMuted = !audioEngineRef.current.isMuted;
-    audioEngineRef.current.setMuted(newMuted);
-    setIsMuted(newMuted);
-  };
-  
-  // Skip current TTS playback ONLY — NEVER call phase.skip() here.
-  // This is a TTS/audio skip: it stops Ms. Sonoma's current sentence so the user
-  // doesn't have to listen to the full read-aloud. The question remains on screen
-  // and the student must
-
-### 24. src/app/api/webb-video-interpret/route.js (87fe21480262867396543c61b0c1206e194c71a4a08c001fc7d06242db70adbd)
-- bm25: -6.2739 | relevance: 0.8625
-
-const moments = []
-    for (const block of raw.split(/PICK\s+\d+:/i).slice(1)) {
-      const idxM   = block.match(/INDEX:\s*(\d+)/)
-      const introM = block.match(/INTRO:\s*(.+)/)
-      if (!idxM) continue
-      const ch = chapters[parseInt(idxM[1], 10)]
-      if (!ch) continue
-      // Play up to 60 s of the chapter (don't run into the next chapter)
-      moments.push({
-        startSeconds: ch.startSec,
-        endSeconds:   Math.min(ch.startSec + 60, ch.endSec),
-        title:        ch.title,
-        intro:        introM?.[1]?.trim() || '',
-      })
-    }
-    return moments.length >= 1 ? moments : null
-  } catch {
-    return null
-  }
-}
-
-// ── Route handler ─────────────────────────────────────────────────────────────
-export async function POST(req) {
-  try {
-    const {
-      videoId     = '',
-      lessonTitle = '',
-      grade       = 'elementary',
-      learnerName = '',
-    } = await req.json()
-
-const apiKey = process.env.OPENAI_API_KEY
-    const ytKey  = process.env.YOUTUBE_API_KEY
-    if (!apiKey)  return NextResponse.json({ error: 'Not configured' }, { status: 503 })
-    if (!videoId) return NextResponse.json({ error: 'No videoId'    }, { status: 400 })
-
-const addressAs = learnerName || 'you'
-
-// ── Path 1: youtube-transcript (full caption text) ────────────────────
-    let transcriptMoments = null
-    try {
-      let entries
-      try {
-        entries = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'en' })
-      } catch {
-        entries = await YoutubeTranscript.fetchTranscript(videoId)
-      }
-
-### 25. src/app/api/webb-video-interpret/route.js (f9de87afffcbc8777ec4016cb664abe47d675ddb0b9a644ee23afdefde431056)
-- bm25: -6.2632 | relevance: 0.8623
-
-if (transcriptMoments) return NextResponse.json({ moments: transcriptMoments })
-
-// ── Path 2: YouTube chapter markers (official Data API, never blocked) ─
-    const chapterMoments = await momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs, apiKey)
-    if (chapterMoments) return NextResponse.json({ moments: chapterMoments })
-
-// ── Neither path worked ───────────────────────────────────────────────
-    return NextResponse.json({ error: 'transcript_unavailable' })
-
-} catch (e) {
-    console.error('[webb-video-interpret]', e)
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
-  }
-}
-
-### 26. src/app/session/components/games/FlashCards.jsx (8c50ea739662c356e0a6262e0d8131c6f9b1191029f576573b40970a24b5a9df)
-- bm25: -6.2413 | relevance: 0.8619
-
-// Meter decay: gradually decreases over time; speeds up each stage.
-  useEffect(() => {
-    if (meterDecayIntervalRef.current) {
-      try { clearInterval(meterDecayIntervalRef.current); } catch {}
-      meterDecayIntervalRef.current = null;
-    }
-
-if (screen !== 'card') return;
-    const TICK_MS = 100;
-    const perSecond = getMeterDecayPerSecond(stage);
-    const perTick = perSecond * (TICK_MS / 1000);
-    meterDecayIntervalRef.current = setInterval(() => {
-      setMeter((m) => {
-        const cur = Number(m) || 0;
-        if (cur <= 0) return cur;
-        return Math.max(0, cur - perTick);
-      });
-    }, TICK_MS);
-
-return () => {
-      if (meterDecayIntervalRef.current) {
-        try { clearInterval(meterDecayIntervalRef.current); } catch {}
-        meterDecayIntervalRef.current = null;
-      }
-    };
-  }, [screen, stage]);
-
-// If we leave the card screen mid-animation (e.g., stage complete), stop timers.
-  useEffect(() => {
-    if (screen === 'card') return;
-    clearCardAnimTimers();
-    setCardAnim('idle');
-  }, [screen]);
-
-const deck = useMemo(() => {
-    if (subjectId !== 'math') return [];
-    const stageSafe = clampStage(stage);
-    const seedValue = seed != null ? Number(seed) : makeSeed(learnerId, subjectId, topicId, stageSafe);
-    return makeMathDeck({ topicId, stage: stageSafe, seed: seedValue, count: DECK_SIZE });
-  }, [learnerId, subjectId, topicId, stage, seed]);
-
-const currentCard = deck.length ? deck[cardIndex % deck.length] : null;
-
-useEffect(() => {
-    if (screen !== 'card') return;
-    try {
-      inputRef.current?.focus?.();
-    } catch {}
-  }, [screen, topicId, stage, cardIndex]);
-
-### 27. src/app/session/v2/AudioEngine.jsx (75f5a94e72177b413e2794ca5f0a10e67f28a4cf0a5ff2bdf9eb341cd8ced106)
-- bm25: -6.1796 | relevance: 0.8607
-
-// Video unlock bookkeeping (iOS Safari requires play() during user gesture)
-  #videoUnlockRequested = false;
-  #videoUnlockPlayingHandler = null;
-  #videoUnlockCleanupTimer = null;
-  
-  constructor(options = {}) {
-    this.#videoElement = options.videoElement || null;
-  }
-  
-  // Public API: Event subscription
-  on(event, callback) {
-    if (!this.#listeners.has(event)) {
-      this.#listeners.set(event, []);
-    }
-    this.#listeners.get(event).push(callback);
-
-### 28. src/app/session/v2/AudioEngine.jsx (5626169cd987afe0eaea4ed091bcffc1b39bb9d355359a9a82eede6d12c11e3b)
-- bm25: -6.0730 | relevance: 0.8586
-
-this.#initializePromise = (async () => {
-      // iOS audio unlock - create AudioContext during user gesture
-      if (!this.#audioContext || this.#audioContext.state === 'closed') {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (AudioContext) {
-          this.#audioContext = new AudioContext();
-          this.#gainNode = this.#audioContext.createGain();
-          this.#gainNode.gain.value = this.#isMuted ? 0 : 1;
-          this.#gainNode.connect(this.#audioContext.destination);
-        }
-      }
-
-### 29. docs/brain/lesson-quota.md (667668f994e6639c835e761aecd5152eb6f331cdb22b15442f025701e70ba167)
-- bm25: -6.0691 | relevance: 0.8585
+---
 
 ## Key Files
 
-- `/api/lessons/quota` - Quota check and enforcement
-- `lesson_unique_starts` table - Daily lesson tracking
-- `src/app/lib/entitlements.js` - Tier limits
+### 5. docs/brain/ingests/pack.md (b7db843ee1cf3e6960f94dbc37cf05a90870bc341c1e61e9c94d94dc5ea1e78f)
+- bm25: -11.2630 | relevance: 0.9185
+
+WRONG: Continue asking for required parameters
+RIGHT: "Of course! Let me search for 4th grade Language Arts lessons instead..."
+```
+
+### ❌ DON'T Confuse Topic Mention with Generation Request
+```
+User: "I need something Christmas-themed"
+
+WRONG: Interpret as "generate a Christmas lesson"
+RIGHT: Interpret as "search for Christmas-themed lessons"
+```
+
+### ❌ DON'T Assume Grade from Context Unless Explicit
+```
+User: "I want you to recommend them to be generated."
+Mr. Mentor: "Is this lesson for Emma's grade (4)?"
+
+WRONG: Assume user wants generation just because they said "generated"
+RIGHT: Clarify intent first - "Would you like me to search for existing lessons 
+       or help you create a new one?"
+```
+
+---
+
+## Key Files
+
+### 32. docs/brain/api-routes.md (f1ee4af5914ccd9a2266616f7f17e803bc3681e9206331fe1c7a011816c5bc08)
+- bm25: -18.1363 | relevance: 1.0000
+
+### `/api/lesson-schedule`
+**Purpose**: Create/read/delete calendar entries for learner lessons  
+**Status**: Operational
+
+- **Location**: `src/app/api/lesson-schedule/route.js`
+
+### `/api/lesson-assign`
+**Purpose**: Assign/unassign lessons to a learner (availability via `learners.approved_lessons`)  
+**Status**: Operational
+
+- **Location**: `src/app/api/lesson-assign/route.js`
+- **Method**: POST
+- **Auth**: Bearer token required; learner ownership verified server-side
+- **Body**: `{ learnerId, lessonKey, assigned }`
+
+### `/api/generate-lesson-outline`
+**Purpose**: Generate a lightweight lesson outline (title + description) for planning/redo  
+**Status**: Operational
+
+### 6. src/app/session/v2/SessionPageV2.jsx (649df07e3ebe3afd9d7e7eccef738a2f718eb3d080765cd15100ec7a9bb69e49)
+- bm25: -10.8440 | relevance: 0.9156
+
+const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
+      // Do NOT clear persisted assessment pools here.
+      // Requirement: pools reset only via Print -> Refresh or lesson completion + explicit restart.
+      
+      // Save medal if test was completed
+      if (testGrade?.percentage != null && learnerId && lessonKey) {
+        try {
+          await upsertMedal(learnerId, goldenKeyLessonKey || lessonKey, testGrade.percentage);
+          addEvent(`🏅 Medal saved: ${testGrade.percentage}%`);
+        } catch (err) {
+          console.error('[SessionPageV2] Failed to save medal:', err);
+        }
+      }
+      
+      // Save transcript segment to mark lesson as completed
+      if (learnerId && learnerId !== 'demo' && lessonId && transcriptLines.length > 0) {
+        try {
+          const learnerName = learnerProfile?.name || (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
+          const startedAt = startSessionRef.current || new Date().toISOString();
+          const completedAt = new Date().toISOString();
+          
+          await appendTranscriptSegment({
+            learnerId,
+            learnerName,
+            lessonId,
+            lessonTitle: lessonData?.title || lessonId,
+            segment: { startedAt, completedAt, lines: transcriptLines },
+            sessionId: browserSessionId || undefined,
+          });
+          addEvent('📝 Transcript saved');
+        } catch (err) {
+          console.error('[SessionPageV2] Failed to save transcript:', err);
+        }
+      }
+      
+      // Pass golden key earned status for notification on lessons page
+      const earnedKey = (goldenKeysEnabledRef.current !== false)
+        ? (timerServiceRef.current?.getGoldenKeySta
+
+### 7. docs/brain/tts-prefetching.md (20cc073772503cfe6baaa7bda436dd53dc02fbe589fd39e4fcad508f79f39b46)
+- bm25: -10.8203 | relevance: 0.9154
+
+**DON'T cache indefinitely**
+- LRU eviction at 10 items prevents memory growth
+- Phase transitions clear cache (old phase audio irrelevant)
+
+**DON'T prefetch more than one question ahead**
+- Student might skip, fail, or use hint - next question unpredictable
+- Better to prefetch N+1 after each answer than N+2..N+10 upfront
+
+**DON'T trust question order without increment tracking**
+```javascript
+// WRONG - currentCompIndex already incremented, so array[currentCompIndex] is N+2 not N+1
+const nextProblem = generatedComprehension[currentCompIndex];
+setCurrentCompIndex(currentCompIndex + 1);
+await speakFrontend(nextProblem);
+ttsCache.prefetch(generatedComprehension[currentCompIndex]); // N+2!
+
+// RIGHT - prefetch from same index that will be used next
+const nextProblem = generatedComprehension[currentCompIndex];
+setCurrentCompIndex(currentCompIndex + 1);
+await speakFrontend(nextProblem);
+// currentCompIndex now points to N+1 (just incremented)
+ttsCache.prefetch(generatedComprehension[currentCompIndex]);
+```
+
+## Related Brain Files
+
+- **[ms-sonoma-teaching-system.md](ms-sonoma-teaching-system.md)** - TTS integrates with Ms. Sonoma teaching flow and phase transitions
+
+## Key Files
+
+**Core Module**:
+- `src/app/session/utils/ttsCache.js`: TTSCache class, LRU cache, prefetch logic
+
+### 8. src/app/session/hooks/useDiscussionHandlers.js (7be01249aa3dede88fdd9756fbda8fd5fed5a2c477980961af851344d51ff9f9)
+- bm25: -10.5994 | relevance: 0.9138
+
+/**
+ * useDiscussionHandlers.js
+ * Custom hook managing all Discussion phase interactive features:
+ * - Jokes
+ * - Riddles (with hint/reveal)
+ * - Poems
+ * - Stories (collaborative storytelling)
+ * - Fill-in-Fun (word game similar to Mad Libs)
+ * - Ask Questions (learner can ask Ms. Sonoma questions)
+ */
+
+import { useCallback } from 'react';
+import { splitIntoSentences, mergeMcChoiceFragments, enforceNbspAfterMcLabels } from '../utils/textProcessing';
+import { normalizeBase64Audio } from '../utils/audioUtils';
+import { ensureQuestionMark, formatQuestionForSpeech } from '../utils/questionFormatting';
+import { pickNextJoke, renderJoke } from '@/app/lib/jokes';
+import { pickNextRiddle, renderRiddle } from '@/app/lib/riddles';
+import { getGradeAndDifficultyStyle } from '../utils/constants';
+
+### 9. src/app/session/slate/page.jsx (b3f2ec7396f2a6e87ee433aae2f69e92ea94620a643afa65e3f113ae289fa1db)
+- bm25: -10.4821 | relevance: 0.9129
+
+{/* Recent tab — completed Ms. Sonoma sessions, most recent first */}
+                {listTab === 'recent' && (
+                  recentList.length === 0 ? (
+                    <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>
+                      NO COMPLETED LESSONS YET — FINISH A LESSON WITH MS. SONOMA TO SEE RESULTS HERE
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ color: C.muted, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>
+                        {recentList.length} COMPLETED LESSON{recentList.length !== 1 ? 'S' : ''}
+                      </div>
+                      {recentList.map((r, i) => <RecentRow key={r.session.id || i} session={r.session} lesson={r.lesson} />)}
+                    </div>
+                  )
+                )}
+
+### 10. src/app/HeaderBar.js (3a962067f6624b759d881b562fe629c21b2a21c024dd8fc5d24581931279db77)
+- bm25: -10.4557 | relevance: 0.9127
+
+{/* Right navigation */}
+				<nav style={{ width: navWidth, display:'flex', gap:16, justifyContent:'flex-end', alignItems:'center', position:'relative' }}>
+					{showHamburger ? (
+						<>
+							<button
+								ref={navToggleRef}
+								type="button"
+								aria-label={navOpen ? 'Close menu' : 'Open menu'}
+								aria-expanded={navOpen}
+								aria-controls="mobile-nav-menu"
+								onClick={() => setNavOpen(v => !v)}
+								style={{
+									background:'#111827', color:'#fff', border:'none', width:36, height:36,
+									display:'inline-flex', alignItems:'center', justifyContent:'center', borderRadius:10, cursor:'pointer',
+									boxShadow:'0 2px 6px rgba(0,0,0,0.25)'
+								}}
+							>
+								{/* Hamburger / Close icon */}
+								{!navOpen ? (
+									<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+										<path d="M3 6h18"/>
+										<path d="M3 12h18"/>
+										<path d="M3 18h18"/>
+									</svg>
+								) : (
+									<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+										<path d="M18 6L6 18"/>
+										<path d="M6 6l12 12"/>
+									</svg>
+								)}
+							</button>
+							{navOpen && (
+								<div
+									id="mobile-nav-menu"
+									ref={navMenuRef}
+									role="menu"
+									style={{ position:'fixed', right: (pathname.startsWith('/session') && !isMobileLandscape) ? '4%' : 8, top: `calc(${headerHeight} + 8px)`, background:'#fff', border:'1px solid #e5e7eb', borderRadius:12, boxShadow:'0 10px 30px rgba(0,0,0,0.15)', minWidth:200, zIndex:1300, overflow:'visible' }}
+								>
+									{/* Print dropdown with nested menu (only on session page) */}
+									{pathna
+
+### 11. docs/brain/story-feature.md (7c541082fb751d8b6d7c2be9019d9fcda07911dd69b371791d357908ef1d85e5)
+- bm25: -10.3563 | relevance: 0.9119
+
+### Story Ending
+1. Child clicks "Story" button
+2. Ms. Sonoma: **Briefly recounts** (first sentence only): "Together they spotted a sparkly treasure chest below."
+3. Ms. Sonoma: "How would you like the story to end?"
+4. Child describes ending
+5. Ms. Sonoma: *Concludes story* "...and they lived happily ever after. The end."
+
+## Key Files
+
+- `page.js` - Story state variables
+- `useDiscussionHandlers.js` - Story handlers (handleStoryStart, handleStoryYourTurn)
+- `/api/sonoma/route.js` - Story generation API
 
 ## What NOT To Do
 
-- Never allow unlimited lesson starts (enforced by API)
-- Never trust client-side quota counting (server is source of truth)
-- Never skip timezone parameter (day boundary matters)
-- Never allow quota bypass without tier check
-- Never delete lesson_unique_starts records (historical data)
+- Never reset storyTranscript between phases (preserve continuity)
+- Never reset storyUsedThisGate between phases (one story per gate)
+- Never skip setup phase on first story creation
+- Never allow freeform story generation without setup (use template-based approach)
+- Never forget to clear story data after "The end." in Test phase
 
-### 30. src/app/api/webb-resources/route.js (2e9edd64d18c5d7ff4ebca7d5651232a73da47443d7ac3609832a724fdd0ebc8)
-- bm25: -5.9233 | relevance: 0.8556
+### 12. docs/brain/ingests/pack.md (ba535074b2f0f77bd019d7cbc5af650b25c0a1324c4e30da69008dc9db4c053b)
+- bm25: -10.2331 | relevance: 0.9110
 
-const best = ranked[0]
-    return {
-      videoId:       best.vid,
-      embedUrl:      `https://www.youtube-nocookie.com/embed/${best.vid}?autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&controls=0&playsinline=1`,
-      title:         best.item.snippet.title,
-      channel:       best.item.snippet.channelTitle,
-      searchQuery:   safeQuery,
-      relevanceTier: best.relevanceScore >= 7 ? 'high' : 'low',
-      hasChapters:   best.hasChapters,
-      hasCaptions:   best.hasCaptions,
-    }
-  } catch (e) {
-    console.error('[webb-resources generateVideo]', e)
-    return { unavailable: true, reason: 'error', searchQuery: safeQuery }
-  }
-}
+### 30. docs/brain/custom-subjects.md (7e58ee1ca5dc34b720347edc91b697304897f6b53937497421004d738d51df62)
+- bm25: -18.4045 | relevance: 1.0000
 
-### 31. src/app/session/v2/SessionPageV2.jsx (39d5de8e4b9e04893f3229d7cf22e96744bfba21d4ad7953e30140cc27810468)
-- bm25: -5.8081 | relevance: 0.8531
+- API
+  - `src/app/api/custom-subjects/route.js`
+- Shared subject utilities
+  - `src/app/hooks/useFacilitatorSubjects.js`
+  - `src/app/lib/subjects.js`
+- UI surfaces that must reflect custom subjects
+  - `src/app/facilitator/calendar/LessonPicker.js` (scheduler subject filter)
+  - `src/app/facilitator/lessons/page.js` (lesson library subject filter)
+  - `src/components/LessonEditor.jsx` (lesson subject field)
+  - `src/app/facilitator/generator/page.js` (Lesson Maker)
+  - `src/app/facilitator/generator/counselor/overlays/*` (Mr. Mentor overlays)
 
-phase.start();
-  };
-  
-  // Handle keyboard hotkeys
-  const handleHotkey = (data) => {
-    const { action, phase, key } = data;
-    
-    addEvent(`âŒ¨ï¸ Hotkey: ${key} (${action})`);
-    
-    // Handle phase-specific actions
-    if (action === 'skip') {
-      if (phase === 'teaching') {
-        skipSentence();
-      } else if (phase === 'discussion') {
-        skipDiscussion();
-      } else if (phase === 'comprehension') {
-        skipComprehension();
-      } else if (phase === 'exercise') {
-        skipExerciseQuestion();
-      } else if (phase === 'worksheet') {
-        skipWorksheetQuestion();
-      } else if (phase === 'test') {
-        skipTestQuestion();
-      }
-    } else if (action === 'repeat' && phase === 'teaching') {
-      repeatSentence();
-    } else if (action === 'next' && phase === 'teaching') {
-      nextSentence();
-    } else if (action === 'pause') {
-      // Toggle pause/resume
-      if (audioEngineRef.current) {
-        const state = audioEngineRef.current.state;
-        if (state === 'playing') {
-          pauseAudio();
-        } else if (state === 'paused') {
-          resumeAudio();
-        }
-      }
-    } else if (action === 'stop') {
-      stopAudio();
-    }
-  };
-  
-  const startSession = async (options = {}) => {
-    if (!orchestratorRef.current) {
-      console.warn('[SessionPageV2] No orchestrator');
-      return;
-    }
-    
-    if (!audioEngineRef.current) {
-      // Engine not yet created (slow iOS, videoRef retry still in-flight).
-      // Construct it now while we are inside a user gesture so the iOS audio
-      // unlock (play/pause of the video element) can succeed.
-      const videoEl = videoRef.current;
-      if (!videoEl) {
-        console.error('[SessionPageV2] Audio engine not ready and no video element');
-        return;
-      }
+### 31. docs/brain/mr-mentor-conversation-flows.md (8d38642aa37f8b8a7e6bd2d6e130151a77c5668c362ce9ff98a5f6a237c14f91)
+- bm25: -18.2419 | relevance: 1.0000
 
-### 32. src/app/session/v2/SessionPageV2.jsx (12703070d977eaf6dd5f5e4fd9a2c73f1695fea4b1b027b83f3ce7284a80d258)
-- bm25: -5.7254 | relevance: 0.8513
+---
 
-if (options?.ignoreResume) {
-      resetTranscriptState();
-    }
-    
-    // Start teaching prefetch in the background (needs to be ready by Teaching phase).
-    // Defer off the Begin click call stack so the "Loading..." state can render immediately.
-    if (teachingControllerRef.current) {
-      setTimeout(() => {
-        try {
-          teachingControllerRef.current?.prefetchAll?.();
-          addEvent('📄 Started background prefetch of teaching content');
-        } catch {
-          // Silent
-        }
-      }, 0);
-    }
-    
-    // Prep video element (load + seek to first frame). The actual iOS autoplay unlock
-    // is handled inside AudioEngine.initialize() (play() during gesture, pause on 'playing').
+## What NOT To Do
+
+### ❌ DON'T Skip Confirmation When Intent Is Ambiguous
+```
+User: "I need a language arts lesson but I don't want one of the ones we have in 
+       the library. It should have a Christmas theme, please make some recommendations."
+
+WRONG: "Is this lesson for Emma's grade (4)?"
+RIGHT: "Would you like me to generate a custom lesson?"
+       (If they say no: "Let me search for Christmas-themed language arts lessons...")
+```
+
+### ❌ DON'T Trigger Generation on Advice-Seeking Language
+```
+User: "Emma has one more Language Arts lesson and then it's Christmas vacation. 
+       Do you have any suggestions?"
+
+WRONG: Start asking for grade, subject, difficulty
+RIGHT: Search language arts lessons, recommend Christmas-themed options
+```
+
+### 13. docs/brain/snapshot-persistence.md (1124fa71ece86ec048aaeef637c7cf577508731d10f3802149bc448806e41006)
+- bm25: -10.2276 | relevance: 0.9109
+
+**Event-Driven Print:**
+- HeaderBar emits `ms:print:worksheet`, `ms:print:test`, `ms:print:combined`, `ms:print:refresh`.
+- SessionPageV2 useEffect wires listeners that call download handlers (worksheet/test PDFs, facilitator key) or refresh (clear cached sets + assessments store).
+- Download handlers are PIN-gated via `ensurePinAllowed('download')` and use a local `createPdfForItems` helper (jsPDF) with a share/preview fallback.
+
+**Refresh Behavior:**
+- `ensurePinAllowed('refresh')` → `clearAssessments(lessonKey, learnerId)` → clear cached sets. Next print regenerates from lesson pools using current learner targets.
+
+**Layout Rules:**
+- PDF generation auto-selects the largest body font that fits the worksheet/test content on a single page (available height = page height minus top/bottom margins). Range: 8–18pt; headers are capped at 20pt.
+- If the content cannot fit even at the minimum size, the generator keeps 8pt and spills to additional pages with guarded page breaks (bottom margin respected). Choices render slightly smaller than prompts and indent by 6pt.
+- Worksheet spacing is compact (spacer ≈ 0.35× body font, min 3pt); Test uses wider spacing (≈0.7× body font, min 4pt) to keep pages balanced while filling available space.
+
+### Key Files
+
+- `src/app/session/v2/SessionPageV2.jsx` – cached assessment load/save, worksheet/test builders, jsPDF helpers, ms:print listeners, refresh handler.
+- `src/app/session/assessment/assessmentStore.js` – dual-write persistence for assessment sets.
+- `src/app/HeaderBar.js` – dispatches ms:print events from the hamburger/print menu.
+
+### 14. docs/brain/story-feature.md (18412a469aaf571ad2790e5068e6ed053af12472994adfc7e85b37d3931d6288)
+- bm25: -10.1928 | relevance: 0.9107
+
+# Story Feature (Continuous Narrative)
+
+## How It Works
+
+The story feature creates a continuous narrative that progresses across all four phases (Teaching, Comprehension, Exercise, Worksheet, and Test). Instead of starting fresh each time, the story builds on itself throughout the session.
+
+### Story Setup Phase (Initial Creation)
+
+When a child first clicks "Story" in any phase, Ms. Sonoma asks three setup questions:
+1. **"Who are the characters in the story?"** - Child responds with characters
+2. **"Where does the story take place?"** - Child responds with setting
+3. **"What happens in the story?"** - Child responds with plot elements
+
+After collecting all three pieces, Ms. Sonoma tells the **first part** of the story using all setup information, ending with **"To be continued."**
+
+### Story Continuation Across Phases
+
+- Story transcript is **preserved** across phase changes
+- Each time child clicks "Story" in subsequent phase:
+  - Ms. Sonoma **reminds them where story left off** (first sentence only)
+  - Asks **"What would you like to happen next?"**
+  - Suggests possibilities (AI-generated)
+  - Continues story based on their input
+  - Ends with **"To be continued."**
+
+### Story Ending in Test Phase
+
+- In Test phase specifically, prompt changes
+- Ms. Sonoma asks: **"How would you like the story to end?"**
+- Child describes desired ending
+- Ms. Sonoma ends story based on their idea, concluding with **"The end."**
+- Happy Ending and Funny Ending buttons removed
+
+### Story Direction Following
+
+- API instructions emphasize: **"Follow the child's ideas closely and make the story about what they want unless it's inappropriate."**
+- Ms. Sonoma stays on track with child's vision instead of redirecting
+- Only inappropriate content triggers redirection
+
+### Story Availability
+
+### 15. src/app/session/slate/page.jsx (4187c15101bc19a9776d811c06dd3cdf687000266b4efe08107c9e58e3f49555)
+- bm25: -10.1858 | relevance: 0.9106
+
+const SETTINGS_CONFIG = [
+  { label: 'SCORE GOAL',        key: 'scoreGoal',    min: 3,  max: 30,  fmt: v => `${v} pts` },
+  { label: 'CORRECT ANSWER',    key: 'correctPts',   min: 1,  max: 5,   fmt: v => `+${v} pt${v !== 1 ? 's' : ''}` },
+  { label: 'WRONG ANSWER',      key: 'wrongPts',     min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u2212${v} pt${v !== 1 ? 's' : ''}` },
+  { label: 'TIMEOUT PENALTY',   key: 'timeoutPts',     min: 0,  max: 5,   fmt: v => v === 0 ? '\u00b10' : `\u2212${v} pt${v !== 1 ? 's' : ''}` },
+  { label: 'TIMEOUT OFFSET',    key: 'timeoutOffset',  min: 0,  max: 5,   fmt: v => v === 0 ? 'none' : `${v} free` },
+  { label: 'TIME PER QUESTION', key: 'questionSecs',   min: 5,  max: 120, fmt: v => `${v}s` },
+]
+const SLATE_VIDEO_SRC = '/media/Mr.%20Slate%20Suit.mp4'
+
+### 16. src/app/session/slate/page.jsx (3180232d4daf1db50af479b0d7660fb657c60aea16e43f724e28c10245b9173c)
+- bm25: -10.1501 | relevance: 0.9103
+
+{/* Owned tab — lesson cards only (filters/count are in controls strip) */}
+                {listTab === 'owned' && (
+                  ownedList.length === 0 ? (
+                    <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>NO LESSONS MATCH FILTERS</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {ownedList.map((l, i) => <LessonCard key={getLk(l) || i} lesson={l} />)}
+                    </div>
+                  )
+                )}
+                </div>{/* end scrollable list */}
+              </>
+            )
+          })()}
+        </div>
+
+### 17. src/app/learn/page.js (8763c06c7c6f8bc95a4e9ccdcf5dc75d7ba7d1a2c3b9abb20a25a0cb801ce11a)
+- bm25: -10.1326 | relevance: 0.9102
+
+{noLearner ? (
+          <div style={{ margin:'8px auto 16px', maxWidth:420 }}>
+            <p style={{ marginTop:0 }}>Pick a Learner to continue:</p>
+            <LearnerSelector onSelect={(l)=> {
+              setLearner({ id: l.id, name: l.name })
+              try {
+                localStorage.setItem('learner_id', l.id)
+                localStorage.setItem('learner_name', l.name)
+                if (l.grade) localStorage.setItem('learner_grade', l.grade)
+              } catch {}
+            }} />
+          </div>
+        ) : (
+          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+            <button
+              onClick={goToLessons}
+              title="Practice lessons guided by Ms. Sonoma"
+              style={{
+                padding:'14px 20px', 
+                border:'2px solid #c7442e', 
+                borderRadius:12,
+                fontSize:16, 
+                fontWeight:700,
+                background:'#c7442e',
+                color:'#fff',
+                cursor:'pointer',
+                width:'100%', 
+                maxWidth:320
+              }}
+            >
+              👩🏻‍🦰 Ms. Sonoma
+            </button>
+            <button
+              onClick={() => r.push('/session/slate')}
+              title="Drill questions with Mr. Slate"
+              style={{
+                padding:'14px 20px', 
+                border:'2px solid #6366f1', 
+                borderRadius:12,
+                fontSize:16, 
+                fontWeight:700,
+                background:'#6366f1',
+                color:'#fff',
+                cursor:'pointer',
+                width:'100%', 
+                maxWidth:320
+              }}
+            >
+              🤖 Mr. Slate
+            </button>
+            <b
+
+### 18. src/app/session/page.js (92f388d9bc5e5ff4e48e752a71b894e2c1fc466812b0f350dfb950e75dbb92a8)
+- bm25: -10.1296 | relevance: 0.9101
+
+// Skip speech: stop TTS, video, captions and jump to end of current response turn
+  const skipJustFiredRef = useRef(false);
+
+const handleSkipSpeech = useCallback(() => {
+    // Mark that skip just fired to prevent Begin hotkey from auto-triggering
+    skipJustFiredRef.current = true;
+    setTimeout(() => { skipJustFiredRef.current = false; }, 300);
+
+// Abort everything but keep existing transcript/captions on screen
+    abortAllActivity(true);
+
+// Explicitly stop any pending WebAudio source and guard timers
     try {
-      if (videoRef.current) {
-        try { videoRef.current.muted = true; } catch {}
-        // Pause first so any in-flight video.play() from the unlock sequence settles
-        // cleanly before we seek. On iOS Safari, setting currentTime while play() is
-        // pending can leave the element in an inconsistent state.
-        try { videoRef.current.pause(); } catch {}
-        if (videoRef.current.readyState < 2) {
-          try { videoRef.current.load(); } catch {}
-        }
-        try { videoRef.current.currentTime = 0; } catch {}
+      if (webAudioSourceRef.current) {
+        try { webAudioSourceRef.current.stop(); } catch {}
+        try { webAudioSourceRef.current.disconnect(); } catch {}
+        webAudioSourceRef.current = null;
+      }
+      clearSpeechGuard();
+    } catch {}
+
+// Hide repeat button during the skip action
+    try { setShowRepeatButton(false); } catch {}
+
+// Enable input immediately when skipping
+    try { setCanSend(true); } catch {}
+
+// Scroll transcript to bottom
+    try {
+      if (captionBoxRef.current) {
+        captionBoxRef.current.scrollTop = captionBoxRef.current.scrollHeight;
       }
     } catch {}
-    
-    const normalizeResumePhase = (phase) => {
-      // Defensive: old snapshots may contain sub-phases that aren't valid orchestrator phases.
-      if (!phase) return null;
-      if (phase === 'grading' || phase === 'congrats') return 'test';
-      if (phase === 'complete') return 'closing';
-      return phase;
+
+// Show opening actions if in the right phase/state
+    try {
+      if (
+        phase === 'discussion' &&
+        subPhase === 'awaiting-learner' &&
+        askState === 'inactive' &&
+        riddleState === 'inactive' &&
+        poemState === 'inactive'
+      ) {
+        setShowOpeningActions(true);
+      }
+    } catch {}
+
+// Reset playback state refs
+    webAudioStartedAtRef.current = 0;
+    webAudioPausedAtRef.current = 0;
+    htmlAudioPausedAtRef.current = 0;
+
+// Restore repeat button so the learner can hear the last line again
+    try {
+      if (lastAudioBase64Ref.current) {
+        setShowRepeatButton(true);
+      }
+    } catch {}
+
+### 19. src/app/session/page.js (0435bfbe3010e78db35da93580cc55cf28c848c92ca5c6a6e9802dae1cfd26ff)
+- bm25: -9.9750 | relevance: 0.9089
+
+// Use hook-provided download functions
+  const handleDownloadWorksheet = handleDownloadWorksheetHook;
+  const handleDownloadTest = handleDownloadTestHook;
+  const handleDownloadAnswers = handleDownloadAnswersHook;
+  const handleDownloadWorksheetTestCombined = handleDownloadWorksheetTestCombinedHook;
+  const handleRefreshWorksheetAndTest = handleRefreshWorksheetAndTestHook;
+
+// Make header print dropdown trigger the same actions
+  useEffect(() => {
+    const onWs = () => { try { handleDownloadWorksheet(); } catch {} };
+    const onTest = () => { try { handleDownloadTest(); } catch {} };
+    const onCombined = () => { try { handleDownloadWorksheetTestCombined(); } catch {} };
+    const onRefresh = () => { try { handleRefreshWorksheetAndTest(); } catch {} };
+    window.addEventListener('ms:print:worksheet', onWs);
+    window.addEventListener('ms:print:test', onTest);
+    window.addEventListener('ms:print:combined', onCombined);
+    window.addEventListener('ms:print:refresh', onRefresh);
+    return () => {
+      window.removeEventListener('ms:print:worksheet', onWs);
+      window.removeEventListener('ms:print:test', onTest);
+      window.removeEventListener('ms:print:combined', onCombined);
+      window.removeEventListener('ms:print:refresh', onRefresh);
     };
+  }, [handleDownloadWorksheet, handleDownloadTest, handleDownloadWorksheetTestCombined, handleRefreshWorksheetAndTest]);
 
-### 33. docs/brain/ingests/pack-mentor-intercepts.md (0682690e311455050c4c7292f9e6b0952953d9463e5fefccdf15414b9d802885)
-- bm25: -5.7162 | relevance: 0.8511
+const resetTestProgress = (listOverride = null) => {
+    const list = Array.isArray(listOverride)
+      ? listOverride
+      : (Array.isArray(generatedTest) ? generatedTest : []);
+    const total = list.length;
+    const target = (typeof TEST_TARGET === 'number' && TEST_TARGET > 0) ? TEST_TARGET : total;
+    const limit = Math.max(0, Math.min(target, total));
 
-**DON'T allow takeover without showing warning** - Dialog must explain consequences (other device loses session). User should understand what's happening.
+### 20. docs/brain/story-feature.md (4603df0d8f12c8d9a3768664d12764d9c500ce470ef136e6ea6a98ef898e946f)
+- bm25: -9.6817 | relevance: 0.9064
 
-### 34. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (96423c5ddc42072ce4865565bda84b0ab6fd69d27d6704ef64b4b75b8814777e)
-- bm25: -5.6884 | relevance: 0.8505
+## State Variables
 
-**DON'T allow takeover without showing warning** - Dialog must explain consequences (other device loses session). User should understand what's happening.
+Location: `page.js`
 
-### 35. docs/brain/ingests/pack.planned-lessons-flow.md (3fc88c54b15aad48286790756df7e202a85aaa9465a17159ddb22d4822a5be56)
-- bm25: -5.6884 | relevance: 0.8505
+```javascript
+const [storySetupStep, setStorySetupStep] = useState('') // 'characters' | 'setting' | 'plot' | 'complete'
+const [storyCharacters, setStoryCharacters] = useState('')
+const [storySetting, setStorySetting] = useState('')
+const [storyPlot, setStoryPlot] = useState('')
+const [storyPhase, setStoryPhase] = useState('') // Tracks which phase story started in
+const [storyState, setStoryState] = useState('inactive') // 'inactive' | 'awaiting-setup' | 'awaiting-turn' | 'ending'
+const [storyTranscript, setStoryTranscript] = useState([]) // Full story history
+```
 
-**DON'T allow takeover without showing warning** - Dialog must explain consequences (other device loses session). User should understand what's happening.
+## Handler Functions
 
-### 36. docs/brain/facilitator-help-system.md (c249a4a4c879fc7d9f3e4681903d5145c69f2f495d6d5eddda5e805833c62e21)
-- bm25: -5.6293 | relevance: 0.8492
+Location: `useDiscussionHandlers.js`
 
-**2026-01-10**: Added `PageHeader` dense mode.
-- Purpose: allow specific pages (e.g., Calendar) to reduce header vertical footprint without changing global facilitator layouts.
-- Implementation: `dense` reduces the default margins and slightly reduces title/subtitle sizing.
-- Tightness: `dense` is intentionally more compact than the default header; use it only where vertical space is at a premium.
+### handleStoryStart
+- Checks if `storyTranscript` has content
+- **If continuing**: Reminds where story left off, asks for next part
+- **If new**: Initiates setup phase asking for characters
 
-**2025-12-15**: Removed "Don't show again" functionality. Help is now fully voluntary - users click ❓ to view, click backdrop/X to close. No localStorage persistence needed. Simplified component state.
+### handleStoryYourTurn
+- Handles all story input including setup and continuation
+- **Setup phase**: Collects characters → setting → plot → generates first part
+- **Continuation phase**: 
+  - Sends full transcript history to maintain context
+  - Generates next part with "To be continued."
+- **Test phase**: 
+  - Asks for ending preference
+  - Generates final part with "The end."
+  - Clears story data for next session
 
-**2025-12-15**: Fixed modal overlay rendering using React Portal and inline styles instead of Tailwind classes. Modals now properly display above page content with backdrop.
+## User Experience Flow
 
-**2025-12-15**: Unified both help components to use ❓ emoji. WorkflowGuide and InlineExplainer now use identical button styling for consistency. Both open centered modal overlays with backdrop on click.
+### First Story Creation
+1. Child clicks "Story" button
+2. Ms. Sonoma: "Who are the characters in the story?"
+3. Child: "A dragon and a princess"
+4. Ms. Sonoma: "Where does the story take place?"
+5. Child: "In a castle"
+6. Ms. Sonoma: "What happens in the story?"
+7. Child: "The dragon helps the princess"
+8. Ms. Sonoma: *Tells first part* "Once upon a time, a dragon and a princess met in a castle. The dragon wanted to help the princess with her problem. To be continued."
 
-**2025-12-15**: Updated InlineExplainer to use modal overlay instead of positioned tooltip. Changed button from blue circle with SVG icon to ❓ emoji. Removed placement prop (no longer needed). Modal centers on screen with backdrop, preventing layout issues and overflow problems.
+### 21. docs/brain/v2-architecture.md (df61e9830d253cd1bf3cc9d065d4ff574ae37b1ad7bd5bebaf167840f2c6eb9a)
+- bm25: -9.5628 | relevance: 0.9053
 
-**2025-12-15**: Initial implementation of help system. Added InlineExplainer, WorkflowGuide, PageHeader components. Deployed help content to calendar, learners, lessons pages. Created this brain file.
+**Rules:**
+- Questions are spoken via TTS using V1 formatting (`formatQuestionForSpeech` + `ensureQuestionMark`).
+- The footer input is the primary answer surface for Exercise (no per-question overlay UI).
+- For MC/TF, quick buttons appear (A/B/C/D or True/False) and submit immediately.
+- For FIB/SA, the footer shows the text input (same surface as comprehension/worksheet/test) so FITB answers can be typed.
+- Worksheet and Test MC/TF also surface quick buttons; only non-MC/TF items show the text input.
+- Wrong answers follow V1 retry behavior: hint, hint, then spoken reveal on the 3rd incorrect attempt.
+
+### 22. src/app/session/slate/page.jsx (05e9852792a6aac67ce8c2bb158c5a762ce686ed9f262b8f8c71acd65aea03d5)
+- bm25: -9.5570 | relevance: 0.9053
+
+// Handle answer result (correct / wrong / timeout)
+  const handleResult = useCallback((correct, timeout = false) => {
+    clearInterval(timerInterval.current)
+    isJudgingRef.current = false
+    setIsJudging(false)
+    const q = currentQRef.current
+    const prev = scoreRef.current
+    let newScore = prev
+    if (!timeout) {
+      consecutiveTimeoutsRef.current = 0
+      const { scoreGoal, correctPts, wrongPts } = settingsRef.current
+      newScore = correct ? Math.min(scoreGoal, prev + correctPts) : Math.max(0, prev - wrongPts)
+    } else {
+      consecutiveTimeoutsRef.current += 1
+      const { timeoutPts, timeoutOffset } = settingsRef.current
+      if (timeoutPts > 0 && consecutiveTimeoutsRef.current > timeoutOffset) {
+        newScore = Math.max(0, prev - timeoutPts)
+      }
+    }
+    scoreRef.current = newScore
+    setScore(newScore)
+    setQCount(c => c + 1)
+
+const msgs = timeout ? TIMEOUT_MSGS : correct ? CORRECT_MSGS : WRONG_MSGS
+    const feedbackText = pick(msgs)
+    const correctAnswer = !correct && q ? getCorrectText(q) : ''
+    setLastResult({ correct, timeout, text: feedbackText, correctAnswer })
+    phaseRef.current = 'feedback'
+    setPagePhase('feedback')
+
+// Helper: advance to next question (used both by timeout and audio onDone)
+    const doAdvance = () => {
+      if (phaseRef.current !== 'feedback') return
+      const next = advanceDeck()
+      if (next) showQuestion(next)
+    }
+
+### 23. src/app/HeaderBar.js (0b79436d351739b4da95cd4886c38741eb1ac314de43cfefd896b4d9584903af)
+- bm25: -9.1067 | relevance: 0.9011
+
+return (
+			<>
+			<header style={{
+				position:'fixed', top:0, left:0, right:0, zIndex:1000,
+				display:'flex', alignItems:'center',
+				height: headerHeight,
+				paddingLeft: headerPadLeft,
+				paddingRight: headerPadRight,
+				background:'rgba(255,255,255,0.85)',
+				backdropFilter:'blur(6px)',
+				WebkitBackdropFilter:'blur(6px)',
+				borderBottom:'1px solid #e5e7eb',
+				boxShadow:'0 4px 12px -2px rgba(0,0,0,0.06)'
+			}}>
+				{/* Left area mirrors right nav width to keep center truly centered */}
+				<div ref={brandContainerRef} style={{ width: navWidth, display:'flex', alignItems:'center' }}>
+					<Link ref={brandLinkRef} href="/" style={{ display:'inline-flex', alignItems:'center', gap:BRAND_GAP, textDecoration:'none', color:'inherit' }}>
+						<Image
+							ref={brandImgRef}
+							src="/ms-sonoma.png"
+							alt="Ms. Sonoma logo"
+							width={40}
+							height={40}
+							priority
+							style={{
+								borderRadius:10,
+								flexShrink:0,
+								width:'clamp(28px, 5vw, 40px)',
+								height:'clamp(28px, 5vw, 40px)'
+							}}
+						/>
+						<span
+							ref={brandTextRef}
+							style={{
+								fontWeight:700,
+								fontSize: brandFitSize ? brandFitSize : BRAND_FONT,
+								lineHeight:1.1,
+								whiteSpace:'nowrap',
+								// Only hide the brand text when on the Session page at small widths.
+								display: (pathname.startsWith('/session') && viewportWidth < 650) ? 'none' : 'inline'
+							}}
+						>
+							Ms. Sonoma
+						</span>
+					</Link>
+				</div>
+
+### 24. src/app/api/slate-tts/route.js (7b8ef6980e896ad0d7892d92873c28d84ff4c37b2f38f83c4fcc29acab5fce64)
+- bm25: -9.0014 | relevance: 0.9000
+
+// Mr. Slate TTS route — uses a male, Standard US voice for a robotic quality
+// Intentionally distinct from /api/tts (Ms. Sonoma) which uses a Neural GB female voice
+
+import { NextResponse } from 'next/server'
+import fs from 'node:fs'
+import path from 'node:path'
+import textToSpeech from '@google-cloud/text-to-speech'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+const { TextToSpeechClient } = textToSpeech
+let ttsClientPromise
+
+// Standard US male voice — Standard (not Neural) gives a more robotic character
+const SLATE_VOICE = {
+  languageCode: 'en-US',
+  name: 'en-US-Standard-B',
+  ssmlGender: 'MALE',
+}
+
+const SLATE_AUDIO_CONFIG = {
+  audioEncoding: 'MP3',
+  speakingRate: 1.08, // slightly faster/crisper than Sonoma
+  pitch: -1.5,        // slightly lower pitch for mechanical feel
+}
+
+function decodeCredentials(raw) {
+  if (!raw) return null
+  try { return JSON.parse(raw) } catch {}
+  try { const decoded = Buffer.from(raw, 'base64').toString('utf8'); return JSON.parse(decoded) } catch {}
+  return null
+}
+
+function loadTtsCredentials() {
+  const inline = process.env.GOOGLE_TTS_CREDENTIALS
+  const inlineCreds = decodeCredentials(inline)
+  if (inlineCreds) return inlineCreds
+  const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(process.cwd(), 'google-tts-key.json')
+  try {
+    if (credentialPath && fs.existsSync(credentialPath)) {
+      const raw = fs.readFileSync(credentialPath, 'utf8').trim()
+      if (raw) return decodeCredentials(raw) || JSON.parse(raw)
+    }
+  } catch {}
+  return null
+}
+
+### 25. src/app/session/v2/SessionPageV2.jsx (da1e8fc8e35e5885bece93951237a82791ce169eefb3ff8be0f2a7fafba79b3c)
+- bm25: -8.9693 | relevance: 0.8997
+
+useEffect(() => {
+    const onWs = () => { try { handleDownloadWorksheet(); } catch {} };
+    const onTest = () => { try { handleDownloadTest(); } catch {} };
+    const onCombined = () => { try { handleDownloadCombined(); } catch {} };
+    const onRefresh = () => { try { handleRefreshWorksheetAndTest(); } catch {} };
+
+window.addEventListener('ms:print:worksheet', onWs);
+    window.addEventListener('ms:print:test', onTest);
+    window.addEventListener('ms:print:combined', onCombined);
+    window.addEventListener('ms:print:refresh', onRefresh);
+
+return () => {
+      window.removeEventListener('ms:print:worksheet', onWs);
+      window.removeEventListener('ms:print:test', onTest);
+      window.removeEventListener('ms:print:combined', onCombined);
+      window.removeEventListener('ms:print:refresh', onRefresh);
+    };
+  }, [handleDownloadCombined, handleDownloadTest, handleDownloadWorksheet, handleRefreshWorksheetAndTest]);
+  
+  // Helper to get the current phase name for timer key (matching V1)
+  const getCurrentPhaseName = useCallback(() => {
+    // Map phase state to phase timer key
+    // Teaching phase uses discussion timer (they're grouped together)
+    if (currentPhase === 'discussion' || currentPhase === 'teaching') return 'discussion';
+    if (currentPhase === 'comprehension') return 'comprehension';
+    if (currentPhase === 'exercise') return 'exercise';
+    if (currentPhase === 'worksheet') return 'worksheet';
+    if (currentPhase === 'test') return 'test';
+    return null;
+  }, [currentPhase]);
+
+// Resolve phase ref by name
+  const getPhaseRef = (phaseName) => {
+    const map = {
+      comprehension: comprehensionPhaseRef,
+      exercise: exercisePhaseRef,
+      worksheet: worksheetPhaseRef,
+      test: testPhaseRef
+    };
+    return map[phaseName] || null;
+  };
+
+### 26. src/app/session/slate/page.jsx (a6b363485986cc3e1dd03c010a16342d15e7a44472a57fed8de43da05c55f732)
+- bm25: -8.7884 | relevance: 0.8978
+
+// --- Sub-components ----------------------------------------------------------
+
+const SlateVideo = forwardRef(function SlateVideo({ size = 180, style: extraStyle }, ref) {
+  const sizeStyle = extraStyle ? {} : { width: size, height: size }
+  return (
+    <video
+      ref={ref}
+      src={SLATE_VIDEO_SRC}
+      loop
+      muted
+      playsInline
+      style={{ objectFit: 'contain', display: 'block', margin: '0 auto', ...sizeStyle, ...extraStyle }}
+    />
+  )
+})
+
+function TimerBar({ secondsLeft, total = QUESTION_SECONDS }) {
+  const pct = Math.max(0, Math.min(100, (secondsLeft / total) * 100))
+  const color = pct > 50 ? C.green : pct > 25 ? C.yellow : C.red
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      <div style={{ flex: 1, height: 6, background: '#21262d', borderRadius: 3, overflow: 'hidden' }}>
+        <div style={{
+          width: `${pct}%`,
+          height: '100%',
+          background: color,
+          borderRadius: 3,
+          transition: 'width 0.9s linear, background 0.4s ease',
+        }} />
+      </div>
+      <span style={{ color: C.muted, fontSize: 12, fontFamily: C.mono, minWidth: 28, textAlign: 'right' }}>{secondsLeft}s</span>
+    </div>
+  )
+}
+
+### 27. src/app/session/slate/page.jsx (4ad05d813291692a4fe7c4dc00d5e0fcff818982b2ddcdb58298ebf3c701f726)
+- bm25: -8.7571 | relevance: 0.8975
+
+{/* Body — flex column so controls stay fixed and only the list scrolls */}
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          {availableLessons.length === 0 && allOwnedLessons.length === 0 ? (
+            <div style={{ textAlign: 'center', marginTop: 60 }}>
+              <div style={{ marginBottom: 16 }}>
+                <SlateVideo size={120} />
+              </div>
+              <div style={{ color: C.muted, fontSize: 14, letterSpacing: 1 }}>NO DRILL LESSONS AVAILABLE</div>
+              <div style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>Complete a lesson with Ms. Sonoma first, then come back to practice.</div>
+            </div>
+          ) : (() => {
+            // --- Derived lists for each tab ---
+            const getLk = l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`
+
+### 28. docs/brain/ingests/pack.md (84a96ac150f2135d31aa9bfe9cd8ac1e61d8f40743bcb440da0563dd1f1c1bb2)
+- bm25: -8.7416 | relevance: 0.8973
+
+### 13. docs/brain/header-navigation.md (17596087776b8a8510ebd6fdda83503d40ccdb8376bc76c97583cafb2888e681)
+- bm25: -23.7972 | relevance: 1.0000
+
+# Header Navigation
+
+## How It Works
+
+The global header (HeaderBar) is rendered across pages and provides:
+
+- Brand link to home
+- Back button on pages that define a back chain
+- Top-level navigation links (About, Learn, Facilitator)
+- Session-specific print menu actions
+
+### Session Print Menu
+
+On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions.
+
+**Trigger behavior (desktop):** Open on hover (mouseenter) with a short grace period on mouseleave so it does not flicker closed while moving from the icon into the menu.
+
+**Trigger behavior (touch / fallback):** The icon should also toggle the dropdown on click.
+
+The dropdown includes print actions:
+
+- Worksheet
+- Test
+- Facilitator Key
+- Refresh
+
+On narrow layouts, these same actions live inside the hamburger menu under a nested "Print" section.
+
+Important: header buttons (including the print icon) must explicitly set `type="button"` so they never behave like submit buttons when a page happens to include a form.
+
+Also: header dropdown trigger buttons must call `e.stopPropagation()` in their onClick handlers to prevent the opening click from bubbling to document and immediately triggering the outside-click-close listener.
+
+### Facilitator Dropdown
+
+On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
+
+- ⚙️ Account -> `/facilitator/account`
+- 🔔 Notifications -> `/facilitator/notifications`
+- 👥 Learners -> `/facilitator/learners`
+- 📚 Lessons -> `/facilitator/lessons`
+- 📅 Calendar -> `/facilitator/calendar`
+- 🧠 Mr. Mentor -> `/facilitator/mr-mentor`
+
+### 29. src/app/session/v2/ComprehensionPhase.jsx (32264c4e04d7838853e8da82ca1eb535b8320fa0452b7246a72c3cc1dd969093)
+- bm25: -8.6816 | relevance: 0.8967
+
+const correctText = deriveCorrectAnswerText(question, acceptable) || String(question.answer || '');
+    
+    // Record answer
+    this.#answers.push({
+      questionId: question.id,
+      question: question.question,
+      userAnswer: answer,
+      correctAnswer: correctText,
+      isCorrect: isCorrect
+    });
+    
+    this.#emit('answerSubmitted', {
+      questionIndex: this.#currentQuestionIndex,
+      isCorrect: isCorrect,
+      attempts,
+      score: this.#score,
+      totalQuestions: this.#questions.length,
+      correctAnswer: correctText
+    });
+    
+    // Request granular snapshot save (V1 behavioral parity)
+    this.#emit('requestSnapshotSave', {
+      trigger: 'comprehension-answer',
+      data: {
+        nextQuestionIndex: Math.min(this.#currentQuestionIndex + 1, this.#questions.length),
+        score: this.#score,
+        totalQuestions: this.#questions.length,
+        questions: this.#questions,
+        answers: [...this.#answers],
+        timerMode: this.#timerMode
+      }
+    });
+    
+    // Play praise TTS if correct (V1 behavior)
+    if (isCorrect) {
+      this.#state = 'playing-feedback';
+      const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
+      
+      try {
+        const praiseAudio = await fetchTTS(praise);
+        await this.#audioEngine.playAudio(praiseAudio || '', [praise]);
+      } catch (err) {
+        console.error('[ComprehensionPhase] Praise TTS failed:', err);
+      }
+    }
+    
+    if (!isCorrect) {
+      // Wrong: hint, hint, then reveal on 3rd (V1 parity).
+      if (attempts < 3) {
+        const qKey = String(question.id || this.#currentQuestionIndex);
+        const hint = attempts === 1 ? pickHint(HINT_FIRST, qKey) : pickHint(HINT_SECOND, qKey);
+        try {
+          // Ensure question TTS cannot ov
+
+### 30. src/app/session/v2/ExercisePhase.jsx (1447e673345aa9276d648a8e498b64c4a0b4d077fc3b95874df5eb0f5aa1957f)
+- bm25: -8.6632 | relevance: 0.8965
+
+const correctText = deriveCorrectAnswerText(question, acceptable) || String(question.answer || '');
+    
+    // Record answer
+    this.#answers.push({
+      questionId: question.id,
+      question: question.question,
+      userAnswer: answer,
+      correctAnswer: correctText,
+      isCorrect: isCorrect
+    });
+    
+    this.#emit('answerSubmitted', {
+      questionIndex: this.#currentQuestionIndex,
+      isCorrect: isCorrect,
+      attempts,
+      score: this.#score,
+      totalQuestions: this.#questions.length,
+      correctAnswer: correctText
+    });
+    
+    // Request granular snapshot save (V1 behavioral parity)
+    this.#emit('requestSnapshotSave', {
+      trigger: 'exercise-answer',
+      data: {
+        nextQuestionIndex: Math.min(this.#currentQuestionIndex + 1, this.#questions.length),
+        score: this.#score,
+        totalQuestions: this.#questions.length,
+        questions: this.#questions,
+        answers: [...this.#answers],
+        timerMode: this.#timerMode
+      }
+    });
+    
+    // Play praise TTS if correct (V1 behavior)
+    if (isCorrect) {
+      this.#state = 'playing-feedback';
+      const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
+      
+      try {
+        const praiseAudio = await fetchTTS(praise);
+        await this.#audioEngine.playAudio(praiseAudio || '', [praise]);
+      } catch (err) {
+        console.error('[ExercisePhase] Praise TTS failed:', err);
+      }
+    }
+    
+    if (!isCorrect) {
+      // Wrong: hint, hint, then reveal on 3rd (V1 parity).
+      if (attempts < 3) {
+        const qKey = String(question.id || this.#currentQuestionIndex);
+        const hint = attempts === 1 ? pickHint(HINT_FIRST, qKey) : pickHint(HINT_SECOND, qKey);
+        try {
+          // Ensure question TTS cannot overlap feed
+
+### 31. docs/brain/header-navigation.md (17596087776b8a8510ebd6fdda83503d40ccdb8376bc76c97583cafb2888e681)
+- bm25: -8.6304 | relevance: 0.8962
+
+# Header Navigation
+
+## How It Works
+
+The global header (HeaderBar) is rendered across pages and provides:
+
+- Brand link to home
+- Back button on pages that define a back chain
+- Top-level navigation links (About, Learn, Facilitator)
+- Session-specific print menu actions
+
+### Session Print Menu
+
+On the Session page, the header shows a printer icon (desktop layout) that opens a small dropdown with print actions.
+
+**Trigger behavior (desktop):** Open on hover (mouseenter) with a short grace period on mouseleave so it does not flicker closed while moving from the icon into the menu.
+
+**Trigger behavior (touch / fallback):** The icon should also toggle the dropdown on click.
+
+The dropdown includes print actions:
+
+- Worksheet
+- Test
+- Facilitator Key
+- Refresh
+
+On narrow layouts, these same actions live inside the hamburger menu under a nested "Print" section.
+
+Important: header buttons (including the print icon) must explicitly set `type="button"` so they never behave like submit buttons when a page happens to include a form.
+
+Also: header dropdown trigger buttons must call `e.stopPropagation()` in their onClick handlers to prevent the opening click from bubbling to document and immediately triggering the outside-click-close listener.
+
+### Facilitator Dropdown
+
+On non-hamburger layouts, mouseovering the "Facilitator" header link opens a small dropdown menu with quick links:
+
+- ⚙️ Account -> `/facilitator/account`
+- 🔔 Notifications -> `/facilitator/notifications`
+- 👥 Learners -> `/facilitator/learners`
+- 📚 Lessons -> `/facilitator/lessons`
+- 📅 Calendar -> `/facilitator/calendar`
+- 🧠 Mr. Mentor -> `/facilitator/mr-mentor`
+
+The dropdown uses a short hover grace period on mouseleave so it does not flicker closed while moving from the header link down into the menu.
+
+### 32. docs/brain/v2-architecture.md (6a7b91ff6e8e0570e3cb0b8ab750c6e9a442924b2edcc946c2ebed47715132c1)
+- bm25: -8.3095 | relevance: 0.8926
+
+**Idle Begin CTA loading feedback (2026-01-07)**
+- When the learner clicks the initial "Begin" (idle phase) or "Resume", the CTA must immediately flip to "Loading..." and disable until `startSession()` returns.
+- The Begin CTA must never hang indefinitely.
+  - Any awaited Begin-start steps must be time-boxed.
+  - On timeout/failure, the CTA must re-enable and show a user-facing error so the learner can retry.
+- When the CTA is disabled because prerequisites are still initializing (e.g., snapshot load), the label must not misleadingly show "Loading..." without context.
+
+**Complete Lesson farewell sequencing (2026-01-07)**
+- The Test review "Complete Lesson" click plays a short congrats line to hide end-of-lesson load.
+- The Closing phase farewell must NOT interrupt that congrats line.
+- If congrats audio is playing when Closing begins, defer `ClosingPhase.start()` until the AudioEngine emits `end`.
+- Transcript now uses V1's `CaptionPanel` (assistant/user styling, MC stack, vocab highlighting) and saves `{ lines:[{text,role}], activeIndex }` into snapshots. Caption changes and learner submissions append lines with duplicate detection; active caption highlights are restored on load for cross-device continuity. The caption panel auto-scrolls to the newest line; on iOS Safari this must use an end-of-list sentinel + `scrollIntoView` with multi-tick retries (direct `scrollTop` writes can be ignored during layout). Transcript state resets when Start Over ignores resume so captions do not accumulate across restarts. In portrait mode, the caption panel height is set to 35vh.
+
+### 33. src/app/session/hooks/useDiscussionHandlers.js (9b55c98f0dc1e40f39d4d34d9f13754d03d7a23365d924c4f621885bd163c850)
+- bm25: -8.2672 | relevance: 0.8921
+
+const handleStoryEnd = useCallback(async (inputValue, endingType = 'happy') => {
+    // This function is kept for backward compatibility but is no longer used
+    // Story endings are now handled through handleStoryYourTurn in test phase
+    const trimmed = String(inputValue ?? '').trim();
+    setCanSend(false);
+    
+    let updatedTranscript = [...storyTranscript];
+    if (trimmed) {
+      updatedTranscript = [...updatedTranscript, { role: 'user', text: trimmed }];
+      try {
+        const prevLen = captionSentencesRef.current?.length || 0;
+        const nextAll = [...(captionSentencesRef.current || []), { text: trimmed, role: 'user' }];
+        captionSentencesRef.current = nextAll;
+        setCaptionSentences(nextAll);
+        setCaptionIndex(prevLen);
+      } catch {}
+    }
+    
+    const storyContext = updatedTranscript.length > 0
+      ? 'Story so far: ' + updatedTranscript.map(turn => 
+          turn.role === 'user' ? `Child: "${turn.text}"` : `You: "${turn.text}"`
+        ).join(' ')
+      : '';
+    
+    const userPart = trimmed ? `The child wants the story to end like this: "${trimmed.replace(/["]/g, "'")}"` : '';
+    const instruction = [
+      `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(learnerGrade, difficultyParam)}`,
+      'You are ending a collaborative story.',
+      storyContext,
+      userPart,
+      'End the story based on their idea in 2-3 short sentences.',
+      'Follow the child\'s ideas closely and make the ending about what they want unless it\'s inappropriate.',
+      'Make it satisfying and age-appropriate for a child.',
+      'Say "The end." at the very end.'
+    ].filter(Boolean).join(' ');
+    
+    let responseText = 'And they all lived happily ever after. The end.';
+    try {
+      const res = await fetch('/api/sonoma', {
+        me
+
+### 34. src/app/session/v2/SessionPageV2.jsx (806a826b41e44fd217fdd3f45566ba0bb00b5ff4507a27930fa1770c831ce668)
+- bm25: -8.2353 | relevance: 0.8917
+
+{openingActionActive && (() => {
+            const action = openingActionState?.action || openingActionType;
+            const data = openingActionState?.data || {};
+            const stage = openingActionState?.stage || data.stage;
+            const riddle = data.riddle || {};
+            const transcript = Array.isArray(data.transcript) ? data.transcript : [];
+            const wordTypes = Array.isArray(data.wordTypes) ? data.wordTypes : [];
+            const currentIndex = Number.isFinite(data.currentIndex) ? data.currentIndex : 0;
+            const currentWordType = wordTypes[currentIndex] || null;
+            const collectedWords = Array.isArray(data.words) ? data.words : [];
+            const cardStyle = {
+              background: '#fffaf0',
+              border: '1px solid #f59e0b',
+              borderRadius: 12,
+              padding: 12,
+              marginBottom: 8,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+            };
+            const rowStyle = { display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8, justifyContent: 'flex-end' };
+            const baseBtn = {
+              padding: '8px 14px',
+              borderRadius: 8,
+              border: 'none',
+              fontWeight: 700,
+              cursor: 'pointer',
+              opacity: 1
+            };
+
+const errorText = openingActionError ? (
+              <div style={{ marginTop: 6, color: '#b91c1c', fontWeight: 600 }}>
+                {openingActionError}
+              </div>
+            ) : null;
+
+### 35. docs/brain/flood-climb-spelling.md (632422d834fc3ead2e54d0c5f015a851978cc243800fcc58da233e1f9df54f46)
+- bm25: -8.2269 | relevance: 0.8916
+
+# Flood Climb Spelling Game (#flood-climb-spelling)
+
+**Status**: Canonical  
+**Last Updated**: 2026-01-13T03:35:15Z
+
+## How It Works
+
+Flood Climb is a time-pressure spelling game inside the Games overlay.
+
+- The player sees an emoji prompt (example: 🐮).
+- The game also shows a scrambled-letter hint for the target word.
+- The prompt is shown in-stage in the "sky" area (right of the rock wall).
+- The rock wall uses a non-repeating polygon SVG texture (asymmetrical facets; no round blobs) with a flat, cool stone palette to match the climber rock.
+- The rock wall uses the SVG palette directly (no CSS tint overlay).
+- The SVG URL is cache-busted so palette tweaks show up immediately during dev.
+- The "How to play" instructions are also shown in the sky area before Start.
+- Win/lose messaging and the "Play Again" / "Next Level" actions also render in that same sky area.
+- The player types the matching word (example: "cow") and submits (Enter or Submit).
+- The input placeholder reads "Type your answer and press Enter."
+- The standalone instruction line above the input is not shown.
+- Clicking in-game buttons should not steal focus from the input during play.
+- Score accumulates across levels and across runs during the session.
+- Correct answers move the climber upward.
+- Wrong answers cause the water level to jump upward.
+- The water also rises continuously over time.
+- The climber renders behind the water, so submerging looks underwater.
+- The climber is slightly inset from the rock wall for visibility.
+- The player loses when the water reaches the climber's head.
+- The player wins by reaching the top zone before the water catches them.
+
+### Level Progression (Game-Scoped)
+
+Difficulty is owned by this game (not by the Games overlay).
+
+### 36. docs/brain/riddle-system.md (cb2c73aaf51d5bb8e14a95a94e6392b5dfae34bea8ba17f22930c73f016e10e7)
+- bm25: -8.1987 | relevance: 0.8913
+
+**Active Components:**
+- Riddle selection algorithm with localStorage rotation
+- TTS integration for riddle narration
+- Answer validation (currently returns false, needs implementation)
+- Hint generation via Ms. Sonoma API
+- Full state management in discussion phase
 
 ---
 
-## Future Considerations
+## Riddle Transformation Guidelines
 
-### 37. docs/brain/ingests/pack.mrmentor-calendar-overlay.md (360bcc81011ae2c2621c74ef6f81c76a3d4911ecd12c6f6eeee67e9bd4d03d4b)
-- bm25: -5.6278 | relevance: 0.8491
+### Quality Classification
 
-### 5. src/app/facilitator/generator/counselor/CounselorClient.jsx (b6a09a7b5de02d74f3286c104c42d33d85ba76ca99054de9f494f42a7b144719)
-- bm25: -22.0298 | relevance: 1.0000
+**✓ True Riddles (20% - Keep & Polish)**
+- Use wordplay, misdirection, puns, lateral thinking
+- Examples: gen-08 (joke), lang-01 (short), lang-03 (incorrectly), math-01 (seven)
 
-// Ensure the calendar overlay is mounted to receive the event.
-            setActiveScreen('calendar')
+**⚠ Educational Questions (60% - Transform)**
+- Direct subject queries lacking riddle qualities
+- Examples: math-19 (How many cents...), sci-29 (organ that pumps blood), lang-19 (What type of word...)
 
-if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('mr-mentor:open-lesson-planner', {
-                detail: {
-                  learnerId: action.learnerId || selectedLearnerId,
-                  startDate: action.startDate,
-                  durationMonths: action.durationMonths,
-                  autoGenerate: true
-                }
-              }))
-            }
+**❌ Broken/Duplicates (20% - Delete or Fix)**
+- Multiple valid answers, subject mismatches, duplicates
+- Examples: gen-13 & gen-30 (piano duplicate), sci-02 & gen-26 (umbrella mismatch)
 
-### 6. docs/brain/mr-mentor-conversation-flows.md (ec792e77787419d1b45a207c4f316b72a0b239666251a1dadd891ad81666a1ed)
-- bm25: -21.8592 | relevance: 1.0000
+### Transformation Patterns
 
-### Scenario 3: Recommendation After Search
-```
-User: "Do you have lessons on fractions?"
-Mr. Mentor: [searches, finds 5 lessons]
-Mr. Mentor: "I found 5 fraction lessons. Here are the top 3..."
-Expected: Offer to generate ONLY if search yields poor results
-```
+**Pattern 1: Personification**  
+*Before*: "What is the organ that pumps blood?" (quiz question)  
+*After*: "I have four rooms but no doors. I beat all day but I'm not a drum. What am I?" (heart - riddle)
 
----
+**Pattern 2: Homonym/Wordplay**  
+*Before*: "What do you call a six sided shape?" (definition)  
+*After*: "I have six sides but I'm not a cube. Bees make my shape when they work. What am I?" (hexagon - connects to honeycomb)
 
-## Multi-Screen Overlay System
+**Pattern 3: Visual Metaphor**  
+*Before*: "How many degrees in a right angle?" (fact recall)  
+*After*: "I'm the corner of a square, standing up straight and tall. If you measure me, I'm perfect for making walls. What am I?" (right angle/90 degrees)
 
-The Mr. Mentor interface includes a multi-screen overlay system allowing users to switch between video and different tool views without leaving the counselor page.
+### 37. docs/brain/ms-sonoma-teaching-system.md (cd6c370212fe57073614171258183f8f54ee47488fd75e43802bef4df904d65c)
+- bm25: -8.1746 | relevance: 0.8910
 
-### Screen Toggle Buttons
-Located on same row as "Discussing learner" dropdown, five buttons for switching views:
-- **👨‍🏫 Mr. Mentor**: Default video view
-- **📚 Lessons**: Facilitator lessons list (scrollable)
-- **📅 Calendar**: Lesson calendar panel
-- **✨ Generated**: Generated lessons list (scrollable)
-- **🎨 Maker**: Lesson creation form
+- OpeningActionsController spins up only after audioReady is true and eventBus/audioEngine exist (dedicated effect rechecks when audio initializes so buttons never point at a null controller); controller and listeners are destroyed on unmount to prevent dead buttons or duplicate handlers. State resets on timeline jumps and play timer expiry.
+- AudioEngine shim adds speak(text) when missing (calls fetchTTS + playAudio with captions) so Ask/Joke/Riddle/Poem/Story/Fill-in-Fun can speak via a single helper like V1.
+- Buttons (Joke, Riddle, Poem, Story, Fill-in-Fun, Games) show in the play-time awaiting-go bar for Q&A phases; Go/work transitions, play-time expiry, or timeline jumps clear inputs/errors/busy flags and hide the Games overlay. Ask Ms. Sonoma lives only as a circular video overlay button (raised-hand icon) on the bottom-left of the video, paired with the Visual Aids button. Skip/Repeat is treated as a single-slot toggle and lives on the bottom-right with Mute.
+- Ask is hidden during the Test phase.
+- Ask replies carry the learner question plus the on-screen Q&A prompt (if one is active) and the lesson vocab terms/definitions so answers stay on-topic and use the correct meaning for multi-sense words.
+- Ask includes a quick action button, "What's the answer?", that submits a canned Ask prompt to get the answer for the currently displayed learner question. It is single-shot while loading: the button becomes disabled, reads "Loading...", and ignores re-press until the response completes.
+- After any Ask response (including the answer shortcut), Ms. Sonoma always follows up with: "Do you have any more questions?"
+- Ask exit re-anchor is hardened: Done/Cancel force-stops current audio, cancels the current opening action, then speaks the captured in-flow question under
 
-### Overlay Components
+### 38. sidekick_pack.md (8d2d98c4a5e9802d9ffc48dd47d1b4ee95e3b624a0bcdde6bb2a6300794f51dd)
+- bm25: -8.0383 | relevance: 0.8894
 
-All overlay components fit in video screen area, match half-screen format:
+**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
 
-### 38. src/app/api/webb-video-interpret/route.js (960ff87eeaeb6c45899eeda69adc7faca4d7e4a1bae6b7d4167ccd0ef1cc067b)
-- bm25: -5.6183 | relevance: 0.8489
+**DON'T fail to update notes** - Stale notes mislead Mr. Mentor. Encourage facilitators to update notes as learner progresses.
 
-const raw = await callGPT(
-      apiKey,
-      `You help Mrs. Webb pick 3 chapter sections from a YouTube video that best illustrate a lesson. ` +
-      `Reply ONLY in this exact format — 3 picks, no other text:\n\n` +
-      `PICK 1:\nINDEX: <number>\nINTRO: <one warm sentence Mrs. Webb says to ${addressAs}>\n\n` +
-      `PICK 2:\nINDEX: <number>\nINTRO: <one warm sentence Mrs. Webb says to ${addressAs}>\n\n` +
-      `PICK 3:\nINDEX: <number>\nINTRO: <one warm sentence Mrs. Webb says to ${addressAs}>`,
-      `Grade: ${grade}. Lesson: "${lessonTitle}".\n\nChapters:\n${chapterList}`,
-      320,
-    )
+**DON'T forget empty note deletion** - Save function correctly deletes empty notes from JSONB object (avoids storing null/empty values).
 
-### 39. sidekick_pack.md (305262c426dc85f8c66cb888e4b25f01697fac656a8656c69c3ded6fe8880d06)
-- bm25: -5.5493 | relevance: 0.8473
+### 14. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -17.8102 | relevance: 1.0000
 
-### 32. docs/brain/mr-mentor-conversation-flows.md (ec792e77787419d1b45a207c4f316b72a0b239666251a1dadd891ad81666a1ed)
-- bm25: -22.3963 | relevance: 1.0000
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
 
-### Scenario 3: Recommendation After Search
-```
-User: "Do you have lessons on fractions?"
-Mr. Mentor: [searches, finds 5 lessons]
-Mr. Mentor: "I found 5 fraction lessons. Here are the top 3..."
-Expected: Offer to generate ONLY if search yields poor results
-```
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
 
----
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
 
-## Multi-Screen Overlay System
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
 
-The Mr. Mentor interface includes a multi-screen overlay system allowing users to switch between video and different tool views without leaving the counselor page.
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
 
-### Screen Toggle Buttons
-Located on same row as "Discussing learner" dropdown, five buttons for switching views:
-- **👨‍🏫 Mr. Mentor**: Default video view
-- **📚 Lessons**: Facilitator lessons list (scrollable)
-- **📅 Calendar**: Lesson calendar panel
-- **✨ Generated**: Generated lessons list (scrollable)
-- **🎨 Maker**: Lesson creation form
+### 39. docs/brain/ingests/pack-mentor-intercepts.md (ad9be28e3be4c170969fd8d3a91e2b0202957cc880842fc857610f9d7f8b194a)
+- bm25: -7.9719 | relevance: 0.8885
 
-### Overlay Components
+**DON'T duplicate medal data** - Medals already appear in transcript. Notes should add *new* context (challenges, interests, behavior) not already captured elsewhere.
 
-All overlay components fit in video screen area, match half-screen format:
+**DON'T fail to update notes** - Stale notes mislead Mr. Mentor. Encourage facilitators to update notes as learner progresses.
 
-**CalendarOverlay** (`overlays/CalendarOverlay.jsx`)
-- Shows only calendar panel (not scheduling panel)
-- Learner selector at top
-- Month/year navigation
-- Visual indicators for scheduled lessons
-- Shows scheduled lessons for selected date
+**DON'T forget empty note deletion** - Save function correctly deletes empty notes from JSONB object (avoids storing null/empty values).
 
-**LessonsOverlay** (`overlays/LessonsOverlay.jsx`)
-- Learner selector
-- Subject-based expandable sections
-- Grade filters per subject
-- Shows approved lessons, medals, progress
-- Fully scrollable list
+### 14. docs/brain/visual-aids.md (85823dd0676182ce38771044864b6e03b9018a0ce74f1747deb60769ad470de3)
+- bm25: -17.8102 | relevance: 1.0000
 
-**GeneratedLessonsOverlay** (`overlays/GeneratedLessonsOverlay.jsx`)
-- Subject and grade filters
-- Status indicators (approved, needs update)
-- Scrollable lesson list
-- Color-coded by status
+- **`src/app/session/components/SessionVisualAidsCarousel.js`** - Learner session display
+  - Full-screen carousel during lesson
+  - "Explain" button triggers Ms. Sonoma TTS of description
+  - Read-only view (no editing)
 
-### 40. sidekick_pack.md (e6a8550c4046e0c6f0024ee9ef0d6e28d4adccf7c75426888d2214fc3c46db44)
-- bm25: -5.5021 | relevance: 0.8462
+### Integration Points
+- **`src/app/facilitator/lessons/edit/page.js`** - Lesson editor
+  - `handleGenerateVisualAids()` - initiates generation
+  - Manages visual aids state and save flow
 
-if (wantsCustomSubjectDelete) {
-      this.state.flow = 'custom_subject_delete'
+- **`src/app/facilitator/calendar/DayViewOverlay.jsx`** - Calendar scheduled-lesson inline editor
+  - Provides the same "Generate Visual Aids" button as the regular editor via `LessonEditor` props
+  - Loads/saves/generates via `/api/visual-aids/*` with bearer auth
+  - Renders `VisualAidsCarousel` above the inline editor modal
 
-### 29. docs/brain/mr-mentor-conversation-flows.md (ec792e77787419d1b45a207c4f316b72a0b239666251a1dadd891ad81666a1ed)
-- bm25: -14.0179 | relevance: 1.0000
+- **`src/app/facilitator/generator/counselor/overlays/LessonsOverlay.jsx`** - Mr. Mentor counselor
+  - `handleGenerateVisualAids()` - generation from counselor lesson creation
 
-### Scenario 3: Recommendation After Search
-```
-User: "Do you have lessons on fractions?"
-Mr. Mentor: [searches, finds 5 lessons]
-Mr. Mentor: "I found 5 fraction lessons. Here are the top 3..."
-Expected: Offer to generate ONLY if search yields poor results
-```
+- **`src/app/session/page.js`** - Learner session
+  - Loads visual aids by normalized `lessonKey`
+  - `onShowVisualAids()` - opens carousel
+  - `onExplainVisualAid()` - triggers Ms. Sonoma explanation
 
----
+### 40. src/app/session/slate/page.jsx (6126271fcf2e22e483660be11ed6fd83a8e257c55f4175914c92284a03b829ce)
+- bm25: -7.9420 | relevance: 0.8882
 
-## Multi-Screen Overlay System
-
-The Mr. Mentor interface includes a multi-screen overlay system allowing users to switch between video and different tool views without leaving the counselor page.
-
-### Screen Toggle Buttons
-Located on same row as "Discussing learner" dropdown, five buttons for switching views:
-- **👨‍🏫 Mr. Mentor**: Default video view
-- **📚 Lessons**: Facilitator lessons list (scrollable)
-- **📅 Calendar**: Lesson calendar panel
-- **✨ Generated**: Generated lessons list (scrollable)
-- **🎨 Maker**: Lesson creation form
-
-### Overlay Components
-
-All overlay components fit in video screen area, match half-screen format:
-
-**CalendarOverlay** (`overlays/CalendarOverlay.jsx`)
-- Shows only calendar panel (not scheduling panel)
-- Learner selector at top
-- Month/year navigation
-- Visual indicators for scheduled lessons
-- Shows scheduled lessons for selected date
-
-**LessonsOverlay** (`overlays/LessonsOverlay.jsx`)
-- Learner selector
-- Subject-based expandable sections
-- Grade filters per subject
-- Shows approved lessons, medals, progress
-- Fully scrollable list
-
-**GeneratedLessonsOverlay** (`overlays/GeneratedLessonsOverlay.jsx`)
-- Subject and grade filters
-- Status indicators (approved, needs update)
-- Scrollable lesson list
-- Color-coded by status
+return (
+              <>
+                {/* ── Non-scrolling controls strip ───────────────────── */}
+                <div style={{ flexShrink: 0, padding: '16px 16px 0', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+                {/* Rules bar */}
+                <button
+                  onClick={() => { setSettingsDraft(settings); setSettingsOpen(true) }}
+                  style={{ color: C.muted, fontSize: 12, lineHeight: 1.8, marginBottom: 16, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: C.mono, display: 'block' }}
+                >
+                  <span style={{ color: C.text, fontWeight: 700 }}>GOAL:</span> Reach{' '}
+                  <span style={{ color: C.text, fontWeight: 700 }}>{settings.scoreGoal} points</span> to earn mastery 🤖
+                  {'  ·  '}<span style={{ color: C.green, fontWeight: 700 }}>+{settings.correctPts}</span> correct
+                  {'  ·  '}<span style={{ color: C.red, fontWeight: 700 }}>−{settings.wrongPts}</span> wrong
+                  {'  ·  '}<span style={{ color: C.yellow, fontWeight: 700 }}>{settings.timeoutPts === 0 ? '±0' : `−${settings.timeoutPts}`}</span> timeout ({settings.questionSecs}s)
+                  {'  '}<span style={{ color: C.accent, fontSize: 10, letterSpacing: 1 }}>✎ EDIT</span>
+                </button>
 
 
 ---
