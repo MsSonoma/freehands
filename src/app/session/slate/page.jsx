@@ -463,6 +463,8 @@ function SlateDrillInner() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsDraft, setSettingsDraft] = useState(DEFAULT_SLATE_SETTINGS)
   const [settingsSaving, setSettingsSaving] = useState(false)
+  const [drillTranscript, setDrillTranscript] = useState([])
+  const drillTranscriptRef = useRef([])
 
   // Refs for stale-closure-free use in timers/callbacks
   const phaseRef = useRef('loading')
@@ -673,6 +675,8 @@ function SlateDrillInner() {
     setScore(0)
     scoreRef.current = 0
     setQCount(0)
+    drillTranscriptRef.current = []
+    setDrillTranscript([])
     const q = advanceDeck()
     if (q) {
       showQuestion(q, true) // skipAudio — we chain greeting → question ourselves
@@ -687,7 +691,7 @@ function SlateDrillInner() {
   }, [advanceDeck, showQuestion])
 
   // Handle answer result (correct / wrong / timeout)
-  const handleResult = useCallback((correct, timeout = false) => {
+  const handleResult = useCallback((correct, timeout = false, rawAnswer = '') => {
     clearInterval(timerInterval.current)
     isJudgingRef.current = false
     setIsJudging(false)
@@ -708,6 +712,21 @@ function SlateDrillInner() {
     scoreRef.current = newScore
     setScore(newScore)
     setQCount(c => c + 1)
+
+    // Build transcript entry
+    if (q) {
+      const entry = {
+        num: drillTranscriptRef.current.length + 1,
+        question: q.question,
+        type: q.type,
+        answer: rawAnswer,
+        correctAnswer: getCorrectText(q),
+        correct,
+        timeout,
+      }
+      drillTranscriptRef.current = [...drillTranscriptRef.current, entry]
+      setDrillTranscript([...drillTranscriptRef.current])
+    }
 
     const msgs = timeout ? TIMEOUT_MSGS : correct ? CORRECT_MSGS : WRONG_MSGS
     const feedbackText = pick(msgs)
@@ -787,7 +806,7 @@ function SlateDrillInner() {
       setIsJudging(false)
       return
     }
-    handleResult(correct, false)
+    handleResult(correct, false, userAnswer)
   }, [userAnswer, handleResult])
 
   // Choice click (MC / TF)
@@ -796,7 +815,15 @@ function SlateDrillInner() {
     if (isJudgingRef.current) return  // prevent double-fire
     isJudgingRef.current = true
     setIsJudging(true)
-    handleResult(checkAnswerLocal(currentQRef.current, String(value)), false)
+    const q = currentQRef.current
+    // Build human-readable label for the selected choice
+    let rawAnswerLabel = String(value)
+    if (q?.type === 'multiplechoice' && Array.isArray(q.choices)) {
+      rawAnswerLabel = q.choices[Number(value)] ?? rawAnswerLabel
+    } else if (q?.type === 'truefalse') {
+      rawAnswerLabel = value === 'true' ? 'True' : 'False'
+    }
+    handleResult(checkAnswerLocal(q, String(value)), false, rawAnswerLabel)
   }, [handleResult])
 
   const onKeyDown = useCallback(e => { if (e.key === 'Enter') onTextSubmit() }, [onTextSubmit])
@@ -1194,6 +1221,74 @@ function SlateDrillInner() {
   //  RENDER -- Won
   // ===========================================================================
   if (pagePhase === 'won') {
+    const printTranscript = () => {
+      const title = lessonTitle || 'Mr. Slate Drill'
+      const date = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+      const correctCount = drillTranscript.filter(e => e.correct).length
+      const wrongCount = drillTranscript.filter(e => !e.correct && !e.timeout).length
+      const timeoutCount = drillTranscript.filter(e => e.timeout).length
+
+      const rows = drillTranscript.map((e, i) => {
+        const statusColor = e.correct ? '#16a34a' : e.timeout ? '#b45309' : '#dc2626'
+        const statusLabel = e.correct ? '✓ Correct' : e.timeout ? '⏱ Timeout' : '✗ Wrong'
+        const answerLine = e.answer
+          ? `<div style="margin-top:4px;font-size:13px;color:#374151"><strong>Your answer:</strong> ${e.answer}</div>`
+          : ''
+        const correctLine = !e.correct
+          ? `<div style="margin-top:4px;font-size:13px;color:#1d4ed8"><strong>Correct answer:</strong> ${e.correctAnswer || '—'}</div>`
+          : ''
+        return `
+          <div style="margin-bottom:18px;padding:14px 16px;border:1px solid #e5e7eb;border-radius:8px;break-inside:avoid">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+              <div style="font-size:14px;font-weight:600;color:#111;flex:1;line-height:1.5">${i + 1}. ${e.question}</div>
+              <div style="font-size:12px;font-weight:700;color:${statusColor};white-space:nowrap;flex-shrink:0">${statusLabel}</div>
+            </div>
+            ${answerLine}
+            ${correctLine}
+          </div>`
+      }).join('')
+
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>${title} — Drill Transcript</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #111; padding: 32px 40px; max-width: 760px; margin: 0 auto; }
+    @media print { body { padding: 20px; } }
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .sub { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+    .summary { display: flex; gap: 24px; margin-bottom: 28px; padding: 14px 18px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; }
+    .summary-item { text-align: center; }
+    .summary-item .val { font-size: 22px; font-weight: 800; }
+    .summary-item .lbl { font-size: 11px; color: #6b7280; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .green { color: #16a34a; } .red { color: #dc2626; } .amber { color: #b45309; }
+    h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7280; margin-bottom: 14px; }
+  </style>
+</head>
+<body>
+  <h1>🤖 ${title}</h1>
+  <div class="sub">Mr. Slate Drill Transcript &mdash; ${date}</div>
+  <div class="summary">
+    <div class="summary-item"><div class="val green">${correctCount}</div><div class="lbl">Correct</div></div>
+    <div class="summary-item"><div class="val red">${wrongCount}</div><div class="lbl">Wrong</div></div>
+    <div class="summary-item"><div class="val amber">${timeoutCount}</div><div class="lbl">Timeout</div></div>
+    <div class="summary-item"><div class="val">${drillTranscript.length}</div><div class="lbl">Total</div></div>
+  </div>
+  <h2>Questions &amp; Answers</h2>
+  ${rows}
+</body>
+</html>`
+
+      const win = window.open('', '_blank', 'width=820,height=900')
+      if (!win) return
+      win.document.write(html)
+      win.document.close()
+      win.focus()
+      setTimeout(() => win.print(), 400)
+    }
+
     return (
       <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
         <div style={{ maxWidth: 540, width: '100%', textAlign: 'center' }}>
@@ -1215,11 +1310,53 @@ function SlateDrillInner() {
             🤖 MASTERY ICON WILL APPEAR ON YOUR LESSON CARD.
           </div>
 
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 28 }}>
             <button onClick={startDrill} style={ghostBtn}>DRILL AGAIN</button>
             <button onClick={backToList} style={ghostBtn}>LESSON LIST</button>
             <button onClick={exitToLessons} style={primaryBtn}>← BACK TO LESSONS</button>
           </div>
+
+          {drillTranscript.length > 0 && (
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '20px 24px', textAlign: 'left' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <span style={{ color: C.accent, fontWeight: 800, fontSize: 12, letterSpacing: 2 }}>DRILL TRANSCRIPT</span>
+                <button
+                  onClick={printTranscript}
+                  style={{ ...ghostBtn, fontSize: 12, padding: '6px 14px' }}
+                >
+                  🖨 PRINT
+                </button>
+              </div>
+              {drillTranscript.map((e) => (
+                <div key={e.num} style={{
+                  marginBottom: 12,
+                  padding: '10px 12px',
+                  background: C.surfaceElev,
+                  borderRadius: 8,
+                  borderLeft: `3px solid ${e.correct ? C.green : e.timeout ? C.yellow : C.red}`,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                    <span style={{ color: C.text, fontSize: 13, fontWeight: 600, flex: 1, lineHeight: 1.4 }}>
+                      {e.num}. {e.question}
+                    </span>
+                    <span style={{ color: e.correct ? C.green : e.timeout ? C.yellow : C.red, fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                      {e.correct ? '✓' : e.timeout ? '⏱' : '✗'}
+                    </span>
+                  </div>
+                  {e.answer && (
+                    <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+                      Your answer: <span style={{ color: C.text }}>{e.answer}</span>
+                    </div>
+                  )}
+                  {!e.correct && e.correctAnswer && (
+                    <div style={{ fontSize: 12, color: C.accent, marginTop: 2 }}>
+                      Correct: {e.correctAnswer}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     )
