@@ -92,9 +92,24 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false)
   return lines.filter(Boolean).join('\n')
 }
 
+function buildDirectTeachSystem(lesson, targetObjective) {
+  const title   = lesson?.title   || 'this topic'
+  const subject = lesson?.subject || 'general'
+  const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
+  return [
+    `You are Mrs. Webb, a warm and encouraging teacher.`,
+    `You are helping a student understand this specific learning goal: "${targetObjective}"`,
+    `Lesson: "${title}" (${subject}, ${grade}).`,
+    `Your task:`,
+    `1. In 2-3 clear, age-appropriate sentences, explain what this means — use a simple analogy, real-world example, or concrete fact if it helps.`,
+    `2. End with ONE Socratic question asking the student to explain the concept back in their own words (e.g. "Can you tell me, in your own words, what that means?").`,
+    `Keep it to 3-5 sentences total. Write in natural spoken language. No markdown, no bullet points. Do NOT mention videos or articles.`,
+  ].join('\n')
+}
+
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, seekRequest = null, researchMode = false, targetObjective = '' } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '' } = await req.json()
 
     // ── Seek request: "show me the part where..." ─────────────────────────
     // Client sends { seekRequest: { momentList }, messages } instead of going through
@@ -143,12 +158,14 @@ export async function POST(req) {
     }
 
     // ── Research mode: teach a specific objective ─────────────────────────
-    // Client sends { researchMode: true, targetObjective: string }.
-    // Webb explains the objective and ends with a "say it in your own words" prompt.
-    if (researchMode && targetObjective) {
+    // researchDirect: no media available — teach purely in conversation.
+    // researchMode: normal — mention available media.
+    if ((researchMode || researchDirect) && targetObjective) {
       const apiKey = process.env.OPENAI_API_KEY
       if (!apiKey) return NextResponse.json({ error: 'OpenAI not configured' }, { status: 503 })
-      const sysContent = buildResearchSystem(lesson, targetObjective, media)
+      const sysContent = researchDirect
+        ? buildDirectTeachSystem(lesson, targetObjective)
+        : buildResearchSystem(lesson, targetObjective, media)
       const r = await fetch(OPENAI_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },

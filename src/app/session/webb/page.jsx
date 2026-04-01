@@ -1209,35 +1209,208 @@ export default function WebbPage() {
     setShowObjectives(false)
   }
 
-  // ── Research mode: close overlay, Webb teaches a specific objective ──
+  // ── Research mode: close overlay, Webb navigates to the best media or teaches directly ──
+  // Priority: (A) video with chapters → seek to best chapter → play → Socratic
+  //           (B) article available   → targeted highlight+scroll → Socratic
+  //           (C) no navigable media  → conversational teach → Socratic
   async function startResearch(objIdx) {
     closeObjectivesPanel()
     setMediaOverlay(null)
     const obj = objectives[objIdx]
     setChatLoading(true)
     try {
-      const res = await fetch('/api/webb-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: chatMessages,
-          lesson: selectedLesson,
-          media: {
-            video:   videoResource   || null,
-            article: articleResource ? { title: articleResource.title, source: articleResource.source } : null,
-          },
-          researchMode:    true,
-          targetObjective: obj,
-        }),
-      })
-      const data = await res.json()
-      const reply = data.reply || `Let's learn about: ${obj}. Can you explain what you know about it?`
-      const assistantMsg = { role: 'assistant', content: reply }
-      const finalHistory = [...chatMessages, assistantMsg]
-      setChatMessages(finalHistory)
-      addMsg(reply)
-    } catch {
-      addMsg(`Let's think about this objective together: "${obj}". What do you already know about it?`)
+      // ── Try to get navigable video chapters ──────────────────────────
+      let researchMoments = null
+      if (videoResource && !videoResource.unavailable && videoResource.hasChapters) {
+        if (videoMoments.length) {
+          researchMoments = videoMoments
+        } else {
+          // Load chapter moments silently (no tour, just fetch)
+          try {
+            const r = await fetch('/api/webb-video-interpret', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                videoId:          videoResource.videoId,
+                lessonTitle:      selectedLesson?.title || '',
+                grade:            selectedLesson?.grade,
+                learnerName:      learnerName.current || '',
+                objectives,
+                completedIndices: completedObj,
+              }),
+            })
+            const d = await r.json()
+            if (d.moments?.length) {
+              researchMoments = d.moments
+              setVideoMoments(d.moments)
+            }
+          } catch { /* fall through */ }
+        }
+      }
+
+      // ═══ Path A: Video + chapters ═══════════════════════════════════
+      if (researchMoments?.length) {
+        // Ask GPT to pick the chapter that best covers this objective
+        const momentList = researchMoments.map((m, i) => `${i}: [${formatVideoTime(m.startSeconds)}] ${m.title}`).join('\n')
+        let pickIdx  = 0
+        let introMsg = ''
+        try {
+          const seekRes = await fetch('/api/webb-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              seekRequest: { momentList },
+              messages:    [{ role: 'user', content: obj }],
+              lesson:      selectedLesson,
+            }),
+          })
+          const seekData = await seekRes.json()
+          if (typeof seekData.seekMomentIdx === 'number' && seekData.seekMomentIdx >= 0 && seekData.seekMomentIdx < researchMoments.length) {
+            pickIdx = seekData.seekMomentIdx
+          }
+          introMsg = seekData.reply || ''
+        } catch { /* use defaults */ }
+
+        const m          = researchMoments[pickIdx]
+        const webbIntro  = introMsg || `Let me take you to the right part of the video! Watch this section and then I'll ask you about it.`
+        const introEntry = { role: 'assistant', content: webbIntro }
+        setChatMessages(prev => [...prev, introEntry])
+        addMsg(webbIntro)
+
+        // Open video and play that chapter segment
+        const segMs = Math.max(10, m.endSeconds - m.startSeconds) * 1000
+        playSegment(m.startSeconds, m.endSeconds)
+        await waitForSegmentEnd(m.endSeconds, segMs + 8000)
+        await waitForTTSIdle()
+
+        // Socratic follow-up after the segment
+        try {
+          const fRes = await fetch('/api/webb-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages:            [...chatMessages, introEntry],
+              lesson:              selectedLesson,
+              remainingObjectives: [obj],
+              assessmentPush:      true,
+            }),
+          })
+          const fData  = await fRes.json()
+          const fReply = fData.reply || `Now that you've seen that, can you explain in your own words: ${obj}?`
+          const fEntry = { role: 'assistant', content: fReply }
+          setChatMessages(prev => [...prev, fEntry])
+          addMsg(fReply)
+        } catch {
+          addMsg(`Great! Now, can you explain in your own words: ${obj}?`)
+        }
+
+      // ═══ Path B: Article highlight + scroll ═════════════════════════
+      } else if (articleResource?.html) {
+        setMediaOverlay('article')
+        setInterpretingArticle(true)
+        passageEls.current          = []
+        userScrolledArticleRef.current = false
+        try {
+          const r = await fetch('/api/webb-interpret', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              html:             articleResource.html,
+              lessonTitle:      selectedLesson?.title || '',
+              grade:            selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
+              learnerName:      learnerName.current || '',
+              objectives:       [obj],   // single focused objective
+              completedIndices: [],
+            }),
+          })
+          const data    = await r.json()
+          const passages = data.passages || (data.excerpt ? [{ excerpt: data.excerpt }] : [])
+          const excerpts = passages.map(p => p.excerpt).filter(Boolean)
+
+          if (excerpts.length) {
+            // Wait for article iframe to be ready
+            await new Promise(resolve => {
+              let tries = 0
+              const check = () => {
+                const iframe = articleIframeRef.current
+                if (iframe) {
+                  if (iframe.contentDocument?.readyState === 'complete') { resolve() }
+                  else {
+                    let settled = false
+                    const done = () => { if (!settled) { settled = true; resolve() } }
+                    iframe.addEventListener('load', done, { once: true })
+                    setTimeout(done, 3000)
+                  }
+                } else if (tries++ < 40) { setTimeout(check, 100) }
+                else { resolve() }
+              }
+              check()
+            })
+
+            setArticlePassageExcerpts(excerpts)
+            const els = highlightPassages(excerpts)
+            passageEls.current = els
+
+            if (data.intro) addMsg(data.intro)
+            for (let i = 0; i < excerpts.length; i++) {
+              await waitForTTSIdle()
+              activatePassage(i)
+              scrollToPassage(i, true)
+              addPassageMsg(excerpts[i], i)
+            }
+            await waitForTTSIdle()
+            const doc = articleIframeRef.current?.contentDocument
+            doc?.querySelectorAll('.webb-hl-active').forEach(el => el.classList.remove('webb-hl-active'))
+          }
+        } catch (e) { console.error('[webb] research-article error:', e) }
+        setInterpretingArticle(false)
+
+        // Socratic follow-up after article passages
+        try {
+          const fRes = await fetch('/api/webb-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages:            chatMessages,
+              lesson:              selectedLesson,
+              remainingObjectives: [obj],
+              assessmentPush:      true,
+            }),
+          })
+          const fData  = await fRes.json()
+          const fReply = fData.reply || `Now, can you explain in your own words: ${obj}?`
+          const fEntry = { role: 'assistant', content: fReply }
+          setChatMessages(prev => [...prev, fEntry])
+          addMsg(fReply)
+        } catch {
+          addMsg(`Now, can you explain in your own words: ${obj}?`)
+        }
+
+      // ═══ Path C: No navigable media — teach directly in conversation ═
+      } else {
+        try {
+          const res = await fetch('/api/webb-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages:        chatMessages,
+              lesson:          selectedLesson,
+              researchDirect:  true,
+              targetObjective: obj,
+            }),
+          })
+          const data  = await res.json()
+          const reply = data.reply || `Let me explain: "${obj}". Can you tell me what that means in your own words?`
+          const entry = { role: 'assistant', content: reply }
+          setChatMessages(prev => [...prev, entry])
+          addMsg(reply)
+        } catch {
+          addMsg(`Let's explore this together: "${obj}". What do you already know about it?`)
+        }
+      }
+    } catch (e) {
+      console.error('[webb] startResearch error:', e)
+      addMsg(`Let's explore this learning goal together: "${obj}". What do you already know?`)
     }
     setChatLoading(false)
   }
