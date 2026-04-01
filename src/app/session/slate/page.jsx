@@ -1221,72 +1221,106 @@ function SlateDrillInner() {
   //  RENDER -- Won
   // ===========================================================================
   if (pagePhase === 'won') {
-    const printTranscript = () => {
+    const openTranscript = () => {
       const title = lessonTitle || 'Mr. Slate Drill'
       const date = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
       const correctCount = drillTranscript.filter(e => e.correct).length
       const wrongCount = drillTranscript.filter(e => !e.correct && !e.timeout).length
       const timeoutCount = drillTranscript.filter(e => e.timeout).length
 
+      // Escape user-provided text for safe HTML insertion
+      const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+
       const rows = drillTranscript.map((e, i) => {
         const statusColor = e.correct ? '#16a34a' : e.timeout ? '#b45309' : '#dc2626'
         const statusLabel = e.correct ? '✓ Correct' : e.timeout ? '⏱ Timeout' : '✗ Wrong'
         const answerLine = e.answer
-          ? `<div style="margin-top:4px;font-size:13px;color:#374151"><strong>Your answer:</strong> ${e.answer}</div>`
+          ? `<div class="detail">Your answer: <strong>${esc(e.answer)}</strong></div>`
           : ''
-        const correctLine = !e.correct
-          ? `<div style="margin-top:4px;font-size:13px;color:#1d4ed8"><strong>Correct answer:</strong> ${e.correctAnswer || '—'}</div>`
+        const correctLine = !e.correct && e.correctAnswer
+          ? `<div class="detail correct-ans">Correct: <strong>${esc(e.correctAnswer)}</strong></div>`
           : ''
-        return `
-          <div style="margin-bottom:18px;padding:14px 16px;border:1px solid #e5e7eb;border-radius:8px;break-inside:avoid">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-              <div style="font-size:14px;font-weight:600;color:#111;flex:1;line-height:1.5">${i + 1}. ${e.question}</div>
-              <div style="font-size:12px;font-weight:700;color:${statusColor};white-space:nowrap;flex-shrink:0">${statusLabel}</div>
-            </div>
-            ${answerLine}
-            ${correctLine}
-          </div>`
-      }).join('')
+        return `<div class="row" style="border-left-color:${statusColor}">
+  <div class="row-top">
+    <span class="qtext">${i + 1}. ${esc(e.question)}</span>
+    <span class="status" style="color:${statusColor}">${statusLabel}</span>
+  </div>${answerLine}${correctLine}
+</div>`
+      }).join('\n')
 
       const html = `<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8"/>
-  <title>${title} — Drill Transcript</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #111; padding: 32px 40px; max-width: 760px; margin: 0 auto; }
-    @media print { body { padding: 20px; } }
-    h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-    .sub { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
-    .summary { display: flex; gap: 24px; margin-bottom: 28px; padding: 14px 18px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; }
-    .summary-item { text-align: center; }
-    .summary-item .val { font-size: 22px; font-weight: 800; }
-    .summary-item .lbl { font-size: 11px; color: #6b7280; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .green { color: #16a34a; } .red { color: #dc2626; } .amber { color: #b45309; }
-    h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7280; margin-bottom: 14px; }
-  </style>
+<meta charset="utf-8"/>
+<title>${esc(title)} — Drill Transcript</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:28px 36px;max-width:740px;margin:0 auto;font-size:13px;line-height:1.45}
+.no-print{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:10px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px}
+.no-print button{padding:7px 18px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.03em}
+.no-print button:hover{background:#15803d}
+.no-print span{font-size:12px;color:#166534}
+h1{font-size:18px;font-weight:800;margin-bottom:3px}
+.sub{font-size:11px;color:#6b7280;margin-bottom:14px}
+.summary{display:flex;gap:20px;margin-bottom:18px;padding:10px 14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px}
+.summary-item{text-align:center}
+.summary-item .val{font-size:20px;font-weight:800}
+.summary-item .lbl{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+.green{color:#16a34a}.red{color:#dc2626}.amber{color:#b45309}
+h2{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin-bottom:10px}
+.row{border-left:3px solid #e5e7eb;padding:7px 10px;margin-bottom:8px;break-inside:avoid}
+.row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.qtext{font-weight:600;flex:1;line-height:1.4}
+.status{font-weight:700;white-space:nowrap;flex-shrink:0;font-size:.9em}
+.detail{margin-top:3px;font-size:.9em;color:#374151}
+.correct-ans{color:#1d4ed8}
+@media print{.no-print{display:none!important}}
+</style>
 </head>
 <body>
-  <h1>🤖 ${title}</h1>
-  <div class="sub">Mr. Slate Drill Transcript &mdash; ${date}</div>
-  <div class="summary">
-    <div class="summary-item"><div class="val green">${correctCount}</div><div class="lbl">Correct</div></div>
-    <div class="summary-item"><div class="val red">${wrongCount}</div><div class="lbl">Wrong</div></div>
-    <div class="summary-item"><div class="val amber">${timeoutCount}</div><div class="lbl">Timeout</div></div>
-    <div class="summary-item"><div class="val">${drillTranscript.length}</div><div class="lbl">Total</div></div>
-  </div>
-  <h2>Questions &amp; Answers</h2>
-  ${rows}
+<div class="no-print">
+  <button onclick="window.print()">🖨 Print Transcript</button>
+  <span>Tip: Set margins to &ldquo;Minimum&rdquo; in print settings to save paper.</span>
+</div>
+<h1>🤖 ${esc(title)}</h1>
+<div class="sub">Mr. Slate Drill Transcript &mdash; ${esc(date)}</div>
+<div class="summary">
+  <div class="summary-item"><div class="val green">${correctCount}</div><div class="lbl">Correct</div></div>
+  <div class="summary-item"><div class="val red">${wrongCount}</div><div class="lbl">Wrong</div></div>
+  <div class="summary-item"><div class="val amber">${timeoutCount}</div><div class="lbl">Timeout</div></div>
+  <div class="summary-item"><div class="val">${drillTranscript.length}</div><div class="lbl">Total</div></div>
+</div>
+<h2>Questions &amp; Answers</h2>
+<div id="content">
+${rows}
+</div>
+<script>
+(function(){
+  // Shrink font only if content overflows 2 letter pages.
+  // 2 pages: 2 * (11in * 96dpi - 2 * 0.5in * 96dpi) = 2 * 960 = 1920px usable height.
+  // The .no-print bar is excluded from this calculation at print time, so we
+  // measure only the #content block against a slightly smaller budget to be safe.
+  var TARGET = 1820; // ~2 pages usable height in screen pixels
+  var MIN_FS = 7;    // never go below 7px
+  var el = document.getElementById('content');
+  if (!el) return;
+  var base = parseFloat(document.body.style.fontSize) || 13;
+  var fs = base;
+  // Only shrink, never enlarge — start at base and reduce until it fits
+  while (el.scrollHeight > TARGET && fs > MIN_FS) {
+    fs -= 0.5;
+    document.body.style.fontSize = fs + 'px';
+  }
+})();
+</script>
 </body>
 </html>`
 
-      const win = window.open('', '_blank', 'width=820,height=900')
+      const win = window.open('', '_blank')
       if (!win) return
       win.document.write(html)
       win.document.close()
       win.focus()
-      setTimeout(() => win.print(), 400)
     }
 
     return (
@@ -1310,53 +1344,14 @@ function SlateDrillInner() {
             🤖 MASTERY ICON WILL APPEAR ON YOUR LESSON CARD.
           </div>
 
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 28 }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={startDrill} style={ghostBtn}>DRILL AGAIN</button>
             <button onClick={backToList} style={ghostBtn}>LESSON LIST</button>
+            {drillTranscript.length > 0 && (
+              <button onClick={openTranscript} style={ghostBtn}>TRANSCRIPT</button>
+            )}
             <button onClick={exitToLessons} style={primaryBtn}>← BACK TO LESSONS</button>
           </div>
-
-          {drillTranscript.length > 0 && (
-            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '20px 24px', textAlign: 'left' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <span style={{ color: C.accent, fontWeight: 800, fontSize: 12, letterSpacing: 2 }}>DRILL TRANSCRIPT</span>
-                <button
-                  onClick={printTranscript}
-                  style={{ ...ghostBtn, fontSize: 12, padding: '6px 14px' }}
-                >
-                  🖨 PRINT
-                </button>
-              </div>
-              {drillTranscript.map((e) => (
-                <div key={e.num} style={{
-                  marginBottom: 12,
-                  padding: '10px 12px',
-                  background: C.surfaceElev,
-                  borderRadius: 8,
-                  borderLeft: `3px solid ${e.correct ? C.green : e.timeout ? C.yellow : C.red}`,
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
-                    <span style={{ color: C.text, fontSize: 13, fontWeight: 600, flex: 1, lineHeight: 1.4 }}>
-                      {e.num}. {e.question}
-                    </span>
-                    <span style={{ color: e.correct ? C.green : e.timeout ? C.yellow : C.red, fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                      {e.correct ? '✓' : e.timeout ? '⏱' : '✗'}
-                    </span>
-                  </div>
-                  {e.answer && (
-                    <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-                      Your answer: <span style={{ color: C.text }}>{e.answer}</span>
-                    </div>
-                  )}
-                  {!e.correct && e.correctAnswer && (
-                    <div style={{ fontSize: 12, color: C.accent, marginTop: 2 }}>
-                      Correct: {e.correctAnswer}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     )
