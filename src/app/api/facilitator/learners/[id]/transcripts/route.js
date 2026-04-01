@@ -4,6 +4,11 @@ import { createClient } from '@supabase/supabase-js';
 const BUCKET = 'transcripts';
 const VROOT = 'v1';
 
+// Known teacher sub-folders. Anything at the top level that is NOT one of these
+// is treated as a legacy Ms. Sonoma lesson entry.
+const TEACHER_FOLDERS = ['sonoma', 'webb', 'slate'];
+const TEACHER_DISPLAY = { sonoma: 'Ms. Sonoma', webb: 'Mrs. Webb', slate: 'Mr. Slate' };
+
 async function listAll(store, path, pageSize = 200) {
   const items = [];
   let offset = 0;
@@ -14,7 +19,6 @@ async function listAll(store, path, pageSize = 200) {
       sortBy: { column: 'name', order: 'asc' },
     });
     if (error) {
-      // Treat missing folders as empty; surface other errors to the caller.
       if (error?.status === 404 || /not found/i.test(error?.message || '')) break;
       throw error;
     }
@@ -59,7 +63,6 @@ export async function GET(req, { params }) {
     const user = await getUserFromAuthHeader(req);
     if (!user) return NextResponse.json({ items: [] }, { status: 401 });
     const { svc } = getClients() || {};
-    // If no service role, fall back to a user-scoped client seeded with the bearer token.
     const auth = req.headers.get('authorization') || req.headers.get('Authorization');
     const token = auth?.startsWith('Bearer ') ? auth.split(' ')[1] : null;
     const client = svc
@@ -78,7 +81,7 @@ export async function GET(req, { params }) {
     if (!learnerId) return NextResponse.json({ items: [] });
     const store = client.storage.from(BUCKET);
     const base = `${VROOT}/${user.id}/${learnerId}`;
-    const lessons = await listAll(store, base);
+
     function isHeaderOnlyTranscript(text) {
       if (!text) return false;
       const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
@@ -108,56 +111,83 @@ export async function GET(req, { params }) {
       return { path, url: signed.signedUrl, kind };
     }
 
-    const out = [];
-    for (const entry of lessons || []) {
-      if (!entry || typeof entry.name !== 'string') continue;
-      const lessonBase = `${base}/${entry.name}`;
-      
-      // Prefer TXT, then RTF, fallback to PDF (only if size >= MIN)
+    // Collect transcripts for one lesson folder (teacher-tagged)
+    async function collectLessonTranscripts(lessonBase, lessonId, teacher) {
+      const collected = [];
       const txt = await tryGetTranscript(lessonBase, 'transcript.txt', 'txt');
       if (txt) {
-        out.push({ lessonId: entry.name, ...txt });
+        collected.push({ lessonId, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher, ...txt });
       } else {
         const rtf = await tryGetTranscript(lessonBase, 'transcript.rtf', 'rtf');
         if (rtf) {
-          out.push({ lessonId: entry.name, ...rtf });
+          collected.push({ lessonId, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher, ...rtf });
         } else {
           const pdf = await tryGetTranscript(lessonBase, 'transcript.pdf', 'pdf');
           if (pdf) {
-            out.push({ lessonId: entry.name, ...pdf });
+            collected.push({ lessonId, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher, ...pdf });
           }
         }
       }
-
-      // Sessions
+      // Per-session transcripts
       const sessions = await listAll(store, `${lessonBase}/sessions`);
       for (const ses of sessions || []) {
         if (!ses || typeof ses.name !== 'string') continue;
         const sessionBase = `${lessonBase}/sessions/${ses.name}`;
         const stxt = await tryGetTranscript(sessionBase, 'transcript.txt', 'txt');
         if (stxt) {
-          out.push({ lessonId: `${entry.name} — ${ses.name}`, ...stxt });
+          collected.push({ lessonId: `${lessonId} — ${ses.name}`, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher, ...stxt });
           continue;
         }
         const srtf = await tryGetTranscript(sessionBase, 'transcript.rtf', 'rtf');
         if (srtf) {
-          out.push({ lessonId: `${entry.name} — ${ses.name}`, ...srtf });
+          collected.push({ lessonId: `${lessonId} — ${ses.name}`, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher, ...srtf });
           continue;
         }
         const spdf = await tryGetTranscript(sessionBase, 'transcript.pdf', 'pdf');
         if (spdf) {
-          out.push({ lessonId: `${entry.name} — ${ses.name}`, ...spdf });
+          collected.push({ lessonId: `${lessonId} — ${ses.name}`, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher, ...spdf });
         }
       }
+      return collected;
     }
-    
-    // Sort by last session timestamp (newest first)
+
+    const out = [];
+    const topLevel = await listAll(store, base);
+
+    for (const entry of topLevel || []) {
+      if (!entry || typeof entry.name !== 'string') continue;
+
+      if (TEACHER_FOLDERS.includes(entry.name)) {
+        // Teacher sub-folder: list lessons inside it
+        const teacher = entry.name;
+        const teacherBase = `${base}/${teacher}`;
+        const lessons = await listAll(store, teacherBase);
+        for (const lessonEntry of lessons || []) {
+          if (!lessonEntry || typeof lessonEntry.name !== 'string') continue;
+          const lessonBase = `${teacherBase}/${lessonEntry.name}`;
+          const items = await collectLessonTranscripts(lessonBase, lessonEntry.name, teacher);
+          out.push(...items);
+        }
+      } else {
+        // Legacy flat entry — Ms. Sonoma (old path without teacher folder)
+        const lessonBase = `${base}/${entry.name}`;
+        const items = await collectLessonTranscripts(lessonBase, entry.name, 'sonoma');
+        out.push(...items);
+      }
+    }
+
+    // Sort: teacher display order, then newest-first within each teacher
+    const teacherOrder = { sonoma: 0, webb: 1, slate: 2 };
     out.sort((a, b) => {
-      const timeA = a.path.match(/sessions\/r-(\d+)/)?.[1] || '0';
-      const timeB = b.path.match(/sessions\/r-(\d+)/)?.[1] || '0';
+      const tA = teacherOrder[a.teacher] ?? 99;
+      const tB = teacherOrder[b.teacher] ?? 99;
+      if (tA !== tB) return tA - tB;
+      // Within a teacher, newer session IDs first
+      const timeA = a.path.match(/sessions\/r-(\d+)/)?.[1] || a.lessonId;
+      const timeB = b.path.match(/sessions\/r-(\d+)/)?.[1] || b.lessonId;
       return timeB.localeCompare(timeA);
     });
-    
+
     return NextResponse.json({ items: out });
   } catch (e) {
     return NextResponse.json({ items: [], hint: e?.message || 'Unexpected' }, { status: 200 });

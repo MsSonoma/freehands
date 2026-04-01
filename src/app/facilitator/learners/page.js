@@ -508,6 +508,28 @@ export default function LearnersPage() {
 									<span>⏱️</span>
 									<span style={{ display: 'none' }} className="button-text-tablet">Timers</span>
 								</button>
+								<button
+									onClick={(e) => {
+										e.stopPropagation();
+										router.push(`/facilitator/learners/${learner.id}/transcripts`);
+									}}
+									title="Transcripts"
+									style={{
+										border: 'none',
+										background: '#6b7280',
+										color: '#fff',
+										borderRadius: 6,
+										padding: '4px 8px',
+										fontSize: 14,
+										cursor: 'pointer',
+										display: 'flex',
+										alignItems: 'center',
+										gap: 6
+									}}
+								>
+									<span>📄</span>
+									<span style={{ display: 'none' }} className="button-text-tablet">Transcripts</span>
+								</button>
 								</div>
 								</div>
 							);

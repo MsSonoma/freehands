@@ -9,6 +9,25 @@ import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 const BUCKET = 'transcripts';
 const VROOT = 'v1';
 
+const TEACHER_NAMES = {
+  sonoma: 'Ms. Sonoma',
+  webb: 'Mrs. Webb',
+  slate: 'Mr. Slate',
+};
+
+export function getTeacherDisplayName(teacher) {
+  return TEACHER_NAMES[teacher] || 'Ms. Sonoma';
+}
+
+// Returns the base lesson path in storage. Webb and Slate use a teacher sub-folder;
+// Sonoma (and legacy entries) use the flat v1/{owner}/{learner}/{lesson} path.
+function getLessonBasePath(ownerId, learnerId, teacher, lessonId) {
+  const t = teacher && teacher !== 'sonoma' ? teacher : null;
+  return t
+    ? `${VROOT}/${ownerId}/${learnerId}/${t}/${lessonId}`
+    : `${VROOT}/${ownerId}/${learnerId}/${lessonId}`;
+}
+
 const INVALID_LINE_PATTERNS = [
   /{"statusCode"\s*:\s*"400"\s*,\s*"error"\s*:\s*"InvalidJWT"/i,
   /"exp"\s*claim\s*timestamp\s*check\s*failed/i,
@@ -71,7 +90,7 @@ function wrapLines(doc, text, maxWidth) {
   try { return doc.splitTextToSize(text, maxWidth); } catch { return [text]; }
 }
 
-function renderTranscriptPdf({ lessonTitle, learnerName, learnerId, lessonId, segments }) {
+function renderTranscriptPdf({ lessonTitle, learnerName, learnerId, lessonId, segments, teacherDisplayName = 'Ms. Sonoma' }) {
   const doc = new jsPDF({ unit: 'pt', format: 'letter' }); // 612x792
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -115,7 +134,7 @@ function renderTranscriptPdf({ lessonTitle, learnerName, learnerId, lessonId, se
     addLine(label, 'bold');
     const lines = Array.isArray(seg?.lines) ? seg.lines : [];
     lines.forEach((ln) => {
-      const role = (ln?.role || '').toLowerCase() === 'user' ? 'Learner' : 'Ms. Sonoma';
+      const role = (ln?.role || '').toLowerCase() === 'user' ? 'Learner' : teacherDisplayName;
       const color = role === 'Learner' ? '#c7442e' : '#000000';
       const text = typeof ln?.text === 'string' ? ln.text : '';
       if (!text) return;
@@ -128,7 +147,7 @@ function renderTranscriptPdf({ lessonTitle, learnerName, learnerId, lessonId, se
   return doc;
 }
 
-function renderTranscriptText({ lessonTitle, learnerName, learnerId, lessonId, segments }) {
+function renderTranscriptText({ lessonTitle, learnerName, learnerId, lessonId, segments, teacherDisplayName = 'Ms. Sonoma' }) {
   const lines = [];
   lines.push(`${lessonTitle} — Transcript`);
   const meta = [
@@ -144,7 +163,7 @@ function renderTranscriptText({ lessonTitle, learnerName, learnerId, lessonId, s
     lines.push(header);
     const segLines = Array.isArray(seg?.lines) ? seg.lines : [];
     segLines.forEach((ln) => {
-      const role = (ln?.role || '').toLowerCase() === 'user' ? 'Learner' : 'Ms. Sonoma';
+      const role = (ln?.role || '').toLowerCase() === 'user' ? 'Learner' : teacherDisplayName;
       const text = typeof ln?.text === 'string' ? ln.text : '';
       if (text) lines.push(`${role}: ${text}`);
     });
@@ -210,7 +229,7 @@ async function loadLedger(store, path) {
 }
 
 // Internal helper: write ledger and rebuild/upload PDF at a given lesson base path
-async function writeLedgerAndArtifacts(store, { basePath, lessonTitle, learnerName, learnerId, lessonId, ledger }) {
+async function writeLedgerAndArtifacts(store, { basePath, lessonTitle, learnerName, learnerId, lessonId, ledger, teacherDisplayName = 'Ms. Sonoma' }) {
   const ledgerPath = `${basePath}/ledger.json`;
   const pdfPath = `${basePath}/transcript.pdf`;
   const txtPath = `${basePath}/transcript.txt`;
@@ -231,13 +250,13 @@ async function writeLedgerAndArtifacts(store, { basePath, lessonTitle, learnerNa
   }
   
   // PDF
-  const pdfDoc = renderTranscriptPdf({ lessonTitle, learnerName, learnerId, lessonId, segments: sanitizedLedger });
+  const pdfDoc = renderTranscriptPdf({ lessonTitle, learnerName, learnerId, lessonId, segments: sanitizedLedger, teacherDisplayName });
   const pdfBlob = pdfDoc.output('blob');
   const pdfResult = await store.upload(pdfPath, pdfBlob, { upsert: true, contentType: 'application/pdf' });
   if (pdfResult.error) throw new Error(`PDF upload failed: ${pdfResult.error.message}`);
   
   // TXT
-  const txt = renderTranscriptText({ lessonTitle, learnerName, learnerId, lessonId, segments: sanitizedLedger });
+  const txt = renderTranscriptText({ lessonTitle, learnerName, learnerId, lessonId, segments: sanitizedLedger, teacherDisplayName });
   const txtBlob = new Blob([txt], { type: 'text/plain' });
   const txtResult = await store.upload(txtPath, txtBlob, { upsert: true, contentType: 'text/plain; charset=utf-8' });
   if (txtResult.error) throw new Error(`TXT upload failed: ${txtResult.error.message}`);
@@ -248,7 +267,7 @@ async function writeLedgerAndArtifacts(store, { basePath, lessonTitle, learnerNa
   return { pdfPath, txtPath };
 }
 
-export async function appendTranscriptSegment({ learnerId, learnerName, lessonId, lessonTitle, segment, sessionId }) {
+export async function appendTranscriptSegment({ learnerId, learnerName, lessonId, lessonTitle, segment, sessionId, teacher }) {
   try {
     if (!hasSupabaseEnv() || !learnerId || learnerId === 'demo') return { ok: false, reason: 'no-env-or-demo' };
     const supabase = getSupabaseClient();
@@ -258,7 +277,8 @@ export async function appendTranscriptSegment({ learnerId, learnerName, lessonId
     if (!ownerId) return { ok: false, reason: 'no-owner' };
 
     const store = supabase.storage.from(BUCKET);
-    const baseLessonPath = `${VROOT}/${ownerId}/${learnerId}/${lessonId}`;
+    const teacherDisplayName = getTeacherDisplayName(teacher);
+    const baseLessonPath = getLessonBasePath(ownerId, learnerId, teacher, lessonId);
     const sessionBasePath = sessionId ? `${baseLessonPath}/sessions/${sessionId}` : null;
     const sanitizedSegment = {
       startedAt: segment?.startedAt || new Date().toISOString(),
@@ -280,7 +300,7 @@ export async function appendTranscriptSegment({ learnerId, learnerName, lessonId
         sLedger.push(cloneSegment());
       }
       const sesOut = await writeLedgerAndArtifacts(store, {
-        basePath: sessionBasePath, lessonTitle, learnerName, learnerId, lessonId, ledger: sLedger,
+        basePath: sessionBasePath, lessonTitle, learnerName, learnerId, lessonId, ledger: sLedger, teacherDisplayName,
       });
       lastSessionFile = sesOut?.txtPath || sesOut?.pdfPath;
     }
@@ -291,7 +311,7 @@ export async function appendTranscriptSegment({ learnerId, learnerName, lessonId
       ledger.push(cloneSegment());
     }
     const consolidatedOut = await writeLedgerAndArtifacts(store, {
-      basePath: baseLessonPath, lessonTitle, learnerName, learnerId, lessonId, ledger,
+      basePath: baseLessonPath, lessonTitle, learnerName, learnerId, lessonId, ledger, teacherDisplayName,
     });
     const consolidatedFile = consolidatedOut?.txtPath || consolidatedOut?.pdfPath;
     return { ok: true, path: lastSessionFile || consolidatedFile };
@@ -307,7 +327,7 @@ export async function appendTranscriptSegment({ learnerId, learnerName, lessonId
 
 // Live updater: upsert the current segment (by startedAt) instead of always pushing a new one.
 // Use this to keep the ledger and PDF in sync during autosaves without creating many tiny segments.
-export async function updateTranscriptLiveSegment({ learnerId, learnerName, lessonId, lessonTitle, startedAt, lines, sessionId }) {
+export async function updateTranscriptLiveSegment({ learnerId, learnerName, lessonId, lessonTitle, startedAt, lines, sessionId, teacher }) {
   try {
     if (!hasSupabaseEnv() || !learnerId || learnerId === 'demo') return { ok: false, reason: 'no-env-or-demo' };
     const supabase = getSupabaseClient();
@@ -317,7 +337,8 @@ export async function updateTranscriptLiveSegment({ learnerId, learnerName, less
     if (!ownerId) return { ok: false, reason: 'no-owner' };
     const store = supabase.storage.from(BUCKET);
 
-    const baseLessonPath = `${VROOT}/${ownerId}/${learnerId}/${lessonId}`;
+    const teacherDisplayName = getTeacherDisplayName(teacher);
+    const baseLessonPath = getLessonBasePath(ownerId, learnerId, teacher, lessonId);
     const sessionBasePath = sessionId ? `${baseLessonPath}/sessions/${sessionId}` : null;
 
     const nowIso = new Date().toISOString();
@@ -339,7 +360,7 @@ export async function updateTranscriptLiveSegment({ learnerId, learnerName, less
           lines: safeLines.map((ln) => ({ ...ln })),
         });
       }
-      const out = await writeLedgerAndArtifacts(store, { basePath, lessonTitle, learnerName, learnerId, lessonId, ledger });
+      const out = await writeLedgerAndArtifacts(store, { basePath, lessonTitle, learnerName, learnerId, lessonId, ledger, teacherDisplayName });
       return out?.txtPath || out?.pdfPath;
     };
 
@@ -428,6 +449,7 @@ export default {
   appendTranscriptSegment,
   updateTranscriptLiveSegment,
   listLearnerTranscriptPdfs,
+  getTeacherDisplayName,
 };
 
 export {

@@ -23,6 +23,7 @@
 import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { getMasteryForLearner, saveMastery } from '@/app/lib/masteryClient'
+import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 
 // --- Constants ---------------------------------------------------------------
 
@@ -491,6 +492,36 @@ function SlateDrillInner() {
   useEffect(() => { soundRef.current = soundOn }, [soundOn])
   useEffect(() => { learnerIdRef.current = learnerId }, [learnerId])
   useEffect(() => { settingsRef.current = settings }, [settings])
+
+  // ── Save drill transcript to Supabase when lesson is won ───────────────
+  useEffect(() => {
+    if (pagePhase !== 'won') return
+    const lid = learnerId
+    const lk = lessonKeyRef.current
+    if (!lid || lid === 'demo' || !lk || !drillTranscriptRef.current.length) return
+    const lines = drillTranscriptRef.current.flatMap(e => {
+      const rows = [
+        { role: 'assistant', text: `Q${e.num}: ${e.question}` },
+        { role: 'user', text: e.timeout ? '(time out)' : (String(e.studentAnswer || '').trim() || '(no answer)') },
+      ]
+      if (!e.correct && e.correctAnswer) {
+        rows.push({ role: 'assistant', text: `Correct answer: ${e.correctAnswer}` })
+      }
+      return rows
+    })
+    const lessonTitle = lessonData?.title || lk
+    const learnerNameVal = (() => { try { return localStorage.getItem('learner_name') || '' } catch { return '' } })()
+    updateTranscriptLiveSegment({
+      learnerId: lid,
+      learnerName: learnerNameVal,
+      lessonId: lk,
+      lessonTitle,
+      startedAt: new Date().toISOString(),
+      lines,
+      teacher: 'slate',
+    }).catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagePhase])
 
   // Load learner + mastery + available lessons
   useEffect(() => {

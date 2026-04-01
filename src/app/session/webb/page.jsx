@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
+import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 
 // CSS animations
 if (typeof document !== 'undefined' && !document.getElementById('webb-spin-style')) {
@@ -337,8 +338,7 @@ export default function WebbPage() {
   const [sideBySideHeight, setSBSH]         = useState(null)
 
   const learnerName = useRef('')
-
-  // ── Init ─────────────────────────────────────────────────────────────
+  const webbSessionStartRef = useRef(null)
   useEffect(() => {
     try { learnerName.current = localStorage.getItem('learner_name') || '' } catch {}
     const id = (() => { try { return localStorage.getItem('learner_id') || null } catch { return null } })()
@@ -385,6 +385,33 @@ export default function WebbPage() {
       }))
     } catch { /* ignore quota errors */ }
   }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, completedObj, objResponses, essay, essayMode])
+
+  // ── Supabase transcript auto-save (Mrs. Webb) ─────────────────────────
+  // Debounced: fires 3 s after the last transcript change while chatting.
+  useEffect(() => {
+    if (phase !== PHASE.CHATTING || !selectedLesson || !transcript.length) return
+    const tid = setTimeout(async () => {
+      try {
+        const lid = learnerId
+        if (!lid || lid === 'demo') return
+        const lessonId = selectedLesson.lessonKey || selectedLesson.lesson_id || selectedLesson.id || 'unknown'
+        const lines = transcript.map(ln => ({
+          role: (ln.role === 'user') ? 'user' : 'assistant',
+          text: String(ln.text || '').trim(),
+        })).filter(ln => ln.text)
+        await updateTranscriptLiveSegment({
+          learnerId: lid,
+          learnerName: learnerName.current || '',
+          lessonId,
+          lessonTitle: selectedLesson.title || lessonId,
+          startedAt: webbSessionStartRef.current || new Date().toISOString(),
+          lines,
+          teacher: 'webb',
+        })
+      } catch { /* fail silently */ }
+    }, 3000)
+    return () => clearTimeout(tid)
+  }, [transcript, phase, selectedLesson, learnerId])
 
   useEffect(() => { isMutedRef.current = isMuted }, [isMuted])
 
@@ -916,6 +943,7 @@ export default function WebbPage() {
     setExpandedObj(null)
     setEssayMode(false)
     setEssay(null)
+    webbSessionStartRef.current = new Date().toISOString()
 
     // Get Mrs. Webb's opening greeting
     try {
