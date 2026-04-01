@@ -70,10 +70,13 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false)
 
   if (Array.isArray(remainingObjectives) && remainingObjectives.length) {
     lines.push(
-      `\nResearch objectives the student has NOT yet demonstrated (they must explain these in their own words):`,
+      `\nThe student has NOT yet demonstrated these learning goals (listed in priority order — work through them top to bottom):`,
       remainingObjectives.slice(0, 6).map((o, i) => `${i + 1}. ${o}`).join('\n'),
-      `After discussing the video or article, casually end your response with ONE natural question that would lead the student to demonstrate one of these objectives - as if you are just curious, not testing them.`,
-      `Never mention "objectives", never say you are checking comprehension.`,
+      `IMPORTANT — End EVERY reply with ONE focused question that steers the student toward explaining goal #1 in their own words.`,
+      `- Do NOT wait for a video or article. Ask about goal #1 in every response until the student demonstrates it.`,
+      `- Once goal #1 is demonstrated, shift to goal #2 on the next turn (the list will update automatically).`,
+      `- Bridge naturally from what the student just said: "That's interesting! Can you also tell me..." or "Speaking of that, what do you know about..."`,
+      `- Never use the words "objective", "goal", or "check". Sound warm and curious, not like a quiz.`,
     )
   }
 
