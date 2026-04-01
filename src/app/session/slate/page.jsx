@@ -466,6 +466,13 @@ function SlateDrillInner() {
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [drillTranscript, setDrillTranscript] = useState([])
   const drillTranscriptRef = useRef([])
+  const [offerResume, setOfferResume] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const raw = localStorage.getItem('slate_session')
+      return !!(raw && JSON.parse(raw)?.lessonData)
+    } catch { return false }
+  })
 
   // Refs for stale-closure-free use in timers/callbacks
   const phaseRef = useRef('loading')
@@ -898,6 +905,67 @@ function SlateDrillInner() {
     router.push('/learn')
   }, [router])
 
+  // ── Snapshot save/restore (survive navigation) ────────────────────────
+  function handleSlateResume() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('slate_session') || 'null')
+      if (!saved?.lessonData) { setOfferResume(false); return }
+      const p = buildPool(saved.lessonData)
+      if (!p.length) { setOfferResume(false); return }
+      poolRef.current = p
+      setPool(p)
+      lessonKeyRef.current = saved.lessonKey || ''
+      setLessonData(saved.lessonData)
+      const sc = saved.score || 0
+      const qc = saved.qCount || 0
+      scoreRef.current = sc
+      setScore(sc)
+      setQCount(qc)
+      drillTranscriptRef.current = saved.drillTranscript || []
+      setDrillTranscript(saved.drillTranscript || [])
+      const newDeck = shuffleArr(p)
+      deckRef.current = newDeck
+      deckIdxRef.current = 1
+      const q = newDeck[0]
+      if (q) {
+        currentQRef.current = q
+        setCurrentQ(q)
+        setUserAnswer('')
+        setLastResult(null)
+        setSecondsLeft(settingsRef.current.questionSecs)
+        phaseRef.current = 'asking'
+        setPagePhase('asking')
+        setTimeout(() => inputEl.current?.focus?.(), 80)
+      }
+      setOfferResume(false)
+    } catch { setOfferResume(false) }
+  }
+
+  function handleSlateRestart() {
+    try { localStorage.removeItem('slate_session') } catch {}
+    setOfferResume(false)
+  }
+
+  // Save drill state after each question; clear on completion
+  useEffect(() => {
+    if (offerResume) return // never wipe storage while the resume prompt is showing
+    if (pagePhase === 'won') {
+      try { localStorage.removeItem('slate_session') } catch {}
+      return
+    }
+    if ((pagePhase === 'asking' || pagePhase === 'feedback') && lessonData) {
+      try {
+        localStorage.setItem('slate_session', JSON.stringify({
+          lessonData,
+          lessonKey: lessonKeyRef.current,
+          score,
+          qCount,
+          drillTranscript: drillTranscriptRef.current,
+        }))
+      } catch { /* ignore quota errors */ }
+    }
+  }, [pagePhase, lessonData, score, qCount, drillTranscript, offerResume])
+
   const lessonTitle = lessonData?.title || ''
 
   // ===========================================================================
@@ -939,6 +1007,48 @@ function SlateDrillInner() {
   if (pagePhase === 'list') {
     return (
       <div style={{ fontFamily: C.mono, background: C.bg, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        {/* ── Resume overlay ─────────────────────────────────────────── */}
+        {offerResume && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 1200,
+            background: 'rgba(0,0,0,0.80)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+          }}>
+            <div style={{
+              background: '#0f172a',
+              borderRadius: 18,
+              width: 'min(92vw, 360px)',
+              boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 2px #6366f1',
+              padding: '28px 24px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>🤖</div>
+              <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Welcome back!</div>
+              <div style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+                You were in the middle of a drill with Mr. Slate.<br/>
+                Would you like to pick up where you left off?
+              </div>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <button type="button" onClick={handleSlateResume}
+                  style={{
+                    flex: 1, background: '#6366f1', color: '#fff', border: 'none',
+                    borderRadius: 10, padding: '11px 0', cursor: 'pointer',
+                    fontWeight: 800, fontSize: 15, fontFamily: 'inherit',
+                  }}
+                >▶ Resume</button>
+                <button type="button" onClick={handleSlateRestart}
+                  style={{
+                    flex: 1, background: 'rgba(255,255,255,0.07)', color: '#94a3b8',
+                    border: '1px solid #334155',
+                    borderRadius: 10, padding: '11px 0', cursor: 'pointer',
+                    fontWeight: 700, fontSize: 15, fontFamily: 'inherit',
+                  }}
+                >↺ New Lesson</button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Header */}
         <div style={{
           background: C.surface,

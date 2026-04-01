@@ -190,7 +190,7 @@ export default function WebbPage() {
   const [offerResume,        setOfferResume]        = useState(() => {
     if (typeof window === 'undefined') return false
     try {
-      const raw = sessionStorage.getItem('webb_session')
+      const raw = localStorage.getItem('webb_session')
       return !!(raw && JSON.parse(raw)?.selectedLesson)
     } catch { return false }
   }) // resume/restart prompt on refresh
@@ -351,7 +351,7 @@ export default function WebbPage() {
 
   function handleResume() {
     try {
-      const saved = JSON.parse(sessionStorage.getItem('webb_session') || 'null')
+      const saved = JSON.parse(localStorage.getItem('webb_session') || 'null')
       if (!saved?.selectedLesson) { setOfferResume(false); return }
       setSelectedLesson(saved.selectedLesson)
       setChatMessages(saved.chatMessages || [])
@@ -368,7 +368,7 @@ export default function WebbPage() {
   }
 
   function handleRestartFromPrompt() {
-    try { sessionStorage.removeItem('webb_session') } catch {}
+    try { localStorage.removeItem('webb_session') } catch {}
     setOfferResume(false)
   }
 
@@ -376,11 +376,11 @@ export default function WebbPage() {
   useEffect(() => {
     if (offerResume) return // never wipe storage while the resume prompt is visible
     if (phase !== PHASE.CHATTING || !selectedLesson) {
-      sessionStorage.removeItem('webb_session')
+      localStorage.removeItem('webb_session')
       return
     }
     try {
-      sessionStorage.setItem('webb_session', JSON.stringify({
+      localStorage.setItem('webb_session', JSON.stringify({
         selectedLesson, chatMessages, transcript, objectives, completedObj, objResponses, essay, essayMode,
       }))
     } catch { /* ignore quota errors */ }
@@ -2109,7 +2109,7 @@ export default function WebbPage() {
                     <button type="button"
                       onClick={() => {
                         setShowSourceSettings(false)
-                        try { sessionStorage.removeItem('webb_session') } catch {}
+                        try { localStorage.removeItem('webb_session') } catch {}
                         handleBack()
                       }}
                       style={{
