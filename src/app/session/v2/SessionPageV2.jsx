@@ -7140,6 +7140,9 @@ function SessionPageV2Inner() {
             const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
             const needBeginTest = (currentPhase === 'test' && (!testState || testState === 'idle'));
             if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest)) return null;
+            // Hide Begin while the play-time-expired countdown is running — clicking Begin
+            // at this point would restart the play timer and give double time.
+            if (showPlayTimeExpired) return null;
 
             const offerResume = !!snapshotLoaded && !!resumePhase && resumePhase !== 'idle' && resumePhase !== 'discussion';
             
