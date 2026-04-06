@@ -800,6 +800,7 @@ function SessionPageV2Inner() {
   
   // Phase timer state (loaded from learner profile)
   const [phaseTimers, setPhaseTimers] = useState(null);
+  const phaseTimersRef = useRef(null);
   const [currentTimerMode, setCurrentTimerMode] = useState({
     discussion: null,
     comprehension: null,
@@ -901,6 +902,10 @@ function SessionPageV2Inner() {
   useEffect(() => {
     goldenKeyLessonKeyRef.current = String(goldenKeyLessonKey || '');
   }, [goldenKeyLessonKey]);
+
+  useEffect(() => {
+    phaseTimersRef.current = phaseTimers;
+  }, [phaseTimers]);
 
   useEffect(() => {
     if (typeof goldenKeysEnabled === 'boolean') {
@@ -1759,7 +1764,6 @@ function SessionPageV2Inner() {
     const playBonusSec = goldenKeysEnabled
       ? Math.max(0, Number(goldenKeyBonus || 0)) * 60
       : 0;
-    console.log('[TimerFix] setPlayTimerLimits — goldenKeyBonus:', goldenKeyBonus, 'enabled:', goldenKeysEnabled, 'bonusSec:', playBonusSec);
     const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
 
     timerServiceRef.current.setPlayTimerLimits({
@@ -2748,6 +2752,16 @@ function SessionPageV2Inner() {
         const timers = loadPhaseTimersForLearner(learner);
         setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
         setTimerRefreshKey(k => k + 1);
+        if (timerServiceRef.current) {
+          const bonusSec = goldenKeysEnabledRef.current ? (timers.golden_key_bonus_min || 0) * 60 : 0;
+          const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+          timerServiceRef.current.setPlayTimerLimits({
+            comprehension: m2s(timers.comprehension_play_min) + bonusSec,
+            exercise: m2s(timers.exercise_play_min) + bonusSec,
+            worksheet: m2s(timers.worksheet_play_min) + bonusSec,
+            test: m2s(timers.test_play_min) + bonusSec,
+          });
+        }
         persistTimerStateNow('golden-key-applied');
         return;
       }
@@ -2770,6 +2784,16 @@ function SessionPageV2Inner() {
       const timers = loadPhaseTimersForLearner(updated || learner);
       setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
       setTimerRefreshKey(k => k + 1);
+      if (timerServiceRef.current) {
+        const bonusSec = goldenKeysEnabledRef.current ? (timers.golden_key_bonus_min || 0) * 60 : 0;
+        const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+        timerServiceRef.current.setPlayTimerLimits({
+          comprehension: m2s(timers.comprehension_play_min) + bonusSec,
+          exercise: m2s(timers.exercise_play_min) + bonusSec,
+          worksheet: m2s(timers.worksheet_play_min) + bonusSec,
+          test: m2s(timers.test_play_min) + bonusSec,
+        });
+      }
       persistTimerStateNow('golden-key-applied');
     } catch (err) {
       console.warn('[SessionPageV2] Failed to apply golden key:', err);
@@ -2782,6 +2806,16 @@ function SessionPageV2Inner() {
     setIsGoldenKeySuspended(true);
     setGoldenKeyBonus(0);
     setTimerRefreshKey(k => k + 1);
+    if (timerServiceRef.current && phaseTimersRef.current) {
+      const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+      const pt = phaseTimersRef.current;
+      timerServiceRef.current.setPlayTimerLimits({
+        comprehension: m2s(pt.comprehension_play_min),
+        exercise: m2s(pt.exercise_play_min),
+        worksheet: m2s(pt.worksheet_play_min),
+        test: m2s(pt.test_play_min),
+      });
+    }
     persistTimerStateNow('golden-key-suspended');
   }, [hasGoldenKey, persistTimerStateNow]);
 
@@ -2793,6 +2827,18 @@ function SessionPageV2Inner() {
       setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
     }
     setTimerRefreshKey(k => k + 1);
+    if (timerServiceRef.current && phaseTimers) {
+      const bonusSec = goldenKeysEnabledRef.current
+        ? ((phaseTimers.golden_key_bonus_min || 5) * 60)
+        : 0;
+      const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+      timerServiceRef.current.setPlayTimerLimits({
+        comprehension: m2s(phaseTimers.comprehension_play_min) + bonusSec,
+        exercise: m2s(phaseTimers.exercise_play_min) + bonusSec,
+        worksheet: m2s(phaseTimers.worksheet_play_min) + bonusSec,
+        test: m2s(phaseTimers.test_play_min) + bonusSec,
+      });
+    }
     persistTimerStateNow('golden-key-unsuspended');
   }, [hasGoldenKey, phaseTimers, persistTimerStateNow]);
   
