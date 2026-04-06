@@ -1,3 +1,5 @@
+2026 — Transcript system: teacher tabs + Webb/Slate saves. Restored Sonoma transcript compatibility; added Webb (3s-debounced save on CHATTING phase) and Slate (save on pagePhase='won') persistence to Supabase Storage; rewrote API route to walk teacher sub-folders (sonoma/webb/slate); rewrote transcripts page with teacher tabs + count badges; added Transcripts button to learner cards. Files: transcriptsClient.js, webb/page.jsx, slate/page.jsx, route.js, learners/[id]/transcripts/page.js, learners/page.js. Commit: e1414a3. Build: ✓. Recon prompt: "Where is transcripts feature implemented end-to-end? List entrypoints, key files, and data flow."
+
 2026-03-31 | feat(slate): Drill transcript + print at lesson completion. Added `drillTranscript` state + ref to accumulate Q&A entries as the drill runs. `handleResult` now accepts `rawAnswer` param; `onTextSubmit`/`onChoiceClick` pass human-readable answer labels. `startDrill` resets transcript. On `pagePhase === 'won'`, an inline transcript panel shows each question color-coded (green/red/amber) with the student's answer and the correct answer if wrong. A 🖨 PRINT button opens a new window with clean print-ready HTML auto-triggering `window.print()`. No persistent button — only appears at end of lesson. Commit: cc9bd6a. Build: ✓. Recon prompt: "Mr Slate print page at end of lesson with answers and transcript of right and wrong answers, similar to Ms. Sonoma print".
 
 2026-03-25 | fix(slate): Mr. Slate now reveals correct answer on timeout (same flow as wrong answer). Root cause: `correctAnswer` was guarded by `!correct && !timeout`, so timeout events got an empty string and fell into the "advance with delay" branch instead of the audio-chain branch. Fix: removed `!timeout` from the guard; now `correctAnswer` is populated for both wrong answers and timeouts. The existing `else if (soundRef.current && correctAnswer)` branch handles both cases: plays timeout message → "The correct answer was X" → advance. UI `EXPECTED:` label also displays on timeout. File: `src/app/session/slate/page.jsx` line 714. Commit: 0e0fbf8. Build: pending. Recon prompt: "Mr. Slate page - give correct answer on timeout, currently only does on incorrect answer".
@@ -619,3 +621,18 @@ File: src/app/session/components/CaptionPanel.js
 
 
 2026-03-14T17:55:30Z | Fix: Skip videos without captions (webb-resources). Root cause: generateVideo returned the first GPT-picked YouTube video regardless of caption availability, causing webb-video-interpret to fail silently when captions were absent. Fix: (1) Added import { YoutubeTranscript } from 'youtube-transcript' to webb-resources/route.js. (2) Added hasTranscript(videoId) helper wrapping YoutubeTranscript.fetchTranscript. (3) generateVideo: after GPT picks pickedIdx, build ordered list (GPT pick first + remaining candidates) and iterate until one passes hasTranscript. First with captions is returned; if all fail → { unavailable: true }. Recon prompt: skip videos without captions available webb-resources generateVideo YoutubeTranscript.
+
+## 2026-04-01 � Webb objective-steered Socratic questions
+Recon: `Mrs. Webb Socratic questioning drive toward incomplete objectives completion goals session`
+Problem: buildSystem in webb-chat/route.js only told Mrs. Webb to ask an objective-probing question 'after discussing the video or article', so chat meanders without driving toward completion.
+Fix: Changed system prompt to instruct Webb to end EVERY reply with a focused question targeting goal #1 in the remaining objectives list (priority order), bridging naturally from whatever the student just said. Once goal #1 is demonstrated the list automatically shifts to #2.
+File: src/app/api/webb-chat/route.js � buildSystem() lines 71-80.
+
+## 2026-04-01 � Webb Research button: media navigation instead of vague recommendation
+Recon: `Mrs. Webb Research objective researchMode video chapters article scroll highlight navigate open herself`
+Problem: startResearch always called webb-chat researchMode which just vaguely mentioned the video/article title without navigating anywhere.
+Fix (3 paths):
+  A) Video + chapters: silently loads chapter moments if not yet fetched, uses seekRequest API to pick the best chapter for the objective, opens video and plays that segment, then asks Socratic after playback ends.
+  B) Article available: calls webb-interpret with [singleObjective] to pick targeted passages, opens article overlay, highlights + scrolls to those passages, then asks Socratic.
+  C) No navigable media: calls new buildDirectTeachSystem (researchDirect:true) which teaches the concept in 2-3 sentences with a real-world example then Socratic � no media mentions.
+Files: src/app/session/webb/page.jsx (startResearch), src/app/api/webb-chat/route.js (buildDirectTeachSystem + researchDirect flag).
