@@ -184,14 +184,20 @@ export class TimerService {
         // rather than waiting up to 1 second for the next interval tick, or
         // never updating when the timer is paused.
         const isCurrentPhase = phase === this.currentPlayPhase;
-        console.log(`[TimerFix] setPlayTimerLimits phase=${phase} currentPlayPhase=${this.currentPlayPhase} expired=${timer.expired} willEmitTick=${isCurrentPhase && !timer.expired} newLimit=${timer.timeLimit} elapsed=${timer.elapsed}`);
         if (isCurrentPhase && !timer.expired) {
-          const remaining = Math.max(0, timer.timeLimit - timer.elapsed);
+          // Recalculate elapsed from startTime so the tick carries the live value,
+          // not the cached value from the last 1-second interval tick.
+          const liveElapsed = Math.max(
+            timer.elapsed,
+            Math.floor((Date.now() - timer.startTime) / 1000)
+          );
+          timer.elapsed = liveElapsed;
+          const remaining = Math.max(0, timer.timeLimit - liveElapsed);
           this.eventBus.emit('playTimerTick', {
             phase,
-            elapsed: timer.elapsed,
+            elapsed: liveElapsed,
             remaining,
-            formatted: this.#formatTime(timer.elapsed),
+            formatted: this.#formatTime(liveElapsed),
             remainingFormatted: this.#formatTime(remaining)
           });
         }

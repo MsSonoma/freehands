@@ -800,6 +800,8 @@ function SessionPageV2Inner() {
   
   // Phase timer state (loaded from learner profile)
   const [phaseTimers, setPhaseTimers] = useState(null);
+  // Ref mirror so golden-key handlers can read current phaseTimers without stale closures
+  const phaseTimersRef = useRef(null);
   const [currentTimerMode, setCurrentTimerMode] = useState({
     discussion: null,
     comprehension: null,
@@ -897,6 +899,10 @@ function SessionPageV2Inner() {
   useEffect(() => {
     hasGoldenKeyRef.current = !!hasGoldenKey;
   }, [hasGoldenKey]);
+
+  useEffect(() => {
+    phaseTimersRef.current = phaseTimers;
+  }, [phaseTimers]);
 
   useEffect(() => {
     goldenKeyLessonKeyRef.current = String(goldenKeyLessonKey || '');
@@ -1759,7 +1765,6 @@ function SessionPageV2Inner() {
     const playBonusSec = goldenKeysEnabled
       ? Math.max(0, Number(goldenKeyBonus || 0)) * 60
       : 0;
-    console.log('[TimerFix] setPlayTimerLimits — goldenKeyBonus:', goldenKeyBonus, 'enabled:', goldenKeysEnabled, 'bonusSec:', playBonusSec);
     const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
 
     timerServiceRef.current.setPlayTimerLimits({
@@ -2746,8 +2751,22 @@ function SessionPageV2Inner() {
         setHasGoldenKey(true);
         setIsGoldenKeySuspended(false);
         const timers = loadPhaseTimersForLearner(learner);
-        setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
+        const bonusMin = timers.golden_key_bonus_min || 0;
+        setGoldenKeyBonus(bonusMin);
         setTimerRefreshKey(k => k + 1);
+        // Push new limits to TimerService immediately so the video timer and overlay
+        // both update in the same render — not one cycle apart via useEffect.
+        const pt = phaseTimersRef.current;
+        if (timerServiceRef.current && pt) {
+          const bonusSec = goldenKeysEnabledRef.current ? bonusMin * 60 : 0;
+          const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+          timerServiceRef.current.setPlayTimerLimits({
+            comprehension: m2s(pt.comprehension_play_min) + bonusSec,
+            exercise: m2s(pt.exercise_play_min) + bonusSec,
+            worksheet: m2s(pt.worksheet_play_min) + bonusSec,
+            test: m2s(pt.test_play_min) + bonusSec,
+          });
+        }
         persistTimerStateNow('golden-key-applied');
         return;
       }
@@ -2768,8 +2787,22 @@ function SessionPageV2Inner() {
       setHasGoldenKey(true);
       setIsGoldenKeySuspended(false);
       const timers = loadPhaseTimersForLearner(updated || learner);
-      setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
+      const bonusMin = timers.golden_key_bonus_min || 0;
+      setGoldenKeyBonus(bonusMin);
       setTimerRefreshKey(k => k + 1);
+      // Push new limits to TimerService immediately so the video timer and overlay
+      // both update in the same render — not one cycle apart via useEffect.
+      const pt = phaseTimersRef.current;
+      if (timerServiceRef.current && pt) {
+        const bonusSec = goldenKeysEnabledRef.current ? bonusMin * 60 : 0;
+        const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+        timerServiceRef.current.setPlayTimerLimits({
+          comprehension: m2s(pt.comprehension_play_min) + bonusSec,
+          exercise: m2s(pt.exercise_play_min) + bonusSec,
+          worksheet: m2s(pt.worksheet_play_min) + bonusSec,
+          test: m2s(pt.test_play_min) + bonusSec,
+        });
+      }
       persistTimerStateNow('golden-key-applied');
     } catch (err) {
       console.warn('[SessionPageV2] Failed to apply golden key:', err);
@@ -2782,6 +2815,18 @@ function SessionPageV2Inner() {
     setIsGoldenKeySuspended(true);
     setGoldenKeyBonus(0);
     setTimerRefreshKey(k => k + 1);
+    // Remove bonus from TimerService immediately so the video timer and overlay
+    // both drop to base limits in the same render — not one cycle apart via useEffect.
+    const pt = phaseTimersRef.current;
+    if (timerServiceRef.current && pt) {
+      const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+      timerServiceRef.current.setPlayTimerLimits({
+        comprehension: m2s(pt.comprehension_play_min),
+        exercise: m2s(pt.exercise_play_min),
+        worksheet: m2s(pt.worksheet_play_min),
+        test: m2s(pt.test_play_min),
+      });
+    }
     persistTimerStateNow('golden-key-suspended');
   }, [hasGoldenKey, persistTimerStateNow]);
 
@@ -2789,12 +2834,24 @@ function SessionPageV2Inner() {
     if (goldenKeysEnabledRef.current === false) return;
     if (!hasGoldenKey) return;
     setIsGoldenKeySuspended(false);
-    if (phaseTimers) {
-      setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
-    }
+    const pt = phaseTimersRef.current;
+    const bonusMin = pt ? (pt.golden_key_bonus_min || 5) : 5;
+    setGoldenKeyBonus(bonusMin);
     setTimerRefreshKey(k => k + 1);
+    // Restore bonus in TimerService immediately so the video timer and overlay
+    // both gain the bonus in the same render — not one cycle apart via useEffect.
+    if (timerServiceRef.current && pt) {
+      const bonusSec = bonusMin * 60;
+      const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+      timerServiceRef.current.setPlayTimerLimits({
+        comprehension: m2s(pt.comprehension_play_min) + bonusSec,
+        exercise: m2s(pt.exercise_play_min) + bonusSec,
+        worksheet: m2s(pt.worksheet_play_min) + bonusSec,
+        test: m2s(pt.test_play_min) + bonusSec,
+      });
+    }
     persistTimerStateNow('golden-key-unsuspended');
-  }, [hasGoldenKey, phaseTimers, persistTimerStateNow]);
+  }, [hasGoldenKey, persistTimerStateNow]);
   
   // Start play timer for a phase (called when phase begins)
   const startPhasePlayTimer = useCallback((phaseName) => {
