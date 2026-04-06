@@ -2878,31 +2878,45 @@ function SessionPageV2Inner() {
   
   // Handle PlayTimeExpiredOverlay countdown completion (auto-advance to work mode) - V1 parity
   const handlePlayExpiredComplete = useCallback(async () => {
-    console.log('[SessionPageV2] PlayTimeExpired countdown complete, transitioning to work');
     setShowPlayTimeExpired(false);
     const phaseToStart = playExpiredPhase;
     setPlayExpiredPhase(null);
     
     if (phaseToStart) {
-      console.log('[SessionPageV2] Calling go() for phase:', phaseToStart);
       transitionToWorkTimer(phaseToStart);
       
-      // Call go() on the phase controller to start work mode
       try {
         if (phaseToStart === 'discussion') {
           // Discussion starts teaching immediately (no play time)
           startSessionRef.current?.({ ignoreResume: true });
-        } else if (phaseToStart === 'comprehension') {
-          comprehensionPhaseRef.current?.go();
-        } else if (phaseToStart === 'exercise') {
-          exercisePhaseRef.current?.go();
-        } else if (phaseToStart === 'worksheet') {
-          worksheetPhaseRef.current?.go();
-        } else if (phaseToStart === 'test') {
-          testPhaseRef.current?.go();
+        } else {
+          // If Begin was never clicked the phase is still 'idle' — start() was never
+          // called so go() has nothing to work with. Instead initialize the phase in
+          // work-only mode (same path as handleBeginPhase skipPlayPortion).
+          const phaseStateRef = {
+            comprehension: comprehensionStateRef,
+            exercise: exerciseStateRef,
+            worksheet: worksheetStateRef,
+            test: testStateRef,
+          }[phaseToStart];
+          const phaseRef = {
+            comprehension: comprehensionPhaseRef,
+            exercise: exercisePhaseRef,
+            worksheet: worksheetPhaseRef,
+            test: testPhaseRef,
+          }[phaseToStart];
+
+          if (!phaseStateRef || phaseStateRef.current === 'idle') {
+            // Begin gate — phase not yet started; launch work timer and begin in work mode
+            timerServiceRef.current?.startWorkPhaseTimer(phaseToStart);
+            await phaseRef?.current?.start?.({ skipPlayPortion: true });
+          } else {
+            // Phase was already in play mode — just call go()
+            phaseRef?.current?.go();
+          }
         }
       } catch (e) {
-        console.error('[SessionPageV2] Failed to call go() on phase:', e);
+        console.error('[SessionPageV2] Failed to transition to work phase:', e);
       }
     }
   }, [playExpiredPhase, transitionToWorkTimer]);
@@ -2916,18 +2930,29 @@ function SessionPageV2Inner() {
     if (phaseToStart) {
       transitionToWorkTimer(phaseToStart);
       
-      // Trigger the appropriate Go handler
       try {
         if (phaseToStart === 'discussion' || currentPhase === 'discussion' || currentPhase === 'teaching') {
-            startSessionRef.current?.({ ignoreResume: true });
-        } else if (phaseToStart === 'comprehension' || currentPhase === 'comprehension') {
-          comprehensionPhaseRef.current?.go();
-        } else if (phaseToStart === 'exercise' || currentPhase === 'exercise') {
-          exercisePhaseRef.current?.go();
-        } else if (phaseToStart === 'worksheet' || currentPhase === 'worksheet') {
-          worksheetPhaseRef.current?.go();
-        } else if (phaseToStart === 'test' || currentPhase === 'test') {
-          testPhaseRef.current?.go();
+          startSessionRef.current?.({ ignoreResume: true });
+        } else {
+          const phaseStateRef = {
+            comprehension: comprehensionStateRef,
+            exercise: exerciseStateRef,
+            worksheet: worksheetStateRef,
+            test: testStateRef,
+          }[phaseToStart];
+          const phaseRef = {
+            comprehension: comprehensionPhaseRef,
+            exercise: exercisePhaseRef,
+            worksheet: worksheetPhaseRef,
+            test: testPhaseRef,
+          }[phaseToStart];
+
+          if (!phaseStateRef || phaseStateRef.current === 'idle') {
+            timerServiceRef.current?.startWorkPhaseTimer(phaseToStart);
+            await phaseRef?.current?.start?.({ skipPlayPortion: true });
+          } else {
+            phaseRef?.current?.go();
+          }
         }
       } catch (e) {
         console.warn('[SessionPageV2] Start now failed:', e);
