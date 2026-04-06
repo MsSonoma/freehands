@@ -1396,24 +1396,26 @@ function SlateDrillInner() {
 <title>${esc(title)} — Drill Transcript</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:28px 36px;max-width:740px;margin:0 auto;font-size:13px;line-height:1.45}
-.no-print{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:10px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px}
-.no-print button{padding:7px 18px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.03em}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:24px 32px;max-width:900px;margin:0 auto;font-size:13px;line-height:1.4}
+@media print{body{padding:16px 20px;max-width:none}}
+.no-print{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:9px 13px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px}
+.no-print button{padding:6px 16px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.03em}
 .no-print button:hover{background:#15803d}
-.no-print span{font-size:12px;color:#166534}
-h1{font-size:18px;font-weight:800;margin-bottom:3px}
-.sub{font-size:11px;color:#6b7280;margin-bottom:14px}
-.summary{display:flex;gap:20px;margin-bottom:18px;padding:10px 14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px}
+.no-print span{font-size:11px;color:#166534}
+h1{font-size:16px;font-weight:800;margin-bottom:2px}
+.sub{font-size:10px;color:#6b7280;margin-bottom:10px}
+.summary{display:flex;gap:16px;margin-bottom:12px;padding:8px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px}
 .summary-item{text-align:center}
-.summary-item .val{font-size:20px;font-weight:800}
-.summary-item .lbl{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+.summary-item .val{font-size:17px;font-weight:800}
+.summary-item .lbl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
 .green{color:#16a34a}.red{color:#dc2626}.amber{color:#b45309}
-h2{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin-bottom:10px}
-.row{border-left:3px solid #e5e7eb;padding:7px 10px;margin-bottom:8px;break-inside:avoid}
-.row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-.qtext{font-weight:600;flex:1;line-height:1.4}
-.status{font-weight:700;white-space:nowrap;flex-shrink:0;font-size:.9em}
-.detail{margin-top:3px;font-size:.9em;color:#374151}
+h2{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin-bottom:8px}
+#content{column-count:2;column-gap:20px}
+.row{border-left:3px solid #e5e7eb;padding:5px 8px;margin-bottom:6px;break-inside:avoid;-webkit-column-break-inside:avoid}
+.row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.qtext{font-weight:600;flex:1;line-height:1.35}
+.status{font-weight:700;white-space:nowrap;flex-shrink:0;font-size:.85em}
+.detail{margin-top:2px;font-size:.85em;color:#374151}
 .correct-ans{color:#1d4ed8}
 @media print{.no-print{display:none!important}}
 </style>
@@ -1437,18 +1439,14 @@ ${rows}
 </div>
 <script>
 (function(){
-  // Shrink font only if content overflows 2 letter pages.
-  // 2 pages: 2 * (11in * 96dpi - 2 * 0.5in * 96dpi) = 2 * 960 = 1920px usable height.
-  // The .no-print bar is excluded from this calculation at print time, so we
-  // measure only the #content block against a slightly smaller budget to be safe.
-  var TARGET = 1820; // ~2 pages usable height in screen pixels
-  var MIN_FS = 7;    // never go below 7px
-  var el = document.getElementById('content');
-  if (!el) return;
-  var base = parseFloat(document.body.style.fontSize) || 13;
-  var fs = base;
-  // Only shrink, never enlarge — start at base and reduce until it fits
-  while (el.scrollHeight > TARGET && fs > MIN_FS) {
+  // With 2 columns, the column content is compressed vertically, so we measure
+  // document.body.scrollHeight (full page height including header) against a
+  // 2-page budget: 2 * ~960px usable (letter at 96dpi with 0.5in margins) = ~1920px.
+  // Use 1800 as a slightly conservative target to account for the header block.
+  var TARGET = 1800;
+  var MIN_FS = 7;
+  var fs = 13; // matches base font-size above
+  while (document.body.scrollHeight > TARGET && fs > MIN_FS) {
     fs -= 0.5;
     document.body.style.fontSize = fs + 'px';
   }
