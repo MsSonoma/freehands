@@ -82,18 +82,15 @@ export async function GET(req, { params }) {
     const store = client.storage.from(BUCKET);
     const base = `${VROOT}/${user.id}/${learnerId}`;
 
-    function isHeaderOnlyTranscript(text) {
-      if (!text) return false;
-      const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-      if (!lines.length) return false;
-      const headerMatchers = [
-        /^learner\s*:/i,
-        /^lesson\s*id\s*:/i,
-        /^session\s+\d+/i,
-        /transcript/i,
-        /^\d{4}-\d{2}-\d{2}/,
-      ];
-      return lines.every((line) => headerMatchers.some((matcher) => matcher.test(line)));
+    // Only filter transcripts that contain stale auth-error payloads (InvalidJWT etc.).
+    // The old "header-only" heuristic incorrectly filtered V2 Sonoma transcripts that
+    // legitimately contain only learner-answer lines (all starting with "Learner: …").
+    function isInvalidTranscript(text) {
+      if (!text || !text.trim()) return true;
+      return (
+        /\{"statusCode"\s*:\s*"400"\s*,\s*"error"\s*:\s*"InvalidJWT"/i.test(text) ||
+        /"exp"\s*claim\s*timestamp\s*check\s*failed/i.test(text)
+      );
     }
 
     async function tryGetTranscript(basePath, fileName, kind) {
@@ -102,7 +99,7 @@ export async function GET(req, { params }) {
       if (downloadErr || !file) return null;
       try {
         const text = await file.text();
-        if (isHeaderOnlyTranscript(text)) return null;
+        if (isInvalidTranscript(text)) return null;
       } catch {
         return null;
       }
