@@ -82,96 +82,88 @@ export async function GET(req, { params }) {
     const store = client.storage.from(BUCKET);
     const base = `${VROOT}/${user.id}/${learnerId}`;
 
-    // Only filter transcripts that contain stale auth-error payloads (InvalidJWT etc.).
-    // The old "header-only" heuristic incorrectly filtered V2 Sonoma transcripts that
-    // legitimately contain only learner-answer lines (all starting with "Learner: …").
-    function isInvalidTranscript(text) {
-      if (!text || !text.trim()) return true;
-      return (
-        /\{"statusCode"\s*:\s*"400"\s*,\s*"error"\s*:\s*"InvalidJWT"/i.test(text) ||
-        /"exp"\s*claim\s*timestamp\s*check\s*failed/i.test(text)
-      );
-    }
-
+    // Probe for a transcript file by creating a signed URL — no download needed.
+    // Supabase returns an error for non-existent paths, so this doubles as an
+    // existence check. Avoids downloading (potentially large) PDF/TXT files just
+    // to verify they exist, which was the main cause of 504 timeouts.
     async function tryGetTranscript(basePath, fileName, kind) {
       const path = `${basePath}/${fileName}`;
-      const { data: file, error: downloadErr } = await store.download(path);
-      if (downloadErr || !file) return null;
-      try {
-        const text = await file.text();
-        if (isInvalidTranscript(text)) return null;
-      } catch {
-        return null;
-      }
       const { data: signed, error } = await store.createSignedUrl(path, 600);
       if (error || !signed?.signedUrl) return null;
       return { path, url: signed.signedUrl, kind };
     }
 
-    // Collect transcripts for one lesson folder (teacher-tagged)
+    // Collect transcripts for one lesson folder. Prefer TXT; fall back to PDF.
+    // RTF is omitted: transcriptsClient.js removes RTF files on every write,
+    // so probing for them just adds unnecessary round trips.
     async function collectLessonTranscripts(lessonBase, lessonId, teacher) {
+      const tag = { lessonId, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher };
       const collected = [];
+
+      // Lesson-level consolidated file (TXT preferred; PDF fallback)
       const txt = await tryGetTranscript(lessonBase, 'transcript.txt', 'txt');
       if (txt) {
-        collected.push({ lessonId, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher, ...txt });
+        collected.push({ ...tag, ...txt });
       } else {
-        const rtf = await tryGetTranscript(lessonBase, 'transcript.rtf', 'rtf');
-        if (rtf) {
-          collected.push({ lessonId, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher, ...rtf });
-        } else {
-          const pdf = await tryGetTranscript(lessonBase, 'transcript.pdf', 'pdf');
-          if (pdf) {
-            collected.push({ lessonId, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher, ...pdf });
-          }
-        }
+        const pdf = await tryGetTranscript(lessonBase, 'transcript.pdf', 'pdf');
+        if (pdf) collected.push({ ...tag, ...pdf });
       }
-      // Per-session transcripts
+
+      // Per-session transcripts — parallelize across all sessions
       const sessions = await listAll(store, `${lessonBase}/sessions`);
-      for (const ses of sessions || []) {
-        if (!ses || typeof ses.name !== 'string') continue;
-        const sessionBase = `${lessonBase}/sessions/${ses.name}`;
-        const stxt = await tryGetTranscript(sessionBase, 'transcript.txt', 'txt');
-        if (stxt) {
-          collected.push({ lessonId: `${lessonId} — ${ses.name}`, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher, ...stxt });
-          continue;
-        }
-        const srtf = await tryGetTranscript(sessionBase, 'transcript.rtf', 'rtf');
-        if (srtf) {
-          collected.push({ lessonId: `${lessonId} — ${ses.name}`, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher, ...srtf });
-          continue;
-        }
-        const spdf = await tryGetTranscript(sessionBase, 'transcript.pdf', 'pdf');
-        if (spdf) {
-          collected.push({ lessonId: `${lessonId} — ${ses.name}`, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher, ...spdf });
-        }
-      }
+      const sessionItems = await Promise.all(
+        (sessions || [])
+          .filter((ses) => ses && typeof ses.name === 'string')
+          .map(async (ses) => {
+            const sessionBase = `${lessonBase}/sessions/${ses.name}`;
+            const sessionTag = { ...tag, lessonId: `${lessonId} \u2014 ${ses.name}` };
+            const stxt = await tryGetTranscript(sessionBase, 'transcript.txt', 'txt');
+            if (stxt) return { ...sessionTag, ...stxt };
+            const spdf = await tryGetTranscript(sessionBase, 'transcript.pdf', 'pdf');
+            if (spdf) return { ...sessionTag, ...spdf };
+            return null;
+          }),
+      );
+      collected.push(...sessionItems.filter(Boolean));
       return collected;
     }
 
-    const out = [];
     const topLevel = await listAll(store, base);
 
+    // Separate teacher sub-folders from legacy flat entries, then process in parallel
+    const teacherEntries = [];
+    const legacyEntries = [];
     for (const entry of topLevel || []) {
       if (!entry || typeof entry.name !== 'string') continue;
-
       if (TEACHER_FOLDERS.includes(entry.name)) {
-        // Teacher sub-folder: list lessons inside it
+        teacherEntries.push(entry);
+      } else {
+        legacyEntries.push(entry);
+      }
+    }
+
+    const allGroups = await Promise.all([
+      // Teacher sub-folders (sonoma / webb / slate) — list their lessons in parallel
+      ...teacherEntries.map(async (entry) => {
         const teacher = entry.name;
         const teacherBase = `${base}/${teacher}`;
         const lessons = await listAll(store, teacherBase);
-        for (const lessonEntry of lessons || []) {
-          if (!lessonEntry || typeof lessonEntry.name !== 'string') continue;
-          const lessonBase = `${teacherBase}/${lessonEntry.name}`;
-          const items = await collectLessonTranscripts(lessonBase, lessonEntry.name, teacher);
-          out.push(...items);
-        }
-      } else {
-        // Legacy flat entry — Ms. Sonoma (old path without teacher folder)
-        const lessonBase = `${base}/${entry.name}`;
-        const items = await collectLessonTranscripts(lessonBase, entry.name, 'sonoma');
-        out.push(...items);
-      }
-    }
+        const lessonItems = await Promise.all(
+          (lessons || [])
+            .filter((le) => le && typeof le.name === 'string')
+            .map((le) =>
+              collectLessonTranscripts(`${teacherBase}/${le.name}`, le.name, teacher),
+            ),
+        );
+        return lessonItems.flat();
+      }),
+      // Legacy flat entries (old Sonoma path without teacher sub-folder)
+      ...legacyEntries.map((entry) =>
+        collectLessonTranscripts(`${base}/${entry.name}`, entry.name, 'sonoma'),
+      ),
+    ]);
+
+    const out = allGroups.flat();
 
     // Sort: teacher display order, then newest-first within each teacher
     const teacherOrder = { sonoma: 0, webb: 1, slate: 2 };
