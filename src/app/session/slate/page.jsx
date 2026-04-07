@@ -466,6 +466,7 @@ function SlateDrillInner() {
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [drillTranscript, setDrillTranscript] = useState([])
   const drillTranscriptRef = useRef([])
+  const [txStatus, setTxStatus] = useState(null) // null | 'saving' | 'ok' | 'failed'
   const [offerResume, setOfferResume] = useState(() => {
     if (typeof window === 'undefined') return false
     try {
@@ -505,11 +506,14 @@ function SlateDrillInner() {
     if (pagePhase !== 'won') return
     const lid = learnerId
     const lk = lessonKeyRef.current
-    if (!lid || lid === 'demo' || !lk || !drillTranscriptRef.current.length) return
+    if (!lid) { console.warn('[Slate] Transcript skip: no learnerId'); return }
+    if (lid === 'demo') return
+    if (!lk) { console.warn('[Slate] Transcript skip: no lessonKey'); return }
+    if (!drillTranscriptRef.current.length) { console.warn('[Slate] Transcript skip: drillTranscript is empty'); return }
     const lines = drillTranscriptRef.current.flatMap(e => {
       const rows = [
         { role: 'assistant', text: `Q${e.num}: ${e.question}` },
-        { role: 'user', text: e.timeout ? '(time out)' : (String(e.studentAnswer || '').trim() || '(no answer)') },
+        { role: 'user', text: e.timeout ? '(time out)' : (String(e.answer || '').trim() || '(no answer)') },
       ]
       if (!e.correct && e.correctAnswer) {
         rows.push({ role: 'assistant', text: `Correct answer: ${e.correctAnswer}` })
@@ -518,6 +522,7 @@ function SlateDrillInner() {
     })
     const lessonTitle = lessonData?.title || lk
     const learnerNameVal = (() => { try { return localStorage.getItem('learner_name') || '' } catch { return '' } })()
+    setTxStatus('saving')
     updateTranscriptLiveSegment({
       learnerId: lid,
       learnerName: learnerNameVal,
@@ -527,8 +532,16 @@ function SlateDrillInner() {
       lines,
       teacher: 'slate',
     }).then(r => {
-      if (!r?.ok) console.error('[Slate] Transcript save failed:', r?.reason, r?.error)
-    }).catch(e => console.error('[Slate] Transcript save error:', e))
+      if (r?.ok) {
+        setTxStatus('ok')
+      } else {
+        console.error('[Slate] Transcript save failed:', r?.reason, r?.error)
+        setTxStatus('failed')
+      }
+    }).catch(e => {
+      console.error('[Slate] Transcript save error:', e)
+      setTxStatus('failed')
+    })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagePhase])
 
@@ -717,6 +730,7 @@ function SlateDrillInner() {
     setQCount(0)
     drillTranscriptRef.current = []
     setDrillTranscript([])
+    setTxStatus(null)
     const q = advanceDeck()
     if (q) {
       showQuestion(q, true) // skipAudio — we chain greeting → question ourselves
@@ -1481,9 +1495,16 @@ ${rows}
             <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>{qCount} QUERIES PROCESSED TO REACH MASTERY</div>
           </div>
 
-          <div style={{ color: C.muted, fontSize: 12, letterSpacing: 1, marginBottom: 28 }}>
+          <div style={{ color: C.muted, fontSize: 12, letterSpacing: 1, marginBottom: txStatus ? 8 : 28 }}>
             🤖 MASTERY ICON WILL APPEAR ON YOUR LESSON CARD.
           </div>
+          {txStatus && (
+            <div style={{ fontSize: 11, letterSpacing: 1, marginBottom: 28, color: txStatus === 'ok' ? C.green : txStatus === 'failed' ? '#ef4444' : C.muted }}>
+              {txStatus === 'saving' && '⏳ SAVING TRANSCRIPT…'}
+              {txStatus === 'ok' && '✓ TRANSCRIPT SAVED'}
+              {txStatus === 'failed' && '⚠ TRANSCRIPT SAVE FAILED — CHECK CONSOLE'}
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={startDrill} style={ghostBtn}>DRILL AGAIN</button>
