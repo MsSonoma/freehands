@@ -937,6 +937,7 @@ function SessionPageV2Inner() {
   
   const [currentCaption, setCurrentCaption] = useState('');
   const [transcriptLines, setTranscriptLines] = useState([]);
+  const transcriptLinesRef = useRef([]); // ref mirror so stale-closure handlers read the latest lines
   const [activeCaptionIndex, setActiveCaptionIndex] = useState(-1);
   const [engineState, setEngineState] = useState('idle');
   const [isMuted, setIsMuted] = useState(false);
@@ -1087,6 +1088,9 @@ function SessionPageV2Inner() {
   useEffect(() => {
     scrollTranscriptToBottom();
   }, [transcriptLines.length, snapshotLoaded, scrollTranscriptToBottom]);
+
+  // Keep transcriptLinesRef in sync so event-handler closures always see the latest lines.
+  useEffect(() => { transcriptLinesRef.current = transcriptLines; }, [transcriptLines]);
 
   // Broadcast lesson title to HeaderBar so the header matches V1 in mobile landscape
   useEffect(() => {
@@ -4093,8 +4097,11 @@ function SessionPageV2Inner() {
         }
       }
       
-      // Save transcript segment to mark lesson as completed
-      if (learnerId && learnerId !== 'demo' && lessonId && transcriptLines.length > 0) {
+      // Save transcript segment to mark lesson as completed.
+      // Use the ref mirror (transcriptLinesRef) — this closure was created when lessonData
+      // loaded and would otherwise capture the empty initial state via stale closure.
+      const liveTranscriptLines = transcriptLinesRef.current || [];
+      if (learnerId && learnerId !== 'demo' && lessonId && liveTranscriptLines.length > 0) {
         try {
           const learnerName = learnerProfile?.name || (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
           const startedAt = startSessionRef.current || new Date().toISOString();
@@ -4105,7 +4112,7 @@ function SessionPageV2Inner() {
             learnerName,
             lessonId,
             lessonTitle: lessonData?.title || lessonId,
-            segment: { startedAt, completedAt, lines: transcriptLines },
+            segment: { startedAt, completedAt, lines: liveTranscriptLines },
             sessionId: browserSessionId || undefined,
           });
           addEvent('📝 Transcript saved');
