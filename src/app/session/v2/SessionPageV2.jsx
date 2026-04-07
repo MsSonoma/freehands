@@ -4107,7 +4107,7 @@ function SessionPageV2Inner() {
           const startedAt = startSessionRef.current || new Date().toISOString();
           const completedAt = new Date().toISOString();
           
-          await appendTranscriptSegment({
+          const txResult = await appendTranscriptSegment({
             learnerId,
             learnerName,
             lessonId,
@@ -4115,7 +4115,12 @@ function SessionPageV2Inner() {
             segment: { startedAt, completedAt, lines: liveTranscriptLines },
             sessionId: browserSessionId || undefined,
           });
-          addEvent('📝 Transcript saved');
+          if (txResult?.ok) {
+            addEvent('📝 Transcript saved');
+          } else {
+            console.error('[SessionPageV2] Transcript save failed:', txResult?.reason, txResult?.error);
+            addEvent('⚠️ Transcript save failed: ' + (txResult?.reason || 'unknown'));
+          }
         } catch (err) {
           console.error('[SessionPageV2] Failed to save transcript:', err);
         }

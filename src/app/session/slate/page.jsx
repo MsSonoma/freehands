@@ -526,7 +526,9 @@ function SlateDrillInner() {
       startedAt: new Date().toISOString(),
       lines,
       teacher: 'slate',
-    }).catch(() => {})
+    }).then(r => {
+      if (!r?.ok) console.error('[Slate] Transcript save failed:', r?.reason, r?.error)
+    }).catch(e => console.error('[Slate] Transcript save error:', e))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagePhase])
 

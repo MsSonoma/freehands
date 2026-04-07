@@ -399,7 +399,7 @@ export default function WebbPage() {
           role: (ln.role === 'user') ? 'user' : 'assistant',
           text: String(ln.text || '').trim(),
         })).filter(ln => ln.text)
-        await updateTranscriptLiveSegment({
+        const txResult = await updateTranscriptLiveSegment({
           learnerId: lid,
           learnerName: learnerName.current || '',
           lessonId,
@@ -408,7 +408,10 @@ export default function WebbPage() {
           lines,
           teacher: 'webb',
         })
-      } catch { /* fail silently */ }
+        if (!txResult?.ok) {
+          console.error('[Webb] Transcript save failed:', txResult?.reason, txResult?.error)
+        }
+      } catch (e) { console.error('[Webb] Transcript save error:', e) }
     }, 3000)
     return () => clearTimeout(tid)
   }, [transcript, phase, selectedLesson, learnerId])

@@ -316,11 +316,7 @@ export async function appendTranscriptSegment({ learnerId, learnerName, lessonId
     const consolidatedFile = consolidatedOut?.txtPath || consolidatedOut?.pdfPath;
     return { ok: true, path: lastSessionFile || consolidatedFile };
   } catch (e) {
-    // Storage errors are often due to missing bucket or RLS policies
-    const isStorageError = e?.message?.includes('Storage') || e?.message?.includes('upload failed');
-    if (isStorageError) {
-      // Storage configuration error
-    }
+    console.error('[Transcripts] appendTranscriptSegment failed:', e?.message || e);
     return { ok: false, reason: 'error', error: e };
   }
 }
@@ -373,10 +369,7 @@ export async function updateTranscriptLiveSegment({ learnerId, learnerName, less
 
     return { ok: true, path: lastPdf || consolidatedPdf };
   } catch (e) {
-    const isStorageError = e?.message?.includes('Storage') || e?.message?.includes('upload failed');
-    if (isStorageError) {
-      // Storage configuration error
-    }
+    console.error('[Transcripts] updateTranscriptLiveSegment failed:', e?.message || e);
     return { ok: false, reason: 'error', error: e };
   }
 }
