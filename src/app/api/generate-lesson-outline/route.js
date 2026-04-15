@@ -93,6 +93,7 @@ Return ONLY a JSON object with this exact structure:
 Rules:
 - If kind is "review", the title MUST start triggered and start with "Review:".
 - If kind is "new", the title MUST NOT start with "Review:".
+- The title MUST NOT start with "Exploring", "Understanding", "Discovering", "Introduction to", "Intro to", "An Introduction to", or "Learning About". Use a specific, descriptive title instead (e.g. "The Water Cycle", "Fractions and Mixed Numbers", "The American Revolution").
 
 The lesson must be age-appropriate, educationally sound, and engaging. Keep the description concise but informative.`
 }
@@ -114,6 +115,13 @@ function stripReviewPrefix(title) {
   const t = String(title || '').trim()
   if (!t) return ''
   return t.replace(/^review:\s*/i, '').trim()
+}
+
+const GENERIC_OPENERS = /^(exploring|understanding|discovering|introduction to|intro to|an introduction to|learning about)\s+/i
+
+function stripGenericOpener(title) {
+  const t = String(title || '').trim()
+  return t.replace(GENERIC_OPENERS, '').trim() || t
 }
 
 export async function POST(request) {
@@ -168,6 +176,8 @@ export async function POST(request) {
       // Avoid accidentally labeling new lessons as review.
       const stripped = stripReviewPrefix(title)
       title = stripped || title
+      // Strip generic AI openers (e.g. "Exploring ", "Understanding ") as a safety net.
+      title = stripGenericOpener(title) || title
     }
 
     return NextResponse.json({ 
