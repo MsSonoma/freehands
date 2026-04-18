@@ -348,7 +348,14 @@ function LessonsPageInner(){
     setGeneratedLoading(true)
     ;(async () => {
       try {
-        const res = await fetch('/api/lessons/generated', { cache: 'no-store' })
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token) { if (!cancelled) { setAllGeneratedLessons([]); setGeneratedLoading(false) }; return }
+        const res = await fetch('/api/facilitator/lessons/list', {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${token}` }
+        })
         if (!cancelled) setAllGeneratedLessons(res.ok ? (await res.json()) : [])
       } catch {
         if (!cancelled) setAllGeneratedLessons([])
