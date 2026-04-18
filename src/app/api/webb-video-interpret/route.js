@@ -66,7 +66,7 @@ function parseChapters(description, totalSec) {
 }
 
 // ── Path 2: chapter-based key moments ────────────────────────────────────────
-async function momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs, apiKey, objClause) {
+async function momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs, apiKey, objClause, objReminder) {
   if (!ytKey) return null
   try {
     const r    = await fetch(`${YT_VIDEOS}?part=snippet,contentDetails&id=${videoId}&key=${ytKey}`)
@@ -94,7 +94,7 @@ async function momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs
       `PICK 1:\nINDEX: <number>\nINTRO: <one warm sentence Mrs. Webb says to ${addressAs}>\n\n` +
       `PICK 2:\nINDEX: <number>\nINTRO: <one warm sentence Mrs. Webb says to ${addressAs}>\n\n` +
       `PICK 3:\nINDEX: <number>\nINTRO: <one warm sentence Mrs. Webb says to ${addressAs}>`,
-      `Grade: ${grade}. Lesson: "${lessonTitle}".\n\nChapters:\n${chapterList}`,
+      `Grade: ${grade}. Lesson: "${lessonTitle}".${objReminder}\n\nChapters:\n${chapterList}`,
       400,
     )
 
@@ -139,11 +139,20 @@ export async function POST(req) {
     const addressAs = learnerName || 'you'
 
     const uncompleted = objectives.filter((_, i) => !completedIndices.includes(i))
+    const primaryObjective = uncompleted.length === 1 ? uncompleted[0] : null
     const objClause = uncompleted.length
-      ? `The lesson has these uncompleted learning objectives:\n${uncompleted.map((o, i) => `${i + 1}. ${o}`).join('\n')}\n` +
-        `Pick moments that directly address one or more of these objectives. ` +
-        `Only choose moments where the content visibly teaches or demonstrates an objective. `
+      ? primaryObjective
+        ? `YOUR ONLY JOB is to find moments that teach this ONE learning objective: "${primaryObjective}". ` +
+          `Every moment you pick MUST directly explain or demonstrate this concept. ` +
+          `Reject any moment — no matter how interesting — that does not address this objective. `
+        : `Pick moments that directly address one or more of these learning objectives:\n${uncompleted.map((o, i) => `${i + 1}. ${o}`).join('\n')}\n` +
+          `Only choose moments where the content visibly teaches or demonstrates an objective. `
       : ''
+    const objReminder = primaryObjective
+      ? `\n\nTARGET OBJECTIVE (all moments must address this): "${primaryObjective}"`
+      : uncompleted.length
+        ? `\n\nLearning objectives to address:\n${uncompleted.map((o, i) => `${i + 1}. ${o}`).join('\n')}`
+        : ''
 
     // ── Path 1: youtube-transcript (full caption text) ────────────────────
     let transcriptMoments = null
@@ -176,11 +185,11 @@ export async function POST(req) {
           `Choose moments spread across the video — not all from the beginning. ` +
           `Each moment should be 15–45 seconds long. ` +
           `Give each a short title (4–8 words) and one warm intro sentence addressed to "${addressAs}".`,
-          `Grade: ${grade}. Lesson: "${lessonTitle}".\n\n` +
+          `Grade: ${grade}. Lesson: "${lessonTitle}".${objReminder}\n\n` +
           `Return EXACTLY this format — 3 moments, no other text:\n\n` +
-          `MOMENT 1:\nSTART: <integer seconds>\nEND: <integer seconds>\nTITLE: <4-8 words>\nINTRO: <one warm sentence>\n\n` +
-          `MOMENT 2:\nSTART: <integer seconds>\nEND: <integer seconds>\nTITLE: <4-8 words>\nINTRO: <one warm sentence>\n\n` +
-          `MOMENT 3:\nSTART: <integer seconds>\nEND: <integer seconds>\nTITLE: <4-8 words>\nINTRO: <one warm sentence>\n\n` +
+          `MOMENT 1:\nSTART: <integer seconds>\nEND: <integer seconds>\nTITLE: <4-8 words that relate to the target objective>\nINTRO: <one warm sentence>\n\n` +
+          `MOMENT 2:\nSTART: <integer seconds>\nEND: <integer seconds>\nTITLE: <4-8 words that relate to the target objective>\nINTRO: <one warm sentence>\n\n` +
+          `MOMENT 3:\nSTART: <integer seconds>\nEND: <integer seconds>\nTITLE: <4-8 words that relate to the target objective>\nINTRO: <one warm sentence>\n\n` +
           `Transcript:\n${trimmed}`,
           450,
         )
@@ -208,7 +217,7 @@ export async function POST(req) {
     if (transcriptMoments) return NextResponse.json({ moments: transcriptMoments })
 
     // ── Path 2: YouTube chapter markers (official Data API, never blocked) ─
-    const chapterMoments = await momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs, apiKey, objClause)
+    const chapterMoments = await momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs, apiKey, objClause, objReminder)
     if (chapterMoments) return NextResponse.json({ moments: chapterMoments })
 
     // ── Neither path worked ───────────────────────────────────────────────

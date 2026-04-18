@@ -49,11 +49,23 @@ export async function POST(req) {
     const addressAs  = learnerName ? learnerName : 'you'
 
     const uncompleted = objectives.filter((_, i) => !completedIndices.includes(i))
+    // When called from Research, uncompleted is always a single objective — be explicit
+    const primaryObjective = uncompleted.length === 1 ? uncompleted[0] : null
     const objClause = uncompleted.length
-      ? `The lesson has these uncompleted learning objectives:\n${uncompleted.map((o, i) => `${i + 1}. ${o}`).join('\n')}\n` +
-        `You MUST choose passages that directly address one or more of these objectives. ` +
-        `Each passage should visibly teach or demonstrate an objective — not just mention the topic in passing. `
+      ? primaryObjective
+        ? `YOUR ONLY JOB is to find passages that teach this ONE learning objective: "${primaryObjective}". ` +
+          `Every passage you pick MUST directly explain or demonstrate this concept. ` +
+          `Reject any passage — no matter how interesting — that does not address this objective. `
+        : `You MUST choose passages that directly address one or more of these learning objectives:\n${uncompleted.map((o, i) => `${i + 1}. ${o}`).join('\n')}\n` +
+          `Each passage must visibly teach or demonstrate an objective — not just mention the topic in passing. `
       : ''
+
+    // Repeated in user message so GPT stays anchored to the objective through the format task
+    const objReminder = primaryObjective
+      ? `\n\nTARGET OBJECTIVE (all passages must address this): "${primaryObjective}"`
+      : uncompleted.length
+        ? `\n\nLearning objectives to address:\n${uncompleted.map((o, i) => `${i + 1}. ${o}`).join('\n')}`
+        : ''
 
     const res = await fetch(OPENAI_URL, {
       method: 'POST',
@@ -70,9 +82,7 @@ export async function POST(req) {
               `Pick 2–3 passages from DIFFERENT sections of the article body — NOT the opening ` +
               `paragraph, NOT photo captions, NOT image descriptions, NOT table entries. ` +
               `Each passage must be 2 consecutive verbatim sentences from the article. ` +
-              `Choose passages that together directly address the learning objectives above ` +
-              `(or tell a great educational story about the topic if no objectives are listed) — ` +
-              `concrete facts, surprising details, important causes or effects. ` +
+              `If no passage in the article directly addresses the target objective, pick the closest available and note it in SPOKEN. ` +
               `List them in the order they appear in the article (top to bottom). ` +
               `Then write ONE warm intro sentence Mrs. Webb says before starting — ` +
               `address the student as "${addressAs}" (never "class", "students", or "everyone").`,
@@ -80,13 +90,13 @@ export async function POST(req) {
           {
             role: 'user',
             content:
-              `Grade: ${grade}. Lesson: "${lessonTitle}".\n\n` +
+              `Grade: ${grade}. Lesson: "${lessonTitle}".${objReminder}\n\n` +
               `Return exactly this format:\n` +
-              `EXCERPT 1: [2 verbatim sentences from somewhere past the first paragraph]\n` +
+              `EXCERPT 1: [2 verbatim sentences that teach the target objective]\n` +
               `SPOKEN 1: [Rewrite EXCERPT 1 in 1–2 friendly sentences a ${grade} student can understand. Use simple words, no jargon. Mrs. Webb is speaking warmly to the student — not quoting a textbook.]\n` +
-              `EXCERPT 2: [2 verbatim sentences from a different section]\n` +
+              `EXCERPT 2: [2 verbatim sentences from a different section that teach the target objective]\n` +
               `SPOKEN 2: [Rewrite EXCERPT 2 in 1–2 friendly sentences a ${grade} student can understand.]\n` +
-              `EXCERPT 3: [2 verbatim sentences from a different section]\n` +
+              `EXCERPT 3: [2 verbatim sentences from a different section that teach the target objective]\n` +
               `SPOKEN 3: [Rewrite EXCERPT 3 in 1–2 friendly sentences a ${grade} student can understand.]\n` +
               `INTRO: [Mrs. Webb's one warm lead-in sentence]\n\n` +
               `Article text:\n${plainText}`,
