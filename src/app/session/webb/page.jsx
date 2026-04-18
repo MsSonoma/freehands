@@ -187,13 +187,7 @@ export default function WebbPage() {
   const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
   const [showSourceSettings, setShowSourceSettings] = useState(false) // settings overlay
   const [settingsTab,        setSettingsTab]        = useState('settings') // 'settings' | 'article'
-  const [offerResume,        setOfferResume]        = useState(() => {
-    if (typeof window === 'undefined') return false
-    try {
-      const raw = localStorage.getItem('webb_session')
-      return !!(raw && JSON.parse(raw)?.selectedLesson)
-    } catch { return false }
-  }) // resume/restart prompt on refresh
+  const [offerResume,        setOfferResume]        = useState(false) // shown after lesson is selected, if a per-lesson snapshot exists
   const [essayMode,          setEssayMode]         = useState(false) // essay copy-down screen
   const [essay,              setEssay]             = useState(null)  // generated essay string
   const [generatingEssay,    setGeneratingEssay]   = useState(false)
@@ -344,16 +338,21 @@ export default function WebbPage() {
     const id = (() => { try { return localStorage.getItem('learner_id') || null } catch { return null } })()
     setLearnerId(id)
     loadLessons(id)
+    // Migrate: remove old single-key snapshot from before per-lesson keys
+    try { localStorage.removeItem('webb_session') } catch {}
   }, [])
 
-  // ── Session persistence: restore on refresh ──────────────────────────
-  // (offerResume is initialized synchronously above, so no effect needed for that)
+  // ── Per-lesson snapshot helpers ────────────────────────────────────────
+  function snapKey(lesson) {
+    const k = lesson?.lessonKey || lesson?.lesson_id || lesson?.id
+    return k ? `webb_session_${k}` : null
+  }
 
   function handleResume() {
     try {
-      const saved = JSON.parse(localStorage.getItem('webb_session') || 'null')
-      if (!saved?.selectedLesson) { setOfferResume(false); return }
-      setSelectedLesson(saved.selectedLesson)
+      const key = snapKey(selectedLesson)
+      const saved = key ? JSON.parse(localStorage.getItem(key) || 'null') : null
+      if (!saved) { setOfferResume(false); return }
       setChatMessages(saved.chatMessages || [])
       setTranscript(saved.transcript || [])
       setObjectives(saved.objectives || [])
@@ -363,24 +362,26 @@ export default function WebbPage() {
       if (saved.essayMode) setEssayMode(saved.essayMode)
       setPhase(PHASE.CHATTING)
       setOfferResume(false)
-      preloadResources(saved.selectedLesson)
+      preloadResources(selectedLesson)
     } catch { setOfferResume(false) }
   }
 
   function handleRestartFromPrompt() {
-    try { localStorage.removeItem('webb_session') } catch {}
+    const key = snapKey(selectedLesson)
+    try { if (key) localStorage.removeItem(key) } catch {}
     setOfferResume(false)
+    // Start a fresh session for the already-selected lesson
+    selectLesson(selectedLesson, true)
   }
 
   // ── Session persistence: save on state change ─────────────────────────
   useEffect(() => {
     if (offerResume) return // never wipe storage while the resume prompt is visible
-    if (phase !== PHASE.CHATTING || !selectedLesson) {
-      localStorage.removeItem('webb_session')
-      return
-    }
+    if (phase !== PHASE.CHATTING || !selectedLesson) return // nothing to save
+    const key = snapKey(selectedLesson)
+    if (!key) return
     try {
-      localStorage.setItem('webb_session', JSON.stringify({
+      localStorage.setItem(key, JSON.stringify({
         selectedLesson, chatMessages, transcript, objectives, completedObj, objResponses, essay, essayMode,
       }))
     } catch { /* ignore quota errors */ }
@@ -936,7 +937,19 @@ export default function WebbPage() {
   }, [newlyCompletedObj])
 
   // ── Select lesson → start AI chat ─────────────────────────────────────
-  const selectLesson = useCallback(async (lesson) => {
+  // forceNew: skip snapshot check (used by handleRestartFromPrompt)
+  const selectLesson = useCallback(async (lesson, forceNew = false) => {
+    if (!forceNew) {
+      // Check for a per-lesson snapshot BEFORE starting the session.
+      // If one exists, show the resume/restart prompt instead.
+      const key = snapKey(lesson)
+      const snap = key ? (() => { try { return JSON.parse(localStorage.getItem(key) || 'null') } catch { return null } })() : null
+      if (snap?.chatMessages?.length) {
+        setSelectedLesson(lesson)
+        setOfferResume(true)
+        return
+      }
+    }
     setPhase(PHASE.STARTING)
     setSelectedLesson(lesson)
     setTranscript([])
@@ -2305,7 +2318,8 @@ export default function WebbPage() {
                     <button type="button"
                       onClick={() => {
                         setShowSourceSettings(false)
-                        try { localStorage.removeItem('webb_session') } catch {}
+                        const k = snapKey(selectedLesson)
+                        try { if (k) localStorage.removeItem(k) } catch {}
                         handleBack()
                       }}
                       style={{
@@ -2390,7 +2404,7 @@ export default function WebbPage() {
             <div style={{ fontSize: 36, marginBottom: 12 }}>👋</div>
             <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Welcome back!</div>
             <div style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
-              You were in the middle of a lesson with Mrs. Webb.<br/>
+              You were in the middle of{selectedLesson?.title ? <> <span style={{ color: '#e2e8f0', fontWeight: 600 }}>&ldquo;{selectedLesson.title}&rdquo;</span></> : ' a lesson'} with Mrs. Webb.<br/>
               Would you like to pick up where you left off?
             </div>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
