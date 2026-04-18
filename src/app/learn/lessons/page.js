@@ -1079,10 +1079,12 @@ function LessonsPageInner(){
 
                     {/* Golden Key toggle */}
                     {goldenKeysEnabled === true && !isDemo && (() => {
-                      const keyOn = goldenKeySelected || pendingKeyLessonKey === lessonKey
+                      const keyOn = goldenKeySelected || pendingKeyLessonKey === lessonKey || hasActiveKey
+                      const facilitatorOnly = hasActiveKey && !goldenKeySelected && pendingKeyLessonKey !== lessonKey
                       return (
                         <button
                           onClick={() => {
+                            if (facilitatorOnly) return // facilitator-set, not learner-togglable
                             if (pendingKeyLessonKey === lessonKey) {
                               // Key was already applied to this lesson — remove the pending entry
                               try { sessionStorage.removeItem('golden_key_pending_lesson') } catch {}
@@ -1092,13 +1094,13 @@ function LessonsPageInner(){
                               setGoldenKeySelected(prev => !prev)
                             }
                           }}
-                          title={keyOn ? 'Golden Key active — click to remove' : 'Apply a Golden Key to this lesson'}
+                          title={facilitatorOnly ? 'Golden Key applied by facilitator' : keyOn ? 'Golden Key active — click to remove' : 'Apply a Golden Key to this lesson'}
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: 6,
                             background: keyOn ? '#fef3c7' : '#f3f4f6',
                             border: `1px solid ${keyOn ? '#f59e0b' : '#d1d5db'}`,
                             borderRadius: 20, padding: '3px 10px 3px 6px',
-                            cursor: 'pointer', marginBottom: 14, fontSize: 13, fontWeight: 600,
+                            cursor: facilitatorOnly ? 'default' : 'pointer', marginBottom: 14, fontSize: 13, fontWeight: 600,
                             color: keyOn ? '#92400e' : '#6b7280',
                             transition: 'all 0.15s'
                           }}
