@@ -106,7 +106,7 @@ const UI_FAQ = {
     actionSlug: null,
   },
   help: {
-    keywords: ['help', 'what can i do', 'what buttons', 'features', 'how does this work', 'what is this', 'how do i use'],
+    keywords: ['help me', 'i need help', 'what can you do', 'what can i do', 'what buttons', 'features', 'how does this work', 'what is this', 'how do i use'],
     confirm: 'Are you asking for a quick tour of what I can do?',
     answer: 'Sure! At the bottom of my screen you will find a ▶ video button and a 📖 article button — those pull up extra learning materials just for your lesson. Once open, the toolbar has a ↻ refresh for new content, an arrow to move the window around, a fullscreen button, and a ✕ to close it. The article even has a Key part button that highlights the most important sentences and reads them to you. And the speaker icon in the corner mutes my voice. What would you like to try first?',
     actionPrompt: null,
@@ -118,7 +118,7 @@ function detectUiQuestion(text) {
   const lower = text.toLowerCase()
   const isQuestion =
     lower.includes('?') ||
-    /\b(how|what|where|why|which|explain|describe|tell me|show me|can i|can we|can you|do i|does|help|what is|what's|button|feature|work|use|want to|would like|wanna|i'd like|let me|let's|i need)\b/.test(lower)
+    /\b(how|what|where|why|which|explain|describe|tell me|show me|can i|can we|can you|do i|does|what is|what's|button|feature|work|use|want to|would like|wanna|i'd like|let me|let's|i need)\b/.test(lower)
   if (!isQuestion) return null
   for (const [slug, cfg] of Object.entries(UI_FAQ)) {
     if (cfg.keywords.some(kw => lower.includes(kw))) return slug
