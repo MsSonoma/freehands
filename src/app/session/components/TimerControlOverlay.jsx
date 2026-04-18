@@ -43,7 +43,11 @@ export default function TimerControlOverlay({
   isGoldenKeySuspended = false,
   onApplyGoldenKey,
   onSuspendGoldenKey,
-  onUnsuspendGoldenKey
+  onUnsuspendGoldenKey,
+  // V2: authoritative remaining seconds fed directly from TimerService events.
+  // When provided, sessionStorage polling is skipped entirely — TimerService
+  // is the single owner of timer state and this overlay just reads what it emits.
+  remainingSeconds: remainingSecondsProp = null,
 }) {
   // Calculate effective total (add golden key bonus to play timers)
   const effectiveTotalMinutes = timerType === 'play' 
@@ -52,14 +56,19 @@ export default function TimerControlOverlay({
   
   const totalSeconds = effectiveTotalMinutes * 60;
   
-  // Generate phase-specific storage key (matching SessionTimer)
+  // Generate phase-specific storage key (matching SessionTimer) — only used in V1 fallback path
   const storageKey = lessonKey 
     ? `session_timer_state:${lessonKey}:${phase}:${timerType}` 
     : `session_timer_state:${phase}:${timerType}`;
   
-  // Get current elapsed seconds from phase-specific storage
+  // Get current elapsed seconds from phase-specific storage (V1 / fallback path only)
   // This must match SessionTimer's calculation logic exactly
   const getCurrentElapsedSeconds = useCallback(() => {
+    // V2 path: remainingSeconds is authoritative, derive elapsed from it
+    if (remainingSecondsProp !== null) {
+      return Math.max(0, totalSeconds - remainingSecondsProp);
+    }
+    // V1 fallback: read from sessionStorage
     try {
       const stored = sessionStorage.getItem(storageKey);
       if (stored) {
@@ -81,16 +90,22 @@ export default function TimerControlOverlay({
       }
     } catch {}
     return 0;
-  }, [storageKey, isPaused]);
+  }, [storageKey, isPaused, remainingSecondsProp, totalSeconds]);
   
+  // V2 path: remaining is the prop itself (always current via TimerService events).
+  // V1 path: derive remaining from internal elapsed state polled from sessionStorage.
   const [currentElapsedSeconds, setCurrentElapsedSeconds] = useState(getCurrentElapsedSeconds());
-  const remainingSeconds = Math.max(0, totalSeconds - currentElapsedSeconds);
+  const remainingSeconds = remainingSecondsProp !== null
+    ? Math.max(0, remainingSecondsProp)
+    : Math.max(0, totalSeconds - currentElapsedSeconds);
   
   const [adjustMinutes, setAdjustMinutes] = useState(0);
   const [saving, setSaving] = useState(false);
 
-  // Update elapsed time every second when timer is running
+  // V1 only: update elapsed time every second by polling sessionStorage.
+  // V2 skips this — remainingSeconds prop is already updated every second by TimerService.
   useEffect(() => {
+    if (remainingSecondsProp !== null) return; // V2 path — no polling needed
     if (!isPaused) {
       const interval = setInterval(() => {
         setCurrentElapsedSeconds(getCurrentElapsedSeconds());
@@ -100,15 +115,17 @@ export default function TimerControlOverlay({
       // Update once when paused to get accurate paused time
       setCurrentElapsedSeconds(getCurrentElapsedSeconds());
     }
-  }, [isPaused, getCurrentElapsedSeconds]);
+  }, [isPaused, getCurrentElapsedSeconds, remainingSecondsProp]);
 
   // Reset adjustment when opening and update current time
   useEffect(() => {
     if (isOpen) {
       setAdjustMinutes(0);
-      setCurrentElapsedSeconds(getCurrentElapsedSeconds());
+      if (remainingSecondsProp === null) {
+        setCurrentElapsedSeconds(getCurrentElapsedSeconds());
+      }
     }
-  }, [isOpen, getCurrentElapsedSeconds]);
+  }, [isOpen, getCurrentElapsedSeconds, remainingSecondsProp]);
 
   if (!isOpen) return null;
 

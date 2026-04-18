@@ -7691,6 +7691,11 @@ function SessionPageV2Inner() {
           goldenKeysEnabled={!!planEnt?.goldenKeyFeatures && goldenKeysEnabledRef.current !== false}
           goldenKeyBonus={!!planEnt?.goldenKeyFeatures && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
           isPaused={timerPaused}
+          remainingSeconds={
+            (currentTimerMode[getCurrentPhaseName()] || 'work') === 'play'
+              ? playTimerDisplayRemaining
+              : workTimerDisplayRemaining
+          }
           onUpdateTime={(seconds) => {
             const phaseName = getCurrentPhaseName();
             const mode = phaseName ? (currentTimerMode[phaseName] || 'work') : 'work';
