@@ -60,26 +60,47 @@ async function _fetchHtml(url, baseHref, sourceId, sourceLabel) {
 
 // ── Article title relevance guard ─────────────────────────────────────────────
 // Returns true if the resolved article title looks plausibly on-topic.
-// Compares word overlap between lesson title and article title after stripping
-// common stop-words and short tokens. Prevents returning "The Basics" (a band)
-// for a lesson about "Basics of Economics".
+//
+// Problem: a single generic word like "basics" appears in both the lesson
+// "Basics of Economics" AND the article "The Basics" (a band). Word-overlap
+// alone is too loose — we need to require at least one *subject-domain* word
+// to match, not just a level/modifier word.
 const STOP_WORDS = new Set([
   'the','a','an','of','in','on','at','to','for','and','or','but','is','are',
   'was','were','be','been','by','as','with','about','from','that','this',
   'how','what','why','which','when','where','do','does','did',
+])
+// Generic level/qualifier words that should NOT be the sole basis for a match.
+// e.g. "The Basics" matching "Basics of Economics" only on "basics" → reject.
+const GENERIC_QUALIFIERS = new Set([
+  'basic','basics','introduction','intro','overview','fundamentals','fundamental',
+  'principles','principle','guide','guides','understanding','learning','elements',
+  'element','types','type','facts','fact','concepts','concept','review','summary',
+  'lesson','lessons','unit','units','study','studies','science','history','story',
 ])
 function articleTitleIsRelevant(lessonTitle, articleTitle) {
   const tokens = s => s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ')
     .split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w))
   const lessonWords = new Set(tokens(lessonTitle))
   const articleWords = tokens(articleTitle)
-  // Pass if any content word from the lesson title appears in the article title
-  if (articleWords.some(w => lessonWords.has(w))) return true
-  // Also pass if the lesson search term is a substring of the article title
-  // (handles plurals, possessives, slight variations)
-  const normLesson  = lessonTitle.toLowerCase().replace(/[^a-z0-9]/g, '')
-  const normArticle = articleTitle.toLowerCase().replace(/[^a-z0-9]/g, '')
-  return normArticle.includes(normLesson) || normLesson.includes(normArticle)
+
+  const matches = articleWords.filter(w => lessonWords.has(w))
+  if (matches.length === 0) {
+    // No word overlap — last-chance substring check (handles "Adding Fractions" ↔ "Fraction")
+    const normLesson  = lessonTitle.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const normArticle = articleTitle.toLowerCase().replace(/[^a-z0-9]/g, '')
+    return normArticle.includes(normLesson) || normLesson.includes(normArticle)
+  }
+
+  // If the lesson has more than one content word, require at least one matching
+  // word to be a subject-domain word (not just a generic level qualifier).
+  // This blocks "The Basics" matching "Basics of Economics" solely on "basics".
+  if (lessonWords.size > 1) {
+    const substantiveMatches = matches.filter(w => !GENERIC_QUALIFIERS.has(w))
+    if (substantiveMatches.length === 0) return false
+  }
+
+  return true
 }
 
 export const ARTICLE_SOURCES = [
