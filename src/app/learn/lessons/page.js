@@ -106,6 +106,9 @@ function LessonsPageInner(){
   // Lesson detail overlay: { l, subject, lessonKey, isDemo } | null
   const [selectedLesson, setSelectedLesson] = useState(null)
   const [overlayNoteEditing, setOverlayNoteEditing] = useState(false)
+  const [listTab, setListTab] = useState('active') // 'active' | 'recent' | 'owned'
+  const [allGeneratedLessons, setAllGeneratedLessons] = useState([])
+  const [generatedLoading, setGeneratedLoading] = useState(false)
 
   const {
     sessions: lessonHistorySessions,
@@ -333,6 +336,27 @@ function LessonsPageInner(){
         setMedals({})
       }
     })()
+  }, [learnerId])
+
+  // Load all facilitator-generated lessons for the Owned tab
+  useEffect(() => {
+    if (!learnerId || learnerId === 'demo') {
+      setAllGeneratedLessons([])
+      return
+    }
+    let cancelled = false
+    setGeneratedLoading(true)
+    ;(async () => {
+      try {
+        const res = await fetch('/api/lessons/generated', { cache: 'no-store' })
+        if (!cancelled) setAllGeneratedLessons(res.ok ? (await res.json()) : [])
+      } catch {
+        if (!cancelled) setAllGeneratedLessons([])
+      } finally {
+        if (!cancelled) setGeneratedLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
   }, [learnerId])
 
   useEffect(() => {
@@ -648,6 +672,59 @@ function LessonsPageInner(){
 
   const hasLessons = Object.keys(lessonsBySubject).length > 0
 
+  // Set of lessonKeys that are currently active (approved + scheduled today)
+  const activeSet = useMemo(() => {
+    const s = new Set()
+    Object.values(lessonsBySubject).forEach(lessons => {
+      lessons?.forEach(l => l.lessonKey && s.add(l.lessonKey))
+    })
+    return s
+  }, [lessonsBySubject])
+
+  // Flat metadata lookup: lessonKey → lesson object (for Recent/Owned overlays)
+  const recentMetaLookup = useMemo(() => {
+    const map = {}
+    Object.entries(allLessons).forEach(([subject, lessons]) => {
+      lessons?.forEach(l => {
+        const key = l.lessonKey || (l.isGenerated ? `generated/${l.file}` : `${subject}/${l.file}`)
+        if (key && !map[key]) map[key] = { ...l, subject, lessonKey: key }
+      })
+    })
+    allGeneratedLessons.forEach(l => {
+      const key = `generated/${l.file}`
+      if (!map[key]) map[key] = { ...l, isGenerated: true, subject: 'generated', lessonKey: key }
+    })
+    return map
+  }, [allLessons, allGeneratedLessons])
+
+  // Recent tab: union of completed + in-progress keys, most recent first
+  const recentList = useMemo(() => {
+    const completedKeys = Object.keys(lessonHistoryLastCompleted || {})
+    const inProgressKeys = Object.keys(lessonHistoryInProgress || {})
+    const allKeys = [...new Set([...completedKeys, ...inProgressKeys])]
+    return allKeys
+      .map(key => {
+        const lastAt = lessonHistoryLastCompleted?.[key]
+        const inProgressAt = lessonHistoryInProgress?.[key]
+        const mostRecent = lastAt && inProgressAt
+          ? (new Date(lastAt) > new Date(inProgressAt) ? lastAt : inProgressAt)
+          : (lastAt || inProgressAt || '')
+        return { lessonKey: key, lastAt, inProgressAt, mostRecent, meta: recentMetaLookup[key] || null }
+      })
+      .filter(e => e.mostRecent)
+      .sort((a, b) => new Date(b.mostRecent) - new Date(a.mostRecent))
+  }, [lessonHistoryLastCompleted, lessonHistoryInProgress, recentMetaLookup])
+
+  // Owned tab: all facilitator-generated lessons
+  const ownedList = useMemo(() => {
+    return allGeneratedLessons.map(l => ({
+      ...l,
+      isGenerated: true,
+      subject: l.subject || 'generated',
+      lessonKey: `generated/${l.file}`,
+    }))
+  }, [allGeneratedLessons])
+
   // Check for existing snapshots from server - must use lesson.id not filename
   useEffect(() => {
     if (!sessionGateReady) return
@@ -866,6 +943,34 @@ function LessonsPageInner(){
         </div>
       )}
 
+      {/* ── Tab bar: Active / Recent / Owned ── */}
+      {!loading && !lessonsLoading && learnerId && learnerId !== 'demo' && (
+        <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #f3f4f6' }}>
+          {[
+            { key: 'active', label: 'Active' },
+            { key: 'recent', label: `Recent${recentList.length > 0 ? ` (${recentList.length})` : ''}` },
+            { key: 'owned', label: `Owned${ownedList.length > 0 ? ` (${ownedList.length})` : ''}` },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setListTab(key)}
+              style={{
+                padding: '8px 18px',
+                border: 'none',
+                borderBottom: `2px solid ${listTab === key ? '#111' : 'transparent'}`,
+                background: 'none',
+                fontWeight: listTab === key ? 700 : 500,
+                fontSize: 14,
+                color: listTab === key ? '#111' : '#9ca3af',
+                cursor: 'pointer',
+                marginBottom: -2,
+                transition: 'color 0.12s',
+              }}
+            >{label}</button>
+          ))}
+        </div>
+      )}
+
       {loading || lessonsLoading ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: 12, marginTop: 32 }}>
           <div style={{ 
@@ -884,15 +989,18 @@ function LessonsPageInner(){
             }
           `}</style>
         </div>
-      ) : !hasLessons ? (
-        <div style={{ textAlign:'center', marginTop:32 }}>
-          <p style={{ color:'#6b7280' }}>No lessons available yet.</p>
-          <p style={{ color:'#9ca3af', fontSize:14 }}>
-            Ask your facilitator to add lessons in the Facilitator portal.
-          </p>
-        </div>
       ) : (
         <>
+          {/* ── Active tab ── */}
+          {(listTab === 'active' || learnerId === 'demo') && (
+            !hasLessons ? (
+              <div style={{ textAlign:'center', marginTop:32 }}>
+                <p style={{ color:'#6b7280' }}>No lessons available yet.</p>
+                <p style={{ color:'#9ca3af', fontSize:14 }}>
+                  Ask your facilitator to add lessons in the Facilitator portal.
+                </p>
+              </div>
+            ) : (
           <div style={list}>
             {/* Show demo lessons first if they exist */}
             {lessonsBySubject['demo'] && lessonsBySubject['demo'].map((l) => {
@@ -971,6 +1079,113 @@ function LessonsPageInner(){
               })
             })}
           </div>
+            )
+          )}
+
+          {/* ── Recent tab ── */}
+          {listTab === 'recent' && learnerId !== 'demo' && (
+            recentList.length === 0 ? (
+              <div style={{ textAlign:'center', marginTop:32 }}>
+                <p style={{ color:'#6b7280' }}>No recently attempted lessons.</p>
+                <p style={{ color:'#9ca3af', fontSize:14 }}>Complete or start a lesson to see it here.</p>
+              </div>
+            ) : (
+              <div style={list}>
+                {recentList.map(({ lessonKey: rk, meta }) => {
+                  if (!meta) {
+                    return (
+                      <div key={rk} style={{ ...row, cursor: 'default', opacity: 0.4 }}>
+                        <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{rk}</div>
+                      </div>
+                    )
+                  }
+                  const isActive = activeSet.has(rk)
+                  const rMedalTier = medals[rk]?.medalTier || null
+                  const rMedal = rMedalTier ? emojiForTier(rMedalTier) : ''
+                  const rSubjectBadge = meta.isGenerated
+                    ? (meta.subject && meta.subject !== 'generated' ? meta.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Generated')
+                    : (meta.subject || 'general').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                  return (
+                    <button
+                      key={rk}
+                      style={row}
+                      onClick={() => { setSelectedLesson({ l: meta, subject: meta.subject || 'general', lessonKey: rk, isDemo: false }); setOverlayNoteEditing(false) }}
+                      onMouseEnter={e => { e.currentTarget.style.background='#f9fafb'; e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.07)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background='#fff'; e.currentTarget.style.boxShadow='none' }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 11, background: '#f3f4f6', color: '#374151', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>{rSubjectBadge}</span>
+                          {meta.grade && <span style={{ fontSize: 11, color: '#9ca3af' }}>Grade {meta.grade}</span>}
+                          {meta.difficulty && <span style={{ fontSize: 11, color: '#9ca3af' }}>{meta.difficulty.charAt(0).toUpperCase() + meta.difficulty.slice(1)}</span>}
+                        </div>
+                        <div style={{ fontWeight: 600, fontSize: 15, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {meta.title || rk}{rMedal ? ` ${rMedal}` : ''}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        {lessonHistoryInProgress?.[rk] && <span style={{ fontSize: 11, background: '#d1fae5', color: '#065f46', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>In progress</span>}
+                        {lessonHistoryLastCompleted?.[rk] && !lessonHistoryInProgress?.[rk] && <span style={{ fontSize: 11, color: '#9ca3af' }}>{formatDateOnly(lessonHistoryLastCompleted[rk])}</span>}
+                        {!isActive && <span style={{ fontSize: 13 }} title="Requires facilitator PIN to start">🔒</span>}
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ color: '#9ca3af' }}><path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )
+          )}
+
+          {/* ── Owned tab: facilitator-generated lessons ── */}
+          {listTab === 'owned' && learnerId !== 'demo' && (
+            generatedLoading ? (
+              <div style={{ textAlign:'center', marginTop:32, color:'#9ca3af', fontSize:14 }}>Loading generated lessons…</div>
+            ) : ownedList.length === 0 ? (
+              <div style={{ textAlign:'center', marginTop:32 }}>
+                <p style={{ color:'#6b7280' }}>No generated lessons yet.</p>
+                <p style={{ color:'#9ca3af', fontSize:14 }}>Generate a lesson to see it here.</p>
+              </div>
+            ) : (
+              <div style={list}>
+                {ownedList.map((ol) => {
+                  const olk = ol.lessonKey
+                  const isActive = activeSet.has(olk)
+                  const oMedalTier = medals[olk]?.medalTier || null
+                  const oMedal = oMedalTier ? emojiForTier(oMedalTier) : ''
+                  const oSubjectBadge = ol.subject && ol.subject !== 'generated'
+                    ? ol.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                    : 'Generated'
+                  return (
+                    <button
+                      key={olk}
+                      style={row}
+                      onClick={() => { setSelectedLesson({ l: ol, subject: 'generated', lessonKey: olk, isDemo: false }); setOverlayNoteEditing(false) }}
+                      onMouseEnter={e => { e.currentTarget.style.background='#f9fafb'; e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.07)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background='#fff'; e.currentTarget.style.boxShadow='none' }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 11, background: '#f3f4f6', color: '#374151', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>{oSubjectBadge}</span>
+                          {ol.grade && <span style={{ fontSize: 11, color: '#9ca3af' }}>Grade {ol.grade}</span>}
+                          {ol.difficulty && <span style={{ fontSize: 11, color: '#9ca3af' }}>{ol.difficulty.charAt(0).toUpperCase() + ol.difficulty.slice(1)}</span>}
+                        </div>
+                        <div style={{ fontWeight: 600, fontSize: 15, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {ol.title || olk}{oMedal ? ` ${oMedal}` : ''}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        {isActive
+                          ? <span style={{ fontSize: 11, background: '#d1fae5', color: '#065f46', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>Active</span>
+                          : <span style={{ fontSize: 13 }} title="Requires facilitator PIN to start">🔒</span>
+                        }
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ color: '#9ca3af' }}><path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )
+          )}
 
           {/* Lesson detail overlay */}
           {selectedLesson && (() => {
@@ -994,6 +1209,11 @@ function LessonsPageInner(){
 
             const handleStartLesson = async () => {
               if (isDemo) { openLesson('demo', l.file); return }
+              // PIN gate for lessons not currently active (not approved/scheduled)
+              if (!activeSet.has(lessonKey)) {
+                const ok = await ensurePinAllowed('facilitator-key')
+                if (!ok) return
+              }
               try {
                 const supabase = getSupabaseClient()
                 const { data: { session } } = await supabase.auth.getSession()
@@ -1170,7 +1390,7 @@ function LessonsPageInner(){
                       disabled={capped}
                       onClick={handleStartLesson}
                     >
-                      {hasSnapshot ? 'Continue' : 'Start Lesson'}
+                      {!isDemo && !activeSet.has(lessonKey) ? '🔒 ' : ''}{hasSnapshot ? 'Continue' : 'Start Lesson'}
                     </button>
                     {capped && (
                       <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 13, marginTop: 8, marginBottom: 0 }}>
