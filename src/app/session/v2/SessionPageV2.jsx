@@ -2668,7 +2668,7 @@ function SessionPageV2Inner() {
     const eventBus = eventBusRef.current;
     if (!eventBus || !lessonKey) return;
 
-    const minIntervalMs = 10_000;
+    const minIntervalMs = 3_000;
     const maybePersist = (trigger) => {
       const now = Date.now();
       if (now - lastTimerPersistAtRef.current < minIntervalMs) return;
