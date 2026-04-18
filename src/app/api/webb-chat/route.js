@@ -74,7 +74,7 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false)
       remainingObjectives.slice(0, 6).map((o, i) => `${i + 1}. ${o}`).join('\n'),
       `IMPORTANT — End EVERY reply with ONE focused question that steers the student toward explaining goal #1 in their own words.`,
       `- Do NOT wait for a video or article. Ask about goal #1 in every response until the student demonstrates it.`,
-      `- Once goal #1 is demonstrated, shift to goal #2 on the next turn (the list will update automatically).`,
+      `- SELF-CHECK: Before writing your question, read the student's most recent message. If it already demonstrates understanding of goal #1 (even partially or informally), treat goal #1 as complete RIGHT NOW — acknowledge it warmly and immediately probe goal #2 instead. Do NOT ask about goal #1 again once the student has answered it.`,
       `- Bridge naturally from what the student just said: "That's interesting! Can you also tell me..." or "Speaking of that, what do you know about..."`,
       `- Never use the words "objective", "goal", or "check". Sound warm and curious, not like a quiz.`,
     )
