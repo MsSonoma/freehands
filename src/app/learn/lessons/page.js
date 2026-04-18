@@ -109,6 +109,7 @@ function LessonsPageInner(){
   const [listTab, setListTab] = useState('active') // 'active' | 'recent' | 'owned'
   const [allGeneratedLessons, setAllGeneratedLessons] = useState([])
   const [generatedLoading, setGeneratedLoading] = useState(false)
+  const [historyLessons, setHistoryLessons] = useState({}) // lessonKey → metadata for history-only lessons
 
   const {
     sessions: lessonHistorySessions,
@@ -365,6 +366,49 @@ function LessonsPageInner(){
     })()
     return () => { cancelled = true }
   }, [learnerId])
+
+  // Back-fill metadata for history keys not already in allLessons/allGeneratedLessons
+  useEffect(() => {
+    if (!learnerId || learnerId === 'demo') return
+    const completedKeys = Object.keys(lessonHistoryLastCompleted || {})
+    const inProgressKeys = Object.keys(lessonHistoryInProgress || {})
+    const allHistoryKeys = [...new Set([...completedKeys, ...inProgressKeys])]
+    if (allHistoryKeys.length === 0) return
+
+    // Build the set of keys we already have metadata for
+    const knownKeys = new Set()
+    Object.entries(allLessons).forEach(([subject, lessons]) => {
+      lessons?.forEach(l => {
+        const key = l.lessonKey || (l.isGenerated ? `generated/${l.file}` : `${subject}/${l.file}`)
+        if (key) knownKeys.add(key)
+      })
+    })
+    allGeneratedLessons.forEach(l => knownKeys.add(`generated/${l.file}`))
+
+    const missing = allHistoryKeys.filter(k => !knownKeys.has(k))
+    if (missing.length === 0) return
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/lessons/meta', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keys: missing, learner_id: learnerId }),
+        })
+        if (!res.ok || cancelled) return
+        const data = await res.json()
+        if (cancelled) return
+        const map = {}
+        for (const l of (data?.lessons || [])) {
+          const key = l.lessonKey || l.lesson_key
+          if (key) map[key] = l
+        }
+        if (!cancelled) setHistoryLessons(map)
+      } catch {}
+    })()
+    return () => { cancelled = true }
+  }, [learnerId, lessonHistoryLastCompleted, lessonHistoryInProgress, allLessons, allGeneratedLessons])
 
   useEffect(() => {
     if (!sessionGateReady) return
@@ -701,8 +745,12 @@ function LessonsPageInner(){
       const key = `generated/${l.file}`
       if (!map[key]) map[key] = { ...l, isGenerated: true, subject: 'generated', lessonKey: key }
     })
+    // Backfill from history metadata fetch
+    Object.entries(historyLessons).forEach(([key, l]) => {
+      if (!map[key]) map[key] = { ...l, lessonKey: key }
+    })
     return map
-  }, [allLessons, allGeneratedLessons])
+  }, [allLessons, allGeneratedLessons, historyLessons])
 
   // Recent tab: union of completed + in-progress keys, most recent first
   const recentList = useMemo(() => {
