@@ -772,7 +772,14 @@ function LessonsPageInner(){
         </div>
       )}
 
-      {/* Golden Key Counter is shown inside the lesson detail overlay */}
+      {/* Golden Key Counter */}
+      {goldenKeysEnabled === true && !loading && !lessonsLoading && (
+        <GoldenKeyCounter
+          learnerId={learnerId}
+          selected={goldenKeySelected}
+          onToggle={() => setGoldenKeySelected(prev => !prev)}
+        />
+      )}
 
       {learnerId && learnerId !== 'demo' && (
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, marginTop: 12, gap: 12, flexWrap: 'wrap' }}>
@@ -1059,11 +1066,22 @@ function LessonsPageInner(){
 
                     {/* Golden Key toggle */}
                     {goldenKeysEnabled === true && !isDemo && (
-                      <GoldenKeyCounter
-                        learnerId={learnerId}
-                        selected={goldenKeySelected}
-                        onToggle={() => setGoldenKeySelected(prev => !prev)}
-                      />
+                      <button
+                        onClick={() => setGoldenKeySelected(prev => !prev)}
+                        title={goldenKeySelected ? 'Golden Key active — click to remove' : 'Apply a Golden Key to this lesson'}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: goldenKeySelected ? '#fef3c7' : '#f3f4f6',
+                          border: `1px solid ${goldenKeySelected ? '#f59e0b' : '#d1d5db'}`,
+                          borderRadius: 20, padding: '3px 10px 3px 6px',
+                          cursor: 'pointer', marginBottom: 14, fontSize: 13, fontWeight: 600,
+                          color: goldenKeySelected ? '#92400e' : '#6b7280',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        <span style={{ fontSize: 15, filter: goldenKeySelected ? 'none' : 'grayscale(1) opacity(0.5)' }}>🔑</span>
+                        {goldenKeySelected ? 'Golden Key On' : 'Use Golden Key'}
+                      </button>
                     )}
 
                     {/* History */}
