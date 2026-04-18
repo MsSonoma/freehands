@@ -716,9 +716,16 @@ export default function WebbPage() {
         return
       }
       setVideoMoments(moments)
+      // videoResearchHistory tracks moment intros so the assessment push has full context
+      const videoResearchHistory = [...chatMessages]
       for (let i = 0; i < moments.length; i++) {
         const m = moments[i]
-        if (m.intro) addMsg(m.intro)
+        if (m.intro) {
+          const introMsg = { role: 'assistant', content: m.intro }
+          videoResearchHistory.push(introMsg)
+          setChatMessages(prev => [...prev, introMsg])
+          addMsg(m.intro)
+        }
         await waitForTTSIdle()
         addMomentMsg(`\uD83C\uDFA5 ${m.title} \u00B7 ${formatVideoTime(m.startSeconds)}`, i)
         const segMs = Math.max(10, m.endSeconds - m.startSeconds) * 1000
@@ -735,7 +742,7 @@ export default function WebbPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages:            chatMessages,
+            messages:            videoResearchHistory,
             lesson:              selectedLesson,
             media:               { video: videoResource || null, article: articleResource ? { title: articleResource.title, source: articleResource.source } : null },
             remainingObjectives: remaining,
@@ -752,7 +759,7 @@ export default function WebbPage() {
           // Check if the student's previous responses already covered anything
           setObjectives(obj => {
             setCompletedObj(comp => {
-              checkObjectivesAfterTurn([...chatMessages, aMsg], obj, comp)
+              checkObjectivesAfterTurn([...videoResearchHistory, aMsg], obj, comp)
               return comp
             })
             return obj
@@ -1313,6 +1320,9 @@ export default function WebbPage() {
         setInterpretingArticle(true)
         passageEls.current          = []
         userScrolledArticleRef.current = false
+        // researchHistory tracks everything Mrs. Webb says during the article walk-through
+        // so the Socratic follow-up receives full context (chatMessages is a stale closure).
+        let researchHistory = [...chatMessages]
         try {
           const r = await fetch('/api/webb-interpret', {
             method: 'POST',
@@ -1355,11 +1365,19 @@ export default function WebbPage() {
             const els = highlightPassages(excerpts)
             passageEls.current = els
 
-            if (data.intro) addMsg(data.intro)
+            if (data.intro) {
+              const introMsg = { role: 'assistant', content: data.intro }
+              researchHistory.push(introMsg)
+              setChatMessages(prev => [...prev, introMsg])
+              addMsg(data.intro)
+            }
             for (let i = 0; i < excerpts.length; i++) {
               await waitForTTSIdle()
               activatePassage(i)
               scrollToPassage(i, true)
+              const passMsg = { role: 'assistant', content: spokenTexts[i] }
+              researchHistory.push(passMsg)
+              setChatMessages(prev => [...prev, passMsg])
               addPassageMsg(spokenTexts[i], i)
             }
             await waitForTTSIdle()
@@ -1369,13 +1387,13 @@ export default function WebbPage() {
         } catch (e) { console.error('[webb] research-article error:', e) }
         setInterpretingArticle(false)
 
-        // Socratic follow-up after article passages
+        // Socratic follow-up — researchHistory carries the full research context
         try {
           const fRes = await fetch('/api/webb-chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              messages:            chatMessages,
+              messages:            researchHistory,
               lesson:              selectedLesson,
               remainingObjectives: [obj],
               assessmentPush:      true,
