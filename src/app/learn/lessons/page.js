@@ -513,6 +513,8 @@ function LessonsPageInner(){
         }
       } catch (e) {
       }
+      // Deselect after use so it doesn't carry over to the next lesson
+      setGoldenKeySelected(false)
     }
     
     setSessionLoading(true)
