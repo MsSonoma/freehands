@@ -58,11 +58,35 @@ async function _fetchHtml(url, baseHref, sourceId, sourceLabel) {
   } catch { return null }
 }
 
+// ── Article title relevance guard ─────────────────────────────────────────────
+// Returns true if the resolved article title looks plausibly on-topic.
+// Compares word overlap between lesson title and article title after stripping
+// common stop-words and short tokens. Prevents returning "The Basics" (a band)
+// for a lesson about "Basics of Economics".
+const STOP_WORDS = new Set([
+  'the','a','an','of','in','on','at','to','for','and','or','but','is','are',
+  'was','were','be','been','by','as','with','about','from','that','this',
+  'how','what','why','which','when','where','do','does','did',
+])
+function articleTitleIsRelevant(lessonTitle, articleTitle) {
+  const tokens = s => s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ')
+    .split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w))
+  const lessonWords = new Set(tokens(lessonTitle))
+  const articleWords = tokens(articleTitle)
+  // Pass if any content word from the lesson title appears in the article title
+  if (articleWords.some(w => lessonWords.has(w))) return true
+  // Also pass if the lesson search term is a substring of the article title
+  // (handles plurals, possessives, slight variations)
+  const normLesson  = lessonTitle.toLowerCase().replace(/[^a-z0-9]/g, '')
+  const normArticle = articleTitle.toLowerCase().replace(/[^a-z0-9]/g, '')
+  return normArticle.includes(normLesson) || normLesson.includes(normArticle)
+}
+
 export const ARTICLE_SOURCES = [
   {
     id: 'simple-wikipedia',
     label: 'Simple Wikipedia',
-    async fetch(term) {
+    async fetch(term, lessonTitle) {
       // Use the search API first so any lesson topic resolves to a real article
       // (exact-title lookup 404s for topics like "Story Elements" or "Adding Fractions")
       let slug = term.replace(/\s+/g, '_')
@@ -74,7 +98,10 @@ export const ARTICLE_SOURCES = [
         if (sr.ok) {
           const sd = await sr.json()
           const found = sd?.query?.search?.[0]?.title
-          if (found) slug = found.replace(/\s+/g, '_')
+          if (found) {
+            if (!articleTitleIsRelevant(lessonTitle || term, found)) return null
+            slug = found.replace(/\s+/g, '_')
+          }
         }
       } catch { /* fall back to raw term */ }
       return _fetchHtml(
@@ -86,7 +113,7 @@ export const ARTICLE_SOURCES = [
   {
     id: 'wikipedia',
     label: 'Wikipedia',
-    async fetch(term) {
+    async fetch(term, lessonTitle) {
       // Use the search API first so any lesson topic resolves to a real article
       let slug = term.replace(/\s+/g, '_')
       try {
@@ -97,7 +124,10 @@ export const ARTICLE_SOURCES = [
         if (sr.ok) {
           const sd = await sr.json()
           const found = sd?.query?.search?.[0]?.title
-          if (found) slug = found.replace(/\s+/g, '_')
+          if (found) {
+            if (!articleTitleIsRelevant(lessonTitle || term, found)) return null
+            slug = found.replace(/\s+/g, '_')
+          }
         }
       } catch { /* fall back to raw term */ }
       return _fetchHtml(
@@ -111,7 +141,7 @@ export const ARTICLE_SOURCES = [
     label: 'Kiddle',
     // Kiddle (kids.kiddle.co) is a kid-safe encyclopedia using Wikipedia article titles.
     // We resolve the best-matching title via Wikipedia's search API, then fetch from Kiddle.
-    async fetch(term) {
+    async fetch(term, lessonTitle) {
       let slug = term.replace(/\s+/g, '_')
       try {
         const sr = await fetch(
@@ -121,7 +151,10 @@ export const ARTICLE_SOURCES = [
         if (sr.ok) {
           const sd = await sr.json()
           const found = sd?.query?.search?.[0]?.title
-          if (found) slug = found.replace(/\s+/g, '_')
+          if (found) {
+            if (!articleTitleIsRelevant(lessonTitle || term, found)) return null
+            slug = found.replace(/\s+/g, '_')
+          }
         }
       } catch { /* fall back to raw term */ }
       return _fetchHtml(
@@ -135,7 +168,7 @@ export const ARTICLE_SOURCES = [
     label: 'Ducksters',
     // Ducksters URLs are section-based (e.g. /science/, /history/, /geography/).
     // Ask GPT for the correct full path rather than guessing /science/.
-    async fetch(term, _slug, apiKey) {
+    async fetch(term, _lessonTitle, apiKey) {
       let path = null
       if (apiKey) {
         try {
@@ -361,7 +394,7 @@ async function generateArticle(apiKey, title, grade, preferredSources, excludeSo
   for (const src of toTry) {
     for (const term of terms) {
       try {
-        const result = await src.fetch(term, null, apiKey)
+        const result = await src.fetch(term, title, apiKey)
         if (result?.html) return { ...result, title }
       } catch { /* try next */ }
     }
