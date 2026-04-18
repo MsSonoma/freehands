@@ -83,13 +83,16 @@ export async function POST(req) {
               `Grade: ${grade}. Lesson: "${lessonTitle}".\n\n` +
               `Return exactly this format:\n` +
               `EXCERPT 1: [2 verbatim sentences from somewhere past the first paragraph]\n` +
+              `SPOKEN 1: [Rewrite EXCERPT 1 in 1–2 friendly sentences a ${grade} student can understand. Use simple words, no jargon. Mrs. Webb is speaking warmly to the student — not quoting a textbook.]\n` +
               `EXCERPT 2: [2 verbatim sentences from a different section]\n` +
+              `SPOKEN 2: [Rewrite EXCERPT 2 in 1–2 friendly sentences a ${grade} student can understand.]\n` +
               `EXCERPT 3: [2 verbatim sentences from a different section]\n` +
+              `SPOKEN 3: [Rewrite EXCERPT 3 in 1–2 friendly sentences a ${grade} student can understand.]\n` +
               `INTRO: [Mrs. Webb's one warm lead-in sentence]\n\n` +
               `Article text:\n${plainText}`,
           },
         ],
-        max_tokens: 500,
+        max_tokens: 900,
         temperature: 0.2,
       }),
     })
@@ -101,17 +104,23 @@ export async function POST(req) {
     const intro = introMatch ? introMatch[1].trim() : `Let me show you some key parts about ${lessonTitle}!`
 
     const passages = []
-    const excerptRe = /EXCERPT\s*\d+:\s*([^\n]+(?:\n(?!EXCERPT|INTRO)[^\n]+)*)/gi
+    const excerptRe = /EXCERPT\s*(\d+):\s*([^\n]+(?:\n(?!EXCERPT|SPOKEN|INTRO)[^\n]+)*)/gi
+    const spokenMap = {}
+    const spokenRe  = /SPOKEN\s*(\d+):\s*([^\n]+(?:\n(?!EXCERPT|SPOKEN|INTRO)[^\n]+)*)/gi
     let m
+    while ((m = spokenRe.exec(raw)) !== null) {
+      spokenMap[m[1]] = m[2].trim()
+    }
     while ((m = excerptRe.exec(raw)) !== null) {
-      const excerpt = m[1].trim()
-      if (excerpt) passages.push({ excerpt })
+      const idx     = m[1]
+      const excerpt = m[2].trim()
+      if (excerpt) passages.push({ excerpt, spoken: spokenMap[idx] || null })
     }
 
     // Fallback: if parsing fails, treat everything before INTRO as one passage
     if (!passages.length) {
       const fallback = raw.replace(/INTRO:[\s\S]*/i, '').trim()
-      if (fallback) passages.push({ excerpt: fallback })
+      if (fallback) passages.push({ excerpt: fallback, spoken: null })
     }
 
     return NextResponse.json({ passages, intro })

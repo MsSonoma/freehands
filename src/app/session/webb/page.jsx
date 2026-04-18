@@ -1328,7 +1328,8 @@ export default function WebbPage() {
           })
           const data    = await r.json()
           const passages = data.passages || (data.excerpt ? [{ excerpt: data.excerpt }] : [])
-          const excerpts = passages.map(p => p.excerpt).filter(Boolean)
+          const excerpts     = passages.map(p => p.excerpt).filter(Boolean)
+          const spokenTexts  = passages.map(p => p.spoken || p.excerpt)
 
           if (excerpts.length) {
             // Wait for article iframe to be ready
@@ -1359,7 +1360,7 @@ export default function WebbPage() {
               await waitForTTSIdle()
               activatePassage(i)
               scrollToPassage(i, true)
-              addPassageMsg(excerpts[i], i)
+              addPassageMsg(spokenTexts[i], i)
             }
             await waitForTTSIdle()
             const doc = articleIframeRef.current?.contentDocument
@@ -1528,6 +1529,7 @@ export default function WebbPage() {
       if (!passages.length) return
 
       const excerpts = passages.map(p => p.excerpt).filter(Boolean)
+      const spokenTexts = passages.map(p => p.spoken || p.excerpt)
 
       // Wait for (a) React to flush setMediaOverlay and mount the iframe,
       // and (b) the iframe to finish loading its srcdoc content.
@@ -1568,7 +1570,7 @@ export default function WebbPage() {
         await waitForTTSIdle()
         activatePassage(i)
         scrollToPassage(i, true)
-        addPassageMsg(excerpts[i], i)
+        addPassageMsg(spokenTexts[i], i)
       }
       // Clear active highlight when done
       await waitForTTSIdle()
