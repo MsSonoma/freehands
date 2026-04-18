@@ -1037,7 +1037,6 @@ function LessonsPageInner(){
                             : <span style={{ fontSize: 11, background: '#f3f4f6', color: '#374151', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>{displaySubject}</span>
                           }
                           {isScheduled && <span style={{ fontSize: 11, background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>📅 Scheduled</span>}
-                          {goldenKeysEnabled === true && hasActiveKey && <span style={{ fontSize: 11, background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>🔑 Golden Key</span>}
                         </div>
                         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#111', lineHeight: 1.25 }}>
                           {l.title}{medal ? ` ${medal}` : ''}{!isDemo && masteryMap[lessonKey] ? ' 🤖' : ''}
