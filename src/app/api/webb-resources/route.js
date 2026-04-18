@@ -353,8 +353,10 @@ async function generateArticle(apiKey, title, grade, preferredSources, excludeSo
   try {
     const raw = await callGPT(
       apiKey,
-      'You find the best short search term for a school lesson topic. ' +
-      'Return ONLY 1–4 words, lowercase, no punctuation, no extra text.',
+      'You find the best Wikipedia search term for a school lesson topic. ' +
+      'The term must preserve the subject domain (e.g. "economics", "photosynthesis", "civil war") — ' +
+      'never reduce it to a generic word that could match a band, film, or proper name. ' +
+      'Return ONLY 2–5 words, lowercase, no punctuation, no extra text.',
       `Lesson: "${title.slice(0, 120)}". Grade: ${grade}.`,
       20,
     )
