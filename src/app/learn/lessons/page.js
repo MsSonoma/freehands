@@ -627,12 +627,14 @@ function LessonsPageInner(){
         
         const snapshotsFound = {}
         
-        // Check each loaded lesson for a snapshot using its ID
+        // Check each loaded lesson for a snapshot using its filename
         for (const lesson of allLoadedLessons) {
           if (cancelled) break
           
-          // Use lesson.id if available, fallback to filename without extension
-          const lessonId = lesson.id || lesson.file?.replace(/\.json$/i, '') || lesson.lessonKey?.split('/').pop()?.replace(/\.json$/i, '')
+          // Use filename without extension (matches how sessions save snapshots via URL param).
+          // lesson.id can differ from the filename (e.g. "LA-4-ADV-001" vs "4th_The_Importance_of_Courage_advanced")
+          // and must NOT be used as the primary key here.
+          const lessonId = lesson.file?.replace(/\.json$/i, '') || lesson.lessonKey?.split('/').pop()?.replace(/\.json$/i, '') || lesson.id
           if (!lessonId) continue
           
           try {
