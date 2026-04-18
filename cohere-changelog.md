@@ -1,3 +1,7 @@
+2026-05-01 | feat(session): Remove V1 session page. `src/app/session/page.js` replaced with 9-line passthrough to `SessionPageV2`. `src/app/session/v2test/page.jsx` deleted. V1 had ~9875 lines of legacy teaching flow; V2 (TimerService-owned, event-driven) has been default for all users. No localStorage flags remain. Entry points (`learn/lessons/page.js`, `LearnerTutorial.jsx`) route unchanged. Build clean. Commit: d6440da. Recon prompt: "remove V1 session page.js — V2 is now the only session implementation, promote V2 to /session route directly".
+
+2026-04-08 | fix(webb): Wrong article fetched — "Basics of Economics" returned "The Basics" (band). Two-layer fix in `webb-resources/route.js`: (1) `articleTitleIsRelevant(lessonTitle, articleTitle)` — new guard function strips stop words, checks content-word overlap between lesson title and resolved Wikipedia article title; returns `null` (reject) if no content words match. Applied to `simple-wikipedia`, `wikipedia`, and `kiddle` fetch methods before accepting the resolved slug. (2) GPT search-term prompt rewritten to require 2–5 words and explicitly preserve subject domain ("never reduce to a generic word that could match a band, film, or proper name"). `generateArticle` now passes lesson `title` as second arg to `src.fetch()` so sources always have the original title for the relevance check. Commits: 4ff35bf, 87838d4. Recon prompt: "article fetch returning wrong irrelevant article band called The Basics for lesson Basics of Economics webb-resources search term Wikipedia".
+
 2026-04-07 | perf(transcripts): 504 gateway timeout on learner transcripts page. Route was calling `store.download()` on every transcript file to check validity (2 round trips: download + createSignedUrl), then looping sequentially over all lessons × sessions × teachers. With a realistically sized account (3 teachers, ~10 lessons each, each with session sub-folders) this produced 40-60+ sequential Supabase Storage calls, reliably exceeding Vercel's function timeout. Fix: `tryGetTranscript` now uses `createSignedUrl` only — Supabase errors on missing paths, making it a free existence probe with zero file downloads. Removed RTF probe (client removes RTF on every write). Parallelized sessions within a lesson (`Promise.all`), and all teacher folders + lessons in parallel at the top level. Commit: 08fe1a6.
 
 2026-04-06 | fix(transcripts): fix stale closure — V2 Sonoma saves empty transcript. The `sessionComplete` event handler is registered inside `useEffect([lessonData])`, so it closed over `transcriptLines` as `[]` (the value at mount time). Every `captionChange` event and learner-answer call updated state but the handler never saw those updates. Fix: added `transcriptLinesRef` (ref mirror of `transcriptLines`, kept in sync via a dedicated `useEffect`); replaced `transcriptLines` with `transcriptLinesRef.current` in the `sessionComplete` handler. Paired with the earlier `isInvalidTranscript` filter fix and storage migration, this restores full both-sides transcripts (Ms. Sonoma sentence-by-sentence + learner answers) for all V2 sessions. File: `SessionPageV2.jsx`. Commit: 95648bf.
@@ -673,3 +677,17 @@ Fix (3 paths):
   B) Article available: calls webb-interpret with [singleObjective] to pick targeted passages, opens article overlay, highlights + scrolls to those passages, then asks Socratic.
   C) No navigable media: calls new buildDirectTeachSystem (researchDirect:true) which teaches the concept in 2-3 sentences with a real-world example then Socratic � no media mentions.
 Files: src/app/session/webb/page.jsx (startResearch), src/app/api/webb-chat/route.js (buildDirectTeachSystem + researchDirect flag).
+
+## 2026-04-07 � Slate transcript save diagnosis
+- Recon: 'browser console LEARNER NORMALIZE transcript save errors no errors showing after session'
+- Found [LEARNER NORMALIZE] debug log in clientApi.js (line 370) � harmless noise
+- Found e.studentAnswer bug: entries built with e.answer, but lines used e.studentAnswer ? all answers '(no answer)'
+- Fixed: e.studentAnswer ? e.answer
+- Added txStatus state + on-screen '? TRANSCRIPT SAVED' / '? TRANSCRIPT SAVE FAILED' indicator on Slate won screen
+- Added console.warn for each early-return condition in save effect
+- Commit: 21e55d2
+## 2026-04-15 � ban generic lesson title openers
+- **Prompt**: "Every single generated lesson starts with 'Exploring'"
+- **Root cause**: generate-lesson-outline/route.js prompt had no constraint on generic openers; model defaulted to "Exploring X"
+- **Fix**: Added rule to prompt banning Exploring/Understanding/Discovering/Introduction to/etc. Added stripGenericOpener() safety-net function applied server-side before returning the title.
+- **File**: src/app/api/generate-lesson-outline/route.js`n
