@@ -103,6 +103,31 @@ function articleTitleIsRelevant(lessonTitle, articleTitle) {
   return true
 }
 
+// ── Snippet disqualifier ─────────────────────────────────────────────────────
+// Wikipedia search results include a plain-text `snippet` field (first ~160 chars
+// of the article lead section). We strip HTML tags and check for patterns that
+// indicate the article is about a band, film, person, or other non-educational
+// entity — NOT a school-subject concept.
+// Returns true if the snippet looks disqualifying (i.e. reject this article).
+const DISQUALIFY_PATTERNS = [
+  /\bis (?:an?\s+)?(?:Australian|American|British|Canadian|Irish|Scottish|New Zealand|South African|Indian)?\s*(?:rock|pop|hip.?hop|indie|punk|metal|jazz|country|reggae|electronic|alternative|r&b|soul|folk)\s+(?:band|group|duo|trio|act|artist)/i,
+  /\bis (?:an?\s+)?(?:band|music(?:al)?\s+group|boy band|girl group)/i,
+  /\bis (?:an?\s+)?(?:\d{4}\s+)?(?:American|British|Australian|Canadian|Indian|French|German|Italian|Japanese|Korean|Chinese|Spanish|Mexican|Irish)?\s*(?:film|movie|documentary|motion picture|animated film|short film)/i,
+  /\bis (?:an?\s+)?(?:television|TV)\s+(?:series|show|program|sitcom|drama|miniseries|special)/i,
+  /\bis (?:an?\s+)?(?:studio|debut|compilation|live|box.?set|soundtrack|extended play|EP|LP)\s+album/i,
+  /\bis (?:an?\s+)?album\b/i,
+  /\bis (?:an?\s+)?(?:single|song|track)\s+by\b/i,
+  /\bis (?:an?\s+)?(?:American|British|Australian|Canadian)?\s*(?:rapper|hip.?hop artist|recording artist|singer.songwriter|musician|vocalist|DJ|disc jockey|actor|actress|comedian|YouTuber|podcast)/i,
+  /\bis (?:an?\s+)?(?:video game|computer game|mobile game|board game)/i,
+  /\bis (?:an?\s+)?(?:novel|book|comic|manga|graphic novel|short story|play|opera)/i,
+]
+function isDisqualifyingSnippet(snippet) {
+  if (!snippet) return false
+  // Strip Wikipedia search highlight HTML (<span class="searchmatch">)
+  const text = snippet.replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/g, ' ')
+  return DISQUALIFY_PATTERNS.some(re => re.test(text))
+}
+
 export const ARTICLE_SOURCES = [
   {
     id: 'simple-wikipedia',
@@ -118,9 +143,11 @@ export const ARTICLE_SOURCES = [
         )
         if (sr.ok) {
           const sd = await sr.json()
-          const found = sd?.query?.search?.[0]?.title
+          const hit = sd?.query?.search?.[0]
+          const found = hit?.title
           if (found) {
             if (!articleTitleIsRelevant(lessonTitle || term, found)) return null
+            if (isDisqualifyingSnippet(hit.snippet)) return null
             slug = found.replace(/\s+/g, '_')
           }
         }
@@ -144,9 +171,11 @@ export const ARTICLE_SOURCES = [
         )
         if (sr.ok) {
           const sd = await sr.json()
-          const found = sd?.query?.search?.[0]?.title
+          const hit = sd?.query?.search?.[0]
+          const found = hit?.title
           if (found) {
             if (!articleTitleIsRelevant(lessonTitle || term, found)) return null
+            if (isDisqualifyingSnippet(hit.snippet)) return null
             slug = found.replace(/\s+/g, '_')
           }
         }
@@ -171,8 +200,10 @@ export const ARTICLE_SOURCES = [
         )
         if (sr.ok) {
           const sd = await sr.json()
-          const found = sd?.query?.search?.[0]?.title
+          const hit = sd?.query?.search?.[0]
+          const found = hit?.title
           if (found) {
+            if (isDisqualifyingSnippet(hit.snippet)) return null
             if (!articleTitleIsRelevant(lessonTitle || term, found)) return null
             slug = found.replace(/\s+/g, '_')
           }
@@ -368,17 +399,22 @@ async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeV
 }
 
 // ── Generate article resource ─────────────────────────────────────────────────
-async function generateArticle(apiKey, title, grade, preferredSources, excludeSourceId) {
+async function generateArticle(apiKey, title, grade, preferredSources, excludeSourceId, objectives = []) {
   // Resolve the best search term for this lesson (used as slug base)
+  // Include the first 1–2 objectives so GPT picks a term that actually covers lesson content.
+  const objHint = objectives.length
+    ? `\nLearning objectives: ${objectives.slice(0, 2).map(o => `"${o}"`).join('; ')}.`
+    : ''
   let searchTerm = title
   try {
     const raw = await callGPT(
       apiKey,
       'You find the best Wikipedia search term for a school lesson topic. ' +
-      'The term must preserve the subject domain (e.g. "economics", "photosynthesis", "civil war") — ' +
+      'The term must target the core subject concept (e.g. "economics", "photosynthesis", "civil war") — ' +
       'never reduce it to a generic word that could match a band, film, or proper name. ' +
+      'If learning objectives are provided, choose a term that an article covering those objectives would be titled. ' +
       'Return ONLY 2–5 words, lowercase, no punctuation, no extra text.',
-      `Lesson: "${title.slice(0, 120)}". Grade: ${grade}.`,
+      `Lesson: "${title.slice(0, 120)}". Grade: ${grade}.${objHint}`,
       20,
     )
     if (raw && raw.length > 1 && raw.length < 60) searchTerm = raw
@@ -429,7 +465,7 @@ async function generateArticle(apiKey, title, grade, preferredSources, excludeSo
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req) {
   try {
-    const { lesson = {}, type = 'both', context = '', preferredSources, excludeSourceId, excludeVideoIds = [] } = await req.json()
+    const { lesson = {}, type = 'both', context = '', preferredSources, excludeSourceId, excludeVideoIds = [], objectives = [] } = await req.json()
     const apiKey = process.env.OPENAI_API_KEY
     const ytKey  = process.env.YOUTUBE_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
@@ -446,7 +482,7 @@ export async function POST(req) {
     const safeExcludeVids = Array.isArray(excludeVideoIds) ? excludeVideoIds.slice(0, 20) : []
     const [videoResult, articleResult] = await Promise.all([
       needVideo   ? generateVideo(apiKey, ytKey, title, subject, grade, ctx, safeExcludeVids) : null,
-      needArticle ? generateArticle(apiKey, title, grade, preferredSources, excludeSourceId) : null,
+      needArticle ? generateArticle(apiKey, title, grade, preferredSources, excludeSourceId, Array.isArray(objectives) ? objectives.slice(0, 3) : []) : null,
     ])
 
     return NextResponse.json({

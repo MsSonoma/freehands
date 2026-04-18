@@ -825,7 +825,7 @@ export default function WebbPage() {
   // Video and article are fetched in parallel but independently so each
   // resolves as soon as it's ready (video ~3s, article ~4s).
   // `objContext` is a hint string of remaining objectives used to shape the search.
-  const preloadResources = useCallback((lesson, objContext = '') => {
+  const preloadResources = useCallback((lesson, objContext = '', objectives = []) => {
     setVideoResource(null)
     setArticleResource(null)
     setVideoLoading(true)
@@ -837,7 +837,7 @@ export default function WebbPage() {
     const post = (type) => fetch('/api/webb-resources', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lesson, type, context: objContext, preferredSources: articleSources }),
+      body: JSON.stringify({ lesson, type, context: objContext, preferredSources: articleSources, objectives }),
     })
 
     // Video
@@ -1196,6 +1196,7 @@ export default function WebbPage() {
           lesson: selectedLesson,
           type,
           context: contextWithObj,
+          objectives:             objectives.filter((_, i) => !completedObj.includes(i)),
           excludeSourceId:        type === 'article' ? (articleResource?.sourceId || '') : undefined,
           preferredSources:       type === 'article' ? articleSources : undefined,
           excludeVideoIds:        type === 'video'   ? shownVideoIdsRef.current      : [],
