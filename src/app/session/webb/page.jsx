@@ -1869,9 +1869,11 @@ export default function WebbPage() {
                 &#8592; Lessons
               </button>
             )}
-            <button type="button" onClick={handleExit} style={headerBtn}>
-              &#8592; BACK
-            </button>
+            {!isChatting && (
+              <button type="button" onClick={handleExit} style={headerBtn}>
+                &#8592; BACK
+              </button>
+            )}
           </div>
         </div>
       </div>
