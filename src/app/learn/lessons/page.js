@@ -751,14 +751,7 @@ function LessonsPageInner(){
         </div>
       )}
 
-      {/* Golden Key Counter */}
-      {goldenKeysEnabled === true && !loading && !lessonsLoading && (
-        <GoldenKeyCounter
-          learnerId={learnerId}
-          selected={goldenKeySelected}
-          onToggle={() => setGoldenKeySelected(prev => !prev)}
-        />
-      )}
+      {/* Golden Key Counter is shown inside the lesson detail overlay */}
 
       {learnerId && learnerId !== 'demo' && (
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, marginTop: 12, gap: 12, flexWrap: 'wrap' }}>
@@ -1041,6 +1034,15 @@ function LessonsPageInner(){
                   <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
                     {l.blurb && (
                       <p style={{ margin: '0 0 16px', color: '#374151', fontSize: 15, lineHeight: 1.6 }}>{l.blurb}</p>
+                    )}
+
+                    {/* Golden Key toggle */}
+                    {goldenKeysEnabled === true && !isDemo && (
+                      <GoldenKeyCounter
+                        learnerId={learnerId}
+                        selected={goldenKeySelected}
+                        onToggle={() => setGoldenKeySelected(prev => !prev)}
+                      />
                     )}
 
                     {/* History */}
