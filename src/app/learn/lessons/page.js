@@ -82,7 +82,10 @@ function LessonsPageInner(){
   const [planTier, setPlanTier] = useState('free')
   const [todaysCount, setTodaysCount] = useState(0)
   const [sessionLoading, setSessionLoading] = useState(false)
-  const [goldenKeySelected, setGoldenKeySelected] = useState(false)
+  const [goldenKeySelected, setGoldenKeySelected] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try { return !!sessionStorage.getItem('golden_key_pending_lesson') } catch { return false }
+  })
   const [activeGoldenKeys, setActiveGoldenKeys] = useState({}) // Track lessons with active golden keys
   const [refreshTrigger, setRefreshTrigger] = useState(0) // Used to force refresh at midnight and on schedule changes
   const [lessonNotes, setLessonNotes] = useState({}) // { 'subject/lesson_file': 'note text' }
@@ -183,6 +186,21 @@ function LessonsPageInner(){
     // return () => clearInterval(pollInterval)
   }, [learnerId])
 
+  // Clear pending golden key once the target lesson is detected as completed
+  useEffect(() => {
+    if (!lessonHistoryLastCompleted) return
+    try {
+      const raw = sessionStorage.getItem('golden_key_pending_lesson')
+      if (!raw) return
+      const { lessonKey, startedAt } = JSON.parse(raw)
+      const completedAt = lessonHistoryLastCompleted[lessonKey]
+      if (completedAt && new Date(completedAt).getTime() > startedAt) {
+        sessionStorage.removeItem('golden_key_pending_lesson')
+        setGoldenKeySelected(false)
+      }
+    } catch {}
+  }, [lessonHistoryLastCompleted])
+
   // Check for golden key earned notification
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -216,6 +234,7 @@ function LessonsPageInner(){
       setGoldenKeysEnabled(enabled);
       if (!enabled) {
         setGoldenKeySelected(false);
+        try { sessionStorage.removeItem('golden_key_pending_lesson') } catch {}
         setShowGoldenKeyToast(false);
       }
     });
@@ -513,8 +532,8 @@ function LessonsPageInner(){
         }
       } catch (e) {
       }
-      // Deselect after use so it doesn't carry over to the next lesson
-      setGoldenKeySelected(false)
+      // Persist the pending key across navigation — clears only when lesson is completed
+      try { sessionStorage.setItem('golden_key_pending_lesson', JSON.stringify({ lessonKey: `${subject}/${fileBaseName}`, startedAt: Date.now() })) } catch {}
     }
     
     setSessionLoading(true)
