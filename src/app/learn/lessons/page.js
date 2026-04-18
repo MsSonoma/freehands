@@ -95,6 +95,9 @@ function LessonsPageInner(){
   // null = unknown (still loading learner settings); true/false = loaded value
   const [goldenKeysEnabled, setGoldenKeysEnabled] = useState(null)
   const [masteryMap, setMasteryMap] = useState({}) // { 'subject/file.json': true } — Mr. Slate mastery
+  // Lesson detail overlay: { l, subject, lessonKey, isDemo } | null
+  const [selectedLesson, setSelectedLesson] = useState(null)
+  const [overlayNoteEditing, setOverlayNoteEditing] = useState(false)
 
   const {
     sessions: lessonHistorySessions,
@@ -555,11 +558,22 @@ function LessonsPageInner(){
     }
   }
 
-  const card = { border:'1px solid #e5e7eb', borderRadius:12, padding:14, display:'flex', flexDirection:'column', justifyContent:'space-between', background:'#fff' }
-  const btn = { display:'inline-flex', justifyContent:'center', alignItems:'center', gap:8, width:'100%', padding:'10px 12px', border:'1px solid #111', borderRadius:10, background:'#111', color:'#fff', fontWeight:600 }
+  const row = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+    padding: '13px 16px',
+    border: '1px solid #e5e7eb',
+    borderRadius: 12,
+    background: '#fff',
+    cursor: 'pointer',
+    transition: 'background 0.12s, box-shadow 0.12s',
+    textAlign: 'left',
+    width: '100%',
+  }
+  const btn = { display:'inline-flex', justifyContent:'center', alignItems:'center', gap:8, width:'100%', padding:'12px 16px', border:'1px solid #111', borderRadius:10, background:'#111', color:'#fff', fontWeight:700, fontSize:15, cursor:'pointer' }
   const btnDisabled = { ...btn, background:'#9ca3af', borderColor:'#9ca3af', cursor:'not-allowed' }
-  const subjectHeading = { margin:'24px 0 8px', fontSize:18, fontWeight:600 }
-  const grid = { display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:12, alignItems:'stretch' }
+  const list = { display:'flex', flexDirection:'column', gap:8 }
 
   const lessonsBySubject = useMemo(() => {
     const grouped = {}
@@ -844,291 +858,262 @@ function LessonsPageInner(){
         </div>
       ) : (
         <>
-          <div style={grid}>
+          <div style={list}>
             {/* Show demo lessons first if they exist */}
             {lessonsBySubject['demo'] && lessonsBySubject['demo'].map((l) => {
-              const ent = featuresForTier(planTier)
-              const cap = ent.lessonsPerDay
-              const capped = Number.isFinite(cap) && todaysCount >= cap
               const lessonKey = `demo/${l.file}`
+              const hasSnapshot = lessonSnapshots[lessonKey]
               const medalTier = medals[lessonKey]?.medalTier || null
               const medal = medalTier ? emojiForTier(medalTier) : ''
-              
+              const subjectLabel = l.subject ? l.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Tutorial'
               return (
-                <div key={`demo-${l.file}`} style={card}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <div style={{ fontSize:12, color:'#6b7280' }}>
-                        {l.subject ? l.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Tutorial'}
-                      </div>
-                      <div style={{ 
-                        fontSize: 11, 
-                        background: '#dbeafe', 
-                        color: '#1e40af',
-                        padding: '2px 6px',
-                        borderRadius: 6,
-                        fontWeight: 600
-                      }}>
-                        Demo
-                      </div>
+                <button
+                  key={`demo-${l.file}`}
+                  style={row}
+                  onClick={() => { setSelectedLesson({ l, subject: 'demo', lessonKey, isDemo: true }); setOverlayNoteEditing(false) }}
+                  onMouseEnter={e => { e.currentTarget.style.background='#f9fafb'; e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.07)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background='#fff'; e.currentTarget.style.boxShadow='none' }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11, background: '#dbeafe', color: '#1e40af', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>Demo</span>
+                      <span style={{ fontSize: 11, color: '#9ca3af' }}>{subjectLabel}</span>
                     </div>
-                    <h3 style={{ margin:'0 0 6px' }}>
-                      {l.title} {medal}
-                    </h3>
-                    <p style={{ margin:0, color:'#4b5563', fontSize:14 }}>{l.blurb || ' '}</p>
+                    <div style={{ fontWeight: 600, fontSize: 15, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {l.title}{medal ? ` ${medal}` : ''}
+                    </div>
                   </div>
-                  <button
-                    style={btn}
-                    onClick={()=>{ openLesson('demo', l.file) }}
-                  >
-                    {(() => {
-                      const lessonKey = `demo/${l.file}`
-                      const hasSnapshot = lessonSnapshots[lessonKey]
-                      return hasSnapshot ? 'Continue' : 'Start Lesson'
-                    })()}
-                  </button>
-                </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    {hasSnapshot && <span style={{ fontSize: 11, background: '#d1fae5', color: '#065f46', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>In progress</span>}
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ color: '#9ca3af' }}><path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                </button>
               )
             })}
-            
+
             {SUBJECTS.map(subject => {
               const lessons = lessonsBySubject[subject]
               if (!lessons || lessons.length === 0) return null
-
-              const displaySubject = subject === 'generated' ? 'Generated Lessons' : 
-                                     subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-
-              // Render all lessons as cards with subject badges - no headings
+              const displaySubject = subject === 'generated' ? 'Generated Lessons' :
+                subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
               return lessons.map((l) => {
-                const ent = featuresForTier(planTier)
-                const cap = ent.lessonsPerDay
-                const capped = Number.isFinite(cap) && todaysCount >= cap
                 const lessonKey = `${subject}/${l.file}`
+                const hasSnapshot = lessonSnapshots[lessonKey]
                 const isScheduled = !!scheduledLessons[lessonKey]
                 const medalTier = medals[lessonKey]?.medalTier || null
                 const medal = medalTier ? emojiForTier(medalTier) : ''
                 const hasActiveKey = activeGoldenKeys[lessonKey] === true
-                const noteText = lessonNotes[lessonKey] || ''
-                const isEditingThisNote = editingNote === lessonKey
-                const lastCompletedAt = lessonHistoryLastCompleted?.[lessonKey]
                 const inProgressAt = lessonHistoryInProgress?.[lessonKey]
-                const hasHistory = Boolean(lastCompletedAt || inProgressAt)
-                
-                // For generated lessons, use lesson.subject; for others use the subject category
                 const subjectBadge = subject === 'generated' && l.subject
                   ? l.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
                   : displaySubject
-                
                 return (
-                  <div key={`${subject}-${l.file}`} style={card}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <div style={{ fontSize:12, color:'#6b7280' }}>
-                          {subjectBadge}
-                        </div>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          {isScheduled && (
-                            <div style={{ 
-                              fontSize: 16, 
-                              background: '#dbeafe', 
-                              color: '#1e40af',
-                              padding: '2px 6px',
-                              borderRadius: 6,
-                              fontWeight: 600,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4
-                            }} title="Scheduled for today">
-                              📅
-                            </div>
-                          )}
-                          {goldenKeysEnabled === true && hasActiveKey && (
-                            <div style={{ 
-                              fontSize: 16, 
-                              background: '#fef3c7', 
-                              color: '#92400e',
-                              padding: '2px 6px',
-                              borderRadius: 6,
-                              fontWeight: 600,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4
-                            }} title="Golden Key Active">
-                              🔑 Active
-                            </div>
-                          )}
-                        </div>
+                  <button
+                    key={`${subject}-${l.file}`}
+                    style={row}
+                    onClick={() => { setSelectedLesson({ l, subject, lessonKey, isDemo: false }); setOverlayNoteEditing(false) }}
+                    onMouseEnter={e => { e.currentTarget.style.background='#f9fafb'; e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.07)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background='#fff'; e.currentTarget.style.boxShadow='none' }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 11, background: '#f3f4f6', color: '#374151', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>{subjectBadge}</span>
+                        {l.grade && <span style={{ fontSize: 11, color: '#9ca3af' }}>Grade {l.grade}</span>}
+                        {l.difficulty && <span style={{ fontSize: 11, color: '#9ca3af' }}>{l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1)}</span>}
                       </div>
-                      <h3 style={{ margin:'0 0 6px' }}>
-                        {l.title} {medal}{masteryMap[lessonKey] ? ' 🤖' : ''}
-                      </h3>
-                      <p style={{ margin:0, color:'#4b5563', fontSize:14 }}>{l.blurb || ' '}</p>
-                      {(l.grade || l.difficulty) && (
-                        <div style={{ fontSize:12, color:'#9ca3af', marginTop:4 }}>
-                          {l.grade && `Grade ${l.grade}`}
-                          {l.grade && l.difficulty && '  '}
-                          {l.difficulty && l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1)}
-                        </div>
-                      )}
-                      {hasHistory && (
-                        <div style={{ fontSize:12, color:'#4b5563', marginTop:4 }}>
-                          {inProgressAt && (
-                            <span>In progress since {formatDateTime(inProgressAt)}</span>
-                          )}
-                          {inProgressAt && lastCompletedAt && <span> • </span>}
-                          {lastCompletedAt && (
-                            <span>Last completed {formatDateOnly(lastCompletedAt)}</span>
-                          )}
-                        </div>
-                      )}
-                      
-                      {/* Facilitator Notes Section */}
-                      {noteText && !isEditingThisNote && (
-                        <div style={{
-                          marginTop: 8,
-                          padding: 8,
-                          background: '#fef3c7',
-                          borderRadius: 6,
-                          fontSize: 13,
-                          color: '#92400e'
-                        }}>
-                          <div style={{ fontWeight: 600, marginBottom: 4 }}>📝 Facilitator Note:</div>
-                          <div style={{ whiteSpace: 'pre-wrap' }}>{noteText}</div>
-                        </div>
-                      )}
-                      
-                      {/* Notes Editing Section */}
-                      {isEditingThisNote && (
-                        <div style={{ marginTop: 8 }}>
-                          <textarea
-                            defaultValue={noteText}
-                            placeholder="Add facilitator notes..."
-                            autoFocus
-                            rows={3}
-                            style={{
-                              width: '100%',
-                              padding: '8px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: 6,
-                              fontSize: 13,
-                              fontFamily: 'inherit',
-                              resize: 'vertical',
-                              marginBottom: 8,
-                              boxSizing: 'border-box'
-                            }}
-                            id={`note-${lessonKey}`}
-                          />
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <button
-                              onClick={() => {
-                                const textarea = document.getElementById(`note-${lessonKey}`)
-                                saveNote(lessonKey, textarea?.value || '')
-                              }}
-                              disabled={saving}
-                              style={{
-                                padding: '6px 12px',
-                                border: 'none',
-                                borderRadius: 6,
-                                background: '#2563eb',
-                                color: '#fff',
-                                fontSize: 13,
-                                fontWeight: 600,
-                                cursor: saving ? 'wait' : 'pointer'
-                              }}
-                            >
-                              {saving ? 'Saving...' : 'Save'}
-                            </button>
-                            <button
-                              onClick={() => setEditingNote(null)}
-                              disabled={saving}
-                              style={{
-                                padding: '6px 12px',
-                                border: '1px solid #d1d5db',
-                                borderRadius: 6,
-                                background: '#fff',
-                                color: '#374151',
-                                fontSize: 13,
-                                cursor: saving ? 'wait' : 'pointer'
-                              }}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      <div style={{ fontWeight: 600, fontSize: 15, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {l.title}{medal ? ` ${medal}` : ''}{masteryMap[lessonKey] ? ' 🤖' : ''}
+                      </div>
                     </div>
-                    
-                    {/* Action buttons container */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {/* Notes button */}
-                      {!isEditingThisNote && (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            setEditingNote(lessonKey)
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            border: '1px solid #d1d5db',
-                            borderRadius: 8,
-                            background: noteText ? '#fef3c7' : '#fff',
-                            color: '#374151',
-                            fontSize: 13,
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 6
-                          }}
-                          title={noteText ? 'Edit facilitator note' : 'Add facilitator note'}
-                        >
-                          📝 Notes
-                        </button>
-                      )}
-                      
-                      {/* Start Lesson button */}
-                      <button
-                        style={capped ? btnDisabled : btn}
-                        disabled={capped}
-                        onClick={async ()=>{
-                          try {
-                            const supabase = getSupabaseClient()
-                            const { data: { session } } = await supabase.auth.getSession()
-                            const token = session?.access_token
-                            if (!token) { openLesson(subject, l.file); return }
-                            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-                            const lessonKey = `${subject}/${l.file}`
-                            const res = await fetch('/api/lessons/quota', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                              body: JSON.stringify({ lesson_key: lessonKey, timezone: tz })
-                            })
-                            if (res.ok) {
-                              const js = await res.json()
-                              openLesson(subject, l.file)
-                            } else if (res.status === 429) {
-                              const js = await res.json()
-                              alert(js.error || 'Daily lesson limit reached')
-                            } else {
-                              openLesson(subject, l.file)
-                            }
-                          } catch {
-                            openLesson(subject, l.file)
-                          }
-                        }}
-                      >
-                        {lessonSnapshots[lessonKey] ? 'Continue' : 'Start Lesson'}
-                      </button>
-
-
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      {isScheduled && <span style={{ fontSize: 16 }} title="Scheduled for today">📅</span>}
+                      {goldenKeysEnabled === true && hasActiveKey && <span style={{ fontSize: 13, background: '#fef3c7', color: '#92400e', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>🔑</span>}
+                      {hasSnapshot && <span style={{ fontSize: 11, background: '#d1fae5', color: '#065f46', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>Continue</span>}
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ color: '#9ca3af' }}><path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     </div>
-                  </div>
+                  </button>
                 )
               })
             })}
           </div>
+
+          {/* Lesson detail overlay */}
+          {selectedLesson && (() => {
+            const { l, subject, lessonKey, isDemo } = selectedLesson
+            const ent = featuresForTier(planTier)
+            const cap = ent.lessonsPerDay
+            const capped = !isDemo && Number.isFinite(cap) && todaysCount >= cap
+            const hasSnapshot = lessonSnapshots[lessonKey]
+            const medalTier = medals[lessonKey]?.medalTier || null
+            const medal = medalTier ? emojiForTier(medalTier) : ''
+            const hasActiveKey = !isDemo && activeGoldenKeys[lessonKey] === true
+            const noteText = lessonNotes[lessonKey] || ''
+            const lastCompletedAt = isDemo ? null : lessonHistoryLastCompleted?.[lessonKey]
+            const inProgressAt = isDemo ? null : lessonHistoryInProgress?.[lessonKey]
+            const displaySubject = isDemo
+              ? (l.subject ? l.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Tutorial')
+              : (subject === 'generated' && l.subject
+                  ? l.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                  : (subject === 'generated' ? 'Generated' : subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')))
+            const isScheduled = !isDemo && !!scheduledLessons[lessonKey]
+
+            const handleStartLesson = async () => {
+              if (isDemo) { openLesson('demo', l.file); return }
+              try {
+                const supabase = getSupabaseClient()
+                const { data: { session } } = await supabase.auth.getSession()
+                const token = session?.access_token
+                if (!token) { openLesson(subject, l.file); return }
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+                const res = await fetch('/api/lessons/quota', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                  body: JSON.stringify({ lesson_key: lessonKey, timezone: tz })
+                })
+                if (res.ok) {
+                  openLesson(subject, l.file)
+                } else if (res.status === 429) {
+                  const js = await res.json()
+                  alert(js.error || 'Daily lesson limit reached')
+                } else {
+                  openLesson(subject, l.file)
+                }
+              } catch {
+                openLesson(subject, l.file)
+              }
+            }
+
+            return (
+              <>
+                {/* Backdrop */}
+                <div
+                  onClick={() => { setSelectedLesson(null); setOverlayNoteEditing(false) }}
+                  style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+                    zIndex: 1000, backdropFilter: 'blur(2px)'
+                  }}
+                />
+                {/* Modal */}
+                <div style={{
+                  position: 'fixed', top: '50%', left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 1001,
+                  background: '#fff',
+                  borderRadius: 16,
+                  boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
+                  width: '92vw', maxWidth: 520,
+                  maxHeight: '88vh',
+                  overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column'
+                }}>
+                  {/* Modal header */}
+                  <div style={{ padding: '20px 20px 14px', borderBottom: '1px solid #f3f4f6' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                          {isDemo
+                            ? <span style={{ fontSize: 11, background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>Demo</span>
+                            : <span style={{ fontSize: 11, background: '#f3f4f6', color: '#374151', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>{displaySubject}</span>
+                          }
+                          {isScheduled && <span style={{ fontSize: 11, background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>📅 Scheduled</span>}
+                          {goldenKeysEnabled === true && hasActiveKey && <span style={{ fontSize: 11, background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>🔑 Golden Key</span>}
+                        </div>
+                        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#111', lineHeight: 1.25 }}>
+                          {l.title}{medal ? ` ${medal}` : ''}{!isDemo && masteryMap[lessonKey] ? ' 🤖' : ''}
+                        </h2>
+                        {(l.grade || l.difficulty) && (
+                          <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 4 }}>
+                            {l.grade && `Grade ${l.grade}`}
+                            {l.grade && l.difficulty && '  ·  '}
+                            {l.difficulty && l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1)}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => { setSelectedLesson(null); setOverlayNoteEditing(false) }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#9ca3af', fontSize: 22, lineHeight: 1, flexShrink: 0 }}
+                        aria-label="Close"
+                      >×</button>
+                    </div>
+                  </div>
+
+                  {/* Scrollable body */}
+                  <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
+                    {l.blurb && (
+                      <p style={{ margin: '0 0 16px', color: '#374151', fontSize: 15, lineHeight: 1.6 }}>{l.blurb}</p>
+                    )}
+
+                    {/* History */}
+                    {(inProgressAt || lastCompletedAt) && (
+                      <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        {inProgressAt && <span>⏳ In progress since {formatDateTime(inProgressAt)}</span>}
+                        {lastCompletedAt && <span>✅ Last completed {formatDateOnly(lastCompletedAt)}</span>}
+                      </div>
+                    )}
+
+                    {/* Facilitator note */}
+                    {!overlayNoteEditing && noteText && (
+                      <div style={{ background: '#fef3c7', borderRadius: 8, padding: '10px 12px', marginBottom: 12, fontSize: 14, color: '#92400e' }}>
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>📝 Facilitator Note</div>
+                        <div style={{ whiteSpace: 'pre-wrap' }}>{noteText}</div>
+                      </div>
+                    )}
+                    {!overlayNoteEditing && !isDemo && (
+                      <button
+                        onClick={() => setOverlayNoteEditing(true)}
+                        style={{ fontSize: 13, color: '#6b7280', background: 'none', border: '1px solid #e5e7eb', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', marginBottom: 16 }}
+                      >
+                        {noteText ? '📝 Edit note' : '📝 Add note'}
+                      </button>
+                    )}
+                    {overlayNoteEditing && (
+                      <div style={{ marginBottom: 16 }}>
+                        <textarea
+                          defaultValue={noteText}
+                          placeholder="Add facilitator notes..."
+                          autoFocus
+                          rows={3}
+                          id={`overlay-note-${lessonKey}`}
+                          style={{ width: '100%', padding: 8, border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', marginBottom: 8 }}
+                        />
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById(`overlay-note-${lessonKey}`)
+                              saveNote(lessonKey, el?.value || '')
+                              setOverlayNoteEditing(false)
+                            }}
+                            disabled={saving}
+                            style={{ padding: '6px 14px', border: 'none', borderRadius: 6, background: '#2563eb', color: '#fff', fontSize: 13, fontWeight: 600, cursor: saving ? 'wait' : 'pointer' }}
+                          >{saving ? 'Saving...' : 'Save'}</button>
+                          <button
+                            onClick={() => setOverlayNoteEditing(false)}
+                            style={{ padding: '6px 14px', border: '1px solid #d1d5db', borderRadius: 6, background: '#fff', color: '#374151', fontSize: 13, cursor: 'pointer' }}
+                          >Cancel</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer with action button */}
+                  <div style={{ padding: '14px 20px', borderTop: '1px solid #f3f4f6' }}>
+                    <button
+                      style={capped ? btnDisabled : btn}
+                      disabled={capped}
+                      onClick={handleStartLesson}
+                    >
+                      {hasSnapshot ? 'Continue' : 'Start Lesson'}
+                    </button>
+                    {capped && (
+                      <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 13, marginTop: 8, marginBottom: 0 }}>
+                        Daily lesson limit reached
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )
+          })()}
         </>
       )}
 
