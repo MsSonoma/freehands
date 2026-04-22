@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
+import { getWebbCompletionForLearner, saveWebbCompletion } from '@/app/lib/webbCompletionClient'
 
 // CSS animations
 if (typeof document !== 'undefined' && !document.getElementById('webb-spin-style')) {
@@ -191,6 +192,7 @@ export default function WebbPage() {
   const [essayMode,          setEssayMode]         = useState(false) // essay copy-down screen
   const [essay,              setEssay]             = useState(null)  // generated essay string
   const [generatingEssay,    setGeneratingEssay]   = useState(false)
+  const [webbCompletionMap,  setWebbCompletionMap] = useState({}) // {[lessonKey]: {completed, completedAt}}
   const [articleSources,     setArticleSources]    = useState(() => {
     const ALL = ['simple-wikipedia','wikipedia','kiddle','ducksters','wikijunior']
     if (typeof window === 'undefined') return ALL
@@ -337,6 +339,7 @@ export default function WebbPage() {
     try { learnerName.current = localStorage.getItem('learner_name') || '' } catch {}
     const id = (() => { try { return localStorage.getItem('learner_id') || null } catch { return null } })()
     setLearnerId(id)
+    setWebbCompletionMap(getWebbCompletionForLearner(id))
     loadLessons(id)
     // Migrate: remove old single-key snapshot from before per-lesson keys
     try { localStorage.removeItem('webb_session') } catch {}
@@ -1481,6 +1484,14 @@ export default function WebbPage() {
     setGeneratingEssay(false)
   }
 
+  // ── Complete lesson via Mrs. Webb ─────────────────────────────────────
+  function handleCompleteLesson() {
+    if (!learnerId || !selectedLesson) return
+    const lk = selectedLesson.lessonKey || selectedLesson.lesson_id || selectedLesson.id || 'unknown'
+    saveWebbCompletion(learnerId, lk)
+    setWebbCompletionMap(getWebbCompletionForLearner(learnerId))
+  }
+
   // ── Article passage scroll detector ─────────────────────────────────
   // Attaches a scroll listener so we know when the user has scrolled manually.
   useEffect(() => {
@@ -1976,6 +1987,7 @@ export default function WebbPage() {
               onStart={selectLesson}
               learnerName={learnerName.current}
               starting={phase === PHASE.STARTING}
+              webbCompletionMap={webbCompletionMap}
             />
           )}
 
@@ -2075,6 +2087,34 @@ export default function WebbPage() {
       {/* Footer: chat input */}
       {isChatting && (
         <div style={footerStyle}>
+          {/* Write-essay strip — shown when all objectives are met */}
+          {objectives.length > 0 && completedObj.length === objectives.length && (
+            <div style={{ marginBottom: 10 }}>
+              <button
+                type="button"
+                onClick={handleGenerateEssay}
+                disabled={generatingEssay}
+                style={{
+                  width: '100%',
+                  background: generatingEssay ? '#e5e7eb' : '#0d9488',
+                  color: generatingEssay ? '#9ca3af' : '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '10px 16px',
+                  cursor: generatingEssay ? 'default' : 'pointer',
+                  fontWeight: 800,
+                  fontSize: 14,
+                  fontFamily: 'inherit',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                }}
+              >
+                {generatingEssay ? '✍️ Writing your essay…' : '✨ Make my essay'}
+              </button>
+            </div>
+          )}
           <StudentInput
             onSend={sendMessage}
             loading={chatLoading}
@@ -2649,6 +2689,37 @@ export default function WebbPage() {
               Write every word on lined paper — this helps your brain remember it!
               You can decorate the margins and add a title when you&apos;re done.
             </div>
+            {/* Complete lesson button */}
+            {(() => {
+              const lk = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
+              const alreadyDone = lk && webbCompletionMap[lk]?.completed
+              return (
+                <button
+                  type="button"
+                  onClick={() => { if (!alreadyDone) handleCompleteLesson() }}
+                  style={{
+                    marginTop: 20,
+                    width: '100%',
+                    background: alreadyDone ? '#1e293b' : '#0d9488',
+                    color: alreadyDone ? '#94a3b8' : '#fff',
+                    border: alreadyDone ? '1px solid #334155' : 'none',
+                    borderRadius: 12,
+                    padding: '14px 20px',
+                    cursor: alreadyDone ? 'default' : 'pointer',
+                    fontWeight: 800,
+                    fontSize: 15,
+                    fontFamily: 'inherit',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <span style={{ fontSize: 20 }}>👩🏻‍🏫</span>
+                  {alreadyDone ? 'Lesson Completed ✓' : 'Complete Lesson'}
+                </button>
+              )
+            })()}
           </div>
         </div>,
         document.body
@@ -2748,6 +2819,7 @@ function WebbLessonBrowser({
   availableLessons, allOwnedLessons, recentSessions, historyLessons,
   listTab, setListTab, ownedFilters, setOwnedFilters,
   listError, setListError, onStart, learnerName, starting = false,
+  webbCompletionMap = {},
 }) {
   const getLk = l => l.lessonKey || l.lesson_id || `${l.subject || 'general'}/${l.file || ''}`
 
@@ -2779,6 +2851,7 @@ function WebbLessonBrowser({
   const LessonCard = ({ lesson, dateLabel }) => {
     const lk = getLk(lesson)
     const done = completedKeys.has(lk)
+    const webbDone = !!(webbCompletionMap[lk]?.completed)
     const subjectLabel = (lesson.subject || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     const gradeLabel = lesson.grade ? `Grade ${lesson.grade}` : ''
     const diffLabel = lesson.difficulty ? lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1) : ''
@@ -2788,7 +2861,7 @@ function WebbLessonBrowser({
         onClick={() => onStart(lesson)}
         style={{
           background: '#fff', borderRadius: 12,
-          border: `1.5px solid ${done ? C.success : C.border}`,
+          border: `1.5px solid ${webbDone ? C.accent : done ? C.success : C.border}`,
           padding: '14px 16px', textAlign: 'left',
           cursor: 'pointer', display: 'flex', alignItems: 'center',
           justifyContent: 'space-between', gap: 12, width: '100%',
@@ -2797,12 +2870,14 @@ function WebbLessonBrowser({
       >
         <div style={{ minWidth: 0 }}>
           <div style={{ color: C.text, fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
-            {done && <span style={{ color: C.success, marginRight: 6 }}>&#10003;</span>}
+            {webbDone && <span style={{ marginRight: 6 }}>👩🏻‍🏫</span>}
+            {!webbDone && done && <span style={{ color: C.success, marginRight: 6 }}>&#10003;</span>}
             {lesson.title || lk}
           </div>
           <div style={{ color: C.muted, fontSize: 12 }}>
             {[subjectLabel, gradeLabel, diffLabel].filter(Boolean).join(' \u00b7 ')}
-            {done && <span style={{ color: C.success, marginLeft: 8 }}>Completed</span>}
+            {webbDone && <span style={{ color: C.accent, marginLeft: 8 }}>Essay complete</span>}
+            {!webbDone && done && <span style={{ color: C.success, marginLeft: 8 }}>Completed</span>}
             {dateLabel && <span style={{ marginLeft: 8 }}>{dateLabel}</span>}
           </div>
         </div>
