@@ -162,6 +162,7 @@ export default function WebbPage() {
   // ── Lesson browser state ─────────────────────────────────────────────
   const [phase, setPhase]                       = useState(PHASE.LIST)
   const [availableLessons, setAvailableLessons] = useState([])
+  const [listLoading,       setListLoading]       = useState(true)  // true until first loadLessons resolves
   const [allOwnedLessons, setAllOwnedLessons]   = useState([])
   const [recentSessions, setRecentSessions]     = useState([])
   const [historyLessons, setHistoryLessons]     = useState({})
@@ -785,6 +786,7 @@ export default function WebbPage() {
     const lid = id ?? learnerId
     setPageError('')
     if (!lid) return
+    setListLoading(true)
     try {
       const [availRes, historyRes] = await Promise.all([
         fetch(`/api/learner/available-lessons?learner_id=${encodeURIComponent(lid)}`)
@@ -821,6 +823,8 @@ export default function WebbPage() {
       }
     } catch (e) {
       setPageError(e?.message || 'Could not load lessons.')
+    } finally {
+      setListLoading(false)
     }
   }
 
@@ -1988,6 +1992,7 @@ export default function WebbPage() {
               learnerName={learnerName.current}
               starting={phase === PHASE.STARTING}
               webbCompletionMap={webbCompletionMap}
+              listLoading={listLoading}
             />
           )}
 
@@ -2819,7 +2824,7 @@ function WebbLessonBrowser({
   availableLessons, allOwnedLessons, recentSessions, historyLessons,
   listTab, setListTab, ownedFilters, setOwnedFilters,
   listError, setListError, onStart, learnerName, starting = false,
-  webbCompletionMap = {},
+  webbCompletionMap = {}, listLoading = false,
 }) {
   const getLk = l => l.lessonKey || l.lesson_id || `${l.subject || 'general'}/${l.file || ''}`
 
@@ -2962,7 +2967,16 @@ function WebbLessonBrowser({
       {/* Scrollable list */}
       <div style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', padding: '12px 14px 24px', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         {listTab === 'active' && (
-          availableLessons.length === 0
+          listLoading
+            ? (
+              <div style={{ textAlign: 'center', marginTop: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+                <svg style={{ width: 28, height: 28, animation: 'spin 0.9s linear infinite', color: C.accent }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <circle cx="12" cy="12" r="9" strokeDasharray="28 8" />
+                </svg>
+                <span style={{ color: C.muted, fontSize: 13 }}>Loading lessons&hellip;</span>
+              </div>
+            )
+            : availableLessons.length === 0
             ? <div style={{ textAlign: 'center', marginTop: 40, color: C.muted, fontSize: 14 }}>No lessons available yet.</div>
             : activeList.length === 0
               ? <div style={{ textAlign: 'center', marginTop: 40, color: C.success, fontSize: 14 }}>All lessons completed! Check RECENT or OWNED. &#10003;</div>
