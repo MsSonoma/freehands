@@ -194,6 +194,7 @@ export default function WebbPage() {
   const [essay,              setEssay]             = useState(null)  // generated essay string
   const [generatingEssay,    setGeneratingEssay]   = useState(false)
   const [webbCompletionMap,  setWebbCompletionMap] = useState({}) // {[lessonKey]: {completed, completedAt}}
+  const [justCompletedLesson, setJustCompletedLesson] = useState(null) // lesson title shown as completion toast
   const [articleSources,     setArticleSources]    = useState(() => {
     const ALL = ['simple-wikipedia','wikipedia','kiddle','ducksters','wikijunior']
     if (typeof window === 'undefined') return ALL
@@ -1540,6 +1541,7 @@ export default function WebbPage() {
     const farewell = `Fantastic work! You've completed ${lessonTitle} — your essay is something to be really proud of. I'll see you next time!`
     addMsg(farewell)
     await waitForTTSIdle()
+    setJustCompletedLesson(lessonTitle)
     handleBack()
   }
 
@@ -2021,6 +2023,41 @@ export default function WebbPage() {
 
         {/* Transcript / browser column */}
         <div ref={chatColRef} style={transcriptWrapperStyle}>
+
+          {/* Completion toast — shown briefly after returning from a completed lesson */}
+          {phase === PHASE.LIST && justCompletedLesson && (() => {
+            // auto-dismiss after 4 s
+            if (typeof window !== 'undefined') {
+              setTimeout(() => setJustCompletedLesson(null), 4000)
+            }
+            return (
+              <div style={{
+                margin: '10px 12px 0',
+                padding: '12px 16px',
+                borderRadius: 14,
+                background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+                boxShadow: '0 4px 18px rgba(13,148,136,0.35)',
+                display: 'flex', alignItems: 'center', gap: 12,
+                animation: 'fadeInDown 0.3s ease',
+              }}>
+                <span style={{ fontSize: 24, lineHeight: 1 }}>🎉</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: '#fff', fontWeight: 800, fontSize: 13, marginBottom: 2 }}>
+                    Lesson completed!
+                  </div>
+                  <div style={{ color: '#ccfbf1', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {justCompletedLesson}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setJustCompletedLesson(null)}
+                  style={{ background: 'none', border: 'none', color: '#99f6e4', fontSize: 18, cursor: 'pointer', padding: 0, lineHeight: 1 }}
+                  aria-label="Dismiss"
+                >×</button>
+              </div>
+            )
+          })()}
 
           {/* Lesson browser (LIST and STARTING phases) */}
           {(phase === PHASE.LIST || phase === PHASE.STARTING) && (
