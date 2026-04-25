@@ -1199,6 +1199,7 @@ export default function WebbPage() {
             article: articleResource ? { title: articleResource.title, source: articleResource.source } : null,
           },
           remainingObjectives: objectives.filter((_, i) => !freshCompleted.includes(i)),
+          allObjectivesMet: objectives.length > 0 && freshCompleted.length >= objectives.length,
         }),
       })
       const data = await res.json()
@@ -1527,11 +1528,19 @@ export default function WebbPage() {
   }
 
   // ── Complete lesson via Mrs. Webb ─────────────────────────────────────
-  function handleCompleteLesson() {
+  async function handleCompleteLesson() {
     if (!learnerId || !selectedLesson) return
     const lk = selectedLesson.lessonKey || selectedLesson.lesson_id || selectedLesson.id || 'unknown'
     saveWebbCompletion(learnerId, lk)
     setWebbCompletionMap(getWebbCompletionForLearner(learnerId))
+    // Close the essay overlay immediately
+    setEssayMode(false)
+    // Speak the farewell and then return to lesson selection
+    const lessonTitle = selectedLesson.title || 'this lesson'
+    const farewell = `Fantastic work! You've completed ${lessonTitle} — your essay is something to be really proud of. I'll see you next time!`
+    addMsg(farewell)
+    await waitForTTSIdle()
+    handleBack()
   }
 
   // ── Article passage scroll detector ─────────────────────────────────

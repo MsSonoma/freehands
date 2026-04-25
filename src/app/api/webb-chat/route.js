@@ -33,7 +33,7 @@ function buildResearchSystem(lesson, targetObjective, media) {
   return lines.join('\n')
 }
 
-function buildSystem(lesson, media, remainingObjectives, assessmentPush = false) {
+function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
@@ -66,6 +66,18 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false)
       `- Source: ${media.article.source}`,
       `If the student asks about the article, you can explain what it covers based on the lesson topic and this title.`,
     )
+  }
+
+  if (allObjectivesMet) {
+    lines.push(
+      `\nThe student has just demonstrated ALL of the lesson's learning goals — every single one!`,
+      `Your ONLY job in this response:`,
+      `1. Celebrate warmly and specifically (1-2 sentences). Be genuinely excited for them.`,
+      `2. Tell them it's now time to write their essay using their own words — mention the big "✨ Make my essay" button they'll see below the chat.`,
+      `3. Do NOT ask any question. Do NOT probe any more topics. The lesson is complete.`,
+      `Keep it to 2-3 sentences. Natural spoken language — no markdown, no bullet points.`,
+    )
+    return lines.filter(Boolean).join('\n')
   }
 
   if (Array.isArray(remainingObjectives) && remainingObjectives.length) {
@@ -109,7 +121,7 @@ function buildDirectTeachSystem(lesson, targetObjective) {
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '' } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '' } = await req.json()
 
     // ── Seek request: "show me the part where..." ─────────────────────────
     // Client sends { seekRequest: { momentList }, messages } instead of going through
@@ -199,7 +211,7 @@ export async function POST(req) {
     }
 
     const oaiMessages = [
-      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush) },
+      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet) },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 
