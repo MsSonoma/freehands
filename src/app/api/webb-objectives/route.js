@@ -65,16 +65,17 @@ async function generateObjectives(apiKey, lesson) {
 
 // ── Check whether the student just demonstrated any uncompleted objectives ────
 // Returns: { newlyCompleted: number[], qualifyingText: Record<number, string> }
-async function checkObjectives(apiKey, objectives, completedIndices, conversation) {
+async function checkObjectives(apiKey, objectives, completedIndices, conversation, quick = false) {
   const incomplete = objectives
     .map((obj, i) => ({ obj, i }))
     .filter(({ i }) => !completedIndices.includes(i))
 
   if (!incomplete.length) return { newlyCompleted: [], qualifyingText: {} }
 
-  // Look at up to the last 20 messages (≈10 user turns) so older qualifying
-  // statements aren't invisible just because more turns have since passed.
-  const recentTurns = conversation.slice(-20)
+  // quick=true  → only last 2 user turns (inline pre-check before webb-chat)
+  // quick=false → last 20 messages (~10 turns) for catch-up / video-research checks
+  const windowSize = quick ? 4 : 20
+  const recentTurns = conversation.slice(-windowSize)
     .filter(m => m.role === 'user')
     .map(m => ({ idx: conversation.indexOf(m), text: String(m.content || '').trim() }))
     .filter(t => t.text)
@@ -160,6 +161,7 @@ export async function POST(req) {
         body.objectives    || [],
         body.completedIndices || [],
         body.conversation  || [],
+        body.quick         || false,
       )
       return NextResponse.json({ newlyCompleted, qualifyingText })
     }

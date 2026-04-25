@@ -1155,6 +1155,39 @@ export default function WebbPage() {
     setChatMessages(nextHistory)
     setChatLoading(true)
     try {
+      // ── Step 1: check objectives NOW (before calling webb-chat) ──────────
+      // This ensures webb-chat receives the correct remaining-objectives list
+      // (i.e. already-completed objectives are excluded) so Mrs. Webb's very
+      // next question targets the NEXT incomplete goal, not the one just shown.
+      let freshCompleted = [...completedObj]
+      if (objectives.length && completedObj.length < objectives.length) {
+        try {
+          const checkRes = await fetch('/api/webb-objectives', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action:           'check',
+              objectives,
+              completedIndices: completedObj,
+              conversation:     nextHistory,
+              quick:            true,   // only scan last 2 user turns — keeps this fast
+            }),
+          })
+          const checkData = await checkRes.json()
+          const newly = checkData.newlyCompleted || []
+          if (newly.length) {
+            freshCompleted = [...new Set([...completedObj, ...newly])]
+            setObjResponses(prev => ({ ...prev, ...(checkData.qualifyingText || {}) }))
+            setCompletedObj(freshCompleted)
+            const firstNew = newly.find(i => !completedObj.includes(i))
+            if (firstNew !== undefined) {
+              setNewlyCompletedObj({ idx: firstNew, text: objectives[firstNew] })
+            }
+          }
+        } catch { /* fail silently — chat still proceeds */ }
+      }
+
+      // ── Step 2: call webb-chat with the freshly-updated remaining list ───
       const res = await fetch('/api/webb-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1165,8 +1198,7 @@ export default function WebbPage() {
             video:   videoResource   || null,
             article: articleResource ? { title: articleResource.title, source: articleResource.source } : null,
           },
-          // Pass remaining objectives so Mrs. Webb can weave in a probe question
-          remainingObjectives: objectives.filter((_, i) => !completedObj.includes(i)),
+          remainingObjectives: objectives.filter((_, i) => !freshCompleted.includes(i)),
         }),
       })
       const data = await res.json()
@@ -1175,21 +1207,13 @@ export default function WebbPage() {
       const finalHistory = [...nextHistory, assistantMsg]
       setChatMessages(finalHistory)
       addMsg(reply)
-      // Background: check if the student demonstrated any objectives
-      setObjectives(obj => {
-        setCompletedObj(comp => {
-          checkObjectivesAfterTurn(finalHistory, obj, comp)
-          return comp
-        })
-        return obj
-      })
     } catch {
       const err = "I had a little trouble thinking. Can you say that again?"
       setChatMessages(prev => [...prev, { role: 'assistant', content: err }])
       addMsg(err)
     }
     setChatLoading(false)
-  }, [chatLoading, chatMessages, selectedLesson, videoResource, articleResource, checkObjectivesAfterTurn])
+  }, [chatLoading, chatMessages, selectedLesson, videoResource, articleResource, objectives, completedObj, objResponses])
 
   // ── Refresh a media resource (context-aware) ──────────────────────────
   async function refreshMedia(type) {
