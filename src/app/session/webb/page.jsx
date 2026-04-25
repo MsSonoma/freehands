@@ -203,7 +203,8 @@ export default function WebbPage() {
     } catch {}
     return ALL
   })
-  const checkingObjRef = useRef(false) // debounce concurrent checks
+  const checkingObjRef    = useRef(false) // true while a check is in-flight
+  const pendingCheckRef   = useRef(null)  // args parked when a check was blocked
 
   // ── Media resources ──────────────────────────────────────────────────
   const [videoResource, setVideoResource]       = useState(null) // {videoId,embedUrl,title,channel} or {unavailable:true}
@@ -904,9 +905,16 @@ export default function WebbPage() {
   // ── Objectives: check after each student turn ─────────────────────────
   // Runs in the background after a normal chat turn; never blocks the UI.
   const checkObjectivesAfterTurn = useCallback(async (updatedMessages, currentObjectives, currentCompleted) => {
-    if (!currentObjectives.length || checkingObjRef.current) return
+    if (!currentObjectives.length) return
     if (currentCompleted.length >= currentObjectives.length) return
+    if (checkingObjRef.current) {
+      // A check is already in-flight — park the latest args so we retry once it finishes.
+      // Using the latest args (most recent conversation) means we never lose a qualifying turn.
+      pendingCheckRef.current = { updatedMessages, currentObjectives, currentCompleted }
+      return
+    }
     checkingObjRef.current = true
+    pendingCheckRef.current = null
     try {
       const res  = await fetch('/api/webb-objectives', {
         method: 'POST',
@@ -934,6 +942,12 @@ export default function WebbPage() {
       }
     } catch { /* fail silently */ }
     checkingObjRef.current = false
+    // If a check was parked while we were running, execute it now.
+    if (pendingCheckRef.current) {
+      const pending = pendingCheckRef.current
+      pendingCheckRef.current = null
+      checkObjectivesAfterTurn(pending.updatedMessages, pending.currentObjectives, pending.currentCompleted)
+    }
   }, [])
 
   // Auto-dismiss the tablet toast after 3.5 s

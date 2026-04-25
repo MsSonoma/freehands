@@ -72,8 +72,9 @@ async function checkObjectives(apiKey, objectives, completedIndices, conversatio
 
   if (!incomplete.length) return { newlyCompleted: [], qualifyingText: {} }
 
-  // Only look at the last 4 turns to keep this fast + cheap
-  const recentTurns = conversation.slice(-4)
+  // Look at up to the last 20 messages (≈10 user turns) so older qualifying
+  // statements aren't invisible just because more turns have since passed.
+  const recentTurns = conversation.slice(-20)
     .filter(m => m.role === 'user')
     .map(m => ({ idx: conversation.indexOf(m), text: String(m.content || '').trim() }))
     .filter(t => t.text)
@@ -94,7 +95,7 @@ async function checkObjectives(apiKey, objectives, completedIndices, conversatio
 
   const raw = await callGPT(apiKey, system,
     `Remaining objectives (number: text):\n${objList}\n\nRecent student messages:\n${studentSaid}`,
-    200)
+    300)
 
   if (raw.toLowerCase().startsWith('none')) return { newlyCompleted: [], qualifyingText: {} }
 
