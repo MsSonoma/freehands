@@ -4756,6 +4756,7 @@ function SessionPageV2Inner() {
           timerServiceRef.current.startWorkPhaseTimer('comprehension');
         }
         phase.start({ skipPlayPortion: true });
+        if (workExpiredAutoStart) phase.go?.();
         if (pendingPlayTimersRef.current?.comprehension) {
           delete pendingPlayTimersRef.current.comprehension;
         }
@@ -4992,6 +4993,7 @@ function SessionPageV2Inner() {
           timerServiceRef.current.startWorkPhaseTimer('exercise');
         }
         phase.start({ skipPlayPortion: true });
+        if (workExpiredAutoStart) phase.go?.();
         if (pendingPlayTimersRef.current?.exercise) {
           delete pendingPlayTimersRef.current.exercise;
         }
@@ -5221,6 +5223,7 @@ function SessionPageV2Inner() {
           timerServiceRef.current.startWorkPhaseTimer('worksheet');
         }
         phase.start({ skipPlayPortion: true });
+        if (workExpiredAutoStart) phase.go?.();
         if (pendingPlayTimersRef.current?.worksheet) {
           delete pendingPlayTimersRef.current.worksheet;
         }
@@ -5512,6 +5515,7 @@ function SessionPageV2Inner() {
           timerServiceRef.current.startWorkPhaseTimer('test');
         }
         phase.start({ skipPlayPortion: true });
+        if (workExpiredAutoStart) phase.go?.();
         if (pendingPlayTimersRef.current?.test) {
           delete pendingPlayTimersRef.current.test;
         }
