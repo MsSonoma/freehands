@@ -4497,10 +4497,12 @@ function SessionPageV2Inner() {
       setTeachingStage('complete');
 
       // Discussion work timer spans discussion + teaching (complete it when teaching finishes).
+      let discussionOnTime = true;
       if (timerServiceRef.current) {
         timerServiceRef.current.completeWorkPhaseTimer('discussion');
         const time = timerServiceRef.current.getWorkPhaseTime('discussion');
         if (time) {
+          discussionOnTime = time.onTime;
           setWorkPhaseCompletions(prev => ({
             ...prev,
             discussion: time.onTime
@@ -4524,9 +4526,18 @@ function SessionPageV2Inner() {
         });
       }
       
-      // Notify orchestrator
-      if (orchestratorRef.current) {
-        orchestratorRef.current.onTeachingComplete();
+      // If play-dependent-on-work is on and discussion timer expired, show overlay before comprehension.
+      console.log('[WorkDependent] discussion: dependentOnWork=' + playDependentOnWorkRef.current + ' playTimersEnabled=' + playTimersEnabledRef.current + ' onTime=' + discussionOnTime);
+      if (playDependentOnWorkRef.current && playTimersEnabledRef.current && !discussionOnTime) {
+        workExpiredNextPhaseRef.current = 'comprehension';
+        setWorkExpiredNextPhase('comprehension');
+        pendingPhaseCompletionRef.current = () => orchestratorRef.current?.onTeachingComplete();
+        setShowWorkExpiredSkipPlay(true);
+      } else {
+        // Notify orchestrator (normal path)
+        if (orchestratorRef.current) {
+          orchestratorRef.current.onTeachingComplete();
+        }
       }
     };
     
