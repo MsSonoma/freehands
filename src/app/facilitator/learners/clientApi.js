@@ -301,6 +301,8 @@ export async function updateLearner(id, updates) {
       ...(updates.play_exercise_enabled !== undefined ? { play_exercise_enabled: !!updates.play_exercise_enabled } : {}),
       ...(updates.play_worksheet_enabled !== undefined ? { play_worksheet_enabled: !!updates.play_worksheet_enabled } : {}),
       ...(updates.play_test_enabled !== undefined ? { play_test_enabled: !!updates.play_test_enabled } : {}),
+      ...(updates.play_timers_enabled !== undefined ? { play_timers_enabled: !!updates.play_timers_enabled } : {}),
+      ...(updates.play_dependent_on_work !== undefined ? { play_dependent_on_work: !!updates.play_dependent_on_work } : {}),
     };
     const { data: data2, error: error2 } = await updateWithOwner(supabase, id, jsonPayload, uid);
     if (!error2) { supabaseLearnersMode = 'json'; return normalizeRow(data2); }
