@@ -35,7 +35,7 @@ const PHASE = { LIST: 'list', STARTING: 'starting', CHATTING: 'chatting' }
 // ── UI FAQ: feature explanations in Mrs. Webb's voice ─────────────────────────
 const UI_FAQ = {
   video: {
-    keywords: ['video', 'watch', 'play', 'movie', 'film', 'youtube', 'player'],
+    keywords: ['the video', 'a video', 'watch video', 'play video', 'open video', 'video button', 'movie', 'film', 'youtube', 'player'],
     confirm: 'Are you wondering about the video feature?',
     answer: 'To watch a video, just tap the video button — it looks like ▶ — at the bottom of my screen. That opens a little video player with play, pause, and a timeline. The video is picked specially for your lesson!',
     location: 'tap the ▶ button at the bottom of my screen',
@@ -43,7 +43,7 @@ const UI_FAQ = {
     actionSlug: 'video',
   },
   article: {
-    keywords: ['article', 'read', 'wiki', 'wikipedia', 'reading', 'text', 'page'],
+    keywords: ['the article', 'an article', 'read article', 'open article', 'article button', 'wiki', 'wikipedia'],
     confirm: 'Are you wondering about the article feature?',
     answer: 'The article button — it looks like 📖 — opens a Wikipedia article about your lesson right inside this screen. It is a great way to read a bit more about what we are studying!',
     location: 'tap the 📖 button at the bottom of my screen',
