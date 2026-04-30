@@ -787,6 +787,7 @@ function SessionPageV2Inner() {
   const [showWorkExpiredSkipPlay, setShowWorkExpiredSkipPlay] = useState(false);
   const [workExpiredNextPhase, setWorkExpiredNextPhase] = useState(null);
   const workExpiredNextPhaseRef = useRef(null);
+  const workExpiredAutoStartRef = useRef(false);
   
   // Learner profile state (REQUIRED - no defaults)
   const [learnerProfile, setLearnerProfile] = useState(null);
@@ -3049,6 +3050,7 @@ function SessionPageV2Inner() {
     // which will see the updated playPortionsEnabledRef and skip the play timer.
     const pending = pendingPhaseCompletionRef.current;
     pendingPhaseCompletionRef.current = null;
+    workExpiredAutoStartRef.current = true;
     pending?.();
   }, []);
   
@@ -4734,7 +4736,9 @@ function SessionPageV2Inner() {
     // Start play timer at the Begin gate (before Begin is clicked) for play-enabled Q&A phases.
     // Do NOT do this on resume auto-start, and do NOT double-start after timeline jumps.
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'comprehension';
-    const shouldAutoStart = resumeMatch || !!savedComp;
+    const workExpiredAutoStart = workExpiredAutoStartRef.current;
+    if (workExpiredAutoStart) workExpiredAutoStartRef.current = false;
+    const shouldAutoStart = resumeMatch || !!savedComp || workExpiredAutoStart;
     const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.comprehension !== false;
     if (
       shouldStartPlayAtBeginGate
@@ -4748,6 +4752,9 @@ function SessionPageV2Inner() {
     if (shouldAutoStart && phase.start) {
       if (playPortionsEnabledRef.current?.comprehension === false) {
         transitionToWorkTimer('comprehension');
+        if (workExpiredAutoStart && timerServiceRef.current && timelineJumpTimerStartedRef.current !== 'comprehension') {
+          timerServiceRef.current.startWorkPhaseTimer('comprehension');
+        }
         phase.start({ skipPlayPortion: true });
         if (pendingPlayTimersRef.current?.comprehension) {
           delete pendingPlayTimersRef.current.comprehension;
@@ -4965,7 +4972,9 @@ function SessionPageV2Inner() {
     // Start play timer at the Begin gate (before Begin is clicked) for play-enabled Q&A phases.
     // Do NOT do this on resume auto-start, and do NOT double-start after timeline jumps.
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'exercise';
-    const shouldAutoStart = resumeMatch || !!savedExercise;
+    const workExpiredAutoStart = workExpiredAutoStartRef.current;
+    if (workExpiredAutoStart) workExpiredAutoStartRef.current = false;
+    const shouldAutoStart = resumeMatch || !!savedExercise || workExpiredAutoStart;
     const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.exercise !== false;
     if (
       shouldStartPlayAtBeginGate
@@ -4979,6 +4988,9 @@ function SessionPageV2Inner() {
     if (shouldAutoStart && phase.start) {
       if (playPortionsEnabledRef.current?.exercise === false) {
         transitionToWorkTimer('exercise');
+        if (workExpiredAutoStart && timerServiceRef.current && timelineJumpTimerStartedRef.current !== 'exercise') {
+          timerServiceRef.current.startWorkPhaseTimer('exercise');
+        }
         phase.start({ skipPlayPortion: true });
         if (pendingPlayTimersRef.current?.exercise) {
           delete pendingPlayTimersRef.current.exercise;
@@ -5189,7 +5201,9 @@ function SessionPageV2Inner() {
     });
     // Do NOT do this on resume auto-start, and do NOT double-start after timeline jumps.
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'worksheet';
-    const shouldAutoStart = resumeMatch || !!savedWorksheet;
+    const workExpiredAutoStart = workExpiredAutoStartRef.current;
+    if (workExpiredAutoStart) workExpiredAutoStartRef.current = false;
+    const shouldAutoStart = resumeMatch || !!savedWorksheet || workExpiredAutoStart;
     const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.worksheet !== false;
     if (
       shouldStartPlayAtBeginGate
@@ -5203,6 +5217,9 @@ function SessionPageV2Inner() {
     if (shouldAutoStart && phase.start) {
       if (playPortionsEnabledRef.current?.worksheet === false) {
         transitionToWorkTimer('worksheet');
+        if (workExpiredAutoStart && timerServiceRef.current && timelineJumpTimerStartedRef.current !== 'worksheet') {
+          timerServiceRef.current.startWorkPhaseTimer('worksheet');
+        }
         phase.start({ skipPlayPortion: true });
         if (pendingPlayTimersRef.current?.worksheet) {
           delete pendingPlayTimersRef.current.worksheet;
@@ -5474,7 +5491,9 @@ function SessionPageV2Inner() {
     // Start play timer at the Begin gate (before Begin is clicked) for play-enabled Q&A phases.
     // Do NOT do this on resume auto-start, and do NOT double-start after timeline jumps.
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'test';
-    const shouldAutoStart = !isTimelineJump && (resumeMatch || !!savedTest);
+    const workExpiredAutoStart = workExpiredAutoStartRef.current;
+    if (workExpiredAutoStart) workExpiredAutoStartRef.current = false;
+    const shouldAutoStart = !isTimelineJump && (resumeMatch || !!savedTest || workExpiredAutoStart);
     const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.test !== false;
     if (
       shouldStartPlayAtBeginGate
@@ -5489,6 +5508,9 @@ function SessionPageV2Inner() {
     if (shouldAutoStart && phase.start) {
       if (playPortionsEnabledRef.current?.test === false) {
         transitionToWorkTimer('test');
+        if (workExpiredAutoStart && timerServiceRef.current && timelineJumpTimerStartedRef.current !== 'test') {
+          timerServiceRef.current.startWorkPhaseTimer('test');
+        }
         phase.start({ skipPlayPortion: true });
         if (pendingPlayTimersRef.current?.test) {
           delete pendingPlayTimersRef.current.test;
