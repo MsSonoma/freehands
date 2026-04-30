@@ -4684,7 +4684,7 @@ function SessionPageV2Inner() {
           answer: data.answer,
           submitted: !!data.answer
         }).then(() => {
-          addEvent('ðŸ'¾ Saved comprehension progress');
+          addEvent('💾 Saved comprehension progress');
         }).catch(err => {
           console.error('[SessionPageV2] Save comprehension error:', err);
         });
@@ -4921,7 +4921,7 @@ function SessionPageV2Inner() {
           percentage: data.percentage,
           answers: data.answers
         }).then(() => {
-          addEvent('ðŸ'¾ Saved exercise progress');
+          addEvent('💾 Saved exercise progress');
         }).catch(err => {
           console.error('[SessionPageV2] Save exercise error:', err);
         });
@@ -5145,7 +5145,7 @@ function SessionPageV2Inner() {
           percentage: data.percentage,
           answers: data.answers
         }).then(() => {
-          addEvent('ðŸ'¾ Saved worksheet progress');
+          addEvent('💾 Saved worksheet progress');
         }).catch(err => {
           console.error('[SessionPageV2] Save worksheet error:', err);
         });
@@ -5167,12 +5167,12 @@ function SessionPageV2Inner() {
       phase.destroy();
       worksheetPhaseRef.current = null;
     });
+    phase.on('requestSnapshotSave', (data) => {
       if (snapshotServiceRef.current) {
         snapshotServiceRef.current.saveProgress(data.trigger, data.data);
       }
-    });
 
-    // Start play timer at the Begin gate (before Begin is clicked) for play-enabled Q&A phases.
+    });
     // Do NOT do this on resume auto-start, and do NOT double-start after timeline jumps.
     const resumeMatch = !!snapshotServiceRef.current?.snapshot && resumePhaseRef.current === 'worksheet';
     const shouldAutoStart = resumeMatch || !!savedWorksheet;
