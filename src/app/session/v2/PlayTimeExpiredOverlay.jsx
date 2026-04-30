@@ -16,7 +16,10 @@
  * - lessonKey: string - Unique lesson identifier for storage key
  * - isPaused: boolean - Whether timer is paused (stops countdown)
  * - onComplete: function - Called when countdown reaches 0
- * - onStartNow: function - Called when user clicks "Start Now" button
+ * - onStartNow: function - Called when user clicks "Start Now" button (play-expired only)
+ * - variant: 'play-expired' | 'work-expired' (default 'play-expired')
+ *   - 'play-expired': standard "get back to work" overlay after play timer runs out
+ *   - 'work-expired': "work time ran out, next play skipped" overlay after work timer expires before completion
  * 
  * Timer colors (V1 parity):
  * - Green (#22c55e): countdown > 5 seconds
@@ -37,8 +40,10 @@ export default function PlayTimeExpiredOverlay({
   isPaused = false,
   muted = false,
   onComplete,
-  onStartNow
+  onStartNow,
+  variant = 'play-expired',
 }) {
+  const isWorkExpired = variant === 'work-expired';
   const [countdown, setCountdown] = useState(WARNING_DURATION);
   const [pausedAt, setPausedAt] = useState(null);
   const intervalRef = useRef(null);
@@ -236,7 +241,7 @@ export default function PlayTimeExpiredOverlay({
           fontSize: 'clamp(4rem, 10vw, 6rem)',
           marginBottom: 24
         }}>
-          ⏰
+          {isWorkExpired ? '📚' : '⏰'}
         </div>
 
         {/* Main message */}
@@ -248,7 +253,7 @@ export default function PlayTimeExpiredOverlay({
           lineHeight: 1.2,
           textShadow: '0 2px 8px rgba(0,0,0,0.4)'
         }}>
-          Time to Get Back to Work!
+          {isWorkExpired ? 'Work Time Ran Out!' : 'Time to Get Back to Work!'}
         </h2>
 
         {/* Explanation */}
@@ -259,7 +264,9 @@ export default function PlayTimeExpiredOverlay({
           lineHeight: 1.5,
           textShadow: '0 1px 4px rgba(0,0,0,0.3)'
         }}>
-          Your play time is up. Don't worry—you'll be able to play again as soon as you finish the {phaseDisplay} phase!
+          {isWorkExpired
+            ? `Work time for the ${phaseDisplay} phase ran out, so play time for the next phase is skipped. Next phase work begins shortly!`
+            : `Your play time is up. Don't worry—you'll be able to play again as soon as you finish the ${phaseDisplay} phase!`}
         </p>
 
         {/* Countdown display */}
@@ -278,7 +285,7 @@ export default function PlayTimeExpiredOverlay({
             fontWeight: 600,
             letterSpacing: 0.5
           }}>
-            Starting work in
+            {isWorkExpired ? 'Next phase begins in' : 'Starting work in'}
           </div>
           <div style={{
             fontSize: 'clamp(3rem, 8vw, 5rem)',
@@ -303,8 +310,8 @@ export default function PlayTimeExpiredOverlay({
           </div>
         </div>
 
-        {/* Start Now button */}
-        {onStartNow && (
+        {/* Start Now button — only available for play-expired variant */}
+        {!isWorkExpired && onStartNow && (
           <button
             onClick={handleStartNow}
             style={{
@@ -346,9 +353,19 @@ export default function PlayTimeExpiredOverlay({
           fontWeight: 700,
           textShadow: '0 1px 4px rgba(0,0,0,0.3)'
         }}>
-          <span style={{ fontSize: '1.5em' }}>✏️</span>
-          <span>You've got this!</span>
-          <span style={{ fontSize: '1.5em' }}>✏️</span>
+          {isWorkExpired ? (
+            <>
+              <span style={{ fontSize: '1.5em' }}>⭐</span>
+              <span>Keep going!</span>
+              <span style={{ fontSize: '1.5em' }}>⭐</span>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: '1.5em' }}>✏️</span>
+              <span>You've got this!</span>
+              <span style={{ fontSize: '1.5em' }}>✏️</span>
+            </>
+          )}
         </div>
       </div>
     </div>

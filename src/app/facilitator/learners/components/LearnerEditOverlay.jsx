@@ -41,6 +41,11 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [playExerciseEnabled, setPlayExerciseEnabled] = useState(true);
 	const [playWorksheetEnabled, setPlayWorksheetEnabled] = useState(true);
 	const [playTestEnabled, setPlayTestEnabled] = useState(true);
+	const [playTimersEnabled, setPlayTimersEnabled] = useState(true);
+	const [playDependentOnWork, setPlayDependentOnWork] = useState(false);
+	const [savingPlayTimersEnabled, setSavingPlayTimersEnabled] = useState(false);
+	const [savingPlayDependentOnWork, setSavingPlayDependentOnWork] = useState(false);
+	const [showDependentTooltip, setShowDependentTooltip] = useState(false);
 	const [phaseTimers, setPhaseTimers] = useState(getDefaultPhaseTimers());
 	const [hoveredTooltip, setHoveredTooltip] = useState(null);
 	const [clickedTooltip, setClickedTooltip] = useState(null);
@@ -77,6 +82,8 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setPlayExerciseEnabled(learner.play_exercise_enabled !== false);
 		setPlayWorksheetEnabled(learner.play_worksheet_enabled !== false);
 		setPlayTestEnabled(learner.play_test_enabled !== false);
+		setPlayTimersEnabled(learner.play_timers_enabled !== false);
+		setPlayDependentOnWork(learner.play_dependent_on_work === true);
 		setPhaseTimers({ ...getDefaultPhaseTimers(), ...loadPhaseTimersForLearner(learner) });
 		setAutoAdvancePhases(learner.auto_advance_phases !== false); // Default true if not set
 	}, [isOpen, learner?.id, learner?.initialTab]);
@@ -127,6 +134,8 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 				play_exercise_enabled: playExerciseEnabled,
 				play_worksheet_enabled: playWorksheetEnabled,
 				play_test_enabled: playTestEnabled,
+				play_timers_enabled: playTimersEnabled,
+				play_dependent_on_work: playDependentOnWork,
 				ask_disabled: askDisabled,
 				poem_disabled: poemDisabled,
 				story_disabled: storyDisabled,
@@ -139,6 +148,36 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 			alert(error?.message || 'Failed to save changes');
 		} finally {
 			setSaving(false);
+		}
+	};
+
+	const handleTogglePlayTimersEnabled = async () => {
+		const next = !playTimersEnabled;
+		setPlayTimersEnabled(next);
+		if (typeof onPatch !== 'function' || !learner?.id) return;
+		setSavingPlayTimersEnabled(true);
+		try {
+			await onPatch({ play_timers_enabled: next });
+		} catch (err) {
+			setPlayTimersEnabled(!next);
+			alert(err?.message || 'Failed to update Play Timers setting');
+		} finally {
+			setSavingPlayTimersEnabled(false);
+		}
+	};
+
+	const handleTogglePlayDependentOnWork = async () => {
+		const next = !playDependentOnWork;
+		setPlayDependentOnWork(next);
+		if (typeof onPatch !== 'function' || !learner?.id) return;
+		setSavingPlayDependentOnWork(true);
+		try {
+			await onPatch({ play_dependent_on_work: next });
+		} catch (err) {
+			setPlayDependentOnWork(!next);
+			alert(err?.message || 'Failed to update Play Dependent on Work setting');
+		} finally {
+			setSavingPlayDependentOnWork(false);
 		}
 	};
 
@@ -470,46 +509,172 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 
 								<div style={fieldStyle}>
 									<label style={labelStyle}>Play Portions (Phases 2-5)</label>
-									<div style={{ display: 'grid', gap: 10 }}>
-										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151' }}>
+
+									{/* Master Play Timers toggle */}
+									<div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+										<button
+											onClick={handleTogglePlayTimersEnabled}
+											disabled={savingPlayTimersEnabled || saving}
+											style={{
+												display: 'flex',
+												alignItems: 'center',
+												width: 52,
+												height: 28,
+												borderRadius: 14,
+												border: 'none',
+												padding: 2,
+												cursor: (savingPlayTimersEnabled || saving) ? 'not-allowed' : 'pointer',
+												background: playTimersEnabled ? '#3b82f6' : '#d1d5db',
+												transition: 'background 0.2s',
+												opacity: (savingPlayTimersEnabled || saving) ? 0.7 : 1,
+											}}
+										>
+											<div style={{
+												width: 24,
+												height: 24,
+												borderRadius: '50%',
+												background: '#fff',
+												boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+												transform: playTimersEnabled ? 'translateX(24px)' : 'translateX(0)',
+												transition: 'transform 0.2s'
+											}} />
+										</button>
+										<span style={{ fontSize: 14, color: '#374151', fontWeight: 600 }}>
+											Play Timers {playTimersEnabled ? 'On' : 'Off'}
+										</span>
+										{savingPlayTimersEnabled && (
+											<span style={{ fontSize: 12, color: '#6b7280' }}>Saving...</span>
+										)}
+									</div>
+
+									{/* Individual phase checkboxes — greyed when master is off */}
+									<div style={{ display: 'grid', gap: 10, opacity: playTimersEnabled ? 1 : 0.45, transition: 'opacity 0.2s' }}>
+										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151', cursor: playTimersEnabled ? 'pointer' : 'not-allowed' }}>
 											<input
 												type="checkbox"
 												checked={playComprehensionEnabled}
-												disabled={savingPlayPortions || saving}
+												disabled={!playTimersEnabled || savingPlayPortions || saving}
 												onChange={(e) => handleTogglePlayPortion('play_comprehension_enabled', e.target.checked)}
 											/>
 											<span>Comprehension play portion</span>
 										</label>
-										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151' }}>
+										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151', cursor: playTimersEnabled ? 'pointer' : 'not-allowed' }}>
 											<input
 												type="checkbox"
 												checked={playExerciseEnabled}
-												disabled={savingPlayPortions || saving}
+												disabled={!playTimersEnabled || savingPlayPortions || saving}
 												onChange={(e) => handleTogglePlayPortion('play_exercise_enabled', e.target.checked)}
 											/>
 											<span>Exercise play portion</span>
 										</label>
-										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151' }}>
+										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151', cursor: playTimersEnabled ? 'pointer' : 'not-allowed' }}>
 											<input
 												type="checkbox"
 												checked={playWorksheetEnabled}
-												disabled={savingPlayPortions || saving}
+												disabled={!playTimersEnabled || savingPlayPortions || saving}
 												onChange={(e) => handleTogglePlayPortion('play_worksheet_enabled', e.target.checked)}
 											/>
 											<span>Worksheet play portion</span>
 										</label>
-										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151' }}>
+										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151', cursor: playTimersEnabled ? 'pointer' : 'not-allowed' }}>
 											<input
 												type="checkbox"
 												checked={playTestEnabled}
-												disabled={savingPlayPortions || saving}
+												disabled={!playTimersEnabled || savingPlayPortions || saving}
 												onChange={(e) => handleTogglePlayPortion('play_test_enabled', e.target.checked)}
 											/>
 											<span>Test play portion</span>
 										</label>
+
+										{/* Play Dependent on Work toggle — greyed when master is off */}
+										<div style={{
+											marginTop: 6,
+											paddingTop: 10,
+											borderTop: '1px solid #e5e7eb',
+											display: 'flex',
+											alignItems: 'flex-start',
+											gap: 10,
+											position: 'relative'
+										}}>
+											<button
+												onClick={playTimersEnabled ? handleTogglePlayDependentOnWork : undefined}
+												disabled={!playTimersEnabled || savingPlayDependentOnWork || saving}
+												style={{
+													display: 'flex',
+													alignItems: 'center',
+													flexShrink: 0,
+													width: 44,
+													height: 24,
+													borderRadius: 12,
+													border: 'none',
+													padding: 2,
+													cursor: (!playTimersEnabled || savingPlayDependentOnWork || saving) ? 'not-allowed' : 'pointer',
+													background: playTimersEnabled && playDependentOnWork ? '#f59e0b' : '#d1d5db',
+													transition: 'background 0.2s',
+													opacity: (!playTimersEnabled || savingPlayDependentOnWork || saving) ? 0.6 : 1,
+												}}
+											>
+												<div style={{
+													width: 20,
+													height: 20,
+													borderRadius: '50%',
+													background: '#fff',
+													boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+													transform: (playTimersEnabled && playDependentOnWork) ? 'translateX(20px)' : 'translateX(0)',
+													transition: 'transform 0.2s'
+												}} />
+											</button>
+											<div style={{ flex: 1 }}>
+												<div
+													style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'default' }}
+													onMouseEnter={() => setShowDependentTooltip(true)}
+													onMouseLeave={() => setShowDependentTooltip(false)}
+												>
+													<span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>
+														Play timers dependent on work timers
+													</span>
+													<span style={{
+														fontSize: 12,
+														color: '#9ca3af',
+														border: '1px solid #d1d5db',
+														borderRadius: '50%',
+														width: 16,
+														height: 16,
+														display: 'inline-flex',
+														alignItems: 'center',
+														justifyContent: 'center',
+														cursor: 'help',
+														flexShrink: 0
+													}}>?</span>
+												</div>
+												{showDependentTooltip && (
+													<div style={{
+														position: 'absolute',
+														left: 0,
+														top: '100%',
+														zIndex: 10,
+														background: '#1f2937',
+														color: '#f9fafb',
+														fontSize: 13,
+														lineHeight: 1.5,
+														padding: '10px 14px',
+														borderRadius: 8,
+														boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+														maxWidth: 320,
+														marginTop: 4
+													}}>
+														When on, completing the work phase in time activates the play portion for the <em>next</em> phase. If the work timer runs out before the phase is finished, the next phase's play portion is skipped and a 30-second countdown leads straight into the next phase's work.
+													</div>
+												)}
+												{savingPlayDependentOnWork && (
+													<span style={{ fontSize: 12, color: '#6b7280' }}>Saving...</span>
+												)}
+											</div>
+										</div>
 									</div>
-									<p style={{ margin: '6px 0 0', fontSize: 13, color: '#6b7280' }}>
-										When off, Begin skips opening actions and starts work immediately.
+
+									<p style={{ margin: '8px 0 0', fontSize: 13, color: '#6b7280' }}>
+										When Play Timers are off, Begin skips opening actions and starts work immediately for all phases.
 									</p>
 								</div>
 

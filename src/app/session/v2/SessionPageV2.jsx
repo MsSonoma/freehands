@@ -774,6 +774,19 @@ function SessionPageV2Inner() {
     worksheet: true,
     test: true,
   });
+
+  // Master play-timers switch and dependent-on-work flag. Both default to safe values
+  // so they work before migration runs.
+  const playTimersEnabledRef = useRef(true);
+  const playDependentOnWorkRef = useRef(false);
+
+  // Pending orchestrator call deferred while WorkExpiredSkipPlay overlay is shown.
+  const pendingPhaseCompletionRef = useRef(null);
+
+  // Work-expired skip-play overlay state
+  const [showWorkExpiredSkipPlay, setShowWorkExpiredSkipPlay] = useState(false);
+  const [workExpiredNextPhase, setWorkExpiredNextPhase] = useState(null);
+  const workExpiredNextPhaseRef = useRef(null);
   
   // Learner profile state (REQUIRED - no defaults)
   const [learnerProfile, setLearnerProfile] = useState(null);
@@ -1358,8 +1371,22 @@ function SessionPageV2Inner() {
             throw new Error(`Learner profile missing play_${k}_enabled flag. Please run migrations.`);
           }
         }
-        setPlayPortionsEnabled(playFlags);
-        playPortionsEnabledRef.current = playFlags;
+
+        // Master play-timers toggle and dependent-on-work flag (default safe values if columns absent)
+        const masterPlayTimers = learner.play_timers_enabled !== false;
+        const dependentOnWork = learner.play_dependent_on_work === true;
+        playTimersEnabledRef.current = masterPlayTimers;
+        playDependentOnWorkRef.current = dependentOnWork;
+
+        // When master is off, treat all play portions as disabled (override individual flags)
+        const effectivePlayFlags = masterPlayTimers ? playFlags : {
+          comprehension: false,
+          exercise: false,
+          worksheet: false,
+          test: false,
+        };
+        setPlayPortionsEnabled(effectivePlayFlags);
+        playPortionsEnabledRef.current = effectivePlayFlags;
         
         // Load phase timer settings from learner profile
         const timers = loadPhaseTimersForLearner(learner);
@@ -1460,6 +1487,45 @@ function SessionPageV2Inner() {
         worksheet: ('play_worksheet_enabled' in patch) ? patch.play_worksheet_enabled : undefined,
         test: ('play_test_enabled' in patch) ? patch.play_test_enabled : undefined,
       };
+
+      // Live update: master play-timers toggle
+      if ('play_timers_enabled' in patch) {
+        const nextMaster = patch.play_timers_enabled !== false;
+        playTimersEnabledRef.current = nextMaster;
+        if (!nextMaster) {
+          // Master off — disable all play portions immediately
+          const allOff = { comprehension: false, exercise: false, worksheet: false, test: false };
+          setPlayPortionsEnabled(allOff);
+          playPortionsEnabledRef.current = allOff;
+          // If currently at a Go gate, jump to work immediately
+          try {
+            const phaseNow = String(currentPhaseRef.current || '');
+            const phaseStateMap = {
+              comprehension: comprehensionStateRef.current,
+              exercise: exerciseStateRef.current,
+              worksheet: worksheetStateRef.current,
+              test: testStateRef.current,
+            };
+            const refMap = {
+              comprehension: comprehensionPhaseRef,
+              exercise: exercisePhaseRef,
+              worksheet: worksheetPhaseRef,
+              test: testPhaseRef,
+            };
+            if (['comprehension', 'exercise', 'worksheet', 'test'].includes(phaseNow)
+              && phaseStateMap[phaseNow] === 'awaiting-go') {
+              transitionToWorkTimer(phaseNow);
+              refMap[phaseNow]?.current?.go?.();
+            }
+          } catch {}
+        }
+      }
+
+      // Live update: play_dependent_on_work
+      if ('play_dependent_on_work' in patch) {
+        playDependentOnWorkRef.current = patch.play_dependent_on_work === true;
+      }
+
       const hasAnyPlayFlag = Object.values(nextPlayFlags).some(v => v !== undefined);
       if (hasAnyPlayFlag) {
         const merged = {
@@ -2963,6 +3029,28 @@ function SessionPageV2Inner() {
       }
     }
   }, [playExpiredPhase, currentPhase, transitionToWorkTimer]);
+  
+  // Handle WorkExpiredSkipPlay overlay countdown completion — deferred orchestrator call
+  // when play-dependent-on-work is on and the work timer expired before phase completion.
+  const handleWorkExpiredSkipPlayComplete = useCallback(() => {
+    setShowWorkExpiredSkipPlay(false);
+    const nextPhase = workExpiredNextPhaseRef.current;
+    workExpiredNextPhaseRef.current = null;
+    setWorkExpiredNextPhase(null);
+    
+    // Override play for the next phase so it starts directly in work mode
+    if (nextPhase) {
+      const updated = { ...playPortionsEnabledRef.current, [nextPhase]: false };
+      setPlayPortionsEnabled(updated);
+      playPortionsEnabledRef.current = updated;
+    }
+    
+    // Fire the deferred orchestrator call — this triggers phaseChange for the next phase,
+    // which will see the updated playPortionsEnabledRef and skip the play timer.
+    const pending = pendingPhaseCompletionRef.current;
+    pendingPhaseCompletionRef.current = null;
+    pending?.();
+  }, []);
   
   // Handle timeline phase jump - allows user to click timeline to skip to a phase
   const handleTimelineJump = useCallback(async (targetPhase) => {
@@ -4573,10 +4661,12 @@ function SessionPageV2Inner() {
       setComprehensionState('complete');
       
       // Track work phase completion for golden key
+      let comprehensionOnTime = true;
       if (timerServiceRef.current) {
         timerServiceRef.current.completeWorkPhaseTimer('comprehension');
         const time = timerServiceRef.current.getWorkPhaseTime('comprehension');
         if (time) {
+          comprehensionOnTime = time.onTime;
           setWorkPhaseCompletions(prev => ({
             ...prev,
             comprehension: time.onTime
@@ -4594,15 +4684,24 @@ function SessionPageV2Inner() {
           answer: data.answer,
           submitted: !!data.answer
         }).then(() => {
-          addEvent('ðŸ’¾ Saved comprehension progress');
+          addEvent('ðŸ'¾ Saved comprehension progress');
         }).catch(err => {
           console.error('[SessionPageV2] Save comprehension error:', err);
         });
       }
       
-      // Notify orchestrator
-      if (orchestratorRef.current) {
-        orchestratorRef.current.onComprehensionComplete();
+      // If play-dependent-on-work is on and work timer expired, defer orchestrator
+      // and show the skip-play overlay so the learner knows play is skipped.
+      if (playDependentOnWorkRef.current && playTimersEnabledRef.current && !comprehensionOnTime) {
+        workExpiredNextPhaseRef.current = 'exercise';
+        setWorkExpiredNextPhase('exercise');
+        pendingPhaseCompletionRef.current = () => orchestratorRef.current?.onComprehensionComplete();
+        setShowWorkExpiredSkipPlay(true);
+      } else {
+        // Notify orchestrator (normal path)
+        if (orchestratorRef.current) {
+          orchestratorRef.current.onComprehensionComplete();
+        }
       }
       
       // Cleanup
@@ -4801,11 +4900,13 @@ function SessionPageV2Inner() {
       setExerciseState('complete');
       
       // Complete work phase timer
+      let exerciseOnTime = true;
       if (timerServiceRef.current) {
         timerServiceRef.current.completeWorkPhaseTimer('exercise');
         const time = timerServiceRef.current.getWorkPhaseTime('exercise');
         if (time) {
-          const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
+          exerciseOnTime = time.onTime;
+          const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
           addEvent(`Exercise completed in ${time.formatted} ${status}`);
           setWorkPhaseCompletions(prev => ({ ...prev, exercise: time.onTime }));
           setWorkTimeRemaining(prev => ({ ...prev, exercise: time.remaining / 60 }));
@@ -4820,22 +4921,28 @@ function SessionPageV2Inner() {
           percentage: data.percentage,
           answers: data.answers
         }).then(() => {
-          addEvent('ðŸ’¾ Saved exercise progress');
+          addEvent('ðŸ'¾ Saved exercise progress');
         }).catch(err => {
           console.error('[SessionPageV2] Save exercise error:', err);
         });
       }
       
-      // Notify orchestrator
-      if (orchestratorRef.current) {
-        orchestratorRef.current.onExerciseComplete();
+      // If play-dependent-on-work is on and work timer expired, defer orchestrator
+      if (playDependentOnWorkRef.current && playTimersEnabledRef.current && !exerciseOnTime) {
+        workExpiredNextPhaseRef.current = 'worksheet';
+        setWorkExpiredNextPhase('worksheet');
+        pendingPhaseCompletionRef.current = () => orchestratorRef.current?.onExerciseComplete();
+        setShowWorkExpiredSkipPlay(true);
+      } else {
+        if (orchestratorRef.current) {
+          orchestratorRef.current.onExerciseComplete();
+        }
       }
       
       // Cleanup
       phase.destroy();
       exercisePhaseRef.current = null;
     });
-    
     phase.on('requestSnapshotSave', (data) => {
       if (snapshotServiceRef.current) {
         snapshotServiceRef.current.saveProgress(data.trigger, data.data);
@@ -5017,12 +5124,14 @@ function SessionPageV2Inner() {
       setWorksheetState('complete');
       
       // Complete work phase timer
+      let worksheetOnTime = true;
       if (timerServiceRef.current) {
         timerServiceRef.current.completeWorkPhaseTimer('worksheet');
         const time = timerServiceRef.current.getWorkPhaseTime('worksheet');
         if (time) {
-          const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
-          addEvent(`â±ï¸ Worksheet completed in ${time.formatted} ${status}`);
+          worksheetOnTime = time.onTime;
+          const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
+          addEvent(`â±ï¸ Worksheet completed in ${time.formatted} ${status}`);
           setWorkPhaseCompletions(prev => ({ ...prev, worksheet: time.onTime }));
           setWorkTimeRemaining(prev => ({ ...prev, worksheet: time.remaining / 60 }));
         }
@@ -5036,23 +5145,28 @@ function SessionPageV2Inner() {
           percentage: data.percentage,
           answers: data.answers
         }).then(() => {
-          addEvent('ðŸ’¾ Saved worksheet progress');
+          addEvent('ðŸ'¾ Saved worksheet progress');
         }).catch(err => {
           console.error('[SessionPageV2] Save worksheet error:', err);
         });
       }
       
-      // Notify orchestrator
-      if (orchestratorRef.current) {
-        orchestratorRef.current.onWorksheetComplete();
+      // If play-dependent-on-work is on and work timer expired, defer orchestrator
+      if (playDependentOnWorkRef.current && playTimersEnabledRef.current && !worksheetOnTime) {
+        workExpiredNextPhaseRef.current = 'test';
+        setWorkExpiredNextPhase('test');
+        pendingPhaseCompletionRef.current = () => orchestratorRef.current?.onWorksheetComplete();
+        setShowWorkExpiredSkipPlay(true);
+      } else {
+        if (orchestratorRef.current) {
+          orchestratorRef.current.onWorksheetComplete();
+        }
       }
       
       // Cleanup
       phase.destroy();
       worksheetPhaseRef.current = null;
     });
-    
-    phase.on('requestSnapshotSave', (data) => {
       if (snapshotServiceRef.current) {
         snapshotServiceRef.current.saveProgress(data.trigger, data.data);
       }
@@ -7678,6 +7792,19 @@ function SessionPageV2Inner() {
         />
       )}
       
+      
+      {/* Work Timer Expired - Skip Play Overlay: play-dependent-on-work mode */}
+      {showWorkExpiredSkipPlay && workExpiredNextPhase && (
+        <PlayTimeExpiredOverlay
+          isOpen={showWorkExpiredSkipPlay}
+          variant="work-expired"
+          phase={workExpiredNextPhase}
+          lessonKey={lessonKey}
+          isPaused={timerPaused}
+          muted={isMuted}
+          onComplete={handleWorkExpiredSkipPlayComplete}
+        />
+      )}
       {/* Timer Control Overlay - Facilitator controls for timer and golden key */}
       {showTimerControl && (
         <TimerControlOverlay
