@@ -310,8 +310,37 @@ export default function PlayTimeExpiredOverlay({
           </div>
         </div>
 
-        {/* Start Now button — only available for play-expired variant */}
-        {!isWorkExpired && onStartNow && (
+        {/* Skip / Start Now button */}
+        {isWorkExpired ? (
+          <button
+            onClick={handleComplete}
+            style={{
+              padding: '16px 32px',
+              fontSize: 'clamp(1.1rem, 2.5vw, 1.3rem)',
+              fontWeight: 700,
+              background: '#f97316',
+              color: 'white',
+              border: 'none',
+              borderRadius: 12,
+              cursor: 'pointer',
+              marginBottom: 24,
+              boxShadow: '0 4px 12px rgba(249, 115, 22, 0.4)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#ea580c';
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 16px rgba(249, 115, 22, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#f97316';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 12px rgba(249, 115, 22, 0.4)';
+            }}
+          >
+            Start Work Now
+          </button>
+        ) : onStartNow && (
           <button
             onClick={handleStartNow}
             style={{
