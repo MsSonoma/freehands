@@ -4692,6 +4692,7 @@ function SessionPageV2Inner() {
       
       // If play-dependent-on-work is on and work timer expired, defer orchestrator
       // and show the skip-play overlay so the learner knows play is skipped.
+      console.log('[WorkDependent] comprehension: dependentOnWork=' + playDependentOnWorkRef.current + ' playTimersEnabled=' + playTimersEnabledRef.current + ' onTime=' + comprehensionOnTime);
       if (playDependentOnWorkRef.current && playTimersEnabledRef.current && !comprehensionOnTime) {
         workExpiredNextPhaseRef.current = 'exercise';
         setWorkExpiredNextPhase('exercise');
@@ -4928,6 +4929,7 @@ function SessionPageV2Inner() {
       }
       
       // If play-dependent-on-work is on and work timer expired, defer orchestrator
+      console.log('[WorkDependent] exercise: dependentOnWork=' + playDependentOnWorkRef.current + ' playTimersEnabled=' + playTimersEnabledRef.current + ' onTime=' + exerciseOnTime);
       if (playDependentOnWorkRef.current && playTimersEnabledRef.current && !exerciseOnTime) {
         workExpiredNextPhaseRef.current = 'worksheet';
         setWorkExpiredNextPhase('worksheet');
@@ -5152,6 +5154,7 @@ function SessionPageV2Inner() {
       }
       
       // If play-dependent-on-work is on and work timer expired, defer orchestrator
+      console.log('[WorkDependent] worksheet: dependentOnWork=' + playDependentOnWorkRef.current + ' playTimersEnabled=' + playTimersEnabledRef.current + ' onTime=' + worksheetOnTime);
       if (playDependentOnWorkRef.current && playTimersEnabledRef.current && !worksheetOnTime) {
         workExpiredNextPhaseRef.current = 'test';
         setWorkExpiredNextPhase('test');
