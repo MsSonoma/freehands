@@ -259,6 +259,8 @@ export async function updateLearner(id, updates) {
         ...(updates.play_exercise_enabled !== undefined ? { play_exercise_enabled: !!updates.play_exercise_enabled } : {}),
         ...(updates.play_worksheet_enabled !== undefined ? { play_worksheet_enabled: !!updates.play_worksheet_enabled } : {}),
         ...(updates.play_test_enabled !== undefined ? { play_test_enabled: !!updates.play_test_enabled } : {}),
+        ...(updates.play_timers_enabled !== undefined ? { play_timers_enabled: !!updates.play_timers_enabled } : {}),
+        ...(updates.play_dependent_on_work !== undefined ? { play_dependent_on_work: !!updates.play_dependent_on_work } : {}),
         ...(typeof humorLevel === 'string' ? { humor_level: humorLevel } : {}),
         ...(updates.ask_disabled !== undefined ? { ask_disabled: !!updates.ask_disabled } : {}),
         ...(updates.poem_disabled !== undefined ? { poem_disabled: !!updates.poem_disabled } : {}),
