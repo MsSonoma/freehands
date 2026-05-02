@@ -323,7 +323,16 @@ export default function PostLessonSurvey() {
         <p style={styles.intro}>
           Your feedback has been saved. The golden key is now unlocked.
         </p>
-        <button onClick={handleContinue} style={styles.button}>
+        <p style={{ fontSize: '15px', color: '#333', lineHeight: '1.6', marginBottom: '8px', textAlign: 'center' }}>
+          If you recorded the session, please send it to us — even a short clip helps.
+        </p>
+        <a
+          href="mailto:jordan@mssonoma.com?subject=Session%20Recording&body=Hi%20Jordan%2C%0A%0AHere%20is%20my%20session%20recording%3A%0A%0A"
+          style={{ ...styles.button, display: 'block', textAlign: 'center', textDecoration: 'none', marginBottom: '12px' }}
+        >
+          Send Recording to Jordan
+        </a>
+        <button onClick={handleContinue} style={{ ...styles.button, background: '#fff', color: '#111', border: '1px solid #ddd' }}>
           Return to Learners
         </button>
       </div>
