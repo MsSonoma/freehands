@@ -2,13 +2,36 @@
 
 ## COHERE WORKFLOW (REQUIRED)
 
+## Commit & Push (Required After Every Code Change)
+
+After **every turn** that modifies any tracked file (code, config, HTML, JSON, docs, etc.), run:
+
+```powershell
+git add <changed files>
+git commit -m "<concise description of what changed>"
+git push
+```
+
+Rules:
+- Do this at the **end of every turn** where files were edited — do not batch across turns.
+- Do NOT commit: `sidekick_pack.md`, `sidekick_rounds.jsonl`, or any other Cohere working files.
+- Use a descriptive commit message that names what was changed and why.
+- If `git push` fails (e.g. no remote, auth issue), still commit locally and note the failure briefly.
+- This is not optional. Not committing = leaving the repo in an untracked state.
+
 ## Recon (Use Cohere)
 
-You MUST consult Cohere first before any other source of information. When you don’t fully understand a concept/area of the repo, do recon first using Cohere.
+When you don't fully understand a concept/area of the repo, do recon first using Cohere instead of guessing. **Run it yourself with `run_in_terminal` — do not ask the user to run it.**
 
 ## Round Protocol (Required)
 
-For every non-trivial Copilot turn (anything beyond a short yes/no), you MUST do the following BEFORE answering:
+**FIRST ACTION — before anything else, every turn, no exceptions:**
+
+Run recon yourself using `run_in_terminal`. This is step zero. Do it before reading any file, before thinking, before answering — including short answers, yes/no questions, and conversational replies. There is no turn type that skips this.
+
+**This is non-negotiable.** If you find yourself about to read a file, write code, or say anything — stop. Run recon first.
+
+For every turn, you MUST do the following BEFORE answering:
 
 1) Update Cohere (keep DB current)
 - Ensure a watcher is running for this repo (preferred):
@@ -38,11 +61,13 @@ If (and only if) you created/edited/deleted any repo files in the turn, you MUST
 
 Note: This changelog is NOT `docs/brain/*` and does not violate the Brain-folder documentation policy.
 
-If you cannot run Cohere commands in this session, you MUST say that explicitly and ask the user to run them and paste the results.
+**Never say "I cannot run this" or "please run this command".** You have `run_in_terminal`. Use it.
 
-- Default behavior (automatic recon): before answering any non-trivial user prompt, generate a fresh pack from the latest prompt text and use it as context.
-   - Command: `py -m cohere sk r -a MsSonoma -t "<latest user prompt>" --out sidekick_pack.md`
-   - Then read/use `sidekick_pack.md` when forming the answer.
+Rules:
+- Do not skip recon because a pack already exists — it may be stale from a previous turn.
+- Do not skip recon because the question seems simple or conversational.
+- Do not skip recon because the turn is short, a yes/no, or a clarification — run it anyway.
+- Ingest is autonomous (do not run `cohere ingest` yourself — the watcher handles that).
 
 - Use Sidekick for quick health + linkage checks (good first move before edits):
    - `py -m cohere sk a -a MsSonoma` (audit: inconsistencies, missing context, broken connections)
