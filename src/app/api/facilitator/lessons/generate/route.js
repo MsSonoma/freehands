@@ -176,6 +176,22 @@ export async function POST(request){
   if (!features.lessonGenerator) {
     return NextResponse.json({ error:'Upgrade required' }, { status: 403 })
   }
+
+  // Enforce lifetime generation quota for finite-limit tiers (free = 5 total)
+  const lifetimeLimit = features.lifetimeGenerations
+  let lifetimeUsed = 0
+  if (Number.isFinite(lifetimeLimit) && supabase) {
+    try {
+      const { data: p } = await supabase.from('profiles').select('lifetime_generations_used').eq('id', user.id).maybeSingle()
+      lifetimeUsed = p?.lifetime_generations_used || 0
+      if (lifetimeUsed >= lifetimeLimit) {
+        return NextResponse.json({ error: `You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.` }, { status: 429 })
+      }
+    } catch {
+      // Swallow — do not block generation if quota read fails
+    }
+  }
+
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
   const { title, subject, difficulty, grade, description, notes, vocab } = body || {}
@@ -228,6 +244,15 @@ export async function POST(request){
       storageError = 'Supabase client not initialized'
     }
     
+    // Increment lifetime_generations_used for finite-limit tiers (e.g. free)
+    if (Number.isFinite(lifetimeLimit) && supabase) {
+      try {
+        await supabase.from('profiles').update({ lifetime_generations_used: lifetimeUsed + 1 }).eq('id', user.id)
+      } catch {
+        // Non-fatal — generation succeeded; quota will self-correct on next check
+      }
+    }
+
     return NextResponse.json({ 
       ok: true, 
       file, 

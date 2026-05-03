@@ -7,13 +7,13 @@ export const ENTITLEMENTS = {
     allLessons: true, // Can see all lessons, just limited per day
     learnersMax: 1,
     devices: 1,
-    lessonGenerator: false,
+    lessonGenerator: true, // Free gets 5 lifetime generations
     lessonPlanner: false,
     askFeature: false, // Ask question requires Standard+
     goldenKeyFeatures: false,
     visualAids: true, // visible in session; usage may be gated elsewhere
     games: true, // visible in session; usage may be gated elsewhere
-    lifetimeGenerations: 0,
+    lifetimeGenerations: 5, // 5 total lifetime generations then blocked
     weeklyGenerations: 0,
     mentorSessions: 0,
   },

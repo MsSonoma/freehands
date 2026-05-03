@@ -101,25 +101,48 @@ export async function GET(req) {
     const user = await getUserFromAuthHeader(req);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const clients = getClients();
-    if (!clients) return NextResponse.json({ plan_tier: 'free', count: 0, limit: 1, remaining: 1, timezone: 'UTC', hint: 'Supabase env not configured; defaulting to free plan.' });
+    if (!clients) return NextResponse.json({ plan_tier: 'free', count: 0, limit: 5, remaining: 5, allowed: true, timezone: 'UTC', hint: 'Supabase env not configured; defaulting to free plan.' });
     const { svc } = clients;
     const url = new URL(req.url);
     const tzParam = url.searchParams.get('tz') || url.searchParams.get('timezone') || undefined;
-    const { plan_tier, count, tz, day } = await readPlanTierAndCountInTz(svc, user.id, tzParam);
-    const limit = lessonsPerDay(plan_tier);
-    const used = count || 0;
-    const remaining = safeRemaining(limit, used);
-    const allowed = limit === Infinity ? true : used < limit;
-    return NextResponse.json({ plan_tier, count: used, used, limit: safeLimit(limit), remaining, allowed, day, timezone: tz || 'UTC' });
-  } catch (e) {
-    const msg = (e?.message || '').toLowerCase();
-    const tableMissing = msg.includes('relation "lesson_unique_starts" does not exist') || msg.includes('lesson_unique_starts');
-    if (tableMissing) {
-      // Graceful fallback for local/dev when quota table is not yet created
-      return NextResponse.json({ plan_tier: 'free', count: 0, used: 0, limit: 1, remaining: 1, allowed: true, timezone: 'UTC', hint: 'Create table lesson_unique_starts (see docs/lesson-quota.md). Defaulting to free plan.' });
+
+    // Read tier, timezone, and lifetime usage from profiles
+    let plan_tier = 'free';
+    let preferredTz = '';
+    let lifetimeUsed = 0;
+    try {
+      const { data: profile } = await svc
+        .from('profiles')
+        .select('subscription_tier, plan_tier, timezone, lifetime_generations_used')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (profile) {
+        plan_tier = resolveEffectiveTier(profile.subscription_tier, profile.plan_tier);
+        preferredTz = (profile.timezone || '').trim();
+        lifetimeUsed = profile.lifetime_generations_used || 0;
+      }
+    } catch {
+      // Swallow; proceed with defaults
     }
+
+    const tz = preferredTz || tzParam || undefined;
+    const day = dayInTz(tz);
+    const features = featuresForTier(plan_tier);
+    const lifetimeLimit = features.lifetimeGenerations;
+
+    // For tiers with a finite lifetime generation limit (e.g. free = 5), report that
+    if (Number.isFinite(lifetimeLimit)) {
+      const used = lifetimeUsed;
+      const remaining = Math.max(0, lifetimeLimit - used);
+      const allowed = used < lifetimeLimit;
+      return NextResponse.json({ plan_tier, count: used, used, limit: lifetimeLimit, remaining, allowed, quota_type: 'lifetime', day, timezone: tz || 'UTC' });
+    }
+
+    // Unlimited tiers (standard/pro/lifetime): return unlimited sentinel
+    return NextResponse.json({ plan_tier, count: 0, used: 0, limit: -1, remaining: -1, allowed: true, quota_type: 'unlimited', day, timezone: tz || 'UTC' });
+  } catch (e) {
     // Profile or other schema issues – default to free tier but do not block the UI
-    return NextResponse.json({ plan_tier: 'free', count: 0, used: 0, limit: 1, remaining: 1, allowed: true, timezone: 'UTC', hint: 'Profile read failed; defaulting to free plan temporarily.' }, { status: 200 });
+    return NextResponse.json({ plan_tier: 'free', count: 0, used: 0, limit: 5, remaining: 5, allowed: true, timezone: 'UTC', hint: 'Profile read failed; defaulting to free plan temporarily.' }, { status: 200 });
   }
 }
 
