@@ -1,3 +1,7 @@
+2026-04-18 | feat(lessons): Redesign lessons selection page — horizontal list rows + detail overlay. Replaced the grid of vertical cards with stacked horizontal rows. Each row shows subject badge, title, grade/difficulty, medal, and status pills (Scheduled, Continue, Golden Key). Clicking a row opens a centered modal overlay showing the blurb, history, facilitator note (view/edit), and the Start/Continue button. Notes editing moved from inline-card to overlay. Commit: 562c4f9. Recon prompt: "learn lessons page layout lesson cards grid design UI components".
+
+2026-04-18 | fix(lessons): "Start Lesson" / "Continue" button shows wrong text. The snapshot lookup in `learn/lessons/page.js` used `lesson.id` as the primary key, but snapshots are saved under the URL param key (filename without extension). For lessons with a non-filename `lesson.id` (e.g. `"LA-4-ADV-001"` vs `"4th_The_Importance_of_Courage_advanced"`), the lookup always missed the snapshot, forcing "Start Lesson" even for in-progress lessons. Fix: swapped priority — use `lesson.file` (stripped of `.json`) first, fall back to `lesson.id` last. Commit: 15b79a8. Recon prompt: "learn lessons page start lesson continue button logic which lessons have started".
+
 2026-04-18 | chore(session): Remove dead V1 hooks folder (8 files, 5268 lines), dead `getStoredSnapshot` import from `learn/lessons/page.js` (lessons resume now uses `/api/snapshots` directly), and tighten timer snapshot throttle from 10s to 3s in `SessionPageV2.jsx` (worst-case timer loss on hard refresh drops from 10s to 3s). Commit: a224d37. Recon prompt: "SessionPageV2 remaining state ownership risks: parallel React state copies outside TimerService, SnapshotService, PhaseOrchestrator — any remaining zombie state, stale closure risks, or architectural gaps".
 
 2026-05-01 | feat(session): Remove V1 session page. `src/app/session/page.js` replaced with 9-line passthrough to `SessionPageV2`. `src/app/session/v2test/page.jsx` deleted. V1 had ~9875 lines of legacy teaching flow; V2 (TimerService-owned, event-driven) has been default for all users. No localStorage flags remain. Entry points (`learn/lessons/page.js`, `LearnerTutorial.jsx`) route unchanged. Build clean. Commit: d6440da. Recon prompt: "remove V1 session page.js — V2 is now the only session implementation, promote V2 to /session route directly".
@@ -51,7 +55,7 @@ Files: `src/app/session/v2/SessionPageV2.jsx`, `src/app/session/v2/TimerService.
 
 2026-03-25 | fix(webb): overlay play/pause toggle + fullscreen broken on iOS/mobile. Root cause 1: YT IFrame API `onStateChange` postMessage events are unreliable on iOS — `videoPlaying` state stayed `false` while playing, so every overlay tap called `playVideo`. Fix: added `videoPlayingRef` that's updated optimistically in the click handler AND synced from YT messages when they arrive; both overlay div and custom controls bar use the ref. Root cause 2: `requestFullscreen()` on a div + `webkitRequestFullscreen()` on cross-origin iframe both fail silently on iOS Safari — `fullscreenchange` never fired, `mediaIsFullscreen` never became true. Fix: `toggleMediaFullscreen` now directly calls `setMediaIsFullscreen(!mediaIsFullscreen)` (CSS-based fullscreen via `position:fixed; inset:0`); also attempts `requestFullscreen` as an enhancement on desktop Chrome but doesn't rely on it. `overlayPanelStyle` restructured so `mediaIsFullscreen` is the first condition, always resolving to `inset:0`. `fullscreenchange` listener simplified to only set `false` (handles Escape key exit on desktop). Commit: c5b7b1f. Build: ✓. Recon prompt: "overlay play/pause toggle broken plays but doesn't pause; fullscreen button doesn't work on mobile devices iOS Safari webkit".
 
-2026-03-23 | feat(webb): Key Parts objective alignment — `webb-interpret/route.js` and `webb-video-interpret/route.js` now accept `objectives[]` + `completedIndices[]` from the client. Both compute uncompleted objectives and inject an `objClause` into their GPT system prompts: "The lesson has these uncompleted learning objectives: [list]. Pick passages/moments that directly address one or more of these objectives — not just generally related content." `page.jsx` `interpretVideo()` and `interpretArticle()` now pass `objectives` and `completedIndices: completedObj` in their POST bodies. Root cause: GPT was selecting whatever was prominent in the article/video (e.g. Shakespeare biography) rather than content that demonstrates the lesson's specific learning objectives (e.g. symbolism). Commit: 205b3f0. Build: ✓. Recon prompt: "Key Parts objective alignment pass objectives and completedIndices to webb-interpret and webb-video-interpret routes so GPT selects passages/moments that address lesson objectives".
+2026-04-22 | feat(webb): Three Mrs. Webb upgrades. (1) `webbCompletionClient.js` (new): localStorage tracker `webb_completion_v1` — `saveWebbCompletion(learnerId, lessonKey)`, `getWebbCompletionForLearner`, `isWebbCompleted`. (2) `webb/page.jsx`: `webbCompletionMap` state loaded on mount; `handleCompleteLesson()` saves completion + refreshes map; essay end-screen gets a "Complete Lesson 👩🏻‍🏫" button (grays to "Lesson Completed ✓" once saved); a "✨ Make my essay" strip appears above the chat input whenever all objectives are met (mirrors the objectives-overlay button); `LessonCard` in `WebbLessonBrowser` now shows 👩🏻‍🏫 emoji + "Essay complete" label (teal border) for Webb-completed lessons. Commit: d2241e7. Build: ✓. Recon prompt: "Mrs. Webb essay overlay end screen complete lesson button objectives overlay write your essay button conversation". — `webb-interpret/route.js` and `webb-video-interpret/route.js` now accept `objectives[]` + `completedIndices[]` from the client. Both compute uncompleted objectives and inject an `objClause` into their GPT system prompts: "The lesson has these uncompleted learning objectives: [list]. Pick passages/moments that directly address one or more of these objectives — not just generally related content." `page.jsx` `interpretVideo()` and `interpretArticle()` now pass `objectives` and `completedIndices: completedObj` in their POST bodies. Root cause: GPT was selecting whatever was prominent in the article/video (e.g. Shakespeare biography) rather than content that demonstrates the lesson's specific learning objectives (e.g. symbolism). Commit: 205b3f0. Build: ✓. Recon prompt: "Key Parts objective alignment pass objectives and completedIndices to webb-interpret and webb-video-interpret routes so GPT selects passages/moments that address lesson objectives".
 
 2026-03-23 | fix(webb): Essay generation no longer polishes student vocabulary. `webb-objectives/route.js` `generateEssay` system prompt rewritten: old prompt said "keep student's own words as much as possible" which GPT treated as license to upgrade vocabulary. New prompt explicitly forbids changing any word the student used, allows only one intro sentence, one closing sentence, and minimal connective words. Student's exact phrasing — including simple or awkward words — must be preserved verbatim. Recon prompt: "Mrs Webb end of lesson essay generation student words verbatim". Build: ✓.
 
@@ -693,3 +697,36 @@ Files: src/app/session/webb/page.jsx (startResearch), src/app/api/webb-chat/rout
 - **Root cause**: generate-lesson-outline/route.js prompt had no constraint on generic openers; model defaulted to "Exploring X"
 - **Fix**: Added rule to prompt banning Exploring/Understanding/Discovering/Introduction to/etc. Added stripGenericOpener() safety-net function applied server-side before returning the title.
 - **File**: src/app/api/generate-lesson-outline/route.js`n
+
+## 2025 � play-dependent-on-work mode
+- Recon prompt: "play timers on/off mode, work timer dependant play timer, play phase skipped when work timer runs out, learner settings checkboxes, phase transitions, 30 second timer"
+- Files changed: SessionPageV2.jsx, PlayTimeExpiredOverlay.jsx, LearnerEditOverlay.jsx, scripts/add-play-timer-mode-columns.sql
+- Summary: Added play_timers_enabled master toggle + play_dependent_on_work sub-toggle to learner settings. When work timer expires before phase completion and dependent mode is on, shows 30-sec WorkExpiredSkipPlay overlay (variant='work-expired') then skips play portion of next phase and jumps straight to work. SQL migration adds both columns with safe defaults (master=true, dependent=false).
+- Commit: a80d7ed
+
+
+## 2025-08-04 � fix phase.go() after skipPlayPortion auto-start
+Recon prompt: "play-dependent-on-work phase stuck awaiting-go after work timer expired overlay"
+Fix: added phase.go?.() after phase.start({ skipPlayPortion: true }) when workExpiredAutoStart is true in all 4 phase start handlers (comprehension/exercise/worksheet/test) in SessionPageV2.jsx. wait was not needed since the containing functions are not async � go() is event-driven.
+Commit: 1b64f65
+
+## 2026-05-03 � Introductory Onboarding Flow
+
+**Recon prompt:** introductory onboarding flow for new accounts: create learner, settings/targets/timers, generate first lesson, activate or schedule lesson, calendar tooltips tutorial
+
+**What was built:**
+- src/app/hooks/useOnboarding.js � useOnboarding hook; persists step (0�5) to localStorage + Supabase profiles.onboarding_step
+- src/app/components/OnboardingBanner.jsx � contextual step banner shown at top of each onboarding page
+- src/app/components/OnboardingChecklist.jsx � floating checklist widget (steps 1�4, progress bar, dismiss)
+- src/app/components/CalendarTutorialOverlay.jsx � 6-card modal tutorial shown on first calendar visit
+- scripts/add-onboarding-step-column.sql � ALTER TABLE to add onboarding_step column to profiles
+
+**Pages modified:**
+- uth/signup/page.js ? sets localStorage step=1, redirects new signups to /facilitator/learners/add?onboarding=1
+- uth/callback/route.js ? decodes 
+ext param so email-confirm redirects land on add-learner
+- acilitator/layout.js ? mounts <OnboardingChecklist> globally in the facilitator shell
+- acilitator/learners/add/page.js ? step 1 banner + settings/targets/timers collapsible tip; on save ? advances to step 2 ? generator
+- acilitator/generator/page.js ? step 2 banner; on lesson ready ? advances to step 3 ? lessons
+- acilitator/lessons/page.js ? step 3 banner with calendar link; on activation ? advances to step 4
+- acilitator/calendar/page.js ? mounts CalendarTutorialOverlay at step 4; on complete ? marks onboarding done (step 5)
