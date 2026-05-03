@@ -7,9 +7,8 @@ import GatedOverlay from '@/app/components/GatedOverlay';
 // BillingStatusDev removed per request
 
 const plans = [
-  { name: 'Free', priceLabel: 'Free', priceSub: '', features: ['Access to 1 lesson per day', '1 Learner'], highlight: false },
-  { name: 'Trial', priceLabel: 'Free trial', priceSub: '', features: ['Generate up to 5 lessons (lifetime)', 'No Lesson Planner', 'No Mr. Mentor', 'No Golden Keys, Visual Aids, or Games'], highlight: true },
-  { name: 'Standard', priceLabel: '$49', priceSub: 'per month', features: ['Unlimited lessons', 'Lesson Maker', '2 Learners', 'Golden Keys + Visual Aids + Games'], highlight: false },
+  { name: 'Free', priceLabel: 'Free', priceSub: '', features: ['5 lifetime lesson generations', 'Lesson Maker included', '1 Learner', 'Visual Aids & Games included'], highlight: false },
+  { name: 'Standard', priceLabel: '$49', priceSub: 'per month', features: ['Unlimited lesson generations', 'Lesson Maker', '2 Learners', 'Golden Keys + Visual Aids + Games', 'Ask feature'], highlight: false },
   { name: 'Pro', priceLabel: '$69', priceSub: 'per month', features: ['Everything in Standard', '5 Learners', 'Mr. Mentor', 'Lesson Planner + Curriculum Preferences'], highlight: false },
 ];
 
@@ -215,7 +214,7 @@ export default function FacilitatorPlanPage() {
       <h1 style={{ marginTop: 0, marginBottom: 2 }}>Choose your plan</h1>
       <p style={{ color: '#555', marginTop: 0, marginBottom: 8 }}>Compare features and pick the level that fits your needs.</p>
 
-      <section aria-label="Plan comparison" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6, alignItems: 'stretch', position: 'relative', zIndex: 20 }}>
+      <section aria-label="Plan comparison" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6, alignItems: 'stretch', position: 'relative', zIndex: 20 }}>
         {plans.map((plan) => {
           const tierId = plan.name.toLowerCase();
           const isSelected = loadingTier === tierId; // transient "selected" visual while redirecting
@@ -266,7 +265,7 @@ export default function FacilitatorPlanPage() {
                   aria-label={isCurrent ? `${plan.name} is current plan` : `Choose ${plan.name} plan`}
                   onClick={() => {
                     if (isCurrent) return;
-                    if (tierId === 'trial') return startTrial(setLoadingTier, setCurrentTier);
+                    if (tierId === 'free') return; // Free is the default — no checkout needed
                     return startCheckout(tierId, setLoadingTier);
                   }}
                   disabled={isCurrent || Boolean(loadingTier) || portalLoading}
@@ -319,7 +318,7 @@ export default function FacilitatorPlanPage() {
       </div>
 
       <style>{`
-        @media (max-width: 1100px) { [aria-label="Plan comparison"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 900px) { [aria-label="Plan comparison"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 640px) { [aria-label="Plan comparison"] { grid-template-columns: 1fr; } }
       `}</style>
     </main>
@@ -331,7 +330,7 @@ export default function FacilitatorPlanPage() {
       emoji="💳"
       description="Sign in to view and manage your subscription plan."
       benefits={[
-        'Compare Free, Trial, Standard, and Pro',
+        'Compare Free, Standard, and Pro',
         'Manage your subscription and billing details',
         'View your current plan and usage',
         'Cancel or upgrade anytime'
