@@ -214,7 +214,7 @@ export default function FacilitatorPlanPage() {
       <h1 style={{ marginTop: 0, marginBottom: 2 }}>Choose your plan</h1>
       <p style={{ color: '#555', marginTop: 0, marginBottom: 8 }}>Compare features and pick the level that fits your needs.</p>
 
-      <section aria-label="Plan comparison" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6, alignItems: 'stretch', position: 'relative', zIndex: 20 }}>
+      <section aria-label="Plan comparison" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6, alignItems: 'stretch', position: 'relative' }}>
         {plans.map((plan) => {
           const tierId = plan.name.toLowerCase();
           const isSelected = loadingTier === tierId; // transient "selected" visual while redirecting
