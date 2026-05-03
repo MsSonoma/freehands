@@ -284,7 +284,7 @@ export default function ClientManage() {
       {/* Mini plan comparison with Save */}
       <div style={{ marginTop:16 }}>
         <div style={{ marginBottom:8, color:'#666' }}>Plan</div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12, position:'relative', zIndex:20 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12, paddingBottom: 16 }}>
           {plans.map(p => {
             const isSelected = p.id === selectedTier;
             const isActive = activeTooltip === p.id;
