@@ -366,7 +366,7 @@ export default function ClientManage() {
             );
           })}
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', marginTop: 12 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', marginTop: 48 }}>
           <div />
           <div style={{ justifySelf:'center' }}>
             <button onClick={handlePlanSave} disabled={saveBusy || selectedTier === tier}
