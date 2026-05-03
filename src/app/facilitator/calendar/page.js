@@ -18,9 +18,30 @@ import TypedRemoveConfirmModal from './TypedRemoveConfirmModal'
 import GeneratePortfolioModal from './GeneratePortfolioModal'
 import { InlineExplainer, PageHeader } from '@/components/FacilitatorHelp'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
+import CalendarTutorialOverlay from '@/app/components/CalendarTutorialOverlay'
+import { useOnboarding } from '@/app/hooks/useOnboarding'
 
 export default function CalendarPage() {
   const router = useRouter()
+  const { step, completeOnboarding, STEPS } = useOnboarding()
+  // Show tutorial when landing from onboarding step 4 or with ?onboarding=1
+  const [showTutorial, setShowTutorial] = useState(false)
+  // Read ?onboarding=1 client-side to avoid Suspense boundary requirement;
+  // also set showTutorial in the same effect so it fires once after mount.
+  const [isOnboardingParam, setIsOnboardingParam] = useState(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const ob = new URLSearchParams(window.location.search).get('onboarding') === '1'
+      setIsOnboardingParam(ob)
+      if (ob) setShowTutorial(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  // Also show tutorial if onboarding hook says step 4 (e.g., navigated here from checklist)
+  useEffect(() => {
+    if (step === STEPS.CALENDAR_TOUR) setShowTutorial(true)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
   const [pinChecked, setPinChecked] = useState(false)
   const [authToken, setAuthToken] = useState('')
@@ -718,6 +739,14 @@ export default function CalendarPage() {
 
   return (
     <>
+      {showTutorial && (
+        <CalendarTutorialOverlay
+          onComplete={() => {
+            setShowTutorial(false)
+            completeOnboarding()
+          }}
+        />
+      )}
       <div style={{ minHeight: '100vh', background: '#f9fafb', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: 12 }}>
 

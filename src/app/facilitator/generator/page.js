@@ -11,12 +11,23 @@ import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/l
 import AIRewriteButton from '@/components/AIRewriteButton'
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
+import OnboardingBanner from '@/app/components/OnboardingBanner'
+import { useOnboarding } from '@/app/hooks/useOnboarding'
 
 const difficulties = ['beginner','intermediate','advanced']
 const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
 export default function LessonMakerPage(){
   const router = useRouter()
+  // Read ?onboarding=1 client-side to avoid Suspense boundary requirement
+  const [isOnboardingParam, setIsOnboardingParam] = useState(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsOnboardingParam(new URLSearchParams(window.location.search).get('onboarding') === '1')
+    }
+  }, [])
+  const { step, advanceStep, STEPS } = useOnboarding()
+  const showOnboarding = isOnboardingParam || step === STEPS.GENERATE_LESSON
   const { loading, hasAccess, gateType, tier, isAuthenticated } = useAccessControl({
     requiredAuth: 'required',
      requiredFeature: 'lessonGenerator'
@@ -343,6 +354,13 @@ export default function LessonMakerPage(){
       setToast({ message: 'Lesson ready!', type: 'success' })
       setMessage('')
 
+      // If in onboarding flow, advance to step 3 and navigate to lessons
+      if (showOnboarding) {
+        await advanceStep(STEPS.ACTIVATE_LESSON)
+        router.push('/facilitator/lessons?onboarding=1')
+        return
+      }
+
       // Activate for selected learner(s)
       const lessonKeyToActivate = js?.lessonKey || (generatedFile ? `generated/${generatedFile}` : null)
       if (lessonKeyToActivate && makeActiveFor !== 'none') {
@@ -392,6 +410,13 @@ export default function LessonMakerPage(){
   return (
     <>
     <main style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
+      {showOnboarding && (
+        <OnboardingBanner
+          step={2}
+          title="Generate your first lesson"
+          message="Fill in the subject, grade, and topic below. Ms. Sonoma will write a complete lesson with questions for each phase. You can edit it afterward."
+        />
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 240 }}>
           <h1 style={{ marginTop: 0, marginBottom: 6 }}>Lesson Maker</h1>

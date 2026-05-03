@@ -4,7 +4,9 @@ import { createClient } from '@supabase/supabase-js';
 export async function GET(request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
-  const next = requestUrl.searchParams.get('next') || '/facilitator';
+  // Decode next to allow paths like /facilitator/learners/add passed from signup
+  const rawNext = requestUrl.searchParams.get('next') || '/facilitator';
+  const next = decodeURIComponent(rawNext);
 
   if (code) {
     // Create server-side Supabase client

@@ -10,6 +10,8 @@ import GatedOverlay from '@/app/components/GatedOverlay'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { PageHeader, WorkflowGuide } from '@/components/FacilitatorHelp'
+import OnboardingBanner from '@/app/components/OnboardingBanner'
+import { useOnboarding } from '@/app/hooks/useOnboarding'
 
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 
@@ -33,6 +35,15 @@ function normalizeApprovedLessonKeys(map = {}) {
 
 export default function FacilitatorLessonsPage() {
   const router = useRouter()
+  // Read ?onboarding=1 client-side to avoid Suspense boundary requirement
+  const [isOnboardingParam, setIsOnboardingParam] = useState(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsOnboardingParam(new URLSearchParams(window.location.search).get('onboarding') === '1')
+    }
+  }, [])
+  const { step, advanceStep, STEPS } = useOnboarding()
+  const showOnboarding = isOnboardingParam || step === STEPS.ACTIVATE_LESSON
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
   const { coreSubjects, subjectsWithoutGenerated: subjectDropdownOptions } = useFacilitatorSubjects({ includeGenerated: true })
   const [pinChecked, setPinChecked] = useState(false)
@@ -528,6 +539,12 @@ export default function FacilitatorLessonsPage() {
       if (error) throw error
       
       setAvailableLessons(newApproved)
+
+      // If this was an activation (not a deactivation) and we're in the onboarding flow,
+      // advance to the calendar tour step.
+      if (showOnboarding && !isCurrentlyChecked) {
+        await advanceStep(STEPS.CALENDAR_TOUR)
+      }
     } catch (err) {
       // Silent fail
     } finally {
@@ -689,6 +706,21 @@ export default function FacilitatorLessonsPage() {
     <>
       <main style={{ padding: 7, maxWidth: 1200, margin: '0 auto', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
         <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
+          {showOnboarding && (
+            <OnboardingBanner
+              step={3}
+              title="Activate or schedule your lesson"
+              message="Select your learner, load lessons, then check the box next to a lesson to activate it. Or schedule it on the calendar for a future date."
+              action={
+                <a
+                  href="/facilitator/calendar?onboarding=1"
+                  style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'7px 14px', background:'#6366f1', color:'#fff', borderRadius:8, fontSize:13, fontWeight:600, textDecoration:'none' }}
+                >
+                  📅 Go to Calendar
+                </a>
+              }
+            />
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 12 }}>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

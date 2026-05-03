@@ -4,6 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 
+/** Mark the user's browser as mid-onboarding so every redirect finds step 1. */
+function flagOnboardingStart() {
+	try { localStorage.setItem('ms_sonoma_onboarding_v1', '1'); } catch {}
+}
+
 export default function SignupPage() {
 	const router = useRouter();
 	const [email, setEmail] = useState('');
@@ -20,14 +25,16 @@ export default function SignupPage() {
 		try {
 			if (!hasSupabaseEnv()) {
 				// Dev-friendly fallback
-				// Mark facilitator section as active to skip PIN on redirect
 				try { sessionStorage.setItem('facilitator_section_active', '1'); } catch {}
-				router.push('/facilitator');
+				flagOnboardingStart();
+				router.push('/facilitator/learners/add?onboarding=1');
 				return;
 			}
 			const supabase = getSupabaseClient();
 					const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : undefined);
-					const emailRedirectTo = siteUrl ? `${siteUrl}/auth/callback` : undefined;
+					const emailRedirectTo = siteUrl
+						? `${siteUrl}/auth/callback?next=${encodeURIComponent('/facilitator/learners/add')}`
+						: undefined;
 					const { data, error: signUpError } = await supabase.auth.signUp({
 						email,
 						password,
@@ -36,12 +43,15 @@ export default function SignupPage() {
 			if (signUpError) throw new Error(signUpError.message || 'Sign up failed');
 			// If email confirmation is enabled, Supabase returns a session=null and sends an email
 					if (!data?.session) {
-						setInfo('Check your email to confirm your account, then return here to log in.');
+						// Flag so that when they click the confirmation link they land on step 1
+						flagOnboardingStart();
+						setInfo('Check your email to confirm your account. Once confirmed, you\'ll be guided through setup.');
 						return; // do not redirect if confirmation required
 					}
 					// Mark facilitator section as active to skip PIN on redirect
 					try { sessionStorage.setItem('facilitator_section_active', '1'); } catch {}
-					router.push('/facilitator');
+					flagOnboardingStart();
+					router.push('/facilitator/learners/add?onboarding=1');
 		} catch (err) {
 			setError(err?.message || 'Sign up failed');
 		} finally {

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -7,6 +7,8 @@ import { createLearner } from '../clientApi';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 import { featuresForTier } from '@/app/lib/entitlements';
 import { listLearners } from '../clientApi';
+import OnboardingBanner from '@/app/components/OnboardingBanner';
+import { useOnboarding } from '@/app/hooks/useOnboarding';
 
 const grades = [
 	'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'
@@ -18,6 +20,17 @@ const humorLevels = ['calm', 'funny', 'hilarious'];
 
 export default function AddLearnerPage() {
 	const router = useRouter();
+	// Read ?onboarding=1 client-side to avoid Suspense boundary requirement
+	const [isOnboardingParam, setIsOnboardingParam] = useState(false);
+	useEffect(() => {
+		if (typeof window !== 'undefined') {
+			setIsOnboardingParam(new URLSearchParams(window.location.search).get('onboarding') === '1');
+		}
+	}, []);
+	const { step, advanceStep, STEPS } = useOnboarding();
+	// Show onboarding banner when arriving from signup (?onboarding=1) or hook says step 1
+	const showOnboarding = isOnboardingParam || step === STEPS.CREATE_LEARNER;
+	const [settingsTipOpen, setSettingsTipOpen] = useState(false);
 	const [pinChecked, setPinChecked] = useState(false);
 	const [name, setName] = useState('');
 	const [grade, setGrade] = useState('K');
@@ -102,7 +115,13 @@ export default function AddLearnerPage() {
 					},
 					humor_level: humorLevel,
 				});
-					router.push('/facilitator/learners');
+					// If arriving from onboarding flow, advance step and go to generator
+					if (showOnboarding) {
+						await advanceStep(STEPS.GENERATE_LESSON);
+						router.push('/facilitator/generator?onboarding=1');
+					} else {
+						router.push('/facilitator/learners');
+					}
 			} finally {
 			setSaving(false);
 		}
@@ -111,6 +130,30 @@ export default function AddLearnerPage() {
 	return (
 		<main style={{ padding: 24, maxWidth: 560, margin: '0 auto' }}>
 			<h1 style={{ marginTop: 0 }}>Add Learner</h1>
+
+			{showOnboarding && (
+				<OnboardingBanner
+					step={1}
+					title="Create your first learner"
+					message="Give your learner a name and grade level. Targets and timers are already set to smart defaults — adjust them any time from the Learners page."
+					action={
+						<button type="button" onClick={() => setSettingsTipOpen((o) => !o)} style={{ background:'none', border:'none', color:'#6366f1', fontSize:13, fontWeight:600, cursor:'pointer', padding:0 }}>
+							{settingsTipOpen ? '▲ Hide' : '▼ Show'} settings, targets &amp; timers
+						</button>
+					}
+				/>
+			)}
+
+			{showOnboarding && settingsTipOpen && (
+				<div style={{ marginBottom:16, padding:'14px 16px', background:'#f9fafb', border:'1px solid #e5e7eb', borderRadius:10, fontSize:13, color:'#374151', lineHeight:1.6 }}>
+					<p style={{ margin:'0 0 8px', fontWeight:600 }}>🎯 Targets — how many questions per phase</p>
+					<p style={{ margin:'0 0 10px' }}>Start at 3 questions each and increase as your learner builds confidence.</p>
+					<p style={{ margin:'0 0 8px', fontWeight:600 }}>⏱️ Timers — structured work and play</p>
+					<p style={{ margin:'0 0 10px' }}>Work and play timers keep sessions on track. Fully configurable per learner from the Learners page.</p>
+					<p style={{ margin:'0 0 8px', fontWeight:600 }}>⚙️ AI Features &amp; Settings</p>
+					<p style={{ margin:0 }}>Stories, poems, Ask mode, and humor level are all adjustable. The defaults work great out of the box.</p>
+				</div>
+			)}
 
 			{atLimit && (
 				<div style={{ marginBottom:16, padding:12, border:'1px solid #eee', borderRadius:8, background:'#fff' }}>
