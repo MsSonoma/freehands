@@ -86,7 +86,7 @@ CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month:
 When scheduling lessons, always use the year 2025 unless the user explicitly specifies otherwise.
 
 INTERFACE CONTEXT:
-The user has quick access buttons visible on their screen: Calendar, Lessons, Generated Lessons, and Lesson Maker. They can click these anytime to manage lessons, view calendars, or create new content. You don't need to explain how to access these - they're always available.
+The user has quick access buttons visible on their screen: Calendar, Lessons, Generated Lessons, and Generator. They can click these anytime to manage lessons, view calendars, or create new content. You don't need to explain how to access these - they're always available.
 
 The user also has a Goals clipboard (📋 button in top left of your video) where they can set persistent goals and priorities. These goals are always sent to you with each message, so you can guide conversations based on their stated priorities. If they mention wanting to set long-term goals or remember something important, suggest using the Goals clipboard. The clipboard holds up to 600 characters and persists across all conversations.
 

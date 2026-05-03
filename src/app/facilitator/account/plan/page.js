@@ -7,8 +7,8 @@ import GatedOverlay from '@/app/components/GatedOverlay';
 // BillingStatusDev removed per request
 
 const plans = [
-  { name: 'Free', priceLabel: 'Free', priceSub: '', features: ['5 lifetime lesson generations', 'Lesson Maker included', '1 Learner', 'Visual Aids & Games included'], highlight: false },
-  { name: 'Standard', priceLabel: '$49', priceSub: 'per month', features: ['Unlimited lesson generations', 'Lesson Maker', '2 Learners', 'Golden Keys + Visual Aids + Games', 'Ask feature'], highlight: false },
+  { name: 'Free', priceLabel: 'Free', priceSub: '', features: ['5 lifetime lesson generations', '1 Learner', 'Visual Aids & Games included'], highlight: false },
+  { name: 'Standard', priceLabel: '$49', priceSub: 'per month', features: ['Unlimited lesson generations', '2 Learners', 'Golden Keys + Visual Aids + Games', 'Ask feature'], highlight: false },
   { name: 'Pro', priceLabel: '$69', priceSub: 'per month', features: ['Everything in Standard', '5 Learners', 'Mr. Mentor', 'Lesson Planner + Curriculum Preferences'], highlight: false },
 ];
 

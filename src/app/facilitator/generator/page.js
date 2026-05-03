@@ -419,7 +419,7 @@ export default function LessonMakerPage(){
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 240 }}>
-          <h1 style={{ marginTop: 0, marginBottom: 6 }}>Lesson Maker</h1>
+          <h1 style={{ marginTop: 0, marginBottom: 6 }}>Lesson Generator</h1>
           <p style={{ marginTop: 0, color: '#6b7280' }}>
             Generate a lesson, then edit it in the lesson editor.
           </p>

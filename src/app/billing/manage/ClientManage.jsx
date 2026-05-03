@@ -255,7 +255,7 @@ export default function ClientManage() {
       label: 'Standard',
       priceLabel: '$49',
       priceSub: 'per month',
-      features: ['Unlimited lessons', 'Lesson Maker', '2 Learners', 'Golden Keys + Visual Aids + Games']
+      features: ['Unlimited lessons', '2 Learners', 'Golden Keys + Visual Aids + Games']
     },
     {
       id: 'pro',

@@ -148,7 +148,7 @@
         "/facilitator/lessons"
       ],
       "description": "The Lesson Library is where facilitators browse lessons, make them available to a learner, and optionally schedule them for specific dates.",
-      "howToUse": "Select a learner, then use Search + Subject/Grade filters and the Owned/Downloadable/All scope. Click Load Lessons to fetch the list. Mark lessons Available to show them to the learner, and use scheduling controls to assign lessons to a calendar date. Use New Lesson to create from scratch or Generate Lesson to open Lesson Maker.",
+      "howToUse": "Select a learner, then use Search + Subject/Grade filters and the Owned/Downloadable/All scope. Click Load Lessons to fetch the list. Mark lessons Available to show them to the learner, and use scheduling controls to assign lessons to a calendar date. Use New Lesson to create from scratch or Generate Lesson to open the Generator.",
       "relatedFeatures": ["lesson-library", "lesson-scheduling", "lesson-generation", "lesson-editing"]
     },
     {
@@ -172,9 +172,9 @@
     },
     {
       "id": "facilitator-page-generator",
-      "title": "Lesson Maker (/facilitator/generator)",
+      "title": "Lesson Generator (/facilitator/generator)",
       "keywords": [
-        "lesson maker",
+        "lesson generator",
         "generate lesson page",
         "ai rewrite",
         "quota",
@@ -183,7 +183,7 @@
         "teaching notes",
         "/facilitator/generator"
       ],
-      "description": "Lesson Maker generates a new lesson from a structured form (grade, difficulty, subject, title, description, notes, vocabulary) and then links you into the Lesson Editor.",
+      "description": "Lesson Generator creates a new lesson from a structured form (grade, difficulty, subject, title, description, notes, vocabulary) and then links you into the Lesson Editor.",
       "howToUse": "Fill in Grade/Subject/Difficulty and a Title, then optionally add Description/Teaching Notes/Vocabulary. Use AI Rewrite buttons to rewrite individual fields. Click Generate Lesson, then use Edit This Lesson to open the Lesson Editor, or go Back to Lessons.",
       "relatedFeatures": ["lesson-generation", "lesson-editing"]
     },
@@ -201,13 +201,13 @@
     },
     {
       "id": "facilitator-page-generator-lesson-maker-redirect",
-      "title": "Lesson Maker (Redirect) (/facilitator/generator/lesson-maker)",
+      "title": "Generator (Redirect) (/facilitator/generator/lesson-maker)",
       "keywords": [
-        "lesson maker redirect",
+        "generator redirect",
         "generator redirect",
         "/facilitator/generator/lesson-maker"
       ],
-      "description": "This route redirects to the main Lesson Maker page.",
+      "description": "This route redirects to the main Lesson Generator page.",
       "howToUse": "If you land here, you’ll be sent to /facilitator/generator.",
       "relatedFeatures": ["facilitator-page-generator"]
     },
