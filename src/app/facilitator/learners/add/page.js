@@ -34,10 +34,10 @@ export default function AddLearnerPage() {
 	const [pinChecked, setPinChecked] = useState(false);
 	const [name, setName] = useState('');
 	const [grade, setGrade] = useState('K');
-	const [comprehension, setComprehension] = useState('3');
-	const [exercise, setExercise] = useState('3');
-	const [worksheet, setWorksheet] = useState('3');
-	const [test, setTest] = useState('3');
+	const [comprehension, setComprehension] = useState('5');
+	const [exercise, setExercise] = useState('10');
+	const [worksheet, setWorksheet] = useState('15');
+	const [test, setTest] = useState('10');
 	const [humorLevel, setHumorLevel] = useState('calm');
 	const [saving, setSaving] = useState(false);
 		const [planTier, setPlanTier] = useState('free');

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import CurrentAssessmentPrompt from "./CurrentAssessmentPrompt.js";
 
 const COMPREHENSION_TARGET = 5;
-const EXERCISE_TARGET = 5;
+const EXERCISE_TARGET = 10;
 
 function VideoPanel({ isMobileLandscape, isShortHeight, videoMaxHeight, videoRef, showBegin, isSpeaking, onBegin, onBeginComprehension, onBeginWorksheet, onBeginTest, onBeginSkippedExercise, phase, subPhase, ticker, currentWorksheetIndex, testCorrectCount, testFinalPercent, lessonParam, muted, userPaused, onToggleMute, onSkip, loading, overlayLoading, exerciseSkippedAwaitBegin, skipPendingLessonLoad, currentCompProblem, onCompleteLesson, testActiveIndex, testList, isLastWorksheetQuestion, onOpenReview, visualAids, onShowVisualAids }) {
   // Reduce horizontal max width in mobile landscape to shrink vertical footprint (height scales with width via aspect ratio)

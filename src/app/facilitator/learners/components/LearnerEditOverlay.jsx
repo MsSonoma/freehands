@@ -27,10 +27,10 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [name, setName] = useState('');
 	const [grade, setGrade] = useState('K');
 	const [humorLevel, setHumorLevel] = useState('calm');
-	const [comprehension, setComprehension] = useState('3');
-	const [exercise, setExercise] = useState('3');
-	const [worksheet, setWorksheet] = useState('3');
-	const [test, setTest] = useState('3');
+	const [comprehension, setComprehension] = useState('5');
+	const [exercise, setExercise] = useState('10');
+	const [worksheet, setWorksheet] = useState('15');
+	const [test, setTest] = useState('10');
 	const [goldenKeys, setGoldenKeys] = useState('0');
 	const [askDisabled, setAskDisabled] = useState(false);
 	const [poemDisabled, setPoemDisabled] = useState(false);
