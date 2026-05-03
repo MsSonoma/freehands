@@ -289,7 +289,7 @@ export default function FacilitatorPlanPage() {
         })}
       </section>
 
-      <div style={{ marginTop: 64 }}>
+      <div style={{ marginTop: 120 }}>
         <button
           type="button"
           onClick={() => openPortal(setPortalLoading)}
