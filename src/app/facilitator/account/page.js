@@ -371,6 +371,8 @@ export default function FacilitatorAccountPage() {
                     localStorage.removeItem('target_exercise');
                     localStorage.removeItem('target_worksheet');
                     localStorage.removeItem('target_test');
+                    // Clear onboarding state
+                    localStorage.removeItem('ms_sonoma_onboarding_v1');
                   } catch (e) {}
                 } catch (e) {}
                 router.push('/auth/login')
@@ -1635,6 +1637,8 @@ function DangerZoneOverlay({ isOpen, onClose }) {
         localStorage.removeItem('target_exercise');
         localStorage.removeItem('target_worksheet');
         localStorage.removeItem('target_test');
+        // Clear onboarding state
+        localStorage.removeItem('ms_sonoma_onboarding_v1');
       } catch (e) {}
       
       window.location.assign('/')
