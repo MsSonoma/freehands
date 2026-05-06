@@ -104,7 +104,7 @@ export default function SignupVideoGate() {
             style={styles.video}
             playsInline
           >
-            <source src="/videos/facilitator-signup.mp4" type="video/mp4" />
+            <source src="/media/Intro%20Video.mp4" type="video/mp4" />
             Your browser does not support the video player.
           </video>
         </div>
