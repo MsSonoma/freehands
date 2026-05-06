@@ -31,7 +31,7 @@ export default function SignupPage() {
 				return;
 			}
 			const supabase = getSupabaseClient();
-					const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : undefined);
+					const siteUrl = (typeof window !== 'undefined' ? window.location.origin : null) || process.env.NEXT_PUBLIC_SITE_URL;
 					const emailRedirectTo = siteUrl
 						? `${siteUrl}/auth/callback?next=${encodeURIComponent('/facilitator/learners/add')}`
 						: undefined;
@@ -45,7 +45,7 @@ export default function SignupPage() {
 					if (!data?.session) {
 						// Flag so that when they click the confirmation link they land on step 1
 						flagOnboardingStart();
-						setInfo('Check your email to confirm your account. Once confirmed, you\'ll be guided through setup.');
+						setInfo('Account created! Check your inbox for a confirmation email. After clicking the link, come back to mssonoma.app and sign in — we\'ll walk you through setup from there.');
 						return; // do not redirect if confirmation required
 					}
 					// Mark facilitator section as active to skip PIN on redirect

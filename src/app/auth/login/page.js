@@ -113,7 +113,7 @@ export default function LoginPage() {
 						? String(process.env.NEXT_PUBLIC_DEMO_LOGIN_EMAIL || 'demo@mssonoma.com').trim().toLowerCase()
 						: rawEmail;
 					// Prefer a configured public site URL for redirects to work on LAN or via tunnels
-					const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : undefined);
+					const siteUrl = (typeof window !== 'undefined' ? window.location.origin : null) || process.env.NEXT_PUBLIC_SITE_URL;
 					const emailRedirectTo = siteUrl ? `${siteUrl}/auth/callback` : undefined;
 					const { error } = await supabase.auth.resend({ type: 'signup', email: resendEmail, options: emailRedirectTo ? { emailRedirectTo } : undefined });
 					if (error) throw new Error(error.message || 'Could not resend confirmation');
@@ -232,8 +232,9 @@ export default function LoginPage() {
 					)}
 						<div style={{ fontSize: 14 }}>
 							Don’t have an account? <a href="/auth/signup" style={{ color:'#111' }}>Sign up</a>
-						</div>
-			</form>
+						</div>					<div style={{ fontSize: 13, color: '#6b7280' }}>
+						Just confirmed your email? Enter your credentials above to sign in.
+					</div>			</form>
 		</main>
 	);
 }
