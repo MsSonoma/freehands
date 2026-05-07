@@ -279,6 +279,7 @@ export async function updateLearner(id, updates) {
         ...(updates.test_play_min !== undefined ? { test_play_min: Number(updates.test_play_min) } : {}),
         ...(updates.test_work_min !== undefined ? { test_work_min: Number(updates.test_work_min) } : {}),
         ...(updates.golden_key_bonus_min !== undefined ? { golden_key_bonus_min: Number(updates.golden_key_bonus_min) } : {}),
+        ...(updates.slate_settings !== undefined ? { slate_settings: updates.slate_settings } : {}),
       };
       console.log('[LEARNER UPDATE] Saving to database:', { id, updatePayload });
       const { data, error } = await updateWithOwner(supabase, id, updatePayload, uid);
@@ -370,6 +371,7 @@ function normalizeRow(row) {
     test_play_min: c(row.test_play_min),
     test_work_min: c(row.test_work_min),
     golden_key_bonus_min: c(row.golden_key_bonus_min),
+    slate_settings: row.slate_settings || null,
   };
   console.log('[LEARNER NORMALIZE] Input:', { 
     id: row.id, 

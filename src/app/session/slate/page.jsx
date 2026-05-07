@@ -555,6 +555,7 @@ function SlateDrillInner() {
       setMasteryMap(mm)
       learnerIdRef.current = id
       if (!id || id === 'demo') {
+        // No pending lesson key for demo — go to list (redirect handled below)
         phaseRef.current = 'list'
         setPagePhase('list')
         return
@@ -619,6 +620,21 @@ function SlateDrillInner() {
               }
             }).catch(() => {})
           }
+
+          // Check for a pending lesson key from /learn/lessons teacher selection
+          const pendingKey = (() => { try { return sessionStorage.getItem('slate_pending_lesson_key') } catch { return null } })()
+          if (pendingKey) {
+            const allLessons = lessons || []
+            const match = allLessons.find(l => (l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`) === pendingKey)
+            if (match && buildPool(match).length > 0) {
+              try { sessionStorage.removeItem('slate_pending_lesson_key') } catch {}
+              // Auto-start drill with the pending lesson
+              selectLesson(match)
+              return
+            }
+            try { sessionStorage.removeItem('slate_pending_lesson_key') } catch {}
+          }
+
           phaseRef.current = 'list'
           setPagePhase('list')
         })
@@ -639,6 +655,14 @@ function SlateDrillInner() {
     clearTimeout(feedbackTimeout.current)
     if (audioEl.current) { audioEl.current.pause(); audioEl.current.src = '' }
   }, [])
+
+  // Redirect to /learn/lessons when in list phase with no resume offer
+  // (Lesson selection is now handled by /learn/lessons)
+  useEffect(() => {
+    if (pagePhase === 'list' && !offerResume) {
+      router.replace('/learn/lessons')
+    }
+  }, [pagePhase, offerResume, router])
 
   // Select a lesson from the list — skip the ready screen, go straight to drilling
   const selectLesson = useCallback((lesson) => {
@@ -911,14 +935,13 @@ function SlateDrillInner() {
     setCurrentQ(null)
     setLessonData(null)
     lessonKeyRef.current = ''
-    phaseRef.current = 'list'
-    setPagePhase('list')
-  }, [])
+    router.push('/learn/lessons')
+  }, [router])
 
   const exitToLessons = useCallback(() => {
     clearInterval(timerInterval.current)
     clearTimeout(feedbackTimeout.current)
-    router.push('/learn')
+    router.push('/learn/lessons')
   }, [router])
 
   // ── Snapshot save/restore (survive navigation) ────────────────────────
@@ -1202,18 +1225,6 @@ function SlateDrillInner() {
               <>
                 {/* ── Non-scrolling controls strip ───────────────────── */}
                 <div style={{ flexShrink: 0, padding: '16px 16px 0', maxWidth: 680, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-                {/* Rules bar */}
-                <button
-                  onClick={() => { setSettingsDraft(settings); setSettingsOpen(true) }}
-                  style={{ color: C.muted, fontSize: 12, lineHeight: 1.8, marginBottom: 16, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: C.mono, display: 'block' }}
-                >
-                  <span style={{ color: C.text, fontWeight: 700 }}>GOAL:</span> Reach{' '}
-                  <span style={{ color: C.text, fontWeight: 700 }}>{settings.scoreGoal} points</span> to earn mastery 🤖
-                  {'  ·  '}<span style={{ color: C.green, fontWeight: 700 }}>+{settings.correctPts}</span> correct
-                  {'  ·  '}<span style={{ color: C.red, fontWeight: 700 }}>−{settings.wrongPts}</span> wrong
-                  {'  ·  '}<span style={{ color: C.yellow, fontWeight: 700 }}>{settings.timeoutPts === 0 ? '±0' : `−${settings.timeoutPts}`}</span> timeout ({settings.questionSecs}s)
-                  {'  '}<span style={{ color: C.accent, fontSize: 10, letterSpacing: 1 }}>✎ EDIT</span>
-                </button>
 
                 {/* Inline warning banner */}
                 {listError && (
@@ -1327,49 +1338,7 @@ function SlateDrillInner() {
           })()}
         </div>
 
-        {/* Settings overlay */}
-        {settingsOpen && (
-          <div
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 16 }}
-            onClick={e => { if (e.target === e.currentTarget) setSettingsOpen(false) }}
-          >
-            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: '28px 28px 24px', width: '100%', maxWidth: 420, fontFamily: C.mono }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <span style={{ color: C.accent, fontWeight: 800, fontSize: 15, letterSpacing: 3 }}>DRILL SETTINGS</span>
-                <button onClick={() => setSettingsOpen(false)} style={{ background: 'none', border: 'none', color: C.muted, fontSize: 20, cursor: 'pointer', padding: 0, lineHeight: 1 }}>✕</button>
-              </div>
-              {SETTINGS_CONFIG.map(({ label, key, min, max, fmt }) => (
-                <div key={key} style={{ marginBottom: 18 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <span style={{ color: C.muted, fontSize: 11, letterSpacing: 1 }}>{label}</span>
-                    <span style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>{fmt(settingsDraft[key])}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={min}
-                    max={max}
-                    value={settingsDraft[key]}
-                    onChange={e => setSettingsDraft(d => ({ ...d, [key]: Number(e.target.value) }))}
-                    style={{ width: '100%', accentColor: C.accent, cursor: 'pointer' }}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: C.muted, fontSize: 10, marginTop: 2 }}>
-                    <span>{fmt(min)}</span><span>{fmt(max)}</span>
-                  </div>
-                </div>
-              ))}
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
-                <button onClick={() => setSettingsOpen(false)} style={ghostBtn}>CANCEL</button>
-                <button
-                  onClick={() => saveSettings(settingsDraft)}
-                  style={{ ...primaryBtn, opacity: settingsSaving ? 0.6 : 1 }}
-                  disabled={settingsSaving}
-                >
-                  {settingsSaving ? 'SAVING...' : 'SAVE SETTINGS'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Settings overlay removed — settings now configured in Facilitator > Targets */}
       </div>
     )
   }

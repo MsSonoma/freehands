@@ -103,6 +103,11 @@ function LessonsPageInner(){
   // null = unknown (still loading learner settings); true/false = loaded value
   const [goldenKeysEnabled, setGoldenKeysEnabled] = useState(null)
   const [masteryMap, setMasteryMap] = useState({}) // { 'subject/file.json': true } — Mr. Slate mastery
+  const [selectedTeacher, setSelectedTeacher] = useState(() => {
+    if (typeof window === 'undefined') return 'sonoma'
+    try { return localStorage.getItem('selected_teacher') || 'sonoma' } catch { return 'sonoma' }
+  }) // 'sonoma' | 'webb' | 'slate'
+  const [teacherDropdownOpen, setTeacherDropdownOpen] = useState(false)
   // Lesson detail overlay: { l, subject, lessonKey, isDemo } | null
   const [selectedLesson, setSelectedLesson] = useState(null)
   const [overlayNoteEditing, setOverlayNoteEditing] = useState(false)
@@ -625,6 +630,24 @@ function LessonsPageInner(){
       // If alreadyHasPendingKey, key was already spent — just re-pass URL param without decrementing
     }
     
+    const currentTeacher = (() => { try { return localStorage.getItem('selected_teacher') || 'sonoma' } catch { return 'sonoma' } })()
+
+    if (currentTeacher === 'slate') {
+      setSessionLoading(true)
+      const lessonKey = `${subject}/${fileBaseName}`
+      try { sessionStorage.setItem('slate_pending_lesson_key', lessonKey) } catch {}
+      router.push('/session/slate')
+      return
+    }
+
+    if (currentTeacher === 'webb') {
+      setSessionLoading(true)
+      const lessonKey = `${subject}/${fileBaseName}`
+      try { sessionStorage.setItem('webb_pending_lesson_key', lessonKey) } catch {}
+      router.push('/session/webb')
+      return
+    }
+
     setSessionLoading(true)
     const url = `/session?subject=${encodeURIComponent(subject)}&lesson=${encodeURIComponent(fileBaseName)}`
     const withKey = (goldenKeysEnabled === true && (goldenKeySelected || alreadyHasPendingKey)) ? `${url}&goldenKey=true` : url
@@ -912,6 +935,68 @@ function LessonsPageInner(){
       )}
       
       <h1 style={{ margin:'8px 0 4px', textAlign:'center' }}>Select a Lesson</h1>
+
+      {/* Teacher selector indicator */}
+      {(() => {
+        const TEACHERS = [
+          { key: 'sonoma', label: 'Ms. Sonoma', emoji: '👩🏻‍🦰', color: '#c7442e' },
+          { key: 'slate',  label: 'Mr. Slate',  emoji: '🤖',       color: '#6366f1' },
+          { key: 'webb',   label: 'Mrs. Webb',  emoji: '👩‍🏫',      color: '#0d9488' },
+        ]
+        const current = TEACHERS.find(t => t.key === selectedTeacher) || TEACHERS[0]
+        return (
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <button
+              onClick={() => setTeacherDropdownOpen(o => !o)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 16px', borderRadius: 20,
+                border: `2px solid ${current.color}`,
+                background: '#fff', cursor: 'pointer',
+                fontSize: 14, fontWeight: 700, color: current.color,
+                boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+              }}
+            >
+              <span>{current.emoji} {current.label}</span>
+              <span style={{ fontSize: 11, opacity: 0.7 }}>{teacherDropdownOpen ? '▲' : '▼'}</span>
+            </button>
+            {teacherDropdownOpen && (
+              <div style={{
+                position: 'absolute', top: '110%', left: '50%',
+                transform: 'translateX(-50%)',
+                background: '#fff', border: '1px solid #e5e7eb',
+                borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                zIndex: 200, minWidth: 200, overflow: 'hidden',
+              }}>
+                {TEACHERS.map(t => (
+                  <button
+                    key={t.key}
+                    onClick={() => {
+                      setSelectedTeacher(t.key)
+                      try { localStorage.setItem('selected_teacher', t.key) } catch {}
+                      setTeacherDropdownOpen(false)
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      width: '100%', padding: '12px 18px',
+                      border: 'none', background: t.key === selectedTeacher ? `${t.color}12` : '#fff',
+                      cursor: 'pointer', fontSize: 14, fontWeight: t.key === selectedTeacher ? 700 : 500,
+                      color: t.key === selectedTeacher ? t.color : '#374151',
+                      textAlign: 'left',
+                      borderLeft: t.key === selectedTeacher ? `3px solid ${t.color}` : '3px solid transparent',
+                    }}
+                  >
+                    <span>{t.emoji}</span>
+                    <span>{t.label}</span>
+                    {t.key === selectedTeacher && <span style={{ marginLeft: 'auto', fontSize: 12 }}>✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {learnerName && (
         <div style={{ textAlign:'center', marginBottom:16, fontSize:16, color:'#666' }}>
           Learning with <strong style={{ color:'#111' }}>{learnerName}</strong>

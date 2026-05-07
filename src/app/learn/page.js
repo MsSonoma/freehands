@@ -106,7 +106,10 @@ export default function LearnPage() {
         ) : (
           <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
             <button
-              onClick={goToLessons}
+              onClick={() => {
+                try { localStorage.setItem('selected_teacher', 'sonoma') } catch {}
+                r.push('/learn/lessons')
+              }}
               title="Practice lessons guided by Ms. Sonoma"
               style={{
                 padding:'14px 20px', 
@@ -124,7 +127,10 @@ export default function LearnPage() {
               👩🏻‍🦰 Ms. Sonoma
             </button>
             <button
-              onClick={() => r.push('/session/slate')}
+              onClick={() => {
+                try { localStorage.setItem('selected_teacher', 'slate') } catch {}
+                r.push('/learn/lessons')
+              }}
               title="Drill questions with Mr. Slate"
               style={{
                 padding:'14px 20px', 
@@ -142,7 +148,10 @@ export default function LearnPage() {
               🤖 Mr. Slate
             </button>
             <button
-              onClick={() => r.push('/session/webb')}
+              onClick={() => {
+                try { localStorage.setItem('selected_teacher', 'webb') } catch {}
+                r.push('/learn/lessons')
+              }}
               title="Chat with Mrs. Webb, your educational AI teacher"
               style={{
                 padding:'14px 20px',

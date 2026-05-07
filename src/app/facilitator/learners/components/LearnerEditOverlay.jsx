@@ -14,6 +14,23 @@ const GRADES = ['K', ...Array.from({length: 12}, (_, i) => String(i + 1))];
 const TARGETS = Array.from({length: 18}, (_, i) => String(i + 3)); // 3-20
 const HUMOR_LEVELS = ['calm', 'funny', 'hilarious'];
 
+const DEFAULT_SLATE_SETTINGS = {
+	scoreGoal: 10,
+	correctPts: 1,
+	wrongPts: 1,
+	timeoutPts: 0,
+	timeoutOffset: 0,
+	questionSecs: 15,
+};
+
+const SLATE_SETTINGS_CONFIG = [
+	{ label: 'Score Goal', key: 'scoreGoal', min: 3, max: 30, unit: 'pts' },
+	{ label: 'Correct Answer', key: 'correctPts', min: 1, max: 5, unit: 'pts' },
+	{ label: 'Wrong Answer', key: 'wrongPts', min: 0, max: 5, unit: 'pts' },
+	{ label: 'Timeout Penalty', key: 'timeoutPts', min: 0, max: 5, unit: 'pts' },
+	{ label: 'Time per Question', key: 'questionSecs', min: 5, max: 120, unit: 's' },
+];
+
 const normalizeHumorLevel = (value) => {
 	if (typeof value !== 'string') return 'calm';
 	const v = value.trim().toLowerCase();
@@ -53,6 +70,8 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [autoAdvancePhases, setAutoAdvancePhases] = useState(true);
 	const [savingGoldenKeysToggle, setSavingGoldenKeysToggle] = useState(false);
 	const [savingPlayPortions, setSavingPlayPortions] = useState(false);
+	// Mr. Slate drill settings
+	const [slateSettings, setSlateSettings] = useState(DEFAULT_SLATE_SETTINGS);
 	
 	const [saving, setSaving] = useState(false);
 
@@ -86,6 +105,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setPlayDependentOnWork(learner.play_dependent_on_work === true);
 		setPhaseTimers({ ...getDefaultPhaseTimers(), ...loadPhaseTimersForLearner(learner) });
 		setAutoAdvancePhases(learner.auto_advance_phases !== false); // Default true if not set
+		setSlateSettings({ ...DEFAULT_SLATE_SETTINGS, ...(learner.slate_settings || {}) });
 	}, [isOpen, learner?.id, learner?.initialTab]);
 
 	const handleTimerChange = (phase, type, value) => {
@@ -141,7 +161,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 				story_disabled: storyDisabled,
 				fill_in_fun_disabled: fillInFunDisabled,
 				auto_advance_phases: autoAdvancePhases,
-				...phaseTimers
+			slate_settings: slateSettings,
 			});
 			onClose();
 		} catch (error) {
@@ -799,6 +819,36 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 												<option key={t} value={t}>{t} questions</option>
 											))}
 										</select>
+									</div>
+								</div>
+
+								{/* Mr. Slate drill settings */}
+								<div style={{ marginTop: 24 }}>
+									<p style={{ margin: '0 0 12px', fontSize: 14, color: '#374151', fontWeight: 700 }}>
+										🤖 Mr. Slate
+									</p>
+									<p style={{ margin: '0 0 12px', fontSize: 13, color: '#6b7280' }}>
+										Configure drill scoring and timing for Mr. Slate sessions
+									</p>
+									<div style={gridStyle}>
+										{SLATE_SETTINGS_CONFIG.map(({ label, key, min, max, unit }) => (
+											<div key={key} style={fieldStyle}>
+												<label style={labelStyle}>{label}</label>
+												<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+													<input
+														type="range"
+														min={min}
+														max={max}
+														value={slateSettings[key] ?? DEFAULT_SLATE_SETTINGS[key]}
+														onChange={e => setSlateSettings(s => ({ ...s, [key]: Number(e.target.value) }))}
+														style={{ flex: 1, accentColor: '#6366f1', cursor: 'pointer' }}
+													/>
+													<span style={{ fontSize: 13, fontWeight: 700, color: '#111', minWidth: 36, textAlign: 'right' }}>
+														{slateSettings[key] ?? DEFAULT_SLATE_SETTINGS[key]}{unit}
+													</span>
+												</div>
+											</div>
+										))}
 									</div>
 								</div>
 							</div>

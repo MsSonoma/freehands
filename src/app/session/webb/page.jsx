@@ -393,6 +393,13 @@ export default function WebbPage() {
     } catch { /* ignore quota errors */ }
   }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, completedObj, objResponses, essay, essayMode])
 
+  // Redirect to /learn/lessons when lesson list is shown (list selection is now handled there)
+  useEffect(() => {
+    if (phase === PHASE.LIST && !listLoading && !offerResume) {
+      router.replace('/learn/lessons')
+    }
+  }, [phase, listLoading, offerResume, router])
+
   // ── Supabase transcript auto-save (Mrs. Webb) ─────────────────────────
   // Debounced: fires 3 s after the last transcript change while chatting.
   useEffect(() => {
@@ -822,6 +829,18 @@ export default function WebbPage() {
             setHistoryLessons(map)
           }
         }).catch(() => {})
+      }
+
+      // Check for a pending lesson key from /learn/lessons teacher selection
+      const pendingKey = (() => { try { return sessionStorage.getItem('webb_pending_lesson_key') } catch { return null } })()
+      if (pendingKey) {
+        const match = lessons.find(l => (l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`) === pendingKey)
+        if (match) {
+          try { sessionStorage.removeItem('webb_pending_lesson_key') } catch {}
+          selectLesson(match)
+          return
+        }
+        try { sessionStorage.removeItem('webb_pending_lesson_key') } catch {}
       }
     } catch (e) {
       setPageError(e?.message || 'Could not load lessons.')
@@ -1769,7 +1788,7 @@ export default function WebbPage() {
     const { ensurePinAllowed } = await import('@/app/lib/pinGate')
     if (!await ensurePinAllowed('session-exit')) return
     skipTTS()
-    router.push('/learn')
+    router.push('/learn/lessons')
   }
 
   function handleBack() {
