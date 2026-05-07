@@ -2079,7 +2079,7 @@ export default function WebbPage() {
           })()}
 
           {/* Lesson browser (LIST and STARTING phases) */}
-          {(phase === PHASE.LIST || phase === PHASE.STARTING) && (
+          {(phase === PHASE.LIST || phase === PHASE.STARTING) && !offerResume && (
             <WebbLessonBrowser
               availableLessons={availableLessons}
               allOwnedLessons={allOwnedLessons}

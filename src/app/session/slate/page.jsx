@@ -1531,7 +1531,6 @@ ${rows}
           >
             {soundOn ? '🔊' : '🔇'}
           </button>
-          <button onClick={backToList} style={ghostBtn}>LIST</button>
           <button onClick={exitToLessons} style={dangerBtn}>EXIT</button>
         </div>
       </div>
