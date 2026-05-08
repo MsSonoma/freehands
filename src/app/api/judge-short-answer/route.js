@@ -24,8 +24,8 @@
 import { NextResponse } from 'next/server';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-import { AI_MODEL } from '@/app/lib/aiModel'
-const OPENAI_MODEL = AI_MODEL
+// Answer judging is a simple classification task — pinned to a fast, cheap model.
+const OPENAI_MODEL = 'gpt-4.1-mini'
 
 export async function POST(request) {
   try {
