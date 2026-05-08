@@ -99,7 +99,10 @@ export default function ClientEmbeddedCheckout() {
 
         if (!stripeRef.current) {
           const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-          if (!pk) throw new Error('Publishable key missing');
+          if (!pk) throw new Error('Publishable key missing — contact support.');
+          if (pk.startsWith('pk_test_') && clientSecret?.startsWith('pi_') && !clientSecret?.includes('_test_')) {
+            throw new Error('Stripe key mode mismatch: test publishable key used with live secret. Please contact support.');
+          }
           const stripe = await loadStripe(pk);
           if (!stripe) throw new Error('Stripe failed to load');
           if (cancelled) return;

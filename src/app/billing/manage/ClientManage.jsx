@@ -98,7 +98,10 @@ export default function ClientManage() {
         if (!updatingCard || !cardClientSecret || !mountRef.current) return;
         if (!stripeRef.current) {
           const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-          if (!pk) throw new Error('Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY');
+          if (!pk) throw new Error('Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY — contact support.');
+          if (pk.startsWith('pk_test_') && cardClientSecret?.startsWith('seti_') && !cardClientSecret?.includes('_test_')) {
+            throw new Error('Stripe key mode mismatch: test publishable key is active in this build. Please contact support or try again later.');
+          }
           const stripe = await loadStripe(pk);
           if (!stripe) throw new Error('Stripe failed to load');
           if (cancelled) return;
