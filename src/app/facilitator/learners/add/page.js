@@ -188,7 +188,7 @@ export default function AddLearnerPage() {
 					<>
 						<div style={{ marginBottom: 20, padding: '14px 18px', background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%)', border: '1px solid #e0e7ff', borderRadius: 12 }}>
 							<h2 style={{ margin: '0 0 6px', fontSize: 20, color: '#1e1b4b' }}>🔐 Set Your Facilitator PIN</h2>
-							<p style={{ margin: 0, color: '#4338ca', fontSize: 14 }}>This PIN protects the facilitator area from learners. You'll need it to access settings, lessons, and this dashboard.</p>
+							<p style={{ margin: 0, color: '#4338ca', fontSize: 14 }}>This PIN protects the facilitator area from learners. You&apos;ll need it to access settings, lessons, and this dashboard.</p>
 						</div>
 						<form onSubmit={handlePinSave} style={{ display: 'grid', gap: 14 }}>
 							<input type="text" name="username" autoComplete="username" aria-hidden="true" tabIndex={-1}
