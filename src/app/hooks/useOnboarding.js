@@ -46,34 +46,42 @@ export function useOnboarding() {
     if (local !== null) {
       setStep(local);
       setLoaded(true);
-      return;
-    }
-    if (!hasSupabaseEnv()) {
+    } else if (!hasSupabaseEnv()) {
       setLoaded(true);
-      return;
+    } else {
+      (async () => {
+        try {
+          const sb = getSupabaseClient();
+          const { data: auth } = await sb.auth.getUser();
+          if (!auth?.user) { setLoaded(true); return; }
+          const { data } = await sb.from('profiles')
+            .select('onboarding_step')
+            .eq('id', auth.user.id)
+            .maybeSingle();
+          const dbStep = typeof data?.onboarding_step === 'number' ? data.onboarding_step : null;
+          if (dbStep !== null) {
+            setStep(dbStep);
+            try { localStorage.setItem(STORAGE_KEY, String(dbStep)); } catch {}
+          }
+        } catch {}
+        setLoaded(true);
+      })();
     }
-    (async () => {
-      try {
-        const sb = getSupabaseClient();
-        const { data: auth } = await sb.auth.getUser();
-        if (!auth?.user) { setLoaded(true); return; }
-        const { data } = await sb.from('profiles')
-          .select('onboarding_step')
-          .eq('id', auth.user.id)
-          .maybeSingle();
-        const dbStep = typeof data?.onboarding_step === 'number' ? data.onboarding_step : null;
-        if (dbStep !== null) {
-          setStep(dbStep);
-          try { localStorage.setItem(STORAGE_KEY, String(dbStep)); } catch {}
-        }
-      } catch {}
-      setLoaded(true);
-    })();
+
+    // Keep this instance in sync when another instance advances the step
+    const onStepEvent = (e) => {
+      const s = e?.detail?.step;
+      if (typeof s === 'number') setStep(s);
+    };
+    window.addEventListener('ms:onboarding:step', onStepEvent);
+    return () => window.removeEventListener('ms:onboarding:step', onStepEvent);
   }, []);
 
   const saveStep = useCallback(async (newStep) => {
     setStep(newStep);
     try { localStorage.setItem(STORAGE_KEY, String(newStep)); } catch {}
+    // Notify all other useOnboarding instances in the same window (e.g. layout-mounted checklist)
+    try { window.dispatchEvent(new CustomEvent('ms:onboarding:step', { detail: { step: newStep } })); } catch {}
     // Async persist to Supabase (best-effort)
     if (hasSupabaseEnv()) {
       try {
