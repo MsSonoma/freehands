@@ -104,6 +104,20 @@ export default function LearnPage() {
           </div>
         )}
 
+        {!noLearner && learner.id === 'demo' && (
+          <div style={{ marginTop:4, marginBottom:12 }}>
+            <button
+              onClick={() => {
+                try { localStorage.removeItem('learner_id'); localStorage.removeItem('learner_name'); localStorage.removeItem('learner_grade'); } catch {}
+                setLearner({ id: null, name: '' });
+              }}
+              style={{ padding:'6px 10px', border:'1px solid #e5e7eb', borderRadius:8, background:'#fff', color:'#6b7280' }}
+            >
+              Exit Demo
+            </button>
+          </div>
+        )}
+
         {noLearner ? (
           <div style={{ margin:'8px auto 16px', maxWidth:420 }}>
             <p style={{ marginTop:0 }}>Pick a Learner to continue:</p>
