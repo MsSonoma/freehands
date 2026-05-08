@@ -984,13 +984,15 @@ function LessonsPageInner(){
                 return (
                   <div style={{ position: 'relative', marginBottom: 14 }}>
                     <button
-                      onClick={() => setTeacherDropdownOpen(o => !o)}
+                      onClick={() => { if (learnerId === 'demo') return; setTeacherDropdownOpen(o => !o) }}
+                      title={learnerId === 'demo' ? 'Teacher selection is not available in demo mode' : undefined}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 8, width: '100%',
                         padding: '8px 12px', borderRadius: 8,
                         border: `2px solid ${current.color}`,
-                        background: '#fff', cursor: 'pointer',
+                        background: '#fff', cursor: learnerId === 'demo' ? 'default' : 'pointer',
                         fontSize: 13, fontWeight: 700, color: current.color,
+                        opacity: learnerId === 'demo' ? 0.5 : 1,
                       }}
                     >
                       <span style={{ flex: 1, textAlign: 'left' }}>{current.emoji} {current.label}</span>
