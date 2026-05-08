@@ -273,7 +273,7 @@ export default function ClientManage() {
       label: 'Standard',
       priceLabel: '$49',
       priceSub: '/month',
-      features: ['Unlimited lessons', 'Up to 2 learners', 'Golden Keys', 'Visual Aids & Games'],
+      features: ['Unlimited lessons', 'Up to 2 learners', 'Lesson scheduling & calendar', 'Golden Keys', 'Visual Aids & Games'],
     },
     {
       id: 'pro',

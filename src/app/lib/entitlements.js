@@ -8,6 +8,7 @@ export const ENTITLEMENTS = {
     learnersMax: 1,
     devices: 1,
     lessonGenerator: true, // Free gets 5 lifetime generations
+    lessonScheduling: false, // Scheduling lessons to calendar requires Standard+
     lessonPlanner: false,
     askFeature: false, // Ask question requires Standard+
     goldenKeyFeatures: false,
@@ -25,6 +26,7 @@ export const ENTITLEMENTS = {
     // Trial allows lesson generation, but blocks planner + Mr. Mentor.
     // Quota enforcement uses lifetime/weekly generation limits.
     lessonGenerator: true,
+    lessonScheduling: false, // Scheduling requires Standard+
     lessonPlanner: false,
     askFeature: false,
     goldenKeyFeatures: false,
@@ -40,6 +42,7 @@ export const ENTITLEMENTS = {
     learnersMax: 2,
     devices: 1,
     lessonGenerator: true,
+    lessonScheduling: true, // Scheduling lessons to calendar
     lessonPlanner: false,
     askFeature: true,
     goldenKeyFeatures: true,
@@ -55,6 +58,7 @@ export const ENTITLEMENTS = {
     learnersMax: 5,
     devices: 2,
     lessonGenerator: true,
+    lessonScheduling: true,
     lessonPlanner: true,
     askFeature: true,
     goldenKeyFeatures: true,
@@ -71,6 +75,7 @@ export const ENTITLEMENTS = {
     learnersMax: 10,
     devices: 2,
     lessonGenerator: true,
+    lessonScheduling: true,
     lessonPlanner: true,
     askFeature: true,
     goldenKeyFeatures: true,

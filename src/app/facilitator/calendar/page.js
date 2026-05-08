@@ -53,6 +53,7 @@ export default function CalendarPage() {
   const [plannedLessons, setPlannedLessons] = useState({}) // Format: { 'YYYY-MM-DD': [{...}] }
   const [loading, setLoading] = useState(true)
   const [tier, setTier] = useState('free')
+  const [canSchedule, setCanSchedule] = useState(false)
   const [canPlan, setCanPlan] = useState(false)
   const [tableExists, setTableExists] = useState(true)
   const [rescheduling, setRescheduling] = useState(null) // Track which lesson is being rescheduled
@@ -227,20 +228,22 @@ export default function CalendarPage() {
       setTier(effectiveTier)
       
       const ent = featuresForTier(effectiveTier)
+      setCanSchedule(Boolean(ent.lessonScheduling))
       setCanPlan(Boolean(ent.lessonPlanner))
       setLoading(false)
     } catch (err) {
+      setCanSchedule(false)
       setCanPlan(false)
       setLoading(false)
     }
   }
 
   const showViewOnlyNotice = () => {
-    alert('View-only: upgrade to Pro to schedule, plan, reschedule, or remove lessons.')
+    alert('Scheduling requires a Standard (or higher) subscription. Upgrade to start scheduling lessons.')
   }
 
   const requirePlannerAccess = () => {
-    if (canPlan) return true
+    if (canSchedule) return true
     showViewOnlyNotice()
     return false
   }
@@ -843,11 +846,11 @@ export default function CalendarPage() {
                   }
                 />
 
-                {isAuthenticated && !canPlan && (
+                {isAuthenticated && !canSchedule && (
                   <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="text-sm text-indigo-900">
-                        <strong>View-only mode.</strong> You can view your calendar, but Pro is required to schedule or plan lessons.
+                        <strong>View-only mode.</strong> Standard is required to schedule or reschedule lessons. Pro unlocks the AI Lesson Planner.
                       </div>
                       <button
                         type="button"

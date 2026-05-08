@@ -1293,28 +1293,53 @@ export default function FacilitatorLessonsPage() {
                               📝 <span className="button-text-tablet">{noteText ? 'Note' : 'Notes'}</span>
                             </button>
 
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                setScheduling(isSchedulingThis ? null : lessonKey)
-                              }}
-                              style={{
-                                padding: '4px 10px',
-                                border: '1px solid #d1d5db',
-                                borderRadius: 4,
-                                background: '#fff',
-                                color: '#6b7280',
-                                fontSize: 12,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 4
-                              }}
-                              title="Schedule lesson"
-                            >
-                              📅 <span className="button-text-tablet">Schedule</span>
-                            </button>
+                            {ent.lessonScheduling ? (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  setScheduling(isSchedulingThis ? null : lessonKey)
+                                }}
+                                style={{
+                                  padding: '4px 10px',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: 4,
+                                  background: '#fff',
+                                  color: '#6b7280',
+                                  fontSize: 12,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4
+                                }}
+                                title="Schedule lesson"
+                              >
+                                📅 <span className="button-text-tablet">Schedule</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  router.push('/facilitator/account/plan')
+                                }}
+                                style={{
+                                  padding: '4px 10px',
+                                  border: '1px solid #e5e7eb',
+                                  borderRadius: 4,
+                                  background: '#f9fafb',
+                                  color: '#9ca3af',
+                                  fontSize: 12,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4
+                                }}
+                                title="Scheduling requires Standard — click to upgrade"
+                              >
+                                🔒 <span className="button-text-tablet">Schedule</span>
+                              </button>
+                            )}
                           </>
                         )}
                       </div>
