@@ -17,6 +17,7 @@ export default function ClientManage() {
   const paymentElRef = React.useRef(null);
   const mountRef = React.useRef(null);
   const [cancelBusy, setCancelBusy] = React.useState(false);
+  const [cardReady, setCardReady] = React.useState(false);
   const [message, setMessage] = React.useState('');
   const [saveBusy, setSaveBusy] = React.useState(false);
   const [activeTooltip, setActiveTooltip] = React.useState(null);
@@ -73,7 +74,7 @@ export default function ClientManage() {
   }, []);
 
   async function handleUpdateCard() {
-    setMessage(''); setErr(''); setCardBusy(true);
+    setMessage(''); setErr(''); setCardBusy(true); setCardReady(false);
     try {
       const token = await getAccessToken();
       if (!token) throw new Error('Please log in');
@@ -127,6 +128,10 @@ export default function ClientManage() {
         elementsRef.current = stripeRef.current.elements({ clientSecret: cardClientSecret, appearance });
         paymentElRef.current = elementsRef.current.create('payment', { layout: 'tabs' });
         paymentElRef.current.mount(mountRef.current);
+        paymentElRef.current.on('ready', () => { if (!cancelled) setCardReady(true); });
+        paymentElRef.current.on('loaderror', (ev) => {
+          if (!cancelled) setErr(ev?.error?.message || 'Payment form failed to load. Please refresh and try again.');
+        });
       } catch (e) {
         if (!cancelled) setErr(e?.message || 'Unable to initialize payment form');
       }
@@ -140,9 +145,16 @@ export default function ClientManage() {
   async function saveUpdatedCard() {
     setCardBusy(true); setErr(''); setMessage('');
     try {
-      if (!stripeRef.current || !elementsRef.current) throw new Error('Payment form not ready');
+      if (!stripeRef.current || !elementsRef.current || !cardClientSecret) throw new Error('Payment form not ready');
+      // Step 1: validate & collect payment details
+      const { error: submitError } = await elementsRef.current.submit();
+      if (submitError) throw new Error(submitError.message || 'Validation failed');
+      // Step 2: confirm setup using clientSecret directly
+      const baseUrl = window.location.origin;
+      const returnUrl = `${baseUrl}/billing/manage`;
       const result = await stripeRef.current.confirmSetup({
-        elements: elementsRef.current,
+        clientSecret: cardClientSecret,
+        confirmParams: { return_url: returnUrl },
         redirect: 'if_required',
       });
       if (result.error) throw new Error(result.error.message || 'Failed to confirm');
@@ -163,7 +175,7 @@ export default function ClientManage() {
       }
       // close form
       try { paymentElRef.current?.unmount(); } catch {}
-      elementsRef.current = null; paymentElRef.current = null; setCardClientSecret(''); setUpdatingCard(false);
+      elementsRef.current = null; paymentElRef.current = null; setCardClientSecret(''); setUpdatingCard(false); setCardReady(false);
     } catch (e) {
       setErr(e?.message || 'Unexpected error');
     } finally {
@@ -173,7 +185,7 @@ export default function ClientManage() {
 
   function cancelCardUpdate() {
     try { paymentElRef.current?.unmount(); } catch {}
-    elementsRef.current = null; paymentElRef.current = null; setCardClientSecret(''); setUpdatingCard(false);
+    elementsRef.current = null; paymentElRef.current = null; setCardClientSecret(''); setUpdatingCard(false); setCardReady(false);
   }
 
   async function handlePlanSave() {
@@ -400,7 +412,7 @@ export default function ClientManage() {
             <div style={{ display:'grid', gridTemplateColumns:'1fr auto auto', gap:8, alignItems:'center', marginTop:12 }}>
               <div style={{ color:'#555', fontSize:12 }}>Powered by Stripe</div>
               <button onClick={cancelCardUpdate} disabled={cardBusy} style={{ padding:'8px 12px', border:'1px solid #ddd', borderRadius:8, background:'#fff' }}>Cancel</button>
-              <button onClick={saveUpdatedCard} disabled={cardBusy} style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff' }}>{cardBusy ? 'Saving…' : 'Save card'}</button>
+              <button onClick={saveUpdatedCard} disabled={cardBusy || !cardReady} style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', opacity: (!cardReady && !cardBusy) ? 0.5 : 1 }}>{cardBusy ? 'Saving…' : !cardReady ? 'Loading…' : 'Save card'}</button>
             </div>
           </div>
         )}

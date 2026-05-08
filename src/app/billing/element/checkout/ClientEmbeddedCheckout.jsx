@@ -12,6 +12,7 @@ export default function ClientEmbeddedCheckout() {
   const [clientSecret, setClientSecret] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [elementReady, setElementReady] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState(null);
   const stripeRef = useRef(null);
   const elementsRef = useRef(null);
@@ -84,6 +85,9 @@ export default function ClientEmbeddedCheckout() {
     })();
   }, [selectedTier]);
 
+  // Reset element ready state whenever clientSecret changes (new subscription)
+  useEffect(() => { setElementReady(false); }, [clientSecret]);
+
   // Mount Payment Element (guarded to avoid StrictMode double-mount noise in dev)
   useEffect(() => {
     let cancelled = false;
@@ -138,6 +142,10 @@ export default function ClientEmbeddedCheckout() {
         elementsRef.current = stripeRef.current.elements({ clientSecret, appearance });
         paymentElRef.current = elementsRef.current.create('payment', { layout: 'tabs' });
         paymentElRef.current.mount(mountRef.current);
+        paymentElRef.current.on('ready', () => { if (!cancelled) setElementReady(true); });
+        paymentElRef.current.on('loaderror', (ev) => {
+          if (!cancelled) setError(ev?.error?.message || 'Payment form failed to load. Please refresh and try again.');
+        });
         lastSecretRef.current = clientSecret;
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Unable to initialize payment form');
@@ -307,15 +315,16 @@ export default function ClientEmbeddedCheckout() {
               <div style={{ gridColumn: 2, justifySelf: 'center' }}>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || !elementReady}
                   style={{
                     padding: '12px 24px',
                     fontSize: 16,
                     border: '1px solid #ddd',
                     borderRadius: 8,
+                    opacity: (!elementReady && !submitting) ? 0.5 : 1,
                   }}
                 >
-                  {submitting ? 'Processing…' : `Subscribe to ${selectedLabel}`}
+                  {submitting ? 'Processing…' : !elementReady ? 'Loading…' : `Subscribe to ${selectedLabel}`}
                 </button>
               </div>
               <div style={{ gridColumn: 3, justifySelf: 'end', textAlign: 'right' }}>

@@ -49,7 +49,7 @@ export async function POST(req) {
     const stripe = getStripe();
     const si = await stripe.setupIntents.create({
       customer: customerId,
-      payment_method_types: ['card'],
+      automatic_payment_methods: { enabled: true },
       usage: 'off_session',
     });
     return NextResponse.json({ client_secret: si.client_secret });
