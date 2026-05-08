@@ -135,7 +135,7 @@ export default function ClientEmbeddedCheckout() {
             // Removed unsupported selectors like .AccordionTrigger and .Radio
           },
         };
-        elementsRef.current = elementsRef.current || stripeRef.current.elements({ clientSecret, appearance });
+        elementsRef.current = stripeRef.current.elements({ clientSecret, appearance });
         paymentElRef.current = elementsRef.current.create('payment', { layout: 'tabs' });
         paymentElRef.current.mount(mountRef.current);
         lastSecretRef.current = clientSecret;
