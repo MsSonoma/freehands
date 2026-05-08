@@ -112,14 +112,45 @@ export class TeachingController {
   }
 
   #buildLocalExamplesFallbackSentences() {
-    // Keep this short and harmless: if GPT is temporarily unavailable,
-    // we can still proceed without asking the learner to press Next again.
+    // Build real example sentences from lesson data so that even when GPT is unavailable
+    // the learner still sees actual teaching content.
     const lessonTitle = this.#lessonData?.title || 'this lesson';
+    const vocab = Array.isArray(this.#lessonData?.vocab) ? this.#lessonData.vocab : [];
+    const sampleItems = Array.isArray(this.#lessonData?.sample) ? this.#lessonData.sample : [];
+
+    // Strategy 1: build example sentences from vocab definitions (most reliable)
+    if (vocab.length > 0) {
+      const sentences = [`Let me show you how these ideas work in real life.`];
+      vocab.slice(0, 4).forEach(item => {
+        const term = typeof item === 'string' ? item : (item?.term || '');
+        const def = typeof item === 'object' ? (item?.definition || '') : '';
+        if (term && def) {
+          sentences.push(`Here is ${term} in action. ${def}.`);
+        } else if (term) {
+          sentences.push(`Think about ${term} — where do you see it in the world around you?`);
+        }
+      });
+      // If we got more than just the opener, return the set
+      if (sentences.length > 1) return sentences;
+    }
+
+    // Strategy 2: pose sample discussion questions Ms. Sonoma answers herself
+    if (sampleItems.length > 0) {
+      const sentences = [`Let me walk through some examples for ${lessonTitle}.`];
+      sampleItems.slice(0, 3).forEach(item => {
+        if (!item?.question) return;
+        const hint = item?.expectedAny?.[0] || '';
+        sentences.push(item.question);
+        if (hint) sentences.push(`Think about: ${hint}.`);
+      });
+      if (sentences.length > 1) return sentences;
+    }
+
+    // Last resort: generic placeholder
     const terms = this.#getVocabTerms();
-    const vocabHint = terms.length ? `We will use words like ${terms.slice(0, 4).join(', ')}.` : '';
     return [
-      `Okay. Let\'s do a couple quick examples for ${lessonTitle}.`,
-      vocabHint
+      `Let me show you some examples for ${lessonTitle}.`,
+      terms.length ? `We will look at words like ${terms.slice(0, 3).join(', ')}.` : ''
     ].filter(Boolean);
   }
 
@@ -672,7 +703,20 @@ export class TeachingController {
 
     const fullLessonJson = (() => {
       try {
-        return JSON.stringify(this.#lessonData || {});
+        // Trim large arrays to a representative sample (3 items each) so the instruction
+        // stays within a reasonable size while still giving GPT enough assessment context.
+        const d = this.#lessonData || {};
+        const trimArrayField = (arr) => Array.isArray(arr) ? arr.slice(0, 3) : arr;
+        const trimmed = {
+          ...d,
+          sample:          trimArrayField(d.sample),
+          truefalse:       trimArrayField(d.truefalse),
+          multiplechoice:  trimArrayField(d.multiplechoice),
+          fillintheblank:  trimArrayField(d.fillintheblank),
+          shortanswer:     trimArrayField(d.shortanswer),
+          wordProblems:    trimArrayField(d.wordProblems),
+        };
+        return JSON.stringify(trimmed);
       } catch {
         return '';
       }
