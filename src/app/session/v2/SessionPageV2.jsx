@@ -2039,7 +2039,14 @@ function SessionPageV2Inner() {
       }
     }
 
-    return out.slice(0, target);
+    // Shuffle to interleave written (SA/FITB) randomly among MC/TF instead of clustering at the top.
+    const final = out.slice(0, target);
+    for (let i = final.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [final[i], final[j]] = [final[j], final[i]];
+    }
+
+    return final;
   }, [isPrimaryType, questionKey]);
 
   const buildWorksheetSet = useCallback(() => {
