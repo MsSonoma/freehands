@@ -20,7 +20,6 @@ export default function ClientManage() {
   const [cardReady, setCardReady] = React.useState(false);
   const [message, setMessage] = React.useState('');
   const [saveBusy, setSaveBusy] = React.useState(false);
-  const [activeTooltip, setActiveTooltip] = React.useState(null);
 
   // Friendly labels for plan tiers and subscription statuses
   function formatTierLabel(t) {
@@ -260,11 +259,11 @@ export default function ClientManage() {
     }
   }
 
-  if (loading) return <p style={{ color:'#555' }}>Loading…</p>;
-  if (err) return (
-    <div style={{ display:'grid', gap:12 }}>
-      <div style={{ color:'#b00020' }}>{err}</div>
-      <a href="/auth/login" style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', textDecoration:'none', width:'fit-content' }}>Go to Login</a>
+  if (loading) return <p style={{ color:'#888', padding:'40px 0', textAlign:'center' }}>Loading…</p>;
+  if (err && !summary) return (
+    <div style={{ display:'grid', gap:12, textAlign:'center', padding:'40px 0' }}>
+      <div style={{ color:'#b00020', fontSize:14 }}>{err}</div>
+      <a href="/auth/login" style={{ padding:'10px 16px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', textDecoration:'none', width:'fit-content', margin:'0 auto', fontSize:14 }}>Go to Login</a>
     </div>
   );
 
@@ -273,192 +272,222 @@ export default function ClientManage() {
       id: 'standard',
       label: 'Standard',
       priceLabel: '$49',
-      priceSub: 'per month',
-      features: ['Unlimited lessons', '2 Learners', 'Golden Keys + Visual Aids + Games']
+      priceSub: '/month',
+      features: ['Unlimited lessons', 'Up to 2 learners', 'Golden Keys', 'Visual Aids & Games'],
     },
     {
       id: 'pro',
       label: 'Pro',
       priceLabel: '$69',
-      priceSub: 'per month',
-      features: ['Everything in Standard', '5 Learners', 'Mr. Mentor', 'Lesson Planner + Curriculum Preferences']
+      priceSub: '/month',
+      badge: 'Most popular',
+      features: ['Everything in Standard', 'Up to 5 learners', 'Mr. Mentor AI tutor', 'Lesson Planner', 'Curriculum Preferences'],
     },
   ];
 
+  const statusColor = { active: '#0a7', trialing: '#0a7', past_due: '#c7442e', unpaid: '#c7442e', canceled: '#888', incomplete: '#b57e00', paused: '#888' };
+  const subStatus = summary?.subscription?.status || '';
+  const badgeColor = statusColor[subStatus] || '#888';
+  const isCancelPending = summary?.subscription?.cancel_at_period_end;
+
+  const selectedLabel = selectedTier ? selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1) : '';
+  const ctaLabel = saveBusy ? 'Processing…' : summary?.subscription?.id ? `Switch to ${selectedLabel}` : `Subscribe to ${selectedLabel}`;
+
   return (
-    <div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap' }}>
-        <h1 style={{ margin:0 }}>Plan &amp; billing</h1>
-        <a href="/facilitator/account" className="back-link" style={{ color:'#c7442e', textDecoration:'none' }}>← Back to account</a>
+    <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', color: '#111', maxWidth: 680, margin: '0 auto' }}>
+
+      {/* ── Header ── */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 28 }}>
+        <h1 style={{ margin:0, fontSize:24, fontWeight:700 }}>Plan &amp; billing</h1>
+        <a href="/facilitator/account" style={{ color:'#c7442e', textDecoration:'none', fontSize:14, fontWeight:500 }}>← Back to account</a>
       </div>
 
-      <p style={{ marginTop:8, color:'#6b7280', fontSize: 12 }}>
-        Cancellations take effect at period end; no proration on cancel. Upgrades are instant and cannot be canceled until the next period. See <a href="/legal/billing">Subscription & Billing Terms</a> and <a href="/legal/refunds">Refund/Cancellation Policy</a>.
-      </p>
+      {/* ── Toast messages ── */}
+      {message && (
+        <div style={{ marginBottom:20, padding:'12px 16px', borderRadius:8, background:'#f0faf4', border:'1px solid #a7e3c0', color:'#0a6640', fontSize:14, display:'flex', alignItems:'center', gap:8 }}>
+          <span>✓</span> {message}
+        </div>
+      )}
+      {err && (
+        <div style={{ marginBottom:20, padding:'12px 16px', borderRadius:8, background:'#fff5f5', border:'1px solid #fca5a5', color:'#b00020', fontSize:14 }}>
+          {err}
+        </div>
+      )}
 
-      {message && <div style={{ marginTop:12, padding:12, border:'1px solid #e5e5e5', borderRadius:8, background:'#f8f8f8', color:'#0a7' }}>{message}</div>}
+      {/* ── Current subscription status card ── */}
+      {summary?.subscription && (
+        <div style={{ marginBottom:28, padding:'16px 20px', borderRadius:12, border:'1px solid #e5e7eb', background:'#fafafa', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
+          <div>
+            <div style={{ fontSize:12, color:'#888', fontWeight:500, letterSpacing:.4, textTransform:'uppercase', marginBottom:4 }}>Current plan</div>
+            <div style={{ fontSize:18, fontWeight:700 }}>{formatTierLabel(summary.subscription.tier || tier)}</div>
+            {isCancelPending && (
+              <div style={{ fontSize:12, color:'#c7442e', marginTop:4 }}>Cancels at end of billing period</div>
+            )}
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:8 }}>
+            <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'4px 10px', borderRadius:20, background: badgeColor + '18', color: badgeColor, fontSize:12, fontWeight:600 }}>
+              <span style={{ width:6, height:6, borderRadius:'50%', background: badgeColor, display:'inline-block' }} />
+              {formatSubStatus(subStatus)}
+            </span>
+            {!isCancelPending ? (
+              <button onClick={() => handleCancel('end_of_period')} disabled={cancelBusy}
+                style={{ padding:'6px 12px', border:'1px solid #e5e7eb', borderRadius:8, background:'#fff', color:'#666', fontSize:12, cursor:'pointer', fontWeight:500 }}>
+                {cancelBusy ? 'Updating…' : 'Cancel subscription'}
+              </button>
+            ) : (
+              <button onClick={() => handleCancel('resume')} disabled={cancelBusy}
+                style={{ padding:'6px 12px', border:'1px solid #111', borderRadius:8, background:'#fff', color:'#111', fontSize:12, cursor:'pointer', fontWeight:600 }}>
+                {cancelBusy ? 'Updating…' : 'Resume subscription'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
-      <div style={{ marginTop:16, borderTop:'1px solid #eee' }} />
-
-      {/* Mini plan comparison with Save */}
-      <div style={{ marginTop:16 }}>
-        <div style={{ marginBottom:8, color:'#666' }}>Plan</div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12, paddingBottom: 16 }}>
+      {/* ── Plan cards ── */}
+      <div style={{ marginBottom:8 }}>
+        <div style={{ fontSize:13, fontWeight:600, color:'#555', letterSpacing:.3, textTransform:'uppercase', marginBottom:16 }}>
+          {summary?.subscription?.id ? 'Switch plan' : 'Choose a plan'}
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:16 }}>
           {plans.map(p => {
+            const isCurrent = p.id === tier;
             const isSelected = p.id === selectedTier;
-            const isActive = activeTooltip === p.id;
             return (
               <div
                 key={p.id}
+                onClick={() => { if (!isCurrent) setSelectedTier(p.id); }}
                 style={{
-                  border: isSelected ? '2px solid #111' : '1px solid #ddd',
-                  borderRadius: 12,
-                  padding: 12,
-                  paddingTop: 26,
-                  background: isSelected ? '#fafafa' : '#fff',
-                  boxShadow: isSelected ? '0 8px 22px rgba(0,0,0,0.12)' : 'none',
-                  transition: 'box-shadow .15s ease, border-color .15s ease',
-                  position: 'relative',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  height: '100%'
+                  position:'relative', borderRadius:16, padding:'24px 20px',
+                  border: isCurrent ? '2px solid #111' : isSelected ? '2px solid #111' : '1.5px solid #e5e7eb',
+                  background: '#fff',
+                  boxShadow: isSelected ? '0 4px 20px rgba(0,0,0,0.1)' : '0 1px 4px rgba(0,0,0,0.04)',
+                  cursor: isCurrent ? 'default' : 'pointer',
+                  transition: 'box-shadow .15s, border-color .15s',
+                  display:'flex', flexDirection:'column',
                 }}
-                onMouseEnter={() => p.features?.length && setActiveTooltip(p.id)}
-                onMouseLeave={() => setActiveTooltip(prev => (prev === p.id ? null : prev))}
               >
-                {isSelected ? (
-                  <span style={{ position: 'absolute', top: 6, right: 8, fontSize: 14, color: '#0a7', fontWeight: 700 }}>current</span>
-                ) : null}
-                {p.features?.length ? (
-                  <div
-                    id={`plan-tooltip-${p.id}`}
-                    role="tooltip"
-                    aria-hidden={!isActive}
+                {/* Badge */}
+                {isCurrent && (
+                  <span style={{ position:'absolute', top:-1, right:16, background:'#111', color:'#fff', fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:'0 0 8px 8px', letterSpacing:.4 }}>CURRENT</span>
+                )}
+                {!isCurrent && p.badge && (
+                  <span style={{ position:'absolute', top:-1, right:16, background:'#c7442e', color:'#fff', fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:'0 0 8px 8px', letterSpacing:.4 }}>{p.badge.toUpperCase()}</span>
+                )}
+
+                <div style={{ fontSize:17, fontWeight:700, marginBottom:8 }}>{p.label}</div>
+                <div style={{ display:'flex', alignItems:'baseline', gap:4, marginBottom:16 }}>
+                  <span style={{ fontSize:36, fontWeight:800, letterSpacing:-1 }}>{p.priceLabel}</span>
+                  <span style={{ fontSize:13, color:'#888' }}>{p.priceSub}</span>
+                </div>
+                <ul style={{ margin:'0 0 20px 0', padding:0, listStyle:'none', display:'flex', flexDirection:'column', gap:7, flexGrow:1 }}>
+                  {p.features.map(f => (
+                    <li key={f} style={{ display:'flex', alignItems:'center', gap:8, fontSize:13, color:'#333' }}>
+                      <span style={{ color:'#0a7', fontWeight:700, fontSize:14, flexShrink:0 }}>✓</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                {isCurrent ? (
+                  <div style={{ padding:'9px 0', textAlign:'center', fontSize:13, fontWeight:600, color:'#888', borderTop:'1px solid #f0f0f0' }}>Your current plan</div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setSelectedTier(p.id); }}
                     style={{
-                      position: 'absolute', left: 12, right: 12, top: '100%', marginTop: 10,
-                      background: '#ffffff', color: '#111', border: '1px solid #e5e7eb', borderRadius: 8,
-                      boxShadow: '0 8px 22px rgba(0,0,0,0.12)', padding: '10px 12px', fontSize: 12, lineHeight: 1.4,
-                      zIndex: 10000, pointerEvents: 'none', opacity: isActive ? 1 : 0,
-                      transform: isActive ? 'translateY(0)' : 'translateY(-4px)', transition: 'opacity .12s ease, transform .12s ease'
+                      marginTop:'auto', padding:'10px', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer',
+                      border: isSelected ? '2px solid #111' : '1.5px solid #e5e7eb',
+                      background: isSelected ? '#111' : '#fff',
+                      color: isSelected ? '#fff' : '#555',
+                      transition: 'all .12s',
                     }}
                   >
-                    <div style={{ fontWeight: 700, fontSize: 12, letterSpacing: .2, marginBottom: 6 }}>Features</div>
-                    <ul style={{ margin: 0, paddingLeft: 16 }}>
-                      {p.features.map(f => (
-                        <li key={f} style={{ margin: '4px 0' }}>{f}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', minHeight: 22 }}>
-                  <strong style={{ fontSize: isSelected ? 18 : 16 }}>{p.label}</strong>
-                  {p.id === tier ? (
-                    <span style={{ fontSize: 12, color: '#0a7', fontWeight: 600 }}>Current</span>
-                  ) : null}
-                </div>
-                <div style={{ display:'flex', alignItems:'baseline', gap:6, marginTop:6 }}>
-                  <span style={{ fontSize: isSelected ? 24 : 20, fontWeight:700 }}>{p.priceLabel}</span>
-                  <span style={{ color:'#666', fontSize: isSelected ? 13 : 12 }}>{p.priceSub}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (p.id === tier) return; // current plan, no-op
-                    if (isSelected) { setActiveTooltip(null); return; }
-                    setActiveTooltip(null);
-                    setSelectedTier(p.id);
-                  }}
-                  disabled={p.id === tier}
-                  onFocus={() => p.features?.length && setActiveTooltip(p.id)}
-                  onBlur={() => setActiveTooltip(prev => (prev === p.id ? null : prev))}
-                  aria-describedby={p.features?.length ? `plan-tooltip-${p.id}` : undefined}
-                  style={{
-                    marginTop: 'auto', width: '100%', padding: '8px 10px', borderRadius: 8,
-                    border: (p.id === tier || isSelected) ? '1px solid #000' : '1px solid #c7442e',
-                    background: (p.id === tier || isSelected) ? '#fff' : '#c7442e', color: (p.id === tier || isSelected) ? '#111' : '#fff',
-                    fontWeight: 600, cursor: (p.id === tier) ? 'default' : 'pointer'
-                  }}
-                >
-                  {p.id === tier ? 'Current' : (isSelected ? 'Selected' : `Choose ${p.label}`)}
-                </button>
+                    {isSelected ? '✓ Selected' : `Select ${p.label}`}
+                  </button>
+                )}
               </div>
             );
           })}
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', marginTop: 48 }}>
-          <div />
-          <div style={{ justifySelf:'center' }}>
-            <button onClick={handlePlanSave} disabled={saveBusy || selectedTier === tier}
-              style={{ padding:'10px 16px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff' }}>
-              {saveBusy ? 'Saving…' : summary?.subscription?.id ? 'Save plan' : `Subscribe to ${selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)}`}
+
+        {/* ── CTA: confirm selection ── */}
+        {selectedTier && selectedTier !== tier && (
+          <div style={{ marginTop:20, display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
+            <button
+              onClick={handlePlanSave}
+              disabled={saveBusy}
+              style={{
+                padding:'13px 40px', borderRadius:10, fontSize:15, fontWeight:700,
+                border:'none', background:'#111', color:'#fff', cursor: saveBusy ? 'wait' : 'pointer',
+                boxShadow:'0 2px 8px rgba(0,0,0,0.18)', transition:'opacity .12s',
+                opacity: saveBusy ? 0.7 : 1,
+              }}
+            >
+              {ctaLabel}
+            </button>
+            {summary?.subscription?.id && (
+              <span style={{ fontSize:12, color:'#888' }}>Plan change takes effect immediately</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Payment method ── */}
+      <div style={{ marginTop:32, padding:'20px 20px', borderRadius:12, border:'1px solid #e5e7eb', background:'#fff' }}>
+        <div style={{ fontSize:13, fontWeight:600, color:'#555', letterSpacing:.3, textTransform:'uppercase', marginBottom:14 }}>Payment method</div>
+        {!updatingCard ? (
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+            {summary?.paymentMethod ? (
+              <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                <div style={{ width:44, height:28, borderRadius:4, border:'1px solid #e5e7eb', background:'#f9fafb', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#555', letterSpacing:.3 }}>
+                  {(summary.paymentMethod.brand || 'CARD').toUpperCase().slice(0,4)}
+                </div>
+                <div>
+                  <div style={{ fontSize:14, fontWeight:600 }}>•••• •••• •••• {summary.paymentMethod.last4}</div>
+                  <div style={{ fontSize:12, color:'#888' }}>Expires {summary.paymentMethod.exp_month}/{summary.paymentMethod.exp_year}</div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize:14, color:'#888' }}>No payment method on file</div>
+            )}
+            <button onClick={handleUpdateCard} disabled={cardBusy}
+              style={{ padding:'8px 16px', borderRadius:8, border:'1px solid #e5e7eb', background:'#fff', color:'#111', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+              {cardBusy ? 'Preparing…' : summary?.paymentMethod ? 'Update card' : 'Add card'}
             </button>
           </div>
-          <div />
-        </div>
-      </div>
-
-      <div style={{ marginTop:24, borderTop:'1px solid #eee' }} />
-
-      {/* Payment method */}
-      <div style={{ marginTop:16 }}>
-        <div style={{ marginBottom:8, color:'#666' }}>Payment method</div>
-        {summary?.paymentMethod ? (
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <span style={{ color:'#444' }}>{summary.paymentMethod.brand} •••• {summary.paymentMethod.last4} (exp {summary.paymentMethod.exp_month}/{summary.paymentMethod.exp_year})</span>
-          </div>
         ) : (
-          <div style={{ color:'#666' }}>No default card on file</div>
-        )}
-        {!updatingCard ? (
-          <div style={{ marginTop:8 }}>
-            <button onClick={handleUpdateCard} disabled={cardBusy} style={{ padding:'10px 14px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff' }}>{cardBusy?'Preparing…':'Update card'}</button>
-          </div>
-        ) : (
-          <div style={{ marginTop:12, padding:12, border:'1px solid #e5e7eb', borderRadius:8 }}>
-            <div ref={mountRef} />
-            <div style={{ display:'grid', gridTemplateColumns:'1fr auto auto', gap:8, alignItems:'center', marginTop:12 }}>
-              <div style={{ color:'#555', fontSize:12 }}>Powered by Stripe</div>
-              <button onClick={cancelCardUpdate} disabled={cardBusy} style={{ padding:'8px 12px', border:'1px solid #ddd', borderRadius:8, background:'#fff' }}>Cancel</button>
-              <button onClick={saveUpdatedCard} disabled={cardBusy || !cardReady} style={{ padding:'8px 12px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff', opacity: (!cardReady && !cardBusy) ? 0.5 : 1 }}>{cardBusy ? 'Saving…' : !cardReady ? 'Loading…' : 'Save card'}</button>
+          <div>
+            <div ref={mountRef} style={{ minHeight: 200 }} />
+            {err && updatingCard && (
+              <div style={{ marginTop:8, color:'#b00020', fontSize:13 }}>{err}</div>
+            )}
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:16, flexWrap:'wrap', gap:8 }}>
+              <span style={{ fontSize:12, color:'#aaa' }}>Powered by Stripe</span>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={cancelCardUpdate} disabled={cardBusy}
+                  style={{ padding:'8px 16px', border:'1px solid #e5e7eb', borderRadius:8, background:'#fff', color:'#555', fontSize:13, cursor:'pointer' }}>Cancel</button>
+                <button onClick={saveUpdatedCard} disabled={cardBusy || !cardReady}
+                  style={{ padding:'8px 20px', border:'none', borderRadius:8, background:'#111', color:'#fff', fontSize:13, fontWeight:600, cursor: (!cardReady || cardBusy) ? 'wait' : 'pointer', opacity: (!cardReady && !cardBusy) ? 0.5 : 1 }}>
+                  {cardBusy ? 'Saving…' : !cardReady ? 'Loading…' : 'Save card'}
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      <div style={{ marginTop:24, borderTop:'1px solid #eee' }} />
+      {/* ── Legal ── */}
+      <p style={{ marginTop:24, color:'#aaa', fontSize:11, lineHeight:1.6 }}>
+        Cancellations take effect at period end. Upgrades are immediate. See our{' '}
+        <a href="/legal/billing" style={{ color:'#aaa' }}>Billing Terms</a> and{' '}
+        <a href="/legal/refunds" style={{ color:'#aaa' }}>Refund Policy</a>.
+      </p>
 
-      {/* Cancel/resume */}
-      <div style={{ marginTop:16 }}>
-        <div style={{ marginBottom:8, color:'#666' }}>Status</div>
-        {summary?.subscription ? (
-          <div style={{ display:'grid', gap:8 }}>
-            <div style={{ color:'#444' }}>
-              Plan: {formatTierLabel(summary.subscription.tier || summary.effective_tier || tier)}
-              {' '}
-              <span style={{ color:'#666' }}>
-                ({formatSubStatus(summary.subscription.status)}{summary.subscription.cancel_at_period_end ? '; cancels at period end' : ''})
-              </span>
-            </div>
-            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-              {!summary.subscription.cancel_at_period_end && (
-                <button onClick={() => handleCancel('end_of_period')} disabled={cancelBusy} style={{ padding:'8px 12px', border:'1px solid #ddd', borderRadius:8, background:'#fff' }}>Cancel Subscription</button>
-              )}
-              {summary.subscription.cancel_at_period_end && (
-                <button onClick={() => handleCancel('resume')} disabled={cancelBusy} style={{ padding:'8px 12px', border:'1px solid #ddd', borderRadius:8, background:'#fff' }}>Resume</button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div style={{ color:'#666' }}>Plan: {formatTierLabel(summary?.effective_tier || tier)} (Inactive)</div>
-        )}
-      </div>
-
-      {/* Immediate-cancel survey removed; only end-of-period cancel supported here. */}
       <style>{`
         .back-link:focus-visible { outline: 2px solid #c7442e; outline-offset: 2px; }
-        @media (max-width: 480px) {
-          /* Ensure header row reserves space for status badge on small screens */
-          [role="tooltip"] { pointer-events: none; }
+        @media (max-width: 540px) {
+          div[style*="grid-template-columns: repeat(2, 1fr)"] { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
