@@ -8,6 +8,7 @@ import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 import { featuresForTier } from '@/app/lib/entitlements';
 import { listLearners } from '../clientApi';
 import OnboardingBanner from '@/app/components/OnboardingBanner';
+import VideoTutorial from '@/app/components/VideoTutorial';
 import { useOnboarding } from '@/app/hooks/useOnboarding';
 
 const grades = [
@@ -222,16 +223,30 @@ export default function AddLearnerPage() {
 			<h1 style={{ marginTop: 0 }}>Add Learner</h1>
 
 			{showOnboarding && (
-				<OnboardingBanner
-					step={1}
-					title="Create your first learner"
-					message="Give your learner a name and grade level. Targets and timers are already set to smart defaults — adjust them any time from the Learners page."
-					action={
-						<button type="button" onClick={() => setSettingsTipOpen((o) => !o)} style={{ background:'none', border:'none', color:'#6366f1', fontSize:13, fontWeight:600, cursor:'pointer', padding:0 }}>
-							{settingsTipOpen ? '▲ Hide' : '▼ Show'} settings, targets &amp; timers
-						</button>
-					}
-				/>
+				<>
+					<OnboardingBanner
+						step={1}
+						title="Create your first learner"
+						message="Give your learner a name and grade level. Targets and timers are already set to smart defaults — adjust them any time from the Learners page."
+						action={
+							<button type="button" onClick={() => setSettingsTipOpen((o) => !o)} style={{ background:'none', border:'none', color:'#6366f1', fontSize:13, fontWeight:600, cursor:'pointer', padding:0 }}>
+								{settingsTipOpen ? '▲ Hide' : '▼ Show'} settings, targets &amp; timers
+							</button>
+						}
+					/>
+					<div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16, padding:'10px 14px', background:'linear-gradient(135deg,#ede9fe 0%,#e0e7ff 100%)', border:'1px solid #c4b5fd', borderRadius:10 }}>
+						<VideoTutorial
+							src="/media/Mr. Mentor Wizard Helper.mp4"
+							title="Mr. Mentor — Wizard Walkthrough"
+							label="Watch the walkthrough"
+							width={120}
+						/>
+						<div>
+							<div style={{ fontWeight:700, fontSize:13, color:'#4c1d95', marginBottom:3 }}>🤖 Mr. Mentor explains it all</div>
+							<div style={{ fontSize:12, color:'#5b21b6', lineHeight:1.5 }}>Watch a quick walkthrough of the setup wizard — you can move the video left or right so it doesn&apos;t block the page.</div>
+						</div>
+					</div>
+				</>
 			)}
 
 			{showOnboarding && settingsTipOpen && (
