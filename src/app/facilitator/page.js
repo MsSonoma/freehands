@@ -4,6 +4,7 @@ import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ensurePinAllowed } from '@/app/lib/pinGate';
+import { useOnboarding, ONBOARDING_STEPS } from '@/app/hooks/useOnboarding';
 
 // Facilitator Hub
 export default function FacilitatorPage() {
@@ -14,6 +15,7 @@ export default function FacilitatorPage() {
   const [facilitatorName, setFacilitatorName] = useState('');
   const [plan, setPlan] = useState(null);
   const [pinChecked, setPinChecked] = useState(false);
+  const { step: onboardingStep, loaded: onboardingLoaded } = useOnboarding();
 
   // Check PIN requirement on mount - this is the main entry point to facilitator section
   useEffect(() => {
@@ -169,6 +171,14 @@ export default function FacilitatorPage() {
       window.removeEventListener('focus', onVis);
     };
   }, []);
+
+  // Auto-redirect first-time users to the learners setup page
+  useEffect(() => {
+    if (!pinChecked || !onboardingLoaded) return;
+    if (onboardingStep === ONBOARDING_STEPS.CREATE_LEARNER) {
+      router.replace('/facilitator/learners/add?onboarding=1');
+    }
+  }, [pinChecked, onboardingLoaded, onboardingStep, router]);
 
   // Don't render page content until PIN check is complete
   if (!pinChecked) {
