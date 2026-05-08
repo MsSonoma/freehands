@@ -1003,8 +1003,8 @@ function LessonsPageInner(){
         </div>
       )}
 
-      {/* Golden Key Counter */}
-      {goldenKeysEnabled === true && !loading && !lessonsLoading && (
+      {/* Golden Key Counter — only shown when Ms. Sonoma is selected */}
+      {goldenKeysEnabled === true && !loading && !lessonsLoading && selectedTeacher === 'sonoma' && (
         <GoldenKeyCounter
           learnerId={learnerId}
           selected={goldenKeySelected}
@@ -1437,8 +1437,8 @@ function LessonsPageInner(){
                       <p style={{ margin: '0 0 16px', color: '#374151', fontSize: 15, lineHeight: 1.6 }}>{l.blurb}</p>
                     )}
 
-                    {/* Golden Key toggle */}
-                    {goldenKeysEnabled === true && !isDemo && (() => {
+                    {/* Golden Key toggle — only when Ms. Sonoma is selected */}
+                    {goldenKeysEnabled === true && !isDemo && selectedTeacher === 'sonoma' && (() => {
                       const keyOn = goldenKeySelected || pendingKeyLessonKey === lessonKey || hasActiveKey
                       const facilitatorOnly = hasActiveKey && !goldenKeySelected && pendingKeyLessonKey !== lessonKey
                       return (
