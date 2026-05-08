@@ -371,24 +371,28 @@ export default function LessonEditor({
   }
 
   // Styles - compact mode for overlays
-  const sectionStyle = compact 
-    ? { marginBottom: 12, padding: 8, border: '1px solid #e5e7eb', borderRadius: 6, background: '#f9fafb' }
-    : { marginBottom: 24, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8, background: '#f9fafb' }
+  const sectionStyle = compact
+    ? { marginBottom: 10, border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', overflow: 'hidden' }
+    : { marginBottom: 16, border: '1px solid #e5e7eb', borderRadius: 14, background: '#fff', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }
+  const sectionTitleStyle = compact
+    ? { margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: '#374151', padding: '6px 10px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 6 }
+    : { margin: '0 0 0', fontSize: 13, fontWeight: 700, color: '#374151', padding: '11px 20px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb', letterSpacing: '0.02em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }
+  const sectionContentStyle = compact ? { padding: '8px 10px' } : { padding: '18px 20px' }
   const labelStyle = compact
-    ? { display: 'block', fontWeight: 600, marginBottom: 2, fontSize: 11 }
-    : { display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 14 }
+    ? { display: 'block', fontWeight: 600, marginBottom: 2, fontSize: 11, color: '#374151' }
+    : { display: 'block', fontWeight: 600, marginBottom: 5, fontSize: 13, color: '#374151' }
   const inputStyle = compact
-    ? { width: '100%', padding: '4px 6px', border: '1px solid #d1d5db', borderRadius: 4, fontSize: 11 }
-    : { width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14 }
+    ? { width: '100%', padding: '4px 6px', border: '1px solid #e5e7eb', borderRadius: 4, fontSize: 11, background: '#f9fafb', color: '#111827', boxSizing: 'border-box' }
+    : { width: '100%', padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, background: '#f9fafb', color: '#111827', boxSizing: 'border-box' }
   const textareaStyle = compact
-    ? { ...inputStyle, minHeight: 50, fontFamily: 'inherit' }
-    : { ...inputStyle, minHeight: 80, fontFamily: 'inherit' }
+    ? { ...inputStyle, minHeight: 50, fontFamily: 'inherit', resize: 'vertical' }
+    : { ...inputStyle, minHeight: 80, fontFamily: 'inherit', resize: 'vertical' }
   const btnStyle = compact
-    ? { padding: '4px 8px', border: '1px solid #111', background: '#111', color: '#fff', borderRadius: 4, fontWeight: 600, fontSize: 10, cursor: 'pointer' }
-    : { padding: '6px 10px', border: '1px solid #111', background: '#111', color: '#fff', borderRadius: 6, fontWeight: 600, fontSize: 13, cursor: 'pointer' }
-  const btnSecondaryStyle = { ...btnStyle, background: '#6b7280', borderColor: '#6b7280' }
-  const btnDangerStyle = { ...btnStyle, background: '#dc2626', borderColor: '#dc2626' }
-  const btnAddStyle = { ...btnStyle, background: '#059669', borderColor: '#059669' }
+    ? { padding: '4px 8px', border: 'none', background: '#4f46e5', color: '#fff', borderRadius: 4, fontWeight: 600, fontSize: 10, cursor: 'pointer' }
+    : { padding: '7px 14px', border: 'none', background: '#4f46e5', color: '#fff', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }
+  const btnSecondaryStyle = { ...btnStyle, background: '#6b7280' }
+  const btnDangerStyle = { ...btnStyle, background: '#dc2626' }
+  const btnAddStyle = { ...btnStyle, background: '#059669' }
 
   return (
     <div style={{ 
@@ -397,26 +401,31 @@ export default function LessonEditor({
       height: '100%',
       background: '#fff', 
       borderRadius: compact ? 8 : 12, 
-      border: '1px solid #e5e7eb',
+      border: '1px solid #e0e7ff',
       overflow: 'hidden'
     }}>
-      {/* Sticky Header with Title, Save, and Close */}
+      {/* Sticky Header */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: compact ? '12px 16px' : '16px 24px',
-        borderBottom: '2px solid #e5e7eb',
-        background: '#fff',
+        padding: compact ? '10px 14px' : '16px 24px',
+        borderBottom: '1px solid #e0e7ff',
+        background: compact ? '#fff' : 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 50%, #faf5ff 100%)',
         position: 'sticky',
         top: 0,
         zIndex: 10
       }}>
-        <h2 style={{ 
-          margin: 0, 
-          fontSize: compact ? 16 : 20,
-          fontWeight: 600 
-        }}>Edit Lesson</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 6 : 10 }}>
+          {!compact && <span style={{ fontSize: 20, lineHeight: 1 }}>✏️</span>}
+          <h2 style={{ 
+            margin: 0, 
+            fontSize: compact ? 15 : 20,
+            fontWeight: 700,
+            color: compact ? '#111827' : '#1e1b4b',
+            letterSpacing: '-0.01em'
+          }}>Lesson Editor</h2>
+        </div>
         
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', position: 'relative' }}>
           {isMobilePortrait ? (
@@ -611,25 +620,35 @@ export default function LessonEditor({
           ) : (
             <>
               {/* Desktop: Inline buttons */}
-          <button 
+          <button
             style={{
-              ...btnStyle,
-              background: '#059669',
-              borderColor: '#059669'
+              padding: '9px 20px',
+              border: 'none',
+              background: busy ? '#9ca3af' : 'linear-gradient(135deg, #059669, #10b981)',
+              color: '#fff',
+              borderRadius: 8,
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: busy ? 'not-allowed' : 'pointer',
+              boxShadow: busy ? 'none' : '0 2px 8px rgba(5,150,105,0.2)',
             }}
-            onClick={handleSave} 
+            onClick={handleSave}
             disabled={busy}
           >
             {busy ? 'Saving...' : '💾 Save'}
           </button>
-          
+
           {onNotes && (
             <button
               style={{
-                ...btnStyle,
+                padding: '9px 14px',
+                border: '1px solid #c7d2fe',
                 background: '#fff',
-                color: '#374151',
-                border: '1px solid #d1d5db'
+                color: '#4338ca',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: busy ? 'not-allowed' : 'pointer',
               }}
               onClick={onNotes}
               disabled={busy}
@@ -638,14 +657,18 @@ export default function LessonEditor({
               📝 Notes
             </button>
           )}
-          
+
           {onSchedule && (
             <button
               style={{
-                ...btnStyle,
+                padding: '9px 14px',
+                border: '1px solid #c7d2fe',
                 background: '#fff',
-                color: '#374151',
-                border: '1px solid #d1d5db'
+                color: '#4338ca',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: busy ? 'not-allowed' : 'pointer',
               }}
               onClick={onSchedule}
               disabled={busy}
@@ -654,14 +677,18 @@ export default function LessonEditor({
               📅 Schedule
             </button>
           )}
-          
+
           {onAssign && (
             <button
               style={{
-                ...btnStyle,
+                padding: '9px 14px',
+                border: '1px solid #c7d2fe',
                 background: '#fff',
-                color: '#374151',
-                border: '1px solid #d1d5db'
+                color: '#4338ca',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: busy ? 'not-allowed' : 'pointer',
               }}
               onClick={onAssign}
               disabled={busy}
@@ -670,15 +697,18 @@ export default function LessonEditor({
               ✓ Assign
             </button>
           )}
-          
+
           {onGenerateVisualAids && (
             <button
               style={{
-                ...btnStyle,
-                background: generatingVisualAids ? '#9ca3af' : '#6366f1',
-                borderColor: generatingVisualAids ? '#9ca3af' : '#6366f1',
+                padding: '9px 14px',
+                border: 'none',
+                background: generatingVisualAids ? '#9ca3af' : 'linear-gradient(135deg, #4f46e5, #7c3aed)',
                 color: '#fff',
-                cursor: generatingVisualAids ? 'not-allowed' : 'pointer'
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: (busy || generatingVisualAids) ? 'not-allowed' : 'pointer',
               }}
               onClick={onGenerateVisualAids}
               disabled={busy || generatingVisualAids}
@@ -687,14 +717,18 @@ export default function LessonEditor({
               {visualAidsButtonText}
             </button>
           )}
-          
+
           {onDelete && (
             <button
               style={{
-                ...btnStyle,
+                padding: '9px 14px',
+                border: 'none',
                 background: '#dc2626',
-                borderColor: '#dc2626',
-                color: '#fff'
+                color: '#fff',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: busy ? 'not-allowed' : 'pointer',
               }}
               onClick={onDelete}
               disabled={busy}
@@ -706,17 +740,18 @@ export default function LessonEditor({
           </>
           )}
           
-          <button 
+          <button
             style={{
-              padding: '6px 12px',
+              padding: '6px 10px',
               background: 'transparent',
-              border: 'none',
-              fontSize: 24,
-              cursor: 'pointer',
+              border: '1px solid #e5e7eb',
+              borderRadius: 8,
+              fontSize: 22,
+              cursor: busy ? 'not-allowed' : 'pointer',
               color: '#6b7280',
-              lineHeight: 1
+              lineHeight: 1,
             }}
-            onClick={onCancel} 
+            onClick={onCancel}
             disabled={busy}
             title="Close without saving"
           >
@@ -729,12 +764,12 @@ export default function LessonEditor({
       <div style={{
         flex: 1,
         overflow: 'auto',
-        padding: compact ? 8 : 20
+        padding: compact ? 8 : '18px 20px'
       }}>
         {errors.length > 0 && (
           <div style={compact
             ? { padding: 8, background: '#fee2e2', border: '1px solid #dc2626', borderRadius: 6, marginBottom: 8, fontSize: 11 }
-            : { padding: 12, background: '#fee2e2', border: '1px solid #dc2626', borderRadius: 8, marginBottom: 16 }
+            : { padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, marginBottom: 14, fontSize: 13, color: '#b91c1c' }
           }>
             <strong>Please fix these errors:</strong>
             <ul style={{ margin: '4px 0 0', paddingLeft: 16, fontSize: compact ? 10 : 13 }}>
@@ -745,11 +780,11 @@ export default function LessonEditor({
 
       {/* Basic Info */}
       <div style={sectionStyle}>
-        <h3 style={compact 
-          ? { marginTop: 0, marginBottom: 8, fontSize: 12 }
-          : { marginTop: 0, marginBottom: 12 }
-        }>Basic Information</h3>
-        
+        <div style={sectionTitleStyle}>
+          <span style={{ fontSize: compact ? 11 : 14 }}>🎓</span>
+          <span>Basic Information</span>
+        </div>
+        <div style={sectionContentStyle}>
         <label style={labelStyle}>Title *</label>
         <input
           style={inputStyle}
@@ -844,13 +879,14 @@ export default function LessonEditor({
             />
           </div>
         )}
+        </div>
       </div>
 
       {/* Vocabulary */}
       <VocabularyEditor
         vocab={toArray(lesson.vocab || [])}
         onChange={(newVocab) => updateField('vocab', newVocab)}
-        styles={{ sectionStyle, labelStyle, inputStyle, btnAddStyle, btnDangerStyle }}
+        styles={{ sectionStyle, sectionTitleStyle, sectionContentStyle, labelStyle, inputStyle, btnAddStyle, btnDangerStyle }}
         onRewriteDefinition={onRewriteVocabDefinition}
         rewritingDefinition={rewritingVocabDefinition}
         onGenerate={() => handleGenerate('vocab')}
@@ -861,7 +897,7 @@ export default function LessonEditor({
       <MultipleChoiceEditor
         questions={toArray(lesson.multiplechoice || [])}
         onChange={(newQuestions) => updateField('multiplechoice', newQuestions)}
-        styles={{ sectionStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
+        styles={{ sectionStyle, sectionTitleStyle, sectionContentStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
         onGenerate={() => handleGenerate('multiplechoice')}
         generating={!!generating.multiplechoice}
       />
@@ -870,7 +906,7 @@ export default function LessonEditor({
       <TrueFalseEditor
         questions={toArray(lesson.truefalse || [])}
         onChange={(newQuestions) => updateField('truefalse', newQuestions)}
-        styles={{ sectionStyle, labelStyle, inputStyle, btnAddStyle, btnDangerStyle }}
+        styles={{ sectionStyle, sectionTitleStyle, sectionContentStyle, labelStyle, inputStyle, btnAddStyle, btnDangerStyle }}
         onGenerate={() => handleGenerate('truefalse')}
         generating={!!generating.truefalse}
       />
@@ -879,7 +915,7 @@ export default function LessonEditor({
       <ShortAnswerEditor
         questions={toArray(lesson.shortanswer || [])}
         onChange={(newQuestions) => updateField('shortanswer', newQuestions)}
-        styles={{ sectionStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
+        styles={{ sectionStyle, sectionTitleStyle, sectionContentStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
         onGenerate={() => handleGenerate('shortanswer')}
         generating={!!generating.shortanswer}
       />
@@ -888,7 +924,7 @@ export default function LessonEditor({
       <FillInBlankEditor
         questions={toArray(lesson.fillintheblank || [])}
         onChange={(newQuestions) => updateField('fillintheblank', newQuestions)}
-        styles={{ sectionStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
+        styles={{ sectionStyle, sectionTitleStyle, sectionContentStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
         onGenerate={() => handleGenerate('fillintheblank')}
         generating={!!generating.fillintheblank}
       />
@@ -918,12 +954,16 @@ function VocabularyEditor({ vocab, onChange, styles, onRewriteDefinition, rewrit
 
   return (
     <div style={styles.sectionStyle}>
-      <h3 style={{ marginTop: 0, marginBottom: 12 }}>Vocabulary Terms</h3>
+      <div style={styles.sectionTitleStyle}>
+        <span style={{ fontSize: 14 }}>📖</span>
+        <span>Vocabulary Terms</span>
+      </div>
+      <div style={styles.sectionContentStyle}>
       {vocab.length === 0 ? (
-        <p style={{ color: '#6b7280', fontSize: 14 }}>No vocabulary terms yet. Add one below.</p>
+        <p style={{ color: '#6b7280', fontSize: 14, margin: '0 0 12px' }}>No vocabulary terms yet. Add one below.</p>
       ) : (
         vocab.map((item, idx) => (
-          <div key={idx} style={{ marginBottom: 12, padding: 12, border: '1px solid #d1d5db', borderRadius: 6, background: '#fff' }}>
+          <div key={idx} style={{ marginBottom: 12, padding: 12, border: '1px solid #e5e7eb', borderRadius: 10, background: '#fff' }}>
             <div style={{ marginBottom: 8 }}>
               <label style={styles.labelStyle}>Term</label>
               <textarea
@@ -1002,7 +1042,7 @@ function VocabularyEditor({ vocab, onChange, styles, onRewriteDefinition, rewrit
           </div>
         ))
       )}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
         <button style={styles.btnAddStyle} onClick={addTerm}>
           + Add Vocabulary Term
         </button>
@@ -1013,6 +1053,7 @@ function VocabularyEditor({ vocab, onChange, styles, onRewriteDefinition, rewrit
         >
           {generating ? '✨ Generating...' : '✨ Generate Vocab'}
         </button>
+      </div>
       </div>
     </div>
   )
@@ -1062,12 +1103,16 @@ function MultipleChoiceEditor({ questions, onChange, styles, onGenerate, generat
 
   return (
     <div style={styles.sectionStyle}>
-      <h3 style={{ marginTop: 0, marginBottom: 12 }}>Multiple Choice Questions</h3>
+      <div style={styles.sectionTitleStyle}>
+        <span style={{ fontSize: 14 }}>📋</span>
+        <span>Multiple Choice Questions</span>
+      </div>
+      <div style={styles.sectionContentStyle}>
       {questions.length === 0 ? (
-        <p style={{ color: '#6b7280', fontSize: 14 }}>No multiple choice questions yet. Add one below.</p>
+        <p style={{ color: '#6b7280', fontSize: 14, margin: '0 0 12px' }}>No multiple choice questions yet. Add one below.</p>
       ) : (
         questions.map((q, qIdx) => (
-          <div key={qIdx} style={{ marginBottom: 16, padding: 12, border: '1px solid #d1d5db', borderRadius: 6, background: '#fff' }}>
+          <div key={qIdx} style={{ marginBottom: 16, padding: 12, border: '1px solid #e5e7eb', borderRadius: 10, background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <strong>Question {qIdx + 1}</strong>
               <button style={styles.btnDangerStyle} onClick={() => removeQuestion(qIdx)}>
@@ -1112,7 +1157,7 @@ function MultipleChoiceEditor({ questions, onChange, styles, onGenerate, generat
           </div>
         ))
       )}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
         <button style={styles.btnAddStyle} onClick={addQuestion}>
           + Add Multiple Choice Question
         </button>
@@ -1123,6 +1168,7 @@ function MultipleChoiceEditor({ questions, onChange, styles, onGenerate, generat
         >
           {generating ? '✨ Generating...' : '✨ Generate Multiple Choice Question'}
         </button>
+      </div>
       </div>
     </div>
   )
@@ -1146,12 +1192,16 @@ function TrueFalseEditor({ questions, onChange, styles, onGenerate, generating =
 
   return (
     <div style={styles.sectionStyle}>
-      <h3 style={{ marginTop: 0, marginBottom: 12 }}>True/False Questions</h3>
+      <div style={styles.sectionTitleStyle}>
+        <span style={{ fontSize: 14 }}>✅</span>
+        <span>True/False Questions</span>
+      </div>
+      <div style={styles.sectionContentStyle}>
       {questions.length === 0 ? (
-        <p style={{ color: '#6b7280', fontSize: 14 }}>No true/false questions yet. Add one below.</p>
+        <p style={{ color: '#6b7280', fontSize: 14, margin: '0 0 12px' }}>No true/false questions yet. Add one below.</p>
       ) : (
         questions.map((q, idx) => (
-          <div key={idx} style={{ marginBottom: 12, padding: 12, border: '1px solid #d1d5db', borderRadius: 6, background: '#fff' }}>
+          <div key={idx} style={{ marginBottom: 12, padding: 12, border: '1px solid #e5e7eb', borderRadius: 10, background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <strong>Question {idx + 1}</strong>
               <button style={styles.btnDangerStyle} onClick={() => removeQuestion(idx)}>
@@ -1189,7 +1239,7 @@ function TrueFalseEditor({ questions, onChange, styles, onGenerate, generating =
           </div>
         ))
       )}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
         <button style={styles.btnAddStyle} onClick={addQuestion}>
           + Add True/False Question
         </button>
@@ -1200,6 +1250,7 @@ function TrueFalseEditor({ questions, onChange, styles, onGenerate, generating =
         >
           {generating ? '✨ Generating...' : '✨ Generate True/False Question'}
         </button>
+      </div>
       </div>
     </div>
   )
@@ -1245,12 +1296,16 @@ function ShortAnswerEditor({ questions, onChange, styles, onGenerate, generating
 
   return (
     <div style={styles.sectionStyle}>
-      <h3 style={{ marginTop: 0, marginBottom: 12 }}>Short Answer Questions</h3>
+      <div style={styles.sectionTitleStyle}>
+        <span style={{ fontSize: 14 }}>💬</span>
+        <span>Short Answer Questions</span>
+      </div>
+      <div style={styles.sectionContentStyle}>
       {questions.length === 0 ? (
-        <p style={{ color: '#6b7280', fontSize: 14 }}>No short answer questions yet. Add one below.</p>
+        <p style={{ color: '#6b7280', fontSize: 14, margin: '0 0 12px' }}>No short answer questions yet. Add one below.</p>
       ) : (
         questions.map((q, qIdx) => (
-          <div key={qIdx} style={{ marginBottom: 16, padding: 12, border: '1px solid #d1d5db', borderRadius: 6, background: '#fff' }}>
+          <div key={qIdx} style={{ marginBottom: 16, padding: 12, border: '1px solid #e5e7eb', borderRadius: 10, background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <strong>Question {qIdx + 1}</strong>
               <button style={styles.btnDangerStyle} onClick={() => removeQuestion(qIdx)}>
@@ -1334,7 +1389,7 @@ function ShortAnswerEditor({ questions, onChange, styles, onGenerate, generating
           </div>
         ))
       )}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
         <button style={styles.btnAddStyle} onClick={addQuestion}>
           + Add Short Answer Question
         </button>
@@ -1345,6 +1400,7 @@ function ShortAnswerEditor({ questions, onChange, styles, onGenerate, generating
         >
           {generating ? '✨ Generating...' : '✨ Generate Short Answer Question'}
         </button>
+      </div>
       </div>
     </div>
   )
@@ -1390,15 +1446,19 @@ function FillInBlankEditor({ questions, onChange, styles, onGenerate, generating
 
   return (
     <div style={styles.sectionStyle}>
-      <h3 style={{ marginTop: 0, marginBottom: 12 }}>Fill in the Blank Questions</h3>
+      <div style={styles.sectionTitleStyle}>
+        <span style={{ fontSize: 14 }}>✏️</span>
+        <span>Fill in the Blank Questions</span>
+      </div>
+      <div style={styles.sectionContentStyle}>
       <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 12px' }}>
         Use _____ in the question text to indicate where the blank should be.
       </p>
       {questions.length === 0 ? (
-        <p style={{ color: '#6b7280', fontSize: 14 }}>No fill-in-the-blank questions yet. Add one below.</p>
+        <p style={{ color: '#6b7280', fontSize: 14, margin: '0 0 12px' }}>No fill-in-the-blank questions yet. Add one below.</p>
       ) : (
         questions.map((q, qIdx) => (
-          <div key={qIdx} style={{ marginBottom: 16, padding: 12, border: '1px solid #d1d5db', borderRadius: 6, background: '#fff' }}>
+          <div key={qIdx} style={{ marginBottom: 16, padding: 12, border: '1px solid #e5e7eb', borderRadius: 10, background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <strong>Question {qIdx + 1}</strong>
               <button style={styles.btnDangerStyle} onClick={() => removeQuestion(qIdx)}>
@@ -1436,7 +1496,7 @@ function FillInBlankEditor({ questions, onChange, styles, onGenerate, generating
           </div>
         ))
       )}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
         <button style={styles.btnAddStyle} onClick={addQuestion}>
           + Add Fill in the Blank Question
         </button>
@@ -1447,6 +1507,7 @@ function FillInBlankEditor({ questions, onChange, styles, onGenerate, generating
         >
           {generating ? '✨ Generating...' : '✨ Generate Fill in the Blank Question'}
         </button>
+      </div>
       </div>
     </div>
   )
