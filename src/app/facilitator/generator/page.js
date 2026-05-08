@@ -414,12 +414,16 @@ export default function LessonMakerPage(){
   }, [busy, form, quotaInfo, resolvedHasAccess, ent.lessonGenerator, quotaAllowed])
 
   if (loading || !pinChecked) {
-    return <main style={{ padding: 24 }}><p>Loading...</p></main>
+    return (
+      <main style={{ padding: 24, minHeight: '60vh' }}>
+        <p style={{ color: '#6b7280' }}>Loading...</p>
+      </main>
+    )
   }
 
   return (
     <>
-    <main style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
+    <main style={{ padding: '24px 24px 48px', maxWidth: 860, margin: '0 auto' }}>
       {showOnboarding && (
         <OnboardingBanner
           step={2}
@@ -427,252 +431,361 @@ export default function LessonMakerPage(){
           message="Fill in the subject, grade, and topic below. Ms. Sonoma will write a complete lesson with questions for each phase. You can edit it afterward."
         />
       )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 240 }}>
-          <h1 style={{ marginTop: 0, marginBottom: 6 }}>Lesson Generator</h1>
-          <p style={{ marginTop: 0, color: '#6b7280' }}>
-            Generate a lesson, then edit it in the lesson editor.
+
+      {/* ── Header banner ── */}
+      <div style={{
+        background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 50%, #faf5ff 100%)',
+        border: '1px solid #e0e7ff',
+        borderRadius: 16,
+        padding: '20px 24px',
+        marginBottom: 20,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 16,
+        flexWrap: 'wrap',
+      }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 26, lineHeight: 1 }}>✨</span>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#1e1b4b', letterSpacing: '-0.01em' }}>
+              Lesson Generator
+            </h1>
+          </div>
+          <p style={{ margin: '4px 0 0 36px', fontSize: 13, color: '#6366f1', fontWeight: 500 }}>
+            AI-powered lessons, built in seconds
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button
-            onClick={() => router.push('/facilitator/lessons')}
-            style={{
-              padding: '10px 14px',
-              borderRadius: 8,
-              border: '1px solid #d1d5db',
-              background: '#fff',
-              cursor: 'pointer',
-              fontWeight: 600
-            }}
-          >
-            ← Back to Lessons
-          </button>
-        </div>
+        <button
+          onClick={() => router.push('/facilitator/lessons')}
+          style={{
+            padding: '9px 16px',
+            borderRadius: 8,
+            border: '1px solid #c7d2fe',
+            background: '#fff',
+            color: '#4338ca',
+            cursor: 'pointer',
+            fontWeight: 600,
+            fontSize: 13,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          ← Back to Lessons
+        </button>
       </div>
 
       {toast && (
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginBottom: 16 }}>
           <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
         </div>
       )}
 
-      <form onSubmit={handleGenerate} style={{ marginTop: 18 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12 }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Grade</span>
-            <select
-              value={form.grade}
-              onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}
-              style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}
-              required
-            >
-              <option value="">Select grade</option>
-              {grades.map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-          </label>
+      <form onSubmit={handleGenerate} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Difficulty</span>
-            <select
-              value={form.difficulty}
-              onChange={e => setForm(f => ({ ...f, difficulty: e.target.value }))}
-              style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}
-              required
-            >
-              {difficulties.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </label>
-
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Subject</span>
-            <select
-              value={form.subject}
-              onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-              style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}
-              required
-            >
-              {subjects.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </label>
-        </div>
-
-        <div style={{ marginTop: 12, display: 'grid', gap: 12 }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Title</span>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                value={form.title}
-                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                style={{ flex: 1, padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}
-                placeholder="e.g., Fractions: Adding Like Denominators"
-                required
-              />
-              <AIRewriteButton
-                text={form.title}
-                onRewrite={handleRewriteTitle}
-                loading={rewritingTitle}
-              />
-            </div>
-          </label>
-
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Description</span>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <textarea
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                style={{ flex: 1, padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, minHeight: 90 }}
-                placeholder="What should the learner learn?"
-              />
-              <AIRewriteButton
-                text={form.description}
-                onRewrite={handleRewriteDescription}
-                loading={rewritingDescription}
-              />
-            </div>
-          </label>
-
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Teaching Notes</span>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <textarea
-                value={form.notes}
-                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                style={{ flex: 1, padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, minHeight: 110 }}
-                placeholder="Facilitator notes, examples, reminders..."
-              />
-              <AIRewriteButton
-                text={form.notes}
-                onRewrite={handleRewriteNotes}
-                loading={rewritingNotes}
-              />
-            </div>
-          </label>
-
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Vocabulary (optional)</span>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <textarea
-                value={form.vocab}
-                onChange={e => setForm(f => ({ ...f, vocab: e.target.value }))}
-                style={{ flex: 1, padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, minHeight: 80 }}
-                placeholder="Comma-separated terms, or term: definition pairs"
-              />
-              <AIRewriteButton
-                text={form.vocab}
-                onRewrite={handleRewriteVocab}
-                loading={rewritingVocab}
-              />
-            </div>
-          </label>
-        </div>
-
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          {learners.length > 0 && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>Make Active for</span>
+        {/* ── Card: Lesson Setup ── */}
+        <div style={{
+          background: '#fff',
+          border: '1px solid #e5e7eb',
+          borderRadius: 14,
+          overflow: 'hidden',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        }}>
+          <div style={{
+            padding: '11px 20px',
+            background: '#f8fafc',
+            borderBottom: '1px solid #e5e7eb',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <span style={{ fontSize: 14 }}>🎓</span>
+            <span style={{ fontWeight: 700, fontSize: 13, color: '#374151', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+              Lesson Setup
+            </span>
+          </div>
+          <div style={{
+            padding: '18px 20px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 14,
+          }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>Grade <span style={{ color: '#ef4444' }}>*</span></span>
               <select
-                value={makeActiveFor}
-                onChange={e => setMakeActiveFor(e.target.value)}
-                style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}
+                value={form.grade}
+                onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}
+                style={{ padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, background: '#f9fafb', color: '#111827' }}
+                required
               >
-                <option value="none">None</option>
-                {learners.map(l => (
-                  <option key={l.id} value={l.id}>{l.name}</option>
-                ))}
-                <option value="all">All learners</option>
+                <option value="">Select grade</option>
+                {grades.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
             </label>
-          )}
 
-          <button
-            type={generatedLessonKey ? 'button' : 'submit'}
-            disabled={generatedLessonKey ? false : !canGenerate}
-            onClick={generatedLessonKey ? () => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`) : undefined}
-            style={{
-              padding: '12px 16px',
-              borderRadius: 10,
-              border: `1px solid ${generatedLessonKey ? '#059669' : '#3b82f6'}`,
-              background: generatedLessonKey ? '#059669' : (canGenerate ? '#3b82f6' : '#93c5fd'),
-              color: '#fff',
-              cursor: (generatedLessonKey || canGenerate) ? 'pointer' : 'not-allowed',
-              fontWeight: 700
-            }}
-          >
-            {generatedLessonKey ? '✏️ Edit Lesson' : '✨ Generate Lesson'}
-          </button>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>Difficulty <span style={{ color: '#ef4444' }}>*</span></span>
+              <select
+                value={form.difficulty}
+                onChange={e => setForm(f => ({ ...f, difficulty: e.target.value }))}
+                style={{ padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, background: '#f9fafb', color: '#111827' }}
+                required
+              >
+                {difficulties.map(d => (
+                  <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>
+                ))}
+              </select>
+            </label>
 
-          {generatedLessonKey && (
-            <button
-              type="button"
-              onClick={() => {
-                setGeneratedLessonKey(null)
-                setForm({ grade: '', difficulty: 'intermediate', subject: 'math', title: '', description: '', notes: '', vocab: '' })
-                setMessage('')
-                setToast(null)
-                setMakeActiveFor('none')
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#6b7280',
-                fontSize: 14,
-                fontWeight: 600,
-                padding: '4px 0',
-                textDecoration: 'underline',
-              }}
-            >
-              + New Lesson
-            </button>
-          )}
-
-          {quotaLoading ? (
-            <span style={{ color: '#6b7280', fontSize: 13 }}>Checking quota...</span>
-          ) : quotaInfo ? (
-            <span style={{ color: quotaAllowed ? '#6b7280' : '#b45309', fontSize: 13 }}>
-              {quotaAllowed
-                ? (quotaInfo.remaining === -1 ? 'Unlimited generations' : `Generations remaining today: ${quotaInfo.remaining}`)
-                : 'Generation limit reached for today'}
-            </span>
-          ) : null}
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>Subject <span style={{ color: '#ef4444' }}>*</span></span>
+              <select
+                value={form.subject}
+                onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
+                style={{ padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, background: '#f9fafb', color: '#111827' }}
+                required
+              >
+                {subjects.map(s => (
+                  <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
 
-        {message && (
-          <div style={{ marginTop: 12, color: '#b91c1c', fontWeight: 600 }}>
-            {message}
+        {/* ── Card: Lesson Content ── */}
+        <div style={{
+          background: '#fff',
+          border: '1px solid #e5e7eb',
+          borderRadius: 14,
+          overflow: 'hidden',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        }}>
+          <div style={{
+            padding: '11px 20px',
+            background: '#f8fafc',
+            borderBottom: '1px solid #e5e7eb',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <span style={{ fontSize: 14 }}>📝</span>
+            <span style={{ fontWeight: 700, fontSize: 13, color: '#374151', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+              Lesson Content
+            </span>
           </div>
-        )}
+          <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>
+                Title <span style={{ color: '#ef4444' }}>*</span>
+              </span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  value={form.title}
+                  onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                  style={{ flex: 1, padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, background: '#f9fafb', color: '#111827' }}
+                  placeholder="e.g., Fractions: Adding Like Denominators"
+                  required
+                />
+                <AIRewriteButton text={form.title} onRewrite={handleRewriteTitle} loading={rewritingTitle} />
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>Description</span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <textarea
+                  value={form.description}
+                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  style={{ flex: 1, padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, minHeight: 88, fontSize: 14, background: '#f9fafb', color: '#111827', resize: 'vertical' }}
+                  placeholder="What should the learner learn?"
+                />
+                <AIRewriteButton text={form.description} onRewrite={handleRewriteDescription} loading={rewritingDescription} />
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>Teaching Notes</span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <textarea
+                  value={form.notes}
+                  onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                  style={{ flex: 1, padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, minHeight: 108, fontSize: 14, background: '#f9fafb', color: '#111827', resize: 'vertical' }}
+                  placeholder="Facilitator notes, examples, reminders..."
+                />
+                <AIRewriteButton text={form.notes} onRewrite={handleRewriteNotes} loading={rewritingNotes} />
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>
+                Vocabulary
+                <span style={{ fontWeight: 400, color: '#9ca3af', marginLeft: 6, fontSize: 12 }}>(optional)</span>
+              </span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <textarea
+                  value={form.vocab}
+                  onChange={e => setForm(f => ({ ...f, vocab: e.target.value }))}
+                  style={{ flex: 1, padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, minHeight: 80, fontSize: 14, background: '#f9fafb', color: '#111827', resize: 'vertical' }}
+                  placeholder="Comma-separated terms, or term: definition pairs"
+                />
+                <AIRewriteButton text={form.vocab} onRewrite={handleRewriteVocab} loading={rewritingVocab} />
+              </div>
+            </label>
+          </div>
+        </div>
+
+        {/* ── Card: Generate ── */}
+        <div style={{
+          background: '#fff',
+          border: '1px solid #e5e7eb',
+          borderRadius: 14,
+          padding: '18px 20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            {learners.length > 0 && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontWeight: 600, fontSize: 13, color: '#374151', whiteSpace: 'nowrap' }}>Make Active for</span>
+                <select
+                  value={makeActiveFor}
+                  onChange={e => setMakeActiveFor(e.target.value)}
+                  style={{ padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, background: '#f9fafb', color: '#111827' }}
+                >
+                  <option value="none">None</option>
+                  {learners.map(l => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                  <option value="all">All learners</option>
+                </select>
+              </label>
+            )}
+
+            {quotaLoading ? (
+              <span style={{ fontSize: 12, color: '#9ca3af' }}>Checking quota...</span>
+            ) : quotaInfo ? (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '4px 11px',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 600,
+                background: quotaAllowed ? '#f0fdf4' : '#fef3c7',
+                color: quotaAllowed ? '#166534' : '#92400e',
+                border: `1px solid ${quotaAllowed ? '#bbf7d0' : '#fde68a'}`,
+              }}>
+                {quotaAllowed
+                  ? (quotaInfo.remaining === -1 ? '∞ Unlimited' : `${quotaInfo.remaining} left today`)
+                  : '⚠ Limit reached'}
+              </span>
+            ) : null}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              type={generatedLessonKey ? 'button' : 'submit'}
+              disabled={generatedLessonKey ? false : !canGenerate}
+              onClick={generatedLessonKey ? () => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`) : undefined}
+              style={{
+                padding: '12px 28px',
+                borderRadius: 10,
+                border: 'none',
+                background: generatedLessonKey
+                  ? 'linear-gradient(135deg, #059669, #10b981)'
+                  : (canGenerate
+                    ? 'linear-gradient(135deg, #4f46e5, #7c3aed)'
+                    : '#c4b5fd'),
+                color: '#fff',
+                cursor: (generatedLessonKey || canGenerate) ? 'pointer' : 'not-allowed',
+                fontWeight: 700,
+                fontSize: 15,
+                letterSpacing: '0.01em',
+                boxShadow: (generatedLessonKey || canGenerate) ? '0 2px 10px rgba(99,102,241,0.25)' : 'none',
+              }}
+            >
+              {busy
+                ? '⏳ Generating…'
+                : generatedLessonKey
+                  ? '✏️ Open Lesson Editor'
+                  : '✨ Generate Lesson'}
+            </button>
+
+            {generatedLessonKey && (
+              <button
+                type="button"
+                onClick={() => {
+                  setGeneratedLessonKey(null)
+                  setForm({ grade: '', difficulty: 'intermediate', subject: 'math', title: '', description: '', notes: '', vocab: '' })
+                  setMessage('')
+                  setToast(null)
+                  setMakeActiveFor('none')
+                }}
+                style={{
+                  background: 'none',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  padding: '8px 14px',
+                }}
+              >
+                + New Lesson
+              </button>
+            )}
+          </div>
+
+          {message && (
+            <div style={{
+              padding: '10px 14px',
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: 8,
+              color: '#b91c1c',
+              fontSize: 13,
+              fontWeight: 600,
+            }}>
+              {message}
+            </div>
+          )}
+        </div>
       </form>
 
+      {/* ── Planner promo card ── */}
       <div
         onClick={() => router.push('/facilitator/calendar')}
         role="button"
         tabIndex={0}
         onKeyDown={e => e.key === 'Enter' && router.push('/facilitator/calendar')}
         style={{
-          marginTop: 32,
-          padding: '16px 20px',
-          border: '1px solid #dbeafe',
-          borderRadius: 12,
+          marginTop: 20,
+          padding: '16px 22px',
+          border: '1px solid #bfdbfe',
+          borderRadius: 14,
           background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 12,
+          boxShadow: '0 1px 4px rgba(59,130,246,0.07)',
         }}
       >
         <div>
-          <div style={{ fontWeight: 700, fontSize: 15, color: '#1e40af', marginBottom: 4 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#1e40af', marginBottom: 3 }}>
             📅 Want to generate whole weeks of lessons at once?
           </div>
           <div style={{ fontSize: 13, color: '#4b5563' }}>
             The Lesson Planner builds a full curriculum calendar for you — automatically.
           </div>
         </div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#2563eb', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#2563eb', whiteSpace: 'nowrap' }}>
           Open Planner →
         </div>
       </div>
