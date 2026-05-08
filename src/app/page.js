@@ -1,7 +1,32 @@
+'use client';
 import styles from './home-hero.module.css';
 import Image from 'next/image';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!hasSupabaseEnv()) return;
+    (async () => {
+      try {
+        const supabase = getSupabaseClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          // Not signed in — go straight to demo lessons
+          try {
+            localStorage.setItem('learner_id', 'demo');
+            localStorage.setItem('learner_name', 'Demo Learner');
+            localStorage.setItem('learner_grade', '4');
+          } catch {}
+          router.replace('/learn/lessons');
+        }
+      } catch {}
+    })();
+  }, [router]);
+
   return (
     <main style={{
       display: 'grid',
