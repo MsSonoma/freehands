@@ -360,16 +360,10 @@ export default function LessonMakerPage(){
       setToast({ message: 'Lesson ready!', type: 'success' })
       setMessage('')
 
-      // If in onboarding flow, advance to step 3 and navigate to lessons
-      if (showOnboarding) {
-        await advanceStep(STEPS.ACTIVATE_LESSON)
-        router.push('/facilitator/lessons?onboarding=1')
-        return
-      }
-
-      // Activate for selected learner(s)
+      // Activate for selected learner(s) — run regardless of onboarding so we don't skip it
       const lessonKeyToActivate = js?.lessonKey || (generatedFile ? `generated/${generatedFile}` : null)
-      if (lessonKeyToActivate && makeActiveFor !== 'none') {
+      const didActivate = lessonKeyToActivate && makeActiveFor !== 'none'
+      if (didActivate) {
         try {
           const supabase = getSupabaseClient()
           const targetIds = makeActiveFor === 'all'
@@ -390,6 +384,16 @@ export default function LessonMakerPage(){
         } catch {
           // Silent — generation succeeded; activation failure is non-critical
         }
+      }
+
+      // If in onboarding flow, advance wizard and navigate
+      if (showOnboarding) {
+        // If the user already activated the lesson here, skip straight to calendar tour step
+        const nextStep = didActivate ? STEPS.CALENDAR_TOUR : STEPS.ACTIVATE_LESSON
+        const nextPath = didActivate ? '/facilitator/calendar?onboarding=1' : '/facilitator/lessons?onboarding=1'
+        await advanceStep(nextStep)
+        router.push(nextPath)
+        return
       }
     } catch (err) {
       setMessage(`Generation error: ${err?.message || String(err) || 'Unknown error'}`)
