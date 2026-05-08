@@ -1,49 +1,73 @@
 {
-  "title": "Welcome to Math with Ms. Sonoma!",
+  "id": "demo-multiplication-arrays",
+  "title": "Multiplication: Arrays, Factors, and Products",
   "subject": "math",
-  "grade": "3",
-  "difficulty": "easy",
-  "blurb": "Learn how Ms. Sonoma teaches math by exploring simple addition",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "blurb": "Discover how multiplication works through equal groups, arrays, and real-world problems",
   "vocab": [
-    {
-      "term": "Addition",
-      "definition": "Putting numbers together to find a total"
-    },
-    {
-      "term": "Sum",
-      "definition": "The answer you get when you add numbers together"
-    },
-    {
-      "term": "Plus",
-      "definition": "The word we use for the addition symbol"
-    }
+    { "term": "multiplication", "definition": "A fast way to add equal groups — finding the total when every group has the same amount" },
+    { "term": "array", "definition": "Objects or numbers arranged in equal rows and columns to show multiplication" },
+    { "term": "factor", "definition": "Any of the numbers you multiply together" },
+    { "term": "product", "definition": "The answer you get when you multiply two numbers" },
+    { "term": "row", "definition": "A line of objects going across, left to right" },
+    { "term": "column", "definition": "A line of objects going straight up and down" },
+    { "term": "repeated addition", "definition": "Adding the same number over and over — exactly what multiplication replaces" },
+    { "term": "commutative property", "definition": "The rule that says you can switch the order of factors and still get the same product — 3 × 4 = 4 × 3" }
   ],
-  "examples": [
-    "If you have 3 apples and get 2 more apples, you now have 5 apples. That's 3 plus 2 equals 5.",
-    "When we add 4 plus 3, we can count up from 4: five, six, seven. So 4 plus 3 equals 7.",
-    "Zero is special in addition. When you add zero to any number, the number stays the same. So 5 plus 0 equals 5."
+  "teachingNotes": "Use drawings of arrays on graph paper. Connect each multiplication fact to a real-world scenario — chairs in rows, eggs in cartons, tiles on a floor. Emphasize that multiplication is just repeated addition done faster.",
+  "sample": [
+    { "question": "If there are 4 rows of 6 chairs in a classroom, how many chairs are there altogether — and how did you figure it out?", "expectedAny": ["24", "4 times 6", "4 rows of 6", "multiply", "add 6 four times"] },
+    { "question": "How is 5 × 3 the same as writing 3 + 3 + 3 + 3 + 3?", "expectedAny": ["both equal 15", "same answer", "adding same number", "repeated addition"] },
+    { "question": "You arrange 18 tiles in an array. What are two different ways you could organize them into equal rows?", "expectedAny": ["2 rows of 9", "3 rows of 6", "6 rows of 3", "9 rows of 2", "1 row of 18"] },
+    { "question": "What happens to the product when you multiply any number by zero? Why do you think that is?", "expectedAny": ["zero", "nothing left", "0", "no groups"] },
+    { "question": "If 7 × 8 = 56, what is 8 × 7, and what property tells you that?", "expectedAny": ["56", "commutative", "switch the order"] },
+    { "question": "A baker puts 6 muffins in each tin. She fills 9 tins. Can you write a multiplication sentence for this and solve it?", "expectedAny": ["54", "6 times 9", "9 times 6"] },
+    { "question": "Where do you see multiplication in real life outside of school? Give two examples.", "expectedAny": ["eggs", "boxes", "rows", "shelves", "floors", "tiles", "seats", "money"] }
   ],
-  "comprehension": [
-    {
-      "question": "What is 2 plus 3?",
-      "acceptable": ["5", "five"],
-      "type": "short-answer",
-      "key_terms": ["5", "five"],
-      "min_required": 1
-    },
-    {
-      "question": "What is 4 plus 1?",
-      "acceptable": ["5", "five"],
-      "type": "short-answer",
-      "key_terms": ["5", "five"],
-      "min_required": 1
-    },
-    {
-      "question": "What is 6 plus 0?",
-      "acceptable": ["6", "six"],
-      "type": "short-answer",
-      "key_terms": ["6", "six"],
-      "min_required": 1
-    }
+  "truefalse": [
+    { "question": "3 × 7 gives the same answer as 7 × 3.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "An array always has uneven, random rows.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "question": "Any number multiplied by zero equals zero.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "Multiplication is just a faster way to do repeated addition.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "The product of 7 × 3 is 24.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "question": "A 4 × 6 array has 24 items total.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "The commutative property only works for addition, not multiplication.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is 8 × 7?", "choices": ["54", "56", "63", "49"], "correct": 1, "expectedAny": ["56", "b", "2", "second"] },
+    { "question": "A farmer plants 5 rows with 9 seeds in each row. How many seeds total?", "choices": ["14", "40", "45", "50"], "correct": 2, "expectedAny": ["45", "c", "3", "third"] },
+    { "question": "Which expression means the same as 4 + 4 + 4 + 4 + 4 + 4 + 4?", "choices": ["4 × 4", "7 × 4", "4 × 7", "both 7 × 4 and 4 × 7"], "correct": 3, "expectedAny": ["both", "d", "4", "fourth"] },
+    { "question": "What is 9 × 0?", "choices": ["9", "1", "0", "90"], "correct": 2, "expectedAny": ["0", "c", "3", "third"] },
+    { "question": "What does the commutative property mean?", "choices": ["Always add instead of multiply", "Multiply by zero to reset", "Switch the order of factors without changing the product", "Add the same number twice"], "correct": 2, "expectedAny": ["switch", "order", "c", "3", "third"] },
+    { "question": "A 4 × 4 array has how many items?", "choices": ["8", "12", "16", "20"], "correct": 2, "expectedAny": ["16", "c", "3", "third"] },
+    { "question": "Which multiplication fact matches 7 + 7 + 7?", "choices": ["7 × 7", "3 × 7", "7 × 1", "3 + 7"], "correct": 1, "expectedAny": ["3 × 7", "3 times 7", "b", "2", "second"] }
+  ],
+  "fillintheblank": [
+    { "question": "In a multiplication problem, the answer is called the ___.", "expectedAny": ["product"] },
+    { "question": "The numbers you multiply together are called ___.", "expectedAny": ["factors"] },
+    { "question": "An array with 4 rows and 6 columns shows 4 × 6 = ___.", "expectedAny": ["24", "twenty-four"] },
+    { "question": "Any number multiplied by ___ equals zero.", "expectedAny": ["0", "zero"] },
+    { "question": "6 × 1 = ___.", "expectedAny": ["6", "six"] },
+    { "question": "Multiplication is a shortcut for ___ addition.", "expectedAny": ["repeated"] },
+    { "question": "8 × 9 = ___.", "expectedAny": ["72", "seventy-two"] }
+  ],
+  "shortanswer": [
+    { "question": "Explain what an array is. Describe what a 3 × 5 array would look like.", "expectedAny": ["3 rows", "5 columns", "equal rows", "15 items", "grid"] },
+    { "question": "How does the commutative property make it easier to memorize multiplication facts?", "expectedAny": ["same answer", "only learn half", "switch order", "fewer facts"] },
+    { "question": "Why does any number multiplied by zero equal zero?", "expectedAny": ["no groups", "zero groups", "nothing to count", "empty"] },
+    { "question": "A classroom has 6 rows of desks with 5 desks in each row. How many desks are there? Show your multiplication sentence.", "expectedAny": ["30", "6 × 5", "5 × 6"] },
+    { "question": "How is multiplication different from addition? Give an example.", "expectedAny": ["equal groups", "faster", "shortcut", "repeated"] },
+    { "question": "If you know 8 × 6 = 48, how can you figure out 6 × 8 without recalculating?", "expectedAny": ["48", "commutative", "same answer", "switch order"] },
+    { "question": "Name two jobs where a person would use multiplication every day.", "expectedAny": ["baker", "farmer", "cashier", "carpenter", "chef", "builder", "teacher", "programmer"] }
+  ],
+  "wordProblems": [
+    { "question": "A baker puts 6 cookies on each tray and has 8 trays. How many cookies is that?", "expectedAny": ["48"] },
+    { "question": "A garden has 7 rows of tomato plants with 9 plants in each row. How many plants total?", "expectedAny": ["63"] },
+    { "question": "A movie theater has 9 rows with 8 seats in each row. How many seats are there?", "expectedAny": ["72"] },
+    { "question": "Stickers come in sheets of 6. You have 7 sheets. How many stickers do you have?", "expectedAny": ["42"] },
+    { "question": "You buy 4 bags of apples. Each bag has 8 apples. How many apples total?", "expectedAny": ["32"] },
+    { "question": "A classroom has 5 tables. Each table seats 6 students. How many students can sit down?", "expectedAny": ["30"] },
+    { "question": "A carton holds 12 eggs and you have 4 cartons. How many eggs is that?", "expectedAny": ["48"] }
   ]
 }

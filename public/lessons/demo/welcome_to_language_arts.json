@@ -1,52 +1,73 @@
 {
-  "title": "Welcome to Language Arts with Ms. Sonoma!",
+  "id": "demo-story-elements",
+  "title": "Story Elements: Character, Setting, and Plot",
   "subject": "language arts",
-  "grade": "3",
-  "difficulty": "easy",
-  "blurb": "Learn how Ms. Sonoma teaches reading and writing with nouns",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "blurb": "Learn how every story is built from the same powerful pieces — and how recognizing them makes you a stronger reader and writer",
   "vocab": [
-    {
-      "term": "Noun",
-      "definition": "A word that names a person, place, or thing"
-    },
-    {
-      "term": "Person",
-      "definition": "Any human like a teacher, friend, or parent"
-    },
-    {
-      "term": "Place",
-      "definition": "Anywhere you can go like a school, park, or home"
-    },
-    {
-      "term": "Thing",
-      "definition": "Any object you can see or touch like a book, ball, or chair"
-    }
+    { "term": "character", "definition": "A person, animal, or creature who takes part in a story's events" },
+    { "term": "protagonist", "definition": "The main character the story follows — the one facing the central problem" },
+    { "term": "antagonist", "definition": "The force, character, or obstacle creating conflict for the protagonist" },
+    { "term": "setting", "definition": "Where and when a story takes place — it shapes mood, danger, and possibility" },
+    { "term": "plot", "definition": "The sequence of events in a story — what happens, in order, from beginning to end" },
+    { "term": "conflict", "definition": "The central problem or struggle that drives the story forward" },
+    { "term": "resolution", "definition": "How the conflict is solved or settled — usually near the end of the story" },
+    { "term": "theme", "definition": "The deeper lesson or message an author wants readers to take away from the story" }
   ],
-  "examples": [
-    "Teacher is a noun because it names a person. School is a noun because it names a place.",
-    "Book is a noun because it names a thing. We can say: The teacher read a book at school.",
-    "Nouns are the naming words in sentences. They tell us who or what the sentence is about."
+  "teachingNotes": "Anchor every element in familiar stories — movies, books, shows students already know. Let students generate their own examples. The goal is for them to see that every story they've ever loved follows this same structure.",
+  "sample": [
+    { "question": "Think of your favorite movie or book. Who is the protagonist, and what is their main problem?", "expectedAny": ["main character", "protagonist", "problem", "conflict"] },
+    { "question": "How does the setting change the feel of a story? What would The Wizard of Oz be like if it happened in a grocery store?", "expectedAny": ["different", "setting matters", "changes mood", "less magical"] },
+    { "question": "What would a story be like if it had absolutely no conflict — everything just went perfectly for every character?", "expectedAny": ["boring", "no tension", "no reason to read", "nothing happens"] },
+    { "question": "Can a character be both the protagonist and cause problems for themselves? Give an example.", "expectedAny": ["yes", "inner conflict", "their own enemy", "bad choice"] },
+    { "question": "What is the difference between the plot and the theme of a story?", "expectedAny": ["plot is events", "theme is lesson", "what happens vs message"] },
+    { "question": "The antagonist does not have to be a villain. What else could act as the antagonist in a story?", "expectedAny": ["nature", "storm", "illness", "society", "themselves", "problem"] },
+    { "question": "How can two completely different stories — different characters, different settings — share the exact same theme?", "expectedAny": ["same lesson", "same message", "theme is universal"] }
   ],
-  "comprehension": [
-    {
-      "question": "Is 'dog' a noun?",
-      "acceptable": ["yes", "true"],
-      "type": "true-false",
-      "correct": "true"
-    },
-    {
-      "question": "What kind of noun is 'park'? Is it a person, place, or thing?",
-      "acceptable": ["place", "a place"],
-      "type": "short-answer",
-      "key_terms": ["place"],
-      "min_required": 1
-    },
-    {
-      "question": "Can you name a noun that is a person?",
-      "acceptable": ["teacher", "student", "mom", "dad", "friend", "child", "parent", "brother", "sister", "doctor", "any person"],
-      "type": "short-answer",
-      "key_terms": ["teacher", "student", "mom", "dad", "friend", "child", "parent", "brother", "sister", "doctor", "person"],
-      "min_required": 1
-    }
+  "truefalse": [
+    { "question": "The protagonist must always be a human character.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "question": "A story can take place in more than one setting.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "The resolution always comes at the very beginning of the story.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "question": "Theme is the lesson or message the author wants readers to understand.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "Every story must have a human antagonist to create conflict.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "question": "The plot is the sequence of events in a story.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "Two completely different stories can share the same theme.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "What is the protagonist?", "choices": ["The villain who causes problems", "The main character the story follows", "The place where the story happens", "The lesson at the end"], "correct": 1, "expectedAny": ["main character", "b", "2", "second"] },
+    { "question": "Where and when a story takes place is called the:", "choices": ["plot", "conflict", "setting", "theme"], "correct": 2, "expectedAny": ["setting", "c", "3", "third"] },
+    { "question": "The central problem that drives a story forward is the:", "choices": ["resolution", "theme", "conflict", "protagonist"], "correct": 2, "expectedAny": ["conflict", "c", "3", "third"] },
+    { "question": "The point in a story where the conflict is solved is called the:", "choices": ["setting", "resolution", "plot", "theme"], "correct": 1, "expectedAny": ["resolution", "b", "2", "second"] },
+    { "question": "Which of these is a theme?", "choices": ["A dog named Bruno", "On a stormy mountain in winter", "Hard work leads to success", "The dragon stole the crown"], "correct": 2, "expectedAny": ["hard work", "c", "3", "third"] },
+    { "question": "A girl battles a flood to save her family's home. The flood is the:", "choices": ["protagonist", "theme", "setting and antagonist", "resolution"], "correct": 2, "expectedAny": ["setting and antagonist", "c", "3", "third"] },
+    { "question": "The full sequence of events in a story from start to finish is the:", "choices": ["setting", "character", "plot", "theme"], "correct": 2, "expectedAny": ["plot", "c", "3", "third"] }
+  ],
+  "fillintheblank": [
+    { "question": "The main character that the story centers on is called the ___.", "expectedAny": ["protagonist"] },
+    { "question": "The big lesson or message hidden inside a story is its ___.", "expectedAny": ["theme"] },
+    { "question": "The main problem or struggle that drives the story forward is the ___.", "expectedAny": ["conflict"] },
+    { "question": "A story set in a haunted lighthouse during a storm — the haunted lighthouse during the storm is the ___.", "expectedAny": ["setting"] },
+    { "question": "When the conflict is finally solved near the end of the story, that moment is called the ___.", "expectedAny": ["resolution"] },
+    { "question": "A character who creates obstacles and problems for the main character is the ___.", "expectedAny": ["antagonist"] },
+    { "question": "The ordered sequence of events from beginning to end is the ___.", "expectedAny": ["plot"] }
+  ],
+  "shortanswer": [
+    { "question": "Describe the setting of a book, show, or movie you know. Explain how that setting affects the story.", "expectedAny": ["setting", "place", "affects", "mood", "danger", "changes"] },
+    { "question": "What qualities make a protagonist someone readers root for? What makes you care about a main character?", "expectedAny": ["relatable", "problem", "goal", "trying", "flaw", "human"] },
+    { "question": "Why is conflict the engine of a story? What would happen if nothing ever went wrong?", "expectedAny": ["no tension", "boring", "nothing to solve", "no reason"] },
+    { "question": "Summarize a movie or book you know in three sentences, covering the beginning, middle, and end.", "expectedAny": ["beginning", "middle", "end", "conflict", "resolution"] },
+    { "question": "What is the theme of 'The Tortoise and the Hare'? How do you know — what events show that theme?", "expectedAny": ["slow and steady", "don't give up", "overconfidence", "persistence"] },
+    { "question": "Give an example of a person-versus-nature conflict. What makes nature a powerful antagonist?", "expectedAny": ["storm", "flood", "mountain", "wild animal", "nature", "powerful"] },
+    { "question": "How can two stories with completely different characters and settings share the exact same theme? Give an example.", "expectedAny": ["same message", "lesson", "theme is universal", "different story"] }
+  ],
+  "wordProblems": [
+    { "question": "A story is set on a crumbling space station in the year 2150. The life support is failing and the crew has 12 hours. What is the conflict?", "expectedAny": ["life support failing", "survival", "dying", "running out of air", "time running out"] },
+    { "question": "At the end of the story, the engineer reroutes the power and saves the crew. What story element is this?", "expectedAny": ["resolution"] },
+    { "question": "A lonely wolf helps a lost girl find her way home through the forest. The story ends with the wolf being welcomed into her village. What is a possible theme?", "expectedAny": ["kindness", "friendship", "trust", "helping others", "belonging"] },
+    { "question": "If the conflict in a story is the main character's own fear stopping them from acting, what type of conflict is this — person vs. person, person vs. nature, or person vs. self?", "expectedAny": ["person vs self", "internal", "vs self"] },
+    { "question": "A novel begins in 1940s London during the Blitz and ends in a small village in the countryside. How many settings does it have?", "expectedAny": ["two", "2"] },
+    { "question": "A story called 'Maya and the Mountain' follows Maya trying to climb an unclimbed peak. Who is most likely the protagonist?", "expectedAny": ["Maya"] },
+    { "question": "If a book's theme is 'courage means acting even when you're afraid,' what kind of conflict would best prove that theme?", "expectedAny": ["dangerous", "scary", "something fearful", "hard challenge", "risk"] }
   ]
 }

@@ -1,52 +1,75 @@
 {
-  "title": "Welcome to Social Studies with Ms. Sonoma!",
+  "id": "demo-maps-geography",
+  "title": "Maps and Geography: Continents, Oceans, and Directions",
   "subject": "social studies",
-  "grade": "3",
-  "difficulty": "easy",
-  "blurb": "Explore how Ms. Sonoma teaches about people and places",
+  "grade": "4th",
+  "difficulty": "Beginner",
+  "blurb": "Learn to read maps like an explorer — master continents, oceans, cardinal directions, and the tools that help us understand where everything is on Earth",
   "vocab": [
-    {
-      "term": "Community",
-      "definition": "A group of people who live in the same area"
-    },
-    {
-      "term": "Neighbor",
-      "definition": "Someone who lives near you"
-    },
-    {
-      "term": "Helper",
-      "definition": "Someone who works to make the community better"
-    },
-    {
-      "term": "Citizen",
-      "definition": "A person who belongs to a community"
-    }
+    { "term": "map", "definition": "A flat drawing that represents an area from above — a tool for understanding location and distance" },
+    { "term": "globe", "definition": "A round, three-dimensional model of Earth — more accurate than a flat map for showing true shapes and distances" },
+    { "term": "continent", "definition": "One of the seven major landmasses on Earth: Africa, Antarctica, Asia, Australia, Europe, North America, South America" },
+    { "term": "ocean", "definition": "One of Earth's five major saltwater bodies: Pacific, Atlantic, Indian, Southern, Arctic" },
+    { "term": "cardinal directions", "definition": "The four primary directions used for navigation: North, South, East, West" },
+    { "term": "compass rose", "definition": "A symbol printed on maps showing the four cardinal directions — helps the reader orient themselves" },
+    { "term": "map key", "definition": "Also called a legend — a box explaining what each color, symbol, and line on the map represents" },
+    { "term": "scale", "definition": "A ratio on a map showing how map distance compares to real distance — e.g., 1 inch = 100 miles" },
+    { "term": "equator", "definition": "An imaginary line circling Earth's middle, dividing it into the Northern and Southern hemispheres" },
+    { "term": "hemisphere", "definition": "Half of Earth — the equator creates Northern/Southern halves; the prime meridian creates Eastern/Western halves" }
   ],
-  "examples": [
-    "Your neighborhood is a community. The people who live on your street are your neighbors.",
-    "Community helpers include teachers, firefighters, and doctors. They help keep everyone safe and healthy.",
-    "Good citizens help their community by being kind, following rules, and taking care of shared spaces."
+  "teachingNotes": "Use a physical or projected world map. Have students practice pointing to each continent and ocean. Reinforce cardinal directions by having them find things relative to each other on the map. The common mistake is confusing the equator (North/South divider) with the prime meridian (East/West divider).",
+  "sample": [
+    { "question": "What is the difference between a map and a globe? When would each one be more useful?", "expectedAny": ["globe is round", "map is flat", "globe more accurate", "map easier to carry", "portable"] },
+    { "question": "Can you name all seven continents? Try listing them without looking — what do you remember?", "expectedAny": ["africa", "asia", "europe", "australia", "antarctica", "north america", "south america"] },
+    { "question": "Why is it important to check the map key before reading a map? What could go wrong if you skip it?", "expectedAny": ["misread", "wrong color", "confused", "wrong distance", "symbols"] },
+    { "question": "If you're facing North and turn completely around, what direction are you now facing? What about a quarter turn to your right from North?", "expectedAny": ["south", "east"] },
+    { "question": "The equator runs around the middle of Earth. Why is it hotter near the equator than near the North or South Pole?", "expectedAny": ["direct sunlight", "closer to sun's rays", "angle", "straight overhead", "more sun"] },
+    { "question": "Before GPS, how did sailors and explorers navigate across oceans? What tools did they use?", "expectedAny": ["compass", "stars", "map", "sun", "astrolabe", "cardinal directions"] },
+    { "question": "If a map's scale says 1 inch = 50 miles, and two cities are 4 inches apart on the map, how far apart are they in real life?", "expectedAny": ["200 miles", "200"] }
   ],
-  "comprehension": [
-    {
-      "question": "What is a community?",
-      "acceptable": ["group of people", "people who live together", "people in an area", "people living in the same place"],
-      "type": "short-answer",
-      "key_terms": ["people", "group", "area", "together", "live"],
-      "min_required": 2
-    },
-    {
-      "question": "Is a teacher a community helper?",
-      "acceptable": ["yes", "true"],
-      "type": "true-false",
-      "correct": "true"
-    },
-    {
-      "question": "Can you name one way to be a good citizen?",
-      "acceptable": ["be kind", "follow rules", "help others", "be nice", "share", "take care of things", "respect others"],
-      "type": "short-answer",
-      "key_terms": ["kind", "rules", "help", "nice", "share", "care", "respect"],
-      "min_required": 1
-    }
+  "truefalse": [
+    { "question": "There are seven continents on Earth.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "The equator divides Earth into the Eastern and Western hemispheres.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "question": "A compass rose on a map shows direction.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "The Pacific Ocean is the largest ocean on Earth.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "Australia is both a continent and a country.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "South America is located north of North America.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "question": "A map key explains what the symbols and colors on a map represent.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] }
+  ],
+  "multiplechoice": [
+    { "question": "How many continents are on Earth?", "choices": ["5", "6", "7", "8"], "correct": 2, "expectedAny": ["7", "seven", "c", "3", "third"] },
+    { "question": "Which is the largest ocean on Earth?", "choices": ["Atlantic", "Indian", "Arctic", "Pacific"], "correct": 3, "expectedAny": ["pacific", "d", "4", "fourth"] },
+    { "question": "A compass rose on a map shows:", "choices": ["Population", "Distance", "Directions", "Weather"], "correct": 2, "expectedAny": ["directions", "c", "3", "third"] },
+    { "question": "The equator runs directly through which continent?", "choices": ["Europe", "North America", "Africa", "Australia"], "correct": 2, "expectedAny": ["africa", "c", "3", "third"] },
+    { "question": "What does a map key do?", "choices": ["Shows direction", "Measures distance", "Shows elevation", "Explains symbols and colors"], "correct": 3, "expectedAny": ["explains symbols", "d", "4", "fourth"] },
+    { "question": "Which continent is also entirely its own country?", "choices": ["Africa", "Antarctica", "Australia", "Asia"], "correct": 2, "expectedAny": ["australia", "c", "3", "third"] },
+    { "question": "If you travel west from the United States across an ocean, which ocean do you cross?", "choices": ["Atlantic", "Arctic", "Indian", "Pacific"], "correct": 3, "expectedAny": ["pacific", "d", "4", "fourth"] }
+  ],
+  "fillintheblank": [
+    { "question": "The seven large landmasses on Earth are called ___.", "expectedAny": ["continents"] },
+    { "question": "North, South, East, and West are called ___ directions.", "expectedAny": ["cardinal"] },
+    { "question": "A ___ is a round, three-dimensional model of Earth.", "expectedAny": ["globe"] },
+    { "question": "The ___ divides Earth into the Northern and Southern hemispheres.", "expectedAny": ["equator"] },
+    { "question": "A map ___ is the box that explains what all the symbols and colors on a map mean.", "expectedAny": ["key", "legend"] },
+    { "question": "There are ___ oceans on Earth.", "expectedAny": ["five", "5"] },
+    { "question": "The largest ocean on Earth is the ___ Ocean.", "expectedAny": ["pacific", "Pacific"] }
+  ],
+  "shortanswer": [
+    { "question": "Name all seven continents. Which is the largest, and which is the smallest?", "expectedAny": ["asia", "australia", "africa", "europe", "antarctica", "north america", "south america", "largest asia", "smallest australia"] },
+    { "question": "Explain the difference between cardinal directions and GPS. Why would someone still need cardinal directions today?", "expectedAny": ["no battery", "no signal", "backup", "hiking", "wilderness", "compass", "sailing"] },
+    { "question": "What is the equator, and why is the climate near it so different from near the poles?", "expectedAny": ["middle", "sun angle", "direct rays", "hotter", "divides"] },
+    { "question": "Why does a map need a scale? What mistake could someone make if they used a map without one?", "expectedAny": ["wrong distance", "misjudge", "too far", "plan wrong", "underestimate"] },
+    { "question": "Name all five oceans. Which ocean do you think is most strategically important and why?", "expectedAny": ["pacific", "atlantic", "indian", "southern", "arctic"] },
+    { "question": "Why do the Northern and Southern hemispheres have opposite seasons at the same time?", "expectedAny": ["tilt", "axis", "opposite", "earth tilted", "sun angle"] },
+    { "question": "How does a compass rose help someone navigate using a paper map? Walk through how you would use one.", "expectedAny": ["orient", "direction", "which way", "north marker", "cardinal"] }
+  ],
+  "wordProblems": [
+    { "question": "You're looking at a map. You face North, then turn 180 degrees. What direction are you now facing?", "expectedAny": ["south"] },
+    { "question": "A ship leaves Europe sailing west across the ocean. Which ocean does it cross to reach North America?", "expectedAny": ["atlantic", "Atlantic Ocean"] },
+    { "question": "If you start in South America and travel east, which ocean do you enter?", "expectedAny": ["atlantic", "Atlantic Ocean"] },
+    { "question": "A map's scale shows 1 inch = 100 miles. Two cities are 3.5 inches apart on the map. How far are they in real life?", "expectedAny": ["350 miles", "350"] },
+    { "question": "A traveler flies from Africa heading east and lands in Asia. In which direction did she travel — east or west?", "expectedAny": ["east"] },
+    { "question": "You live in the Northern Hemisphere. Your pen pal lives in the Southern Hemisphere. When you're enjoying summer vacation in July, what season is your pen pal experiencing?", "expectedAny": ["winter"] },
+    { "question": "An explorer wants to travel from the North Pole to the South Pole. What single cardinal direction do they travel the entire time?", "expectedAny": ["south"] }
   ]
 }

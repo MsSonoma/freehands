@@ -1,53 +1,75 @@
 {
-  "title": "Welcome to Science with Ms. Sonoma!",
+  "id": "demo-food-chains",
+  "title": "Food Chains: How Energy Moves Through Nature",
   "subject": "science",
-  "grade": "3",
-  "difficulty": "easy",
-  "blurb": "Discover how Ms. Sonoma teaches science by learning about water",
+  "grade": "4th",
+  "difficulty": "Intermediate",
+  "blurb": "Follow energy from the sun through plants and animals to discover how all living things in an ecosystem depend on each other",
   "vocab": [
-    {
-      "term": "Water",
-      "definition": "A clear liquid that we drink and that falls as rain"
-    },
-    {
-      "term": "Solid",
-      "definition": "Something that keeps its shape, like ice"
-    },
-    {
-      "term": "Liquid",
-      "definition": "Something that flows and takes the shape of its container"
-    },
-    {
-      "term": "Gas",
-      "definition": "Something you cannot see that floats in the air, like steam"
-    }
+    { "term": "food chain", "definition": "A sequence showing what eats what in nature — each arrow means 'is eaten by'" },
+    { "term": "producer", "definition": "A living thing — almost always a plant — that makes its own food using sunlight through photosynthesis" },
+    { "term": "consumer", "definition": "Any living thing that gets energy by eating other living things" },
+    { "term": "decomposer", "definition": "Organisms like fungi and bacteria that break down dead matter and return nutrients to the soil" },
+    { "term": "predator", "definition": "An animal that hunts and eats other animals" },
+    { "term": "prey", "definition": "An animal that is hunted and eaten by a predator" },
+    { "term": "herbivore", "definition": "An animal that eats only plants — a first-level consumer" },
+    { "term": "carnivore", "definition": "An animal that eats only other animals" },
+    { "term": "omnivore", "definition": "An animal that eats both plants and animals" },
+    { "term": "energy", "definition": "The power all living things need to grow, move, and survive — originally from the sun" }
   ],
-  "examples": [
-    "Ice is water in its solid form. When ice gets warm, it melts and turns into liquid water.",
-    "When you boil water in a pot, you see steam rising up. Steam is water as a gas.",
-    "Water can change between solid, liquid, and gas. This is why we see clouds, rain, and snow."
+  "teachingNotes": "Start with a visual food chain on the board. Draw arrows showing energy flow — remind students arrows mean 'energy goes to.' Use local ecosystem examples. The classic misconception is that arrows mean 'eats' — clarify they mean 'is eaten by' or 'energy flows to.'",
+  "sample": [
+    { "question": "Plants make their own food — they don't eat anything. How do you think they get the energy to do that?", "expectedAny": ["sun", "sunlight", "photosynthesis", "solar energy"] },
+    { "question": "Why do all food chains start with a producer? What would happen if they started with an animal?", "expectedAny": ["no energy source", "plants capture sun", "producers make energy", "nothing to eat"] },
+    { "question": "Can you think of an animal that is both predator and prey at the same time? Explain.", "expectedAny": ["frog", "rabbit", "fish", "mouse", "yes", "snake"] },
+    { "question": "Decomposers eat dead things — some people think that sounds disgusting. But what would the world look like without them?", "expectedAny": ["piled up", "dead matter everywhere", "no nutrients", "plants die", "soil dead"] },
+    { "question": "If all the rabbits in a meadow suddenly disappeared, what do you predict would happen to the grass? And to the foxes?", "expectedAny": ["grass grows more", "foxes starve", "less grass eaten", "foxes decline"] },
+    { "question": "The sun is 93 million miles away. How does its energy end up inside a wolf eating a deer?", "expectedAny": ["sun to plant", "plant to deer", "deer to wolf", "food chain", "transfers"] },
+    { "question": "Are humans part of food chains? Where do you fit?", "expectedAny": ["yes", "consumer", "omnivore", "eat plants", "eat animals"] }
   ],
-  "comprehension": [
-    {
-      "question": "What is ice?",
-      "acceptable": ["solid water", "frozen water", "water as a solid", "solid form of water"],
-      "type": "short-answer",
-      "key_terms": ["solid", "water", "frozen", "ice"],
-      "min_required": 2
-    },
-    {
-      "question": "What happens when ice gets warm?",
-      "acceptable": ["it melts", "turns to water", "becomes liquid", "melts into water"],
-      "type": "short-answer",
-      "key_terms": ["melts", "liquid", "water"],
-      "min_required": 1
-    },
-    {
-      "question": "Is steam a solid, liquid, or gas?",
-      "acceptable": ["gas", "a gas"],
-      "type": "short-answer",
-      "key_terms": ["gas"],
-      "min_required": 1
-    }
+  "truefalse": [
+    { "question": "All food chains begin with a producer.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "A rabbit is a carnivore because it eats fast.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "question": "Decomposers only break down living things, not dead ones.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "question": "The sun is the original source of energy in most food chains on Earth.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "If the prey population crashes, predators are unaffected.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] },
+    { "question": "Omnivores eat both plants and animals.", "answer": true, "expectedAny": ["true", "t", "yes", "y", "correct"] },
+    { "question": "There are typically more top predators than producers in a healthy ecosystem.", "answer": false, "expectedAny": ["false", "f", "no", "n", "incorrect"] }
+  ],
+  "multiplechoice": [
+    { "question": "Which organism is a producer?", "choices": ["Deer", "Mushroom", "Oak tree", "Hawk"], "correct": 2, "expectedAny": ["oak tree", "c", "3", "third"] },
+    { "question": "A grasshopper eating grass is an example of:", "choices": ["predator eating prey", "producer eating consumer", "consumer eating producer", "decomposer recycling"], "correct": 2, "expectedAny": ["consumer eating producer", "c", "3", "third"] },
+    { "question": "Which animal is an omnivore?", "choices": ["Rabbit", "Eagle", "Bear", "Rattlesnake"], "correct": 2, "expectedAny": ["bear", "c", "3", "third"] },
+    { "question": "Where does the energy in a food chain originally come from?", "choices": ["The soil", "The rain", "The sun", "The consumer"], "correct": 2, "expectedAny": ["the sun", "sun", "c", "3", "third"] },
+    { "question": "In the chain: grass → rabbit → hawk, the hawk is a:", "choices": ["producer", "first-level consumer", "top predator", "decomposer"], "correct": 2, "expectedAny": ["top predator", "c", "3", "third"] },
+    { "question": "What do decomposers return to the environment?", "choices": ["Sunlight", "Body heat", "Nutrients", "Oxygen only"], "correct": 2, "expectedAny": ["nutrients", "c", "3", "third"] },
+    { "question": "Which correctly shows the direction of energy flow?", "choices": ["Sun ← grass ← rabbit ← hawk", "Hawk → rabbit → grass → sun", "Sun → grass → rabbit → hawk", "Grass → sun → rabbit → hawk"], "correct": 2, "expectedAny": ["sun → grass → rabbit → hawk", "c", "3", "third"] }
+  ],
+  "fillintheblank": [
+    { "question": "A plant that makes its own food using sunlight is called a ___.", "expectedAny": ["producer"] },
+    { "question": "Animals that eat only plants are called ___.", "expectedAny": ["herbivores"] },
+    { "question": "___ break down dead material and recycle nutrients back into the soil.", "expectedAny": ["decomposers"] },
+    { "question": "An animal that hunts other animals is called a ___.", "expectedAny": ["predator"] },
+    { "question": "The animal that gets hunted is called the ___.", "expectedAny": ["prey"] },
+    { "question": "The original source of energy for almost all food chains on Earth is the ___.", "expectedAny": ["sun"] },
+    { "question": "A bear eats berries and fish, so it is an ___.", "expectedAny": ["omnivore"] }
+  ],
+  "shortanswer": [
+    { "question": "Build a food chain using: hawk, mouse, grass, snake. Put them in the correct order and explain your reasoning.", "expectedAny": ["grass → mouse → snake → hawk", "grass first", "producer first"] },
+    { "question": "Explain why removing one organism from a food chain affects everything else in it.", "expectedAny": ["connected", "depends", "ripple", "chain reaction", "all linked"] },
+    { "question": "How do decomposers help plants? Trace the full cycle.", "expectedAny": ["nutrients", "soil", "plants absorb", "break down", "recycle"] },
+    { "question": "Why are there always far more producers than top predators in a healthy ecosystem?", "expectedAny": ["energy lost", "10%", "less energy", "less food available", "energy decreases"] },
+    { "question": "If wolves were removed from a forest, what would likely happen to the deer population and then to the plants? Explain the chain reaction.", "expectedAny": ["deer increase", "plants decrease", "overpopulation", "overgrazing"] },
+    { "question": "Give three examples of producers. What do they all have in common?", "expectedAny": ["photosynthesis", "make own food", "use sunlight", "green", "plants"] },
+    { "question": "How does energy get lost as it moves up a food chain? What happens to the energy that doesn't transfer?", "expectedAny": ["heat", "movement", "10%", "lost", "used up"] }
+  ],
+  "wordProblems": [
+    { "question": "A meadow food chain is: grass → grasshoppers → frogs → snakes → hawks. A disease wipes out all the frogs. What most likely happens to the grasshopper population?", "expectedAny": ["increase", "more grasshoppers", "grow", "explode"] },
+    { "question": "Only about 10% of energy passes to the next level in a food chain. If grass stores 10,000 units of energy, how much energy reaches the rabbit?", "expectedAny": ["1000", "1,000"] },
+    { "question": "A garden has tomato plants, aphids that eat the plants, and ladybugs that eat the aphids. Write this as a food chain.", "expectedAny": ["tomatoes → aphids → ladybugs"] },
+    { "question": "A researcher counts 800 plants, 60 rabbits, and 6 foxes in a meadow. Which count is biggest, and does that match what you'd expect from a food chain?", "expectedAny": ["plants", "yes", "most energy at bottom", "producers"] },
+    { "question": "An eagle eats fish that eat water insects that eat algae. What role does the algae play, and why is it essential?", "expectedAny": ["producer", "start", "energy source", "foundation"] },
+    { "question": "If a new top predator was introduced to an ecosystem, predict two effects it might have on the food chain.", "expectedAny": ["prey decreases", "plants recover", "balance shifts", "other predators compete"] },
+    { "question": "Dead leaves and logs cover the forest floor. Which organisms are responsible for breaking these down, and why does the forest need them to?", "expectedAny": ["decomposers", "fungi", "bacteria", "recycle nutrients", "return to soil"] }
   ]
 }
