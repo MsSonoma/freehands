@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import AIRewriteButton from './AIRewriteButton'
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
+import { getSupabaseClient } from '@/app/lib/supabaseClient'
 
 /**
  * LessonEditor - Structured editor for lesson JSON
@@ -32,6 +33,7 @@ export default function LessonEditor({
   const [errors, setErrors] = useState([])
   const [isMobilePortrait, setIsMobilePortrait] = useState(false)
   const [showActionsMenu, setShowActionsMenu] = useState(false)
+  const [generating, setGenerating] = useState({})
   const actionsMenuRef = useRef(null)
 
   const { subjectsWithoutGenerated: subjectOptions } = useFacilitatorSubjects()
@@ -167,6 +169,44 @@ export default function LessonEditor({
       current[keys[keys.length - 1]] = value
       return updated
     })
+  }
+
+  // Map each generate type to the lesson field it appends to
+  const GENERATE_FIELD = {
+    vocab: 'vocab',
+    multiplechoice: 'multiplechoice',
+    truefalse: 'truefalse',
+    shortanswer: 'shortanswer',
+    fillintheblank: 'fillintheblank',
+  }
+
+  const handleGenerate = async (type) => {
+    setGenerating(prev => ({ ...prev, [type]: true }))
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) { alert('Please sign in to use AI generation.'); return }
+
+      const res = await fetch('/api/ai/lesson-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ lesson, type }),
+      })
+      const data = await res.json()
+      if (!res.ok) { alert(`Generation failed: ${data.error || res.status}`); return }
+      if (!Array.isArray(data.items) || data.items.length === 0) { alert('AI returned no items. Try again.'); return }
+
+      const field = GENERATE_FIELD[type]
+      setLesson(prev => ({
+        ...prev,
+        [field]: [...toArray(prev[field] || []), ...data.items],
+      }))
+    } catch (err) {
+      alert(`Generation error: ${err.message}`)
+    } finally {
+      setGenerating(prev => ({ ...prev, [type]: false }))
+    }
   }
 
   const updateArrayItem = (arrayPath, index, value) => {
@@ -809,6 +849,8 @@ export default function LessonEditor({
         styles={{ sectionStyle, labelStyle, inputStyle, btnAddStyle, btnDangerStyle }}
         onRewriteDefinition={onRewriteVocabDefinition}
         rewritingDefinition={rewritingVocabDefinition}
+        onGenerate={() => handleGenerate('vocab')}
+        generating={!!generating.vocab}
       />
 
       {/* Multiple Choice Questions */}
@@ -816,6 +858,8 @@ export default function LessonEditor({
         questions={toArray(lesson.multiplechoice || [])}
         onChange={(newQuestions) => updateField('multiplechoice', newQuestions)}
         styles={{ sectionStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
+        onGenerate={() => handleGenerate('multiplechoice')}
+        generating={!!generating.multiplechoice}
       />
 
       {/* True/False Questions */}
@@ -823,6 +867,8 @@ export default function LessonEditor({
         questions={toArray(lesson.truefalse || [])}
         onChange={(newQuestions) => updateField('truefalse', newQuestions)}
         styles={{ sectionStyle, labelStyle, inputStyle, btnAddStyle, btnDangerStyle }}
+        onGenerate={() => handleGenerate('truefalse')}
+        generating={!!generating.truefalse}
       />
 
       {/* Short Answer Questions */}
@@ -830,6 +876,8 @@ export default function LessonEditor({
         questions={toArray(lesson.shortanswer || [])}
         onChange={(newQuestions) => updateField('shortanswer', newQuestions)}
         styles={{ sectionStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
+        onGenerate={() => handleGenerate('shortanswer')}
+        generating={!!generating.shortanswer}
       />
 
       {/* Fill in the Blank */}
@@ -837,6 +885,8 @@ export default function LessonEditor({
         questions={toArray(lesson.fillintheblank || [])}
         onChange={(newQuestions) => updateField('fillintheblank', newQuestions)}
         styles={{ sectionStyle, labelStyle, inputStyle, textareaStyle, btnAddStyle, btnDangerStyle }}
+        onGenerate={() => handleGenerate('fillintheblank')}
+        generating={!!generating.fillintheblank}
       />
 
       {/* REMOVED: Sample Q&A section - deprecated zombie code */}
@@ -847,7 +897,7 @@ export default function LessonEditor({
 }
 
 // Vocabulary Editor Component
-function VocabularyEditor({ vocab, onChange, styles, onRewriteDefinition, rewritingDefinition = {} }) {
+function VocabularyEditor({ vocab, onChange, styles, onRewriteDefinition, rewritingDefinition = {}, onGenerate, generating = false }) {
   const addTerm = () => {
     onChange([...vocab, { term: '', definition: '' }])
   }
@@ -948,15 +998,24 @@ function VocabularyEditor({ vocab, onChange, styles, onRewriteDefinition, rewrit
           </div>
         ))
       )}
-      <button style={styles.btnAddStyle} onClick={addTerm}>
-        + Add Vocabulary Term
-      </button>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button style={styles.btnAddStyle} onClick={addTerm}>
+          + Add Vocabulary Term
+        </button>
+        <button
+          style={{ ...styles.btnAddStyle, background: generating ? '#9ca3af' : '#059669', cursor: generating ? 'not-allowed' : 'pointer' }}
+          onClick={onGenerate}
+          disabled={generating}
+        >
+          {generating ? '✨ Generating...' : '✨ Generate Vocab'}
+        </button>
+      </div>
     </div>
   )
 }
 
 // Multiple Choice Editor Component
-function MultipleChoiceEditor({ questions, onChange, styles }) {
+function MultipleChoiceEditor({ questions, onChange, styles, onGenerate, generating = false }) {
   const addQuestion = () => {
     onChange([...questions, { question: '', choices: ['', '', '', ''], correct: 0 }])
   }
@@ -1049,15 +1108,24 @@ function MultipleChoiceEditor({ questions, onChange, styles }) {
           </div>
         ))
       )}
-      <button style={styles.btnAddStyle} onClick={addQuestion}>
-        + Add Multiple Choice Question
-      </button>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button style={styles.btnAddStyle} onClick={addQuestion}>
+          + Add Multiple Choice Question
+        </button>
+        <button
+          style={{ ...styles.btnAddStyle, background: generating ? '#9ca3af' : '#059669', cursor: generating ? 'not-allowed' : 'pointer' }}
+          onClick={onGenerate}
+          disabled={generating}
+        >
+          {generating ? '✨ Generating...' : '✨ Generate Multiple Choice Question'}
+        </button>
+      </div>
     </div>
   )
 }
 
 // True/False Editor Component
-function TrueFalseEditor({ questions, onChange, styles }) {
+function TrueFalseEditor({ questions, onChange, styles, onGenerate, generating = false }) {
   const addQuestion = () => {
     onChange([...questions, { question: '', answer: true }])
   }
@@ -1117,15 +1185,24 @@ function TrueFalseEditor({ questions, onChange, styles }) {
           </div>
         ))
       )}
-      <button style={styles.btnAddStyle} onClick={addQuestion}>
-        + Add True/False Question
-      </button>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button style={styles.btnAddStyle} onClick={addQuestion}>
+          + Add True/False Question
+        </button>
+        <button
+          style={{ ...styles.btnAddStyle, background: generating ? '#9ca3af' : '#059669', cursor: generating ? 'not-allowed' : 'pointer' }}
+          onClick={onGenerate}
+          disabled={generating}
+        >
+          {generating ? '✨ Generating...' : '✨ Generate True/False Question'}
+        </button>
+      </div>
     </div>
   )
 }
 
 // Short Answer Editor Component
-function ShortAnswerEditor({ questions, onChange, styles }) {
+function ShortAnswerEditor({ questions, onChange, styles, onGenerate, generating = false }) {
   const addQuestion = () => {
     onChange([...questions, { question: '', expectedAny: [''] }])
   }
@@ -1253,15 +1330,24 @@ function ShortAnswerEditor({ questions, onChange, styles }) {
           </div>
         ))
       )}
-      <button style={styles.btnAddStyle} onClick={addQuestion}>
-        + Add Short Answer Question
-      </button>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button style={styles.btnAddStyle} onClick={addQuestion}>
+          + Add Short Answer Question
+        </button>
+        <button
+          style={{ ...styles.btnAddStyle, background: generating ? '#9ca3af' : '#059669', cursor: generating ? 'not-allowed' : 'pointer' }}
+          onClick={onGenerate}
+          disabled={generating}
+        >
+          {generating ? '✨ Generating...' : '✨ Generate Short Answer Question'}
+        </button>
+      </div>
     </div>
   )
 }
 
 // Fill in the Blank Editor (similar to short answer)
-function FillInBlankEditor({ questions, onChange, styles }) {
+function FillInBlankEditor({ questions, onChange, styles, onGenerate, generating = false }) {
   const addQuestion = () => {
     onChange([...questions, { question: '', expectedAny: [''] }])
   }
@@ -1346,9 +1432,18 @@ function FillInBlankEditor({ questions, onChange, styles }) {
           </div>
         ))
       )}
-      <button style={styles.btnAddStyle} onClick={addQuestion}>
-        + Add Fill in the Blank Question
-      </button>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button style={styles.btnAddStyle} onClick={addQuestion}>
+          + Add Fill in the Blank Question
+        </button>
+        <button
+          style={{ ...styles.btnAddStyle, background: generating ? '#9ca3af' : '#059669', cursor: generating ? 'not-allowed' : 'pointer' }}
+          onClick={onGenerate}
+          disabled={generating}
+        >
+          {generating ? '✨ Generating...' : '✨ Generate Fill in the Blank Question'}
+        </button>
+      </div>
     </div>
   )
 }
