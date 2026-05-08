@@ -845,6 +845,7 @@ export default function FacilitatorLessonsPage() {
               textTransform: 'uppercase',
               color: '#9ca3af'
             }}>Filters</div>
+            {/* Row 1: dropdowns */}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', padding: '12px 14px 0' }}>
               <select
                 id="learner-select"
@@ -871,8 +872,8 @@ export default function FacilitatorLessonsPage() {
                   fontSize: 14,
                   background: '#fff',
                   cursor: 'pointer',
-                  minWidth: '200px',
-                  flex: '1 1 200px'
+                  minWidth: '180px',
+                  flex: '2 1 180px'
                 }}
               >
                 <option value="">(Select learner)</option>
@@ -882,21 +883,7 @@ export default function FacilitatorLessonsPage() {
                   </option>
                 ))}
               </select>
-              <input
-                type="text"
-                placeholder="Search lessons..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  flex: '1 1 200px',
-                  minWidth: '200px',
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14
-                }}
-              />
-              
+
               <select
                 value={selectedSubject}
                 onChange={(e) => setSelectedSubject(e.target.value)}
@@ -907,7 +894,8 @@ export default function FacilitatorLessonsPage() {
                   fontSize: 14,
                   background: '#fff',
                   cursor: 'pointer',
-                  minWidth: '140px'
+                  minWidth: '130px',
+                  flex: '1 1 130px'
                 }}
               >
                 <option value="all">All Subjects</option>
@@ -930,7 +918,8 @@ export default function FacilitatorLessonsPage() {
                   fontSize: 14,
                   background: '#fff',
                   cursor: 'pointer',
-                  minWidth: '120px'
+                  minWidth: '110px',
+                  flex: '1 1 110px'
                 }}
               >
                 <option value="all">All Grades</option>
@@ -951,13 +940,32 @@ export default function FacilitatorLessonsPage() {
                   fontSize: 14,
                   background: '#fff',
                   cursor: 'pointer',
-                  minWidth: '150px'
+                  minWidth: '130px',
+                  flex: '1 1 130px'
                 }}
               >
                 <option value="owned">Owned</option>
                 <option value="downloadable">Downloadable</option>
                 <option value="all">All Lessons</option>
               </select>
+            </div>
+
+            {/* Row 2: search + action buttons */}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', padding: '10px 14px 2px' }}>
+              <input
+                type="text"
+                placeholder="Search lessons..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  flex: '1 1 200px',
+                  minWidth: '200px',
+                  padding: '8px 12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 6,
+                  fontSize: 14
+                }}
+              />
 
               <button
                 onClick={() => setShowLessons(true)}
@@ -983,7 +991,7 @@ export default function FacilitatorLessonsPage() {
                 <button
                   onClick={() => setShowHistoryModal(true)}
                   style={{
-                    padding: '10px 18px',
+                    padding: '9px 18px',
                     border: '1px solid #d1d5db',
                     borderRadius: 6,
                     background: '#fff',
@@ -1010,7 +1018,7 @@ export default function FacilitatorLessonsPage() {
                 <div style={{ 
                   fontSize: 13, 
                   color: '#6b7280',
-                  padding: '0 8px',
+                  padding: '0 4px',
                   whiteSpace: 'nowrap'
                 }}>
                   {filteredLessons.length} lessons
