@@ -281,7 +281,7 @@ export default function ClientManage() {
       priceLabel: '$69',
       priceSub: '/month',
       badge: 'Most popular',
-      features: ['Everything in Standard', 'Up to 5 learners', 'Mr. Mentor AI tutor', 'Lesson Planner', 'Curriculum Preferences'],
+      features: ['Everything in Standard', 'Up to 5 learners', 'Mr. Mentor (facilitator\'s AI assistant)', 'Lesson Planner', 'Curriculum Preferences'],
     },
   ];
 

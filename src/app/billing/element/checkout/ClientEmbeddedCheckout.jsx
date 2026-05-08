@@ -40,7 +40,7 @@ export default function ClientEmbeddedCheckout() {
       label: 'Pro',
       priceLabel: '$69',
       priceSub: 'per month',
-      features: ['Everything in Standard', '5 Learners', 'Mr. Mentor', 'Lesson Planner + Curriculum Preferences']
+      features: ['Everything in Standard', '5 Learners', 'Mr. Mentor (facilitator\'s AI assistant)', 'Lesson Planner + Curriculum Preferences']
     },
   ]), []);
 
