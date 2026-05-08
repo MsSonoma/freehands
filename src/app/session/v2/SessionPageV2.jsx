@@ -1338,11 +1338,30 @@ function SessionPageV2Inner() {
         
         const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
         
-        if (!learnerId || learnerId === 'demo') {
+        if (!learnerId) {
           throw new Error('No learner selected. Please select a learner from the dashboard.');
         }
-        
-        const learner = await getLearner(learnerId);
+
+        const learner = learnerId === 'demo'
+          ? {
+              id: 'demo',
+              name: 'Demo Learner',
+              grade: '4',
+              golden_keys_enabled: false,
+              active_golden_keys: {},
+              golden_keys: 0,
+              play_comprehension_enabled: true,
+              play_exercise_enabled: true,
+              play_worksheet_enabled: true,
+              play_test_enabled: true,
+              play_timers_enabled: false,
+              play_dependent_on_work: false,
+              comprehension: 3,
+              exercise: 3,
+              worksheet: 3,
+              test: 3,
+            }
+          : await getLearner(learnerId);
         
         if (!learner) {
           throw new Error('Learner profile not found. Please select a valid learner.');
