@@ -5,10 +5,12 @@ import LearnerSelector from './LearnerSelector'
 import { ensurePinAllowed } from '../lib/pinGate'
 import { getLearner } from '../facilitator/learners/clientApi'
 import { getSupabaseClient } from '../lib/supabaseClient'
+import GatedOverlay from '@/app/components/GatedOverlay'
 
 export default function LearnPage() {
   const r = useRouter()
   const [learner, setLearner] = useState({ id: null, name: '' })
+  const [showAuthGate, setShowAuthGate] = useState(false)
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +76,15 @@ export default function LearnPage() {
 
   return (
     <main style={{ padding:'16px 24px' }}>
+      <GatedOverlay
+        show={showAuthGate}
+        onClose={() => setShowAuthGate(false)}
+        gateType="auth"
+        feature="this feature"
+        emoji="👩🏻‍🦰"
+        description="Create a free account to access all teachers, track awards, and save your progress."
+        benefits={['All three AI teachers — Ms. Sonoma, Mr. Slate, Mrs. Webb', 'Awards and medal tracking', 'Lesson history and progress', 'Personalized learner profiles']}
+      />
       <div style={{ width:'100%', maxWidth:560, textAlign:'center', margin:'0 auto' }}>
         <h1 style={{ margin:'4px 0 8px' }}>{noLearner ? 'Learning Portal' : `Hi, ${learner.name}!`}</h1>
         
@@ -128,68 +139,55 @@ export default function LearnPage() {
             >
               👩🏻‍🦰 Ms. Sonoma
             </button>
-            {learner.id !== 'demo' && (<>
-            <button
-              onClick={() => {
-                try { localStorage.setItem('selected_teacher', 'slate') } catch {}
-                r.push('/learn/lessons')
-              }}
-              title="Drill questions with Mr. Slate"
-              style={{
-                padding:'14px 20px', 
-                border:'2px solid #6366f1', 
-                borderRadius:12,
-                fontSize:16, 
-                fontWeight:700,
-                background:'#6366f1',
-                color:'#fff',
-                cursor:'pointer',
-                width:'100%', 
-                maxWidth:320
-              }}
-            >
-              🤖 Mr. Slate
-            </button>
-            <button
-              onClick={() => {
-                try { localStorage.setItem('selected_teacher', 'webb') } catch {}
-                r.push('/learn/lessons')
-              }}
-              title="Chat with Mrs. Webb, your educational AI teacher"
-              style={{
-                padding:'14px 20px',
-                border:'2px solid #0d9488',
-                borderRadius:12,
-                fontSize:16,
-                fontWeight:700,
-                background:'#0d9488',
-                color:'#fff',
-                cursor:'pointer',
-                width:'100%',
-                maxWidth:320
-              }}
-            >
-              👩‍🏫 Mrs. Webb
-            </button>
-            <button
-              onClick={goToAwards}
-              title="View medals and achievements"
-              style={{
-                padding:'14px 20px', 
-                border:'2px solid #059669', 
-                borderRadius:12,
-                fontSize:16, 
-                fontWeight:700,
-                background:'#059669',
-                color:'#fff',
-                cursor:'pointer',
-                width:'100%', 
-                maxWidth:320
-              }}
-            >
-              🏆 Awards
-            </button>
-            </>)}
+            {[{
+              label: '🤖 Mr. Slate',
+              teacher: 'slate',
+              border: '#6366f1',
+              bg: '#6366f1',
+              title: 'Drill questions with Mr. Slate',
+            }, {
+              label: '👩‍🏫 Mrs. Webb',
+              teacher: 'webb',
+              border: '#0d9488',
+              bg: '#0d9488',
+              title: 'Chat with Mrs. Webb, your educational AI teacher',
+            }, {
+              label: '🏆 Awards',
+              teacher: null,
+              border: '#059669',
+              bg: '#059669',
+              title: 'View medals and achievements',
+              onClick: () => r.push('/learn/awards'),
+            }].map(({ label, teacher, border, bg, title, onClick }) => {
+              const isDemo = learner.id === 'demo'
+              return (
+                <div key={label} style={{ position: 'relative', width: '100%', maxWidth: 320 }} title={isDemo ? 'Sign up to use this' : title}>
+                  <button
+                    onClick={() => {
+                      if (isDemo) { setShowAuthGate(true); return }
+                      if (onClick) { onClick(); return }
+                      try { localStorage.setItem('selected_teacher', teacher) } catch {}
+                      r.push('/learn/lessons')
+                    }}
+                    style={{
+                      padding:'14px 20px',
+                      border: `2px solid ${border}`,
+                      borderRadius:12,
+                      fontSize:16,
+                      fontWeight:700,
+                      background: bg,
+                      color:'#fff',
+                      cursor: isDemo ? 'not-allowed' : 'pointer',
+                      width:'100%',
+                      opacity: isDemo ? 0.45 : 1,
+                      transition: 'opacity 0.15s',
+                    }}
+                  >
+                    {label}
+                  </button>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
