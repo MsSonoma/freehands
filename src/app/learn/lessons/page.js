@@ -108,6 +108,7 @@ function LessonsPageInner(){
     try { return localStorage.getItem('selected_teacher') || 'sonoma' } catch { return 'sonoma' }
   }) // 'sonoma' | 'webb' | 'slate'
   const [teacherDropdownOpen, setTeacherDropdownOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   // Lesson detail overlay: { l, subject, lessonKey, isDemo } | null
   const [selectedLesson, setSelectedLesson] = useState(null)
   const [overlayNoteEditing, setOverlayNoteEditing] = useState(false)
@@ -886,7 +887,7 @@ function LessonsPageInner(){
   }
 
   return (
-    <main style={{ padding:24, maxWidth:980, margin:'0 auto' }}>
+    <main style={{ padding: '16px 12px', maxWidth: 1100, margin: '0 auto' }}>
       {/* Golden Key Earned Toast Notification */}
       {showGoldenKeyToast && goldenKeysEnabled === true && (
         <div style={{
@@ -933,155 +934,171 @@ function LessonsPageInner(){
           >×</button>
         </div>
       )}
-      
-      <h1 style={{ margin:'8px 0 4px', textAlign:'center' }}>Select a Lesson</h1>
 
-      {/* Teacher selector indicator */}
-      {(() => {
-        const TEACHERS = [
-          { key: 'sonoma', label: 'Ms. Sonoma', emoji: '👩🏻‍🦰', color: '#c7442e' },
-          { key: 'slate',  label: 'Mr. Slate',  emoji: '🤖',       color: '#6366f1' },
-          { key: 'webb',   label: 'Mrs. Webb',  emoji: '👩‍🏫',      color: '#0d9488' },
-        ]
-        const current = TEACHERS.find(t => t.key === selectedTeacher) || TEACHERS[0]
-        return (
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-            <button
-              onClick={() => setTeacherDropdownOpen(o => !o)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '8px 16px', borderRadius: 20,
-                border: `2px solid ${current.color}`,
-                background: '#fff', cursor: 'pointer',
-                fontSize: 14, fontWeight: 700, color: current.color,
-                boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-              }}
-            >
-              <span>{current.emoji} {current.label}</span>
-              <span style={{ fontSize: 11, opacity: 0.7 }}>{teacherDropdownOpen ? '▲' : '▼'}</span>
-            </button>
-            {teacherDropdownOpen && (
-              <div style={{
-                position: 'absolute', top: '110%', left: '50%',
-                transform: 'translateX(-50%)',
-                background: '#fff', border: '1px solid #e5e7eb',
-                borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                zIndex: 200, minWidth: 200, overflow: 'hidden',
-              }}>
-                {TEACHERS.map(t => (
+      {/* ── Sidebar + Content layout ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
+
+        {/* Sidebar */}
+        <div style={{
+          width: sidebarOpen ? 240 : 44,
+          flexShrink: 0,
+          transition: 'width 0.22s ease',
+          overflow: 'hidden',
+          background: '#fafafa',
+          border: '1px solid #e5e7eb',
+          borderRadius: 12,
+          marginRight: 16,
+          minHeight: 300,
+          position: 'sticky',
+          top: 16,
+          alignSelf: 'flex-start',
+        }}>
+          {/* Toggle button */}
+          <button
+            onClick={() => setSidebarOpen(o => !o)}
+            title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: sidebarOpen ? 'flex-end' : 'center',
+              width: '100%', padding: '10px 12px',
+              background: 'none', border: 'none', borderBottom: '1px solid #e5e7eb',
+              cursor: 'pointer', fontSize: 16, color: '#6b7280',
+            }}
+          >{sidebarOpen ? '◀' : '▶'}</button>
+
+          {sidebarOpen && (
+            <div style={{ padding: '16px 14px' }}>
+              <h2 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 700, color: '#111' }}>Select a Lesson</h2>
+
+              {/* Teacher selector */}
+              {(() => {
+                const TEACHERS = [
+                  { key: 'sonoma', label: 'Ms. Sonoma', emoji: '👩🏻‍🦰', color: '#c7442e' },
+                  { key: 'slate',  label: 'Mr. Slate',  emoji: '🤖',       color: '#6366f1' },
+                  { key: 'webb',   label: 'Mrs. Webb',  emoji: '👩‍🏫',      color: '#0d9488' },
+                ]
+                const current = TEACHERS.find(t => t.key === selectedTeacher) || TEACHERS[0]
+                return (
+                  <div style={{ position: 'relative', marginBottom: 14 }}>
+                    <button
+                      onClick={() => setTeacherDropdownOpen(o => !o)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                        padding: '8px 12px', borderRadius: 8,
+                        border: `2px solid ${current.color}`,
+                        background: '#fff', cursor: 'pointer',
+                        fontSize: 13, fontWeight: 700, color: current.color,
+                      }}
+                    >
+                      <span style={{ flex: 1, textAlign: 'left' }}>{current.emoji} {current.label}</span>
+                      <span style={{ fontSize: 11, opacity: 0.7 }}>{teacherDropdownOpen ? '▲' : '▼'}</span>
+                    </button>
+                    {teacherDropdownOpen && (
+                      <div style={{
+                        position: 'absolute', top: '105%', left: 0, right: 0,
+                        background: '#fff', border: '1px solid #e5e7eb',
+                        borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                        zIndex: 200, overflow: 'hidden',
+                      }}>
+                        {TEACHERS.map(t => (
+                          <button
+                            key={t.key}
+                            onClick={() => {
+                              setSelectedTeacher(t.key)
+                              try { localStorage.setItem('selected_teacher', t.key) } catch {}
+                              setTeacherDropdownOpen(false)
+                            }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 8,
+                              width: '100%', padding: '10px 14px',
+                              border: 'none', background: t.key === selectedTeacher ? `${t.color}12` : '#fff',
+                              cursor: 'pointer', fontSize: 13, fontWeight: t.key === selectedTeacher ? 700 : 500,
+                              color: t.key === selectedTeacher ? t.color : '#374151',
+                              textAlign: 'left',
+                              borderLeft: t.key === selectedTeacher ? `3px solid ${t.color}` : '3px solid transparent',
+                            }}
+                          >
+                            <span>{t.emoji}</span>
+                            <span>{t.label}</span>
+                            {t.key === selectedTeacher && <span style={{ marginLeft: 'auto', fontSize: 11 }}>✓</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* Learner name */}
+              {learnerName && (
+                <div style={{ marginBottom: 14, fontSize: 13, color: '#666' }}>
+                  Learning with <strong style={{ color: '#111' }}>{learnerName}</strong>
+                </div>
+              )}
+
+              {/* Golden Key Counter — only shown when Ms. Sonoma is selected */}
+              {goldenKeysEnabled === true && !loading && !lessonsLoading && selectedTeacher === 'sonoma' && (
+                <div style={{ marginBottom: 14 }}>
+                  <GoldenKeyCounter
+                    learnerId={learnerId}
+                    selected={goldenKeySelected}
+                    onToggle={() => setGoldenKeySelected(prev => !prev)}
+                  />
+                </div>
+              )}
+
+              {/* Action buttons */}
+              {learnerId && learnerId !== 'demo' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <button
-                    key={t.key}
-                    onClick={() => {
-                      setSelectedTeacher(t.key)
-                      try { localStorage.setItem('selected_teacher', t.key) } catch {}
-                      setTeacherDropdownOpen(false)
+                    onClick={() => setShowHistoryModal(true)}
+                    style={{
+                      padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8,
+                      background: '#fff', color: '#111827', fontSize: 13, fontWeight: 600,
+                      cursor: lessonHistoryLoading ? 'wait' : 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                    }}
+                    disabled={lessonHistoryLoading && !lessonHistorySessions.length}
+                    title={lessonHistoryLoading ? 'Loading history…' : 'See completed lessons'}
+                  >
+                    ✅ Completed Lessons{completedLessonCount ? ` (${completedLessonCount})` : ''}
+                    {activeLessonCount > 0 && (
+                      <span style={{ fontSize: 11, color: '#d97706' }}>⏳ {activeLessonCount}</span>
+                    )}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const ok = await ensurePinAllowed('facilitator-page')
+                      if (ok) router.push('/facilitator/generator')
                     }}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      width: '100%', padding: '12px 18px',
-                      border: 'none', background: t.key === selectedTeacher ? `${t.color}12` : '#fff',
-                      cursor: 'pointer', fontSize: 14, fontWeight: t.key === selectedTeacher ? 700 : 500,
-                      color: t.key === selectedTeacher ? t.color : '#374151',
-                      textAlign: 'left',
-                      borderLeft: t.key === selectedTeacher ? `3px solid ${t.color}` : '3px solid transparent',
+                      padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8,
+                      background: '#fff', color: '#111827', fontSize: 13, fontWeight: 600,
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, width: '100%',
                     }}
                   >
-                    <span>{t.emoji}</span>
-                    <span>{t.label}</span>
-                    {t.key === selectedTeacher && <span style={{ marginLeft: 'auto', fontSize: 12 }}>✓</span>}
+                    ✨ Generate a Lesson
                   </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )
-      })()}
-
-      {learnerName && (
-        <div style={{ textAlign:'center', marginBottom:16, fontSize:16, color:'#666' }}>
-          Learning with <strong style={{ color:'#111' }}>{learnerName}</strong>
+                  <button
+                    onClick={async () => {
+                      const ok = await ensurePinAllowed('facilitator-page')
+                      if (ok) router.push('/facilitator/lessons')
+                    }}
+                    style={{
+                      padding: '9px 12px', border: '1px solid #d1d5db', borderRadius: 8,
+                      background: '#fff', color: '#111827', fontSize: 13, fontWeight: 600,
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                    }}
+                  >
+                    📚 Lessons
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Golden Key Counter — only shown when Ms. Sonoma is selected */}
-      {goldenKeysEnabled === true && !loading && !lessonsLoading && selectedTeacher === 'sonoma' && (
-        <GoldenKeyCounter
-          learnerId={learnerId}
-          selected={goldenKeySelected}
-          onToggle={() => setGoldenKeySelected(prev => !prev)}
-        />
-      )}
-
-      {learnerId && learnerId !== 'demo' && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, marginTop: 12, gap: 12, flexWrap: 'wrap' }}>
-          <button
-            onClick={() => setShowHistoryModal(true)}
-            style={{
-              padding: '10px 20px',
-              border: '1px solid #d1d5db',
-              borderRadius: 8,
-              background: '#fff',
-              color: '#111827',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: lessonHistoryLoading ? 'wait' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-            disabled={lessonHistoryLoading && !lessonHistorySessions.length}
-            title={lessonHistoryLoading ? 'Loading history…' : 'See completed lessons'}
-          >
-            ✅ Completed Lessons{completedLessonCount ? ` (${completedLessonCount})` : ''}
-            {activeLessonCount > 0 && (
-              <span style={{ fontSize: 12, color: '#d97706' }}>⏳ {activeLessonCount}</span>
-            )}
-          </button>
-          <button
-            onClick={async () => {
-              const ok = await ensurePinAllowed('facilitator-page')
-              if (ok) router.push('/facilitator/generator')
-            }}
-            style={{
-              padding: '10px 20px',
-              border: '1px solid #d1d5db',
-              borderRadius: 8,
-              background: '#fff',
-              color: '#111827',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            ✨ Generate a Lesson
-          </button>
-          <button
-            onClick={async () => {
-              const ok = await ensurePinAllowed('facilitator-page')
-              if (ok) router.push('/facilitator/lessons')
-            }}
-            style={{
-              padding: '10px 20px',
-              border: '1px solid #d1d5db',
-              borderRadius: 8,
-              background: '#fff',
-              color: '#111827',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            📚 Lessons
-          </button>
-
-        </div>
-      )}
+        {/* Main content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
 
       {/* ── Tab bar: Active / Recent / Owned ── */}
       {!loading && !lessonsLoading && learnerId && learnerId !== 'demo' && (
@@ -1549,8 +1566,9 @@ function LessonsPageInner(){
         Daily lessons used: {Number.isFinite(todaysCount) ? todaysCount : 0} / {featuresForTier(planTier).lessonsPerDay === Infinity ? '' : featuresForTier(planTier).lessonsPerDay}
       </p>
 
+        </div>{/* end main content */}
+      </div>{/* end sidebar+content flex row */}
 
-      
       <LoadingProgress
         isLoading={sessionLoading}
         onComplete={() => setSessionLoading(false)}
