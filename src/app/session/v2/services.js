@@ -101,13 +101,20 @@ export async function loadLesson(lessonFilename, subject = 'math') {
     // Extract grade from filename (e.g., "4th" from "4th_Geometry...")
     const grade = baseFilename.split('_')[0] || '';
     
+    // Grade: prefer the value from the JSON itself (e.g. "4th") over the prefix
+    // extracted from the filename (which breaks for demo lessons like "welcome_to_math").
+    const resolvedGrade = lessonData.grade || grade;
+
     return {
       key: baseFilename,
       title: lessonData.title || 'Untitled Lesson',
       subject: usedSubject,
-      grade: grade,
+      grade: resolvedGrade,
       vocab: lessonData.vocab || [],
+      teachingNotes: lessonData.teachingNotes || '',
       examples: lessonData.examples || lessonData.example || [],
+      sample: lessonData.sample || [],
+      wordProblems: lessonData.wordProblems || [],
       // Question pools for comprehension/exercise (V1 pattern)
       truefalse: lessonData.truefalse || [],
       multiplechoice: lessonData.multiplechoice || [],
