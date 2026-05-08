@@ -19,7 +19,8 @@ const { TextToSpeechClient } = textToSpeech
 
 // OpenAI configuration
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = 'gpt-4o'
+import { AI_MODEL } from '@/app/lib/aiModel'
+const OPENAI_MODEL = AI_MODEL
 
 function fetchJsonWithTimeout(url, options, timeoutMs) {
   const controller = new AbortController()

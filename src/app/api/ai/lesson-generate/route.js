@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
 import { createClient } from '@supabase/supabase-js'
+import { AI_MODEL } from '@/app/lib/aiModel'
 
 export const dynamic = 'force-dynamic'
 
@@ -110,7 +111,7 @@ Return ONLY a JSON object: {"items": [{"question": "The _____ is...", "expectedA
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: AI_MODEL,
       messages: [
         { role: 'system', content: prompts[type].system },
         { role: 'user', content: prompts[type].user },

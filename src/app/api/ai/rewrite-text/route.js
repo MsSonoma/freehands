@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
+import { AI_MODEL } from '@/app/lib/aiModel'
 
 export const dynamic = 'force-dynamic'
 
@@ -103,7 +104,7 @@ Improved text:`
     const promptConfig = prompts[purpose] || prompts.general
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: AI_MODEL,
       messages: [
         { role: 'system', content: promptConfig.system },
         { role: 'user', content: promptConfig.user }

@@ -13,7 +13,8 @@
 import { NextResponse } from 'next/server'
 
 const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+import { AI_MODEL } from '@/app/lib/aiModel'
+const OPENAI_MODEL = AI_MODEL
 
 async function callGPT(apiKey, system, user, maxTokens = 500) {
   const res = await fetch(OPENAI_URL, {

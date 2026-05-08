@@ -18,7 +18,8 @@ import { NextResponse }      from 'next/server'
 import { YoutubeTranscript } from 'youtube-transcript'
 
 const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+import { AI_MODEL } from '@/app/lib/aiModel'
+const OPENAI_MODEL = AI_MODEL
 const YT_VIDEOS    = 'https://www.googleapis.com/youtube/v3/videos'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

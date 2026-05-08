@@ -163,7 +163,8 @@ async function getTtsClient() {
 
 // Provider selection: default to Anthropic when key present or env explicitly set; else OpenAI
 const PROVIDER = (process.env.SONOMA_PROVIDER || (process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'openai')).toLowerCase()
-const OPENAI_MODEL_DEFAULT = process.env.SONOMA_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o'
+import { AI_MODEL } from '@/app/lib/aiModel'
+const OPENAI_MODEL_DEFAULT = process.env.SONOMA_OPENAI_MODEL || AI_MODEL
 // Note: Model name for "Claude Opus 4.1 (Preview)" can vary; prefer env overrides. Fallback to a widely-available Claude model.
 const ANTHROPIC_MODEL_DEFAULT = process.env.SONOMA_MODEL || process.env.ANTHROPIC_MODEL || 'claude-4.1-opus'
 const ANTHROPIC_MODEL_FALLBACK = process.env.ANTHROPIC_MODEL_FALLBACK || 'claude-3.5-sonnet'

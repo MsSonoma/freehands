@@ -8,7 +8,8 @@ import { NextResponse } from 'next/server'
 import { validateInput } from '@/lib/contentSafety'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+import { AI_MODEL } from '@/app/lib/aiModel'
+const OPENAI_MODEL = AI_MODEL
 
 function buildResearchSystem(lesson, targetObjective, media) {
   const title   = lesson?.title   || 'this topic'

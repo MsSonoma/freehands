@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { resolveEffectiveTier, featuresForTier } from '@/app/lib/entitlements'
+import { AI_MODEL } from '@/app/lib/aiModel'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -134,7 +135,7 @@ async function callModel(prompt){
     }
   }
   const body = {
-    model: process.env.SONOMA_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o',
+    model: AI_MODEL,
     messages: [
       { role:'system', content:'Return only valid JSON. No markdown. No commentary.' },
       { role:'user', content: prompt }

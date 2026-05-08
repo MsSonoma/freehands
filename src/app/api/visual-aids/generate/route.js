@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { AI_MODEL } from '@/app/lib/aiModel'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -56,7 +57,7 @@ export async function POST(req) {
             'Authorization': `Bearer ${openaiKey}`
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: AI_MODEL,
             messages: [
               {
                 role: 'system',
@@ -94,7 +95,7 @@ export async function POST(req) {
               'Authorization': `Bearer ${openaiKey}`
             },
             body: JSON.stringify({
-              model: 'gpt-4o-mini',
+              model: AI_MODEL,
               messages: [
                 {
                   role: 'system',

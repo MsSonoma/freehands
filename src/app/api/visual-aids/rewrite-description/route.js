@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
+import { AI_MODEL } from '@/app/lib/aiModel'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,7 +46,7 @@ Requirements:
 Rewritten description:`
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: AI_MODEL,
       messages: [
         { role: 'system', content: 'You are an expert educational content writer for elementary students.' },
         { role: 'user', content: prompt }

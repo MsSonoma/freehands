@@ -7,7 +7,8 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // OpenAI configuration
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = 'gpt-4o-mini' // Using mini for draft summarization (same task as conversation-memory)
+import { AI_MODEL } from '@/app/lib/aiModel'
+const OPENAI_MODEL = AI_MODEL
 
 function getSupabaseAdmin() {
   if (!supabaseUrl || !supabaseServiceKey) return null
