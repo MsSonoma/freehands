@@ -154,7 +154,7 @@ export default function ClientManage() {
       if (submitError) throw new Error(submitError.message || 'Validation failed');
       // Step 2: confirm setup using clientSecret directly
       const baseUrl = window.location.origin;
-      const returnUrl = `${baseUrl}/billing/manage`;
+      const returnUrl = `${baseUrl}/facilitator/account/plan`;
       const result = await stripeRef.current.confirmSetup({
         clientSecret: cardClientSecret,
         confirmParams: { return_url: returnUrl },
@@ -196,7 +196,11 @@ export default function ClientManage() {
     setMessage(''); setErr(''); setSaveBusy(true);
     try {
       if (!summary?.subscription?.id) {
-        throw new Error('No active subscription to update. Please choose a plan to subscribe.');
+        // No active subscription — redirect to checkout to subscribe
+        if (typeof window !== 'undefined') {
+          window.location.assign(`/billing/element/checkout?tier=${encodeURIComponent(selectedTier)}`);
+        }
+        return;
       }
       const token = await getAccessToken();
       if (!token) throw new Error('Please log in');
@@ -284,8 +288,8 @@ export default function ClientManage() {
   return (
     <div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap' }}>
-        <h1 style={{ margin:0 }}>Manage subscription</h1>
-        <a href="/facilitator/account/plan" className="back-link" style={{ color:'#c7442e', textDecoration:'none' }}>← Back to plans</a>
+        <h1 style={{ margin:0 }}>Plan &amp; billing</h1>
+        <a href="/facilitator/account" className="back-link" style={{ color:'#c7442e', textDecoration:'none' }}>← Back to account</a>
       </div>
 
       <p style={{ marginTop:8, color:'#6b7280', fontSize: 12 }}>
@@ -386,7 +390,7 @@ export default function ClientManage() {
           <div style={{ justifySelf:'center' }}>
             <button onClick={handlePlanSave} disabled={saveBusy || selectedTier === tier}
               style={{ padding:'10px 16px', border:'1px solid #111', borderRadius:8, background:'#111', color:'#fff' }}>
-              {saveBusy ? 'Saving…' : 'Save plan'}
+              {saveBusy ? 'Saving…' : summary?.subscription?.id ? 'Save plan' : `Subscribe to ${selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1)}`}
             </button>
           </div>
           <div />

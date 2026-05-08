@@ -394,8 +394,8 @@ export default function HeaderBar() {
 		// Billing (embedded checkout): return to plan selection
 		if (pathname.startsWith('/billing/element/checkout')) return '/facilitator/account/plan';
 
-		// Billing manage page (client-managed billing portal): return to facilitator overview
-		if (pathname.startsWith('/billing/manage')) return '/facilitator';
+		// /billing/manage now redirects to /facilitator/account/plan
+		if (pathname.startsWith('/billing/manage')) return '/facilitator/account/plan';
 
 		// Facilitator Hotkeys page should return to Settings
 		if (pathname.startsWith('/facilitator/hotkeys')) return '/facilitator/account/settings';
