@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOnboarding, ONBOARDING_STEPS } from '@/app/hooks/useOnboarding';
+import VideoTutorial from '@/app/components/VideoTutorial';
 
 const STEP_ITEMS = [
   {
@@ -167,10 +168,34 @@ export default function OnboardingChecklist() {
             );
           })}
 
+          {/* Video walkthrough thumbnail */}
+          <div style={{
+            marginTop: 12,
+            padding: '8px 10px',
+            background: 'linear-gradient(135deg, #ede9fe 0%, #e0e7ff 100%)',
+            border: '1px solid #c4b5fd',
+            borderRadius: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 9,
+          }}>
+            <VideoTutorial
+              src="/media/Mr. Mentor Wizard Helper.mp4"
+              title="Mr. Mentor — Wizard Walkthrough"
+              label=""
+              thumbTime={1}
+              width={72}
+            />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 11, color: '#4c1d95', lineHeight: 1.3 }}>🤖 Watch the walkthrough</div>
+              <div style={{ fontSize: 10, color: '#5b21b6', lineHeight: 1.4, marginTop: 2 }}>Mr. Mentor explains every step</div>
+            </div>
+          </div>
+
           <button
             onClick={dismissOnboarding}
             style={{
-              marginTop: 12,
+              marginTop: 8,
               width: '100%',
               padding: '7px',
               border: '1px solid #e5e7eb',
