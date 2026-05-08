@@ -32,7 +32,6 @@ export default function VideoTutorial({
     if (!src) return
     const vid = document.createElement('video')
     vid.src = src
-    vid.crossOrigin = 'anonymous'
     vid.muted = true
     vid.preload = 'metadata'
     vid.addEventListener('loadedmetadata', () => {
