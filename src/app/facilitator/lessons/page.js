@@ -702,6 +702,16 @@ export default function FacilitatorLessonsPage() {
 
   const filteredLessons = getFilteredLessons()
 
+  const SUBJECT_COLORS = {
+    math:           { bg: '#eff6ff', text: '#1d4ed8', border: '#3b82f6' },
+    science:        { bg: '#f0fdf4', text: '#166534', border: '#22c55e' },
+    'language arts':{ bg: '#faf5ff', text: '#6b21a8', border: '#a855f7' },
+    'social studies':{ bg: '#fffbeb', text: '#92400e', border: '#f59e0b' },
+    history:        { bg: '#fffbeb', text: '#92400e', border: '#f59e0b' },
+    generated:      { bg: '#eef2ff', text: '#3730a3', border: '#6366f1' },
+  }
+  const subjectAccent = (s) => (SUBJECT_COLORS[s?.toLowerCase()] || { bg: '#f9fafb', text: '#374151', border: '#9ca3af' })
+
   return (
     <>
       <main style={{ padding: 7, maxWidth: 1200, margin: '0 auto', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
@@ -819,12 +829,23 @@ export default function FacilitatorLessonsPage() {
           <div style={{ 
             background: '#fff',
             border: '1px solid #e5e7eb',
-            borderRadius: 8,
-            padding: 14,
+            borderRadius: 10,
+            padding: '0 0 14px 0',
             marginBottom: 16,
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            overflow: 'hidden'
           }}>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{
+              padding: '8px 14px',
+              borderBottom: '1px solid #f3f4f6',
+              background: '#fafafa',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.07em',
+              textTransform: 'uppercase',
+              color: '#9ca3af'
+            }}>Filters</div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', padding: '12px 14px 0' }}>
               <select
                 id="learner-select"
                 value={selectedLearnerId || ''}
@@ -942,15 +963,16 @@ export default function FacilitatorLessonsPage() {
                 onClick={() => setShowLessons(true)}
                 disabled={showLessons}
                 style={{
-                  padding: '10px 24px',
-                  background: showLessons ? '#e5e7eb' : '#3b82f6',
+                  padding: '9px 20px',
+                  background: showLessons ? '#e5e7eb' : '#111827',
                   color: showLessons ? '#9ca3af' : '#fff',
                   border: 'none',
                   borderRadius: 6,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: showLessons ? 'default' : 'pointer',
-                  fontSize: 14,
+                  fontSize: 13,
                   whiteSpace: 'nowrap',
+                  letterSpacing: '0.02em',
                   transition: 'all 0.2s'
                 }}
               >
@@ -1002,19 +1024,24 @@ export default function FacilitatorLessonsPage() {
           {/* Show appropriate state based on loading */}
           {!showLessons ? (
             <div style={{
-              background: '#f9fafb',
+              background: '#fff',
               border: '1px solid #e5e7eb',
-              borderRadius: 8,
+              borderRadius: 10,
               padding: '48px 32px',
               textAlign: 'center',
-              color: '#6b7280'
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
             }}>
-              <div style={{ fontSize: 16, marginBottom: selectedLearnerId ? 8 : 12 }}>
-                Click &quot;Load Lessons&quot; to view lessons
+              <div style={{ fontSize: 36, marginBottom: 12 }}>📚</div>
+              <div style={{ fontWeight: 600, fontSize: 15, color: '#111827', marginBottom: selectedLearnerId ? 8 : 12 }}>
+                {selectedLearnerId ? 'Ready to load' : 'Select a learner to get started'}
               </div>
-              {!selectedLearnerId && (
-                <div style={{ fontSize: 13, color: '#4b5563' }}>
-                  Select a learner to unlock availability, notes, and scheduling controls.
+              {selectedLearnerId ? (
+                <div style={{ fontSize: 13, color: '#6b7280' }}>
+                  Click <strong>Load Lessons</strong> above to browse the curriculum.
+                </div>
+              ) : (
+                <div style={{ fontSize: 13, color: '#6b7280' }}>
+                  Choose a learner from the dropdown, then click <strong>Load Lessons</strong>.
                 </div>
               )}
             </div>
@@ -1064,9 +1091,9 @@ export default function FacilitatorLessonsPage() {
             <div style={{
               background: '#fff',
               border: '1px solid #e5e7eb',
-              borderRadius: 8,
+              borderRadius: 10,
               overflow: 'hidden',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
             }}>
               {filteredLessons.map(lesson => {
                 const { lessonKey, subject, displayGrade } = lesson
@@ -1093,9 +1120,10 @@ export default function FacilitatorLessonsPage() {
                 
                 return (
                   <div key={`${subject}-${lessonKey}`} style={{
-                    padding: '14px 16px',
-                    borderBottom: '1px solid #e5e7eb',
-                    transition: 'background 0.2s'
+                    padding: '13px 16px',
+                    borderBottom: '1px solid #f3f4f6',
+                    borderLeft: `3px solid ${subjectAccent(subject).border}`,
+                    transition: 'background 0.15s'
                   }}>
                     {/* Main lesson info with floating buttons */}
                     <div style={{ 
@@ -1127,19 +1155,35 @@ export default function FacilitatorLessonsPage() {
                         {medalEmoji && <span style={{ fontSize: 12 }} title={`${medalInfo.medalTier} - ${medalInfo.bestPercent}%`}>{medalEmoji}</span>}
                       </div>
                       <div style={{ flex: 1, minWidth: 150 }}>
-                        <div style={{ fontWeight: 600, color: '#1f2937', fontSize: 14 }}>
+                        <div style={{ fontWeight: 600, color: '#111827', fontSize: 15, lineHeight: '1.3' }}>
                           {lesson.isGenerated && '✨ '}{lesson.title}
                         </div>
-                        <div style={{ color: '#6b7280', fontSize: 13, marginTop: 2 }}>
-                          {subject === 'language arts' ? 'Language Arts' : 
-                           subject === 'social studies' ? 'Social Studies' :
-                           subject === 'generated' ? 'Generated' :
-                           subject.charAt(0).toUpperCase() + subject.slice(1)}
-                          {displayGrade && ` • Grade ${displayGrade}`}
-                          {lesson.difficulty && ` • ${lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1)}`}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 5, alignItems: 'center' }}>
+                          {(() => {
+                            const sc = subjectAccent(subject)
+                            const subLabel = subject === 'language arts' ? 'Language Arts' :
+                              subject === 'social studies' ? 'Social Studies' :
+                              subject === 'generated' ? 'Generated' :
+                              subject.charAt(0).toUpperCase() + subject.slice(1)
+                            return (
+                              <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: sc.bg, color: sc.text, border: `1px solid ${sc.border}33` }}>
+                                {subLabel}
+                              </span>
+                            )
+                          })()}
+                          {displayGrade && (
+                            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb' }}>
+                              Grade {displayGrade}
+                            </span>
+                          )}
+                          {lesson.difficulty && (
+                            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb' }}>
+                              {lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1)}
+                            </span>
+                          )}
                           {hasCompleted && medalInfo.bestPercent && (
-                            <span style={{ marginLeft: 8, color: '#059669' }}>
-                              • Best: {medalInfo.bestPercent}%
+                            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: '#ecfdf5', color: '#065f46', border: '1px solid #6ee7b733' }}>
+                              Best: {medalInfo.bestPercent}%
                             </span>
                           )}
                         </div>
