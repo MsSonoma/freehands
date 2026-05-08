@@ -118,7 +118,8 @@ export default function AddLearnerPage() {
 					// If arriving from onboarding flow, advance step and go to generator
 					if (showOnboarding) {
 						await advanceStep(STEPS.GENERATE_LESSON);
-						router.push('/facilitator/generator?onboarding=1');
+						const gradeParam = grade ? `&grade=${encodeURIComponent(grade)}` : '';
+						router.push(`/facilitator/generator?onboarding=1${gradeParam}`);
 					} else {
 						router.push('/facilitator/learners');
 					}

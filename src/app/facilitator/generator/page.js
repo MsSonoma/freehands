@@ -19,11 +19,17 @@ const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '1
 
 export default function LessonMakerPage(){
   const router = useRouter()
-  // Read ?onboarding=1 client-side to avoid Suspense boundary requirement
+  // Read ?onboarding=1 and ?grade=X client-side to avoid Suspense boundary requirement
   const [isOnboardingParam, setIsOnboardingParam] = useState(false)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setIsOnboardingParam(new URLSearchParams(window.location.search).get('onboarding') === '1')
+      window.scrollTo(0, 0)
+      const params = new URLSearchParams(window.location.search)
+      setIsOnboardingParam(params.get('onboarding') === '1')
+      const gradeParam = params.get('grade')
+      if (gradeParam) {
+        setForm(f => ({ ...f, grade: gradeParam }))
+      }
     }
   }, [])
   const { step, advanceStep, STEPS } = useOnboarding()
