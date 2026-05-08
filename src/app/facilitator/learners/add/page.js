@@ -31,8 +31,12 @@ export default function AddLearnerPage() {
 	// Show onboarding banner when arriving from signup (?onboarding=1) or hook says step 1
 	const showOnboarding = isOnboardingParam || step === STEPS.CREATE_LEARNER;
 	const [settingsTipOpen, setSettingsTipOpen] = useState(false);
-	const [pinChecked, setPinChecked] = useState(false);
-	const [name, setName] = useState('');
+	const [pinChecked, setPinChecked] = useState(false);	// Onboarding PIN gate: null=loading, 'needed', 'done'
+	const [onboardingPinStatus, setOnboardingPinStatus] = useState(null)
+	const [pinVal, setPinVal] = useState('')
+	const [pinConfirm, setPinConfirm] = useState('')
+	const [pinSaving, setPinSaving] = useState(false)
+	const [pinMsg, setPinMsg] = useState('')	const [name, setName] = useState('');
 	const [grade, setGrade] = useState('K');
 	const [comprehension, setComprehension] = useState('5');
 	const [exercise, setExercise] = useState('10');
@@ -62,7 +66,51 @@ export default function AddLearnerPage() {
 			})();
 			return () => { cancelled = true; };
 		}, [router]);
+	// Check PIN during onboarding only — gate wizard until PIN is set
+	useEffect(() => {
+		if (!isOnboardingParam || !pinChecked) return
+		let cancelled = false
+		;(async () => {
+			try {
+				const supabase = getSupabaseClient()
+				const { data: { session } } = await supabase.auth.getSession()
+				const token = session?.access_token
+				if (!token) { if (!cancelled) setOnboardingPinStatus('done'); return }
+				const res = await fetch('/api/facilitator/pin', { headers: { Authorization: `Bearer ${token}` } })
+				const js = await res.json().catch(() => ({}))
+				if (!cancelled) setOnboardingPinStatus(res.ok && js?.ok && js?.hasPin ? 'done' : 'needed')
+			} catch {
+				if (!cancelled) setOnboardingPinStatus('done') // fail-open
+			}
+		})()
+		return () => { cancelled = true }
+	}, [isOnboardingParam, pinChecked])
 
+	const handlePinSave = async (e) => {
+		e.preventDefault()
+		setPinMsg('')
+		if (!/^\d{4,8}$/.test(pinVal)) { setPinMsg('Use a 4–8 digit PIN'); return }
+		if (pinVal !== pinConfirm) { setPinMsg('PINs do not match'); return }
+		setPinSaving(true)
+		try {
+			const supabase = getSupabaseClient()
+			const { data: { session } } = await supabase.auth.getSession()
+			const token = session?.access_token
+			if (!token) throw new Error('Sign in required')
+			const res = await fetch('/api/facilitator/pin', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+				body: JSON.stringify({ pin: pinVal, currentPin: null })
+			})
+			const js = await res.json().catch(() => ({}))
+			if (!res.ok || !js?.ok) throw new Error(js?.error || 'Failed to save')
+			setOnboardingPinStatus('done')
+		} catch (err) {
+			setPinMsg(err?.message || 'Failed to save')
+		} finally {
+			setPinSaving(false)
+		}
+	}
 		// Load plan tier and current count
 		useEffect(() => {
 			if (!pinChecked) return;
@@ -127,6 +175,46 @@ export default function AddLearnerPage() {
 			setSaving(false);
 		}
 	};
+
+	// Onboarding PIN gate screen
+	if (isOnboardingParam && pinChecked && onboardingPinStatus !== 'done') {
+		return (
+			<main style={{ padding: 24, maxWidth: 480, margin: '0 auto' }}>
+				{onboardingPinStatus === null ? (
+					<p style={{ color: '#6b7280' }}>Loading…</p>
+				) : (
+					<>
+						<div style={{ marginBottom: 20, padding: '14px 18px', background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%)', border: '1px solid #e0e7ff', borderRadius: 12 }}>
+							<h2 style={{ margin: '0 0 6px', fontSize: 20, color: '#1e1b4b' }}>🔐 Set Your Facilitator PIN</h2>
+							<p style={{ margin: 0, color: '#4338ca', fontSize: 14 }}>This PIN protects the facilitator area from learners. You'll need it to access settings, lessons, and this dashboard.</p>
+						</div>
+						<form onSubmit={handlePinSave} style={{ display: 'grid', gap: 14 }}>
+							<input type="text" name="username" autoComplete="username" aria-hidden="true" tabIndex={-1}
+								style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: 0, padding: 0, margin: -1 }} />
+							<label style={{ display: 'grid', gap: 6 }}>
+								<span style={{ fontWeight: 600, fontSize: 14, color: '#374151' }}>PIN <span style={{ fontWeight: 400, color: '#6b7280' }}>(4–8 digits)</span></span>
+								<input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="new-password"
+									value={pinVal} onChange={e => setPinVal(e.target.value)}
+									placeholder="e.g. 1234"
+									style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 16, background: '#f9fafb' }} />
+							</label>
+							<label style={{ display: 'grid', gap: 6 }}>
+								<span style={{ fontWeight: 600, fontSize: 14, color: '#374151' }}>Confirm PIN</span>
+								<input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="new-password"
+									value={pinConfirm} onChange={e => setPinConfirm(e.target.value)}
+									style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 16, background: '#f9fafb' }} />
+							</label>
+							{pinMsg && <p style={{ margin: 0, color: '#dc2626', fontSize: 14 }}>{pinMsg}</p>}
+							<button type="submit" disabled={pinSaving}
+								style={{ padding: '11px 20px', border: 'none', borderRadius: 8, background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: pinSaving ? 'not-allowed' : 'pointer', opacity: pinSaving ? 0.7 : 1 }}>
+								{pinSaving ? 'Saving…' : 'Set PIN & Continue →'}
+							</button>
+						</form>
+					</>
+				)}
+			</main>
+		)
+	}
 
 	return (
 		<main style={{ padding: 24, maxWidth: 560, margin: '0 auto' }}>
