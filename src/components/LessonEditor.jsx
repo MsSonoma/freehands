@@ -766,12 +766,16 @@ export default function LessonEditor({
         }}>
           <div>
             <label style={labelStyle}>Grade *</label>
-            <input
+            <select
               style={inputStyle}
               value={lesson.grade || ''}
               onChange={(e) => updateField('grade', e.target.value)}
-              placeholder="e.g., 4th"
-            />
+            >
+              <option value="">Select grade</option>
+              {['Kindergarten','1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th','11th','12th'].map(g => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label style={labelStyle}>Difficulty *</label>
