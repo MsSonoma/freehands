@@ -180,7 +180,7 @@ export default function OnboardingChecklist() {
             gap: 9,
           }}>
             <VideoTutorial
-              src="/media/Mr.%20Mentor%20Wizard%20Helper.mp4"
+              src="/media/mr-mentor-wizard-helper.mp4"
               title="Mr. Mentor — Wizard Walkthrough"
               label=""
               thumbTime={1}
