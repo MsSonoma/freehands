@@ -89,7 +89,7 @@ export default function AddLearnerPage() {
 	}, [isOnboardingParam, pinChecked])
 
 	const handlePinSave = async (e) => {
-		e.preventDefault()
+		e?.preventDefault()
 		setPinMsg('')
 		if (!/^\d{4,8}$/.test(pinVal)) { setPinMsg('Use a 4–8 digit PIN'); return }
 		if (pinVal !== pinConfirm) { setPinMsg('PINs do not match'); return }
@@ -190,28 +190,27 @@ export default function AddLearnerPage() {
 							<h2 style={{ margin: '0 0 6px', fontSize: 20, color: '#1e1b4b' }}>🔐 Set Your Facilitator PIN</h2>
 							<p style={{ margin: 0, color: '#4338ca', fontSize: 14 }}>This PIN protects the facilitator area from learners. You&apos;ll need it to access settings, lessons, and this dashboard.</p>
 						</div>
-						<form onSubmit={handlePinSave} style={{ display: 'grid', gap: 14 }}>
-							<input type="text" name="username" autoComplete="username" aria-hidden="true" tabIndex={-1}
-								style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: 0, padding: 0, margin: -1 }} />
+						<div style={{ display: 'grid', gap: 14 }}>
 							<label style={{ display: 'grid', gap: 6 }}>
 								<span style={{ fontWeight: 600, fontSize: 14, color: '#374151' }}>PIN <span style={{ fontWeight: 400, color: '#6b7280' }}>(4–8 digits)</span></span>
-								<input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="new-password"
+								<input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="off"
 									value={pinVal} onChange={e => setPinVal(e.target.value)}
 									placeholder="e.g. 1234"
 									style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 16, background: '#f9fafb' }} />
 							</label>
 							<label style={{ display: 'grid', gap: 6 }}>
 								<span style={{ fontWeight: 600, fontSize: 14, color: '#374151' }}>Confirm PIN</span>
-								<input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="new-password"
+								<input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="off"
 									value={pinConfirm} onChange={e => setPinConfirm(e.target.value)}
+									onKeyDown={e => e.key === 'Enter' && handlePinSave()}
 									style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 16, background: '#f9fafb' }} />
 							</label>
 							{pinMsg && <p style={{ margin: 0, color: '#dc2626', fontSize: 14 }}>{pinMsg}</p>}
-							<button type="submit" disabled={pinSaving}
+							<button type="button" onClick={handlePinSave} disabled={pinSaving}
 								style={{ padding: '11px 20px', border: 'none', borderRadius: 8, background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: pinSaving ? 'not-allowed' : 'pointer', opacity: pinSaving ? 0.7 : 1 }}>
 								{pinSaving ? 'Saving…' : 'Set PIN & Continue →'}
 							</button>
-						</form>
+						</div>
 					</>
 				)}
 			</main>
