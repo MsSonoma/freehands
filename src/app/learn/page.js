@@ -27,11 +27,13 @@ export default function LearnPage() {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session?.user) {
-          // Not logged in - clear learner data
-          localStorage.removeItem('learner_id');
-          localStorage.removeItem('learner_name');
-          localStorage.removeItem('learner_grade');
-          if (!cancelled) setLearner({ id: null, name: '' });
+          // Not logged in — auto-select Demo Learner
+          try {
+            localStorage.setItem('learner_id', 'demo');
+            localStorage.setItem('learner_name', 'Demo Learner');
+            localStorage.setItem('learner_grade', '4');
+          } catch {}
+          if (!cancelled) setLearner({ id: 'demo', name: 'Demo Learner' });
           return;
         }
         
@@ -75,7 +77,7 @@ export default function LearnPage() {
       <div style={{ width:'100%', maxWidth:560, textAlign:'center', margin:'0 auto' }}>
         <h1 style={{ margin:'4px 0 8px' }}>{noLearner ? 'Learning Portal' : `Hi, ${learner.name}!`}</h1>
         
-        {!noLearner && (
+        {!noLearner && learner.id !== 'demo' && (
           <div style={{ marginTop:4, marginBottom:12 }}>
             <button
               onClick={async ()=> {
@@ -126,6 +128,7 @@ export default function LearnPage() {
             >
               👩🏻‍🦰 Ms. Sonoma
             </button>
+            {learner.id !== 'demo' && (<>
             <button
               onClick={() => {
                 try { localStorage.setItem('selected_teacher', 'slate') } catch {}
@@ -186,6 +189,7 @@ export default function LearnPage() {
             >
               🏆 Awards
             </button>
+            </>)}
           </div>
         )}
       </div>
