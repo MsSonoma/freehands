@@ -157,11 +157,20 @@ export default function ClientEmbeddedCheckout() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!stripeRef.current || !elementsRef.current) return;
+    if (!stripeRef.current || !elementsRef.current || !clientSecret) return;
     setSubmitting(true);
+    setError('');
     try {
+      // Step 1: validate & collect payment details from the mounted element
+      const { error: submitError } = await elementsRef.current.submit();
+      if (submitError) throw submitError;
+
+      // Step 2: confirm payment using clientSecret directly (avoids "elements not mounted" check)
+      const baseUrl = window.location.origin;
+      const returnUrl = `${baseUrl}/billing/return?to=${encodeURIComponent('/facilitator/account/plan')}`;
       const result = await stripeRef.current.confirmPayment({
-        elements: elementsRef.current,
+        clientSecret,
+        confirmParams: { return_url: returnUrl },
         redirect: 'if_required',
       });
       if (result.error) throw result.error;
@@ -169,7 +178,7 @@ export default function ClientEmbeddedCheckout() {
       url.searchParams.set('rts', Date.now().toString());
       router.replace(url.toString());
     } catch (err) {
-      alert(err?.message || 'Payment failed');
+      setError(err?.message || 'Payment failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -283,11 +292,14 @@ export default function ClientEmbeddedCheckout() {
         {/* Separator between plan comparison and embed */}
   <div style={{ width: '100%', height: 1, background: '#e5e7eb', margin: '40px 0' }} />
 
-        {error ? (
+        {error && !clientSecret ? (
           <div style={{ color: '#b00020' }}>{error}</div>
         ) : clientSecret ? (
           <form onSubmit={onSubmit} style={{ width: '100%', position: 'relative', zIndex: 0 }}>
             <div ref={mountRef} style={{ width: '100%', position: 'relative', zIndex: 0 }} />
+            {error && (
+              <div style={{ color: '#b00020', marginTop: 12, fontSize: 14 }}>{error}</div>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginTop: 28 }}>
               <div style={{ gridColumn: 1, justifySelf: 'start', color: '#555', fontSize: 12 }}>
                 Powered by Stripe
