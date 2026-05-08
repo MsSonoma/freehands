@@ -31,12 +31,14 @@ export default function AddLearnerPage() {
 	// Show onboarding banner when arriving from signup (?onboarding=1) or hook says step 1
 	const showOnboarding = isOnboardingParam || step === STEPS.CREATE_LEARNER;
 	const [settingsTipOpen, setSettingsTipOpen] = useState(false);
-	const [pinChecked, setPinChecked] = useState(false);	// Onboarding PIN gate: null=loading, 'needed', 'done'
+	const [pinChecked, setPinChecked] = useState(false);
+	// Onboarding PIN gate: null=loading, 'needed', 'done'
 	const [onboardingPinStatus, setOnboardingPinStatus] = useState(null)
 	const [pinVal, setPinVal] = useState('')
 	const [pinConfirm, setPinConfirm] = useState('')
 	const [pinSaving, setPinSaving] = useState(false)
-	const [pinMsg, setPinMsg] = useState('')	const [name, setName] = useState('');
+	const [pinMsg, setPinMsg] = useState('')
+	const [name, setName] = useState('');
 	const [grade, setGrade] = useState('K');
 	const [comprehension, setComprehension] = useState('5');
 	const [exercise, setExercise] = useState('10');
