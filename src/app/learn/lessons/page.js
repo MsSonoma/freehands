@@ -483,7 +483,7 @@ function LessonsPageInner(){
       }
     })()
     return () => { cancelled = true }
-  }, [learnerId, availableLessons, scheduledLessons])
+  }, [learnerId, sessionGateReady, availableLessons, scheduledLessons])
 
   useEffect(() => {
     if (!learnerId) {
@@ -742,6 +742,10 @@ function LessonsPageInner(){
         grouped[subject] = availableForSubject
       }
     })
+    // Demo lessons bypass the available/scheduled filter — show all
+    if (allLessons['demo']?.length > 0) {
+      grouped['demo'] = allLessons['demo'].map(l => ({ ...l, lessonKey: `demo/${l.file}` }))
+    }
     return grouped
   }, [allLessons, availableLessons, scheduledLessons])
 
