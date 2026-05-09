@@ -6641,7 +6641,7 @@ function SessionPageV2Inner() {
           zIndex: 10000, 
           pointerEvents: 'none' 
         }}>
-          Question {currentPhase === 'worksheet' ? (worksheetScore + 1) : (testScore + 1)}
+          Question {currentPhase === 'worksheet' ? (worksheetScore + 1) : (testScore + 1)}/{currentPhase === 'worksheet' ? worksheetTotalQuestions : testTotalQuestions}
         </div>
       )}
       
