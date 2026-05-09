@@ -382,15 +382,21 @@ export class TeachingController {
       return;
     }
     if (resumeState?.stage === 'definitions') {
-      await this.#startDefinitions({ autoplayFirstSentence, resumeState });
-      return;
+      // Only skip concept if it was actually completed (conceptSentences will be present in the snapshot).
+      // If conceptSentences is empty, concept never ran or failed — start from concept so the learner gets it.
+      const conceptWasCompleted = Array.isArray(resumeState.conceptSentences) && resumeState.conceptSentences.length > 0;
+      if (conceptWasCompleted) {
+        await this.#startDefinitions({ autoplayFirstSentence, resumeState });
+        return;
+      }
+      // Fall through to fresh start (concept will run first, then definitions)
     }
     if (resumeState?.stage === 'concept') {
       await this.#startConcept({ resumeState });
       return;
     }
 
-    // Fresh start: begin with concept introduction.
+    // Fresh start (or definitions resume with no concept history): begin with concept introduction.
     await this.#startConcept();
   }
   
