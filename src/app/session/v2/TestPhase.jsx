@@ -25,18 +25,6 @@ import { ttsCache } from '../utils/ttsCache';
 import { buildAcceptableList, judgeAnswer } from './judging';
 import { deriveCorrectAnswerText, ensureQuestionMark, formatQuestionForSpeech } from '../utils/questionFormatting';
 
-// Praise phrases for correct answers (matches V1 engagement pattern)
-const PRAISE_PHRASES = [
-  "Great job!",
-  "That's correct!",
-  "Perfect!",
-  "Excellent work!",
-  "You got it!",
-  "Well done!",
-  "Fantastic!",
-  "Nice work!"
-];
-
 // Intro phrases for phase start (matches V1 pacing)
 const INTRO_PHRASES = [
   "Time for the test.",
@@ -347,24 +335,10 @@ export class TestPhase {
           isCorrect: true
         });
 
-        // Check if we've reached the target count before playing feedback
+        // Check if we've reached the target count
         const reachedTarget = this.#answers.length >= this.#questions.length;
-        console.log('[TestPhase] After correct answer - answers:', this.#answers.length, 'questions:', this.#questions.length, 'reachedTarget:', reachedTarget);
-
-        // Play praise for correct answers (V1 engagement pattern)
-        const praise = PRAISE_PHRASES[Math.floor(Math.random() * PRAISE_PHRASES.length)];
-        try {
-          this.#audioEngine.stop();
-          this.#state = 'playing-feedback';
-          this.#emit('stateChange', { state: 'playing-feedback' });
-          const praiseUrl = await fetchTTS(praise);
-          await this.#audioEngine.playAudio(praiseUrl, [praise]);
-        } catch (error) {
-          console.warn('[TestPhase] Failed to play praise:', error);
-        }
 
         // Enter review if target reached, otherwise move to next question
-        console.log('[TestPhase] About to check reachedTarget:', reachedTarget);
         if (reachedTarget) {
           console.log('[TestPhase] Calling enterReview()');
           this.#enterReview();
@@ -377,20 +351,7 @@ export class TestPhase {
         return;
       }
 
-      // Incorrect: speak correct answer immediately, then advance (no retries)
-      const reveal = correctText ? `Not quite right. The correct answer is ${correctText}.` : "Not quite right.";
-      try {
-        this.#audioEngine.stop();
-        this.#state = 'playing-feedback';
-        this.#emit('stateChange', { state: 'playing-feedback' });
-        const revealUrl = await fetchTTS(reveal);
-        if (revealUrl) {
-          await this.#audioEngine.playAudio(revealUrl, [reveal]);
-        }
-      } catch (error) {
-        console.warn('[TestPhase] Failed to play reveal:', error);
-      }
-
+      // Incorrect: record answer and advance — no spoken reveal (learner finds out at review).
       // Record answer
       this.#answers.push({
         questionId: question.id,
@@ -409,15 +370,11 @@ export class TestPhase {
 
       // Check if we've reached the target count
       const reachedTarget = this.#answers.length >= this.#questions.length;
-      console.log('[TestPhase] After incorrect answer - answers:', this.#answers.length, 'questions:', this.#questions.length, 'reachedTarget:', reachedTarget);
 
       // Enter review if target reached, otherwise move to next question
-      console.log('[TestPhase] About to check reachedTarget:', reachedTarget);
       if (reachedTarget) {
-        console.log('[TestPhase] Calling enterReview()');
         this.#enterReview();
       } else {
-        console.log('[TestPhase] Advancing to next question');
         const nextIndex = this.#currentQuestionIndex + 1;
         this.#currentQuestionIndex = nextIndex;
         this.#playCurrentQuestion();

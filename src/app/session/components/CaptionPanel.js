@@ -11,7 +11,7 @@ function stripMarkdown(text) {
     .replace(/_([^_]+)_/g, '$1');
 }
 
-function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [] }) {
+function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [], captionStartIndex = -1 }) {
   const [canScroll, setCanScroll] = useState(false);
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
@@ -21,6 +21,16 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
     if (!Array.isArray(sentences)) return [];
     return sentences.map((s) => (typeof s === 'string' ? { text: s } : (s && typeof s === 'object' ? s : { text: '' })));
   }, [sentences]);
+
+  // During test phase, only show captions from the test start onward so the learner
+  // cannot scroll up into earlier phases.
+  const displayItems = useMemo(() => {
+    if (!Number.isFinite(captionStartIndex) || captionStartIndex <= 0) return items;
+    return items.slice(captionStartIndex);
+  }, [items, captionStartIndex]);
+  const displayActiveIndex = (Number.isFinite(captionStartIndex) && captionStartIndex > 0)
+    ? activeIndex - captionStartIndex
+    : activeIndex;
 
   // Detect overflow & scroll position on the scroller (boxRef)
   const recomputeScrollState = useCallback(() => {
@@ -32,7 +42,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
     setAtBottom(el.scrollTop >= el.scrollHeight - el.clientHeight - 4);
   }, [boxRef]);
 
-  useEffect(() => { recomputeScrollState(); }, [items, stackedHeight, fullHeight, compact, recomputeScrollState]);
+  useEffect(() => { recomputeScrollState(); }, [displayItems, stackedHeight, fullHeight, compact, recomputeScrollState]);
 
   // Keep the latest caption in view (V1 behavior: always pinned to the newest line)
   useEffect(() => {
@@ -64,7 +74,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
       }
       clearTimeout(t1);
     };
-  }, [items.length, boxRef, recomputeScrollState]);
+  }, [displayItems.length, boxRef, recomputeScrollState]);
 
   useEffect(() => {
     if (!boxRef?.current) return;
@@ -79,7 +89,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
   // Auto-center active caption line
   useEffect(() => {
     if (!boxRef?.current) return;
-    const activeEl = boxRef.current.querySelector(`[data-idx="${activeIndex}"]`);
+    const activeEl = boxRef.current.querySelector(`[data-idx="${displayActiveIndex}"]`);
     if (!activeEl) return;
     const container = boxRef.current;
     const marginTop = 8;
@@ -90,7 +100,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
     const viewTop = container.scrollTop;
     const viewBottom = viewTop + container.clientHeight;
     const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
-    const isLast = activeIndex >= (Array.isArray(items) ? items.length - 1 : -1);
+    const isLast = displayActiveIndex >= (Array.isArray(displayItems) ? displayItems.length - 1 : -1);
     if (elementTop < viewTop || elementBottom > viewBottom) {
       const distance = Math.abs(elementTop - viewTop);
       const jumpThreshold = (container.clientHeight * 0.65) / scale;
@@ -102,7 +112,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
       if (distance > jumpThreshold) container.scrollTop = target; else container.scrollTo({ top: target, behavior: 'smooth' });
       if (isLast) requestAnimationFrame(() => { container.scrollTop = maxScroll; });
     }
-  }, [activeIndex, items, scaleFactor, boxRef]);
+  }, [displayActiveIndex, displayItems, scaleFactor, boxRef]);
 
   const containerStyle = {
     width: '100%',
@@ -185,15 +195,15 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
         </button>
       </div>
       <div ref={boxRef} data-ms-caption-panel className="scrollbar-hidden" style={scrollerStyle} aria-live="polite">
-        {Array.isArray(items) && items.length > 0 ? (
+        {Array.isArray(displayItems) && displayItems.length > 0 ? (
           <>
-          {items.map((s, idx) => {
+          {displayItems.map((s, idx) => {
             const rawText = (s && typeof s.text === 'string') ? s.text : '';
             const text = stripMarkdown(rawText);
             if (text === '\n') {
               return <div key={idx} data-idx={idx} style={{ height: 6 }} />;
             }
-            const isActive = idx === activeIndex;
+            const isActive = idx === displayActiveIndex;
             const containerBase = { margin: '6px 0', transition: 'background-color 160ms ease, color 160ms ease' };
             const activeContainer = isActive ? { background: 'rgba(199,68,46,0.08)', borderRadius: 8, padding: '4px 6px' } : null;
             const textBase = { whiteSpace: 'pre-line' };
@@ -231,7 +241,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
                   const core = terms.map(esc).sort((a,b)=>b.length-a.length).join('|');
                   const pattern = new RegExp(`(^|[^A-Za-z0-9])(${core})(?:'s|s)?(?![A-Za-z0-9])`, 'gi');
                   const parts = [];
-                  let lastIndex = 0;
+                  let lastIdx = 0;
                   let m;
                   while ((m = pattern.exec(text)) !== null) {
                     const start = m.index;
@@ -240,16 +250,16 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
                     const full = m[0] || '';
                     const suffix = full.slice(prefix.length + coreTerm.length);
                     // Add text before match
-                    if (start > lastIndex) parts.push(text.slice(lastIndex, start));
+                    if (start > lastIdx) parts.push(text.slice(lastIdx, start));
                     // Add prefix unbolded
                     if (prefix) parts.push(prefix);
                     // Bold the term plus any simple suffix
                     const boldKey = `b-${idx}-${start}`;
                     parts.push(<strong key={boldKey}>{coreTerm + suffix}</strong>);
-                    lastIndex = start + full.length;
+                    lastIdx = start + full.length;
                   }
-                  if (lastIndex > 0) {
-                    if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+                  if (lastIdx > 0) {
+                    if (lastIdx < text.length) parts.push(text.slice(lastIdx));
                     highlighted = parts;
                   }
                 }

@@ -580,6 +580,10 @@ function SessionPageV2Inner() {
   useEffect(() => {
     currentPhaseRef.current = currentPhase;
   }, [currentPhase]);
+
+  // Index into transcriptLines at which the test phase began.
+  // Used to hide pre-test captions in CaptionPanel during the test.
+  const [testCaptionStartIndex, setTestCaptionStartIndex] = useState(-1);
   
   const [teachingStage, setTeachingStage] = useState('idle');
   const [teachingLoading, setTeachingLoading] = useState(false);
@@ -4200,6 +4204,8 @@ function SessionPageV2Inner() {
           }
         }
       } else if (data.phase === 'test') {
+        // Record the current transcript length so CaptionPanel can hide pre-test lines.
+        setTestCaptionStartIndex(transcriptLinesRef.current.length);
         const started = startTestPhase();
         if (started) {
           if (playPortionsEnabledRef.current?.test !== false) {
@@ -6791,6 +6797,7 @@ function SessionPageV2Inner() {
             stackedHeight={isMobileLandscape ? '100%' : (stackedCaptionHeight || null)}
             phase={currentPhase}
             vocabTerms={vocabTerms}
+            captionStartIndex={currentPhase === 'test' ? testCaptionStartIndex : -1}
           />
         )}
       </div>
