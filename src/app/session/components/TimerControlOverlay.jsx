@@ -118,15 +118,22 @@ export default function TimerControlOverlay({
     }
   }, [isPaused, getCurrentElapsedSeconds, remainingSecondsProp]);
 
-  // Reset adjustment when opening and update current time
+  // Reset adjustment only when the overlay is opened — NOT on every prop change.
+  // Keeping remainingSecondsProp or getCurrentElapsedSeconds in this dep array caused
+  // adjustMinutes to reset to 0 on every timer tick, making it impossible to apply an adjustment.
   useEffect(() => {
     if (isOpen) {
       setAdjustMinutes(0);
-      if (remainingSecondsProp === null) {
-        setCurrentElapsedSeconds(getCurrentElapsedSeconds());
-      }
     }
-  }, [isOpen, getCurrentElapsedSeconds, remainingSecondsProp]);
+  }, [isOpen]);
+
+  // V1 only: sync elapsed time from sessionStorage when overlay opens.
+  useEffect(() => {
+    if (isOpen && remainingSecondsProp === null) {
+      setCurrentElapsedSeconds(getCurrentElapsedSeconds());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]); // intentionally omit getCurrentElapsedSeconds — V1 polling handles ongoing updates
 
   if (!isOpen) return null;
 
