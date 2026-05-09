@@ -107,10 +107,9 @@ export class TeachingController {
   #buildLocalConceptFallbackSentences() {
     const title = this.#lessonData?.title || 'today\'s lesson';
     const blurb = (this.#lessonData?.blurb || '').trim();
-    const teachingNotes = (this.#lessonData?.teachingNotes || '').trim();
+    // teachingNotes are educator-facing instructions — never use them as student-facing speech.
     const sentences = [];
     if (blurb) sentences.push(...this.#splitIntoSentences(blurb));
-    if (teachingNotes) sentences.push(...this.#splitIntoSentences(teachingNotes));
     if (!sentences.length) sentences.push(`Today we are learning about ${title}.`);
     return sentences.slice(0, 5);
   }
@@ -698,8 +697,9 @@ export class TeachingController {
       `Grade: ${grade}`,
       `Lesson topic (do not say the title aloud): "${lessonTitle}"`,
       '',
-      blurb ? `Lesson hook (for reference): ${blurb}` : '',
-      teachingNotes ? `Pedagogy notes (for reference, do not read aloud): ${teachingNotes}` : '',
+      blurb ? `Lesson context (student-facing hook, for reference): ${blurb}` : '',
+      // teachingNotes are internal educator instructions — intentionally excluded here
+      //   to prevent the model from mirroring teacher-facing language to the student.
       '',
       questionContext,
       '',
