@@ -103,7 +103,7 @@ const SESSION_TUTORIAL_STEPS = [
 ];
 
 // Test Review UI Component (matches V1)
-function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview }) {
+function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview, isMobileLandscape }) {
   const { score, totalQuestions, percentage, grade: letterGrade, answers } = testGrade;
   
   const tierForPercent = (pct) => {
@@ -199,10 +199,13 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
       display: 'flex', 
       flexDirection: 'column', 
       gap: 12, 
-      overflow: 'auto', 
+      // In landscape the wrapper has a fixed height, so we scroll inside this div.
+      // In portrait the document body scrolls — overflow:auto here would absorb
+      // touch events on iOS Safari and prevent body scroll from working.
+      overflow: isMobileLandscape ? 'auto' : 'visible',
       paddingTop: 8, 
       paddingBottom: 8,
-      height: '100%'
+      height: isMobileLandscape ? '100%' : 'auto'
     }}>
       <div style={{ 
         ...card, 
@@ -229,7 +232,7 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
           </div>
         ) : null}
         <div style={{ fontSize: 13, color: '#4b5563' }}>Play timers are ignored here.</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 6 }}>
           {workPhases.map((p) => {
             const t = getPhaseTime(p);
             const onTime = !!(t?.completed && t.onTime);
@@ -242,17 +245,17 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
               : (t.completed ? (onTime ? '#065f46' : '#7f1d1d') : '#374151');
             return (
               <div key={p} style={{ 
-                padding: 10, 
+                padding: '6px 8px', 
                 border: '1px solid #e5e7eb', 
                 borderRadius: 8, 
                 background: '#f9fafb', 
                 display: 'flex', 
                 flexDirection: 'column', 
-                gap: 4 
+                gap: 2 
               }}>
-                <div style={{ fontWeight: 700, textTransform: 'capitalize' }}>{p}</div>
-                <div style={{ fontFamily: 'monospace', fontWeight: 700 }}>{remainingLabel}</div>
-                <div style={{ fontSize: 12, color: statusColor }}>{statusText}</div>
+                <div style={{ fontWeight: 700, textTransform: 'capitalize', fontSize: 12 }}>{p}</div>
+                <div style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13 }}>{remainingLabel}</div>
+                <div style={{ fontSize: 11, color: statusColor }}>{statusText}</div>
               </div>
             );
           })}
@@ -6787,6 +6790,7 @@ function SessionPageV2Inner() {
             goldenKeysEnabled={goldenKeysEnabled !== false}
             onOverrideAnswer={handleTestOverrideAnswer}
             onCompleteReview={skipTestReview}
+            isMobileLandscape={isMobileLandscape}
           />
         ) : (
           <CaptionPanel
