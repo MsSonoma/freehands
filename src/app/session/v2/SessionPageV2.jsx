@@ -71,7 +71,7 @@ const SESSION_TUTORIAL_STEPS = [
     body: 'Ms. Sonoma reads the lesson to you. Press Repeat (blue button) to hear a sentence again, or Next Sentence (green button) to move forward.',
   },
   {
-    icon: '\u2753',
+    icon: '✋',
     title: 'Ask a Question',
     body: 'During exercises and worksheets, tap the blue "✋" question button to ask Ms. Sonoma anything about the lesson. She will answer and bring you right back.',
   },
