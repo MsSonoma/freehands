@@ -7510,6 +7510,23 @@ function SessionPageV2Inner() {
               {(teachingStage === 'idle' || teachingStage === 'definitions' || teachingStage === 'examples') && (
                 <>
                   <button
+                    onClick={repeatSentence}
+                    disabled={!isInSentenceMode}
+                    style={{
+                      padding: '12px 28px',
+                      background: isInSentenceMode ? 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)' : '#9ca3af',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 10,
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: isInSentenceMode ? 'pointer' : 'not-allowed',
+                      boxShadow: isInSentenceMode ? '0 4px 16px rgba(168, 85, 247, 0.4)' : 'none'
+                    }}
+                  >
+                    Repeat
+                  </button>
+                  <button
                     onClick={nextSentence}
                     disabled={teachingLoading}
                     style={{
@@ -7535,23 +7552,6 @@ function SessionPageV2Inner() {
                             ? 'Continue to Examples'
                             : 'Complete Teaching'
                     }
-                  </button>
-                  <button
-                    onClick={repeatSentence}
-                    disabled={!isInSentenceMode}
-                    style={{
-                      padding: '12px 28px',
-                      background: isInSentenceMode ? 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)' : '#9ca3af',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 10,
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      cursor: isInSentenceMode ? 'pointer' : 'not-allowed',
-                      boxShadow: isInSentenceMode ? '0 4px 16px rgba(168, 85, 247, 0.4)' : 'none'
-                    }}
-                  >
-                    Repeat
                   </button>
                 </>
               )}
