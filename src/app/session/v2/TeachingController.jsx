@@ -264,10 +264,11 @@ export class TeachingController {
     }
     this.#prefetchStarted = true;
 
-    // IMPORTANT: Stagger GPT calls sequentially to reduce 429 risk.
     // Prefetch promises should never produce unhandled rejections.
+    // Concept and definitions start in parallel (3s apart) so definitions are ready
+    // by the time the learner finishes listening to the concept stage.
 
-    // 1. Concept - start immediately (first in the teaching flow)
+    // 1. Concept - start immediately
     this.#conceptGptPromise = this.#fetchConceptFromGPT()
       .then(sentences => {
         sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
@@ -278,10 +279,8 @@ export class TeachingController {
         return [];
       });
 
-    // 2. Definitions - start after concept resolves + 2s stagger
-    this.#definitionsGptPromise = this.#conceptGptPromise
-      .catch(() => [])
-      .then(() => new Promise(resolve => setTimeout(resolve, 2000)))
+    // 2. Definitions - start 3s after concept begins (parallel, not chained)
+    this.#definitionsGptPromise = new Promise(resolve => setTimeout(resolve, 3000))
       .then(() => this.#fetchDefinitionsFromGPT())
       .then(sentences => {
         sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
