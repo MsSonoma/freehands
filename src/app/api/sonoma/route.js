@@ -343,7 +343,7 @@ export async function POST(req) {
       // OpenAI Chat Completions API
       providerUsed = 'openai'
       const { reply, errorStatus, raw } = await callOpenAI(userMessages, openaiKey, OPENAI_MODEL_DEFAULT, logPrefix)
-      if (!reply) return NextResponse.json({ error: 'OpenAI request failed.' }, { status: errorStatus || 500 })
+      if (!reply) return NextResponse.json({ error: 'OpenAI request failed.', _debug: { status: errorStatus, raw } }, { status: errorStatus || 500 })
       msSonomaReply = reply
       // OpenAI response received
       
