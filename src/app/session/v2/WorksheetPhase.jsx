@@ -510,9 +510,10 @@ export class WorksheetPhase {
     });
     
     // Format question for TTS (add "True/False:" prefix for TF, letter options for MC)
-    // Prepend the question number so it matches the printed worksheet.
+    // Caption shows the question number so it matches the printed worksheet; TTS does not say it.
     const questionNumber = this.#currentQuestionIndex + 1;
-    const formattedQuestion = `Question ${questionNumber}. ${formatQuestionForSpeech(question)}`;
+    const formattedQuestion = formatQuestionForSpeech(question);
+    const captionQuestion = `${questionNumber}. ${formattedQuestion}`;
     
     // Check cache first (instant if prefetched)
     let audioBase64 = ttsCache.get(formattedQuestion);
@@ -528,12 +529,12 @@ export class WorksheetPhase {
     // Prefetch next question in background (eliminates wait on Next click)
     const nextIndex = this.#currentQuestionIndex + 1;
     if (nextIndex < this.#questions.length) {
-      const nextQuestion = `Question ${nextIndex + 1}. ${formatQuestionForSpeech(this.#questions[nextIndex])}`;
+      const nextQuestion = formatQuestionForSpeech(this.#questions[nextIndex]);
       ttsCache.prefetch(nextQuestion);
     }
     
     // TTS plays in background - don't await so user can answer while listening
-    this.#audioEngine.playAudio(audioBase64 || '', [formattedQuestion]).catch(err => {
+    this.#audioEngine.playAudio(audioBase64 || '', [captionQuestion]).catch(err => {
       console.error('[WorksheetPhase] Question TTS playback error:', err);
     });
   }

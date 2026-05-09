@@ -554,9 +554,10 @@ export class TestPhase {
       question: question
     });
     
-    // Prepend the question number so it matches the printed test.
+    // Caption shows the question number so it matches the printed test; TTS does not say it.
     const questionNumber = this.#currentQuestionIndex + 1;
-    const spokenQuestion = `Question ${questionNumber}. ${ensureQuestionMark(formatQuestionForSpeech(question, { layout: 'multiline' }))}`;
+    const spokenQuestion = ensureQuestionMark(formatQuestionForSpeech(question, { layout: 'multiline' }));
+    const captionQuestion = `${questionNumber}. ${spokenQuestion}`;
 
     // Check cache first (instant if prefetched)
     let audioBase64 = ttsCache.get(spokenQuestion);
@@ -584,12 +585,12 @@ export class TestPhase {
     const nextIndex = this.#currentQuestionIndex + 1;
     if (nextIndex < this.#questions.length) {
       const nextQ = this.#questions[nextIndex];
-      const nextSpoken = `Question ${nextIndex + 1}. ${ensureQuestionMark(formatQuestionForSpeech(nextQ, { layout: 'multiline' }))}`;
+      const nextSpoken = ensureQuestionMark(formatQuestionForSpeech(nextQ, { layout: 'multiline' }));
       ttsCache.prefetch(nextSpoken);
     }
     
     // TTS plays in background - don't await so user can answer while listening
-    this.#audioEngine.playAudio(audioBase64 || '', [spokenQuestion]).catch(err => {
+    this.#audioEngine.playAudio(audioBase64 || '', [captionQuestion]).catch(err => {
       console.error('[TestPhase] Question TTS playback error:', err);
     });
   }
