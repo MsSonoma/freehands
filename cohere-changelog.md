@@ -730,3 +730,4 @@ ext param so email-confirm redirects land on add-learner
 - acilitator/generator/page.js ? step 2 banner; on lesson ready ? advances to step 3 ? lessons
 - acilitator/lessons/page.js ? step 3 banner with calendar link; on activation ? advances to step 4
 - acilitator/calendar/page.js ? mounts CalendarTutorialOverlay at step 4; on complete ? marks onboarding done (step 5)
+2025-07-17 | feat(learn/lessons): Collapsible sidebar layout. Controls (title, teacher selector, learner name, GoldenKeyCounter, action buttons) moved into a 240px-wide sticky sidebar that collapses to 44px with a toggle button (open=◀, closed=▶). Tab bar + lesson list remain in the flex:1 right content area. sidebarOpen state initialized to true. maxWidth bumped to 1100. Commit: f4d49ad. Recon prompt: sidekick_pack.md.

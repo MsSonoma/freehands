@@ -1,0 +1,38 @@
+{
+  "app": "ms_sonoma",
+  "generated_at": "2026-04-26T00:00:00Z",
+  "note": "Beta phase — update counts manually or via a future export script as data accumulates.",
+  "platform": {
+    "name": "Ms. Sonoma",
+    "url": "mssonoma.com",
+    "stack": "Next.js / Supabase / Google Cloud TTS",
+    "phase": "beta"
+  },
+  "beta_metrics": {
+    "registered_facilitators": 0,
+    "active_learners": 0,
+    "lessons_completed": 0,
+    "popular_subjects": [],
+    "avg_session_duration_minutes": null
+  },
+  "product_surface": {
+    "ai_tutor": "Ms. Sonoma — stateless turn-based K-8 AI tutor (Session V2 / TeachingController)",
+    "conversation_teacher": "Mrs. Webb — Cohere-powered lesson state machine at /session/webb",
+    "session_guide": "Mr. Mentor — overlay guide for session flow",
+    "facilitator_hub": "/facilitator — calendar, lesson planner, billing, notifications",
+    "tiers": ["Free", "Pro"],
+    "pdf_exports": true,
+    "google_tts": true
+  },
+  "open_gaps": [
+    "Facilitator onboarding flow not fully automated",
+    "Proof stack (testimonials, grade improvement data) not yet captured",
+    "Brand message inconsistency between mssonoma.com and mssonoma.app still being resolved",
+    "Social proof / beta buzz pipeline not yet active"
+  ],
+  "dispatch_integration": {
+    "paigr_profile": "mssonoma",
+    "sales_trip_profile": "Ms. Sonoma",
+    "monitored_by_dispatch": true
+  }
+}

@@ -6,23 +6,19 @@ Mode: standard
 
 Prompt (original):
 ```text
-Mrs Webb Research objective researchMode video chapters article scroll highlight navigate open herself
+Next and Repeat button order in session, Next Sentence button right, Repeat button left
 ```
 
 Filter terms used:
 ```text
-mrs
-webb
-research
-objective
-researchmode
-video
-chapters
-article
-scroll
-highlight
-navigate
-open
+next
+repeat
+button
+order
+session
+sentence
+right
+left
 ```
 
 ---
@@ -31,13 +27,13 @@ open
 
 These are previous recon prompts from the same session. Use them to orient yourself if the conversation was interrupted or summarised.
 
-- `2026-04-01 08:16` — transcripts per learner save per teacher Miss Sonoma Mrs Webb Mr Slate learners list button modal list organized
-- `2026-04-01 08:49` — snapshot resume logic for Mr Slate and Mrs Webb sessions - how does Ms Sonoma implement session persistence and resume, 
-- `2026-04-01 12:54` — Mrs. Webb Socratic questioning drive toward incomplete objectives completion goals session
+- `2026-05-08 15:18` — teaching examples phase shows vocab words instead of real examples in session
+- `2026-05-08 15:45` — examples phase supposed to teach the lesson with worked examples not vocab definitions
+- `2026-05-08 20:54` — onboarding wizard steps overlay video auto-open expand tutorial checklist
 
 ---
 
-## [CRITICAL — this pack is thin or empty.] Copilot Self-Recon Obligation
+## [REMINDER] Copilot Self-Recon Obligation
 
 **THREAD FIRST, PACK SECOND.** This pack is supplementary repo knowledge. It does NOT replace the conversation thread. If the user refers to something discussed earlier (e.g. 'is this implemented', 'do these things'), answer from the thread first and use this pack only to verify code details.
 
@@ -54,7 +50,7 @@ You are operating in VS Code with `run_in_terminal` and `semantic_search` tools 
 4. Read the resulting `sidekick_pack.md` with `read_file` before answering.
 5. If `semantic_search` would help fill a gap, call it. Don't ask permission.
 
-Pack chunk count (approximate): 1. Threshold for self-recon: < 3.
+Pack chunk count (approximate): 3. Threshold for self-recon: < 3.
 
 ---
 # Context Pack
@@ -69,7 +65,7 @@ This pack is mechanically assembled: forced canonical context first, then ranked
 
 ## Question
 
-mrs webb research objective researchmode video chapters article scroll highlight navigate open
+next repeat button order session sentence right left
 
 ## Forced Context
 
@@ -77,1309 +73,1376 @@ mrs webb research objective researchmode video chapters article scroll highlight
 
 ## Ranked Evidence
 
-### 1. src/app/session/webb/page.jsx (4802f1a2670c3ddc4881c5179d602ec19c47ce258603ec0da1c82884b1bc4e0c)
-- bm25: -30.2585 | relevance: 0.9680
+### 1. docs/brain/beta-program.md (9f56d643bb6edb2ef8969017ee46c49e1c51ed14146e2bc0eec13cfeb7e28bd0)
+- bm25: -15.6957 | relevance: 0.9401
 
-// ── Close objectives panel (aborts essay generation if in progress) ───
-  function closeObjectivesPanel() {
-    if (generatingEssay && essayAbortRef.current) {
-      essayAbortRef.current.abort()
-      essayAbortRef.current = null
-      setGeneratingEssay(false)
-    }
-    setShowObjectives(false)
+- On Repeat button click, persist `{ session_id, sentence_id, ts }` to `repeat_events`
+
+### 2. docs/brain/ms-sonoma-teaching-system.md (1f079cae33ff43ac4f14837a3de47b84b5b01b2e253899f9ec065dd2e8c8247d)
+- bm25: -15.3762 | relevance: 0.9389
+
+**Transition**:
+- "Great. Let's move on to comprehension."
+
+### Pre-Send Checklist
+
+Before shipping to Ms. Sonoma, verify:
+- Payload contains only speakable text
+- Child's name and lesson title are literal (no placeholders)
+- Exactly one phase represented
+- If Opening: final sentence is silly question
+- If Teaching/Repeat: ends with VERBATIM wrap line
+- If Transition: uses VERBATIM move-on line
+- If Comprehension: exactly one question, no definitions
+- No syntax or labels present: no [], {}, <>, no section labels, no [COPILOT]/[SONOMA]/[VERBATIM]/[SAMPLE]
+- Must pass placeholder scan: no {PLACEHOLDER}, [PLACEHOLDER], <PLACEHOLDER>, or stray ALLCAPS tokens
+
+### Turn Map
+
+**After Opening**: Teaching Definitions (developer-triggered, no teaching during opening)
+
+**After Teaching Definitions wrap**:
+- Repeat Vocab button → Definitions Repeat
+- Next button → Teaching Examples
+- Ask button → freeform questions, respond briefly, return to gate
+
+**After Teaching Examples wrap**:
+- Repeat Vocab button → Examples Repeat
+- Next button → Transition, then Comprehension Ask
+- Ask button → freeform questions, respond briefly, return to gate
+
+**Comprehension loop**: Ask → child reply → FeedbackCorrect or FeedbackHint → Ask again (or Closing when goal met)
+
+**Closing**: End of session
+
+### Opening Actions UI (V2)
+
+### 3. docs/brain/v2-architecture.md (97ff746a3e205ece5b44708e6f477b9500cbf18c2d02f622d3ddf4889a4c4989)
+- bm25: -14.4610 | relevance: 0.9353
+
+**User Experience:**
+- User can press Next/Skip anytime - never blocked
+- If content not ready, brief wait then plays (no forced finishes)
+- If content ready, plays immediately (zero latency from prefetch)
+- Teaching CTA label is **stage-driven** (not "first click" driven):
+  - Shows "Continue to Definitions" only while `teachingStage === 'idle'` (pre-definitions)
+  - Shows "Next Sentence" while reading sentence-by-sentence
+  - Shows "Continue to Examples" at the definitions gate
+  - Shows "Complete Teaching" at the examples gate
+  - Must remain correct after refresh/resume (no local "first click" state)
+- If definitions/examples are still loading after a click, the button shows loading feedback and disables Repeat until content is ready
+- During the definitions gate, the "Continue to Examples" button is hidden while the "Do you have any questions?" + suggested questions audio plays and only appears after that sequence finishes
+
+### 4. docs/brain/ms-sonoma-teaching-system.md (a4cd628a3ea6f93deb0a26acad8137200825707078575f9b6d681391de3d7af7)
+- bm25: -14.1627 | relevance: 0.9340
+
+### Hotkey Behavior
+
+- Default bindings: Skip = PageDown; Next Sentence = End; Repeat = PageUp.
+- Teaching gate Next Sentence hotkey (PageDown) only fires after TTS finishes or has been skipped; while speech is active the key is ignored.
+- Skip still routes through the central speech abort to halt TTS before advancing.
+
+### Teaching Gate Flow
+
+### 5. src/app/HeaderBar.js (d30bb13740b4f787c1b156da5c17ef30e5029d6a6f591ee0294b771a240f9db3)
+- bm25: -13.0809 | relevance: 0.9290
+
+"use client";
+
+import Link from 'next/link';
+import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
+import { useMemo, useCallback, useEffect, useState, useRef } from 'react';
+import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
+import { ensurePinAllowed, setInFacilitatorSection } from '@/app/lib/pinGate';
+
+export default function HeaderBar() {
+	const pathname = usePathname() || '/';
+	const router = useRouter();
+	// Reserved left/right widths; keep smaller on session so center gets more space
+	const navWidth = useMemo(() => {
+		// On the session page, especially in portrait, reclaim width for the title
+		if (pathname.startsWith('/session')) {
+			return 'clamp(64px, 12vw, 120px)';
+		}
+		return 'clamp(84px, 14vw, 160px)';
+	}, [pathname]);
+	// Let the left padding breathe based on viewport so branding does not get pushed too far right
+	const PAD_LEFT = 'clamp(4px, 1vw, 6px)';
+	const PAD_RIGHT = 'clamp(8px, 3vw, 20px)';
+	// Responsive brand text sizing in rem/vw (no px)
+	const BRAND_FONT = 'clamp(1.125rem, 3vw, 1.375rem)';
+	const BRAND_MIN = 14; // px, emergency shrink if space is tight
+	const BRAND_MAX = 22; // px, visual cap
+	const BRAND_GAP = 'clamp(6px, 2vw, 10px)';
+
+### 6. src/app/facilitator/generator/counselor/CounselorClient.jsx (f1ca25f82d23a440047f0261e1fa0dab179411bb45cbba6614b6faf628aa680e)
+- bm25: -12.3991 | relevance: 0.9254
+
+{/* Repeat button (bottom-left, visible when not speaking and has audio) */}
+              {!isSpeaking && lastAudioRef.current && (
+                <button
+                  onClick={handleRepeat}
+                  aria-label="Repeat"
+                  title="Repeat last response"
+                  style={{
+                    position: 'absolute',
+                    bottom: 16,
+                    left: 16,
+                    background: '#1f2937',
+                    color: '#fff',
+                    border: 'none',
+                    width: 'clamp(48px, 10vw, 64px)',
+                    height: 'clamp(48px, 10vw, 64px)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                    zIndex: 10
+                  }}
+                >
+                  <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                    <path d="M3 21v-5h5" />
+                  </svg>
+                </button>
+              )}
+
+### 7. docs/brain/v2-architecture.md (bc99e4b71f540c7bf37fdef5f564161060387111ec7a1c9304f9cd3ccfe6fd49)
+- bm25: -12.2142 | relevance: 0.9243
+
+**Retry + Rate Limit Handling:**
+- If GPT returns 429, TeachingController enters a cooldown and produces a deterministic "wait then press Next" sentence
+- If GPT returns 500+ (or the fetch throws), TeachingController shows a generic server error message (not rate limit)
+- When a non-429 error message is shown, the next Next/Repeat/Restart action triggers an actual retry fetch (instead of advancing past the error sentence and effectively skipping the stage)
+- Next/Repeat/Restart must not spam GPT requests during cooldown
+- Public methods called without `await` (Repeat/Skip/Restart) must not generate unhandled promise rejections
+
+**Environment Variable Requirements:**
+- At least one LLM provider key must be configured: `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
+- Google TTS requires: `GOOGLE_APPLICATION_CREDENTIALS` (path to JSON file) or `GOOGLE_TTS_CREDENTIALS` (inline JSON or base64)
+- Dev server must be restarted after adding/changing `.env.local` to load new environment variables
+- Missing keys cause 500 errors (not 429s); TeachingController now distinguishes these in user-facing messages
+
+**Gate Prompt Flow (uses prefetched content):**
+1. Speak "Do you have any questions?" (TTS prefetched)
+2. Await prefetched GPT result (usually instant)
+3. Speak GPT-generated sample questions (TTS prefetched)
+4. Fallback if GPT failed: deterministic questions using lesson title
+
+**Exposes:**
+- `prefetchAll()` - start all background prefetches (call on Begin)
+- `startTeaching(lessonData)`
+- `advanceSentence()`
+- `repeatSentence()`
+- `skipToExamples()`
+- Events: `onStageChange`, `onSentenceAdvance`, `onTeachingComplete`
+
+### 8. src/app/HeaderBar.js (34cfced6b7737d2a391a4a17b32c336d5f4772da3a4a421406da08fddecd9afe)
+- bm25: -11.9115 | relevance: 0.9225
+
+{/* Center area: show lesson title on Session/Counselor/Calendar; else show Back */}
+				<div style={{ flex:1, display:'flex', justifyContent:'center', alignItems:'center', minWidth:0 }}>
+					{((pathname.startsWith('/session') || pathname.startsWith('/facilitator/mr-mentor') || pathname.startsWith('/facilitator/calendar')) && sessionTitle) ? (
+						isSmallWidth ? (
+							<div style={{ position:'relative', width:'100%', maxWidth:'min(98vw, 1300px)', height:'100%' }}>
+								<div style={{ position:'absolute', left:0, right:0, top:'50%', transform:'translateY(-50%)', display:'flex', justifyContent:'center', alignItems:'center', padding:'0 4px' }}>
+									<div style={{ display:'inline-flex', alignItems:'center', gap:6, maxWidth:'100%' }}>
+										<button
+											type="button"
+											onClick={handleBack}
+											aria-label="Go back"
+											style={{ background:'transparent', color:'#111', border:'1px solid #e5e7eb', padding:'6px 10px', borderRadius:999, cursor:'pointer' }}
+										>
+											<span style={{ fontSize:'clamp(0.95rem, 4vw, 1.1rem)', lineHeight:1 }}>←</span>
+										</button>
+										<div title={sessionTitle} style={{ fontWeight:800, whiteSpace:'nowrap', textOverflow:'ellipsis', overflow:'hidden', textAlign:'left' }}>
+											{sessionTitle}
+										</div>
+									</div>
+								</div>
+							</div>
+						) : (
+								<div style={{ position:'relative', width:'100%', maxWidth:'min(96vw, 1600px)', height:'100%' }}>
+									<div style={{ position:'absolute', left:0, right:0, top:'50%', transform:'translateY(-50%)', display:'flex', justifyContent:'center', alignItems:'center' }}>
+										<div style={{ display:'inline-flex', alignItems:'center', gap:6, maxWidth:'100%' }}>
+											<button
+												type="button"
+												on
+
+### 9. src/app/session/components/games/FlashCards.jsx (f53402cc81f0883ea5891b0cef4b4b254d642172df7d3cb3ce65e0ac6628f0ec)
+- bm25: -10.8156 | relevance: 0.9154
+
+<div style={{ marginTop: 18 }}>
+            <button
+              type="button"
+              style={{ ...btn, width: '100%', padding: '14px 16px', fontSize: 18 }}
+              onClick={goNextTopic}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-// ── Research mode: close overlay, Webb teaches a specific objective ──
-  async function startResearch(objIdx) {
-    closeObjectivesPanel()
-    setMediaOverlay(null)
-    const obj = objectives[objIdx]
-    setChatLoading(true)
-    try {
-      const res = await fetch('/api/webb-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: chatMessages,
-          lesson: selectedLesson,
-          media: {
-            video:   videoResource   || null,
-            article: articleResource ? { title: articleResource.title, source: articleResource.source } : null,
-          },
-          researchMode:    true,
-          targetObjective: obj,
-        }),
-      })
-      const data = await res.json()
-      const reply = data.reply || `Let's learn about: ${obj}. Can you explain what you know about it?`
-      const assistantMsg = { role: 'assistant', content: reply }
-      const finalHistory = [...chatMessages, assistantMsg]
-      setChatMessages(finalHistory)
-      addMsg(reply)
-    } catch {
-      addMsg(`Let's think about this objective together: "${obj}". What do you already know about it?`)
-    }
-    setChatLoading(false)
-  }
+// Card screen
+  // "compact" fires when the visible viewport is short enough that the keyboard
+  // is open in landscape. Priority: card visible > input usable > meter minimal > no header.
+  const compact = vpHeight < 260;
 
-### 2. src/app/api/webb-chat/route.js (8b310991150580b9342fbcfdca121d14f3014713b6c78010338e233e5a29dc08)
-- bm25: -29.7389 | relevance: 0.9675
+return (
+    <div
+      style={{
+        height: vpHeight,
+        display: 'flex',
+        flexDirection: 'column',
+        padding: compact ? '4px 8px' : '12px 16px',
+        maxWidth: 720,
+        margin: '0 auto',
+        boxSizing: 'border-box',
+        position: 'fixed',
+        top: vpOffsetTop,
+        left: 0,
+        right: 0,
+        overflow: 'hidden',
+        background: '#f9fafb',
+      }}
+    >
+      <style>{`
+        @keyframes flashcards-party {
+          0% { transform: translateX(-40px); opacity: 0; }
+          20% { opacity: 1; }
+          50% { transform: translateX(0); opacity: 1; }
+          80% { opacity: 1; }
+          100% { transform: translateX(40px); opacity: 0; }
+        }
 
-/**
- * /api/webb-chat
- * Mrs. Webb - AI conversation endpoint.
- * Maintains freeform chat about a lesson topic using GPT-4o-mini.
- * Safety-validates student input before forwarding.
- */
-import { NextResponse } from 'next/server'
-import { validateInput } from '@/lib/contentSafety'
+@keyframes flashcards-card-in {
+          0% { transform: translateX(120%); opacity: 0.15; }
+          100% { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes flashcards-card-out {
+          0% { transform: translateX(0); opacity: 1; }
+          100% { transform: translateX(-120%); opacity: 0.15; }
+        }
+      `}</style>
 
-const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+### 10. docs/brain/visual-aids.md (b69193981881a118fa4e27776424b52e27e21c2159feb23b1e0da3a88b93ecb7)
+- bm25: -10.2615 | relevance: 0.9112
 
-function buildResearchSystem(lesson, targetObjective, media) {
-  const title   = lesson?.title   || 'this topic'
-  const subject = lesson?.subject || 'general'
-  const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
-  const lines = [
-    `You are Mrs. Webb, a warm and encouraging teacher.`,
-    `You are helping a student learn specifically about this objective: "${targetObjective}"`,
-    `Lesson: "${title}" (${subject}, ${grade}).`,
-    `Your task:`,
-    `1. In 2-3 sentences, explain that objective in simple, age-appropriate language.`,
-    `2. If a video or article is available, tell the student it can help them learn more about this.`,
-    `3. End with a single open-ended question like "Can you tell me, in your own words, what ${targetObjective.toLowerCase().trim().replace(/[.?!]+$/, '')} means?" — phrased naturally and warmly.`,
-    `Keep it to 3-5 sentences total. Write in natural spoken language. No markdown, no bullet points.`,
-  ]
-  if (media?.video && !media.video.unavailable) {
-    lines.push(`\nA video titled "${media.video.title || 'Educational video'}" is available and likely covers this objective.`)
-  }
-  if (media?.article?.title) {
-    lines.push(`\nA Wikipedia article titled "${media.article.title}" is available and may explain this concept.`)
-  }
-  return lines.join('\n')
+### UI Components
+- **`src/components/VisualAidsCarousel.jsx`** - Facilitator lesson editor
+  - Generate, upload, reorder, delete visual aids
+  - Preview with left/right navigation
+  - Custom prompt input
+  - Rewrite description button
+  - Accepts an optional `zIndex` prop so callers can render it above other modals
+  - Stops click propagation on its overlay root so it does not trigger underlying modal backdrops (e.g., Calendar lesson editor close-confirm)
+
+### 11. docs/brain/tts-prefetching.md (a734797ab7cd17f97e18513557fea7446be0c460489b499b01dde60831784295)
+- bm25: -10.0826 | relevance: 0.9098
+
+**Teaching Flow Sentence-by-Sentence (useTeachingFlow.js)**:
+
+Definitions and examples are delivered sentence-by-sentence. After speaking each sentence, prefetch the next one.
+
+**After First Vocab Sentence (line ~312)**:
+```javascript
+// Speak the first sentence
+try { await speakFrontend(sentences[0]); } catch {}
+
+// Prefetch next sentence while student reads/processes current one
+if (sentences.length > 1) {
+  ttsCache.prefetch(sentences[1]);
 }
+```
 
-### 3. src/app/session/webb/page.jsx (4f11e867c77e1dd423a151c31034c590fb334564417a5bc4c49cf4d4fb4669f0)
-- bm25: -28.1911 | relevance: 0.9657
+**After Subsequent Vocab Sentences (line ~550)**:
+```javascript
+const nextSentence = vocabSentencesRef.current[nextIndex];
+try { await speakFrontend(nextSentence); } catch {}
 
-// ── UI FAQ: feature explanations in Mrs. Webb's voice ─────────────────────────
-const UI_FAQ = {
-  video: {
-    keywords: ['video', 'watch', 'play', 'movie', 'film', 'youtube', 'player'],
-    confirm: 'Are you wondering about the video feature?',
-    answer: 'To watch a video, just tap the video button — it looks like ▶ — at the bottom of my screen. That opens a little video player with play, pause, and a timeline. The video is picked specially for your lesson!',
-    location: 'tap the ▶ button at the bottom of my screen',
-    actionPrompt: 'Want me to open the video for you right now?',
-    actionSlug: 'video',
-  },
-  article: {
-    keywords: ['article', 'read', 'wiki', 'wikipedia', 'reading', 'text', 'page'],
-    confirm: 'Are you wondering about the article feature?',
-    answer: 'The article button — it looks like 📖 — opens a Wikipedia article about your lesson right inside this screen. It is a great way to read a bit more about what we are studying!',
-    location: 'tap the 📖 button at the bottom of my screen',
-    actionPrompt: 'Would you like me to open the article for you?',
-    actionSlug: 'article',
-  },
-  keypart: {
-    keywords: ['key part', 'highlight', 'important part', 'read aloud', 'interpret', 'magnify', 'underline', 'find the'],
-    confirm: 'Are you wondering about the Key part feature?',
-    answer: 'The Key part button — it looks like a magnifying glass — lives in the video and article toolbar. Tap it and I will find the most important parts, highlight them, and walk you through them one by one. It is like having me point to the page!',
-    actionPrompt: null,
-    actionSlug: null,
-  },
-  move: {
-    keywords: ['move', 'arrow', 'switch side', 'other side', 'reposition', 'swap', 'slide'],
-    confirm: 'Are you wondering how to move the video or art
-
-### 4. src/app/session/webb/page.jsx (70a30817ba5630c69ed5055c336df1598cddfffe4d180400c858891d02436328)
-- bm25: -24.2918 | relevance: 0.9605
-
-// Clear stored passage excerpts whenever the article content changes
-  useEffect(() => {
-    setArticlePassageExcerpts([])
-    passageEls.current = []
-  }, [articleResource])
-
-// ── Article interpret: highlight all passages and read each one in order ──
-  async function interpretArticle() {
-    if (!articleResource?.html || interpretingArticle) return
-    setInterpretingArticle(true)
-    // Ensure article overlay is open so the iframe exists in the DOM
-    setMediaOverlay('article')
-    // Reset so auto-scroll works cleanly on each new interpret run
-    passageEls.current = []
-    userScrolledArticleRef.current = false
-    try {
-      const res = await fetch('/api/webb-interpret', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          html:             articleResource.html,
-          lessonTitle:      selectedLesson?.title || '',
-          grade:            selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
-          learnerName:      learnerName.current || '',
-          objectives,
-          completedIndices: completedObj,
-        }),
-      })
-      const data = await res.json()
-      const passages = data.passages || (data.excerpt ? [{ excerpt: data.excerpt }] : [])
-      if (!passages.length) return
-
-const excerpts = passages.map(p => p.excerpt).filter(Boolean)
-
-### 5. src/app/api/webb-chat/route.js (6cbc9b6378ef2c6526dd4ddf2bfc20da97a878524749a3b1f218192c3719cae4)
-- bm25: -23.7628 | relevance: 0.9596
-
-const idxMatch   = raw.match(/INDEX:\s*(\d+)/)
-      const replyMatch = raw.match(/REPLY:\s*(.+)/)
-      const idx        = idxMatch ? parseInt(idxMatch[1], 10) : -1
-      const reply      = replyMatch?.[1]?.trim() || ''
-      return NextResponse.json({ reply, seekMomentIdx: idx >= 0 ? idx : undefined })
-    }
-
-// ── Research mode: teach a specific objective ─────────────────────────
-    // Client sends { researchMode: true, targetObjective: string }.
-    // Webb explains the objective and ends with a "say it in your own words" prompt.
-    if (researchMode && targetObjective) {
-      const apiKey = process.env.OPENAI_API_KEY
-      if (!apiKey) return NextResponse.json({ error: 'OpenAI not configured' }, { status: 503 })
-      const sysContent = buildResearchSystem(lesson, targetObjective, media)
-      const r = await fetch(OPENAI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: OPENAI_MODEL,
-          messages: [{ role: 'system', content: sysContent }],
-          max_tokens: 180,
-          temperature: 0.7,
-        }),
-      })
-      if (!r.ok) return NextResponse.json({ error: 'AI unavailable' }, { status: 502 })
-      const d = await r.json()
-      const reply = d.choices?.[0]?.message?.content?.trim() || `Let me tell you about: ${targetObjective}. Can you explain it back to me in your own words?`
-      return NextResponse.json({ reply })
-    }
-
-### 6. src/app/api/webb-interpret/route.js (10d5d59b6df1333d4627ffb4b3eaffc5fd849424e29b85cc0404de2073d974ed)
-- bm25: -19.9004 | relevance: 0.9522
-
-/**
- * /api/webb-interpret
- * Finds the most educationally relevant passage in a Wikipedia article
- * for a given lesson, so Mrs. Webb can highlight and read it aloud.
- *
- * POST { html, lessonTitle, grade, learnerName?, objectives?, completedIndices? }
- * Returns { passages: [{ excerpt }], intro }
- *   excerpt — 2–3 verbatim sentences from the article body text
- *   intro   — friendly 1-sentence lead-in for Mrs. Webb to speak first
- */
-import { NextResponse } from 'next/server'
-
-const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-
-function stripHtml(html) {
-  return html
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    // Remove figure captions, image descriptions, table headers, nav, footer
-    .replace(/<figure[^>]*>[\s\S]*?<\/figure>/gi, '')
-    .replace(/<figcaption[^>]*>[\s\S]*?<\/figcaption>/gi, '')
-    .replace(/<caption[^>]*>[\s\S]*?<\/caption>/gi, '')
-    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
-    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-    .replace(/<table[^>]*>[\s\S]*?<\/table>/gi, '')
-    // Strip remaining tags
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s{2,}/g, ' ')
-    .trim()
+// Prefetch the sentence after this one while student reads current
+if (nextIndex + 1 < vocabSentencesRef.current.length) {
+  ttsCache.prefetch(vocabSentencesRef.current[nextIndex + 1]);
 }
+```
 
-### 7. src/app/session/webb/page.jsx (31ad3ed0666563930eac09bfad23a195a8741a4301ac4b747edcf4d5e8f88f0a)
-- bm25: -18.8991 | relevance: 0.9497
+**After First Example Sentence (line ~436)**:
+```javascript
+// Speak the first sentence
+try { await speakFrontend(sentences[0]); } catch {}
 
-// Open/close the video overlay with tier-aware Mrs. Webb messages.
-  function handleVideoButtonClick() {
-    if (mediaOverlay === 'video') { setMediaOverlay(null); return }
-    // Still loading or resource not yet resolved — open overlay to show spinner
-    if (videoLoading || !videoResource) { setMediaOverlay('video'); return }
-    // No relevant video was found — say something once, then don't open
-    if (videoResource.unavailable) {
-      if (!noVideoMsgSentRef.current) {
-        noVideoMsgSentRef.current = true
-        addMsg("I searched for a video to go with this lesson but the results just weren't helpful — nothing came up that would actually teach the material. Let's keep talking — there's plenty we can dig into together!")
-      }
-      return
-    }
-    // Low-relevance video — say something once, then open
-    if (videoResource.relevanceTier === 'low' && !lowTierMsgSentRef.current) {
-      lowTierMsgSentRef.current = true
-      addMsg("I searched hard but couldn't find a perfect video for this lesson. I found one that covers some related ideas — it might still be worth watching!")
-    }
+// Prefetch next sentence while student reads/processes current one
+if (sentences.length > 1) {
+  ttsCache.prefetch(sentences[1]);
+}
+```
+
+**After Subsequent Example Sentences (line ~607)**:
+```javascript
+const nextSentence = exampleSentencesRef.current[nextIndex];
+try { await speakFrontend(nextSentence); } catch {}
+
+// Prefetch the sentence after this one while student reads current
+if (nextIndex + 1 < exampleSentencesRef.current.length) {
+  ttsCache.prefetch(exampleSentencesRef.current[nextIndex + 1]);
+}
+```
+
+**3. Cache Clearing (page.js line ~990)**
+```javascript
+// Clear TTS cache on phase transitions to prevent stale audio from previous phases
+useEffect(() => {
+  try { ttsCache.clear(); } catch {}
+}, [phase]);
+```
+
+Prevents comprehension audio bleeding into exercise phase, etc.
+
+### Abort Handling
+
+### 12. docs/brain/v2-architecture.md (8ec1e8e7ff11b868bda1adcbf7227de9eee5ed57674484e751d290fd80163f9f)
+- bm25: -10.0398 | relevance: 0.9094
+
+**Post-audit UX/telemetry fixes (2026-01-01)**
+- Teaching controls (Next/Repeat/Restart/Skip) are anchored in the fixed footer instead of overlaid on the video to match V1 footer placement and avoid covering the video.
+- All Q&A phase controls (Comprehension, Exercise, Worksheet, Test) are anchored in the fixed footer (answer input or MC/TF quick buttons + submit/skip) and must not render as on-video overlays.
+- `captionChange` payloads from HTMLAudio now emit `{ index, text }`, keeping transcript rendering consistent with WebAudio/Synthetic paths.
+- Session timer interval is bound to the TimerService instance, ensuring `sessionTimerTick` events fire and the on-screen timer advances.
+- HTMLAudio path emits the first caption immediately so transcripts populate as soon as playback starts (no blank transcript on first line).
+- AudioEngine replays the current caption immediately on `captionChange` subscription so the transcript works even if playback starts before the UI attaches listeners.
+- AudioEngine falls back to Synthetic playback (caption scheduling only) when both HTMLAudio and WebAudio playback fail (e.g., invalid base64, decode errors), so transcripts still populate and sessions can proceed even when TTS audio cannot be decoded.
+- Captions/transcripts are rendered only in the transcript panel (no on-video caption overlay).
+- Fixed AudioEngine initialization race: AudioEngine now retries initialization until the video element ref is available, preventing the Discussion phase Begin button from getting stuck on "Loading..." due to a one-shot effect returning early.
+- Teaching phase no longer auto-plays the first sentence; audio waits for the learner's first Next/Repeat click (V1 pacing gate).
+- SnapshotService now automatically falls back to localStorage when Supabas
+
+### 13. src/app/facilitator/calendar/DayViewOverlay.jsx (fba203951940dab1dcf59fb885092274b2544a9ec07bb70ed0d93a5920504e53)
+- bm25: -9.9372 | relevance: 0.9086
+
+{/* ── schedule level ── */}
+                    {addMenuStep === 'schedule' && (
+                      <>
+                        <button
+                          onClick={() => setAddMenuStep('top')}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '8px 12px', fontSize: 12, fontWeight: 600, border: 'none', borderBottom: '1px solid #f3f4f6', background: 'transparent', cursor: 'pointer', color: '#6b7280' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6' }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                        >
+                          ‹ Schedule Lesson
+                        </button>
+                        {[
+                          { label: '🗂  Owned', next: 'own' },
+                          { label: '✨  Generate', next: 'generate' }
+                        ].map(({ label, next }) => (
+                          <button
+                            key={next}
+                            onClick={() => {
+                              if (next === 'own') { loadOwnedLessons(); setAddMenuStep('own') }
+                              else { setAddMenuStep(null); setShowGenerator(true) }
+                            }}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 14px', fontSize: 13, fontWeight: 500, border: 'none', background: 'transparent', cursor: 'pointer', color: '#111827', textAlign: 'left' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6' }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+
+### 14. src/app/session/webb/page.jsx (7a35e745616327af2536392eeb500df5a4280a743896baa63e9023dfe1f42f71)
+- bm25: -9.8303 | relevance: 0.9077
+
+// Seek to a segment and auto-play; useEffect above auto-pauses at endSec.
+  function playSegment(startSec, endSec) {
     setMediaOverlay('video')
-  }
-
-### 8. src/app/api/webb-chat/route.js (e2705cbd1f86219ceefff5fdcae832830c00672c24f7ad0012b19638dbfaa696)
-- bm25: -18.8117 | relevance: 0.9495
-
-if (media?.video && !media.video.unavailable) {
-    lines.push(
-      `\nA video is available for this lesson:`,
-      `- Title: "${media.video.title || 'Educational video'}"`,
-      `- Channel: ${media.video.channel || 'unknown'}`,
-      media.video.searchQuery ? `- Search query used: "${media.video.searchQuery}"` : '',
-      `If the student asks about the video, explain what it is likely about based on its title and the lesson topic.`,
-    )
-  }
-
-if (media?.article && media.article.source) {
-    lines.push(
-      `\nA Wikipedia article is available:`,
-      `- Title: "${media.article.title || title}"`,
-      `- Source: ${media.article.source}`,
-      `If the student asks about the article, you can explain what it covers based on the lesson topic and this title.`,
-    )
-  }
-
-if (Array.isArray(remainingObjectives) && remainingObjectives.length) {
-    lines.push(
-      `\nThe student has NOT yet demonstrated these learning goals (listed in priority order — work through them top to bottom):`,
-      remainingObjectives.slice(0, 6).map((o, i) => `${i + 1}. ${o}`).join('\n'),
-      `IMPORTANT — End EVERY reply with ONE focused question that steers the student toward explaining goal #1 in their own words.`,
-      `- Do NOT wait for a video or article. Ask about goal #1 in every response until the student demonstrates it.`,
-      `- Once goal #1 is demonstrated, shift to goal #2 on the next turn (the list will update automatically).`,
-      `- Bridge naturally from what the student just said: "That's interesting! Can you also tell me..." or "Speaking of that, what do you know about..."`,
-      `- Never use the words "objective", "goal", or "check". Sound warm and curious, not like a quiz.`,
-    )
-  }
-
-### 9. src/app/session/webb/page.jsx (f17270ce1ae6c71c186f923ef24aeac36e11824c807781285a708f17185b1c39)
-- bm25: -18.6179 | relevance: 0.9490
-
-// Scroll the article iframe to passage[idx]. isProgrammatic suppresses the
-  // manual-scroll flag so auto-scroll continues working after our own scrolls.
-  function scrollToPassage(idx, isProgrammatic = false) {
-    // Auto-scroll (TTS) honours the user's manual scroll position; pin clicks always go.
-    if (isProgrammatic && userScrolledArticleRef.current) return
-    if (isProgrammatic) {
-      programmaticScrollRef.current = true
-      setTimeout(() => { programmaticScrollRef.current = false }, 800)
-    }
-    if (!isProgrammatic) {
-      // Pin click — make sure article overlay is visible
-      setMediaOverlay('article')
-    }
-    // Use getElementById so we are never relying on stale DOM refs from before
-    // a potential iframe remount. Retry up to 8 times × 250 ms to allow the
-    // re-apply-highlights effect enough time to re-inject the spans after remount.
-    const tryScroll = (left) => {
-      const doc = articleIframeRef.current?.contentDocument
-      const el  = doc?.getElementById(`webb-passage-${idx}`) ?? passageEls.current[idx]
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    segmentEndRef.current = typeof endSec === 'number' ? endSec : null
+    // Poll for iframe mount in case the overlay was just opened
+    const doCmd = (left) => {
+      if (videoIframeRef.current?.contentWindow) {
+        ytCmd('seekTo', [startSec, true])
+        ytCmd('playVideo')
       } else if (left > 0) {
-        setTimeout(() => tryScroll(left - 1), 250)
+        setTimeout(() => doCmd(left - 1), 120)
       }
     }
-    setTimeout(() => tryScroll(8), 50)
+    setTimeout(() => doCmd(10), 60)
   }
 
-### 10. src/app/session/webb/page.jsx (fd8c5dde609eb3d7431e60ef43405e1d51d1c3e1a00f858ba092516378da5568)
-- bm25: -18.4778 | relevance: 0.9487
-
-// ── Research objectives ──────────────────────────────────────────────
-  const [objectives,         setObjectives]        = useState([])  // string[]
-  const [completedObj,       setCompletedObj]      = useState([])  // number[] of completed indices
-  const [objResponses,       setObjResponses]      = useState({})  // Record<idx, studentText> — what they said
-  const [newlyCompletedObj,  setNewlyCompletedObj] = useState(null) // {idx, text} — drives tablet toast
-  const [expandedObj,        setExpandedObj]       = useState(null) // number|null — accordion open index
-  const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
-  const [showSourceSettings, setShowSourceSettings] = useState(false) // settings overlay
-  const [settingsTab,        setSettingsTab]        = useState('settings') // 'settings' | 'article'
-  const [offerResume,        setOfferResume]        = useState(() => {
-    if (typeof window === 'undefined') return false
-    try {
-      const raw = localStorage.getItem('webb_session')
-      return !!(raw && JSON.parse(raw)?.selectedLesson)
-    } catch { return false }
-  }) // resume/restart prompt on refresh
-  const [essayMode,          setEssayMode]         = useState(false) // essay copy-down screen
-  const [essay,              setEssay]             = useState(null)  // generated essay string
-  const [generatingEssay,    setGeneratingEssay]   = useState(false)
-  const [articleSources,     setArticleSources]    = useState(() => {
-    const ALL = ['simple-wikipedia','wikipedia','kiddle','ducksters','wikijunior']
-    if (typeof window === 'undefined') return ALL
-    try {
-      const stored = JSON.parse(localStorage.getItem('webb_article_sources') || 'null')
-      if (Array.isArray(stored) && stored.length) return stored
-
-### 11. src/app/session/webb/page.jsx (804cc50a5eec55a452df5753bca21e915ff781c24ff47da85ca4b777664800d2)
-- bm25: -18.3818 | relevance: 0.9484
-
-// Highlight all passages and persist excerpts for remount re-apply
-      const iframeEl = articleIframeRef.current
-      setArticlePassageExcerpts(excerpts)
-      const els = highlightPassages(excerpts)
-      passageEls.current = els
-
-// Speak intro, then for each passage: wait for TTS → activate + scroll → speak
-      if (data.intro) addMsg(data.intro)
-      for (let i = 0; i < excerpts.length; i++) {
-        await waitForTTSIdle()
-        activatePassage(i)
-        scrollToPassage(i, true)
-        addPassageMsg(excerpts[i], i)
-      }
-      // Clear active highlight when done
-      await waitForTTSIdle()
-      const doc = articleIframeRef.current?.contentDocument
-      doc?.querySelectorAll('.webb-hl-active').forEach(el => el.classList.remove('webb-hl-active'))
-    } catch (e) { console.error('[webb] interpretArticle error:', e) }
-    setInterpretingArticle(false)
+// Add a transcript bubble tagged with momentIdx so it shows a ▶ replay button
+  function addMomentMsg(text, momentIdx) {
+    const t = String(text || '').trim()
+    if (!t) return
+    setTranscript(prev => {
+      const next = [...prev, { text: t, role: 'assistant', momentIdx }]
+      setActiveIndex(next.length - 1)
+      return next
+    })
   }
 
-// Returns a Promise that resolves when TTS has finished its current queue
-  function waitForTTSIdle() {
+// Resolves once the segment auto-pause fires or the deadline is reached
+  function waitForSegmentEnd(endSec, maxWaitMs) {
     return new Promise(resolve => {
+      const startedAt = Date.now()
+      const deadline  = startedAt + (maxWaitMs ?? 90000)
       const check = () => {
-        if (!ttsBusyRef.current && ttsQueueRef.current.length === 0) resolve()
-        else setTimeout(check, 150)
+        if (Date.now() - startedAt < 1500) { setTimeout(check, 400); return }
+        if (segmentEndRef.current === null ||
+            videoCurrentTimeRef.current >= endSec ||
+            Date.now() > deadline) resolve()
+        else setTimeout(check, 400)
       }
-      setTimeout(check, 400) // give TTS time to actually start before first check
+      setTimeout(check, 200)
     })
   }
 
-// Highlights an array of text excerpts in the article iframe by searching
-  // element textContent (not window.find — which is broken in sandboxed iframes).
-  // Assigns id="webb-passage-{i}" to each matched element so scrollToPassage
-  // can use getElementById, which survives iframe remounts.
-  function highlightPassages(excerpts) {
-    const doc = articleIframeRef.current?.contentDocument
-    if (!doc?.body) return excerpts.map(() => null)
+### 15. src/app/session/v2/SessionPageV2.jsx (9fddd84e4d53797cf576b3c61c003c5a9d5f729bf2888d75dad4d685a3832f3f)
+- bm25: -9.7405 | relevance: 0.9069
 
-### 12. src/app/session/webb/page.jsx (e4f86fa7decec8ef830aa252472e04baed51d21c0e13b1693ef2e6be55c2c315)
-- bm25: -18.0048 | relevance: 0.9474
+{/* Teaching controls (footer) */}
+          {currentPhase === 'teaching' && (
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              padding: '8px 4px'
+            }}>
+              {(teachingStage === 'idle' || teachingStage === 'definitions' || teachingStage === 'examples') && (
+                <>
+                  <button
+                    onClick={nextSentence}
+                    disabled={teachingLoading}
+                    style={{
+                      padding: '12px 28px',
+                      background: teachingLoading ? '#9ca3af' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 10,
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: teachingLoading ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 4px 16px rgba(59, 130, 246, 0.4)',
+                      opacity: teachingLoading ? 0.7 : 1
+                    }}
+                  >
+                    {teachingLoading
+                      ? 'Loading...'
+                      : teachingStage === 'idle'
+                        ? 'Continue to Definitions'
+                        : isInSentenceMode
+                          ? 'Next Sentence'
+                          : teachingStage === 'definitions'
+                            ? 'Continue to Examples'
+                            : 'Complete Teaching'
+                    }
+                  </button>
+                  <button
+                    onClick={repeatSentence}
+                    disabled={!isInSentenceMode}
+                    style={{
 
-// ── Article passage scroll detector ─────────────────────────────────
-  // Attaches a scroll listener so we know when the user has scrolled manually.
+### 16. src/app/learn/lessons/page.js (6b8b89044a5b02e2033c592c55a8d62fdad9ddf04cfc8bb3982e4038895d985b)
+- bm25: -9.6466 | relevance: 0.9061
+
+{/* Teacher selector */}
+              {(() => {
+                const TEACHERS = [
+                  { key: 'sonoma', label: 'Ms. Sonoma', emoji: '👩🏻‍🦰', color: '#c7442e' },
+                  { key: 'slate',  label: 'Mr. Slate',  emoji: '🤖',       color: '#6366f1' },
+                  { key: 'webb',   label: 'Mrs. Webb',  emoji: '👩‍🏫',      color: '#0d9488' },
+                ]
+                const current = TEACHERS.find(t => t.key === selectedTeacher) || TEACHERS[0]
+                return (
+                  <div style={{ position: 'relative', marginBottom: 14 }}>
+                    <button
+                      onClick={() => setTeacherDropdownOpen(o => !o)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                        padding: '8px 12px', borderRadius: 8,
+                        border: `2px solid ${current.color}`,
+                        background: '#fff', cursor: 'pointer',
+                        fontSize: 13, fontWeight: 700, color: current.color,
+                      }}
+                    >
+                      <span style={{ flex: 1, textAlign: 'left' }}>{current.emoji} {current.label}</span>
+                      <span style={{ fontSize: 11, opacity: 0.7 }}>{teacherDropdownOpen ? '▲' : '▼'}</span>
+                    </button>
+                    {teacherDropdownOpen && (
+                      <div style={{
+                        position: 'absolute', top: '105%', left: 0, right: 0,
+                        background: '#fff', border: '1px solid #e5e7eb',
+                        borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                        zIndex: 200, overflow: 'hidden',
+                      }}>
+                        {TEACHERS.map(t => (
+
+### 17. src/app/session/v2/TeachingController.jsx (bbec4549b564d97d0f5f984ec25302df4e7167efb89e77213255e94b3cc7e2fa)
+- bm25: -9.4502 | relevance: 0.9043
+
+// Prefetch first sentence TTS on await gate when not autoplaying
+    const firstSentence = this.#vocabSentences[this.#currentSentenceIndex];
+    if (firstSentence) {
+      ttsCache.prefetch(firstSentence);
+    }
+  }
+  
+  async #playCurrentDefinition() {
+    const sentence = this.#vocabSentences[this.#currentSentenceIndex];
+    if (!sentence) return;
+    
+    // Listen for audio end
+    this.#setupAudioEndListener(() => {
+      this.#emit('sentenceComplete', {
+        stage: 'definitions',
+        index: this.#currentSentenceIndex,
+        total: this.#vocabSentences.length
+      });
+    });
+    
+    // Check cache first
+    let audioBase64 = ttsCache.get(sentence);
+    
+    if (!audioBase64) {
+      audioBase64 = await fetchTTS(sentence);
+      if (audioBase64) {
+        ttsCache.set(sentence, audioBase64);
+      }
+    }
+    
+    // Prefetch next sentence
+    const nextIndex = this.#currentSentenceIndex + 1;
+    if (nextIndex < this.#vocabSentences.length) {
+      ttsCache.prefetch(this.#vocabSentences[nextIndex]);
+    }
+    
+    await this.#audioEngine.playAudio(audioBase64 || '', [sentence]);
+  }
+  
+  #advanceDefinition() {
+    if (!this.#isInSentenceMode) {
+      // At final gate - transition to examples
+      this.#startExamples();
+      return;
+    }
+    
+    const nextIndex = this.#currentSentenceIndex + 1;
+    
+    if (nextIndex >= this.#vocabSentences.length) {
+      // Reached end - show final gate
+      this.#isInSentenceMode = false;
+      this.#emit('finalGateReached', { stage: 'definitions' });
+
+### 18. docs/brain/session-takeover.md (60c9d4cd0ab0fea91764faad1891a96fb7c304045c5c530242436be8f9fdd5f4)
+- bm25: -9.3135 | relevance: 0.9030
+
+5. **iPad - Next gate attempt**
+   - User clicks Next (or any action triggering gate)
+   - Gate: `scheduleSaveSnapshot('vocab-sentence-4')`
+   - Database returns "session ended" error
+   - Show notification: "Lesson continued on laptop"
+   - Redirect to learner dashboard (or show Resume option for laptop)
+
+### 19. docs/brain/tts-prefetching.md (20cc073772503cfe6baaa7bda436dd53dc02fbe589fd39e4fcad508f79f39b46)
+- bm25: -9.2590 | relevance: 0.9025
+
+**DON'T cache indefinitely**
+- LRU eviction at 10 items prevents memory growth
+- Phase transitions clear cache (old phase audio irrelevant)
+
+**DON'T prefetch more than one question ahead**
+- Student might skip, fail, or use hint - next question unpredictable
+- Better to prefetch N+1 after each answer than N+2..N+10 upfront
+
+**DON'T trust question order without increment tracking**
+```javascript
+// WRONG - currentCompIndex already incremented, so array[currentCompIndex] is N+2 not N+1
+const nextProblem = generatedComprehension[currentCompIndex];
+setCurrentCompIndex(currentCompIndex + 1);
+await speakFrontend(nextProblem);
+ttsCache.prefetch(generatedComprehension[currentCompIndex]); // N+2!
+
+// RIGHT - prefetch from same index that will be used next
+const nextProblem = generatedComprehension[currentCompIndex];
+setCurrentCompIndex(currentCompIndex + 1);
+await speakFrontend(nextProblem);
+// currentCompIndex now points to N+1 (just incremented)
+ttsCache.prefetch(generatedComprehension[currentCompIndex]);
+```
+
+## Related Brain Files
+
+- **[ms-sonoma-teaching-system.md](ms-sonoma-teaching-system.md)** - TTS integrates with Ms. Sonoma teaching flow and phase transitions
+
+## Key Files
+
+**Core Module**:
+- `src/app/session/utils/ttsCache.js`: TTSCache class, LRU cache, prefetch logic
+
+### 20. src/app/session/components/games/GamesOverlay.jsx (fa2d4453a411b9e71bcc1321022e0445e4c09827884f8f32ea97fa8be4e80a63)
+- bm25: -9.2147 | relevance: 0.9021
+
+// Game selection menu
+  if (!selectedGame) {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.75)',
+          zIndex: 20000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(4px)',
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div
+          style={{
+            background: '#fff',
+            borderRadius: 16,
+            maxWidth: 600,
+            width: '90%',
+            maxHeight: '90dvh',
+            overflow: 'auto',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            position: 'relative',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Play timer in upper left */}
+          {playTimer && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 16,
+                left: 16,
+                zIndex: 10001,
+              }}
+            >
+              {playTimer}
+            </div>
+          )}
+
+### 21. docs/brain/ms-sonoma-teaching-system.md (1b4ee06cf283a5924fd938a14c5f34054fb5fb5d3352ab28382727abf1ae0b21)
+- bm25: -9.1790 | relevance: 0.9018
+
+- After "Do you have any questions?" Ms. Sonoma explicitly speaks the generated "You could ask questions like..." follow-ups; if GPT is empty or errors, a deterministic three-question fallback is spoken.
+- Snapshot triggers stay stage-specific: definitions use teaching-definition / teaching-definition-gate, examples use teaching-example / teaching-example-gate, and they fire before gate playback so resume hits the correct gate/audio without falling back to definitions labels.
+- If the examples GPT call returns no text, the stage ends (no deterministic fallback injected); rely on GPT output only.
+- Gate controls (Repeat/Next and the PageDown hotkey) stay hidden/blocked while the gate prompt or sample questions load/play under a dedicated lock so learners hear the three suggestions before moving on.
+- If Skip is pressed during this locked sequence, skipGatePrompt stops audio, emits gatePromptComplete, and snaps back to awaiting-gate so controls/hotkey surface instead of hanging; captions already contain the sample questions even when TTS is skipped.
+- Frontend safety: teaching gate state lives before the skip handler to avoid TDZ ReferenceError crashes in minified builds when Skip fires during the gate.
+- Teaching CTAs (Start Definitions / Next Sentence) render as soon as teaching begins, even during the loading-definitions intro, allowing immediate advance into definitions; Next triggers nextSentence which stops intro audio and begins definitions playback.
+- Discussion screen shows a Start Definitions button; it calls skipDiscussion to stop the greeting audio and emit discussionComplete immediately so orchestrator enters teaching without waiting for the greeting to finish.
+
+### 22. docs/brain/ms-sonoma-teaching-system.md (6a2edee4e3cfc75ce3af218db8d3ad5077d743885a3415aa675b5984f9edc421)
+- bm25: -9.0707 | relevance: 0.9007
+
+**Allowed Phases**:
+
+1. **Opening** (V2: greeting only, no activities)
+   - **V1**: Greeting with child's exact name and lesson title (1-2 sentences) + encouragement + joke + silly question
+   - **V2**: Greeting with child's exact name and lesson title (1-2 sentences) only. No joke, no silly question. "Begin" button advances to teaching immediately.
+   - **Rationale**: V2 removes opening actions from discussion phase to eliminate play timer exploit. Opening actions (Ask, Joke, Riddle, Poem, Story, Fill-in-Fun, Games) moved to play time in phases 2-5.
+
+2. **Teaching Definitions** (first stage)
+   - One short kid-friendly definition per vocab term (one sentence each)
+   - End with [VERBATIM]: "Do you have any questions? You could ask questions like..." + 2-3 example questions
+
+3. **Teaching Examples** (second stage)
+   - Inputs: the examples prompt receives the full lesson JSON (including all generated questions used for assessment)
+   - Goal: reverse-engineer the assessment questions back into the teaching examples
+   - Coverage requirement (CRITICAL): examples must teach all knowledge needed to answer every lesson question (comprehension, exercise, worksheet, test), even when multiple questions overlap
+   - Output shape: 2-3 tiny worked examples by default; may use up to 5 tiny examples when needed to cover all question content
+   - End with [VERBATIM]: "Do you have any questions? You could ask questions like..." + 2-3 example questions
+
+4. **Repeat** (when Repeat Vocab clicked)
+   - Shorter recap of current stage
+   - End with [VERBATIM]: "Do you have any questions? You could ask questions like..." + 2-3 example questions
+
+5. **Transition to Comprehension** (when Next clicked after examples)
+   - [VERBATIM]: "Great. Let's move on to comprehension."
+
+### 23. src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx (418c9c3faddf20d3ca769b5165c6222ab216a542ef44d565a0c34b7fe8ea03fe)
+- bm25: -9.0513 | relevance: 0.9005
+
+return isMounted ? createPortal(overlay, document.body) : null
+  }
+
+// If lesson planner overlay is open, show it as a full-screen overlay
+  if (showPlannerOverlay) {
+    const overlay = (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          zIndex: OVERLAY_Z_INDEX,
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+        onClick={() => setShowPlannerOverlay(false)}
+      >
+        <div
+          style={{
+            background: '#fff',
+            height: '100%',
+            width: '100%',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 16px',
+            borderBottom: '1px solid #e5e7eb',
+            background: '#f9fafb'
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#111827' }}>
+              Lesson Planner
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowPlannerOverlay(false)}
+              style={{
+                padding: '6px 10px',
+                fontSize: 12,
+                fontWeight: 700,
+                borderRadius: 8,
+                border: '1px solid #d1d5db',
+                background: '#fff',
+                cursor: 'pointer'
+              }}
+            >
+              Close
+            </button>
+          </div>
+
+### 24. docs/brain/lesson-assessment-architecture.md (c2bb45b2d56241d3d8fd623e8d666b181907464ee2958f4c3fb8e62fc0a646d7)
+- bm25: -9.0396 | relevance: 0.9004
+
+# Lesson Assessment Architecture
+
+## How It Works
+
+### Core Design: Arrays as Source of Truth
+
+When a student loads a lesson, the system generates 4 shuffled question arrays that represent their progress through that lesson:
+
+1. **generatedComprehension** - Questions for Comprehension phase (Ask/Feedback)
+2. **generatedExercise** - Questions for Exercise phase (interactive practice)
+3. **generatedWorksheet** - Questions for Worksheet phase (PDF printable)
+4. **generatedTest** - Questions for Test phase (final assessment)
+
+These arrays are **the canonical source of progress**. They persist across browser sessions via localStorage, ensuring:
+- Same shuffled order when student returns to lesson
+- Student picks up right where they left off
+- Consistent question sequence across all 4 phases unless refresh button clicked
+
+### Data Flow
+
+```
+Supabase lesson file (questions array)
+  ↓
+buildQAPool (shuffle with crypto-random)
+  ↓
+4 generated arrays (ONE TIME on lesson load)
+  ↓
+localStorage (persist after generation/restore on load)
+  ↓
+Phase rendering (use arrays[phaseIndex])
+
+### Question Mix (80/20)
+
+- Each phase array targets roughly 80% Multiple Choice/True-False (primary) and 20% Fill-in-the-Blank/Short Answer (secondary).
+- Comprehension is blended first, then Exercise is blended from the remainder to avoid duplicate questions between the two phases.
+- Worksheet and Test arrays each blend independently using the same 80/20 rule.
+- If a category is short (e.g., not enough MC/TF), the blender backfills from whatever remains so targets are still met.
+```
+
+### Lesson Data State
+
+### 25. src/app/session/components/games/GamesOverlay.jsx (57124ae743b1dbc4fd0131f8cd0de2cade0c51a4d51f4c9f14067219723d857a)
+- bm25: -9.0062 | relevance: 0.9001
+
+// Active game screen
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: '#fff',
+        zIndex: 20000,
+        overflow: 'auto',
+      }}
+    >
+      {/* Play timer in upper left */}
+      {playTimer && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 16,
+            left: 16,
+            zIndex: 10001,
+          }}
+        >
+          {playTimer}
+        </div>
+      )}
+
+{/* Render the selected game */}
+      {selectedGame === 'memory-match' && (
+        <MemoryMatch onExit={() => setSelectedGame(null)} />
+      )}
+      {selectedGame === 'snake' && (
+        <Snake onExit={() => setSelectedGame(null)} />
+      )}
+      {selectedGame === 'catch-collect' && (
+        <CatchCollect onBack={() => setSelectedGame(null)} />
+      )}
+      {selectedGame === 'maze-runner' && (
+        <MazeRunner onBack={() => setSelectedGame(null)} />
+      )}
+      {selectedGame === 'whack-a-mole' && (
+        <WhackAMole onBack={() => setSelectedGame(null)} />
+      )}
+      {selectedGame === 'platform-jumper' && (
+        <PlatformJumper onBack={() => setSelectedGame(null)} />
+      )}
+      {selectedGame === 'flood-climb' && (
+        <FloodClimbSpelling onBack={() => setSelectedGame(null)} />
+      )}
+      {selectedGame === 'flash-cards' && (
+        <FlashCards onBack={() => setSelectedGame(null)} />
+      )}
+    </div>
+  );
+}
+
+### 26. src/app/facilitator/calendar/LessonCalendar.js (a8e39eeeeb782e13e4e8ae94c0c228edeb7a950a815f4da3f5b1a22542562ee5)
+- bm25: -8.9687 | relevance: 0.8997
+
+{/* Month navigation arrows */}
+          <div style={{ display: 'flex', gap: 4, flex: '0 0 auto' }}>
+            <button
+              onClick={handleMonthDown}
+              style={{
+                padding: '4px 10px',
+                fontSize: 14,
+                fontWeight: 600,
+                borderRadius: 4,
+                background: '#fff',
+                border: '1px solid #d1d5db',
+                cursor: 'pointer',
+                lineHeight: 1
+              }}
+              title="Previous month"
+            >
+              ◀
+            </button>
+            <button
+              onClick={handleMonthUp}
+              style={{
+                padding: '4px 10px',
+                fontSize: 14,
+                fontWeight: 600,
+                borderRadius: 4,
+                background: '#fff',
+                border: '1px solid #d1d5db',
+                cursor: 'pointer',
+                lineHeight: 1
+              }}
+              title="Next month"
+            >
+              ▶
+            </button>
+          </div>
+        </div>
+      </div>
+
+{/* Calendar Table */}
+      <div style={{ padding: 12 }}>
+        {/* Day Headers */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(7, 1fr)', 
+          gap: 4,
+          marginBottom: 8
+        }}>
+          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+            <div key={day} style={{ 
+              textAlign: 'center', 
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#6b7280',
+              padding: '4px 0'
+            }}>
+              {day}
+            </div>
+          ))}
+        </div>
+
+### 27. docs/brain/ms-sonoma-teaching-system.md (cd6c370212fe57073614171258183f8f54ee47488fd75e43802bef4df904d65c)
+- bm25: -8.8168 | relevance: 0.8981
+
+- OpeningActionsController spins up only after audioReady is true and eventBus/audioEngine exist (dedicated effect rechecks when audio initializes so buttons never point at a null controller); controller and listeners are destroyed on unmount to prevent dead buttons or duplicate handlers. State resets on timeline jumps and play timer expiry.
+- AudioEngine shim adds speak(text) when missing (calls fetchTTS + playAudio with captions) so Ask/Joke/Riddle/Poem/Story/Fill-in-Fun can speak via a single helper like V1.
+- Buttons (Joke, Riddle, Poem, Story, Fill-in-Fun, Games) show in the play-time awaiting-go bar for Q&A phases; Go/work transitions, play-time expiry, or timeline jumps clear inputs/errors/busy flags and hide the Games overlay. Ask Ms. Sonoma lives only as a circular video overlay button (raised-hand icon) on the bottom-left of the video, paired with the Visual Aids button. Skip/Repeat is treated as a single-slot toggle and lives on the bottom-right with Mute.
+- Ask is hidden during the Test phase.
+- Ask replies carry the learner question plus the on-screen Q&A prompt (if one is active) and the lesson vocab terms/definitions so answers stay on-topic and use the correct meaning for multi-sense words.
+- Ask includes a quick action button, "What's the answer?", that submits a canned Ask prompt to get the answer for the currently displayed learner question. It is single-shot while loading: the button becomes disabled, reads "Loading...", and ignores re-press until the response completes.
+- After any Ask response (including the answer shortcut), Ms. Sonoma always follows up with: "Do you have any more questions?"
+- Ask exit re-anchor is hardened: Done/Cancel force-stops current audio, cancels the current opening action, then speaks the captured in-flow question under
+
+### 28. src/app/session/v2/SessionPageV2.jsx (6c145f0c66305a44af55e1da37bf39428e72214ed8d3c5af2d08fe57543012db)
+- bm25: -8.6652 | relevance: 0.8965
+
+const phaseData = snapshot.phaseData && typeof snapshot.phaseData === 'object' ? Object.keys(snapshot.phaseData) : [];
+  phaseData.forEach((p) => addCandidate(candidates, p));
+
+if (!candidates.size) return null;
+
+let best = null;
+  for (const candidate of candidates) {
+    if (best === null || rank(candidate) > rank(best)) {
+      best = candidate;
+    }
+  }
+
+return best;
+};
+
+// Timeline component
+function Timeline({ timelinePhases, timelineHighlight, compact = false, onJumpPhase }) {
+  const columns = Array.isArray(timelinePhases) && timelinePhases.length > 0 ? timelinePhases.length : 5;
+  const gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
+  const containerRef = useRef(null);
+  const [labelFontSize, setLabelFontSize] = useState('1rem');
+
+// Compute a shared font size so the longest label fits within a single column
   useEffect(() => {
-    if (mediaOverlay !== 'article') return
-    const iframeEl = articleIframeRef.current
-    if (!iframeEl) return
-    userScrolledArticleRef.current = false
-    let removeListener = () => {}
-    const attach = () => {
-      const win = iframeEl.contentWindow
-      if (!win) return
-      const onScroll = () => {
-        if (!programmaticScrollRef.current) userScrolledArticleRef.current = true
-      }
-      win.addEventListener('scroll', onScroll, { passive: true })
-      removeListener = () => win.removeEventListener('scroll', onScroll)
-    }
-    if (iframeEl.contentDocument?.readyState === 'complete') {
-      attach()
-    } else {
-      const onLoad = () => attach()
-      iframeEl.addEventListener('load', onLoad)
-      return () => { iframeEl.removeEventListener('load', onLoad); removeListener() }
-    }
-    return () => removeListener()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mediaOverlay, articleResource])
+    const el = containerRef.current;
+    if (!el) return;
 
-### 13. src/app/session/webb/page.jsx (a7b429d31f81bf128bf0e5691862d600762bf49efcc66b592f939bfefa99f972)
-- bm25: -17.9231 | relevance: 0.9472
+const BASE = 16; // px for measurement
+    const MIN = 12;  // px - keep readable on small screens
+    const MAX = 20;  // px - permit larger labels on wider screens
+    const PADDING_X = 18 * 2 + 4; // left+right padding plus a little slack for borders
 
-// Inject a <style> block for highlight rules (once per document load)
-    if (!doc.getElementById('webb-hl-style')) {
-      const s = doc.createElement('style')
-      s.id = 'webb-hl-style'
-      s.textContent =
-        '.webb-hl{background:#fef08a!important;outline:2px solid #ca8a04!important;' +
-        'border-radius:3px;scroll-margin-top:80px}' +
-        '.webb-hl-active{background:#fbbf24!important;outline:2px solid #b45309!important}'
-      try { doc.head?.appendChild(s) } catch { /* ignore */ }
-    }
+const labels = (Array.isArray(timelinePhases) ? timelinePhases : []).map(k => String(phaseLabels[k] || ''));
+    if (!labels.length) return;
 
-### 14. src/app/api/webb-video-interpret/route.js (09dd767721d3396267318d2501c3a620f8dfdb9a10af9080f95721ad12d1d88c)
-- bm25: -17.6262 | relevance: 0.9463
+const compute = () => {
+      const totalWidth = el.clientWidth || 0;
+      if (totalWidth <= 0) { setLabelFontSize('1rem'); return; }
+      const colWidth = totalWidth / columns;
+      const available = Math.max(0, colWidth - PADDING_X);
 
-const raw = await callGPT(
-      apiKey,
-      `You help Mrs. Webb pick 3 chapter sections from a YouTube video that best illustrate a lesson. ` +
-      `${objClause || ''}` +
-      `Reply ONLY in this exact format — 3 picks, no other text:\n\n` +
-      `PICK 1:\nINDEX: <number>\nINTRO: <one warm sentence Mrs. Webb says to ${addressAs}>\n\n` +
-      `PICK 2:\nINDEX: <number>\nINTRO: <one warm sentence Mrs. Webb says to ${addressAs}>\n\n` +
-      `PICK 3:\nINDEX: <number>\nINTRO: <one warm sentence Mrs. Webb says to ${addressAs}>`,
-      `Grade: ${grade}. Lesson: "${lessonTitle}".\n\nChapters:\n${chapterList}`,
-      400,
-    )
+### 29. src/app/facilitator/generator/counselor/GoalsClipboardOverlay.jsx (a5e0f50a117448b2ccf00a67f4d4400846960e750dc76d0e755029cdea07fc3e)
+- bm25: -8.6267 | relevance: 0.8961
 
-### 15. src/app/session/webb/page.jsx (0fd85b462095854d36a8b6071701be23e25421041717bca7054ff6ebc2fb6eb2)
-- bm25: -17.4863 | relevance: 0.9459
+return (
+    <div 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10000,
+        padding: 16
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: 12,
+          maxWidth: 480,
+          width: '100%',
+          maxHeight: '85vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+          overflow: 'hidden'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid #e5e7eb',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexShrink: 0
+        }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: '#1f2937' }}>
+              📋 {contextText}
+            </div>
+            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+              Persistent notes that Mr. Mentor always sees
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: 24,
+              color: '#9ca3af',
+              cursor: 'pointer',
+              padding: 4,
+              lineHeight: 1
+            }}
+          >
+            ×
+          </button>
+        </div>
 
-// ── Preload resources for lesson ──────────────────────────────────────
-  // Video and article are fetched in parallel but independently so each
-  // resolves as soon as it's ready (video ~3s, article ~4s).
-  // `objContext` is a hint string of remaining objectives used to shape the search.
-  const preloadResources = useCallback((lesson, objContext = '') => {
-    setVideoResource(null)
-    setArticleResource(null)
-    setVideoLoading(true)
-    setArticleLoading(true)
-    shownVideoIdsRef.current   = []
-    lowTierMsgSentRef.current  = false
-    noVideoMsgSentRef.current  = false
+### 30. docs/brain/v2-architecture.md (c7863e1410f4c287352ee79a9ea8fa9cfa8f6dc2f33d4653981cbb5f7690accc)
+- bm25: -8.5826 | relevance: 0.8956
 
-const post = (type) => fetch('/api/webb-resources', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lesson, type, context: objContext, preferredSources: articleSources }),
-    })
+**Key Files:**
+- `SessionPageV2.jsx` lines 1304-1340: `startSession()` function with video unlock
+- `SessionPageV2.jsx` lines 1495-1507: Video element with preload settings and onLoadedMetadata handler
+- `AudioEngine.jsx` lines 617-626: `#startVideo()` method using `playVideoWithRetry()`
+- `utils/audioUtils.js` lines 10-68: `playVideoWithRetry()` utility with iOS edge case handling
 
-// Video
-    post('video')
-      .then(r => r.json())
-      .then(data => {
-        if (data.video) {
-          setVideoResource(data.video)
-          if (data.video.videoId) shownVideoIdsRef.current = [data.video.videoId]
-        }
-      })
-      .catch(() => {})
-      .finally(() => setVideoLoading(false))
+**What NOT To Do:**
+- ❌ Don't add `autoPlay` prop - violates Chrome policy and defeats unlock pattern
+- ❌ Don't pause video when audio stops - video loops continuously (brand immersion)
+- ❌ Don't try to sync video play/pause with isSpeaking state - video always loops once unlocked
+- ❌ Don't use simple `video.play()` without retry logic - breaks on iOS Safari
 
-// Article
-    post('article')
-      .then(r => r.json())
-      .then(data => {
-        if (data.article?.html) {
-          setArticleResource(data.article)
-        } else {
-          // Retry once after a short pause (handles transient Wikipedia timeouts)
-          return new Promise(res => setTimeout(res, 2000))
-            .then(() => post('article'))
-            .then(r => r.json())
-            .then(data2 => { if (data2.article?.html) setArticleResource(data2.article) })
-        }
-      })
-      .catch(() => {})
-      .finally(() => setArticleLoading(false))
-  }, [])
+### TeachingController Component
+**Owns:**
+- Teaching stage machine (idle → definitions → examples)
+- Sentence navigation state (current index, total count)
+- Gate button state (Repeat/Next visibility)
+- Vocabulary and example sentences
+- **GPT-based content generation** (definitions, examples, gate prompts)
+- **Background prefetching** (zero-latency teaching flow)
 
-### 16. src/app/session/webb/page.jsx (c7276e0f2069e425de763d701c62396a6ee51efed5940c401b8360326ed7ed8b)
-- bm25: -17.3347 | relevance: 0.9455
+**Architecture (matches V1 `useTeachingFlow.js`):**
+- Definitions and examples are **NOT read from JSON** - they are generated by GPT
+- Vocab terms are extracted from `lessonData.vocab` (just the terms, not definitions)
+- `#fetchDefinitionsFromGPT()` calls `/api/sonoma` with kid-friendly instruction
+- `#fetchExamplesFromGPT()` calls `/api/sonoma` for real-world usage examples
+- `#fetchGatePromptFromGPT(stage)` calls `/api/sonoma` for sample questions
+- GPT responses are split into sentences via `#splitIntoSentences()` for pacing
+- Constructor accepts `lessonMeta: { subject, difficulty, lessonId, lessonTitle }`
 
-async function interpretVideo() {
-    const vid = videoResource?.videoId
-    if (!vid || interpretingVideo) return
+### 31. src/app/HeaderBar.js (0b79436d351739b4da95cd4886c38741eb1ac314de43cfefd896b4d9584903af)
+- bm25: -8.5644 | relevance: 0.8954
 
-// Fast path: we already know this video has neither captions nor chapters.
-    // Skip the API round-trip and tell the student up front.
-    if (videoResource.hasCaptions === false && videoResource.hasChapters === false) {
-      const isHigh = videoResource.relevanceTier !== 'low'
-      addMsg(isHigh
-        ? "This video is a great match, but it doesn't have chapters so I can't jump to specific moments. Go ahead and watch it — ask me about anything that pops up!"
-        : "I found this video because it covers some related ideas, but without chapters I can't take you to specific parts. Give it a watch and bring any questions my way!"
-      )
-      return
-    }
+return (
+			<>
+			<header style={{
+				position:'fixed', top:0, left:0, right:0, zIndex:1000,
+				display:'flex', alignItems:'center',
+				height: headerHeight,
+				paddingLeft: headerPadLeft,
+				paddingRight: headerPadRight,
+				background:'rgba(255,255,255,0.85)',
+				backdropFilter:'blur(6px)',
+				WebkitBackdropFilter:'blur(6px)',
+				borderBottom:'1px solid #e5e7eb',
+				boxShadow:'0 4px 12px -2px rgba(0,0,0,0.06)'
+			}}>
+				{/* Left area mirrors right nav width to keep center truly centered */}
+				<div ref={brandContainerRef} style={{ width: navWidth, display:'flex', alignItems:'center' }}>
+					<Link ref={brandLinkRef} href="/" style={{ display:'inline-flex', alignItems:'center', gap:BRAND_GAP, textDecoration:'none', color:'inherit' }}>
+						<Image
+							ref={brandImgRef}
+							src="/ms-sonoma.png"
+							alt="Ms. Sonoma logo"
+							width={40}
+							height={40}
+							priority
+							style={{
+								borderRadius:10,
+								flexShrink:0,
+								width:'clamp(28px, 5vw, 40px)',
+								height:'clamp(28px, 5vw, 40px)'
+							}}
+						/>
+						<span
+							ref={brandTextRef}
+							style={{
+								fontWeight:700,
+								fontSize: brandFitSize ? brandFitSize : BRAND_FONT,
+								lineHeight:1.1,
+								whiteSpace:'nowrap',
+								// Only hide the brand text when on the Session page at small widths.
+								display: (pathname.startsWith('/session') && viewportWidth < 650) ? 'none' : 'inline'
+							}}
+						>
+							Ms. Sonoma
+						</span>
+					</Link>
+				</div>
 
-### 17. src/app/api/webb-interpret/route.js (793a208d767160ee419b00d67002dcfd0fd8181e5bdc556c198581810a2ace9b)
-- bm25: -17.2812 | relevance: 0.9453
+### 32. src/app/session/v2/SessionPageV2.jsx (5cd4c338b6c7df1b38acdf87984ee9f22f598304e011c8692d61a9d59a68f223)
+- bm25: -8.4917 | relevance: 0.8946
 
-const res = await fetch(OPENAI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        messages: [
-          {
-            role: 'system',
-            content:
-              `You help Mrs. Webb, an AI teacher, guide a student through an article. ` +
-              `${nameClause} ` +
-              `${objClause}` +
-              `Pick 2–3 passages from DIFFERENT sections of the article body — NOT the opening ` +
-              `paragraph, NOT photo captions, NOT image descriptions, NOT table entries. ` +
-              `Each passage must be 2 consecutive verbatim sentences from the article. ` +
-              `Choose passages that together directly address the learning objectives above ` +
-              `(or tell a great educational story about the topic if no objectives are listed) — ` +
-              `concrete facts, surprising details, important causes or effects. ` +
-              `List them in the order they appear in the article (top to bottom). ` +
-              `Then write ONE warm intro sentence Mrs. Webb says before starting — ` +
-              `address the student as "${addressAs}" (never "class", "students", or "everyone").`,
-          },
-          {
-            role: 'user',
-            content:
-              `Grade: ${grade}. Lesson: "${lessonTitle}".\n\n` +
-              `Return exactly this format:\n` +
-              `EXCERPT 1: [2 verbatim sentences from somewhere past the first paragraph]\n` +
-              `EXCERPT 2: [2 verbatim sentences from a different section]\n` +
-              `EXCERPT 3: [2 verbatim sentences from a different section]\n` +
-              `INTRO: [Mrs. Webb's one warm lead-in sentence]\n\n` +
-              `
+{engineState !== 'playing' && showRepeatButton && (
+              <button
+                type="button"
+                onClick={replayTTS}
+                aria-label="Repeat"
+                title="Repeat"
+                style={{
+                  background: '#1f2937',
+                  color: '#fff',
+                  border: 'none',
+                  width: 'clamp(34px, 6.2vw, 52px)',
+                  height: 'clamp(34px, 6.2vw, 52px)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+                }}
+              >
+                <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 1v6h-6" />
+                  <path d="M7 23v-6h6" />
+                  <path d="M3.51 9a9 9 0 0114.13-3.36L17 7" />
+                  <path d="M20.49 15A9 9 0 015.36 18.36L7 17" />
+                </svg>
+              </button>
+            )}
 
-### 18. src/app/api/webb-video-interpret/route.js (087b5f5b0774ede28725e1a6613335f57740bf47fef863941db9ce8ebba1ac31)
-- bm25: -16.7451 | relevance: 0.9436
+### 33. docs/brain/v2-architecture.md (07100d0540a5bc32812eb611909832cc0b8baa09ad9bbd8bb32fb71cf34aae1c)
+- bm25: -8.4660 | relevance: 0.8944
 
-/**
- * /api/webb-video-interpret
- * Identifies 3 key moments from a YouTube video for Mrs. Webb to guide the student through.
- *
- * Strategy (in order):
- *  1. youtube-transcript — full caption text, best quality. Often blocked by YouTube
- *     from datacenter/cloud IPs (intentional anti-bot IP filtering).
- *  2. YouTube Data API v3 chapters — parses chapter timestamps from the video description.
- *     Uses the existing YOUTUBE_API_KEY. Works reliably because it uses the official API.
- *     Most educational videos include chapter markers.
- *  3. { error: 'transcript_unavailable' } — only reached if both paths fail.
- *
- * POST { videoId, lessonTitle, grade, learnerName?, objectives?, completedIndices? }
- * Returns { moments: [{ title, startSeconds, endSeconds, intro }] }
- *       | { error: 'transcript_unavailable' }
- */
-import { NextResponse }      from 'next/server'
-import { YoutubeTranscript } from 'youtube-transcript'
+**User Flow:**
+1. Learner clicks Start Lesson
+2. Discussion phase loads, plays greeting: "Hi [name], ready to learn about [topic]?"
+3. Learner clicks "Begin" button
+4. Teaching phase starts with play timer (green) - opening action buttons available
+5. Learner can interact with opening actions during play time in teaching phase
+6. Play timer expires → PlayTimeExpiredOverlay → work timer starts → teaching questions begin
 
-const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-const YT_VIDEOS    = 'https://www.googleapis.com/youtube/v3/videos'
+---
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+## Why V2 Exists
 
-async function callGPT(apiKey, system, user, maxTokens) {
-  const r = await fetch(OPENAI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-      max_tokens: maxTokens,
-      temperature: 0.3,
-    }),
-  })
-  const j = await r.json()
-  return j.choices?.[0]?.message?.content?.trim() || ''
-}
+The v1 session page (`src/app/session/page.js`) is a 9,797-line monolith managing 30+ coupled state machines simultaneously:
+- Phase/subPhase navigation
+- Teaching flow (definitions → examples with sentence-by-sentence gating)
+- Audio playback (HTMLAudio vs WebAudio vs Synthetic paths)
+- Caption synchronization
+- Video coordination
+- Question tracking (comprehension, exercise, worksheet, test)
+- Discussion activities (Ask, Riddle, Poem, Story, Fill-in-Fun)
+- Snapshot persistence
+- Timer systems (session timer + 11 phase timers + speech guard)
+- Keyboard hotkeys
 
-### 19. src/app/session/webb/page.jsx (d298bfa75aa1bda58d27a898fa14e476dc6607d05ce31d4427efc47cf2a1cfe7)
-- bm25: -16.7182 | relevance: 0.9436
+**Problem:** All systems share state directly via props drilling (~150 props to each hook). Every fix breaks something else because there are no boundaries. Example: Skip hotkey clears audio, but Next Sentence hotkey fires immediately after, advancing teaching stage while audio system thinks playback is still active → examples stage plays no audio.
 
-// Phase 0: detect a UI question / feature intent
-    const uiSlug = detectUiQuestion(text)
-    if (uiSlug) {
-      const cfg = UI_FAQ[uiSlug]
-      uiFaqPendingRef.current = uiSlug
-      if (cfg.actionSlug) {
-        // Action-capable feature: name the resource, give button location, ask to open
-        // Jump straight to action-pending phase (skip the generic confirm → answer steps)
-        uiFaqActionPendingRef.current = true
-        let intro
-        if (uiSlug === 'video') {
-          const title = videoResource?.title && !videoResource?.unavailable
-            ? `"${videoResource.title}"`
-            : 'one picked just for your lesson'
-          intro = `There's a video for you — ${title}! To watch it, ${cfg.location}. Want me to open it for you right now?`
-        } else if (uiSlug === 'article') {
-          const title = articleResource?.title
-            ? `"${articleResource.title}"`
-            : 'one about your lesson topic'
-          intro = `There's a Wikipedia article ready for you — ${title}! To read it, ${cfg.location}. Would you like me to open it for you?`
-        } else {
-          // Generic fallback for any future actionSlug entries
-          intro = `${cfg.answer} ${cfg.actionPrompt}`
-        }
-        addMsg(intro)
-      } else {
-        // Non-action feature: standard confirm → answer flow
-        addMsg(cfg.confirm)
-      }
-      return
-    }
-    // ── Normal API call ───────────────────────────────────────────────────
-    const userMsg = { role: 'user', content: text }
-    const nextHistory = [...chatMessages, userMsg]
-    setChatMessages(nextHistory)
-    setChatLoading(true)
-    try {
-      const res = await fetch('/api/webb-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify
+**Solution:** V2 implements clean architectural boundaries with event-driven communication. Systems don't manipulate each other's state—they emit events and react to events.
 
-### 20. src/app/session/webb/page.jsx (68ea28d8bd48ecc0ce30dadbd1edcc874cc585528275c615ae6c5790955e8341)
-- bm25: -16.4516 | relevance: 0.9427
+---
 
-// ── Refresh a media resource (context-aware) ──────────────────────────
-  async function refreshMedia(type) {
-    setRefreshingMedia(true)
-    // Reset tier-message flags so a newly fetched video can say its own message
-    if (type === 'video') { lowTierMsgSentRef.current = false; noVideoMsgSentRef.current = false }
-    // Save current article so we can restore it if the refresh fails/returns nothing
-    const savedArticle = articleResource
-    // Clear immediately so the "Finding an article…" spinner appears while loading
-    if (type === 'article') setArticleResource(null)
-    const recentContext = chatMessages.slice(-6)
-      .filter(m => m.role === 'user')
-      .map(m => m.content)
-      .join('. ')
-    // Narrow search to remaining (incomplete) objectives
-    const remaining = objectives
-      .filter((_, i) => !completedObj.includes(i))
-      .join('; ')
-    const contextWithObj = [remaining, recentContext].filter(Boolean).join('. ')
-    try {
-      const res = await fetch('/api/webb-resources', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lesson: selectedLesson,
-          type,
-          context: contextWithObj,
-          excludeSourceId:        type === 'article' ? (articleResource?.sourceId || '') : undefined,
-          preferredSources:       type === 'article' ? articleSources : undefined,
-          excludeVideoIds:        type === 'video'   ? shownVideoIdsRef.current      : [],
-        }),
-      })
-      const data = await res.json()
-      if (type === 'video' && data.video) {
-        setVideoResource(data.video)
-        if (data.video.videoId)
-          shownVideoIdsRef.current = [...new Set([...shownVideoIdsRef.current, data.video.videoId])]
-      }
-      if (type === 'artic
+## Migration Strategy: Parallel Implementation (Option C)
 
-### 21. src/app/session/webb/page.jsx (7fb451cec3eb155c39a6982ae83c2d6b1dfa33de9251d0188bf430c66145cfc4)
-- bm25: -16.0951 | relevance: 0.9415
+### 34. src/app/facilitator/learners/components/LearnerEditOverlay.jsx (7fc447d232e02b2af5f1c2562c6364d6959bbff2928c4091794f6fa4ca4bdc34)
+- bm25: -8.4463 | relevance: 0.8941
 
-// ── Re-apply passage highlights every time the article overlay opens ──
-  // The iframe unmounts when the overlay closes, destroying injected <span>s.
-  // Stored excerpts let us re-highlight as soon as the iframe is ready again.
-  useEffect(() => {
-    if (mediaOverlay !== 'article' || !articlePassageExcerpts.length) return
-    const iframeEl = articleIframeRef.current
-    if (!iframeEl) return
-    const apply = () => {
-      const els = highlightPassages(articlePassageExcerpts)
-      passageEls.current = els
-    }
-    if (iframeEl.contentDocument?.readyState === 'complete') {
-      apply()
-    } else {
-      iframeEl.addEventListener('load', apply, { once: true })
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mediaOverlay, articlePassageExcerpts])
+{/* Tooltip */}
+											{showTooltip(`phase-${phase}`) && (
+												<div style={{
+													position: 'absolute',
+													top: '100%',
+													left: 0,
+													marginTop: 6,
+													background: '#1f2937',
+													color: '#fff',
+													padding: '8px 12px',
+													borderRadius: 6,
+													fontSize: 12,
+													lineHeight: 1.4,
+													boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+													zIndex: 10,
+													maxWidth: 280,
+													whiteSpace: 'normal'
+												}}>
+													<strong>Play:</strong> Time from "Begin {PHASE_DISPLAY_NAMES[phase]}" to "Go" button (games/exploration).
+													<br />
+													<strong>Work:</strong> Time from "Go" to next phase (actual lesson work).
+												</div>
+											)}
+										</div>
 
-### 22. src/app/session/webb/page.jsx (24dc909d6b9a6b972111b2341ca480cc73469c516c9e35a602a22fe921840dd8)
-- bm25: -16.0532 | relevance: 0.9414
+### 35. src/app/session/v2/OpeningActionsController.jsx (e7f4693ec058de197924990621df30dff2e7873f587566d9e62dda2ba252c253)
+- bm25: -8.4262 | relevance: 0.8939
 
-// Get Mrs. Webb's opening greeting
-    try {
-      const res = await fetch('/api/webb-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [], lesson }),
-      })
-      const data = await res.json()
-      const reply = data.reply || `Hi! I'm Mrs. Webb. Today we're exploring "${lesson.title}". What do you already know about this topic?`
-      const firstMsg = { role: 'assistant', content: reply }
-      setChatMessages([firstMsg])
-      addMsg(reply)
-    } catch {
-      const fallback = `Hi! I'm Mrs. Webb. Let's explore "${lesson.title}" together! What do you already know?`
-      setChatMessages([{ role: 'assistant', content: fallback }])
-      addMsg(fallback)
-    }
+const ensureTemplatePromise = () => {
+      if (!this.#fillInFunTemplatePromise) {
+        const instruction = [
+          `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(this.#learnerGrade, this.#difficulty)}`,
+          `Create ONE short Mad Libs template sentence about ${this.#subject}.`,
+          'The template MUST contain these blanks in this exact order:',
+          '[ADJECTIVE] then [VERB] then [PLACE] then [ADJECTIVE] then [NOUN] then [ADJECTIVE] then [NUMBER].',
+          'Return ONLY the template sentence. No intro. No explanation. No quotes. No markdown.',
+          'Do not put two blanks adjacent; ensure normal spaces/punctuation between blanks.'
+        ].join(' ');
 
-setPhase(PHASE.CHATTING)
-
-// Preload media + generate objectives in background
-    preloadResources(lesson)
-    generateObjectives(lesson)
-  }, [preloadResources, generateObjectives])
-
-// ── Send chat message ─────────────────────────────────────────────────
-  const sendMessage = useCallback(async (text) => {
-    if (!text.trim() || chatLoading) return
-    addStudentLine(text)
-
-// ── Video trouble intercept ───────────────────────────────────────────
-    // Catches "black screen", "video not working", etc. and gives a canned
-    // explanation about YouTube being blocked by Screen Time / parental controls.
-    if (detectVideoTrouble(text)) {
-      addMsg(VIDEO_TROUBLE_MSG)
-      return
-    }
-
-### 23. src/app/api/webb-video-interpret/route.js (c31d60b44859e1b211e5d8500b9b72efa873225e68419f9e287b558340e22679)
-- bm25: -16.0327 | relevance: 0.9413
-
-// Parse chapter markers from a YouTube video description.
-// Accepts: "0:00 Intro", "00:00 Intro", "1:23:45 Deep Dive"
-function parseChapters(description, totalSec) {
-  const chapters = []
-  for (const line of description.split('\n')) {
-    const m = line.match(/^(\d+):(\d{2})(?::(\d{2}))?\s+(.{3,80})/)
-    if (!m) continue
-    const hasHours = m[3] !== undefined
-    const h   = hasHours ? parseInt(m[1]) : 0
-    const min = hasHours ? parseInt(m[2]) : parseInt(m[1])
-    const sec = hasHours ? parseInt(m[3]) : parseInt(m[2])
-    chapters.push({ startSec: h * 3600 + min * 60 + sec, title: m[4].trim() })
-  }
-  // Attach end times (next chapter start − 1, or totalSec for the last)
-  return chapters.map((c, i) => ({
-    ...c,
-    endSec: (chapters[i + 1]?.startSec ?? totalSec) - 1,
-  }))
-}
-
-// ── Path 2: chapter-based key moments ────────────────────────────────────────
-async function momentsfromChapters(videoId, ytKey, lessonTitle, grade, addressAs, apiKey, objClause) {
-  if (!ytKey) return null
-  try {
-    const r    = await fetch(`${YT_VIDEOS}?part=snippet,contentDetails&id=${videoId}&key=${ytKey}`)
-    const data = await r.json()
-    const item = data.items?.[0]
-    if (!item) return null
-
-const desc     = item.snippet?.description || ''
-    const totalSec = isoDurToSec(item.contentDetails?.duration)
-    const chapters = parseChapters(desc, totalSec)
-    if (chapters.length < 2) return null
-
-// Ask GPT to pick the 3 most lesson-relevant chapters and write intros
-    const chapterList = chapters.map((c, i) => {
-      const mm = Math.floor(c.startSec / 60)
-      const ss = String(c.startSec % 60).padStart(2, '0')
-      return `${i}: [${mm}:${ss}] ${c.title}`
-    }).join('\n')
-
-### 24. src/app/api/webb-resources/route.js (2483fada8d0ed482cee08991261a148201d4e923f30daaaab5dc2b0adac8b1bf)
-- bm25: -15.6879 | relevance: 0.9401
-
-return NextResponse.json({
-      ...(videoResult   ? { video:   videoResult   } : {}),
-      ...(articleResult ? { article: articleResult } : {}),
-    })
-  } catch (e) {
-    console.error('webb-resources error:', e)
-    return NextResponse.json({ error: 'Resource generation failed' }, { status: 500 })
-  }
-}
-
-### 25. src/app/session/webb/page.jsx (f6912fd314ec4145e5d68594701d32ec9bf674e9cdc78ec45caff2ea50c336cf)
-- bm25: -15.2960 | relevance: 0.9386
-
-// ── Assessment push: ask the student to demonstrate objective comprehension ──
-      // Build snapshot of remaining objectives at the moment the tour ends
-      const remaining = objectives.filter((_, i) => !completedObj.includes(i))
-      try {
-        const assessRes = await fetch('/api/webb-chat', {
+this.#fillInFunTemplatePromise = fetch('/api/sonoma', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages:            chatMessages,
-            lesson:              selectedLesson,
-            media:               { video: videoResource || null, article: articleResource ? { title: articleResource.title, source: articleResource.source } : null },
-            remainingObjectives: remaining,
-            assessmentPush:      true,
-          }),
+          body: JSON.stringify({ instruction, innertext: '', skipAudio: true })
         })
-        const assessData = await assessRes.json()
-        const assessReply = assessData.reply
-        if (assessReply) {
-          const aMsg = { role: 'assistant', content: assessReply }
-          setChatMessages(prev => [...prev, aMsg])
-          addMsg(assessReply)
-          await waitForTTSIdle()
-          // Check if the student's previous responses already covered anything
-          setObjectives(obj => {
-            setCompletedObj(comp => {
-              checkObjectivesAfterTurn([...chatMessages, aMsg], obj, comp)
-              return comp
-            })
-            return obj
+          .then(async (res) => {
+            if (!res.ok) throw new Error('Fill-in-Fun generation failed');
+            const data = await res.json();
+            return String(data?.reply || '').trim();
           })
-        } else {
-          addMsg('Great job watching those key moments! Tell me: what\'s the most interesting thing you just learned?')
-          await waitForTTSIdle()
-        }
-      } catch {
-        addMsg('Those were the key moments! What was the most interesting part for you?')
-        await waitForTTSIdle()
+          .catch((err) => {
+            console.error('[OpeningActionsController] Fill-in-Fun error:', err);
+            return '';
+          });
       }
-    } catch (e) { console.error('[webb] interpretVideo error:', e) }
-    s
+      return this.#fillInFunTemplatePromise;
+    };
 
-### 26. src/app/session/webb/page.jsx (e0dd867c52c29fb194466b8ffcbe027541dacfc2a9057a37e44da5571587fe15)
-- bm25: -15.0826 | relevance: 0.9378
+// Start prefetch immediately, then speak the hardwired intro.
+    const templatePromise = ensureTemplatePromise();
+    await this.#audioEngine.speak(intro);
 
-setInterpretingVideo(true)
-    setMediaOverlay('video')
-    setVideoMoments([])
-    try {
-      const res = await fetch('/api/webb-video-interpret', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          videoId:          vid,
-          lessonTitle:      selectedLesson?.title || '',
-          grade:            selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
-          learnerName:      learnerName.current || '',
-          objectives,
-          completedIndices: completedObj,
-        }),
-      })
-      const data = await res.json()
-      if (data.error === 'transcript_unavailable') {
-        const isHigh = videoResource?.relevanceTier !== 'low'
-        addMsg(isHigh
-          ? "This video looks like a great match, but it doesn't have chapters so I can't take you to specific moments. Go ahead and watch — ask me anything that comes up!"
-          : "I found this video because it relates to some of our ideas, but it doesn't have chapters so I can't jump to key parts. Feel free to watch what's here — bring any questions my way!"
-        )
-        setInterpretingVideo(false)
-        return
-      }
-      const moments = data.moments || []
-      if (!moments.length) {
-        addMsg("I couldn't identify the key moments in this video. Try watching it and ask me about anything interesting!")
-        return
-      }
-      setVideoMoments(moments)
-      for (let i = 0; i < moments.length; i++) {
-        const m = moments[i]
-        if (m.intro) addMsg(m.intro)
-        await waitForTTSIdle()
-        addMomentMsg(`\uD83C\uDFA5 ${m.title} \u00B7 ${formatVideoTime(m.startSeconds)}`, i)
-        const segMs = Math.max(10, m.endSeconds - m.startSeconds) * 1000
-        playSegment(m.startSeconds, m.
+const templateRaw = await templatePromise;
+    this.#fillInFunTemplatePromise = null;
 
-### 27. src/app/session/webb/page.jsx (b03600037d8ebdb65c6178ec69d7621e41a768370eb2f021fdf926bb73e12906)
-- bm25: -14.4694 | relevance: 0.9354
+### 36. docs/brain/story-feature.md (47b7112fa17bfb5f0221b18351895de13c106fd2c67fbfea01dda4cb32a9d469)
+- bm25: -8.4098 | relevance: 0.8937
 
-{/* Overlay buttons — bottom left: Video + Article (chatting phase) */}
-            {isChatting && (
-              <div style={{ position: 'absolute', bottom: 14, left: 14, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6, zIndex: 10 }}>
-                {(videoLoading || articleLoading) && (
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', background: 'rgba(0,0,0,0.45)', borderRadius: 6, padding: '2px 7px', letterSpacing: '0.02em' }}>
-                    Searching the web…
-                  </span>
-                )}
-                <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={handleVideoButtonClick}
-                  aria-label="Watch a video"
-                  title={videoLoading ? 'Loading video…' : videoResource ? 'Watch a video' : 'Loading video…'}
-                  style={{ ...overlayBtnStyle, background: mediaOverlay === 'video' ? C.accent : '#1f2937', opacity: videoLoading ? 0.55 : 1 }}
-                >
-                  {videoLoading
-                    ? <svg style={{ width: '55%', height: '55%', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
-                    : <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-                  }
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setMediaOverlay(v => v === 'article' ? null : 'article') }}
-                  aria-label="Read Wikipedia article"
+### Story Continuation
+1. Child clicks "Story" button
+2. Ms. Sonoma: **Briefly recounts** (first sentence only): "The dragon wanted to help the princess."
+3. Ms. Sonoma: "What would you like to happen next?"
+4. Ms. Sonoma: **Suggests possibilities** (AI-generated): "You could say: the dragon flies away, or they find a map, or a wizard appears."
+5. Child: "The dragon flies the princess to find treasure"
+6. Ms. Sonoma: *Continues story* "The dragon spread its wings and flew the princess high above the clouds. Together they spotted a sparkly treasure chest below. To be continued."
 
-### 28. src/app/api/webb/[...path]/route.js (fc074f0d53fad54489a7cce75723e3274ce1339ed3b8cd9a606921c7296a7711)
-- bm25: -14.2994 | relevance: 0.9346
+### 37. cohere-changelog.md (c5d179f11b440c90046bbe102135795b3225c69cec71e2403d113e198431f7d4)
+- bm25: -8.3753 | relevance: 0.8933
 
-// Next.js catch-all proxy → Mrs. Webb Cohere server (http://127.0.0.1:7720)
-//
-// Forwards:
-//   GET  /api/webb/health                   → GET  /health
-//   GET  /api/webb/lesson/list              → GET  /mrs-webb/lesson/list
-//   POST /api/webb/lesson/start             → POST /mrs-webb/lesson/start
-//   POST /api/webb/lesson/item-done         → POST /mrs-webb/lesson/item-done
-//   POST /api/webb/lesson/respond           → POST /mrs-webb/lesson/respond   ← safety-filtered
-//   GET  /api/webb/lesson/status            → GET  /mrs-webb/lesson/status
-//   POST /api/webb/lesson/remediate         → POST /mrs-webb/lesson/remediate
-//   POST /api/webb/lesson/remediation-done  → POST /mrs-webb/lesson/remediation-done
-//   GET  /api/webb/lesson/reward            → GET  /mrs-webb/lesson/reward
-//   POST /api/webb/lesson/close             → POST /mrs-webb/lesson/close
-//
-// Safety:
-//   • POST /respond: student `text` is validated via contentSafety before forwarding.
-//   • All other student-initiated POST bodies are passed through (no user-generated text).
-//   • The Cohere server enforces a separate safety layer on its end.
-//   • No OpenAI calls are made here — Cohere handles LLM.
+2026-03-13T01:00:00Z | Rebuild: Mrs. Webb — replaced freeform chat design with full Cohere lesson-flow state machine per `C:\Users\atari\Cohere\docs\mrs_webb_ms_sonoma_design.md`. New architecture: (1) `src/app/api/webb/[...path]/route.js` — Next.js catch-all proxy to local Cohere server at `http://127.0.0.1:7720` (configurable via `WEBB_SERVER_URL` env). Forwards all Cohere API paths (`/health`, `/mrs-webb/lesson/*`). Safety layer: `validateInput` on student `text` in `/lesson/respond`; blocked replies return a safe Mrs. Webb nudge (HTTP 200) instead of hard error. (2) `src/app/session/webb/page.jsx` — Full state machine: `list → starting → presenting → probing → remediating → complete`. Components: `LessonList` (fetches `/lesson/list`), `WebbBubbles` (animated teacher speech bubbles), `ContentViewer` (routes to `VideoPlayer` or `TextReader` by `content_type`), `StudentInput` (`/lesson/respond`), `RemediationPanel` (3 options: rewatch/explain/read_aloud; respects `rewatch_blocked`; inline video re-mount on rewatch), `RewardVideo` (reward on lesson complete), progress bar in header. Session close via `/lesson/close` on exit. Old freeform OpenAI-based route removed. Recon prompt: "Mrs. Webb lesson flow session page ContentViewer VideoPlayer TextReader RemediationPanel RewardVideo state machine presenting probing remediating complete Cohere API proxy".
+2026-03-13T00:00:00Z | Feature: Mrs. Webb — chat-style educational AI teacher. New button on `/learn` page (teal, 👩‍🏫, navigates to `/session/webb`). Full-page chat UI at `src/app/session/webb/page.jsx`: header with own back button + teal palette; chat bubble list (webb left / student right); textarea + Send; safety notice banner; typing indicator; char-limit guard (400 chars). API at `src/app/api/webb/route.js`: POST accep
 
-import { NextResponse } from 'next/server'
-import { validateInput, getFallbackResponse } from '@/lib/contentSafety'
+### 38. docs/brain/AGENTS.md (b2f5233067954d8765d14d37c50da1667258410571fc1e1f70b436a84ed53a25)
+- bm25: -8.3406 | relevance: 0.8929
 
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+AGENTS.md - Brain-Builder Rules for Codex
 
-const WEBB_BASE = process.env.WEBB_SERVER_URL || 'http://127.0.0.1:7720'
+Scope
+- Applies to the entire repository unless superseded by a more specific AGENTS.md deeper in a subfolder.
+- Instruction precedence: user > developer > this AGENTS.md > repo norms.
 
-// Paths that live directly under / on the Cohere server (not under /mrs-webb/)
-const ROOT_PATHS = new Set(['health'])
+Ms. Sonoma App Overview
+- Purpose: kid-facing tutor voice that delivers short, warm, stateless lines; plus adult-facing paperwork to evidence comprehension for homeschool/small classrooms.
+- Roles: Brain (Codex) steers Copilot; Copilot enforces rules/templates; Ms. Sonoma outputs only final kid-facing text.
+- Session model: conceptually one session, implemented as stateless turns; we direct phase progression externally.
+- Phases allowed: Opening, Teaching, Repeat, Transition, Comprehension (Ask/Feedback), Closing — exactly one phase worth of content per turn.
+- Turn model: Opening -> Teaching -> Repeat/Transition -> Comprehension -> Closing.
+- Payload constraints: no UI/capability talk, no files/vars/APIs/tools, no placeholders; ASCII-only punctuation; 6-12 words per sentence; one idea per sentence; warm tone.
+- Adult artifacts (developer-only): progress logs, mastery summaries, printable proof artifacts; never mixed into child speech.
 
-### 29. src/app/session/webb/page.jsx (f23f43ab857951056fdb37012588db7fd1592cf77451981c95007a98e2256e21)
-- bm25: -14.2323 | relevance: 0.9343
+Mission
+- Be the Brain-builder for GitHub Copilot.
+- Talk to the user in their style (plain, non-technical) while translating their intent into precise, drift-proof Copilot instructions.
+- When asked to update `.github/copilot-instructions.md`, always archive the previous version and enforce backup retention.
 
-// ── UI FAQ intercept ──────────────────────────────────────────────────
-    // Phase 2: action yes/no ("Want me to open it?")
-    if (uiFaqActionPendingRef.current && uiFaqPendingRef.current) {
-      if (!isYes(text) && !isNo(text)) {
-        // Unrecognized — clear FAQ state and fall through to AI chat
-        uiFaqPendingRef.current = null
-        uiFaqActionPendingRef.current = false
-      } else {
-        const slug = uiFaqPendingRef.current
-        uiFaqPendingRef.current = null
-        uiFaqActionPendingRef.current = false
-        if (isYes(text)) {
-          addMsg('Sure thing! Opening it for you now.')
-          if (slug === 'video')   setMediaOverlay('video')
-          if (slug === 'article') setMediaOverlay('article')
-        } else {
-          addMsg("No problem! Just let me know if you need anything else.")
-        }
-        return
-      }
-    }
-    // Phase 1: feature confirmation yes/no ("Are you wondering about X?")
-    if (uiFaqPendingRef.current) {
-      if (!isYes(text) && !isNo(text)) {
-        // Unrecognized — clear FAQ state and fall through to AI chat
-        uiFaqPendingRef.current = null
-      } else {
-        const slug = uiFaqPendingRef.current
-        const cfg  = UI_FAQ[slug]
-        if (isNo(text)) {
-          uiFaqPendingRef.current = null
-          addMsg("No problem! Ask me anything else about our lesson.")
-        } else {
-          addMsg(cfg.answer)
-          if (cfg.actionSlug && cfg.actionPrompt) {
-            uiFaqActionPendingRef.current = true
-            setTimeout(() => addMsg(cfg.actionPrompt), 150)
-          } else {
-            uiFaqPendingRef.current = null
+Working Model
+- Two audiences:
+  - User (natural voice): summarize, align, and confirm intent briefly.
+  - Copilot (programmer artifacts): exact, unambiguous rules, templates, validators.
+- Separation: never emit child-directed payload here; only programmer artifacts and rules.
+
+### 39. docs/brain/snapshot-persistence.md (21a8bbfae35597a8c397e2fce48a68622e36d63147cd8c10ac34190f362ea5ff)
+- bm25: -8.2746 | relevance: 0.8922
+
+**Start Over button:**
+- Confirms with user (cannot be reversed)
+- Calls `snapshotServiceRef.current.deleteSnapshot()` to clear localStorage and database
+- Calls `timerServiceRef.current.reset()` to clear timer Maps and remove all `session_timer_state:{lessonKey}:*` keys
+- Clears `resumePhase` state **and** `resumePhaseRef` to null (prevents stale closure values)
+- Calls `startSession({ ignoreResume: true })` which forces a fresh start from discussion/teaching (no resume)
+
+**Resume phase source of truth:** `startSession` reads `resumePhaseRef.current` so it always uses the latest loaded snapshot. Call sites that should never resume (Start Over, PlayTimeExpired overlay auto-start) pass `{ ignoreResume: true }` so they cannot jump to a saved phase accidentally. Resume normalization now derives the furthest saved phase from `currentPhase`, `completedPhases`, and `phaseData` keys, preferring the latest valid phase order (discussion → teaching → comprehension → exercise → worksheet → test → closing). Aliases `grading`/`congrats` map to `test`, and `complete` maps to `closing` before ranking.
+
+**Teaching resume state applied:** SessionPageV2 now passes `snapshot.phaseData.teaching` (stage, sentenceIndex, isInSentenceMode, vocabSentences, exampleSentences) into TeachingController so Resume lands on the exact teaching sentence and gate state instead of restarting definitions/examples.
+
+### 40. src/app/session/components/games/FlashCards.jsx (492a7d70b1997352eae80b62e10bf34f15628df789faa6ee3813b04de72a4be1)
+- bm25: -8.2387 | relevance: 0.8918
+
+if (screen === 'topic-complete') {
+    return (
+      <div style={frame}>
+        <style>{`
+          @keyframes flashcards-float {
+            0% { transform: translateY(0); opacity: 0.9; }
+            50% { transform: translateY(-14px); opacity: 1; }
+            100% { transform: translateY(0); opacity: 0.9; }
           }
-        }
-        return
-      }
-    }
-    // ── Seek intent: "show me the part where..." ─────────────────────────
-    if (detectSeekIntent(text) && media
+          @keyframes flashcards-slide {
+            0% { transform: translateX(-20px); opacity: 0; }
+            15% { opacity: 1; }
+            50% { transform: translateX(0); opacity: 1; }
+            85% { opacity: 1; }
+            100% { transform: translateX(20px); opacity: 0; }
+          }
+        `}</style>
 
-### 30. src/app/api/webb-video-interpret/route.js (09022e0bc2d73080b4cd711b421bc878d4956acb0ba58efaf2340244da924cca)
-- bm25: -13.6400 | relevance: 0.9317
+<div style={headerRow}>
+          <button type="button" style={softBtn} onClick={onBack}>← Back</button>
+          <div style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>Flash Cards</div>
+          <div style={{ width: 90 }} />
+        </div>
 
-const moments = []
-    for (const block of raw.split(/PICK\s+\d+:/i).slice(1)) {
-      const idxM   = block.match(/INDEX:\s*(\d+)/)
-      const introM = block.match(/INTRO:\s*(.+)/)
-      if (!idxM) continue
-      const ch = chapters[parseInt(idxM[1], 10)]
-      if (!ch) continue
-      // Play up to 60 s of the chapter (don't run into the next chapter)
-      moments.push({
-        startSeconds: ch.startSec,
-        endSeconds:   Math.min(ch.startSec + 60, ch.endSec),
-        title:        ch.title,
-        intro:        introM?.[1]?.trim() || '',
-      })
-    }
-    return moments.length >= 1 ? moments : null
-  } catch {
-    return null
-  }
-}
+<div
+          style={{
+            background: '#fff',
+            border: '2px solid #e5e7eb',
+            borderRadius: 16,
+            padding: 18,
+            textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ position: 'absolute', top: 14, left: 14, animation: 'flashcards-slide 1.2s ease-in-out infinite' }}>✨</div>
+          <div style={{ position: 'absolute', top: 14, right: 14, animation: 'flashcards-slide 1.2s ease-in-out infinite reverse' }}>✨</div>
 
-// ── Route handler ─────────────────────────────────────────────────────────────
-export async function POST(req) {
-  try {
-    const {
-      videoId          = '',
-      lessonTitle      = '',
-      grade            = 'elementary',
-      learnerName      = '',
-      objectives       = [],
-      completedIndices = [],
-    } = await req.json()
-
-const apiKey = process.env.OPENAI_API_KEY
-    const ytKey  = process.env.YOUTUBE_API_KEY
-    if (!apiKey)  return NextResponse.json({ error: 'Not configured' }, { status: 503 })
-    if (!videoId) return NextResponse.json({ error: 'No videoId'    }, { status: 400 })
-
-const addressAs = learnerName || 'you'
-
-const uncompleted = objectives.filter((_, i) => !completedIndices.includes(i))
-    const objClause = uncompleted.length
-      ? `The lesson has these uncompleted learning objectives:\n${uncompleted.map((o, i) => `${i + 1}. ${o}`).join('\n')}\n` +
-        `Pick moments that directly address one or more of these objectives. ` +
-        `Only choose moments where the content visibly teaches or demonstrates an objective. `
-      : ''
-
-### 31. src/app/api/webb-resources/route.js (7708fa9e01f96aeb56803975b5c23d4ccb47f5571a4378b8ebd90e7b973aef00)
-- bm25: -13.0025 | relevance: 0.9286
-
-// ── Generate video resource ───────────────────────────────────────────────────
-// Returns a tiered result so page.jsx can tune Mrs. Webb's dialogue:
-//   relevanceTier: 'high' (score ≥ 7) | 'low' (score 3–6)
-//   hasChapters / hasCaptions: drive Key Part behaviour
-//   unavailable: true + reason → don't show the video at all
-async function generateVideo(apiKey, ytKey, title, subject, grade, ctx, excludeVideoIds = []) {
-  // Step 1: GPT builds the best educational search query
-  const query = await callGPT(
-    apiKey,
-    'You create YouTube search queries for educational videos for children. ' +
-    'Return ONLY the search query — 4 to 7 words, no punctuation at the end, no quotes.',
-    `Lesson: "${title}". Subject: ${subject}. ${grade}.${ctx}`,
-    40,
-  )
-  const safeQuery = (query || `educational ${title}`).slice(0, 120)
-
-### 32. src/app/session/webb/page.jsx (118044bcf73a60d6010613187ad365e4bc793f9e76d51d1292893cd400e0389e)
-- bm25: -12.7503 | relevance: 0.9273
-
-// 3. Measure the target element rect and keep it updated via ResizeObserver.
-  //    Runs whenever mediaPos or mediaOverlay changes so the rect is current
-  //    immediately after the user opens or moves the overlay.
-  useEffect(() => {
-    if (!mediaOverlay) { setOverlayRect(null); return }
-    const target = (mediaPos === 'video' ? videoInnerRef : chatColRef).current
-    if (!target) return
-    const measure = () => {
-      const r = target.getBoundingClientRect()
-      if (r.width > 0 && r.height > 0)
-        setOverlayRect({ top: r.top, left: r.left, width: r.width, height: r.height })
-    }
-    measure()
-    let ro
-    if (typeof ResizeObserver !== 'undefined') {
-      ro = new ResizeObserver(measure)
-      ro.observe(target)
-    }
-    window.addEventListener('resize', measure)
-    window.addEventListener('scroll', measure, { passive: true })
-    return () => {
-      ro?.disconnect()
-      window.removeEventListener('resize', measure)
-      window.removeEventListener('scroll', measure)
-    }
-  }, [mediaPos, mediaOverlay])
-
-### 33. src/app/session/webb/page.jsx (0920c8926ee870924d7bf931159f1932cdf097d379a615dff26f98a2cd77f32a)
-- bm25: -12.7101 | relevance: 0.9271
-
-function toggleMute() {
-    setIsMuted(prev => {
-      const next = !prev
-      isMutedRef.current = next
-      if (next) skipTTS()
-      return next
-    })
-  }
-
-// ── Transcript helpers ────────────────────────────────────────────────
-  function addMsg(text) {
-    const t = String(text || '').trim()
-    if (!t) return
-    setTranscript(prev => {
-      const next = [...prev, { text: t, role: 'assistant' }]
-      setActiveIndex(next.length - 1)
-      return next
-    })
-    speakText(t)
-  }
-
-function addStudentLine(text) {
-    const t = String(text || '').trim()
-    if (!t) return
-    setTranscript(prev => [...prev, { text: t, role: 'user' }])
-  }
-
-// Like addMsg but tags the transcript entry with a passage index so the
-  // bubble renderer can show a citation link back to the article highlight.
-  function addPassageMsg(text, passageIdx) {
-    const t = String(text || '').trim()
-    if (!t) return
-    setTranscript(prev => {
-      const next = [...prev, { text: t, role: 'assistant', passageIdx }]
-      setActiveIndex(next.length - 1)
-      return next
-    })
-    speakText(t)
-  }
-
-### 34. src/app/session/webb/page.jsx (cc057c071038d8859bbc2479a690dad086dda86402dec50cd67eae60b85bc46d)
-- bm25: -12.4896 | relevance: 0.9259
-
-// ── Media resources ──────────────────────────────────────────────────
-  const [videoResource, setVideoResource]       = useState(null) // {videoId,embedUrl,title,channel} or {unavailable:true}
-  const [articleResource, setArticleResource]   = useState(null) // {html, source, title} — HTML fetched server-side
-  const [articleKey,      setArticleKey]        = useState(0)   // increments to force iframe remount on new article
-  const [videoLoading, setVideoLoading]         = useState(false)
-  const [articleLoading, setArticleLoading]     = useState(false)
-  const [mediaOverlay, setMediaOverlay]         = useState(null) // 'video'|'article'|null
-  const [refreshingMedia, setRefreshingMedia]       = useState(false)
-  const [interpretingArticle, setInterpretingArticle] = useState(false)
-  const [interpretingVideo,   setInterpretingVideo]   = useState(false)
-  const [videoMoments,        setVideoMoments]         = useState([])
-  const segmentEndRef       = useRef(null) // endSeconds of active playback segment
-  const videoCurrentTimeRef = useRef(0)    // mirrors videoCurrentTime for async polling
-  // Passage excerpts are stored so highlights can be re-applied if the iframe remounts
-  const [articlePassageExcerpts, setArticlePassageExcerpts] = useState([])
-  // Tracks video IDs already shown so refresh never repeats
-  const shownVideoIdsRef    = useRef([])
-  const lowTierMsgSentRef  = useRef(false) // true once the "limited results" message has been said for the current video
-  const noVideoMsgSentRef  = useRef(false) // true once the "no relevant video" message has been said for the current lesson
-  const essayAbortRef      = useRef(null)  // AbortController for in-flight essay generation
-  const articleIframeRef   = useRef(null)
-  // Media overlay position + fullscreen
-
-### 35. src/app/session/webb/page.jsx (9249fc2656776d57b0fd8d2ac538104699e432c9f9a69deecc5725096fb1aaf0)
-- bm25: -12.4896 | relevance: 0.9259
-
-{/* Toolbar */}
-          <div style={{ background: 'rgba(15,118,110,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', flexShrink: 0 }}>
-            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 0.5 }}>
-              {mediaOverlay === 'video' ? '\u25B6 VIDEO' : '\uD83D\uDCD6 ARTICLE'}
-              {mediaOverlay === 'article' && articleResource?.source && (
-                <span style={{ opacity: 0.75, fontWeight: 400, marginLeft: 4 }}>\u00B7 {articleResource.source}</span>
-              )}
-            </span>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              {/* Refresh */}
-              <button type="button" onClick={() => refreshMedia(mediaOverlay)} disabled={refreshingMedia} title="Load a different one"
-                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 10px', fontSize: 16, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {refreshingMedia ? '\u2026' : '\u21BB'}
-              </button>
-              {/* Interpret: play key moments (video only) — magnifying glass icon only */}
-              {mediaOverlay === 'video' && videoResource?.videoId && !videoResource?.unavailable && (
-                <button type="button" onClick={interpretVideo} disabled={interpretingVideo} title="Key part — play key moments"
-                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 8px', cursor: interpretingVideo ? 'wait' : 'pointer', display: 'flex', alignItems: 'center',
-
-### 36. src/app/api/webb-resources/route.js (575bb542ed356dbb5930ab1f3dd95ae93840b354fcd471b5281b312fa132d80b)
-- bm25: -12.0059 | relevance: 0.9231
-
-﻿/**
- * /api/webb-resources
- * Generates curated, child-safe media resources for a lesson.
- *
- * Video:   YouTube Data API v3 + GPT picks best result.
- * Article: Fetches from child-friendly internet sources. Caller passes
- *          `preferredSources` (array of source IDs); server shuffles those,
- *          tries each until one succeeds, then falls back to Simple Wikipedia.
- *          `excludeSourceId` = source ID last shown; rotated to last so refresh
- *          always picks a different source first.
- *
- * POST { lesson, type, context?, preferredSources?, excludeSourceId?, excludeVideoIds? }
- */
-import { NextResponse } from 'next/server'
-
-const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-const YT_SEARCH    = 'https://www.googleapis.com/youtube/v3/search'
-const YT_VIDEOS    = 'https://www.googleapis.com/youtube/v3/videos'
-
-// ── Article sources catalogue ─────────────────────────────────────────────────
-
-function shuffle(arr) {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-### 37. src/app/api/webb-chat/route.js (52461fc4df533581844f21bed57e2de19ab986718fdc9705ca2f781540db616d)
-- bm25: -11.9747 | relevance: 0.9229
-
-if (assessmentPush) {
-    lines.push(
-      `\nYou just finished showing the student key moments from the video. Now is the time to draw out their understanding.`,
-      `Write 2-3 sentences: briefly celebrate that they watched the key moments, then ask ONE specific question that requires them to explain something from the lesson in their own words.`,
-      `The question should target the most important undemonstrated objective (listed above) if any remain, otherwise ask about the most important concept from the lesson.`,
-      `Be warm and conversational — this should feel like natural curiosity, not a quiz. No markdown. No bullet points.`,
-    )
-  }
-
-### 38. src/app/api/webb/[...path]/route.js (7f3a8bbf8a794fd04abca2298eeec8e948669745c87abfb2dcf81b0cd05e527d)
-- bm25: -11.7477 | relevance: 0.9216
-
-function buildUpstreamUrl(pathSegments, searchParams) {
-  const joined = pathSegments.join('/')
-  const upstreamPath = ROOT_PATHS.has(joined) ? `/${joined}` : `/mrs-webb/${joined}`
-  const qs = searchParams.toString()
-  return `${WEBB_BASE}${upstreamPath}${qs ? `?${qs}` : ''}`
-}
-
-### 39. src/app/api/webb/route.js (2c13bad551fac608bc913cfbef1c10780610255a1f9e10cc47e4564a4d984849)
-- bm25: -11.5190 | relevance: 0.9201
-
-return '' // stub: no context injected yet
-}
-
-// ============================================================================
-// Safety: harden instructions for Mrs. Webb's chat persona
-// ============================================================================
-function buildSystemPrompt(cohereContext, learnerName, grade) {
-  const gradeLabel = grade ? `grade ${grade}` : 'elementary school'
-  const nameGreeting = learnerName ? ` You are talking to ${learnerName}.` : ''
-
-const baseRole = `You are Mrs. Webb, a warm and encouraging educational chat teacher for ${gradeLabel} students.${nameGreeting}
-Your role is to answer school-related questions, help explain concepts clearly, and guide students with patience.
-Keep your responses concise (2–4 sentences), friendly, age-appropriate, and always end with a gentle prompt to keep the student engaged.`
-
-const context = cohereContext
-    ? `\n\nRelevant curriculum context (use this to inform your answer):\n${cohereContext}`
-    : ''
-
-return hardenInstructions(baseRole + context, 'general educational topics', [])
-}
-
-function createCallId() {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-}
-
-// ============================================================================
-// POST handler
-// ============================================================================
-export async function POST(req) {
-  const callId = createCallId()
-  const logPrefix = `[Mrs. Webb API][${callId}]`
-
-try {
-    // ── Parse body ────────────────────────────────────────────────────────────
-    let messages = []    // [{ role: 'student'|'webb', content: string }]
-    let learnerName = ''
-    let grade = ''
-
-### 40. src/app/api/webb-resources/route.js (b11966e2ec9648407930d99f26c6d2fb141eeb4120ef6ba54663cc23735b1250)
-- bm25: -11.4421 | relevance: 0.9196
-
-// Health check
-export async function GET() {
-  return NextResponse.json({
-    ok: true,
-    endpoint: 'webb-resources',
-    articleSources: ARTICLE_SOURCES.map(s => ({ id: s.id, label: s.label })),
-  })
-}
+<div style={{ fontSize: 52, marginBottom: 6, animation: 'flashcards-float 1.4s ease-in-out infinite' }}>🏁</div>
+          <div style={{ fontWeight: 900, fontSize: 28, color: '#111827' }}>Topic complete!</div>
+          <div style={{ marginTop: 8, fontSize: 18, fontWeight: 800, color: '#111827' }}>{topicLabel}</div>
 
 
 ---
