@@ -104,21 +104,6 @@ export class TeachingController {
     return new Promise(resolve => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
   }
 
-  #buildLocalConceptFallbackSentences() {
-    const title = this.#lessonData?.title || 'today\'s lesson';
-    const blurb = (this.#lessonData?.blurb || '').trim();
-    const vocabTerms = this.#getVocabTerms();
-    const sentences = [];
-    if (blurb) sentences.push(...this.#splitIntoSentences(blurb));
-    if (!sentences.length) {
-      sentences.push(`Today we are learning about ${title}.`);
-      if (vocabTerms.length > 0) {
-        sentences.push(`We will be exploring words like ${vocabTerms.slice(0, 3).join(', ')}.`);
-      }
-    }
-    return sentences.slice(0, 5);
-  }
-
   #buildLocalDefinitionFallbackSentences() {
     try {
       const items = Array.isArray(this.#lessonData?.vocab) ? this.#lessonData.vocab : [];
@@ -788,14 +773,10 @@ export class TeachingController {
       }
     }
 
-    // Last-resort fallback: use lesson blurb/notes so teaching always proceeds.
-    const local = this.#buildLocalConceptFallbackSentences();
-    if (local.length) {
-      this.#conceptRateLimited = false;
-      this.#conceptRetryPending = false;
-      return local;
-    }
-    return ['Let me introduce what we are learning today.'];
+    // Concept stage has no meaningful local fallback — skip to definitions instead.
+    this.#conceptRateLimited = false;
+    this.#conceptRetryPending = false;
+    return [];
   }
 
   // Private: Call GPT for definitions
