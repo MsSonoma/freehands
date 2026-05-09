@@ -254,15 +254,14 @@ export class TeachingController {
     this.#prefetchStarted = true;
 
     // Prefetch promises should never produce unhandled rejections.
-    // The /api/sonoma function cold-starts on Vercel (~5-10s). Warm it immediately
-    // with a free GET ping (no LLM call), then stagger real calls after 1s.
+    // prefetchAll() is called synchronously in startSession before the orchestrator runs,
+    // so #conceptGptPromise is guaranteed to be set before startTeachingPhase fires.
 
     // 0. Warm-up ping — wakes the Vercel function at no token cost
     fetch('/api/sonoma', { method: 'GET' }).catch(() => {});
 
-    // 1. Concept - delay 1s so warm-up resolves before the fetch fires
-    this.#conceptGptPromise = new Promise(resolve => setTimeout(resolve, 1000))
-      .then(() => this.#fetchConceptFromGPT())
+    // 1. Concept - fire immediately; warm-up ping runs concurrently
+    this.#conceptGptPromise = this.#fetchConceptFromGPT()
       .then(sentences => {
         sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
         return sentences;
@@ -272,7 +271,7 @@ export class TeachingController {
         return [];
       });
 
-    // 2. Definitions - start 3s after prefetchAll begins
+    // 2. Definitions - start 3s after concept begins
     this.#definitionsGptPromise = new Promise(resolve => setTimeout(resolve, 3000))
       .then(() => this.#fetchDefinitionsFromGPT())
       .then(sentences => {

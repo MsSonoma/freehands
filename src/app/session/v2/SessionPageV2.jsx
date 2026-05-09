@@ -4559,6 +4559,10 @@ function SessionPageV2Inner() {
   const startTeachingPhase = () => {
     if (!teachingControllerRef.current) return;
 
+    // Safety net: ensure prefetch is running even if startSession's prefetchAll call was skipped.
+    // prefetchAll() is idempotent — the #prefetchStarted guard prevents double-calls.
+    try { teachingControllerRef.current.prefetchAll(); } catch {}
+
     const savedTeaching = snapshotServiceRef.current?.snapshot?.phaseData?.teaching || null;
     const resumeState = savedTeaching ? {
       stage: savedTeaching.stage,
@@ -5840,17 +5844,16 @@ function SessionPageV2Inner() {
       resetTranscriptState();
     }
     
-    // Start teaching prefetch in the background (needs to be ready by Teaching phase).
-    // Defer off the Begin click call stack so the "Loading..." state can render immediately.
+    // Start teaching prefetch immediately — must run synchronously before orchestratorRef.current.startSession()
+    // because phaseChange('teaching') fires synchronously inside startSession and calls startTeachingPhase
+    // directly (not via useEffect). If prefetchAll is deferred, #conceptGptPromise is null when teaching starts.
     if (teachingControllerRef.current) {
-      setTimeout(() => {
-        try {
-          teachingControllerRef.current?.prefetchAll?.();
-          addEvent('📄 Started background prefetch of teaching content');
-        } catch {
-          // Silent
-        }
-      }, 0);
+      try {
+        teachingControllerRef.current.prefetchAll();
+        addEvent('📄 Started background prefetch of teaching content');
+      } catch {
+        // Silent
+      }
     }
     
     // Prep video element (load + seek to first frame). The actual iOS autoplay unlock
