@@ -1200,6 +1200,15 @@ export class TeachingController {
       if (sampleAudio) ttsCache.set(sampleText, sampleAudio);
     }
     await this.#audioEngine.playAudio(sampleAudio || '', [sampleText]);
+
+    // 5. Prompt learner to use the question button
+    const raiseHandText = 'Press the blue raised hand button to ask a question.';
+    let raiseHandAudio = ttsCache.get(raiseHandText);
+    if (!raiseHandAudio) {
+      raiseHandAudio = await fetchTTS(raiseHandText);
+      if (raiseHandAudio) ttsCache.set(raiseHandText, raiseHandAudio);
+    }
+    await this.#audioEngine.playAudio(raiseHandAudio || '', [raiseHandText]);
     } catch (err) {
       gateError = err;
       throw err;
