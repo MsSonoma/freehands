@@ -703,14 +703,14 @@ export class TeachingController {
       '',
       questionContext,
       '',
-      'Your task: Give a brief, friendly concept introduction that explains the core idea of this lesson.',
-      'Write 3–5 short spoken sentences that explain:',
-      '  1. What this topic is (the big idea)',
-      '  2. Why it matters or where students will see it in real life',
+      'Your task: Speak 3 to 5 short sentences that introduce the main idea of this lesson.',
+      'Explain what this topic is and why it matters in everyday life.',
       'Do NOT define vocabulary words yet — that comes next.',
       'Do NOT give worked examples yet — that comes after.',
       'Do NOT greet or introduce yourself. Begin speaking immediately.',
       'Do NOT ask any questions.',
+      'Do NOT use numbered lists, bullet points, or any list formatting.',
+      'Write only flowing spoken sentences, one idea each.'
       '',
       'Kid-friendly: Use simple everyday words. Keep sentences short (about 6–12 words). One idea per sentence.',
       'Always respond with natural spoken text only. No emojis, decorative characters, or symbols.',
@@ -776,7 +776,14 @@ export class TeachingController {
       }
     }
 
-    return this.#buildLocalConceptFallbackSentences();
+    // Last-resort fallback: use lesson blurb/notes so teaching always proceeds.
+    const local = this.#buildLocalConceptFallbackSentences();
+    if (local.length) {
+      this.#conceptRateLimited = false;
+      this.#conceptRetryPending = false;
+      return local;
+    }
+    return ['Let me introduce what we are learning today.'];
   }
 
   // Private: Call GPT for definitions
