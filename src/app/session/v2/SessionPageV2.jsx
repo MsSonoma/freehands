@@ -2048,86 +2048,68 @@ function SessionPageV2Inner() {
     return (q?.prompt || q?.question || q?.Q || q?.q || '').toString().trim().toLowerCase();
   }, []);
 
-  const isPrimaryType = useCallback((q) => {
-    const qt = String(q?.questionType || q?.type || q?.sourceType || '').toLowerCase();
-    return qt === 'mc' || qt === 'multiplechoice' || qt === 'tf' || qt === 'truefalse';
-  }, []);
+  // Build all phase question sets from a single shuffled pool so questions are
+  // never repeated across phases until the full pool has been exhausted, at which
+  // point the pool is reshuffled and dealing continues.
+  const buildAllPhaseSets = useCallback(() => {
+    if (!lessonData) return null;
 
-  const blendByType = useCallback((pool = [], target = 0) => {
-    const shuffleLocal = (arr) => {
-      const copy = [...arr];
-      for (let i = copy.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-      return copy;
-    };
+    const tf = Array.isArray(lessonData.truefalse)
+      ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf', type: 'tf' })) : [];
+    const mc = Array.isArray(lessonData.multiplechoice)
+      ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc', type: 'mc' })) : [];
+    const fib = Array.isArray(lessonData.fillintheblank)
+      ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib', type: 'fib' })) : [];
+    const sa = Array.isArray(lessonData.shortanswer)
+      ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short', type: 'short' })) : [];
 
-    const deduped = [];
+    // Deduplicate by question text
     const seen = new Set();
-    for (const item of pool) {
-      const key = questionKey(item);
+    const uniquePool = [];
+    for (const q of [...tf, ...mc, ...fib, ...sa]) {
+      const key = questionKey(q);
       if (key && seen.has(key)) continue;
       if (key) seen.add(key);
-      deduped.push(item);
+      uniquePool.push(q);
     }
+    if (!uniquePool.length) return null;
 
-    const primaryPool = shuffleLocal(deduped.filter(isPrimaryType));
-    const secondaryPool = shuffleLocal(deduped.filter((q) => !isPrimaryType(q)));
-
-    const desiredSecondary = Math.max(0, Math.round(target * 0.2));
-    const desiredPrimary = Math.max(0, target - desiredSecondary);
-
-    const out = [];
-    const takeFrom = (arr, count) => {
-      while (count > 0 && arr.length) {
-        out.push(arr.shift());
-        count -= 1;
+    const shuffle = (arr) => {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
       }
+      return a;
     };
 
-    takeFrom(secondaryPool, desiredSecondary);
-    takeFrom(primaryPool, desiredPrimary);
+    const compTarget     = getLearnerTarget('comprehension') || 5;
+    const exerciseTarget = getLearnerTarget('exercise')      || 10;
+    const worksheetTarget = getLearnerTarget('worksheet')   || 15;
+    const testTarget     = getLearnerTarget('test')         || 10;
+    const totalNeeded = compTarget + exerciseTarget + worksheetTarget + testTarget;
 
-    let remaining = target - out.length;
-    const spill = [...primaryPool, ...secondaryPool];
-    takeFrom(spill, remaining);
-
-    // If still short (e.g., after dedup), backfill by cycling the original pool so we always hit the target count.
-    if (out.length < target && pool.length) {
-      const refill = shuffleLocal(pool);
-      let idx = 0;
-      while (out.length < target && refill.length) {
-        out.push(refill[idx % refill.length]);
-        idx += 1;
-      }
+    // Build a supply long enough for all phases; reshuffle and append when exhausted
+    const supply = shuffle(uniquePool);
+    while (supply.length < totalNeeded) {
+      supply.push(...shuffle(uniquePool));
     }
 
-    // Shuffle to interleave written (SA/FITB) randomly among MC/TF instead of clustering at the top.
-    const final = out.slice(0, target);
-    for (let i = final.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [final[i], final[j]] = [final[j], final[i]];
-    }
+    // Slice each phase in sequence so no two phases share a question until recycling starts
+    let cursor = 0;
+    const take = (n) => {
+      const slice = supply.slice(cursor, cursor + n);
+      cursor += n;
+      return slice.map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
+    };
 
-    return final;
-  }, [isPrimaryType, questionKey]);
-
-  const buildWorksheetSet = useCallback(() => {
-    const target = getLearnerTarget('worksheet');
-    if (!lessonData || !target) return [];
-    const pool = buildQuestionPool(target, []);
-    const selected = pool.slice(0, target).map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
-    return selected;
-  }, [lessonData, getLearnerTarget]);
-
-  const buildTestSet = useCallback(() => {
-    const target = getLearnerTarget('test');
-    if (!lessonData || !target) return [];
-    const pool = buildQuestionPool(target, []);
-    const selected = pool.slice(0, target).map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
-    return selected;
-  }, [lessonData, getLearnerTarget, buildQuestionPool]);
+    return {
+      comprehension: take(compTarget),
+      exercise:      take(exerciseTarget),
+      worksheet:     take(worksheetTarget),
+      test:          take(testTarget),
+    };
+  }, [lessonData, getLearnerTarget, questionKey]);
 
   const shareOrPreviewPdf = useCallback(async (blob, fileName = 'document.pdf', previewWin = null) => {
     try {
@@ -2360,10 +2342,14 @@ function SessionPageV2Inner() {
 
     let source = generatedWorksheet;
     if (!source || !source.length) {
-      source = buildWorksheetSet();
+      const allSets = buildAllPhaseSets() || {};
+      source = allSets.worksheet || [];
       if (source.length) {
         setGeneratedWorksheet(source);
-        persistAssessments(source, generatedTest);
+        if (!generatedTest?.length)          setGeneratedTest(allSets.test || []);
+        if (!generatedComprehension?.length) setGeneratedComprehension(allSets.comprehension || []);
+        if (!generatedExercise?.length)      setGeneratedExercise(allSets.exercise || []);
+        persistAssessments(source, allSets.test || generatedTest, allSets.comprehension || generatedComprehension, allSets.exercise || generatedExercise);
       }
     }
 
@@ -2373,7 +2359,7 @@ function SessionPageV2Inner() {
     }
 
     await createPdfForItems(source.map((q, i) => ({ ...q, number: q.number || (i + 1) })), 'worksheet', previewWin);
-  }, [buildWorksheetSet, createPdfForItems, generatedTest, generatedWorksheet, persistAssessments]);
+  }, [buildAllPhaseSets, createPdfForItems, generatedComprehension, generatedExercise, generatedTest, generatedWorksheet, persistAssessments]);
 
   const handleDownloadTest = useCallback(async () => {
     const ok = await ensurePinAllowed('download');
@@ -2383,10 +2369,14 @@ function SessionPageV2Inner() {
 
     let source = generatedTest;
     if (!source || !source.length) {
-      source = buildTestSet();
+      const allSets = buildAllPhaseSets() || {};
+      source = allSets.test || [];
       if (source.length) {
         setGeneratedTest(source);
-        persistAssessments(generatedWorksheet, source);
+        if (!generatedWorksheet?.length)     setGeneratedWorksheet(allSets.worksheet || []);
+        if (!generatedComprehension?.length) setGeneratedComprehension(allSets.comprehension || []);
+        if (!generatedExercise?.length)      setGeneratedExercise(allSets.exercise || []);
+        persistAssessments(allSets.worksheet || generatedWorksheet, source, allSets.comprehension || generatedComprehension, allSets.exercise || generatedExercise);
       }
     }
 
@@ -2396,7 +2386,7 @@ function SessionPageV2Inner() {
     }
 
     await createPdfForItems(source.map((q, i) => ({ ...q, number: q.number || (i + 1) })), 'test', previewWin);
-  }, [buildTestSet, createPdfForItems, generatedTest, generatedWorksheet, persistAssessments]);
+  }, [buildAllPhaseSets, createPdfForItems, generatedComprehension, generatedExercise, generatedTest, generatedWorksheet, persistAssessments]);
 
   const handleDownloadCombined = useCallback(async () => {
     const ok = await ensurePinAllowed('download');
@@ -4662,10 +4652,23 @@ function SessionPageV2Inner() {
     }
     const storedCompQuestions = !forceFresh && Array.isArray(generatedComprehension) && generatedComprehension.length ? generatedComprehension : null;
     
-    // Build comprehension questions with 80/20 MC+TF vs SA+FIB blend (all types allowed)
     const compTarget = savedCompQuestions ? savedCompQuestions.length : (storedCompQuestions ? storedCompQuestions.length : getLearnerTarget('comprehension'));
     if (!compTarget) return false;
-    const questions = savedCompQuestions || storedCompQuestions || buildQuestionPool(compTarget, []); // target-driven, no exclusions
+    let questions;
+    if (savedCompQuestions) {
+      questions = savedCompQuestions;
+    } else if (storedCompQuestions) {
+      questions = storedCompQuestions;
+    } else {
+      // Build all phases at once so later phases draw from a non-overlapping pool
+      const allSets = buildAllPhaseSets() || {};
+      questions = allSets.comprehension || [];
+      setGeneratedComprehension(questions);
+      setGeneratedExercise(allSets.exercise || []);
+      setGeneratedWorksheet(allSets.worksheet || []);
+      setGeneratedTest(allSets.test || []);
+      persistAssessments(allSets.worksheet, allSets.test, questions, allSets.exercise);
+    }
     console.log('[SessionPageV2] startComprehensionPhase built questions:', questions.length);
 
     const resumeIndex = (!forceFresh && savedComp) ? (savedComp.nextQuestionIndex ?? savedComp.questionIndex ?? 0) : 0;
@@ -4699,10 +4702,7 @@ function SessionPageV2Inner() {
         timerMode: forceFresh ? 'play' : (savedComp?.timerMode || 'play')
       });
     }
-    if (!savedCompQuestions && !storedCompQuestions) {
-      setGeneratedComprehension(questions);
-      persistAssessments(generatedWorksheet, generatedTest, questions, generatedExercise);
-    }
+    // (All-phase allocation already handled above in the fresh-build branch)
     
     const phase = new ComprehensionPhase({
       audioEngine: audioEngineRef.current,
@@ -4874,21 +4874,6 @@ function SessionPageV2Inner() {
   
   // Start exercise phase
   // Helper: Build question pool from lesson data arrays with 80/20 MC+TF vs SA+FIB blend
-  function buildQuestionPool(target = 5, excludeTypes = []) {
-    const tf = !excludeTypes.includes('tf') && Array.isArray(lessonData?.truefalse) 
-      ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf', type: 'tf' })) : [];
-    const mc = !excludeTypes.includes('mc') && Array.isArray(lessonData?.multiplechoice) 
-      ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc', type: 'mc' })) : [];
-    const fib = !excludeTypes.includes('fib') && Array.isArray(lessonData?.fillintheblank) 
-      ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib', type: 'fib' })) : [];
-    const sa = !excludeTypes.includes('short') && Array.isArray(lessonData?.shortanswer) 
-      ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short', type: 'short' })) : [];
-    
-    const pool = [...tf, ...mc, ...fib, ...sa];
-    const blended = blendByType(pool, target);
-    return blended;
-  }
-
   const startExercisePhase = () => {
     console.log('[SessionPageV2] startExercisePhase called');
     console.log('[SessionPageV2] startExercisePhase audioEngineRef:', !!audioEngineRef.current);
@@ -4913,8 +4898,20 @@ function SessionPageV2Inner() {
     
     const exerciseTarget = savedExerciseQuestions ? savedExerciseQuestions.length : (storedExerciseQuestions ? storedExerciseQuestions.length : getLearnerTarget('exercise'));
     if (!exerciseTarget) return false;
-    // Build exercise questions with 80/20 MC+TF vs SA+FIB blend
-    const questions = savedExerciseQuestions || storedExerciseQuestions || buildQuestionPool(exerciseTarget, []);
+    let questions;
+    if (savedExerciseQuestions) {
+      questions = savedExerciseQuestions;
+    } else if (storedExerciseQuestions) {
+      questions = storedExerciseQuestions;
+    } else {
+      const allSets = buildAllPhaseSets() || {};
+      questions = allSets.exercise || [];
+      setGeneratedExercise(questions);
+      if (!generatedComprehension?.length) setGeneratedComprehension(allSets.comprehension || []);
+      if (!generatedWorksheet?.length)     setGeneratedWorksheet(allSets.worksheet || []);
+      if (!generatedTest?.length)          setGeneratedTest(allSets.test || []);
+      persistAssessments(allSets.worksheet || generatedWorksheet, allSets.test || generatedTest, allSets.comprehension || generatedComprehension, questions);
+    }
     console.log('[SessionPageV2] startExercisePhase built questions:', questions.length);
 
     const resumeIndex = (!forceFresh && savedExercise) ? (savedExercise.nextQuestionIndex ?? savedExercise.questionIndex ?? 0) : 0;
@@ -4947,10 +4944,7 @@ function SessionPageV2Inner() {
         timerMode: forceFresh ? 'play' : (savedExercise?.timerMode || 'play')
       });
     }
-    if (!savedExerciseQuestions && !storedExerciseQuestions) {
-      setGeneratedExercise(questions);
-      persistAssessments(generatedWorksheet, generatedTest, generatedComprehension, questions);
-    }
+    // (All-phase allocation already handled above in the fresh-build branch)
     
     const phase = new ExercisePhase({
       audioEngine: audioEngineRef.current,
@@ -5132,10 +5126,14 @@ function SessionPageV2Inner() {
 
     let questions = savedWorksheetQuestions || generatedWorksheet || [];
     if (!questions.length) {
-      questions = buildWorksheetSet();
+      const allSets = buildAllPhaseSets() || {};
+      questions = allSets.worksheet || [];
       if (questions.length) {
         setGeneratedWorksheet(questions);
-        persistAssessments(questions, generatedTest, generatedComprehension, generatedExercise);
+        if (!generatedComprehension?.length) setGeneratedComprehension(allSets.comprehension || []);
+        if (!generatedExercise?.length)      setGeneratedExercise(allSets.exercise || []);
+        if (!generatedTest?.length)          setGeneratedTest(allSets.test || []);
+        persistAssessments(questions, allSets.test || generatedTest, allSets.comprehension || generatedComprehension, allSets.exercise || generatedExercise);
       }
     }
 
@@ -5378,10 +5376,14 @@ function SessionPageV2Inner() {
     // Prefer saved deck, then cached generation; rebuild only when none exist.
     let questions = savedTestQuestions || generatedTest || [];
     if (!questions.length) {
-      questions = buildTestSet();
+      const allSets = buildAllPhaseSets() || {};
+      questions = allSets.test || [];
       if (questions.length) {
         setGeneratedTest(questions);
-        persistAssessments(generatedWorksheet, questions, generatedComprehension, generatedExercise);
+        if (!generatedComprehension?.length) setGeneratedComprehension(allSets.comprehension || []);
+        if (!generatedExercise?.length)      setGeneratedExercise(allSets.exercise || []);
+        if (!generatedWorksheet?.length)     setGeneratedWorksheet(allSets.worksheet || []);
+        persistAssessments(allSets.worksheet || generatedWorksheet, questions, allSets.comprehension || generatedComprehension, allSets.exercise || generatedExercise);
       }
     }
 
