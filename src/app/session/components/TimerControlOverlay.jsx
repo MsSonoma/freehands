@@ -223,7 +223,7 @@ export default function TimerControlOverlay({
         style={{
           background: '#fff',
           borderRadius: 16,
-          padding: 24,
+          padding: '14px 18px',
           maxWidth: 480,
           width: '100%',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
@@ -233,8 +233,8 @@ export default function TimerControlOverlay({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#111' }}>Timer Controls</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#111' }}>Timer Controls</h2>
           <button
             onClick={onClose}
             style={{
@@ -252,56 +252,62 @@ export default function TimerControlOverlay({
         {/* Current Status */}
         <div style={{
           background: '#f9fafb',
-          padding: 16,
+          padding: '8px 12px',
           borderRadius: 8,
-          marginBottom: 20
+          marginBottom: 10,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8
         }}>
-          <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
-            Current Phase: <strong>{phase}</strong> ({timerType === 'play' ? '🎮 Play Time' : '📝 Work Time'})
-            {goldenKeysEnabled && goldenKeyBonus > 0 && timerType === 'play' && (
-              <span style={{ color: '#fbbf24', marginLeft: 8 }}>🔑 +{goldenKeyBonus} min bonus</span>
-            )}
+          <div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>
+              <strong>{phase}</strong> · {timerType === 'play' ? '🎮 Play' : '📝 Work'}
+              {goldenKeysEnabled && goldenKeyBonus > 0 && timerType === 'play' && (
+                <span style={{ color: '#fbbf24', marginLeft: 6 }}>🔑 +{goldenKeyBonus}m</span>
+              )}
+            </div>
+            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1 }}>
+              {isPaused ? '⏸️ Paused' : '▶️ Running'}
+            </div>
           </div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: '#111', fontFamily: 'monospace' }}>
-            {formatTime(remainingSeconds)} <span style={{ fontSize: 14, fontWeight: 400 }}>remaining</span>
-          </div>
-          <div style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>
-            {isPaused ? '⏸️ Paused' : '▶️ Running'}
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#111', fontFamily: 'monospace', flexShrink: 0 }}>
+            {formatTime(remainingSeconds)}
           </div>
         </div>
 
         {/* Time Adjustment */}
-        <div style={{ marginBottom: 24 }}>
-          <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 8 }}>
+        <div style={{ marginBottom: 10 }}>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>
             Adjust Time
           </label>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+          <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 5 }}>
             <button
               onClick={() => setAdjustMinutes(prev => prev - 5)}
               disabled={saving}
               style={{
-                padding: '8px 16px',
+                padding: '5px 8px',
                 border: '1px solid #d1d5db',
                 borderRadius: 6,
                 background: '#fff',
                 cursor: 'pointer',
-                fontSize: 16,
+                fontSize: 13,
                 fontWeight: 600
               }}
-            >-5 min</button>
+            >-5</button>
             <button
               onClick={() => setAdjustMinutes(prev => prev - 1)}
               disabled={saving}
               style={{
-                padding: '8px 16px',
+                padding: '5px 8px',
                 border: '1px solid #d1d5db',
                 borderRadius: 6,
                 background: '#fff',
                 cursor: 'pointer',
-                fontSize: 16,
+                fontSize: 13,
                 fontWeight: 600
               }}
-            >-1 min</button>
+            >-1</button>
             <input
               type="number"
               value={adjustMinutes}
@@ -309,10 +315,10 @@ export default function TimerControlOverlay({
               disabled={saving}
               style={{
                 flex: 1,
-                padding: '8px 12px',
+                padding: '5px 8px',
                 border: '1px solid #d1d5db',
                 borderRadius: 6,
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: 600,
                 textAlign: 'center',
                 fontFamily: 'monospace'
@@ -322,31 +328,31 @@ export default function TimerControlOverlay({
               onClick={() => setAdjustMinutes(prev => prev + 1)}
               disabled={saving}
               style={{
-                padding: '8px 16px',
+                padding: '5px 8px',
                 border: '1px solid #d1d5db',
                 borderRadius: 6,
                 background: '#fff',
                 cursor: 'pointer',
-                fontSize: 16,
+                fontSize: 13,
                 fontWeight: 600
               }}
-            >+1 min</button>
+            >+1</button>
             <button
               onClick={() => setAdjustMinutes(prev => prev + 5)}
               disabled={saving}
               style={{
-                padding: '8px 16px',
+                padding: '5px 8px',
                 border: '1px solid #d1d5db',
                 borderRadius: 6,
                 background: '#fff',
                 cursor: 'pointer',
-                fontSize: 16,
+                fontSize: 13,
                 fontWeight: 600
               }}
-            >+5 min</button>
+            >+5</button>
           </div>
           {adjustMinutes !== 0 && (
-            <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
+            <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 5 }}>
               New remaining: <strong>{formatTime(previewRemaining)}</strong>
             </div>
           )}
@@ -355,12 +361,12 @@ export default function TimerControlOverlay({
             disabled={adjustMinutes === 0 || saving}
             style={{
               width: '100%',
-              padding: '10px',
+              padding: '7px',
               border: 'none',
               borderRadius: 8,
               background: adjustMinutes === 0 || saving ? '#d1d5db' : '#c7442e',
               color: '#fff',
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: 600,
               cursor: adjustMinutes === 0 || saving ? 'not-allowed' : 'pointer'
             }}
@@ -370,17 +376,17 @@ export default function TimerControlOverlay({
         </div>
 
         {/* Pause/Resume */}
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 10 }}>
           <button
             onClick={handleTogglePause}
             disabled={saving}
             style={{
               width: '100%',
-              padding: '12px',
+              padding: '7px 12px',
               border: '1px solid #d1d5db',
               borderRadius: 8,
               background: '#fff',
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: 600,
               cursor: saving ? 'not-allowed' : 'pointer',
               color: '#111'
@@ -394,45 +400,42 @@ export default function TimerControlOverlay({
         {goldenKeysEntitled ? (
           <div style={{
             borderTop: '1px solid #e5e7eb',
-            paddingTop: 20
+            paddingTop: 10
           }}>
-            <h3 style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 600, color: '#111' }}>🔑 Golden Key</h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#111' }}>🔑 Golden Key</h3>
+              <span style={{ fontSize: 12, color: '#6b7280' }}>
+                Status: <strong>{hasGoldenKey ? (isGoldenKeySuspended ? 'Active (Suspended)' : 'Active') : 'Not Applied'}</strong>
+              </span>
+            </div>
 
             {!goldenKeysEnabled && (
               <div style={{
                 border: '1px solid #e5e7eb',
                 background: '#f9fafb',
                 color: '#6b7280',
-                padding: 12,
-                borderRadius: 10,
-                fontSize: 13,
-                lineHeight: 1.5,
-                marginBottom: 12
+                padding: '6px 10px',
+                borderRadius: 8,
+                fontSize: 12,
+                marginBottom: 6
               }}>
                 Golden Keys are turned off for this learner.
               </div>
             )}
-            
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
-                Status: <strong>{hasGoldenKey ? (isGoldenKeySuspended ? 'Active (Suspended)' : 'Active') : 'Not Applied'}</strong>
-              </div>
-            </div>
 
             {!goldenKeysEnabled ? (
               <button
                 disabled={true}
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '7px',
                   border: 'none',
                   borderRadius: 8,
                   background: '#d1d5db',
                   color: '#374151',
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: 700,
-                  cursor: 'not-allowed',
-                  boxShadow: 'none'
+                  cursor: 'not-allowed'
                 }}
               >
                 Apply Golden Key to This Lesson
@@ -443,12 +446,12 @@ export default function TimerControlOverlay({
                 disabled={saving}
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '7px',
                   border: 'none',
                   borderRadius: 8,
                   background: saving ? '#d1d5db' : 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
                   color: '#78350f',
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: 700,
                   cursor: saving ? 'not-allowed' : 'pointer',
                   boxShadow: '0 2px 8px rgba(251, 191, 36, 0.3)'
@@ -462,12 +465,12 @@ export default function TimerControlOverlay({
                 disabled={saving}
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '7px',
                   border: '1px solid #d1d5db',
                   borderRadius: 8,
                   background: '#fff',
                   color: '#111',
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: 600,
                   cursor: saving ? 'not-allowed' : 'pointer'
                 }}
@@ -475,11 +478,11 @@ export default function TimerControlOverlay({
                 {isGoldenKeySuspended ? 'Unsuspend Golden Key Effect' : 'Suspend Golden Key Effect'}
               </button>
             )}
-            
-            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 8, lineStyle: 1.4 }}>
-              {isGoldenKeySuspended 
-                ? 'Key is applied but suspended - bonus time is paused until unsuspended.'
-                : hasGoldenKey 
+
+            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 5 }}>
+              {isGoldenKeySuspended
+                ? 'Key is applied but suspended — bonus time is paused until unsuspended.'
+                : hasGoldenKey
                   ? 'Golden key adds bonus time to play timers for this lesson.'
                   : 'Applying a golden key will add bonus time to play timers for this lesson.'}
             </div>
@@ -487,17 +490,16 @@ export default function TimerControlOverlay({
         ) : (
           <div style={{
             borderTop: '1px solid #e5e7eb',
-            paddingTop: 20
+            paddingTop: 10
           }}>
-            <h3 style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 600, color: '#111' }}>🔑 Golden Key</h3>
+            <h3 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 600, color: '#111' }}>🔑 Golden Key</h3>
             <div style={{
               border: '1px solid #fcd34d',
               background: '#fef3c7',
               color: '#92400e',
-              padding: 12,
-              borderRadius: 10,
-              fontSize: 13,
-              lineHeight: 1.5
+              padding: '6px 10px',
+              borderRadius: 8,
+              fontSize: 12
             }}>
               Golden Keys are available on Standard and Pro plans.
             </div>
@@ -506,7 +508,7 @@ export default function TimerControlOverlay({
 
         {/* Timers & Targets Settings Link */}
         {onOpenLearnerSettings && (
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <div style={{ textAlign: 'center', marginTop: 10 }}>
             <button
               onClick={onOpenLearnerSettings}
               style={{
@@ -526,16 +528,16 @@ export default function TimerControlOverlay({
         )}
 
         {/* Close Button */}
-        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 20, marginTop: 20 }}>
+        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 10, marginTop: 10 }}>
           <button
             onClick={onClose}
             style={{
               width: '100%',
-              padding: '12px',
+              padding: '7px 12px',
               border: '1px solid #d1d5db',
               borderRadius: 8,
               background: '#fff',
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: 600,
               cursor: 'pointer',
               color: '#111'
