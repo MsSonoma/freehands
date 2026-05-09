@@ -143,19 +143,33 @@ export class OpeningActionsController {
         'If the question is off-topic or inappropriate, gently redirect.'
       ].filter(Boolean).join(' ');
       
-      const response = await fetch('/api/sonoma', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // Ask uses the frontend audio engine for speech; skip server-side TTS to
-        // avoid large base64 payloads and reduce failure risk.
-        body: JSON.stringify({ instruction, innertext: question, skipAudio: true })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Sonoma API request failed (status ${response.status})`);
+      let response;
+      try {
+        response = await fetch('/api/sonoma', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // Ask uses the frontend audio engine for speech; skip server-side TTS to
+          // avoid large base64 payloads and reduce failure risk.
+          body: JSON.stringify({ instruction, innertext: question, skipAudio: true })
+        });
+      } catch (fetchErr) {
+        console.error('[OpeningActionsController] Ask fetch network error:', fetchErr?.message || fetchErr);
+        throw fetchErr;
       }
       
-      const data = await response.json();
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => '');
+        console.error('[OpeningActionsController] Ask API non-ok:', response.status, errBody);
+        throw new Error(`Sonoma API request failed (status ${response.status}): ${errBody}`);
+      }
+      
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        console.error('[OpeningActionsController] Ask response JSON parse failed:', jsonErr?.message);
+        throw jsonErr;
+      }
       const answer = data.reply || data.text || 'That\'s an interesting question! Let me think about that.';
       
       this.#actionState.answer = answer;
