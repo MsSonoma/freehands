@@ -131,77 +131,89 @@ export default function LearnPage() {
             }} />
           </div>
         ) : (
-          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-            <button
-              onClick={() => {
-                try { localStorage.setItem('selected_teacher', 'sonoma') } catch {}
-                r.push('/learn/lessons')
-              }}
-              title="Practice lessons guided by Ms. Sonoma"
-              style={{
-                padding:'14px 20px', 
-                border:'2px solid #c7442e', 
-                borderRadius:12,
-                fontSize:16, 
-                fontWeight:700,
-                background:'#c7442e',
-                color:'#fff',
-                cursor:'pointer',
-                width:'100%', 
-                maxWidth:320
-              }}
-            >
-              👩🏻‍🦰 Ms. Sonoma
-            </button>
-            {[{
-              label: '🤖 Mr. Slate',
-              teacher: 'slate',
-              border: '#6366f1',
-              bg: '#6366f1',
-              title: 'Drill questions with Mr. Slate',
-            }, {
-              label: '👩‍🏫 Mrs. Webb',
-              teacher: 'webb',
-              border: '#0d9488',
-              bg: '#0d9488',
-              title: 'Chat with Mrs. Webb, your educational AI teacher',
-            }, {
-              label: '🏆 Awards',
-              teacher: null,
-              border: '#059669',
-              bg: '#059669',
-              title: 'View medals and achievements',
-              onClick: () => r.push('/learn/awards'),
-            }].map(({ label, teacher, border, bg, title, onClick }) => {
-              const isDemo = learner.id === 'demo'
-              return (
-                <div key={label} style={{ position: 'relative', width: '100%', maxWidth: 320 }} title={isDemo ? 'Sign up to use this' : title}>
+          <div style={{ marginTop: 16 }}>
+            {/* Teacher buttons — responsive grid, spreads on wider screens */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+              gap: 14,
+            }}>
+              {[{
+                label: '👩🏻‍🦰 Ms. Sonoma',
+                teacher: 'sonoma',
+                border: '#c7442e',
+                bg: '#c7442e',
+                title: 'Practice lessons guided by Ms. Sonoma',
+              }, {
+                label: '🤖 Mr. Slate',
+                teacher: 'slate',
+                border: '#6366f1',
+                bg: '#6366f1',
+                title: 'Drill questions with Mr. Slate',
+              }, {
+                label: '👩‍🏫 Mrs. Webb',
+                teacher: 'webb',
+                border: '#0d9488',
+                bg: '#0d9488',
+                title: 'Chat with Mrs. Webb, your educational AI teacher',
+              }].map(({ label, teacher, border, bg, title }) => {
+                const isDemo = learner.id === 'demo'
+                return (
                   <button
+                    key={label}
                     onClick={() => {
                       if (isDemo) { setShowAuthGate(true); return }
-                      if (onClick) { onClick(); return }
                       try { localStorage.setItem('selected_teacher', teacher) } catch {}
                       r.push('/learn/lessons')
                     }}
+                    title={isDemo ? 'Sign up to use this' : title}
                     style={{
-                      padding:'14px 20px',
+                      padding: '14px 20px',
                       border: `2px solid ${border}`,
-                      borderRadius:12,
-                      fontSize:16,
-                      fontWeight:700,
+                      borderRadius: 12,
+                      fontSize: 16,
+                      fontWeight: 700,
                       background: bg,
-                      color:'#fff',
+                      color: '#fff',
                       cursor: isDemo ? 'not-allowed' : 'pointer',
-                      width:'100%',
                       opacity: isDemo ? 0.45 : 1,
                       transition: 'opacity 0.15s',
+                      width: '100%',
                     }}
                   >
                     {label}
                   </button>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
+
+            {/* Divider separating Awards from teachers */}
+            <div style={{ borderTop: '1px solid #e5e7eb', margin: '20px 0 16px' }} />
+
+            {/* Awards — outlined/gold to distinguish from teacher buttons */}
+            <button
+              onClick={() => {
+                if (learner.id === 'demo') { setShowAuthGate(true); return }
+                r.push('/learn/awards')
+              }}
+              title={learner.id === 'demo' ? 'Sign up to use this' : 'View medals and achievements'}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '12px 20px',
+                border: '2px solid #d97706',
+                borderRadius: 12,
+                fontSize: 16,
+                fontWeight: 600,
+                background: 'transparent',
+                color: '#d97706',
+                cursor: learner.id === 'demo' ? 'not-allowed' : 'pointer',
+                opacity: learner.id === 'demo' ? 0.45 : 1,
+                transition: 'opacity 0.15s',
+              }}
+            >
+              🏆 Awards
+            </button>
           </div>
         )}
       </div>
