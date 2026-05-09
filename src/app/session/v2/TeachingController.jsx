@@ -53,6 +53,7 @@ export class TeachingController {
 
   // Rate-limit / spam guards
   #prefetchStarted = false;
+  #conceptCompleted = false; // true only when concept sentences were actually spoken
   #conceptCooldownUntilMs = 0;
   #definitionsCooldownUntilMs = 0;
   #examplesCooldownUntilMs = 0;
@@ -355,6 +356,7 @@ export class TeachingController {
       stage: this.#stage,
       sentenceIndex: this.#currentSentenceIndex,
       isInSentenceMode: this.#isInSentenceMode,
+      conceptCompleted: this.#conceptCompleted,
       conceptSentences: this.#conceptSentences,
       vocabSentences: this.#vocabSentences,
       exampleSentences: this.#exampleSentences
@@ -381,21 +383,21 @@ export class TeachingController {
       return;
     }
     if (resumeState?.stage === 'definitions') {
-      // Only skip concept if it was actually completed (conceptSentences will be present in the snapshot).
-      // If conceptSentences is empty, concept never ran or failed — start from concept so the learner gets it.
-      const conceptWasCompleted = Array.isArray(resumeState.conceptSentences) && resumeState.conceptSentences.length > 0;
-      if (conceptWasCompleted) {
+      // Only skip concept if the explicit conceptCompleted flag is set.
+      // Inferring from conceptSentences.length is unreliable: old snapshots may have
+      // fallback/garbage sentences, and failed fetches leave an empty array.
+      if (resumeState.conceptCompleted === true) {
         await this.#startDefinitions({ autoplayFirstSentence, resumeState });
         return;
       }
-      // Fall through to fresh start (concept will run first, then definitions)
+      // conceptCompleted not set — concept never properly ran; start fresh from concept.
     }
     if (resumeState?.stage === 'concept') {
       await this.#startConcept({ resumeState });
       return;
     }
 
-    // Fresh start (or definitions resume with no concept history): begin with concept introduction.
+    // Fresh start (or stale snapshot without conceptCompleted): begin with concept introduction.
     await this.#startConcept();
   }
   
@@ -1169,7 +1171,8 @@ export class TeachingController {
     const nextIndex = this.#currentSentenceIndex + 1;
 
     if (nextIndex >= this.#conceptSentences.length) {
-      // Concept complete — transition seamlessly into definitions
+      // Concept complete — mark it done so snapshots can gate the resume routing correctly
+      this.#conceptCompleted = true;
       this.#startDefinitions();
       return;
     }
