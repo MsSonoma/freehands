@@ -107,10 +107,15 @@ export class TeachingController {
   #buildLocalConceptFallbackSentences() {
     const title = this.#lessonData?.title || 'today\'s lesson';
     const blurb = (this.#lessonData?.blurb || '').trim();
-    // teachingNotes are educator-facing instructions — never use them as student-facing speech.
+    const vocabTerms = this.#getVocabTerms();
     const sentences = [];
     if (blurb) sentences.push(...this.#splitIntoSentences(blurb));
-    if (!sentences.length) sentences.push(`Today we are learning about ${title}.`);
+    if (!sentences.length) {
+      sentences.push(`Today we are learning about ${title}.`);
+      if (vocabTerms.length > 0) {
+        sentences.push(`We will be exploring words like ${vocabTerms.slice(0, 3).join(', ')}.`);
+      }
+    }
     return sentences.slice(0, 5);
   }
 
@@ -680,7 +685,13 @@ export class TeachingController {
     const lessonTitle = this.#lessonData?.title || 'this lesson';
     const grade = this.#lessonData?.grade || '';
     const blurb = (this.#lessonData?.blurb || '').trim();
-    const teachingNotes = (this.#lessonData?.teachingNotes || '').trim();
+
+    // Vocab terms + definitions are the most reliable context — present on every lesson.
+    const vocabContext = (this.#lessonData?.vocab || [])
+      .filter(v => v?.term && v?.definition)
+      .map(v => `${v.term}: ${v.definition}`)
+      .join('\n');
+    const vocabTerms = this.#getVocabTerms();
 
     // Anchor GPT on a sample of assessment questions so the concept explanation
     // targets what the learner will actually be assessed on.
@@ -697,9 +708,10 @@ export class TeachingController {
       `Grade: ${grade}`,
       `Lesson topic (do not say the title aloud): "${lessonTitle}"`,
       '',
-      blurb ? `Lesson context (student-facing hook, for reference): ${blurb}` : '',
+      blurb ? `Lesson context (for reference): ${blurb}` : '',
       // teachingNotes are internal educator instructions — intentionally excluded here
       //   to prevent the model from mirroring teacher-facing language to the student.
+      vocabContext ? `Vocabulary in this lesson (do not define them yet — that comes next; use only to understand what the lesson covers):\n${vocabContext}` : '',
       '',
       questionContext,
       '',
