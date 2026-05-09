@@ -7514,14 +7514,14 @@ function SessionPageV2Inner() {
                     disabled={!isInSentenceMode}
                     style={{
                       padding: '12px 28px',
-                      background: isInSentenceMode ? 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)' : '#9ca3af',
+                      background: isInSentenceMode ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : '#9ca3af',
                       color: '#fff',
                       border: 'none',
                       borderRadius: 10,
                       fontSize: '1rem',
                       fontWeight: 600,
                       cursor: isInSentenceMode ? 'pointer' : 'not-allowed',
-                      boxShadow: isInSentenceMode ? '0 4px 16px rgba(168, 85, 247, 0.4)' : 'none'
+                      boxShadow: isInSentenceMode ? '0 4px 16px rgba(59, 130, 246, 0.4)' : 'none'
                     }}
                   >
                     Repeat
@@ -7531,14 +7531,14 @@ function SessionPageV2Inner() {
                     disabled={teachingLoading}
                     style={{
                       padding: '12px 28px',
-                      background: teachingLoading ? '#9ca3af' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      background: teachingLoading ? '#9ca3af' : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
                       color: '#fff',
                       border: 'none',
                       borderRadius: 10,
                       fontSize: '1rem',
                       fontWeight: 600,
                       cursor: teachingLoading ? 'not-allowed' : 'pointer',
-                      boxShadow: '0 4px 16px rgba(59, 130, 246, 0.4)',
+                      boxShadow: '0 4px 16px rgba(34, 197, 94, 0.4)',
                       opacity: teachingLoading ? 0.7 : 1
                     }}
                   >
