@@ -527,25 +527,7 @@ export default function TimerControlOverlay({
           </div>
         )}
 
-        {/* Close Button */}
-        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 10, marginTop: 10 }}>
-          <button
-            onClick={onClose}
-            style={{
-              width: '100%',
-              padding: '7px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: 8,
-              background: '#fff',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'pointer',
-              color: '#111'
-            }}
-          >
-            Close
-          </button>
-        </div>
+
       </div>
     </div>
   );
