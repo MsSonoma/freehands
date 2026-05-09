@@ -730,6 +730,7 @@ export class TeachingController {
         body: JSON.stringify({
           instruction,
           input: '',
+          lessonTopic: lessonTitle,
           context: {
             phase: 'teaching',
             step: 'concept',
@@ -766,8 +767,8 @@ export class TeachingController {
         const data = await response.json().catch(() => null);
         const text = (data && (data.reply || data.text)) ? String(data.reply || data.text) : '';
         if (!text) {
-          console.warn('[TeachingController] Empty GPT response for concept');
-          break;
+          console.warn('[TeachingController] Empty GPT response for concept, retrying');
+          continue;
         }
 
         const sentences = this.#splitIntoSentences(text);

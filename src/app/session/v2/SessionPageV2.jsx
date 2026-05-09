@@ -4096,6 +4096,14 @@ function SessionPageV2Inner() {
         snapshotServiceRef.current.saveProgress(data.trigger, data.data);
       }
     });
+
+    controller.on('loading', (data) => {
+      addEvent(`⏳ Loading: ${data.stage}`);
+    });
+
+    controller.on('error', (data) => {
+      addEvent(`⚠️ Concept error: stage=${data.stage} status=${data.status}`);
+    });
     
     // Note: teachingComplete handled in startTeachingPhase, not here
     
@@ -4568,6 +4576,7 @@ function SessionPageV2Inner() {
       stage: savedTeaching.stage,
       sentenceIndex: Number.isFinite(savedTeaching.sentenceIndex) ? savedTeaching.sentenceIndex : 0,
       isInSentenceMode: savedTeaching.isInSentenceMode !== false,
+      conceptCompleted: savedTeaching.conceptCompleted === true,
       conceptSentences: Array.isArray(savedTeaching.conceptSentences) ? savedTeaching.conceptSentences : [],
       vocabSentences: Array.isArray(savedTeaching.vocabSentences) ? savedTeaching.vocabSentences : [],
       exampleSentences: Array.isArray(savedTeaching.exampleSentences) ? savedTeaching.exampleSentences : []
