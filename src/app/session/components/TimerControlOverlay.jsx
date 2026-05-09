@@ -44,6 +44,7 @@ export default function TimerControlOverlay({
   onApplyGoldenKey,
   onSuspendGoldenKey,
   onUnsuspendGoldenKey,
+  onOpenLearnerSettings,
   // V2: authoritative remaining seconds fed directly from TimerService events.
   // When provided, sessionStorage polling is skipped entirely — TimerService
   // is the single owner of timer state and this overlay just reads what it emits.
@@ -500,6 +501,27 @@ export default function TimerControlOverlay({
             }}>
               Golden Keys are available on Standard and Pro plans.
             </div>
+          </div>
+        )}
+
+        {/* Timers & Targets Settings Link */}
+        {onOpenLearnerSettings && (
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <button
+              onClick={onOpenLearnerSettings}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#6366f1',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                padding: 0
+              }}
+            >
+              ⚙️ Edit Timers &amp; Targets
+            </button>
           </div>
         )}
 

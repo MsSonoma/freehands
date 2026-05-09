@@ -37,7 +37,7 @@ const normalizeHumorLevel = (value) => {
 	return HUMOR_LEVELS.includes(v) ? v : 'calm';
 };
 
-export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, onDelete, onPatch }) {
+export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, onDelete, onPatch, zIndex: zIndexProp = 1000 }) {
 	const [activeTab, setActiveTab] = useState(learner?.initialTab || 'basic'); // 'basic' | 'targets' | 'ai-features' | 'timers'
 	
 	// Form state
@@ -161,7 +161,8 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 				story_disabled: storyDisabled,
 				fill_in_fun_disabled: fillInFunDisabled,
 				auto_advance_phases: autoAdvancePhases,
-			slate_settings: slateSettings,
+				slate_settings: slateSettings,
+				...phaseTimers,
 			});
 			onClose();
 		} catch (error) {
@@ -257,7 +258,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		display: 'flex',
 		alignItems: 'center',
 		justifyContent: 'center',
-		zIndex: 1000,
+		zIndex: zIndexProp,
 		padding: 16
 	};
 

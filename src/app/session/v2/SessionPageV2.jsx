@@ -42,6 +42,7 @@ import { OpeningActionsController } from './OpeningActionsController';
 import PlayTimeExpiredOverlay from './PlayTimeExpiredOverlay';
 import FullscreenPlayTimerOverlay from './FullscreenPlayTimerOverlay';
 import TimerControlOverlay from '../components/TimerControlOverlay';
+import LearnerEditOverlay from '@/app/facilitator/learners/components/LearnerEditOverlay';
 import GamesOverlay from '../components/games/GamesOverlay';
 import EventBus from './EventBus';
 import { loadLesson, fetchTTS } from './services';
@@ -1003,6 +1004,7 @@ function SessionPageV2Inner() {
   
   // Timer control overlay state (facilitator controls)
   const [showTimerControl, setShowTimerControl] = useState(false);
+  const [showTimerSettingsEdit, setShowTimerSettingsEdit] = useState(false);
   
   const [currentCaption, setCurrentCaption] = useState('');
   const [transcriptLines, setTranscriptLines] = useState([]);
@@ -7999,6 +8001,32 @@ function SessionPageV2Inner() {
           onApplyGoldenKey={handleApplyGoldenKeyForLesson}
           onSuspendGoldenKey={handleSuspendGoldenKey}
           onUnsuspendGoldenKey={handleUnsuspendGoldenKey}
+          onOpenLearnerSettings={learnerProfile ? () => setShowTimerSettingsEdit(true) : undefined}
+        />
+      )}
+
+      {/* Learner Settings Edit Overlay - opened from Timer Controls */}
+      {showTimerSettingsEdit && learnerProfile && (
+        <LearnerEditOverlay
+          isOpen={showTimerSettingsEdit}
+          learner={{ ...learnerProfile, initialTab: 'timers' }}
+          zIndex={2147483647}
+          onClose={() => setShowTimerSettingsEdit(false)}
+          onSave={async (updates) => {
+            await updateLearner(learnerProfile.id, updates);
+            const merged = { ...learnerProfile, ...updates };
+            learnerProfileRef.current = merged;
+            setLearnerProfile(merged);
+            const newTimers = loadPhaseTimersForLearner(merged);
+            setPhaseTimers(newTimers);
+            setShowTimerSettingsEdit(false);
+          }}
+          onPatch={async (patch) => {
+            await updateLearner(learnerProfile.id, patch);
+            const merged = { ...learnerProfile, ...patch };
+            learnerProfileRef.current = merged;
+            setLearnerProfile(merged);
+          }}
         />
       )}
 
