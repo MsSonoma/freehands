@@ -6,11 +6,50 @@ import { ensurePinAllowed } from '../lib/pinGate'
 import { getLearner } from '../facilitator/learners/clientApi'
 import { getSupabaseClient } from '../lib/supabaseClient'
 import GatedOverlay from '@/app/components/GatedOverlay'
+import PageTutorialOverlay from '@/app/components/PageTutorialOverlay'
+
+const LEARN_TUTORIAL_STEPS = [
+  {
+    icon: '🏠',
+    title: 'Welcome to Your Learning Portal',
+    body: 'This is where your learning begins! Pick a teacher to start a lesson, or check your Awards to see how far you have come.',
+  },
+  {
+    icon: '👩🏻‍🦰',
+    title: 'Ms. Sonoma',
+    body: 'Ms. Sonoma reads each lesson out loud, teaches vocabulary and examples, and asks you questions along the way. Great for guided learning!',
+  },
+  {
+    icon: '🤖',
+    title: 'Mr. Slate',
+    body: 'Mr. Slate drills you with rapid-fire practice questions to sharpen what you know. Perfect for review and test prep!',
+  },
+  {
+    icon: '👩‍🏫',
+    title: 'Mrs. Webb',
+    body: 'Mrs. Webb is a conversational AI teacher. Ask her questions, discuss topics, and explore the subject in your own words.',
+  },
+  {
+    icon: '🏆',
+    title: 'Awards',
+    body: 'Every completed lesson earns you a medal. Visit the Awards screen to see your full collection and celebrate your progress!',
+  },
+]
 
 export default function LearnPage() {
   const r = useRouter()
   const [learner, setLearner] = useState({ id: null, name: '' })
   const [showAuthGate, setShowAuthGate] = useState(false)
+  const [showTutorial, setShowTutorial] = useState(false)
+
+  // Auto-show tutorial on first visit
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem('ms_learn_tutorial_seen')) {
+        setShowTutorial(true)
+      }
+    } catch {}
+  }, [])
 
   useEffect(() => {
     let cancelled = false;
@@ -76,6 +115,15 @@ export default function LearnPage() {
 
   return (
     <main style={{ padding:'16px 24px' }}>
+      {showTutorial && (
+        <PageTutorialOverlay
+          steps={LEARN_TUTORIAL_STEPS}
+          onClose={() => {
+            setShowTutorial(false)
+            try { localStorage.setItem('ms_learn_tutorial_seen', '1') } catch {}
+          }}
+        />
+      )}
       <GatedOverlay
         show={showAuthGate}
         onClose={() => setShowAuthGate(false)}
@@ -86,7 +134,27 @@ export default function LearnPage() {
         benefits={['All three AI teachers — Ms. Sonoma, Mr. Slate, Mrs. Webb', 'Awards and medal tracking', 'Lesson history and progress', 'Personalized learner profiles']}
       />
       <div style={{ width:'100%', maxWidth:560, textAlign:'center', margin:'0 auto' }}>
-        <h1 style={{ margin:'4px 0 8px' }}>{noLearner ? 'Learning Portal' : `Hi, ${learner.name}!`}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 4 }}>
+          <h1 style={{ margin: 0 }}>{noLearner ? 'Learning Portal' : `Hi, ${learner.name}!`}</h1>
+          <button
+            onClick={() => setShowTutorial(true)}
+            title="Show page tour"
+            style={{
+              padding: '4px 10px',
+              border: '1px solid #c7d2fe',
+              borderRadius: 8,
+              background: '#eef2ff',
+              color: '#6366f1',
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: 'pointer',
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
+          >
+            ? Tour
+          </button>
+        </div>
         
         {!noLearner && learner.id !== 'demo' && (
           <div style={{ marginTop:4, marginBottom:12 }}>

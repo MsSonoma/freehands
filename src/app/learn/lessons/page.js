@@ -13,6 +13,40 @@ import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
 import { getMasteryForLearner } from '@/app/lib/masteryClient'
+import PageTutorialOverlay from '@/app/components/PageTutorialOverlay'
+
+const LESSONS_TUTORIAL_STEPS = [
+  {
+    icon: '📚',
+    title: 'Your Lesson Library',
+    body: 'Here you\'ll find all the lessons your teacher has prepared for you. Tap any lesson card to begin!',
+  },
+  {
+    icon: '🎓',
+    title: 'Choose Your Teacher',
+    body: 'Use the teacher selector in the sidebar to switch between Ms. Sonoma, Mr. Slate, and Mrs. Webb. Each one teaches in their own unique way.',
+  },
+  {
+    icon: '📋',
+    title: 'Lesson Tabs',
+    body: 'Active shows lessons ready for you today. Recent shows lessons you have started. Owned shows lessons created just for you by your teacher.',
+  },
+  {
+    icon: '▶️',
+    title: 'Starting a Lesson',
+    body: 'Tap a lesson card to begin. If you left mid-lesson, your progress is saved automatically — you\'ll pick up right where you stopped.',
+  },
+  {
+    icon: '🗝️',
+    title: 'Golden Keys',
+    body: 'Finish work phases before the timer runs out to earn a Golden Key! Earn enough in a lesson to unlock a special bonus reward.',
+  },
+  {
+    icon: '🏅',
+    title: 'Medals & Mastery',
+    body: 'Complete a lesson to earn a medal. Score high enough on the test to earn a Mastery badge. All achievements show up on the Awards page!',
+  },
+]
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 
@@ -70,6 +104,16 @@ function snapshotHasMeaningfulProgress(snapshot) {
 
 function LessonsPageInner(){
   const router = useRouter()
+  const [showTutorial, setShowTutorial] = useState(false)
+
+  // Auto-show tutorial on first visit
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem('ms_lessons_tutorial_seen')) {
+        setShowTutorial(true)
+      }
+    } catch {}
+  }, [])
 
   const [scheduledLessons, setScheduledLessons] = useState({}) // { 'subject/lesson_file': true } - lessons scheduled for today
   const [allLessons, setAllLessons] = useState({})
@@ -892,6 +936,15 @@ function LessonsPageInner(){
 
   return (
     <main style={{ padding: '16px 12px', maxWidth: 1100, margin: '0 auto' }}>
+      {showTutorial && (
+        <PageTutorialOverlay
+          steps={LESSONS_TUTORIAL_STEPS}
+          onClose={() => {
+            setShowTutorial(false)
+            try { localStorage.setItem('ms_lessons_tutorial_seen', '1') } catch {}
+          }}
+        />
+      )}
       {/* Golden Key Earned Toast Notification */}
       {showGoldenKeyToast && goldenKeysEnabled === true && (
         <div style={{
@@ -971,7 +1024,25 @@ function LessonsPageInner(){
 
           {sidebarOpen && (
             <div style={{ padding: '16px 14px' }}>
-              <h2 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 700, color: '#111' }}>Select a Lesson</h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111' }}>Select a Lesson</h2>
+                <button
+                  onClick={() => setShowTutorial(true)}
+                  title="Show page tour"
+                  style={{
+                    padding: '3px 9px',
+                    border: '1px solid #c7d2fe',
+                    borderRadius: 7,
+                    background: '#eef2ff',
+                    color: '#6366f1',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    lineHeight: 1.4,
+                    flexShrink: 0,
+                  }}
+                >? Tour</button>
+              </div>
 
               {/* Teacher selector */}
               {(() => {

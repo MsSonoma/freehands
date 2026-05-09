@@ -824,25 +824,48 @@ export default function CalendarPage() {
                   subtitle="Organize your teaching schedule with manual scheduling or automated planning"
                   dense
                   actions={
-                    <button
-                      type="button"
-                      onClick={() => setShowGeneratePortfolio(true)}
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: 10,
-                        border: '1px solid #c7d2fe',
-                        background: '#eef2ff',
-                        color: '#1e40af',
-                        fontWeight: 900,
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap'
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = '#e0e7ff' }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = '#eef2ff' }}
-                    >
-                      Generate portfolio
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowTutorial(true)}
+                        title="Show page tour"
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: 10,
+                          border: '1px solid #c7d2fe',
+                          background: '#eef2ff',
+                          color: '#6366f1',
+                          fontWeight: 700,
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          lineHeight: 1,
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#e0e7ff' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = '#eef2ff' }}
+                      >
+                        ? Tour
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowGeneratePortfolio(true)}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: 10,
+                          border: '1px solid #c7d2fe',
+                          background: '#eef2ff',
+                          color: '#1e40af',
+                          fontWeight: 900,
+                          fontSize: 12,
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#e0e7ff' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = '#eef2ff' }}
+                      >
+                        Generate portfolio
+                      </button>
+                    </div>
                   }
                 />
 

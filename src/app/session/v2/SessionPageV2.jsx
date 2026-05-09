@@ -56,6 +56,50 @@ import SessionVisualAidsCarousel from '../components/SessionVisualAidsCarousel';
 import { useSessionTracking } from '@/app/hooks/useSessionTracking';
 import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
+import PageTutorialOverlay from '@/app/components/PageTutorialOverlay';
+
+const SESSION_TUTORIAL_STEPS = [
+  {
+    icon: '\ud83c\udf93',
+    title: "Welcome to Ms. Sonoma's Classroom",
+    body: "This is your lesson space! Ms. Sonoma will guide you through each part of the lesson step by step.",
+  },
+  {
+    icon: '\ud83d\udcd6',
+    title: 'Teaching Phase',
+    body: 'Ms. Sonoma reads the lesson to you. Press Repeat (blue button) to hear a sentence again, or Next Sentence (green button) to move forward.',
+  },
+  {
+    icon: '\u2753',
+    title: 'Ask a Question',
+    body: 'During exercises and worksheets, tap the question button to ask Ms. Sonoma anything about the lesson. She will answer and bring you right back.',
+  },
+  {
+    icon: '\u23f1\ufe0f',
+    title: 'Session Timer',
+    body: 'The timer in the corner shows how long your session has been running. The phase bar at the top tells you which part of the lesson you are in.',
+  },
+  {
+    icon: '\u23f3',
+    title: 'Work Timer',
+    body: 'During Comprehension, Exercises, and Worksheets, a countdown timer appears. Finishing your work before it runs out helps you earn a Golden Key!',
+  },
+  {
+    icon: '\u25b6\ufe0f',
+    title: 'Play Timer',
+    body: 'After a work phase you earn free play time as a reward. The play timer counts down your break \u2014 enjoy it!',
+  },
+  {
+    icon: '\ud83d\udcdd',
+    title: 'Live Transcript',
+    body: 'Everything Ms. Sonoma says is captured in the transcript panel. Scroll up anytime to re-read something from the lesson.',
+  },
+  {
+    icon: '\ud83c\udfaf',
+    title: 'Phase Targets',
+    body: 'Each phase has a target number of questions, set by your teacher. Hit your targets to complete the lesson and earn a medal!',
+  },
+];
 
 // Test Review UI Component (matches V1)
 function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview }) {
@@ -441,6 +485,17 @@ export { SessionPageV2Inner };
 function SessionPageV2Inner() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Auto-show session tutorial on first visit
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem('ms_session_tutorial_seen')) {
+        setShowTutorial(true);
+      }
+    } catch {}
+  }, []);
+
   const lessonId = searchParams?.get('lesson') || '';
   const subjectParam = searchParams?.get('subject') || 'math'; // Subject folder for lesson lookup
   const regenerateParam = searchParams?.get('regenerate'); // Support generated lessons
@@ -6238,6 +6293,43 @@ function SessionPageV2Inner() {
   
   return (
     <>
+      {/* Tutorial overlay */}
+      {showTutorial && (
+        <PageTutorialOverlay
+          steps={SESSION_TUTORIAL_STEPS}
+          onClose={() => {
+            setShowTutorial(false);
+            try { localStorage.setItem('ms_session_tutorial_seen', '1'); } catch {}
+          }}
+        />
+      )}
+
+      {/* Fixed tutorial toggle button */}
+      {!showTutorial && (
+        <button
+          onClick={() => setShowTutorial(true)}
+          title="Show page tour"
+          style={{
+            position: 'fixed',
+            bottom: 80,
+            right: 16,
+            zIndex: 1500,
+            padding: '6px 12px',
+            border: '1px solid #c7d2fe',
+            borderRadius: 8,
+            background: '#eef2ff',
+            color: '#6366f1',
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: 'pointer',
+            lineHeight: 1,
+            boxShadow: '0 2px 8px rgba(99,102,241,0.15)',
+          }}
+        >
+          ? Tour
+        </button>
+      )}
+
       {/* Content wrapper - add horizontal gutters in landscape */}
       <div style={isMobileLandscape ? { width: '100%', paddingLeft: 8, paddingRight: 8, boxSizing: 'border-box', position: 'relative' } : { width: '100%' }}>
         
