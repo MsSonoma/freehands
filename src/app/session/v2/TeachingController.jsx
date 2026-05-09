@@ -254,13 +254,14 @@ export class TeachingController {
     this.#prefetchStarted = true;
 
     // Prefetch promises should never produce unhandled rejections.
-    // Stagger all calls so the Vercel function is warm before concept fires:
-    //   t=0:  warm-up via TTS prefetch (low-cost, triggers function warm-up)
-    //   t=2s: concept fetch (function now warm from discussion phase activity)
-    //   t=4s: definitions fetch (parallel with concept, well-staggered)
+    // The /api/sonoma function cold-starts on Vercel (~5-10s). Warm it immediately
+    // with a free GET ping (no LLM call), then stagger real calls after 1s.
 
-    // 1. Concept - delay 2s so the Vercel function cold-start has resolved
-    this.#conceptGptPromise = new Promise(resolve => setTimeout(resolve, 2000))
+    // 0. Warm-up ping — wakes the Vercel function at no token cost
+    fetch('/api/sonoma', { method: 'GET' }).catch(() => {});
+
+    // 1. Concept - delay 1s so warm-up resolves before the fetch fires
+    this.#conceptGptPromise = new Promise(resolve => setTimeout(resolve, 1000))
       .then(() => this.#fetchConceptFromGPT())
       .then(sentences => {
         sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
@@ -271,8 +272,8 @@ export class TeachingController {
         return [];
       });
 
-    // 2. Definitions - start 4s after prefetchAll begins (parallel with concept)
-    this.#definitionsGptPromise = new Promise(resolve => setTimeout(resolve, 4000))
+    // 2. Definitions - start 3s after prefetchAll begins
+    this.#definitionsGptPromise = new Promise(resolve => setTimeout(resolve, 3000))
       .then(() => this.#fetchDefinitionsFromGPT())
       .then(sentences => {
         sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
