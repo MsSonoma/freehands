@@ -34,6 +34,11 @@ const TOUR_STEPS = [
     body: 'Switch to the Planner tab to drag-and-drop lessons across weeks, mark no-school days, and bulk-plan your curriculum. Perfect for end-of-term prep.',
   },
   {
+    icon: '🎓',
+    title: 'Ready to Start? Hit "Learn"!',
+    body: 'When your learner is ready to begin, click the "Learn" button in the top navigation bar. That switches to the learner-facing side where they can pick a lesson and start.',
+  },
+  {
     icon: '✅',
     title: 'You\'re all set!',
     body: 'That\'s the full tour. Explore at your own pace — every panel has a help icon (❓) with more detail. Happy teaching!',
