@@ -2396,13 +2396,16 @@ function SessionPageV2Inner() {
 
     let ws = generatedWorksheet;
     let ts = generatedTest;
-    if (!ws || !ws.length) {
-      ws = buildWorksheetSet();
-      if (ws.length) setGeneratedWorksheet(ws);
-    }
-    if (!ts || !ts.length) {
-      ts = buildTestSet();
-      if (ts.length) setGeneratedTest(ts);
+    if ((!ws || !ws.length) || (!ts || !ts.length)) {
+      const all = buildAllPhaseSets();
+      if (!ws || !ws.length) {
+        ws = all.worksheet;
+        if (ws.length) setGeneratedWorksheet(ws);
+      }
+      if (!ts || !ts.length) {
+        ts = all.test;
+        if (ts.length) setGeneratedTest(ts);
+      }
     }
 
     if ((ws && ws.length) || (ts && ts.length)) {
@@ -2502,7 +2505,7 @@ function SessionPageV2Inner() {
       console.error('[SessionPageV2] Combined PDF generation failed', err);
       setDownloadError('Failed to generate facilitator key.');
     }
-  }, [buildTestSet, buildWorksheetSet, generatedTest, generatedWorksheet, lessonData, lessonId, lessonKey, persistAssessments, shareOrPreviewPdf]);
+  }, [buildAllPhaseSets, generatedTest, generatedWorksheet, lessonData, lessonId, lessonKey, persistAssessments, shareOrPreviewPdf]);
 
   const handleRefreshWorksheetAndTest = useCallback(async () => {
     const ok = await ensurePinAllowed('refresh');
