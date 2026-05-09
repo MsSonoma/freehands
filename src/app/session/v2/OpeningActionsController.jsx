@@ -136,11 +136,10 @@ export class OpeningActionsController {
         question ? `The learner asked: "${question}".` : '',
         vocabChunk || '',
         problemChunk || '',
-        'Answer their question in 2-3 short sentences.',
+        'Answer their question directly in 2-3 short sentences. Give a real, specific answer.',
         'Use the provided vocab meanings when relevant so words with multiple definitions stay on-topic.',
-        'Be warm, encouraging, and age-appropriate.',
-        'Do not ask the learner any questions in your reply.',
-        'If the question is off-topic or inappropriate, gently redirect.'
+        'Be warm and age-appropriate. Do not use filler phrases like "That\'s a great question" or "Keep thinking about it" — just answer.',
+        'Do not ask the learner any questions in your reply.'
       ].filter(Boolean).join(' ');
       
       let response;
@@ -150,7 +149,7 @@ export class OpeningActionsController {
           headers: { 'Content-Type': 'application/json' },
           // Ask uses the frontend audio engine for speech; skip server-side TTS to
           // avoid large base64 payloads and reduce failure risk.
-          body: JSON.stringify({ instruction, innertext: question, skipAudio: true })
+          body: JSON.stringify({ instruction, innertext: question, skipAudio: true, lessonTopic: lessonTitle })
         });
       } catch (fetchErr) {
         console.error('[OpeningActionsController] Ask fetch network error:', fetchErr?.message || fetchErr);

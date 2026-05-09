@@ -178,6 +178,7 @@ export async function POST(req) {
   let instructions = ''
   let innertext = ''
   let skipAudio = false
+  let lessonTopic = ''
 
     const contentType = (req.headers?.get?.('content-type') || '').toLowerCase()
     try {
@@ -189,6 +190,7 @@ export async function POST(req) {
           const instruction = body.instruction || ''
           innertext = body.innertext || ''
           skipAudio = Boolean(body.skipAudio)
+          lessonTopic = body.lessonTopic || ''
           // Got structured body
           instructions = instruction
         } catch {
@@ -262,7 +264,7 @@ export async function POST(req) {
       }
     }
     // CONTENT SAFETY: Harden instructions with safety preamble
-    const hardenedInstructions = hardenInstructions(trimmedInstructions, 'educational content', [])
+    const hardenedInstructions = hardenInstructions(trimmedInstructions, lessonTopic || 'educational content', [])
     
     // Minimal user payload: single user message containing instructions + (optional) innertext
     const combined = trimmedInnertext
