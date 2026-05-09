@@ -680,8 +680,10 @@ export default function LessonMakerPage(){
                 border: `1px solid ${quotaAllowed ? '#bbf7d0' : '#fde68a'}`,
               }}>
                 {quotaAllowed
-                  ? (quotaInfo.remaining === -1 ? '∞ Unlimited' : `${quotaInfo.remaining} left today`)
-                  : '⚠ Limit reached'}
+                  ? (quotaInfo.remaining === -1
+                      ? '✨ Unlimited generations'
+                      : `✨ ${quotaInfo.remaining} of ${quotaInfo.limit} AI generations left today`)
+                  : '⚠ Daily generation limit reached'}
               </span>
             ) : null}
           </div>

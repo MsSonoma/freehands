@@ -1639,9 +1639,19 @@ function LessonsPageInner(){
         </>
       )}
 
-      <p style={{ textAlign:'center', color:'#6b7280', marginTop:24 }}>
-        Daily lessons used: {Number.isFinite(todaysCount) ? todaysCount : 0} / {featuresForTier(planTier).lessonsPerDay === Infinity ? '' : featuresForTier(planTier).lessonsPerDay}
-      </p>
+      {(() => {
+        const ent = featuresForTier(planTier)
+        const cap = ent.lessonsPerDay
+        const used = Number.isFinite(todaysCount) ? todaysCount : 0
+        const unlimited = cap === Infinity
+        return (
+          <p style={{ textAlign: 'center', color: '#9ca3af', marginTop: 24, fontSize: 13 }}>
+            {unlimited
+              ? `Lessons started today: ${used} (no daily limit on your plan)`
+              : `Lessons started today: ${used} of ${cap} — ${Math.max(0, cap - used)} remaining`}
+          </p>
+        )
+      })()}
 
         </div>{/* end main content */}
       </div>{/* end sidebar+content flex row */}
