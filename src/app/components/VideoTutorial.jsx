@@ -18,9 +18,10 @@ export default function VideoTutorial({
   label,
   thumbTime = 1,
   width = 160,
+  autoOpen = false,
 }) {
   const height = Math.round(width * (9 / 16))
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(autoOpen)
   const [side, setSide] = useState('right') // 'left' | 'right'
   const [fullscreen, setFullscreen] = useState(false)
   const [thumbUrl, setThumbUrl] = useState(null)
@@ -50,6 +51,12 @@ export default function VideoTutorial({
     })
     vid.load()
   }, [src, thumbTime])
+
+  // Auto-play when opened via autoOpen prop
+  useEffect(() => {
+    if (autoOpen) setTimeout(() => overlayVideoRef.current?.play(), 200)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleOpen = () => {
     setOpen(true)

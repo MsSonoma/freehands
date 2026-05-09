@@ -185,6 +185,7 @@ export default function OnboardingChecklist() {
               label=""
               thumbTime={1}
               width={72}
+              autoOpen={step === ONBOARDING_STEPS.CREATE_LEARNER}
             />
             <div>
               <div style={{ fontWeight: 700, fontSize: 11, color: '#4c1d95', lineHeight: 1.3 }}>🤖 Watch the walkthrough</div>
