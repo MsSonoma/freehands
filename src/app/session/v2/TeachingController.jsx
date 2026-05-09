@@ -710,7 +710,7 @@ export class TeachingController {
       'Do NOT greet or introduce yourself. Begin speaking immediately.',
       'Do NOT ask any questions.',
       'Do NOT use numbered lists, bullet points, or any list formatting.',
-      'Write only flowing spoken sentences, one idea each.'
+      'Write only flowing spoken sentences, one idea each.',
       '',
       'Kid-friendly: Use simple everyday words. Keep sentences short (about 6–12 words). One idea per sentence.',
       'Always respond with natural spoken text only. No emojis, decorative characters, or symbols.',
