@@ -676,7 +676,6 @@ export class TeachingController {
       .filter(v => v?.term && v?.definition)
       .map(v => `${v.term}: ${v.definition}`)
       .join('\n');
-    const vocabTerms = this.#getVocabTerms();
 
     // Anchor GPT on a sample of assessment questions so the concept explanation
     // targets what the learner will actually be assessed on.
