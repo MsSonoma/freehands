@@ -510,7 +510,9 @@ export class WorksheetPhase {
     });
     
     // Format question for TTS (add "True/False:" prefix for TF, letter options for MC)
-    const formattedQuestion = formatQuestionForSpeech(question);
+    // Prepend the question number so it matches the printed worksheet.
+    const questionNumber = this.#currentQuestionIndex + 1;
+    const formattedQuestion = `Question ${questionNumber}. ${formatQuestionForSpeech(question)}`;
     
     // Check cache first (instant if prefetched)
     let audioBase64 = ttsCache.get(formattedQuestion);
@@ -526,7 +528,7 @@ export class WorksheetPhase {
     // Prefetch next question in background (eliminates wait on Next click)
     const nextIndex = this.#currentQuestionIndex + 1;
     if (nextIndex < this.#questions.length) {
-      const nextQuestion = formatQuestionForSpeech(this.#questions[nextIndex]);
+      const nextQuestion = `Question ${nextIndex + 1}. ${formatQuestionForSpeech(this.#questions[nextIndex])}`;
       ttsCache.prefetch(nextQuestion);
     }
     

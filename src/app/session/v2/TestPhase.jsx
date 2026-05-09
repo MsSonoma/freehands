@@ -554,7 +554,9 @@ export class TestPhase {
       question: question
     });
     
-    const spokenQuestion = ensureQuestionMark(formatQuestionForSpeech(question, { layout: 'multiline' }));
+    // Prepend the question number so it matches the printed test.
+    const questionNumber = this.#currentQuestionIndex + 1;
+    const spokenQuestion = `Question ${questionNumber}. ${ensureQuestionMark(formatQuestionForSpeech(question, { layout: 'multiline' }))}`;
 
     // Check cache first (instant if prefetched)
     let audioBase64 = ttsCache.get(spokenQuestion);
@@ -582,7 +584,7 @@ export class TestPhase {
     const nextIndex = this.#currentQuestionIndex + 1;
     if (nextIndex < this.#questions.length) {
       const nextQ = this.#questions[nextIndex];
-      const nextSpoken = ensureQuestionMark(formatQuestionForSpeech(nextQ, { layout: 'multiline' }));
+      const nextSpoken = `Question ${nextIndex + 1}. ${ensureQuestionMark(formatQuestionForSpeech(nextQ, { layout: 'multiline' }))}`;
       ttsCache.prefetch(nextSpoken);
     }
     
