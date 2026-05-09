@@ -78,6 +78,25 @@ function normalizeBlanksForSpeech(safe) {
   } catch { return safe }
 }
 
+// Strip emoji and other non-speech characters so TTS does not read them aloud.
+function stripEmojiForSpeech(text) {
+  if (!text) return text
+  return String(text)
+    // Emoji: covers the vast majority of Unicode emoji blocks
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')   // CJK/Mahjong/Domino/misc supplementary
+    .replace(/[\u{2600}-\u{27BF}]/gu, '')       // Misc symbols, dingbats
+    .replace(/[\u{2300}-\u{23FF}]/gu, '')       // Misc technical
+    .replace(/[\u{2B00}-\u{2BFF}]/gu, '')       // Misc symbols and arrows
+    .replace(/[\u{FE00}-\u{FE0F}]/gu, '')       // Variation selectors
+    .replace(/\u{20E3}/gu, '')                  // Combining enclosing keycap
+    .replace(/[\u{E0020}-\u{E007F}]/gu, '')     // Tags block (flag sequences)
+    // Catch-all: any remaining characters outside Basic Latin + Latin-1 that aren't
+    // normal punctuation or accented letters (covers stray symbols, private use, etc.)
+    .replace(/[^\u0000-\u02FF\u0300-\u036F\u0370-\u03FF]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
 // Strip markdown formatting so TTS does not read asterisks, underscores, etc.
 function stripMarkdownForSpeech(text) {
   if (!text) return text
@@ -89,7 +108,8 @@ function stripMarkdownForSpeech(text) {
 }
 
 function toSsml(text) {
-  const stripped = stripMarkdownForSpeech(text || '')
+  const deEmojied = stripEmojiForSpeech(text || '')
+  const stripped = stripMarkdownForSpeech(deEmojied)
   const safe = escapeForSsml(stripped)
   const withParagraphBreaks = safe.replace(/(?:\r?\n){2,}/g, ' <break time="700ms"/> ')
   const withBlanks = normalizeBlanksForSpeech(withParagraphBreaks)
