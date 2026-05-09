@@ -6717,7 +6717,7 @@ function SessionPageV2Inner() {
               <div className="text-sm font-semibold text-gray-600 mb-1">TeachingController</div>
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${
-                  teachingStage === 'concept' || teachingStage === 'definitions' || teachingStage === 'examples' ? 'bg-blue-500' :
+                  teachingStage === 'definitions' || teachingStage === 'examples' ? 'bg-blue-500' :
                   teachingStage === 'complete' ? 'bg-green-500' :
                   'bg-gray-300'
                 }`} />
@@ -7657,7 +7657,7 @@ function SessionPageV2Inner() {
                       : teachingStage === 'idle'
                         ? 'Begin'
                         : isInSentenceMode
-                          ? 'Next'
+                          ? 'Next Sentence'
                           : teachingStage === 'definitions'
                             ? 'Continue to Examples'
                             : 'Complete Teaching'
