@@ -4561,6 +4561,7 @@ function SessionPageV2Inner() {
       stage: savedTeaching.stage,
       sentenceIndex: Number.isFinite(savedTeaching.sentenceIndex) ? savedTeaching.sentenceIndex : 0,
       isInSentenceMode: savedTeaching.isInSentenceMode !== false,
+      conceptSentences: Array.isArray(savedTeaching.conceptSentences) ? savedTeaching.conceptSentences : [],
       vocabSentences: Array.isArray(savedTeaching.vocabSentences) ? savedTeaching.vocabSentences : [],
       exampleSentences: Array.isArray(savedTeaching.exampleSentences) ? savedTeaching.exampleSentences : []
     } : null;
@@ -4568,7 +4569,9 @@ function SessionPageV2Inner() {
     if (resumeState) {
       const total = resumeState.stage === 'examples'
         ? resumeState.exampleSentences.length
-        : resumeState.vocabSentences.length;
+        : resumeState.stage === 'concept'
+          ? resumeState.conceptSentences.length
+          : resumeState.vocabSentences.length;
       if (resumeState.stage) setTeachingStage(resumeState.stage);
       if (total) setTotalSentences(total);
       setSentenceIndex(Math.max(0, Math.min(resumeState.sentenceIndex || 0, Math.max(0, total - 1))));
@@ -6714,7 +6717,7 @@ function SessionPageV2Inner() {
               <div className="text-sm font-semibold text-gray-600 mb-1">TeachingController</div>
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${
-                  teachingStage === 'definitions' || teachingStage === 'examples' ? 'bg-blue-500' :
+                  teachingStage === 'concept' || teachingStage === 'definitions' || teachingStage === 'examples' ? 'bg-blue-500' :
                   teachingStage === 'complete' ? 'bg-green-500' :
                   'bg-gray-300'
                 }`} />
@@ -7614,7 +7617,7 @@ function SessionPageV2Inner() {
               justifyContent: 'center',
               padding: '8px 4px'
             }}>
-              {(teachingStage === 'idle' || teachingStage === 'definitions' || teachingStage === 'examples') && (
+              {(teachingStage === 'idle' || teachingStage === 'concept' || teachingStage === 'definitions' || teachingStage === 'examples') && (
                 <>
                   <button
                     onClick={repeatSentence}
@@ -7652,9 +7655,9 @@ function SessionPageV2Inner() {
                     {teachingLoading
                       ? 'Loading...'
                       : teachingStage === 'idle'
-                        ? 'Continue to Definitions'
+                        ? 'Begin'
                         : isInSentenceMode
-                          ? 'Next Sentence'
+                          ? 'Next'
                           : teachingStage === 'definitions'
                             ? 'Continue to Examples'
                             : 'Complete Teaching'

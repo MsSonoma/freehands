@@ -1,17 +1,18 @@
 /**
- * TeachingController - Manages two-stage teaching flow
+ * TeachingController - Manages three-stage teaching flow
  * 
- * V2 Architecture: Calls GPT to generate definitions and examples text,
+ * V2 Architecture: Calls GPT to generate concept intro, definitions, and examples text,
  * then splits into sentences for sentence-by-sentence navigation.
  * 
  * Flow:
- * 1. Extract vocab terms from lesson JSON (just the terms, not definitions)
- * 2. Call GPT to generate kid-friendly definitions text
- * 3. Split GPT response into sentences
- * 4. User navigates sentence-by-sentence with gate controls
- * 5. At definitions gate, transition to examples
- * 6. Call GPT to generate examples text
- * 7. Split into sentences, navigate, gate, complete
+ * 1. Call GPT to generate a 3-5 sentence concept introduction (the big idea)
+ * 2. User navigates concept sentences; on completion transitions to definitions
+ * 3. Extract vocab terms from lesson JSON
+ * 4. Call GPT to generate kid-friendly definitions text
+ * 5. Split GPT response into sentences, navigate, gate
+ * 6. At definitions gate, transition to examples
+ * 7. Call GPT to generate examples text
+ * 8. Split into sentences, navigate, gate, complete
  * 
  * Events emitted:
  * - stageChange: { stage, totalSentences }
@@ -32,7 +33,8 @@ export class TeachingController {
   #lessonData = null;
   #lessonMeta = null; // { subject, difficulty, lessonId, lessonTitle }
   
-  #stage = 'idle'; // 'idle' | 'loading-definitions' | 'definitions' | 'loading-examples' | 'examples' | 'complete'
+  #stage = 'idle'; // 'idle' | 'loading-concept' | 'concept' | 'loading-definitions' | 'definitions' | 'loading-examples' | 'examples' | 'complete'
+  #conceptSentences = [];
   #vocabSentences = [];
   #exampleSentences = [];
   #currentSentenceIndex = 0;
@@ -43,6 +45,7 @@ export class TeachingController {
   #audioEndListener = null;
   
   // Background prefetch promises - started early, awaited when needed
+  #conceptGptPromise = null;
   #definitionsGptPromise = null;
   #examplesGptPromise = null;
   #definitionsGatePromptPromise = null;
@@ -50,10 +53,13 @@ export class TeachingController {
 
   // Rate-limit / spam guards
   #prefetchStarted = false;
+  #conceptCooldownUntilMs = 0;
   #definitionsCooldownUntilMs = 0;
   #examplesCooldownUntilMs = 0;
+  #conceptRateLimited = false;
   #definitionsRateLimited = false;
   #examplesRateLimited = false;
+  #conceptRetryPending = false;
   #definitionsRetryPending = false;
   #examplesRetryPending = false;
 
@@ -96,6 +102,17 @@ export class TeachingController {
 
   #sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+  }
+
+  #buildLocalConceptFallbackSentences() {
+    const title = this.#lessonData?.title || 'today\'s lesson';
+    const blurb = (this.#lessonData?.blurb || '').trim();
+    const teachingNotes = (this.#lessonData?.teachingNotes || '').trim();
+    const sentences = [];
+    if (blurb) sentences.push(...this.#splitIntoSentences(blurb));
+    if (teachingNotes) sentences.push(...this.#splitIntoSentences(teachingNotes));
+    if (!sentences.length) sentences.push(`Today we are learning about ${title}.`);
+    return sentences.slice(0, 5);
   }
 
   #buildLocalDefinitionFallbackSentences() {
@@ -154,6 +171,31 @@ export class TeachingController {
 
   async #maybeRetryRateLimited(stage) {
     const now = this.#getNowMs();
+
+    if (stage === 'concept' && (this.#conceptRateLimited || this.#conceptRetryPending)) {
+      if (now < this.#conceptCooldownUntilMs) {
+        this.#currentSentenceIndex = 0;
+        await this.#playCurrentConcept();
+        return true;
+      }
+
+      // Cooldown passed: retry fetch.
+      this.#conceptRateLimited = false;
+      this.#conceptRetryPending = false;
+      this.#conceptCooldownUntilMs = 0;
+      this.#conceptSentences = [];
+      this.#conceptGptPromise = null;
+
+      this.#stage = 'loading-concept';
+      this.#emit('loading', { stage: 'concept' });
+      await this.#ensureConceptLoaded();
+
+      this.#stage = 'concept';
+      this.#currentSentenceIndex = 0;
+      this.#emit('stageChange', { stage: 'concept', totalSentences: this.#conceptSentences.length });
+      await this.#playCurrentConcept();
+      return true;
+    }
 
     if (stage === 'definitions' && (this.#definitionsRateLimited || this.#definitionsRetryPending)) {
       if (now < this.#definitionsCooldownUntilMs) {
@@ -221,13 +263,27 @@ export class TeachingController {
       return;
     }
     this.#prefetchStarted = true;
-    
-    // Start definitions GPT (don't await) - then prefetch TTS for first few sentences.
-    // IMPORTANT: Stagger downstream GPT calls to reduce 429 risk.
+
+    // IMPORTANT: Stagger GPT calls sequentially to reduce 429 risk.
     // Prefetch promises should never produce unhandled rejections.
-    this.#definitionsGptPromise = this.#fetchDefinitionsFromGPT()
+
+    // 1. Concept - start immediately (first in the teaching flow)
+    this.#conceptGptPromise = this.#fetchConceptFromGPT()
       .then(sentences => {
-        // Prefetch TTS for first 3 definition sentences
+        sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
+        return sentences;
+      })
+      .catch(err => {
+        console.error('[TeachingController] Concept prefetch error:', err);
+        return [];
+      });
+
+    // 2. Definitions - start after concept resolves + 2s stagger
+    this.#definitionsGptPromise = this.#conceptGptPromise
+      .catch(() => [])
+      .then(() => new Promise(resolve => setTimeout(resolve, 2000)))
+      .then(() => this.#fetchDefinitionsFromGPT())
+      .then(sentences => {
         sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
         return sentences;
       })
@@ -235,14 +291,13 @@ export class TeachingController {
         console.error('[TeachingController] Definitions prefetch error:', err);
         return [];
       });
-    
-    // Start examples GPT after definitions completes + 4 second delay (rate limit safety).
+
+    // 3. Examples - start after definitions resolves + 4s stagger
     this.#examplesGptPromise = this.#definitionsGptPromise
       .catch(() => [])
       .then(() => new Promise(resolve => setTimeout(resolve, 4000)))
       .then(() => this.#fetchExamplesFromGPT())
       .then(sentences => {
-        // Prefetch TTS for first 3 example sentences
         sentences.slice(0, 3).forEach(s => ttsCache.prefetch(s));
         return sentences;
       })
@@ -250,27 +305,27 @@ export class TeachingController {
         console.error('[TeachingController] Examples prefetch error:', err);
         return [];
       });
-    
+
     // Gate prompts are nice-to-have; fetch them after their parent content + 2s delay each.
     this.#definitionsGatePromptPromise = this.#definitionsGptPromise
       .catch(() => [])
       .then(() => new Promise(resolve => setTimeout(resolve, 2000)))
       .then(() => this.#fetchGatePromptFromGPT('definitions'))
       .then(text => {
-      if (text) ttsCache.prefetch(text);
-      return text;
-    });
-    
+        if (text) ttsCache.prefetch(text);
+        return text;
+      });
+
     this.#examplesGatePromptPromise = this.#examplesGptPromise
       .catch(() => [])
       .then(() => new Promise(resolve => setTimeout(resolve, 2000)))
       .then(() => this.#fetchGatePromptFromGPT('examples'))
       .then(text => {
-      if (text) ttsCache.prefetch(text);
-      return text;
-    });
-    
-    // Also prefetch the intro TTS
+        if (text) ttsCache.prefetch(text);
+        return text;
+      });
+
+    // Prefetch transition TTS phrases
     ttsCache.prefetch("First let's go over some definitions.");
     ttsCache.prefetch("Now let's see this in action.");
     ttsCache.prefetch("Do you have any questions?");
@@ -309,6 +364,7 @@ export class TeachingController {
       stage: this.#stage,
       sentenceIndex: this.#currentSentenceIndex,
       isInSentenceMode: this.#isInSentenceMode,
+      conceptSentences: this.#conceptSentences,
       vocabSentences: this.#vocabSentences,
       exampleSentences: this.#exampleSentences
     };
@@ -328,18 +384,30 @@ export class TeachingController {
       throw new Error('No lesson data provided');
     }
 
-    // If resuming directly into examples, bypass definitions intro and go straight there.
+    // Route resume states directly to the correct stage.
     if (resumeState?.stage === 'examples') {
       await this.#startExamples({ resumeState });
       return;
     }
+    if (resumeState?.stage === 'definitions') {
+      await this.#startDefinitions({ autoplayFirstSentence, resumeState });
+      return;
+    }
+    if (resumeState?.stage === 'concept') {
+      await this.#startConcept({ resumeState });
+      return;
+    }
 
-    // Resume into definitions (or fresh start if no resume state).
-    await this.#startDefinitions({ autoplayFirstSentence, resumeState });
+    // Fresh start: begin with concept introduction.
+    await this.#startConcept();
   }
   
   // Public API: Sentence navigation
   async nextSentence() {
+    if (this.#stage === 'concept') {
+      const handled = await this.#maybeRetryRateLimited('concept');
+      if (handled) return;
+    }
     if (this.#stage === 'definitions') {
       const handled = await this.#maybeRetryRateLimited('definitions');
       if (handled) return;
@@ -350,6 +418,18 @@ export class TeachingController {
     }
 
     // If in loading stage, stop current audio, await content, then play first sentence
+    if (this.#stage === 'loading-concept') {
+      console.log('[TeachingController] nextSentence during loading-concept - awaiting content');
+      this.#audioEngine.stop();
+      await this.#ensureConceptLoaded();
+      if (this.#conceptSentences.length > 0) {
+        this.#stage = 'concept';
+        this.#currentSentenceIndex = 0;
+        this.#emit('stageChange', { stage: 'concept', totalSentences: this.#conceptSentences.length });
+        this.#playCurrentConcept();
+      }
+      return;
+    }
     if (this.#stage === 'loading-definitions') {
       console.log('[TeachingController] nextSentence during loading-definitions - awaiting content');
       this.#audioEngine.stop(); // Stop intro audio
@@ -376,11 +456,11 @@ export class TeachingController {
       }
       return;
     }
-    
+
     if (this.#stage === 'idle' || this.#stage === 'complete') {
       return;
     }
-    
+
     if (this.#stage === 'definitions' && this.#awaitingFirstPlay) {
       this.#awaitingFirstPlay = false;
       this.#playCurrentDefinition();
@@ -391,7 +471,9 @@ export class TeachingController {
       this.#playCurrentExample();
       return;
     }
-    if (this.#stage === 'definitions') {
+    if (this.#stage === 'concept') {
+      this.#advanceConcept();
+    } else if (this.#stage === 'definitions') {
       this.#advanceDefinition();
     } else if (this.#stage === 'examples') {
       this.#advanceExample();
@@ -400,6 +482,10 @@ export class TeachingController {
   
   async repeatSentence() {
     try {
+      if (this.#stage === 'concept') {
+        const handled = await this.#maybeRetryRateLimited('concept');
+        if (handled) return;
+      }
       if (this.#stage === 'definitions') {
         const handled = await this.#maybeRetryRateLimited('definitions');
         if (handled) return;
@@ -410,6 +496,17 @@ export class TeachingController {
       }
 
       // If in loading stage, stop current audio, await content, then play first sentence
+      if (this.#stage === 'loading-concept') {
+        this.#audioEngine.stop();
+        await this.#ensureConceptLoaded();
+        if (this.#conceptSentences.length > 0) {
+          this.#stage = 'concept';
+          this.#currentSentenceIndex = 0;
+          this.#emit('stageChange', { stage: 'concept', totalSentences: this.#conceptSentences.length });
+          this.#playCurrentConcept();
+        }
+        return;
+      }
       if (this.#stage === 'loading-definitions') {
         this.#audioEngine.stop();
         await this.#ensureDefinitionsLoaded();
@@ -449,7 +546,9 @@ export class TeachingController {
         this.#playCurrentExample();
         return;
       }
-      if (this.#stage === 'definitions') {
+      if (this.#stage === 'concept') {
+        this.#playCurrentConcept();
+      } else if (this.#stage === 'definitions') {
         this.#playCurrentDefinition();
       } else if (this.#stage === 'examples') {
         this.#playCurrentExample();
@@ -462,7 +561,8 @@ export class TeachingController {
   
   async skipToExamples() {
     try {
-      if (this.#stage === 'definitions' || this.#stage === 'loading-definitions') {
+      if (this.#stage === 'concept' || this.#stage === 'loading-concept' ||
+          this.#stage === 'definitions' || this.#stage === 'loading-definitions') {
         await this.#startExamples();
       }
     } catch (err) {
@@ -472,7 +572,18 @@ export class TeachingController {
   }
   
   restartStage() {
-    if (this.#stage === 'definitions') {
+    if (this.#stage === 'concept') {
+      if (this.#conceptRateLimited || this.#conceptRetryPending) {
+        void this.#maybeRetryRateLimited('concept').catch(err => {
+          console.error('[TeachingController] restartStage retry (concept) error:', err);
+          this.#emit('error', { type: 'teaching', action: 'restartStage', stage: 'concept', error: String(err?.message || err) });
+        });
+        return;
+      }
+      this.#currentSentenceIndex = 0;
+      this.#isInSentenceMode = true;
+      this.#playCurrentConcept();
+    } else if (this.#stage === 'definitions') {
       if (this.#definitionsRateLimited || this.#definitionsRetryPending) {
         void this.#maybeRetryRateLimited('definitions').catch(err => {
           console.error('[TeachingController] restartStage retry (definitions) error:', err);
@@ -509,7 +620,9 @@ export class TeachingController {
   }
   
   get totalSentences() {
-    if (this.#stage === 'definitions') {
+    if (this.#stage === 'concept') {
+      return this.#conceptSentences.length;
+    } else if (this.#stage === 'definitions') {
       return this.#vocabSentences.length;
     } else if (this.#stage === 'examples') {
       return this.#exampleSentences.length;
@@ -522,7 +635,9 @@ export class TeachingController {
   }
   
   get currentSentence() {
-    if (this.#stage === 'definitions') {
+    if (this.#stage === 'concept') {
+      return this.#conceptSentences[this.#currentSentenceIndex] || '';
+    } else if (this.#stage === 'definitions') {
       return this.#vocabSentences[this.#currentSentenceIndex] || '';
     } else if (this.#stage === 'examples') {
       return this.#exampleSentences[this.#currentSentenceIndex] || '';
@@ -552,6 +667,119 @@ export class TeachingController {
     return sharedSplitIntoSentences(text);
   }
   
+  // Private: Call GPT for concept introduction
+  async #fetchConceptFromGPT() {
+    const now = this.#getNowMs();
+    if (now < this.#conceptCooldownUntilMs) {
+      this.#conceptRateLimited = true;
+      this.#conceptRetryPending = false;
+      const remainingMs = this.#conceptCooldownUntilMs - now;
+      const msg = this.#buildRateLimitSentence(remainingMs);
+      this.#emit('error', { type: 'gpt', stage: 'concept', status: 429, retryAfterMs: remainingMs });
+      return [msg];
+    }
+
+    const lessonTitle = this.#lessonData?.title || 'this lesson';
+    const grade = this.#lessonData?.grade || '';
+    const blurb = (this.#lessonData?.blurb || '').trim();
+    const teachingNotes = (this.#lessonData?.teachingNotes || '').trim();
+
+    // Anchor GPT on a sample of assessment questions so the concept explanation
+    // targets what the learner will actually be assessed on.
+    const allQuestions = [
+      ...(this.#lessonData?.multiplechoice || []).slice(0, 2).map(q => q?.question || q?.Q || ''),
+      ...(this.#lessonData?.truefalse || []).slice(0, 2).map(q => q?.question || q?.statement || ''),
+      ...(this.#lessonData?.shortanswer || []).slice(0, 1).map(q => q?.question || ''),
+    ].filter(Boolean);
+    const questionContext = allQuestions.length > 0
+      ? `Assessment questions the learner will answer (do not read aloud; use only to guide your explanation):\n${allQuestions.join('\n')}`
+      : '';
+
+    const instruction = [
+      `Grade: ${grade}`,
+      `Lesson topic (do not say the title aloud): "${lessonTitle}"`,
+      '',
+      blurb ? `Lesson hook (for reference): ${blurb}` : '',
+      teachingNotes ? `Pedagogy notes (for reference, do not read aloud): ${teachingNotes}` : '',
+      '',
+      questionContext,
+      '',
+      'Your task: Give a brief, friendly concept introduction that explains the core idea of this lesson.',
+      'Write 3–5 short spoken sentences that explain:',
+      '  1. What this topic is (the big idea)',
+      '  2. Why it matters or where students will see it in real life',
+      'Do NOT define vocabulary words yet — that comes next.',
+      'Do NOT give worked examples yet — that comes after.',
+      'Do NOT greet or introduce yourself. Begin speaking immediately.',
+      'Do NOT ask any questions.',
+      '',
+      'Kid-friendly: Use simple everyday words. Keep sentences short (about 6–12 words). One idea per sentence.',
+      'Always respond with natural spoken text only. No emojis, decorative characters, or symbols.',
+    ].filter(Boolean).join('\n');
+
+    const attemptFetch = async () => {
+      return fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instruction,
+          input: '',
+          context: {
+            phase: 'teaching',
+            step: 'concept',
+            lessonTitle,
+          },
+          skipAudio: true,
+        }),
+      });
+    };
+
+    const delays = [0, 500, 1200];
+    for (let i = 0; i < delays.length; i += 1) {
+      if (delays[i]) await this.#sleep(delays[i]);
+      try {
+        const response = await attemptFetch();
+        if (!response.ok) {
+          const status = response.status;
+          if (status === 429) {
+            const retryAfterMs = this.#getRetryAfterMs(response);
+            this.#conceptCooldownUntilMs = this.#getNowMs() + retryAfterMs;
+            this.#conceptRateLimited = true;
+            this.#conceptRetryPending = false;
+            this.#emit('error', { type: 'gpt', stage: 'concept', status, retryAfterMs });
+            return [this.#buildRateLimitSentence(retryAfterMs)];
+          }
+          if (status >= 500 && i < delays.length - 1) continue;
+          console.error(`[TeachingController] Concept request failed with status ${status}`);
+          this.#conceptRateLimited = false;
+          this.#conceptRetryPending = true;
+          this.#emit('error', { type: 'gpt', stage: 'concept', status });
+          break;
+        }
+
+        const data = await response.json().catch(() => null);
+        const text = (data && (data.reply || data.text)) ? String(data.reply || data.text) : '';
+        if (!text) {
+          console.warn('[TeachingController] Empty GPT response for concept');
+          break;
+        }
+
+        const sentences = this.#splitIntoSentences(text);
+        console.log('[TeachingController] GPT concept split into', sentences.length, 'sentences');
+        this.#conceptRateLimited = false;
+        this.#conceptRetryPending = false;
+        return sentences;
+      } catch (err) {
+        if (i < delays.length - 1) continue;
+        console.error('[TeachingController] GPT concept error:', err);
+        this.#conceptRateLimited = false;
+        this.#conceptRetryPending = true;
+      }
+    }
+
+    return this.#buildLocalConceptFallbackSentences();
+  }
+
   // Private: Call GPT for definitions
   async #fetchDefinitionsFromGPT() {
     const now = this.#getNowMs();
@@ -872,6 +1100,83 @@ export class TeachingController {
     }
   }
   
+  // Private: Concept introduction stage
+  async #startConcept({ resumeState = null } = {}) {
+    console.log('[TeachingController] #startConcept called');
+
+    const resumeIntoConcept = resumeState?.stage === 'concept';
+    if (resumeIntoConcept && Array.isArray(resumeState.conceptSentences) && resumeState.conceptSentences.length) {
+      this.#conceptSentences = resumeState.conceptSentences;
+    }
+
+    this.#stage = 'loading-concept';
+    this.#currentSentenceIndex = resumeIntoConcept ? Math.max(0, resumeState.sentenceIndex || 0) : 0;
+    this.#isInSentenceMode = true;
+
+    await this.#ensureConceptLoaded();
+
+    if (this.#conceptSentences.length === 0) {
+      console.warn('[TeachingController] No concept sentences generated, skipping to definitions');
+      await this.#startDefinitions();
+      return;
+    }
+
+    this.#stage = 'concept';
+    this.#currentSentenceIndex = resumeIntoConcept
+      ? Math.max(0, Math.min(resumeState.sentenceIndex || 0, this.#conceptSentences.length - 1))
+      : 0;
+
+    this.#emit('stageChange', { stage: 'concept', totalSentences: this.#conceptSentences.length });
+    this.#emitSnapshot('begin-teaching-concept');
+
+    await this.#playCurrentConcept();
+  }
+
+  async #playCurrentConcept() {
+    const sentence = this.#conceptSentences[this.#currentSentenceIndex];
+    if (!sentence) return;
+
+    this.#setupAudioEndListener(() => {
+      this.#emit('sentenceComplete', {
+        stage: 'concept',
+        index: this.#currentSentenceIndex,
+        total: this.#conceptSentences.length,
+      });
+    });
+
+    let audioBase64 = ttsCache.get(sentence);
+    if (!audioBase64) {
+      audioBase64 = await fetchTTS(sentence);
+      if (audioBase64) ttsCache.set(sentence, audioBase64);
+    }
+
+    const nextIndex = this.#currentSentenceIndex + 1;
+    if (nextIndex < this.#conceptSentences.length) {
+      ttsCache.prefetch(this.#conceptSentences[nextIndex]);
+    }
+
+    await this.#audioEngine.playAudio(audioBase64 || '', [sentence]);
+  }
+
+  #advanceConcept() {
+    const nextIndex = this.#currentSentenceIndex + 1;
+
+    if (nextIndex >= this.#conceptSentences.length) {
+      // Concept complete — transition seamlessly into definitions
+      this.#startDefinitions();
+      return;
+    }
+
+    this.#currentSentenceIndex = nextIndex;
+    this.#emit('sentenceAdvance', {
+      stage: 'concept',
+      index: this.#currentSentenceIndex,
+      total: this.#conceptSentences.length,
+    });
+    this.#emitSnapshot('teaching-concept');
+    this.#playCurrentConcept();
+  }
+
   // Private: Definitions stage
   async #startDefinitions({ autoplayFirstSentence = true, resumeState = null } = {}) {
     console.log('[TeachingController] #startDefinitions called');
@@ -1233,6 +1538,27 @@ export class TeachingController {
     this.#gatePromptStage = null;
   }
   
+  // Private: Ensure concept is loaded (await pending promise if needed)
+  async #ensureConceptLoaded() {
+    if (this.#conceptSentences.length > 0) return;
+
+    if (this.#conceptGptPromise) {
+      console.log('[TeachingController] Awaiting pending concept GPT promise');
+      this.#emit('loading', { stage: 'concept' });
+      try {
+        this.#conceptSentences = await this.#conceptGptPromise;
+        console.log('[TeachingController] Concept loaded:', this.#conceptSentences.length, 'sentences');
+      } finally {
+        this.#conceptGptPromise = null;
+      }
+    } else {
+      console.log('[TeachingController] No pending concept promise, fetching now');
+      this.#emit('loading', { stage: 'concept' });
+      this.#conceptSentences = await this.#fetchConceptFromGPT();
+      console.log('[TeachingController] Concept fetched:', this.#conceptSentences.length, 'sentences');
+    }
+  }
+
   // Private: Ensure definitions are loaded (await pending promise if needed)
   async #ensureDefinitionsLoaded() {
     if (this.#vocabSentences.length > 0) return; // Already loaded
