@@ -4587,7 +4587,9 @@ function SessionPageV2Inner() {
         ? resumeState.exampleSentences.length
         : resumeState.stage === 'concept'
           ? resumeState.conceptSentences.length
-          : resumeState.vocabSentences.length;
+          : resumeState.stage === 'lecture'
+            ? (resumeState.lectureSentences?.length || 0)
+            : resumeState.vocabSentences.length;
       if (resumeState.stage) setTeachingStage(resumeState.stage);
       if (total) setTotalSentences(total);
       setSentenceIndex(Math.max(0, Math.min(resumeState.sentenceIndex || 0, Math.max(0, total - 1))));
@@ -6732,7 +6734,7 @@ function SessionPageV2Inner() {
               <div className="text-sm font-semibold text-gray-600 mb-1">TeachingController</div>
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${
-                  teachingStage === 'definitions' || teachingStage === 'examples' ? 'bg-blue-500' :
+                  teachingStage === 'definitions' || teachingStage === 'lecture' || teachingStage === 'examples' ? 'bg-blue-500' :
                   teachingStage === 'complete' ? 'bg-green-500' :
                   'bg-gray-300'
                 }`} />
@@ -7632,7 +7634,7 @@ function SessionPageV2Inner() {
               justifyContent: 'center',
               padding: '8px 4px'
             }}>
-              {(teachingStage === 'idle' || teachingStage === 'concept' || teachingStage === 'definitions' || teachingStage === 'examples') && (
+              {(teachingStage === 'idle' || teachingStage === 'concept' || teachingStage === 'definitions' || teachingStage === 'lecture' || teachingStage === 'examples') && (
                 <>
                   <button
                     onClick={repeatSentence}
@@ -7674,8 +7676,10 @@ function SessionPageV2Inner() {
                         : isInSentenceMode
                           ? 'Next Sentence'
                           : teachingStage === 'definitions'
-                            ? 'Continue to Examples'
-                            : 'Complete Teaching'
+                            ? 'Continue to Lesson'
+                            : teachingStage === 'lecture'
+                              ? 'Continue to Examples'
+                              : 'Complete Teaching'
                     }
                   </button>
                 </>
