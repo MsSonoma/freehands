@@ -2104,10 +2104,17 @@ function SessionPageV2Inner() {
     const cappedSecondary = secondaryItems.slice(0, maxSecondary);
     const cappedPool = shuffle([...primaryItems, ...cappedSecondary]);
 
-    // Build a supply long enough for all phases; reshuffle and append when exhausted
-    const supply = [...cappedPool];
+    // Build a supply by dealing one card at a time — only reshuffling when the
+    // deck runs dry. This guarantees no question repeats within any contiguous
+    // slice of ≤ cappedPool.length items (i.e. no repeats within one phase as
+    // long as the phase target ≤ pool size). Appending whole shuffled copies at
+    // once (the previous approach) could produce repeats when a phase slice
+    // straddled two copies.
+    const deck = shuffle([...cappedPool]);
+    const supply = [];
     while (supply.length < totalNeeded) {
-      supply.push(...shuffle(cappedPool));
+      if (deck.length === 0) deck.push(...shuffle(cappedPool));
+      supply.push(deck.shift());
     }
 
     // Slice each phase in sequence so no two phases share a question until recycling starts
