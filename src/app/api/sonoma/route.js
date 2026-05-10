@@ -343,7 +343,7 @@ export async function POST(req) {
       // OpenAI Chat Completions API
       providerUsed = 'openai'
       const { reply, errorStatus, raw } = await callOpenAI(userMessages, openaiKey, OPENAI_MODEL_DEFAULT, logPrefix)
-      if (!reply) return NextResponse.json({ error: 'OpenAI request failed.', _debug: { status: errorStatus, raw } }, { status: errorStatus || 500 })
+      if (!reply) return NextResponse.json({ error: 'OpenAI request failed.' }, { status: errorStatus || 500 })
       msSonomaReply = reply
       // OpenAI response received
       
@@ -472,7 +472,7 @@ async function callOpenAI(userMessages, apiKey, modelOverride, logPrefix) {
       body: JSON.stringify({
         model,
         messages: userMessages,
-        max_tokens: 1024
+        max_completion_tokens: 1024
       })
     })
     const rawBody = await response.text()
