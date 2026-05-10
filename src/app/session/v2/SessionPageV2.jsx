@@ -103,7 +103,7 @@ const SESSION_TUTORIAL_STEPS = [
 ];
 
 // Test Review UI Component (matches V1)
-function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview, isMobileLandscape }) {
+function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview, isMobileLandscape, isMobilePortrait }) {
   const { score, totalQuestions, percentage, grade: letterGrade, answers } = testGrade;
   
   const tierForPercent = (pct) => {
@@ -231,35 +231,42 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
             {meetsGoldenKey ? 'Golden key eligible (3+ on-time work timers)' : 'Golden key not yet met (needs 3 on-time work timers)'}
           </div>
         ) : null}
-        <div style={{ fontSize: 13, color: '#4b5563' }}>Play timers are ignored here.</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 6 }}>
-          {workPhases.map((p) => {
-            const t = getPhaseTime(p);
-            const onTime = !!(t?.completed && t.onTime);
-            const remainingLabel = t ? t.remainingFormatted : '—';
-            const statusText = !t
-              ? 'not completed'
-              : (t.completed ? (onTime ? 'on time' : 'timed out') : 'in progress');
-            const statusColor = !t
-              ? '#374151'
-              : (t.completed ? (onTime ? '#065f46' : '#7f1d1d') : '#374151');
-            return (
-              <div key={p} style={{ 
-                padding: '6px 8px', 
-                border: '1px solid #e5e7eb', 
-                borderRadius: 8, 
-                background: '#f9fafb', 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: 2 
-              }}>
-                <div style={{ fontWeight: 700, textTransform: 'capitalize', fontSize: 12 }}>{p}</div>
-                <div style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13 }}>{remainingLabel}</div>
-                <div style={{ fontSize: 11, color: statusColor }}>{statusText}</div>
-              </div>
-            );
-          })}
-        </div>
+        {!isMobilePortrait && (
+          <>
+            <div style={{ fontSize: 13, color: '#4b5563' }}>Play timers are ignored here.</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 6 }}>
+              {workPhases.map((p) => {
+                const t = getPhaseTime(p);
+                const onTime = !!(t?.completed && t.onTime);
+                const remainingLabel = t ? t.remainingFormatted : '—';
+                const statusText = !t
+                  ? 'not completed'
+                  : (t.completed ? (onTime ? 'on time' : 'timed out') : 'in progress');
+                const statusColor = !t
+                  ? '#374151'
+                  : (t.completed ? (onTime ? '#065f46' : '#7f1d1d') : '#374151');
+                return (
+                  <div key={p} style={{ 
+                    padding: '6px 8px', 
+                    border: '1px solid #e5e7eb', 
+                    borderRadius: 8, 
+                    background: '#f9fafb', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: 2 
+                  }}>
+                    <div style={{ fontWeight: 700, textTransform: 'capitalize', fontSize: 12 }}>{p}</div>
+                    <div style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13 }}>{remainingLabel}</div>
+                    <div style={{ fontSize: 11, color: statusColor }}>{statusText}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+        {isMobilePortrait && (
+          <div style={{ fontSize: 13, color: '#4b5563' }}>{onTimeCount} of {workPhases.length} phases on time · Play timers excluded</div>
+        )}
       </div>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -6821,6 +6828,7 @@ function SessionPageV2Inner() {
             onOverrideAnswer={handleTestOverrideAnswer}
             onCompleteReview={skipTestReview}
             isMobileLandscape={isMobileLandscape}
+            isMobilePortrait={!isMobileLandscape && (typeof window !== 'undefined' ? window.innerWidth <= 768 : false)}
           />
         ) : (
           <CaptionPanel
