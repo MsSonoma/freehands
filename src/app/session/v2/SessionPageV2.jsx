@@ -2089,10 +2089,18 @@ function SessionPageV2Inner() {
     const testTarget     = getLearnerTarget('test')         || 10;
     const totalNeeded = compTarget + exerciseTarget + worksheetTarget + testTarget;
 
+    // Cap SA/FITB (secondary) at 20% of questions so MC/TF remain the majority,
+    // matching the original blendByType behaviour.
+    const primaryItems   = shuffle(uniquePool.filter(q => q.sourceType === 'tf' || q.sourceType === 'mc'));
+    const secondaryItems = shuffle(uniquePool.filter(q => q.sourceType === 'fib' || q.sourceType === 'short'));
+    const maxSecondary   = Math.max(0, Math.round(totalNeeded * 0.2));
+    const cappedSecondary = secondaryItems.slice(0, maxSecondary);
+    const cappedPool = shuffle([...primaryItems, ...cappedSecondary]);
+
     // Build a supply long enough for all phases; reshuffle and append when exhausted
-    const supply = shuffle(uniquePool);
+    const supply = [...cappedPool];
     while (supply.length < totalNeeded) {
-      supply.push(...shuffle(uniquePool));
+      supply.push(...shuffle(cappedPool));
     }
 
     // Slice each phase in sequence so no two phases share a question until recycling starts
