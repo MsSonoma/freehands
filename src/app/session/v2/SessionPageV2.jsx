@@ -103,7 +103,7 @@ const SESSION_TUTORIAL_STEPS = [
 ];
 
 // Test Review UI Component (matches V1)
-function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview, isMobileLandscape, isMobilePortrait }) {
+function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview, isMobileLandscape, isMobilePortrait, footerHeight }) {
   const { score, totalQuestions, percentage, grade: letterGrade, answers } = testGrade;
   
   const tierForPercent = (pct) => {
@@ -199,13 +199,12 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
       display: 'flex', 
       flexDirection: 'column', 
       gap: 12, 
-      // In landscape the wrapper has a fixed height, so we scroll inside this div.
-      // In portrait the document body scrolls — overflow:auto here would absorb
-      // touch events on iOS Safari and prevent body scroll from working.
-      overflow: isMobileLandscape ? 'auto' : 'visible',
+      overflow: 'auto',
       paddingTop: 8, 
       paddingBottom: 8,
-      height: isMobileLandscape ? '100%' : 'auto'
+      height: isMobileLandscape ? '100%' : `calc(100dvh - ${footerHeight || 80}px - 16px)`,
+      maxHeight: isMobileLandscape ? '100%' : `calc(100dvh - ${footerHeight || 80}px - 16px)`,
+      WebkitOverflowScrolling: 'touch'
     }}>
       <div style={{ 
         ...card, 
@@ -2096,40 +2095,40 @@ function SessionPageV2Inner() {
     const testTarget     = getLearnerTarget('test')         || 10;
     const totalNeeded = compTarget + exerciseTarget + worksheetTarget + testTarget;
 
-    // Cap SA/FITB (secondary) at 20% of questions so MC/TF remain the majority,
-    // matching the original blendByType behaviour.
+    // Cap SA/FITB (secondary) at 20% of total so MC/TF remain the majority.
     const primaryItems   = shuffle(uniquePool.filter(q => q.sourceType === 'tf' || q.sourceType === 'mc'));
     const secondaryItems = shuffle(uniquePool.filter(q => q.sourceType === 'fib' || q.sourceType === 'short'));
     const maxSecondary   = Math.max(0, Math.round(totalNeeded * 0.2));
-    const cappedSecondary = secondaryItems.slice(0, maxSecondary);
-    const cappedPool = shuffle([...primaryItems, ...cappedSecondary]);
+    const cappedPool = shuffle([...primaryItems, ...secondaryItems.slice(0, maxSecondary)]);
 
-    // Build a supply by dealing one card at a time — only reshuffling when the
-    // deck runs dry. This guarantees no question repeats within any contiguous
-    // slice of ≤ cappedPool.length items (i.e. no repeats within one phase as
-    // long as the phase target ≤ pool size). Appending whole shuffled copies at
-    // once (the previous approach) could produce repeats when a phase slice
-    // straddled two copies.
-    const deck = shuffle([...cappedPool]);
-    const supply = [];
-    while (supply.length < totalNeeded) {
-      if (deck.length === 0) deck.push(...shuffle(cappedPool));
-      supply.push(deck.shift());
-    }
+    // Deal n items with guaranteed no within-phase repeats: each full pass through
+    // the pool is independently shuffled, so no question appears twice within any
+    // single pass. Phases never cross pass boundaries, eliminating within-phase dups.
+    const dealPhase = (pool, n) => {
+      const result = [];
+      while (result.length < n) {
+        const batch = shuffle([...pool]);
+        result.push(...batch.slice(0, Math.min(batch.length, n - result.length)));
+      }
+      return result;
+    };
 
-    // Slice each phase in sequence so no two phases share a question until recycling starts
-    let cursor = 0;
-    const take = (n) => {
-      const slice = supply.slice(cursor, cursor + n);
-      cursor += n;
-      return slice.map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
+    // Build each phase independently; prefer questions not yet used in prior phases
+    // (best-effort cross-phase deduplication — falls back to full pool if pool is small).
+    const usedKeys = new Set();
+    const buildPhase = (target) => {
+      const fresh = cappedPool.filter(q => !usedKeys.has(questionKey(q)));
+      const pool = fresh.length >= target ? fresh : cappedPool;
+      const questions = dealPhase(pool, target);
+      questions.forEach(q => usedKeys.add(questionKey(q)));
+      return questions.map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
     };
 
     return {
-      comprehension: take(compTarget),
-      exercise:      take(exerciseTarget),
-      worksheet:     take(worksheetTarget),
-      test:          take(testTarget),
+      comprehension: buildPhase(compTarget),
+      exercise:      buildPhase(exerciseTarget),
+      worksheet:     buildPhase(worksheetTarget),
+      test:          buildPhase(testTarget),
     };
   }, [lessonData, getLearnerTarget, questionKey]);
 
@@ -6836,6 +6835,7 @@ function SessionPageV2Inner() {
             onCompleteReview={skipTestReview}
             isMobileLandscape={isMobileLandscape}
             isMobilePortrait={!isMobileLandscape && (typeof window !== 'undefined' ? window.innerWidth <= 768 : false)}
+            footerHeight={footerHeight}
           />
         ) : (
           <CaptionPanel
