@@ -1268,9 +1268,13 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
       if (historyRes.ok) {
         const history = await historyRes.json()
         const sessions = Array.isArray(history?.sessions) ? history.sessions : []
-        if (sessions.length > 0) {
-          contextText += '\n\nLearner lesson history (scores guide Review vs new topics):\n'
-          sessions
+        const subjectSessions = sessions.filter(s =>
+          !plannedLesson.subject ||
+          (s.lesson_id || '').replace(/\\/g, '/').split('/')[0].toLowerCase() === plannedLesson.subject
+        )
+        if (subjectSessions.length > 0) {
+          contextText += `\n\nLearner lesson history for ${plannedLesson.subject} (scores guide Review vs new topics):\n`
+          subjectSessions
             .slice()
             .sort((a, b) => new Date(a.started_at || a.ended_at || 0) - new Date(b.started_at || b.ended_at || 0))
             .slice(-60)
@@ -1296,8 +1300,12 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
         })
       })
       if (scheduledFlat.length > 0) {
-        contextText += '\n\nScheduled lessons (do NOT reuse these topics):\n'
+        contextText += '\n\nScheduled lessons for this subject (do NOT reuse these topics):\n'
         scheduledFlat
+          .filter(l =>
+            !plannedLesson.subject ||
+            (l.key || '').replace(/\\/g, '/').split('/')[0].toLowerCase() === plannedLesson.subject
+          )
           .slice()
           .sort((a, b) => String(a.date).localeCompare(String(b.date)))
           .slice(-60)
@@ -1313,8 +1321,9 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
         })
       })
       if (plannedFlat.length > 0) {
-        contextText += '\n\nPlanned lessons already in the calendar plan (do NOT repeat these topics):\n'
+        contextText += '\n\nPlanned lessons for this subject already in the calendar (do NOT repeat these topics):\n'
         plannedFlat
+          .filter(l => !plannedLesson.subject || l.subject === plannedLesson.subject)
           .slice()
           .sort((a, b) => String(a.date).localeCompare(String(b.date)))
           .slice(-80)

@@ -393,111 +393,105 @@ export default function LessonPlanner({
         return additions
       }
 
-      // Build context string for GPT
-      let contextText = ''
-      if (lessonContext.length > 0) {
-        contextText += '\n\nLearner Lesson History (chronological):\n'
-        lessonContext.forEach(l => {
-          if (l.status === 'completed' && l.score !== null) {
-            contextText += `- ${l.name} (${l.status}, score: ${l.score}%)\n`
-          } else {
-            contextText += `- ${l.name} (${l.status})\n`
-          }
-        })
+      // Helper: extract subject from a lesson key (e.g. "science/foo.json" → "science")
+      const subjectOfKey = (name) => {
+        if (!name) return null
+        return String(name).replace(/\\/g, '/').split('/')[0].toLowerCase() || null
       }
 
-        // Review policy thresholds (tuned for "repeat low scores, skip high scores")
-        const LOW_SCORE_REVIEW_THRESHOLD = 70
-        const HIGH_SCORE_AVOID_REPEAT_THRESHOLD = 85
+      // Review policy thresholds
+      const LOW_SCORE_REVIEW_THRESHOLD = 70
+      const HIGH_SCORE_AVOID_REPEAT_THRESHOLD = 85
 
-        const lowScoreCompleted = lessonContext
+      // Build context string for GPT, filtered to the current subject so science history
+      // doesn't bleed into math recommendations and vice versa.
+      const buildContextForSubject = (subject) => {
+        const subjectHistory = lessonContext.filter(l => subjectOfKey(l.name) === subject)
+
+        let text = ''
+        if (subjectHistory.length > 0) {
+          text += `\n\nLearner Lesson History for ${subject} (chronological):\n`
+          subjectHistory.forEach(l => {
+            if (l.status === 'completed' && l.score !== null) {
+              text += `- ${l.name} (${l.status}, score: ${l.score}%)\n`
+            } else {
+              text += `- ${l.name} (${l.status})\n`
+            }
+          })
+        }
+
+        const lowScoreCompleted = subjectHistory
           .filter((l) => l.status === 'completed' && l.score !== null && l.score <= LOW_SCORE_REVIEW_THRESHOLD)
           .slice(-20)
 
-        const highScoreCompleted = lessonContext
+        const highScoreCompleted = subjectHistory
           .filter((l) => l.status === 'completed' && l.score !== null && l.score >= HIGH_SCORE_AVOID_REPEAT_THRESHOLD)
           .slice(-30)
 
-      // Curriculum preferences are applied per-subject inside getSubjectContextAdditions below.
+        // Recommended difficulty based on recent performance in this subject
+        const recentCompleted = subjectHistory
+          .filter(l => l.status === 'completed' && l.score !== null)
+          .slice(-6)
 
-      // Calculate recommended difficulty based on recent performance
-      const recentCompleted = lessonContext
-        .filter(l => l.status === 'completed' && l.score !== null)
-        .slice(-6) // Last 6 completed lessons
-      
-      let recommendedDifficulty = 'intermediate' // Safe default
-      
-      if (recentCompleted.length >= 3) {
-        const avgScore = recentCompleted.reduce((sum, l) => sum + l.score, 0) / recentCompleted.length
-        
-        // Detect current level from recent lesson keywords
-        const recentBeginner = recentCompleted.slice(-3).filter(l => 
-          l.name.toLowerCase().includes('beginner') || 
-          l.name.toLowerCase().includes('introduction') ||
-          l.name.toLowerCase().includes('basics')
-        ).length
-        
-        const recentAdvanced = recentCompleted.slice(-3).filter(l => 
-          l.name.toLowerCase().includes('advanced') || 
-          l.name.toLowerCase().includes('expert') ||
-          l.name.toLowerCase().includes('mastery')
-        ).length
-        
-        // Bidirectional adjustment based on performance
-        if (avgScore >= 85 && recentAdvanced >= 2) {
-          recommendedDifficulty = 'advanced' // Already advanced, doing great
-        } else if (avgScore >= 80 && recentBeginner === 0) {
-          recommendedDifficulty = 'advanced' // Ready to move up from intermediate
-        } else if (avgScore <= 65) {
-          recommendedDifficulty = 'beginner' // Struggling - move down
-        } else if (avgScore <= 70 && recentAdvanced >= 2) {
-          recommendedDifficulty = 'intermediate' // Struggling at advanced - move down
+        let recommendedDifficulty = 'intermediate'
+
+        if (recentCompleted.length >= 3) {
+          const avgScore = recentCompleted.reduce((sum, l) => sum + l.score, 0) / recentCompleted.length
+
+          const recentBeginner = recentCompleted.slice(-3).filter(l =>
+            l.name.toLowerCase().includes('beginner') ||
+            l.name.toLowerCase().includes('introduction') ||
+            l.name.toLowerCase().includes('basics')
+          ).length
+
+          const recentAdvanced = recentCompleted.slice(-3).filter(l =>
+            l.name.toLowerCase().includes('advanced') ||
+            l.name.toLowerCase().includes('expert') ||
+            l.name.toLowerCase().includes('mastery')
+          ).length
+
+          if (avgScore >= 85 && recentAdvanced >= 2) {
+            recommendedDifficulty = 'advanced'
+          } else if (avgScore >= 80 && recentBeginner === 0) {
+            recommendedDifficulty = 'advanced'
+          } else if (avgScore <= 65) {
+            recommendedDifficulty = 'beginner'
+          } else if (avgScore <= 70 && recentAdvanced >= 2) {
+            recommendedDifficulty = 'intermediate'
+          }
         }
-        // else stays at intermediate (safe middle ground)
-      }
 
-      if (contextText) {
-        contextText += '\n\n=== PLANNING RULES: NEW TOPICS vs REVIEW ==='
-          contextText += `\nPrefer NEW topics most of the time, but schedule REVIEW lessons for low scores (<= ${LOW_SCORE_REVIEW_THRESHOLD}%).`
-          contextText += `\nAvoid repeating lessons that scored well (>= ${HIGH_SCORE_AVOID_REPEAT_THRESHOLD}%).`
+        if (text) {
+          text += '\n\n=== PLANNING RULES: NEW TOPICS vs REVIEW ==='
+          text += `\nPrefer NEW topics most of the time, but schedule REVIEW lessons for low scores (<= ${LOW_SCORE_REVIEW_THRESHOLD}%).`
+          text += `\nAvoid repeating lessons that scored well (>= ${HIGH_SCORE_AVOID_REPEAT_THRESHOLD}%).`
 
           if (lowScoreCompleted.length > 0) {
-            contextText += `\n\nLow-score completed lessons that are eligible for REVIEW (<= ${LOW_SCORE_REVIEW_THRESHOLD}%):\n`
-            lowScoreCompleted.forEach((l) => {
-              contextText += `- ${l.name} (score: ${l.score}%)\n`
-            })
+            text += `\n\nLow-score completed lessons eligible for REVIEW (<= ${LOW_SCORE_REVIEW_THRESHOLD}%):\n`
+            lowScoreCompleted.forEach((l) => { text += `- ${l.name} (score: ${l.score}%)\n` })
           }
 
           if (highScoreCompleted.length > 0) {
-            contextText += `\n\nHigh-score completed lessons to AVOID repeating (>= ${HIGH_SCORE_AVOID_REPEAT_THRESHOLD}%):\n`
-            highScoreCompleted.forEach((l) => {
-              contextText += `- ${l.name} (score: ${l.score}%)\n`
-            })
+            text += `\n\nHigh-score completed lessons to AVOID repeating (>= ${HIGH_SCORE_AVOID_REPEAT_THRESHOLD}%):\n`
+            highScoreCompleted.forEach((l) => { text += `- ${l.name} (score: ${l.score}%)\n` })
           }
 
-          contextText += '\n\nWhen you choose a REVIEW lesson:'
-          contextText += '\n- It can revisit the underlying concept of a low-score lesson'
-          contextText += '\n- It MUST be rephrased with different examples and practice (not a near-duplicate)'
-          contextText += "\n- The title MUST start with 'Review:'"
+          text += '\n\nWhen you choose a REVIEW lesson:'
+          text += '\n- It can revisit the underlying concept of a low-score lesson'
+          text += '\n- It MUST be rephrased with different examples and practice (not a near-duplicate)'
+          text += "\n- The title MUST start with 'Review:'"
+        }
 
-          contextText += '\n\nAlso: you are generating a multi-week plan.'
-          contextText += '\nFor weekly recurring subjects, each week MUST progress naturally.'
-          contextText += "\nDo not repeat last week's topic unless it is explicitly a 'Review:' for a low-score concept."
+        text += '\n\nAlso: you are generating a multi-week plan.'
+        text += '\nFor weekly recurring subjects, each week MUST be a new topic that progresses naturally.'
+        text += '\nDo NOT repeat a topic one week later with different wording.'
+        text += '\n\nCurriculum Evolution Guidelines:'
+        text += '\n- Each new lesson must advance to a NEW topic not yet covered'
+        text += '\n- Build sequentially (e.g., after "Fractions Intro" → "Comparing Fractions" → "Adding Fractions")'
+        text += '\n- Reference prior concepts but teach something genuinely new'
+        text += `\n- Target difficulty: ${recommendedDifficulty} (maintain for 3-4 lessons before advancing)`
 
-          contextText += '\n\nCurriculum Evolution Guidelines:'
-          contextText += '\n- Mix new instruction with occasional review based on scores'
-          contextText += '\n- Build sequentially (e.g., after "Fractions Intro" → "Comparing Fractions" → "Adding Fractions")'
-          contextText += '\n- Reference prior concepts but teach something genuinely new'
-          contextText += `\n- Target difficulty: ${recommendedDifficulty} (maintain for 3-4 lessons before advancing)`
-
-        contextText += '\n\nAlso: you are generating a multi-week plan.'
-        contextText += '\nFor weekly recurring subjects, each week MUST be a new topic that progresses naturally.'
-        contextText += '\nDo NOT repeat a topic one week later with different wording.'
-        contextText += '\n\nCurriculum Evolution Guidelines:'
-        contextText += '\n- Each new lesson must advance to a NEW topic not yet covered'
-        contextText += '\n- Build sequentially (e.g., after "Fractions Intro" → "Comparing Fractions" → "Adding Fractions")'
-        contextText += '\n- Reference prior concepts but teach something genuinely new'
-        contextText += `\n- Target difficulty: ${recommendedDifficulty} (maintain for 3-4 lessons before advancing)`
+        return text
       }
 
       const buildGenerationSoFarText = (subject) => {
@@ -535,7 +529,7 @@ export default function LessonPlanner({
         for (const subjectInfo of daySubjects) {
           // Generate outline for each subject on this day
           try {
-            const dynamicContextText = `${contextText}${getSubjectContextAdditions(subjectInfo.subject)}${buildGenerationSoFarText(subjectInfo.subject)}`
+            const dynamicContextText = `${buildContextForSubject(subjectInfo.subject)}${getSubjectContextAdditions(subjectInfo.subject)}${buildGenerationSoFarText(subjectInfo.subject)}`
 
               const response = await fetch('/api/generate-lesson-outline', {
                 method: 'POST',
