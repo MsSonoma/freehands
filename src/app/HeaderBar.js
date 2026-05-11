@@ -35,6 +35,7 @@ export default function HeaderBar() {
 	const [brandFitSize, setBrandFitSize] = useState(null);
 	const [printMenuOpen, setPrintMenuOpen] = useState(false);
 	const printMenuRef = useRef(null);
+	const printButtonMouseDownRef = useRef(false);
 	const [facilitatorMenuOpen, setFacilitatorMenuOpen] = useState(false);
 	const facilitatorMenuCloseTimerRef = useRef(null);
 	const printMenuCloseTimerRef = useRef(null);
@@ -745,6 +746,7 @@ export default function HeaderBar() {
 										aria-label="Print menu"
 										aria-haspopup="menu"
 										aria-expanded={printMenuOpen}
+										onMouseDown={() => { printButtonMouseDownRef.current = true; }}
 										onClick={(e) => {
 											try { e.stopPropagation(); } catch {}
 											try { e.preventDefault(); } catch {}
@@ -752,7 +754,7 @@ export default function HeaderBar() {
 											setPrintMenuOpen((v) => !v);
 										}}
 										onMouseEnter={openPrintMenu}
-										onFocus={openPrintMenu}
+										onFocus={() => { if (printButtonMouseDownRef.current) { printButtonMouseDownRef.current = false; return; } openPrintMenu(); }}
 										style={{
 											background:'#1f2937', color:'#fff', border:'none', width:36, height:36,
 											display:'inline-flex', alignItems:'center', justifyContent:'center', borderRadius:8, cursor:'pointer',
