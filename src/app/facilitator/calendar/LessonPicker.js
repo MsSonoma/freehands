@@ -307,9 +307,9 @@ export default function LessonPicker({
       )}
       
       {/* Compact Header with filters */}
-      <div style={{ background: 'linear-gradient(to right, #eff6ff, #e0e7ff)', padding: '10px 12px', borderBottom: '1px solid #d1d5db' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#111827', margin: 0 }}>
+      <div style={{ background: 'linear-gradient(to right, #eff6ff, #e0e7ff)', padding: '5px 10px', borderBottom: '1px solid #d1d5db' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#111827', margin: 0 }}>
             Add Lessons
           </h3>
           <div style={{ fontSize: '11px', color: '#6b7280' }}>

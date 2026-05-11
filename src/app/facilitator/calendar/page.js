@@ -982,18 +982,18 @@ export default function CalendarPage() {
                   {selectedDate && (
                     <div style={{ 
                       background: 'linear-gradient(to right, #dbeafe, #e0e7ff)', 
-                      borderRadius: '8px', 
-                      padding: '10px 12px',
+                      borderRadius: '6px', 
+                      padding: '5px 10px',
                       border: '1px solid #93c5fd'
                     }}>
-                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#1e40af', marginBottom: '2px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e40af', marginBottom: 0 }}>
                         {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
                           weekday: 'long',
                           month: 'long',
                           day: 'numeric'
                         })}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#3b82f6' }}>
+                      <div style={{ fontSize: '11px', color: '#3b82f6' }}>
                         {scheduledForSelectedDate.length} scheduled
                       </div>
                     </div>
@@ -1002,8 +1002,8 @@ export default function CalendarPage() {
                   {/* Scheduled Lessons - Show first if any exist */}
                   {selectedDate && scheduledForSelectedDate.length > 0 && (
                     <div className="bg-white rounded-lg shadow-md border border-gray-300 overflow-hidden">
-                      <div style={{ background: '#f0fdf4', padding: '8px 12px', borderBottom: '1px solid #bbf7d0' }}>
-                        <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#065f46', margin: 0 }}>
+                      <div style={{ background: '#f0fdf4', padding: '4px 10px', borderBottom: '1px solid #bbf7d0' }}>
+                        <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#065f46', margin: 0 }}>
                           Scheduled for This Day
                         </h3>
                       </div>
@@ -1019,8 +1019,8 @@ export default function CalendarPage() {
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '10px',
-                                padding: '8px 12px',
+                                gap: '8px',
+                                padding: '4px 10px',
                                 borderBottom: '1px solid #e5e7eb'
                               }}
                             >
