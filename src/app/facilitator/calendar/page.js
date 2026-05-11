@@ -820,7 +820,6 @@ export default function CalendarPage() {
               {/* Right Panel: Tabs for Scheduler and Planner */}
               <div className="content-panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <PageHeader
-                  title="Lesson Calendar"
                   subtitle="Organize your teaching schedule with manual scheduling or automated planning"
                   dense
                   actions={
