@@ -57,9 +57,61 @@ export default function CalendarPage() {
   const [canPlan, setCanPlan] = useState(false)
   const [tableExists, setTableExists] = useState(true)
   const [rescheduling, setRescheduling] = useState(null) // Track which lesson is being rescheduled
-  const [activeTab, setActiveTab] = useState('scheduler') // 'scheduler' or 'planner'
+  const [activeTab, setActiveTab] = useState('scheduler') // 'scheduler', 'planner', or 'subjects'
+  const [customSubjects, setCustomSubjects] = useState([])
+  const [newSubjectName, setNewSubjectName] = useState('')
   const [showDayView, setShowDayView] = useState(false)
   const [noSchoolDates, setNoSchoolDates] = useState({}) // Format: { 'YYYY-MM-DD': 'reason' }
+
+  const loadCustomSubjects = async (token) => {
+    try {
+      const t = token || authToken
+      if (!t) return
+      const res = await fetch('/api/custom-subjects', { headers: { 'Authorization': `Bearer ${t}` } })
+      if (res.ok) {
+        const result = await res.json()
+        setCustomSubjects(result.subjects || [])
+      }
+    } catch (err) {
+      console.error('Error loading custom subjects:', err)
+    }
+  }
+
+  const handleAddCustomSubject = async () => {
+    if (!canPlan) { alert('Upgrade to Pro to manage custom subjects.'); return }
+    if (!newSubjectName.trim()) return
+    try {
+      const res = await fetch('/api/custom-subjects', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newSubjectName.trim() })
+      })
+      if (res.ok) {
+        setNewSubjectName('')
+        await loadCustomSubjects()
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Failed to create custom subject')
+      }
+    } catch (err) {
+      console.error('Error creating custom subject:', err)
+      alert('Failed to create custom subject')
+    }
+  }
+
+  const handleDeleteCustomSubject = async (subjectId) => {
+    if (!canPlan) { alert('Upgrade to Pro to manage custom subjects.'); return }
+    if (!confirm('Delete this custom subject?')) return
+    try {
+      const res = await fetch(`/api/custom-subjects?id=${subjectId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      })
+      if (res.ok) await loadCustomSubjects()
+    } catch (err) {
+      console.error('Error deleting custom subject:', err)
+    }
+  }
 
   const [notesItem, setNotesItem] = useState(null)
   const [visualAidsItem, setVisualAidsItem] = useState(null)
@@ -161,6 +213,7 @@ export default function CalendarPage() {
       loadSchedule()
       loadPlannedLessons()
       loadNoSchoolDates()
+      loadCustomSubjects()
     }
   }, [selectedLearnerId])
 
@@ -942,6 +995,24 @@ export default function CalendarPage() {
                     <p>Generate multi-week lesson outlines automatically. Set a weekly pattern (which subjects on which days), choose duration, and we&apos;ll create a curriculum plan.</p>
                     <p className="mt-2 text-xs text-gray-500">Best for consistent schedules and long-term planning.</p>
                   </InlineExplainer>
+                  <button
+                    onClick={() => setActiveTab('subjects')}
+                    style={{
+                      flex: 1,
+                      padding: '6px 10px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      border: 'none',
+                      borderBottom: activeTab === 'subjects' ? '2px solid #2563eb' : '2px solid transparent',
+                      background: 'transparent',
+                      color: activeTab === 'subjects' ? '#2563eb' : '#6b7280',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      marginBottom: -2
+                    }}
+                  >
+                    Custom Subjects
+                  </button>
                 </div>
 
                 {/* Tab Content - Both tabs remain mounted, only visibility changes */}
@@ -1309,7 +1380,86 @@ export default function CalendarPage() {
                     plannedLessons={plannedLessons}
                     onPlannedLessonsChange={savePlannedLessons}
                     onLessonGenerated={loadSchedule}
+                    customSubjects={customSubjects}
                   />
+                </div>
+
+                <div style={{ display: activeTab === 'subjects' ? 'block' : 'none' }}>
+                  <div style={{ padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+                      Add custom subjects to include in your weekly lesson pattern.
+                    </p>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        type="text"
+                        value={newSubjectName}
+                        onChange={(e) => setNewSubjectName(e.target.value)}
+                        placeholder="Enter new subject name"
+                        onKeyPress={(e) => e.key === 'Enter' && handleAddCustomSubject()}
+                        style={{
+                          flex: 1,
+                          padding: 8,
+                          border: '1px solid #d1d5db',
+                          borderRadius: 6,
+                          fontSize: 13
+                        }}
+                      />
+                      <button
+                        onClick={handleAddCustomSubject}
+                        disabled={!newSubjectName.trim()}
+                        style={{
+                          padding: '8px 16px',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          borderRadius: 6,
+                          border: 'none',
+                          background: newSubjectName.trim() ? '#2563eb' : '#9ca3af',
+                          color: '#fff',
+                          cursor: newSubjectName.trim() ? 'pointer' : 'not-allowed'
+                        }}
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {customSubjects.length > 0 ? (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {customSubjects.map(subject => (
+                          <div
+                            key={subject.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              padding: '6px 10px',
+                              background: '#f3f4f6',
+                              borderRadius: 6,
+                              fontSize: 12,
+                              fontWeight: 500,
+                              color: '#374151'
+                            }}
+                          >
+                            {subject.name}
+                            <button
+                              onClick={() => handleDeleteCustomSubject(subject.id)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#ef4444',
+                                cursor: 'pointer',
+                                fontSize: 14,
+                                padding: 0,
+                                lineHeight: 1
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>No custom subjects yet.</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

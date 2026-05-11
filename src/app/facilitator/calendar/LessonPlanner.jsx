@@ -31,9 +31,9 @@ export default function LessonPlanner({
   onLessonGenerated,
   initialPlanStartDate,
   initialPlanDuration,
-  autoGeneratePlan
+  autoGeneratePlan,
+  customSubjects = []
 }) {
-  const [customSubjects, setCustomSubjects] = useState([])
   const [weeklyPattern, setWeeklyPattern] = useState({
     sunday: [],
     monday: [],
@@ -43,7 +43,6 @@ export default function LessonPlanner({
     friday: [],
     saturday: []
   })
-  const [newSubjectName, setNewSubjectName] = useState('')
   const [showPreferences, setShowPreferences] = useState(false)
   const [showGenerator, setShowGenerator] = useState(false)
   const [generatorData, setGeneratorData] = useState(null)
@@ -63,7 +62,6 @@ export default function LessonPlanner({
   }
 
   useEffect(() => {
-    loadCustomSubjects()
     loadWeeklyPattern()
   }, [learnerId])
 
@@ -87,27 +85,6 @@ export default function LessonPlanner({
       }
     }
   }, [initialPlanDuration])
-
-  const loadCustomSubjects = async () => {
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-
-      if (!token) return
-
-      const response = await fetch('/api/custom-subjects', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        setCustomSubjects(result.subjects || [])
-      }
-    } catch (err) {
-      console.error('Error loading custom subjects:', err)
-    }
-  }
 
   const loadWeeklyPattern = async () => {
     if (!learnerId) return
@@ -137,65 +114,6 @@ export default function LessonPlanner({
       console.error('Error loading weekly pattern:', err)
     } finally {
       weeklyPatternLoadedRef.current = true
-    }
-  }
-
-  const handleAddCustomSubject = async () => {
-    if (!requirePlannerAccess()) return
-    if (!newSubjectName.trim()) return
-
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-
-      if (!token) return
-
-      const response = await fetch('/api/custom-subjects', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: newSubjectName.trim()
-        })
-      })
-
-      if (response.ok) {
-        setNewSubjectName('')
-        await loadCustomSubjects()
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to create custom subject')
-      }
-    } catch (err) {
-      console.error('Error creating custom subject:', err)
-      alert('Failed to create custom subject')
-    }
-  }
-
-  const handleDeleteCustomSubject = async (subjectId) => {
-    if (!requirePlannerAccess()) return
-    if (!confirm('Delete this custom subject?')) return
-
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-
-      if (!token) return
-
-      const response = await fetch(`/api/custom-subjects?id=${subjectId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-
-      if (response.ok) {
-        await loadCustomSubjects()
-      }
-    } catch (err) {
-      console.error('Error deleting custom subject:', err)
     }
   }
 
@@ -863,88 +781,6 @@ export default function LessonPlanner({
             {generating ? 'Generating...' : 'Generate Lesson Plan'}
           </button>
         </div>
-      </div>
-
-      {/* Custom Subjects Section */}
-      <div style={{
-        background: '#fff',
-        borderRadius: 8,
-        border: '1px solid #e5e7eb',
-        padding: 16
-      }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1f2937', marginBottom: 12 }}>
-          Custom Subjects
-        </h3>
-        
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <input
-            type="text"
-            value={newSubjectName}
-            onChange={(e) => setNewSubjectName(e.target.value)}
-            placeholder="Enter new subject name"
-            onKeyPress={(e) => e.key === 'Enter' && handleAddCustomSubject()}
-            style={{
-              flex: 1,
-              padding: 8,
-              border: '1px solid #d1d5db',
-              borderRadius: 6,
-              fontSize: 13
-            }}
-          />
-          <button
-            onClick={handleAddCustomSubject}
-            disabled={!newSubjectName.trim()}
-            style={{
-              padding: '8px 16px',
-              fontSize: 13,
-              fontWeight: 600,
-              borderRadius: 6,
-              border: 'none',
-              background: newSubjectName.trim() ? '#2563eb' : '#9ca3af',
-              color: '#fff',
-              cursor: newSubjectName.trim() ? 'pointer' : 'not-allowed'
-            }}
-          >
-            Add
-          </button>
-        </div>
-
-        {customSubjects.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {customSubjects.map(subject => (
-              <div
-                key={subject.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '6px 10px',
-                  background: '#f3f4f6',
-                  borderRadius: 6,
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: '#374151'
-                }}
-              >
-                {subject.name}
-                <button
-                  onClick={() => handleDeleteCustomSubject(subject.id)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#ef4444',
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    padding: 0,
-                    lineHeight: 1
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Planned Lessons Info */}
