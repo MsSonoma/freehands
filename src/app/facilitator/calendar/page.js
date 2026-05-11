@@ -803,7 +803,7 @@ export default function CalendarPage() {
           }}
         />
       )}
-      <div style={{ minHeight: '100vh', background: '#f9fafb', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
+      <div style={{ background: '#f9fafb', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '4px 8px' }}>
 
         {/* Database Setup Warning */}
@@ -844,7 +844,7 @@ export default function CalendarPage() {
                   flex: 1;
                   min-width: 0;
                   position: sticky;
-                  top: 4px;
+                  top: clamp(56px, 9svh, 72px);
                   align-self: flex-start;
                 }
                 .calendar-container > .content-panel {
