@@ -95,7 +95,7 @@ Summary:`
         { role: 'system', content: 'You are a professional summarizer for counseling sessions. Create clear, empathetic summaries that preserve important context.' },
         { role: 'user', content: prompt }
       ],
-      max_tokens: 600,
+      max_completion_tokens: 600,
       temperature: 0.3 // Lower temperature for more consistent summaries
     })
   })

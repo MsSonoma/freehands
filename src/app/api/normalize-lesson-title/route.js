@@ -67,7 +67,7 @@ Output: The Water Cycle`
         }
       ],
       temperature: 0.3,
-      max_tokens: 50
+      max_completion_tokens: 50
     })
     
     const title = completion.choices[0]?.message?.content?.trim() || userInput

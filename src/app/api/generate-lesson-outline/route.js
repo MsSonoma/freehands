@@ -28,7 +28,7 @@ async function callOpenAI(prompt) {
       { role: 'user', content: prompt }
     ],
     temperature: 0.7,
-    max_tokens: 300
+    max_completion_tokens: 300
   }
 
   const res = await fetch(url, {

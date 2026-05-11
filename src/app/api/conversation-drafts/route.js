@@ -271,7 +271,7 @@ ${conversationTurns.map(t => `${t.role === 'user' ? 'User' : 'Assistant'}: ${t.c
           role: 'user',
           content: prompt
         }],
-        max_tokens: 300,
+        max_completion_tokens: 300,
         temperature: 0.3
       })
     })

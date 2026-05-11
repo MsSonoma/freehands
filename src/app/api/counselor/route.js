@@ -2009,7 +2009,7 @@ export async function POST(req) {
           body: JSON.stringify({
             model: OPENAI_MODEL,
             messages: followUpMessages,
-            max_tokens: 1500,
+            max_completion_tokens: 1500,
             temperature: 0.8
           })
         }, OPENAI_TIMEOUT_MS)
@@ -2063,7 +2063,7 @@ export async function POST(req) {
     const requestBody = {
       model: OPENAI_MODEL,
       messages: messages,
-      max_tokens: 1500,
+      max_completion_tokens: 1500,
       temperature: 0.8,
       tools: tools,
       tool_choice: 'auto'
@@ -2237,7 +2237,7 @@ export async function POST(req) {
         body: JSON.stringify({
           model: OPENAI_MODEL,
           messages: followUpMessages,
-          max_tokens: 1500,
+          max_completion_tokens: 1500,
           temperature: 0.8
         })
         }, OPENAI_TIMEOUT_MS)

@@ -110,7 +110,7 @@ Improved text:`
         { role: 'user', content: promptConfig.user }
       ],
       temperature: 0.7,
-      max_tokens: purpose === 'visual-aid-prompt-from-notes' ? 200 : (purpose === 'generation-prompt' ? 200 : 150)
+      max_completion_tokens: purpose === 'visual-aid-prompt-from-notes' ? 200 : (purpose === 'generation-prompt' ? 200 : 150)
     })
 
     const rewritten = completion.choices[0]?.message?.content?.trim() || text
