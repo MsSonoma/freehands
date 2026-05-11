@@ -47,7 +47,10 @@ export default function CalendarPage() {
   const [authToken, setAuthToken] = useState('')
   const [learners, setLearners] = useState([])
   const [selectedLearnerId, setSelectedLearnerId] = useState('')
-  const [selectedDate, setSelectedDate] = useState(null)
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  })
   const [scheduledLessons, setScheduledLessons] = useState({}) // Format: { 'YYYY-MM-DD': [{...}] }
   const [scheduledForSelectedDate, setScheduledForSelectedDate] = useState([])
   const [plannedLessons, setPlannedLessons] = useState({}) // Format: { 'YYYY-MM-DD': [{...}] }
@@ -804,7 +807,7 @@ export default function CalendarPage() {
         />
       )}
       <div style={{ background: '#f9fafb', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '4px 8px' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '4px 8px 0 8px' }}>
 
         {/* Database Setup Warning */}
         {!tableExists && (
@@ -837,21 +840,21 @@ export default function CalendarPage() {
                 .calendar-container {
                   flex-direction: row;
                   align-items: flex-start;
-                  height: calc(100vh - 72px);
+                  height: calc(100vh - 80px);
                   gap: 0.5rem;
+                  overflow: hidden;
                 }
                 .calendar-container > .calendar-panel {
                   flex: 1;
                   min-width: 0;
-                  position: sticky;
-                  top: clamp(56px, 9svh, 72px);
-                  align-self: flex-start;
+                  overflow-y: auto;
+                  max-height: calc(100vh - 80px);
                 }
                 .calendar-container > .content-panel {
                   flex: 1;
                   min-width: 0;
                   overflow-y: auto;
-                  max-height: calc(100vh - 72px);
+                  max-height: calc(100vh - 80px);
                 }
               }
             `}</style>
