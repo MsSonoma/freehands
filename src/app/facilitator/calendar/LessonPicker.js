@@ -377,7 +377,7 @@ export default function LessonPicker({
       </div>
 
       {/* Compact Lessons List */}
-      <div style={{ height: '400px', overflowY: 'auto' }}>
+      <div style={{ maxHeight: 'calc(100vh - 280px)', overflowY: 'auto' }}>
         {totalCount === 0 ? (
           <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>
             {Object.keys(allLessons).length === 0 ? 'Loading lessons...' : 'No lessons match your filters'}
