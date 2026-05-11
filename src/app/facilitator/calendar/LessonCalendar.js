@@ -120,7 +120,7 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
     <div className="bg-white rounded-lg shadow-md border border-gray-500 overflow-hidden">
       {/* Calendar Header with Learner Selector */}
       <div style={{ 
-        padding: '12px 8px', 
+        padding: '6px 8px', 
         background: 'linear-gradient(to right, #eff6ff, #eef2ff)',
         borderBottom: '1px solid #e5e7eb'
       }}>
@@ -138,8 +138,8 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
               value={selectedLearnerId}
               onChange={(e) => onLearnerChange(e.target.value)}
               style={{
-                padding: '6px 10px',
-                fontSize: 13,
+                padding: '4px 8px',
+                fontSize: 12,
                 fontWeight: 600,
                 borderRadius: 6,
                 background: '#fff',
@@ -162,8 +162,8 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
             value={currentMonthIndex}
             onChange={handleMonthChange}
             style={{
-              padding: '6px 10px',
-              fontSize: 13,
+              padding: '4px 8px',
+              fontSize: 12,
               fontWeight: 600,
               borderRadius: 6,
               background: '#fff',
@@ -185,8 +185,8 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
             value={currentYear}
             onChange={handleYearChange}
             style={{
-              padding: '6px 10px',
-              fontSize: 13,
+              padding: '4px 8px',
+              fontSize: 12,
               fontWeight: 600,
               borderRadius: 6,
               background: '#fff',
@@ -209,8 +209,8 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
             <button
               onClick={handleMonthDown}
               style={{
-                padding: '4px 10px',
-                fontSize: 14,
+                padding: '3px 8px',
+                fontSize: 12,
                 fontWeight: 600,
                 borderRadius: 4,
                 background: '#fff',
@@ -225,8 +225,8 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
             <button
               onClick={handleMonthUp}
               style={{
-                padding: '4px 10px',
-                fontSize: 14,
+                padding: '3px 8px',
+                fontSize: 12,
                 fontWeight: 600,
                 borderRadius: 4,
                 background: '#fff',
@@ -243,21 +243,21 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
       </div>
 
       {/* Calendar Table */}
-      <div style={{ padding: 12 }}>
+      <div style={{ padding: 8 }}>
         {/* Day Headers */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: 4,
-          marginBottom: 8
+          gap: 2,
+          marginBottom: 4
         }}>
-          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
             <div key={day} style={{ 
               textAlign: 'center', 
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 700,
               color: '#6b7280',
-              padding: '4px 0'
+              padding: '2px 0'
             }}>
               {day}
             </div>
@@ -265,7 +265,7 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
         </div>
 
         {/* Calendar Days Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
           {calendarDays.map((item, idx) => {
             if (!item.day) {
               return <div key={idx} style={{ aspectRatio: '1', background: 'transparent' }} />
