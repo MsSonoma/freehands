@@ -91,6 +91,7 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
   const day = String(now.getDate()).padStart(2, '0')
   const today = `${year}-${month}-${day}`
   const calendarDays = generateCalendarDays()
+  const numRows = Math.ceil(calendarDays.length / 7)
 
   // Auto-focus the month to the most recent scheduled date for the selected learner.
   // This makes retroactive completed lessons visible immediately (e.g., Dec 2025) instead
@@ -265,10 +266,11 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
         </div>
 
         {/* Calendar Days Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-          {calendarDays.map((item, idx) => {
-            if (!item.day) {
-              return <div key={idx} style={{ aspectRatio: '1', background: 'transparent' }} />
+        <div style={{ aspectRatio: '7/5', width: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: `repeat(${numRows}, 1fr)`, gap: 2, height: '100%' }}>
+            {calendarDays.map((item, idx) => {
+              if (!item.day) {
+                return <div key={idx} style={{ minHeight: 0, background: 'transparent' }} />
             }
 
             const dateStr = item.date
@@ -285,7 +287,7 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
                 key={idx}
                 onClick={() => handleDateClick(dateStr)}
                 style={{
-                  aspectRatio: '1',
+                  minHeight: 0,
                   border: isSelected ? '2px solid' : '1px solid',
                   borderColor: isSelected ? '#1f2937' : isNoSchool ? '#f59e0b' : isToday ? '#10b981' : '#e5e7eb',
                   borderRadius: 6,
@@ -349,6 +351,7 @@ export default function LessonCalendar({ learnerId, onDateSelect, scheduledLesso
               </button>
             )
           })}
+          </div>
         </div>
       </div>
     </div>
