@@ -155,12 +155,23 @@ export default function HeaderBar() {
 		return () => window.removeEventListener('ms:session:title', onTitle);
 	}, [pathname]);
 
-	// Close the print menu on Escape key
+	// Close the print menu on outside click or Escape
 	useEffect(() => {
 		if (!printMenuOpen) return;
 		const onKey = (e) => { if (e.key === 'Escape') setPrintMenuOpen(false); };
+		const onDocDown = (e) => {
+			try {
+				if (printMenuRef.current && !printMenuRef.current.contains(e.target)) {
+					setPrintMenuOpen(false);
+				}
+			} catch {}
+		};
 		document.addEventListener('keydown', onKey);
-		return () => document.removeEventListener('keydown', onKey);
+		document.addEventListener('mousedown', onDocDown);
+		return () => {
+			document.removeEventListener('keydown', onKey);
+			document.removeEventListener('mousedown', onDocDown);
+		};
 	}, [printMenuOpen]);
 
 	// Close the nav menu on outside click or Escape
@@ -737,19 +748,13 @@ export default function HeaderBar() {
 								<div
 									ref={printMenuRef}
 									style={{ position:'relative', display:'flex', alignItems:'center', gap:8 }}
-									onMouseEnter={openPrintMenu}
-									onMouseLeave={closePrintMenuSoon}
 								>
 									<button
 										type="button"
 										aria-label="Print menu"
 										aria-haspopup="menu"
 										aria-expanded={printMenuOpen}
-										onClick={(e) => {
-											try { e.stopPropagation(); } catch {}
-											cancelPrintMenuClose();
-											setPrintMenuOpen((v) => !v);
-										}}
+										onClick={() => setPrintMenuOpen((v) => !v)}
 										style={{
 											background:'#1f2937', color:'#fff', border:'none', width:36, height:36,
 											display:'inline-flex', alignItems:'center', justifyContent:'center', borderRadius:8, cursor:'pointer',
@@ -766,8 +771,7 @@ export default function HeaderBar() {
 									</button>
 									{printMenuOpen && (
 										<div
-											onMouseEnter={cancelPrintMenuClose}
-											onMouseLeave={closePrintMenuSoon}
+
 											style={{ position:'absolute', right:0, top:44, background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', minWidth:160, overflow:'hidden', zIndex:1200 }}
 										>
 											<button
