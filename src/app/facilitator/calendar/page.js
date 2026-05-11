@@ -193,6 +193,12 @@ export default function CalendarPage() {
     checkAccess()
   }, [pinChecked])
 
+  // Lock body scroll while on this page so the fixed-height layout never overflows
+  useEffect(() => {
+    document.body.style.overflowY = 'hidden'
+    return () => { document.body.style.overflowY = '' }
+  }, [])
+
   // Send title to HeaderBar
   useEffect(() => {
     if (typeof window !== 'undefined') {
