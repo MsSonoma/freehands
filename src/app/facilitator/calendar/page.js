@@ -16,7 +16,7 @@ import VisualAidsManagerModal from './VisualAidsManagerModal'
 import PortfolioScansModal from './PortfolioScansModal'
 import TypedRemoveConfirmModal from './TypedRemoveConfirmModal'
 import GeneratePortfolioModal from './GeneratePortfolioModal'
-import { InlineExplainer, PageHeader } from '@/components/FacilitatorHelp'
+import { InlineExplainer } from '@/components/FacilitatorHelp'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
 import CalendarTutorialOverlay from '@/app/components/CalendarTutorialOverlay'
 import { useOnboarding } from '@/app/hooks/useOnboarding'
@@ -804,7 +804,7 @@ export default function CalendarPage() {
         />
       )}
       <div style={{ minHeight: '100vh', background: '#f9fafb', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: 12 }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '4px 8px' }}>
 
         {/* Database Setup Warning */}
         {!tableExists && (
@@ -837,21 +837,21 @@ export default function CalendarPage() {
                 .calendar-container {
                   flex-direction: row;
                   align-items: flex-start;
-                  height: calc(100vh - 100px);
-                  gap: 0.75rem;
+                  height: calc(100vh - 72px);
+                  gap: 0.5rem;
                 }
                 .calendar-container > .calendar-panel {
                   flex: 1;
                   min-width: 0;
                   position: sticky;
-                  top: 12px;
+                  top: 4px;
                   align-self: flex-start;
                 }
                 .calendar-container > .content-panel {
                   flex: 1;
                   min-width: 0;
                   overflow-y: auto;
-                  max-height: calc(100vh - 100px);
+                  max-height: calc(100vh - 72px);
                 }
               }
             `}</style>
@@ -871,55 +871,7 @@ export default function CalendarPage() {
               </div>
 
               {/* Right Panel: Tabs for Scheduler and Planner */}
-              <div className="content-panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <PageHeader
-                  subtitle="Organize your teaching schedule with manual scheduling or automated planning"
-                  dense
-                  actions={
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <button
-                        type="button"
-                        onClick={() => setShowTutorial(true)}
-                        title="Show page tour"
-                        style={{
-                          padding: '8px 12px',
-                          borderRadius: 10,
-                          border: '1px solid #c7d2fe',
-                          background: '#eef2ff',
-                          color: '#6366f1',
-                          fontWeight: 700,
-                          fontSize: 13,
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                          lineHeight: 1,
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#e0e7ff' }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = '#eef2ff' }}
-                      >
-                        ? Tour
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowGeneratePortfolio(true)}
-                        style={{
-                          padding: '8px 12px',
-                          borderRadius: 10,
-                          border: '1px solid #c7d2fe',
-                          background: '#eef2ff',
-                          color: '#1e40af',
-                          fontWeight: 900,
-                          fontSize: 12,
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#e0e7ff' }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = '#eef2ff' }}
-                      >
-                        Generate portfolio
-                      </button>
-                    </div>
-                  }
-                />
+              <div className="content-panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
 
                 {isAuthenticated && !canSchedule && (
                   <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
@@ -941,7 +893,7 @@ export default function CalendarPage() {
                 {/* Tab Headers */}
                 <div style={{
                   display: 'flex',
-                  gap: 6,
+                  gap: 4,
                   borderBottom: '2px solid #e5e7eb',
                   alignItems: 'center'
                 }}>
@@ -949,8 +901,8 @@ export default function CalendarPage() {
                     onClick={() => setActiveTab('scheduler')}
                     style={{
                       flex: 1,
-                      padding: '6px 10px',
-                      fontSize: 13,
+                      padding: '4px 8px',
+                      fontSize: 12,
                       fontWeight: 600,
                       border: 'none',
                       borderBottom: activeTab === 'scheduler' ? '2px solid #2563eb' : '2px solid transparent',
@@ -963,10 +915,7 @@ export default function CalendarPage() {
                   >
                     Schedule Lessons
                   </button>
-                  <InlineExplainer
-                    helpKey="calendar-scheduler-tab"
-                    title="Schedule Tab"
-                  >
+                  <InlineExplainer helpKey="calendar-scheduler-tab" title="Schedule Tab">
                     <p>Use this tab to manually assign lessons to specific dates. Click a date on the calendar, browse your lesson library, and add lessons one at a time.</p>
                     <p className="mt-2 text-xs text-gray-500">Best for custom schedules and one-off lessons.</p>
                   </InlineExplainer>
@@ -974,8 +923,8 @@ export default function CalendarPage() {
                     onClick={() => setActiveTab('planner')}
                     style={{
                       flex: 1,
-                      padding: '6px 10px',
-                      fontSize: 13,
+                      padding: '4px 8px',
+                      fontSize: 12,
                       fontWeight: 600,
                       border: 'none',
                       borderBottom: activeTab === 'planner' ? '2px solid #2563eb' : '2px solid transparent',
@@ -988,10 +937,7 @@ export default function CalendarPage() {
                   >
                     Lesson Planner
                   </button>
-                  <InlineExplainer
-                    helpKey="calendar-planner-tab"
-                    title="Planner Tab"
-                  >
+                  <InlineExplainer helpKey="calendar-planner-tab" title="Planner Tab">
                     <p>Generate multi-week lesson outlines automatically. Set a weekly pattern (which subjects on which days), choose duration, and we&apos;ll create a curriculum plan.</p>
                     <p className="mt-2 text-xs text-gray-500">Best for consistent schedules and long-term planning.</p>
                   </InlineExplainer>
@@ -999,8 +945,8 @@ export default function CalendarPage() {
                     onClick={() => setActiveTab('subjects')}
                     style={{
                       flex: 1,
-                      padding: '6px 10px',
-                      fontSize: 13,
+                      padding: '4px 8px',
+                      fontSize: 12,
                       fontWeight: 600,
                       border: 'none',
                       borderBottom: activeTab === 'subjects' ? '2px solid #2563eb' : '2px solid transparent',
@@ -1013,6 +959,21 @@ export default function CalendarPage() {
                   >
                     Custom Subjects
                   </button>
+                  {/* Action buttons folded into tab bar */}
+                  <div style={{ display: 'flex', gap: 4, flex: '0 0 auto', paddingLeft: 4 }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowTutorial(true)}
+                      title="Show page tour"
+                      style={{ padding: '3px 7px', borderRadius: 6, border: '1px solid #c7d2fe', background: '#eef2ff', color: '#6366f1', fontWeight: 700, fontSize: 11, cursor: 'pointer', lineHeight: 1 }}
+                    >? Tour</button>
+                    <button
+                      type="button"
+                      onClick={() => setShowGeneratePortfolio(true)}
+                      title="Generate portfolio"
+                      style={{ padding: '3px 7px', borderRadius: 6, border: '1px solid #c7d2fe', background: '#eef2ff', color: '#1e40af', fontWeight: 700, fontSize: 11, cursor: 'pointer', lineHeight: 1, whiteSpace: 'nowrap' }}
+                    >Portfolio</button>
+                  </div>
                 </div>
 
                 {/* Tab Content - Both tabs remain mounted, only visibility changes */}
