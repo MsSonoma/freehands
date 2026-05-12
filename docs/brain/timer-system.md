@@ -1,5 +1,7 @@
 # Timer System Architecture
 
+> **Multi-feature system.** Before editing timer code, read [feature-edge-map.md](feature-edge-map.md) — timers are shared by Golden Key, Play Dependent on Work, Timers Overlay, Snapshot, and Takeover. Changing timer serialization, sessionStorage keys, or event names can break all of them.
+
 **Last updated**: 2026-02-04T01:00:00Z  
 **Status**: Canonical
 

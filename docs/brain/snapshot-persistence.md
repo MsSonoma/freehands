@@ -1,5 +1,7 @@
 # Snapshot Persistence System
 
+> **Multi-feature system.** Before editing snapshot code, read [feature-edge-map.md](feature-edge-map.md) — the snapshot is shared by all 9 session features. Changes to the payload shape or save timing can break Takeover, Timers, Persistent Sets, and Transcripts simultaneously.
+
 ## Core Architecture
 
 **ATOMIC GATES, NOT POLLING**

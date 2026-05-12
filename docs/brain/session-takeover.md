@@ -1,5 +1,7 @@
 # Session Takeover System (Gate-Based)
 
+> **Multi-feature system.** Before editing takeover code, read [feature-edge-map.md](feature-edge-map.md) — takeover depends on Snapshot, Timers, and Transcripts all being current at every gate. A stale snapshot or missing timer state breaks device continuity.
+
 ## Core Architecture
 
 **EARLY CONFLICT DETECTION, NO POLLING**

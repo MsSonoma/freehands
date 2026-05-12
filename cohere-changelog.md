@@ -1,3 +1,7 @@
+2026-05-12 | arch(brain): Feature drift prevention â€” created Feature Edge Map and 4 missing brain files. Root problem: 9 session features (Snapshot, Takeover, Persistent Sets, Timers, Play-Dependent-on-Work, Timers Overlay, Learners List, Golden Key, Transcripts) were breaking each other because the AI context couldn't hold all 9 simultaneously. Solution: (1) `docs/brain/feature-edge-map.md` â€” hub document listing all 9 features as nodes with dependency edges, shared storage registry (snapshot payload, sessionStorage keys, DB columns), and anti-drift protocol with 9-feature checklist. Cohere will pull this into every session-related pack via keyword overlap. (2) New brain files for 4 undocumented features: `persistent-sets.md`, `play-dependent-on-work.md`, `timers-overlay.md`, `transcripts.md`. (3) Cross-reference banner added to top of snapshot-persistence.md, session-takeover.md, timer-system.md. All 8 files ingested (92 chunks). Recon prompt: "state persistence across devices takeover snapshot timers persistent sets golden key transcripts learners list".
+
+2026-05-12 | feat(learners,session): Add per-learner "Unskippable Voice" setting (`tts_unskippable`). SQL migration in `scripts/add-tts-unskippable-column.sql` adds boolean column (default false). Toggle in `LearnerEditOverlay` AI Features tab. `clientApi.js` wired in `normalizeRow`, `createLearner` (flat), and `updateLearner` (flat). `SessionPageV2` reads the flag on learner load and via live-update patch bus; when on: skip button hidden in video overlay, Next Sentence disabled while `engineState=playing`, PageDown hotkey blocked in `skipSentence()` via `ttsUnskippableRef`. Commit: 8242408. Recon prompt: "learners list per-learner settings toggle TTS unskippable skip button next sentence session video overlay".
+
 2026-04-18 | feat(lessons): Redesign lessons selection page â€” horizontal list rows + detail overlay. Replaced the grid of vertical cards with stacked horizontal rows. Each row shows subject badge, title, grade/difficulty, medal, and status pills (Scheduled, Continue, Golden Key). Clicking a row opens a centered modal overlay showing the blurb, history, facilitator note (view/edit), and the Start/Continue button. Notes editing moved from inline-card to overlay. Commit: 562c4f9. Recon prompt: "learn lessons page layout lesson cards grid design UI components".
 
 2026-04-18 | fix(lessons): "Start Lesson" / "Continue" button shows wrong text. The snapshot lookup in `learn/lessons/page.js` used `lesson.id` as the primary key, but snapshots are saved under the URL param key (filename without extension). For lessons with a non-filename `lesson.id` (e.g. `"LA-4-ADV-001"` vs `"4th_The_Importance_of_Courage_advanced"`), the lookup always missed the snapshot, forcing "Start Lesson" even for in-progress lessons. Fix: swapped priority â€” use `lesson.file` (stripped of `.json`) first, fall back to `lesson.id` last. Commit: 15b79a8. Recon prompt: "learn lessons page start lesson continue button logic which lessons have started".
@@ -698,28 +702,28 @@ Files: src/app/session/webb/page.jsx (startResearch), src/app/api/webb-chat/rout
 - **Fix**: Added rule to prompt banning Exploring/Understanding/Discovering/Introduction to/etc. Added stripGenericOpener() safety-net function applied server-side before returning the title.
 - **File**: src/app/api/generate-lesson-outline/route.js`n
 
-## 2025 — play-dependent-on-work mode
+## 2025 ï¿½ play-dependent-on-work mode
 - Recon prompt: "play timers on/off mode, work timer dependant play timer, play phase skipped when work timer runs out, learner settings checkboxes, phase transitions, 30 second timer"
 - Files changed: SessionPageV2.jsx, PlayTimeExpiredOverlay.jsx, LearnerEditOverlay.jsx, scripts/add-play-timer-mode-columns.sql
 - Summary: Added play_timers_enabled master toggle + play_dependent_on_work sub-toggle to learner settings. When work timer expires before phase completion and dependent mode is on, shows 30-sec WorkExpiredSkipPlay overlay (variant='work-expired') then skips play portion of next phase and jumps straight to work. SQL migration adds both columns with safe defaults (master=true, dependent=false).
 - Commit: a80d7ed
 
 
-## 2025-08-04 — fix phase.go() after skipPlayPortion auto-start
+## 2025-08-04 ï¿½ fix phase.go() after skipPlayPortion auto-start
 Recon prompt: "play-dependent-on-work phase stuck awaiting-go after work timer expired overlay"
-Fix: added phase.go?.() after phase.start({ skipPlayPortion: true }) when workExpiredAutoStart is true in all 4 phase start handlers (comprehension/exercise/worksheet/test) in SessionPageV2.jsx. wait was not needed since the containing functions are not async — go() is event-driven.
+Fix: added phase.go?.() after phase.start({ skipPlayPortion: true }) when workExpiredAutoStart is true in all 4 phase start handlers (comprehension/exercise/worksheet/test) in SessionPageV2.jsx. wait was not needed since the containing functions are not async ï¿½ go() is event-driven.
 Commit: 1b64f65
 
-## 2026-05-03 — Introductory Onboarding Flow
+## 2026-05-03 ï¿½ Introductory Onboarding Flow
 
 **Recon prompt:** introductory onboarding flow for new accounts: create learner, settings/targets/timers, generate first lesson, activate or schedule lesson, calendar tooltips tutorial
 
 **What was built:**
-- src/app/hooks/useOnboarding.js — useOnboarding hook; persists step (0–5) to localStorage + Supabase profiles.onboarding_step
-- src/app/components/OnboardingBanner.jsx — contextual step banner shown at top of each onboarding page
-- src/app/components/OnboardingChecklist.jsx — floating checklist widget (steps 1–4, progress bar, dismiss)
-- src/app/components/CalendarTutorialOverlay.jsx — 6-card modal tutorial shown on first calendar visit
-- scripts/add-onboarding-step-column.sql — ALTER TABLE to add onboarding_step column to profiles
+- src/app/hooks/useOnboarding.js ï¿½ useOnboarding hook; persists step (0ï¿½5) to localStorage + Supabase profiles.onboarding_step
+- src/app/components/OnboardingBanner.jsx ï¿½ contextual step banner shown at top of each onboarding page
+- src/app/components/OnboardingChecklist.jsx ï¿½ floating checklist widget (steps 1ï¿½4, progress bar, dismiss)
+- src/app/components/CalendarTutorialOverlay.jsx ï¿½ 6-card modal tutorial shown on first calendar visit
+- scripts/add-onboarding-step-column.sql ï¿½ ALTER TABLE to add onboarding_step column to profiles
 
 **Pages modified:**
 - uth/signup/page.js ? sets localStorage step=1, redirects new signups to /facilitator/learners/add?onboarding=1
@@ -731,3 +735,8 @@ ext param so email-confirm redirects land on add-learner
 - acilitator/lessons/page.js ? step 3 banner with calendar link; on activation ? advances to step 4
 - acilitator/calendar/page.js ? mounts CalendarTutorialOverlay at step 4; on complete ? marks onboarding done (step 5)
 2025-07-17 | feat(learn/lessons): Collapsible sidebar layout. Controls (title, teacher selector, learner name, GoldenKeyCounter, action buttons) moved into a 240px-wide sticky sidebar that collapses to 44px with a toggle button (open=â—€, closed=â–¶). Tab bar + lesson list remain in the flex:1 right content area. sidebarOpen state initialized to true. maxWidth bumped to 1100. Commit: f4d49ad. Recon prompt: sidekick_pack.md.
+
+## 2025-07-19 ï¿½ Production TDZ fix: Cannot access 'nC' before initialization
+- Root cause: uildAllPhaseSets, persistAssessments, getLearnerTarget, getAssessmentStorageKey, questionKey, and ddEvent were declared at lines 2035-2215 of SessionPageV2.jsx, but uildAllPhaseSets and persistAssessments appeared in a useEffect dependency array at line 1773 (363 lines before their declarations). In dev builds the webpack scope hoisting coincidentally resolved the name to a hoisted unction nC(){} from ClosingPhase; in the Vercel production build the minifier assigned 
+C to the let buildAllPhaseSets = useCallback(...) inside the component function, hitting TDZ on the dep array evaluation.
+- Fix: moved the entire block (addEvent + getLearnerTarget + getAssessmentStorageKey + persistAssessments + questionKey + buildAllPhaseSets) to just before the first useEffect that references them (now line 1701, useEffect now at line 1884). Build passes, pushed commit 8d0f87a.
