@@ -1698,6 +1698,189 @@ function SessionPageV2Inner() {
   useEffect(() => { generatedComprehensionRef.current = generatedComprehension; }, [generatedComprehension]);
   useEffect(() => { generatedExerciseRef.current = generatedExercise; }, [generatedExercise]);
 
+  const addEvent = (msg) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setEvents(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 15));
+  };
+
+  // Learner target helper: no silent defaults. Returns positive integer or null (caller must block start).
+  const getLearnerTarget = useCallback((phaseName) => {
+    const asNumber = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    const parsedTargets = (() => {
+      const t = learnerProfile?.targets;
+      if (!t) return null;
+      if (typeof t === 'object') return t;
+      if (typeof t === 'string') {
+        try { return JSON.parse(t); } catch { return null; }
+      }
+      return null;
+    })();
+
+    const fromFlat = asNumber(learnerProfile && learnerProfile[phaseName]);
+    const fromNested = asNumber(parsedTargets?.[phaseName]);
+    // Legacy V1 fallback: some learners stored comprehension under "discussion" (V1 alias)
+    const fromLegacy = phaseName === 'comprehension'
+      ? (asNumber(learnerProfile && learnerProfile.discussion) ?? asNumber(parsedTargets?.discussion))
+      : null;
+
+    let fromOverride = null;
+    // Use the pinned session learner id (or loaded profile id) to avoid override lookups drifting mid-session.
+    const lid = sessionLearnerIdRef.current || learnerProfile?.id || null;
+    try {
+      const overrideKeys = [];
+      if (lid && lid !== 'demo') {
+        overrideKeys.push(`target_${phaseName}_${lid}`);
+      }
+      overrideKeys.push(`target_${phaseName}`);
+
+      for (const key of overrideKeys) {
+        const raw = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+        const num = asNumber(raw);
+        if (num && num > 0) {
+          fromOverride = num;
+          break;
+        }
+      }
+    } catch {}
+
+    const raw = [fromFlat, fromNested, fromLegacy, fromOverride].find(v => Number.isFinite(v) && v > 0) ?? null;
+    if (!Number.isFinite(raw) || raw <= 0) {
+      setLearnerError(`Missing learner target for ${phaseName}. Update the learner targets and retry.`);
+      setError(null);
+      addEvent(`⚠️ Missing learner target for ${phaseName}`);
+      return null;
+    }
+
+    return Math.trunc(raw);
+  }, [learnerProfile]);
+
+  const getAssessmentStorageKey = useCallback(() => {
+    return lessonKey || null;
+  }, [lessonKey]);
+
+  const persistAssessments = useCallback((worksheetSet, testSet, comprehensionSet, exerciseSet) => {
+    const key = getAssessmentStorageKey();
+    if (!key) return;
+    const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
+    try {
+      const payload = {};
+
+      const pick = (explicit, fallback) => {
+        if (Array.isArray(explicit) && explicit.length) return explicit;
+        if (Array.isArray(fallback) && fallback.length) return fallback;
+        return undefined;
+      };
+
+      const ws = pick(worksheetSet, generatedWorksheetRef.current);
+      const ts = pick(testSet, generatedTestRef.current);
+      const comp = pick(comprehensionSet, generatedComprehensionRef.current);
+      const ex = pick(exerciseSet, generatedExerciseRef.current);
+
+      if (ws) payload.worksheet = ws;
+      if (ts) payload.test = ts;
+      if (comp) payload.comprehension = comp;
+      if (ex) payload.exercise = ex;
+
+      if (!Object.keys(payload).length) return;
+      saveAssessments(key, payload, { learnerId });
+    } catch {
+      /* noop */
+    }
+  }, [getAssessmentStorageKey, learnerProfile]);
+
+  const questionKey = useCallback((q) => {
+    return (q?.prompt || q?.question || q?.Q || q?.q || '').toString().trim().toLowerCase();
+  }, []);
+
+  // Build all phase question sets from a single shuffled pool so questions are
+  // never repeated across phases until the full pool has been exhausted, at which
+  // point the pool is reshuffled and dealing continues.
+  const buildAllPhaseSets = useCallback(() => {
+    if (!lessonData) return null;
+    // Return cached result if available for this lessonData reference.
+    // This guarantees all phases and the print handler draw from the same random shuffle.
+    if (buildAllPhaseSetsCache.current?.lessonData === lessonData) {
+      return buildAllPhaseSetsCache.current.sets;
+    }
+
+    const tf = Array.isArray(lessonData.truefalse)
+      ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf', type: 'tf' })) : [];
+    const mc = Array.isArray(lessonData.multiplechoice)
+      ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc', type: 'mc' })) : [];
+    const fib = Array.isArray(lessonData.fillintheblank)
+      ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib', type: 'fib' })) : [];
+    const sa = Array.isArray(lessonData.shortanswer)
+      ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short', type: 'short' })) : [];
+
+    // Deduplicate by question text
+    const seen = new Set();
+    const uniquePool = [];
+    for (const q of [...tf, ...mc, ...fib, ...sa]) {
+      const key = questionKey(q);
+      if (key && seen.has(key)) continue;
+      if (key) seen.add(key);
+      uniquePool.push(q);
+    }
+    if (!uniquePool.length) return null;
+
+    const shuffle = (arr) => {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+
+    const compTarget     = getLearnerTarget('comprehension') || 5;
+    const exerciseTarget = getLearnerTarget('exercise')      || 10;
+    const worksheetTarget = getLearnerTarget('worksheet')   || 15;
+    const testTarget     = getLearnerTarget('test')         || 10;
+    const totalNeeded = compTarget + exerciseTarget + worksheetTarget + testTarget;
+
+    // Cap SA/FITB (secondary) at 20% of total so MC/TF remain the majority.
+    const primaryItems   = shuffle(uniquePool.filter(q => q.sourceType === 'tf' || q.sourceType === 'mc'));
+    const secondaryItems = shuffle(uniquePool.filter(q => q.sourceType === 'fib' || q.sourceType === 'short'));
+    const maxSecondary   = Math.max(0, Math.round(totalNeeded * 0.2));
+    const cappedPool = shuffle([...primaryItems, ...secondaryItems.slice(0, maxSecondary)]);
+
+    // Deal n items with guaranteed no within-phase repeats: each full pass through
+    // the pool is independently shuffled, so no question appears twice within any
+    // single pass. Phases never cross pass boundaries, eliminating within-phase dups.
+    const dealPhase = (pool, n) => {
+      const result = [];
+      while (result.length < n) {
+        const batch = shuffle([...pool]);
+        result.push(...batch.slice(0, Math.min(batch.length, n - result.length)));
+      }
+      return result;
+    };
+
+    // Build each phase independently; prefer questions not yet used in prior phases
+    // (best-effort cross-phase deduplication — falls back to full pool if pool is small).
+    const usedKeys = new Set();
+    const buildPhase = (target) => {
+      const fresh = cappedPool.filter(q => !usedKeys.has(questionKey(q)));
+      const pool = fresh.length >= target ? fresh : cappedPool;
+      const questions = dealPhase(pool, target);
+      questions.forEach(q => usedKeys.add(questionKey(q)));
+      return questions.map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
+    };
+
+    const sets = {
+      comprehension: buildPhase(compTarget),
+      exercise:      buildPhase(exerciseTarget),
+      worksheet:     buildPhase(worksheetTarget),
+      test:          buildPhase(testTarget),
+    };
+    buildAllPhaseSetsCache.current = { lessonData, sets };
+    return sets;
+  }, [lessonData, getLearnerTarget, questionKey]);
+
   // Load persisted worksheet/test sets for printing (local+Supabase)
   useEffect(() => {
     if (!lessonKey) return;
@@ -2031,189 +2214,6 @@ function SessionPageV2Inner() {
       keyboardServiceRef.current = null;
     };
   }, []);
-  
-  const addEvent = (msg) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setEvents(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 15));
-  };
-
-  // Learner target helper: no silent defaults. Returns positive integer or null (caller must block start).
-  const getLearnerTarget = useCallback((phaseName) => {
-    const asNumber = (v) => {
-      const n = Number(v);
-      return Number.isFinite(n) ? n : null;
-    };
-
-    const parsedTargets = (() => {
-      const t = learnerProfile?.targets;
-      if (!t) return null;
-      if (typeof t === 'object') return t;
-      if (typeof t === 'string') {
-        try { return JSON.parse(t); } catch { return null; }
-      }
-      return null;
-    })();
-
-    const fromFlat = asNumber(learnerProfile && learnerProfile[phaseName]);
-    const fromNested = asNumber(parsedTargets?.[phaseName]);
-    // Legacy V1 fallback: some learners stored comprehension under "discussion" (V1 alias)
-    const fromLegacy = phaseName === 'comprehension'
-      ? (asNumber(learnerProfile && learnerProfile.discussion) ?? asNumber(parsedTargets?.discussion))
-      : null;
-
-    let fromOverride = null;
-    // Use the pinned session learner id (or loaded profile id) to avoid override lookups drifting mid-session.
-    const lid = sessionLearnerIdRef.current || learnerProfile?.id || null;
-    try {
-      const overrideKeys = [];
-      if (lid && lid !== 'demo') {
-        overrideKeys.push(`target_${phaseName}_${lid}`);
-      }
-      overrideKeys.push(`target_${phaseName}`);
-
-      for (const key of overrideKeys) {
-        const raw = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
-        const num = asNumber(raw);
-        if (num && num > 0) {
-          fromOverride = num;
-          break;
-        }
-      }
-    } catch {}
-
-    const raw = [fromFlat, fromNested, fromLegacy, fromOverride].find(v => Number.isFinite(v) && v > 0) ?? null;
-    if (!Number.isFinite(raw) || raw <= 0) {
-      setLearnerError(`Missing learner target for ${phaseName}. Update the learner targets and retry.`);
-      setError(null);
-      addEvent(`⚠️ Missing learner target for ${phaseName}`);
-      return null;
-    }
-
-    return Math.trunc(raw);
-  }, [learnerProfile]);
-
-  const getAssessmentStorageKey = useCallback(() => {
-    return lessonKey || null;
-  }, [lessonKey]);
-
-  const persistAssessments = useCallback((worksheetSet, testSet, comprehensionSet, exerciseSet) => {
-    const key = getAssessmentStorageKey();
-    if (!key) return;
-    const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
-    try {
-      const payload = {};
-
-      const pick = (explicit, fallback) => {
-        if (Array.isArray(explicit) && explicit.length) return explicit;
-        if (Array.isArray(fallback) && fallback.length) return fallback;
-        return undefined;
-      };
-
-      const ws = pick(worksheetSet, generatedWorksheetRef.current);
-      const ts = pick(testSet, generatedTestRef.current);
-      const comp = pick(comprehensionSet, generatedComprehensionRef.current);
-      const ex = pick(exerciseSet, generatedExerciseRef.current);
-
-      if (ws) payload.worksheet = ws;
-      if (ts) payload.test = ts;
-      if (comp) payload.comprehension = comp;
-      if (ex) payload.exercise = ex;
-
-      if (!Object.keys(payload).length) return;
-      saveAssessments(key, payload, { learnerId });
-    } catch {
-      /* noop */
-    }
-  }, [getAssessmentStorageKey, learnerProfile]);
-
-  const questionKey = useCallback((q) => {
-    return (q?.prompt || q?.question || q?.Q || q?.q || '').toString().trim().toLowerCase();
-  }, []);
-
-  // Build all phase question sets from a single shuffled pool so questions are
-  // never repeated across phases until the full pool has been exhausted, at which
-  // point the pool is reshuffled and dealing continues.
-  const buildAllPhaseSets = useCallback(() => {
-    if (!lessonData) return null;
-    // Return cached result if available for this lessonData reference.
-    // This guarantees all phases and the print handler draw from the same random shuffle.
-    if (buildAllPhaseSetsCache.current?.lessonData === lessonData) {
-      return buildAllPhaseSetsCache.current.sets;
-    }
-
-    const tf = Array.isArray(lessonData.truefalse)
-      ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf', type: 'tf' })) : [];
-    const mc = Array.isArray(lessonData.multiplechoice)
-      ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc', type: 'mc' })) : [];
-    const fib = Array.isArray(lessonData.fillintheblank)
-      ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib', type: 'fib' })) : [];
-    const sa = Array.isArray(lessonData.shortanswer)
-      ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short', type: 'short' })) : [];
-
-    // Deduplicate by question text
-    const seen = new Set();
-    const uniquePool = [];
-    for (const q of [...tf, ...mc, ...fib, ...sa]) {
-      const key = questionKey(q);
-      if (key && seen.has(key)) continue;
-      if (key) seen.add(key);
-      uniquePool.push(q);
-    }
-    if (!uniquePool.length) return null;
-
-    const shuffle = (arr) => {
-      const a = [...arr];
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      return a;
-    };
-
-    const compTarget     = getLearnerTarget('comprehension') || 5;
-    const exerciseTarget = getLearnerTarget('exercise')      || 10;
-    const worksheetTarget = getLearnerTarget('worksheet')   || 15;
-    const testTarget     = getLearnerTarget('test')         || 10;
-    const totalNeeded = compTarget + exerciseTarget + worksheetTarget + testTarget;
-
-    // Cap SA/FITB (secondary) at 20% of total so MC/TF remain the majority.
-    const primaryItems   = shuffle(uniquePool.filter(q => q.sourceType === 'tf' || q.sourceType === 'mc'));
-    const secondaryItems = shuffle(uniquePool.filter(q => q.sourceType === 'fib' || q.sourceType === 'short'));
-    const maxSecondary   = Math.max(0, Math.round(totalNeeded * 0.2));
-    const cappedPool = shuffle([...primaryItems, ...secondaryItems.slice(0, maxSecondary)]);
-
-    // Deal n items with guaranteed no within-phase repeats: each full pass through
-    // the pool is independently shuffled, so no question appears twice within any
-    // single pass. Phases never cross pass boundaries, eliminating within-phase dups.
-    const dealPhase = (pool, n) => {
-      const result = [];
-      while (result.length < n) {
-        const batch = shuffle([...pool]);
-        result.push(...batch.slice(0, Math.min(batch.length, n - result.length)));
-      }
-      return result;
-    };
-
-    // Build each phase independently; prefer questions not yet used in prior phases
-    // (best-effort cross-phase deduplication — falls back to full pool if pool is small).
-    const usedKeys = new Set();
-    const buildPhase = (target) => {
-      const fresh = cappedPool.filter(q => !usedKeys.has(questionKey(q)));
-      const pool = fresh.length >= target ? fresh : cappedPool;
-      const questions = dealPhase(pool, target);
-      questions.forEach(q => usedKeys.add(questionKey(q)));
-      return questions.map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
-    };
-
-    const sets = {
-      comprehension: buildPhase(compTarget),
-      exercise:      buildPhase(exerciseTarget),
-      worksheet:     buildPhase(worksheetTarget),
-      test:          buildPhase(testTarget),
-    };
-    buildAllPhaseSetsCache.current = { lessonData, sets };
-    return sets;
-  }, [lessonData, getLearnerTarget, questionKey]);
 
   const shareOrPreviewPdf = useCallback(async (blob, fileName = 'document.pdf', previewWin = null) => {
     try {
