@@ -868,6 +868,8 @@ function SessionPageV2Inner() {
   // Session tracking (lesson_sessions + lesson_session_events)
   const [showTakeoverDialog, setShowTakeoverDialog] = useState(false);
   const [conflictingSession, setConflictingSession] = useState(null);
+  // true when this device was notified by polling that it was taken over (vs. this device arriving at a conflict)
+  const [isTakenOverNotification, setIsTakenOverNotification] = useState(false);
   const {
     startSession: startTrackedSession,
     endSession: endTrackedSession,
@@ -878,6 +880,7 @@ function SessionPageV2Inner() {
     goldenKeyLessonKey || null,
     false,
     (session) => {
+      setIsTakenOverNotification(true);
       setConflictingSession(session);
       setShowTakeoverDialog(true);
     }
@@ -6061,27 +6064,32 @@ function SessionPageV2Inner() {
       throw new Error('Invalid PIN');
     }
 
-    if (conflictingSession?.id) {
-      try {
-        const { endLessonSession } = await import('@/app/lib/sessionTracking');
-        await endLessonSession(conflictingSession.id, {
-          reason: 'taken_over',
-          metadata: {
-            taken_over_by_session_id: browserSessionId,
-            taken_over_at: new Date().toISOString(),
-          },
-          learnerId: trackingLearnerId,
-          lessonId: trackingLessonId,
-        });
-      } catch {}
-    }
+    // End all currently active sessions for this learner+lesson regardless of which
+    // device owns them. This covers both directions:
+    //   (a) new device arriving to take over from Device A
+    //   (b) Device A reclaiming after its polling notification (conflictingSession.id
+    //       would be Device A's own dead session — not Device B's live one — so
+    //       endLessonSession(conflictingSession.id) was a no-op and startTrackedSession
+    //       would find Device B still active and throw "still active on another device").
+    const effectiveLessonId = goldenKeyLessonKey || trackingLessonId;
+    try {
+      const nowIso = new Date().toISOString();
+      const { data: activeSessions } = await supabase
+        .from('lesson_sessions')
+        .select('id')
+        .eq('learner_id', trackingLearnerId)
+        .eq('lesson_id', effectiveLessonId)
+        .is('ended_at', null);
+      if (Array.isArray(activeSessions) && activeSessions.length > 0) {
+        for (const row of activeSessions) {
+          await supabase.from('lesson_sessions').update({ ended_at: nowIso }).eq('id', row.id);
+        }
+      }
+    } catch {}
 
     try {
       const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
-      const takeoverStart = await startTrackedSession(browserSessionId, deviceName);
-      if (takeoverStart?.conflict) {
-        throw new Error('Lesson is still active on another device');
-      }
+      await startTrackedSession(browserSessionId, deviceName);
       try { startSessionPolling?.(); } catch {}
     } catch (err) {
       throw err;
@@ -6092,15 +6100,17 @@ function SessionPageV2Inner() {
       localStorage.removeItem(`atomic_snapshot:${trackingLearnerId}:${trackingLessonId}`);
     } catch {}
 
+    setIsTakenOverNotification(false);
     setShowTakeoverDialog(false);
     setConflictingSession(null);
 
     if (typeof window !== 'undefined') {
       window.location.reload();
     }
-  }, [browserSessionId, conflictingSession, learnerProfile?.id, lessonKey, startTrackedSession, startSessionPolling]);
+  }, [browserSessionId, conflictingSession, goldenKeyLessonKey, learnerProfile?.id, lessonKey, startTrackedSession, startSessionPolling]);
 
   const handleCancelTakeover = useCallback(() => {
+    setIsTakenOverNotification(false);
     setShowTakeoverDialog(false);
     setConflictingSession(null);
     if (typeof window !== 'undefined') {
@@ -8202,6 +8212,7 @@ function SessionPageV2Inner() {
           existingSession={conflictingSession}
           onTakeover={handleSessionTakeover}
           onCancel={handleCancelTakeover}
+          isTakenOver={isTakenOverNotification}
         />
       )}
     </>

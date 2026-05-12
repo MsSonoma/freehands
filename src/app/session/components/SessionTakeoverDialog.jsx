@@ -6,7 +6,8 @@ import { useState } from 'react'
 export default function SessionTakeoverDialog({ 
   existingSession, 
   onTakeover, 
-  onCancel
+  onCancel,
+  isTakenOver = false
 }) {
   const [pinCode, setPinCode] = useState('')
   const [error, setError] = useState('')
@@ -78,15 +79,21 @@ export default function SessionTakeoverDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, color: '#1f2937' }}>
-          🔒 Lesson Active on Another Device
+          {isTakenOver ? '⚡ Session Taken Over' : '🔒 Lesson Active on Another Device'}
         </div>
         
         <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 24, lineHeight: 1.5 }}>
-          <strong>{lessonName}</strong> is currently active on <strong>{existingSession?.device_name || 'another device'}</strong>.
-          {existingSession?.started_at && (
-            <div style={{ marginTop: 8 }}>
-              Last activity: {formatLastActivity(existingSession.started_at)}
-            </div>
+          {isTakenOver ? (
+            <>Another device took over <strong>{lessonName}</strong>. Enter your PIN to take it back.</>  
+          ) : (
+            <>
+              <strong>{lessonName}</strong> is currently active on <strong>{existingSession?.device_name || 'another device'}</strong>.
+              {existingSession?.started_at && (
+                <div style={{ marginTop: 8 }}>
+                  Last activity: {formatLastActivity(existingSession.started_at)}
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -100,12 +107,20 @@ export default function SessionTakeoverDialog({
           color: '#92400e',
           lineHeight: 1.5
         }}>
-          <strong>⚠️ Taking over this lesson will:</strong>
-          <ul style={{ margin: '8px 0 0 0', paddingLeft: 20 }}>
-            <li>End the lesson on the other device</li>
-            <li>Continue the lesson here</li>
-            <li>Load your most recent progress</li>
-          </ul>
+          {isTakenOver ? (
+            <><strong>⚡ Taking back will:</strong>
+            <ul style={{ margin: '8px 0 0 0', paddingLeft: 20 }}>
+              <li>Return the session to this device</li>
+              <li>The other device will see this same screen</li>
+            </ul></>
+          ) : (
+            <><strong>⚠️ Taking over this lesson will:</strong>
+            <ul style={{ margin: '8px 0 0 0', paddingLeft: 20 }}>
+              <li>End the lesson on the other device</li>
+              <li>Continue the lesson here</li>
+              <li>Load your most recent progress</li>
+            </ul></>
+          )}
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -205,7 +220,7 @@ export default function SessionTakeoverDialog({
                 transition: 'all 0.2s'
               }}
             >
-              {loading ? 'Taking Over...' : 'Take Over Lesson'}
+              {loading ? 'Taking Over...' : isTakenOver ? 'Take Back' : 'Take Over Lesson'}
             </button>
           </div>
         </form>
