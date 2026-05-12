@@ -53,6 +53,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [poemDisabled, setPoemDisabled] = useState(false);
 	const [storyDisabled, setStoryDisabled] = useState(false);
 	const [fillInFunDisabled, setFillInFunDisabled] = useState(false);
+	const [ttsUnskippable, setTtsUnskippable] = useState(false);
 	const [goldenKeysEnabled, setGoldenKeysEnabled] = useState(true);
 	const [playComprehensionEnabled, setPlayComprehensionEnabled] = useState(true);
 	const [playExerciseEnabled, setPlayExerciseEnabled] = useState(true);
@@ -96,6 +97,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setPoemDisabled(!!learner.poem_disabled);
 		setStoryDisabled(!!learner.story_disabled);
 		setFillInFunDisabled(!!learner.fill_in_fun_disabled);
+		setTtsUnskippable(learner.tts_unskippable === true);
 		setGoldenKeysEnabled(learner.golden_keys_enabled !== false);
 		setPlayComprehensionEnabled(learner.play_comprehension_enabled !== false);
 		setPlayExerciseEnabled(learner.play_exercise_enabled !== false);
@@ -160,6 +162,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 				poem_disabled: poemDisabled,
 				story_disabled: storyDisabled,
 				fill_in_fun_disabled: fillInFunDisabled,
+				tts_unskippable: ttsUnskippable,
 				auto_advance_phases: autoAdvancePhases,
 				slate_settings: slateSettings,
 				...phaseTimers,
@@ -915,6 +918,20 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 										</button>
 										<p style={{ margin: '6px 0 0', fontSize: 13, color: '#6b7280' }}>
 											Mad libs style activities
+										</p>
+									</div>
+
+									<div>
+										<label style={{ ...labelStyle, marginBottom: 8 }}>Unskippable Voice</label>
+										<button
+											onClick={() => setTtsUnskippable(!ttsUnskippable)}
+											style={toggleButtonStyle(ttsUnskippable)}
+										>
+											<span>{ttsUnskippable ? '✅' : '🚫'}</span>
+											<span>{ttsUnskippable ? 'Enabled' : 'Disabled'}</span>
+										</button>
+										<p style={{ margin: '6px 0 0', fontSize: 13, color: '#6b7280' }}>
+											Hide skip button; Next Sentence waits for Ms. Sonoma to finish
 										</p>
 									</div>
 								</div>

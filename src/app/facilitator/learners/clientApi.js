@@ -154,6 +154,7 @@ export async function createLearner(payload) {
         story_disabled: !!payload.story_disabled,
         fill_in_fun_disabled: !!payload.fill_in_fun_disabled,
         auto_advance_phases: payload.auto_advance_phases !== false,
+        tts_unskippable: !!payload.tts_unskippable,
       }, uid);
       if (!error) { supabaseLearnersMode = 'flat'; return normalizeRow(data); }
       if (!isUndefinedColumnOrTable(error)) throw new Error(error.message || 'Failed to create learner');
@@ -267,6 +268,7 @@ export async function updateLearner(id, updates) {
         ...(updates.story_disabled !== undefined ? { story_disabled: !!updates.story_disabled } : {}),
         ...(updates.fill_in_fun_disabled !== undefined ? { fill_in_fun_disabled: !!updates.fill_in_fun_disabled } : {}),
         ...(updates.auto_advance_phases !== undefined ? { auto_advance_phases: !!updates.auto_advance_phases } : {}),
+        ...(updates.tts_unskippable !== undefined ? { tts_unskippable: !!updates.tts_unskippable } : {}),
         // Phase timer fields (11 total)
         ...(updates.discussion_play_min !== undefined ? { discussion_play_min: Number(updates.discussion_play_min) } : {}),
         ...(updates.discussion_work_min !== undefined ? { discussion_work_min: Number(updates.discussion_work_min) } : {}),
@@ -359,6 +361,7 @@ function normalizeRow(row) {
     story_disabled: !!row.story_disabled,
     fill_in_fun_disabled: !!row.fill_in_fun_disabled,
     auto_advance_phases: row.auto_advance_phases !== false,
+    tts_unskippable: !!row.tts_unskippable,
     // Phase timer fields
     discussion_play_min: c(row.discussion_play_min),
     discussion_work_min: c(row.discussion_work_min),

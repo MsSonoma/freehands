@@ -862,6 +862,8 @@ function SessionPageV2Inner() {
   const [learnerProfile, setLearnerProfile] = useState(null);
   const [learnerLoading, setLearnerLoading] = useState(true);
   const [learnerError, setLearnerError] = useState(null);
+  // Per-learner TTS unskippable setting
+  const [ttsUnskippable, setTtsUnskippable] = useState(false);
 
   // Session tracking (lesson_sessions + lesson_session_events)
   const [showTakeoverDialog, setShowTakeoverDialog] = useState(false);
@@ -1010,6 +1012,8 @@ function SessionPageV2Inner() {
   // Ref that always mirrors the latest loaded learner so plan-tier effects can read it
   // without taking a reactive dependency on learnerProfile.
   const learnerProfileRef = useRef(null);
+  // Ref mirror for ttsUnskippable (safe to read inside stale closures, e.g. hotkey handlers)
+  const ttsUnskippableRef = useRef(false);
   
   // Play timer expired overlay state (V1 parity)
   const [showPlayTimeExpired, setShowPlayTimeExpired] = useState(false);
@@ -1453,6 +1457,11 @@ function SessionPageV2Inner() {
         learnerProfileRef.current = learner;
         setLearnerProfile(learner);
 
+        // Per-learner TTS unskippable flag
+        const unskippable = learner.tts_unskippable === true;
+        setTtsUnskippable(unskippable);
+        ttsUnskippableRef.current = unskippable;
+
         if (typeof learner.golden_keys_enabled !== 'boolean') {
           throw new Error('Learner profile missing golden_keys_enabled flag. Please run migrations.');
         }
@@ -1625,6 +1634,13 @@ function SessionPageV2Inner() {
       // Live update: play_dependent_on_work
       if ('play_dependent_on_work' in patch) {
         playDependentOnWorkRef.current = patch.play_dependent_on_work === true;
+      }
+
+      // Live update: tts_unskippable
+      if ('tts_unskippable' in patch) {
+        const next = patch.tts_unskippable === true;
+        setTtsUnskippable(next);
+        ttsUnskippableRef.current = next;
       }
 
       const hasAnyPlayFlag = Object.values(nextPlayFlags).some(v => v !== undefined);
@@ -6165,6 +6181,7 @@ function SessionPageV2Inner() {
   const skipSentence = () => {
     if (!audioEngineRef.current) return;
     if (askExitSpeechLockRef.current) return;
+    if (ttsUnskippableRef.current) return;
     stopAudioSafe();
   };
   
@@ -6539,7 +6556,7 @@ function SessionPageV2Inner() {
             zIndex: 10
           }}>
             {/* Skip/Repeat (acts as one button) */}
-            {engineState === 'playing' && (
+            {engineState === 'playing' && !ttsUnskippable && (
               <button
                 type="button"
                 onClick={skipTTS}
@@ -7746,18 +7763,18 @@ function SessionPageV2Inner() {
                   </button>
                   <button
                     onClick={nextSentence}
-                    disabled={teachingLoading}
+                    disabled={teachingLoading || (ttsUnskippable && engineState === 'playing')}
                     style={{
                       padding: '12px 28px',
-                      background: teachingLoading ? '#9ca3af' : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                      background: (teachingLoading || (ttsUnskippable && engineState === 'playing')) ? '#9ca3af' : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
                       color: '#fff',
                       border: 'none',
                       borderRadius: 10,
                       fontSize: '1rem',
                       fontWeight: 600,
-                      cursor: teachingLoading ? 'not-allowed' : 'pointer',
+                      cursor: (teachingLoading || (ttsUnskippable && engineState === 'playing')) ? 'not-allowed' : 'pointer',
                       boxShadow: '0 4px 16px rgba(34, 197, 94, 0.4)',
-                      opacity: teachingLoading ? 0.7 : 1
+                      opacity: (teachingLoading || (ttsUnskippable && engineState === 'playing')) ? 0.7 : 1
                     }}
                   >
                     {teachingLoading
