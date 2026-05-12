@@ -306,6 +306,7 @@ export async function updateLearner(id, updates) {
       ...(updates.play_test_enabled !== undefined ? { play_test_enabled: !!updates.play_test_enabled } : {}),
       ...(updates.play_timers_enabled !== undefined ? { play_timers_enabled: !!updates.play_timers_enabled } : {}),
       ...(updates.play_dependent_on_work !== undefined ? { play_dependent_on_work: !!updates.play_dependent_on_work } : {}),
+      ...(updates.tts_unskippable !== undefined ? { tts_unskippable: !!updates.tts_unskippable } : {}),
     };
     const { data: data2, error: error2 } = await updateWithOwner(supabase, id, jsonPayload, uid);
     if (!error2) { supabaseLearnersMode = 'json'; return normalizeRow(data2); }
@@ -449,6 +450,7 @@ function updateLocal(id, updates) {
       ...(updates.story_disabled !== undefined ? { story_disabled: !!updates.story_disabled } : {}),
       ...(updates.fill_in_fun_disabled !== undefined ? { fill_in_fun_disabled: !!updates.fill_in_fun_disabled } : {}),
       ...(updates.auto_advance_phases !== undefined ? { auto_advance_phases: !!updates.auto_advance_phases } : {}),
+      ...(updates.tts_unskippable !== undefined ? { tts_unskippable: !!updates.tts_unskippable } : {}),
     };
     list[idx] = updated; writeLocal(list); return updated;
   }
