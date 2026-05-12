@@ -1036,6 +1036,13 @@ function SessionPageV2Inner() {
   // on lesson change. Cleared explicitly on refresh. Prevents multiple calls within the
   // same session from producing different random draws (which caused print/audio mismatch).
   const buildAllPhaseSetsCache = useRef(null); // { lessonData, sets } | null
+  // Mirror refs for generated arrays — always hold the current value regardless of closure age.
+  // Used by start*Phase (called from stale orchestrator closures) and download handlers
+  // so they always see the latest sets even if captured before state updated.
+  const generatedWorksheetRef = useRef(null);
+  const generatedTestRef = useRef(null);
+  const generatedComprehensionRef = useRef(null);
+  const generatedExerciseRef = useRef(null);
 
   // Persisting the full transcript via SnapshotService serializes a large object and writes
   // to localStorage; doing that on every caption update can cause noticeable jank over time.
@@ -1669,6 +1676,12 @@ function SessionPageV2Inner() {
     };
   }, [learnerProfile?.id, planEnt?.goldenKeyFeatures]);
 
+  // Keep mirror refs in sync so stale closures always read the current set value.
+  useEffect(() => { generatedWorksheetRef.current = generatedWorksheet; }, [generatedWorksheet]);
+  useEffect(() => { generatedTestRef.current = generatedTest; }, [generatedTest]);
+  useEffect(() => { generatedComprehensionRef.current = generatedComprehension; }, [generatedComprehension]);
+  useEffect(() => { generatedExerciseRef.current = generatedExercise; }, [generatedExercise]);
+
   // Load persisted worksheet/test sets for printing (local+Supabase)
   useEffect(() => {
     if (!lessonKey) return;
@@ -1692,10 +1705,11 @@ function SessionPageV2Inner() {
           setGeneratedTest(stored.test);
         }
         // Pre-seed the phase-sets cache from storage so stale closures in start*Phase
-        // (captured at orchestrator setup) see the stored sets and never regenerate a
-        // different random draw mid-session. Only seed when all four are present so that
-        // partial stores don't suppress a legitimate fresh build for missing phases.
+        // see the stored sets and never regenerate a different random draw mid-session.
+        // Guard: only seed when cache is empty — don't overwrite a cache already
+        // populated by a running session (would cause print/audio split).
         if (
+          !buildAllPhaseSetsCache.current &&
           lessonData &&
           Array.isArray(stored.comprehension) && stored.comprehension.length &&
           Array.isArray(stored.exercise)       && stored.exercise.length      &&
@@ -2058,10 +2072,10 @@ function SessionPageV2Inner() {
         return undefined;
       };
 
-      const ws = pick(worksheetSet, generatedWorksheet);
-      const ts = pick(testSet, generatedTest);
-      const comp = pick(comprehensionSet, generatedComprehension);
-      const ex = pick(exerciseSet, generatedExercise);
+      const ws = pick(worksheetSet, generatedWorksheetRef.current);
+      const ts = pick(testSet, generatedTestRef.current);
+      const comp = pick(comprehensionSet, generatedComprehensionRef.current);
+      const ex = pick(exerciseSet, generatedExerciseRef.current);
 
       if (ws) payload.worksheet = ws;
       if (ts) payload.test = ts;
@@ -2073,7 +2087,7 @@ function SessionPageV2Inner() {
     } catch {
       /* noop */
     }
-  }, [generatedComprehension, generatedExercise, generatedTest, generatedWorksheet, getAssessmentStorageKey, learnerProfile]);
+  }, [getAssessmentStorageKey, learnerProfile]);
 
   const questionKey = useCallback((q) => {
     return (q?.prompt || q?.question || q?.Q || q?.q || '').toString().trim().toLowerCase();
@@ -2393,16 +2407,16 @@ function SessionPageV2Inner() {
     const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
     setDownloadError('');
 
-    let source = generatedWorksheet;
+    let source = generatedWorksheetRef.current;
     if (!source || !source.length) {
       const allSets = buildAllPhaseSets() || {};
       source = allSets.worksheet || [];
       if (source.length) {
         setGeneratedWorksheet(source);
-        if (!generatedTest?.length)          setGeneratedTest(allSets.test || []);
-        if (!generatedComprehension?.length) setGeneratedComprehension(allSets.comprehension || []);
-        if (!generatedExercise?.length)      setGeneratedExercise(allSets.exercise || []);
-        persistAssessments(source, allSets.test || generatedTest, allSets.comprehension || generatedComprehension, allSets.exercise || generatedExercise);
+        if (!generatedTestRef.current?.length)          setGeneratedTest(allSets.test || []);
+        if (!generatedComprehensionRef.current?.length) setGeneratedComprehension(allSets.comprehension || []);
+        if (!generatedExerciseRef.current?.length)      setGeneratedExercise(allSets.exercise || []);
+        persistAssessments(source, allSets.test || generatedTestRef.current, allSets.comprehension || generatedComprehensionRef.current, allSets.exercise || generatedExerciseRef.current);
       }
     }
 
@@ -2412,7 +2426,7 @@ function SessionPageV2Inner() {
     }
 
     await createPdfForItems(source.map((q, i) => ({ ...q, number: q.number || (i + 1) })), 'worksheet', previewWin);
-  }, [buildAllPhaseSets, createPdfForItems, generatedComprehension, generatedExercise, generatedTest, generatedWorksheet, persistAssessments]);
+  }, [buildAllPhaseSets, createPdfForItems, persistAssessments]);
 
   const handleDownloadTest = useCallback(async () => {
     const ok = await ensurePinAllowed('download');
@@ -2420,16 +2434,16 @@ function SessionPageV2Inner() {
     const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
     setDownloadError('');
 
-    let source = generatedTest;
+    let source = generatedTestRef.current;
     if (!source || !source.length) {
       const allSets = buildAllPhaseSets() || {};
       source = allSets.test || [];
       if (source.length) {
         setGeneratedTest(source);
-        if (!generatedWorksheet?.length)     setGeneratedWorksheet(allSets.worksheet || []);
-        if (!generatedComprehension?.length) setGeneratedComprehension(allSets.comprehension || []);
-        if (!generatedExercise?.length)      setGeneratedExercise(allSets.exercise || []);
-        persistAssessments(allSets.worksheet || generatedWorksheet, source, allSets.comprehension || generatedComprehension, allSets.exercise || generatedExercise);
+        if (!generatedWorksheetRef.current?.length)     setGeneratedWorksheet(allSets.worksheet || []);
+        if (!generatedComprehensionRef.current?.length) setGeneratedComprehension(allSets.comprehension || []);
+        if (!generatedExerciseRef.current?.length)      setGeneratedExercise(allSets.exercise || []);
+        persistAssessments(allSets.worksheet || generatedWorksheetRef.current, source, allSets.comprehension || generatedComprehensionRef.current, allSets.exercise || generatedExerciseRef.current);
       }
     }
 
@@ -2439,7 +2453,7 @@ function SessionPageV2Inner() {
     }
 
     await createPdfForItems(source.map((q, i) => ({ ...q, number: q.number || (i + 1) })), 'test', previewWin);
-  }, [buildAllPhaseSets, createPdfForItems, generatedComprehension, generatedExercise, generatedTest, generatedWorksheet, persistAssessments]);
+  }, [buildAllPhaseSets, createPdfForItems, persistAssessments]);
 
   const handleDownloadCombined = useCallback(async () => {
     const ok = await ensurePinAllowed('download');
@@ -2447,8 +2461,8 @@ function SessionPageV2Inner() {
     const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
     setDownloadError('');
 
-    let ws = generatedWorksheet;
-    let ts = generatedTest;
+    let ws = generatedWorksheetRef.current;
+    let ts = generatedTestRef.current;
     if ((!ws || !ws.length) || (!ts || !ts.length)) {
       const all = buildAllPhaseSets();
       if (!ws || !ws.length) {
@@ -2462,7 +2476,7 @@ function SessionPageV2Inner() {
     }
 
     if ((ws && ws.length) || (ts && ts.length)) {
-      persistAssessments(ws || generatedWorksheet, ts || generatedTest);
+      persistAssessments(ws || generatedWorksheetRef.current, ts || generatedTestRef.current);
     }
 
     if ((!ws || !ws.length) && (!ts || !ts.length)) {
@@ -4722,10 +4736,10 @@ function SessionPageV2Inner() {
     const snapshot = snapshotServiceRef.current?.snapshot;
     const savedComp = forceFresh ? null : (snapshot?.phaseData?.comprehension || null);
     const savedCompQuestions = !forceFresh && Array.isArray(savedComp?.questions) && savedComp.questions.length ? savedComp.questions : null;
-    if (savedCompQuestions && savedCompQuestions.length && (!generatedComprehension || !generatedComprehension.length)) {
+    if (savedCompQuestions && savedCompQuestions.length && (!generatedComprehensionRef.current || !generatedComprehensionRef.current.length)) {
       setGeneratedComprehension(savedCompQuestions);
     }
-    const storedCompQuestions = !forceFresh && Array.isArray(generatedComprehension) && generatedComprehension.length ? generatedComprehension : null;
+    const storedCompQuestions = !forceFresh && Array.isArray(generatedComprehensionRef.current) && generatedComprehensionRef.current.length ? generatedComprehensionRef.current : null;
     
     const compTarget = savedCompQuestions ? savedCompQuestions.length : (storedCompQuestions ? storedCompQuestions.length : getLearnerTarget('comprehension'));
     if (!compTarget) return false;
@@ -4966,10 +4980,10 @@ function SessionPageV2Inner() {
     const snapshot = snapshotServiceRef.current?.snapshot;
     const savedExercise = forceFresh ? null : (snapshot?.phaseData?.exercise || null);
     const savedExerciseQuestions = !forceFresh && Array.isArray(savedExercise?.questions) && savedExercise.questions.length ? savedExercise.questions : null;
-    if (savedExerciseQuestions && savedExerciseQuestions.length && (!generatedExercise || !generatedExercise.length)) {
+    if (savedExerciseQuestions && savedExerciseQuestions.length && (!generatedExerciseRef.current || !generatedExerciseRef.current.length)) {
       setGeneratedExercise(savedExerciseQuestions);
     }
-    const storedExerciseQuestions = !forceFresh && Array.isArray(generatedExercise) && generatedExercise.length ? generatedExercise : null;
+    const storedExerciseQuestions = !forceFresh && Array.isArray(generatedExerciseRef.current) && generatedExerciseRef.current.length ? generatedExerciseRef.current : null;
     
     const exerciseTarget = savedExerciseQuestions ? savedExerciseQuestions.length : (storedExerciseQuestions ? storedExerciseQuestions.length : getLearnerTarget('exercise'));
     if (!exerciseTarget) return false;
@@ -4982,10 +4996,10 @@ function SessionPageV2Inner() {
       const allSets = buildAllPhaseSets() || {};
       questions = allSets.exercise || [];
       setGeneratedExercise(questions);
-      if (!generatedComprehension?.length) setGeneratedComprehension(allSets.comprehension || []);
-      if (!generatedWorksheet?.length)     setGeneratedWorksheet(allSets.worksheet || []);
-      if (!generatedTest?.length)          setGeneratedTest(allSets.test || []);
-      persistAssessments(allSets.worksheet || generatedWorksheet, allSets.test || generatedTest, allSets.comprehension || generatedComprehension, questions);
+      if (!generatedComprehensionRef.current?.length) setGeneratedComprehension(allSets.comprehension || []);
+      if (!generatedWorksheetRef.current?.length)     setGeneratedWorksheet(allSets.worksheet || []);
+      if (!generatedTestRef.current?.length)          setGeneratedTest(allSets.test || []);
+      persistAssessments(allSets.worksheet || generatedWorksheetRef.current, allSets.test || generatedTestRef.current, allSets.comprehension || generatedComprehensionRef.current, questions);
     }
     console.log('[SessionPageV2] startExercisePhase built questions:', questions.length);
 
@@ -5195,20 +5209,20 @@ function SessionPageV2Inner() {
     const snapshot = snapshotServiceRef.current?.snapshot;
     const savedWorksheet = forceFresh ? null : (snapshot?.phaseData?.worksheet || null);
     const savedWorksheetQuestions = !forceFresh && Array.isArray(savedWorksheet?.questions) && savedWorksheet.questions.length ? savedWorksheet.questions : null;
-    if (savedWorksheetQuestions && savedWorksheetQuestions.length && (!generatedWorksheet || !generatedWorksheet.length)) {
+    if (savedWorksheetQuestions && savedWorksheetQuestions.length && (!generatedWorksheetRef.current || !generatedWorksheetRef.current.length)) {
       setGeneratedWorksheet(savedWorksheetQuestions);
     }
 
-    let questions = savedWorksheetQuestions || generatedWorksheet || [];
+    let questions = savedWorksheetQuestions || generatedWorksheetRef.current || [];
     if (!questions.length) {
       const allSets = buildAllPhaseSets() || {};
       questions = allSets.worksheet || [];
       if (questions.length) {
         setGeneratedWorksheet(questions);
-        if (!generatedComprehension?.length) setGeneratedComprehension(allSets.comprehension || []);
-        if (!generatedExercise?.length)      setGeneratedExercise(allSets.exercise || []);
-        if (!generatedTest?.length)          setGeneratedTest(allSets.test || []);
-        persistAssessments(questions, allSets.test || generatedTest, allSets.comprehension || generatedComprehension, allSets.exercise || generatedExercise);
+        if (!generatedComprehensionRef.current?.length) setGeneratedComprehension(allSets.comprehension || []);
+        if (!generatedExerciseRef.current?.length)      setGeneratedExercise(allSets.exercise || []);
+        if (!generatedTestRef.current?.length)          setGeneratedTest(allSets.test || []);
+        persistAssessments(questions, allSets.test || generatedTestRef.current, allSets.comprehension || generatedComprehensionRef.current, allSets.exercise || generatedExerciseRef.current);
       }
     }
 
@@ -5444,21 +5458,21 @@ function SessionPageV2Inner() {
     const snapshot = snapshotServiceRef.current?.snapshot;
     const savedTest = snapshot?.phaseData?.test || null;
     const savedTestQuestions = Array.isArray(savedTest?.questions) && savedTest.questions.length ? savedTest.questions : null;
-    if (savedTestQuestions && (!generatedTest || !generatedTest.length)) {
+    if (savedTestQuestions && (!generatedTestRef.current || !generatedTestRef.current.length)) {
       setGeneratedTest(savedTestQuestions);
     }
 
     // Prefer saved deck, then cached generation; rebuild only when none exist.
-    let questions = savedTestQuestions || generatedTest || [];
+    let questions = savedTestQuestions || generatedTestRef.current || [];
     if (!questions.length) {
       const allSets = buildAllPhaseSets() || {};
       questions = allSets.test || [];
       if (questions.length) {
         setGeneratedTest(questions);
-        if (!generatedComprehension?.length) setGeneratedComprehension(allSets.comprehension || []);
-        if (!generatedExercise?.length)      setGeneratedExercise(allSets.exercise || []);
-        if (!generatedWorksheet?.length)     setGeneratedWorksheet(allSets.worksheet || []);
-        persistAssessments(allSets.worksheet || generatedWorksheet, questions, allSets.comprehension || generatedComprehension, allSets.exercise || generatedExercise);
+        if (!generatedComprehensionRef.current?.length) setGeneratedComprehension(allSets.comprehension || []);
+        if (!generatedExerciseRef.current?.length)      setGeneratedExercise(allSets.exercise || []);
+        if (!generatedWorksheetRef.current?.length)     setGeneratedWorksheet(allSets.worksheet || []);
+        persistAssessments(allSets.worksheet || generatedWorksheetRef.current, questions, allSets.comprehension || generatedComprehensionRef.current, allSets.exercise || generatedExerciseRef.current);
       }
     }
 
