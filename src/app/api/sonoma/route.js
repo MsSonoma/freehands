@@ -6,6 +6,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import textToSpeech from '@google-cloud/text-to-speech'
 import { validateInput, validateOutput, hardenInstructions, getFallbackResponse } from '@/lib/contentSafety'
+import { AI_MODEL } from '@/app/lib/aiModel'
 
 // Providers
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
@@ -163,7 +164,6 @@ async function getTtsClient() {
 
 // Provider selection: default to Anthropic when key present or env explicitly set; else OpenAI
 const PROVIDER = (process.env.SONOMA_PROVIDER || (process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'openai')).toLowerCase()
-import { AI_MODEL } from '@/app/lib/aiModel'
 const OPENAI_MODEL_DEFAULT = process.env.SONOMA_OPENAI_MODEL || AI_MODEL
 // Note: Model name for "Claude Opus 4.1 (Preview)" can vary; prefer env overrides. Fallback to a widely-available Claude model.
 const ANTHROPIC_MODEL_DEFAULT = process.env.SONOMA_MODEL || process.env.ANTHROPIC_MODEL || 'claude-4.1-opus'
