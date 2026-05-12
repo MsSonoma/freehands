@@ -2084,9 +2084,14 @@ function SessionPageV2Inner() {
     }
 
     const runCheck = async () => {
+      // If Begin was clicked while this check was in-flight, abort — don't
+      // raise a spurious conflict dialog after the session has already started.
+      if (!preBeginConflictIntervalRef.current) return;
       try {
         const { checkLessonSessionConflict } = await import('@/app/lib/sessionTracking');
         const result = await checkLessonSessionConflict(learnerId, effectiveLessonId, browserSessionId);
+        // Re-check after await: interval may have been cleared by Begin click during the fetch
+        if (!preBeginConflictIntervalRef.current) return;
         if (result?.conflict) {
           setConflictingSession(result.existingSession);
           setShowTakeoverDialog(true);
