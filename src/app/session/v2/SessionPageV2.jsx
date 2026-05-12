@@ -549,7 +549,7 @@ function SessionPageV2Inner() {
   const timelineJumpTimerStartedRef = useRef(null); // track which phase had timer started by timeline jump (prevent double-start)
   const timelineJumpInProgressRef = useRef(false); // Debounce timeline jumps
   const startOverInProgressRef = useRef(false); // Debounce Start Over to prevent concurrent handler executions
-  const initialConflictCheckedRef = useRef(false); // guard: page-load conflict check fires once
+  const preBeginConflictIntervalRef = useRef(null); // repeating conflict watch before Begin is clicked
   const pendingTimerStateRef = useRef(null);
   const lastTimerPersistAtRef = useRef(0);
   const startSessionRef = useRef(null);
@@ -2067,25 +2067,49 @@ function SessionPageV2Inner() {
     };
   }, [lessonData, learnerProfile, browserSessionId, lessonKey, resetTranscriptState, applyRestoredTimerStateToUi]);
 
-  // Page-load conflict check: show takeover dialog as soon as we have enough context,
-  // before the user presses Begin or Resume. This prevents a user on Device B from
-  // bypassing the gate by pressing Resume (which would already be past idle).
+  // Pre-Begin conflict watch: repeatedly checks for an active session on another device
+  // every 4 seconds until the user clicks Begin/Resume (which starts real tracking + polling)
+  // or the dialog is already showing. This covers both:
+  //   (a) Device B arriving while Device A already owns the session (gate before Begin)
+  //   (b) Device A sitting at the Begin screen while Device B takes over in real-time
   useEffect(() => {
     const learnerId = learnerProfile?.id || null;
     const effectiveLessonId = goldenKeyLessonKey || lessonKey || null;
     if (!learnerId || learnerId === 'demo' || !effectiveLessonId || !browserSessionId) return;
-    if (initialConflictCheckedRef.current) return;
-    initialConflictCheckedRef.current = true;
-    (async () => {
+
+    // Clear any previous interval when deps change
+    if (preBeginConflictIntervalRef.current) {
+      clearInterval(preBeginConflictIntervalRef.current);
+      preBeginConflictIntervalRef.current = null;
+    }
+
+    const runCheck = async () => {
       try {
         const { checkLessonSessionConflict } = await import('@/app/lib/sessionTracking');
         const result = await checkLessonSessionConflict(learnerId, effectiveLessonId, browserSessionId);
         if (result?.conflict) {
           setConflictingSession(result.existingSession);
           setShowTakeoverDialog(true);
+          // Stop watching — dialog is up
+          if (preBeginConflictIntervalRef.current) {
+            clearInterval(preBeginConflictIntervalRef.current);
+            preBeginConflictIntervalRef.current = null;
+          }
         }
       } catch {}
-    })();
+    };
+
+    // Immediate first check
+    runCheck();
+    // Then repeat every 4 seconds until Begin is clicked (cleared in startSession)
+    preBeginConflictIntervalRef.current = setInterval(runCheck, 4000);
+
+    return () => {
+      if (preBeginConflictIntervalRef.current) {
+        clearInterval(preBeginConflictIntervalRef.current);
+        preBeginConflictIntervalRef.current = null;
+      }
+    };
   }, [learnerProfile?.id, goldenKeyLessonKey, lessonKey, browserSessionId]);
 
   // Initialize TimerService
@@ -5918,6 +5942,12 @@ function SessionPageV2Inner() {
   };
   
   const startSession = async (options = {}) => {
+    // Stop pre-Begin conflict watch — tracking takes over from here
+    if (preBeginConflictIntervalRef.current) {
+      clearInterval(preBeginConflictIntervalRef.current);
+      preBeginConflictIntervalRef.current = null;
+    }
+
     if (!orchestratorRef.current) {
       console.warn('[SessionPageV2] No orchestrator');
       return;
