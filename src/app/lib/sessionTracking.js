@@ -70,6 +70,26 @@ async function logLessonSessionEvent({
 }
 
 /**
+ * Check-only: returns conflict info if another device owns an active session for this learner+lesson.
+ * Does NOT create or modify any session rows.
+ */
+export async function checkLessonSessionConflict(learnerId, lessonId, browserSessionId) {
+  if (!learnerId || !lessonId || !browserSessionId || !hasSupabaseEnv()) return null;
+  const supabase = getSupabaseClient();
+  const { data: existingActive } = await supabase
+    .from('lesson_sessions')
+    .select('id, session_id, device_name, last_activity_at, started_at')
+    .eq('learner_id', learnerId)
+    .eq('lesson_id', lessonId)
+    .is('ended_at', null)
+    .maybeSingle();
+  if (existingActive && existingActive.session_id !== browserSessionId) {
+    return { conflict: true, existingSession: existingActive };
+  }
+  return { conflict: false };
+}
+
+/**
  * Start a new lesson session
  * 
  * @param {string} learnerId - Learner ID

@@ -549,6 +549,7 @@ function SessionPageV2Inner() {
   const timelineJumpTimerStartedRef = useRef(null); // track which phase had timer started by timeline jump (prevent double-start)
   const timelineJumpInProgressRef = useRef(false); // Debounce timeline jumps
   const startOverInProgressRef = useRef(false); // Debounce Start Over to prevent concurrent handler executions
+  const initialConflictCheckedRef = useRef(false); // guard: page-load conflict check fires once
   const pendingTimerStateRef = useRef(null);
   const lastTimerPersistAtRef = useRef(0);
   const startSessionRef = useRef(null);
@@ -2065,7 +2066,28 @@ function SessionPageV2Inner() {
       snapshotServiceRef.current = null;
     };
   }, [lessonData, learnerProfile, browserSessionId, lessonKey, resetTranscriptState, applyRestoredTimerStateToUi]);
-  
+
+  // Page-load conflict check: show takeover dialog as soon as we have enough context,
+  // before the user presses Begin or Resume. This prevents a user on Device B from
+  // bypassing the gate by pressing Resume (which would already be past idle).
+  useEffect(() => {
+    const learnerId = learnerProfile?.id || null;
+    const effectiveLessonId = goldenKeyLessonKey || lessonKey || null;
+    if (!learnerId || learnerId === 'demo' || !effectiveLessonId || !browserSessionId) return;
+    if (initialConflictCheckedRef.current) return;
+    initialConflictCheckedRef.current = true;
+    (async () => {
+      try {
+        const { checkLessonSessionConflict } = await import('@/app/lib/sessionTracking');
+        const result = await checkLessonSessionConflict(learnerId, effectiveLessonId, browserSessionId);
+        if (result?.conflict) {
+          setConflictingSession(result.existingSession);
+          setShowTakeoverDialog(true);
+        }
+      } catch {}
+    })();
+  }, [learnerProfile?.id, goldenKeyLessonKey, lessonKey, browserSessionId]);
+
   // Initialize TimerService
   useEffect(() => {
     if (!eventBusRef.current || !lessonKey || !phaseTimers) return;
