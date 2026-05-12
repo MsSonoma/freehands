@@ -272,7 +272,7 @@ async function callGPT(apiKey, systemPrompt, userPrompt, maxTokens = 60) {
         { role: 'system', content: systemPrompt },
         { role: 'user',   content: userPrompt   },
       ],
-      max_tokens: maxTokens,
+      max_completion_tokens: maxTokens,
       temperature: 0.3,
     }),
   })

@@ -103,7 +103,7 @@ export async function POST(req) {
               `Article text:\n${plainText}`,
           },
         ],
-        max_tokens: 900,
+        max_completion_tokens: 900,
         temperature: 0.2,
       }),
     })

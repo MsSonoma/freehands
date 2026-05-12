@@ -155,7 +155,7 @@ export async function POST(req) {
                 content: `Student request: "${userRequest}"\n\nAvailable moments:\n${seekRequest.momentList}`,
               },
             ],
-            max_tokens: 80,
+            max_completion_tokens: 80,
             temperature: 0.4,
           }),
         })
@@ -185,7 +185,7 @@ export async function POST(req) {
         body: JSON.stringify({
           model: OPENAI_MODEL,
           messages: [{ role: 'system', content: sysContent }],
-          max_tokens: 180,
+          max_completion_tokens: 180,
           temperature: 0.7,
         }),
       })
@@ -225,7 +225,7 @@ export async function POST(req) {
       body: JSON.stringify({
         model: OPENAI_MODEL,
         messages: oaiMessages,
-        max_tokens: 160,
+        max_completion_tokens: 160,
         temperature: 0.75,
       }),
     })
