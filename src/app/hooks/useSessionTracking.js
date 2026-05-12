@@ -4,7 +4,7 @@
  * 
  * Manages session lifecycle and event tracking for lessons.
  * Automatically starts/ends sessions and provides methods for logging events.
- * Polls for session takeover detection.
+ * Detects session takeover via Supabase Realtime (instant) with 15s polling fallback.
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
@@ -16,6 +16,7 @@ import {
   addTranscriptLine,
   checkSessionStatus,
 } from '@/app/lib/sessionTracking';
+import { getSupabaseClient } from '@/app/lib/supabaseClient';
 
 /**
  * @param {string} learnerId - Learner ID
@@ -30,7 +31,9 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
   const sessionIdRef = useRef(null);
   const sessionMetaRef = useRef({ learnerId, lessonId });
   const pollIntervalRef = useRef(null);
+  const realtimeChannelRef = useRef(null);
   const isMountedRef = useRef(true);
+  const takenOverRef = useRef(false); // guard: fire callback once per takeover
 
   const startSession = async (browserSessionId = null, deviceName = null) => {
     if (!learnerId || !lessonId) {
@@ -130,64 +133,104 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
     return await addTranscriptLine(sessionIdRef.current, speaker, text);
   };
 
-  // Start polling for session takeover detection
+  // Start takeover detection: Realtime subscription (instant) + polling fallback (15s)
   const startPolling = useCallback(() => {
+    // --- Teardown any previous watchers ---
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+    const supabase = getSupabaseClient();
+    if (realtimeChannelRef.current && supabase) {
+      supabase.removeChannel(realtimeChannelRef.current);
+      realtimeChannelRef.current = null;
     }
 
-    console.log('[SESSION TAKEOVER] Starting polling for session takeover detection');
-    console.log('[SESSION TAKEOVER] Current sessionId in ref:', sessionIdRef.current);
+    const currentSessionId = sessionIdRef.current;
+    if (!currentSessionId) return;
+    takenOverRef.current = false;
 
-    pollIntervalRef.current = setInterval(async () => {
-      const currentSessionId = sessionIdRef.current;
-      if (!currentSessionId || !isMountedRef.current) {
-        console.log('[SESSION TAKEOVER] Polling skipped - sessionId:', currentSessionId, 'mounted:', isMountedRef.current);
-        return;
+    const handleTakenOver = (sessionRow) => {
+      if (!isMountedRef.current || takenOverRef.current) return;
+      takenOverRef.current = true;
+
+      // Stop all watchers
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      if (realtimeChannelRef.current && supabase) {
+        supabase.removeChannel(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
       }
 
-      console.log('[SESSION TAKEOVER] Polling session status for ID:', currentSessionId);
+      sessionIdRef.current = null;
+      setSessionId(null);
+      setConflictingSession(sessionRow);
 
+      if (typeof onSessionTakenOver === 'function') {
+        onSessionTakenOver(sessionRow);
+      }
+    };
+
+    // --- Realtime: primary (instant) ---
+    if (supabase) {
       try {
-        const { active, session } = await checkSessionStatus(currentSessionId);
+        const channel = supabase
+          .channel(`session-takeover:${currentSessionId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'lesson_sessions',
+              filter: `id=eq.${currentSessionId}`,
+            },
+            (payload) => {
+              // ended_at being set means another device took over
+              if (payload.new?.ended_at != null) {
+                console.log('[SESSION TAKEOVER] Realtime: session ended by another device');
+                handleTakenOver(payload.new);
+              }
+            }
+          )
+          .subscribe((status) => {
+            console.log('[SESSION TAKEOVER] Realtime channel status:', status);
+          });
+        realtimeChannelRef.current = channel;
+      } catch (err) {
+        console.warn('[SESSION TAKEOVER] Realtime subscribe failed, falling back to poll only:', err);
+      }
+    }
 
-        console.log('[SESSION TAKEOVER] Poll result - active:', active, 'session:', session);
-
-        if (!isMountedRef.current) return;
-
-        // Session was taken over by another device
+    // --- Polling: fallback (15s) ---
+    // Catches the case where the Realtime WS is dropped/unreliable.
+    pollIntervalRef.current = setInterval(async () => {
+      const sid = sessionIdRef.current;
+      if (!sid || !isMountedRef.current || takenOverRef.current) return;
+      try {
+        const { active, session } = await checkSessionStatus(sid);
+        if (!isMountedRef.current || takenOverRef.current) return;
         if (!active && session) {
-          console.log('[SESSION TAKEOVER] Session was closed by another device:', session);
-          
-          // Stop polling
-          if (pollIntervalRef.current) {
-            clearInterval(pollIntervalRef.current);
-            pollIntervalRef.current = null;
-          }
-
-          // Clear local session state
-          sessionIdRef.current = null;
-          setSessionId(null);
-          setConflictingSession(session);
-
-          // Notify parent component
-          if (typeof onSessionTakenOver === 'function') {
-            onSessionTakenOver(session);
-          }
-        } else if (active) {
-          console.log('[SESSION TAKEOVER] Session still active');
+          console.log('[SESSION TAKEOVER] Poll fallback: session closed by another device');
+          handleTakenOver(session);
         }
       } catch (err) {
-        console.error('[SESSION TAKEOVER] Polling error:', err);
+        console.error('[SESSION TAKEOVER] Poll fallback error:', err);
       }
-    }, 8000); // Poll every 8 seconds
+    }, 15000);
   }, [onSessionTakenOver]);
 
-  // Stop polling
+  // Stop all takeover watchers
   const stopPolling = useCallback(() => {
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = null;
+    }
+    const supabase = getSupabaseClient();
+    if (realtimeChannelRef.current && supabase) {
+      supabase.removeChannel(realtimeChannelRef.current);
+      realtimeChannelRef.current = null;
     }
   }, []);
 
