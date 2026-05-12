@@ -1691,7 +1691,28 @@ function SessionPageV2Inner() {
       try {
         const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
         const stored = await getStoredAssessments(lessonKey, { learnerId });
-        if (cancelled || !stored) return;
+        if (cancelled) return;
+        if (!stored) {
+          // Nothing in Supabase yet — generate all 4 sets now and persist immediately
+          // so that a second device loading this lesson before any phase starts still
+          // receives the same canonical random draw.
+          if (lessonData && !buildAllPhaseSetsCache.current) {
+            const earlyBuild = buildAllPhaseSets();
+            if (earlyBuild) {
+              setGeneratedComprehension(earlyBuild.comprehension || []);
+              setGeneratedExercise(earlyBuild.exercise || []);
+              setGeneratedWorksheet(earlyBuild.worksheet || []);
+              setGeneratedTest(earlyBuild.test || []);
+              persistAssessments(
+                earlyBuild.worksheet,
+                earlyBuild.test,
+                earlyBuild.comprehension,
+                earlyBuild.exercise,
+              );
+            }
+          }
+          return;
+        }
         if (Array.isArray(stored.comprehension) && stored.comprehension.length) {
           setGeneratedComprehension(stored.comprehension);
         }
@@ -1733,7 +1754,7 @@ function SessionPageV2Inner() {
 
     loadStored();
     return () => { cancelled = true; };
-  }, [lessonKey, lessonData, learnerProfile]);
+  }, [lessonKey, lessonData, learnerProfile, buildAllPhaseSets, persistAssessments]);
   
   // Initialize shared EventBus (must be first)
   useEffect(() => {
