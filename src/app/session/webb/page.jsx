@@ -1930,7 +1930,7 @@ export default function WebbPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {isChatting && (
+            {isChatting && objectives.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowObjectives(true)}
@@ -1938,15 +1938,13 @@ export default function WebbPage() {
                 style={{
                   ...headerBtn,
                   display: 'flex', alignItems: 'center', gap: 5,
-                  background: objectives.length > 0 && completedObj.length === objectives.length
+                  background: completedObj.length === objectives.length
                     ? 'rgba(13,148,136,0.45)'
                     : 'rgba(255,255,255,0.15)',
                 }}
               >
                 <span style={{ fontSize: 14 }}>&#9989;</span>
-                {objectives.length > 0 && (
-                  <span style={{ fontSize: 12 }}>{completedObj.length}/{objectives.length}</span>
-                )}
+                <span style={{ fontSize: 12 }}>{completedObj.length}/{objectives.length}</span>
               </button>
             )}
             {isChatting && (

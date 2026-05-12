@@ -23,7 +23,7 @@ async function callGPT(apiKey, system, user, maxTokens = 500) {
     body: JSON.stringify({
       model: OPENAI_MODEL,
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-      max_tokens: maxTokens,
+      max_completion_tokens: maxTokens,
       temperature: 0.3,
     }),
   })
