@@ -1032,6 +1032,10 @@ function SessionPageV2Inner() {
   const [generatedExercise, setGeneratedExercise] = useState(null);
   const [generatedWorksheet, setGeneratedWorksheet] = useState(null);
   const [generatedTest, setGeneratedTest] = useState(null);
+  // Cache for buildAllPhaseSets — keyed to lessonData reference so it auto-invalidates
+  // on lesson change. Cleared explicitly on refresh. Prevents multiple calls within the
+  // same session from producing different random draws (which caused print/audio mismatch).
+  const buildAllPhaseSetsCache = useRef(null); // { lessonData, sets } | null
 
   // Persisting the full transcript via SnapshotService serializes a large object and writes
   // to localStorage; doing that on every caption update can cause noticeable jank over time.
@@ -1687,6 +1691,27 @@ function SessionPageV2Inner() {
         if (Array.isArray(stored.test) && stored.test.length) {
           setGeneratedTest(stored.test);
         }
+        // Pre-seed the phase-sets cache from storage so stale closures in start*Phase
+        // (captured at orchestrator setup) see the stored sets and never regenerate a
+        // different random draw mid-session. Only seed when all four are present so that
+        // partial stores don't suppress a legitimate fresh build for missing phases.
+        if (
+          lessonData &&
+          Array.isArray(stored.comprehension) && stored.comprehension.length &&
+          Array.isArray(stored.exercise)       && stored.exercise.length      &&
+          Array.isArray(stored.worksheet)      && stored.worksheet.length     &&
+          Array.isArray(stored.test)           && stored.test.length
+        ) {
+          buildAllPhaseSetsCache.current = {
+            lessonData,
+            sets: {
+              comprehension: stored.comprehension,
+              exercise:      stored.exercise,
+              worksheet:     stored.worksheet,
+              test:          stored.test,
+            },
+          };
+        }
       } catch {
         /* noop */
       }
@@ -1694,7 +1719,7 @@ function SessionPageV2Inner() {
 
     loadStored();
     return () => { cancelled = true; };
-  }, [lessonKey, learnerProfile]);
+  }, [lessonKey, lessonData, learnerProfile]);
   
   // Initialize shared EventBus (must be first)
   useEffect(() => {
@@ -2059,6 +2084,11 @@ function SessionPageV2Inner() {
   // point the pool is reshuffled and dealing continues.
   const buildAllPhaseSets = useCallback(() => {
     if (!lessonData) return null;
+    // Return cached result if available for this lessonData reference.
+    // This guarantees all phases and the print handler draw from the same random shuffle.
+    if (buildAllPhaseSetsCache.current?.lessonData === lessonData) {
+      return buildAllPhaseSetsCache.current.sets;
+    }
 
     const tf = Array.isArray(lessonData.truefalse)
       ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf', type: 'tf' })) : [];
@@ -2124,12 +2154,14 @@ function SessionPageV2Inner() {
       return questions.map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
     };
 
-    return {
+    const sets = {
       comprehension: buildPhase(compTarget),
       exercise:      buildPhase(exerciseTarget),
       worksheet:     buildPhase(worksheetTarget),
       test:          buildPhase(testTarget),
     };
+    buildAllPhaseSetsCache.current = { lessonData, sets };
+    return sets;
   }, [lessonData, getLearnerTarget, questionKey]);
 
   const shareOrPreviewPdf = useCallback(async (blob, fileName = 'document.pdf', previewWin = null) => {
@@ -2535,6 +2567,7 @@ function SessionPageV2Inner() {
     setGeneratedExercise(null);
     setGeneratedWorksheet(null);
     setGeneratedTest(null);
+    buildAllPhaseSetsCache.current = null; // force fresh random draw on next build
     const key = getAssessmentStorageKey();
     const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
     if (key) {
