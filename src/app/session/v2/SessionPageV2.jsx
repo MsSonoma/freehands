@@ -2018,7 +2018,7 @@ function SessionPageV2Inner() {
           setResumePhase(resumePhaseName);
           resumePhaseRef.current = resumePhaseName;
 
-          const isBeginningPhase = !resumePhaseName || resumePhaseName === 'idle' || resumePhaseName === 'discussion';
+          const isBeginningPhase = !resumePhaseName || resumePhaseName === 'idle';
 
           const storedTranscript = snapshot?.transcript;
           const storedLines = Array.isArray(storedTranscript?.lines) ? storedTranscript.lines : null;
@@ -7674,7 +7674,7 @@ function SessionPageV2Inner() {
             // at this point would restart the play timer and give double time.
             if (showPlayTimeExpired) return null;
 
-            const offerResume = !!snapshotLoaded && !!resumePhase && resumePhase !== 'idle' && resumePhase !== 'discussion';
+            const offerResume = !!snapshotLoaded && !!resumePhase && resumePhase !== 'idle';
             
             const ctaStyle = {
               background: '#c7442e',
