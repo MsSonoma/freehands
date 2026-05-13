@@ -236,6 +236,11 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
 
   // Auto-start session on mount
   useEffect(() => {
+    // Reset on every run — a prior deps-change cleanup may have set this to false
+    // while the component is still mounted (e.g. learnerId/lessonId becoming non-null
+    // after async load). If we don't reset it here, handleTakenOver will silently bail.
+    isMountedRef.current = true;
+
     if (autoStart && learnerId && lessonId) {
       startSession().then((id) => {
         if (id && isMountedRef.current) {
