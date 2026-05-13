@@ -822,9 +822,6 @@ function SessionPageV2Inner() {
   }, [openingActionType]);
 
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
-  // Gate: snapshot must not load until the conflict check has cleared.
-  // Prevents each device from showing its own local Resume state before the takeover dialog.
-  const [sessionConflictChecked, setSessionConflictChecked] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
   
   const [workPhaseTime, setWorkPhaseTime] = useState('0:00');
@@ -874,6 +871,17 @@ function SessionPageV2Inner() {
   const [conflictingSession, setConflictingSession] = useState(null);
   // true when this device was notified by polling that it was taken over (vs. this device arriving at a conflict)
   const [isTakenOverNotification, setIsTakenOverNotification] = useState(false);
+
+  // Stable callback so startPolling's useCallback dep doesn't change every render.
+  // Without this, every SessionPageV2 re-render (e.g. timer tick) recreates this
+  // function, which recreates startPolling, which triggers the useSessionTracking
+  // autoStart useEffect cleanup (stopPolling) — destroying the Realtime subscription.
+  const handleSessionTakenOver = useCallback((session) => {
+    setIsTakenOverNotification(true);
+    setConflictingSession(session);
+    setShowTakeoverDialog(true);
+  }, []);
+
   const {
     startSession: startTrackedSession,
     endSession: endTrackedSession,
@@ -883,11 +891,7 @@ function SessionPageV2Inner() {
     learnerProfile?.id || null,
     goldenKeyLessonKey || null,
     false,
-    (session) => {
-      setIsTakenOverNotification(true);
-      setConflictingSession(session);
-      setShowTakeoverDialog(true);
-    }
+    handleSessionTakenOver
   );
   
   // Phase timer state (loaded from learner profile)
@@ -1978,11 +1982,8 @@ function SessionPageV2Inner() {
   useEffect(() => {
     if (!lessonData || !learnerProfile || !browserSessionId || !lessonKey) return;
 
-    // Always reset the button so it stays disabled while the conflict check is in flight.
-    setSnapshotLoaded(false);
-    if (!sessionConflictChecked) return;
-
     let cancelled = false;
+    setSnapshotLoaded(false);
 
     const sessionId = browserSessionId;
     const learnerId = learnerProfile.id;
@@ -2071,7 +2072,7 @@ function SessionPageV2Inner() {
       cancelled = true;
       snapshotServiceRef.current = null;
     };
-  }, [lessonData, learnerProfile, browserSessionId, lessonKey, sessionConflictChecked, resetTranscriptState, applyRestoredTimerStateToUi]);
+  }, [lessonData, learnerProfile, browserSessionId, lessonKey, resetTranscriptState, applyRestoredTimerStateToUi]);
 
   // Pre-Begin conflict watch: repeatedly checks for an active session on another device
   // every 4 seconds until the user clicks Begin/Resume (which starts real tracking + polling)
@@ -2081,20 +2082,13 @@ function SessionPageV2Inner() {
   useEffect(() => {
     const learnerId = learnerProfile?.id || null;
     const effectiveLessonId = goldenKeyLessonKey || lessonKey || null;
-
-    // Demo users or missing deps: no conflict possible, unblock snapshot immediately.
-    if (learnerId === 'demo') { setSessionConflictChecked(true); return; }
-    if (!learnerId || !effectiveLessonId || !browserSessionId) return;
+    if (!learnerId || learnerId === 'demo' || !effectiveLessonId || !browserSessionId) return;
 
     // Clear any previous interval when deps change
     if (preBeginConflictIntervalRef.current) {
       clearInterval(preBeginConflictIntervalRef.current);
       preBeginConflictIntervalRef.current = null;
     }
-
-    // Only the FIRST check result opens the snapshot gate. Subsequent 4s polls
-    // are conflict-watches only; they must not re-trigger a snapshot reload.
-    let firstCheckSettled = false;
 
     const runCheck = async () => {
       // If Begin was clicked while this check was in-flight, abort — don't
@@ -2113,20 +2107,8 @@ function SessionPageV2Inner() {
             clearInterval(preBeginConflictIntervalRef.current);
             preBeginConflictIntervalRef.current = null;
           }
-          // Keep gate CLOSED: snapshot must not load until after takeover + reload.
-          firstCheckSettled = true;
-        } else if (!firstCheckSettled) {
-          // No conflict on first check — open the gate so snapshot can load.
-          firstCheckSettled = true;
-          setSessionConflictChecked(true);
         }
-      } catch {
-        // Fail-safe: if the check errors, unblock so the page doesn't freeze.
-        if (!firstCheckSettled) {
-          firstCheckSettled = true;
-          setSessionConflictChecked(true);
-        }
-      }
+      } catch {}
     };
 
     // Set interval FIRST so preBeginConflictIntervalRef.current is truthy when the
