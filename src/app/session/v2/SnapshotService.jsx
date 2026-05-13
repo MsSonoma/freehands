@@ -185,9 +185,21 @@ export class SnapshotService {
   
   // Public API: Load snapshot from database
   async loadSnapshot() {
-    // Restore strategy: localStorage first (instant), then server.
-    const local = this.#loadFromLocalStorage();
-    if (local) return local;
+    // After a takeover + reload, skip the local cache so this device always
+    // reads the active device's latest Supabase snapshot, not its own stale copy.
+    const skipLocal = typeof window !== 'undefined' && (() => {
+      try {
+        const v = sessionStorage.getItem('__snapshot_skip_local__');
+        if (v) { sessionStorage.removeItem('__snapshot_skip_local__'); return true; }
+        return false;
+      } catch { return false; }
+    })();
+
+    if (!skipLocal) {
+      // Restore strategy: localStorage first (instant), then server.
+      const local = this.#loadFromLocalStorage();
+      if (local) return local;
+    }
 
     if (!this.#supabaseClient || this.#forceLocalStorage) {
       return null;

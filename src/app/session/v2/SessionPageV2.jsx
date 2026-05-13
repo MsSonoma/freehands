@@ -2086,9 +2086,6 @@ function SessionPageV2Inner() {
     if (learnerId === 'demo') { setSessionConflictChecked(true); return; }
     if (!learnerId || !effectiveLessonId || !browserSessionId) return;
 
-    // Close the snapshot gate while we re-check (deps changed).
-    setSessionConflictChecked(false);
-
     // Clear any previous interval when deps change
     if (preBeginConflictIntervalRef.current) {
       clearInterval(preBeginConflictIntervalRef.current);
@@ -2132,10 +2129,10 @@ function SessionPageV2Inner() {
       }
     };
 
-    // Immediate first check
-    runCheck();
-    // Then repeat every 4 seconds until Begin is clicked (cleared in startSession)
+    // Set interval FIRST so preBeginConflictIntervalRef.current is truthy when the
+    // immediate first call runs — otherwise the guard inside runCheck aborts it.
     preBeginConflictIntervalRef.current = setInterval(runCheck, 4000);
+    runCheck();
 
     return () => {
       if (preBeginConflictIntervalRef.current) {
@@ -6181,9 +6178,13 @@ function SessionPageV2Inner() {
     }
 
     // Clear local snapshot so reload pulls the latest remote snapshot.
+    // Also set a one-shot sessionStorage flag so SnapshotService skips the
+    // localStorage cache on the post-reload load — ensuring the taking-over device
+    // always reads the shared Supabase snapshot, not its own stale local copy.
     try {
       localStorage.removeItem(`atomic_snapshot:${trackingLearnerId}:${trackingLessonId}`);
     } catch {}
+    try { sessionStorage.setItem('__snapshot_skip_local__', '1'); } catch {}
 
     setIsTakenOverNotification(false);
     setShowTakeoverDialog(false);
