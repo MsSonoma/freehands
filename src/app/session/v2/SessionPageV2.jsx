@@ -4306,10 +4306,8 @@ function SessionPageV2Inner() {
         // Discussion has no play timer - start directly in work mode
         setCurrentTimerMode(prev => ({ ...prev, discussion: 'work' }));
         setTimerRefreshKey(k => k + 1);
-        // If timeline jump, keep discussionState as 'idle' to show Begin button
-        if (!isTimelineJump && discussionPhaseRef.current) {
-          discussionPhaseRef.current.start();
-        }
+        // Do NOT auto-start: prefetch() fires in startDiscussionPhase();
+        // user must click Begin Discussion to call start().
       } else if (data.phase === 'teaching') {
         startTeachingPhase();
         // Teaching uses discussion timer (grouped together, already in work mode)
@@ -6635,7 +6633,8 @@ function SessionPageV2Inner() {
           />
           
           {/* Phase Timer - top left overlay (matching V1) */}
-          {phaseTimers && !showGames && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] && (
+          {phaseTimers && !showGames && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] &&
+           !(currentPhase === 'discussion' && (!discussionState || discussionState === 'idle' || discussionState === 'loading' || discussionState === 'ready')) && (
             <div style={{ 
               position: 'absolute',
               top: 8,
