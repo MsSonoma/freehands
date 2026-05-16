@@ -4303,11 +4303,9 @@ function SessionPageV2Inner() {
       // Start phase-specific controller
       if (data.phase === 'discussion') {
         startDiscussionPhase();
-        // Discussion has no play timer - start directly in work mode
-        setCurrentTimerMode(prev => ({ ...prev, discussion: 'work' }));
-        setTimerRefreshKey(k => k + 1);
         // Do NOT auto-start: prefetch() fires in startDiscussionPhase();
         // user must click Begin Discussion to call start().
+        // Timer mode is set in greetingPlaying once playback actually begins.
       } else if (data.phase === 'teaching') {
         startTeachingPhase();
         // Teaching uses discussion timer (grouped together, already in work mode)
@@ -4704,7 +4702,9 @@ function SessionPageV2Inner() {
       addEvent(`ðŸ‘‹ Playing greeting: "${data.greetingText}"`);
       setDiscussionState('playing-greeting');
       
-      // Start discussion work timer when greeting begins (discussion has no play timer)
+      // Set timer mode + start the work timer now that discussion has actually begun
+      setCurrentTimerMode(prev => ({ ...prev, discussion: 'work' }));
+      setTimerRefreshKey(k => k + 1);
       if (timerServiceRef.current) {
         timerServiceRef.current.startWorkPhaseTimer('discussion');
       }
@@ -6633,8 +6633,7 @@ function SessionPageV2Inner() {
           />
           
           {/* Phase Timer - top left overlay (matching V1) */}
-          {phaseTimers && !showGames && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] &&
-           !(currentPhase === 'discussion' && (!discussionState || discussionState === 'idle' || discussionState === 'loading' || discussionState === 'ready')) && (
+          {phaseTimers && !showGames && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] && (
             <div style={{ 
               position: 'absolute',
               top: 8,
