@@ -2749,10 +2749,12 @@ function SessionPageV2Inner() {
       : false;
     
     // Discussion: unlock audio on this user gesture (required for iOS since auto-start fires
-    // without a gesture), then set loading state.
+    // without a gesture), then start sentence-by-sentence playback.
     if (phaseName === 'discussion') {
       try { await audioEngineRef.current?.initialize(); } catch {}
       setDiscussionState('loading');
+      discussionPhaseRef.current?.start();
+      return;
     }
     
     const ref = getPhaseRef(phaseName);
