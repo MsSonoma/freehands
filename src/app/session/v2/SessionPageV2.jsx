@@ -7874,8 +7874,7 @@ function SessionPageV2Inner() {
                   boxShadow: '0 4px 16px rgba(34,197,94,0.4)',
                 }}
               >
-                {discussionState === 'playing-vocab' &&
-                 discussionSentenceInfo.index === discussionSentenceInfo.total - 1
+                {discussionSentenceInfo.type === 'transition'
                   ? 'Begin Discussion'
                   : 'Next'}
               </button>
