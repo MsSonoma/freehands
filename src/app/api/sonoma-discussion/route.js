@@ -30,9 +30,11 @@ function buildOverviewSystem(lesson, vocab = []) {
     `1. Greets the student warmly by name and states the lesson topic.`,
     `2. Gives a brief, accessible overview of what the lesson covers in plain language.`,
     vocab.length
-      ? `3. Introduces the key vocabulary terms naturally in context: ${vocabList}`
+      ? `3. Briefly mentions the lesson covers important vocabulary you will review together.`
       : `3. Gets the student curious about the topic with an interesting fact or question.`,
-    `4. Closes by saying you will now discuss the topic together and look forward to their thoughts.`,
+    vocab.length
+      ? `4. Closes with a natural transition into vocabulary — e.g. "Let's start with a few key words." or "First, let's go over some important terms." Do NOT say "let's talk" or invite the student to share thoughts yet.`
+      : `4. Closes by saying you will now discuss the topic together and look forward to their thoughts.`,
     `Write in natural spoken language. No markdown, no bullet points. Aim for under 90 words.`,
   ]
   return lines.filter(Boolean).join('\n')
