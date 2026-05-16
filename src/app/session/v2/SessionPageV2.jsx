@@ -8010,14 +8010,14 @@ function SessionPageV2Inner() {
                   title="View learning objectives"
                   style={{
                     background: discussionObjectivesInfo.completed === discussionObjectivesInfo.total
-                      ? 'rgba(13,148,136,0.20)' : 'rgba(107,114,128,0.12)',
+                      ? 'rgba(199,68,46,0.12)' : 'rgba(107,114,128,0.10)',
                     border: 'none',
                     borderRadius: 8,
                     padding: '4px 10px',
                     cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: 5,
                     fontSize: '0.8rem',
-                    color: discussionObjectivesInfo.completed === discussionObjectivesInfo.total ? '#0d9488' : '#6b7280',
+                    color: discussionObjectivesInfo.completed === discussionObjectivesInfo.total ? '#c7442e' : '#6b7280',
                     whiteSpace: 'nowrap',
                     fontWeight: 600,
                   }}
@@ -8445,7 +8445,7 @@ function SessionPageV2Inner() {
         <div
           style={{
             position: 'fixed', inset: 0, zIndex: 2000,
-            background: 'rgba(0,0,0,0.65)',
+            background: 'rgba(0,0,0,0.45)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: 20,
           }}
@@ -8453,12 +8453,12 @@ function SessionPageV2Inner() {
         >
           <div
             style={{
-              background: '#0f172a',
+              background: '#ffffff',
               borderRadius: 18,
               width: 'min(92vw, 400px)',
               maxHeight: '80dvh',
               display: 'flex', flexDirection: 'column',
-              boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 2px #0d9488',
+              boxShadow: '0 12px 48px rgba(0,0,0,0.18), 0 0 0 2px #c7442e',
               overflow: 'hidden',
             }}
             onClick={e => e.stopPropagation()}
@@ -8467,17 +8467,17 @@ function SessionPageV2Inner() {
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '16px 20px 12px',
-              borderBottom: '1px solid #1e293b',
+              borderBottom: '1px solid #f3f4f6',
             }}>
               <div>
-                <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Learning Goals</div>
-                <div style={{ color: '#94a3b8', fontSize: 12 }}>{discussionObjectivesInfo.completed} of {discussionObjectivesInfo.total} completed</div>
+                <div style={{ color: '#c7442e', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Learning Goals</div>
+                <div style={{ color: '#6b7280', fontSize: 12 }}>{discussionObjectivesInfo.completed} of {discussionObjectivesInfo.total} completed</div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDiscussionObjectives(false)}
                 style={{
-                  background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8',
+                  background: '#f3f4f6', border: 'none', color: '#6b7280',
                   borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
                   display: 'grid', placeItems: 'center', fontSize: 18, fontFamily: 'inherit',
                 }}
@@ -8485,11 +8485,11 @@ function SessionPageV2Inner() {
               >&#215;</button>
             </div>
             {/* Progress bar */}
-            <div style={{ height: 4, background: '#1e293b', flexShrink: 0 }}>
+            <div style={{ height: 4, background: '#f3f4f6', flexShrink: 0 }}>
               <div style={{
                 height: '100%',
                 width: `${discussionObjectivesInfo.total ? (discussionObjectivesInfo.completed / discussionObjectivesInfo.total) * 100 : 0}%`,
-                background: '#0d9488',
+                background: '#c7442e',
                 transition: 'width 0.4s ease',
                 borderRadius: '0 2px 2px 0',
               }} />
@@ -8497,18 +8497,18 @@ function SessionPageV2Inner() {
             {/* Objectives list */}
             <div style={{ overflowY: 'auto', padding: '8px 0 16px' }}>
               {discussionObjectivesList.length === 0 ? (
-                <div style={{ color: '#475569', fontSize: 13, padding: '16px 20px' }}>Loading objectives…</div>
+                <div style={{ color: '#9ca3af', fontSize: 13, padding: '16px 20px' }}>Loading objectives…</div>
               ) : discussionObjectivesList.map((obj, i) => {
                 const done = discussionCompletedIndices.includes(i);
                 return (
                   <div key={i} style={{
                     display: 'flex', alignItems: 'flex-start', gap: 10,
                     padding: '11px 20px',
-                    borderBottom: '1px solid #1e293b',
+                    borderBottom: '1px solid #f3f4f6',
                   }}>
                     <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{done ? '\u2705' : '\u2B1C'}</span>
                     <span style={{
-                      color: done ? '#e2e8f0' : '#64748b',
+                      color: done ? '#111827' : '#9ca3af',
                       fontSize: 13, lineHeight: 1.5,
                       transition: 'color 0.3s',
                     }}>{obj}</span>
