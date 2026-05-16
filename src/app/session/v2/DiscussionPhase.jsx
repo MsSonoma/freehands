@@ -136,25 +136,19 @@ export class DiscussionPhase {
 
     if (this.#destroyed) return;
 
-    // On audio end → enter chatting state
+    // On audio end → play vocab definitions, then enter chatting state
     this.#setupAudioEndListener(() => {
       if (this.#destroyed) return;
-      this.#state = 'chatting';
-      this.#emitStateChange();
-      this.#eventBus.emit('greetingComplete', {});
+      this.#playVocabThenBeginChat();
     });
 
     try {
       await this.#audioEngine.playAudio(overviewAudio || '', [overviewText]);
     } catch (err) {
       console.warn('[DiscussionPhase] Audio playback error for overview:', err);
-      // Recover: enter chatting state regardless
+      // Recover: still play vocab then begin chat
       this.#removeAudioEndListener();
-      if (!this.#destroyed) {
-        this.#state = 'chatting';
-        this.#emitStateChange();
-        this.#eventBus.emit('greetingComplete', {});
-      }
+      if (!this.#destroyed) this.#playVocabThenBeginChat();
     }
   }
 
@@ -310,6 +304,55 @@ export class DiscussionPhase {
       state:               this.#state,
       completedObjectives: this.#completedIndices.length,
       totalObjectives:     this.#objectives.length,
+    });
+  }
+
+  // After the overview TTS ends: speak each vocab term then open chat
+  async #playVocabThenBeginChat() {
+    const vocab = (this.#lessonData?.vocab || []).slice(0, 10);
+
+    if (vocab.length > 0) {
+      const introText = 'Now let me go over some key vocabulary words for this lesson.';
+      this.#chatHistory.push({ role: 'assistant', content: introText });
+      this.#eventBus.emit('discussionMessage', { role: 'assistant', text: introText });
+      let introAudio = null;
+      try { introAudio = await fetchTTS(introText); } catch {}
+      if (!this.#destroyed && this.#state !== 'complete') {
+        await this.#playAndWait(introAudio, [introText]);
+      }
+
+      for (const { term, definition } of vocab) {
+        if (this.#destroyed || this.#state === 'complete') break;
+        const line = `${term}: ${definition}.`;
+        this.#chatHistory.push({ role: 'assistant', content: line });
+        this.#eventBus.emit('discussionMessage', { role: 'assistant', text: line });
+        let audio = null;
+        try { audio = await fetchTTS(line); } catch {}
+        if (this.#destroyed || this.#state === 'complete') break;
+        await this.#playAndWait(audio, [line]);
+      }
+    }
+
+    if (this.#destroyed || this.#state === 'complete') return;
+    this.#state = 'chatting';
+    this.#emitStateChange();
+    this.#eventBus.emit('greetingComplete', {});
+  }
+
+  // Play a TTS clip and wait for the audio engine's 'end' event before resolving
+  #playAndWait(audio, sentences) {
+    return new Promise((resolve) => {
+      const handler = (data) => {
+        if (data.completed || data.skipped) {
+          this.#audioEngine.off('end', handler);
+          resolve();
+        }
+      };
+      this.#audioEngine.on('end', handler);
+      this.#audioEngine.playAudio(audio || '', sentences).catch(() => {
+        this.#audioEngine.off('end', handler);
+        resolve();
+      });
     });
   }
 
