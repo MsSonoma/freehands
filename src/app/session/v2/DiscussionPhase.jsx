@@ -104,6 +104,16 @@ export class DiscussionPhase {
     if (this.#overviewSentences.length === 0) {
       this.#overviewSentences = [overviewText || `Hi ${this.#learnerName}, let's explore ${this.#lessonTitle}!`];
     }
+
+    // Inject hand-raise instruction right before the last overview sentence
+    // (the last sentence is always the vocab transition, e.g. "First, let's go over some important terms.")
+    const handRaise = 'If you have any questions, you can raise your hand by pressing the blue circle-shaped hand button.';
+    if (this.#overviewSentences.length >= 2) {
+      this.#overviewSentences.splice(this.#overviewSentences.length - 1, 0, handRaise);
+    } else {
+      this.#overviewSentences.push(handRaise);
+    }
+
     this.#vocabItems = (this.#lessonData?.vocab || []).slice(0, 10);
     this.#transitionText = `Do you have any questions? What do you already know about ${this.#lessonTitle}?`;
 
