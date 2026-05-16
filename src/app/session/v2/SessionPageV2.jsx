@@ -720,6 +720,9 @@ function SessionPageV2Inner() {
   const [discussionResponse, setDiscussionResponse] = useState('');
   const [discussionActivityIndex, setDiscussionActivityIndex] = useState(0);
   const [discussionObjectivesInfo, setDiscussionObjectivesInfo] = useState({ completed: 0, total: 0 });
+  const [discussionObjectivesList, setDiscussionObjectivesList] = useState([]);
+  const [discussionCompletedIndices, setDiscussionCompletedIndices] = useState([]);
+  const [showDiscussionObjectives, setShowDiscussionObjectives] = useState(false);
   const [discussionSentenceInfo, setDiscussionSentenceInfo] = useState({ type: 'overview', index: 0, total: 0, text: '', waitingForNext: false });
   
   // Opening actions state
@@ -4687,6 +4690,8 @@ function SessionPageV2Inner() {
         completed: data.completedObjectives || 0,
         total:     data.totalObjectives     || 0,
       });
+      if (Array.isArray(data.objectives))      setDiscussionObjectivesList(data.objectives);
+      if (Array.isArray(data.completedIndices)) setDiscussionCompletedIndices(data.completedIndices);
     });
 
     // discussionMessage — append each chat turn to the transcript
@@ -7999,13 +8004,27 @@ function SessionPageV2Inner() {
                 {discussionState === 'awaiting-response' ? 'Thinking...' : 'Send'}
               </button>
               {discussionObjectivesInfo.total > 0 && (
-                <span style={{
-                  fontSize: '0.8rem',
-                  color: '#6b7280',
-                  whiteSpace: 'nowrap',
-                }}>
+                <button
+                  type="button"
+                  onClick={() => setShowDiscussionObjectives(true)}
+                  title="View learning objectives"
+                  style={{
+                    background: discussionObjectivesInfo.completed === discussionObjectivesInfo.total
+                      ? 'rgba(13,148,136,0.20)' : 'rgba(107,114,128,0.12)',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '4px 10px',
+                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    fontSize: '0.8rem',
+                    color: discussionObjectivesInfo.completed === discussionObjectivesInfo.total ? '#0d9488' : '#6b7280',
+                    whiteSpace: 'nowrap',
+                    fontWeight: 600,
+                  }}
+                >
+                  <span style={{ fontSize: 13 }}>&#9989;</span>
                   {discussionObjectivesInfo.completed}/{discussionObjectivesInfo.total}
-                </span>
+                </button>
               )}
             </div>
           )}
@@ -8419,6 +8438,86 @@ function SessionPageV2Inner() {
           onCancel={handleCancelTakeover}
           isTakenOver={isTakenOverNotification}
         />
+      )}
+
+      {/* Discussion objectives overlay */}
+      {showDiscussionObjectives && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 2000,
+            background: 'rgba(0,0,0,0.65)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+          }}
+          onClick={() => setShowDiscussionObjectives(false)}
+        >
+          <div
+            style={{
+              background: '#0f172a',
+              borderRadius: 18,
+              width: 'min(92vw, 400px)',
+              maxHeight: '80dvh',
+              display: 'flex', flexDirection: 'column',
+              boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 2px #0d9488',
+              overflow: 'hidden',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px 12px',
+              borderBottom: '1px solid #1e293b',
+            }}>
+              <div>
+                <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Learning Goals</div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>{discussionObjectivesInfo.completed} of {discussionObjectivesInfo.total} completed</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDiscussionObjectives(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8',
+                  borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
+                  display: 'grid', placeItems: 'center', fontSize: 18, fontFamily: 'inherit',
+                }}
+                aria-label="Close"
+              >&#215;</button>
+            </div>
+            {/* Progress bar */}
+            <div style={{ height: 4, background: '#1e293b', flexShrink: 0 }}>
+              <div style={{
+                height: '100%',
+                width: `${discussionObjectivesInfo.total ? (discussionObjectivesInfo.completed / discussionObjectivesInfo.total) * 100 : 0}%`,
+                background: '#0d9488',
+                transition: 'width 0.4s ease',
+                borderRadius: '0 2px 2px 0',
+              }} />
+            </div>
+            {/* Objectives list */}
+            <div style={{ overflowY: 'auto', padding: '8px 0 16px' }}>
+              {discussionObjectivesList.length === 0 ? (
+                <div style={{ color: '#475569', fontSize: 13, padding: '16px 20px' }}>Loading objectives…</div>
+              ) : discussionObjectivesList.map((obj, i) => {
+                const done = discussionCompletedIndices.includes(i);
+                return (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 10,
+                    padding: '11px 20px',
+                    borderBottom: '1px solid #1e293b',
+                  }}>
+                    <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{done ? '\u2705' : '\u2B1C'}</span>
+                    <span style={{
+                      color: done ? '#e2e8f0' : '#64748b',
+                      fontSize: 13, lineHeight: 1.5,
+                      transition: 'color 0.3s',
+                    }}>{obj}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

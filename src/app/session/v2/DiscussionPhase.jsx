@@ -315,6 +315,8 @@ export class DiscussionPhase {
       state:               this.#state,
       completedObjectives: this.#completedIndices.length,
       totalObjectives:     this.#objectives.length,
+      objectives:          [...this.#objectives],
+      completedIndices:    [...this.#completedIndices],
     });
   }
 
