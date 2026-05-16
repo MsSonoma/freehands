@@ -379,6 +379,18 @@ export class DiscussionPhase {
     this.#emitSentenceChange(key);
 
     const audio = this.#sentenceAudios.get(key) || null;
+
+    if (key === 'trans:0') {
+      // Open the chat input immediately — don't wait for audio to finish.
+      // The TTS plays in the background; if the user submits before it ends,
+      // the reply audio will naturally take over.
+      this.#state = 'chatting';
+      this.#emitStateChange();
+      this.#eventBus.emit('greetingComplete', {});
+      this.#audioEngine.playAudio(audio || '', [text]).catch(() => {});
+      return;
+    }
+
     this.#setupAudioEndListener(() => {
       if (this.#destroyed) return;
       this.#waitingForNext = true;
