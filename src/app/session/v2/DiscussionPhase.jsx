@@ -312,15 +312,6 @@ export class DiscussionPhase {
     const vocab = (this.#lessonData?.vocab || []).slice(0, 10);
 
     if (vocab.length > 0) {
-      const introText = 'Now let me go over some key vocabulary words for this lesson.';
-      this.#chatHistory.push({ role: 'assistant', content: introText });
-      this.#eventBus.emit('discussionMessage', { role: 'assistant', text: introText });
-      let introAudio = null;
-      try { introAudio = await fetchTTS(introText); } catch {}
-      if (!this.#destroyed && this.#state !== 'complete') {
-        await this.#playAndWait(introAudio, [introText]);
-      }
-
       for (const { term, definition } of vocab) {
         if (this.#destroyed || this.#state === 'complete') break;
         const line = `${term}: ${definition}.`;
