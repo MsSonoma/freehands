@@ -7699,7 +7699,7 @@ function SessionPageV2Inner() {
           
           {/* Phase-specific Begin buttons */}
           {(() => {
-            const needBeginDiscussion = (currentPhase === 'idle') || (currentPhase === 'discussion' && (!discussionState || discussionState === 'idle' || discussionState === 'ready'));
+            const needBeginDiscussion = (currentPhase === 'idle') || (currentPhase === 'discussion' && (!discussionState || discussionState === 'idle' || discussionState === 'ready' || discussionState === 'loading'));
             const needBeginComp = (currentPhase === 'comprehension' && (!comprehensionState || comprehensionState === 'idle'));
             const needBeginExercise = (currentPhase === 'exercise' && (!exerciseState || exerciseState === 'idle'));
             const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
