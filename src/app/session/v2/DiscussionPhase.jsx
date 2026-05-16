@@ -360,6 +360,7 @@ export class DiscussionPhase {
     this.#removeAudioEndListener();
     this.#audioEndListener = (data) => {
       if (data.completed || data.skipped) {
+        this.#removeAudioEndListener(); // one-shot: remove before callback to prevent re-entrancy
         callback();
       }
     };
