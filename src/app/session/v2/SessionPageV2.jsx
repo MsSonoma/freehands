@@ -322,11 +322,10 @@ function deriveCanonicalLessonKey({ lessonData, lessonId }) {
 }
 
 // Timeline constants
-const timelinePhases = ["discussion", "comprehension", "exercise", "worksheet", "test"];
+const timelinePhases = ["discussion", "exercise", "worksheet", "test"];
 const orderedPhases = ["discussion", "teaching", "comprehension", "exercise", "worksheet", "test", "closing"];
 const phaseLabels = {
   discussion: "Discussion",
-  comprehension: "Comp",
   exercise: "Exercise",
   worksheet: "Worksheet",
   test: "Test",
@@ -720,6 +719,7 @@ function SessionPageV2Inner() {
   const [discussionPrompt, setDiscussionPrompt] = useState('');
   const [discussionResponse, setDiscussionResponse] = useState('');
   const [discussionActivityIndex, setDiscussionActivityIndex] = useState(0);
+  const [discussionObjectivesInfo, setDiscussionObjectivesInfo] = useState({ completed: 0, total: 0 });
   
   // Opening actions state
   const [openingActionActive, setOpeningActionActive] = useState(false);
@@ -1232,12 +1232,9 @@ function SessionPageV2Inner() {
   
   // Compute timeline highlight based on current phase
   const timelineHighlight = (() => {
-    // Group teaching with discussion; comprehension is its own segment on the timeline
-    if (["discussion", "teaching", "idle"].includes(currentPhase)) {
+    // Teaching, comprehension, and discussion are all grouped under the "discussion" segment
+    if (["discussion", "teaching", "comprehension", "idle"].includes(currentPhase)) {
       return "discussion";
-    }
-    if (currentPhase === "comprehension") {
-      return "comprehension";
     }
     if (currentPhase === "exercise") {
       return "exercise";
@@ -2750,21 +2747,9 @@ function SessionPageV2Inner() {
       ? !playEnabledForPhase(phaseName)
       : false;
     
-    // Special handling for discussion: prefetch greeting TTS before starting
+    // Discussion: set loading state; DiscussionPhase.start() handles its own TTS fetching
     if (phaseName === 'discussion') {
       setDiscussionState('loading');
-      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'friend';
-      const lessonTitle = lessonData?.title || lessonId || 'this topic';
-      const greetingText = `Hi ${learnerName}, ready to learn about ${lessonTitle}?`;
-      
-      try {
-        // Prefetch greeting TTS
-        await fetchTTS(greetingText);
-      } catch (err) {
-        console.error('[SessionPageV2] Failed to prefetch greeting:', err);
-      }
-      
-      // Discussion work timer starts when Begin is clicked, not here
     }
     
     const ref = getPhaseRef(phaseName);
@@ -4668,7 +4653,9 @@ function SessionPageV2Inner() {
       audioEngine: audioEngineRef.current,
       eventBus: eventBusRef.current,
       learnerName: learnerName,
-      lessonTitle: lessonTitle
+      lessonTitle: lessonTitle,
+      lessonData: lessonData,
+      grade: (learnerProfile?.grade || lessonData?.grade || '').toString(),
     });
     
 
@@ -4677,6 +4664,29 @@ function SessionPageV2Inner() {
     console.log('[SessionPageV2] Setting up event listeners');
 
     let didComplete = false;
+
+    // discussionStateChange — sync DiscussionPhase internal state to React state
+    const unsubStateChange = eventBusRef.current.on('discussionStateChange', (data) => {
+      const stateMap = {
+        'idle':               'idle',
+        'loading-objectives': 'loading',
+        'playing-overview':   'playing-greeting',
+        'chatting':           'chatting',
+        'awaiting-response':  'awaiting-response',
+        'complete':           'complete',
+      };
+      setDiscussionState(stateMap[data.state] || data.state);
+      setDiscussionObjectivesInfo({
+        completed: data.completedObjectives || 0,
+        total:     data.totalObjectives     || 0,
+      });
+    });
+
+    // discussionMessage — append each chat turn to the transcript
+    const unsubMessage = eventBusRef.current.on('discussionMessage', (data) => {
+      appendTranscriptLine({ text: data.text, role: data.role === 'user' ? 'user' : 'assistant' });
+    });
+
     // Subscribe to events (capture unsubs so we can cleanly tear down)
     const unsubGreetingPlaying = eventBusRef.current.on('greetingPlaying', (data) => {
       addEvent(`ðŸ‘‹ Playing greeting: "${data.greetingText}"`);
@@ -4688,19 +4698,21 @@ function SessionPageV2Inner() {
       }
     });
     
-    const unsubGreetingComplete = eventBusRef.current.on('greetingComplete', (data) => {
-      addEvent('âœ… Greeting complete');
-      setDiscussionState('complete');
+    const unsubGreetingComplete = eventBusRef.current.on('greetingComplete', () => {
+      addEvent('Overview complete — entering discussion chat');
+      setDiscussionState('chatting');
     });
     
     const unsubDiscussionComplete = eventBusRef.current.on('discussionComplete', (data) => {
       if (didComplete) return;
       didComplete = true;
 
-      addEvent('ðŸŽ‰ Discussion complete - proceeding to teaching');
+      addEvent('Discussion complete - proceeding to exercise');
       setDiscussionState('complete');
 
       // Cleanup FIRST to remove discussion audio end listener.
+      try { unsubStateChange?.(); } catch {}
+      try { unsubMessage?.(); } catch {}
       try { unsubGreetingPlaying?.(); } catch {}
       try { unsubGreetingComplete?.(); } catch {}
       try { unsubDiscussionComplete?.(); } catch {}
@@ -6272,7 +6284,7 @@ function SessionPageV2Inner() {
   // Discussion handlers
   const submitDiscussionResponse = () => {
     if (!discussionPhaseRef.current) return;
-    discussionPhaseRef.current.submitResponse(discussionResponse);
+    discussionPhaseRef.current.submitMessage(discussionResponse);
     setDiscussionResponse(''); // Clear input after submit
   };
   
@@ -7873,6 +7885,73 @@ function SessionPageV2Inner() {
             </div>
           )}
           
+          {/* Discussion chat input — shown when in the Socratic conversation */}
+          {currentPhase === 'discussion' &&
+           (discussionState === 'chatting' || discussionState === 'awaiting-response') &&
+           !openingActionActive && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '4px 12px',
+              marginBottom: 4,
+            }}>
+              <input
+                type="text"
+                placeholder="Share your thoughts..."
+                value={discussionResponse}
+                disabled={discussionState === 'awaiting-response'}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  border: '1px solid #bdbdbd',
+                  borderRadius: 6,
+                  fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)',
+                  outline: 'none',
+                  background: '#fff',
+                  color: '#111827',
+                  opacity: discussionState === 'awaiting-response' ? 0.6 : 1,
+                }}
+                onChange={(e) => setDiscussionResponse(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    submitDiscussionResponse();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                disabled={discussionState === 'awaiting-response' || !discussionResponse.trim()}
+                style={{
+                  background: '#c7442e',
+                  color: '#fff',
+                  borderRadius: 8,
+                  padding: '10px 20px',
+                  fontWeight: 700,
+                  fontSize: 'clamp(0.9rem, 1.5vw, 1rem)',
+                  border: 'none',
+                  cursor: (discussionState === 'awaiting-response' || !discussionResponse.trim()) ? 'not-allowed' : 'pointer',
+                  opacity: (discussionState === 'awaiting-response' || !discussionResponse.trim()) ? 0.6 : 1,
+                  boxShadow: '0 2px 8px rgba(199,68,46,0.28)',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={submitDiscussionResponse}
+              >
+                {discussionState === 'awaiting-response' ? 'Thinking...' : 'Send'}
+              </button>
+              {discussionObjectivesInfo.total > 0 && (
+                <span style={{
+                  fontSize: '0.8rem',
+                  color: '#6b7280',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {discussionObjectivesInfo.completed}/{discussionObjectivesInfo.total}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Q&A footer for phases 2-5 */}
           {(() => {
             const qaPhase = ['comprehension', 'exercise', 'worksheet', 'test'].includes(currentPhase) ? currentPhase : null;

@@ -114,7 +114,7 @@ export const COMPREHENSION_CUE_PHRASE = "Great. Let's move on to comprehension."
 /**
  * Order of major phases shown above the video timeline.
  */
-export const timelinePhases = ["discussion", "comprehension", "exercise", "worksheet", "test"];
+export const timelinePhases = ["discussion", "exercise", "worksheet", "test"];
 
 /**
  * Display labels for each phase.
