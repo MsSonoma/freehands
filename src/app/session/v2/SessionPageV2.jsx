@@ -7774,6 +7774,8 @@ function SessionPageV2Inner() {
                           setResumePhase(null);
                           resetTranscriptState();
                           try { timerServiceRef.current?.reset?.(); } catch {}
+                          setCurrentTimerMode({ discussion: null, comprehension: null, exercise: null, worksheet: null, test: null });
+                          setTimerRefreshKey(k => k + 1);
                           // Auto-start will re-fire once resumePhase clears
                           setCurrentPhase('idle');
                           setDiscussionState('idle');
