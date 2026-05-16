@@ -720,6 +720,7 @@ function SessionPageV2Inner() {
   const [discussionResponse, setDiscussionResponse] = useState('');
   const [discussionActivityIndex, setDiscussionActivityIndex] = useState(0);
   const [discussionObjectivesInfo, setDiscussionObjectivesInfo] = useState({ completed: 0, total: 0 });
+  const [discussionSentenceInfo, setDiscussionSentenceInfo] = useState({ type: 'overview', index: 0, total: 0, text: '', waitingForNext: false });
   
   // Opening actions state
   const [openingActionActive, setOpeningActionActive] = useState(false);
@@ -4660,6 +4661,9 @@ function SessionPageV2Inner() {
     
 
     discussionPhaseRef.current = phase;
+
+    // Begin background prefetch immediately so data is ready when user clicks Begin
+    phase.prefetch();
     
     console.log('[SessionPageV2] Setting up event listeners');
 
@@ -4669,8 +4673,11 @@ function SessionPageV2Inner() {
     const unsubStateChange = eventBusRef.current.on('discussionStateChange', (data) => {
       const stateMap = {
         'idle':               'idle',
+        'prefetching':        'loading',
         'loading-objectives': 'loading',
+        'ready':              'ready',
         'playing-overview':   'playing-greeting',
+        'playing-vocab':      'playing-vocab',
         'chatting':           'chatting',
         'awaiting-response':  'awaiting-response',
         'complete':           'complete',
@@ -4685,6 +4692,11 @@ function SessionPageV2Inner() {
     // discussionMessage — append each chat turn to the transcript
     const unsubMessage = eventBusRef.current.on('discussionMessage', (data) => {
       appendTranscriptLine({ text: data.text, role: data.role === 'user' ? 'user' : 'assistant' });
+    });
+
+    // discussionSentenceChange — track current sentence for Repeat/Next UI
+    const unsubSentenceChange = eventBusRef.current.on('discussionSentenceChange', (data) => {
+      setDiscussionSentenceInfo(data);
     });
 
     // Subscribe to events (capture unsubs so we can cleanly tear down)
@@ -4713,6 +4725,7 @@ function SessionPageV2Inner() {
       // Cleanup FIRST to remove discussion audio end listener.
       try { unsubStateChange?.(); } catch {}
       try { unsubMessage?.(); } catch {}
+      try { unsubSentenceChange?.(); } catch {}
       try { unsubGreetingPlaying?.(); } catch {}
       try { unsubGreetingComplete?.(); } catch {}
       try { unsubDiscussionComplete?.(); } catch {}
@@ -7676,7 +7689,7 @@ function SessionPageV2Inner() {
           
           {/* Phase-specific Begin buttons */}
           {(() => {
-            const needBeginDiscussion = (currentPhase === 'idle') || (currentPhase === 'discussion' && (!discussionState || discussionState === 'idle'));
+            const needBeginDiscussion = (currentPhase === 'idle') || (currentPhase === 'discussion' && (!discussionState || discussionState === 'idle' || discussionState === 'ready'));
             const needBeginComp = (currentPhase === 'comprehension' && (!comprehensionState || comprehensionState === 'idle'));
             const needBeginExercise = (currentPhase === 'exercise' && (!exerciseState || exerciseState === 'idle'));
             const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
@@ -7822,6 +7835,56 @@ function SessionPageV2Inner() {
               </div>
             );
           })()}
+
+          {/* Discussion sentence controls — Repeat/Next during overview and vocab playback */}
+          {currentPhase === 'discussion' &&
+           (discussionState === 'playing-greeting' || discussionState === 'playing-vocab') && (
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              padding: '8px 4px'
+            }}>
+              <button
+                type="button"
+                onClick={() => discussionPhaseRef.current?.repeatCurrentSentence()}
+                style={{
+                  padding: '12px 28px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(59,130,246,0.4)',
+                }}
+              >
+                Repeat
+              </button>
+              <button
+                type="button"
+                onClick={() => discussionPhaseRef.current?.nextSentence()}
+                style={{
+                  padding: '12px 28px',
+                  background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(34,197,94,0.4)',
+                }}
+              >
+                {discussionState === 'playing-vocab' &&
+                 discussionSentenceInfo.index === discussionSentenceInfo.total - 1
+                  ? 'Begin Discussion'
+                  : 'Next'}
+              </button>
+            </div>
+          )}
 
           {/* Teaching controls (footer) */}
           {currentPhase === 'teaching' && (

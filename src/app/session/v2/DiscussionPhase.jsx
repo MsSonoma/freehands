@@ -1,25 +1,24 @@
 /**
- * DiscussionPhase.jsx (V3 – Webb-style Socratic Discussion)
- *
- * Discussion phase that replaces the old greeting-only + Teaching + Comprehension sequence.
- * Ms. Sonoma gives a brief overview with vocab, then conducts a Socratic objectives-driven
- * conversation until all learning goals are demonstrated, then advances to Exercise.
+ * DiscussionPhase.jsx (V4 – Webb-style Socratic Discussion + Sentence-by-Sentence Playback)
  *
  * Flow:
- *  1. start()            → fetch objectives → fetch overview text → play overview TTS
- *  2. overview TTS ends  → state: 'chatting' → emit greetingComplete (compat)
- *  3. submitMessage(txt) → check objectives → call /api/sonoma-discussion
- *                        → play reply TTS → if all met: emit discussionComplete
- *                        → else: state: 'chatting' (ready for next message)
- *  4. skip()             → stop audio → emit discussionComplete immediately
+ *  1. prefetch()         → (called immediately on init) fetches objectives + overview text +
+ *                          all TTS audio in parallel; state: prefetching → ready
+ *  2. start()            → called when user clicks Begin; begins sentence-by-sentence playback
+ *  3. overview sentences → one at a time; Repeat/Next buttons; state: playing-overview
+ *  4. vocab items        → one at a time; Repeat/Next buttons; state: playing-vocab
+ *  5. greetingComplete   → state: chatting
+ *  6. submitMessage(txt) → Socratic objectives-driven conversation
+ *  7. discussionComplete → all objectives met
  *
  * Events emitted:
- *  greetingPlaying          { greetingText }                  – overview TTS starting (compat)
- *  greetingComplete         {}                                – entering chat state (compat)
+ *  greetingPlaying          { greetingText }       – first sentence about to play
+ *  greetingComplete         {}                     – all sentences done, entering chat
  *  discussionStateChange    { state, completedObjectives, totalObjectives }
- *  discussionMessage        { role: 'user'|'assistant', text }
+ *  discussionMessage        { role, text }         – every sentence + chat turn
+ *  discussionSentenceChange { type, index, total, text, waitingForNext } – sentence nav
  *  discussionObjectiveComplete { completedCount, totalCount, newlyCompleted }
- *  discussionComplete       {}                                – all objectives met
+ *  discussionComplete       {}                     – all objectives met
  */
 
 'use client';
@@ -28,6 +27,15 @@ import { fetchTTS } from './services';
 
 const WEBB_OBJECTIVES_URL   = '/api/webb-objectives';
 const SONOMA_DISCUSSION_URL = '/api/sonoma-discussion';
+
+// Split a paragraph into individual sentences for one-at-a-time playback
+function splitSentences(text) {
+  if (!text?.trim()) return [];
+  return text.trim()
+    .split(/(?<=[.!?])\s+(?=[A-Z"'\u2018\u201C])/)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
 
 export class DiscussionPhase {
   // Private state
@@ -38,13 +46,22 @@ export class DiscussionPhase {
   #lessonData     = null;
   #grade          = '';
 
-  // 'idle' | 'loading-objectives' | 'playing-overview' | 'chatting' | 'awaiting-response' | 'complete'
+  // 'idle'|'prefetching'|'ready'|'playing-overview'|'playing-vocab'|'chatting'|'awaiting-response'|'complete'
   #state             = 'idle';
   #objectives        = [];
   #completedIndices  = [];
   #chatHistory       = [];   // { role: 'user'|'assistant', content: string }[]
   #audioEndListener  = null;
   #destroyed         = false;
+
+  // Sentence-by-sentence playback
+  #prefetchDone       = false;
+  #playRequested      = false;
+  #overviewSentences  = [];        // string[]
+  #vocabItems         = [];        // { term, definition }[]
+  #sentenceAudios     = new Map(); // key → base64 audio
+  #currentSentenceKey = null;      // 'ov:N' | 'voc:N'
+  #waitingForNext     = false;
 
   constructor(options = {}) {
     this.#audioEngine = options.audioEngine;
@@ -67,89 +84,80 @@ export class DiscussionPhase {
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
-  async start() {
+  // prefetch() — call immediately on phase setup to begin background loading
+  async prefetch() {
     if (this.#state !== 'idle') return;
-    this.#state = 'loading-objectives';
+    this.#state = 'prefetching';
     this.#emitStateChange();
 
-    // Step 1: Generate objectives from the lesson question bank
-    try {
-      if (this.#lessonData) {
-        const res = await fetch(WEBB_OBJECTIVES_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'generate', lesson: this.#lessonData }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data.objectives) && data.objectives.length) {
-            this.#objectives = data.objectives;
-          }
-        }
-      }
-    } catch (err) {
-      console.warn('[DiscussionPhase] Failed to generate objectives:', err);
-    }
+    // Fetch objectives + overview text in parallel
+    const [, overviewText] = await Promise.all([
+      this.#fetchObjectives(),
+      this.#fetchOverviewText(),
+    ]);
 
     if (this.#destroyed) return;
 
-    // Step 2: Generate overview text via Ms. Sonoma API (with local fallback)
-    let overviewText = `Hi ${this.#learnerName}, let's explore ${this.#lessonTitle} together!`;
-    try {
-      const vocab = this.#lessonData?.vocab || [];
-      const res = await fetch(SONOMA_DISCUSSION_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'overview',
-          lesson:      this.#lessonData,
-          vocab,
-          learnerName: this.#learnerName,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.text) overviewText = data.text;
-      }
-    } catch (err) {
-      console.warn('[DiscussionPhase] Failed to fetch overview:', err);
+    // Split overview into sentences; build vocab list
+    this.#overviewSentences = splitSentences(overviewText);
+    if (this.#overviewSentences.length === 0) {
+      this.#overviewSentences = [overviewText || `Hi ${this.#learnerName}, let's explore ${this.#lessonTitle}!`];
     }
+    this.#vocabItems = (this.#lessonData?.vocab || []).slice(0, 10);
 
-    if (this.#destroyed) return;
-
-    // Step 3: Play overview TTS
-    this.#state = 'playing-overview';
-    this.#emitStateChange();
-
-    this.#eventBus.emit('greetingPlaying', { greetingText: overviewText });
-
-    // Add overview to chat history as the first assistant message
-    this.#chatHistory.push({ role: 'assistant', content: overviewText });
-    this.#eventBus.emit('discussionMessage', { role: 'assistant', text: overviewText });
-
-    let overviewAudio = null;
-    try {
-      overviewAudio = await fetchTTS(overviewText);
-    } catch (err) {
-      console.warn('[DiscussionPhase] TTS fetch failed for overview:', err);
-    }
-
-    if (this.#destroyed) return;
-
-    // On audio end → play vocab definitions, then enter chatting state
-    this.#setupAudioEndListener(() => {
+    // Prefetch all TTS audio in parallel
+    const allItems = [
+      ...this.#overviewSentences.map((t, i) => ({ key: `ov:${i}`, text: t })),
+      ...this.#vocabItems.map((v, i) => ({ key: `voc:${i}`, text: `${v.term}: ${v.definition}.` })),
+    ];
+    await Promise.all(allItems.map(async ({ key, text }) => {
       if (this.#destroyed) return;
-      this.#playVocabThenBeginChat();
-    });
+      try {
+        const audio = await fetchTTS(text);
+        this.#sentenceAudios.set(key, audio);
+      } catch {}
+    }));
 
-    try {
-      await this.#audioEngine.playAudio(overviewAudio || '', [overviewText]);
-    } catch (err) {
-      console.warn('[DiscussionPhase] Audio playback error for overview:', err);
-      // Recover: still play vocab then begin chat
-      this.#removeAudioEndListener();
-      if (!this.#destroyed) this.#playVocabThenBeginChat();
+    if (this.#destroyed) return;
+    this.#prefetchDone = true;
+    this.#state = 'ready';
+    this.#emitStateChange();
+    if (this.#playRequested) this.#startPlaying();
+  }
+
+  // start() — called when user clicks Begin
+  start() {
+    if (this.#state === 'complete' || this.#state === 'chatting') return;
+    this.#playRequested = true;
+    if (this.#prefetchDone && !this.#destroyed) this.#startPlaying();
+    // else: prefetch() will call #startPlaying() when done
+  }
+
+  // nextSentence() — advance past the current overview/vocab sentence
+  nextSentence() {
+    if (this.#state !== 'playing-overview' && this.#state !== 'playing-vocab') return;
+    try { this.#audioEngine.stop(); } catch {}
+    this.#removeAudioEndListener();
+    const nextKey = this.#getNextKey(this.#currentSentenceKey);
+    if (!nextKey) {
+      this.#state = 'chatting';
+      this.#emitStateChange();
+      this.#eventBus.emit('greetingComplete', {});
+      return;
     }
+    this.#currentSentenceKey = nextKey;
+    this.#state = nextKey.startsWith('voc:') ? 'playing-vocab' : 'playing-overview';
+    this.#emitStateChange();
+    this.#playSentence(nextKey);
+  }
+
+  // repeatCurrentSentence() — replay the currently displayed sentence
+  repeatCurrentSentence() {
+    if (!this.#currentSentenceKey) return;
+    if (this.#state !== 'playing-overview' && this.#state !== 'playing-vocab') return;
+    try { this.#audioEngine.stop(); } catch {}
+    this.#removeAudioEndListener();
+    this.#playSentence(this.#currentSentenceKey);
   }
 
   async submitMessage(userText) {
@@ -307,51 +315,113 @@ export class DiscussionPhase {
     });
   }
 
-  // After the overview TTS ends: speak each vocab term then open chat
-  async #playVocabThenBeginChat() {
-    const vocab = (this.#lessonData?.vocab || []).slice(0, 10);
-
-    if (vocab.length > 0) {
-      for (const { term, definition } of vocab) {
-        if (this.#destroyed || this.#state === 'complete') break;
-        const line = `${term}: ${definition}.`;
-        this.#chatHistory.push({ role: 'assistant', content: line });
-        this.#eventBus.emit('discussionMessage', { role: 'assistant', text: line });
-        let audio = null;
-        try { audio = await fetchTTS(line); } catch {}
-        if (this.#destroyed || this.#state === 'complete') break;
-        await this.#playAndWait(audio, [line]);
+  async #fetchObjectives() {
+    try {
+      if (this.#lessonData) {
+        const res = await fetch(WEBB_OBJECTIVES_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'generate', lesson: this.#lessonData }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.objectives) && data.objectives.length) {
+            this.#objectives = data.objectives;
+          }
+        }
       }
+    } catch (err) {
+      console.warn('[DiscussionPhase] Failed to generate objectives:', err);
     }
-
-    if (this.#destroyed || this.#state === 'complete') return;
-    this.#state = 'chatting';
-    this.#emitStateChange();
-    this.#eventBus.emit('greetingComplete', {});
   }
 
-  // Play a TTS clip and wait for the audio engine's 'end' event before resolving
-  #playAndWait(audio, sentences) {
-    return new Promise((resolve) => {
-      const handler = (data) => {
-        if (data.completed || data.skipped) {
-          this.#audioEngine.off('end', handler);
-          resolve();
-        }
-      };
-      this.#audioEngine.on('end', handler);
-      this.#audioEngine.playAudio(audio || '', sentences).catch(() => {
-        this.#audioEngine.off('end', handler);
-        resolve();
+  async #fetchOverviewText() {
+    let overviewText = `Hi ${this.#learnerName}, let's explore ${this.#lessonTitle} together!`;
+    try {
+      const vocab = this.#lessonData?.vocab || [];
+      const res = await fetch(SONOMA_DISCUSSION_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'overview',
+          lesson:      this.#lessonData,
+          vocab,
+          learnerName: this.#learnerName,
+        }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.text) overviewText = data.text;
+      }
+    } catch (err) {
+      console.warn('[DiscussionPhase] Failed to fetch overview:', err);
+    }
+    return overviewText;
+  }
+
+  #startPlaying() {
+    if (this.#destroyed || this.#overviewSentences.length === 0) return;
+    this.#currentSentenceKey = 'ov:0';
+    this.#state = 'playing-overview';
+    this.#emitStateChange();
+    this.#eventBus.emit('greetingPlaying', { greetingText: this.#overviewSentences[0] });
+    this.#playSentence('ov:0');
+  }
+
+  #playSentence(key) {
+    this.#waitingForNext = false;
+    const { text } = this.#getSentenceForKey(key);
+    this.#chatHistory.push({ role: 'assistant', content: text });
+    this.#eventBus.emit('discussionMessage', { role: 'assistant', text });
+    this.#emitSentenceChange(key);
+
+    const audio = this.#sentenceAudios.get(key) || null;
+    this.#setupAudioEndListener(() => {
+      if (this.#destroyed) return;
+      this.#waitingForNext = true;
+      this.#emitSentenceChange(key);
     });
+    this.#audioEngine.playAudio(audio || '', [text]).catch(() => {
+      this.#removeAudioEndListener();
+      if (!this.#destroyed) { this.#waitingForNext = true; this.#emitSentenceChange(key); }
+    });
+  }
+
+  #getNextKey(key) {
+    if (!key) return null;
+    if (key.startsWith('ov:')) {
+      const idx = parseInt(key.slice(3), 10);
+      if (idx + 1 < this.#overviewSentences.length) return `ov:${idx + 1}`;
+      if (this.#vocabItems.length > 0) return 'voc:0';
+      return null;
+    } else {
+      const idx = parseInt(key.slice(4), 10);
+      if (idx + 1 < this.#vocabItems.length) return `voc:${idx + 1}`;
+      return null;
+    }
+  }
+
+  #getSentenceForKey(key) {
+    if (key.startsWith('ov:')) {
+      const idx = parseInt(key.slice(3), 10);
+      return { type: 'overview', index: idx, total: this.#overviewSentences.length, text: this.#overviewSentences[idx] || '' };
+    } else {
+      const idx = parseInt(key.slice(4), 10);
+      const item = this.#vocabItems[idx] || {};
+      return { type: 'vocab', index: idx, total: this.#vocabItems.length, text: `${item.term}: ${item.definition}.` };
+    }
+  }
+
+  #emitSentenceChange(key) {
+    const info = this.#getSentenceForKey(key);
+    this.#eventBus.emit('discussionSentenceChange', { ...info, waitingForNext: this.#waitingForNext });
   }
 
   #setupAudioEndListener(callback) {
     this.#removeAudioEndListener();
     this.#audioEndListener = (data) => {
       if (data.completed || data.skipped) {
-        this.#removeAudioEndListener(); // one-shot: remove before callback to prevent re-entrancy
+        this.#removeAudioEndListener(); // one-shot
         callback();
       }
     };
