@@ -1158,8 +1158,10 @@ function SessionPageV2Inner() {
     const el = transcriptRef.current;
     if (!el) return;
     requestAnimationFrame(() => {
-      if (!transcriptRef.current) return;
-      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+      requestAnimationFrame(() => {
+        if (!transcriptRef.current) return;
+        transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+      });
     });
   }, []);
 
@@ -1202,7 +1204,7 @@ function SessionPageV2Inner() {
   // Keep transcript pinned to the newest line on initial load/refresh (V1 parity)
   useEffect(() => {
     scrollTranscriptToBottom();
-  }, [transcriptLines.length, snapshotLoaded, scrollTranscriptToBottom]);
+  }, [transcriptLines.length, snapshotLoaded, scrollTranscriptToBottom, activeCaptionIndex]);
 
   // Keep transcriptLinesRef in sync so event-handler closures always see the latest lines.
   useEffect(() => { transcriptLinesRef.current = transcriptLines; }, [transcriptLines]);
