@@ -2748,8 +2748,10 @@ function SessionPageV2Inner() {
       ? !playEnabledForPhase(phaseName)
       : false;
     
-    // Discussion: set loading state; DiscussionPhase.start() handles its own TTS fetching
+    // Discussion: unlock audio on this user gesture (required for iOS since auto-start fires
+    // without a gesture), then set loading state.
     if (phaseName === 'discussion') {
+      try { await audioEngineRef.current?.initialize(); } catch {}
       setDiscussionState('loading');
     }
     
@@ -6124,6 +6126,14 @@ function SessionPageV2Inner() {
     }
   }, [startSession]);
 
+  // Auto-start the session as soon as the page is ready and no snapshot resume is pending.
+  // This eliminates the initial "Begin" click — user goes straight to "Begin Discussion".
+  useEffect(() => {
+    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase) {
+      handleStartSessionClick();
+    }
+  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, handleStartSessionClick]);
+
   const handleSessionTakeover = useCallback(async (pinCode) => {
     const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
     const trackingLessonId = lessonKey || null;
@@ -7733,65 +7743,49 @@ function SessionPageV2Inner() {
                     {discussionState === 'loading' ? 'Loading...' : 'Begin Discussion'}
                   </button>
                 )}
-                {needBeginDiscussion && currentPhase === 'idle' && (
-                  offerResume ? (
-                    <>
-                      <button
-                        type="button"
-                        style={{...ctaStyle, opacity: (audioReady && snapshotLoaded) ? 1 : 0.5}}
-                        onClick={() => handleStartSessionClick()}
-                        disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
-                      >
-                        {startSessionLoading ? 'Loading...' : 'Resume'}
-                      </button>
-                      <button
-                        type="button"
-                        style={{
-                          ...ctaStyle,
-                          background: '#374151',
-                          boxShadow: '0 2px 12px rgba(17,24,39,0.24)',
-                          opacity: (audioReady && snapshotLoaded) ? 1 : 0.5
-                        }}
-                        onClick={async () => {
-                          // Debounce: prevent concurrent executions from rapid taps
-                          if (startOverInProgressRef.current) return;
-                          startOverInProgressRef.current = true;
-                          try {
-                            // Stop any in-progress audio/video first so the engine is in a
-                            // clean state before the session restarts. Without this, a playing
-                            // video.play() from the unlock sequence can race with the fresh
-                            // playVideoWithRetry() call that comes with the next Begin click.
-                            try { audioEngineRef.current?.stop(); } catch {}
-                            try { await snapshotServiceRef.current?.deleteSnapshot?.(); } catch {}
-                            resumePhaseRef.current = null;
-                            setResumePhase(null);
-                            resetTranscriptState();
-                            try { timerServiceRef.current?.reset?.(); } catch {}
-                            // Don't auto-start - let user click Begin button
-                            setCurrentPhase('idle');
-                            setDiscussionState('idle');
-                          } finally {
-                            startOverInProgressRef.current = false;
-                          }
-                        }}
-                        disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
-                      >
-                        Start Over
-                      </button>
-                    </>
-                  ) : (
+                {needBeginDiscussion && currentPhase === 'idle' && offerResume && (
+                  <>
                     <button
                       type="button"
                       style={{...ctaStyle, opacity: (audioReady && snapshotLoaded) ? 1 : 0.5}}
                       onClick={() => handleStartSessionClick()}
                       disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
                     >
-                      {(audioReady && snapshotLoaded)
-                        ? (startSessionLoading ? 'Loading...' : 'Begin')
-                        : (!snapshotLoaded ? 'Loading session...' : 'Preparing audio...')
-                      }
+                      {startSessionLoading ? 'Loading...' : 'Resume'}
                     </button>
-                  )
+                    <button
+                      type="button"
+                      style={{
+                        ...ctaStyle,
+                        background: '#374151',
+                        boxShadow: '0 2px 12px rgba(17,24,39,0.24)',
+                        opacity: (audioReady && snapshotLoaded) ? 1 : 0.5
+                      }}
+                      onClick={async () => {
+                        // Debounce: prevent concurrent executions from rapid taps
+                        if (startOverInProgressRef.current) return;
+                        startOverInProgressRef.current = true;
+                        try {
+                          // Stop any in-progress audio/video first so the engine is in a
+                          // clean state before the session restarts.
+                          try { audioEngineRef.current?.stop(); } catch {}
+                          try { await snapshotServiceRef.current?.deleteSnapshot?.(); } catch {}
+                          resumePhaseRef.current = null;
+                          setResumePhase(null);
+                          resetTranscriptState();
+                          try { timerServiceRef.current?.reset?.(); } catch {}
+                          // Auto-start will re-fire once resumePhase clears
+                          setCurrentPhase('idle');
+                          setDiscussionState('idle');
+                        } finally {
+                          startOverInProgressRef.current = false;
+                        }
+                      }}
+                      disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
+                    >
+                      Start Over
+                    </button>
+                  </>
                 )}
                 {needBeginDiscussion && currentPhase === 'idle' && startSessionError ? (
                   <div style={{
