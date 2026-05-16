@@ -723,6 +723,7 @@ function SessionPageV2Inner() {
   const [discussionObjectivesList, setDiscussionObjectivesList] = useState([]);
   const [discussionCompletedIndices, setDiscussionCompletedIndices] = useState([]);
   const [showDiscussionObjectives, setShowDiscussionObjectives] = useState(false);
+  const [newlyCompletedDiscussionObj, setNewlyCompletedDiscussionObj] = useState(null); // {text, completedCount, totalCount}
   const [discussionSentenceInfo, setDiscussionSentenceInfo] = useState({ type: 'overview', index: 0, total: 0, text: '', waitingForNext: false });
   
   // Opening actions state
@@ -4717,6 +4718,14 @@ function SessionPageV2Inner() {
       }
     });
     
+    const unsubObjectiveComplete = eventBusRef.current.on('discussionObjectiveComplete', (data) => {
+      setNewlyCompletedDiscussionObj({
+        text:           data.objectiveText ?? null,
+        completedCount: data.completedCount,
+        totalCount:     data.totalCount,
+      });
+    });
+
     const unsubGreetingComplete = eventBusRef.current.on('greetingComplete', () => {
       addEvent('Overview complete — entering discussion chat');
       setDiscussionState('chatting');
@@ -4735,6 +4744,7 @@ function SessionPageV2Inner() {
       try { unsubSentenceChange?.(); } catch {}
       try { unsubGreetingPlaying?.(); } catch {}
       try { unsubGreetingComplete?.(); } catch {}
+      try { unsubObjectiveComplete?.(); } catch {}
       try { unsubDiscussionComplete?.(); } catch {}
 
       try { phase.destroy(); } catch {}
@@ -6138,6 +6148,13 @@ function SessionPageV2Inner() {
       handleStartSessionClick();
     }
   }, [audioReady, snapshotLoaded, currentPhase, resumePhase, handleStartSessionClick]);
+
+  // Auto-dismiss the objective complete toast after 3.5s
+  useEffect(() => {
+    if (!newlyCompletedDiscussionObj) return;
+    const t = setTimeout(() => setNewlyCompletedDiscussionObj(null), 3500);
+    return () => clearTimeout(t);
+  }, [newlyCompletedDiscussionObj]);
 
   const handleSessionTakeover = useCallback(async (pinCode) => {
     const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
@@ -8439,6 +8456,47 @@ function SessionPageV2Inner() {
           isTakenOver={isTakenOverNotification}
         />
       )}
+
+      {/* Discussion objective complete toast */}
+      {newlyCompletedDiscussionObj && (() => {
+        const { text, completedCount, totalCount } = newlyCompletedDiscussionObj;
+        return (
+          <div style={{
+            position: 'fixed',
+            bottom: 90, left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1999,
+            width: 'min(88vw, 340px)',
+            pointerEvents: 'none',
+          }}>
+            <div style={{
+              background: '#fff',
+              borderRadius: 16,
+              padding: '14px 18px',
+              boxShadow: '0 8px 32px rgba(199,68,46,0.18), 0 0 0 2px #c7442e',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: text ? 8 : 0 }}>
+                <span style={{ fontSize: 20 }}>✅</span>
+                <span style={{ color: '#c7442e', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>Goal Reached!</span>
+              </div>
+              {text && (
+                <p style={{ color: '#374151', fontSize: 13, lineHeight: 1.6, margin: '0 0 10px', fontStyle: 'italic' }}>
+                  &ldquo;{text}&rdquo;
+                </p>
+              )}
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                {Array.from({ length: totalCount }).map((_, i) => (
+                  <div key={i} style={{
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: i < completedCount ? '#c7442e' : '#e5e7eb',
+                    transition: 'background 0.3s',
+                  }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Discussion objectives overlay */}
       {showDiscussionObjectives && (

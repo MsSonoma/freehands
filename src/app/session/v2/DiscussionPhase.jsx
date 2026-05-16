@@ -204,6 +204,8 @@ export class DiscussionPhase {
           if (Array.isArray(data.newlyCompleted) && data.newlyCompleted.length) {
             newlyCompleted = data.newlyCompleted;
             this.#completedIndices = [...this.#completedIndices, ...newlyCompleted];
+            // Emit immediately so the badge updates before the reply audio plays
+            this.#emitStateChange();
           }
         }
       } catch (err) {
@@ -215,9 +217,10 @@ export class DiscussionPhase {
 
     if (newlyCompleted.length > 0) {
       this.#eventBus.emit('discussionObjectiveComplete', {
-        completedCount: this.#completedIndices.length,
-        totalCount:     this.#objectives.length,
+        completedCount:  this.#completedIndices.length,
+        totalCount:      this.#objectives.length,
         newlyCompleted,
+        objectiveText:   this.#objectives[newlyCompleted[0]] ?? null,
       });
     }
 
