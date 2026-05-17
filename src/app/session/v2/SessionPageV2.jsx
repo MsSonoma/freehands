@@ -1042,6 +1042,7 @@ function SessionPageV2Inner() {
   const [currentCaption, setCurrentCaption] = useState('');
   const [transcriptLines, setTranscriptLines] = useState([]);
   const transcriptLinesRef = useRef([]); // ref mirror so stale-closure handlers read the latest lines
+  const discussionCompletedIndicesRef = useRef([]); // ref mirror for completed objective indices
   const [activeCaptionIndex, setActiveCaptionIndex] = useState(-1);
   const [engineState, setEngineState] = useState('idle');
   const [isMuted, setIsMuted] = useState(false);
@@ -1122,7 +1123,7 @@ function SessionPageV2Inner() {
     }, 500);
   }, []);
 
-  const appendTranscriptLine = useCallback((line, { updateActive = false } = {}) => {
+  const appendTranscriptLine = useCallback((line, { updateActive = false, immediate = false } = {}) => {
     const text = String(line?.text || '').trim();
     if (!text) return;
     const role = line?.role === 'user' ? 'user' : 'assistant';
@@ -1132,7 +1133,7 @@ function SessionPageV2Inner() {
       if (updateActive || role === 'assistant') {
         setActiveCaptionIndex(nextActive);
       }
-      persistTranscriptState(next, nextActive);
+      persistTranscriptState(next, nextActive, { immediate });
       return next;
     });
   }, [activeCaptionIndex, persistTranscriptState]);
@@ -1208,6 +1209,8 @@ function SessionPageV2Inner() {
 
   // Keep transcriptLinesRef in sync so event-handler closures always see the latest lines.
   useEffect(() => { transcriptLinesRef.current = transcriptLines; }, [transcriptLines]);
+  // Keep discussionCompletedIndicesRef in sync.
+  useEffect(() => { discussionCompletedIndicesRef.current = discussionCompletedIndices; }, [discussionCompletedIndices]);
 
   // Broadcast lesson title to HeaderBar so the header matches V1 in mobile landscape
   useEffect(() => {
@@ -4697,9 +4700,16 @@ function SessionPageV2Inner() {
       if (Array.isArray(data.completedIndices)) setDiscussionCompletedIndices(data.completedIndices);
     });
 
-    // discussionMessage — append each chat turn to the transcript
+    // discussionMessage — append each chat turn to the transcript and snap immediately
     const unsubMessage = eventBusRef.current.on('discussionMessage', (data) => {
-      appendTranscriptLine({ text: data.text, role: data.role === 'user' ? 'user' : 'assistant' });
+      appendTranscriptLine({ text: data.text, role: data.role === 'user' ? 'user' : 'assistant' }, { immediate: true });
+      // Save completed-objective state alongside each sentence so resume is accurate
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.saveProgress('discussion-sentence', {
+          completedObjectiveIndices: discussionCompletedIndicesRef.current,
+          turnCount: (transcriptLinesRef.current?.length ?? 0) + 1,
+        }).catch(() => {});
+      }
     });
 
     // discussionSentenceChange — track current sentence for Repeat/Next UI
