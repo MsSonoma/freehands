@@ -57,17 +57,27 @@ function buildOutlinePrompt({ subject, grade, difficulty, preferences, context, 
   let preferencesText = ''
   
   if (preferences) {
-    if (preferences.banned_topics?.length > 0) {
-      preferencesText += `\n\nAVOID these topics: ${preferences.banned_topics.join(', ')}`
+    if (preferences.focus_subjects?.length > 0) {
+      preferencesText += `\n\nPREFER lessons about these subjects: ${preferences.focus_subjects.join(', ')}`
+    } else if (preferences.focus_topics?.length > 0) {
+      preferencesText += `\n\nPREFER lessons about these subjects: ${preferences.focus_topics.join(', ')}`
     }
-    if (preferences.banned_words?.length > 0) {
-      preferencesText += `\n\nDo NOT use these words: ${preferences.banned_words.join(', ')}`
-    }
-    if (preferences.focus_topics?.length > 0) {
-      preferencesText += `\n\nPREFER lessons about: ${preferences.focus_topics.join(', ')}`
+    if (preferences.focus_concepts?.length > 0) {
+      preferencesText += `\n\nEmphasize these concepts and all related synonyms/ideas: ${preferences.focus_concepts.join(', ')}`
     }
     if (preferences.focus_keywords?.length > 0) {
-      preferencesText += `\n\nEmphasize these concepts: ${preferences.focus_keywords.join(', ')}`
+      preferencesText += `\n\nUse these exact terms in the lesson: ${preferences.focus_keywords.join(', ')}`
+    }
+    if (preferences.banned_subjects?.length > 0) {
+      preferencesText += `\n\nDo NOT make the lesson about these subjects (regardless of how they are phrased): ${preferences.banned_subjects.join(', ')}`
+    } else if (preferences.banned_topics?.length > 0) {
+      preferencesText += `\n\nDo NOT make the lesson about these subjects (regardless of how they are phrased): ${preferences.banned_topics.join(', ')}`
+    }
+    if (preferences.banned_concepts?.length > 0) {
+      preferencesText += `\n\nAVOID these concepts and all related synonyms/ideas: ${preferences.banned_concepts.join(', ')}`
+    }
+    if (preferences.banned_words?.length > 0) {
+      preferencesText += `\n\nDo NOT use these exact terms/words anywhere in the lesson: ${preferences.banned_words.join(', ')}`
     }
   }
 

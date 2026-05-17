@@ -226,19 +226,22 @@ export default function CurriculumPreferencesOverlay({ learnerId, customSubjects
               label="Focus Concepts"
               value={fields.focusConcepts}
               onChange={v => setField('focusConcepts', v)}
-              placeholder="Concepts to emphasize (comma-separated)"
+              placeholder="Ideas to emphasize, including synonyms (e.g. courage, perseverance)"
+              hint="Broad ideas — the AI will cover this concept and related synonyms."
             />
             <Field
-              label="Focus Topics"
+              label="Focus Subjects"
               value={fields.focusTopics}
               onChange={v => setField('focusTopics', v)}
-              placeholder="Topics to emphasize (comma-separated)"
+              placeholder="Lesson subjects to include (e.g. photosynthesis, World War II)"
+              hint="Lesson subjects — not word-level filtering, just what the lesson should cover."
             />
             <Field
-              label="Focus Keywords"
+              label="Focus Terms"
               value={fields.focusKeywords}
               onChange={v => setField('focusKeywords', v)}
-              placeholder="Keywords to include (comma-separated)"
+              placeholder="Exact words to use (e.g. ecosystem, democracy)"
+              hint="Specific words — the AI will use these exact terms in the lesson."
             />
 
             {/* Bans section */}
@@ -248,19 +251,22 @@ export default function CurriculumPreferencesOverlay({ learnerId, customSubjects
               label="Banned Concepts"
               value={fields.bannedConcepts}
               onChange={v => setField('bannedConcepts', v)}
-              placeholder="Concepts to avoid (comma-separated)"
+              placeholder="Ideas to avoid, including synonyms (e.g. violence, death)"
+              hint="Broad ideas — the AI will avoid this concept and related synonyms."
             />
             <Field
-              label="Banned Topics"
+              label="Avoided Subjects"
               value={fields.bannedTopics}
               onChange={v => setField('bannedTopics', v)}
-              placeholder="Topics to exclude (comma-separated)"
+              placeholder="Lesson subjects to skip (e.g. evolution, war)"
+              hint="Lesson subjects — not word-level filtering, just what the lesson should not be about."
             />
             <Field
-              label="Banned Words"
+              label="Banned Terms"
               value={fields.bannedWords}
               onChange={v => setField('bannedWords', v)}
-              placeholder="Words to avoid (comma-separated)"
+              placeholder="Exact words to never use (e.g. kill, hate)"
+              hint="Specific words — the AI will never use these exact terms."
             />
           </div>
         )}
@@ -321,7 +327,7 @@ function SectionLabel({ label }) {
   )
 }
 
-function Field({ label, value, onChange, placeholder }) {
+function Field({ label, value, onChange, placeholder, hint }) {
   return (
     <div>
       <label style={{
@@ -329,10 +335,13 @@ function Field({ label, value, onChange, placeholder }) {
         fontSize: 13,
         fontWeight: 600,
         color: '#374151',
-        marginBottom: 4
+        marginBottom: 2
       }}>
         {label}
       </label>
+      {hint && (
+        <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 4px 0' }}>{hint}</p>
+      )}
       <input
         type="text"
         value={value}

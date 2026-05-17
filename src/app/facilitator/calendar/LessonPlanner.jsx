@@ -302,12 +302,12 @@ export default function LessonPlanner({
         const bannedTopics = [...globalBannedTopics, ...(subPrefs.bannedTopics || [])]
         const bannedWords = [...globalBannedWords, ...(subPrefs.bannedWords || [])]
         let additions = ''
-        if (focusConcepts.length) additions += `\n\nFocus Concepts (this subject): ${focusConcepts.join(', ')}`
-        if (focusTopics.length) additions += `\n\nFocus Topics (this subject): ${focusTopics.join(', ')}`
-        if (focusKeywords.length) additions += `\n\nFocus Keywords (this subject): ${focusKeywords.join(', ')}`
-        if (bannedConcepts.length) additions += `\n\nBanned Concepts (this subject): ${bannedConcepts.join(', ')}`
-        if (bannedTopics.length) additions += `\n\nBanned Topics (this subject): ${bannedTopics.join(', ')}`
-        if (bannedWords.length) additions += `\n\nBanned Words (this subject): ${bannedWords.join(', ')}`
+        if (focusConcepts.length) additions += `\n\nEmphasize these concepts and related synonyms/ideas (this subject): ${focusConcepts.join(', ')}`
+        if (focusTopics.length) additions += `\n\nPREFER lessons about these subjects (this subject): ${focusTopics.join(', ')}`
+        if (focusKeywords.length) additions += `\n\nUse these exact terms in the lesson (this subject): ${focusKeywords.join(', ')}`
+        if (bannedConcepts.length) additions += `\n\nAVOID these concepts and all related synonyms/ideas (this subject): ${bannedConcepts.join(', ')}`
+        if (bannedTopics.length) additions += `\n\nDo NOT make the lesson about these subjects (this subject): ${bannedTopics.join(', ')}`
+        if (bannedWords.length) additions += `\n\nDo NOT use these exact terms/words (this subject): ${bannedWords.join(', ')}`
         return additions
       }
 
