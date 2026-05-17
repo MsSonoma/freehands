@@ -57,6 +57,8 @@ export default function LessonMakerPage(){
   const [rewritingDescription, setRewritingDescription] = useState(false)
   const [rewritingVocab, setRewritingVocab] = useState(false)
   const [rewritingNotes, setRewritingNotes] = useState(false)
+  const [generatingDescriptionFromTitle, setGeneratingDescriptionFromTitle] = useState(false)
+  const [generatingNotesFromDescription, setGeneratingNotesFromDescription] = useState(false)
 
   // The quota API uses the service role key, immune to client-side RLS issues.
   // Use its plan_tier as the authoritative tier; fall back to useAccessControl's if higher.
@@ -251,6 +253,74 @@ export default function LessonMakerPage(){
       // Silent error handling
     } finally {
       setRewritingVocab(false)
+    }
+  }
+
+  const handleGenerateDescriptionFromTitle = async () => {
+    if (!form.title.trim()) return
+    setGeneratingDescriptionFromTitle(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: form.title,
+          context: '',
+          purpose: 'generate-description-from-title'
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.rewritten) {
+          setForm(f => ({ ...f, description: data.rewritten }))
+        }
+      }
+    } catch (err) {
+      // Silent error handling
+    } finally {
+      setGeneratingDescriptionFromTitle(false)
+    }
+  }
+
+  const handleGenerateNotesFromDescription = async () => {
+    if (!form.description.trim()) return
+    setGeneratingNotesFromDescription(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: form.description,
+          context: form.title || 'Lesson',
+          purpose: 'generate-notes-from-description'
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.rewritten) {
+          setForm(f => ({ ...f, notes: data.rewritten }))
+        }
+      }
+    } catch (err) {
+      // Silent error handling
+    } finally {
+      setGeneratingNotesFromDescription(false)
     }
   }
 
@@ -600,7 +670,17 @@ export default function LessonMakerPage(){
                   style={{ flex: 1, padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, minHeight: 88, fontSize: 14, background: '#f9fafb', color: '#111827', resize: 'vertical' }}
                   placeholder="What should the learner learn?"
                 />
-                <AIRewriteButton text={form.description} onRewrite={handleRewriteDescription} loading={rewritingDescription} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={handleGenerateDescriptionFromTitle}
+                    disabled={generatingDescriptionFromTitle || !form.title.trim()}
+                    style={{ background: generatingDescriptionFromTitle ? '#9ca3af' : '#0891b2', color: '#fff', border: 'none', borderRadius: 6, cursor: (generatingDescriptionFromTitle || !form.title.trim()) ? 'not-allowed' : 'pointer', fontWeight: 600, opacity: !form.title.trim() ? 0.5 : 1, whiteSpace: 'nowrap', padding: '4px 12px', fontSize: 12 }}
+                  >
+                    {generatingDescriptionFromTitle ? '✨ Generating...' : '✨ Generate from title'}
+                  </button>
+                  <AIRewriteButton text={form.description} onRewrite={handleRewriteDescription} loading={rewritingDescription} />
+                </div>
               </div>
             </label>
 
@@ -613,7 +693,17 @@ export default function LessonMakerPage(){
                   style={{ flex: 1, padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, minHeight: 108, fontSize: 14, background: '#f9fafb', color: '#111827', resize: 'vertical' }}
                   placeholder="Facilitator notes, examples, reminders..."
                 />
-                <AIRewriteButton text={form.notes} onRewrite={handleRewriteNotes} loading={rewritingNotes} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={handleGenerateNotesFromDescription}
+                    disabled={generatingNotesFromDescription || !form.description.trim()}
+                    style={{ background: generatingNotesFromDescription ? '#9ca3af' : '#0891b2', color: '#fff', border: 'none', borderRadius: 6, cursor: (generatingNotesFromDescription || !form.description.trim()) ? 'not-allowed' : 'pointer', fontWeight: 600, opacity: !form.description.trim() ? 0.5 : 1, whiteSpace: 'nowrap', padding: '4px 12px', fontSize: 12 }}
+                  >
+                    {generatingNotesFromDescription ? '✨ Generating...' : '✨ Generate from description'}
+                  </button>
+                  <AIRewriteButton text={form.notes} onRewrite={handleRewriteNotes} loading={rewritingNotes} />
+                </div>
               </div>
             </label>
 
