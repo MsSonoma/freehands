@@ -22,6 +22,7 @@ export default function LearnerTranscriptsPage({ params }) {
   const [error, setError] = useState('');
   const [learnerName, setLearnerName] = useState('');
   const [activeTab, setActiveTab] = useState('sonoma');
+  const [sortOrder, setSortOrder] = useState('date'); // 'date' | 'name'
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +78,9 @@ export default function LearnerTranscriptsPage({ params }) {
   }, [pinChecked, learnerId]);
 
   const itemsForTab = allItems.filter(it => it.teacher === activeTab);
+  const sortedItemsForTab = sortOrder === 'name'
+    ? itemsForTab.slice().sort((a, b) => (a.lessonId || '').localeCompare(b.lessonId || ''))
+    : itemsForTab; // API returns newest-first
 
   const cardStyle = {
     border: '1px solid #e5e7eb',
@@ -148,8 +152,29 @@ export default function LearnerTranscriptsPage({ params }) {
             })}
           </div>
 
+          {/* Sort controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 13, color: '#6b7280' }}>Sort:</span>
+            {[{ key: 'date', label: 'Newest first' }, { key: 'name', label: 'A → Z' }].map(opt => (
+              <button
+                key={opt.key}
+                onClick={() => setSortOrder(opt.key)}
+                style={{
+                  padding: '4px 11px',
+                  border: `1.5px solid ${sortOrder === opt.key ? '#111' : '#d1d5db'}`,
+                  borderRadius: 6,
+                  background: sortOrder === opt.key ? '#111' : '#fff',
+                  color: sortOrder === opt.key ? '#fff' : '#374151',
+                  fontSize: 13,
+                  fontWeight: sortOrder === opt.key ? 600 : 400,
+                  cursor: 'pointer',
+                }}
+              >{opt.label}</button>
+            ))}
+          </div>
+
           {/* Transcript list for selected teacher */}
-          {itemsForTab.length === 0 ? (
+          {sortedItemsForTab.length === 0 ? (
             <div style={{ padding: '32px 16px', textAlign: 'center', color: '#6b7280', border: '1px dashed #e5e7eb', borderRadius: 8 }}>
               <div style={{ fontSize: 36, marginBottom: 8 }}>{TEACHERS.find(t => t.key === activeTab)?.emoji}</div>
               <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>No transcripts yet</div>
@@ -157,7 +182,7 @@ export default function LearnerTranscriptsPage({ params }) {
             </div>
           ) : (
             <div style={{ display: 'grid', gap: 10 }}>
-              {itemsForTab.map((it, i) => (
+              {sortedItemsForTab.map((it, i) => (
                 <div key={it.path || i} style={cardStyle}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
