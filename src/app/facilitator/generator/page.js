@@ -59,6 +59,7 @@ export default function LessonMakerPage(){
   const [rewritingNotes, setRewritingNotes] = useState(false)
   const [generatingDescriptionFromTitle, setGeneratingDescriptionFromTitle] = useState(false)
   const [generatingNotesFromDescription, setGeneratingNotesFromDescription] = useState(false)
+  const [generatingVocabFromDescription, setGeneratingVocabFromDescription] = useState(false)
 
   // The quota API uses the service role key, immune to client-side RLS issues.
   // Use its plan_tier as the authoritative tier; fall back to useAccessControl's if higher.
@@ -219,6 +220,40 @@ export default function LessonMakerPage(){
       // Silent error handling
     } finally {
       setRewritingDescription(false)
+    }
+  }
+
+  const handleGenerateVocabFromDescription = async () => {
+    if (!form.description.trim()) return
+    setGeneratingVocabFromDescription(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: form.description,
+          context: form.title || 'Lesson',
+          purpose: 'generate-vocab-from-description'
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.rewritten) {
+          setForm(f => ({ ...f, vocab: data.rewritten }))
+        }
+      }
+    } catch (err) {
+      // Silent error handling
+    } finally {
+      setGeneratingVocabFromDescription(false)
     }
   }
 
@@ -719,7 +754,17 @@ export default function LessonMakerPage(){
                   style={{ flex: 1, padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, minHeight: 80, fontSize: 14, background: '#f9fafb', color: '#111827', resize: 'vertical' }}
                   placeholder="Comma-separated terms, or term: definition pairs"
                 />
-                <AIRewriteButton text={form.vocab} onRewrite={handleRewriteVocab} loading={rewritingVocab} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={handleGenerateVocabFromDescription}
+                    disabled={generatingVocabFromDescription || !form.description.trim()}
+                    style={{ background: generatingVocabFromDescription ? '#9ca3af' : '#0891b2', color: '#fff', border: 'none', borderRadius: 6, cursor: (generatingVocabFromDescription || !form.description.trim()) ? 'not-allowed' : 'pointer', fontWeight: 600, opacity: !form.description.trim() ? 0.5 : 1, whiteSpace: 'nowrap', padding: '4px 12px', fontSize: 12 }}
+                  >
+                    {generatingVocabFromDescription ? '✨ Generating...' : '✨ Generate from description'}
+                  </button>
+                  <AIRewriteButton text={form.vocab} onRewrite={handleRewriteVocab} loading={rewritingVocab} />
+                </div>
               </div>
             </label>
           </div>

@@ -84,6 +84,21 @@ Requirements:
 
 Improved prompt (emphasize visual-only elements):`
       },
+      'generate-vocab-from-description': {
+        system: 'You are an expert elementary school educator and curriculum developer.',
+        user: `Based on this lesson description, suggest relevant vocabulary terms with definitions.
+
+${context ? `Lesson title: ${context}` : ''}
+Lesson description: ${text}
+
+Requirements:
+- 4-6 key vocabulary terms
+- Each on its own line in the format: term: definition
+- Definitions should be simple and age-appropriate for elementary students
+- Focus on terms central to understanding the lesson
+
+Vocabulary list:`
+      },
       'generate-description-from-title': {
         system: 'You are an expert educational content writer for elementary school lessons.',
         user: `Write a clear, engaging lesson description (blurb) for a lesson titled: "${text}"
