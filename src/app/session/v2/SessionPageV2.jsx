@@ -97,8 +97,8 @@ const SESSION_TUTORIAL_STEPS = [
   },
   {
     icon: '\ud83c\udfaf',
-    title: 'Phase Targets',
-    body: 'Each phase has a target number of questions, set by your teacher. Hit your targets to complete the lesson and earn a medal!',
+    title: 'Questions per Phase',
+    body: 'Each phase has a set number of questions, configured by your teacher. Complete them all to finish the lesson and earn a medal!',
   },
 ];
 
@@ -1768,7 +1768,7 @@ function SessionPageV2Inner() {
 
     const raw = [fromFlat, fromNested, fromLegacy, fromOverride].find(v => Number.isFinite(v) && v > 0) ?? null;
     if (!Number.isFinite(raw) || raw <= 0) {
-      setLearnerError(`Missing learner target for ${phaseName}. Update the learner targets and retry.`);
+      setLearnerError(`Missing question count for ${phaseName}. Update Questions per Phase and retry.`);
       setError(null);
       addEvent(`⚠️ Missing learner target for ${phaseName}`);
       return null;

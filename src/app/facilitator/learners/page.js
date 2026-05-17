@@ -403,7 +403,7 @@ export default function LearnersPage() {
 											Grade {learner.grade || 'K'} • {learner.humor_level || 'calm'}
 										</div>
 										<div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
-											{learner.golden_keys || 0} 🔑 • Targets: {learner.targets?.comprehension ?? learner.comprehension ?? '–'}-{learner.targets?.test ?? learner.test ?? '–'}
+											{learner.golden_keys || 0} 🔑 • Questions/phase: {learner.targets?.comprehension ?? learner.comprehension ?? '–'}-{learner.targets?.test ?? learner.test ?? '–'}
 										</div>
 									</div>
 
@@ -447,7 +447,7 @@ export default function LearnersPage() {
 										e.stopPropagation();
 										setEditingTargets(learner);
 									}}
-									title="Learning Targets"
+									title="Questions per Phase"
 									style={{
 										border: 'none',
 										background: '#3b82f6',
@@ -462,7 +462,7 @@ export default function LearnersPage() {
 									}}
 								>
 									<span>🎯</span>
-									<span style={{ display: 'none' }} className="button-text-tablet">Targets</span>
+									<span style={{ display: 'none' }} className="button-text-tablet">Questions</span>
 								</button>
 								<button
 									onClick={(e) => {
@@ -610,7 +610,7 @@ export default function LearnersPage() {
 			benefits={[
 				'Create and manage multiple learners',
 				'Track progress and performance across lessons',
-				'Customize grade levels and learning targets',
+				'Customize grade levels and questions per phase',
 				'Sync learner data across all your devices'
 			]}
 		/>

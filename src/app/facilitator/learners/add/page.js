@@ -225,10 +225,10 @@ export default function AddLearnerPage() {
 				<OnboardingBanner
 					step={1}
 					title="Create your first learner"
-					message="Give your learner a name and grade level. Targets and timers are already set to smart defaults — adjust them any time from the Learners page."
+					message="Give your learner a name and grade level. Questions per phase and timers are already set to smart defaults — adjust them any time from the Learners page."
 					action={
 						<button type="button" onClick={() => setSettingsTipOpen((o) => !o)} style={{ background:'none', border:'none', color:'#6366f1', fontSize:13, fontWeight:600, cursor:'pointer', padding:0 }}>
-							{settingsTipOpen ? '▲ Hide' : '▼ Show'} settings, targets &amp; timers
+							{settingsTipOpen ? '▲ Hide' : '▼ Show'} settings, questions &amp; timers
 						</button>
 					}
 				/>
@@ -236,7 +236,7 @@ export default function AddLearnerPage() {
 
 			{showOnboarding && settingsTipOpen && (
 				<div style={{ marginBottom:16, padding:'14px 16px', background:'#f9fafb', border:'1px solid #e5e7eb', borderRadius:10, fontSize:13, color:'#374151', lineHeight:1.6 }}>
-					<p style={{ margin:'0 0 8px', fontWeight:600 }}>🎯 Targets — how many questions per phase</p>
+					<p style={{ margin:'0 0 8px', fontWeight:600 }}>🎯 Questions per Phase</p>
 					<p style={{ margin:'0 0 10px' }}>Start at 3 questions each and increase as your learner builds confidence.</p>
 					<p style={{ margin:'0 0 8px', fontWeight:600 }}>⏱️ Timers — structured work and play</p>
 					<p style={{ margin:'0 0 10px' }}>Work and play timers keep sessions on track. Fully configurable per learner from the Learners page.</p>

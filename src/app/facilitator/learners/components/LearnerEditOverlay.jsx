@@ -139,7 +139,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 
 	const ALL_TABS = [
 		{ id: 'basic', label: '👤 Basic' },
-		{ id: 'targets', label: '🎯 Targets' },
+		{ id: 'targets', label: '🎯 Questions per Phase' },
 		{ id: 'ai-features', label: '🤖 AI Features' },
 		{ id: 'timers', label: '⏱️ Timers' },
 	];
@@ -402,7 +402,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const getTitle = () => {
 		switch (activeTab) {
 			case 'basic': return '👤 Basic Info';
-			case 'targets': return '🎯 Learning Targets';
+			case 'targets': return '🎯 Questions per Phase';
 			case 'ai-features': return '🤖 AI Features';
 			case 'timers': return '⏱️ Timers';
 			default: return 'Edit Learner';
@@ -1305,7 +1305,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 									}}>
 										{activeTab === 'targets' && (
 											<>
-												<p><strong>Learning Targets</strong></p>
+												<p><strong>Questions per Phase</strong></p>
 												<p style={{ marginTop: 8 }}>Set how many questions appear in each lesson phase (Comprehension, Exercise, Worksheet, Test).</p>
 												<p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>Higher numbers = more practice, longer lessons.</p>
 											</>
