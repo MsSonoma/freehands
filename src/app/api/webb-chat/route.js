@@ -34,7 +34,7 @@ function buildResearchSystem(lesson, targetObjective, media) {
   return lines.join('\n')
 }
 
-function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false) {
+function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, needSentenceForObj = null) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
@@ -93,6 +93,12 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
     )
   }
 
+  if (needSentenceForObj) {
+    lines.push(
+      `\nIMPORTANT: The student just showed they understand "${needSentenceForObj}" but said it as a fragment or single word, not a full sentence. Warmly acknowledge that they've got the right idea, then ask them to say it again in a complete sentence — their own words, full sentence — because that's what goes in their essay. Do this naturally, not like a correction.`,
+    )
+  }
+
   if (assessmentPush) {
     lines.push(
       `\nYou just finished showing the student key moments from the video. Now is the time to draw out their understanding.`,
@@ -122,7 +128,7 @@ function buildDirectTeachSystem(lesson, targetObjective) {
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '' } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', needSentenceForObj = null } = await req.json()
 
     // ── Seek request: "show me the part where..." ─────────────────────────
     // Client sends { seekRequest: { momentList }, messages } instead of going through
@@ -212,7 +218,7 @@ export async function POST(req) {
     }
 
     const oaiMessages = [
-      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet) },
+      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, needSentenceForObj) },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 

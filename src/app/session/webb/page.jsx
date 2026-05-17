@@ -228,7 +228,6 @@ export default function WebbPage() {
   const noVideoMsgSentRef  = useRef(false) // true once the "no relevant video" message has been said for the current lesson
   const videosWatchedRef   = useRef(0)    // count of times the video overlay was opened this lesson (for per-objectives rate limit)
   const essayAbortRef      = useRef(null)  // AbortController for in-flight essay generation
-  const awaitingSentenceRef = useRef(null) // {objIdx} — objective earned but awaiting sentence restatement
   const articleIframeRef   = useRef(null)
   // Media overlay position + fullscreen
   const [mediaPos, setMediaPos]               = useState('video') // 'video'|'chat'
@@ -1023,7 +1022,6 @@ export default function WebbPage() {
     setExpandedObj(null)
     setEssayMode(false)
     setEssay(null)
-    awaitingSentenceRef.current = null
     webbSessionStartRef.current = new Date().toISOString()
 
     // Get Mrs. Webb's opening greeting
@@ -1064,47 +1062,7 @@ export default function WebbPage() {
       return
     }
 
-    // ── Sentence restatement gate ─────────────────────────────────────────
-    // An objective was earned but the answer wasn't a complete sentence.
-    // Hold the objective for up to 2 more tries, then release so the
-    // conversation can continue (the objective stays uncompleted and can
-    // be earned again naturally in normal chat).
-    if (awaitingSentenceRef.current !== null) {
-      const { objIdx, attempts = 0 } = awaitingSentenceRef.current
-      setChatLoading(true)
-      try {
-        const res = await fetch('/api/webb-objectives', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'check-sentence', text }),
-        })
-        const data = await res.json()
-        if (data.isSentence) {
-          awaitingSentenceRef.current = null
-          setObjResponses(prev => ({ ...prev, [objIdx]: text }))
-          setCompletedObj(prev => {
-            if (prev.includes(objIdx)) return prev
-            const next = [...prev, objIdx]
-            setNewlyCompletedObj({ idx: objIdx, text: objectives[objIdx] })
-            return next
-          })
-          addMsg("Perfect — that's a great sentence! I'm counting that objective.")
-        } else if (attempts >= 1) {
-          // Two strikes — release the gate, let normal conversation resume.
-          awaitingSentenceRef.current = null
-          addMsg("No worries — let's keep going! You can always come back to that one. Just tell me more about it in a sentence whenever you're ready and I'll count it.")
-        } else {
-          awaitingSentenceRef.current = { objIdx, attempts: attempts + 1 }
-          addMsg("Almost! I need a full sentence — something like \"The [topic] [does something].\" Try again!")
-        }
-      } catch {
-        // API error — release the gate so the conversation isn't permanently stuck.
-        awaitingSentenceRef.current = null
-        addMsg("Almost! Try saying that in a full sentence. You've got this!")
-      }
-      setChatLoading(false)
-      return
-    }
+
 
     // ── UI FAQ intercept ──────────────────────────────────────────────────
     // Phase 2: action yes/no ("Want me to open it?")
@@ -1239,6 +1197,7 @@ export default function WebbPage() {
       // (i.e. already-completed objectives are excluded) so Mrs. Webb's very
       // next question targets the NEXT incomplete goal, not the one just shown.
       let freshCompleted = [...completedObj]
+      let needSentenceForObj = null
       if (objectives.length && completedObj.length < objectives.length) {
         try {
           const checkRes = await fetch('/api/webb-objectives', {
@@ -1258,19 +1217,17 @@ export default function WebbPage() {
             const qt = checkData.qualifyingText || {}
             const sq = checkData.sentenceQuality || {}
             const firstNew = newly.find(i => !completedObj.includes(i))
-            // If AI flagged the qualifying answer as not a complete sentence, hold the
-            // objective and ask the student to restate before crediting it.
             if (firstNew !== undefined && sq[firstNew] === false) {
-              awaitingSentenceRef.current = { objIdx: firstNew }
-              setChatLoading(false)
-              addMsg("You've got the right idea! I need you to say that in a complete sentence though — that's what goes in your essay. Give it a try!")
-              return
-            }
-            freshCompleted = [...new Set([...completedObj, ...newly])]
-            setObjResponses(prev => ({ ...prev, ...qt }))
-            setCompletedObj(freshCompleted)
-            if (firstNew !== undefined) {
-              setNewlyCompletedObj({ idx: firstNew, text: objectives[firstNew] })
+              // Answer is correct but not a sentence — don't credit yet.
+              // Pass a hint to webb-chat so Mrs. Webb asks naturally in her reply.
+              needSentenceForObj = objectives[firstNew]
+            } else {
+              freshCompleted = [...new Set([...completedObj, ...newly])]
+              setObjResponses(prev => ({ ...prev, ...qt }))
+              setCompletedObj(freshCompleted)
+              if (firstNew !== undefined) {
+                setNewlyCompletedObj({ idx: firstNew, text: objectives[firstNew] })
+              }
             }
           }
         } catch { /* fail silently — chat still proceeds */ }
@@ -1289,6 +1246,7 @@ export default function WebbPage() {
           },
           remainingObjectives: objectives.filter((_, i) => !freshCompleted.includes(i)),
           allObjectivesMet: objectives.length > 0 && freshCompleted.length >= objectives.length,
+          needSentenceForObj,
         }),
       })
       const data = await res.json()
