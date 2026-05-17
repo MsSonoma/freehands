@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { getPinPrefsLocal, setPinPrefsLocal } from '@/app/lib/pinGate'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
+import { useOnboarding } from '@/app/hooks/useOnboarding'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import SettingsOverlay from '@/components/SettingsOverlay'
 import { useRouter } from 'next/navigation'
@@ -10,6 +11,7 @@ import { useRouter } from 'next/navigation'
 export default function FacilitatorAccountPage() {
   const router = useRouter()
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
+  const { startOnboarding } = useOnboarding()
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
   
@@ -306,6 +308,29 @@ export default function FacilitatorAccountPage() {
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Plan</div>
                 <div style={{ fontSize: 13, color: '#6b7280' }}>Manage subscription and billing</div>
+              </div>
+            </div>
+
+            {/* Take the Tour */}
+            <div
+              onClick={() => {
+                startOnboarding()
+                router.push('/facilitator/learners/add?onboarding=1')
+              }}
+              style={cardStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+                e.currentTarget.style.borderColor = '#9ca3af'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
+                e.currentTarget.style.borderColor = '#e5e7eb'
+              }}
+            >
+              <div style={iconStyle}>🚀</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#374151', marginBottom: 2 }}>Take the Tour</div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Re-run the getting started walkthrough</div>
               </div>
             </div>
 
