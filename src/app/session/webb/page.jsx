@@ -155,6 +155,12 @@ function isNo(text) {
   return /^\s*(no|nope|nah|never ?mind|not now|don'?t|that'?s ok|i'?m good|no thanks|no thank you|skip it|forget it|it'?s fine|cancel|nvm|👎)\b/i.test(text)
 }
 
+// Returns true when text looks like a complete sentence (≥ 5 words).
+// Used to enforce sentence-quality answers before crediting an objective.
+function isCompleteSentence(text) {
+  return (text || '').trim().split(/\s+/).filter(Boolean).length >= 5
+}
+
 // ── Root page ─────────────────────────────────────────────────────────────────
 export default function WebbPage() {
   const router = useRouter()
@@ -228,6 +234,7 @@ export default function WebbPage() {
   const noVideoMsgSentRef  = useRef(false) // true once the "no relevant video" message has been said for the current lesson
   const videosWatchedRef   = useRef(0)    // count of times the video overlay was opened this lesson (for per-objectives rate limit)
   const essayAbortRef      = useRef(null)  // AbortController for in-flight essay generation
+  const awaitingSentenceRef = useRef(null) // {objIdx} — objective earned but awaiting sentence restatement
   const articleIframeRef   = useRef(null)
   // Media overlay position + fullscreen
   const [mediaPos, setMediaPos]               = useState('video') // 'video'|'chat'
@@ -1022,6 +1029,7 @@ export default function WebbPage() {
     setExpandedObj(null)
     setEssayMode(false)
     setEssay(null)
+    awaitingSentenceRef.current = null
     webbSessionStartRef.current = new Date().toISOString()
 
     // Get Mrs. Webb's opening greeting
@@ -1059,6 +1067,27 @@ export default function WebbPage() {
     // explanation about YouTube being blocked by Screen Time / parental controls.
     if (detectVideoTrouble(text)) {
       addMsg(VIDEO_TROUBLE_MSG)
+      return
+    }
+
+    // ── Sentence restatement gate ─────────────────────────────────────────
+    // An objective was earned but the answer wasn't a complete sentence.
+    // Hold the objective until the student restates in a full sentence.
+    if (awaitingSentenceRef.current !== null) {
+      const { objIdx } = awaitingSentenceRef.current
+      if (isCompleteSentence(text)) {
+        awaitingSentenceRef.current = null
+        setObjResponses(prev => ({ ...prev, [objIdx]: text }))
+        setCompletedObj(prev => {
+          if (prev.includes(objIdx)) return prev
+          const next = [...prev, objIdx]
+          setNewlyCompletedObj({ idx: objIdx, text: objectives[objIdx] })
+          return next
+        })
+        addMsg("Perfect — that's a great sentence! I'm counting that objective.")
+      } else {
+        addMsg("Almost! I need a full sentence — something like \"The [topic] [does something].\" Try again!")
+      }
       return
     }
 
@@ -1211,10 +1240,19 @@ export default function WebbPage() {
           const checkData = await checkRes.json()
           const newly = checkData.newlyCompleted || []
           if (newly.length) {
-            freshCompleted = [...new Set([...completedObj, ...newly])]
-            setObjResponses(prev => ({ ...prev, ...(checkData.qualifyingText || {}) }))
-            setCompletedObj(freshCompleted)
+            const qt = checkData.qualifyingText || {}
             const firstNew = newly.find(i => !completedObj.includes(i))
+            // If the qualifying answer isn't a complete sentence, hold the objective
+            // and ask the student to restate before crediting it.
+            if (firstNew !== undefined && !isCompleteSentence(qt[firstNew] || '')) {
+              awaitingSentenceRef.current = { objIdx: firstNew }
+              setChatLoading(false)
+              addMsg("You've got the right idea! I need you to say that in a complete sentence though — that's what goes in your essay. Give it a try!")
+              return
+            }
+            freshCompleted = [...new Set([...completedObj, ...newly])]
+            setObjResponses(prev => ({ ...prev, ...qt }))
+            setCompletedObj(freshCompleted)
             if (firstNew !== undefined) {
               setNewlyCompletedObj({ idx: firstNew, text: objectives[firstNew] })
             }
