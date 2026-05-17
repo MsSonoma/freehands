@@ -74,6 +74,18 @@ export class DiscussionPhase {
 
     if (!this.#audioEngine) throw new Error('DiscussionPhase requires audioEngine');
     if (!this.#eventBus)    throw new Error('DiscussionPhase requires eventBus');
+
+    // Resume: pre-populate chat history and completed indices so #startPlaying() skips the overview
+    const resumeHistory = Array.isArray(options.resumeHistory) ? options.resumeHistory : [];
+    if (resumeHistory.length > 0) {
+      this.#chatHistory = resumeHistory.map(l => ({
+        role:    l.role === 'user' ? 'user' : 'assistant',
+        content: String(l.content || l.text || ''),
+      }));
+      this.#completedIndices = Array.isArray(options.resumeCompletedIndices)
+        ? [...options.resumeCompletedIndices]
+        : [];
+    }
   }
 
   // ── Getters ────────────────────────────────────────────────────────────────
@@ -378,7 +390,19 @@ export class DiscussionPhase {
   }
 
   #startPlaying() {
-    if (this.#destroyed || this.#overviewSentences.length === 0) return;
+    if (this.#destroyed) return;
+
+    // Resume: conversation history pre-loaded — skip the overview and re-enter chatting directly
+    if (this.#chatHistory.length > 0) {
+      this.#state = 'chatting';
+      this.#emitStateChange();
+      // Emit greetingPlaying so SessionPageV2 starts/validates the work timer
+      this.#eventBus.emit('greetingPlaying', { greetingText: '' });
+      this.#eventBus.emit('greetingComplete', {});
+      return;
+    }
+
+    if (this.#overviewSentences.length === 0) return;
     this.#currentSentenceKey = 'ov:0';
     this.#state = 'playing-overview';
     this.#emitStateChange();

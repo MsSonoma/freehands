@@ -2039,6 +2039,12 @@ function SessionPageV2Inner() {
             setActiveCaptionIndex(nextActive);
             const lastAssistant = [...normalized].reverse().find((l) => l.role !== 'user');
             setCurrentCaption(lastAssistant?.text || '');
+            // Restore discussion objective state so resume has the right badge/history
+            const savedObjIndices = snapshot?.phaseData?.discussion?.completedObjectiveIndices;
+            if (Array.isArray(savedObjIndices) && savedObjIndices.length > 0) {
+              setDiscussionCompletedIndices(savedObjIndices);
+              discussionCompletedIndicesRef.current = savedObjIndices;
+            }
           } else {
             resetTranscriptState({ persist: true });
           }
@@ -4666,6 +4672,13 @@ function SessionPageV2Inner() {
       lessonTitle: lessonTitle,
       lessonData: lessonData,
       grade: (learnerProfile?.grade || lessonData?.grade || '').toString(),
+      // Resume: pass saved conversation history so the overview is skipped
+      resumeHistory: (resumePhaseRef.current === 'discussion' && transcriptLinesRef.current.length > 0)
+        ? transcriptLinesRef.current.map(l => ({ role: l.role, content: l.text }))
+        : [],
+      resumeCompletedIndices: (resumePhaseRef.current === 'discussion')
+        ? discussionCompletedIndicesRef.current
+        : [],
     });
     
 
