@@ -26,8 +26,8 @@ export async function buildLearnerTranscript(learner, medals) {
   // Target goals
   lines.push(``);
   lines.push(`QUESTIONS PER PHASE:`);
-  lines.push(`- Comprehension: ${learner.comprehension ?? learner.targets?.comprehension ?? 'Not set'}`);
   lines.push(`- Exercise: ${learner.exercise ?? learner.targets?.exercise ?? 'Not set'}`);
+
   lines.push(`- Worksheet: ${learner.worksheet ?? learner.targets?.worksheet ?? 'Not set'}`);
   lines.push(`- Test: ${learner.test ?? learner.targets?.test ?? 'Not set'}`);
   

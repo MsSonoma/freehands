@@ -285,15 +285,6 @@ export default function AddLearnerPage() {
 				</label>
 
 				<label style={{ display: 'grid', gap: 6 }}>
-					<span>Comprehension Target</span>
-					<select value={comprehension} onChange={(e) => setComprehension(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
-						{targetOptions.map((n) => (
-							<option key={'c'+n} value={n}>{n}</option>
-						))}
-					</select>
-				</label>
-
-				<label style={{ display: 'grid', gap: 6 }}>
 					<span>Exercise Target</span>
 					<select value={exercise} onChange={(e) => setExercise(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
 						{targetOptions.map((n) => (

@@ -403,7 +403,7 @@ export default function LearnersPage() {
 											Grade {learner.grade || 'K'} • {learner.humor_level || 'calm'}
 										</div>
 										<div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
-											{learner.golden_keys || 0} 🔑 • Questions/phase: {learner.targets?.comprehension ?? learner.comprehension ?? '–'}-{learner.targets?.test ?? learner.test ?? '–'}
+											{learner.golden_keys || 0} 🔑 • Questions/phase: {learner.targets?.exercise ?? learner.exercise ?? '–'}-{learner.targets?.test ?? learner.test ?? '–'}
 										</div>
 									</div>
 

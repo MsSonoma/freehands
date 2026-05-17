@@ -601,15 +601,6 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151', cursor: playTimersEnabled ? 'pointer' : 'not-allowed' }}>
 											<input
 												type="checkbox"
-												checked={playComprehensionEnabled}
-												disabled={!playTimersEnabled || savingPlayPortions || saving}
-												onChange={(e) => handleTogglePlayPortion('play_comprehension_enabled', e.target.checked)}
-											/>
-											<span>Comprehension play portion</span>
-										</label>
-										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151', cursor: playTimersEnabled ? 'pointer' : 'not-allowed' }}>
-											<input
-												type="checkbox"
 												checked={playExerciseEnabled}
 												disabled={!playTimersEnabled || savingPlayPortions || saving}
 												onChange={(e) => handleTogglePlayPortion('play_exercise_enabled', e.target.checked)}
@@ -998,7 +989,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 								Click phase names for details.
 							</p>
 						</div>						{/* Phase timers */}
-						{['discussion', 'comprehension', 'exercise', 'worksheet', 'test'].map((phase) => (
+						{['discussion', 'exercise', 'worksheet', 'test'].map((phase) => (
 							<div key={phase} style={{ marginBottom: 12 }}>
 								{/* Phase header with tooltip */}
 								<div style={{ position: 'relative', marginBottom: 6 }}>
@@ -1306,7 +1297,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 										{activeTab === 'targets' && (
 											<>
 												<p><strong>Questions per Phase</strong></p>
-												<p style={{ marginTop: 8 }}>Set how many questions appear in each lesson phase (Comprehension, Exercise, Worksheet, Test).</p>
+												<p style={{ marginTop: 8 }}>Set how many questions appear in each lesson phase (Exercise, Worksheet, Test).</p>
 												<p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>Higher numbers = more practice, longer lessons.</p>
 											</>
 										)}
