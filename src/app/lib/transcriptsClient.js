@@ -33,20 +33,66 @@ const INVALID_LINE_PATTERNS = [
   /"exp"\s*claim\s*timestamp\s*check\s*failed/i,
 ];
 
+// Mirror the same pre-processing applied in the TTS API routes so transcript text
+// matches what is actually spoken rather than the raw lesson JSON.
+function _normalizeFractionsForSpeech(text) {
+  if (!text) return text;
+  const ordinals = {
+    2: ['half', 'halves'], 3: ['third', 'thirds'], 4: ['fourth', 'fourths'],
+    5: ['fifth', 'fifths'], 6: ['sixth', 'sixths'], 7: ['seventh', 'sevenths'],
+    8: ['eighth', 'eighths'], 9: ['ninth', 'ninths'], 10: ['tenth', 'tenths'],
+    12: ['twelfth', 'twelfths'], 16: ['sixteenth', 'sixteenths'], 100: ['hundredth', 'hundredths'],
+  };
+  const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+    'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+  return String(text).replace(/\b(\d{1,2})\/(\d{1,3})\b/g, (match, ns, ds) => {
+    const n = parseInt(ns, 10), d = parseInt(ds, 10);
+    if (n >= d || !ordinals[d]) return match;
+    const nWord = n <= 20 ? ones[n] : ns;
+    return `${nWord} ${n === 1 ? ordinals[d][0] : ordinals[d][1]}`;
+  });
+}
+
+function _stripForTranscript(rawText) {
+  return String(rawText)
+    // Normalize typographic apostrophes/quotes to ASCII (mirrors TTS route)
+    .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+    // Strip emoji and stray symbols
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+    .replace(/[\u{2600}-\u{27BF}]/gu, '')
+    .replace(/[\u{2300}-\u{23FF}]/gu, '')
+    .replace(/[\u{2B00}-\u{2BFF}]/gu, '')
+    .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
+    .replace(/\u{20E3}/gu, '')
+    // Strip markdown formatting (* _ `)
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    // Convert numeric fractions to spoken form
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function normalizeTranscriptText(text) {
+  return _normalizeFractionsForSpeech(_stripForTranscript(text));
+}
+
 function sanitizeTranscriptLines(lines) {
   if (!Array.isArray(lines)) return [];
   return lines
     .map((entry) => {
       if (!entry) return null;
       if (typeof entry === 'string') {
-        const text = entry.replace(/\s+/g, ' ').trim();
+        const text = normalizeTranscriptText(entry.replace(/\s+/g, ' ').trim());
         if (!text) return null;
         if (INVALID_LINE_PATTERNS.some((re) => re.test(text))) return null;
         return { role: 'assistant', text };
       }
       if (typeof entry === 'object') {
         const rawText = typeof entry.text === 'string' ? entry.text : '';
-        const text = rawText.replace(/\s+/g, ' ').trim();
+        const text = normalizeTranscriptText(rawText.replace(/\s+/g, ' ').trim());
         if (!text) return null;
         if (INVALID_LINE_PATTERNS.some((re) => re.test(text))) return null;
         const role = entry.role === 'user' ? 'user' : 'assistant';
