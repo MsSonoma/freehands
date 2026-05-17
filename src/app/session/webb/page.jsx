@@ -1066,9 +1066,11 @@ export default function WebbPage() {
 
     // ── Sentence restatement gate ─────────────────────────────────────────
     // An objective was earned but the answer wasn't a complete sentence.
-    // Hold the objective until the student restates in a full sentence.
+    // Hold the objective for up to 2 more tries, then release so the
+    // conversation can continue (the objective stays uncompleted and can
+    // be earned again naturally in normal chat).
     if (awaitingSentenceRef.current !== null) {
-      const { objIdx } = awaitingSentenceRef.current
+      const { objIdx, attempts = 0 } = awaitingSentenceRef.current
       setChatLoading(true)
       try {
         const res = await fetch('/api/webb-objectives', {
@@ -1087,10 +1089,17 @@ export default function WebbPage() {
             return next
           })
           addMsg("Perfect — that's a great sentence! I'm counting that objective.")
+        } else if (attempts >= 1) {
+          // Two strikes — release the gate, let normal conversation resume.
+          awaitingSentenceRef.current = null
+          addMsg("No worries — let's keep going! You can always come back to that one. Just tell me more about it in a sentence whenever you're ready and I'll count it.")
         } else {
+          awaitingSentenceRef.current = { objIdx, attempts: attempts + 1 }
           addMsg("Almost! I need a full sentence — something like \"The [topic] [does something].\" Try again!")
         }
       } catch {
+        // API error — release the gate so the conversation isn't permanently stuck.
+        awaitingSentenceRef.current = null
         addMsg("Almost! Try saying that in a full sentence. You've got this!")
       }
       setChatLoading(false)
