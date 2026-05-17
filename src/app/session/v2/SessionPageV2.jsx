@@ -30,6 +30,7 @@ import { AudioEngine } from './AudioEngine';
 import { TeachingController } from './TeachingController';
 import { ComprehensionPhase } from './ComprehensionPhase';
 import { ExercisePhase } from './ExercisePhase';
+import { ExerciseConversationPhase } from './ExerciseConversationPhase';
 import { WorksheetPhase } from './WorksheetPhase';
 import { TestPhase } from './TestPhase';
 import { ClosingPhase } from './ClosingPhase';
@@ -624,6 +625,7 @@ function SessionPageV2Inner() {
   const [currentExerciseQuestion, setCurrentExerciseQuestion] = useState(null);
   const [exerciseScore, setExerciseScore] = useState(0);
   const [exerciseTotalQuestions, setExerciseTotalQuestions] = useState(0);
+  const [exerciseCurrentQuestionIndex, setExerciseCurrentQuestionIndex] = useState(0);
   const [selectedExerciseAnswer, setSelectedExerciseAnswer] = useState('');
   const [exerciseTimerMode, setExerciseTimerMode] = useState('play');
   
@@ -5198,9 +5200,7 @@ function SessionPageV2Inner() {
     if (questions[clampedIndex]) {
       setCurrentExerciseQuestion(questions[clampedIndex]);
     }
-    if ((!exerciseState || exerciseState === 'idle') && savedExercise) {
-      setExerciseState('awaiting-answer');
-    }
+    // State will be set by the phase's own stateChange event on start()
     
     if (questions.length === 0) {
       // If no exercise questions, skip to worksheet
@@ -5223,11 +5223,14 @@ function SessionPageV2Inner() {
     }
     // (All-phase allocation already handled above in the fresh-build branch)
     
-    const phase = new ExercisePhase({
+    const learnerName = learnerProfile?.name || (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'student';
+    const phase = new ExerciseConversationPhase({
       audioEngine: audioEngineRef.current,
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
       questions: questions,
+      lessonData: lessonData,
+      learnerName: learnerName,
       resumeState: (!forceFresh && savedExercise) ? {
         questions,
         nextQuestionIndex: savedExercise.nextQuestionIndex ?? savedExercise.questionIndex ?? 0,
@@ -5242,6 +5245,15 @@ function SessionPageV2Inner() {
     // Subscribe to state changes
     phase.on('stateChange', (data) => {
       setExerciseState(data.state);
+      if (typeof data.questionIndex === 'number') {
+        setExerciseCurrentQuestionIndex(data.questionIndex);
+      }
+      if (typeof data.totalQuestions === 'number') {
+        setExerciseTotalQuestions(data.totalQuestions);
+      }
+      if (typeof data.score === 'number') {
+        setExerciseScore(data.score);
+      }
       if (data.timerMode) {
         setExerciseTimerMode(data.timerMode);
         if (data.timerMode === 'play' || data.timerMode === 'work') {
@@ -5254,28 +5266,12 @@ function SessionPageV2Inner() {
       }
     });
     
-    // Subscribe to question events
-    phase.on('questionStart', (data) => {
-      addEvent(`ðŸ“ Question ${data.questionIndex + 1}/${data.totalQuestions}`);
-      setCurrentExerciseQuestion(data.question);
-      setExerciseTotalQuestions(data.totalQuestions);
-    });
-    
-    phase.on('questionReady', (data) => {
-      setExerciseState('awaiting-answer');
-      addEvent('â“ Question ready for answer...');
-    });
-    
-    phase.on('answerSubmitted', (data) => {
-      const result = data.isCorrect ? 'âœ… Correct!' : 'âŒ Incorrect';
-      addEvent(`${result} (Score: ${data.score}/${data.totalQuestions})`);
-      setExerciseScore(data.score);
-      setSelectedExerciseAnswer('');
-    });
-    
-    phase.on('questionSkipped', (data) => {
-      addEvent(`â­ï¸ Skipped (Score: ${data.score}/${data.totalQuestions})`);
-      setSelectedExerciseAnswer('');
+    // Conversational exercise messages -> transcript
+    phase.on('exerciseConvMessage', (data) => {
+      appendTranscriptLine({ text: data.text, role: data.role === 'user' ? 'user' : 'assistant' }, { immediate: true });
+      if (data.role === 'user') {
+        setSelectedExerciseAnswer('');
+      }
     });
     
     phase.on('exerciseComplete', (data) => {
@@ -6915,7 +6911,8 @@ function SessionPageV2Inner() {
         </div>
       )}
       
-      {currentPhase === 'exercise' && (
+      {currentPhase === 'exercise' &&
+       (exerciseState === 'chatting' || exerciseState === 'awaiting-response') && (
         <div style={{ 
           position: 'absolute', 
           top: 8, 
@@ -6931,7 +6928,7 @@ function SessionPageV2Inner() {
           zIndex: 10000, 
           pointerEvents: 'none' 
         }}>
-          {exerciseScore}/{exerciseTotalQuestions}
+          Q {exerciseCurrentQuestionIndex + 1}/{exerciseTotalQuestions}
         </div>
       )}
       
@@ -8013,6 +8010,78 @@ function SessionPageV2Inner() {
             </div>
           )}
           
+          {/* Exercise conversation chat input */}
+          {currentPhase === 'exercise' &&
+           (exerciseState === 'chatting' || exerciseState === 'awaiting-response') &&
+           !openingActionActive && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '4px 12px',
+              marginBottom: 4,
+            }}>
+              <input
+                type="text"
+                placeholder="Type your answer..."
+                value={selectedExerciseAnswer}
+                disabled={exerciseState === 'awaiting-response'}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  border: '1px solid #bdbdbd',
+                  borderRadius: 6,
+                  fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)',
+                  outline: 'none',
+                  background: '#fff',
+                  color: '#111827',
+                  opacity: exerciseState === 'awaiting-response' ? 0.6 : 1,
+                }}
+                onChange={(e) => setSelectedExerciseAnswer(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && exerciseState === 'chatting') {
+                    e.preventDefault();
+                    if (selectedExerciseAnswer.trim()) {
+                      exercisePhaseRef.current?.submitMessage(selectedExerciseAnswer);
+                    }
+                  }
+                }}
+              />
+              <button
+                type="button"
+                disabled={exerciseState === 'awaiting-response' || !selectedExerciseAnswer.trim()}
+                style={{
+                  background: '#c7442e',
+                  color: '#fff',
+                  borderRadius: 8,
+                  padding: '10px 20px',
+                  fontWeight: 700,
+                  fontSize: 'clamp(0.9rem, 1.5vw, 1rem)',
+                  border: 'none',
+                  cursor: (exerciseState === 'awaiting-response' || !selectedExerciseAnswer.trim()) ? 'not-allowed' : 'pointer',
+                  opacity: (exerciseState === 'awaiting-response' || !selectedExerciseAnswer.trim()) ? 0.6 : 1,
+                  boxShadow: '0 2px 8px rgba(199,68,46,0.28)',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={() => {
+                  if (selectedExerciseAnswer.trim()) {
+                    exercisePhaseRef.current?.submitMessage(selectedExerciseAnswer);
+                  }
+                }}
+              >
+                {exerciseState === 'awaiting-response' ? 'Thinking...' : 'Send'}
+              </button>
+              <div style={{
+                fontSize: '0.8rem',
+                color: '#6b7280',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}>
+                Q {exerciseCurrentQuestionIndex + 1}/{exerciseTotalQuestions}
+              </div>
+            </div>
+          )}
+
           {/* Discussion chat input — shown when in the Socratic conversation */}
           {currentPhase === 'discussion' &&
            (discussionState === 'chatting' || discussionState === 'awaiting-response') &&
