@@ -790,19 +790,6 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 								</p>
 								<div style={gridStyle}>
 									<div style={fieldStyle}>
-										<label style={labelStyle}>Comprehension</label>
-										<select
-											value={comprehension}
-											onChange={(e) => setComprehension(e.target.value)}
-											style={selectStyle}
-										>
-											{TARGETS.map(t => (
-												<option key={t} value={t}>{t} questions</option>
-											))}
-										</select>
-									</div>
-
-									<div style={fieldStyle}>
 										<label style={labelStyle}>Exercise</label>
 										<select
 											value={exercise}
