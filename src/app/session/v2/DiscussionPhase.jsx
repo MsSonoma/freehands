@@ -158,7 +158,9 @@ export class DiscussionPhase {
     this.#prefetchDone = true;
     this.#state = 'ready';
     this.#emitStateChange();
-    if (this.#playRequested) this.#startPlaying();
+    // Guard: if start() was already called synchronously from within the 'ready' event handler
+    // (e.g. auto-start on resume), #state is no longer 'ready' here — skip the redundant call.
+    if (this.#playRequested && this.#state === 'ready') this.#startPlaying();
   }
 
   // start() — called when user clicks Begin
