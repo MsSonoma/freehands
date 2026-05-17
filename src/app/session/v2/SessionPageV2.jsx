@@ -4665,6 +4665,13 @@ function SessionPageV2Inner() {
     
     console.log('[SessionPageV2] Creating DiscussionPhase with learnerName:', learnerName, 'lessonTitle:', lessonTitle);
     
+    const isDiscussionResume = resumePhaseRef.current === 'discussion' && transcriptLinesRef.current.length > 0;
+    const savedDiscData = snapshotServiceRef.current?.snapshot?.phaseData?.discussion;
+    // Sentence-level resume: present when refreshed mid-overview/vocab (null means chat-level resume)
+    const resumeSentenceKey = (isDiscussionResume && typeof savedDiscData?.sentenceKey === 'string' && savedDiscData.sentenceKey)
+      ? savedDiscData.sentenceKey
+      : null;
+
     const phase = new DiscussionPhase({
       audioEngine: audioEngineRef.current,
       eventBus: eventBusRef.current,
@@ -4673,12 +4680,14 @@ function SessionPageV2Inner() {
       lessonData: lessonData,
       grade: (learnerProfile?.grade || lessonData?.grade || '').toString(),
       // Resume: pass saved conversation history so the overview is skipped
-      resumeHistory: (resumePhaseRef.current === 'discussion' && transcriptLinesRef.current.length > 0)
+      resumeHistory: isDiscussionResume
         ? transcriptLinesRef.current.map(l => ({ role: l.role, content: l.text }))
         : [],
-      resumeCompletedIndices: (resumePhaseRef.current === 'discussion')
+      resumeCompletedIndices: isDiscussionResume
         ? discussionCompletedIndicesRef.current
         : [],
+      // Sentence-level resume: replay at the exact sentence that was active on refresh
+      resumeSentenceKey: resumeSentenceKey,
     });
     
 
@@ -4721,6 +4730,9 @@ function SessionPageV2Inner() {
         snapshotServiceRef.current.saveProgress('discussion-sentence', {
           completedObjectiveIndices: discussionCompletedIndicesRef.current,
           turnCount: (transcriptLinesRef.current?.length ?? 0) + 1,
+          // Save the sentence key so sentence-level resume can restart at the right position.
+          // Returns null when in chat/awaiting state — indicating chat-level resume instead.
+          sentenceKey: discussionPhaseRef.current?.currentSentenceKey ?? null,
         }).catch(() => {});
       }
     });

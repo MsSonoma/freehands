@@ -63,6 +63,7 @@ export class DiscussionPhase {
   #sentenceAudios     = new Map(); // key → base64 audio
   #currentSentenceKey = null;      // 'ov:N' | 'voc:N' | 'trans:0'
   #waitingForNext     = false;
+  #resumeSentenceKey  = null;      // set from options when restoring mid-sentence
 
   constructor(options = {}) {
     this.#audioEngine = options.audioEngine;
@@ -86,6 +87,10 @@ export class DiscussionPhase {
         ? [...options.resumeCompletedIndices]
         : [];
     }
+    // Sentence-level resume: replay at the exact sentence that was playing on refresh
+    if (typeof options.resumeSentenceKey === 'string' && options.resumeSentenceKey) {
+      this.#resumeSentenceKey = options.resumeSentenceKey;
+    }
   }
 
   // ── Getters ────────────────────────────────────────────────────────────────
@@ -94,6 +99,12 @@ export class DiscussionPhase {
   get totalObjectives()     { return this.#objectives.length; }
   get learnerName()         { return this.#learnerName; }
   get lessonTitle()         { return this.#lessonTitle; }
+  // Returns the active sentence key ONLY while playing overview/vocab (null during chat or other states)
+  get currentSentenceKey()  {
+    return (this.#state === 'playing-overview' || this.#state === 'playing-vocab')
+      ? this.#currentSentenceKey
+      : null;
+  }
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -392,7 +403,20 @@ export class DiscussionPhase {
   #startPlaying() {
     if (this.#destroyed) return;
 
-    // Resume: conversation history pre-loaded — skip the overview and re-enter chatting directly
+    // Sentence-level resume: replay audio for the sentence that was active on refresh.
+    // The transcript is already restored from snapshot, so we skip re-adding to history.
+    if (this.#resumeSentenceKey) {
+      const key = this.#resumeSentenceKey;
+      this.#resumeSentenceKey = null;
+      this.#currentSentenceKey = key;
+      this.#state = key.startsWith('voc:') ? 'playing-vocab' : 'playing-overview';
+      this.#emitStateChange();
+      this.#eventBus.emit('greetingPlaying', { greetingText: '' });
+      this.#playSentence(key, { addToHistory: false });
+      return;
+    }
+
+    // Chat-level resume: conversation history pre-loaded — skip the overview and re-enter chatting directly
     if (this.#chatHistory.length > 0) {
       this.#state = 'chatting';
       this.#emitStateChange();
@@ -410,11 +434,13 @@ export class DiscussionPhase {
     this.#playSentence('ov:0');
   }
 
-  #playSentence(key) {
+  #playSentence(key, { addToHistory = true } = {}) {
     this.#waitingForNext = false;
     const { text } = this.#getSentenceForKey(key);
-    this.#chatHistory.push({ role: 'assistant', content: text });
-    this.#eventBus.emit('discussionMessage', { role: 'assistant', text });
+    if (addToHistory) {
+      this.#chatHistory.push({ role: 'assistant', content: text });
+      this.#eventBus.emit('discussionMessage', { role: 'assistant', text });
+    }
     this.#emitSentenceChange(key);
 
     const audio = this.#sentenceAudios.get(key) || null;
