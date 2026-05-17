@@ -3556,10 +3556,7 @@ function SessionPageV2Inner() {
     return next;
   }, []);
 
-  const handleOpeningActionCancel = useCallback(async () => {
-    const actionType = openingActionState?.action || openingActionType;
-    const askReminder = actionType === 'ask' ? askReturnQuestionRef.current : '';
-
+  const handleOpeningActionCancel = useCallback(() => {
     const controller = openingActionsControllerRef.current;
     stopAudioSafe({ force: true });
     if (controller?.cancelCurrent) {
@@ -3573,17 +3570,8 @@ function SessionPageV2Inner() {
     setOpeningActionBusy(false);
     askAnswerShortcutLoadingRef.current = false;
     setAskAnswerShortcutLoading(false);
-
-    if (askReminder) {
-      askExitSpeechLockRef.current = true;
-      try {
-        await speakSystemLineHardened(askReminder);
-      } finally {
-        askExitSpeechLockRef.current = false;
-      }
-    }
     askReturnQuestionRef.current = '';
-  }, [openingActionState?.action, openingActionType, stopAudioSafe, speakSystemLineHardened]);
+  }, [stopAudioSafe]);
 
   const buildAskContext = useCallback(() => {
     const lessonTitle = (lessonData?.title || lessonKey || lessonId || 'this lesson').toString();
