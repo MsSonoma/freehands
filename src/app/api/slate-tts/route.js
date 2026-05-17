@@ -74,9 +74,31 @@ function stripMarkdownForSpeech(text) {
     .replace(/`([^`]+)`/g, '$1')
 }
 
+// Convert numeric fractions (e.g. 1/4) to spoken form so TTS does not read "divided by".
+function normalizeFractionsForSpeech(text) {
+  if (!text) return text
+  const ordinals = {
+    2: ['half', 'halves'], 3: ['third', 'thirds'], 4: ['fourth', 'fourths'],
+    5: ['fifth', 'fifths'], 6: ['sixth', 'sixths'], 7: ['seventh', 'sevenths'],
+    8: ['eighth', 'eighths'], 9: ['ninth', 'ninths'], 10: ['tenth', 'tenths'],
+    12: ['twelfth', 'twelfths'], 16: ['sixteenth', 'sixteenths'], 100: ['hundredth', 'hundredths'],
+  }
+  const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+    'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty']
+  return String(text).replace(/\b(\d{1,2})\/(\d{1,3})\b/g, (match, ns, ds) => {
+    const n = parseInt(ns, 10), d = parseInt(ds, 10)
+    if (n >= d || !ordinals[d]) return match
+    const nWord = n <= 20 ? ones[n] : ns
+    return `${nWord} ${n === 1 ? ordinals[d][0] : ordinals[d][1]}`
+  })
+}
+
 function toSsml(text) {
   const stripped = stripMarkdownForSpeech(text || '')
-  const safe = escapeForSsml(stripped)
+  const withFractions = normalizeFractionsForSpeech(stripped)
+  const safe = escapeForSsml(withFractions)
+    .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
   // Replace degree symbols for natural reading
   const withDegrees = safe.replace(/°/g, ' degrees')
   return `<speak>${withDegrees}</speak>`
