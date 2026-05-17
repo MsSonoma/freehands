@@ -50,7 +50,8 @@ function sanitizeTranscriptLines(lines) {
         if (!text) return null;
         if (INVALID_LINE_PATTERNS.some((re) => re.test(text))) return null;
         const role = entry.role === 'user' ? 'user' : 'assistant';
-        return { role, text };
+        const phase = typeof entry.phase === 'string' && entry.phase ? entry.phase : undefined;
+        return { role, text, ...(phase ? { phase } : {}) };
       }
       return null;
     })
@@ -70,6 +71,16 @@ function sanitizeLedgerSegments(ledger) {
     out.push(entry);
   }
   return out;
+}
+
+function formatPhaseLabel(phase) {
+  if (!phase) return null;
+  const NAMES = {
+    discussion: 'Discussion', teaching: 'Teaching', exercise: 'Exercise',
+    test: 'Test', opening: 'Opening', closing: 'Closing',
+    comprehension: 'Comprehension', worksheet: 'Worksheet', overview: 'Overview',
+  };
+  return NAMES[String(phase).toLowerCase()] || String(phase).charAt(0).toUpperCase() + String(phase).slice(1);
 }
 
 function pad2(n) { return String(n).padStart(2, '0'); }
@@ -133,7 +144,13 @@ function renderTranscriptPdf({ lessonTitle, learnerName, learnerId, lessonId, se
     const label = completed ? `Session ${idx + 1} — ${started} to ${completed}` : `Session ${idx + 1} — ${started}`;
     addLine(label, 'bold');
     const lines = Array.isArray(seg?.lines) ? seg.lines : [];
+    let currentPhaseLabel = null;
     lines.forEach((ln) => {
+      const phaseLabel = formatPhaseLabel(ln?.phase);
+      if (phaseLabel && phaseLabel !== currentPhaseLabel) {
+        currentPhaseLabel = phaseLabel;
+        addLine(`— ${phaseLabel} —`, 'bold', '#555555');
+      }
       const role = (ln?.role || '').toLowerCase() === 'user' ? 'Learner' : teacherDisplayName;
       const color = role === 'Learner' ? '#c7442e' : '#000000';
       const text = typeof ln?.text === 'string' ? ln.text : '';
@@ -162,7 +179,13 @@ function renderTranscriptText({ lessonTitle, learnerName, learnerId, lessonId, s
     const header = completed ? `Session ${idx + 1} — ${started} to ${completed}` : `Session ${idx + 1} — ${started}`;
     lines.push(header);
     const segLines = Array.isArray(seg?.lines) ? seg.lines : [];
+    let currentPhaseLabel = null;
     segLines.forEach((ln) => {
+      const phaseLabel = formatPhaseLabel(ln?.phase);
+      if (phaseLabel && phaseLabel !== currentPhaseLabel) {
+        currentPhaseLabel = phaseLabel;
+        lines.push(`\n[${phaseLabel}]`);
+      }
       const role = (ln?.role || '').toLowerCase() === 'user' ? 'Learner' : teacherDisplayName;
       const text = typeof ln?.text === 'string' ? ln.text : '';
       if (text) lines.push(`${role}: ${text}`);

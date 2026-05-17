@@ -51,7 +51,7 @@ import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech
 import { getSnapshotStorageKey } from '../utils/snapshotPersistenceUtils';
 import { ensurePinAllowed } from '@/app/lib/pinGate';
 import { upsertMedal } from '@/app/lib/medalsClient';
-import { appendTranscriptSegment } from '@/app/lib/transcriptsClient';
+import { appendTranscriptSegment, updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
 import CaptionPanel from '../components/CaptionPanel';
 import SessionVisualAidsCarousel from '../components/SessionVisualAidsCarousel';
@@ -1083,6 +1083,51 @@ function SessionPageV2Inner() {
     };
   }, []);
 
+  // Best-effort save to Supabase Storage when the learner leaves the page before sessionComplete.
+  // pagehide is more reliable than beforeunload for this (fires on back/forward cache too).
+  useEffect(() => {
+    const handler = () => {
+      const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+      const lines = transcriptLinesRef.current || [];
+      if (!learnerId || learnerId === 'demo' || !lessonId || lines.length === 0) return;
+      const learnerName = typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null;
+      const startedAt = startSessionRef.current || new Date().toISOString();
+      updateTranscriptLiveSegment({
+        learnerId,
+        learnerName,
+        lessonId,
+        lessonTitle: lessonData?.title || lessonId,
+        startedAt,
+        lines,
+        sessionId: browserSessionId || undefined,
+      }).catch(() => {});
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pagehide', handler);
+      return () => window.removeEventListener('pagehide', handler);
+    }
+  }, [lessonId, lessonData, browserSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save live transcript to Supabase Storage on every phase transition so incomplete sessions
+  // have a partial record in the facilitator hub (not just at sessionComplete).
+  useEffect(() => {
+    if (!currentPhase || currentPhase === 'idle' || currentPhase === 'complete') return;
+    const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+    const lines = transcriptLinesRef.current || [];
+    if (!learnerId || learnerId === 'demo' || !lessonId || lines.length === 0) return;
+    const learnerName = typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null;
+    const startedAt = startSessionRef.current || new Date().toISOString();
+    updateTranscriptLiveSegment({
+      learnerId,
+      learnerName,
+      lessonId,
+      lessonTitle: lessonData?.title || lessonId,
+      startedAt,
+      lines,
+      sessionId: browserSessionId || undefined,
+    }).catch(() => {});
+  }, [currentPhase]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const persistTranscriptState = useCallback((lines, activeIdx, { immediate = false } = {}) => {
     if (!snapshotServiceRef.current) return;
 
@@ -1130,8 +1175,10 @@ function SessionPageV2Inner() {
     const text = String(line?.text || '').trim();
     if (!text) return;
     const role = line?.role === 'user' ? 'user' : 'assistant';
+    const phase = line?.phase !== undefined ? line.phase : (currentPhaseRef.current || undefined);
     setTranscriptLines((prev) => {
-      const next = [...prev, { text, role }];
+      const newLine = { text, role, ...(phase ? { phase } : {}) };
+      const next = [...prev, newLine];
       const nextActive = updateActive || role === 'assistant' ? next.length - 1 : activeCaptionIndex;
       if (updateActive || role === 'assistant') {
         setActiveCaptionIndex(nextActive);
@@ -3670,6 +3717,8 @@ function SessionPageV2Inner() {
     openingActionBusyRef.current = true;
     setOpeningActionBusy(true);
     setOpeningActionError('');
+    // Record the learner's question in the transcript (teacher reply comes via captionChange)
+    appendTranscriptLine({ text: question, role: 'user', phase: currentPhaseRef.current || undefined }, { immediate: true });
     try {
       const askContext = buildAskContext();
       await controller.submitAskQuestion(question, askContext);
@@ -4168,7 +4217,8 @@ function SessionPageV2Inner() {
             persistTranscriptState(prev, nextActive);
             return prev;
           }
-          const next = [...prev, { text, role: 'assistant' }];
+          const captionPhase = currentPhaseRef.current || undefined;
+          const next = [...prev, { text, role: 'assistant', ...(captionPhase ? { phase: captionPhase } : {}) }];
           setActiveCaptionIndex(nextActive);
           persistTranscriptState(next, nextActive);
           return next;
@@ -4455,6 +4505,7 @@ function SessionPageV2Inner() {
             lessonTitle: lessonData?.title || lessonId,
             segment: { startedAt, completedAt, lines: liveTranscriptLines },
             sessionId: browserSessionId || undefined,
+            teacher: undefined, // Sonoma uses flat path; explicit for clarity
           });
           if (txResult?.ok) {
             addEvent('📝 Transcript saved');
