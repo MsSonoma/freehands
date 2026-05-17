@@ -4720,6 +4720,11 @@ function SessionPageV2Inner() {
       });
       if (Array.isArray(data.objectives))      setDiscussionObjectivesList(data.objectives);
       if (Array.isArray(data.completedIndices)) setDiscussionCompletedIndices(data.completedIndices);
+      // Auto-start on resume: skip the 'Begin Discussion' button when prefetch completes
+      if (data.state === 'ready' && isDiscussionResume) {
+        audioEngineRef.current?.initialize().catch(() => {});
+        discussionPhaseRef.current?.start();
+      }
     });
 
     // discussionMessage — append each chat turn to the transcript and snap immediately
