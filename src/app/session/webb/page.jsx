@@ -226,6 +226,7 @@ export default function WebbPage() {
   const shownVideoIdsRef    = useRef([])
   const lowTierMsgSentRef  = useRef(false) // true once the "limited results" message has been said for the current video
   const noVideoMsgSentRef  = useRef(false) // true once the "no relevant video" message has been said for the current lesson
+  const videosWatchedRef   = useRef(0)    // count of times the video overlay was opened this lesson (for per-objectives rate limit)
   const essayAbortRef      = useRef(null)  // AbortController for in-flight essay generation
   const articleIframeRef   = useRef(null)
   // Media overlay position + fullscreen
@@ -675,11 +676,24 @@ export default function WebbPage() {
       }
       return
     }
+    // Video rate limit: first watch is free; each additional watch requires 2 more completed objectives.
+    // maxAllowed = 1 + floor(completedObj.length / 2)
+    const maxVideos  = 1 + Math.floor(completedObj.length / 2)
+    if (videosWatchedRef.current >= maxVideos) {
+      const objsNeeded = videosWatchedRef.current * 2 - completedObj.length
+      addMsg(
+        objsNeeded === 1
+          ? `I love that you want to keep watching! Here's our deal — I open the video once for every two objectives we work through together. You're almost there: show me you understand just one more objective and I'll open it right back up!`
+          : `I love that you want to keep watching! Here's our deal — I open the video once for every two objectives we work through together. Show me you understand ${objsNeeded} more objectives and I'll open it right back up!`
+      )
+      return
+    }
     // Low-relevance video — say something once, then open
     if (videoResource.relevanceTier === 'low' && !lowTierMsgSentRef.current) {
       lowTierMsgSentRef.current = true
       addMsg("I searched hard but couldn't find a perfect video for this lesson. I found one that covers some related ideas — it might still be worth watching!")
     }
+    videosWatchedRef.current += 1
     setMediaOverlay('video')
   }
 
@@ -861,6 +875,7 @@ export default function WebbPage() {
     shownVideoIdsRef.current   = []
     lowTierMsgSentRef.current  = false
     noVideoMsgSentRef.current  = false
+    videosWatchedRef.current   = 0
 
     const post = (type) => fetch('/api/webb-resources', {
       method: 'POST',
