@@ -41,6 +41,8 @@ export default function SignupPage() {
 						options: emailRedirectTo ? { emailRedirectTo } : undefined,
 					});
 			if (signUpError) throw new Error(signUpError.message || 'Sign up failed');
+			// Subscribe to email list (fire-and-forget, never blocks signup)
+			try { fetch('/api/email/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }); } catch {}
 			// If email confirmation is enabled, Supabase returns a session=null and sends an email
 					if (!data?.session) {
 						// Flag so that when they click the confirmation link they land on step 1
