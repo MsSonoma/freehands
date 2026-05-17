@@ -56,7 +56,7 @@ export function buildLessonTitleFromKey(lessonKey) {
   const key = String(lessonKey || '')
   const parts = key.split('/')
   const filename = parts.length > 1 ? parts[1] : parts[0]
-  return String(filename || key).replace(/\.json$/i, '').replace(/_/g, ' ')
+  return String(filename || key).replace(/\.json$/i, '').replace(/[_-]/g, ' ')
 }
 
 export function makePortfolioId() {
