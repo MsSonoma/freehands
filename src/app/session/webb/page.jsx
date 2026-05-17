@@ -1253,6 +1253,20 @@ export default function WebbPage() {
 
   // ── Refresh a media resource (context-aware) ──────────────────────────
   async function refreshMedia(type) {
+    // Video refreshes count the same as opens — one per two objectives completed.
+    if (type === 'video') {
+      const maxVideos = 1 + Math.floor(completedObj.length / 2)
+      if (videosWatchedRef.current >= maxVideos) {
+        const objsNeeded = videosWatchedRef.current * 2 - completedObj.length
+        addMsg(
+          objsNeeded === 1
+            ? `I love that you want to explore more! Here's our deal — I show a new video once for every two objectives we work through together. You're almost there: show me you understand just one more objective and I'll find a fresh one!`
+            : `I love that you want to explore more! Here's our deal — I show a new video once for every two objectives we work through together. Show me you understand ${objsNeeded} more objectives and I'll find a fresh one!`
+        )
+        return
+      }
+      videosWatchedRef.current += 1
+    }
     setRefreshingMedia(true)
     // Reset tier-message flags so a newly fetched video can say its own message
     if (type === 'video') { lowTierMsgSentRef.current = false; noVideoMsgSentRef.current = false }
