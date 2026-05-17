@@ -100,27 +100,40 @@ export async function GET(req, { params }) {
       const tag = { lessonId, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher };
       const collected = [];
 
+      // List lesson-level files and sessions in parallel.
+      // The file listing gives us updated_at for chronological sorting without extra probes.
+      const [lessonFiles, sessions] = await Promise.all([
+        listAll(store, lessonBase),
+        listAll(store, `${lessonBase}/sessions`),
+      ]);
+
       // Lesson-level consolidated file (TXT preferred; PDF fallback)
-      const txt = await tryGetTranscript(lessonBase, 'transcript.txt', 'txt');
-      if (txt) {
-        collected.push({ ...tag, ...txt });
-      } else {
-        const pdf = await tryGetTranscript(lessonBase, 'transcript.pdf', 'pdf');
-        if (pdf) collected.push({ ...tag, ...pdf });
+      const txtMeta = (lessonFiles || []).find(f => f.name === 'transcript.txt');
+      const pdfMeta = (lessonFiles || []).find(f => f.name === 'transcript.pdf');
+      const consolidatedMeta = txtMeta || pdfMeta;
+      const consolidatedKind = txtMeta ? 'txt' : (pdfMeta ? 'pdf' : null);
+      if (consolidatedMeta) {
+        const updatedAt = consolidatedMeta.updated_at || consolidatedMeta.created_at || null;
+        const result = await tryGetTranscript(lessonBase, `transcript.${consolidatedKind}`, consolidatedKind);
+        if (result) collected.push({ ...tag, ...result, updatedAt });
       }
 
       // Per-session transcripts — parallelize across all sessions
-      const sessions = await listAll(store, `${lessonBase}/sessions`);
       const sessionItems = await Promise.all(
         (sessions || [])
           .filter((ses) => ses && typeof ses.name === 'string')
           .map(async (ses) => {
             const sessionBase = `${lessonBase}/sessions/${ses.name}`;
             const sessionTag = { ...tag, lessonId: `${lessonId} \u2014 ${ses.name}` };
+            // r-{ms} folder names encode the session start timestamp
+            const tsMatch = ses.name.match(/^r-(\d+)$/);
+            const updatedAt = tsMatch
+              ? new Date(parseInt(tsMatch[1], 10)).toISOString()
+              : (ses.updated_at || ses.created_at || null);
             const stxt = await tryGetTranscript(sessionBase, 'transcript.txt', 'txt');
-            if (stxt) return { ...sessionTag, ...stxt };
+            if (stxt) return { ...sessionTag, ...stxt, updatedAt };
             const spdf = await tryGetTranscript(sessionBase, 'transcript.pdf', 'pdf');
-            if (spdf) return { ...sessionTag, ...spdf };
+            if (spdf) return { ...sessionTag, ...spdf, updatedAt };
             return null;
           }),
       );
@@ -171,10 +184,9 @@ export async function GET(req, { params }) {
       const tA = teacherOrder[a.teacher] ?? 99;
       const tB = teacherOrder[b.teacher] ?? 99;
       if (tA !== tB) return tA - tB;
-      // Within a teacher, newer session IDs first
-      const timeA = a.path.match(/sessions\/r-(\d+)/)?.[1] || a.lessonId;
-      const timeB = b.path.match(/sessions\/r-(\d+)/)?.[1] || b.lessonId;
-      return timeB.localeCompare(timeA);
+      const dA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const dB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return dB - dA; // newest first
     });
 
     return NextResponse.json({ items: out });

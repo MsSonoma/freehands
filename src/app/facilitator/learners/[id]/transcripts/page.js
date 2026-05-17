@@ -80,7 +80,11 @@ export default function LearnerTranscriptsPage({ params }) {
   const itemsForTab = allItems.filter(it => it.teacher === activeTab);
   const sortedItemsForTab = sortOrder === 'name'
     ? itemsForTab.slice().sort((a, b) => (a.lessonId || '').localeCompare(b.lessonId || ''))
-    : itemsForTab; // API returns newest-first
+    : itemsForTab.slice().sort((a, b) => {
+        const dA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const dB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return dB - dA; // newest first
+      });
 
   const cardStyle = {
     border: '1px solid #e5e7eb',
