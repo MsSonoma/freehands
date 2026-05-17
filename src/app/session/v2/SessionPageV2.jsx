@@ -715,6 +715,7 @@ function SessionPageV2Inner() {
   const [closingMessage, setClosingMessage] = useState('');
   
   const [discussionState, setDiscussionState] = useState('idle');
+  const [discussionResuming, setDiscussionResuming] = useState(false); // true while auto-starting on resume (hides Begin button)
   const [discussionActivity, setDiscussionActivity] = useState(null);
   const [discussionPrompt, setDiscussionPrompt] = useState('');
   const [discussionResponse, setDiscussionResponse] = useState('');
@@ -4666,6 +4667,7 @@ function SessionPageV2Inner() {
     console.log('[SessionPageV2] Creating DiscussionPhase with learnerName:', learnerName, 'lessonTitle:', lessonTitle);
     
     const isDiscussionResume = resumePhaseRef.current === 'discussion' && transcriptLinesRef.current.length > 0;
+    if (isDiscussionResume) setDiscussionResuming(true);
     const savedDiscData = snapshotServiceRef.current?.snapshot?.phaseData?.discussion;
     // Sentence-level resume: present when refreshed mid-overview/vocab (null means chat-level resume)
     const resumeSentenceKey = (isDiscussionResume && typeof savedDiscData?.sentenceKey === 'string' && savedDiscData.sentenceKey)
@@ -4724,6 +4726,10 @@ function SessionPageV2Inner() {
       if (data.state === 'ready' && isDiscussionResume) {
         audioEngineRef.current?.initialize().catch(() => {});
         discussionPhaseRef.current?.start();
+      }
+      // Clear the resuming flag once the phase is actively playing (button can show normally if needed)
+      if (data.state !== 'idle' && data.state !== 'prefetching' && data.state !== 'loading-objectives' && data.state !== 'ready') {
+        setDiscussionResuming(false);
       }
     });
 
@@ -7763,7 +7769,7 @@ function SessionPageV2Inner() {
           
           {/* Phase-specific Begin buttons */}
           {(() => {
-            const needBeginDiscussion = (currentPhase === 'idle') || (currentPhase === 'discussion' && (!discussionState || discussionState === 'idle' || discussionState === 'ready' || discussionState === 'loading'));
+            const needBeginDiscussion = (currentPhase === 'idle') || (currentPhase === 'discussion' && !discussionResuming && (!discussionState || discussionState === 'idle' || discussionState === 'ready' || discussionState === 'loading'));
             const needBeginComp = (currentPhase === 'comprehension' && (!comprehensionState || comprehensionState === 'idle'));
             const needBeginExercise = (currentPhase === 'exercise' && (!exerciseState || exerciseState === 'idle'));
             const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
