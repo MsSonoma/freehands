@@ -8453,6 +8453,7 @@ function SessionPageV2Inner() {
           isOpen={showTimerSettingsEdit}
           learner={{ ...learnerProfile, initialTab: 'timers' }}
           zIndex={2147483647}
+          visibleTabs={['timers', 'targets']}
           onClose={() => setShowTimerSettingsEdit(false)}
           onSave={async (updates) => {
             await updateLearner(learnerProfile.id, updates);

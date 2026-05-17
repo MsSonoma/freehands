@@ -37,7 +37,7 @@ const normalizeHumorLevel = (value) => {
 	return HUMOR_LEVELS.includes(v) ? v : 'calm';
 };
 
-export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, onDelete, onPatch, zIndex: zIndexProp = 1000 }) {
+export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, onDelete, onPatch, zIndex: zIndexProp = 1000, visibleTabs = null }) {
 	const [activeTab, setActiveTab] = useState(learner?.initialTab || 'basic'); // 'basic' | 'targets' | 'ai-features' | 'timers'
 	
 	// Form state
@@ -136,6 +136,16 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	};
 
 	const showTooltip = (key) => hoveredTooltip === key || clickedTooltip === key;
+
+	const ALL_TABS = [
+		{ id: 'basic', label: '👤 Basic' },
+		{ id: 'targets', label: '🎯 Targets' },
+		{ id: 'ai-features', label: '🤖 AI Features' },
+		{ id: 'timers', label: '⏱️ Timers' },
+	];
+	const tabsToShow = visibleTabs
+		? ALL_TABS.filter(t => visibleTabs.includes(t.id))
+		: ALL_TABS;
 
 	const handleSave = async () => {
 		setSaving(true);
@@ -426,6 +436,21 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 							×
 						</button>
 					</div>
+
+				{/* Tab bar */}
+				{tabsToShow.length > 1 && (
+					<div style={tabsStyle}>
+						{tabsToShow.map(tab => (
+							<button
+								key={tab.id}
+								onClick={() => setActiveTab(tab.id)}
+								style={tabStyle(activeTab === tab.id)}
+							>
+								{tab.label}
+							</button>
+						))}
+					</div>
+				)}
 
 					{/* Content */}
 					<div style={contentStyle}>
