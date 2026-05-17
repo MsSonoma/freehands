@@ -23,6 +23,8 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
   const [rewritingDescription, setRewritingDescription] = useState(false)
   const [rewritingTeachingNotes, setRewritingTeachingNotes] = useState(false)
   const [rewritingVocabDefinition, setRewritingVocabDefinition] = useState({})
+  const [generatingDescriptionFromTitle, setGeneratingDescriptionFromTitle] = useState(false)
+  const [generatingNotesFromDescription, setGeneratingNotesFromDescription] = useState(false)
 
   useEffect(() => {
     loadLessons()
@@ -277,6 +279,39 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
     }
   }
 
+  const handleGenerateDescriptionFromTitle = async (title) => {
+    setGeneratingDescriptionFromTitle(true)
+    const generated = await handleRewriteDescription(title, '', 'generate-description-from-title')
+    setGeneratingDescriptionFromTitle(false)
+
+    if (generated && editingLesson) {
+      setEditingLesson(prev => ({
+        ...prev,
+        lesson: {
+          ...prev.lesson,
+          blurb: generated
+        }
+      }))
+    }
+  }
+
+  const handleGenerateNotesFromDescription = async (description) => {
+    setGeneratingNotesFromDescription(true)
+    const lessonTitle = editingLesson?.lesson?.title || 'Lesson'
+    const generated = await handleRewriteDescription(description, lessonTitle, 'generate-notes-from-description')
+    setGeneratingNotesFromDescription(false)
+
+    if (generated && editingLesson) {
+      setEditingLesson(prev => ({
+        ...prev,
+        lesson: {
+          ...prev.lesson,
+          teachingNotes: generated
+        }
+      }))
+    }
+  }
+
   const handleRewriteVocabDefinition = async (definition, term, index) => {
     setRewritingVocabDefinition(prev => ({ ...prev, [index]: true }))
     const lessonTitle = editingLesson?.lesson?.title || 'Lesson'
@@ -416,6 +451,10 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
               rewritingDescription={rewritingDescription}
               rewritingTeachingNotes={rewritingTeachingNotes}
               rewritingVocabDefinition={rewritingVocabDefinition}
+              onGenerateDescriptionFromTitle={handleGenerateDescriptionFromTitle}
+              generatingDescriptionFromTitle={generatingDescriptionFromTitle}
+              onGenerateNotesFromDescription={handleGenerateNotesFromDescription}
+              generatingNotesFromDescription={generatingNotesFromDescription}
             />
           </div>
         </div>

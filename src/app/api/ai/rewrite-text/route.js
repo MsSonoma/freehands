@@ -84,6 +84,34 @@ Requirements:
 
 Improved prompt (emphasize visual-only elements):`
       },
+      'generate-description-from-title': {
+        system: 'You are an expert educational content writer for elementary school lessons.',
+        user: `Write a clear, engaging lesson description (blurb) for a lesson titled: "${text}"
+
+Requirements:
+- 2-3 sentences maximum
+- Age-appropriate for elementary school students
+- Explain what the lesson is about and what students will learn
+- Warm and encouraging tone
+- No emojis or special characters
+
+Lesson description:`
+      },
+      'generate-notes-from-description': {
+        system: 'You are an expert teacher and curriculum developer for elementary education.',
+        user: `Based on this lesson description, write practical teaching notes for the facilitator:
+
+${context ? `Lesson title: ${context}` : ''}
+Lesson description: ${text}
+
+Requirements:
+- 3-5 sentences of practical guidance for the teacher
+- Include what to emphasize, potential misconceptions to address, or suggested discussion approaches
+- Written directly to the teacher (use "you")
+- Clear and actionable
+
+Teaching notes:`
+      },
       'general': {
         system: 'You are a helpful writing assistant.',
         user: `Improve and clarify the following text while maintaining its intent:
