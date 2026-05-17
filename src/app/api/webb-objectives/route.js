@@ -88,8 +88,8 @@ async function checkObjectives(apiKey, objectives, completedIndices, conversatio
     `in their own words — NOT just from hearing the teacher say it. ` +
     `The student must use their own words, paraphrase, or give an example. ` +
     `They do NOT need to use exact terminology — a clear conceptual demonstration counts. ` +
-    `For each demonstrated objective, output one line: INDEX|STUDENT_QUOTE ` +
-    `where STUDENT_QUOTE is the verbatim student sentence(s) that best demonstrate it. ` +
+    `For each demonstrated objective, output one line in this exact format: INDEX|SENTENCE_OK|STUDENT_QUOTE ` +
+    `where INDEX is the objective number, SENTENCE_OK is "yes" if the student quote is a complete sentence suitable for use in an essay (subject + predicate, full thought), or "no" if it is a fragment, single word, or phrase, and STUDENT_QUOTE is the verbatim student sentence(s) that best demonstrate it. ` +
     `If no objectives are demonstrated, return "none".`
 
   const objList = incomplete.map(({ obj, i }) => `${i}: ${obj}`).join('\n')
@@ -99,20 +99,33 @@ async function checkObjectives(apiKey, objectives, completedIndices, conversatio
     `Remaining objectives (number: text):\n${objList}\n\nRecent student messages:\n${studentSaid}`,
     300)
 
-  if (raw.toLowerCase().startsWith('none')) return { newlyCompleted: [], qualifyingText: {} }
+  if (raw.toLowerCase().startsWith('none')) return { newlyCompleted: [], qualifyingText: {}, sentenceQuality: {} }
 
   const newlyCompleted = []
   const qualifyingText = {}
+  const sentenceQuality = {}
   for (const line of raw.split('\n')) {
-    const [indexPart, ...quoteParts] = line.split('|')
-    const n = parseInt(indexPart?.trim(), 10)
-    const quote = quoteParts.join('|').trim()
+    const parts = line.split('|')
+    const n = parseInt(parts[0]?.trim(), 10)
+    const sentenceOk = (parts[1]?.trim() || '').toLowerCase() === 'yes'
+    const quote = parts.slice(2).join('|').trim()
     if (!isNaN(n) && !completedIndices.includes(n) && objectives[n]) {
       newlyCompleted.push(n)
       if (quote) qualifyingText[n] = quote
+      sentenceQuality[n] = sentenceOk
     }
   }
-  return { newlyCompleted, qualifyingText }
+  return { newlyCompleted, qualifyingText, sentenceQuality }
+}
+
+// ── Check if a student's text is a complete sentence usable in an essay ───────
+async function checkSentence(apiKey, text) {
+  const system =
+    `You judge whether a student's response is a complete sentence that could be used verbatim in an essay. ` +
+    `A complete sentence has a subject and predicate and conveys a full thought. ` +
+    `Reply with exactly one word: YES or NO.`
+  const raw = await callGPT(apiKey, system, `Student said: "${text}"`, 5)
+  return raw.toUpperCase().startsWith('Y')
 }
 
 // ── Generate essay from the student's own responses ──────────────────────────
@@ -157,14 +170,19 @@ export async function POST(req) {
     }
 
     if (body.action === 'check') {
-      const { newlyCompleted, qualifyingText } = await checkObjectives(
+      const { newlyCompleted, qualifyingText, sentenceQuality } = await checkObjectives(
         apiKey,
         body.objectives    || [],
         body.completedIndices || [],
         body.conversation  || [],
         body.quick         || false,
       )
-      return NextResponse.json({ newlyCompleted, qualifyingText })
+      return NextResponse.json({ newlyCompleted, qualifyingText, sentenceQuality })
+    }
+
+    if (body.action === 'check-sentence') {
+      const isSentence = await checkSentence(apiKey, body.text || '')
+      return NextResponse.json({ isSentence })
     }
 
     if (body.action === 'generate-essay') {

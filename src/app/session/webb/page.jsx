@@ -155,12 +155,6 @@ function isNo(text) {
   return /^\s*(no|nope|nah|never ?mind|not now|don'?t|that'?s ok|i'?m good|no thanks|no thank you|skip it|forget it|it'?s fine|cancel|nvm|👎)\b/i.test(text)
 }
 
-// Returns true when text looks like a complete sentence (≥ 5 words).
-// Used to enforce sentence-quality answers before crediting an objective.
-function isCompleteSentence(text) {
-  return (text || '').trim().split(/\s+/).filter(Boolean).length >= 5
-}
-
 // ── Root page ─────────────────────────────────────────────────────────────────
 export default function WebbPage() {
   const router = useRouter()
@@ -1075,19 +1069,31 @@ export default function WebbPage() {
     // Hold the objective until the student restates in a full sentence.
     if (awaitingSentenceRef.current !== null) {
       const { objIdx } = awaitingSentenceRef.current
-      if (isCompleteSentence(text)) {
-        awaitingSentenceRef.current = null
-        setObjResponses(prev => ({ ...prev, [objIdx]: text }))
-        setCompletedObj(prev => {
-          if (prev.includes(objIdx)) return prev
-          const next = [...prev, objIdx]
-          setNewlyCompletedObj({ idx: objIdx, text: objectives[objIdx] })
-          return next
+      setChatLoading(true)
+      try {
+        const res = await fetch('/api/webb-objectives', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'check-sentence', text }),
         })
-        addMsg("Perfect — that's a great sentence! I'm counting that objective.")
-      } else {
-        addMsg("Almost! I need a full sentence — something like \"The [topic] [does something].\" Try again!")
+        const data = await res.json()
+        if (data.isSentence) {
+          awaitingSentenceRef.current = null
+          setObjResponses(prev => ({ ...prev, [objIdx]: text }))
+          setCompletedObj(prev => {
+            if (prev.includes(objIdx)) return prev
+            const next = [...prev, objIdx]
+            setNewlyCompletedObj({ idx: objIdx, text: objectives[objIdx] })
+            return next
+          })
+          addMsg("Perfect — that's a great sentence! I'm counting that objective.")
+        } else {
+          addMsg("Almost! I need a full sentence — something like \"The [topic] [does something].\" Try again!")
+        }
+      } catch {
+        addMsg("Almost! Try saying that in a full sentence. You've got this!")
       }
+      setChatLoading(false)
       return
     }
 
@@ -1241,10 +1247,11 @@ export default function WebbPage() {
           const newly = checkData.newlyCompleted || []
           if (newly.length) {
             const qt = checkData.qualifyingText || {}
+            const sq = checkData.sentenceQuality || {}
             const firstNew = newly.find(i => !completedObj.includes(i))
-            // If the qualifying answer isn't a complete sentence, hold the objective
-            // and ask the student to restate before crediting it.
-            if (firstNew !== undefined && !isCompleteSentence(qt[firstNew] || '')) {
+            // If AI flagged the qualifying answer as not a complete sentence, hold the
+            // objective and ask the student to restate before crediting it.
+            if (firstNew !== undefined && sq[firstNew] === false) {
               awaitingSentenceRef.current = { objIdx: firstNew }
               setChatLoading(false)
               addMsg("You've got the right idea! I need you to say that in a complete sentence though — that's what goes in your essay. Give it a try!")
