@@ -829,35 +829,6 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 									</div>
 								</div>
 
-								{/* Mr. Slate drill settings */}
-								<div style={{ marginTop: 24 }}>
-									<p style={{ margin: '0 0 12px', fontSize: 14, color: '#374151', fontWeight: 700 }}>
-										🤖 Mr. Slate
-									</p>
-									<p style={{ margin: '0 0 12px', fontSize: 13, color: '#6b7280' }}>
-										Configure drill scoring and timing for Mr. Slate sessions
-									</p>
-									<div style={gridStyle}>
-										{SLATE_SETTINGS_CONFIG.map(({ label, key, min, max, unit }) => (
-											<div key={key} style={fieldStyle}>
-												<label style={labelStyle}>{label}</label>
-												<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-													<input
-														type="range"
-														min={min}
-														max={max}
-														value={slateSettings[key] ?? DEFAULT_SLATE_SETTINGS[key]}
-														onChange={e => setSlateSettings(s => ({ ...s, [key]: Number(e.target.value) }))}
-														style={{ flex: 1, accentColor: '#6366f1', cursor: 'pointer' }}
-													/>
-													<span style={{ fontSize: 13, fontWeight: 700, color: '#111', minWidth: 36, textAlign: 'right' }}>
-														{slateSettings[key] ?? DEFAULT_SLATE_SETTINGS[key]}{unit}
-													</span>
-												</div>
-											</div>
-										))}
-									</div>
-								</div>
 							</div>
 						)}
 
