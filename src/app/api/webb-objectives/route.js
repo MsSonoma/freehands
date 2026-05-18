@@ -105,9 +105,6 @@ async function checkObjectives(apiKey, objectives, completedIndices, conversatio
   const qualifyingText = {}
   const sentenceQuality = {}
 
-  // Build a set of all actual student text (lowercased) for hallucination-check
-  const allStudentText = recentTurns.map(t => t.text.toLowerCase())
-
   for (const line of raw.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.toLowerCase() === 'none') continue
@@ -117,26 +114,6 @@ async function checkObjectives(apiKey, objectives, completedIndices, conversatio
     const sentenceOk = (parts[1]?.trim() || '').toLowerCase() === 'yes'
     const quote = parts.slice(2).join('|').trim()
     if (isNaN(n) || completedIndices.includes(n) || !objectives[n]) continue
-
-    // Reject if the AI invented a quote — require at least 4 consecutive words
-    // from the quote to appear in one of the actual student messages
-    if (quote) {
-      const quoteWords = quote.toLowerCase().split(/\s+/).filter(Boolean)
-      const windowWords = Math.min(4, quoteWords.length)
-      const verified = windowWords < 2
-        ? allStudentText.some(s => s.includes(quoteWords[0]))
-        : allStudentText.some(s => {
-            for (let i = 0; i <= quoteWords.length - windowWords; i++) {
-              const phrase = quoteWords.slice(i, i + windowWords).join(' ')
-              if (s.includes(phrase)) return true
-            }
-            return false
-          })
-      if (!verified) {
-        console.warn(`[webb-objectives] Rejected hallucinated quote for objective ${n}: "${quote}"`)
-        continue
-      }
-    }
 
     newlyCompleted.push(n)
     if (quote) qualifyingText[n] = quote
