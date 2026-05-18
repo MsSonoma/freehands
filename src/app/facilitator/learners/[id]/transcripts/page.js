@@ -192,8 +192,11 @@ export default function LearnerTranscriptsPage({ params }) {
                     <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {it.lessonId || 'Lesson'}
                     </div>
-                    <div style={{ color: '#6b7280', fontSize: 13 }}>
-                      {it.kind ? it.kind.toUpperCase() : 'TXT'} transcript
+                    <div style={{ color: '#6b7280', fontSize: 13, display: 'flex', gap: 8, alignItems: 'center' }}>
+                      {it.updatedAt ? (
+                        <span>{new Date(it.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                      ) : null}
+                      <span>{it.kind ? it.kind.toUpperCase() : 'TXT'}</span>
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>

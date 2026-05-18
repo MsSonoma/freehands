@@ -130,15 +130,33 @@ function formatPhaseLabel(phase) {
 }
 
 function pad2(n) { return String(n).padStart(2, '0'); }
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function toLocalDateTime(ts) {
   try {
     const d = new Date(ts);
-    const yyyy = d.getFullYear();
-    const mm = pad2(d.getMonth() + 1);
-    const dd = pad2(d.getDate());
-    const hh = pad2(d.getHours());
+    const month = MONTHS[d.getMonth()];
+    const day = d.getDate();
+    const year = d.getFullYear();
+    const hh = d.getHours();
     const mi = pad2(d.getMinutes());
-    return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+    const ampm = hh >= 12 ? 'PM' : 'AM';
+    const h = hh % 12 || 12;
+    return `${month} ${day}, ${year} – ${h}:${mi} ${ampm}`;
+  } catch { return String(ts); }
+}
+function toLocalDate(ts) {
+  try {
+    const d = new Date(ts);
+    return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  } catch { return String(ts); }
+}
+function toLocalTime(ts) {
+  try {
+    const d = new Date(ts);
+    const hh = d.getHours();
+    const mi = pad2(d.getMinutes());
+    const ampm = hh >= 12 ? 'PM' : 'AM';
+    return `${hh % 12 || 12}:${mi} ${ampm}`;
   } catch { return String(ts); }
 }
 
@@ -160,50 +178,60 @@ function renderTranscriptPdf({ lessonTitle, learnerName, learnerId, lessonId, se
     doc.text(`${lessonTitle} — Transcript`, margin, margin);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
-    const meta = [
-      `Learner: ${learnerName || learnerId || 'Unknown'}`,
-      `Lesson ID: ${lessonId}`,
-    ];
     let y = margin + 20;
-    meta.forEach(line => { doc.text(line, margin, y); y += 16; });
+    doc.text(`Learner: ${learnerName || learnerId || 'Unknown'}`, margin, y); y += 16;
     return y + 8;
   };
 
   let y = addHeader();
 
-  const addLine = (text, style = 'normal', color = '#000000') => {
+  const addLine = (text, style = 'normal', color = '#000000', extraSpaceAfter = 0) => {
     doc.setFont('helvetica', style);
     doc.setTextColor(color);
     const lines = wrapLines(doc, text, maxW);
-    const height = lines.length * 14 + 6;
+    const height = lines.length * 14 + 6 + extraSpaceAfter;
     if (y + height > pageH - margin) {
       doc.addPage();
       y = addHeader();
     }
     lines.forEach((ln) => { doc.text(ln, margin, y); y += 14; });
-    y += 6;
+    y += 6 + extraSpaceAfter;
   };
 
+  const multiSeg = (segments || []).length > 1;
+
   (segments || []).forEach((seg, idx) => {
-    const started = toLocalDateTime(seg?.startedAt || seg?.completedAt || Date.now());
-    const completed = seg?.completedAt ? toLocalDateTime(seg.completedAt) : null;
-    const label = completed ? `Session ${idx + 1} — ${started} to ${completed}` : `Session ${idx + 1} — ${started}`;
-    addLine(label, 'bold');
+    const ts = seg?.startedAt || seg?.completedAt || Date.now();
+    const dateStr = toLocalDate(ts);
+    const startTime = toLocalTime(ts);
+    const endTime = seg?.completedAt ? toLocalTime(seg.completedAt) : null;
+    if (multiSeg) {
+      if (idx > 0) y += 10;
+      const label = endTime ? `Session ${idx + 1}  •  ${dateStr}  •  ${startTime} – ${endTime}` : `Session ${idx + 1}  •  ${dateStr}  •  ${startTime}`;
+      addLine(label, 'bold', '#374151', 4);
+    } else {
+      const label = endTime ? `${dateStr}  •  ${startTime} – ${endTime}` : `${dateStr}  •  ${startTime}`;
+      addLine(label, 'normal', '#6b7280', 4);
+    }
     const lines = Array.isArray(seg?.lines) ? seg.lines : [];
     let currentPhaseLabel = null;
+    let prevRole = null;
     lines.forEach((ln) => {
       const phaseLabel = formatPhaseLabel(ln?.phase);
       if (phaseLabel && phaseLabel !== currentPhaseLabel) {
         currentPhaseLabel = phaseLabel;
-        addLine(`— ${phaseLabel} —`, 'bold', '#555555');
+        y += 6;
+        addLine(`[ ${phaseLabel} ]`, 'bold', '#555555', 4);
+        prevRole = null;
       }
       const role = (ln?.role || '').toLowerCase() === 'user' ? 'Learner' : teacherDisplayName;
-      const color = role === 'Learner' ? '#c7442e' : '#000000';
+      const color = role === 'Learner' ? '#c7442e' : '#111111';
       const text = typeof ln?.text === 'string' ? ln.text : '';
       if (!text) return;
+      if (prevRole && prevRole !== role) y += 4;
       addLine(`${role}: ${text}`, role === 'Learner' ? 'bold' : 'normal', color);
+      prevRole = role;
     });
-    y += 10; // extra space between sessions
   });
 
   doc.setTextColor('#000000');
@@ -213,30 +241,46 @@ function renderTranscriptPdf({ lessonTitle, learnerName, learnerId, lessonId, se
 function renderTranscriptText({ lessonTitle, learnerName, learnerId, lessonId, segments, teacherDisplayName = 'Ms. Sonoma' }) {
   const lines = [];
   lines.push(`${lessonTitle} — Transcript`);
-  const meta = [
-    `Learner: ${learnerName || learnerId || 'Unknown'}`,
-    `Lesson ID: ${lessonId}`,
-  ];
-  lines.push(...meta);
+  lines.push(`Learner: ${learnerName || learnerId || 'Unknown'}`);
   lines.push('');
+  const multiSeg = (segments || []).length > 1;
   (segments || []).forEach((seg, idx) => {
-    const started = toLocalDateTime(seg?.startedAt || seg?.completedAt || Date.now());
-    const completed = seg?.completedAt ? toLocalDateTime(seg.completedAt) : null;
-    const header = completed ? `Session ${idx + 1} — ${started} to ${completed}` : `Session ${idx + 1} — ${started}`;
-    lines.push(header);
+    const ts = seg?.startedAt || seg?.completedAt || Date.now();
+    const dateStr = toLocalDate(ts);
+    const startTime = toLocalTime(ts);
+    const endTime = seg?.completedAt ? toLocalTime(seg.completedAt) : null;
+    if (multiSeg) {
+      if (idx > 0) lines.push('');
+      const header = endTime
+        ? `Session ${idx + 1}  •  ${dateStr}  •  ${startTime} – ${endTime}`
+        : `Session ${idx + 1}  •  ${dateStr}  •  ${startTime}`;
+      lines.push(header);
+      lines.push('─'.repeat(header.length));
+    } else {
+      const header = endTime ? `${dateStr}  •  ${startTime} – ${endTime}` : `${dateStr}  •  ${startTime}`;
+      lines.push(header);
+    }
+    lines.push('');
     const segLines = Array.isArray(seg?.lines) ? seg.lines : [];
     let currentPhaseLabel = null;
+    let prevRole = null;
     segLines.forEach((ln) => {
       const phaseLabel = formatPhaseLabel(ln?.phase);
       if (phaseLabel && phaseLabel !== currentPhaseLabel) {
         currentPhaseLabel = phaseLabel;
-        lines.push(`\n[${phaseLabel}]`);
+        if (prevRole) lines.push('');
+        lines.push(`[ ${phaseLabel} ]`);
+        lines.push('');
+        prevRole = null;
       }
       const role = (ln?.role || '').toLowerCase() === 'user' ? 'Learner' : teacherDisplayName;
       const text = typeof ln?.text === 'string' ? ln.text : '';
-      if (text) lines.push(`${role}: ${text}`);
+      if (!text) return;
+      if (prevRole && prevRole !== role) lines.push('');
+      lines.push(`${role}: ${text}`);
+      prevRole = role;
     });
-    lines.push('');
+    if (multiSeg) lines.push('');
   });
   return lines.join('\n');
 }
@@ -366,7 +410,8 @@ export async function appendTranscriptSegment({ learnerId, learnerName, lessonId
     if (sessionBasePath) {
       let sLedger = sanitizeLedgerSegments(await loadLedger(store, `${sessionBasePath}/ledger.json`));
       if (sanitizedSegment.lines.length) {
-        sLedger.push(cloneSegment());
+        const sExistIdx = sLedger.findIndex((s) => s?.startedAt === sanitizedSegment.startedAt);
+        if (sExistIdx !== -1) { sLedger[sExistIdx] = cloneSegment(); } else { sLedger.push(cloneSegment()); }
       }
       const sesOut = await writeLedgerAndArtifacts(store, {
         basePath: sessionBasePath, lessonTitle, learnerName, learnerId, lessonId, ledger: sLedger, teacherDisplayName,
@@ -377,7 +422,9 @@ export async function appendTranscriptSegment({ learnerId, learnerName, lessonId
     // 2) Always update consolidated per-lesson ledger/PDF for facilitator convenience
     let ledger = sanitizeLedgerSegments(await loadLedger(store, `${baseLessonPath}/ledger.json`));
     if (sanitizedSegment.lines.length) {
-      ledger.push(cloneSegment());
+      // Upsert by startedAt so autosave + sessionComplete don't create duplicate segments
+      const existIdx = ledger.findIndex((s) => s?.startedAt === sanitizedSegment.startedAt);
+      if (existIdx !== -1) { ledger[existIdx] = cloneSegment(); } else { ledger.push(cloneSegment()); }
     }
     const consolidatedOut = await writeLedgerAndArtifacts(store, {
       basePath: baseLessonPath, lessonTitle, learnerName, learnerId, lessonId, ledger, teacherDisplayName,
