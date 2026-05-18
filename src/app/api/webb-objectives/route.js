@@ -84,15 +84,13 @@ async function checkObjectives(apiKey, objectives, completedIndices, conversatio
   if (!recentTurns.length) return { newlyCompleted: [], qualifyingText: {} }
 
   const system =
-    `You are a strict evaluator. A student has earned an objective ONLY if they have clearly explained it ` +
-    `in their own words — describing what it is, how it works, or why it matters. ` +
-    `Merely mentioning a word, asking a question about it, or giving a one-word answer does NOT count. ` +
-    `Be conservative: if there is any doubt, do NOT award it. ` +
-    `Award AT MOST ONE objective per check — the single most clearly demonstrated one. ` +
-    `If you find a qualifying response, output exactly one line: INDEX|SENTENCE_OK|STUDENT_QUOTE ` +
-    `where INDEX is the objective number (integer), SENTENCE_OK is "yes" if the student quote is a complete sentence (subject + predicate, full thought — not a fragment or single word), or "no" otherwise, ` +
-    `and STUDENT_QUOTE is the verbatim student text that demonstrates it. ` +
-    `If no objective is clearly demonstrated, output exactly: none`
+    `You are checking whether a student has demonstrated an understanding of lesson objectives ` +
+    `in their own words — NOT just from hearing the teacher say it. ` +
+    `The student must use their own words, paraphrase, or give an example. ` +
+    `They do NOT need to use exact terminology — a clear conceptual demonstration counts. ` +
+    `For each demonstrated objective, output one line: INDEX|SENTENCE_OK|STUDENT_QUOTE ` +
+    `where INDEX is the objective number, SENTENCE_OK is "yes" if the student quote is a complete sentence suitable for use in an essay (subject + predicate, full thought), or "no" if it is a fragment, single word, or phrase, and STUDENT_QUOTE is the verbatim student sentence(s) that best demonstrate it. ` +
+    `If no objectives are demonstrated, return "none".`
 
   const objList = incomplete.map(({ obj, i }) => `${i}: ${obj}`).join('\n')
   const studentSaid = recentTurns.map(t => `Student: "${t.text}"`).join('\n')
