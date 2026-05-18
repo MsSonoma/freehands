@@ -409,7 +409,7 @@ export default function LessonPlanner({
         text += '\n- Reference prior concepts but teach something genuinely new'
         text += `\n- Target difficulty: ${recommendedDifficulty} (maintain for 3-4 lessons before advancing)`
 
-        return text
+        return { text, difficulty: recommendedDifficulty }
       }
 
       const buildGenerationSoFarText = (subject) => {
@@ -447,7 +447,8 @@ export default function LessonPlanner({
         for (const subjectInfo of daySubjects) {
           // Generate outline for each subject on this day
           try {
-            const dynamicContextText = `${buildContextForSubject(subjectInfo.subject)}${getSubjectContextAdditions(subjectInfo.subject)}${buildGenerationSoFarText(subjectInfo.subject)}`
+            const { text: subjectContextText, difficulty: recommendedDifficulty } = buildContextForSubject(subjectInfo.subject)
+            const dynamicContextText = `${subjectContextText}${getSubjectContextAdditions(subjectInfo.subject)}${buildGenerationSoFarText(subjectInfo.subject)}`
 
               const response = await fetch('/api/generate-lesson-outline', {
                 method: 'POST',
