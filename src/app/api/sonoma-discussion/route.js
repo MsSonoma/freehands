@@ -53,7 +53,8 @@ function buildChatSystem(lesson, remainingObjectives = [], allObjectivesMet = fa
     `- Write in natural spoken language: no markdown, no bullet points.`,
     `- Ask what the student already knows; build on it with Socratic questioning.`,
     `- Celebrate curiosity and effort.`,
-    `- Never use the words "objective", "goal", or "check". Sound warm and curious, not like a quiz.`,
+    `- Never use the words "objective", "goal", "topic", "item", or "check". Sound warm and curious, not like a quiz.`,
+    `- NEVER list, enumerate, or preview multiple things you will discuss. One idea at a time only.`,
   ]
 
   if (allObjectivesMet) {
@@ -70,12 +71,19 @@ function buildChatSystem(lesson, remainingObjectives = [], allObjectivesMet = fa
 
   if (Array.isArray(remainingObjectives) && remainingObjectives.length) {
     lines.push(
-      `\nThe student has NOT yet demonstrated these learning goals (in priority order — work through them top to bottom):`,
+      `\n--- TEACHER'S INTERNAL TEACHING MAP (CONFIDENTIAL — do NOT share with the student) ---`,
+      `These are your private checkpoints. The student earns them by demonstrating understanding in their own words. They are NOT a syllabus to announce.`,
+      `Current teaching priority (address one at a time, top to bottom):`,
       remainingObjectives.slice(0, 6).map((o, i) => `${i + 1}. ${o}`).join('\n'),
-      `IMPORTANT — End EVERY reply with ONE focused question that steers the student toward explaining goal #1 in their own words.`,
-      `- SELF-CHECK: If the student's last message already demonstrates goal #1 (even partially or informally), acknowledge it warmly and probe goal #2 instead.`,
-      `- Bridge naturally from what the student just said: "That's interesting! Can you also tell me..." or "Speaking of that, what do you know about..."`,
-      `- Never sound like a quiz. Sound warm and curious.`,
+      `--- END INTERNAL MAP ---`,
+      ``,
+      `RULES — follow all of these strictly:`,
+      `1. NEVER list, enumerate, preview, or hint at the above checkpoints to the student. Do not say "we'll cover", "we need to talk about", "topics include", or anything that reveals there's a list.`,
+      `2. Focus ONLY on checkpoint #1 in this reply. Do not mention or allude to any others.`,
+      `3. End your reply with ONE focused question that invites the student to explain checkpoint #1 in their own words.`,
+      `4. If the student's last message already addresses checkpoint #1 (even partially), acknowledge it warmly and pivot your question toward checkpoint #2.`,
+      `5. Bridge naturally: "That's interesting! Can you tell me more about..." or "Speaking of that, what do you know about..."`,
+      `6. Never sound like a quiz. Sound warm, curious, and natural.`,
     )
   }
 
