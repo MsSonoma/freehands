@@ -228,17 +228,10 @@ export class DiscussionPhase {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data.newlyCompleted) && data.newlyCompleted.length) {
-            const sq = data.sentenceQuality || {};
-            // Only award objectives where the student gave a complete sentence.
-            // Fragments, single words, or shaky AI awards are held back — same
-            // gate that Mrs. Webb uses (sq[n] === false means not a full sentence).
-            const qualified = data.newlyCompleted.filter(n => sq[n] !== false);
-            if (qualified.length) {
-              newlyCompleted = qualified;
-              this.#completedIndices = [...this.#completedIndices, ...qualified];
-              // Emit immediately so the badge updates before the reply audio plays
-              this.#emitStateChange();
-            }
+            newlyCompleted = data.newlyCompleted;
+            this.#completedIndices = [...this.#completedIndices, ...newlyCompleted];
+            // Emit immediately so the badge updates before the reply audio plays
+            this.#emitStateChange();
           }
         }
       } catch (err) {
