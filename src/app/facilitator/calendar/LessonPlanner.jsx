@@ -492,13 +492,13 @@ export default function LessonPlanner({
         }
 
       if (onPlannedLessonsChange) {
-        onPlannedLessonsChange(lessons)
+        onPlannedLessonsChange({ ...plannedLessons, ...lessons })
       }
     } catch (err) {
       console.error('Error generating planned lessons:', err)
       // Save any partial results already generated rather than discarding them
       if (Object.keys(lessons).length > 0 && onPlannedLessonsChange) {
-        onPlannedLessonsChange(lessons)
+        onPlannedLessonsChange({ ...plannedLessons, ...lessons })
       }
     } finally {
       setGenerating(false)
