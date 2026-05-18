@@ -222,6 +222,7 @@ export class DiscussionPhase {
             objectives:       this.#objectives,
             completedIndices: this.#completedIndices,
             conversation:     this.#chatHistory.map(m => ({ role: m.role, content: m.content })),
+            quick:            true,
           }),
         });
         if (res.ok) {

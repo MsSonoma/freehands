@@ -16,7 +16,7 @@ const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL } from '@/app/lib/aiModel'
 const OPENAI_MODEL = AI_MODEL
 
-async function callGPT(apiKey, system, user, maxTokens = 500) {
+async function callGPT(apiKey, system, user, maxTokens = 500, temperature = 0.3) {
   const res = await fetch(OPENAI_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -24,7 +24,7 @@ async function callGPT(apiKey, system, user, maxTokens = 500) {
       model: OPENAI_MODEL,
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
       max_completion_tokens: maxTokens,
-      temperature: 0.3,
+      temperature,
     }),
   })
   const json = await res.json()
@@ -84,38 +84,63 @@ async function checkObjectives(apiKey, objectives, completedIndices, conversatio
   if (!recentTurns.length) return { newlyCompleted: [], qualifyingText: {} }
 
   const system =
-    `You evaluate whether a student has demonstrated understanding of specific objectives ` +
-    `in their own words — NOT just from hearing the teacher say it. ` +
-    `The student must use their own words, paraphrase, or give an example. ` +
-    `They do NOT need to use exact terminology — a clear conceptual demonstration counts. ` +
-    `For each demonstrated objective, output one line in this exact format: INDEX|SENTENCE_OK|STUDENT_QUOTE ` +
-    `where INDEX is the objective number, SENTENCE_OK is "yes" if the student quote is a complete sentence suitable for use in an essay (subject + predicate, full thought), or "no" if it is a fragment, single word, or phrase, and STUDENT_QUOTE is the verbatim student sentence(s) that best demonstrate it. ` +
-    `If no objectives are demonstrated, return "none".`
+    `You are a strict evaluator. A student has earned an objective ONLY if they have clearly explained it ` +
+    `in their own words — describing what it is, how it works, or why it matters. ` +
+    `Merely MENTIONING a word, asking a question about it, repeating what the teacher said, or giving a one-word answer does NOT count. ` +
+    `The student must demonstrate understanding through their own explanation or example. ` +
+    `Be conservative: if there is any doubt, do NOT award it. ` +
+    `Award AT MOST ONE objective per check — the single most clearly demonstrated one. ` +
+    `If you find a qualifying response, output exactly one line: INDEX|STUDENT_QUOTE ` +
+    `where INDEX is the objective number and STUDENT_QUOTE is the verbatim student text that demonstrates it. ` +
+    `If no objective is clearly demonstrated, output exactly: none`
 
   const objList = incomplete.map(({ obj, i }) => `${i}: ${obj}`).join('\n')
   const studentSaid = recentTurns.map(t => `Student: "${t.text}"`).join('\n')
 
   const raw = await callGPT(apiKey, system,
     `Remaining objectives (number: text):\n${objList}\n\nRecent student messages:\n${studentSaid}`,
-    300)
-
-  if (raw.toLowerCase().startsWith('none')) return { newlyCompleted: [], qualifyingText: {}, sentenceQuality: {} }
+    300, 0)
 
   const newlyCompleted = []
   const qualifyingText = {}
   const sentenceQuality = {}
+
+  // Build a set of all actual student text (lowercased) for hallucination-check
+  const allStudentText = recentTurns.map(t => t.text.toLowerCase())
+
   for (const line of raw.split('\n')) {
-    const parts = line.split('|')
-    const n = parseInt(parts[0]?.trim(), 10)
-    const sentenceOk = (parts[1]?.trim() || '').toLowerCase() === 'yes'
-    const quote = parts.slice(2).join('|').trim()
-    if (!isNaN(n) && !completedIndices.includes(n) && objectives[n]) {
-      newlyCompleted.push(n)
-      if (quote) qualifyingText[n] = quote
-      sentenceQuality[n] = sentenceOk
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.toLowerCase() === 'none') continue
+    const pipeIdx = trimmed.indexOf('|')
+    if (pipeIdx === -1) continue
+    const n = parseInt(trimmed.slice(0, pipeIdx).trim(), 10)
+    const quote = trimmed.slice(pipeIdx + 1).trim()
+    if (isNaN(n) || completedIndices.includes(n) || !objectives[n]) continue
+
+    // Reject if the AI invented a quote — require at least 4 consecutive words
+    // from the quote to appear in one of the actual student messages
+    if (quote) {
+      const quoteWords = quote.toLowerCase().split(/\s+/).filter(Boolean)
+      const windowWords = Math.min(4, quoteWords.length)
+      const verified = windowWords < 2
+        ? allStudentText.some(s => s.includes(quoteWords[0]))
+        : allStudentText.some(s => {
+            for (let i = 0; i <= quoteWords.length - windowWords; i++) {
+              const phrase = quoteWords.slice(i, i + windowWords).join(' ')
+              if (s.includes(phrase)) return true
+            }
+            return false
+          })
+      if (!verified) {
+        console.warn(`[webb-objectives] Rejected hallucinated quote for objective ${n}: "${quote}"`)
+        continue
+      }
     }
+
+    newlyCompleted.push(n)
+    if (quote) qualifyingText[n] = quote
   }
-  return { newlyCompleted, qualifyingText, sentenceQuality }
+  return { newlyCompleted, qualifyingText, sentenceQuality: {} }
 }
 
 // ── Check if a student's text is a complete sentence usable in an essay ───────
