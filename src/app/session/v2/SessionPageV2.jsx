@@ -553,6 +553,8 @@ function SessionPageV2Inner() {
   const pendingTimerStateRef = useRef(null);
   const lastTimerPersistAtRef = useRef(0);
   const startSessionRef = useRef(null);
+  const sessionStartedAtRef = useRef(null); // ISO timestamp set when user clicks Begin/Resume for this window
+  const sessionTranscriptStartIdxRef = useRef(0); // # of lines restored from prior sessions; new lines start at this index
   const resumePhaseRef = useRef(null);
   const deferClosingStartUntilAudioEndRef = useRef(false);
   
@@ -1088,10 +1090,11 @@ function SessionPageV2Inner() {
   useEffect(() => {
     const handler = () => {
       const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
-      const lines = transcriptLinesRef.current || [];
+      const allLines = transcriptLinesRef.current || [];
+      const lines = allLines.slice(sessionTranscriptStartIdxRef.current); // only lines from this session window
       if (!learnerId || learnerId === 'demo' || !lessonId || lines.length === 0) return;
       const learnerName = typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null;
-      const startedAt = startSessionRef.current || new Date().toISOString();
+      const startedAt = sessionStartedAtRef.current || new Date().toISOString();
       updateTranscriptLiveSegment({
         learnerId,
         learnerName,
@@ -1113,10 +1116,11 @@ function SessionPageV2Inner() {
   useEffect(() => {
     if (!currentPhase || currentPhase === 'idle' || currentPhase === 'complete') return;
     const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
-    const lines = transcriptLinesRef.current || [];
+    const allLines = transcriptLinesRef.current || [];
+    const lines = allLines.slice(sessionTranscriptStartIdxRef.current); // only lines from this session window
     if (!learnerId || learnerId === 'demo' || !lessonId || lines.length === 0) return;
     const learnerName = typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null;
-    const startedAt = startSessionRef.current || new Date().toISOString();
+    const startedAt = sessionStartedAtRef.current || new Date().toISOString();
     updateTranscriptLiveSegment({
       learnerId,
       learnerName,
@@ -1200,6 +1204,7 @@ function SessionPageV2Inner() {
     setTranscriptLines([]);
     setActiveCaptionIndex(-1);
     setCurrentCaption('');
+    sessionTranscriptStartIdxRef.current = 0; // all lines are new in a fresh session
     if (persist) {
       persistTranscriptState([], -1, { immediate: true });
     }
@@ -2085,6 +2090,8 @@ function SessionPageV2Inner() {
           } else if (storedLines && storedLines.length) {
             const normalized = storedLines.map((l) => ({ text: String(l?.text || ''), role: l?.role === 'user' ? 'user' : 'assistant' }));
             setTranscriptLines(normalized);
+            // Mark how many lines came from prior sessions so the next save only includes new lines.
+            sessionTranscriptStartIdxRef.current = normalized.length;
             const nextActive = Number.isFinite(storedTranscript?.activeIndex) ? storedTranscript.activeIndex : (normalized.length ? normalized.length - 1 : -1);
             setActiveCaptionIndex(nextActive);
             const lastAssistant = [...normalized].reverse().find((l) => l.role !== 'user');
@@ -4491,11 +4498,14 @@ function SessionPageV2Inner() {
       // Save transcript segment to mark lesson as completed.
       // Use the ref mirror (transcriptLinesRef) — this closure was created when lessonData
       // loaded and would otherwise capture the empty initial state via stale closure.
-      const liveTranscriptLines = transcriptLinesRef.current || [];
+      // Only save lines added in this session window (slice from sessionTranscriptStartIdxRef),
+      // not lines restored from prior sessions which are already in the ledger.
+      const allTranscriptLines = transcriptLinesRef.current || [];
+      const liveTranscriptLines = allTranscriptLines.slice(sessionTranscriptStartIdxRef.current);
       if (learnerId && learnerId !== 'demo' && lessonId && liveTranscriptLines.length > 0) {
         try {
           const learnerName = learnerProfile?.name || (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
-          const startedAt = startSessionRef.current || new Date().toISOString();
+          const startedAt = sessionStartedAtRef.current || new Date().toISOString();
           const completedAt = new Date().toISOString();
           
           const txResult = await appendTranscriptSegment({
@@ -6152,6 +6162,11 @@ function SessionPageV2Inner() {
     if (options?.ignoreResume) {
       resetTranscriptState();
     }
+
+    // Record when this session window starts (used as startedAt for transcript segments).
+    // Must be set AFTER resetTranscriptState (which clears the start index) and BEFORE the
+    // orchestrator fires phaseChange events that trigger transcript autosaves.
+    sessionStartedAtRef.current = new Date().toISOString();
     
     // Start teaching prefetch immediately — must run synchronously before orchestratorRef.current.startSession()
     // because phaseChange('teaching') fires synchronously inside startSession and calls startTeachingPhase
