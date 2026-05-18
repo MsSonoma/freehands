@@ -86,12 +86,12 @@ async function checkObjectives(apiKey, objectives, completedIndices, conversatio
   const system =
     `You are a strict evaluator. A student has earned an objective ONLY if they have clearly explained it ` +
     `in their own words — describing what it is, how it works, or why it matters. ` +
-    `Merely MENTIONING a word, asking a question about it, repeating what the teacher said, or giving a one-word answer does NOT count. ` +
-    `The student must demonstrate understanding through their own explanation or example. ` +
+    `Merely mentioning a word, asking a question about it, or giving a one-word answer does NOT count. ` +
     `Be conservative: if there is any doubt, do NOT award it. ` +
     `Award AT MOST ONE objective per check — the single most clearly demonstrated one. ` +
-    `If you find a qualifying response, output exactly one line: INDEX|STUDENT_QUOTE ` +
-    `where INDEX is the objective number and STUDENT_QUOTE is the verbatim student text that demonstrates it. ` +
+    `If you find a qualifying response, output exactly one line: INDEX|SENTENCE_OK|STUDENT_QUOTE ` +
+    `where INDEX is the objective number (integer), SENTENCE_OK is "yes" if the student quote is a complete sentence (subject + predicate, full thought — not a fragment or single word), or "no" otherwise, ` +
+    `and STUDENT_QUOTE is the verbatim student text that demonstrates it. ` +
     `If no objective is clearly demonstrated, output exactly: none`
 
   const objList = incomplete.map(({ obj, i }) => `${i}: ${obj}`).join('\n')
@@ -111,10 +111,11 @@ async function checkObjectives(apiKey, objectives, completedIndices, conversatio
   for (const line of raw.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.toLowerCase() === 'none') continue
-    const pipeIdx = trimmed.indexOf('|')
-    if (pipeIdx === -1) continue
-    const n = parseInt(trimmed.slice(0, pipeIdx).trim(), 10)
-    const quote = trimmed.slice(pipeIdx + 1).trim()
+    const parts = trimmed.split('|')
+    if (parts.length < 2) continue
+    const n = parseInt(parts[0].trim(), 10)
+    const sentenceOk = (parts[1]?.trim() || '').toLowerCase() === 'yes'
+    const quote = parts.slice(2).join('|').trim()
     if (isNaN(n) || completedIndices.includes(n) || !objectives[n]) continue
 
     // Reject if the AI invented a quote — require at least 4 consecutive words
@@ -139,8 +140,9 @@ async function checkObjectives(apiKey, objectives, completedIndices, conversatio
 
     newlyCompleted.push(n)
     if (quote) qualifyingText[n] = quote
+    sentenceQuality[n] = sentenceOk
   }
-  return { newlyCompleted, qualifyingText, sentenceQuality: {} }
+  return { newlyCompleted, qualifyingText, sentenceQuality }
 }
 
 // ── Check if a student's text is a complete sentence usable in an essay ───────
