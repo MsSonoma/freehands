@@ -4510,8 +4510,9 @@ function SessionPageV2Inner() {
           if (txResult?.ok) {
             addEvent('📝 Transcript saved');
           } else {
+            const errMsg = txResult?.error?.message || txResult?.reason || 'unknown';
             console.error('[SessionPageV2] Transcript save failed:', txResult?.reason, txResult?.error);
-            addEvent('⚠️ Transcript save failed: ' + (txResult?.reason || 'unknown'));
+            addEvent('⚠️ Transcript save failed: ' + errMsg);
           }
         } catch (err) {
           console.error('[SessionPageV2] Failed to save transcript:', err);
