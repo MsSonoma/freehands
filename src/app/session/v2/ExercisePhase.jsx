@@ -144,6 +144,9 @@ export class ExercisePhase {
     });
   }
   
+  // Public API: Expose current internal state so callers can branch after start()
+  getState() { return this.#state; }
+
   // Public API: Start phase
   async start(options = {}) {
     const skipPlayPortion = options?.skipPlayPortion === true;
@@ -257,6 +260,11 @@ export class ExercisePhase {
       if (this.#state !== 'playing-intro') return;
       this.#playCurrentQuestion();
     };
+
+    // Stop any in-flight audio before registering the listener so a stale
+    // 'end' event (e.g. play-line still speaking) cannot trigger finishIntro
+    // prematurely and advance the state before the intro TTS is ready.
+    this.#audioEngine.stop();
 
     // Advance to the first question when the intro completes OR is skipped.
     this.#setupAudioEndListener(finishIntro);

@@ -2843,16 +2843,19 @@ function SessionPageV2Inner() {
       }
 
       // Q&A phases with play timers: after Begin, tell the learner they can play.
-      // (Exclude discussion; skipPlayPortion phases should not say this.)
+      // Only when start() actually landed in awaiting-go (not a resume straight into
+      // awaiting-answer/reviewing). Check via getState() so we don't rely on stale
+      // React state (which hasn't batched yet at this point in the async function).
+      // Fire-and-forget (no await): AudioEngine.stop() abandons #playHTMLAudio so
+      // awaiting playAudio() can hang forever if the learner clicks Go while the
+      // line is still speaking.
       if (!skipPlayPortion && ['comprehension', 'exercise', 'worksheet', 'test'].includes(phaseName)) {
-        const playLine = 'Now you can play until the play timer runs out.';
-        try {
-          const playAudio = await fetchTTS(playLine);
-          if (audioEngineRef.current) {
-            await audioEngineRef.current.playAudio(playAudio || '', [playLine]);
-          }
-        } catch (err) {
-          console.warn('[SessionPageV2] Failed to speak play timer line:', err);
+        const phaseStateAfterStart = ref.current?.getState?.() ?? null;
+        if (phaseStateAfterStart === 'awaiting-go') {
+          const playLine = 'Now you can play until the play timer runs out.';
+          fetchTTS(playLine)
+            .then(audio => audioEngineRef.current?.playAudio(audio || '', [playLine])?.catch?.(() => {}))
+            .catch(err => console.warn('[SessionPageV2] Failed to speak play timer line:', err));
         }
       }
     } else {
