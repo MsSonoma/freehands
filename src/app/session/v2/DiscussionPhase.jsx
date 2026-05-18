@@ -53,6 +53,7 @@ export class DiscussionPhase {
   #chatHistory       = [];   // { role: 'user'|'assistant', content: string }[]
   #audioEndListener  = null;
   #destroyed         = false;
+  #submitGen         = 0;     // incremented on each submitMessage; used to abort stale async chains
 
   // Sentence-by-sentence playback
   #prefetchDone       = false;
@@ -199,9 +200,18 @@ export class DiscussionPhase {
   }
 
   async submitMessage(userText) {
-    if (this.#state !== 'chatting') return;
+    // Allow sending while Ms. Sonoma is speaking — stops TTS and starts new turn
+    if (this.#state === 'awaiting-response') {
+      try { this.#audioEngine.stop(); } catch {}
+    } else if (this.#state !== 'chatting') {
+      return;
+    }
+
     const text = userText?.trim();
     if (!text) return;
+
+    // Bump generation — any in-flight async chain from a previous call will bail out
+    const gen = ++this.#submitGen;
 
     this.#state = 'awaiting-response';
     this.#emitStateChange();
@@ -225,12 +235,12 @@ export class DiscussionPhase {
             quick:            true,
           }),
         });
+        if (gen !== this.#submitGen || this.#destroyed) return;
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data.newlyCompleted) && data.newlyCompleted.length) {
             newlyCompleted = data.newlyCompleted;
             this.#completedIndices = [...this.#completedIndices, ...newlyCompleted];
-            // Emit immediately so the badge updates before the reply audio plays
             this.#emitStateChange();
           }
         }
@@ -239,7 +249,7 @@ export class DiscussionPhase {
       }
     }
 
-    if (this.#destroyed) return;
+    if (gen !== this.#submitGen || this.#destroyed) return;
 
     if (newlyCompleted.length > 0) {
       this.#eventBus.emit('discussionObjectiveComplete', {
@@ -271,6 +281,7 @@ export class DiscussionPhase {
           allObjectivesMet:    allMet,
         }),
       });
+      if (gen !== this.#submitGen || this.#destroyed) return;
       if (res.ok) {
         const data = await res.json();
         replyText = data.text || '';
@@ -279,7 +290,7 @@ export class DiscussionPhase {
       console.warn('[DiscussionPhase] Chat API error:', err);
     }
 
-    if (this.#destroyed) return;
+    if (gen !== this.#submitGen || this.#destroyed) return;
 
     // Fallback reply
     if (!replyText) {
@@ -300,10 +311,10 @@ export class DiscussionPhase {
       console.warn('[DiscussionPhase] TTS fetch failed for reply:', err);
     }
 
-    if (this.#destroyed) return;
+    if (gen !== this.#submitGen || this.#destroyed) return;
 
     this.#setupAudioEndListener(() => {
-      if (this.#destroyed) return;
+      if (gen !== this.#submitGen || this.#destroyed) return;
       if (allMet) {
         this.#state = 'complete';
         this.#emitStateChange();
@@ -319,15 +330,14 @@ export class DiscussionPhase {
     } catch (err) {
       console.warn('[DiscussionPhase] Audio playback error for reply:', err);
       this.#removeAudioEndListener();
-      if (!this.#destroyed) {
-        if (allMet) {
-          this.#state = 'complete';
-          this.#emitStateChange();
-          this.#eventBus.emit('discussionComplete', {});
-        } else {
-          this.#state = 'chatting';
-          this.#emitStateChange();
-        }
+      if (gen !== this.#submitGen || this.#destroyed) return;
+      if (allMet) {
+        this.#state = 'complete';
+        this.#emitStateChange();
+        this.#eventBus.emit('discussionComplete', {});
+      } else {
+        this.#state = 'chatting';
+        this.#emitStateChange();
       }
     }
   }

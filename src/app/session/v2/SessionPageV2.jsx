@@ -8080,7 +8080,6 @@ function SessionPageV2Inner() {
                 type="text"
                 placeholder="Type your answer..."
                 value={selectedExerciseAnswer}
-                disabled={exerciseState === 'awaiting-response'}
                 style={{
                   flex: 1,
                   padding: '10px 16px',
@@ -8090,11 +8089,10 @@ function SessionPageV2Inner() {
                   outline: 'none',
                   background: '#fff',
                   color: '#111827',
-                  opacity: exerciseState === 'awaiting-response' ? 0.6 : 1,
                 }}
                 onChange={(e) => setSelectedExerciseAnswer(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && exerciseState === 'chatting') {
+                  if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     if (selectedExerciseAnswer.trim()) {
                       exercisePhaseRef.current?.submitMessage(selectedExerciseAnswer);
@@ -8104,7 +8102,7 @@ function SessionPageV2Inner() {
               />
               <button
                 type="button"
-                disabled={exerciseState === 'awaiting-response' || !selectedExerciseAnswer.trim()}
+                disabled={!selectedExerciseAnswer.trim()}
                 style={{
                   background: '#c7442e',
                   color: '#fff',
@@ -8113,8 +8111,8 @@ function SessionPageV2Inner() {
                   fontWeight: 700,
                   fontSize: 'clamp(0.9rem, 1.5vw, 1rem)',
                   border: 'none',
-                  cursor: (exerciseState === 'awaiting-response' || !selectedExerciseAnswer.trim()) ? 'not-allowed' : 'pointer',
-                  opacity: (exerciseState === 'awaiting-response' || !selectedExerciseAnswer.trim()) ? 0.6 : 1,
+                  cursor: !selectedExerciseAnswer.trim() ? 'not-allowed' : 'pointer',
+                  opacity: !selectedExerciseAnswer.trim() ? 0.6 : 1,
                   boxShadow: '0 2px 8px rgba(199,68,46,0.28)',
                   whiteSpace: 'nowrap',
                 }}
@@ -8124,7 +8122,7 @@ function SessionPageV2Inner() {
                   }
                 }}
               >
-                {exerciseState === 'awaiting-response' ? 'Thinking...' : 'Send'}
+                Send
               </button>
               <div style={{
                 fontSize: '0.8rem',
@@ -8152,7 +8150,6 @@ function SessionPageV2Inner() {
                 type="text"
                 placeholder="Share your thoughts..."
                 value={discussionResponse}
-                disabled={discussionState === 'awaiting-response'}
                 style={{
                   flex: 1,
                   padding: '10px 16px',
@@ -8162,7 +8159,6 @@ function SessionPageV2Inner() {
                   outline: 'none',
                   background: '#fff',
                   color: '#111827',
-                  opacity: discussionState === 'awaiting-response' ? 0.6 : 1,
                 }}
                 onChange={(e) => setDiscussionResponse(e.target.value)}
                 onKeyDown={(e) => {
@@ -8174,7 +8170,7 @@ function SessionPageV2Inner() {
               />
               <button
                 type="button"
-                disabled={discussionState === 'awaiting-response' || !discussionResponse.trim()}
+                disabled={!discussionResponse.trim()}
                 style={{
                   background: '#c7442e',
                   color: '#fff',
@@ -8183,14 +8179,14 @@ function SessionPageV2Inner() {
                   fontWeight: 700,
                   fontSize: 'clamp(0.9rem, 1.5vw, 1rem)',
                   border: 'none',
-                  cursor: (discussionState === 'awaiting-response' || !discussionResponse.trim()) ? 'not-allowed' : 'pointer',
-                  opacity: (discussionState === 'awaiting-response' || !discussionResponse.trim()) ? 0.6 : 1,
+                  cursor: !discussionResponse.trim() ? 'not-allowed' : 'pointer',
+                  opacity: !discussionResponse.trim() ? 0.6 : 1,
                   boxShadow: '0 2px 8px rgba(199,68,46,0.28)',
                   whiteSpace: 'nowrap',
                 }}
                 onClick={submitDiscussionResponse}
               >
-                {discussionState === 'awaiting-response' ? 'Thinking...' : 'Send'}
+                Send
               </button>
               {discussionObjectivesInfo.total > 0 && (
                 <button

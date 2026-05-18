@@ -36,6 +36,7 @@ export class ExerciseConversationPhase {
   #answers        = []
   #timerMode      = 'play'
   #destroyed      = false
+  #submitGen      = 0     // incremented each submitMessage call; stale chains bail out
 
   #listeners        = new Map()
   #audioEndListener = null
@@ -333,9 +334,17 @@ export class ExerciseConversationPhase {
   }
 
   async submitMessage(userText) {
-    if (this.#state !== 'chatting') return
+    // Allow sending while Ms. Sonoma is speaking — stops TTS and starts new turn
+    if (this.#state === 'awaiting-response') {
+      try { this.#audioEngine.stop(); } catch {}
+    } else if (this.#state !== 'chatting') {
+      return
+    }
+
     const trimmed = String(userText || '').trim()
     if (!trimmed) return
+
+    const gen = ++this.#submitGen  // invalidates any previous in-flight chain
 
     // Disable input while Ms. Sonoma processes + responds
     this.#state = 'awaiting-response'
@@ -346,7 +355,7 @@ export class ExerciseConversationPhase {
       const q          = this.#questions[this.#questionIndex]
       const acceptable = buildAcceptableList(q)
       const isCorrect  = await judgeAnswer(trimmed, acceptable, q)
-      if (this.#destroyed) return
+      if (gen !== this.#submitGen || this.#destroyed) return
 
       const correctAnswer = deriveCorrectAnswerText(q, acceptable) || String(q.answer || '')
       this.#answers.push({
@@ -363,13 +372,13 @@ export class ExerciseConversationPhase {
         this.#wrongAttempts = 0
         const isLast       = this.#questionIndex >= this.#questions.length - 1
         const feedbackText = await this.#getFeedbackText(true, 1, isLast, q)
-        if (this.#destroyed) return
+        if (gen !== this.#submitGen || this.#destroyed) return
 
         if (feedbackText) {
           this.#emit('exerciseConvMessage', { role: 'assistant', text: feedbackText })
           await this.#speakAndWait(feedbackText)
         }
-        if (this.#destroyed) return
+        if (gen !== this.#submitGen || this.#destroyed) return
 
         this.#emitSnapshotSave('exercise-answer')
 
@@ -390,13 +399,13 @@ export class ExerciseConversationPhase {
           isReveal && isLast,
           q,
         )
-        if (this.#destroyed) return
+        if (gen !== this.#submitGen || this.#destroyed) return
 
         if (feedbackText) {
           this.#emit('exerciseConvMessage', { role: 'assistant', text: feedbackText })
           await this.#speakAndWait(feedbackText)
         }
-        if (this.#destroyed) return
+        if (gen !== this.#submitGen || this.#destroyed) return
 
         if (isReveal) {
           this.#emitSnapshotSave('exercise-answer')
@@ -416,7 +425,7 @@ export class ExerciseConversationPhase {
       }
     } catch (err) {
       console.error('[ExerciseConversationPhase] submitMessage error:', err)
-      if (!this.#destroyed) {
+      if (gen === this.#submitGen && !this.#destroyed) {
         this.#state = 'chatting'
         this.#emitStateChange()
       }
