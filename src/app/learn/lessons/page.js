@@ -159,6 +159,8 @@ function LessonsPageInner(){
   const [listTab, setListTab] = useState('active') // 'active' | 'recent' | 'owned'
   const [allGeneratedLessons, setAllGeneratedLessons] = useState([])
   const [generatedLoading, setGeneratedLoading] = useState(false)
+  const [ownedSubjectFilter, setOwnedSubjectFilter] = useState('')
+  const [ownedSort, setOwnedSort] = useState('title-asc')
   const [historyLessons, setHistoryLessons] = useState({}) // lessonKey → metadata for history-only lessons
 
   const {
@@ -855,6 +857,31 @@ function LessonsPageInner(){
     }))
   }, [allGeneratedLessons])
 
+  // Owned tab: unique subjects for filter dropdown
+  const ownedSubjects = useMemo(() => {
+    const s = new Set()
+    ownedList.forEach(l => { if (l.subject) s.add(l.subject) })
+    return [...s].sort()
+  }, [ownedList])
+
+  // Owned tab: filtered + sorted list
+  const filteredOwnedList = useMemo(() => {
+    let list = ownedSubjectFilter
+      ? ownedList.filter(l => l.subject === ownedSubjectFilter)
+      : ownedList
+    return [...list].sort((a, b) => {
+      switch (ownedSort) {
+        case 'title-asc':  return (a.title || '').localeCompare(b.title || '')
+        case 'title-desc': return (b.title || '').localeCompare(a.title || '')
+        case 'subject':    return (a.subject || '').localeCompare(b.subject || '')
+        case 'grade-asc':  return (Number(a.grade) || 0) - (Number(b.grade) || 0)
+        case 'grade-desc': return (Number(b.grade) || 0) - (Number(a.grade) || 0)
+        case 'active':     return (activeSet.has(b.lessonKey) ? 1 : 0) - (activeSet.has(a.lessonKey) ? 1 : 0)
+        default: return 0
+      }
+    })
+  }, [ownedList, ownedSubjectFilter, ownedSort, activeSet])
+
   // Check for existing snapshots from server - must use lesson.id not filename
   useEffect(() => {
     if (!sessionGateReady) return
@@ -1383,44 +1410,82 @@ function LessonsPageInner(){
                 <p style={{ color:'#9ca3af', fontSize:14 }}>Generate a lesson to see it here.</p>
               </div>
             ) : (
-              <div style={list}>
-                {ownedList.map((ol) => {
-                  const olk = ol.lessonKey
-                  const isActive = activeSet.has(olk)
-                  const oMedalTier = medals[olk]?.medalTier || null
-                  const oMedal = oMedalTier ? emojiForTier(oMedalTier) : ''
-                  const oSubjectBadge = ol.subject && ol.subject !== 'generated'
-                    ? ol.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-                    : 'Generated'
-                  return (
-                    <button
-                      key={olk}
-                      style={row}
-                      onClick={() => { setSelectedLesson({ l: ol, subject: 'generated', lessonKey: olk, isDemo: false }); setOverlayNoteEditing(false) }}
-                      onMouseEnter={e => { e.currentTarget.style.background='#f9fafb'; e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.07)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background='#fff'; e.currentTarget.style.boxShadow='none' }}
+              <>
+                {/* Filter + sort bar */}
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12, flexWrap:'wrap' }}>
+                  {ownedSubjects.length > 1 && (
+                    <select
+                      value={ownedSubjectFilter}
+                      onChange={e => setOwnedSubjectFilter(e.target.value)}
+                      style={{ fontSize:12, padding:'4px 8px', borderRadius:6, border:'1px solid #e5e7eb', background:'#fff', color:'#374151', cursor:'pointer' }}
                     >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 11, background: '#f3f4f6', color: '#374151', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>{oSubjectBadge}</span>
-                          {ol.grade && <span style={{ fontSize: 11, color: '#9ca3af' }}>Grade {ol.grade}</span>}
-                          {ol.difficulty && <span style={{ fontSize: 11, color: '#9ca3af' }}>{ol.difficulty.charAt(0).toUpperCase() + ol.difficulty.slice(1)}</span>}
-                        </div>
-                        <div style={{ fontWeight: 600, fontSize: 15, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {ol.title || olk}{oMedal ? ` ${oMedal}` : ''}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        {isActive
-                          ? <span style={{ fontSize: 11, background: '#d1fae5', color: '#065f46', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>Active</span>
-                          : <span style={{ fontSize: 13 }} title="Requires facilitator PIN to start">🔒</span>
-                        }
-                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ color: '#9ca3af' }}><path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
+                      <option value=''>All Subjects</option>
+                      {ownedSubjects.map(s => (
+                        <option key={s} value={s}>{s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</option>
+                      ))}
+                    </select>
+                  )}
+                  <select
+                    value={ownedSort}
+                    onChange={e => setOwnedSort(e.target.value)}
+                    style={{ fontSize:12, padding:'4px 8px', borderRadius:6, border:'1px solid #e5e7eb', background:'#fff', color:'#374151', cursor:'pointer' }}
+                  >
+                    <option value='title-asc'>Title A → Z</option>
+                    <option value='title-desc'>Title Z → A</option>
+                    <option value='subject'>Subject</option>
+                    <option value='grade-asc'>Grade ↑</option>
+                    <option value='grade-desc'>Grade ↓</option>
+                    <option value='active'>Active first</option>
+                  </select>
+                  <span style={{ fontSize:12, color:'#9ca3af', marginLeft:'auto' }}>
+                    {filteredOwnedList.length === ownedList.length
+                      ? `${ownedList.length} lesson${ownedList.length !== 1 ? 's' : ''}`
+                      : `${filteredOwnedList.length} of ${ownedList.length}`}
+                  </span>
+                </div>
+                {filteredOwnedList.length === 0 ? (
+                  <div style={{ textAlign:'center', marginTop:32, color:'#9ca3af', fontSize:14 }}>No lessons match filters.</div>
+                ) : (
+                  <div style={list}>
+                    {filteredOwnedList.map((ol) => {
+                      const olk = ol.lessonKey
+                      const isActive = activeSet.has(olk)
+                      const oMedalTier = medals[olk]?.medalTier || null
+                      const oMedal = oMedalTier ? emojiForTier(oMedalTier) : ''
+                      const oSubjectBadge = ol.subject && ol.subject !== 'generated'
+                        ? ol.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                        : 'Generated'
+                      return (
+                        <button
+                          key={olk}
+                          style={row}
+                          onClick={() => { setSelectedLesson({ l: ol, subject: 'generated', lessonKey: olk, isDemo: false }); setOverlayNoteEditing(false) }}
+                          onMouseEnter={e => { e.currentTarget.style.background='#f9fafb'; e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.07)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background='#fff'; e.currentTarget.style.boxShadow='none' }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 11, background: '#f3f4f6', color: '#374151', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>{oSubjectBadge}</span>
+                              {ol.grade && <span style={{ fontSize: 11, color: '#9ca3af' }}>Grade {ol.grade}</span>}
+                              {ol.difficulty && <span style={{ fontSize: 11, color: '#9ca3af' }}>{ol.difficulty.charAt(0).toUpperCase() + ol.difficulty.slice(1)}</span>}
+                            </div>
+                            <div style={{ fontWeight: 600, fontSize: 15, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {ol.title || olk}{oMedal ? ` ${oMedal}` : ''}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                            {isActive
+                              ? <span style={{ fontSize: 11, background: '#d1fae5', color: '#065f46', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>Active</span>
+                              : <span style={{ fontSize: 13 }} title="Requires facilitator PIN to start">🔒</span>
+                            }
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ color: '#9ca3af' }}><path d="M7 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </>
             )
           )}
 
