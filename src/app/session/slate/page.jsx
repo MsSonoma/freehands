@@ -466,6 +466,7 @@ function SlateDrillInner() {
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [drillTranscript, setDrillTranscript] = useState([])
   const drillTranscriptRef = useRef([])
+  const slateSessionStartRef = useRef(null) // ISO timestamp set when drill starts
   const [txStatus, setTxStatus] = useState(null) // null | 'saving' | 'ok' | 'failed'
   const [offerResume, setOfferResume] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -528,7 +529,7 @@ function SlateDrillInner() {
       learnerName: learnerNameVal,
       lessonId: lk,
       lessonTitle,
-      startedAt: new Date().toISOString(),
+      startedAt: slateSessionStartRef.current || new Date().toISOString(),
       lines,
       teacher: 'slate',
     }).then(r => {
@@ -753,6 +754,7 @@ function SlateDrillInner() {
     scoreRef.current = 0
     setQCount(0)
     drillTranscriptRef.current = []
+    slateSessionStartRef.current = new Date().toISOString()
     setDrillTranscript([])
     setTxStatus(null)
     const q = advanceDeck()
