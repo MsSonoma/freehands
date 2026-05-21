@@ -1861,9 +1861,9 @@ export default function WebbPage() {
   function handleBack() {
     skipTTS()
     try { sessionStorage.removeItem('webb_active_lesson_key') } catch {}
-    setPhase(PHASE.LIST)
     setSelectedLesson(null)
     setMediaOverlay(null)
+    router.push('/learn/lessons')
   }
 
   // ── Layout styles ─────────────────────────────────────────────────────
