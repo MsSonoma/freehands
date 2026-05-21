@@ -2160,8 +2160,8 @@ export default function WebbPage() {
             )
           })()}
 
-          {/* Lesson browser (LIST and STARTING phases) */}
-          {(phase === PHASE.LIST || phase === PHASE.STARTING) && !offerResume && !listLoading && (
+          {/* Lesson browser (LIST phase only — STARTING phase handled separately below) */}
+          {phase === PHASE.LIST && !offerResume && !listLoading && (
             <WebbLessonBrowser
               availableLessons={availableLessons}
               allOwnedLessons={allOwnedLessons}
@@ -2175,10 +2175,26 @@ export default function WebbPage() {
               setListError={setListError}
               onStart={selectLesson}
               learnerName={learnerName.current}
-              starting={phase === PHASE.STARTING}
+              starting={false}
               webbCompletionMap={webbCompletionMap}
               listLoading={listLoading}
             />
+          )}
+
+          {/* STARTING phase: show a loading indicator while the opening greeting is being fetched */}
+          {phase === PHASE.STARTING && (
+            <div style={{ flex: '1 1 0', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 7 }}>
+                <span style={{ fontSize: 24, lineHeight: 1 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
+                <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '4px 18px 18px 18px', padding: '10px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.09)' }}>
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    {[0, 160, 320].map(d => (
+                      <span key={d} style={{ display: 'block', width: 7, height: 7, borderRadius: '50%', background: '#9ca3af', animation: `webb-bounce 1s ease-in-out ${d}ms infinite` }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Chat thread — iMessage-style bubbles */}
