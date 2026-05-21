@@ -21,11 +21,20 @@ export function getTeacherDisplayName(teacher) {
 
 // Returns the base lesson path in storage. Webb and Slate use a teacher sub-folder;
 // Sonoma (and legacy entries) use the flat v1/{owner}/{learner}/{lesson} path.
+// lessonId may arrive as a slash-separated key (e.g. "generated/my-lesson.json");
+// we collapse it to the final path segment (minus .json) so it stays a single folder.
+function sanitizeLessonSegment(lessonId) {
+  let s = String(lessonId || '').trim();
+  if (s.includes('/')) s = s.split('/').pop();
+  return s.replace(/\.json$/i, '') || lessonId;
+}
+
 function getLessonBasePath(ownerId, learnerId, teacher, lessonId) {
   const t = teacher && teacher !== 'sonoma' ? teacher : null;
+  const seg = sanitizeLessonSegment(lessonId);
   return t
-    ? `${VROOT}/${ownerId}/${learnerId}/${t}/${lessonId}`
-    : `${VROOT}/${ownerId}/${learnerId}/${lessonId}`;
+    ? `${VROOT}/${ownerId}/${learnerId}/${t}/${seg}`
+    : `${VROOT}/${ownerId}/${learnerId}/${seg}`;
 }
 
 const INVALID_LINE_PATTERNS = [
