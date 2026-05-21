@@ -247,6 +247,25 @@ export default function SessionTimer({
           50% { opacity: 0.4; }
         }
       `}</style>
+        {onTimerClick && (
+        <button
+          onClick={handleTimerClick}
+          title="Adjust timers (requires PIN)"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '1.1rem',
+            padding: '2px 4px',
+            opacity: 0.75,
+            lineHeight: 1,
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          ⚙️
+        </button>
+      )}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -277,25 +296,6 @@ export default function SessionTimer({
           </span>
         )}
       </div>
-      {onTimerClick && (
-        <button
-          onClick={handleTimerClick}
-          title="Adjust timers (requires PIN)"
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '1.1rem',
-            padding: '2px 4px',
-            opacity: 0.75,
-            lineHeight: 1,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          ⚙️
-        </button>
-      )}
     </div>
   );
 }
