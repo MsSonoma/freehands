@@ -13,6 +13,7 @@ import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
 import { getMasteryForLearner } from '@/app/lib/masteryClient'
+import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay'
 
 const LESSONS_TUTORIAL_STEPS = [
@@ -146,7 +147,9 @@ function LessonsPageInner(){
   const [showGoldenKeyToast, setShowGoldenKeyToast] = useState(false) // Show golden key earned notification
   // null = unknown (still loading learner settings); true/false = loaded value
   const [goldenKeysEnabled, setGoldenKeysEnabled] = useState(null)
-  const [masteryMap, setMasteryMap] = useState({}) // { 'subject/file.json': true } — Mr. Slate mastery
+  const [masteryMap, setMasteryMap] = useState({}) // { 'subject/file.json': { mastered, masteredAt } } — Mr. Slate mastery
+  const [webbMap, setWebbMap] = useState({}) // { 'lessonKey': { completed, completedAt } } — Mrs. Webb completions
+  const [showLessonDetailHistory, setShowLessonDetailHistory] = useState(null) // { lessonKey, title } | null
   const [selectedTeacher, setSelectedTeacher] = useState(() => {
     if (typeof window === 'undefined') return 'sonoma'
     try { return localStorage.getItem('selected_teacher') || 'sonoma' } catch { return 'sonoma' }
@@ -321,6 +324,7 @@ function LessonsPageInner(){
       if (id) {
         setLearnerId(id)
         setMasteryMap(getMasteryForLearner(id))
+        setWebbMap(getWebbCompletionForLearner(id))
       }
     } catch {}
     ;(async () => {
@@ -1309,6 +1313,11 @@ function LessonsPageInner(){
                 const isScheduled = !!scheduledLessons[lessonKey]
                 const medalTier = medals[lessonKey]?.medalTier || null
                 const medal = medalTier ? emojiForTier(medalTier) : ''
+                const teacherAward = selectedTeacher === 'slate'
+                  ? (masteryMap[lessonKey] ? ' 🏅' : '')
+                  : selectedTeacher === 'webb'
+                    ? (webbMap[lessonKey]?.completed ? ' 🏆' : '')
+                    : (medal ? ` ${medal}` : '')
                 const hasActiveKey = activeGoldenKeys[lessonKey] === true
                 const inProgressAt = lessonHistoryInProgress?.[lessonKey]
                 const subjectBadge = subject === 'generated' && l.subject
@@ -1329,7 +1338,7 @@ function LessonsPageInner(){
                         {l.difficulty && <span style={{ fontSize: 11, color: '#9ca3af' }}>{l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1)}</span>}
                       </div>
                       <div style={{ fontWeight: 600, fontSize: 15, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {l.title}{medal ? ` ${medal}` : ''}{masteryMap[lessonKey] ? ' 🤖' : ''}
+                        {l.title}{teacherAward}{medals[lessonKey]?.medalTier ? ' 👩🏻‍🦰' : ''}{masteryMap[lessonKey] ? ' 🤖' : ''}{webbMap[lessonKey]?.completed ? ' 👩🏻‍🏫' : ''}
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -1366,6 +1375,11 @@ function LessonsPageInner(){
                   const isActive = activeSet.has(rk)
                   const rMedalTier = medals[rk]?.medalTier || null
                   const rMedal = rMedalTier ? emojiForTier(rMedalTier) : ''
+                  const rTeacherAward = selectedTeacher === 'slate'
+                    ? (masteryMap[rk] ? ' 🏅' : '')
+                    : selectedTeacher === 'webb'
+                      ? (webbMap[rk]?.completed ? ' 🏆' : '')
+                      : (rMedal ? ` ${rMedal}` : '')
                   const rSubjectBadge = meta.isGenerated
                     ? (meta.subject && meta.subject !== 'generated' ? meta.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Generated')
                     : (meta.subject || 'general').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
@@ -1384,7 +1398,7 @@ function LessonsPageInner(){
                           {meta.difficulty && <span style={{ fontSize: 11, color: '#9ca3af' }}>{meta.difficulty.charAt(0).toUpperCase() + meta.difficulty.slice(1)}</span>}
                         </div>
                         <div style={{ fontWeight: 600, fontSize: 15, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {meta.title || rk}{rMedal ? ` ${rMedal}` : ''}
+                          {meta.title || rk}{rTeacherAward}{medals[rk]?.medalTier ? ' 👩🏻‍🦰' : ''}{masteryMap[rk] ? ' 🤖' : ''}{webbMap[rk]?.completed ? ' 👩🏻‍🏫' : ''}
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -1452,6 +1466,11 @@ function LessonsPageInner(){
                       const isActive = activeSet.has(olk)
                       const oMedalTier = medals[olk]?.medalTier || null
                       const oMedal = oMedalTier ? emojiForTier(oMedalTier) : ''
+                      const oTeacherAward = selectedTeacher === 'slate'
+                        ? (masteryMap[olk] ? ' 🏅' : '')
+                        : selectedTeacher === 'webb'
+                          ? (webbMap[olk]?.completed ? ' 🏆' : '')
+                          : (oMedal ? ` ${oMedal}` : '')
                       const oSubjectBadge = ol.subject && ol.subject !== 'generated'
                         ? ol.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
                         : 'Generated'
@@ -1470,7 +1489,7 @@ function LessonsPageInner(){
                               {ol.difficulty && <span style={{ fontSize: 11, color: '#9ca3af' }}>{ol.difficulty.charAt(0).toUpperCase() + ol.difficulty.slice(1)}</span>}
                             </div>
                             <div style={{ fontWeight: 600, fontSize: 15, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {ol.title || olk}{oMedal ? ` ${oMedal}` : ''}
+                              {ol.title || olk}{oTeacherAward}{medals[olk]?.medalTier ? ' 👩🏻‍🦰' : ''}{masteryMap[olk] ? ' 🤖' : ''}{webbMap[olk]?.completed ? ' 👩🏻‍🏫' : ''}
                             </div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -1590,13 +1609,33 @@ function LessonsPageInner(){
                           {isScheduled && <span style={{ fontSize: 11, background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>📅 Scheduled</span>}
                         </div>
                         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#111', lineHeight: 1.25 }}>
-                          {l.title}{medal ? ` ${medal}` : ''}{!isDemo && masteryMap[lessonKey] ? ' 🤖' : ''}
+                          {l.title}
                         </h2>
                         {(l.grade || l.difficulty) && (
                           <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 4 }}>
                             {l.grade && `Grade ${l.grade}`}
                             {l.grade && l.difficulty && '  ·  '}
                             {l.difficulty && l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1)}
+                          </div>
+                        )}
+                        {/* Teacher achievement badges — show all three teachers' grades */}
+                        {!isDemo && (medals[lessonKey]?.medalTier || masteryMap[lessonKey] || webbMap[lessonKey]?.completed) && (
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                            {medals[lessonKey]?.medalTier && (
+                              <span style={{ fontSize: 13, background: '#fef3c7', color: '#92400e', padding: '2px 9px', borderRadius: 20, fontWeight: 600 }}>
+                                {emojiForTier(medals[lessonKey].medalTier)} 👩🏻‍🦰 Ms. Sonoma
+                              </span>
+                            )}
+                            {masteryMap[lessonKey] && (
+                              <span style={{ fontSize: 13, background: '#ede9fe', color: '#5b21b6', padding: '2px 9px', borderRadius: 20, fontWeight: 600 }}>
+                                🏅 🤖 Mr. Slate
+                              </span>
+                            )}
+                            {webbMap[lessonKey]?.completed && (
+                              <span style={{ fontSize: 13, background: '#d1fae5', color: '#065f46', padding: '2px 9px', borderRadius: 20, fontWeight: 600 }}>
+                                🏆 👩🏻‍🏫 Mrs. Webb
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1654,6 +1693,16 @@ function LessonsPageInner(){
                         {inProgressAt && <span>⏳ In progress since {formatDateTime(inProgressAt)}</span>}
                         {lastCompletedAt && <span>✅ Last completed {formatDateOnly(lastCompletedAt)}</span>}
                       </div>
+                    )}
+
+                    {/* View all attempts link */}
+                    {!isDemo && (
+                      <button
+                        onClick={() => setShowLessonDetailHistory({ lessonKey, title: l.title })}
+                        style={{ fontSize: 13, color: '#6b7280', background: 'none', border: '1px solid #e5e7eb', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', marginBottom: 16 }}
+                      >
+                        📋 View all attempts
+                      </button>
                     )}
 
                     {/* Facilitator note */}
@@ -1721,6 +1770,88 @@ function LessonsPageInner(){
           })()}
         </>
       )}
+
+      {/* Per-lesson history sub-overlay */}
+      {showLessonDetailHistory && (() => {
+        const { lessonKey: hk, title: hTitle } = showLessonDetailHistory
+        const sonomaSessions = (lessonHistorySessions || []).filter(s => {
+          const fname = hk.split('/').pop()?.replace(/\.json$/i, '')
+          return s.lesson_id === fname || s.lesson_id === hk
+        })
+        const sonomaCompleted = sonomaSessions.filter(s => s.ended_at).length
+        const sonomaBest = medals[hk]?.medalTier ? emojiForTier(medals[hk].medalTier) : null
+        const sonomaLastAt = lessonHistoryLastCompleted?.[hk]
+        const sonomaInProgress = lessonHistoryInProgress?.[hk]
+        const slateEntry = masteryMap[hk]
+        const webbEntry = webbMap[hk]
+        const hasSomething = sonomaCompleted > 0 || sonomaBest || sonomaInProgress || slateEntry || webbEntry
+        return (
+          <>
+            <div
+              onClick={() => setShowLessonDetailHistory(null)}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1100 }}
+            />
+            <div style={{
+              position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 1101, padding: '16px'
+            }}>
+              <div style={{
+                background: '#fff', borderRadius: 16,
+                boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
+                width: '92vw', maxWidth: 460,
+                maxHeight: '80vh',
+                overflow: 'hidden',
+                display: 'flex', flexDirection: 'column'
+              }}>
+                {/* Header */}
+                <div style={{ padding: '18px 20px 12px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, marginBottom: 2 }}>LESSON HISTORY</div>
+                    <div style={{ fontWeight: 700, fontSize: 17, color: '#111', lineHeight: 1.25 }}>{hTitle}</div>
+                  </div>
+                  <button
+                    onClick={() => setShowLessonDetailHistory(null)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#9ca3af', fontSize: 22, lineHeight: 1, flexShrink: 0 }}
+                    aria-label="Close"
+                  >×</button>
+                </div>
+                {/* Body */}
+                <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {!hasSomething && (
+                    <p style={{ color: '#9ca3af', fontSize: 14, margin: 0 }}>No attempts recorded yet for this lesson.</p>
+                  )}
+                  {/* Ms. Sonoma */}
+                  {(sonomaCompleted > 0 || sonomaBest || sonomaInProgress) && (
+                    <div style={{ background: '#fff7ed', borderRadius: 10, padding: '12px 14px' }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e', marginBottom: 6 }}>👩🏻‍🦰 Ms. Sonoma</div>
+                      {sonomaBest && <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>Best grade: {sonomaBest}</div>}
+                      {sonomaCompleted > 0 && <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>Sessions completed: {sonomaCompleted}</div>}
+                      {sonomaLastAt && <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>Last completed: {formatDateOnly(sonomaLastAt)}</div>}
+                      {sonomaInProgress && <div style={{ fontSize: 13, color: '#374151' }}>⏳ In progress since {formatDateTime(sonomaInProgress)}</div>}
+                    </div>
+                  )}
+                  {/* Mr. Slate */}
+                  {slateEntry && (
+                    <div style={{ background: '#ede9fe', borderRadius: 10, padding: '12px 14px' }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#5b21b6', marginBottom: 6 }}>🤖 Mr. Slate</div>
+                      <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>🏅 Mastered</div>
+                      {slateEntry.masteredAt && <div style={{ fontSize: 13, color: '#374151' }}>Mastered on: {formatDateOnly(slateEntry.masteredAt)}</div>}
+                    </div>
+                  )}
+                  {/* Mrs. Webb */}
+                  {webbEntry?.completed && (
+                    <div style={{ background: '#d1fae5', borderRadius: 10, padding: '12px 14px' }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#065f46', marginBottom: 6 }}>👩🏻‍🏫 Mrs. Webb</div>
+                      <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>🏆 Completed</div>
+                      {webbEntry.completedAt && <div style={{ fontSize: 13, color: '#374151' }}>Completed on: {formatDateOnly(webbEntry.completedAt)}</div>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )
+      })()}
 
       {(() => {
         const ent = featuresForTier(planTier)
