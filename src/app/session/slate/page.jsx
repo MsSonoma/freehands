@@ -404,7 +404,7 @@ const tfBtnBase = {
 
 // --- TTS helper ---------------------------------------------------------------
 
-async function playSlateAudio(text, audioEl, videoEl, onDone, isSpeakingRef) {
+async function playSlateAudio(text, audioEl, videoEl, onDone, isSpeakingRef, muted = false) {
   if (!text || !audioEl) { onDone?.(); return }
   if (isSpeakingRef) isSpeakingRef.current = true
   try {
@@ -418,6 +418,7 @@ async function playSlateAudio(text, audioEl, videoEl, onDone, isSpeakingRef) {
     if (!audio) { if (isSpeakingRef) isSpeakingRef.current = false; onDone?.(); return }
     audioEl.pause()
     audioEl.src = audio.startsWith('data:') ? audio : `data:audio/mp3;base64,${audio}`
+    audioEl.muted = muted
     if (videoEl) { try { videoEl.play().catch(() => {}) } catch {} }
     audioEl.onended = () => {
       if (isSpeakingRef) isSpeakingRef.current = false
@@ -702,13 +703,12 @@ function SlateDrillInner() {
       phaseRef.current = 'asking'
       setPagePhase('asking')
       setTimeout(() => inputEl.current?.focus?.(), 80)
-      if (soundRef.current) {
-        setTimeout(() => {
-          playSlateAudio(pick(GREETING_MSGS), audioEl.current, slateVideoRef.current, () => {
-            playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef)
-          }, slateIsSpeakingRef)
-        }, 120)
-      }
+      setTimeout(() => {
+        const m = !soundRef.current
+        playSlateAudio(pick(GREETING_MSGS), audioEl.current, slateVideoRef.current, () => {
+          playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current)
+        }, slateIsSpeakingRef, m)
+      }, 120)
     }
   }, [])
 
@@ -740,7 +740,7 @@ function SlateDrillInner() {
     phaseRef.current = 'asking'
     setPagePhase('asking')
     setTimeout(() => inputEl.current?.focus?.(), 80)
-    if (!skipAudio && soundRef.current) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef), 120)
+    if (!skipAudio) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current), 120)
   }, [])
 
   // Start / restart the drill
@@ -760,13 +760,12 @@ function SlateDrillInner() {
     const q = advanceDeck()
     if (q) {
       showQuestion(q, true) // skipAudio — we chain greeting → question ourselves
-      if (soundRef.current) {
-        setTimeout(() => {
-          playSlateAudio(pick(GREETING_MSGS), audioEl.current, slateVideoRef.current, () => {
-            playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef)
-          }, slateIsSpeakingRef)
-        }, 120)
-      }
+      setTimeout(() => {
+        const m = !soundRef.current
+        playSlateAudio(pick(GREETING_MSGS), audioEl.current, slateVideoRef.current, () => {
+          playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current)
+        }, slateIsSpeakingRef, m)
+      }, 120)
     }
   }, [advanceDeck, showQuestion])
 
@@ -832,25 +831,20 @@ function SlateDrillInner() {
           setMasteryMap(getMasteryForLearner(lid))
         }
         const doWon = () => { phaseRef.current = 'won'; setPagePhase('won') }
-        if (soundRef.current) {
-          playSlateAudio(pick(CONGRATS_MSGS), audioEl.current, slateVideoRef.current, doWon, slateIsSpeakingRef)
-        } else {
-          doWon()
-        }
+        playSlateAudio(pick(CONGRATS_MSGS), audioEl.current, slateVideoRef.current, doWon, slateIsSpeakingRef, !soundRef.current)
       }, FEEDBACK_DELAY_MS)
-    } else if (soundRef.current && correctAnswer) {
-      // Wrong answer with sound: chain feedback → correct answer → advance
+    } else if (correctAnswer) {
+      // Wrong answer: chain feedback → correct answer → advance (muted if sound off)
       // No separate timeout — audio onDone drives the transition so nothing cuts it off
+      const m = !soundRef.current
       playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, () => {
         playSlateAudio(`The correct answer was ${correctAnswer}.`, audioEl.current, slateVideoRef.current, () => {
           feedbackTimeout.current = setTimeout(doAdvance, 600)
-        }, slateIsSpeakingRef)
-      }, slateIsSpeakingRef)
+        }, slateIsSpeakingRef, !soundRef.current)
+      }, slateIsSpeakingRef, m)
     } else {
-      // Correct / timeout with sound, or sound off: use normal delay then advance
-      if (soundRef.current) {
-        playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef)
-      }
+      // Correct / timeout: play feedback (muted if sound off), then advance after delay
+      playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current)
       feedbackTimeout.current = setTimeout(doAdvance, FEEDBACK_DELAY_MS)
     }
   }, [advanceDeck, showQuestion])
@@ -1527,7 +1521,12 @@ ${rows}
 
         <div style={{ display: 'flex', gap: 8 }}>
           <button
-            onClick={() => setSoundOn(v => !v)}
+            onClick={() => setSoundOn(v => {
+              const next = !v
+              soundRef.current = next
+              if (audioEl.current) audioEl.current.muted = !next
+              return next
+            })}
             title={soundOn ? 'Mute voice' : 'Unmute voice'}
             style={soundBtn}
           >
