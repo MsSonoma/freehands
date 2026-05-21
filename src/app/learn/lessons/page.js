@@ -12,7 +12,7 @@ import { getActiveLessonSession } from '@/app/lib/sessionTracking'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
-import { getMasteryForLearner } from '@/app/lib/masteryClient'
+import { getMasteryForLearner, slateEmojiForTier } from '@/app/lib/masteryClient'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay'
 
@@ -1313,8 +1313,9 @@ function LessonsPageInner(){
                 const isScheduled = !!scheduledLessons[lessonKey]
                 const medalTier = medals[lessonKey]?.medalTier || null
                 const medal = medalTier ? emojiForTier(medalTier) : ''
+                const slateTier = masteryMap[lessonKey]?.medalTier
                 const teacherAward = selectedTeacher === 'slate'
-                  ? (masteryMap[lessonKey] ? ' 🏅' : '')
+                  ? (masteryMap[lessonKey] ? ` ${slateTier ? slateEmojiForTier(slateTier) : '🏅'}` : '')
                   : selectedTeacher === 'webb'
                     ? (webbMap[lessonKey]?.completed ? ' 🏆' : '')
                     : (medal ? ` ${medal}` : '')
@@ -1375,8 +1376,9 @@ function LessonsPageInner(){
                   const isActive = activeSet.has(rk)
                   const rMedalTier = medals[rk]?.medalTier || null
                   const rMedal = rMedalTier ? emojiForTier(rMedalTier) : ''
+                  const rSlateTier = masteryMap[rk]?.medalTier
                   const rTeacherAward = selectedTeacher === 'slate'
-                    ? (masteryMap[rk] ? ' 🏅' : '')
+                    ? (masteryMap[rk] ? ` ${rSlateTier ? slateEmojiForTier(rSlateTier) : '🏅'}` : '')
                     : selectedTeacher === 'webb'
                       ? (webbMap[rk]?.completed ? ' 🏆' : '')
                       : (rMedal ? ` ${rMedal}` : '')
@@ -1466,8 +1468,9 @@ function LessonsPageInner(){
                       const isActive = activeSet.has(olk)
                       const oMedalTier = medals[olk]?.medalTier || null
                       const oMedal = oMedalTier ? emojiForTier(oMedalTier) : ''
+                      const oSlateTier = masteryMap[olk]?.medalTier
                       const oTeacherAward = selectedTeacher === 'slate'
-                        ? (masteryMap[olk] ? ' 🏅' : '')
+                        ? (masteryMap[olk] ? ` ${oSlateTier ? slateEmojiForTier(oSlateTier) : '🏅'}` : '')
                         : selectedTeacher === 'webb'
                           ? (webbMap[olk]?.completed ? ' 🏆' : '')
                           : (oMedal ? ` ${oMedal}` : '')
@@ -1628,7 +1631,7 @@ function LessonsPageInner(){
                             )}
                             {masteryMap[lessonKey] && (
                               <span style={{ fontSize: 13, background: '#ede9fe', color: '#5b21b6', padding: '2px 9px', borderRadius: 20, fontWeight: 600 }}>
-                                🏅 🤖 Mr. Slate
+                                {masteryMap[lessonKey]?.medalTier ? slateEmojiForTier(masteryMap[lessonKey].medalTier) : '🏅'} 🤖 Mr. Slate
                               </span>
                             )}
                             {webbMap[lessonKey]?.completed && (
@@ -1834,7 +1837,10 @@ function LessonsPageInner(){
                   {slateEntry && (
                     <div style={{ background: '#ede9fe', borderRadius: 10, padding: '12px 14px' }}>
                       <div style={{ fontWeight: 700, fontSize: 14, color: '#5b21b6', marginBottom: 6 }}>🤖 Mr. Slate</div>
-                      <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>🏅 Mastered</div>
+                      {slateEntry.bestPercent != null
+                        ? <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>Best grade: {slateEmojiForTier(slateEntry.medalTier)} {slateEntry.bestPercent}%</div>
+                        : <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>🏅 Mastered</div>
+                      }
                       {slateEntry.masteredAt && <div style={{ fontSize: 13, color: '#374151' }}>Mastered on: {formatDateOnly(slateEntry.masteredAt)}</div>}
                     </div>
                   )}

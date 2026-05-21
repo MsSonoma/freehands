@@ -830,7 +830,11 @@ function SlateDrillInner() {
         const lid = learnerIdRef.current
         const lk = lessonKeyRef.current
         if (lid && lk) {
-          saveMastery(lid, lk)
+          const nonTimeoutTries = drillTranscriptRef.current.filter(e => !e.timeout).length
+          const percent = nonTimeoutTries > 0
+            ? Math.round(settingsRef.current.scoreGoal / nonTimeoutTries * 100)
+            : 100
+          saveMastery(lid, lk, percent)
           setMasteryMap(getMasteryForLearner(lid))
         }
         const doWon = () => { phaseRef.current = 'won'; setPagePhase('won') }
