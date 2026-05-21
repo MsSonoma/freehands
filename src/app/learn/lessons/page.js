@@ -1495,7 +1495,22 @@ function LessonsPageInner(){
             const ent = featuresForTier(planTier)
             const cap = ent.lessonsPerDay
             const capped = !isDemo && Number.isFinite(cap) && todaysCount >= cap
-            const hasSnapshot = lessonSnapshots[lessonKey]
+            const hasSnapshot = (() => {
+              if (isDemo) return false
+              if (selectedTeacher === 'slate') {
+                try {
+                  const saved = JSON.parse(typeof window !== 'undefined' ? localStorage.getItem('slate_session') || 'null' : 'null')
+                  return !!(saved?.lessonData && saved.lessonKey === lessonKey)
+                } catch { return false }
+              }
+              if (selectedTeacher === 'webb') {
+                try {
+                  const saved = JSON.parse(typeof window !== 'undefined' ? localStorage.getItem(`webb_session_${lessonKey}`) || 'null' : 'null')
+                  return !!(saved?.chatMessages?.length)
+                } catch { return false }
+              }
+              return !!lessonSnapshots[lessonKey]
+            })()
             const medalTier = medals[lessonKey]?.medalTier || null
             const medal = medalTier ? emojiForTier(medalTier) : ''
             const hasActiveKey = !isDemo && activeGoldenKeys[lessonKey] === true
