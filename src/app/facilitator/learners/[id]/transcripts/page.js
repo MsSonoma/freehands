@@ -9,7 +9,7 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient';
 
 const TEACHERS = [
   { key: 'sonoma', label: 'Ms. Sonoma', emoji: '👩🏻‍🦰', color: '#c7442e' },
-  { key: 'webb',   label: 'Mrs. Webb',  emoji: '👩‍🏫',  color: '#0d9488' },
+  { key: 'webb',   label: 'Mrs. Webb',  emoji: '👩🏻‍🏫', color: '#0d9488' },
   { key: 'slate',  label: 'Mr. Slate',  emoji: '🤖',    color: '#6366f1' },
 ];
 
