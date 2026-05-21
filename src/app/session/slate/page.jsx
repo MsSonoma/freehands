@@ -623,9 +623,12 @@ function SlateDrillInner() {
             }).catch(() => {})
           }
 
-          // Check for a pending lesson key from /learn/lessons teacher selection
+          // Check for a pending lesson key from /learn/lessons teacher selection.
+          // Only auto-start if there is no saved session to resume — if offerResume is
+          // true we fall through to the overlay so the user can choose resume vs new.
           const pendingKey = (() => { try { return sessionStorage.getItem('slate_pending_lesson_key') } catch { return null } })()
-          if (pendingKey) {
+          const hasSavedSession = (() => { try { return !!(localStorage.getItem('slate_session') && JSON.parse(localStorage.getItem('slate_session'))?.lessonData) } catch { return false } })()
+          if (pendingKey && !hasSavedSession) {
             const allLessons = lessons || []
             const match = allLessons.find(l => (l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`) === pendingKey)
             if (match && buildPool(match).length > 0) {
@@ -972,12 +975,26 @@ function SlateDrillInner() {
         setPagePhase('asking')
         setTimeout(() => inputEl.current?.focus?.(), 80)
       }
+      // Also discard any pending lesson key — user chose to resume the old session
+      try { sessionStorage.removeItem('slate_pending_lesson_key') } catch {}
       setOfferResume(false)
     } catch { setOfferResume(false) }
   }
 
   function handleSlateRestart() {
     try { localStorage.removeItem('slate_session') } catch {}
+    // If the user arrived with a pending lesson key (re-entry from /learn/lessons),
+    // start that lesson now instead of redirecting back to lesson selection.
+    const pendingKey = (() => { try { return sessionStorage.getItem('slate_pending_lesson_key') } catch { return null } })()
+    if (pendingKey) {
+      try { sessionStorage.removeItem('slate_pending_lesson_key') } catch {}
+      const match = availableLessons.find(l => (l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`) === pendingKey)
+      if (match && buildPool(match).length > 0) {
+        setOfferResume(false)
+        selectLesson(match)
+        return
+      }
+    }
     setOfferResume(false)
   }
 
