@@ -1953,6 +1953,20 @@ export default function WebbPage() {
 
   const isChatting = phase === PHASE.CHATTING
 
+  // ── Guard: never show the retired lesson-selection shell while loading ─
+  // During initial load (listLoading=true) the page is still in PHASE.LIST.
+  // Show a neutral loading screen so the old lesson browser never flashes.
+  // offerResume is handled separately via its own full-screen portal overlay.
+  if (phase === PHASE.LIST && listLoading) {
+    return (
+      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0f766e', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <span style={{ fontSize: 48, marginBottom: 16 }}>&#128105;&#127995;&#8205;&#127979;</span>
+        <div style={{ color: '#fff', fontWeight: 800, fontSize: 17, letterSpacing: 0.5, marginBottom: 8 }}>MRS. WEBB</div>
+        <svg style={{ width: 28, height: 28, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
+      </div>
+    )
+  }
+
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
