@@ -252,15 +252,17 @@ export default function SessionTimer({
           onClick={handleTimerClick}
           title="Adjust timers (requires PIN)"
           style={{
-            background: 'none',
+            background: '#1f2937',
             border: 'none',
             cursor: 'pointer',
             fontSize: '1.1rem',
-            padding: '2px 4px',
-            opacity: 0.75,
-            lineHeight: 1,
-            display: 'flex',
-            alignItems: 'center',
+            width: 'clamp(30px, 5vw, 42px)',
+            height: 'clamp(30px, 5vw, 42px)',
+            display: 'grid',
+            placeItems: 'center',
+            borderRadius: '50%',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            flexShrink: 0,
           }}
         >
           ⚙️
