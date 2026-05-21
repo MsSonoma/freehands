@@ -1315,7 +1315,7 @@ function LessonsPageInner(){
                 const medal = medalTier ? emojiForTier(medalTier) : ''
                 const slateTier = masteryMap[lessonKey]?.medalTier
                 const teacherAward = selectedTeacher === 'slate'
-                  ? (masteryMap[lessonKey] ? ` ${slateTier ? slateEmojiForTier(slateTier) : '🏅'}` : '')
+                  ? (masteryMap[lessonKey] ? ` ${slateTier ? slateEmojiForTier(slateTier) : '�'}` : '')
                   : selectedTeacher === 'webb'
                     ? (webbMap[lessonKey]?.completed ? ' 🏆' : '')
                     : (medal ? ` ${medal}` : '')
@@ -1378,7 +1378,7 @@ function LessonsPageInner(){
                   const rMedal = rMedalTier ? emojiForTier(rMedalTier) : ''
                   const rSlateTier = masteryMap[rk]?.medalTier
                   const rTeacherAward = selectedTeacher === 'slate'
-                    ? (masteryMap[rk] ? ` ${rSlateTier ? slateEmojiForTier(rSlateTier) : '🏅'}` : '')
+                    ? (masteryMap[rk] ? ` ${rSlateTier ? slateEmojiForTier(rSlateTier) : '�'}` : '')
                     : selectedTeacher === 'webb'
                       ? (webbMap[rk]?.completed ? ' 🏆' : '')
                       : (rMedal ? ` ${rMedal}` : '')
@@ -1470,7 +1470,7 @@ function LessonsPageInner(){
                       const oMedal = oMedalTier ? emojiForTier(oMedalTier) : ''
                       const oSlateTier = masteryMap[olk]?.medalTier
                       const oTeacherAward = selectedTeacher === 'slate'
-                        ? (masteryMap[olk] ? ` ${oSlateTier ? slateEmojiForTier(oSlateTier) : '🏅'}` : '')
+                        ? (masteryMap[olk] ? ` ${oSlateTier ? slateEmojiForTier(oSlateTier) : '�'}` : '')
                         : selectedTeacher === 'webb'
                           ? (webbMap[olk]?.completed ? ' 🏆' : '')
                           : (oMedal ? ` ${oMedal}` : '')
@@ -1631,7 +1631,7 @@ function LessonsPageInner(){
                             )}
                             {masteryMap[lessonKey] && (
                               <span style={{ fontSize: 13, background: '#ede9fe', color: '#5b21b6', padding: '2px 9px', borderRadius: 20, fontWeight: 600 }}>
-                                {masteryMap[lessonKey]?.medalTier ? slateEmojiForTier(masteryMap[lessonKey].medalTier) : '🏅'} 🤖 Mr. Slate
+                                {masteryMap[lessonKey]?.medalTier ? slateEmojiForTier(masteryMap[lessonKey].medalTier) : '�'} 🤖 Mr. Slate
                               </span>
                             )}
                             {webbMap[lessonKey]?.completed && (
@@ -1839,7 +1839,7 @@ function LessonsPageInner(){
                       <div style={{ fontWeight: 700, fontSize: 14, color: '#5b21b6', marginBottom: 6 }}>🤖 Mr. Slate</div>
                       {slateEntry.bestPercent != null
                         ? <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>Best grade: {slateEmojiForTier(slateEntry.medalTier)} {slateEntry.bestPercent}%</div>
-                        : <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>🏅 Mastered</div>
+                        : <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>� Mastered</div>
                       }
                       {slateEntry.masteredAt && <div style={{ fontSize: 13, color: '#374151' }}>Mastered on: {formatDateOnly(slateEntry.masteredAt)}</div>}
                     </div>

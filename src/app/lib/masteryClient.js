@@ -23,7 +23,7 @@ export function slateEmojiForTier(tier) {
   if (tier === 'gold')   return '🏅'
   if (tier === 'silver') return '🥈'
   if (tier === 'bronze') return '🥉'
-  return '🏅'
+  return '�'
 }
 
 function read() {
