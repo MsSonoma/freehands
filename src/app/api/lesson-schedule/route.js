@@ -69,7 +69,7 @@ export async function GET(request) {
       
       const { data, error } = await adminSupabase
         .from('lesson_schedule')
-        .select('lesson_key')
+        .select('lesson_key, scheduled_date, created_at, updated_at')
         .eq('learner_id', learnerId)
         .eq('scheduled_date', today)
 

@@ -115,7 +115,7 @@ function LessonsPageInner(){
     } catch {}
   }, [])
 
-  const [scheduledLessons, setScheduledLessons] = useState({}) // { 'subject/lesson_file': true } - lessons scheduled for today
+  const [scheduledLessons, setScheduledLessons] = useState({}) // { 'subject/lesson_file': isoTimestamp } - lessons scheduled for today
   const [allLessons, setAllLessons] = useState({})
   const [availableLessons, setAvailableLessons] = useState({}) // { 'subject/lesson_file': true } - lessons marked as available by facilitator
   const [loading, setLoading] = useState(true)
@@ -587,10 +587,10 @@ function LessonsPageInner(){
               const scheduleData = await scheduleResponse.json()
               const scheduledLessons = scheduleData.lessons || []
               
-              // Track scheduled lessons
+              // Track scheduled lessons (store timestamp for Recent tab ordering)
               scheduledLessons.forEach(item => {
                 if (item.lesson_key) {
-                  scheduled[item.lesson_key] = true
+                  scheduled[item.lesson_key] = item.updated_at || item.created_at || (item.scheduled_date + 'T00:00:00.000Z')
                 }
               })
             } else {
@@ -771,9 +771,9 @@ function LessonsPageInner(){
         const isAvailable = availableLessons[lessonKey] === true 
           || availableLessons[legacyKey] === true 
           || availableLessons[filenameOnly] === true
-          || scheduledLessons[lessonKey] === true 
-          || scheduledLessons[legacyKey] === true
-          || scheduledLessons[filenameOnly] === true
+          || !!scheduledLessons[lessonKey]
+          || !!scheduledLessons[legacyKey]
+          || !!scheduledLessons[filenameOnly]
         return isAvailable
       }).map(lesson => {
         // Add lessonKey to each lesson object for snapshot lookup
@@ -824,23 +824,26 @@ function LessonsPageInner(){
     return map
   }, [allLessons, allGeneratedLessons, historyLessons])
 
-  // Recent tab: union of completed + in-progress keys, most recent first
+  // Recent tab: union of completed + in-progress + scheduled keys, most recent first
   const recentList = useMemo(() => {
     const completedKeys = Object.keys(lessonHistoryLastCompleted || {})
     const inProgressKeys = Object.keys(lessonHistoryInProgress || {})
-    const allKeys = [...new Set([...completedKeys, ...inProgressKeys])]
+    const scheduledKeys = Object.keys(scheduledLessons || {})
+    const allKeys = [...new Set([...completedKeys, ...inProgressKeys, ...scheduledKeys])]
     return allKeys
       .map(key => {
         const lastAt = lessonHistoryLastCompleted?.[key]
         const inProgressAt = lessonHistoryInProgress?.[key]
-        const mostRecent = lastAt && inProgressAt
-          ? (new Date(lastAt) > new Date(inProgressAt) ? lastAt : inProgressAt)
-          : (lastAt || inProgressAt || '')
-        return { lessonKey: key, lastAt, inProgressAt, mostRecent, meta: recentMetaLookup[key] || null }
+        const scheduledAt = scheduledLessons?.[key] && typeof scheduledLessons[key] === 'string' ? scheduledLessons[key] : null
+        const candidates = [lastAt, inProgressAt, scheduledAt].filter(Boolean)
+        const mostRecent = candidates.length
+          ? candidates.reduce((a, b) => new Date(a) > new Date(b) ? a : b)
+          : ''
+        return { lessonKey: key, lastAt, inProgressAt, scheduledAt, mostRecent, meta: recentMetaLookup[key] || null }
       })
       .filter(e => e.mostRecent)
       .sort((a, b) => new Date(b.mostRecent) - new Date(a.mostRecent))
-  }, [lessonHistoryLastCompleted, lessonHistoryInProgress, recentMetaLookup])
+  }, [lessonHistoryLastCompleted, lessonHistoryInProgress, scheduledLessons, recentMetaLookup])
 
   // Owned tab: all facilitator-generated lessons
   const ownedList = useMemo(() => {
