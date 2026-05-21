@@ -1049,7 +1049,7 @@ function LessonsPageInner(){
                 const TEACHERS = [
                   { key: 'sonoma', label: 'Ms. Sonoma', emoji: '👩🏻‍🦰', color: '#c7442e' },
                   { key: 'slate',  label: 'Mr. Slate',  emoji: '🤖',       color: '#6366f1' },
-                  { key: 'webb',   label: 'Mrs. Webb',  emoji: '👩‍🏫',      color: '#0d9488' },
+                  { key: 'webb',   label: 'Mrs. Webb',  emoji: '👩🏻‍🏫',     color: '#0d9488' },
                 ]
                 const current = TEACHERS.find(t => t.key === selectedTeacher) || TEACHERS[0]
                 return (

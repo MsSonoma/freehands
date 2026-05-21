@@ -25,7 +25,7 @@ const LEARN_TUTORIAL_STEPS = [
     body: 'Mr. Slate drills you with rapid-fire practice questions to sharpen what you know. Perfect for review and test prep!',
   },
   {
-    icon: '👩‍🏫',
+    icon: '👩🏻‍🏫',
     title: 'Mrs. Webb',
     body: 'Mrs. Webb is a conversational AI teacher. Ask her questions, discuss topics, and explore the subject in your own words.',
   },
@@ -219,7 +219,7 @@ export default function LearnPage() {
                 bg: '#6366f1',
                 title: 'Drill questions with Mr. Slate',
               }, {
-                label: '👩‍🏫 Mrs. Webb',
+                label: '👩🏻‍🏫 Mrs. Webb',
                 teacher: 'webb',
                 border: '#0d9488',
                 bg: '#0d9488',
