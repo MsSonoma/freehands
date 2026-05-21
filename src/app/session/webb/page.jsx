@@ -369,6 +369,8 @@ export default function WebbPage() {
       if (saved.essayMode) setEssayMode(saved.essayMode)
       setPhase(PHASE.CHATTING)
       setOfferResume(false)
+      const resumeLk = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
+      try { if (resumeLk) sessionStorage.setItem('webb_active_lesson_key', resumeLk) } catch {}
       preloadResources(selectedLesson)
     } catch { setOfferResume(false) }
   }
@@ -845,6 +847,25 @@ export default function WebbPage() {
         }).catch(() => {})
       }
 
+      // Check for a mid-session lesson key first — set when a session starts and
+      // survives page refresh so users return to resume/restart instead of /learn/lessons.
+      const activeKey = (() => { try { return sessionStorage.getItem('webb_active_lesson_key') } catch { return null } })()
+      if (activeKey) {
+        const match = lessons.find(l => (l.lessonKey || l.lesson_id || l.id || `${l.subject || 'general'}/${l.file || ''}`) === activeKey)
+        if (match) {
+          selectLesson(match)
+          return
+        }
+        // Lesson not in available list — restore directly from snapshot (has selectedLesson stored)
+        const snapData = (() => { try { return JSON.parse(localStorage.getItem(`webb_session_${activeKey}`) || 'null') } catch { return null } })()
+        if (snapData?.chatMessages?.length && snapData.selectedLesson) {
+          selectLesson(snapData.selectedLesson)
+          return
+        }
+        // Snapshot gone — clear stale key and fall through to redirect
+        try { sessionStorage.removeItem('webb_active_lesson_key') } catch {}
+      }
+
       // Check for a pending lesson key from /learn/lessons teacher selection
       const pendingKey = (() => { try { return sessionStorage.getItem('webb_pending_lesson_key') } catch { return null } })()
       if (pendingKey) {
@@ -1043,6 +1064,10 @@ export default function WebbPage() {
     }
 
     setPhase(PHASE.CHATTING)
+    // Record the active lesson key so a page refresh brings the user back to the
+    // resume/restart prompt rather than redirecting to /learn/lessons.
+    const activeLk = lesson.lessonKey || lesson.lesson_id || lesson.id
+    try { if (activeLk) sessionStorage.setItem('webb_active_lesson_key', activeLk) } catch {}
 
     // Preload media + generate objectives in background
     preloadResources(lesson)
@@ -1829,11 +1854,13 @@ export default function WebbPage() {
     const { ensurePinAllowed } = await import('@/app/lib/pinGate')
     if (!await ensurePinAllowed('session-exit')) return
     skipTTS()
+    try { sessionStorage.removeItem('webb_active_lesson_key') } catch {}
     router.push('/learn/lessons')
   }
 
   function handleBack() {
     skipTTS()
+    try { sessionStorage.removeItem('webb_active_lesson_key') } catch {}
     setPhase(PHASE.LIST)
     setSelectedLesson(null)
     setMediaOverlay(null)
