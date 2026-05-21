@@ -1040,6 +1040,55 @@ function SlateDrillInner() {
   //  RENDER -- Lesson list
   // ===========================================================================
   if (pagePhase === 'list') {
+    // When a resume is being offered, show only the overlay over a neutral screen.
+    // The lesson list is phased out; never expose it to the user.
+    if (offerResume) {
+      return (
+        <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <audio ref={audioEl} />
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 1200,
+            background: 'rgba(0,0,0,0.80)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+          }}>
+            <div style={{
+              background: '#0f172a',
+              borderRadius: 18,
+              width: 'min(92vw, 360px)',
+              boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 2px #6366f1',
+              padding: '28px 24px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>🤖</div>
+              <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Welcome back!</div>
+              <div style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+                You were in the middle of a drill with Mr. Slate.<br/>
+                Would you like to pick up where you left off?
+              </div>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <button type="button" onClick={handleSlateResume}
+                  style={{
+                    flex: 1, background: '#6366f1', color: '#fff', border: 'none',
+                    borderRadius: 10, padding: '11px 0', cursor: 'pointer',
+                    fontWeight: 800, fontSize: 15, fontFamily: 'inherit',
+                  }}
+                >▶ Resume</button>
+                <button type="button" onClick={handleSlateRestart}
+                  style={{
+                    flex: 1, background: 'rgba(255,255,255,0.07)', color: '#94a3b8',
+                    border: '1px solid #334155',
+                    borderRadius: 10, padding: '11px 0', cursor: 'pointer',
+                    fontWeight: 700, fontSize: 15, fontFamily: 'inherit',
+                  }}
+                >↺ New Lesson</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div style={{ fontFamily: C.mono, background: C.bg, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
         {/* ── Resume overlay ─────────────────────────────────────────── */}
