@@ -307,6 +307,7 @@ export default function WebbPage() {
   const ttsQueueRef   = useRef([])
   const ttsBusyRef    = useRef(false)
   const ttsCurrentRef = useRef(null)
+  const ttsGenRef     = useRef(0)  // incremented on skipTTS to cancel in-flight fetches
   const [engineState, setEngineState] = useState('idle')
   const [isMuted, setIsMuted]         = useState(false)
   const isMutedRef                    = useRef(false)
@@ -494,6 +495,7 @@ export default function WebbPage() {
     const text = ttsQueueRef.current.shift()
     if (!text) return
     ttsBusyRef.current = true
+    const gen = ttsGenRef.current  // capture before async gap; checked after fetch
     if (!isMutedRef.current) {
       try {
         const res = await fetch('/api/webb-tts', {
@@ -503,7 +505,7 @@ export default function WebbPage() {
         })
         const data = await res.json()
         const audioUrl = data.audio
-        if (audioUrl && !isMutedRef.current) {
+        if (audioUrl && !isMutedRef.current && ttsGenRef.current === gen) {
           await new Promise((resolve) => {
             const audio = new Audio(audioUrl)
             ttsCurrentRef.current = audio
@@ -543,6 +545,7 @@ export default function WebbPage() {
   }
 
   function skipTTS() {
+    ttsGenRef.current++  // invalidate any in-flight fetch — it will discard its audio on resolution
     ttsQueueRef.current = []
     if (ttsCurrentRef.current) {
       ttsCurrentRef.current.pause()
