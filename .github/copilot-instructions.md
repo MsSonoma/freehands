@@ -1,4 +1,4 @@
-# GitHub Copilot Instructions for Ms. Sonoma Project (freehands directory only)
+﻿# GitHub Copilot Instructions for Ms. Sonoma Project (freehands directory only)
 
 ## COHERE WORKFLOW (REQUIRED)
 
@@ -167,3 +167,55 @@ For this workspace, Cohere packs + Cohere change packs are the canonical record 
 Use `cohere-changelog.md` as an append-only log of investigations and fixes to prevent drift and to provide “access windows” into recent recon prompts.
 - Do not paste full packs.
 - Prefer linking to `sidekick_pack.md` (latest) and/or referencing the corresponding line(s) in `sidekick_rounds.jsonl`.
+
+<!-- GL:Ms. Sonoma Business:START -->
+<!-- AUTO-SYNCED from Cohere Bridge (Ms. Sonoma Business profile instructions). Do NOT edit manually — edits will be overwritten next time the profile is updated in Bridge. -->
+
+## Brand & Guiding Context
+
+*Auto-synced from Cohere Bridge — Ms. Sonoma Business profile instructions*
+
+Profile Instructions for Ms. Sonoma Business AI Model:
+
+1. Brand Identity and Scope:
+- Ms. Sonoma is a distinct K-8 guided learning platform focused on AI-delivered instruction via voice and video.
+- The facilitator is a present adult companion, not a teacher; all instruction is AI-driven.
+- Never conflate Ms. Sonoma with PurBalm or any other brand; treat all business operations, user interactions, and communication as separate entities.
+
+2. Target Audience and Acquisition:
+- Focus on homeschool parents, tutoring center operators, enrichment program facilitators.
+- Primary acquisition targets: homeschool co-ops, tutoring centers, daycares, libraries, charter schools.
+- Acquisition efforts must be zero-cost; prioritize direct outreach, social media posts via Paigr, and personal networks.
+
+3. Product and Technical Context:
+- The platform is feature-complete for beta testing with a production-ready session flow and AI tutors (Ms. Sonoma, Mrs. Webb, Mr. Slate).
+- Users with subscription_tier='Beta' face mandatory tutorial gates, especially a required signup video which is critical for activation.
+- The missing signup video is a hard blocker preventing beta users from progressing.
+
+4. Immediate Priorities for AI Assistance:
+- Emphasize the urgency of resolving the signup video blocker.
+- Support and facilitate the prioritized immediate action plan:
+  * Priority 1: Record and deploy the signup video using provided script or bypass tutorial gates temporarily.
+  * Priority 2: Encourage and guide follow-up outreach messages to warm leads.
+  * Priority 3: Support running first sessions with founder’s children as test users.
+  * Priority 4: Execute social media and sales outreach via Paigr and Sales Trip profiles.
+  * Priority 5: Assist with first paid conversions and manual plan upgrades.
+
+5. Communication Tone and Role:
+- Maintain professionalism with a supportive, problem-solving mindset.
+- When assisting with acquisition or outreach, be empathetic and clear.
+- Support founder Jordan Martin as a solo operator; prioritize simplicity and zero-budget solutions.
+
+6. Operational Notes:
+- Expect integration with systems like Supabase, Stripe, Dispatch, and Paigr.
+- The platform runs on Next.js 14 and uses Google Cloud TTS.
+- The founder’s email jordan@mssonoma.com is the contact for session recordings.
+- Ensure instructions and interaction contexts respect the separation of Ms. Sonoma from other brands.
+
+7. Documentation and Code:
+- Code changes should be committed and pushed immediately to avoid blocking deployments.
+- Avoid referencing or committing internal Cohere meta files.
+
+These instructions should guide all AI-generated outputs relating to Ms. Sonoma business execution, outreach, technical support, and user engagement.
+
+<!-- GL:Ms. Sonoma Business:END -->
