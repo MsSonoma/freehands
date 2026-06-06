@@ -5300,6 +5300,9 @@ function SessionPageV2Inner() {
       setExerciseState(data.state);
       if (typeof data.questionIndex === 'number') {
         setExerciseCurrentQuestionIndex(data.questionIndex);
+        if (questions[data.questionIndex]) {
+          setCurrentExerciseQuestion(questions[data.questionIndex]);
+        }
       }
       if (typeof data.totalQuestions === 'number') {
         setExerciseTotalQuestions(data.totalQuestions);
@@ -8222,7 +8225,7 @@ function SessionPageV2Inner() {
             const qaPhase = ['comprehension', 'exercise', 'worksheet', 'test'].includes(currentPhase) ? currentPhase : null;
             const awaitingAnswer =
               (qaPhase === 'comprehension' && comprehensionState === 'awaiting-answer') ||
-              (qaPhase === 'exercise' && exerciseState === 'awaiting-answer') ||
+              (qaPhase === 'exercise' && (exerciseState === 'awaiting-answer' || exerciseState === 'chatting')) ||
               (qaPhase === 'worksheet' && worksheetState === 'awaiting-answer') ||
               (qaPhase === 'test' && testState === 'awaiting-answer');
 
@@ -8321,17 +8324,20 @@ function SessionPageV2Inner() {
                             style={quickButtonStyle}
                             onClick={() => {
                               setValue(val);
-                              appendTranscriptLine({ text: val, role: 'user' });
                               if (qaPhase === 'comprehension') {
+                                appendTranscriptLine({ text: val, role: 'user' });
                                 comprehensionPhaseRef.current?.submitAnswer(val);
                                 setComprehensionAnswer('');
                               } else if (qaPhase === 'exercise') {
-                                exercisePhaseRef.current?.submitAnswer(val);
+                                // submitMessage emits exerciseConvMessage which appends to transcript
+                                exercisePhaseRef.current?.submitMessage(val);
                                 setSelectedExerciseAnswer('');
                               } else if (qaPhase === 'worksheet') {
+                                appendTranscriptLine({ text: val, role: 'user' });
                                 worksheetPhaseRef.current?.submitAnswer(val);
                                 setWorksheetAnswer('');
                               } else if (qaPhase === 'test') {
+                                appendTranscriptLine({ text: val, role: 'user' });
                                 testPhaseRef.current?.submitAnswer(val);
                                 setTestAnswer('');
                               }
@@ -8356,17 +8362,20 @@ function SessionPageV2Inner() {
                               style={quickButtonStyle}
                               onClick={() => {
                                 setValue(val);
-                                appendTranscriptLine({ text: val, role: 'user' });
                                 if (qaPhase === 'comprehension') {
+                                  appendTranscriptLine({ text: val, role: 'user' });
                                   comprehensionPhaseRef.current?.submitAnswer(val);
                                   setComprehensionAnswer('');
                                 } else if (qaPhase === 'exercise') {
-                                  exercisePhaseRef.current?.submitAnswer(val);
+                                  // submitMessage emits exerciseConvMessage which appends to transcript
+                                  exercisePhaseRef.current?.submitMessage(val);
                                   setSelectedExerciseAnswer('');
                                 } else if (qaPhase === 'worksheet') {
+                                  appendTranscriptLine({ text: val, role: 'user' });
                                   worksheetPhaseRef.current?.submitAnswer(val);
                                   setWorksheetAnswer('');
                                 } else if (qaPhase === 'test') {
+                                  appendTranscriptLine({ text: val, role: 'user' });
                                   testPhaseRef.current?.submitAnswer(val);
                                   setTestAnswer('');
                                 }
