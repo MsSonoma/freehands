@@ -834,10 +834,15 @@ Audience created: 'Ms. Sonoma Email List' (id: 1743ddf7-62ae-4a05-99db-103d95da4
 Backfill: scripts/backfill-resend-audience.mjs -- synced 11 existing users from Supabase auth.
 API route: src/app/api/email/subscribe/route.js -- POST /api/email/subscribe for ongoing signups.
 
-## 2026-06-06 — Exercise quick answer buttons fix
+## 2026-06-06 ï¿½ Exercise quick answer buttons fix
 - Recon: `exercise phase quick answer buttons a b c d t/f conversational questions mc tf sa fitb`
 - Problem: 3 root causes blocking buttons in ExerciseConversationPhase:
   1. awaitingAnswer gate checked 'awaiting-answer' but conv phase uses 'chatting'
   2. Click handlers called submitAnswer() (ExercisePhase API), conv phase only has submitMessage()
   3. stateChange handler didn't update currentExerciseQuestion as questions advanced (stale options)
-- Fix: SessionPageV2.jsx — awaitingAnswer includes chatting; exercise branch calls submitMessage(); stateChange updates currentExerciseQuestion; skips duplicate appendTranscriptLine for exercise
+- Fix: SessionPageV2.jsx ï¿½ awaitingAnswer includes chatting; exercise branch calls submitMessage(); stateChange updates currentExerciseQuestion; skips duplicate appendTranscriptLine for exercise
+
+## 2026-07-18 - Git sync large temp upload cleanup
+- Recon: `I need you to fix the git. It won't sync`
+- Problem: `git push origin dev` was rejected by GitHub GH001 because the unpushed commit tracked `.tmp.driveupload` blobs, including one over 100 MB.
+- Fix: removed `.tmp.driveupload` from the unpushed commit, added `.tmp.driveupload/` to `.gitignore`, restored Cohere working files out of the commit, amended, and pushed `dev` successfully.
