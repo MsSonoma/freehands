@@ -44,6 +44,9 @@ next-env.d.ts
 google-tts-key.json
 nice-symbol-472120-v7-30781ef9b517.json
 
+# local upload/cache scratch files
+.tmp.driveupload/
+
 # repository hygiene: ignore oversized video not needed in repo
 public/media/ms-sonoma.mp4
 

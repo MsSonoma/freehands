@@ -833,3 +833,11 @@ Setup: Domain mssonoma.app verified in Resend. DNS records added via Vercel CLI 
 Audience created: 'Ms. Sonoma Email List' (id: 1743ddf7-62ae-4a05-99db-103d95da4daf).
 Backfill: scripts/backfill-resend-audience.mjs -- synced 11 existing users from Supabase auth.
 API route: src/app/api/email/subscribe/route.js -- POST /api/email/subscribe for ongoing signups.
+
+## 2026-06-06 — Exercise quick answer buttons fix
+- Recon: `exercise phase quick answer buttons a b c d t/f conversational questions mc tf sa fitb`
+- Problem: 3 root causes blocking buttons in ExerciseConversationPhase:
+  1. awaitingAnswer gate checked 'awaiting-answer' but conv phase uses 'chatting'
+  2. Click handlers called submitAnswer() (ExercisePhase API), conv phase only has submitMessage()
+  3. stateChange handler didn't update currentExerciseQuestion as questions advanced (stale options)
+- Fix: SessionPageV2.jsx — awaitingAnswer includes chatting; exercise branch calls submitMessage(); stateChange updates currentExerciseQuestion; skips duplicate appendTranscriptLine for exercise
