@@ -7,6 +7,8 @@ import {
   buildLessonProposal,
   normalizeGenerationRequest,
   normalizePreparationSnapshot,
+  reassignPreparationSnapshotLearner,
+  resolvePreparationLearnerRecovery,
 } from '../src/app/lib/facilitatorPreparation.mjs'
 import { resolveFacilitatorHomeDecision } from '../src/app/lib/facilitatorHome.mjs'
 import { resolveCalendarLandingParams } from '../src/app/lib/facilitatorCalendarLanding.mjs'
@@ -103,6 +105,62 @@ test('DELIVERY snapshot preserves selected learner with multiple learners', () =
   assert.equal(decision.kind, 'CHOOSE_DELIVERY')
   assert.match(decision.href, /learnerId=learner-2/)
   assert.doesNotMatch(decision.href, /learnerId=learner-1/)
+  assert.equal(resolvePreparationLearnerRecovery({ version: 1, stage: FACILITATOR_PREPARATION_STAGES.DELIVERY, learnerId: 'learner-2', lessonIdentity: identity }, learners), null)
+})
+
+test('deleted learner DELIVERY snapshot opens learner recovery without reassigning automatically', () => {
+  const learners = [{ id: 'learner-1', name: 'First', approved_lessons: {} }]
+  const identity = buildCanonicalLessonIdentity({ file: 'second-approved.json', ownerId: 'facilitator-1' })
+  const snapshot = {
+    version: 1,
+    stage: FACILITATOR_PREPARATION_STAGES.DELIVERY,
+    learnerId: 'learner-2',
+    intent: { version: 1, learnerId: 'learner-2', need: 'Needs fraction comparison practice.' },
+    proposal: { version: 1, learnerId: 'learner-2', generationSpec: { title: 'Second Learner Fractions' } },
+    lessonIdentity: identity,
+  }
+
+  const recovery = resolvePreparationLearnerRecovery(snapshot, learners)
+  assert.deepEqual(recovery, { missingLearnerId: 'learner-2', stage: FACILITATOR_PREPARATION_STAGES.DELIVERY })
+  assert.equal(normalizePreparationSnapshot(snapshot).learnerId, 'learner-2')
+  assert.notEqual(normalizePreparationSnapshot(snapshot).learnerId, learners[0].id)
+
+  const decision = resolveFacilitatorHomeDecision({ learners, preparationSnapshot: snapshot })
+  assert.equal(decision.kind, 'SELECT_LEARNER')
+  assert.equal(decision.label, 'Choose learner')
+  assert.equal(decision.href, '/facilitator/prepare')
+
+  const reassigned = reassignPreparationSnapshotLearner(snapshot, learners[0].id)
+  assert.equal(reassigned.stage, FACILITATOR_PREPARATION_STAGES.DELIVERY)
+  assert.equal(reassigned.learnerId, 'learner-1')
+  assert.equal(reassigned.intent.learnerId, 'learner-1')
+  assert.equal(reassigned.proposal.learnerId, 'learner-1')
+  assert.deepEqual(reassigned.lessonIdentity, identity)
+})
+
+test('deleted learner DRAFT snapshot opens learner recovery and restores the original draft after selection', () => {
+  const learners = [{ id: 'learner-1', name: 'First', approved_lessons: {} }]
+  const identity = buildCanonicalLessonIdentity({ file: 'second-draft.json', ownerId: 'facilitator-1' })
+  const snapshot = {
+    version: 1,
+    stage: FACILITATOR_PREPARATION_STAGES.DRAFT,
+    learnerId: 'learner-2',
+    intent: { version: 1, learnerId: 'learner-2', need: 'Needs reading fluency practice.' },
+    proposal: { version: 1, learnerId: 'learner-2', generationSpec: { title: 'Reading Fluency Draft' } },
+    lessonIdentity: identity,
+  }
+
+  assert.deepEqual(resolvePreparationLearnerRecovery(snapshot, learners), {
+    missingLearnerId: 'learner-2',
+    stage: FACILITATOR_PREPARATION_STAGES.DRAFT,
+  })
+
+  const reassigned = reassignPreparationSnapshotLearner(snapshot, 'learner-1')
+  assert.equal(reassigned.stage, FACILITATOR_PREPARATION_STAGES.DRAFT)
+  assert.equal(reassigned.learnerId, 'learner-1')
+  assert.equal(reassigned.intent.need, snapshot.intent.need)
+  assert.equal(reassigned.proposal.generationSpec.title, 'Reading Fluency Draft')
+  assert.deepEqual(reassigned.lessonIdentity, identity)
 })
 
 test('generated lesson history does not hijack primary home decision without active snapshot', () => {

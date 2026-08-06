@@ -10,6 +10,8 @@ import {
   FACILITATOR_PREPARATION_STAGES,
   FACILITATOR_PREPARATION_VERSION,
   canTransitionPreparationStage,
+  reassignPreparationSnapshotLearner,
+  resolvePreparationLearnerRecovery,
 } from '@/app/lib/facilitatorPreparation.mjs'
 import { clearPreparationSnapshot, readPreparationSnapshot, writePreparationSnapshot } from './preparationSnapshot'
 
@@ -62,11 +64,14 @@ export default function FacilitatorPreparePage() {
     parentNotes: '',
   })
   const [proposal, setProposal] = useState(null)
+  const [intentSnapshot, setIntentSnapshot] = useState(null)
   const [lessonIdentity, setLessonIdentity] = useState(null)
   const [lessonDraft, setLessonDraft] = useState(null)
   const [scheduleDate, setScheduleDate] = useState(todayDate())
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const [recoveryStage, setRecoveryStage] = useState('')
+  const [missingLearnerId, setMissingLearnerId] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -116,12 +121,16 @@ export default function FacilitatorPreparePage() {
 
         const snapshot = readPreparationSnapshot()
         if (snapshot) {
+          const recovery = resolvePreparationLearnerRecovery(snapshot, list || [])
           setStage(snapshot.stage || STAGES.NEED)
-          setLearnerId(snapshot.learnerId || snapshot.intent?.learnerId || '')
+          setLearnerId(recovery ? '' : (snapshot.learnerId || snapshot.intent?.learnerId || ''))
           setNeed(snapshot.intent?.need || '')
           setBoundaries((prev) => ({ ...prev, ...(snapshot.intent?.boundaries || {}) }))
+          setIntentSnapshot(snapshot.intent || null)
           setProposal(snapshot.proposal || null)
           setLessonIdentity(snapshot.lessonIdentity || null)
+          setRecoveryStage(recovery?.stage || '')
+          setMissingLearnerId(recovery?.missingLearnerId || '')
         } else if (list?.[0]?.id) {
           setLearnerId(list[0].id)
         }
@@ -135,13 +144,19 @@ export default function FacilitatorPreparePage() {
   }, [pinChecked])
 
   const selectedLearner = useMemo(() => learners.find((learner) => learner.id === learnerId) || null, [learners, learnerId])
+  const hasLearnerRecovery = !!recoveryStage && !!missingLearnerId
+
+  function snapshotIntentFor(nextLearnerId = learnerId) {
+    if (intentSnapshot) return { ...intentSnapshot, learnerId: nextLearnerId }
+    return need ? { version: 1, learnerId: nextLearnerId, need, boundaries: activeBoundaries() } : null
+  }
 
   function persist(nextStage, extras = {}) {
     const next = {
       version: FACILITATOR_PREPARATION_VERSION,
       stage: nextStage,
       learnerId,
-      intent: extras.intent || (need ? { version: 1, learnerId, need, boundaries: activeBoundaries() } : null),
+      intent: extras.intent || snapshotIntentFor(learnerId),
       proposal: extras.proposal ?? proposal,
       lessonIdentity: extras.lessonIdentity ?? lessonIdentity,
     }
@@ -186,6 +201,7 @@ export default function FacilitatorPreparePage() {
       })
       const json = await response.json().catch(() => ({}))
       if (!response.ok || !json?.proposal) throw new Error(json?.error || 'Ms. Sonoma could not prepare a proposal')
+      setIntentSnapshot(intent)
       setProposal(json.proposal)
       moveStage(STAGES.PROPOSAL, { intent, proposal: json.proposal })
     } catch (error) {
@@ -223,6 +239,10 @@ export default function FacilitatorPreparePage() {
   }
 
   async function approveLesson() {
+    if (!selectedLearner) {
+      setMessage('Choose a learner before approving this lesson.')
+      return
+    }
     if (!lessonIdentity?.file) return
     setMessage('')
     setBusy(true)
@@ -246,6 +266,7 @@ export default function FacilitatorPreparePage() {
   }
 
   async function setAvailability(available = true) {
+    if (!selectedLearner) throw new Error('Choose a learner before choosing delivery.')
     const token = await getToken()
     const response = await fetch('/api/facilitator/learners/lesson-availability', {
       method: 'POST',
@@ -290,6 +311,10 @@ export default function FacilitatorPreparePage() {
   }
 
   async function scheduleLesson() {
+    if (!selectedLearner) {
+      setMessage('Choose a learner before scheduling this lesson.')
+      return
+    }
     setBusy(true)
     setMessage('')
     try {
@@ -311,12 +336,20 @@ export default function FacilitatorPreparePage() {
   }
 
   function saveForLater() {
+    if (!selectedLearner) {
+      setMessage('Choose a learner before saving this delivery decision.')
+      return
+    }
     setMessage('The lesson is approved and saved. It is not available or scheduled yet.')
     persist(STAGES.DELIVERY, { lessonIdentity })
     router.push('/facilitator')
   }
 
   function saveDraftAndLeave() {
+    if (!selectedLearner) {
+      setMessage('Choose a learner before saving this draft.')
+      return
+    }
     persist(STAGES.DRAFT, { lessonIdentity })
     router.push('/facilitator')
   }
@@ -331,9 +364,40 @@ export default function FacilitatorPreparePage() {
     clearPreparationSnapshot()
     setStage(STAGES.NEED)
     setProposal(null)
+    setIntentSnapshot(null)
     setLessonIdentity(null)
     setLessonDraft(null)
+    setRecoveryStage('')
+    setMissingLearnerId('')
     setMessage('Preparation cleared.')
+  }
+
+  function assignReplacementLearner(event) {
+    event?.preventDefault()
+    if (!learnerId || !learners.some((learner) => learner.id === learnerId)) {
+      setMessage('Choose a learner before continuing.')
+      return
+    }
+    const reassigned = reassignPreparationSnapshotLearner({
+      version: FACILITATOR_PREPARATION_VERSION,
+      stage: recoveryStage,
+      learnerId: missingLearnerId,
+      intent: intentSnapshot,
+      proposal,
+      lessonIdentity,
+    }, learnerId)
+    if (!reassigned) {
+      setMessage('Could not update the saved preparation. Please choose a learner again.')
+      return
+    }
+    writePreparationSnapshot(reassigned)
+    setIntentSnapshot(reassigned.intent)
+    setProposal(reassigned.proposal)
+    setLessonIdentity(reassigned.lessonIdentity)
+    setStage(reassigned.stage)
+    setRecoveryStage('')
+    setMissingLearnerId('')
+    setMessage('Learner selected. The saved lesson is ready to continue.')
   }
 
   if (!pinChecked || loading) {
@@ -360,7 +424,7 @@ export default function FacilitatorPreparePage() {
         </section>
       ) : null}
 
-      {learners.length > 0 && stage === STAGES.NEED && (
+      {learners.length > 0 && stage === STAGES.NEED && !hasLearnerRecovery && (
         <form onSubmit={proposeLesson} style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
           <label style={{ display: 'grid', gap: 6 }}>
             <span style={{ fontWeight: 700 }}>Learner</span>
@@ -392,7 +456,26 @@ export default function FacilitatorPreparePage() {
         </form>
       )}
 
-      {stage === STAGES.PROPOSAL && proposal && (
+      {hasLearnerRecovery && (
+        <form onSubmit={assignReplacementLearner} style={{ display: 'grid', gap: 14, border: '1px solid #f0c9c0', borderRadius: 8, padding: 18, background: '#fff7f5' }}>
+          <h2 style={{ margin: 0, fontSize: 18 }}>Choose a learner to continue</h2>
+          <p style={{ margin: 0, color: '#4b5563', lineHeight: 1.55 }}>The previously selected learner is no longer available. This lesson has not been reassigned. Choose a learner before continuing with the saved {recoveryStage === STAGES.DELIVERY ? 'approved lesson' : 'draft lesson'}.</p>
+          <label style={{ display: 'grid', gap: 6 }}>
+            <span style={{ fontWeight: 700 }}>Learner</span>
+            <select value={learnerId} onChange={(event) => setLearnerId(event.target.value)} style={{ padding: 10, border: '1px solid #d1d5db', borderRadius: 8 }} required>
+              <option value="">Choose a learner</option>
+              {learners.map((learner) => <option key={learner.id} value={learner.id}>{learner.name} - grade {learner.grade}</option>)}
+            </select>
+          </label>
+          <div style={{ border: '1px solid #f0c9c0', borderRadius: 8, padding: 12, background: '#fff' }}>
+            <strong>{proposal?.generationSpec?.title || lessonIdentity?.file || 'Saved lesson'}</strong>
+            <p style={{ marginBottom: 0, color: '#4b5563' }}>{recoveryStage === STAGES.DELIVERY ? 'Delivery, scheduling, and Start now are disabled until a learner is selected.' : 'Approval is disabled until a learner is selected.'}</p>
+          </div>
+          <button type="submit" disabled={busy || !learnerId} style={{ ...button, opacity: busy || !learnerId ? 0.7 : 1 }}>Continue with selected learner</button>
+        </form>
+      )}
+
+      {stage === STAGES.PROPOSAL && proposal && !hasLearnerRecovery && (
         <section style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>Proposed approach</h2>
           <p style={{ margin: 0, lineHeight: 1.55 }}>{proposal.summary}</p>
@@ -408,14 +491,14 @@ export default function FacilitatorPreparePage() {
         </section>
       )}
 
-      {stage === STAGES.GENERATING && (
+      {stage === STAGES.GENERATING && !hasLearnerRecovery && (
         <section style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
           <h2 style={{ marginTop: 0, fontSize: 18 }}>Generating lesson</h2>
           <p style={{ color: '#4b5563' }}>Ms. Sonoma is creating the draft lesson now.</p>
         </section>
       )}
 
-      {stage === STAGES.DRAFT && lessonIdentity && (
+      {stage === STAGES.DRAFT && lessonIdentity && !hasLearnerRecovery && (
         <section style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>Review draft</h2>
           {selectedLearner && <p style={{ margin: 0, color: '#374151', fontWeight: 700 }}>Learner: {selectedLearner.name}</p>}
@@ -425,7 +508,7 @@ export default function FacilitatorPreparePage() {
             <p style={{ marginBottom: 0 }}>{lessonDraft?.blurb || proposal?.generationSpec?.description}</p>
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button type="button" onClick={approveLesson} disabled={busy} style={button}>{busy ? 'Approving...' : 'Approve lesson content'}</button>
+            <button type="button" onClick={approveLesson} disabled={busy || !selectedLearner} style={button}>{busy ? 'Approving...' : 'Approve lesson content'}</button>
             <Link href={`/facilitator/lessons/edit?key=${encodeURIComponent(lessonIdentity.lessonKey)}`} style={{ ...secondaryButton, textDecoration: 'none' }}>Edit draft</Link>
             <button type="button" onClick={saveDraftAndLeave} style={secondaryButton}>Save and leave</button>
             <button type="button" onClick={abandonFlow} style={secondaryButton}>Discard draft setup</button>
@@ -433,14 +516,14 @@ export default function FacilitatorPreparePage() {
         </section>
       )}
 
-      {stage === STAGES.DELIVERY && lessonIdentity && (
+      {stage === STAGES.DELIVERY && lessonIdentity && !hasLearnerRecovery && (
         <section style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>Choose delivery</h2>
           {selectedLearner && <p style={{ margin: 0, color: '#374151', fontWeight: 700 }}>Learner: {selectedLearner.name}</p>}
           <p style={{ margin: 0, color: '#4b5563' }}>The lesson content is approved. Choose when the learner receives it.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
-            <button type="button" onClick={startNow} disabled={busy} style={button}>Start now</button>
-            <button type="button" onClick={makeAvailable} disabled={busy} style={secondaryButton}>Make available</button>
+            <button type="button" onClick={startNow} disabled={busy || !selectedLearner} style={button}>Start now</button>
+            <button type="button" onClick={makeAvailable} disabled={busy || !selectedLearner} style={secondaryButton}>Make available</button>
             <button type="button" onClick={saveForLater} disabled={busy} style={secondaryButton}>Save for later</button>
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', borderTop: '1px solid #e5e7eb', paddingTop: 14 }}>
@@ -448,7 +531,7 @@ export default function FacilitatorPreparePage() {
               <span style={{ fontWeight: 700 }}>Schedule date</span>
               <input type="date" value={scheduleDate} onChange={(event) => setScheduleDate(event.target.value)} style={{ padding: 10, border: '1px solid #d1d5db', borderRadius: 8 }} />
             </label>
-            <button type="button" onClick={scheduleLesson} disabled={busy || !scheduleDate} style={button}>Schedule</button>
+            <button type="button" onClick={scheduleLesson} disabled={busy || !scheduleDate || !selectedLearner} style={button}>Schedule</button>
           </div>
         </section>
       )}
