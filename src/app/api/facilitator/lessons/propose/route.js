@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server.js'
 import { createClient } from '@supabase/supabase-js'
-import { buildLessonProposal, validateLessonIntent } from '@/app/lib/facilitatorPreparation.mjs'
+import { buildLessonProposal, validateLessonIntent } from '../../../../lib/facilitatorPreparation.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -13,7 +13,7 @@ function getEnv() {
   }
 }
 
-async function getUserAndAdmin(request) {
+async function getUserAndAdmin(request, { createClientImpl = createClient } = {}) {
   const auth = request.headers.get('authorization') || ''
   const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : null
   if (!token) return { user: null, admin: null }
@@ -21,17 +21,17 @@ async function getUserAndAdmin(request) {
   const { url, anon, service } = getEnv()
   if (!url || !anon || !service) return { user: null, admin: null, error: 'Server not configured' }
 
-  const authClient = createClient(url, anon, { auth: { persistSession: false } })
+  const authClient = createClientImpl(url, anon, { auth: { persistSession: false } })
   const { data: { user }, error } = await authClient.auth.getUser(token)
   if (error || !user) return { user: null, admin: null }
 
-  const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } })
+  const admin = createClientImpl(url, service, { auth: { persistSession: false, autoRefreshToken: false } })
   return { user, admin }
 }
 
-export async function POST(request) {
+export async function POST(request, deps = {}) {
   try {
-    const { user, admin, error } = await getUserAndAdmin(request)
+    const { user, admin, error } = await getUserAndAdmin(request, deps)
     if (error) return NextResponse.json({ error }, { status: 500 })
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (!admin) return NextResponse.json({ error: 'Server not configured' }, { status: 500 })

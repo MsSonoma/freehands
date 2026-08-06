@@ -6,19 +6,10 @@ import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
+import { normalizeApprovedLessons, resolveFacilitatorHomeDecision } from '@/app/lib/facilitatorHome.mjs'
+import { readPreparationSnapshot } from './prepare/preparationSnapshot'
 
-function normalizeApprovedLessons(raw) {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
-  const out = {}
-  for (const [key, value] of Object.entries(raw)) {
-    if (value && key) out[key] = true
-  }
-  return out
-}
-
-function lessonKeyForGenerated(lesson) {
-  return lesson?.file ? `generated/${lesson.file}` : null
-}
+const PREPARE_PATH = '/facilitator/prepare'
 
 export default function FacilitatorPage() {
   const router = useRouter()
@@ -30,7 +21,7 @@ export default function FacilitatorPage() {
   const [learners, setLearners] = useState([])
   const [generatedLessons, setGeneratedLessons] = useState([])
   const [scheduledKeys, setScheduledKeys] = useState({})
-  const [historySummary, setHistorySummary] = useState(null)
+  const [preparationSnapshot, setPreparationSnapshot] = useState(null)
   const [loadError, setLoadError] = useState('')
 
   useEffect(() => {
@@ -81,6 +72,7 @@ export default function FacilitatorPage() {
         const learnerList = await listLearners()
         if (cancelled) return
         setLearners(learnerList || [])
+        setPreparationSnapshot(readPreparationSnapshot())
 
         if (token) {
           const lessonsResponse = await fetch('/api/facilitator/lessons/list', {
@@ -112,16 +104,6 @@ export default function FacilitatorPage() {
           if (!cancelled) setScheduledKeys(scheduleEntries)
         }
 
-        const firstLearner = (learnerList || [])[0]
-        if (firstLearner?.id) {
-          try {
-            const historyResponse = await fetch(`/api/learner/lesson-history?learner_id=${encodeURIComponent(firstLearner.id)}&limit=10`, { cache: 'no-store' })
-            if (historyResponse.ok) {
-              const history = await historyResponse.json().catch(() => ({}))
-              if (!cancelled) setHistorySummary(history?.summary || null)
-            }
-          } catch {}
-        }
       } catch (error) {
         if (!cancelled) setLoadError(error?.message || 'Could not load facilitator home')
       } finally {
@@ -132,76 +114,8 @@ export default function FacilitatorPage() {
   }, [pinChecked])
 
   const decision = useMemo(() => {
-    if (!learners.length) {
-      return {
-        label: 'Add learner',
-        title: 'Add your first learner',
-        body: 'Start with the learner name and grade. Settings can wait.',
-        href: '/facilitator/learners/add',
-      }
-    }
-
-    const draft = generatedLessons.find((lesson) => lesson && lesson.approved !== true)
-    if (draft) {
-      const lessonKey = lessonKeyForGenerated(draft)
-      return {
-        label: 'Review lesson',
-        title: 'A lesson draft is waiting for review',
-        body: draft.title || draft.file,
-        href: lessonKey ? `/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}` : '/facilitator/lessons',
-      }
-    }
-
-    const availableKeys = new Set()
-    learners.forEach((learner) => {
-      Object.keys(normalizeApprovedLessons(learner.approved_lessons)).forEach((key) => availableKeys.add(key))
-    })
-    Object.keys(scheduledKeys).forEach((key) => availableKeys.add(key))
-
-    const approvedAwaitingDelivery = generatedLessons.find((lesson) => {
-      if (lesson?.approved !== true) return false
-      const lessonKey = lessonKeyForGenerated(lesson)
-      return lessonKey && !availableKeys.has(lessonKey)
-    })
-    if (approvedAwaitingDelivery) {
-      const lessonKey = lessonKeyForGenerated(approvedAwaitingDelivery)
-      const learnerId = learners[0]?.id || ''
-      return {
-        label: 'Choose delivery',
-        title: 'An approved lesson needs a delivery choice',
-        body: approvedAwaitingDelivery.title || approvedAwaitingDelivery.file,
-        href: `/facilitator/prepare?stage=DELIVERY&learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}`,
-      }
-    }
-
-    const completed = historySummary?.lastCompleted && Object.keys(historySummary.lastCompleted).length > 0
-    if (completed) {
-      return {
-        label: 'Review what happened',
-        title: 'A recent session is ready to review',
-        body: 'See completion history, medals, notes, and next lesson signals.',
-        href: '/facilitator/lessons',
-      }
-    }
-
-    const hasNextLesson = learners.some((learner) => Object.keys(normalizeApprovedLessons(learner.approved_lessons)).length > 0)
-      || Object.keys(scheduledKeys).length > 0
-    if (!hasNextLesson) {
-      return {
-        label: 'Prepare next lesson',
-        title: 'No next lesson is ready yet',
-        body: 'Describe what the learner needs and review Ms. Sonoma\'s proposed approach.',
-        href: '/facilitator/prepare',
-      }
-    }
-
-    return {
-      label: 'Prepare ahead',
-      title: 'Nothing urgent needs your decision',
-      body: 'You can prepare another guided learning session whenever you are ready.',
-      href: '/facilitator/prepare',
-    }
-  }, [generatedLessons, historySummary, learners, scheduledKeys])
+    return resolveFacilitatorHomeDecision({ learners, generatedLessons, scheduledKeys, preparationSnapshot, preparePath: PREPARE_PATH })
+  }, [generatedLessons, learners, preparationSnapshot, scheduledKeys])
 
   if (!pinChecked || loading) {
     return <main style={{ padding: '12px 24px' }}><p style={{ color: '#6b7280' }}>Loading...</p></main>
@@ -224,14 +138,14 @@ export default function FacilitatorPage() {
       <h1 style={{ margin: '0 0 4px', fontFamily: 'Montserrat, sans-serif', fontSize: 24 }}>
         {facilitatorName ? `Hi, ${facilitatorName}` : 'Facilitator Home'}
       </h1>
-      <p style={{ margin: '0 0 18px', color: '#6b7280' }}>Next decision first. Advanced tools stay available below.</p>
+      <p style={{ margin: '0 0 18px', color: '#6b7280' }}>Your next facilitator decision is first. Advanced tools stay available below.</p>
 
       {loadError && <div style={{ marginBottom: 14, padding: 12, border: '1px solid #f0c9c0', borderRadius: 8, background: '#fff7f5', color: '#7f1d1d' }}>{loadError}</div>}
 
       <section style={{ border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', padding: 18, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', marginBottom: 18 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
           <div style={{ flex: '1 1 280px' }}>
-            <div style={{ color: 'rgb(199, 68, 46)', fontWeight: 800, fontSize: 13, marginBottom: 6 }}>Next decision</div>
+            <div style={{ color: 'rgb(199, 68, 46)', fontWeight: 800, fontSize: 13, marginBottom: 6 }}>Primary decision</div>
             <h2 style={{ margin: '0 0 6px', fontSize: 20 }}>{decision.title}</h2>
             <p style={{ margin: 0, color: '#4b5563', lineHeight: 1.5 }}>{decision.body}</p>
           </div>

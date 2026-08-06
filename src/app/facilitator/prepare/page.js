@@ -315,6 +315,11 @@ export default function FacilitatorPreparePage() {
     finishFlow()
   }
 
+  function saveDraftAndLeave() {
+    persist(STAGES.DRAFT, { lessonIdentity })
+    router.push('/facilitator')
+  }
+
   function finishFlow() {
     clearPreparationSnapshot()
     setStage(STAGES.COMPLETE)
@@ -420,7 +425,8 @@ export default function FacilitatorPreparePage() {
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button type="button" onClick={approveLesson} disabled={busy} style={button}>{busy ? 'Approving...' : 'Approve lesson content'}</button>
             <Link href={`/facilitator/lessons/edit?key=${encodeURIComponent(lessonIdentity.lessonKey)}`} style={{ ...secondaryButton, textDecoration: 'none' }}>Edit draft</Link>
-            <button type="button" onClick={abandonFlow} style={secondaryButton}>Save and leave</button>
+            <button type="button" onClick={saveDraftAndLeave} style={secondaryButton}>Save and leave</button>
+            <button type="button" onClick={abandonFlow} style={secondaryButton}>Discard draft setup</button>
           </div>
         </section>
       )}

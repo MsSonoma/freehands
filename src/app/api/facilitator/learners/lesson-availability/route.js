@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server.js'
 import { createClient } from '@supabase/supabase-js'
 import fs from 'node:fs'
 import path from 'node:path'
-import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
-import { applyLessonAvailability } from '@/app/lib/lessonAvailability.mjs'
+import { normalizeLessonKey } from '../../../../lib/lessonKeyNormalization.js'
+import { applyLessonAvailability } from '../../../../lib/lessonAvailability.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -18,7 +18,7 @@ function getEnv() {
   }
 }
 
-async function getUserAndAdmin(request) {
+async function getUserAndAdmin(request, { createClientImpl = createClient } = {}) {
   const auth = request.headers.get('authorization') || ''
   const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : null
   if (!token) return { user: null, admin: null }
@@ -26,17 +26,17 @@ async function getUserAndAdmin(request) {
   const { url, anon, service } = getEnv()
   if (!url || !anon || !service) return { user: null, admin: null, error: 'Server not configured' }
 
-  const authClient = createClient(url, anon, { auth: { persistSession: false } })
+  const authClient = createClientImpl(url, anon, { auth: { persistSession: false } })
   const { data: { user }, error } = await authClient.auth.getUser(token)
   if (error || !user) return { user: null, admin: null }
 
   return {
     user,
-    admin: createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } }),
+    admin: createClientImpl(url, service, { auth: { persistSession: false, autoRefreshToken: false } }),
   }
 }
 
-async function verifyLessonAccess({ admin, userId, lessonKey }) {
+async function verifyLessonAccess({ admin, userId, lessonKey, fileExistsSync = fs.existsSync }) {
   const normalized = normalizeLessonKey(lessonKey)
   if (!normalized || !normalized.includes('/')) return { ok: false, error: 'Invalid lesson key' }
   const [subject, ...rest] = normalized.split('/')
@@ -57,10 +57,10 @@ async function verifyLessonAccess({ admin, userId, lessonKey }) {
   if (!STOCK_SUBJECTS.has(subject)) return { ok: false, error: 'Lesson not found or unauthorized' }
   const folder = subject === 'general' ? 'Facilitator Lessons' : subject
   const publicPath = path.join(process.cwd(), 'public', 'lessons', folder, file)
-  return fs.existsSync(publicPath) ? { ok: true } : { ok: false, error: 'Lesson not found or unauthorized' }
+  return fileExistsSync(publicPath) ? { ok: true } : { ok: false, error: 'Lesson not found or unauthorized' }
 }
 
-export async function POST(request) {
+export async function POST(request, deps = {}) {
   try {
     const body = await request.json().catch(() => null)
     const learnerId = body?.learnerId
@@ -71,7 +71,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'learnerId, lessonKey, and available (boolean) are required' }, { status: 400 })
     }
 
-    const { user, admin, error } = await getUserAndAdmin(request)
+    const { user, admin, error } = await getUserAndAdmin(request, deps)
     if (error) return NextResponse.json({ error }, { status: 500 })
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (!admin) return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
@@ -87,9 +87,11 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
     }
 
-    const lessonAccess = await verifyLessonAccess({ admin, userId: user.id, lessonKey: normalizedLessonKey })
-    if (!lessonAccess.ok) {
-      return NextResponse.json({ error: lessonAccess.error || 'Lesson not found or unauthorized' }, { status: 403 })
+    if (available) {
+      const lessonAccess = await verifyLessonAccess({ admin, userId: user.id, lessonKey: normalizedLessonKey, fileExistsSync: deps.fileExistsSync })
+      if (!lessonAccess.ok) {
+        return NextResponse.json({ error: lessonAccess.error || 'Lesson not found or unauthorized' }, { status: 403 })
+      }
     }
 
     const availabilityResult = applyLessonAvailability(learner.approved_lessons, normalizedLessonKey, available)

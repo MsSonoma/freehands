@@ -432,10 +432,11 @@ export default function LessonMakerPage(){
 
       generatedFile = js?.file
       generatedUserId = js?.userId
+      const storedLessonKey = js?.storageError ? null : (js?.lessonKey || (generatedFile ? `generated/${generatedFile}` : null))
       if (js?.lessonKey) {
         setGeneratedLessonKey(js.lessonKey)
-      } else if (generatedFile) {
-        setGeneratedLessonKey(`generated/${generatedFile}`)
+      } else if (storedLessonKey) {
+        setGeneratedLessonKey(storedLessonKey)
       }
 
       // STEP 2: Validate lesson quality
@@ -466,7 +467,7 @@ export default function LessonMakerPage(){
       setMessage('')
 
       // Activate for selected learner(s) — run regardless of onboarding so we don't skip it
-      const lessonKeyToActivate = js?.lessonKey || (generatedFile ? `generated/${generatedFile}` : null)
+      const lessonKeyToActivate = storedLessonKey
       const didActivate = lessonKeyToActivate && makeActiveFor !== 'none'
       if (didActivate) {
         const targetIds = makeActiveFor === 'all'

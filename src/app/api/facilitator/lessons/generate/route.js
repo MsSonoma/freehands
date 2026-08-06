@@ -1,18 +1,18 @@
-import { NextResponse } from 'next/server'
-import { resolveEffectiveTier, featuresForTier } from '@/app/lib/entitlements'
-import { AI_MODEL } from '@/app/lib/aiModel'
-import { buildCanonicalLessonIdentity, normalizeGenerationRequest } from '@/app/lib/facilitatorPreparation.mjs'
+import { NextResponse } from 'next/server.js'
+import { resolveEffectiveTier, featuresForTier } from '../../../../lib/entitlements.js'
+import { AI_MODEL } from '../../../../lib/aiModel.js'
+import { buildCanonicalLessonIdentity, normalizeGenerationRequest } from '../../../../lib/facilitatorPreparation.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 export const maxDuration = 60 // Extended timeout for OpenAI lesson generation
 
-async function readUserAndTier(request){
+async function readUserAndTier(request, { createClientImpl = null } = {}){
   try {
     const auth = request.headers.get('authorization') || ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
     if (!token) return { user: null, tier: 'free', token: null, supabase: null }
-    const { createClient } = await import('@supabase/supabase-js')
+    const createClient = createClientImpl || (await import('@supabase/supabase-js')).createClient
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -169,8 +169,8 @@ async function callModel(prompt){
   }
 }
 
-export async function POST(request){
-  const { user, tier, supabase } = await readUserAndTier(request)
+export async function POST(request, deps = {}){
+  const { user, tier, supabase } = await readUserAndTier(request, deps)
   if (!user) return NextResponse.json({ error:'Unauthorized' }, { status: 401 })
   
   // Check if user has lessonGenerator entitlement
@@ -196,6 +196,7 @@ export async function POST(request){
 
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
+  const proposalMode = body?.mode === 'proposal'
   const normalized = normalizeGenerationRequest(body || {})
   if (!normalized.ok) return NextResponse.json({ error: normalized.error }, { status: 400 })
   const { title, subject, difficulty, grade, description, notes, vocab } = normalized.request
@@ -248,7 +249,10 @@ export async function POST(request){
     } else {
       storageError = 'Supabase client not initialized'
     }
-    const identity = buildCanonicalLessonIdentity({ file, ownerId: user.id, storagePath })
+    if (proposalMode && storageError) {
+      return NextResponse.json({ error: `Lesson storage failed: ${storageError}` }, { status: 500 })
+    }
+    const identity = storageError ? null : buildCanonicalLessonIdentity({ file, ownerId: user.id, storagePath })
     
     // Increment lifetime_generations_used for finite-limit tiers (e.g. free)
     if (Number.isFinite(lifetimeLimit) && supabase) {
@@ -263,7 +267,7 @@ export async function POST(request){
       ok: true, 
       file, 
       identity,
-      lessonKey: identity?.lessonKey || `generated/${file}`,
+      lessonKey: identity?.lessonKey || null,
       storagePath: identity?.storagePath || storagePath,
       ownerId: user.id,
       lesson,

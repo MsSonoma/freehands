@@ -32,7 +32,7 @@ test('proposal and availability routes verify learner ownership before acting', 
   }
 })
 
-test('availability route verifies lesson access before mutating learner availability', () => {
+test('availability route verifies lesson access when making a lesson available', () => {
   const source = read('src/app/api/facilitator/learners/lesson-availability/route.js')
   assert.match(source, /verifyLessonAccess/)
   assert.match(source, /Lesson not found or unauthorized/)
@@ -40,10 +40,41 @@ test('availability route verifies lesson access before mutating learner availabi
   assert.match(source, /applyLessonAvailability/)
 })
 
+test('Facilitator Home visibly contains the reconstructed primary decision experience', () => {
+  const source = read('src/app/facilitator/page.js')
+  assert.match(source, /resolveFacilitatorHomeDecision/)
+  assert.match(source, /readPreparationSnapshot/)
+  assert.match(source, /Primary decision/)
+  assert.match(source, /Advanced Tools/)
+  assert.match(source, /\/facilitator\/prepare/)
+  assert.doesNotMatch(source, /Choose a section to manage your homeschool or classroom/)
+})
+
 test('generation route returns canonical identity and keeps new lessons as drafts', () => {
   const source = read('src/app/api/facilitator/lessons/generate/route.js')
   assert.match(source, /normalizeGenerationRequest/)
   assert.match(source, /buildCanonicalLessonIdentity/)
   assert.match(source, /lesson\.approved\s*=\s*false/)
-  assert.match(source, /identity,/) 
+  assert.match(source, /proposalMode && storageError/)
+  assert.match(source, /const identity = storageError \? null : buildCanonicalLessonIdentity/)
+})
+
+test('advanced generator does not create actionable lesson keys after storage fallback', () => {
+  const source = read('src/app/facilitator/generator/page.js')
+  assert.match(source, /const storedLessonKey = js\?\.storageError \? null :/)
+  assert.match(source, /const lessonKeyToActivate = storedLessonKey/)
+})
+
+test('old onboarding no longer bypasses reconstructed preparation flow', () => {
+  const addLearnerPage = read('src/app/facilitator/learners/add/page.js')
+  assert.match(addLearnerPage, /router\.push\(`\/facilitator\/prepare\$\{learnerParam\}`\)/)
+  assert.match(addLearnerPage, /router\.push\('\/facilitator\/prepare'\)/)
+  assert.doesNotMatch(addLearnerPage, /router\.push\(`\/facilitator\/generator/)
+})
+
+test('preparation draft Save and leave preserves snapshot and exits home', () => {
+  const preparePage = read('src/app/facilitator/prepare/page.js')
+  assert.match(preparePage, /function saveDraftAndLeave\(\) \{[\s\S]*persist\(STAGES\.DRAFT, \{ lessonIdentity \}\)[\s\S]*router\.push\('\/facilitator'\)/)
+  assert.match(preparePage, /onClick=\{saveDraftAndLeave\}[\s\S]*>Save and leave<\/button>/)
+  assert.match(preparePage, /onClick=\{abandonFlow\}[\s\S]*>Discard draft setup<\/button>/)
 })

@@ -1,16 +1,16 @@
-import { NextResponse } from 'next/server'
-import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
-import { buildCanonicalLessonIdentity } from '@/app/lib/facilitatorPreparation.mjs'
+import { NextResponse } from 'next/server.js'
+import { featuresForTier, resolveEffectiveTier } from '../../../../lib/entitlements.js'
+import { buildCanonicalLessonIdentity } from '../../../../lib/facilitatorPreparation.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-async function readUserAndTier(request){
+async function readUserAndTier(request, { createClientImpl = null } = {}){
   try {
     const auth = request.headers.get('authorization') || ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
     if (!token) return { user: null, plan_tier: 'free', supabase: null }
-    const { createClient } = await import('@supabase/supabase-js')
+    const createClient = createClientImpl || (await import('@supabase/supabase-js')).createClient
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -42,9 +42,9 @@ async function readUserAndTier(request){
   }
 }
 
-export async function POST(request){
+export async function POST(request, deps = {}){
   const startTime = Date.now()
-  const { user, plan_tier, supabase } = await readUserAndTier(request)
+  const { user, plan_tier, supabase } = await readUserAndTier(request, deps)
   if (!user) return NextResponse.json({ error:'Unauthorized' }, { status: 401 })
   if (!featuresForTier(plan_tier).lessonGenerator) return NextResponse.json({ error:'Lesson Generator plan required' }, { status: 403 })
   if (!supabase) return NextResponse.json({ error:'Storage not configured' }, { status: 500 })

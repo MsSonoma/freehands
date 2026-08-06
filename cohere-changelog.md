@@ -226,6 +226,14 @@ Topic: Facilitator preparation path reconstruction slice
 Recon prompt (exact string): Reconstruct the Ms. Sonoma facilitator path: inspect facilitator prepare flow, lesson proposal, generator, approval, availability, scheduling, learner creation, facilitator home, ownership authorization, tests
 
 Key evidence: Added `/facilitator/prepare`, stateless `/api/facilitator/lessons/propose`, centralized `/api/facilitator/learners/lesson-availability`, canonical lesson identity helpers, deterministic facilitator home, simplified learner creation, and focused route/security/flow tests. Build and lint completed; existing session engine files were read back but not edited.
+
+Date (UTC): 2026-08-06T00:00:00Z
+
+Topic: Facilitator reconstruction correction after 957201e
+
+Recon prompt (exact string): Copilot Correction Task: Complete the Facilitator Reconstruction. Audit current source after commit 957201e; repair facilitator home primary decision, prepare link, onboarding path, save-and-leave snapshot behavior, proposal storage failure, availability removal, and add route-level tests.
+
+Key evidence: Repaired Facilitator Home recovery snapshot decision ordering, Draft Save and leave snapshot preservation, proposal-mode storage failure handling, availability removal behavior, advanced generator storage fallback keys, and added mocked route-handler tests for proposal/generation/approval/availability routes.
 - sidekick_pack: (optional) `sidekick_pack.md`
 - rounds journal: (optional) `sidekick_rounds.jsonl` (search by prompt)
 

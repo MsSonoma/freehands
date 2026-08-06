@@ -8,6 +8,7 @@ import {
   normalizeGenerationRequest,
   normalizePreparationSnapshot,
 } from '../src/app/lib/facilitatorPreparation.mjs'
+import { resolveFacilitatorHomeDecision } from '../src/app/lib/facilitatorHome.mjs'
 import { applyLessonAvailability } from '../src/app/lib/lessonAvailability.mjs'
 import { normalizeLessonKey } from '../src/app/lib/lessonKeyNormalization.js'
 
@@ -66,4 +67,17 @@ test('refresh recovery can schedule with the same normalized learner-facing less
     lessonKey: 'generated/fractions.json',
     scheduledDate: '2026-08-07',
   })
+})
+
+test('Facilitator Home resolves the required primary decision states', () => {
+  const learner = { id: 'learner-1', name: 'Ada', approved_lessons: {} }
+  assert.equal(resolveFacilitatorHomeDecision().kind, 'NO_LEARNER')
+  assert.equal(resolveFacilitatorHomeDecision({
+    learners: [learner],
+    preparationSnapshot: { version: 1, stage: FACILITATOR_PREPARATION_STAGES.PROPOSAL, learnerId: learner.id, proposal: {} },
+  }).kind, 'CONTINUE_PREPARING')
+  assert.equal(resolveFacilitatorHomeDecision({ learners: [learner], generatedLessons: [{ file: 'draft.json', approved: false }] }).kind, 'REVIEW_DRAFT')
+  assert.equal(resolveFacilitatorHomeDecision({ learners: [learner], generatedLessons: [{ file: 'approved.json', approved: true }] }).kind, 'CHOOSE_DELIVERY')
+  assert.equal(resolveFacilitatorHomeDecision({ learners: [learner] }).kind, 'PREPARE_NEXT')
+  assert.equal(resolveFacilitatorHomeDecision({ learners: [{ ...learner, approved_lessons: { 'generated/ready.json': true } }] }).kind, 'PREPARE_AHEAD')
 })
