@@ -31,6 +31,7 @@ export default function AddLearnerPage() {
 	// Show onboarding banner when arriving from signup (?onboarding=1) or hook says step 1
 	const showOnboarding = isOnboardingParam || step === STEPS.CREATE_LEARNER;
 	const [settingsTipOpen, setSettingsTipOpen] = useState(false);
+	const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
 	const [pinChecked, setPinChecked] = useState(false);
 	// Onboarding PIN gate: null=loading, 'needed', 'done'
 	const [onboardingPinStatus, setOnboardingPinStatus] = useState(null)
@@ -154,7 +155,7 @@ export default function AddLearnerPage() {
 						setSaving(false);
 						return;
 					}
-					await createLearner({
+					const createdLearner = await createLearner({
 					name,
 					grade,
 					targets: {
@@ -168,10 +169,10 @@ export default function AddLearnerPage() {
 					// If arriving from onboarding flow, advance step and go to generator
 					if (showOnboarding) {
 						await advanceStep(STEPS.GENERATE_LESSON);
-						const gradeParam = grade ? `&grade=${encodeURIComponent(grade)}` : '';
-						router.push(`/facilitator/generator?onboarding=1${gradeParam}`);
+						const learnerParam = createdLearner?.id ? `?learnerId=${encodeURIComponent(createdLearner.id)}` : '';
+						router.push(`/facilitator/prepare${learnerParam}`);
 					} else {
-						router.push('/facilitator/learners');
+						router.push('/facilitator/prepare');
 					}
 			} finally {
 			setSaving(false);
@@ -275,41 +276,59 @@ export default function AddLearnerPage() {
 					</select>
 				</label>
 
-				<label style={{ display: 'grid', gap: 6 }}>
-					<span>Humor Level</span>
-					<select value={humorLevel} onChange={(e) => setHumorLevel(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
-						{humorLevels.map((level) => (
-							<option key={level} value={level}>{level.charAt(0).toUpperCase() + level.slice(1)}</option>
-						))}
-					</select>
-				</label>
 
-				<label style={{ display: 'grid', gap: 6 }}>
-					<span>Exercise Target</span>
-					<select value={exercise} onChange={(e) => setExercise(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
-						{targetOptions.map((n) => (
-							<option key={'e'+n} value={n}>{n}</option>
-						))}
-					</select>
-				</label>
+					<button type="button" onClick={() => setAdvancedSettingsOpen((open) => !open)} style={{ justifySelf:'start', padding:'8px 12px', border:'1px solid #ddd', borderRadius:8, background:'#fff', color:'#374151', fontWeight:600 }}>
+						{advancedSettingsOpen ? 'Hide advanced settings' : 'Advanced settings'}
+					</button>
 
-				<label style={{ display: 'grid', gap: 6 }}>
-					<span>Worksheet Target</span>
-					<select value={worksheet} onChange={(e) => setWorksheet(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
-						{targetOptions.map((n) => (
-							<option key={'w'+n} value={n}>{n}</option>
-						))}
-					</select>
-				</label>
+					{advancedSettingsOpen && (
+						<div style={{ display:'grid', gap:12, padding:12, border:'1px solid #e5e7eb', borderRadius:8, background:'#f9fafb' }}>
+							<label style={{ display: 'grid', gap: 6 }}>
+								<span>Humor Level</span>
+								<select value={humorLevel} onChange={(e) => setHumorLevel(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
+									{humorLevels.map((level) => (
+										<option key={level} value={level}>{level.charAt(0).toUpperCase() + level.slice(1)}</option>
+									))}
+								</select>
+							</label>
 
-				<label style={{ display: 'grid', gap: 6 }}>
-					<span>Test Target</span>
-					<select value={test} onChange={(e) => setTest(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
-						{targetOptions.map((n) => (
-							<option key={'t'+n} value={n}>{n}</option>
-						))}
-					</select>
-				</label>
+							<label style={{ display: 'grid', gap: 6 }}>
+								<span>Comprehension Target</span>
+								<select value={comprehension} onChange={(e) => setComprehension(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
+									{targetOptions.map((n) => (
+										<option key={'c'+n} value={n}>{n}</option>
+									))}
+								</select>
+							</label>
+
+							<label style={{ display: 'grid', gap: 6 }}>
+								<span>Exercise Target</span>
+								<select value={exercise} onChange={(e) => setExercise(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
+									{targetOptions.map((n) => (
+										<option key={'e'+n} value={n}>{n}</option>
+									))}
+								</select>
+							</label>
+
+							<label style={{ display: 'grid', gap: 6 }}>
+								<span>Worksheet Target</span>
+								<select value={worksheet} onChange={(e) => setWorksheet(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
+									{targetOptions.map((n) => (
+										<option key={'w'+n} value={n}>{n}</option>
+									))}
+								</select>
+							</label>
+
+							<label style={{ display: 'grid', gap: 6 }}>
+								<span>Test Target</span>
+								<select value={test} onChange={(e) => setTest(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}>
+									{targetOptions.map((n) => (
+										<option key={'t'+n} value={n}>{n}</option>
+									))}
+								</select>
+							</label>
+						</div>
+					)}
 
 				<div style={{ display:'flex', gap:8, marginTop:4 }}>
 					<button type="submit" disabled={saving || atLimit} style={{ padding: '10px 14px', border: '1px solid #111', borderRadius: 8, background: atLimit ? '#999' : '#111', color: '#fff', opacity: atLimit ? 0.6 : 1 }}>

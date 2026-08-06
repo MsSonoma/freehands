@@ -10,7 +10,7 @@ import Toast from '@/components/Toast'
 import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/lessonValidation'
 import AIRewriteButton from '@/components/AIRewriteButton'
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
-import { listLearners } from '@/app/facilitator/learners/clientApi'
+import { listLearners, setLearnerLessonAvailability } from '@/app/facilitator/learners/clientApi'
 import OnboardingBanner from '@/app/components/OnboardingBanner'
 import { useOnboarding } from '@/app/hooks/useOnboarding'
 
@@ -469,25 +469,15 @@ export default function LessonMakerPage(){
       const lessonKeyToActivate = js?.lessonKey || (generatedFile ? `generated/${generatedFile}` : null)
       const didActivate = lessonKeyToActivate && makeActiveFor !== 'none'
       if (didActivate) {
+        const targetIds = makeActiveFor === 'all'
+          ? learners.map(l => l.id)
+          : [makeActiveFor]
         try {
-          const supabase = getSupabaseClient()
-          const targetIds = makeActiveFor === 'all'
-            ? learners.map(l => l.id)
-            : [makeActiveFor]
-          await Promise.all(targetIds.map(async (lid) => {
-            const { data: row } = await supabase
-              .from('learners')
-              .select('approved_lessons')
-              .eq('id', lid)
-              .maybeSingle()
-            const current = row?.approved_lessons || {}
-            await supabase
-              .from('learners')
-              .update({ approved_lessons: { ...current, [lessonKeyToActivate]: true } })
-              .eq('id', lid)
-          }))
-        } catch {
-          // Silent — generation succeeded; activation failure is non-critical
+          await Promise.all(targetIds.map((lid) => setLearnerLessonAvailability({ learnerId: lid, lessonKey: lessonKeyToActivate, available: true })))
+        } catch (activationError) {
+          setMessage(`Lesson generated, but availability failed: ${activationError?.message || 'Unknown error'}`)
+          setToast({ message: 'Availability update failed', type: 'error' })
+          return
         }
       }
 

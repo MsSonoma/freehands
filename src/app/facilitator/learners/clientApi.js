@@ -337,6 +337,27 @@ export async function deleteLearner(id) {
   return deleteLocal(id);
 }
 
+export async function setLearnerLessonAvailability({ learnerId, lessonKey, available }) {
+  if (!learnerId || !lessonKey || typeof available !== 'boolean') {
+    throw new Error('learnerId, lessonKey, and available are required');
+  }
+  const supabase = getSupabaseClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error('Please log in to update lesson availability');
+
+  const response = await fetch('/api/facilitator/learners/lesson-availability', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ learnerId, lessonKey, available }),
+  });
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok || !json?.ok) {
+    throw new Error(json?.error || 'Failed to update lesson availability');
+  }
+  return json;
+}
+
 // Helpers
 function normalizeRow(row) {
   if (!row) return row;

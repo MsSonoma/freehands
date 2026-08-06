@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { resolveEffectiveTier, featuresForTier } from '@/app/lib/entitlements'
 import { AI_MODEL } from '@/app/lib/aiModel'
+import { buildCanonicalLessonIdentity } from '@/app/lib/facilitatorPreparation.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -105,13 +106,15 @@ export async function POST(request){
   
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
-  const { file, changeRequest, userId: requestUserId } = body || {}
-  const userId = requestUserId || user.id
+  const { file, changeRequest } = body || {}
   if (!file || !changeRequest) return NextResponse.json({ error:'Missing file or changeRequest' }, { status: 400 })
+  if (String(file).includes('..') || String(file).includes('/') || String(file).includes('\\')) {
+    return NextResponse.json({ error:'Invalid file' }, { status: 400 })
+  }
   
   try {
     // Load existing lesson from Supabase Storage
-    const storagePath = `facilitator-lessons/${userId}/${file}`
+    const storagePath = `facilitator-lessons/${user.id}/${file}`
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('lessons')
       .download(storagePath)
@@ -155,7 +158,8 @@ export async function POST(request){
       return NextResponse.json({ error: 'Failed to save updated lesson' }, { status: 500 })
     }
     
-    return NextResponse.json({ ok:true, file, message:'Lesson updated successfully' })
+    const identity = buildCanonicalLessonIdentity({ file, ownerId: user.id, storagePath })
+    return NextResponse.json({ ok:true, file, identity, lessonKey: identity?.lessonKey, storagePath, ownerId: user.id, message:'Lesson updated successfully' })
   } catch (e) {
     // General error
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })

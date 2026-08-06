@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { resolveEffectiveTier, featuresForTier } from '@/app/lib/entitlements'
 import { AI_MODEL } from '@/app/lib/aiModel'
+import { buildCanonicalLessonIdentity, normalizeGenerationRequest } from '@/app/lib/facilitatorPreparation.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -195,8 +196,9 @@ export async function POST(request){
 
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
-  const { title, subject, difficulty, grade, description, notes, vocab } = body || {}
-  if (!title || !subject || !difficulty || !grade) return NextResponse.json({ error:'Missing fields' }, { status: 400 })
+  const normalized = normalizeGenerationRequest(body || {})
+  if (!normalized.ok) return NextResponse.json({ error: normalized.error }, { status: 400 })
+  const { title, subject, difficulty, grade, description, notes, vocab } = normalized.request
   
   try {
     const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
@@ -210,6 +212,7 @@ export async function POST(request){
     lesson.subject = (lesson.subject || subject || '').toString().toLowerCase()
     // Store the creator's userId for filtering
     lesson.userId = user.id
+    lesson.approved = false
     
     const base = safeFileName(`${grade}_${lesson.title}_${difficulty}`)
     const file = `${base}.json`
@@ -218,9 +221,10 @@ export async function POST(request){
     // Store in Supabase Storage in user's generated-lessons folder
     let storageUrl = null
     let storageError = null
+    let storagePath = null
     if (supabase) {
       try {
-        const storagePath = `facilitator-lessons/${user.id}/${file}`
+        storagePath = `facilitator-lessons/${user.id}/${file}`
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('lessons')
           .upload(storagePath, lessonJson, {
@@ -244,6 +248,7 @@ export async function POST(request){
     } else {
       storageError = 'Supabase client not initialized'
     }
+    const identity = buildCanonicalLessonIdentity({ file, ownerId: user.id, storagePath })
     
     // Increment lifetime_generations_used for finite-limit tiers (e.g. free)
     if (Number.isFinite(lifetimeLimit) && supabase) {
@@ -257,6 +262,10 @@ export async function POST(request){
     return NextResponse.json({ 
       ok: true, 
       file, 
+      identity,
+      lessonKey: identity?.lessonKey || `generated/${file}`,
+      storagePath: identity?.storagePath || storagePath,
+      ownerId: user.id,
       lesson,
       storageUrl,
       storageError,

@@ -12,6 +12,7 @@ import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { PageHeader, WorkflowGuide } from '@/components/FacilitatorHelp'
 import OnboardingBanner from '@/app/components/OnboardingBanner'
 import { useOnboarding } from '@/app/hooks/useOnboarding'
+import { setLearnerLessonAvailability } from '@/app/facilitator/learners/clientApi'
 
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 
@@ -506,39 +507,12 @@ export default function FacilitatorLessonsPage() {
     
     try {
       setSaving(true)
-      const supabase = getSupabaseClient()
-      
-      const { data: currentData } = await supabase
-        .from('learners')
-        .select('approved_lessons')
-        .eq('id', selectedLearnerId)
-        .maybeSingle()
-      
-      const { normalized: currentApproved, changed } = normalizeApprovedLessonKeys(currentData?.approved_lessons || {})
-      const newApproved = { ...currentApproved }
-      
+      const currentApproved = { ...(availableLessons || {}) }
       const legacyKey = lessonKey.replace('general/', 'facilitator/')
-      const isCurrentlyChecked = newApproved[lessonKey] || newApproved[legacyKey]
+      const isCurrentlyChecked = currentApproved[lessonKey] || currentApproved[legacyKey]
+      const result = await setLearnerLessonAvailability({ learnerId: selectedLearnerId, lessonKey, available: !isCurrentlyChecked })
       
-      if (isCurrentlyChecked) {
-        delete newApproved[lessonKey]
-        delete newApproved[legacyKey]
-      } else {
-        newApproved[lessonKey] = true
-      }
-      
-      const updatePayload = { approved_lessons: newApproved }
-      if (changed) {
-        updatePayload.approved_lessons = newApproved
-      }
-      const { error } = await supabase
-        .from('learners')
-        .update(updatePayload)
-        .eq('id', selectedLearnerId)
-      
-      if (error) throw error
-      
-      setAvailableLessons(newApproved)
+      setAvailableLessons(result.approvedLessons || {})
 
       // If this was an activation (not a deactivation) and we're in the onboarding flow,
       // advance to the calendar tour step.

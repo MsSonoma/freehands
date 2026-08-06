@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
+import { buildCanonicalLessonIdentity } from '@/app/lib/facilitatorPreparation.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -51,12 +52,11 @@ export async function POST(request){
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
   const file = (body?.file || '').toString()
-  const userId = body?.userId || user.id // Use provided userId or fall back to current user
   if (!file || file.includes('..') || file.includes('/') || file.includes('\\\\')) return NextResponse.json({ error:'Invalid file' }, { status: 400 })
 
   try {
     // Download from Supabase Storage
-    const storagePath = `facilitator-lessons/${userId}/${file}`
+    const storagePath = `facilitator-lessons/${user.id}/${file}`
     const downloadStart = Date.now()
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('lessons')
@@ -91,7 +91,8 @@ export async function POST(request){
     }
     
     const totalTime = Date.now() - startTime
-    return NextResponse.json({ ok:true, file, timeMs: totalTime })
+    const identity = buildCanonicalLessonIdentity({ file, ownerId: user.id, storagePath })
+    return NextResponse.json({ ok:true, file, identity, lessonKey: identity?.lessonKey, storagePath, ownerId: user.id, timeMs: totalTime })
   } catch (e) {
     // General exception
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
