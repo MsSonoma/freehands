@@ -126,9 +126,9 @@ export default function FacilitatorPage() {
     ['Generator', '/facilitator/generator'],
     ['Lesson Library', '/facilitator/lessons'],
     ['Calendar', '/facilitator/calendar'],
-    ['Lesson Planner', '/facilitator/planner'],
-    ['Custom Subjects', '/facilitator/subjects'],
-    ['Portfolio tools', '/facilitator/portfolio'],
+    ['Lesson Planner', '/facilitator/calendar?tab=planner'],
+    ['Custom Subjects', '/facilitator/calendar?tab=subjects'],
+    ['Portfolio tools', '/facilitator/calendar?portfolio=1'],
     ['Account', '/facilitator/account'],
     ['Mr. Mentor', '/facilitator/mr-mentor'],
   ]

@@ -13,19 +13,79 @@ export function lessonKeyForGenerated(lesson) {
   return lesson?.file ? `generated/${lesson.file}` : null
 }
 
-export function isRecoverablePreparationSnapshot(snapshot) {
+export function isRecoverablePreparationSnapshot(snapshot, learners = []) {
   if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return false
   if (Number(snapshot.version) !== FACILITATOR_PREPARATION_VERSION) return false
   if (snapshot.stage === FACILITATOR_PREPARATION_STAGES.COMPLETE) return false
+  if (snapshot.learnerId && Array.isArray(learners) && learners.length) {
+    if (!learners.some((learner) => learner?.id === snapshot.learnerId)) return false
+  }
   if (snapshot.lessonIdentity?.lessonKey) return true
   if (snapshot.proposal) return true
   if (snapshot.intent?.learnerId && snapshot.intent?.need) return true
   return !!snapshot.learnerId && snapshot.stage !== FACILITATOR_PREPARATION_STAGES.NEED
 }
 
+function resolveSnapshotDecision(snapshot, learners, preparePath) {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return null
+  if (Number(snapshot.version) !== FACILITATOR_PREPARATION_VERSION) return null
+  if (snapshot.stage === FACILITATOR_PREPARATION_STAGES.COMPLETE) return null
+
+  const learnerId = snapshot.learnerId || snapshot.intent?.learnerId || ''
+  if (learnerId && Array.isArray(learners) && learners.length && !learners.some((learner) => learner?.id === learnerId)) {
+    return {
+      kind: 'SELECT_LEARNER',
+      label: 'Choose learner',
+      title: 'Choose a learner to continue',
+      body: 'The saved preparation references a learner that is no longer available. Choose a learner before continuing.',
+      href: preparePath,
+    }
+  }
+
+  if (!isRecoverablePreparationSnapshot(snapshot, learners)) return null
+
+  if ([
+    FACILITATOR_PREPARATION_STAGES.NEED,
+    FACILITATOR_PREPARATION_STAGES.PROPOSAL,
+    FACILITATOR_PREPARATION_STAGES.GENERATING,
+  ].includes(snapshot.stage)) {
+    return {
+      kind: 'CONTINUE_PREPARING',
+      label: 'Continue preparing',
+      title: 'Continue preparing this guided learning session',
+      body: 'A saved preparation is waiting right where you left it.',
+      href: preparePath,
+    }
+  }
+
+  if (snapshot.stage === FACILITATOR_PREPARATION_STAGES.DRAFT) {
+    return {
+      kind: 'REVIEW_DRAFT',
+      label: 'Review lesson',
+      title: 'A lesson draft is waiting for review',
+      body: snapshot.proposal?.generationSpec?.title || snapshot.lessonIdentity?.file || 'Review the saved draft before approving it.',
+      href: preparePath,
+    }
+  }
+
+  if (snapshot.stage === FACILITATOR_PREPARATION_STAGES.DELIVERY) {
+    const lessonKey = snapshot.lessonIdentity?.lessonKey || ''
+    return {
+      kind: 'CHOOSE_DELIVERY',
+      label: 'Choose delivery',
+      title: 'An approved lesson needs a delivery choice',
+      body: snapshot.proposal?.generationSpec?.title || snapshot.lessonIdentity?.file || 'Choose when the learner receives this approved lesson.',
+      href: lessonKey
+        ? `${preparePath}?stage=DELIVERY&learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}`
+        : preparePath,
+    }
+  }
+
+  return null
+}
+
 export function resolveFacilitatorHomeDecision({
   learners = [],
-  generatedLessons = [],
   scheduledKeys = {},
   preparationSnapshot = null,
   preparePath = '/facilitator/prepare',
@@ -40,50 +100,14 @@ export function resolveFacilitatorHomeDecision({
     }
   }
 
-  if (isRecoverablePreparationSnapshot(preparationSnapshot)) {
-    return {
-      kind: 'CONTINUE_PREPARING',
-      label: 'Continue preparing',
-      title: 'Continue preparing this guided learning session',
-      body: 'A saved preparation is waiting right where you left it.',
-      href: preparePath,
-    }
-  }
-
-  const draft = generatedLessons.find((lesson) => lesson && lesson.approved !== true)
-  if (draft) {
-    const lessonKey = lessonKeyForGenerated(draft)
-    return {
-      kind: 'REVIEW_DRAFT',
-      label: 'Review lesson',
-      title: 'A lesson draft is waiting for review',
-      body: draft.title || draft.file,
-      href: lessonKey ? `/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}` : '/facilitator/lessons',
-    }
-  }
+  const snapshotDecision = resolveSnapshotDecision(preparationSnapshot, learners, preparePath)
+  if (snapshotDecision) return snapshotDecision
 
   const availableKeys = new Set()
   learners.forEach((learner) => {
     Object.keys(normalizeApprovedLessons(learner.approved_lessons)).forEach((key) => availableKeys.add(key))
   })
   Object.keys(scheduledKeys || {}).forEach((key) => availableKeys.add(key))
-
-  const approvedAwaitingDelivery = generatedLessons.find((lesson) => {
-    if (lesson?.approved !== true) return false
-    const lessonKey = lessonKeyForGenerated(lesson)
-    return lessonKey && !availableKeys.has(lessonKey)
-  })
-  if (approvedAwaitingDelivery) {
-    const lessonKey = lessonKeyForGenerated(approvedAwaitingDelivery)
-    const learnerId = learners[0]?.id || ''
-    return {
-      kind: 'CHOOSE_DELIVERY',
-      label: 'Choose delivery',
-      title: 'An approved lesson needs a delivery choice',
-      body: approvedAwaitingDelivery.title || approvedAwaitingDelivery.file,
-      href: `${preparePath}?stage=DELIVERY&learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}`,
-    }
-  }
 
   const hasNextLesson = learners.some((learner) => Object.keys(normalizeApprovedLessons(learner.approved_lessons)).length > 0)
     || Object.keys(scheduledKeys || {}).length > 0

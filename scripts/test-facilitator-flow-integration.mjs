@@ -9,6 +9,7 @@ import {
   normalizePreparationSnapshot,
 } from '../src/app/lib/facilitatorPreparation.mjs'
 import { resolveFacilitatorHomeDecision } from '../src/app/lib/facilitatorHome.mjs'
+import { resolveCalendarLandingParams } from '../src/app/lib/facilitatorCalendarLanding.mjs'
 import { applyLessonAvailability } from '../src/app/lib/lessonAvailability.mjs'
 import { normalizeLessonKey } from '../src/app/lib/lessonKeyNormalization.js'
 
@@ -69,15 +70,75 @@ test('refresh recovery can schedule with the same normalized learner-facing less
   })
 })
 
-test('Facilitator Home resolves the required primary decision states', () => {
+test('Facilitator Home resolves snapshot-stage primary decision states', () => {
   const learner = { id: 'learner-1', name: 'Ada', approved_lessons: {} }
+  const identity = buildCanonicalLessonIdentity({ file: 'draft.json', ownerId: 'facilitator-1' })
   assert.equal(resolveFacilitatorHomeDecision().kind, 'NO_LEARNER')
   assert.equal(resolveFacilitatorHomeDecision({
     learners: [learner],
     preparationSnapshot: { version: 1, stage: FACILITATOR_PREPARATION_STAGES.PROPOSAL, learnerId: learner.id, proposal: {} },
   }).kind, 'CONTINUE_PREPARING')
-  assert.equal(resolveFacilitatorHomeDecision({ learners: [learner], generatedLessons: [{ file: 'draft.json', approved: false }] }).kind, 'REVIEW_DRAFT')
-  assert.equal(resolveFacilitatorHomeDecision({ learners: [learner], generatedLessons: [{ file: 'approved.json', approved: true }] }).kind, 'CHOOSE_DELIVERY')
+  assert.equal(resolveFacilitatorHomeDecision({
+    learners: [learner],
+    preparationSnapshot: { version: 1, stage: FACILITATOR_PREPARATION_STAGES.DRAFT, learnerId: learner.id, lessonIdentity: identity },
+  }).kind, 'REVIEW_DRAFT')
+  assert.equal(resolveFacilitatorHomeDecision({
+    learners: [learner],
+    preparationSnapshot: { version: 1, stage: FACILITATOR_PREPARATION_STAGES.DELIVERY, learnerId: learner.id, lessonIdentity: identity },
+  }).kind, 'CHOOSE_DELIVERY')
   assert.equal(resolveFacilitatorHomeDecision({ learners: [learner] }).kind, 'PREPARE_NEXT')
   assert.equal(resolveFacilitatorHomeDecision({ learners: [{ ...learner, approved_lessons: { 'generated/ready.json': true } }] }).kind, 'PREPARE_AHEAD')
+})
+
+test('DELIVERY snapshot preserves selected learner with multiple learners', () => {
+  const learners = [
+    { id: 'learner-1', name: 'First', approved_lessons: {} },
+    { id: 'learner-2', name: 'Second', approved_lessons: {} },
+  ]
+  const identity = buildCanonicalLessonIdentity({ file: 'second.json', ownerId: 'facilitator-1' })
+  const decision = resolveFacilitatorHomeDecision({
+    learners,
+    preparationSnapshot: { version: 1, stage: FACILITATOR_PREPARATION_STAGES.DELIVERY, learnerId: 'learner-2', lessonIdentity: identity },
+  })
+  assert.equal(decision.kind, 'CHOOSE_DELIVERY')
+  assert.match(decision.href, /learnerId=learner-2/)
+  assert.doesNotMatch(decision.href, /learnerId=learner-1/)
+})
+
+test('generated lesson history does not hijack primary home decision without active snapshot', () => {
+  const learner = { id: 'learner-1', name: 'Ada', approved_lessons: {} }
+  assert.equal(resolveFacilitatorHomeDecision({
+    learners: [learner],
+    generatedLessons: [{ file: 'legacy.json' }],
+  }).kind, 'PREPARE_NEXT')
+})
+
+test('unrelated generated draft does not replace active DELIVERY decision', () => {
+  const learner = { id: 'learner-1', name: 'Ada', approved_lessons: {} }
+  const identity = buildCanonicalLessonIdentity({ file: 'active.json', ownerId: 'facilitator-1' })
+  const decision = resolveFacilitatorHomeDecision({
+    learners: [learner],
+    generatedLessons: [{ file: 'unrelated.json', approved: false }],
+    preparationSnapshot: { version: 1, stage: FACILITATOR_PREPARATION_STAGES.DELIVERY, learnerId: learner.id, lessonIdentity: identity },
+  })
+  assert.equal(decision.kind, 'CHOOSE_DELIVERY')
+  assert.match(decision.href, /active\.json/)
+  assert.doesNotMatch(decision.href, /unrelated\.json/)
+})
+
+test('missing snapshot learner returns selection state instead of substituting another learner', () => {
+  const identity = buildCanonicalLessonIdentity({ file: 'missing.json', ownerId: 'facilitator-1' })
+  const decision = resolveFacilitatorHomeDecision({
+    learners: [{ id: 'learner-1', name: 'First', approved_lessons: {} }],
+    preparationSnapshot: { version: 1, stage: FACILITATOR_PREPARATION_STAGES.DELIVERY, learnerId: 'learner-2', lessonIdentity: identity },
+  })
+  assert.equal(decision.kind, 'SELECT_LEARNER')
+  assert.match(decision.body, /no longer available/)
+})
+
+test('calendar query parameters select existing advanced calendar controls', () => {
+  assert.deepEqual(resolveCalendarLandingParams('tab=planner'), { activeTab: 'planner', openPortfolio: false })
+  assert.deepEqual(resolveCalendarLandingParams('tab=subjects'), { activeTab: 'subjects', openPortfolio: false })
+  assert.deepEqual(resolveCalendarLandingParams('portfolio=1'), { activeTab: 'scheduler', openPortfolio: true })
+  assert.deepEqual(resolveCalendarLandingParams('tab=not-real&portfolio=0'), { activeTab: 'scheduler', openPortfolio: false })
 })

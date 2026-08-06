@@ -18,6 +18,7 @@ import TypedRemoveConfirmModal from './TypedRemoveConfirmModal'
 import GeneratePortfolioModal from './GeneratePortfolioModal'
 import { InlineExplainer } from '@/components/FacilitatorHelp'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
+import { resolveCalendarLandingParams } from '@/app/lib/facilitatorCalendarLanding.mjs'
 import CalendarTutorialOverlay from '@/app/components/CalendarTutorialOverlay'
 import { useOnboarding } from '@/app/hooks/useOnboarding'
 
@@ -31,8 +32,12 @@ export default function CalendarPage() {
   const [isOnboardingParam, setIsOnboardingParam] = useState(false)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const ob = new URLSearchParams(window.location.search).get('onboarding') === '1'
+      const params = new URLSearchParams(window.location.search)
+      const ob = params.get('onboarding') === '1'
+      const landing = resolveCalendarLandingParams(params)
       setIsOnboardingParam(ob)
+      setActiveTab(landing.activeTab)
+      if (landing.openPortfolio) setShowGeneratePortfolio(true)
       if (ob) setShowTutorial(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

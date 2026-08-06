@@ -312,7 +312,8 @@ export default function FacilitatorPreparePage() {
 
   function saveForLater() {
     setMessage('The lesson is approved and saved. It is not available or scheduled yet.')
-    finishFlow()
+    persist(STAGES.DELIVERY, { lessonIdentity })
+    router.push('/facilitator')
   }
 
   function saveDraftAndLeave() {
@@ -417,6 +418,7 @@ export default function FacilitatorPreparePage() {
       {stage === STAGES.DRAFT && lessonIdentity && (
         <section style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>Review draft</h2>
+          {selectedLearner && <p style={{ margin: 0, color: '#374151', fontWeight: 700 }}>Learner: {selectedLearner.name}</p>}
           <p style={{ margin: 0, color: '#4b5563' }}>This lesson is a draft. The learner will not see it until you approve the content and choose delivery.</p>
           <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#f9fafb' }}>
             <strong>{lessonDraft?.title || proposal?.generationSpec?.title || lessonIdentity.file}</strong>
@@ -434,6 +436,7 @@ export default function FacilitatorPreparePage() {
       {stage === STAGES.DELIVERY && lessonIdentity && (
         <section style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>Choose delivery</h2>
+          {selectedLearner && <p style={{ margin: 0, color: '#374151', fontWeight: 700 }}>Learner: {selectedLearner.name}</p>}
           <p style={{ margin: 0, color: '#4b5563' }}>The lesson content is approved. Choose when the learner receives it.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
             <button type="button" onClick={startNow} disabled={busy} style={button}>Start now</button>
