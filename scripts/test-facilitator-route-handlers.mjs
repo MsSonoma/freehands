@@ -34,7 +34,7 @@ function jsonRequest(body) {
   })
 }
 
-function createTableMock({ profile = { plan_tier: 'pro', subscription_tier: null }, learner = null, updateCapture = null } = {}) {
+function createTableMock({ profile = { plan_tier: 'pro', subscription_tier: null }, learner = null, updateCapture = null, scheduleCapture = null } = {}) {
   return function from(table) {
     if (table === 'profiles') {
       return {
@@ -65,7 +65,10 @@ function createTableMock({ profile = { plan_tier: 'pro', subscription_tier: null
       return {
         upsert: (value) => ({
           select: () => ({
-            single: async () => ({ data: { id: 'schedule-1', ...value }, error: null }),
+            single: async () => {
+              if (scheduleCapture) scheduleCapture.value = value
+              return { data: { id: 'schedule-1', ...value }, error: null }
+            },
           }),
         }),
       }
@@ -247,33 +250,52 @@ test('schedule API still rejects missing authorization before entitlement checks
   }
 })
 
-test('schedule API enforces centralized scheduling entitlement', async () => {
+test('schedule API enforces centralized scheduling entitlement behavior', async () => {
   const restore = withSupabaseEnv()
   try {
-    const freeResponse = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'math/live.json', scheduledDate: '2026-08-06' }), {
-      createClientImpl: createClientMock({
-        admin: { from: createTableMock({ profile: { plan_tier: 'free', subscription_tier: null }, learner: { id: 'learner-1' } }) },
-      }),
-    })
-    assert.equal(freeResponse.status, 403)
-    assert.equal((await freeResponse.json()).error, 'Scheduling requires a Standard plan or higher')
+    for (const profile of [
+      { plan_tier: 'free', subscription_tier: null },
+      { plan_tier: 'trial', subscription_tier: null },
+    ]) {
+      const response = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'math/live.json', scheduledDate: '2026-08-06' }), {
+        createClientImpl: createClientMock({
+          admin: { from: createTableMock({ profile, learner: { id: 'learner-1' } }) },
+        }),
+      })
+      assert.equal(response.status, 403)
+      assert.equal((await response.json()).error, 'Scheduling requires a Standard plan or higher')
+    }
 
-    const standardResponse = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'math/live.json', scheduledDate: '2026-08-06' }), {
-      createClientImpl: createClientMock({
-        admin: { from: createTableMock({ profile: { plan_tier: 'standard', subscription_tier: null }, learner: { id: 'learner-1' } }) },
-      }),
-    })
-    const standardJson = await standardResponse.json()
-    assert.equal(standardResponse.status, 200)
-    assert.equal(standardJson.success, true)
-    assert.equal(standardJson.data.lesson_key, 'math/live.json')
+    for (const { profile, label } of [
+      { label: 'standard', profile: { plan_tier: 'standard', subscription_tier: null } },
+      { label: 'pro', profile: { plan_tier: 'pro', subscription_tier: null } },
+      { label: 'beta', profile: { plan_tier: 'free', subscription_tier: 'beta' } },
+    ]) {
+      const scheduleCapture = {}
+      const response = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'facilitator-lessons/live.json', scheduledDate: '2026-08-06' }), {
+        createClientImpl: createClientMock({
+          admin: { from: createTableMock({ profile, learner: { id: 'learner-1' }, scheduleCapture }) },
+        }),
+      })
+      const json = await response.json()
+      assert.equal(response.status, 200, label)
+      assert.equal(json.success, true, label)
+      assert.equal(json.data.lesson_key, 'generated/live.json', label)
+      assert.deepEqual(scheduleCapture.value, {
+        facilitator_id: 'facilitator-1',
+        learner_id: 'learner-1',
+        lesson_key: 'generated/live.json',
+        scheduled_date: '2026-08-06',
+      }, label)
+    }
 
-    const betaResponse = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'math/live.json', scheduledDate: '2026-08-06' }), {
+    const unauthorizedResponse = await scheduleLesson(jsonRequest({ learnerId: 'other-learner', lessonKey: 'math/live.json', scheduledDate: '2026-08-06' }), {
       createClientImpl: createClientMock({
-        admin: { from: createTableMock({ profile: { plan_tier: 'free', subscription_tier: 'beta' }, learner: { id: 'learner-1' } }) },
+        admin: { from: createTableMock({ profile: { plan_tier: 'pro', subscription_tier: null }, learner: null }) },
       }),
     })
-    assert.equal(betaResponse.status, 200)
+    assert.equal(unauthorizedResponse.status, 403)
+    assert.equal((await unauthorizedResponse.json()).error, 'Learner not found or unauthorized')
   } finally {
     restore()
   }
