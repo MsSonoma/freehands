@@ -787,6 +787,9 @@ export default function CalendarPage() {
     setShowDayView(true)
   }
 
+  const advancedCalendarRequested = activeTab !== 'scheduler' || showGeneratePortfolio
+  const advancedCalendarLocked = advancedCalendarRequested && !canPlan
+
   if (authLoading || loading) {
     return <div style={{ padding: '24px' }}><p>Loading…</p></div>
   }
@@ -874,91 +877,37 @@ export default function CalendarPage() {
                   </div>
                 )}
                 
-                {/* Tab Headers */}
-                <div style={{
-                  display: 'flex',
-                  gap: 4,
-                  borderBottom: '2px solid #e5e7eb',
-                  alignItems: 'center'
-                }}>
-                  <button
-                    onClick={() => setActiveTab('scheduler')}
-                    style={{
-                      flex: 1,
-                      padding: '4px 8px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      border: 'none',
-                      borderBottom: activeTab === 'scheduler' ? '2px solid #2563eb' : '2px solid transparent',
-                      background: 'transparent',
-                      color: activeTab === 'scheduler' ? '#2563eb' : '#6b7280',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      marginBottom: -2
-                    }}
-                  >
-                    Schedule Lessons
-                  </button>
-                  <InlineExplainer helpKey="calendar-scheduler-tab" title="Schedule Tab">
-                    <p>Use this tab to manually assign lessons to specific dates. Click a date on the calendar, browse your lesson library, and add lessons one at a time.</p>
-                    <p className="mt-2 text-xs text-gray-500">Best for custom schedules and one-off lessons.</p>
-                  </InlineExplainer>
-                  <button
-                    onClick={() => setActiveTab('planner')}
-                    style={{
-                      flex: 1,
-                      padding: '4px 8px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      border: 'none',
-                      borderBottom: activeTab === 'planner' ? '2px solid #2563eb' : '2px solid transparent',
-                      background: 'transparent',
-                      color: activeTab === 'planner' ? '#2563eb' : '#6b7280',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      marginBottom: -2
-                    }}
-                  >
-                    Lesson Planner
-                  </button>
-                  <InlineExplainer helpKey="calendar-planner-tab" title="Planner Tab">
-                    <p>Generate multi-week lesson outlines automatically. Set a weekly pattern (which subjects on which days), choose duration, and we&apos;ll create a curriculum plan.</p>
-                    <p className="mt-2 text-xs text-gray-500">Best for consistent schedules and long-term planning.</p>
-                  </InlineExplainer>
-                  <button
-                    onClick={() => setActiveTab('subjects')}
-                    style={{
-                      flex: 1,
-                      padding: '4px 8px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      border: 'none',
-                      borderBottom: activeTab === 'subjects' ? '2px solid #2563eb' : '2px solid transparent',
-                      background: 'transparent',
-                      color: activeTab === 'subjects' ? '#2563eb' : '#6b7280',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      marginBottom: -2
-                    }}
-                  >
-                    Custom Subjects
-                  </button>
-                  {/* Action buttons folded into tab bar */}
-                  <div style={{ display: 'flex', gap: 4, flex: '0 0 auto', paddingLeft: 4 }}>
-                    <button
-                      type="button"
-                      onClick={() => setShowTutorial(true)}
-                      title="Show page tour"
-                      style={{ padding: '3px 7px', borderRadius: 6, border: '1px solid #c7d2fe', background: '#eef2ff', color: '#6366f1', fontWeight: 700, fontSize: 11, cursor: 'pointer', lineHeight: 1 }}
-                    >? Tour</button>
-                    <button
-                      type="button"
-                      onClick={() => setShowGeneratePortfolio(true)}
-                      title="Generate portfolio"
-                      style={{ padding: '3px 7px', borderRadius: 6, border: '1px solid #c7d2fe', background: '#eef2ff', color: '#1e40af', fontWeight: 700, fontSize: 11, cursor: 'pointer', lineHeight: 1, whiteSpace: 'nowrap' }}
-                    >Portfolio</button>
+                {advancedCalendarRequested && (
+                  <div className="bg-white border border-indigo-100 rounded-lg px-4 py-3" style={{ display: 'grid', gap: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#312e81' }}>Advanced calendar tools</div>
+                        <div style={{ fontSize: 12, color: '#6b7280' }}>Scheduler is the default calendar view.</div>
+                      </div>
+                      <button type="button" onClick={() => { setActiveTab('scheduler'); setShowGeneratePortfolio(false); router.push('/facilitator/calendar') }} style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, background: '#fff', color: '#374151', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                        Back to Scheduler
+                      </button>
+                    </div>
+                    {advancedCalendarLocked ? (
+                      <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <div className="text-sm text-indigo-900">
+                            <strong>Pro required.</strong> Lesson Planner, custom subjects, and portfolio generation are advanced calendar tools.
+                          </div>
+                          <button type="button" onClick={() => router.push('/facilitator/account/plan')} className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-indigo-700">
+                            View Plans
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button type="button" onClick={() => { setActiveTab('planner'); setShowGeneratePortfolio(false); router.push('/facilitator/calendar?tab=planner') }} style={{ padding: '7px 10px', border: '1px solid #c7d2fe', borderRadius: 6, background: activeTab === 'planner' ? '#eef2ff' : '#fff', color: '#3730a3', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Lesson Planner</button>
+                        <button type="button" onClick={() => { setActiveTab('subjects'); setShowGeneratePortfolio(false); router.push('/facilitator/calendar?tab=subjects') }} style={{ padding: '7px 10px', border: '1px solid #c7d2fe', borderRadius: 6, background: activeTab === 'subjects' ? '#eef2ff' : '#fff', color: '#3730a3', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Custom Subjects</button>
+                        <button type="button" onClick={() => { setActiveTab('scheduler'); setShowGeneratePortfolio(true); router.push('/facilitator/calendar?portfolio=1') }} style={{ padding: '7px 10px', border: '1px solid #c7d2fe', borderRadius: 6, background: showGeneratePortfolio ? '#eef2ff' : '#fff', color: '#3730a3', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Portfolio</button>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
 
                 {/* Tab Content - Both tabs remain mounted, only visibility changes */}
                 <div style={{ display: activeTab === 'scheduler' ? 'block' : 'none' }}>
@@ -1316,21 +1265,23 @@ export default function CalendarPage() {
                 </div>
 
                 <div style={{ display: activeTab === 'planner' ? 'block' : 'none' }}>
-                  <LessonPlanner
-                    learnerId={selectedLearnerId}
-                    learnerGrade={learners.find(l => l.id === selectedLearnerId)?.grade || '3rd'}
-                    tier={tier}
-                    canPlan={canPlan}
-                    selectedDate={selectedDate}
-                    plannedLessons={plannedLessons}
-                    onPlannedLessonsChange={savePlannedLessons}
-                    onLessonGenerated={loadSchedule}
-                    customSubjects={customSubjects}
-                  />
+                  {canPlan && (
+                    <LessonPlanner
+                      learnerId={selectedLearnerId}
+                      learnerGrade={learners.find(l => l.id === selectedLearnerId)?.grade || '3rd'}
+                      tier={tier}
+                      canPlan={canPlan}
+                      selectedDate={selectedDate}
+                      plannedLessons={plannedLessons}
+                      onPlannedLessonsChange={savePlannedLessons}
+                      onLessonGenerated={loadSchedule}
+                      customSubjects={customSubjects}
+                    />
+                  )}
                 </div>
 
                 <div style={{ display: activeTab === 'subjects' ? 'block' : 'none' }}>
-                  <div style={{ padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {canPlan && <div style={{ padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
                     <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
                       Add custom subjects to include in your weekly lesson pattern.
                     </p>
@@ -1404,7 +1355,7 @@ export default function CalendarPage() {
                     ) : (
                       <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>No custom subjects yet.</p>
                     )}
-                  </div>
+                  </div>}
                 </div>
               </div>
             </div>
@@ -1547,7 +1498,7 @@ export default function CalendarPage() {
             />
 
             <GeneratePortfolioModal
-              open={showGeneratePortfolio}
+              open={showGeneratePortfolio && canPlan}
               onClose={() => setShowGeneratePortfolio(false)}
               learnerId={selectedLearnerId}
               learnerName={learners.find(l => l.id === selectedLearnerId)?.name || ''}

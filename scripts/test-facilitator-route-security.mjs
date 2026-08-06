@@ -136,6 +136,32 @@ test('preparation and schedule API use centralized scheduling entitlements', () 
   assert.match(scheduleRoute, /Scheduling requires a Standard plan or higher/)
 })
 
+test('lesson library auto-loads and keeps multi-learner choice explicit', () => {
+  const source = read('src/app/facilitator/lessons/page.js')
+
+  assert.match(source, /learnersData\.length === 1/)
+  assert.match(source, /setSelectedLearnerId\(onlyLearner\.id\)/)
+  assert.doesNotMatch(source, /localStorage\.getItem\('learner_id'\)/)
+  assert.doesNotMatch(source, /showLessons|setShowLessons|Load Lessons|Ready to load|Click <strong>Load Lessons/)
+  assert.match(source, /Advanced library tools/)
+  assert.match(source, /Advanced filters/)
+  assert.match(source, /\/facilitator\/generator\?advanced=1/)
+})
+
+test('calendar keeps Scheduler default and gates advanced route-state surfaces', () => {
+  const source = read('src/app/facilitator/calendar/page.js')
+
+  assert.match(source, /const \[activeTab, setActiveTab\] = useState\('scheduler'\)/)
+  assert.match(source, /advancedCalendarRequested = activeTab !== 'scheduler' \|\| showGeneratePortfolio/)
+  assert.match(source, /advancedCalendarLocked = advancedCalendarRequested && !canPlan/)
+  assert.match(source, /Scheduler is the default calendar view/)
+  assert.match(source, /\/facilitator\/calendar\?tab=planner/)
+  assert.match(source, /\/facilitator\/calendar\?tab=subjects/)
+  assert.match(source, /\/facilitator\/calendar\?portfolio=1/)
+  assert.match(source, /open=\{showGeneratePortfolio && canPlan\}/)
+  assert.doesNotMatch(source, /setShowTutorial|\? Tour|Show page tour/)
+})
+
 test('preparation Save actions preserve the expected snapshots and exit home', () => {
   const preparePage = read('src/app/facilitator/prepare/page.js')
   assert.match(preparePage, /Learner: \{selectedLearner\.name\}/)

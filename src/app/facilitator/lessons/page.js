@@ -61,7 +61,7 @@ export default function FacilitatorLessonsPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0) // Used to force refresh at midnight and on schedule changes
   const [selectedLearner, setSelectedLearner] = useState(null) // Store full learner object
   const [learnerDataLoading, setLearnerDataLoading] = useState(false) // Loading learner-specific data
-  const [showLessons, setShowLessons] = useState(false) // Whether to show lessons list
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
 
   const {
@@ -182,13 +182,13 @@ export default function FacilitatorLessonsPage() {
           const { data: learnersData } = await supabase.from('learners').select('*').order('created_at', { ascending: false })
           if (!cancelled && learnersData) {
             setLearners(learnersData)
-            // Auto-select the active learner from localStorage
-            const activeLearnerIdFromStorage = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null
-            if (activeLearnerIdFromStorage) {
-              const match = learnersData.find(l => l.id === activeLearnerIdFromStorage)
-              if (match) {
-                setSelectedLearnerId(match.id)
-                setSelectedLearner(match)
+            if (learnersData.length === 1) {
+              const onlyLearner = learnersData[0]
+              setSelectedLearnerId(onlyLearner.id)
+              setSelectedLearner(onlyLearner)
+              if (onlyLearner?.grade) {
+                const learnerGrade = String(onlyLearner.grade).trim().replace(/(?:st|nd|rd|th)$/i, '').toUpperCase()
+                setSelectedGrade(learnerGrade)
               }
             }
           }
@@ -228,7 +228,7 @@ export default function FacilitatorLessonsPage() {
       // Initialize generated bucket even if we haven't loaded owned lessons yet.
       lessonsMap['generated'] = []
 
-      // Publish public lessons ASAP so Load Lessons feels instant.
+      // Publish public lessons ASAP so the library appears immediately.
       if (!cancelled) {
         setAllLessons({ ...lessonsMap })
         setLessonsLoading(false)
@@ -687,8 +687,8 @@ export default function FacilitatorLessonsPage() {
                       description: 'Choose which student you want to manage lessons for' 
                     },
                     { 
-                      step: 'Load and browse lessons', 
-                      description: 'Click "Load Lessons" to see available curriculum filtered by grade' 
+                      step: 'Browse lessons', 
+                      description: 'Lessons load automatically. Choose a learner when you want learner-specific history, availability, and scheduling controls.' 
                     },
                     { 
                       step: 'Make lessons available', 
@@ -705,48 +705,19 @@ export default function FacilitatorLessonsPage() {
                 Browse, approve, and schedule lessons for your learners
               </p>
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => router.push('/facilitator/lessons/edit?new=1')}
-                style={{
-                  padding: '10px 16px',
-                  background: '#fff',
-                  color: '#374151',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontSize: 14,
-                  whiteSpace: 'nowrap'
-                }}
-                title="Create a new lesson from scratch"
-              >
-                📝 New Lesson
-              </button>
-              <button
-                onClick={() => router.push('/facilitator/generator')}
-                style={{
-                  padding: '10px 16px',
-                  background: '#3b82f6',
-                  color: '#fff',
-                  border: '1px solid #3b82f6',
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontSize: 14,
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#2563eb'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#3b82f6'
-                }}
-              >
-                ✨ Generate Lesson
-              </button>
-            </div>
+            <details style={{ position: 'relative' }}>
+              <summary style={{ listStyle: 'none', cursor: 'pointer', padding: '9px 13px', border: '1px solid #d1d5db', borderRadius: 8, background: '#fff', color: '#374151', fontWeight: 700, fontSize: 13 }}>
+                Advanced library tools
+              </summary>
+              <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 5, display: 'grid', gap: 6, minWidth: 210, padding: 8, border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', boxShadow: '0 8px 24px rgba(15,23,42,0.12)' }}>
+                <button type="button" onClick={() => router.push('/facilitator/lessons/edit?new=1')} style={{ textAlign: 'left', padding: '9px 10px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#374151', fontWeight: 600, cursor: 'pointer' }}>
+                  New lesson from scratch
+                </button>
+                <button type="button" onClick={() => router.push('/facilitator/generator?advanced=1')} style={{ textAlign: 'left', padding: '9px 10px', border: '1px solid #dbeafe', borderRadius: 6, background: '#eff6ff', color: '#1d4ed8', fontWeight: 600, cursor: 'pointer' }}>
+                  Detailed lesson builder
+                </button>
+              </div>
+            </details>
           </div>
         </div>
       
@@ -805,8 +776,6 @@ export default function FacilitatorLessonsPage() {
                     setSelectedGrade(learnerGrade)
                   }
                   
-                  // Reset showLessons when changing learner
-                  setShowLessons(false)
                 }}
                 style={{
                   padding: '8px 12px',
@@ -827,71 +796,46 @@ export default function FacilitatorLessonsPage() {
                 ))}
               </select>
 
-              <select
-                value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  background: '#fff',
-                  cursor: 'pointer',
-                  minWidth: '130px',
-                  flex: '1 1 130px'
-                }}
-              >
-                <option value="all">All Subjects</option>
-                {subjectDropdownOptions.map(subject => (
-                  <option key={subject} value={subject} style={{ textTransform: 'capitalize' }}>
-                    {subject === 'language arts' ? 'Language Arts' : 
-                     subject === 'social studies' ? 'Social Studies' :
-                     subject.charAt(0).toUpperCase() + subject.slice(1)}
-                  </option>
-                ))}
-              </select>
-              
-              <select
-                value={selectedGrade}
-                onChange={(e) => setSelectedGrade(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  background: '#fff',
-                  cursor: 'pointer',
-                  minWidth: '110px',
-                  flex: '1 1 110px'
-                }}
-              >
-                <option value="all">All Grades</option>
-                {GRADES.map(grade => (
-                  <option key={grade} value={grade}>
-                    Grade {grade}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={lessonLibraryScope}
-                onChange={(e) => setLessonLibraryScope(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  background: '#fff',
-                  cursor: 'pointer',
-                  minWidth: '130px',
-                  flex: '1 1 130px'
-                }}
-              >
-                <option value="owned">Owned</option>
-                <option value="downloadable">Downloadable</option>
-                <option value="all">All Lessons</option>
-              </select>
+              <button type="button" onClick={() => setAdvancedFiltersOpen(open => !open)} style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, background: '#fff', color: '#374151', cursor: 'pointer', fontWeight: 600 }}>
+                {advancedFiltersOpen ? 'Hide filters' : 'Advanced filters'}
+              </button>
             </div>
+
+            {advancedFiltersOpen && (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', padding: '10px 14px 0' }}>
+                <select
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, background: '#fff', cursor: 'pointer', minWidth: '130px', flex: '1 1 130px' }}
+                >
+                  <option value="all">All Subjects</option>
+                  {subjectDropdownOptions.map(subject => (
+                    <option key={subject} value={subject} style={{ textTransform: 'capitalize' }}>
+                      {subject === 'language arts' ? 'Language Arts' : 
+                       subject === 'social studies' ? 'Social Studies' :
+                       subject.charAt(0).toUpperCase() + subject.slice(1)}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedGrade}
+                  onChange={(e) => setSelectedGrade(e.target.value)}
+                  style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, background: '#fff', cursor: 'pointer', minWidth: '110px', flex: '1 1 110px' }}
+                >
+                  <option value="all">All Grades</option>
+                  {GRADES.map(grade => <option key={grade} value={grade}>Grade {grade}</option>)}
+                </select>
+                <select
+                  value={lessonLibraryScope}
+                  onChange={(e) => setLessonLibraryScope(e.target.value)}
+                  style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, background: '#fff', cursor: 'pointer', minWidth: '130px', flex: '1 1 130px' }}
+                >
+                  <option value="owned">Owned</option>
+                  <option value="downloadable">Downloadable</option>
+                  <option value="all">All Lessons</option>
+                </select>
+              </div>
+            )}
 
             {/* Row 2: search + action buttons */}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', padding: '10px 14px 2px' }}>
@@ -910,27 +854,7 @@ export default function FacilitatorLessonsPage() {
                 }}
               />
 
-              <button
-                onClick={() => setShowLessons(true)}
-                disabled={showLessons}
-                style={{
-                  padding: '9px 20px',
-                  background: showLessons ? '#e5e7eb' : '#111827',
-                  color: showLessons ? '#9ca3af' : '#fff',
-                  border: 'none',
-                  borderRadius: 6,
-                  fontWeight: 700,
-                  cursor: showLessons ? 'default' : 'pointer',
-                  fontSize: 13,
-                  whiteSpace: 'nowrap',
-                  letterSpacing: '0.02em',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Load Lessons
-              </button>
-
-              {selectedLearnerId && showLessons && (
+              {selectedLearnerId && (
                 <button
                   onClick={() => setShowHistoryModal(true)}
                   style={{
@@ -957,7 +881,7 @@ export default function FacilitatorLessonsPage() {
                 </button>
               )}
 
-              {showLessons && !lessonsLoading && (
+              {!lessonsLoading && (
                 <div style={{ 
                   fontSize: 13, 
                   color: '#6b7280',
@@ -973,30 +897,7 @@ export default function FacilitatorLessonsPage() {
           {saving && <p style={{ color: '#555' }}>Saving...</p>}
 
           {/* Show appropriate state based on loading */}
-          {!showLessons ? (
-            <div style={{
-              background: '#fff',
-              border: '1px solid #e5e7eb',
-              borderRadius: 10,
-              padding: '48px 32px',
-              textAlign: 'center',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
-            }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>📚</div>
-              <div style={{ fontWeight: 600, fontSize: 15, color: '#111827', marginBottom: selectedLearnerId ? 8 : 12 }}>
-                {selectedLearnerId ? 'Ready to load' : 'Select a learner to get started'}
-              </div>
-              {selectedLearnerId ? (
-                <div style={{ fontSize: 13, color: '#6b7280' }}>
-                  Click <strong>Load Lessons</strong> above to browse the curriculum.
-                </div>
-              ) : (
-                <div style={{ fontSize: 13, color: '#6b7280' }}>
-                  Choose a learner from the dropdown, then click <strong>Load Lessons</strong>.
-                </div>
-              )}
-            </div>
-          ) : lessonsLoading ? (
+          {lessonsLoading ? (
             <div style={{
               background: '#fff',
               border: '1px solid #e5e7eb',
