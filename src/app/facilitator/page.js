@@ -123,7 +123,7 @@ export default function FacilitatorPage() {
 
   const advancedTools = [
     ['Learners', '/facilitator/learners'],
-    ['Generator', '/facilitator/generator'],
+    ['Detailed lesson builder', '/facilitator/generator?advanced=1'],
     ['Lesson Library', '/facilitator/lessons'],
     ['Calendar', '/facilitator/calendar'],
     ['Lesson Planner', '/facilitator/calendar?tab=planner'],

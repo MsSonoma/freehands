@@ -1,7 +1,8 @@
 // API endpoint for lesson schedule management
 import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
-import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
+import { NextResponse } from 'next/server.js'
+import { normalizeLessonKey } from '../../lib/lessonKeyNormalization.js'
+import { featuresForTier, resolveEffectiveTier } from '../../lib/entitlements.js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -138,7 +139,7 @@ export async function GET(request) {
   }
 }
 
-export async function POST(request) {
+export async function POST(request, deps = {}) {
   try {
     const body = await request.json()
     const { learnerId, lessonKey, scheduledDate } = body
@@ -159,7 +160,8 @@ export async function POST(request) {
     }
 
     const token = authHeader.replace('Bearer ', '')
-    const adminSupabase = createClient(
+    const createClientImpl = deps.createClientImpl || createClient
+    const adminSupabase = createClientImpl(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { persistSession: false, autoRefreshToken: false } }
@@ -181,6 +183,16 @@ export async function POST(request) {
 
     if (learnerError || !learner) {
       return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
+    }
+
+    const { data: profile } = await adminSupabase
+      .from('profiles')
+      .select('subscription_tier, plan_tier')
+      .eq('id', user.id)
+      .maybeSingle()
+    const effectiveTier = resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier)
+    if (!featuresForTier(effectiveTier).lessonScheduling) {
+      return NextResponse.json({ error: 'Scheduling requires a Standard plan or higher' }, { status: 403 })
     }
 
     // Insert or update schedule entry

@@ -2,8 +2,8 @@
 /**
  * PageTutorialOverlay – generic reusable tour overlay.
  *
- * Style matches CalendarTutorialOverlay exactly (dark backdrop, white card,
- * indigo progress bars, icon + title + body, step counter, skip / next).
+ * Dark backdrop, white card, progress bars, icon + title + body, step counter,
+ * skip / next.
  *
  * Props:
  *   steps    – Array<{ icon: string, title: string, body: string }>

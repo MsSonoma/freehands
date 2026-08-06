@@ -54,7 +54,7 @@ test('Advanced Tools links resolve to existing facilitator pages', () => {
   const source = read('src/app/facilitator/page.js')
   const expected = [
     '/facilitator/learners',
-    '/facilitator/generator',
+    '/facilitator/generator?advanced=1',
     '/facilitator/lessons',
     '/facilitator/calendar',
     '/facilitator/calendar?tab=planner',
@@ -69,6 +69,7 @@ test('Advanced Tools links resolve to existing facilitator pages', () => {
     const routePath = href.split('?')[0]
     assert.equal(fs.existsSync(path.join(root, 'src/app', routePath, 'page.js')), true, href)
   }
+  assert.match(source, /Detailed lesson builder/)
   assert.doesNotMatch(source, /\/facilitator\/planner/)
   assert.doesNotMatch(source, /\/facilitator\/subjects/)
   assert.doesNotMatch(source, /\/facilitator\/portfolio/)
@@ -96,14 +97,43 @@ test('generation route returns canonical identity and keeps new lessons as draft
 test('advanced generator does not create actionable lesson keys after storage fallback', () => {
   const source = read('src/app/facilitator/generator/page.js')
   assert.match(source, /const storedLessonKey = js\?\.storageError \? null :/)
-  assert.match(source, /const lessonKeyToActivate = storedLessonKey/)
+  assert.match(source, /params\.get\('advanced'\) !== '1'/)
+  assert.match(source, /router\.replace\('\/facilitator\/prepare'\)/)
+  assert.match(source, /writePreparationSnapshot/)
+  assert.match(source, /stage: FACILITATOR_PREPARATION_STAGES\.DRAFT/)
+  assert.doesNotMatch(source, /setLearnerLessonAvailability/)
+  assert.doesNotMatch(source, /Make Active for/)
+  assert.doesNotMatch(source, /All learners/)
+  assert.doesNotMatch(source, /onboarding=1/)
 })
 
 test('old onboarding no longer bypasses reconstructed preparation flow', () => {
   const addLearnerPage = read('src/app/facilitator/learners/add/page.js')
-  assert.match(addLearnerPage, /router\.push\(`\/facilitator\/prepare\$\{learnerParam\}`\)/)
-  assert.match(addLearnerPage, /router\.push\('\/facilitator\/prepare'\)/)
+  const signupPage = read('src/app/auth/signup/page.js')
+  const layoutPage = read('src/app/facilitator/layout.js')
+  const lessonsPage = read('src/app/facilitator/lessons/page.js')
+  const calendarPage = read('src/app/facilitator/calendar/page.js')
+
+  assert.match(addLearnerPage, /router\.push\('\/facilitator'\)/)
   assert.doesNotMatch(addLearnerPage, /router\.push\(`\/facilitator\/generator/)
+  assert.doesNotMatch(addLearnerPage, /onboarding=1|OnboardingBanner|useOnboarding|GENERATE_LESSON/)
+  assert.doesNotMatch(signupPage, /onboarding=1|flagOnboardingStart|ms_sonoma_onboarding_v1/)
+  assert.doesNotMatch(layoutPage, /OnboardingChecklist/)
+  assert.doesNotMatch(lessonsPage, /OnboardingBanner|useOnboarding|ACTIVATE_LESSON|CALENDAR_TOUR|onboarding=1/)
+  assert.doesNotMatch(calendarPage, /CalendarTutorialOverlay|useOnboarding|CALENDAR_TOUR|onboarding=1/)
+})
+
+test('preparation and schedule API use centralized scheduling entitlements', () => {
+  const preparePage = read('src/app/facilitator/prepare/page.js')
+  const scheduleRoute = read('src/app/api/lesson-schedule/route.js')
+
+  assert.match(preparePage, /featuresForTier, resolveEffectiveTier/)
+  assert.match(preparePage, /canScheduleLesson = featuresForTier\(effectiveTier\)\.lessonScheduling === true/)
+  assert.match(preparePage, /Scheduling is available on Standard\. You can start this lesson now, make it available, or save it for later\./)
+  assert.match(preparePage, /href="\/facilitator\/account\/plan"/)
+  assert.match(scheduleRoute, /featuresForTier, resolveEffectiveTier/)
+  assert.match(scheduleRoute, /featuresForTier\(effectiveTier\)\.lessonScheduling/)
+  assert.match(scheduleRoute, /Scheduling requires a Standard plan or higher/)
 })
 
 test('preparation Save actions preserve the expected snapshots and exit home', () => {

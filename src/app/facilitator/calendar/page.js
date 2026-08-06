@@ -19,34 +19,18 @@ import GeneratePortfolioModal from './GeneratePortfolioModal'
 import { InlineExplainer } from '@/components/FacilitatorHelp'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
 import { resolveCalendarLandingParams } from '@/app/lib/facilitatorCalendarLanding.mjs'
-import CalendarTutorialOverlay from '@/app/components/CalendarTutorialOverlay'
-import { useOnboarding } from '@/app/hooks/useOnboarding'
 
 export default function CalendarPage() {
   const router = useRouter()
-  const { step, completeOnboarding, STEPS } = useOnboarding()
-  // Show tutorial when landing from onboarding step 4 or with ?onboarding=1
-  const [showTutorial, setShowTutorial] = useState(false)
-  // Read ?onboarding=1 client-side to avoid Suspense boundary requirement;
-  // also set showTutorial in the same effect so it fires once after mount.
-  const [isOnboardingParam, setIsOnboardingParam] = useState(false)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
-      const ob = params.get('onboarding') === '1'
       const landing = resolveCalendarLandingParams(params)
-      setIsOnboardingParam(ob)
       setActiveTab(landing.activeTab)
       if (landing.openPortfolio) setShowGeneratePortfolio(true)
-      if (ob) setShowTutorial(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  // Also show tutorial if onboarding hook says step 4 (e.g., navigated here from checklist)
-  useEffect(() => {
-    if (step === STEPS.CALENDAR_TOUR) setShowTutorial(true)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
   const [pinChecked, setPinChecked] = useState(false)
   const [authToken, setAuthToken] = useState('')
@@ -809,29 +793,15 @@ export default function CalendarPage() {
 
   return (
     <>
-      {showTutorial && (
-        <CalendarTutorialOverlay
-          onComplete={() => {
-            setShowTutorial(false)
-            completeOnboarding()
-          }}
-        />
-      )}
       <div style={{ background: '#f9fafb', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '4px 8px 0 8px' }}>
 
         {/* Database Setup Warning */}
         {!tableExists && (
           <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6">
-            <h3 className="text-yellow-800 font-semibold mb-2">⚠️ Database Setup Required</h3>
+            <h3 className="text-yellow-800 font-semibold mb-2">Scheduling is temporarily unavailable</h3>
             <p className="text-yellow-700 text-sm mb-3">
-              The lesson_schedule table hasn&apos;t been created yet. Please run the migration in your Supabase SQL Editor:
-            </p>
-            <code className="block bg-yellow-100 text-yellow-900 p-2 rounded text-xs mb-2">
-              scripts/add-lesson-schedule-table.sql
-            </code>
-            <p className="text-yellow-700 text-xs">
-              After running the migration, refresh this page.
+              Scheduling is temporarily unavailable. Your lessons are unchanged.
             </p>
           </div>
         )}

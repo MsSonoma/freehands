@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import {
   FACILITATOR_PREPARATION_STAGES,
   FACILITATOR_PREPARATION_VERSION,
@@ -72,6 +73,8 @@ export default function FacilitatorPreparePage() {
   const [busy, setBusy] = useState(false)
   const [recoveryStage, setRecoveryStage] = useState('')
   const [missingLearnerId, setMissingLearnerId] = useState('')
+  const [effectiveTier, setEffectiveTier] = useState('free')
+  const canScheduleLesson = featuresForTier(effectiveTier).lessonScheduling === true
 
   useEffect(() => {
     let cancelled = false
@@ -98,6 +101,21 @@ export default function FacilitatorPreparePage() {
         const list = await listLearners()
         if (cancelled) return
         setLearners(list || [])
+
+        try {
+          const supabase = getSupabaseClient()
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('subscription_tier, plan_tier')
+              .eq('id', session.user.id)
+              .maybeSingle()
+            if (!cancelled) setEffectiveTier(resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier))
+          }
+        } catch {
+          if (!cancelled) setEffectiveTier('free')
+        }
 
         const params = new URLSearchParams(window.location.search)
         const paramLearnerId = params.get('learnerId') || ''
@@ -311,6 +329,10 @@ export default function FacilitatorPreparePage() {
   }
 
   async function scheduleLesson() {
+    if (!canScheduleLesson) {
+      setMessage('Scheduling is available on Standard. You can start this lesson now, make it available, or save it for later.')
+      return
+    }
     if (!selectedLearner) {
       setMessage('Choose a learner before scheduling this lesson.')
       return
@@ -526,13 +548,20 @@ export default function FacilitatorPreparePage() {
             <button type="button" onClick={makeAvailable} disabled={busy || !selectedLearner} style={secondaryButton}>Make available</button>
             <button type="button" onClick={saveForLater} disabled={busy} style={secondaryButton}>Save for later</button>
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', borderTop: '1px solid #e5e7eb', paddingTop: 14 }}>
-            <label style={{ display: 'grid', gap: 4 }}>
-              <span style={{ fontWeight: 700 }}>Schedule date</span>
-              <input type="date" value={scheduleDate} onChange={(event) => setScheduleDate(event.target.value)} style={{ padding: 10, border: '1px solid #d1d5db', borderRadius: 8 }} />
-            </label>
-            <button type="button" onClick={scheduleLesson} disabled={busy || !scheduleDate || !selectedLearner} style={button}>Schedule</button>
-          </div>
+          {canScheduleLesson ? (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', borderTop: '1px solid #e5e7eb', paddingTop: 14 }}>
+              <label style={{ display: 'grid', gap: 4 }}>
+                <span style={{ fontWeight: 700 }}>Schedule date</span>
+                <input type="date" value={scheduleDate} onChange={(event) => setScheduleDate(event.target.value)} style={{ padding: 10, border: '1px solid #d1d5db', borderRadius: 8 }} />
+              </label>
+              <button type="button" onClick={scheduleLesson} disabled={busy || !scheduleDate || !selectedLearner} style={button}>Schedule</button>
+            </div>
+          ) : (
+            <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 14, color: '#4b5563', lineHeight: 1.5 }}>
+              Scheduling is available on Standard. You can start this lesson now, make it available, or save it for later.{' '}
+              <Link href="/facilitator/account/plan" style={{ color: 'rgb(199, 68, 46)', fontWeight: 700 }}>View plans</Link>
+            </div>
+          )}
         </section>
       )}
     </main>

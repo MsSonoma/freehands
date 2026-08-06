@@ -10,30 +10,31 @@ import Toast from '@/components/Toast'
 import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/lessonValidation'
 import AIRewriteButton from '@/components/AIRewriteButton'
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
-import { listLearners, setLearnerLessonAvailability } from '@/app/facilitator/learners/clientApi'
-import OnboardingBanner from '@/app/components/OnboardingBanner'
-import { useOnboarding } from '@/app/hooks/useOnboarding'
+import { listLearners } from '@/app/facilitator/learners/clientApi'
+import { FACILITATOR_PREPARATION_STAGES, FACILITATOR_PREPARATION_VERSION } from '@/app/lib/facilitatorPreparation.mjs'
+import { writePreparationSnapshot } from '@/app/facilitator/prepare/preparationSnapshot'
 
 const difficulties = ['beginner','intermediate','advanced']
 const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
 export default function LessonMakerPage(){
   const router = useRouter()
-  // Read ?onboarding=1 and ?grade=X client-side to avoid Suspense boundary requirement
-  const [isOnboardingParam, setIsOnboardingParam] = useState(false)
+  const [advancedAllowed, setAdvancedAllowed] = useState(false)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.scrollTo(0, 0)
       const params = new URLSearchParams(window.location.search)
-      setIsOnboardingParam(params.get('onboarding') === '1')
+      if (params.get('advanced') !== '1') {
+        router.replace('/facilitator/prepare')
+        return
+      }
+      setAdvancedAllowed(true)
       const gradeParam = params.get('grade')
       if (gradeParam) {
         setForm(f => ({ ...f, grade: gradeParam }))
       }
     }
-  }, [])
-  const { step, advanceStep, STEPS } = useOnboarding()
-  const showOnboarding = isOnboardingParam || step === STEPS.GENERATE_LESSON
+  }, [router])
   const { loading, hasAccess, gateType, tier, isAuthenticated } = useAccessControl({
     requiredAuth: 'required',
      requiredFeature: 'lessonGenerator'
@@ -50,7 +51,7 @@ export default function LessonMakerPage(){
   const [toast, setToast] = useState(null) // { message, type }
   const [generatedLessonKey, setGeneratedLessonKey] = useState(null) // Track last generated lesson
   const [learners, setLearners] = useState([])
-  const [makeActiveFor, setMakeActiveFor] = useState('none')
+  const [intendedLearnerId, setIntendedLearnerId] = useState('')
 
   // AI Rewrite loading states
   const [rewritingTitle, setRewritingTitle] = useState(false)
@@ -141,7 +142,7 @@ export default function LessonMakerPage(){
     return () => { cancelled = true }
   }, [])
 
-  // Load learners for "Make Active for" dropdown
+  // Load learners for intended learner context
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -465,32 +466,40 @@ export default function LessonMakerPage(){
 
       setToast({ message: 'Lesson ready!', type: 'success' })
       setMessage('')
-
-      // Activate for selected learner(s) — run regardless of onboarding so we don't skip it
-      const lessonKeyToActivate = storedLessonKey
-      const didActivate = lessonKeyToActivate && makeActiveFor !== 'none'
-      if (didActivate) {
-        const targetIds = makeActiveFor === 'all'
-          ? learners.map(l => l.id)
-          : [makeActiveFor]
-        try {
-          await Promise.all(targetIds.map((lid) => setLearnerLessonAvailability({ learnerId: lid, lessonKey: lessonKeyToActivate, available: true })))
-        } catch (activationError) {
-          setMessage(`Lesson generated, but availability failed: ${activationError?.message || 'Unknown error'}`)
-          setToast({ message: 'Availability update failed', type: 'error' })
-          return
-        }
-      }
-
-      // If in onboarding flow, advance wizard and navigate
-      if (showOnboarding) {
-        // If the user already activated the lesson here, skip straight to calendar tour step
-        const nextStep = didActivate ? STEPS.CALENDAR_TOUR : STEPS.ACTIVATE_LESSON
-        const nextPath = didActivate ? '/facilitator/calendar?onboarding=1' : '/facilitator/lessons?onboarding=1'
-        await advanceStep(nextStep)
-        router.push(nextPath)
+      const identity = js?.identity || (storedLessonKey ? {
+        file: generatedFile,
+        lessonKey: storedLessonKey,
+        storagePath: js?.storagePath || '',
+        ownerId: js?.ownerId || generatedUserId || '',
+      } : null)
+      if (!identity?.lessonKey) {
+        setMessage('Lesson generated, but storage was not available for review. Please try again.')
+        setToast({ message: 'Lesson storage failed', type: 'error' })
         return
       }
+
+      const intent = intendedLearnerId ? {
+        version: FACILITATOR_PREPARATION_VERSION,
+        learnerId: intendedLearnerId,
+        need: form.description || form.title,
+        boundaries: {},
+      } : null
+      const proposal = {
+        version: FACILITATOR_PREPARATION_VERSION,
+        learnerId: intendedLearnerId,
+        summary: `Review the detailed lesson draft for ${form.title}.`,
+        generationSpec: { ...form },
+        assumptions: ['Created in the detailed lesson builder.'],
+      }
+      writePreparationSnapshot({
+        version: FACILITATOR_PREPARATION_VERSION,
+        stage: FACILITATOR_PREPARATION_STAGES.DRAFT,
+        learnerId: intendedLearnerId,
+        intent,
+        proposal,
+        lessonIdentity: identity,
+      })
+      router.push('/facilitator/prepare')
     } catch (err) {
       setMessage(`Generation error: ${err?.message || String(err) || 'Unknown error'}`)
       setToast({ message: 'Generation failed', type: 'error' })
@@ -505,11 +514,12 @@ export default function LessonMakerPage(){
     if (busy) return false
     if (!resolvedHasAccess || !ent.lessonGenerator) return false
     if (!form.grade || !form.title || !form.subject || !form.difficulty) return false
+    if (learners.length > 0 && !intendedLearnerId) return false
     if (quotaInfo && !quotaAllowed) return false
     return true
-  }, [busy, form, quotaInfo, resolvedHasAccess, ent.lessonGenerator, quotaAllowed])
+  }, [busy, form, learners.length, intendedLearnerId, quotaInfo, resolvedHasAccess, ent.lessonGenerator, quotaAllowed])
 
-  if (loading || !pinChecked) {
+  if (!advancedAllowed || loading || !pinChecked) {
     return (
       <main style={{ padding: 24, minHeight: '60vh' }}>
         <p style={{ color: '#6b7280' }}>Loading...</p>
@@ -520,14 +530,6 @@ export default function LessonMakerPage(){
   return (
     <>
     <main style={{ padding: '24px 24px 48px', maxWidth: 860, margin: '0 auto' }}>
-      {showOnboarding && (
-        <OnboardingBanner
-          step={2}
-          title="Generate your first lesson"
-          message="Fill in the subject, grade, and topic below. Ms. Sonoma will write a complete lesson with questions for each phase. You can edit it afterward."
-        />
-      )}
-
       {/* ── Header banner ── */}
       <div style={{
         background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 50%, #faf5ff 100%)',
@@ -775,17 +777,16 @@ export default function LessonMakerPage(){
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             {learners.length > 0 && (
               <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontWeight: 600, fontSize: 13, color: '#374151', whiteSpace: 'nowrap' }}>Make Active for</span>
+                <span style={{ fontWeight: 600, fontSize: 13, color: '#374151', whiteSpace: 'nowrap' }}>Intended learner</span>
                 <select
-                  value={makeActiveFor}
-                  onChange={e => setMakeActiveFor(e.target.value)}
+                  value={intendedLearnerId}
+                  onChange={e => setIntendedLearnerId(e.target.value)}
                   style={{ padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, background: '#f9fafb', color: '#111827' }}
                 >
-                  <option value="none">None</option>
+                  <option value="">Choose learner</option>
                   {learners.map(l => (
                     <option key={l.id} value={l.id}>{l.name}</option>
                   ))}
-                  <option value="all">All learners</option>
                 </select>
               </label>
             )}
@@ -851,7 +852,7 @@ export default function LessonMakerPage(){
                   setForm({ grade: '', difficulty: 'intermediate', subject: 'math', title: '', description: '', notes: '', vocab: '' })
                   setMessage('')
                   setToast(null)
-                  setMakeActiveFor('none')
+                  setIntendedLearnerId('')
                 }}
                 style={{
                   background: 'none',
@@ -887,10 +888,10 @@ export default function LessonMakerPage(){
 
       {/* ── Planner promo card ── */}
       <div
-        onClick={() => router.push('/facilitator/calendar')}
+        onClick={() => router.push('/facilitator/calendar?tab=planner')}
         role="button"
         tabIndex={0}
-        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator/calendar')}
+        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator/calendar?tab=planner')}
         style={{
           marginTop: 20,
           padding: '16px 22px',

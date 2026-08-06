@@ -5,6 +5,7 @@ import { POST as approveLesson } from '../src/app/api/facilitator/lessons/approv
 import { POST as generateLesson } from '../src/app/api/facilitator/lessons/generate/route.js'
 import { POST as updateAvailability } from '../src/app/api/facilitator/learners/lesson-availability/route.js'
 import { POST as proposeLesson } from '../src/app/api/facilitator/lessons/propose/route.js'
+import { POST as scheduleLesson } from '../src/app/api/lesson-schedule/route.js'
 
 function withSupabaseEnv() {
   const previous = {
@@ -56,6 +57,16 @@ function createTableMock({ profile = { plan_tier: 'pro', subscription_tier: null
             if (updateCapture) updateCapture.value = value
             return { error: null }
           },
+        }),
+      }
+    }
+
+    if (table === 'lesson_schedule') {
+      return {
+        upsert: (value) => ({
+          select: () => ({
+            single: async () => ({ data: { id: 'schedule-1', ...value }, error: null }),
+          }),
         }),
       }
     }
@@ -213,6 +224,56 @@ test('inaccessible or deleted lesson can still be removed from availability', as
     assert.equal(downloadCalls, 0)
     assert.deepEqual(json.approvedLessons, { 'math/live.json': true })
     assert.deepEqual(updateCapture.value, { approved_lessons: { 'math/live.json': true } })
+  } finally {
+    restore()
+  }
+})
+
+test('schedule API still rejects missing authorization before entitlement checks', async () => {
+  const restore = withSupabaseEnv()
+  try {
+    const response = await scheduleLesson(new Request('http://localhost.test/route', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ learnerId: 'learner-1', lessonKey: 'math/live.json', scheduledDate: '2026-08-06' }),
+    }), {
+      createClientImpl: createClientMock({ admin: { from: createTableMock({ learner: { id: 'learner-1' } }) } }),
+    })
+
+    assert.equal(response.status, 401)
+    assert.equal((await response.json()).error, 'Missing authorization')
+  } finally {
+    restore()
+  }
+})
+
+test('schedule API enforces centralized scheduling entitlement', async () => {
+  const restore = withSupabaseEnv()
+  try {
+    const freeResponse = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'math/live.json', scheduledDate: '2026-08-06' }), {
+      createClientImpl: createClientMock({
+        admin: { from: createTableMock({ profile: { plan_tier: 'free', subscription_tier: null }, learner: { id: 'learner-1' } }) },
+      }),
+    })
+    assert.equal(freeResponse.status, 403)
+    assert.equal((await freeResponse.json()).error, 'Scheduling requires a Standard plan or higher')
+
+    const standardResponse = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'math/live.json', scheduledDate: '2026-08-06' }), {
+      createClientImpl: createClientMock({
+        admin: { from: createTableMock({ profile: { plan_tier: 'standard', subscription_tier: null }, learner: { id: 'learner-1' } }) },
+      }),
+    })
+    const standardJson = await standardResponse.json()
+    assert.equal(standardResponse.status, 200)
+    assert.equal(standardJson.success, true)
+    assert.equal(standardJson.data.lesson_key, 'math/live.json')
+
+    const betaResponse = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'math/live.json', scheduledDate: '2026-08-06' }), {
+      createClientImpl: createClientMock({
+        admin: { from: createTableMock({ profile: { plan_tier: 'free', subscription_tier: 'beta' }, learner: { id: 'learner-1' } }) },
+      }),
+    })
+    assert.equal(betaResponse.status, 200)
   } finally {
     restore()
   }
