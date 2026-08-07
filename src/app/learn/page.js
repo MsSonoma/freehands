@@ -7,6 +7,13 @@ import { getLearner } from '../facilitator/learners/clientApi'
 import { getSupabaseClient } from '../lib/supabaseClient'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay'
+import {
+  canUseAnonymousTeacher,
+  initializeDemoLearner,
+  isDemoLearnerId,
+  requiresDemoAuthGate,
+  shouldAutoShowLearnerTutorial,
+} from './demoLearner.mjs'
 
 const LEARN_TUTORIAL_STEPS = [
   {
@@ -41,15 +48,21 @@ export default function LearnPage() {
   const [learner, setLearner] = useState({ id: null, name: '' })
   const [showAuthGate, setShowAuthGate] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
+  const [learnerResolved, setLearnerResolved] = useState(false)
 
-  // Auto-show tutorial on first visit
+  // Show the learner portal tutorial only after a real learner has been validated.
+  // Demo visitors should reach the curated lesson path immediately.
   useEffect(() => {
     try {
-      if (!localStorage.getItem('ms_learn_tutorial_seen')) {
+      if (shouldAutoShowLearnerTutorial({
+        learnerResolved,
+        learnerId: learner.id,
+        tutorialSeen: Boolean(localStorage.getItem('ms_learn_tutorial_seen')),
+      })) {
         setShowTutorial(true)
       }
     } catch {}
-  }, [])
+  }, [learner.id, learnerResolved])
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +72,7 @@ export default function LearnPage() {
       
       if (!id) {
         setLearner({ id: null, name: '' });
+        setLearnerResolved(true);
         return;
       }
       
@@ -70,9 +84,7 @@ export default function LearnPage() {
         if (!session?.user) {
           // Not logged in — auto-select Demo Learner
           try {
-            localStorage.setItem('learner_id', 'demo');
-            localStorage.setItem('learner_name', 'Demo Learner');
-            localStorage.setItem('learner_grade', '4');
+            initializeDemoLearner(localStorage);
           } catch {}
           if (!cancelled) setLearner({ id: 'demo', name: 'Demo Learner' });
           return;
@@ -97,6 +109,8 @@ export default function LearnPage() {
         localStorage.removeItem('learner_name');
         localStorage.removeItem('learner_grade');
         if (!cancelled) setLearner({ id: null, name: '' });
+      } finally {
+        if (!cancelled) setLearnerResolved(true);
       }
     })();
     
@@ -192,9 +206,14 @@ export default function LearnPage() {
             <LearnerSelector onSelect={(l)=> {
               setLearner({ id: l.id, name: l.name })
               try {
-                localStorage.setItem('learner_id', l.id)
-                localStorage.setItem('learner_name', l.name)
-                if (l.grade) localStorage.setItem('learner_grade', l.grade)
+                if (isDemoLearnerId(l.id)) {
+                  initializeDemoLearner(localStorage)
+                  setShowTutorial(false)
+                } else {
+                  localStorage.setItem('learner_id', l.id)
+                  localStorage.setItem('learner_name', l.name)
+                  if (l.grade) localStorage.setItem('learner_grade', l.grade)
+                }
               } catch {}
             }} />
           </div>
@@ -225,16 +244,17 @@ export default function LearnPage() {
                 bg: '#0d9488',
                 title: 'Chat with Mrs. Webb, your educational AI teacher',
               }].map(({ label, teacher, border, bg, title }) => {
-                const isDemo = learner.id === 'demo'
+                const demoAuthGate = requiresDemoAuthGate(learner.id, teacher)
+                const anonymousDemoPath = canUseAnonymousTeacher(learner.id, teacher)
                 return (
                   <button
                     key={label}
                     onClick={() => {
-                      if (isDemo) { setShowAuthGate(true); return }
+                      if (demoAuthGate) { setShowAuthGate(true); return }
                       try { localStorage.setItem('selected_teacher', teacher) } catch {}
                       r.push('/learn/lessons')
                     }}
-                    title={isDemo ? 'Sign up to use this' : title}
+                    title={demoAuthGate ? 'Sign up to use this' : anonymousDemoPath ? 'Try a Ms. Sonoma demo lesson' : title}
                     style={{
                       padding: '14px 20px',
                       border: `2px solid ${border}`,
@@ -243,8 +263,8 @@ export default function LearnPage() {
                       fontWeight: 700,
                       background: bg,
                       color: '#fff',
-                      cursor: isDemo ? 'not-allowed' : 'pointer',
-                      opacity: isDemo ? 0.45 : 1,
+                      cursor: demoAuthGate ? 'not-allowed' : 'pointer',
+                      opacity: demoAuthGate ? 0.45 : 1,
                       transition: 'opacity 0.15s',
                       width: '100%',
                     }}

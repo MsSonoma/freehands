@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
+import { shouldUseAccountPersistence } from '@/app/learn/demoLearner.mjs'
 
 function createInitialState() {
   return {
@@ -51,7 +52,7 @@ export function useLessonHistory(learnerId, options = {}) {
   useEffect(() => {
     let cancelled = false
 
-    if (!learnerId || learnerId === 'none') {
+    if (!shouldUseAccountPersistence(learnerId) || learnerId === 'none') {
       setState(createInitialState())
       return () => { cancelled = true }
     }

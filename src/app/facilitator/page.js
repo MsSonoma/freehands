@@ -8,11 +8,14 @@ import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
 import { normalizeApprovedLessons, resolveFacilitatorHomeDecision } from '@/app/lib/facilitatorHome.mjs'
 import { readPreparationSnapshot } from './prepare/preparationSnapshot'
+import { useAccessControl } from '@/app/hooks/useAccessControl'
+import GatedOverlay from '@/app/components/GatedOverlay'
 
 const PREPARE_PATH = '/facilitator/prepare'
 
 export default function FacilitatorPage() {
   const router = useRouter()
+  const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: 'required' })
   const [pinChecked, setPinChecked] = useState(false)
   const [loading, setLoading] = useState(true)
   const [session, setSession] = useState(null)
@@ -25,6 +28,7 @@ export default function FacilitatorPage() {
   const [loadError, setLoadError] = useState('')
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated) return
     let cancelled = false
     ;(async () => {
       try {
@@ -39,10 +43,10 @@ export default function FacilitatorPage() {
       }
     })()
     return () => { cancelled = true }
-  }, [router])
+  }, [authLoading, isAuthenticated, router])
 
   useEffect(() => {
-    if (!pinChecked) return
+    if (!pinChecked || !isAuthenticated) return
     let cancelled = false
     ;(async () => {
       try {
@@ -111,14 +115,33 @@ export default function FacilitatorPage() {
       }
     })()
     return () => { cancelled = true }
-  }, [pinChecked])
+  }, [isAuthenticated, pinChecked])
 
   const decision = useMemo(() => {
     return resolveFacilitatorHomeDecision({ learners, generatedLessons, scheduledKeys, preparationSnapshot, preparePath: PREPARE_PATH })
   }, [generatedLessons, learners, preparationSnapshot, scheduledKeys])
 
-  if (!pinChecked || loading) {
+  if (authLoading || (isAuthenticated && (!pinChecked || loading))) {
     return <main style={{ padding: '12px 24px' }}><p style={{ color: '#6b7280' }}>Loading...</p></main>
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <main style={{ minHeight: 320 }}>
+        <GatedOverlay
+          show
+          gateType={gateType || 'auth'}
+          feature="Facilitator Home"
+          emoji="🔒"
+          description="Sign in to manage learners, prepare lessons, schedule learning, and review progress."
+          benefits={[
+            'Create and manage learner profiles',
+            'Prepare and approve personalized lessons',
+            'Schedule lessons and review saved progress',
+          ]}
+        />
+      </main>
+    )
   }
 
   const advancedTools = [

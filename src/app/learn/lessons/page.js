@@ -15,6 +15,13 @@ import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
 import { getMasteryForLearner, slateEmojiForTier } from '@/app/lib/masteryClient'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay'
+import {
+  buildLessonSessionRoute,
+  getLessonListRequest,
+  initializeDemoLearner,
+  isDemoLearnerId,
+  resolveTeacherForLearner,
+} from '@/app/learn/demoLearner.mjs'
 
 const LESSONS_TUTORIAL_STEPS = [
   {
@@ -110,7 +117,8 @@ function LessonsPageInner(){
   // Auto-show tutorial on first visit
   useEffect(() => {
     try {
-      if (!localStorage.getItem('ms_lessons_tutorial_seen')) {
+      const storedLearnerId = localStorage.getItem('learner_id')
+      if (!isDemoLearnerId(storedLearnerId) && !localStorage.getItem('ms_lessons_tutorial_seen')) {
         setShowTutorial(true)
       }
     } catch {}
@@ -152,7 +160,12 @@ function LessonsPageInner(){
   const [showLessonDetailHistory, setShowLessonDetailHistory] = useState(null) // { lessonKey, title } | null
   const [selectedTeacher, setSelectedTeacher] = useState(() => {
     if (typeof window === 'undefined') return 'sonoma'
-    try { return localStorage.getItem('selected_teacher') || 'sonoma' } catch { return 'sonoma' }
+    try {
+      return resolveTeacherForLearner(
+        localStorage.getItem('learner_id'),
+        localStorage.getItem('selected_teacher')
+      )
+    } catch { return 'sonoma' }
   }) // 'sonoma' | 'webb' | 'slate'
   const [teacherDropdownOpen, setTeacherDropdownOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -322,6 +335,11 @@ function LessonsPageInner(){
       const n = localStorage.getItem('learner_name')
       if (n) setLearnerName(n)
       if (id) {
+        if (isDemoLearnerId(id)) {
+          initializeDemoLearner(localStorage)
+          setSelectedTeacher('sonoma')
+          setShowTutorial(false)
+        }
         setLearnerId(id)
         setMasteryMap(getMasteryForLearner(id))
         setWebbMap(getWebbCompletionForLearner(id))
@@ -481,18 +499,20 @@ function LessonsPageInner(){
       const lessonsMap = {}
       
       // Load demo lessons if it's the demo learner
-      if (learnerId === 'demo') {
+      if (isDemoLearnerId(learnerId)) {
         try {
-          const res = await fetch('/api/lessons/demo', { cache: 'no-store' })
+          const { url, subject } = getLessonListRequest(learnerId)
+          const res = await fetch(url, { cache: 'no-store' })
           const list = res.ok ? await res.json() : []
-          lessonsMap['demo'] = Array.isArray(list) ? list : []
+          lessonsMap[subject] = Array.isArray(list) ? list : []
         } catch {
           lessonsMap['demo'] = []
         }
       } else if (learnerId) {
         // OPTIMIZED: Call single API that returns only checked/scheduled lessons
         try {
-          const res = await fetch(`/api/learner/available-lessons?learner_id=${learnerId}`, {
+          const { url } = getLessonListRequest(learnerId)
+          const res = await fetch(url, {
             cache: 'no-store'
           })
           
@@ -681,13 +701,19 @@ function LessonsPageInner(){
       // If alreadyHasPendingKey, key was already spent — just re-pass URL param without decrementing
     }
     
-    const currentTeacher = (() => { try { return localStorage.getItem('selected_teacher') || 'sonoma' } catch { return 'sonoma' } })()
+    const currentTeacher = (() => {
+      try {
+        const resolved = resolveTeacherForLearner(learnerId, localStorage.getItem('selected_teacher'))
+        if (isDemoLearnerId(learnerId)) localStorage.setItem('selected_teacher', resolved)
+        return resolved
+      } catch { return 'sonoma' }
+    })()
 
     if (currentTeacher === 'slate') {
       setSessionLoading(true)
       const lessonKey = `${subject}/${fileBaseName}`
       try { sessionStorage.setItem('slate_pending_lesson_key', lessonKey) } catch {}
-      router.push('/session/slate')
+      router.push(buildLessonSessionRoute({ learnerId, subject, fileName: fileBaseName, selectedTeacher: currentTeacher }))
       return
     }
 
@@ -695,13 +721,18 @@ function LessonsPageInner(){
       setSessionLoading(true)
       const lessonKey = `${subject}/${fileBaseName}`
       try { sessionStorage.setItem('webb_pending_lesson_key', lessonKey) } catch {}
-      router.push('/session/webb')
+      router.push(buildLessonSessionRoute({ learnerId, subject, fileName: fileBaseName, selectedTeacher: currentTeacher }))
       return
     }
 
     setSessionLoading(true)
-    const url = `/session?subject=${encodeURIComponent(subject)}&lesson=${encodeURIComponent(fileBaseName)}`
-    const withKey = (goldenKeysEnabled === true && (goldenKeySelected || alreadyHasPendingKey)) ? `${url}&goldenKey=true` : url
+    const withKey = buildLessonSessionRoute({
+      learnerId,
+      subject,
+      fileName: fileBaseName,
+      selectedTeacher: currentTeacher,
+      goldenKey: goldenKeysEnabled === true && (goldenKeySelected || alreadyHasPendingKey),
+    })
     router.push(withKey)
   }
 

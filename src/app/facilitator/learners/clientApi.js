@@ -98,17 +98,22 @@ export async function listLearners() {
 
 export async function createLearner(payload) {
   const supabase = getSupabaseClient();
-  if (supabase && hasSupabaseEnv()) {
+  if (!supabase || !hasSupabaseEnv()) {
+    throw new Error('Please log in to create learners');
+  }
+
+  if (supabase) {
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr) throw new Error(userErr.message || 'Auth error');
+    const uid = userData?.user?.id;
+    if (!uid) throw new Error('Please log in to create learners');
+
     if (supabaseLearnersMode === 'disabled') {
       // In local mode, still respect the user's actual plan tier if available
       const list = readLocal();
       let tier = 'free';
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        const uid = userData?.user?.id;
-        if (uid) {
-          tier = await getPlanTier(supabase, uid);
-        }
+        tier = await getPlanTier(supabase, uid);
       } catch {}
       const ent = featuresForTier(tier);
       if (Number.isFinite(ent.learnersMax) && list.length >= ent.learnersMax) {
@@ -116,11 +121,6 @@ export async function createLearner(payload) {
       }
       return createLocal(payload);
     }
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
-    if (userErr) throw new Error(userErr.message || 'Auth error');
-    const uid = userData?.user?.id;
-    if (!uid) throw new Error('Please log in to create learners');
-
     // Gate by plan: read plan tier and current count
     const planTier = await getPlanTier(supabase, uid);
     const ent = featuresForTier(planTier);
@@ -177,7 +177,7 @@ export async function createLearner(payload) {
     if (isUndefinedColumnOrTable(error2)) { supabaseLearnersMode = 'disabled'; return createLocal(payload); }
     throw new Error(error2.message || 'Failed to create learner');
   }
-  return createLocal(payload);
+  throw new Error('Please log in to create learners');
 }
 
 export async function getLearner(id) {

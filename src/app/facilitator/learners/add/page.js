@@ -7,6 +7,8 @@ import { createLearner } from '../clientApi';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 import { listLearners } from '../clientApi';
+import { useAccessControl } from '@/app/hooks/useAccessControl';
+import GatedOverlay from '@/app/components/GatedOverlay';
 
 const grades = [
 	'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'
@@ -18,6 +20,7 @@ const humorLevels = ['calm', 'funny', 'hilarious'];
 
 export default function AddLearnerPage() {
 	const router = useRouter();
+	const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: 'required' });
 	const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
 	const [pinChecked, setPinChecked] = useState(false);
 	const [name, setName] = useState('');
@@ -35,6 +38,7 @@ export default function AddLearnerPage() {
 
 		// Check PIN requirement on mount
 		useEffect(() => {
+			if (authLoading || !isAuthenticated) return;
 			let cancelled = false;
 			(async () => {
 				try {
@@ -49,10 +53,10 @@ export default function AddLearnerPage() {
 				}
 			})();
 			return () => { cancelled = true; };
-		}, [router]);
+		}, [authLoading, isAuthenticated, router]);
 		// Load plan tier and current count
 		useEffect(() => {
-			if (!pinChecked) return;
+			if (!pinChecked || !isAuthenticated) return;
 			let cancelled = false;
 			(async () => {
 				try {
@@ -80,10 +84,11 @@ export default function AddLearnerPage() {
 				} catch {}
 			})();
 			return () => { cancelled = true; };
-		}, [pinChecked]);
+		}, [isAuthenticated, pinChecked]);
 
 	const handleSave = async (e) => {
 		e.preventDefault();
+		if (!isAuthenticated) return;
 		setSaving(true);
 				try {
 					if (atLimit) {
@@ -107,6 +112,29 @@ export default function AddLearnerPage() {
 			setSaving(false);
 		}
 	};
+
+	if (authLoading || (isAuthenticated && !pinChecked)) {
+		return <main style={{ padding: 24, maxWidth: 560, margin: '0 auto' }}><p style={{ color: '#6b7280' }}>Loading...</p></main>;
+	}
+
+	if (!isAuthenticated) {
+		return (
+			<main style={{ minHeight: 320 }}>
+				<GatedOverlay
+					show
+					gateType={gateType || 'auth'}
+					feature="Learner Creation"
+					emoji="🔒"
+					description="Sign in to create a persistent learner profile and save learner-specific progress."
+					benefits={[
+						'Create persistent learner profiles',
+						'Save lesson progress and transcripts',
+						'Keep learner data tied to your facilitator account',
+					]}
+				/>
+			</main>
+		);
+	}
 
 	return (
 		<main style={{ padding: 24, maxWidth: 560, margin: '0 auto' }}>

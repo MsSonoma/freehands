@@ -1413,6 +1413,10 @@ function SessionPageV2Inner() {
 
   // Load visual aids separately from database (facilitator-specific)
   useEffect(() => {
+    if (subjectParam === 'demo') {
+      setVisualAidsData(null);
+      return;
+    }
     if (!visualAidsLessonKey) {
       setVisualAidsData(null);
       return;
@@ -1461,7 +1465,7 @@ function SessionPageV2Inner() {
     return () => {
       cancelled = true;
     };
-  }, [visualAidsLessonKey]);
+  }, [subjectParam, visualAidsLessonKey]);
 
   const stopAudioSafe = useCallback((options = {}) => {
     const force = options?.force === true;

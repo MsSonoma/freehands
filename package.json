@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:demo": "node --test src/app/learn/__tests__/demoLearner.test.mjs",
     "dev:3001": "cross-env PORT=3001 next dev -H 0.0.0.0",
     "start:3001": "cross-env PORT=3001 next start -H 0.0.0.0",
     "dev:lan": "cross-env PORT=3001 next dev -p 3001 -H 0.0.0.0",
