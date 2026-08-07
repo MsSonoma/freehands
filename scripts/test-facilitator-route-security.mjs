@@ -34,7 +34,7 @@ test('proposal and availability routes verify learner ownership before acting', 
 
 test('availability route verifies lesson access when making a lesson available', () => {
   const source = read('src/app/api/facilitator/learners/lesson-availability/route.js')
-  assert.match(source, /verifyLessonAccess/)
+  assert.match(source, /verifyFacilitatorLessonAccess/)
   assert.match(source, /Lesson not found or unauthorized/)
   assert.match(source, /Approve the lesson content before making it available/)
   assert.match(source, /applyLessonAvailability/)
@@ -107,6 +107,14 @@ test('advanced generator does not create actionable lesson keys after storage fa
   assert.doesNotMatch(source, /onboarding=1/)
 })
 
+test('advanced generator cannot turn Free generation entitlement into signed-out access', () => {
+  const source = read('src/app/facilitator/generator/page.js')
+  assert.match(source, /resolvedHasAccess = isAuthenticated && \(hasAccess \|\|/)
+  assert.match(source, /if \(loading \|\| !isAuthenticated\) return/)
+  assert.match(source, /if \(loading \|\| !isAuthenticated \|\| !pinChecked\) return/)
+  assert.match(source, /if \(!isAuthenticated\) \{[\s\S]*<GatedOverlay[\s\S]*gateType=\{gateType \|\| 'auth'\}/)
+})
+
 test('old onboarding no longer bypasses reconstructed preparation flow', () => {
   const addLearnerPage = read('src/app/facilitator/learners/add/page.js')
   const signupPage = read('src/app/auth/signup/page.js')
@@ -127,13 +135,37 @@ test('preparation and schedule API use centralized scheduling entitlements', () 
   const preparePage = read('src/app/facilitator/prepare/page.js')
   const scheduleRoute = read('src/app/api/lesson-schedule/route.js')
 
-  assert.match(preparePage, /featuresForTier, resolveEffectiveTier/)
-  assert.match(preparePage, /canScheduleLesson = featuresForTier\(effectiveTier\)\.lessonScheduling === true/)
+  assert.match(preparePage, /preparationDeliveryActionsForTier, resolveEffectiveTier/)
+  assert.match(preparePage, /deliveryActions = useMemo\(\(\) => preparationDeliveryActionsForTier\(effectiveTier\)/)
+  assert.match(preparePage, /const canScheduleLesson = deliveryActions\.schedule/)
   assert.match(preparePage, /Scheduling is available on Standard\. You can start this lesson now, make it available, or save it for later\./)
   assert.match(preparePage, /href="\/facilitator\/account\/plan"/)
   assert.match(scheduleRoute, /featuresForTier, resolveEffectiveTier/)
   assert.match(scheduleRoute, /featuresForTier\(effectiveTier\)\.lessonScheduling/)
   assert.match(scheduleRoute, /Scheduling requires a Standard plan or higher/)
+  assert.match(scheduleRoute, /verifyFacilitatorLessonAccess/)
+})
+
+test('all core facilitator entry surfaces explicitly require account authentication', () => {
+  const routes = [
+    'src/app/facilitator/page.js',
+    'src/app/facilitator/prepare/page.js',
+    'src/app/facilitator/learners/add/page.js',
+    'src/app/facilitator/lessons/page.js',
+    'src/app/facilitator/calendar/page.js',
+    'src/app/facilitator/generator/page.js',
+  ]
+
+  for (const route of routes) {
+    const source = read(route)
+    assert.match(source, /useAccessControl/, route)
+    assert.match(source, /requiredAuth:\s*(?:'required'|true)/, route)
+    assert.match(source, /GatedOverlay/, route)
+  }
+
+  const preparePage = read('src/app/facilitator/prepare/page.js')
+  assert.match(preparePage, /if \(authLoading \|\| !isAuthenticated\) return/)
+  assert.match(preparePage, /if \(!pinChecked \|\| !isAuthenticated\) return/)
 })
 
 test('lesson library auto-loads and keeps multi-learner choice explicit', () => {

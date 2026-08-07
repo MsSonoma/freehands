@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server.js'
 import { createClient } from '@supabase/supabase-js'
-import fs from 'node:fs'
-import path from 'node:path'
 import { normalizeLessonKey } from '../../../../lib/lessonKeyNormalization.js'
 import { applyLessonAvailability } from '../../../../lib/lessonAvailability.mjs'
+import { verifyFacilitatorLessonAccess } from '../../../../lib/serverLessonAccess.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-
-const STOCK_SUBJECTS = new Set(['math', 'science', 'social studies', 'language arts', 'general'])
 
 function getEnv() {
   return {
@@ -34,30 +31,6 @@ async function getUserAndAdmin(request, { createClientImpl = createClient } = {}
     user,
     admin: createClientImpl(url, service, { auth: { persistSession: false, autoRefreshToken: false } }),
   }
-}
-
-async function verifyLessonAccess({ admin, userId, lessonKey, fileExistsSync = fs.existsSync }) {
-  const normalized = normalizeLessonKey(lessonKey)
-  if (!normalized || !normalized.includes('/')) return { ok: false, error: 'Invalid lesson key' }
-  const [subject, ...rest] = normalized.split('/')
-  const file = rest.join('/')
-  if (!file || file.includes('..') || file.includes('\\')) return { ok: false, error: 'Invalid lesson key' }
-
-  if (subject === 'generated') {
-    const { data, error } = await admin.storage
-      .from('lessons')
-      .download(`facilitator-lessons/${userId}/${file}`)
-    if (error || !data) return { ok: false, error: 'Lesson not found or unauthorized' }
-    const raw = await data.text()
-    const lesson = JSON.parse(raw)
-    if (lesson?.approved !== true) return { ok: false, error: 'Approve the lesson content before making it available' }
-    return { ok: true }
-  }
-
-  if (!STOCK_SUBJECTS.has(subject)) return { ok: false, error: 'Lesson not found or unauthorized' }
-  const folder = subject === 'general' ? 'Facilitator Lessons' : subject
-  const publicPath = path.join(process.cwd(), 'public', 'lessons', folder, file)
-  return fileExistsSync(publicPath) ? { ok: true } : { ok: false, error: 'Lesson not found or unauthorized' }
 }
 
 export async function POST(request, deps = {}) {
@@ -88,7 +61,13 @@ export async function POST(request, deps = {}) {
     }
 
     if (available) {
-      const lessonAccess = await verifyLessonAccess({ admin, userId: user.id, lessonKey: normalizedLessonKey, fileExistsSync: deps.fileExistsSync })
+      const lessonAccess = await verifyFacilitatorLessonAccess({
+        admin,
+        userId: user.id,
+        lessonKey: normalizedLessonKey,
+        fileExistsSync: deps.fileExistsSync,
+        unapprovedError: 'Approve the lesson content before making it available',
+      })
       if (!lessonAccess.ok) {
         return NextResponse.json({ error: lessonAccess.error || 'Lesson not found or unauthorized' }, { status: 403 })
       }

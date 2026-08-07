@@ -91,6 +91,16 @@ function createClientMock({ user = { id: 'facilitator-1' }, admin = {} } = {}) {
   }
 }
 
+function generatedLessonStorage(lesson = { approved: true }, downloadError = null) {
+  return {
+    from: () => ({
+      download: async () => downloadError
+        ? { data: null, error: downloadError }
+        : { data: new Blob([JSON.stringify(lesson)], { type: 'application/json' }), error: null },
+    }),
+  }
+}
+
 test('proposal route rejects another facilitator learner', async () => {
   const restore = withSupabaseEnv()
   try {
@@ -250,6 +260,24 @@ test('schedule API still rejects missing authorization before entitlement checks
   }
 })
 
+test('schedule API rejects an invalid bearer token', async () => {
+  const restore = withSupabaseEnv()
+  try {
+    const response = await scheduleLesson(jsonRequest({
+      learnerId: 'learner-1',
+      lessonKey: 'generated/live.json',
+      scheduledDate: '2026-08-06',
+    }), {
+      createClientImpl: createClientMock({ user: null }),
+    })
+
+    assert.equal(response.status, 401)
+    assert.equal((await response.json()).error, 'Unauthorized')
+  } finally {
+    restore()
+  }
+})
+
 test('schedule API enforces centralized scheduling entitlement behavior', async () => {
   const restore = withSupabaseEnv()
   try {
@@ -274,7 +302,10 @@ test('schedule API enforces centralized scheduling entitlement behavior', async 
       const scheduleCapture = {}
       const response = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'facilitator-lessons/live.json', scheduledDate: '2026-08-06' }), {
         createClientImpl: createClientMock({
-          admin: { from: createTableMock({ profile, learner: { id: 'learner-1' }, scheduleCapture }) },
+          admin: {
+            from: createTableMock({ profile, learner: { id: 'learner-1' }, scheduleCapture }),
+            storage: generatedLessonStorage(),
+          },
         }),
       })
       const json = await response.json()
@@ -289,13 +320,56 @@ test('schedule API enforces centralized scheduling entitlement behavior', async 
       }, label)
     }
 
-    const unauthorizedResponse = await scheduleLesson(jsonRequest({ learnerId: 'other-learner', lessonKey: 'math/live.json', scheduledDate: '2026-08-06' }), {
-      createClientImpl: createClientMock({
-        admin: { from: createTableMock({ profile: { plan_tier: 'pro', subscription_tier: null }, learner: null }) },
-      }),
-    })
-    assert.equal(unauthorizedResponse.status, 403)
-    assert.equal((await unauthorizedResponse.json()).error, 'Learner not found or unauthorized')
+    for (const planTier of ['free', 'pro']) {
+      const unauthorizedResponse = await scheduleLesson(jsonRequest({ learnerId: 'other-learner', lessonKey: 'math/live.json', scheduledDate: '2026-08-06' }), {
+        createClientImpl: createClientMock({
+          admin: { from: createTableMock({ profile: { plan_tier: planTier, subscription_tier: null }, learner: null }) },
+        }),
+      })
+      assert.equal(unauthorizedResponse.status, 403, planTier)
+      assert.equal((await unauthorizedResponse.json()).error, 'Learner not found or unauthorized', planTier)
+    }
+  } finally {
+    restore()
+  }
+})
+
+test('schedule API denies unapproved or inaccessible generated lessons', async () => {
+  const restore = withSupabaseEnv()
+  try {
+    const cases = [
+      {
+        label: 'unapproved',
+        storage: generatedLessonStorage({ approved: false }),
+        error: 'Approve the lesson content before scheduling it',
+      },
+      {
+        label: 'inaccessible',
+        storage: generatedLessonStorage(null, { message: 'not found' }),
+        error: 'Lesson not found or unauthorized',
+      },
+    ]
+
+    for (const item of cases) {
+      const response = await scheduleLesson(jsonRequest({
+        learnerId: 'learner-1',
+        lessonKey: 'generated/draft.json',
+        scheduledDate: '2026-08-06',
+      }), {
+        createClientImpl: createClientMock({
+          admin: {
+            from: createTableMock({
+              profile: { plan_tier: 'standard', subscription_tier: null },
+              learner: { id: 'learner-1' },
+            }),
+            storage: item.storage,
+          },
+        }),
+      })
+
+      assert.equal(response.status, 403, item.label)
+      assert.equal((await response.json()).error, item.error, item.label)
+    }
   } finally {
     restore()
   }

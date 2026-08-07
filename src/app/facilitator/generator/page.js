@@ -77,7 +77,7 @@ export default function LessonMakerPage(){
 
   // hasAccess may be false when the client-side profiles query is blocked by RLS.
   // If the quota API (service role) confirms lessonGenerator entitlement, honour that.
-  const resolvedHasAccess = hasAccess || (!quotaLoading && ent.lessonGenerator)
+  const resolvedHasAccess = isAuthenticated && (hasAccess || (!quotaLoading && ent.lessonGenerator))
 
   const quotaAllowed = useMemo(() => {
     if (!quotaInfo) return true
@@ -93,6 +93,7 @@ export default function LessonMakerPage(){
 
   // Check PIN requirement on mount
   useEffect(() => {
+    if (loading || !isAuthenticated) return
     let cancelled = false;
     (async () => {
       try {
@@ -107,12 +108,12 @@ export default function LessonMakerPage(){
       }
     })();
     return () => { cancelled = true; };
-  }, [router]);
+  }, [isAuthenticated, loading, router]);
 
-  // Load quota info — check session directly, NOT via isAuthenticated from useAccessControl.
-  // useAccessControl resets isAuthenticated=false in its catch block (e.g. on RLS errors),
-  // which would prevent this effect from ever running. We go to Supabase directly instead.
+  // Load quota only after account authentication and the facilitator PIN boundary.
+  // Read the session directly here because the quota API needs the access token.
   useEffect(() => {
+    if (loading || !isAuthenticated || !pinChecked) return
     let cancelled = false;
     (async () => {
       try {
@@ -140,10 +141,11 @@ export default function LessonMakerPage(){
       }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [isAuthenticated, loading, pinChecked])
 
   // Load learners for intended learner context
   useEffect(() => {
+    if (loading || !isAuthenticated || !pinChecked) return
     let cancelled = false
     ;(async () => {
       try {
@@ -154,7 +156,7 @@ export default function LessonMakerPage(){
       }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [isAuthenticated, loading, pinChecked])
 
   // AI Rewrite handlers
   const handleRewriteTitle = async () => {
@@ -519,10 +521,24 @@ export default function LessonMakerPage(){
     return true
   }, [busy, form, learners.length, intendedLearnerId, quotaInfo, resolvedHasAccess, ent.lessonGenerator, quotaAllowed])
 
-  if (!advancedAllowed || loading || !pinChecked) {
+  if (!advancedAllowed || loading || (isAuthenticated && (!pinChecked || quotaLoading))) {
     return (
       <main style={{ padding: 24, minHeight: '60vh' }}>
         <p style={{ color: '#6b7280' }}>Loading...</p>
+      </main>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <main style={{ minHeight: 320 }}>
+        <GatedOverlay
+          show
+          gateType={gateType || 'auth'}
+          feature="Lesson Generator"
+          benefits={["Generate custom lessons instantly", "Edit and assign lessons", "Build a full curriculum over time"]}
+          emoji="✨"
+        />
       </main>
     )
   }

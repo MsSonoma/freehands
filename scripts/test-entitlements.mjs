@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { featuresForTier, resolveEffectiveTier } from '../src/app/lib/entitlements.js'
+import {
+  featuresForTier,
+  preparationDeliveryActionsForTier,
+  resolveEffectiveTier,
+} from '../src/app/lib/entitlements.js'
 
 test('central entitlement matrix exposes expected scheduling, planner, caps, and generation limits', () => {
   const cases = [
@@ -14,10 +18,51 @@ test('central entitlement matrix exposes expected scheduling, planner, caps, and
 
   for (const item of cases) {
     const features = featuresForTier(item.tier)
+    assert.equal(features.lessonGenerator, true, item.tier)
     assert.equal(features.lessonScheduling, item.canSchedule, item.tier)
     assert.equal(features.lessonPlanner, item.canPlan, item.tier)
     assert.equal(features.learnersMax, item.learnersMax, item.tier)
     assert.equal(features.lifetimeGenerations, item.lifetimeGenerations, item.tier)
+  }
+})
+
+test('Free and Trial generation stays available under the current finite quota', () => {
+  for (const tier of ['free', 'trial']) {
+    const features = featuresForTier(tier)
+    assert.equal(features.lessonGenerator, true, tier)
+    assert.equal(Number.isFinite(features.lifetimeGenerations), true, tier)
+    assert.ok(features.lifetimeGenerations > 0, tier)
+    assert.equal(features.lessonScheduling, false, tier)
+    assert.equal(features.lessonPlanner, false, tier)
+  }
+})
+
+test('Prepare DELIVERY stays usable for Free and Trial without scheduling entitlement', () => {
+  for (const tier of ['free', 'trial']) {
+    assert.deepEqual(preparationDeliveryActionsForTier(tier), {
+      startNow: true,
+      makeAvailable: true,
+      saveForLater: true,
+      schedule: false,
+    }, tier)
+  }
+})
+
+test('Prepare DELIVERY adds scheduling for Standard, Pro, beta, and lifetime access', () => {
+  const effectiveTiers = [
+    ['standard', resolveEffectiveTier('free', 'standard')],
+    ['pro', resolveEffectiveTier('pro', 'free')],
+    ['beta', resolveEffectiveTier('beta', 'free')],
+    ['lifetime', resolveEffectiveTier('lifetime', 'free')],
+  ]
+
+  for (const [label, tier] of effectiveTiers) {
+    assert.deepEqual(preparationDeliveryActionsForTier(tier), {
+      startNow: true,
+      makeAvailable: true,
+      saveForLater: true,
+      schedule: true,
+    }, label)
   }
 })
 

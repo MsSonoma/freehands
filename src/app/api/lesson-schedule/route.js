@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server.js'
 import { normalizeLessonKey } from '../../lib/lessonKeyNormalization.js'
 import { featuresForTier, resolveEffectiveTier } from '../../lib/entitlements.js'
+import { verifyFacilitatorLessonAccess } from '../../lib/serverLessonAccess.mjs'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -193,6 +194,17 @@ export async function POST(request, deps = {}) {
     const effectiveTier = resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier)
     if (!featuresForTier(effectiveTier).lessonScheduling) {
       return NextResponse.json({ error: 'Scheduling requires a Standard plan or higher' }, { status: 403 })
+    }
+
+    const lessonAccess = await verifyFacilitatorLessonAccess({
+      admin: adminSupabase,
+      userId: user.id,
+      lessonKey: normalizedLessonKey,
+      fileExistsSync: deps.fileExistsSync,
+      unapprovedError: 'Approve the lesson content before scheduling it',
+    })
+    if (!lessonAccess.ok) {
+      return NextResponse.json({ error: lessonAccess.error || 'Lesson not found or unauthorized' }, { status: 403 })
     }
 
     // Insert or update schedule entry

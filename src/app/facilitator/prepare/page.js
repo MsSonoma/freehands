@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
-import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
+import { preparationDeliveryActionsForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
+import { useAccessControl } from '@/app/hooks/useAccessControl'
+import GatedOverlay from '@/app/components/GatedOverlay'
 import {
   FACILITATOR_PREPARATION_STAGES,
   FACILITATOR_PREPARATION_VERSION,
@@ -49,6 +51,7 @@ function splitLessonKey(lessonKey) {
 
 export default function FacilitatorPreparePage() {
   const router = useRouter()
+  const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: 'required' })
   const [pinChecked, setPinChecked] = useState(false)
   const [loading, setLoading] = useState(true)
   const [learners, setLearners] = useState([])
@@ -74,9 +77,11 @@ export default function FacilitatorPreparePage() {
   const [recoveryStage, setRecoveryStage] = useState('')
   const [missingLearnerId, setMissingLearnerId] = useState('')
   const [effectiveTier, setEffectiveTier] = useState('free')
-  const canScheduleLesson = featuresForTier(effectiveTier).lessonScheduling === true
+  const deliveryActions = useMemo(() => preparationDeliveryActionsForTier(effectiveTier), [effectiveTier])
+  const canScheduleLesson = deliveryActions.schedule
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated) return
     let cancelled = false
     ;(async () => {
       try {
@@ -91,10 +96,10 @@ export default function FacilitatorPreparePage() {
       }
     })()
     return () => { cancelled = true }
-  }, [router])
+  }, [authLoading, isAuthenticated, router])
 
   useEffect(() => {
-    if (!pinChecked) return
+    if (!pinChecked || !isAuthenticated) return
     let cancelled = false
     ;(async () => {
       try {
@@ -159,7 +164,7 @@ export default function FacilitatorPreparePage() {
       }
     })()
     return () => { cancelled = true }
-  }, [pinChecked])
+  }, [isAuthenticated, pinChecked])
 
   const selectedLearner = useMemo(() => learners.find((learner) => learner.id === learnerId) || null, [learners, learnerId])
   const hasLearnerRecovery = !!recoveryStage && !!missingLearnerId
@@ -422,8 +427,27 @@ export default function FacilitatorPreparePage() {
     setMessage('Learner selected. The saved lesson is ready to continue.')
   }
 
-  if (!pinChecked || loading) {
+  if (authLoading || (isAuthenticated && (!pinChecked || loading))) {
     return <main style={{ padding: 24 }}><p style={{ color: '#6b7280' }}>Loading...</p></main>
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <main style={{ minHeight: 320 }}>
+        <GatedOverlay
+          show
+          gateType={gateType || 'auth'}
+          feature="Lesson Preparation"
+          emoji="🔒"
+          description="Sign in to prepare, approve, and deliver lessons for your learners."
+          benefits={[
+            'Restore saved lesson preparation',
+            'Generate and review learner-specific lessons',
+            'Choose delivery after approving lesson content',
+          ]}
+        />
+      </main>
+    )
   }
 
   return (
@@ -544,9 +568,9 @@ export default function FacilitatorPreparePage() {
           {selectedLearner && <p style={{ margin: 0, color: '#374151', fontWeight: 700 }}>Learner: {selectedLearner.name}</p>}
           <p style={{ margin: 0, color: '#4b5563' }}>The lesson content is approved. Choose when the learner receives it.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
-            <button type="button" onClick={startNow} disabled={busy || !selectedLearner} style={button}>Start now</button>
-            <button type="button" onClick={makeAvailable} disabled={busy || !selectedLearner} style={secondaryButton}>Make available</button>
-            <button type="button" onClick={saveForLater} disabled={busy} style={secondaryButton}>Save for later</button>
+            {deliveryActions.startNow && <button type="button" onClick={startNow} disabled={busy || !selectedLearner} style={button}>Start now</button>}
+            {deliveryActions.makeAvailable && <button type="button" onClick={makeAvailable} disabled={busy || !selectedLearner} style={secondaryButton}>Make available</button>}
+            {deliveryActions.saveForLater && <button type="button" onClick={saveForLater} disabled={busy} style={secondaryButton}>Save for later</button>}
           </div>
           {canScheduleLesson ? (
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', borderTop: '1px solid #e5e7eb', paddingTop: 14 }}>

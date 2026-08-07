@@ -93,6 +93,7 @@ test('owned lesson without selected learner does not expose preparation actions'
   assert.equal(state.stateKey, LIBRARY_LESSON_STATES.SELECT_LEARNER)
   assert.equal(state.label, 'Choose a learner')
   assert.equal(state.primaryActionType, LIBRARY_PRIMARY_ACTIONS.NONE)
+  assert.equal(state.href, null)
   assert.equal(primaryActionCount(state), 0)
 })
 
@@ -115,6 +116,87 @@ test('conflicting learner evidence follows documented precedence', () => {
   })
   assert.equal(state.stateKey, LIBRARY_LESSON_STATES.COMPLETED)
   assert.equal(state.primaryActionType, LIBRARY_PRIMARY_ACTIONS.NONE)
+})
+
+test('each learner-state collision follows the resolver precedence independently', () => {
+  const collisions = [
+    {
+      label: 'completed beats available',
+      evidence: {
+        completedLessons: { 'generated/fractions.json': '2026-08-06T11:00:00Z' },
+        availableLessons: { 'generated/fractions.json': true },
+      },
+      expected: LIBRARY_LESSON_STATES.COMPLETED,
+    },
+    {
+      label: 'in progress beats available',
+      evidence: {
+        inProgressLessons: { 'generated/fractions.json': '2026-08-06T10:00:00Z' },
+        availableLessons: { 'generated/fractions.json': true },
+      },
+      expected: LIBRARY_LESSON_STATES.IN_PROGRESS,
+    },
+    {
+      label: 'scheduled today beats available',
+      evidence: {
+        scheduledToday: { 'generated/fractions.json': true },
+        availableLessons: { 'generated/fractions.json': true },
+      },
+      expected: LIBRARY_LESSON_STATES.SCHEDULED_TODAY,
+    },
+    {
+      label: 'scheduled future beats available',
+      evidence: {
+        futureScheduledLessons: { 'generated/fractions.json': '2026-08-12' },
+        availableLessons: { 'generated/fractions.json': true },
+      },
+      expected: LIBRARY_LESSON_STATES.SCHEDULED_FUTURE,
+    },
+    {
+      label: 'available beats approved delivery',
+      evidence: {
+        lesson: { ...base.lesson, approved: true },
+        availableLessons: { 'generated/fractions.json': true },
+      },
+      expected: LIBRARY_LESSON_STATES.AVAILABLE,
+    },
+  ]
+
+  for (const collision of collisions) {
+    const state = resolveLibraryLessonState({ ...base, ...collision.evidence })
+    assert.equal(state.stateKey, collision.expected, collision.label)
+    assert.equal(state.primaryActionType, LIBRARY_PRIMARY_ACTIONS.NONE, collision.label)
+    assert.equal(state.href, null, collision.label)
+  }
+})
+
+test('downloadable ownership state beats every learner delivery and outcome state', () => {
+  const state = resolveLibraryLessonState({
+    ...base,
+    isDownloadableNotOwned: true,
+    availableLessons: { 'generated/fractions.json': true },
+    scheduledToday: { 'generated/fractions.json': true },
+    inProgressLessons: { 'generated/fractions.json': true },
+    completedLessons: { 'generated/fractions.json': true },
+  })
+  assert.equal(state.stateKey, LIBRARY_LESSON_STATES.DOWNLOADABLE)
+  assert.equal(state.primaryActionType, LIBRARY_PRIMARY_ACTIONS.DOWNLOAD)
+  assert.equal(state.href, null)
+})
+
+test('legacy general generated key resolves to the same availability state as canonical key', () => {
+  const canonical = resolveLibraryLessonState({
+    ...base,
+    availableLessons: { 'generated/fractions.json': true },
+  })
+  const legacy = resolveLibraryLessonState({
+    ...base,
+    availableLessons: { 'general/fractions.json': true },
+  })
+  assert.equal(canonical.stateKey, LIBRARY_LESSON_STATES.AVAILABLE)
+  assert.equal(legacy.stateKey, canonical.stateKey)
+  assert.equal(legacy.primaryActionType, canonical.primaryActionType)
+  assert.equal(legacy.lessonKey, canonical.lessonKey)
 })
 
 test('initial library learner selection is automatic only for exactly one learner', () => {
