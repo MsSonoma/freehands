@@ -59,6 +59,7 @@ import { useSessionTracking } from '@/app/hooks/useSessionTracking';
 import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay';
+import { shouldAutoShowSessionTutorial } from '@/app/learn/demoLearner.mjs';
 
 const SESSION_TUTORIAL_STEPS = [
   {
@@ -500,7 +501,9 @@ function SessionPageV2Inner() {
   // Auto-show session tutorial on first visit
   useEffect(() => {
     try {
-      if (!localStorage.getItem('ms_session_tutorial_seen')) {
+      const learnerId = localStorage.getItem('learner_id');
+      const tutorialSeen = Boolean(localStorage.getItem('ms_session_tutorial_seen'));
+      if (shouldAutoShowSessionTutorial({ learnerId, tutorialSeen })) {
         setShowTutorial(true);
       }
     } catch {}

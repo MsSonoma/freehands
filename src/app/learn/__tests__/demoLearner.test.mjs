@@ -13,6 +13,7 @@ import {
   requiresDemoAuthGate,
   resolveTeacherForLearner,
   shouldAutoShowLearnerTutorial,
+  shouldAutoShowSessionTutorial,
   shouldUseAccountPersistence,
 } from '../demoLearner.mjs'
 
@@ -93,6 +94,26 @@ test('Demo Learner suppresses automatic learner tutorials while real learners re
   assert.equal(shouldAutoShowLearnerTutorial({ learnerResolved: true, learnerId: 'demo', tutorialSeen: false }), false)
   assert.equal(shouldAutoShowLearnerTutorial({ learnerResolved: true, learnerId: 'real', tutorialSeen: false }), true)
   assert.equal(shouldAutoShowLearnerTutorial({ learnerResolved: true, learnerId: 'real', tutorialSeen: true }), false)
+})
+
+test('Demo Learner suppresses the automatic V2 session tutorial', () => {
+  assert.equal(shouldAutoShowSessionTutorial({ learnerId: 'demo', tutorialSeen: false }), false)
+})
+
+test('real learners retain automatic V2 session tutorial behavior', () => {
+  assert.equal(shouldAutoShowSessionTutorial({ learnerId: 'real', tutorialSeen: false }), true)
+  assert.equal(shouldAutoShowSessionTutorial({ learnerId: 'real', tutorialSeen: true }), false)
+})
+
+test('skipping the V2 session tutorial for Demo does not write the seen flag', () => {
+  const storage = memoryStorage({ learner_id: 'demo' })
+  const shouldShow = shouldAutoShowSessionTutorial({
+    learnerId: storage.getItem('learner_id'),
+    tutorialSeen: Boolean(storage.getItem('ms_session_tutorial_seen')),
+  })
+
+  assert.equal(shouldShow, false)
+  assert.equal(storage.getItem('ms_session_tutorial_seen'), null)
 })
 
 test('account persistence excludes only empty and Demo Learner identities', () => {

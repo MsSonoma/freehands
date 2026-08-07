@@ -35,6 +35,10 @@ export function shouldAutoShowLearnerTutorial({ learnerResolved, learnerId, tuto
   return Boolean(learnerResolved && learnerId && !isDemoLearnerId(learnerId) && !tutorialSeen)
 }
 
+export function shouldAutoShowSessionTutorial({ learnerId, tutorialSeen }) {
+  return !isDemoLearnerId(learnerId) && !tutorialSeen
+}
+
 export function getLessonListRequest(learnerId) {
   if (isDemoLearnerId(learnerId)) {
     return { url: '/api/lessons/demo', subject: 'demo' }
