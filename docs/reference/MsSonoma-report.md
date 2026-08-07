@@ -367,4 +367,12 @@ The fixes aren't complicated. You just need to pick one story and tell it everyw
 **SignalScope by Signal Frameworks**  
 Ms. Sonoma | mssonoma.com & mssonoma.app | Education Technology  
 Report generated: December 13, 2025
+# Historical Report Notice
+
+This is a retained SignalScope business clarity report generated in 2025. It is preserved for historical context and should not be used as current Ms. Sonoma positioning, product truth, testimonial authority, or technical source. Current product mechanics come from `C:\Users\atari\freehands`; current positioning comes from the live Ms. Sonoma Business profile and current Cohere `cohere_libraries/ms_sonoma/` guidance.
+
+The report below may contain obsolete language such as online tutor, teacher-at-home framing, parent-first audience hierarchy, unsupported proof recommendations, and old domain messaging.
+
+---
+
 # BUSINESS CLARITY REPORT
