@@ -1,512 +1,312 @@
-'use client';
-
-import { useState } from 'react';
 import Link from 'next/link';
 import styles from './about.module.css';
 
-export default function AboutPage() {
-  const [activeSection, setActiveSection] = useState('ai-safety');
+export const metadata = {
+  title: 'About Ms. Sonoma',
+  description:
+    'How Ms. Sonoma combines mastery-first AI learning facilitation with educator authorship, session evidence, and practical boundaries.',
+};
 
+const phases = [
+  {
+    name: 'Discussion',
+    description: 'Open the topic, surface prior knowledge, and give the learner a reason to engage.',
+  },
+  {
+    name: 'Teaching',
+    description: 'Explain ideas, vocabulary, and examples in language suited to the lesson.',
+  },
+  {
+    name: 'Comprehension',
+    description: 'Ask questions, listen to the learner, and respond to signs of confusion.',
+  },
+  {
+    name: 'Exercise',
+    description: 'Move from explanation into guided practice with feedback and another attempt.',
+  },
+  {
+    name: 'Worksheet',
+    description: 'Give the learner room for more independent practice while preserving the session record.',
+  },
+  {
+    name: 'Test',
+    description: 'Collect assessment responses that the educator can review alongside the rest of the session.',
+  },
+  {
+    name: 'Completion',
+    description: 'Close the session, recognize the work, and make the resulting evidence available for review.',
+  },
+];
+
+const aiReasons = [
+  {
+    title: 'Patient repetition',
+    text: 'An explanation can be repeated or approached another way without social pressure or frustration.',
+  },
+  {
+    title: 'Responsive interaction',
+    text: 'The next instructional turn can respond to what the learner just said instead of following a fixed recording.',
+  },
+  {
+    title: 'One-to-one pacing',
+    text: 'A session can pause, revisit, or continue around one learner rather than the pace of a whole group.',
+  },
+  {
+    title: 'Useful documentation',
+    text: 'The application can preserve the exchanges and responses an educator may want to examine later.',
+  },
+];
+
+const educatorControls = [
+  'Choose from built-in lessons or supply lesson material.',
+  'Generate lesson drafts, then review, revise, and approve them before use.',
+  'Manage learner settings and the optional AI features available to a learner.',
+  'Assign or schedule lessons and decide when a learner should use them.',
+  'Review available transcripts, responses, scores, progress, and notes.',
+  'Intervene, adapt the next lesson, or make a different educational decision.',
+];
+
+const records = [
+  {
+    title: 'Session snapshots',
+    text: 'The application can save the current phase, completed phases, phase data, timer state, and timestamps so a session can resume.',
+  },
+  {
+    title: 'Transcripts and responses',
+    text: 'What Ms. Sonoma and the learner said, along with available question responses, can be retained for educator readback.',
+  },
+  {
+    title: 'Local and account-backed persistence',
+    text: 'Snapshots are saved locally first and can also be persisted through authenticated account storage when those services are configured.',
+  },
+];
+
+export default function AboutPage() {
   return (
     <main className={styles.container}>
-      <div className={styles.hero}>
-        <h1 className={styles.title}>About Ms. Sonoma</h1>
+      <header className={styles.hero}>
+        <p className={styles.eyebrow}>About Ms. Sonoma</p>
+        <h1 className={styles.title}>
+          Can AI facilitate learning better than humans while empowering educators?
+        </h1>
         <p className={styles.subtitle}>
-          AI-powered lessons personalized to each learner, with comprehensive safety protections
+          Ms. Sonoma is a mastery-first AI learning facilitator. That question is the
+          hypothesis we are building and testing—not a proven comparison.
         </p>
-      </div>
+        <p className={styles.heroStatement}>
+          The learner&apos;s understanding is the purpose. AI can take greater responsibility
+          for the work of teaching without taking authority over the education.
+        </p>
+      </header>
 
-      <nav className={styles.nav}>
-        <button 
-          className={activeSection === 'ai-safety' ? styles.navActive : styles.navButton}
-          onClick={() => setActiveSection('ai-safety')}
-        >
-          AI Safety First
-        </button>
-        <button 
-          className={activeSection === 'how-to-use' ? styles.navActive : styles.navButton}
-          onClick={() => setActiveSection('how-to-use')}
-        >
-          How to Use
-        </button>
+      <nav className={styles.sectionNav} aria-label="About page sections">
+        <a href="#what-it-is">What it is</a>
+        <a href="#learning">During learning</a>
+        <a href="#why-ai">Why AI</a>
+        <a href="#educator-control">Educator control</a>
+        <a href="#records">Records</a>
+        <a href="#ai-features">Safety &amp; privacy</a>
       </nav>
 
-      <div className={styles.content}>
-        {activeSection === 'ai-safety' && (
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>AI Safety & Protection</h2>
-            
-            <div className={styles.safetyCard}>
-              <h3 className={styles.cardTitle}>Learner-Facing AI: Tightly Safeguarded</h3>
-              <p className={styles.cardText}>
-                The only AI feature learners interact with is the <strong>&quot;Ask&quot;</strong> button 
-                during lessons. This feature has six layers of protection:
+      <article className={styles.content}>
+        <section className={styles.section} id="what-it-is">
+          <div className={styles.sectionHeading}>
+            <p className={styles.sectionKicker}>01 · What Ms. Sonoma is</p>
+            <h2>A learning facilitator, not a chatbot beside a lesson</h2>
+          </div>
+          <div className={styles.twoColumn}>
+            <p className={styles.lead}>
+              Ms. Sonoma actively participates in the instructional session. The application
+              supplies lesson material, keeps track of the current step and progression, and
+              preserves session state. AI performs meaningful teaching interactions using the
+              current instructional prompt and the learner&apos;s input.
+            </p>
+            <aside className={styles.principleCard}>
+              <span>Mastery first</span>
+              <p>
+                The goal is not to keep a learner occupied for a set amount of time. The goal is
+                to move learning forward, notice uncertainty, provide practice, and create
+                evidence an educator can interpret.
               </p>
-              
-              <div className={styles.layersList}>
-                <div className={styles.layer}>
-                  <div className={styles.layerNumber}>1</div>
-                  <div className={styles.layerContent}>
-                    <h4>Input Validation & Keyword Filtering</h4>
-                    <p>
-                      All learner inputs are scanned for banned keywords including violence, 
-                      weapons, sexual content, drugs, profanity, hate speech, and personal 
-                      information requests. Inputs containing these are blocked immediately.
-                    </p>
-                  </div>
-                </div>
+            </aside>
+          </div>
+        </section>
 
-                <div className={styles.layer}>
-                  <div className={styles.layerNumber}>2</div>
-                  <div className={styles.layerContent}>
-                    <h4>Prompt Injection Detection</h4>
-                    <p>
-                      Advanced pattern matching detects attempts to manipulate the AI 
-                      (e.g., &quot;ignore previous instructions&quot;, &quot;pretend you are&quot;, &quot;forget everything&quot;). 
-                      These are blocked before reaching the AI.
-                    </p>
-                  </div>
-                </div>
+        <section className={styles.section} id="learning">
+          <div className={styles.sectionHeading}>
+            <p className={styles.sectionKicker}>02 · What happens during learning</p>
+            <h2>A structured path from conversation to assessment</h2>
+            <p>
+              A full session can include the stages below. The exact starting point and path can
+              vary by lesson, resume state, and session configuration; stages may be skipped or
+              combined when the experience calls for it.
+            </p>
+          </div>
+          <ol className={styles.phaseGrid}>
+            {phases.map((phase, index) => (
+              <li className={styles.phaseCard} key={phase.name}>
+                <span className={styles.phaseNumber}>{String(index + 1).padStart(2, '0')}</span>
+                <h3>{phase.name}</h3>
+                <p>{phase.description}</p>
+              </li>
+            ))}
+          </ol>
+          <p className={styles.flowNote}>
+            Progression is organized around explanation, comprehension, practice, and evidence—not
+            merely elapsed time.
+          </p>
+        </section>
 
-                <div className={styles.layer}>
-                  <div className={styles.layerNumber}>3</div>
-                  <div className={styles.layerContent}>
-                    <h4>AI Moderation API</h4>
-                    <p>
-                      Before any question reaches Ms. Sonoma, it passes through OpenAI&apos;s 
-                      Moderation API, which uses machine learning to detect harmful content 
-                      across multiple categories.
-                    </p>
-                  </div>
-                </div>
+        <section className={styles.section} id="why-ai">
+          <div className={styles.sectionHeading}>
+            <p className={styles.sectionKicker}>03 · Why AI</p>
+            <h2>Capabilities worth testing, not outcomes to assume</h2>
+            <p>
+              AI may be well suited to parts of facilitation that benefit from responsiveness and
+              repetition. Those capabilities motivate the product; they do not prove that AI
+              teaches better than a person or that one session creates durable mastery.
+            </p>
+          </div>
+          <div className={styles.cardGrid}>
+            {aiReasons.map((reason) => (
+              <article className={styles.compactCard} key={reason.title}>
+                <h3>{reason.title}</h3>
+                <p>{reason.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
 
-                <div className={styles.layer}>
-                  <div className={styles.layerNumber}>4</div>
-                  <div className={styles.layerContent}>
-                    <h4>System Instruction Hardening</h4>
-                    <p>
-                      Every request to Ms. Sonoma includes strict safety rules that cannot be 
-                      overridden. She is instructed to only discuss the current lesson vocabulary 
-                      and to refuse all &quot;forbidden&quot; topics with a preset response.
-                    </p>
-                  </div>
-                </div>
+        <section className={styles.section} id="educator-control">
+          <div className={styles.sectionHeading}>
+            <p className={styles.sectionKicker}>04 · What the educator controls</p>
+            <h2>Educational authorship stays with the educator</h2>
+            <p>
+              Educators decide what should be taught, what material is acceptable, who receives a
+              lesson, and what to do with the evidence afterward. AI can carry more of the
+              instructional workload without becoming the educational authority.
+            </p>
+          </div>
+          <ul className={styles.controlList}>
+            {educatorControls.map((control) => (
+              <li key={control}>{control}</li>
+            ))}
+          </ul>
+          <div className={styles.authNote}>
+            <strong>Access is layered.</strong> Account authentication and owner-scoped data checks
+            protect supported facilitator records and actions. Some facilitator navigation can add
+            a user-configured PIN as an in-app boundary; that PIN is not presented here as a
+            substitute for account authorization.
+          </div>
+        </section>
 
-                <div className={styles.layer}>
-                  <div className={styles.layerNumber}>5</div>
-                  <div className={styles.layerContent}>
-                    <h4>Output Validation</h4>
-                    <p>
-                      After Ms. Sonoma generates a response, it is validated again through 
-                      keyword filtering and the Moderation API before being shown to the learner.
-                    </p>
-                  </div>
-                </div>
+        <section className={styles.section} id="records">
+          <div className={styles.sectionHeading}>
+            <p className={styles.sectionKicker}>05 · How the product handles records</p>
+            <h2>Preserve what happened, then interpret it carefully</h2>
+          </div>
+          <div className={styles.recordGrid}>
+            {records.map((record) => (
+              <article className={styles.recordCard} key={record.title}>
+                <h3>{record.title}</h3>
+                <p>{record.text}</p>
+              </article>
+            ))}
+          </div>
+          <p className={styles.evidenceNote}>
+            Transcripts, responses, scores, timing, and facilitator notes can show what happened
+            during a session. They do not by themselves prove long-term retention, durable mastery,
+            or superiority to human teaching.
+          </p>
+        </section>
 
-                <div className={styles.layer}>
-                  <div className={styles.layerNumber}>6</div>
-                  <div className={styles.layerContent}>
-                    <h4>Lesson Scope Enforcement</h4>
-                    <p>
-                      Ms. Sonoma only has access to the current lesson&apos;s vocabulary and teaching 
-                      notes. She cannot access other lessons, user data, or external information.
-                    </p>
-                  </div>
-                </div>
-              </div>
+        <section className={styles.section} id="ai-features">
+          <div className={styles.sectionHeading}>
+            <p className={styles.sectionKicker}>06 · Safety, boundaries, and privacy</p>
+            <h2>Practical safeguards, described without guarantees</h2>
+            <p>
+              Ms. Sonoma uses application and prompt-level boundaries intended to keep learner
+              interactions tied to an age-appropriate learning experience. We continue to test and
+              improve those safeguards.
+            </p>
+          </div>
 
-              <div className={styles.highlight}>
-                <strong>Technical Implementation:</strong> All safety code is located in 
-                <code>src/lib/contentSafety.js</code> and enforced in <code>src/app/api/sonoma/route.js</code>. 
-                The system &quot;fails closed&quot; - if any safety check encounters an error, the content is blocked.
-              </div>
-            </div>
-
-            <div className={styles.safetyCard}>
-              <h3 className={styles.cardTitle}>Facilitator-Only AI: PIN Protected</h3>
-              <p className={styles.cardText}>
-                Generative AI features that create new content are <strong>exclusively for facilitators</strong> 
-                and are protected by PIN authentication:
-              </p>
-              
-              <ul className={styles.featureList}>
-                <li>
-                  <strong>Lesson Rewriting:</strong> Uses AI to adapt lesson difficulty or reading level. 
-                  Requires PIN to access (&quot;Rewrite Lesson&quot; button).
-                </li>
-                <li>
-                  <strong>Visual Aid Generation:</strong> Creates images for lessons using DALL-E. 
-                  Requires PIN to access.
-                </li>
-                <li>
-                  <strong>Comprehension Item Creation:</strong> Generates practice questions. 
-                  Requires PIN to access.
-                </li>
+          <div className={styles.boundaryGrid}>
+            <article className={styles.boundaryCard}>
+              <h3>Current safeguards</h3>
+              <ul>
+                <li>Checks on learner input supplied to the main Sonoma instructional route.</li>
+                <li>Prompt guidance intended to keep responses age-appropriate and lesson-focused.</li>
+                <li>Lightweight checks on generated text before a response is returned.</li>
+                <li>Authenticated, owner-scoped routes for supported account records and lesson actions.</li>
               </ul>
-
-              <p className={styles.cardText}>
-                <strong>How PIN Protection Works:</strong> The first time a facilitator attempts to 
-                access any AI feature, they must create a 4-digit PIN. This PIN is stored securely 
-                (hashed) and required for all subsequent AI interactions. Learners cannot access 
-                these features even if they navigate to facilitator pages.
+              <p>
+                Safeguards vary by feature and route. They reduce risk; they do not make AI output
+                infallible or remove the need for adult judgment and supervision.
               </p>
+            </article>
 
-              <div className={styles.highlight}>
-                <strong>Technical Implementation:</strong> PIN validation is enforced in 
-                <code>src/app/lib/pinGate.js</code> with server-side verification.
-              </div>
-            </div>
-
-            <div className={styles.safetyCard}>
-              <h3 className={styles.cardTitle}>You Can Avoid AI Entirely</h3>
-              <p className={styles.cardText}>
-                The app is fully functional without using any AI features:
+            <article className={styles.boundaryCard}>
+              <h3>Optional learner features</h3>
+              <p>
+                The instructional experience itself includes active AI-guided turns. Depending on
+                lesson and learner settings, optional features such as Ask, Poem, Story, and
+                Fill-in-Fun may also be available. Educators can configure access to those optional
+                features for a learner.
               </p>
-              
-              <ul className={styles.featureList}>
-                <li>All pre-written lessons work without AI</li>
-                <li>Comprehension questions can be written manually</li>
-                <li>Visual aids can be uploaded from your own files</li>
-                <li id="ai-features">
-                  <strong>All four learner-facing AI features can be disabled individually per learner:</strong>
-                  <ul style={{ marginTop: '8px', marginLeft: '20px' }}>
-                    <li><strong>Ask</strong> - Questions about lesson vocabulary</li>
-                    <li><strong>Poem</strong> - Generate creative silly poems</li>
-                    <li><strong>Story</strong> - Generate creative short stories</li>
-                    <li><strong>Fill-in-Fun</strong> - Mad libs style creative game</li>
-                  </ul>
-                  Simply toggle any feature off in the Learner management page, and that button will be 
-                  greyed out and non-functional for that learner across all lessons.
-                </li>
-                <li>Don&apos;t set a PIN and all facilitator AI features remain locked</li>
-              </ul>
+            </article>
 
-              <p className={styles.cardText}>
-                <strong>Complete control over AI access:</strong> You can disable all four learner-facing 
-                AI features (Ask, Poem, Story, Fill-in-Fun) for each individual learner. This ensures 
-                they cannot interact with AI even if they click the buttons. Control is entirely in the 
-                facilitator&apos;s hands, not the learner&apos;s.
+            <article className={styles.boundaryCard}>
+              <h3>Providers and model memory</h3>
+              <p>
+                The main Sonoma route can use Anthropic or OpenAI, depending on deployment
+                configuration. It sends the content supplied for the current turn rather than
+                maintaining a hidden, durable model conversation in that route.
               </p>
-            </div>
-
-            <div className={styles.safetyCard}>
-              <h3 className={styles.cardTitle}>Data Privacy</h3>
-              <ul className={styles.featureList}>
-                <li>
-                  <strong>No training data:</strong> Learner questions are never used to train AI models
-                </li>
-                <li>
-                  <strong>No data sharing:</strong> Conversations are not shared with third parties 
-                  beyond the AI provider (OpenAI) necessary to generate responses
-                </li>
-                <li>
-                  <strong>Session isolation:</strong> Each lesson is a separate session; 
-                  no conversation history is retained across lessons
-                </li>
-                <li>
-                  <strong>Local control:</strong> All lesson content and learner progress 
-                  is stored in your account, under your control
-                </li>
-              </ul>
-            </div>
-          </section>
-        )}
-
-        {activeSection === 'how-to-use' && (
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>How to Use Ms. Sonoma</h2>
-            
-            <div className={styles.guideCard}>
-              <h3 className={styles.cardTitle}>Getting Started</h3>
-              <ol className={styles.stepList}>
-                <li>
-                  <strong>Create an account:</strong> Sign up with email or Google OAuth
-                </li>
-                <li>
-                  <strong>Create learner profiles:</strong> Add each child/student with their name and grade
-                </li>
-                <li>
-                  <strong>Browse lessons:</strong> Navigate to Learn → [Grade Level] → [Subject]
-                </li>
-                <li>
-                  <strong>Select a lesson:</strong> Choose from pre-written curriculum aligned to standards
-                </li>
-                <li>
-                  <strong>Start teaching:</strong> Click &quot;Teach This Lesson&quot; to begin
-                </li>
-              </ol>
-            </div>
-
-            <div className={styles.guideCard}>
-              <h3 className={styles.cardTitle}>During a Lesson</h3>
-              
-              <div className={styles.featureExplain}>
-                <h4>Teaching Phase</h4>
-                <p>
-                  Ms. Sonoma introduces vocabulary with definitions and examples. 
-                  The learner can click &quot;Repeat Vocab&quot; to hear definitions again, 
-                  or &quot;Next&quot; to move forward.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain} id="ai-features">
-                <h4>Learner-Facing AI Features (All Content-Safety Protected)</h4>
-                <p>
-                  During lessons, learners have access to four optional AI features, each with 
-                  six layers of safety protection (see AI Safety section). All can be disabled 
-                  individually per learner in the Learner management page:
-                </p>
-                <ul className={styles.featureList}>
-                  <li>
-                    <strong>Ask</strong> - Type questions about lesson vocabulary. Questions must 
-                    relate to the lesson topic and are filtered, moderated, and validated.
-                  </li>
-                  <li>
-                    <strong>Poem</strong> - Generate creative silly poems.
-                  </li>
-                  <li>
-                    <strong>Story</strong> - Generate creative short stories.
-                  </li>
-                  <li>
-                    <strong>Fill-in-Fun</strong> - Mad libs style creative game.
-                  </li>
-                </ul>
-                <p className={styles.protectionNote}>
-                  <strong>Protection:</strong> All four features share the same 6-layer safety system. 
-                  Each can be disabled per learner via toggle in Learner management.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain}>
-                <h4>Comprehension Phase</h4>
-                <p>
-                  After teaching, Ms. Sonoma asks practice questions. The learner 
-                  responds by speaking (voice) or typing. Correct answers advance; 
-                  incorrect answers receive hints.
-                </p>
-                <p className={styles.protectionNote}>
-                  <strong>Getting Unstuck:</strong> If a learner is stuck on a problem, they can 
-                  ask Ms. Sonoma for the answer in Comprehension, Exercise, and Worksheet phases. 
-                  Test phase does not allow answers to maintain assessment integrity. Facilitators 
-                  can access all answers through the Lesson Editor or the Facilitator&apos;s Answer Key 
-                  if the Ask feature is disabled.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain}>
-                <h4>Notes Feature</h4>
-                <p>
-                  Facilitators can click &quot;Notes&quot; at any time to record observations 
-                  about the learner&apos;s progress, struggles, or insights. Notes are 
-                  timestamped and saved to the session report.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain}>
-                <h4>Session Report</h4>
-                <p>
-                  After the lesson, facilitators complete a brief survey about the 
-                  learning environment and student engagement. This unlocks a detailed 
-                  report with transcript, notes, and mastery summary.
-                </p>
-              </div>
-            </div>
-
-            <div className={styles.guideCard}>
-              <h3 className={styles.cardTitle}>Facilitator Tools (PIN Protected AI)</h3>
-              
-              <p className={styles.cardText}>
-                Access these from the Facilitator dashboard. First-time use requires 
-                creating a 4-digit PIN.
+              <p>
+                When AI is used, the request data needed to generate a response is sent to the
+                configured provider. Provider and deployment terms govern that processing; this
+                page does not make a categorical model-training promise.
               </p>
+            </article>
 
-              <div className={styles.featureExplain}>
-                <h4>Mr. Mentor (AI Assistant for Facilitators)</h4>
-                <p>
-                  Your all-in-one AI assistant for facilitator tasks. Mr. Mentor helps with 
-                  lesson creation, editing, scheduling, comprehension question building, and 
-                  provides guidance on curriculum planning and teaching strategies.
-                </p>
-                <p className={styles.protectionNote}>
-                  <strong>Protection:</strong> PIN required. Full content safety guardrails apply. 
-                  All generated content can be reviewed and approved before use.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain}>
-                <h4>Lesson Generator</h4>
-                <p>
-                  Create new custom lessons from scratch by providing a topic, grade level, 
-                  and vocabulary words. AI generates a complete lesson with definitions and examples.
-                </p>
-                <p className={styles.protectionNote}>
-                  <strong>Protection:</strong> PIN required. Review and approve before use.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain}>
-                <h4>Lesson Editor</h4>
-                <p>
-                  Edit existing lessons - adjust difficulty, reading level, or focus. 
-                  Modify vocabulary, definitions, examples, or teaching notes.
-                </p>
-                <p className={styles.protectionNote}>
-                  <strong>Protection:</strong> PIN required. Changes saved to your custom lesson library.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain}>
-                <h4>Lesson Scheduler</h4>
-                <p>
-                  Plan ahead by scheduling lessons for specific dates. View your lesson calendar 
-                  and send scheduled lessons to your learner&apos;s portal for independent work.
-                </p>
-                <p className={styles.protectionNote}>
-                  <strong>Organization:</strong> Keep track of curriculum progress and upcoming lessons.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain}>
-                <h4>Learner Portal Push</h4>
-                <p>
-                  Assign lessons directly to a learner&apos;s portal where they can access and complete 
-                  them independently. Monitor progress and review completed work.
-                </p>
-                <p className={styles.protectionNote}>
-                  <strong>Independence:</strong> Learners work at their own pace with automatic progress tracking.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain}>
-                <h4>Visual Aids</h4>
-                <p>
-                  Generate lesson illustrations using DALL-E or upload your own images. 
-                  AI-generated images can be reviewed and approved before adding to lessons.
-                </p>
-                <p className={styles.protectionNote}>
-                  <strong>Protection:</strong> PIN required. Generation prompts are pre-validated.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain}>
-                <h4>Comprehension Builder</h4>
-                <p>
-                  Create practice questions automatically based on lesson vocabulary. 
-                  Review and edit before adding to lessons.
-                </p>
-                <p className={styles.protectionNote}>
-                  <strong>Protection:</strong> PIN required. Questions reviewed before learner exposure.
-                </p>
-              </div>
-            </div>
-
-            <div className={styles.guideCard}>
-              <h3 className={styles.cardTitle}>Managing Learners</h3>
-              <ul className={styles.featureList}>
-                <li>View all learner profiles from Facilitator → Learners</li>
-                <li>Edit names, grades, and archived status</li>
-                <li>View session history and progress reports per learner</li>
-                <li>Archive learners who are no longer active (preserves data)</li>
-              </ul>
-            </div>
-
-            <div className={styles.guideCard}>
-              <h3 className={styles.cardTitle}>Session Reports & Evidence</h3>
-              <p className={styles.cardText}>
-                Each lesson session generates a comprehensive report for homeschool 
-                or classroom documentation:
+            <article className={styles.boundaryCard}>
+              <h3>Application records are different</h3>
+              <p>
+                A stateless model request does not mean the learning application retains nothing.
+                Ms. Sonoma may keep local snapshots and, for authenticated accounts where services
+                are configured, persist progress, phase data, transcripts, and related records for
+                resume and educator readback.
               </p>
-              <ul className={styles.featureList}>
-                <li><strong>Transcript:</strong> Full conversation between learner and Ms. Sonoma</li>
-                <li><strong>Timestamped notes:</strong> Facilitator observations during the lesson</li>
-                <li><strong>Mastery summary:</strong> Which concepts were mastered, which need review</li>
-                <li><strong>Comprehension answers:</strong> What the learner got right/wrong</li>
-                <li><strong>Duration:</strong> How long the lesson took</li>
-                <li><strong>Environment survey:</strong> Context about learning conditions</li>
-              </ul>
-            </div>
+            </article>
+          </div>
+        </section>
 
-            <div className={styles.guideCard}>
-              <h3 className={styles.cardTitle}>Best Practices</h3>
-              <ul className={styles.featureList}>
-                <li>
-                  <strong>Be present:</strong> Facilitators should supervise lessons, 
-                  especially when learners might use the Ask feature
-                </li>
-                <li>
-                  <strong>Take notes:</strong> Use the Notes feature to capture insights 
-                  in real-time
-                </li>
-                <li>
-                  <strong>Review reports:</strong> Use session reports to track progress 
-                  and identify patterns
-                </li>
-                <li>
-                  <strong>Customize lessons:</strong> Use the rewriter tool to adapt 
-                  content to individual learning needs
-                </li>
-                <li>
-                  <strong>Limit Ask usage:</strong> Encourage learners to think first, 
-                  then ask if truly stuck
-                </li>
-                <li>
-                  <strong>Keep PIN secure:</strong> Don&apos;t share your facilitator PIN 
-                  with learners
-                </li>
-              </ul>
-            </div>
+        <section className={styles.closing}>
+          <p className={styles.sectionKicker}>The standard we are choosing</p>
+          <h2>Evidence should outrank the story we hope is true.</h2>
+          <p>
+            Ms. Sonoma is an experiment in giving AI more responsibility for the work of teaching
+            while increasing, not diminishing, educator authority. Calm supports that work by
+            making correction, repetition, and another attempt easier. Calm is the method; learning
+            is the mission.
+          </p>
+          <div className={styles.actions}>
+            <Link href="/learn" className={styles.primaryAction}>Explore learning</Link>
+            <Link href="/facilitator" className={styles.secondaryAction}>Open facilitator tools</Link>
+          </div>
+        </section>
+      </article>
 
-            <div className={styles.guideCard}>
-              <h3 className={styles.cardTitle}>Troubleshooting</h3>
-              
-              <div className={styles.featureExplain}>
-                <h4>Voice not working?</h4>
-                <p>
-                  Check browser permissions for microphone access. For best overall experience, 
-                  use Firefox.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain}>
-                <h4>Ask feature blocked?</h4>
-                <p>
-                  The question may have triggered safety filters. Try rephrasing to 
-                  focus specifically on lesson vocabulary.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain}>
-                <h4>Forgot PIN?</h4>
-                <p>
-                  Contact support to reset. For security, PINs cannot be recovered, 
-                  only reset.
-                </p>
-              </div>
-
-              <div className={styles.featureExplain}>
-                <h4>Lesson not loading?</h4>
-                <p>
-                  Check internet connection. Lessons require active connection to 
-                  load content and sync progress.
-                </p>
-              </div>
-            </div>
-          </section>
-        )}
-      </div>
-
-      <div className={styles.domainNote}>
-        <p className={styles.domainText}>
-          <strong>About mssonoma.app:</strong> This is the Ms. Sonoma learning platform where 
-          facilitators and learners access lessons, track progress, and use interactive features. 
-          Visit <a href="https://mssonoma.com" target="_blank" rel="noopener noreferrer" className={styles.domainLink}>mssonoma.com</a> to 
-          learn more about our educational approach and philosophy.
+      <aside className={styles.domainNote}>
+        <p>
+          <strong>About this site:</strong> mssonoma.app is the learning application. Visit{' '}
+          <a href="https://mssonoma.com" target="_blank" rel="noopener noreferrer">
+            mssonoma.com
+          </a>{' '}
+          for the broader educational thesis and project updates.
         </p>
-      </div>
-
-      <div className={styles.footer}>
-        <Link href="/" className={styles.backButton}>← Back to Home</Link>
-      </div>
+      </aside>
     </main>
   );
 }
