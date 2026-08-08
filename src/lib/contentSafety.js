@@ -16,7 +16,7 @@
  */
 const BANNED_KEYWORDS = [
   // Extreme violence (removed: death, die, fight, attack, hurt - too common in educational contexts)
-  'kill', 'murder', 'stab', 'shoot',
+  'kill', 'murder', 'stab', 'shoot', 'bomb',
   
   // Sexual content (removed: naked - common in art/history contexts)
   'sex', 'nude', 'porn', 'xxx',
