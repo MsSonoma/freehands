@@ -124,10 +124,22 @@ export function checkFacilitatorSection() {
 // Global lock to prevent multiple simultaneous PIN prompts
 let activePinPrompt = null;
 
-export async function ensurePinAllowed(action = 'action') {
-	if (typeof window === 'undefined') return true; // SSR: allow
+export async function ensurePinAllowed(action = 'action', overrides = {}) {
+	const isBrowser = overrides.isBrowser ?? (typeof window !== 'undefined');
+	if (!isBrowser) return true; // SSR: allow
 	try {
-		const { hasPin, prefs } = await fetchServerPrefsAndHasPin();
+		const isAuthorized = overrides.isInFacilitatorSection || isInFacilitatorSection;
+		// A normal authenticated navigation inside the active facilitator section is
+		// already authorized. Check this before any session or PIN preference request.
+		if (action === 'facilitator-page' && isAuthorized()) {
+			return true;
+		}
+
+		const fetchPreferences = overrides.fetchServerPrefsAndHasPin || fetchServerPrefsAndHasPin;
+		const promptForPin = overrides.promptForPinMasked || promptForPinMasked;
+		const verifyPin = overrides.verifyPinServer || verifyPinServer;
+		const markAuthorized = overrides.setInFacilitatorSection || setInFacilitatorSection;
+		const { hasPin, prefs } = await fetchPreferences();
 		const prefKey = mapActionToPrefKey(action);
 		const shouldGate = Boolean(hasPin && (prefKey ? (prefs?.[prefKey] ?? DEFAULT_PREFS[prefKey]) : true));
 		
@@ -135,11 +147,6 @@ export async function ensurePinAllowed(action = 'action') {
 			return true;
 		}
 		
-		// For facilitator-page action: if already in facilitator section, skip PIN check
-		if (action === 'facilitator-page' && isInFacilitatorSection()) {
-			return true;
-		}
-
 		// If another PIN prompt is already active, wait for it instead of creating a duplicate
 		if (activePinPrompt) {
 			return await activePinPrompt;
@@ -149,11 +156,11 @@ export async function ensurePinAllowed(action = 'action') {
 		activePinPrompt = (async () => {
 			try {
 				// Prompt for PIN using a minimal masked modal so characters are hidden.
-				const input = await promptForPinMasked({ title: 'Facilitator PIN', message: 'Enter PIN to continue' });
+				const input = await promptForPin({ title: 'Facilitator PIN', message: 'Enter PIN to continue' });
 				if (input == null || input === '') return false;
 
 				// Server verification only (no localStorage fallback)
-				const serverOk = await verifyPinServer(input);
+				const serverOk = await verifyPin(input);
 				if (serverOk !== true) {
 					try { alert('Incorrect PIN.'); } catch {}
 					return false;
@@ -163,7 +170,7 @@ export async function ensurePinAllowed(action = 'action') {
 				// Do NOT set it for other actions like session-exit or active-session
 				// This prevents learners from bypassing PIN requirements on facilitator pages
 				if (action === 'facilitator-page') {
-					setInFacilitatorSection(true);
+					markAuthorized(true);
 				}
 				
 				return true;
