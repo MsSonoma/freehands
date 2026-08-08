@@ -16,6 +16,7 @@ import {
 import { readPreparationSnapshot } from './prepare/preparationSnapshot'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
+import styles from './facilitatorHome.module.css'
 
 const PREPARE_PATH = '/facilitator/prepare'
 
@@ -238,71 +239,74 @@ export default function FacilitatorPage() {
   }
 
   const advancedTools = [
-    ['Learners', '/facilitator/learners'],
-    ['Detailed lesson builder', '/facilitator/generator?advanced=1'],
-    ['Lesson Library', '/facilitator/lessons'],
-    ['Calendar', '/facilitator/calendar'],
-    ['Lesson Planner', '/facilitator/calendar?tab=planner'],
-    ['Custom Subjects', '/facilitator/calendar?tab=subjects'],
-    ['Portfolio tools', '/facilitator/calendar?portfolio=1'],
-    ['Account', '/facilitator/account'],
-    ['Mr. Mentor', '/facilitator/mr-mentor'],
+    { label: 'Learners', href: '/facilitator/learners', icon: '👥' },
+    { label: 'Detailed lesson builder', href: '/facilitator/generator?advanced=1' },
+    { label: 'Lesson Library', href: '/facilitator/lessons', icon: '📚' },
+    { label: 'Calendar', href: '/facilitator/calendar', icon: '📅' },
+    { label: 'Lesson Planner', href: '/facilitator/calendar?tab=planner', icon: '📅' },
+    { label: 'Custom Subjects', href: '/facilitator/calendar?tab=subjects' },
+    { label: 'Portfolio tools', href: '/facilitator/calendar?portfolio=1' },
+    { label: 'Account', href: '/facilitator/account', icon: '⚙️' },
+    { label: 'Mr. Mentor', href: '/facilitator/mr-mentor', icon: '🧠' },
   ]
 
   return (
-    <main style={{ padding: '18px 12px 44px', maxWidth: 860, margin: '0 auto', fontFamily: 'Roboto, sans-serif' }}>
-      <h1 style={{ margin: '0 0 4px', fontFamily: 'Montserrat, sans-serif', fontSize: 24 }}>
-        {facilitatorName ? `Hi, ${facilitatorName}` : 'Facilitator Home'}
-      </h1>
-      <p style={{ margin: '0 0 18px', color: '#6b7280' }}>Your next facilitator decision is first. Advanced tools stay available below.</p>
+    <main className={styles.page}>
+      <header className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>
+          {facilitatorName ? `Hi, ${facilitatorName}` : 'Facilitator Home'}
+        </h1>
+        <p className={styles.pageSubtitle}>Your next facilitator decision is first. Advanced tools stay available below.</p>
+      </header>
 
-      {scheduleWarning && <div role="status" style={{ marginBottom: 14, padding: 12, border: '1px solid #f3d7a6', borderRadius: 8, background: '#fffbeb', color: '#78350f' }}>{scheduleWarning}</div>}
+      {scheduleWarning && <div role="status" className={styles.warning}>{scheduleWarning}</div>}
 
-      <section style={{ border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', padding: 18, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', marginBottom: 18 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <div style={{ flex: '1 1 280px' }}>
-            <div style={{ color: 'rgb(199, 68, 46)', fontWeight: 800, fontSize: 13, marginBottom: 6 }}>Primary decision</div>
-            <h2 style={{ margin: '0 0 6px', fontSize: 20 }}>{decision.title}</h2>
-            <p style={{ margin: 0, color: '#4b5563', lineHeight: 1.5 }}>{decision.body}</p>
+      <section className={styles.primaryCard}>
+        <div className={styles.primaryLayout}>
+          <div className={styles.primaryCopy}>
+            <div className={styles.eyebrow}>Primary decision</div>
+            <h2 className={styles.decisionTitle}>{decision.title}</h2>
+            <p className={styles.decisionBody}>{decision.body}</p>
           </div>
           {decision.kind === 'LOAD_ERROR' && (
-            <button type="button" onClick={() => setLearnerRetry((value) => value + 1)} style={{ minWidth: 150, padding: '11px 16px', borderRadius: 8, border: '1px solid rgb(199, 68, 46)', background: 'rgb(199, 68, 46)', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
+            <button type="button" onClick={() => setLearnerRetry((value) => value + 1)} className={styles.primaryAction}>
               Try again
             </button>
           )}
           {decision.href && (
-            <Link href={decision.href} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 150, padding: '11px 16px', borderRadius: 8, border: '1px solid rgb(199, 68, 46)', background: 'rgb(199, 68, 46)', color: '#fff', fontWeight: 800, textDecoration: 'none' }}>
+            <Link href={decision.href} className={styles.primaryAction}>
               {decision.label}
             </Link>
           )}
         </div>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 20 }}>
-        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#fff' }}>
-          <strong>{learnerStatus === 'ready' ? learners.length : '—'}</strong>
-          <div style={{ color: '#6b7280', fontSize: 13 }}>Learners</div>
+      <section className={styles.statusGrid} aria-label="Facilitator status">
+        <div className={styles.statusItem}>
+          <strong className={styles.statusValue}>{learnerStatus === 'ready' ? learners.length : '—'}</strong>
+          <div className={styles.statusLabel}>Learners</div>
         </div>
-        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#fff' }}>
-          <strong>{lessonStatus === 'ready' ? generatedLessons.filter((lesson) => lesson.approved === true).length : '—'}</strong>
-          <div style={{ color: '#6b7280', fontSize: 13 }}>Approved lessons</div>
+        <div className={styles.statusItem}>
+          <strong className={styles.statusValue}>{lessonStatus === 'ready' ? generatedLessons.filter((lesson) => lesson.approved === true).length : '—'}</strong>
+          <div className={styles.statusLabel}>Approved lessons</div>
         </div>
-        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#fff' }}>
-          <strong>{scheduleStatus === 'ready' ? Object.keys(scheduledKeys).length : '—'}</strong>
-          <div style={{ color: '#6b7280', fontSize: 13 }}>Scheduled</div>
+        <div className={styles.statusItem}>
+          <strong className={styles.statusValue}>{scheduleStatus === 'ready' ? Object.keys(scheduledKeys).length : '—'}</strong>
+          <div className={styles.statusLabel}>Scheduled</div>
         </div>
-        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#fff' }}>
-          <strong>{sessionStatus === 'ready' ? plan : '—'}</strong>
-          <div style={{ color: '#6b7280', fontSize: 13 }}>Plan</div>
+        <div className={styles.statusItem}>
+          <strong className={styles.statusValue}>{sessionStatus === 'ready' ? plan : '—'}</strong>
+          <div className={styles.statusLabel}>Plan</div>
         </div>
       </section>
 
-      <section>
-        <h2 style={{ margin: '0 0 10px', fontSize: 16 }}>Advanced Tools</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
-          {advancedTools.map(([label, href]) => (
-            <Link key={href} href={href} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#fff', color: '#111827', textDecoration: 'none', fontWeight: 700 }}>
-              {label}
+      <section aria-labelledby="advanced-tools-heading">
+        <h2 id="advanced-tools-heading" className={styles.toolsHeading}>Advanced Tools</h2>
+        <div className={styles.toolsGrid}>
+          {advancedTools.map(({ label, href, icon }) => (
+            <Link key={href} href={href} className={styles.toolCard}>
+              {icon && <span aria-hidden="true" className={styles.toolIcon}>{icon}</span>}
+              <span className={styles.toolName}>{label}</span>
             </Link>
           ))}
         </div>
