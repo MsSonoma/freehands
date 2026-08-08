@@ -36,7 +36,7 @@ export default function Home() {
           </div>
           <div className={styles.aboutRow}>
             <a href="/about" className={styles.aboutLink}>
-              How AI Works & Safety Protections →
+              How Ms. Sonoma Works →
             </a>
           </div>
           <div className={styles.externalRow}>
