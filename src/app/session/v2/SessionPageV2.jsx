@@ -3717,7 +3717,7 @@ function SessionPageV2Inner() {
       return getEvidenceItemContext(phase, currentComprehensionQuestion, comprehensionPhaseRef.current?.currentQuestionIndex ?? 0);
     }
     if (phase === 'exercise' && currentExerciseQuestion) {
-      return getEvidenceItemContext(phase, currentExerciseQuestion, exerciseCurrentQuestionIndex ?? 0);
+      return getEvidenceItemContext(phase, currentExerciseQuestion, exercisePhaseRef.current?.currentQuestionIndex ?? 0);
     }
     if (phase === 'worksheet' && currentWorksheetQuestion) {
       return getEvidenceItemContext(phase, currentWorksheetQuestion, worksheetPhaseRef.current?.currentQuestionIndex ?? 0);
@@ -3732,7 +3732,6 @@ function SessionPageV2Inner() {
     currentExerciseQuestion,
     currentWorksheetQuestion,
     currentTestQuestion,
-    exerciseCurrentQuestionIndex,
     getEvidenceItemContext,
   ]);
 
