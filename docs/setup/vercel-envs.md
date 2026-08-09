@@ -30,6 +30,7 @@ Google TTS
 
 App
 - APP_URL = https://your-domain
+- NEXT_PUBLIC_MASTERY_EVIDENCE_ENABLED = true only when Stage 1 evidence collection should write live records
 
 Admin endpoints (optional)
 - ADMIN_API_ENABLED = false

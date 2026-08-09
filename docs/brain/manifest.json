@@ -168,6 +168,25 @@
     "last_updated": "2026-01-20T16:13:47Z",
     "status": "canonical"
   },
+  "mastery-evidence": {
+    "file": "mastery-evidence.md",
+    "systems": [
+      "learning_evidence_sessions",
+      "learning_evidence_events",
+      "/api/evidence",
+      "MasteryEvidenceClient",
+      "mastery-evidence-v1",
+      "session_started",
+      "phase_transition",
+      "session_ended",
+      "evidence_status",
+      "idempotency_key",
+      "provider-model-provenance",
+      "lesson_content_hash"
+    ],
+    "last_updated": "2026-08-09T00:00:00Z",
+    "status": "active-development"
+  },
   "portfolio-generation": {
     "file": "portfolio-generation.md",
     "systems": [
