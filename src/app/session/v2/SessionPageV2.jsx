@@ -55,6 +55,7 @@ import { getStoredAssessments, saveAssessments, clearAssessments } from '../asse
 import CaptionPanel from '../components/CaptionPanel';
 import SessionVisualAidsCarousel from '../components/SessionVisualAidsCarousel';
 import { useSessionTracking } from '@/app/hooks/useSessionTracking';
+import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js';
 import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay';
@@ -553,6 +554,10 @@ function SessionPageV2Inner() {
   const pendingTimerStateRef = useRef(null);
   const lastTimerPersistAtRef = useRef(0);
   const startSessionRef = useRef(null);
+  const sessionStartedAtRef = useRef(null); // ISO timestamp set when user clicks Begin/Resume for this window
+  const masteryEvidenceClientRef = useRef(null);
+  const masteryEvidenceSkipNextPhaseTransitionRef = useRef(false);
+  const sessionTranscriptStartIdxRef = useRef(0); // # of lines restored from prior sessions; new lines start at this index
   const resumePhaseRef = useRef(null);
   const deferClosingStartUntilAudioEndRef = useRef(false);
   
@@ -4298,6 +4303,18 @@ function SessionPageV2Inner() {
       addEvent(`ðŸ”„ Phase: ${data.phase}`);
       setCurrentPhase(data.phase);
 
+      if (masteryEvidenceSkipNextPhaseTransitionRef.current) {
+        masteryEvidenceSkipNextPhaseTransitionRef.current = false;
+      } else {
+        try {
+          void masteryEvidenceClientRef.current?.recordPhaseTransition({
+            previousPhase: data.previousPhase || null,
+            phase: data.phase,
+            sequence: Array.isArray(data.history) ? data.history.length : 0,
+          });
+        } catch {}
+      }
+
       // Keep snapshot currentPhase aligned so granular saves write under the active phase.
       if (snapshotServiceRef.current) {
         snapshotServiceRef.current.saveProgress('phase-change', { phaseOverride: data.phase });
@@ -4536,6 +4553,13 @@ function SessionPageV2Inner() {
           }
         }
       }
+
+      try {
+        await masteryEvidenceClientRef.current?.recordSessionEnded({
+          reason: 'completed',
+          testPercentage: testGrade?.percentage ?? null,
+        });
+      } catch {}
 
       // End tracked session (so Calendar history can detect this completion).
       try { stopSessionPolling?.(); } catch {}
@@ -6000,6 +6024,8 @@ function SessionPageV2Inner() {
       // Ignore - browsers may block resume/play outside strict gesture contexts.
     }
 
+    let trackedSessionIdForEvidence = null;
+
     // Start (or conflict-check) session tracking before the orchestrator begins.
     // This is required for Calendar history to detect completions reliably.
     try {
@@ -6017,6 +6043,7 @@ function SessionPageV2Inner() {
           setShowTakeoverDialog(true);
           return;
         }
+        trackedSessionIdForEvidence = sessionResult?.id || null;
         try { startSessionPolling?.(); } catch {}
       }
     } catch {
@@ -6068,17 +6095,42 @@ function SessionPageV2Inner() {
       : (options?.startPhase || resumePhaseRef.current);
     const target = normalizeResumePhase(resolvedPhase);
 
+    if (trackedSessionIdForEvidence) {
+      try {
+        const evidenceClient = new MasteryEvidenceClient();
+        masteryEvidenceClientRef.current = evidenceClient;
+        evidenceClient.initialize({
+          sessionId: trackedSessionIdForEvidence,
+          browserSessionId,
+          learnerId: sessionLearnerIdRef.current || learnerProfile?.id || null,
+          lessonKey: lessonKey || null,
+          lessonId,
+          lessonData,
+          startedAt: sessionStartedAtRef.current,
+        });
+        const initialPhase = target && target !== 'idle' ? target : 'discussion';
+        void evidenceClient.recordSessionStarted({ initialPhase });
+      } catch {
+        masteryEvidenceClientRef.current = null;
+      }
+    } else {
+      masteryEvidenceClientRef.current = null;
+    }
+
     // Resume flow (snapshot): start the orchestrator directly at the target phase.
     // Critical: do NOT start Discussion first then skip, because Discussion/Teaching can still complete
     // and override the manual skip later.
     if (target && target !== 'idle') {
       try {
+        masteryEvidenceSkipNextPhaseTransitionRef.current = true;
         await orchestratorRef.current.startSession({ startPhase: target });
       } catch (e) {
         console.warn('[SessionPageV2] Resume startSession(startPhase) failed; starting fresh:', e);
+        masteryEvidenceSkipNextPhaseTransitionRef.current = false;
         await orchestratorRef.current.startSession();
       }
     } else {
+      masteryEvidenceSkipNextPhaseTransitionRef.current = false;
       await orchestratorRef.current.startSession();
     }
   };
