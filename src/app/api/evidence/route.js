@@ -4,6 +4,7 @@ import {
   MASTERY_EVIDENCE_SCHEMA_VERSION,
   MASTERY_EVIDENCE_STATUSES,
   STAGE_1_EVIDENCE_EVENT_TYPES,
+  MASTERY_EVIDENCE_EVENT_TYPES,
   isMasteryEvidenceEnabled,
 } from '../../lib/masteryEvidence/constants.js';
 import {
@@ -15,6 +16,8 @@ import {
   normalizeIsoTimestamp,
   normalizeJsonObject,
   normalizeOptionalText,
+  normalizeOptionalBoolean,
+  normalizeOptionalPositiveInteger,
   normalizeRequiredText,
 } from '../../lib/masteryEvidence/schema.js';
 import { mergeProvenance, resolveSonomaProviderProvenance } from '../../lib/masteryEvidence/provenance.js';
@@ -118,8 +121,16 @@ function normalizeEventBody(body) {
     evidence_session_id: normalizeRequiredText(body?.evidence_session_id, 'evidence_session_id'),
     event_type: body.event_type,
     idempotency_key: normalizeRequiredText(body?.idempotency_key, 'idempotency_key'),
+    event_sequence: normalizeOptionalPositiveInteger(body?.event_sequence, 'event_sequence'),
     occurred_at: normalizeIsoTimestamp(body?.occurred_at, new Date().toISOString()),
     phase: assertStage1Phase(body?.phase, { allowNull: true }),
+    concept_id: null,
+    item_id: normalizeOptionalText(body?.item_id),
+    item_purpose: normalizeOptionalText(body?.item_purpose),
+    item_exposure_id: normalizeOptionalText(body?.item_exposure_id),
+    assistance_level: normalizeOptionalText(body?.assistance_level),
+    attempt_number: normalizeOptionalPositiveInteger(body?.attempt_number, 'attempt_number'),
+    is_first_response: normalizeOptionalBoolean(body?.is_first_response),
     result: normalizeJsonObject(body?.result, 'result'),
     payload: normalizeJsonObject(body?.payload, 'payload'),
     provenance: normalizeJsonObject(body?.provenance, 'provenance'),
@@ -204,6 +215,7 @@ async function handleRecordEvent({ body, user, admin }) {
     schema_version: event.schema_version,
     event_type: event.event_type,
     occurred_at: event.occurred_at,
+    event_sequence: event.event_sequence,
     idempotency_key: event.idempotency_key,
     evidence_session_id: evidenceSession.id,
     session_id: evidenceSession.session_id,
@@ -213,6 +225,13 @@ async function handleRecordEvent({ body, user, admin }) {
     lesson_key: evidenceSession.lesson_key,
     lesson_id: evidenceSession.lesson_id,
     phase: event.phase,
+    concept_id: event.concept_id,
+    item_id: event.item_id,
+    item_purpose: event.item_purpose,
+    item_exposure_id: event.item_exposure_id,
+    assistance_level: event.assistance_level,
+    attempt_number: event.attempt_number,
+    is_first_response: event.is_first_response,
     result: event.result,
     payload: event.payload,
     provenance: mergeProvenance({
@@ -339,4 +358,4 @@ export async function GET(request, deps = {}) {
   }
 }
 
-export { STAGE_1_EVIDENCE_EVENT_TYPES };
+export { STAGE_1_EVIDENCE_EVENT_TYPES, MASTERY_EVIDENCE_EVENT_TYPES };

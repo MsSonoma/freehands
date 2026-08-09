@@ -12,6 +12,25 @@ export const STAGE_1_EVIDENCE_EVENT_TYPES = Object.freeze({
   SESSION_ENDED: 'session_ended',
 });
 
+export const STAGE_2_EVIDENCE_EVENT_TYPES = Object.freeze({
+  ITEM_PRESENTED: 'item_presented',
+  LEARNER_RESPONSE: 'learner_response',
+  ANSWER_EVALUATED: 'answer_evaluated',
+  HINT_GIVEN: 'hint_given',
+  RETRY_REQUESTED: 'retry_requested',
+  ANSWER_REVEALED: 'answer_revealed',
+  ASK_USED: 'ask_used',
+  REPEAT_USED: 'repeat_used',
+  VISUAL_AID_USED: 'visual_aid_used',
+  QUESTION_SET_REFRESHED: 'question_set_refreshed',
+  TIMELINE_JUMP: 'timeline_jump',
+});
+
+export const MASTERY_EVIDENCE_EVENT_TYPES = Object.freeze({
+  ...STAGE_1_EVIDENCE_EVENT_TYPES,
+  ...STAGE_2_EVIDENCE_EVENT_TYPES,
+});
+
 export const STAGE_1_PHASES = Object.freeze([
   'idle',
   'discussion',
