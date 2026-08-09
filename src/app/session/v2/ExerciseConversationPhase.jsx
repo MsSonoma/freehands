@@ -232,6 +232,12 @@ export class ExerciseConversationPhase {
    */
   async #askCurrentQuestion() {
     if (this.#destroyed) return
+    const question = this.#questions[this.#questionIndex]
+    this.#emit('questionStart', {
+      questionIndex: this.#questionIndex,
+      question,
+      totalQuestions: this.#questions.length,
+    })
     const text = await this.#getAskText(this.#questionIndex)
     if (this.#destroyed) return
     if (text) {
@@ -241,6 +247,11 @@ export class ExerciseConversationPhase {
     if (this.#destroyed) return
     // Audio complete — now it's the learner's turn
     this.#state = 'chatting'
+    this.#emit('questionReady', {
+      questionIndex: this.#questionIndex,
+      question,
+      totalQuestions: this.#questions.length,
+    })
     this.#emitStateChange()
   }
 
@@ -358,13 +369,26 @@ export class ExerciseConversationPhase {
       if (gen !== this.#submitGen || this.#destroyed) return
 
       const correctAnswer = deriveCorrectAnswerText(q, acceptable) || String(q.answer || '')
+      const attemptNumber = this.#wrongAttempts + 1
       this.#answers.push({
         questionId:    q.id,
         question:      q.question,
         userAnswer:    trimmed,
         correctAnswer,
         isCorrect,
-        attemptNumber: this.#wrongAttempts + 1,
+        attemptNumber,
+      })
+
+      this.#emit('answerSubmitted', {
+        questionIndex: this.#questionIndex,
+        question: q,
+        answer: trimmed,
+        isCorrect,
+        attemptNumber,
+        isFirstResponse: attemptNumber === 1,
+        correctAnswer: isCorrect ? correctAnswer : undefined,
+        score: this.#score,
+        totalQuestions: this.#questions.length,
       })
 
       if (isCorrect) {
@@ -404,6 +428,23 @@ export class ExerciseConversationPhase {
         if (feedbackText) {
           this.#emit('exerciseConvMessage', { role: 'assistant', text: feedbackText })
           await this.#speakAndWait(feedbackText)
+          if (isReveal) {
+            this.#emit('answerRevealed', {
+              questionIndex: this.#questionIndex,
+              question: q,
+              attemptNumber,
+              correctAnswer,
+              revealSource: 'exercise-feedback',
+            })
+          } else {
+            this.#emit('hintGiven', {
+              questionIndex: this.#questionIndex,
+              question: q,
+              attemptNumber,
+              hint: feedbackText,
+              hintSource: 'exercise-feedback',
+            })
+          }
         }
         if (gen !== this.#submitGen || this.#destroyed) return
 
@@ -421,6 +462,12 @@ export class ExerciseConversationPhase {
           // Still on same question — let the learner try again
           this.#state = 'chatting'
           this.#emitStateChange()
+          this.#emit('retryRequested', {
+            questionIndex: this.#questionIndex,
+            question: q,
+            attemptNumber,
+            retrySource: 'exercise-feedback',
+          })
         }
       }
     } catch (err) {

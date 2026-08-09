@@ -57,6 +57,8 @@ import CaptionPanel from '../components/CaptionPanel';
 import SessionVisualAidsCarousel from '../components/SessionVisualAidsCarousel';
 import { useSessionTracking } from '@/app/hooks/useSessionTracking';
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js';
+import { STAGE_2_EVIDENCE_EVENT_TYPES } from '@/app/lib/masteryEvidence/constants.js';
+import { createLegacyItemFingerprint, summarizeEvidenceItem } from '@/app/lib/masteryEvidence/items.js';
 import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay';
@@ -560,6 +562,8 @@ function SessionPageV2Inner() {
   const sessionStartedAtRef = useRef(null); // ISO timestamp set when user clicks Begin/Resume for this window
   const masteryEvidenceClientRef = useRef(null);
   const masteryEvidenceSkipNextPhaseTransitionRef = useRef(false);
+  const masteryEvidencePhaseRunsRef = useRef({});
+  const masteryEvidenceExposureRef = useRef(new Map());
   const sessionTranscriptStartIdxRef = useRef(0); // # of lines restored from prior sessions; new lines start at this index
   const resumePhaseRef = useRef(null);
   const deferClosingStartUntilAudioEndRef = useRef(false);
@@ -1496,6 +1500,7 @@ function SessionPageV2Inner() {
       console.warn('[SessionPageV2] Visual aid explain failed:', err);
     }
   }, [stopAudioSafe]);
+
   
   // Load learner profile (REQUIRED - no defaults or fallback)
   useEffect(() => {
@@ -2755,6 +2760,14 @@ function SessionPageV2Inner() {
   const handleRefreshWorksheetAndTest = useCallback(async () => {
     const ok = await ensurePinAllowed('refresh');
     if (!ok) return;
+    void masteryEvidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.QUESTION_SET_REFRESHED,
+      phase: normalizePhaseAlias(currentPhaseRef.current || currentPhase),
+      suffix: `question-set-refresh:${Date.now()}`,
+      payload: {
+        refresh_scope: 'comprehension-exercise-worksheet-test-assessments',
+      },
+    });
     setGeneratedComprehension(null);
     setGeneratedExercise(null);
     setGeneratedWorksheet(null);
@@ -2770,7 +2783,7 @@ function SessionPageV2Inner() {
       resumePhaseRef.current = null;
       setResumePhase(null);
     }
-  }, [getAssessmentStorageKey, learnerProfile]);
+  }, [currentPhase, getAssessmentStorageKey, learnerProfile]);
 
   useEffect(() => {
     const onWs = () => { try { handleDownloadWorksheet(); } catch {} };
@@ -3434,6 +3447,16 @@ function SessionPageV2Inner() {
     }
     
     console.log('[SessionPageV2] Timeline jump proceeding to:', targetPhase);
+    masteryEvidencePhaseRunsRef.current[targetPhase] = (masteryEvidencePhaseRunsRef.current[targetPhase] || 1) + 1;
+    void masteryEvidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.TIMELINE_JUMP,
+      phase: normalizePhaseAlias(currentPhaseRef.current || currentPhase),
+      suffix: `timeline-jump:${targetPhase}:${Date.now()}`,
+      payload: {
+        from_phase: normalizePhaseAlias(currentPhaseRef.current || currentPhase),
+        target_phase: targetPhase,
+      },
+    });
     
     // Stop any playing audio first
     stopAudioSafe({ force: true });
@@ -3543,7 +3566,7 @@ function SessionPageV2Inner() {
     setTimeout(() => {
       timelineJumpInProgressRef.current = false;
     }, 500);
-  }, [lessonKey]);
+  }, [currentPhase, lessonKey, stopAudioSafe]);
 
   // Opening actions helpers
   const speakSystemLine = useCallback(async (text) => {
@@ -3709,6 +3732,144 @@ function SessionPageV2Inner() {
     };
   }, [lessonData, lessonKey, lessonId, learnerProfile, subjectParam, currentPhase, currentComprehensionQuestion, currentExerciseQuestion, currentWorksheetQuestion, currentTestQuestion]);
 
+  const ensureEvidencePhaseRun = useCallback((phaseName) => {
+    const phase = normalizePhaseAlias(phaseName);
+    if (!phase) return 1;
+    if (!masteryEvidencePhaseRunsRef.current[phase]) {
+      masteryEvidencePhaseRunsRef.current[phase] = 1;
+    }
+    return masteryEvidencePhaseRunsRef.current[phase];
+  }, []);
+
+  const getEvidenceItemContext = useCallback((phaseName, item, questionIndex = null) => {
+    const phase = normalizePhaseAlias(phaseName);
+    const phaseRun = ensureEvidencePhaseRun(phase);
+    const index = Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : 0;
+    const legacyItemFingerprint = createLegacyItemFingerprint({
+      lessonKey,
+      lessonId,
+      phase,
+      item,
+      questionIndex: index,
+    });
+    const exposureKey = `${phase}:run-${phaseRun}:q-${index}:${legacyItemFingerprint}`;
+    let itemExposureId = masteryEvidenceExposureRef.current.get(exposureKey);
+    if (!itemExposureId) {
+      itemExposureId = `${phase || 'unknown'}-run${phaseRun}-q${index + 1}-${legacyItemFingerprint.replace(/^legacy:/, '')}`;
+      masteryEvidenceExposureRef.current.set(exposureKey, itemExposureId);
+    }
+    return {
+      phase,
+      itemId: legacyItemFingerprint,
+      itemPurpose: phase,
+      itemExposureId,
+      legacyItemFingerprint,
+      questionIndex: index,
+      item: summarizeEvidenceItem(item),
+    };
+  }, [ensureEvidencePhaseRun, lessonId, lessonKey]);
+
+  const getActiveEvidenceItemContext = useCallback(() => {
+    const phase = normalizePhaseAlias(currentPhaseRef.current || currentPhase);
+    if (phase === 'comprehension' && currentComprehensionQuestion) {
+      return getEvidenceItemContext(phase, currentComprehensionQuestion, comprehensionPhaseRef.current?.currentQuestionIndex ?? 0);
+    }
+    if (phase === 'exercise' && currentExerciseQuestion) {
+      return getEvidenceItemContext(phase, currentExerciseQuestion, exerciseCurrentQuestionIndex ?? 0);
+    }
+    if (phase === 'worksheet' && currentWorksheetQuestion) {
+      return getEvidenceItemContext(phase, currentWorksheetQuestion, worksheetPhaseRef.current?.currentQuestionIndex ?? 0);
+    }
+    if (phase === 'test' && currentTestQuestion) {
+      return getEvidenceItemContext(phase, currentTestQuestion, testPhaseRef.current?.currentQuestionIndex ?? 0);
+    }
+    return { phase, item: null };
+  }, [
+    currentPhase,
+    currentComprehensionQuestion,
+    currentExerciseQuestion,
+    currentWorksheetQuestion,
+    currentTestQuestion,
+    exerciseCurrentQuestionIndex,
+    getEvidenceItemContext,
+  ]);
+
+  const recordVisualAidUsed = useCallback((aid, meta = {}) => {
+    const itemContext = getActiveEvidenceItemContext();
+    const aidIdentifier = aid?.id || aid?.image_path || aid?.storage_path || aid?.url || aid?.description || 'visual-aid';
+    void masteryEvidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.VISUAL_AID_USED,
+      ...itemContext,
+      suffix: `visual-aid:${meta.viewMode || 'view'}:${meta.currentIndex ?? 0}:${Date.now()}`,
+      payload: {
+        visual_aid_id: aidIdentifier,
+        visual_aid_type: aid?.type || aid?.kind || null,
+        visual_aid_index: Number.isFinite(Number(meta.currentIndex)) ? Number(meta.currentIndex) : null,
+        use_mode: meta.viewMode || 'view',
+      },
+    });
+  }, [getActiveEvidenceItemContext]);
+
+  const recordEvidenceItemPresented = useCallback((phaseName, data = {}) => {
+    const itemContext = getEvidenceItemContext(phaseName, data.question, data.questionIndex);
+    void masteryEvidenceClientRef.current?.recordItemPresented({
+      ...itemContext,
+      totalQuestions: data.totalQuestions,
+    });
+    return itemContext;
+  }, [getEvidenceItemContext]);
+
+  const recordEvidenceAnswerSubmitted = useCallback((phaseName, data = {}) => {
+    const itemContext = getEvidenceItemContext(phaseName, data.question, data.questionIndex);
+    const attemptNumber = Number.isFinite(Number(data.attemptNumber)) ? Number(data.attemptNumber) : 1;
+    const isFirstResponse = data.isFirstResponse === true || attemptNumber === 1;
+    void masteryEvidenceClientRef.current?.recordLearnerResponse({
+      ...itemContext,
+      attemptNumber,
+      isFirstResponse,
+      response: data.answer,
+      responseType: data.answer == null ? 'skipped_or_empty' : 'text',
+    });
+    void masteryEvidenceClientRef.current?.recordAnswerEvaluated({
+      ...itemContext,
+      attemptNumber,
+      isFirstResponse,
+      isCorrect: data.isCorrect === true,
+      evaluationMode: `${normalizePhaseAlias(phaseName)}_current_app_judgment`,
+      response: data.answer,
+      correctAnswer: data.correctAnswer ?? null,
+    });
+  }, [getEvidenceItemContext]);
+
+  const recordEvidenceHintGiven = useCallback((phaseName, data = {}) => {
+    const itemContext = getEvidenceItemContext(phaseName, data.question, data.questionIndex);
+    void masteryEvidenceClientRef.current?.recordHintGiven({
+      ...itemContext,
+      attemptNumber: data.attemptNumber,
+      hintSource: data.hintSource || `${normalizePhaseAlias(phaseName)}-feedback`,
+      hintText: data.hint || null,
+    });
+  }, [getEvidenceItemContext]);
+
+  const recordEvidenceRetryRequested = useCallback((phaseName, data = {}) => {
+    const itemContext = getEvidenceItemContext(phaseName, data.question, data.questionIndex);
+    void masteryEvidenceClientRef.current?.recordRetryRequested({
+      ...itemContext,
+      attemptNumber: data.attemptNumber,
+      retrySource: data.retrySource || `${normalizePhaseAlias(phaseName)}-feedback`,
+    });
+  }, [getEvidenceItemContext]);
+
+  const recordEvidenceAnswerRevealed = useCallback((phaseName, data = {}) => {
+    const itemContext = getEvidenceItemContext(phaseName, data.question, data.questionIndex);
+    void masteryEvidenceClientRef.current?.recordAnswerRevealed({
+      ...itemContext,
+      attemptNumber: data.attemptNumber,
+      revealSource: data.revealSource || `${normalizePhaseAlias(phaseName)}-feedback`,
+      correctAnswer: data.correctAnswer,
+    });
+  }, [getEvidenceItemContext]);
+
   const handleOpeningAskStart = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
     if (!controller || openingActionBusy) return;
@@ -3741,7 +3902,16 @@ function SessionPageV2Inner() {
     appendTranscriptLine({ text: question, role: 'user', phase: currentPhaseRef.current || undefined }, { immediate: true });
     try {
       const askContext = buildAskContext();
-      await controller.submitAskQuestion(question, askContext);
+      const itemContext = getActiveEvidenceItemContext();
+      const result = await controller.submitAskQuestion(question, askContext);
+      if (result?.success) {
+        void masteryEvidenceClientRef.current?.recordAskUsed({
+          ...itemContext,
+          askMode: 'freeform',
+          prompt: question,
+          answerRevealed: false,
+        });
+      }
       setOpeningActionInput('');
       syncOpeningActionState();
     } catch (err) {
@@ -3751,7 +3921,7 @@ function SessionPageV2Inner() {
       openingActionBusyRef.current = false;
       setOpeningActionBusy(false);
     }
-  }, [openingActionInput, syncOpeningActionState, buildAskContext]);
+  }, [openingActionInput, syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext]);
 
   const handleOpeningAskWhatsTheAnswer = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -3768,7 +3938,21 @@ function SessionPageV2Inner() {
 
     try {
       const askContext = buildAskContext();
-      await controller.submitAskQuestion("What's the answer?", askContext);
+      const itemContext = getActiveEvidenceItemContext();
+      const result = await controller.submitAskQuestion("What's the answer?", askContext);
+      if (result?.success) {
+        void masteryEvidenceClientRef.current?.recordAskUsed({
+          ...itemContext,
+          askMode: 'current_answer_request',
+          prompt: "What's the answer?",
+          answerRevealed: true,
+        });
+        void masteryEvidenceClientRef.current?.recordAnswerRevealed({
+          ...itemContext,
+          revealSource: 'ask-current-answer-request',
+          correctAnswer: result.answer || null,
+        });
+      }
       syncOpeningActionState();
     } catch (err) {
       console.error('[SessionPageV2] Ask answer shortcut error:', err);
@@ -3779,7 +3963,7 @@ function SessionPageV2Inner() {
       askAnswerShortcutLoadingRef.current = false;
       setAskAnswerShortcutLoading(false);
     }
-  }, [syncOpeningActionState, buildAskContext]);
+  }, [syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext]);
 
   const handleOpeningAskDone = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -5108,12 +5292,26 @@ function SessionPageV2Inner() {
     phase.on('questionReady', (data) => {
       setCurrentComprehensionQuestion(data.question);
       setComprehensionState('awaiting-answer');
+      recordEvidenceItemPresented('comprehension', data);
     });
 
     phase.on('answerSubmitted', (data) => {
       setComprehensionScore(data.score);
       setComprehensionTotalQuestions(data.totalQuestions);
       setComprehensionAnswer('');
+      recordEvidenceAnswerSubmitted('comprehension', data);
+    });
+
+    phase.on('hintGiven', (data) => {
+      recordEvidenceHintGiven('comprehension', data);
+    });
+
+    phase.on('retryRequested', (data) => {
+      recordEvidenceRetryRequested('comprehension', data);
+    });
+
+    phase.on('answerRevealed', (data) => {
+      recordEvidenceAnswerRevealed('comprehension', data);
     });
 
     phase.on('questionSkipped', (data) => {
@@ -5350,6 +5548,26 @@ function SessionPageV2Inner() {
         }
       }
     });
+
+    phase.on('questionReady', (data) => {
+      recordEvidenceItemPresented('exercise', data);
+    });
+
+    phase.on('answerSubmitted', (data) => {
+      recordEvidenceAnswerSubmitted('exercise', data);
+    });
+
+    phase.on('hintGiven', (data) => {
+      recordEvidenceHintGiven('exercise', data);
+    });
+
+    phase.on('retryRequested', (data) => {
+      recordEvidenceRetryRequested('exercise', data);
+    });
+
+    phase.on('answerRevealed', (data) => {
+      recordEvidenceAnswerRevealed('exercise', data);
+    });
     
     // Conversational exercise messages -> transcript
     phase.on('exerciseConvMessage', (data) => {
@@ -5572,6 +5790,7 @@ function SessionPageV2Inner() {
     phase.on('questionReady', (data) => {
       setWorksheetState('awaiting-answer');
       addEvent('â“ Fill in the blank...');
+      recordEvidenceItemPresented('worksheet', data);
     });
     
     phase.on('answerSubmitted', (data) => {
@@ -5583,6 +5802,19 @@ function SessionPageV2Inner() {
         isCorrect: data.isCorrect,
         correctAnswer: data.correctAnswer
       });
+      recordEvidenceAnswerSubmitted('worksheet', data);
+    });
+
+    phase.on('hintGiven', (data) => {
+      recordEvidenceHintGiven('worksheet', data);
+    });
+
+    phase.on('retryRequested', (data) => {
+      recordEvidenceRetryRequested('worksheet', data);
+    });
+
+    phase.on('answerRevealed', (data) => {
+      recordEvidenceAnswerRevealed('worksheet', data);
     });
     
     phase.on('questionSkipped', (data) => {
@@ -5837,6 +6069,7 @@ function SessionPageV2Inner() {
     phase.on('questionReady', (data) => {
       setTestState('awaiting-answer');
       addEvent('â“ Answer the test question...');
+      recordEvidenceItemPresented('test', data);
     });
     
     phase.on('answerSubmitted', (data) => {
@@ -5844,6 +6077,7 @@ function SessionPageV2Inner() {
       addEvent(`${result} (Score: ${data.score}/${data.totalQuestions})`);
       setTestScore(data.score);
       setTestAnswer('');
+      recordEvidenceAnswerSubmitted('test', data);
     });
     
     phase.on('questionSkipped', (data) => {
@@ -6427,6 +6661,14 @@ function SessionPageV2Inner() {
   
   const repeatSentence = () => {
     if (!teachingControllerRef.current) return;
+    void masteryEvidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
+      phase: normalizePhaseAlias(currentPhaseRef.current || currentPhase),
+      suffix: `teaching-repeat:${Date.now()}`,
+      payload: {
+        repeat_surface: 'teaching_sentence',
+      },
+    });
     teachingControllerRef.current.repeatSentence();
   };
   
@@ -6485,7 +6727,29 @@ function SessionPageV2Inner() {
   // Replay current sentence
   const replayTTS = () => {
     if (!audioEngineRef.current) return;
+    const itemContext = getActiveEvidenceItemContext();
+    void masteryEvidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
+      ...itemContext,
+      suffix: `tts-replay:${Date.now()}`,
+      payload: {
+        repeat_surface: 'current_tts_replay_button',
+      },
+    });
     audioEngineRef.current.replay();
+  };
+
+  const repeatDiscussionSentence = () => {
+    if (!discussionPhaseRef.current) return;
+    void masteryEvidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
+      phase: 'discussion',
+      suffix: `discussion-repeat:${Date.now()}`,
+      payload: {
+        repeat_surface: 'discussion_sentence',
+      },
+    });
+    discussionPhaseRef.current.repeatCurrentSentence();
   };
   
   // Discussion handlers
@@ -8029,7 +8293,7 @@ function SessionPageV2Inner() {
             }}>
               <button
                 type="button"
-                onClick={() => discussionPhaseRef.current?.repeatCurrentSentence()}
+                onClick={repeatDiscussionSentence}
                 style={{
                   padding: '12px 28px',
                   background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
@@ -8530,6 +8794,7 @@ function SessionPageV2Inner() {
           visualAids={visualAidsData}
           onClose={() => setShowVisualAids(false)}
           onExplain={handleExplainVisualAid}
+          onViewAid={recordVisualAidUsed}
           videoRef={videoRef}
           isSpeaking={engineState === 'playing'}
         />

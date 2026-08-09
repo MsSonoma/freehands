@@ -5,6 +5,7 @@ import {
   MASTERY_EVIDENCE_SCHEMA_VERSION,
   MASTERY_EVIDENCE_STATUSES,
   STAGE_1_EVIDENCE_EVENT_TYPES,
+  STAGE_2_EVIDENCE_EVENT_TYPES,
   isMasteryEvidenceEnabled,
 } from './constants.js';
 import { inferLessonSource } from './schema.js';
@@ -97,6 +98,7 @@ export class MasteryEvidenceClient {
     this.recordedKeys = new Set();
     this.pendingWrites = new Set();
     this.readyPromise = null;
+    this.eventSequence = 0;
   }
 
   initialize({
@@ -167,6 +169,294 @@ export class MasteryEvidenceClient {
         previous_phase: previousPhase || null,
         phase: phase || null,
         sequence: Number.isFinite(Number(sequence)) ? Number(sequence) : 0,
+      },
+    }));
+  }
+
+  recordItemPresented({
+    phase,
+    itemId = null,
+    itemPurpose = null,
+    itemExposureId,
+    legacyItemFingerprint,
+    questionIndex = null,
+    totalQuestions = null,
+    item = null,
+  } = {}) {
+    const suffix = [
+      itemExposureId || legacyItemFingerprint || itemId || 'unknown-item',
+      'presented',
+    ].join(':');
+    return this.#trackWrite(this.#recordEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED,
+      occurredAt: this.now(),
+      phase,
+      suffix,
+      itemId: itemId || legacyItemFingerprint || null,
+      itemPurpose,
+      itemExposureId,
+      payload: {
+        source: 'session-v2',
+        legacy_item_fingerprint: legacyItemFingerprint || null,
+        question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
+        total_questions: Number.isFinite(Number(totalQuestions)) ? Number(totalQuestions) : null,
+        item,
+      },
+    }));
+  }
+
+  recordLearnerResponse({
+    phase,
+    itemId = null,
+    itemPurpose = null,
+    itemExposureId,
+    legacyItemFingerprint,
+    attemptNumber,
+    isFirstResponse,
+    response,
+    responseType = 'text',
+    questionIndex = null,
+  } = {}) {
+    const normalizedAttempt = Number.isFinite(Number(attemptNumber)) ? Number(attemptNumber) : 1;
+    const suffix = [
+      itemExposureId || legacyItemFingerprint || itemId || 'unknown-item',
+      'attempt',
+      normalizedAttempt,
+      'response',
+    ].join(':');
+    return this.#trackWrite(this.#recordEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.LEARNER_RESPONSE,
+      occurredAt: this.now(),
+      phase,
+      suffix,
+      itemId: itemId || legacyItemFingerprint || null,
+      itemPurpose,
+      itemExposureId,
+      attemptNumber: normalizedAttempt,
+      isFirstResponse: !!isFirstResponse,
+      payload: {
+        source: 'session-v2',
+        legacy_item_fingerprint: legacyItemFingerprint || null,
+        question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
+        response_type: responseType,
+        response_value: response == null ? null : String(response),
+      },
+    }));
+  }
+
+  recordAnswerEvaluated({
+    phase,
+    itemId = null,
+    itemPurpose = null,
+    itemExposureId,
+    legacyItemFingerprint,
+    attemptNumber,
+    isFirstResponse,
+    isCorrect,
+    evaluationMode = 'current_app_judgment',
+    response = null,
+    correctAnswer = null,
+    questionIndex = null,
+  } = {}) {
+    const normalizedAttempt = Number.isFinite(Number(attemptNumber)) ? Number(attemptNumber) : 1;
+    const suffix = [
+      itemExposureId || legacyItemFingerprint || itemId || 'unknown-item',
+      'attempt',
+      normalizedAttempt,
+      'evaluation',
+    ].join(':');
+    return this.#trackWrite(this.#recordEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.ANSWER_EVALUATED,
+      occurredAt: this.now(),
+      phase,
+      suffix,
+      itemId: itemId || legacyItemFingerprint || null,
+      itemPurpose,
+      itemExposureId,
+      attemptNumber: normalizedAttempt,
+      isFirstResponse: !!isFirstResponse,
+      result: {
+        correct: isCorrect === true,
+        evaluation_mode: evaluationMode,
+      },
+      payload: {
+        source: 'session-v2',
+        legacy_item_fingerprint: legacyItemFingerprint || null,
+        question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
+        response_value: response == null ? null : String(response),
+        correct_answer: correctAnswer == null ? null : String(correctAnswer),
+      },
+    }));
+  }
+
+  recordHintGiven({
+    phase,
+    itemId = null,
+    itemPurpose = null,
+    itemExposureId,
+    legacyItemFingerprint,
+    attemptNumber,
+    hintSource = 'current_phase_feedback',
+    hintText = null,
+    questionIndex = null,
+  } = {}) {
+    const normalizedAttempt = Number.isFinite(Number(attemptNumber)) ? Number(attemptNumber) : 1;
+    const suffix = [
+      itemExposureId || legacyItemFingerprint || itemId || 'unknown-item',
+      'attempt',
+      normalizedAttempt,
+      'hint',
+    ].join(':');
+    return this.#trackWrite(this.#recordEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.HINT_GIVEN,
+      occurredAt: this.now(),
+      phase,
+      suffix,
+      itemId: itemId || legacyItemFingerprint || null,
+      itemPurpose,
+      itemExposureId,
+      assistanceLevel: 'hinted',
+      attemptNumber: normalizedAttempt,
+      payload: {
+        source: 'session-v2',
+        legacy_item_fingerprint: legacyItemFingerprint || null,
+        question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
+        hint_source: hintSource,
+        hint_text: hintText == null ? null : String(hintText),
+      },
+    }));
+  }
+
+  recordRetryRequested({
+    phase,
+    itemId = null,
+    itemPurpose = null,
+    itemExposureId,
+    legacyItemFingerprint,
+    attemptNumber,
+    retrySource = 'current_phase_feedback',
+    questionIndex = null,
+  } = {}) {
+    const normalizedAttempt = Number.isFinite(Number(attemptNumber)) ? Number(attemptNumber) : 1;
+    const suffix = [
+      itemExposureId || legacyItemFingerprint || itemId || 'unknown-item',
+      'attempt',
+      normalizedAttempt,
+      'retry',
+    ].join(':');
+    return this.#trackWrite(this.#recordEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.RETRY_REQUESTED,
+      occurredAt: this.now(),
+      phase,
+      suffix,
+      itemId: itemId || legacyItemFingerprint || null,
+      itemPurpose,
+      itemExposureId,
+      assistanceLevel: 'retry_no_hint',
+      attemptNumber: normalizedAttempt,
+      payload: {
+        source: 'session-v2',
+        legacy_item_fingerprint: legacyItemFingerprint || null,
+        question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
+        retry_source: retrySource,
+      },
+    }));
+  }
+
+  recordAnswerRevealed({
+    phase,
+    itemId = null,
+    itemPurpose = null,
+    itemExposureId,
+    legacyItemFingerprint,
+    attemptNumber = null,
+    revealSource = 'current_phase_feedback',
+    correctAnswer = null,
+    questionIndex = null,
+  } = {}) {
+    const suffix = [
+      itemExposureId || legacyItemFingerprint || itemId || 'unknown-item',
+      attemptNumber ? `attempt:${attemptNumber}` : 'no-attempt',
+      'answer-revealed',
+      revealSource,
+    ].join(':');
+    return this.#trackWrite(this.#recordEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.ANSWER_REVEALED,
+      occurredAt: this.now(),
+      phase,
+      suffix,
+      itemId: itemId || legacyItemFingerprint || null,
+      itemPurpose,
+      itemExposureId,
+      assistanceLevel: 'answer_revealed',
+      attemptNumber,
+      payload: {
+        source: 'session-v2',
+        legacy_item_fingerprint: legacyItemFingerprint || null,
+        question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
+        reveal_source: revealSource,
+        correct_answer: correctAnswer == null ? null : String(correctAnswer),
+      },
+    }));
+  }
+
+  recordAskUsed({
+    phase,
+    itemId = null,
+    itemPurpose = null,
+    itemExposureId = null,
+    legacyItemFingerprint = null,
+    askMode = 'freeform',
+    prompt = null,
+    answerRevealed = false,
+  } = {}) {
+    const suffix = [
+      itemExposureId || legacyItemFingerprint || itemId || 'no-active-item',
+      askMode,
+      this.eventSequence + 1,
+    ].join(':');
+    return this.#trackWrite(this.#recordEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.ASK_USED,
+      occurredAt: this.now(),
+      phase,
+      suffix,
+      itemId: itemId || legacyItemFingerprint || null,
+      itemPurpose,
+      itemExposureId,
+      assistanceLevel: answerRevealed ? 'answer_revealed' : 'reteach_or_scaffolded',
+      payload: {
+        source: 'session-v2',
+        legacy_item_fingerprint: legacyItemFingerprint || null,
+        ask_mode: askMode,
+        prompt: prompt == null ? null : String(prompt),
+        current_answer_requested: askMode === 'current_answer_request',
+        answer_revealed: !!answerRevealed,
+      },
+    }));
+  }
+
+  recordInteractionEvent({
+    eventType,
+    phase,
+    suffix,
+    itemId = null,
+    itemPurpose = null,
+    itemExposureId = null,
+    legacyItemFingerprint = null,
+    payload = {},
+  } = {}) {
+    return this.#trackWrite(this.#recordEvent({
+      eventType,
+      occurredAt: this.now(),
+      phase,
+      suffix: suffix || String(this.eventSequence + 1),
+      itemId: itemId || legacyItemFingerprint || null,
+      itemPurpose,
+      itemExposureId,
+      payload: {
+        source: 'session-v2',
+        legacy_item_fingerprint: legacyItemFingerprint || null,
+        ...payload,
       },
     }));
   }
@@ -263,10 +553,24 @@ export class MasteryEvidenceClient {
     }
   }
 
-  async #recordEvent({ eventType, occurredAt, phase, suffix, payload }) {
+  async #recordEvent({
+    eventType,
+    occurredAt,
+    phase,
+    suffix,
+    payload,
+    result = null,
+    itemId = null,
+    itemPurpose = null,
+    itemExposureId = null,
+    assistanceLevel = null,
+    attemptNumber = null,
+    isFirstResponse = null,
+  }) {
     try {
       if (this.readyPromise) await this.readyPromise;
       if (!this.evidenceSessionId || !this.meta) return { ok: false, status: this.status };
+      const eventSequence = this.eventSequence + 1;
       const idempotencyKey = makeEvidenceIdempotencyKey({
         sessionId: this.meta.sessionId,
         eventType,
@@ -281,12 +585,21 @@ export class MasteryEvidenceClient {
         evidence_session_id: this.evidenceSessionId,
         event_type: eventType,
         idempotency_key: idempotencyKey,
+        event_sequence: eventSequence,
         occurred_at: occurredAt,
         phase,
+        item_id: itemId,
+        item_purpose: itemPurpose,
+        item_exposure_id: itemExposureId,
+        assistance_level: assistanceLevel,
+        attempt_number: attemptNumber,
+        is_first_response: isFirstResponse,
+        result,
         payload,
         provenance: this.serverProvenance || null,
       });
       if (response?.ok) {
+        this.eventSequence = eventSequence;
         this.recordedKeys.add(idempotencyKey);
         return { ok: true, duplicate: !!response.duplicate, status: this.status };
       }

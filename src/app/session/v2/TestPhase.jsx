@@ -313,7 +313,11 @@ export class TestPhase {
       // Emit result (single-attempt test).
       this.#emit('answerSubmitted', {
         questionIndex: this.#currentQuestionIndex,
+        question,
+        answer,
         isCorrect,
+        attemptNumber: 1,
+        isFirstResponse: true,
         correctAnswer: isCorrect ? correctText : undefined,
         score: this.#score,
         totalQuestions: this.#questions.length
@@ -375,6 +379,8 @@ export class TestPhase {
 
       this.#emit('answerRevealed', {
         questionIndex: this.#currentQuestionIndex,
+        question,
+        attemptNumber: 1,
         correctAnswer: correctText
       });
 

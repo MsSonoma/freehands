@@ -295,7 +295,9 @@ export class WorksheetPhase {
     const isCorrect = await judgeAnswer(answer, acceptable, question);
 
     // Track wrong attempts so hint/reveal logic matches V1/V2 comprehension.
-    let attempts = this.#wrongAttempts.get(question.id) || 0;
+    const priorWrongAttempts = this.#wrongAttempts.get(question.id) || 0;
+    let attempts = priorWrongAttempts;
+    const attemptNumber = priorWrongAttempts + 1;
     if (!isCorrect) {
       attempts += 1;
       this.#wrongAttempts.set(question.id, attempts);
@@ -310,7 +312,11 @@ export class WorksheetPhase {
     // Emit attempt result, but do NOT reveal the correct answer on early misses.
     this.#emit('answerSubmitted', {
       questionIndex: this.#currentQuestionIndex,
+      question,
+      answer,
       isCorrect,
+      attemptNumber,
+      isFirstResponse: attemptNumber === 1,
       correctAnswer: isCorrect ? correctText : undefined,
       attempts,
       score: this.#score,
@@ -364,10 +370,23 @@ export class WorksheetPhase {
         const hintUrl = await fetchTTS(hint);
         if (hintUrl) {
           await this.#audioEngine.playAudio(hintUrl, [hint]);
+          this.#emit('hintGiven', {
+            questionIndex: this.#currentQuestionIndex,
+            question,
+            attemptNumber,
+            hint,
+            hintSource: 'worksheet-feedback'
+          });
         }
       } catch (error) {
         console.warn('[WorksheetPhase] Failed to play hint:', error);
       }
+      this.#emit('retryRequested', {
+        questionIndex: this.#currentQuestionIndex,
+        question,
+        attemptNumber,
+        retrySource: 'worksheet-feedback'
+      });
       return;
     }
 
@@ -394,6 +413,8 @@ export class WorksheetPhase {
 
     this.#emit('answerRevealed', {
       questionIndex: this.#currentQuestionIndex,
+      question,
+      attemptNumber,
       correctAnswer: correctText
     });
 

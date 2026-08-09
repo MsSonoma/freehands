@@ -11,7 +11,9 @@ import {
   MASTERY_EVIDENCE_SCHEMA_VERSION,
   MASTERY_EVIDENCE_STATUSES,
   STAGE_1_EVIDENCE_EVENT_TYPES,
+  STAGE_2_EVIDENCE_EVENT_TYPES,
 } from '../src/app/lib/masteryEvidence/constants.js'
+import { createLegacyItemFingerprint } from '../src/app/lib/masteryEvidence/items.js'
 
 const facilitatorId = '11111111-1111-1111-1111-111111111111'
 const learnerId = '22222222-2222-2222-2222-222222222222'
@@ -228,8 +230,77 @@ test('mastery evidence events are append-only and idempotent by key', async () =
   assert.equal(second.duplicate, true)
   assert.equal(store.learning_evidence_events.length, 1)
   assert.equal(store.learning_evidence_events[0].event_type, STAGE_1_EVIDENCE_EVENT_TYPES.PHASE_TRANSITION)
-  assert.equal(store.learning_evidence_events[0].concept_id, undefined)
-  assert.equal(store.learning_evidence_events[0].item_id, undefined)
+  assert.equal(store.learning_evidence_events[0].concept_id, null)
+  assert.equal(store.learning_evidence_events[0].item_id, null)
+}))
+
+test('stage 2 evidence events persist item, exposure, attempt, and sequence fields', async () => withEvidenceEnv(async () => {
+  const store = makeStore()
+  const session = await createEvidenceSession(store)
+  const body = {
+    action: 'record_event',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    evidence_session_id: session.evidence_session.id,
+    event_type: STAGE_2_EVIDENCE_EVENT_TYPES.LEARNER_RESPONSE,
+    idempotency_key: 'stage2-response-key-1',
+    event_sequence: 4,
+    occurred_at: '2026-08-09T12:02:00.000Z',
+    phase: 'worksheet',
+    item_id: 'legacy:abc123',
+    item_purpose: 'worksheet',
+    item_exposure_id: 'worksheet-run1-q1-abc123',
+    assistance_level: 'independent',
+    attempt_number: 1,
+    is_first_response: true,
+    payload: {
+      legacy_item_fingerprint: 'legacy:abc123',
+      response_type: 'text',
+      response_value: '42',
+    },
+    result: { correct: false, evaluation_mode: 'worksheet_current_app_judgment' },
+    provenance: { client: 'test' },
+  }
+
+  const first = await (await POST(jsonRequest(body), { createClientImpl: makeCreateClientImpl(store) })).json()
+  const second = await (await POST(jsonRequest(body), { createClientImpl: makeCreateClientImpl(store) })).json()
+
+  assert.equal(first.ok, true)
+  assert.equal(first.duplicate, false)
+  assert.equal(second.ok, true)
+  assert.equal(second.duplicate, true)
+  assert.equal(store.learning_evidence_events.length, 1)
+  assert.equal(store.learning_evidence_events[0].event_type, STAGE_2_EVIDENCE_EVENT_TYPES.LEARNER_RESPONSE)
+  assert.equal(store.learning_evidence_events[0].event_sequence, 4)
+  assert.equal(store.learning_evidence_events[0].item_exposure_id, 'worksheet-run1-q1-abc123')
+  assert.equal(store.learning_evidence_events[0].attempt_number, 1)
+  assert.equal(store.learning_evidence_events[0].is_first_response, true)
+  assert.equal(store.learning_evidence_events[0].payload.response_value, '42')
+}))
+
+test('stage 2 evidence route rejects future event semantics and malformed attempts', async () => withEvidenceEnv(async () => {
+  const store = makeStore()
+  const session = await createEvidenceSession(store)
+  const base = {
+    action: 'record_event',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    evidence_session_id: session.evidence_session.id,
+    idempotency_key: 'bad-stage2-key',
+    occurred_at: '2026-08-09T12:02:00.000Z',
+    phase: 'worksheet',
+  }
+
+  const future = await POST(jsonRequest({
+    ...base,
+    event_type: 'baseline_result',
+  }), { createClientImpl: makeCreateClientImpl(store) })
+  assert.equal(future.status, 400)
+
+  const malformed = await POST(jsonRequest({
+    ...base,
+    event_type: STAGE_2_EVIDENCE_EVENT_TYPES.LEARNER_RESPONSE,
+    attempt_number: 0,
+  }), { createClientImpl: makeCreateClientImpl(store) })
+  assert.equal(malformed.status, 400)
 }))
 
 test('mastery evidence route finalizes and reads back a complete session', async () => withEvidenceEnv(async () => {
@@ -303,4 +374,83 @@ test('client writer no-ops when disabled and suppresses duplicate local event wr
     'create_session',
     'mastery-evidence-v1:session-row-1:session_started:session_started',
   ])
+})
+
+test('client writer records ordered stage 2 item and response evidence', async () => {
+  const posted = []
+  const client = new MasteryEvidenceClient({
+    enabled: true,
+    getAuthToken: async () => 'valid-token',
+    now: () => '2026-08-09T12:00:00.000Z',
+    fetchImpl: async (_url, init) => {
+      const body = JSON.parse(init.body)
+      posted.push(body)
+      if (body.action === 'create_session') {
+        return Response.json({
+          ok: true,
+          evidence_session: { id: 'evidence-session-1', evidence_status: MASTERY_EVIDENCE_STATUSES.PARTIAL },
+          server_provenance: { provider: 'openai', model: 'gpt-test' },
+        })
+      }
+      if (body.action === 'record_event') return Response.json({ ok: true, duplicate: false })
+      return Response.json({ ok: true, evidence_session: { evidence_status: body.evidence_status } })
+    },
+  })
+  const question = { id: 'q1', type: 'fib', question: '2 + 2 = ___', answer: '4' }
+  const fingerprint = createLegacyItemFingerprint({
+    lessonKey: 'generated/fractions.json',
+    phase: 'worksheet',
+    item: question,
+    questionIndex: 0,
+  })
+
+  client.initialize({
+    sessionId,
+    learnerId,
+    lessonKey: 'generated/fractions.json',
+    lessonData: { title: 'Fractions' },
+    startedAt: '2026-08-09T12:00:00.000Z',
+  })
+  await client.recordItemPresented({
+    phase: 'worksheet',
+    itemId: fingerprint,
+    itemPurpose: 'worksheet',
+    itemExposureId: 'worksheet-run1-q1',
+    legacyItemFingerprint: fingerprint,
+    questionIndex: 0,
+    totalQuestions: 1,
+  })
+  await client.recordLearnerResponse({
+    phase: 'worksheet',
+    itemId: fingerprint,
+    itemPurpose: 'worksheet',
+    itemExposureId: 'worksheet-run1-q1',
+    legacyItemFingerprint: fingerprint,
+    attemptNumber: 1,
+    isFirstResponse: true,
+    response: 'five',
+  })
+  await client.recordAnswerEvaluated({
+    phase: 'worksheet',
+    itemId: fingerprint,
+    itemPurpose: 'worksheet',
+    itemExposureId: 'worksheet-run1-q1',
+    legacyItemFingerprint: fingerprint,
+    attemptNumber: 1,
+    isFirstResponse: true,
+    isCorrect: false,
+    response: 'five',
+    correctAnswer: '4',
+  })
+
+  const events = posted.filter((body) => body.action === 'record_event')
+  assert.deepEqual(events.map((event) => event.event_type), [
+    STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED,
+    STAGE_2_EVIDENCE_EVENT_TYPES.LEARNER_RESPONSE,
+    STAGE_2_EVIDENCE_EVENT_TYPES.ANSWER_EVALUATED,
+  ])
+  assert.deepEqual(events.map((event) => event.event_sequence), [1, 2, 3])
+  assert.equal(events[1].attempt_number, 1)
+  assert.equal(events[1].is_first_response, true)
+  assert.equal(events[2].result.correct, false)
 })

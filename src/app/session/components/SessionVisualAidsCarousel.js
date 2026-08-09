@@ -9,12 +9,14 @@ export default function SessionVisualAidsCarousel({
   visualAids = [], 
   onClose, 
   onExplain,
+  onViewAid,
   videoRef,
   isSpeaking = false
 }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [explaining, setExplaining] = useState(false)
   const miniVideoRef = useRef(null)
+  const lastViewedRef = useRef(null)
 
   // Sync mini video playback with isSpeaking state
   useEffect(() => {
@@ -27,6 +29,15 @@ export default function SessionVisualAidsCarousel({
       miniVideoRef.current.currentTime = 0
     }
   }, [isSpeaking])
+
+  useEffect(() => {
+    if (!onViewAid || !visualAids?.length) return
+    const currentAid = visualAids[currentIndex]
+    const key = `${currentIndex}:${currentAid?.id || currentAid?.url || currentAid?.description || ''}`
+    if (lastViewedRef.current === key) return
+    lastViewedRef.current = key
+    onViewAid(currentAid, { currentIndex, viewMode: 'view' })
+  }, [currentIndex, onViewAid, visualAids])
 
   const goNext = () => {
     if (currentIndex < visualAids.length - 1) {
@@ -47,6 +58,7 @@ export default function SessionVisualAidsCarousel({
     const currentAid = visualAids[currentIndex]
     
     try {
+      onViewAid?.(currentAid, { currentIndex, viewMode: 'explain' })
       await onExplain(currentAid)
     } finally {
       setExplaining(false)
