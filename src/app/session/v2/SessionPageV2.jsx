@@ -6571,19 +6571,6 @@ function SessionPageV2Inner() {
     audioEngineRef.current.replay();
   };
 
-  const repeatDiscussionSentence = () => {
-    if (!discussionPhaseRef.current) return;
-    void masteryEvidenceClientRef.current?.recordInteractionEvent({
-      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
-      phase: 'discussion',
-      suffix: `discussion-repeat:${Date.now()}`,
-      payload: {
-        repeat_surface: 'discussion_sentence',
-      },
-    });
-    discussionPhaseRef.current.repeatCurrentSentence();
-  };
-  
   // Discussion handlers
   const submitDiscussionResponse = () => {
     if (!discussionPhaseRef.current) return;
@@ -8125,55 +8112,6 @@ function SessionPageV2Inner() {
               </div>
             );
           })()}
-
-          {/* Discussion sentence controls — Repeat/Next during overview and vocab playback */}
-          {currentPhase === 'discussion' &&
-           (discussionState === 'playing-greeting' || discussionState === 'playing-vocab') && (
-            <div style={{
-              display: 'flex',
-              gap: 12,
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              padding: '8px 4px'
-            }}>
-              <button
-                type="button"
-                onClick={repeatDiscussionSentence}
-                style={{
-                  padding: '12px 28px',
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 10,
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 16px rgba(59,130,246,0.4)',
-                }}
-              >
-                Repeat
-              </button>
-              <button
-                type="button"
-                onClick={() => discussionPhaseRef.current?.nextSentence()}
-                style={{
-                  padding: '12px 28px',
-                  background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 10,
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 16px rgba(34,197,94,0.4)',
-                }}
-              >
-                {discussionSentenceInfo.type === 'transition'
-                  ? 'Begin Discussion'
-                  : 'Next'}
-              </button>
-            </div>
-          )}
 
           {/* Teaching controls (footer) */}
           {currentPhase === 'teaching' && (
