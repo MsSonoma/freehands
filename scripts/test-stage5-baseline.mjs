@@ -246,7 +246,8 @@ test('baseline event chain records one first response without mastery semantics'
   assert.equal(events[1].is_first_response, true)
   assert.equal(events[2].result.correct, false)
   assert.equal(JSON.stringify(posted).includes('mastered'), false)
-  assert.equal(JSON.stringify(posted).includes('retention'), false)
+  assert.equal(events.some((event) => event.event_type === 'retention_check_result'), false)
+  assert.equal(events.every((event) => event.retention_outcome == null), true)
 })
 
 test('Session V2 baseline ordering prevents teaching before baseline response', () => {
@@ -262,7 +263,7 @@ test('Session V2 baseline ordering prevents teaching before baseline response', 
   assert.ok(submitHandler > -1)
   assert.ok(completion > submitHandler)
   assert.ok(prefetch > -1)
-  assert.ok(session.includes("if (baselineState === 'awaiting-response') return null"))
+  assert.ok(session.includes("if (baselineState === 'awaiting-response' || retentionState === 'awaiting-response') return null"))
   assert.ok(session.includes('recordLearnerResponse'))
   assert.ok(session.includes('recordAnswerEvaluated'))
   assert.equal(session.includes('baseline_result'), false)

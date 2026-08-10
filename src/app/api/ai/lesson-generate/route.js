@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
  * Generate lesson content items using AI with full lesson context.
  * Body: { lesson, type }
  *   lesson — full lesson JSON object
- *   type   — 'vocab' | 'baseline' | 'test' | 'multiplechoice' | 'truefalse' | 'shortanswer' | 'fillintheblank'
+ *   type   — 'vocab' | 'baseline' | 'retention' | 'test' | 'multiplechoice' | 'truefalse' | 'shortanswer' | 'fillintheblank'
  * Returns: { items: [...] }
  */
 export async function POST(req) {
@@ -40,20 +40,27 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Missing lesson or type' }, { status: 400 })
     }
 
-    const validTypes = ['vocab', 'baseline', 'test', 'multiplechoice', 'truefalse', 'shortanswer', 'fillintheblank']
+    const validTypes = ['vocab', 'baseline', 'retention', 'test', 'multiplechoice', 'truefalse', 'shortanswer', 'fillintheblank']
     if (!validTypes.includes(type)) {
       return NextResponse.json({ error: `Invalid type: ${type}` }, { status: 400 })
     }
 
-    // Strip reserved Test and baseline pools from instructional generation context so
-    // instructional item generation cannot accidentally reuse pre-instruction or
-    // held-out items. Test generation is not instructional, so it may see baseline
-    // prompts to avoid duplicating them while still excluding any existing Test pool.
+    // Strip reserved Test, retention, and baseline pools from instructional generation
+    // context so instructional item generation cannot accidentally reuse protected
+    // items. Test/retention generation may see sibling protected pools only to avoid
+    // duplication while still excluding the pool it is generating.
     const instructionalView = buildInstructionalLessonView(lesson)
     const lessonContextSource = type === 'test'
       ? {
           ...instructionalView,
           baseline: lesson?.baseline || lesson?.baselinePool || lesson?.baseline_items || null,
+          retention: lesson?.retention || lesson?.retentionPool || lesson?.retention_items || null,
+        }
+      : type === 'retention'
+        ? {
+          ...instructionalView,
+          baseline: lesson?.baseline || lesson?.baselinePool || lesson?.baseline_items || null,
+          test: lesson?.test || null,
         }
       : instructionalView
     const lessonContext = JSON.stringify(lessonContextSource, null, 2)
@@ -105,6 +112,18 @@ LESSON:
 ${lessonContext}
 
 Return ONLY a JSON object: {"items": [{"id": "reserved-test-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
+      },
+
+      retention: {
+        system: `You are an expert curriculum writer creating delayed-retention-reserved questions for elementary school lessons.
+Always return valid JSON as: {"items": [{"id": "retention-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}
+Generate exactly 2 items. Keep them distinct from baseline, instruction, worksheet, practice, and Test items.`,
+        user: `Given this lesson, generate exactly 2 delayed-retention-reserved questions. They must not duplicate any baseline, instructional practice, or Test question.
+
+LESSON:
+${lessonContext}
+
+Return ONLY a JSON object: {"items": [{"id": "retention-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
       },
 
       truefalse: {

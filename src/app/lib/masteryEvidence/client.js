@@ -7,6 +7,7 @@ import {
   STAGE_1_EVIDENCE_EVENT_TYPES,
   STAGE_2_EVIDENCE_EVENT_TYPES,
   STAGE_6_EVIDENCE_EVENT_TYPES,
+  STAGE_7_EVIDENCE_EVENT_TYPES,
   isMasteryEvidenceEnabled,
 } from './constants.js';
 import {
@@ -27,6 +28,10 @@ import {
   buildMasteryCheckId,
   buildMasteryCycleId,
 } from './mastery.js';
+import {
+  RETENTION_PROTOCOL_VERSION,
+  buildRetentionCheckId,
+} from './retention.js';
 import { inferLessonSource } from './schema.js';
 
 const DEFAULT_WRITE_TIMEOUT_MS = 4000;
@@ -112,6 +117,7 @@ export class MasteryEvidenceClient {
     this.assessmentIsolation = null;
     this.baseline = null;
     this.mastery = null;
+    this.retention = null;
     this.presentedItemIdentityKeys = new Set();
   }
 
@@ -125,6 +131,7 @@ export class MasteryEvidenceClient {
     assessmentIsolation = null,
     baseline = null,
     mastery = null,
+    retention = null,
     startedAt,
   } = {}) {
     if (!this.enabled) {
@@ -152,11 +159,13 @@ export class MasteryEvidenceClient {
       assessmentIsolation: assessmentIsolation || null,
       baseline: baseline || null,
       mastery: mastery || null,
+      retention: retention || null,
       startedAt: startedAt || this.now(),
     };
     this.assessmentIsolation = assessmentIsolation || null;
     this.baseline = baseline || null;
     this.mastery = mastery || null;
+    this.retention = retention || null;
     this.presentedItemIdentityKeys = new Set();
 
     this.readyPromise = this.#createSession();
@@ -682,6 +691,77 @@ export class MasteryEvidenceClient {
     }));
   }
 
+  async recordRetentionCheckResult({
+    phase = 'idle',
+    itemId = null,
+    itemPurpose = 'retention',
+    itemExposureId,
+    identityItem = null,
+    assessmentRole = null,
+    legacyItemFingerprint = null,
+    attemptNumber = 1,
+    isFirstResponse = true,
+    isCorrect = false,
+    retentionCheckId = null,
+    retentionAnchorMasteryCheckId = null,
+    retentionDelaySeconds = null,
+    retentionQualificationStatus = null,
+    retentionQualificationReason = null,
+    retentionOutcome = null,
+    independenceStatus = null,
+    independenceReason = null,
+    response = null,
+    correctAnswer = null,
+    qualification = null,
+    questionIndex = null,
+  } = {}) {
+    const checkId = retentionCheckId || await buildRetentionCheckId({
+      retentionAnchorMasteryCheckId,
+      itemExposureId,
+    });
+    const suffix = [
+      checkId || itemExposureId || legacyItemFingerprint || itemId || 'unknown-retention-check',
+      retentionOutcome || 'outcome',
+    ].join(':');
+    return this.#trackWrite(this.#recordEvent({
+      eventType: STAGE_7_EVIDENCE_EVENT_TYPES.RETENTION_CHECK_RESULT,
+      occurredAt: this.now(),
+      phase,
+      suffix,
+      itemId: itemId || legacyItemFingerprint || null,
+      itemPurpose,
+      itemExposureId,
+      identityItem,
+      assessmentRole,
+      evidencePurpose: 'retention',
+      attemptNumber,
+      isFirstResponse,
+      result: {
+        correct: isCorrect === true,
+        retention_outcome: retentionOutcome || null,
+        retention_qualification_status: retentionQualificationStatus || null,
+        retention_qualification_reason: retentionQualificationReason || null,
+      },
+      payload: {
+        source: 'session-v2',
+        legacy_item_fingerprint: legacyItemFingerprint || null,
+        question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
+        response_value: response == null ? null : String(response),
+        correct_answer: correctAnswer == null ? null : String(correctAnswer),
+        qualification: qualification || null,
+      },
+      retentionProtocolVersion: RETENTION_PROTOCOL_VERSION,
+      retentionCheckId: checkId,
+      retentionAnchorMasteryCheckId,
+      retentionDelaySeconds,
+      retentionQualificationStatus,
+      retentionQualificationReason,
+      retentionOutcome,
+      independenceStatus,
+      independenceReason,
+    }));
+  }
+
   async checkPriorExposure({ learnerId, itemIdentities = [] } = {}) {
     try {
       if (this.readyPromise) await this.readyPromise;
@@ -701,6 +781,43 @@ export class MasteryEvidenceClient {
     } catch (error) {
       this.logger?.warn?.('[MasteryEvidence] Prior exposure check failed:', error);
       return { ok: false, exposedKeys: [] };
+    }
+  }
+
+  async checkRetentionEligibility({
+    learnerId,
+    lessonKey = this.meta?.lessonKey,
+    currentSessionId = this.meta?.sessionId,
+    itemIdentities = [],
+    now = this.now(),
+  } = {}) {
+    try {
+      if (this.readyPromise) await this.readyPromise;
+      const response = await this.#post({
+        action: 'check_retention_eligibility',
+        schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+        learner_id: learnerId,
+        lesson_key: lessonKey,
+        current_session_id: currentSessionId,
+        now,
+        item_identities: itemIdentities.map((identity) => ({
+          stable_item_id: identity?.stableItemId || identity?.stable_item_id || null,
+          item_content_hash: identity?.itemContentHash || identity?.item_content_hash || null,
+        })),
+      });
+      return {
+        ok: !!response?.ok,
+        eligible: !!response?.eligible,
+        anchor: response?.anchor || null,
+        retentionDelaySeconds: Number.isFinite(Number(response?.retention_delay_seconds))
+          ? Number(response.retention_delay_seconds)
+          : null,
+        exposedKeys: Array.isArray(response?.exposed_keys) ? response.exposed_keys : [],
+        reason: response?.reason || null,
+      };
+    } catch (error) {
+      this.logger?.warn?.('[MasteryEvidence] Retention eligibility check failed:', error);
+      return { ok: false, eligible: false, anchor: null, retentionDelaySeconds: null, exposedKeys: [], reason: 'evidence_unavailable' };
     }
   }
 
@@ -745,6 +862,7 @@ export class MasteryEvidenceClient {
           : null,
         baseline_unavailable_reason: this.baseline?.reason || null,
         mastery_protocol_version: this.mastery?.protocolVersion || INDEPENDENT_MASTERY_PROTOCOL_VERSION,
+        retention_protocol_version: this.retention?.protocolVersion || RETENTION_PROTOCOL_VERSION,
         started_at: this.meta.startedAt,
       });
       if (!response?.ok || !response.evidence_session?.id) {
@@ -827,6 +945,13 @@ export class MasteryEvidenceClient {
     independenceStatus = null,
     independenceReason = null,
     masteryOutcome = null,
+    retentionProtocolVersion = null,
+    retentionCheckId = null,
+    retentionAnchorMasteryCheckId = null,
+    retentionDelaySeconds = null,
+    retentionQualificationStatus = null,
+    retentionQualificationReason = null,
+    retentionOutcome = null,
     preAssessmentExposed = null,
     assistanceLevel = null,
     attemptNumber = null,
@@ -880,6 +1005,15 @@ export class MasteryEvidenceClient {
         independence_status: independenceStatus || null,
         independence_reason: independenceReason || null,
         mastery_outcome: masteryOutcome || null,
+        retention_protocol_version: retentionProtocolVersion || null,
+        retention_check_id: retentionCheckId || null,
+        retention_anchor_mastery_check_id: retentionAnchorMasteryCheckId || null,
+        retention_delay_seconds: Number.isFinite(Number(retentionDelaySeconds))
+          ? Number(retentionDelaySeconds)
+          : null,
+        retention_qualification_status: retentionQualificationStatus || null,
+        retention_qualification_reason: retentionQualificationReason || null,
+        retention_outcome: retentionOutcome || null,
         assistance_level: assistanceLevel,
         attempt_number: attemptNumber,
         is_first_response: isFirstResponse,

@@ -28,6 +28,15 @@ import {
   MASTERY_OUTCOMES,
 } from '../../lib/masteryEvidence/mastery.js';
 import {
+  RETENTION_PROTOCOL_VERSION,
+  RETENTION_OUTCOMES,
+  RETENTION_QUALIFICATION_STATUSES,
+  RETENTION_REASONS,
+  RETENTION_MIN_DELAY_SECONDS,
+  isRetentionDelayEligible,
+  isValidRetentionAnchor,
+} from '../../lib/masteryEvidence/retention.js';
+import {
   assertEvidenceStatus,
   assertSchemaVersion,
   assertStage1EventType,
@@ -142,7 +151,7 @@ function assertOptionalBaselineStatus(value) {
 
 function assertOptionalEvidencePurpose(value) {
   const normalized = normalizeOptionalText(value);
-  if (normalized && !['baseline', 'independent_mastery'].includes(normalized)) {
+  if (normalized && !['baseline', 'independent_mastery', 'retention'].includes(normalized)) {
     throw new Error('Unsupported evidence purpose');
   }
   return normalized;
@@ -168,6 +177,22 @@ function assertOptionalMasteryOutcome(value) {
   const normalized = normalizeOptionalText(value);
   if (normalized && !Object.values(MASTERY_OUTCOMES).includes(normalized)) {
     throw new Error('Unsupported mastery outcome');
+  }
+  return normalized;
+}
+
+function assertOptionalRetentionQualificationStatus(value) {
+  const normalized = normalizeOptionalText(value);
+  if (normalized && !Object.values(RETENTION_QUALIFICATION_STATUSES).includes(normalized)) {
+    throw new Error('Unsupported retention qualification status');
+  }
+  return normalized;
+}
+
+function assertOptionalRetentionOutcome(value) {
+  const normalized = normalizeOptionalText(value);
+  if (normalized && !Object.values(RETENTION_OUTCOMES).includes(normalized)) {
+    throw new Error('Unsupported retention outcome');
   }
   return normalized;
 }
@@ -237,6 +262,11 @@ function normalizeSessionBody(body) {
       INDEPENDENT_MASTERY_PROTOCOL_VERSION,
       'mastery_protocol_version',
     ),
+    retention_protocol_version: assertOptionalIdentityVersion(
+      body?.retention_protocol_version,
+      RETENTION_PROTOCOL_VERSION,
+      'retention_protocol_version',
+    ),
     started_at: normalizeIsoTimestamp(body?.started_at, new Date().toISOString()),
     evidence_status: MASTERY_EVIDENCE_STATUSES.PARTIAL,
   };
@@ -279,6 +309,17 @@ function normalizeEventBody(body) {
     independence_status: assertOptionalIndependenceStatus(body?.independence_status),
     independence_reason: normalizeOptionalText(body?.independence_reason),
     mastery_outcome: assertOptionalMasteryOutcome(body?.mastery_outcome),
+    retention_protocol_version: assertOptionalIdentityVersion(
+      body?.retention_protocol_version,
+      RETENTION_PROTOCOL_VERSION,
+      'retention_protocol_version',
+    ),
+    retention_check_id: normalizeOptionalText(body?.retention_check_id),
+    retention_anchor_mastery_check_id: normalizeOptionalText(body?.retention_anchor_mastery_check_id),
+    retention_delay_seconds: normalizeOptionalNonnegativeInteger(body?.retention_delay_seconds, 'retention_delay_seconds'),
+    retention_qualification_status: assertOptionalRetentionQualificationStatus(body?.retention_qualification_status),
+    retention_qualification_reason: normalizeOptionalText(body?.retention_qualification_reason),
+    retention_outcome: assertOptionalRetentionOutcome(body?.retention_outcome),
     assistance_level: normalizeOptionalText(body?.assistance_level),
     attempt_number: normalizeOptionalPositiveInteger(body?.attempt_number, 'attempt_number'),
     is_first_response: normalizeOptionalBoolean(body?.is_first_response),
@@ -393,6 +434,13 @@ async function handleRecordEvent({ body, user, admin }) {
     independence_status: event.independence_status,
     independence_reason: event.independence_reason,
     mastery_outcome: event.mastery_outcome,
+    retention_protocol_version: event.retention_protocol_version,
+    retention_check_id: event.retention_check_id,
+    retention_anchor_mastery_check_id: event.retention_anchor_mastery_check_id,
+    retention_delay_seconds: event.retention_delay_seconds,
+    retention_qualification_status: event.retention_qualification_status,
+    retention_qualification_reason: event.retention_qualification_reason,
+    retention_outcome: event.retention_outcome,
     assistance_level: event.assistance_level,
     attempt_number: event.attempt_number,
     is_first_response: event.is_first_response,
@@ -532,6 +580,132 @@ async function handleCheckPriorExposure({ body, user, admin }) {
   });
 }
 
+async function handleCheckRetentionEligibility({ body, user, admin }) {
+  const learnerId = normalizeRequiredText(body?.learner_id, 'learner_id');
+  if (!isUuid(learnerId)) throw new Error('learner_id must be a UUID');
+  const ownsLearner = await verifyLearnerOwnership(admin, user.id, learnerId);
+  if (!ownsLearner) return forbidden('Learner not found or unauthorized');
+
+  const lessonKey = normalizeRequiredText(body?.lesson_key, 'lesson_key');
+  const currentSessionId = normalizeOptionalText(body?.current_session_id);
+  const now = normalizeIsoTimestamp(body?.now, new Date().toISOString());
+  const minDelaySeconds = normalizeOptionalNonnegativeInteger(body?.min_delay_seconds, 'min_delay_seconds')
+    || RETENTION_MIN_DELAY_SECONDS;
+  const identities = Array.isArray(body?.item_identities) ? body.item_identities : [];
+
+  const { data: rows, error } = await admin
+    .from('learning_evidence_events')
+    .select('*')
+    .eq('facilitator_id', user.id)
+    .eq('learner_id', learnerId)
+    .eq('lesson_key', lessonKey)
+    .limit(5000);
+
+  if (error) {
+    return NextResponse.json({ ok: false, error: error.message || 'Retention history read failed' }, { status: 500 });
+  }
+
+  const events = Array.isArray(rows) ? rows : [];
+  const consumedAnchorIds = new Set(events
+    .filter((event) => event.event_type === MASTERY_EVIDENCE_EVENT_TYPES.RETENTION_CHECK_RESULT)
+    .map((event) => event.retention_anchor_mastery_check_id)
+    .filter(Boolean));
+
+  const anchors = events
+    .filter((event) => event.event_type === MASTERY_EVIDENCE_EVENT_TYPES.MASTERY_CHECK_RESULT)
+    .filter(isValidRetentionAnchor)
+    .filter((event) => event.mastery_check_id && !consumedAnchorIds.has(event.mastery_check_id))
+    .filter((event) => !currentSessionId || event.session_id !== currentSessionId)
+    .map((event) => ({
+      event,
+      delay: isRetentionDelayEligible({
+        anchorOccurredAt: event.occurred_at,
+        now,
+        minDelaySeconds,
+      }),
+    }))
+    .filter((entry) => entry.delay.eligible)
+    .sort((a, b) => Date.parse(b.event.occurred_at || 0) - Date.parse(a.event.occurred_at || 0));
+
+  const exposedKeys = new Set();
+  const stableIds = identities
+    .map((identity) => normalizeOptionalText(identity?.stable_item_id || identity?.stableItemId))
+    .filter(Boolean);
+  const contentHashes = identities
+    .map((identity) => normalizeOptionalText(identity?.item_content_hash || identity?.itemContentHash))
+    .filter(Boolean);
+  for (const event of events) {
+    if (event.event_type !== MASTERY_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED) continue;
+    if (event.stable_item_id && stableIds.includes(event.stable_item_id)) exposedKeys.add(`stable:${event.stable_item_id}`);
+    if (event.item_content_hash && contentHashes.includes(event.item_content_hash)) exposedKeys.add(`content:${event.item_content_hash}`);
+  }
+
+  for (const entry of anchors) {
+    const anchor = entry.event;
+    const anchorTime = Date.parse(anchor.occurred_at || '');
+    const anchorConcept = normalizeOptionalText(anchor.concept_id);
+    const interveningSameTargetInstruction = events.some((event) => {
+      const occurred = Date.parse(event.occurred_at || '');
+      if (!Number.isFinite(occurred) || !Number.isFinite(anchorTime) || occurred <= anchorTime) return false;
+      if (occurred > Date.parse(now)) return false;
+      if (event.event_type === MASTERY_EVIDENCE_EVENT_TYPES.RETENTION_CHECK_RESULT) return false;
+      if (event.event_id === anchor.event_id) return false;
+      const isInstructional = event.assessment_role === ASSESSMENT_ROLES.INSTRUCTIONAL
+        || ['discussion', 'comprehension', 'exercise', 'worksheet'].includes(event.phase);
+      if (!isInstructional) return false;
+      if (anchorConcept) return event.concept_id === anchorConcept;
+      return true;
+    });
+    if (interveningSameTargetInstruction) continue;
+
+    return NextResponse.json({
+      ok: true,
+      eligible: true,
+      anchor: {
+        event_id: anchor.event_id,
+        session_id: anchor.session_id,
+        mastery_cycle_id: anchor.mastery_cycle_id,
+        mastery_check_id: anchor.mastery_check_id,
+        mastery_outcome: anchor.mastery_outcome,
+        concept_id: anchor.concept_id,
+        stable_item_id: anchor.stable_item_id,
+        item_content_hash: anchor.item_content_hash,
+        occurred_at: anchor.occurred_at,
+      },
+      retention_delay_seconds: entry.delay.delaySeconds,
+      exposed_keys: Array.from(exposedKeys),
+    });
+  }
+
+  const validAnchors = events
+    .filter((event) => event.event_type === MASTERY_EVIDENCE_EVENT_TYPES.MASTERY_CHECK_RESULT)
+    .filter(isValidRetentionAnchor)
+    .sort((a, b) => Date.parse(b.occurred_at || 0) - Date.parse(a.occurred_at || 0));
+  const latestRejectedAnchor = validAnchors[0] || null;
+  const delay = latestRejectedAnchor
+    ? isRetentionDelayEligible({ anchorOccurredAt: latestRejectedAnchor.occurred_at, now, minDelaySeconds })
+    : null;
+  let reason = RETENTION_REASONS.NO_VALID_ANCHOR;
+  if (validAnchors.length) {
+    const allConsumed = validAnchors.every((event) => event.mastery_check_id && consumedAnchorIds.has(event.mastery_check_id));
+    const allCurrentSession = currentSessionId
+      ? validAnchors.every((event) => event.session_id === currentSessionId)
+      : false;
+    if (allConsumed) reason = RETENTION_REASONS.ANCHOR_ALREADY_CONSUMED;
+    else if (allCurrentSession) reason = RETENTION_REASONS.NOT_NEW_SESSION;
+    else if (delay && !delay.eligible) reason = delay.reason;
+    else reason = RETENTION_REASONS.INTERVENING_SAME_TARGET_INSTRUCTION;
+  }
+
+  return NextResponse.json({
+    ok: true,
+    eligible: false,
+    reason,
+    retention_delay_seconds: delay?.delaySeconds ?? null,
+    exposed_keys: Array.from(exposedKeys),
+  });
+}
+
 async function handleGetSession({ request, user, admin }) {
   const url = new URL(request.url);
   const evidenceSessionId = normalizeOptionalText(url.searchParams.get('evidence_session_id'));
@@ -583,6 +757,9 @@ export async function POST(request, deps = {}) {
     }
     if (action === 'check_prior_exposure') {
       return await handleCheckPriorExposure({ body, user: auth.user, admin: auth.clients.admin });
+    }
+    if (action === 'check_retention_eligibility') {
+      return await handleCheckRetentionEligibility({ body, user: auth.user, admin: auth.clients.admin });
     }
 
     return badRequest('Unsupported evidence action');

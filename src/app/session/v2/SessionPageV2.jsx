@@ -87,6 +87,14 @@ import {
   classifyMasteryOutcome,
   qualifyMasteryOpportunity,
 } from '@/app/lib/masteryEvidence/mastery.js';
+import {
+  RETENTION_EVIDENCE_PURPOSE,
+  RETENTION_PROTOCOL_VERSION,
+  RETENTION_QUALIFICATION_STATUSES,
+  buildRetentionPlan,
+  classifyRetentionOutcome,
+  qualifyRetentionOpportunity,
+} from '@/app/lib/masteryEvidence/retention.js';
 import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay';
@@ -678,6 +686,23 @@ function SessionPageV2Inner() {
   const masteryAssistanceByExposureRef = useRef(new Map());
   const masteryPriorNeedsRecoveryRef = useRef(false);
   const masteryUsedIdentityKeysRef = useRef(new Set());
+  const [retentionState, setRetentionState] = useState('idle');
+  const retentionStateRef = useRef('idle');
+  useEffect(() => {
+    retentionStateRef.current = retentionState;
+  }, [retentionState]);
+  const [retentionPlan, setRetentionPlan] = useState(null);
+  const retentionPlanRef = useRef(null);
+  const [retentionIndex, setRetentionIndex] = useState(0);
+  const retentionIndexRef = useRef(0);
+  useEffect(() => {
+    retentionIndexRef.current = retentionIndex;
+  }, [retentionIndex]);
+  const [retentionAnswer, setRetentionAnswer] = useState('');
+  const [retentionMessage, setRetentionMessage] = useState('');
+  const [retentionSubmitting, setRetentionSubmitting] = useState(false);
+  const retentionResponsesRef = useRef([]);
+  const retentionEligibilityRef = useRef(null);
   
   const [workPhaseCompletions, setWorkPhaseCompletions] = useState({
     discussion: false,
@@ -6594,6 +6619,197 @@ function SessionPageV2Inner() {
     }
   }, []);
 
+  const getRetentionEvidenceContext = useCallback((item, questionIndex = 0) => {
+    const index = Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : 0;
+    const legacyItemFingerprint = createLegacyItemFingerprint({
+      lessonKey,
+      lessonId,
+      phase: RETENTION_EVIDENCE_PURPOSE,
+      item,
+      questionIndex: index,
+    });
+    const itemExposureId = `retention-q${index + 1}-${legacyItemFingerprint.replace(/^legacy:/, '')}`;
+    return {
+      phase: 'idle',
+      itemId: legacyItemFingerprint,
+      itemPurpose: RETENTION_EVIDENCE_PURPOSE,
+      evidencePurpose: RETENTION_EVIDENCE_PURPOSE,
+      itemExposureId,
+      assessmentRole: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
+      legacyItemFingerprint,
+      questionIndex: index,
+      identityItem: item || null,
+      item: summarizeEvidenceItem(item),
+    };
+  }, [lessonId, lessonKey]);
+
+  const speakRetentionText = useCallback(async (text) => {
+    const spoken = String(text || '').trim();
+    if (!spoken || !audioEngineRef.current) return;
+    try {
+      const audio = await fetchTTS(spoken);
+      await audioEngineRef.current.playAudio(audio || '', [spoken]);
+    } catch {}
+  }, []);
+
+  const presentRetentionItem = useCallback(async (index, item, { speak = true } = {}) => {
+    if (!item) return;
+    const context = getRetentionEvidenceContext(item, index);
+    void masteryEvidenceClientRef.current?.recordItemPresented({
+      ...context,
+      totalQuestions: retentionPlanRef.current?.selectedItems?.length || 0,
+    });
+    if (snapshotServiceRef.current) {
+      try {
+        await snapshotServiceRef.current.saveProgress('retention-presented', {
+          phaseOverride: RETENTION_EVIDENCE_PURPOSE,
+          protocolVersion: RETENTION_PROTOCOL_VERSION,
+          status: 'active',
+          currentIndex: index,
+          plan: retentionPlanRef.current || null,
+          eligibility: retentionEligibilityRef.current || null,
+          responses: retentionResponsesRef.current,
+        });
+      } catch {}
+    }
+    if (speak) {
+      await speakRetentionText(formatQuestionForSpeech(item, { layout: 'multiline' }));
+    }
+  }, [getRetentionEvidenceContext, speakRetentionText]);
+
+  const activateRetention = useCallback(async (plan, eligibility, savedRetention = null) => {
+    const selectedItems = Array.isArray(plan?.selectedItems) ? plan.selectedItems : [];
+    if (!selectedItems.length) return false;
+    retentionPlanRef.current = plan;
+    retentionEligibilityRef.current = eligibility || null;
+    const savedResponses = Array.isArray(savedRetention?.responses) ? savedRetention.responses : [];
+    retentionResponsesRef.current = savedResponses;
+    const startIndex = Math.min(savedResponses.length, Math.max(0, selectedItems.length - 1));
+    setRetentionPlan(plan);
+    setRetentionIndex(startIndex);
+    setRetentionAnswer('');
+    setRetentionMessage('Before we review, try this one. It is okay if you are not sure.');
+    setRetentionState('awaiting-response');
+    await presentRetentionItem(startIndex, selectedItems[startIndex], { speak: true });
+    return true;
+  }, [presentRetentionItem]);
+
+  const finishRetentionAndContinue = useCallback(async () => {
+    setRetentionState('complete');
+    await beginInstruction(null);
+  }, [beginInstruction]);
+
+  const handleRetentionRepeat = useCallback(async () => {
+    const item = retentionPlanRef.current?.selectedItems?.[retentionIndexRef.current];
+    if (!item) return;
+    const context = getRetentionEvidenceContext(item, retentionIndexRef.current);
+    void masteryEvidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
+      ...context,
+      suffix: `retention-repeat:${retentionIndexRef.current}:${Date.now()}`,
+      payload: { repeat_mode: 'verbatim_retention_item' },
+    });
+    await speakRetentionText(formatQuestionForSpeech(item, { layout: 'multiline' }));
+  }, [getRetentionEvidenceContext, speakRetentionText]);
+
+  const handleRetentionSubmit = useCallback(async () => {
+    if (retentionSubmitting) return;
+    const item = retentionPlanRef.current?.selectedItems?.[retentionIndexRef.current];
+    const identity = retentionPlanRef.current?.selectedIdentities?.[retentionIndexRef.current] || null;
+    const eligibility = retentionEligibilityRef.current || null;
+    if (!item || !eligibility?.anchor) return;
+    const response = String(retentionAnswer || '').trim() || "I don't know";
+    setRetentionSubmitting(true);
+    try {
+      const acceptable = buildAcceptableList(item);
+      let isCorrect = false;
+      try {
+        isCorrect = await judgeAnswer(response, acceptable, item);
+      } catch {
+        isCorrect = false;
+      }
+      const correctAnswer = deriveCorrectAnswerText(item, acceptable) || null;
+      const context = getRetentionEvidenceContext(item, retentionIndexRef.current);
+      const qualification = qualifyRetentionOpportunity({
+        anchor: eligibility.anchor,
+        delaySeconds: eligibility.retentionDelaySeconds,
+        itemIdentity: identity,
+        itemExposureId: context.itemExposureId,
+        isFirstResponse: true,
+        priorExposedKeys: eligibility.exposedKeys || [],
+        assistanceEventsBeforeResponse: [],
+        interveningSameTargetInstruction: false,
+      });
+      const retentionOutcome = classifyRetentionOutcome({ qualification, isCorrect });
+
+      void masteryEvidenceClientRef.current?.recordLearnerResponse({
+        ...context,
+        attemptNumber: 1,
+        isFirstResponse: true,
+        response,
+      });
+      void masteryEvidenceClientRef.current?.recordAnswerEvaluated({
+        ...context,
+        attemptNumber: 1,
+        isFirstResponse: true,
+        isCorrect,
+        evaluationMode: 'retention_v1_current_app_judgment',
+        response,
+        correctAnswer,
+      });
+      void masteryEvidenceClientRef.current?.recordRetentionCheckResult({
+        ...context,
+        attemptNumber: 1,
+        isFirstResponse: true,
+        isCorrect,
+        retentionAnchorMasteryCheckId: eligibility.anchor.mastery_check_id,
+        retentionDelaySeconds: eligibility.retentionDelaySeconds,
+        retentionQualificationStatus: qualification.retentionQualificationStatus,
+        retentionQualificationReason: qualification.retentionQualificationReason,
+        retentionOutcome,
+        independenceStatus: qualification.independenceStatus,
+        independenceReason: qualification.independenceReason,
+        response,
+        correctAnswer,
+        qualification,
+      });
+
+      const nextResponses = [
+        ...retentionResponsesRef.current,
+        {
+          questionIndex: retentionIndexRef.current,
+          response,
+          isCorrect,
+          retentionOutcome,
+          answeredAt: new Date().toISOString(),
+        },
+      ];
+      retentionResponsesRef.current = nextResponses;
+      setRetentionAnswer('');
+      setRetentionMessage('Thanks.');
+      if (snapshotServiceRef.current) {
+        try {
+          await snapshotServiceRef.current.savePhaseCompletion(RETENTION_EVIDENCE_PURPOSE, {
+            protocolVersion: RETENTION_PROTOCOL_VERSION,
+            status: RETENTION_QUALIFICATION_STATUSES.ELIGIBLE,
+            itemCount: nextResponses.length,
+            anchor: eligibility.anchor,
+            retentionDelaySeconds: eligibility.retentionDelaySeconds,
+            responses: nextResponses,
+          });
+        } catch {}
+      }
+      await finishRetentionAndContinue();
+    } finally {
+      setRetentionSubmitting(false);
+    }
+  }, [
+    finishRetentionAndContinue,
+    getRetentionEvidenceContext,
+    retentionAnswer,
+    retentionSubmitting,
+  ]);
+
   const getBaselineEvidenceContext = useCallback((item, questionIndex = 0) => {
     const index = Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : 0;
     const legacyItemFingerprint = createLegacyItemFingerprint({
@@ -6921,6 +7137,9 @@ function SessionPageV2Inner() {
           mastery: {
             protocolVersion: INDEPENDENT_MASTERY_PROTOCOL_VERSION,
           },
+          retention: {
+            protocolVersion: RETENTION_PROTOCOL_VERSION,
+          },
           startedAt: sessionStartedAtRef.current,
         });
         const initialPhase = target && target !== 'idle' ? target : 'discussion';
@@ -6954,6 +7173,52 @@ function SessionPageV2Inner() {
 
     try {
       const phaseSets = buildAllPhaseSets() || {};
+      const savedRetention = snapshot?.currentPhase === RETENTION_EVIDENCE_PURPOSE
+        ? snapshot?.phaseData?.[RETENTION_EVIDENCE_PURPOSE]
+        : null;
+      try {
+        let retentionPlanCandidate = await buildRetentionPlan({
+          lessonKey,
+          lessonId,
+          lessonData,
+          phaseSets,
+        });
+        if (
+          retentionPlanCandidate.status === RETENTION_QUALIFICATION_STATUSES.ELIGIBLE
+          && savedRetention?.status === 'active'
+          && Array.isArray(savedRetention?.responses)
+          && savedRetention.responses.length === 0
+          && savedRetention?.plan
+        ) {
+          await activateRetention(savedRetention.plan, savedRetention.eligibility || retentionEligibilityRef.current, savedRetention);
+          return;
+        }
+        if (retentionPlanCandidate.candidateIdentities?.length && evidenceClientForBaseline) {
+          const eligibility = await evidenceClientForBaseline.checkRetentionEligibility({
+            learnerId: sessionLearnerIdRef.current || learnerProfile?.id || null,
+            lessonKey,
+            currentSessionId: trackedSessionIdForEvidence,
+            itemIdentities: retentionPlanCandidate.candidateIdentities,
+          });
+          if (eligibility.ok && eligibility.eligible) {
+            retentionPlanCandidate = await buildRetentionPlan({
+              lessonKey,
+              lessonId,
+              lessonData,
+              phaseSets,
+              priorExposedKeys: eligibility.exposedKeys,
+            });
+            if (retentionPlanCandidate.status === RETENTION_QUALIFICATION_STATUSES.ELIGIBLE) {
+              await activateRetention(retentionPlanCandidate, eligibility, savedRetention);
+              return;
+            }
+          }
+        }
+      } catch {
+        // Retention evidence is additive. If historical read/qualification fails,
+        // continue with the existing pre-instruction path and do not invent retention.
+      }
+
       let plan = await buildBaselinePlan({
         lessonKey,
         lessonId,
@@ -7028,10 +7293,10 @@ function SessionPageV2Inner() {
   // Auto-start the session as soon as the page is ready and no snapshot resume is pending.
   // This eliminates the initial "Begin" click — user goes straight to "Begin Discussion".
   useEffect(() => {
-    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase && baselineState === 'idle') {
+    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase && baselineState === 'idle' && retentionState === 'idle') {
       handleStartSessionClick();
     }
-  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, baselineState, handleStartSessionClick]);
+  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, baselineState, retentionState, handleStartSessionClick]);
 
   // Auto-dismiss the objective complete toast after 3.5s
   useEffect(() => {
@@ -8605,6 +8870,96 @@ function SessionPageV2Inner() {
             return null;
           })()}
           
+          {/* Stage 7 retention: short delayed pre-review evidence step, not a canonical phase */}
+          {retentionState === 'awaiting-response' && (() => {
+            const item = retentionPlan?.selectedItems?.[retentionIndex] || null;
+            const total = retentionPlan?.selectedItems?.length || 0;
+            if (!item) return null;
+            const prompt = formatQuestionForSpeech(item, { layout: 'multiline' });
+            return (
+              <div style={{ padding: '8px 12px 10px' }}>
+                <div style={{
+                  maxWidth: 720,
+                  margin: '0 auto',
+                  border: '1px solid rgba(15,118,110,0.25)',
+                  borderRadius: 16,
+                  background: 'rgba(240,253,250,0.94)',
+                  boxShadow: '0 8px 28px rgba(15,118,110,0.10)',
+                  padding: 16
+                }}>
+                  <div style={{ color: '#115e59', fontWeight: 800, fontSize: 14, marginBottom: 6 }}>
+                    Before we review {total ? `• ${retentionIndex + 1} of ${total}` : ''}
+                  </div>
+                  <div style={{ color: '#374151', fontSize: 14, marginBottom: 12 }}>
+                    {retentionMessage || 'Try this one. It is okay if you are not sure.'}
+                  </div>
+                  <div style={{
+                    whiteSpace: 'pre-wrap',
+                    color: '#111827',
+                    fontSize: 'clamp(1rem, 2.5vw, 1.15rem)',
+                    fontWeight: 750,
+                    marginBottom: 12
+                  }}>
+                    {prompt}
+                  </div>
+                  <textarea
+                    value={retentionAnswer}
+                    onChange={(event) => setRetentionAnswer(event.target.value)}
+                    placeholder={"Type your answer, or write I don't know."}
+                    disabled={retentionSubmitting}
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      borderRadius: 12,
+                      border: '1px solid #99f6e4',
+                      padding: 12,
+                      fontSize: 16,
+                      resize: 'vertical',
+                      marginBottom: 10
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={handleRetentionRepeat}
+                      disabled={retentionSubmitting}
+                      style={{
+                        background: '#0f766e',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '10px 16px',
+                        fontWeight: 800,
+                        cursor: retentionSubmitting ? 'not-allowed' : 'pointer',
+                        opacity: retentionSubmitting ? 0.7 : 1
+                      }}
+                    >
+                      Repeat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRetentionSubmit}
+                      disabled={retentionSubmitting}
+                      style={{
+                        background: '#c7442e',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '10px 18px',
+                        fontWeight: 800,
+                        cursor: retentionSubmitting ? 'not-allowed' : 'pointer',
+                        opacity: retentionSubmitting ? 0.7 : 1
+                      }}
+                    >
+                      {retentionSubmitting ? 'Saving...' : 'Continue'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Stage 5 baseline: short pre-instruction evidence step, not a teaching phase */}
           {baselineState === 'awaiting-response' && (() => {
             const item = baselinePlan?.selectedItems?.[baselineIndex] || null;
@@ -8732,7 +9087,7 @@ function SessionPageV2Inner() {
             const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
             const needBeginTest = (currentPhase === 'test' && (!testState || testState === 'idle'));
             if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest)) return null;
-            if (baselineState === 'awaiting-response') return null;
+            if (baselineState === 'awaiting-response' || retentionState === 'awaiting-response') return null;
             // Hide Begin while the play-time-expired countdown is running — clicking Begin
             // at this point would restart the play timer and give double time.
             if (showPlayTimeExpired) return null;
@@ -8811,6 +9166,14 @@ function SessionPageV2Inner() {
                           setBaselineAnswer('');
                           setBaselineMessage('');
                           setBaselineState('idle');
+                          retentionPlanRef.current = null;
+                          retentionEligibilityRef.current = null;
+                          retentionResponsesRef.current = [];
+                          setRetentionPlan(null);
+                          setRetentionIndex(0);
+                          setRetentionAnswer('');
+                          setRetentionMessage('');
+                          setRetentionState('idle');
                           masteryEligibilityRef.current = null;
                           masteryAssistanceByExposureRef.current = new Map();
                           masteryPriorNeedsRecoveryRef.current = false;

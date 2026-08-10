@@ -13,6 +13,7 @@ import {
   STAGE_1_EVIDENCE_EVENT_TYPES,
   STAGE_2_EVIDENCE_EVENT_TYPES,
   STAGE_6_EVIDENCE_EVENT_TYPES,
+  STAGE_7_EVIDENCE_EVENT_TYPES,
 } from '../src/app/lib/masteryEvidence/constants.js'
 import {
   ITEM_IDENTITY_VERSION,
@@ -36,6 +37,12 @@ import {
   MASTERY_CHECK_ROLES,
   MASTERY_OUTCOMES,
 } from '../src/app/lib/masteryEvidence/mastery.js'
+import {
+  RETENTION_OUTCOMES,
+  RETENTION_PROTOCOL_VERSION,
+  RETENTION_QUALIFICATION_STATUSES,
+  RETENTION_REASONS,
+} from '../src/app/lib/masteryEvidence/retention.js'
 import { createLegacyItemFingerprint } from '../src/app/lib/masteryEvidence/items.js'
 
 const facilitatorId = '11111111-1111-1111-1111-111111111111'
@@ -217,6 +224,7 @@ async function createEvidenceSession(store) {
     baseline_status: BASELINE_STATUSES.UNAVAILABLE,
     baseline_item_count: 0,
     baseline_unavailable_reason: 'no_baseline_pool',
+    retention_protocol_version: RETENTION_PROTOCOL_VERSION,
     started_at: '2026-08-09T12:00:00.000Z',
   }), { createClientImpl: makeCreateClientImpl(store) })
   return response.json()
@@ -256,6 +264,7 @@ test('mastery evidence route creates an owned partial evidence session', async (
   assert.equal(result.evidence_session.baseline_status, BASELINE_STATUSES.UNAVAILABLE)
   assert.equal(result.evidence_session.baseline_item_count, 0)
   assert.equal(result.evidence_session.baseline_unavailable_reason, 'no_baseline_pool')
+  assert.equal(result.evidence_session.retention_protocol_version, RETENTION_PROTOCOL_VERSION)
   assert.equal(result.evidence_session.provider, 'openai')
   assert.equal(result.evidence_session.model, 'gpt-test')
   assert.equal(store.learning_evidence_sessions.length, 1)
@@ -573,6 +582,152 @@ test('stage 6 evidence route persists independent mastery result metadata', asyn
   assert.equal(bad.status, 400)
 }))
 
+test('stage 7 evidence route persists retention result metadata and validates retention fields', async () => withEvidenceEnv(async () => {
+  const store = makeStore()
+  const session = await createEvidenceSession(store)
+  const result = await (await POST(jsonRequest({
+    action: 'record_event',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    evidence_session_id: session.evidence_session.id,
+    event_type: STAGE_7_EVIDENCE_EVENT_TYPES.RETENTION_CHECK_RESULT,
+    idempotency_key: 'stage7-retention-check-result',
+    event_sequence: 10,
+    occurred_at: '2026-08-10T12:09:00.000Z',
+    phase: 'idle',
+    stable_item_id: 'item:item-identity-v1:retention-a',
+    item_content_hash: 'hash-retention-a',
+    item_identity_version: ITEM_IDENTITY_VERSION,
+    assessment_role: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
+    evidence_purpose: 'retention',
+    item_exposure_id: 'retention-run1-q1',
+    retention_protocol_version: RETENTION_PROTOCOL_VERSION,
+    retention_check_id: 'retention-check:retention-v1:abc',
+    retention_anchor_mastery_check_id: 'mastery-check:independent-mastery-v1:def',
+    retention_delay_seconds: 90000,
+    retention_qualification_status: RETENTION_QUALIFICATION_STATUSES.ELIGIBLE,
+    retention_qualification_reason: RETENTION_REASONS.ELIGIBLE,
+    retention_outcome: RETENTION_OUTCOMES.RETAINED,
+    independence_status: INDEPENDENCE_STATUSES.INDEPENDENT,
+    independence_reason: 'eligible',
+    attempt_number: 1,
+    is_first_response: true,
+    result: { correct: true, retention_outcome: RETENTION_OUTCOMES.RETAINED },
+  }), { createClientImpl: makeCreateClientImpl(store) })).json()
+  assert.equal(result.ok, true)
+  assert.equal(store.learning_evidence_events[0].event_type, STAGE_7_EVIDENCE_EVENT_TYPES.RETENTION_CHECK_RESULT)
+  assert.equal(store.learning_evidence_events[0].retention_protocol_version, RETENTION_PROTOCOL_VERSION)
+  assert.equal(store.learning_evidence_events[0].retention_check_id, 'retention-check:retention-v1:abc')
+  assert.equal(store.learning_evidence_events[0].retention_anchor_mastery_check_id, 'mastery-check:independent-mastery-v1:def')
+  assert.equal(store.learning_evidence_events[0].retention_delay_seconds, 90000)
+  assert.equal(store.learning_evidence_events[0].retention_qualification_status, RETENTION_QUALIFICATION_STATUSES.ELIGIBLE)
+  assert.equal(store.learning_evidence_events[0].retention_outcome, RETENTION_OUTCOMES.RETAINED)
+
+  const badOutcome = await POST(jsonRequest({
+    action: 'record_event',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    evidence_session_id: session.evidence_session.id,
+    event_type: STAGE_7_EVIDENCE_EVENT_TYPES.RETENTION_CHECK_RESULT,
+    idempotency_key: 'bad-stage7-outcome',
+    occurred_at: '2026-08-10T12:10:00.000Z',
+    phase: 'idle',
+    retention_outcome: 'future_outcome',
+  }), { createClientImpl: makeCreateClientImpl(store) })
+  assert.equal(badOutcome.status, 400)
+
+  const badQualification = await POST(jsonRequest({
+    action: 'record_event',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    evidence_session_id: session.evidence_session.id,
+    event_type: STAGE_7_EVIDENCE_EVENT_TYPES.RETENTION_CHECK_RESULT,
+    idempotency_key: 'bad-stage7-qualification',
+    occurred_at: '2026-08-10T12:10:00.000Z',
+    phase: 'idle',
+    retention_qualification_status: 'future_status',
+  }), { createClientImpl: makeCreateClientImpl(store) })
+  assert.equal(badQualification.status, 400)
+}))
+
+test('stage 7 eligibility readback uses Stage 6 anchors, exact delay, session boundary, and consumed anchors', async () => withEvidenceEnv(async () => {
+  const store = makeStore()
+  await createEvidenceSession(store)
+  store.learning_evidence_events.push({
+    event_id: 'anchor-event-1',
+    facilitator_id: facilitatorId,
+    learner_id: learnerId,
+    session_id: 'prior-session',
+    lesson_key: 'generated/fractions.json',
+    event_type: STAGE_6_EVIDENCE_EVENT_TYPES.MASTERY_CHECK_RESULT,
+    mastery_check_id: 'mastery-check:independent-mastery-v1:anchor',
+    mastery_cycle_id: 'mastery-cycle:independent-mastery-v1:cycle',
+    mastery_outcome: MASTERY_OUTCOMES.INDEPENDENT_SUCCESS,
+    concept_id: 'concept:item-identity-v1:half',
+    occurred_at: '2026-08-09T12:00:00.000Z',
+  })
+
+  const eligible = await (await POST(jsonRequest({
+    action: 'check_retention_eligibility',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    learner_id: learnerId,
+    lesson_key: 'generated/fractions.json',
+    current_session_id: sessionId,
+    now: '2026-08-10T12:00:30.000Z',
+    item_identities: [
+      { stable_item_id: 'item:item-identity-v1:retention-a', item_content_hash: 'hash-retention-a' },
+    ],
+  }), { createClientImpl: makeCreateClientImpl(store) })).json()
+  assert.equal(eligible.ok, true)
+  assert.equal(eligible.eligible, true)
+  assert.equal(eligible.anchor.mastery_check_id, 'mastery-check:independent-mastery-v1:anchor')
+  assert.equal(eligible.retention_delay_seconds, 86430)
+
+  store.learning_evidence_events.push({
+    event_id: 'retention-consumed-1',
+    facilitator_id: facilitatorId,
+    learner_id: learnerId,
+    session_id: sessionId,
+    lesson_key: 'generated/fractions.json',
+    event_type: STAGE_7_EVIDENCE_EVENT_TYPES.RETENTION_CHECK_RESULT,
+    retention_anchor_mastery_check_id: 'mastery-check:independent-mastery-v1:anchor',
+    occurred_at: '2026-08-10T12:01:00.000Z',
+  })
+  const consumed = await (await POST(jsonRequest({
+    action: 'check_retention_eligibility',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    learner_id: learnerId,
+    lesson_key: 'generated/fractions.json',
+    current_session_id: sessionId,
+    now: '2026-08-10T12:02:00.000Z',
+  }), { createClientImpl: makeCreateClientImpl(store) })).json()
+  assert.equal(consumed.ok, true)
+  assert.equal(consumed.eligible, false)
+  assert.equal(consumed.reason, RETENTION_REASONS.ANCHOR_ALREADY_CONSUMED)
+
+  const sameSessionStore = makeStore()
+  await createEvidenceSession(sameSessionStore)
+  sameSessionStore.learning_evidence_events.push({
+    event_id: 'anchor-event-same-session',
+    facilitator_id: facilitatorId,
+    learner_id: learnerId,
+    session_id: sessionId,
+    lesson_key: 'generated/fractions.json',
+    event_type: STAGE_6_EVIDENCE_EVENT_TYPES.MASTERY_CHECK_RESULT,
+    mastery_check_id: 'mastery-check:independent-mastery-v1:same-session',
+    mastery_outcome: MASTERY_OUTCOMES.INDEPENDENT_SUCCESS,
+    occurred_at: '2026-08-09T12:00:00.000Z',
+  })
+  const sameSession = await (await POST(jsonRequest({
+    action: 'check_retention_eligibility',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    learner_id: learnerId,
+    lesson_key: 'generated/fractions.json',
+    current_session_id: sessionId,
+    now: '2026-08-10T12:02:00.000Z',
+  }), { createClientImpl: makeCreateClientImpl(sameSessionStore) })).json()
+  assert.equal(sameSession.ok, true)
+  assert.equal(sameSession.eligible, false)
+  assert.equal(sameSession.reason, RETENTION_REASONS.NOT_NEW_SESSION)
+}))
+
 test('client writer no-ops when disabled and suppresses duplicate local event writes', async () => {
   const disabled = new MasteryEvidenceClient({ enabled: false })
   const disabledResult = await disabled.recordSessionStarted()
@@ -613,6 +768,9 @@ test('client writer no-ops when disabled and suppresses duplicate local event wr
       status: BASELINE_STATUSES.UNAVAILABLE,
       baselineItemCount: 0,
       reason: 'no_baseline_pool',
+    },
+    retention: {
+      protocolVersion: RETENTION_PROTOCOL_VERSION,
     },
     startedAt: '2026-08-09T12:00:00.000Z',
   })
@@ -727,6 +885,25 @@ test('client writer records ordered stage 2 item and response evidence', async (
     response: '4',
     correctAnswer: '4',
   })
+  await client.recordRetentionCheckResult({
+    phase: 'idle',
+    itemPurpose: 'retention',
+    itemExposureId: 'retention-run1-q1',
+    identityItem: question,
+    assessmentRole: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
+    attemptNumber: 1,
+    isFirstResponse: true,
+    isCorrect: true,
+    retentionAnchorMasteryCheckId: 'mastery-check:independent-mastery-v1:def',
+    retentionDelaySeconds: 90000,
+    retentionQualificationStatus: RETENTION_QUALIFICATION_STATUSES.ELIGIBLE,
+    retentionQualificationReason: RETENTION_REASONS.ELIGIBLE,
+    retentionOutcome: RETENTION_OUTCOMES.RETAINED,
+    independenceStatus: INDEPENDENCE_STATUSES.INDEPENDENT,
+    independenceReason: 'eligible',
+    response: '4',
+    correctAnswer: '4',
+  })
 
   const events = posted.filter((body) => body.action === 'record_event')
   const createSession = posted.find((body) => body.action === 'create_session')
@@ -741,13 +918,15 @@ test('client writer records ordered stage 2 item and response evidence', async (
   assert.equal(createSession.baseline_protocol_version, BASELINE_PROTOCOL_VERSION)
   assert.equal(createSession.baseline_status, BASELINE_STATUSES.UNAVAILABLE)
   assert.equal(createSession.mastery_protocol_version, INDEPENDENT_MASTERY_PROTOCOL_VERSION)
+  assert.equal(createSession.retention_protocol_version, RETENTION_PROTOCOL_VERSION)
   assert.deepEqual(events.map((event) => event.event_type), [
     STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED,
     STAGE_2_EVIDENCE_EVENT_TYPES.LEARNER_RESPONSE,
     STAGE_2_EVIDENCE_EVENT_TYPES.ANSWER_EVALUATED,
     STAGE_6_EVIDENCE_EVENT_TYPES.MASTERY_CHECK_RESULT,
+    STAGE_7_EVIDENCE_EVENT_TYPES.RETENTION_CHECK_RESULT,
   ])
-  assert.deepEqual(events.map((event) => event.event_sequence), [1, 2, 3, 4])
+  assert.deepEqual(events.map((event) => event.event_sequence), [1, 2, 3, 4, 5])
   assert.ok(events.every((event) => event.stable_item_id?.startsWith('item:item-identity-v1:')))
   assert.ok(events.every((event) => event.item_content_hash))
   assert.ok(events.every((event) => event.item_identity_version === ITEM_IDENTITY_VERSION))
@@ -759,6 +938,13 @@ test('client writer records ordered stage 2 item and response evidence', async (
   assert.equal(events[3].mastery_check_role, MASTERY_CHECK_ROLES.INITIAL)
   assert.equal(events[3].independence_status, INDEPENDENCE_STATUSES.INDEPENDENT)
   assert.equal(events[3].mastery_outcome, MASTERY_OUTCOMES.INDEPENDENT_SUCCESS)
+  assert.equal(events[4].assessment_role, ASSESSMENT_ROLES.ASSESSMENT_RESERVED)
+  assert.equal(events[4].evidence_purpose, 'retention')
+  assert.equal(events[4].retention_protocol_version, RETENTION_PROTOCOL_VERSION)
+  assert.equal(events[4].retention_anchor_mastery_check_id, 'mastery-check:independent-mastery-v1:def')
+  assert.equal(events[4].retention_delay_seconds, 90000)
+  assert.equal(events[4].retention_qualification_status, RETENTION_QUALIFICATION_STATUSES.ELIGIBLE)
+  assert.equal(events[4].retention_outcome, RETENTION_OUTCOMES.RETAINED)
   assert.equal(events[1].attempt_number, 1)
   assert.equal(events[1].is_first_response, true)
   assert.equal(events[2].result.correct, false)

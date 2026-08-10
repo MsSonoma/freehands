@@ -30,6 +30,11 @@ const RESERVED_LESSON_FIELDS = Object.freeze([
   'baseline_items',
   'priorKnowledge',
   'prior_knowledge',
+  'retention',
+  'retentionPool',
+  'retention_pool',
+  'retentionItems',
+  'retention_items',
 ]);
 
 const INSTRUCTIONAL_PHASE_NAMES = Object.freeze([

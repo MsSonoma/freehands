@@ -165,6 +165,43 @@ Recovery teaching must not receive future held-out verification items. The recov
 
 Known Stage 2 boundary: retry-attempt continuity is only as reliable as current phase state. Active-session attempts are recorded from the authoritative phase controller. If a refresh/takeover happens after a wrong answer where the current snapshot does not preserve retry counters or current-question position accurately, Stage 2 does not invent continuity.
 
+Stage 7 adds delayed retention evidence without adding scheduling, reminders, reporting, or a new major lesson phase.
+
+Stage 7 answers one narrow later-revisit question: after a meaningful delay, can the learner still demonstrate the target independently before Ms. Sonoma reviews or reteaches it? A retention check is eligible only when all of these are true:
+
+- a prior Stage 6 `mastery_check_result` anchor has `mastery_outcome = independent_success` or `independent_success_after_recovery`;
+- at least 24 hours have elapsed from that anchor event timestamp;
+- the check happens in a later session, not the same session that produced the anchor;
+- the anchor has not already been consumed by an earlier retention result;
+- the selected item comes from an explicit dedicated retention pool;
+- the selected item has deterministic identity and has not already been presented to the same learner;
+- the item does not overlap baseline, instructional, or reserved Stage 6 Test items by stable/content identity;
+- there is no app-observed same-target instructional exposure between the anchor and the retention check;
+- the submitted answer is the first response and no hint, Ask, answer reveal, generated visual aid, or retry assistance occurred before it.
+
+Repeat/TTS remains allowed because it repeats the prompt verbatim and does not add instructional content.
+
+The Stage 7 protocol is versioned as `retention-v1`. It separates correctness from retention qualification:
+
+- eligible and correct: `retained`;
+- eligible and incorrect: `needs_review`;
+- assisted and correct: `assisted_review`;
+- otherwise: `unavailable`.
+
+Stage 7 records append-only `retention_check_result` events. These may carry:
+
+- `retention_protocol_version`
+- `retention_check_id`
+- `retention_anchor_mastery_check_id`
+- `retention_delay_seconds`
+- `retention_qualification_status`
+- `retention_qualification_reason`
+- `retention_outcome`
+
+Legacy lessons without a retention pool continue normally and do not produce fake retention evidence. Evidence API failures or ineligible histories are nonblocking and fall through to the existing pre-instruction path.
+
+New facilitator-generated lessons request a small explicit retention pool, normally two delayed-retention-reserved items. The retention pool participates in the deterministic lesson content hash/version, but it is excluded from instructional AI payloads, recovery payloads, visual-aid payloads, and Stage 6 Test item selection.
+
 ## What NOT To Do
 
 - Do not use `lesson_session_events` as the mastery evidence store.
@@ -174,6 +211,7 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - Do not treat Stage 4 assessment isolation as baseline, mastery, retention, or outcome evidence.
 - Do not treat Stage 5 baseline evidence as post-instruction mastery, retained knowledge, or outcome proof.
 - Do not treat Stage 6 independent mastery results as retention, causal learning proof, a facilitator dashboard, or a rewrite of legacy scores/medals.
+- Do not treat Stage 7 retention evidence as a scheduler, spaced-repetition system, causal proof, dashboard report, or general mastery percentage.
 - Do not claim assessment secrecy for unsupported legacy lessons with no separable reserved Test pool.
 - Do not change prompts, phase order, question selection, scoring, snapshots, transcripts, or completion behavior to serve evidence writes.
 - Do not mutate existing evidence events. Corrections belong in later appended events.
@@ -189,12 +227,14 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - `supabase/migrations/20260809030000_add_stage_4_assessment_isolation.sql`
 - `supabase/migrations/20260809040000_add_stage_5_baseline_evidence.sql`
 - `supabase/migrations/20260809050000_add_stage_6_independent_mastery.sql`
+- `supabase/migrations/20260809060000_add_stage_7_retention_evidence.sql`
 - `src/app/api/evidence/route.js`
 - `src/app/lib/masteryEvidence/constants.js`
 - `src/app/lib/masteryEvidence/identity.js`
 - `src/app/lib/masteryEvidence/assessmentIsolation.js`
 - `src/app/lib/masteryEvidence/baseline.js`
 - `src/app/lib/masteryEvidence/mastery.js`
+- `src/app/lib/masteryEvidence/retention.js`
 - `src/app/lib/masteryEvidence/schema.js`
 - `src/app/lib/masteryEvidence/provenance.js`
 - `src/app/lib/masteryEvidence/client.js`
@@ -210,3 +250,4 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - `scripts/test-stage4-assessment-isolation.mjs`
 - `scripts/test-stage5-baseline.mjs`
 - `scripts/test-stage6-independent-mastery.mjs`
+- `scripts/test-stage7-retention.mjs`

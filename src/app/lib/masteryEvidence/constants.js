@@ -32,10 +32,15 @@ export const STAGE_6_EVIDENCE_EVENT_TYPES = Object.freeze({
   RECOVERY_COMPLETED: 'recovery_completed',
 });
 
+export const STAGE_7_EVIDENCE_EVENT_TYPES = Object.freeze({
+  RETENTION_CHECK_RESULT: 'retention_check_result',
+});
+
 export const MASTERY_EVIDENCE_EVENT_TYPES = Object.freeze({
   ...STAGE_1_EVIDENCE_EVENT_TYPES,
   ...STAGE_2_EVIDENCE_EVENT_TYPES,
   ...STAGE_6_EVIDENCE_EVENT_TYPES,
+  ...STAGE_7_EVIDENCE_EVENT_TYPES,
 });
 
 export const STAGE_1_PHASES = Object.freeze([

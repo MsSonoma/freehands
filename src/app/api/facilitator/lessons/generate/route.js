@@ -74,6 +74,7 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   "vocab": [{"term": "string", "definition": "string"}],
   "teachingNotes": "string",
   "baseline": [{"id": "baseline-1", "question": "short, low-pressure pre-instruction question", "expectedAny": ["answer"]}],
+  "retention": [{"id": "retention-1", "question": "delayed retention question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}],
   "truefalse": [{"question": "COMPLETE QUESTION TEXT HERE", "answer": true|false, "expectedAny": ["true"|"false"]}],
   "multiplechoice": [{"question": "string", "choices": ["A", "B", "C", "D"], "correct": 0-3, "expectedAny": ["correct answer text"]}],
   "fillintheblank": [{"question": "COMPLETE SENTENCE WITH _____ BLANK", "expectedAny": ["answer"]}],
@@ -104,6 +105,7 @@ CRITICAL REQUIREMENTS:
 6. teachingNotes: Include key teaching strategies, common misconceptions, real-world connections, and differentiation tips (2-4 sentences)${notesGuidance}
 7. baseline: Include exactly 2 short, low-pressure pre-instruction questions. These must check what a learner may already know before teaching, not trick questions. They must be distinct from all truefalse, multiplechoice, fillintheblank, shortanswer, and test items. Do not call them a pretest.
 8. test: Include at least 6 reserved held-out Test questions. They must be distinct from baseline and all instructional question pools. Prefer multiple-choice or true/false with source-backed answers. These are for the final Test only and must not duplicate practice items.
+9. retention: Include exactly 2 delayed-retention-reserved questions. They must be distinct from baseline, all instructional pools, and test. These are for a future delayed revisit only.
 
 EXAMPLE truefalse format:
 {"question": "The sun rises in the east.", "answer": true, "expectedAny": ["true"]}
@@ -136,6 +138,10 @@ async function callModel(prompt){
       baseline:[
         {id:'baseline-1', question:'What do you already know about this topic?', expectedAny:['something about the topic']},
         {id:'baseline-2', question:'Can you name one idea related to this topic?', expectedAny:['related idea']}
+      ],
+      retention:[
+        {id:'retention-1', question:'Which number is even?', choices:['15','16','17','19'], correct:1, expectedAny:['16']},
+        {id:'retention-2', question:'True or false: 18 is even.', answer:true, expectedAny:['true']}
       ],
       truefalse:[{question:'2 is even.', answer:true, expectedAny:['true']}],
       multiplechoice:[{question:'Pick 2', choices:['1','2','3','4'], correct:1, expectedAny:['2']}],
