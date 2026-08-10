@@ -11,6 +11,7 @@
  *   → { essay: string }   — student's own words woven into a short essay
  */
 import { NextResponse } from 'next/server'
+import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
 
 const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL } from '@/app/lib/aiModel'
@@ -167,7 +168,7 @@ export async function POST(req) {
     if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
 
     if (body.action === 'generate') {
-      const objectives = await generateObjectives(apiKey, body.lesson || {})
+      const objectives = await generateObjectives(apiKey, buildInstructionalLessonView(body.lesson || {}))
       return NextResponse.json({ objectives })
     }
 
@@ -192,7 +193,7 @@ export async function POST(req) {
         apiKey,
         body.objectives || [],
         body.responses  || {},
-        body.lesson     || {},
+        buildInstructionalLessonView(body.lesson || {}),
       )
       return NextResponse.json({ essay: essay || '' })
     }

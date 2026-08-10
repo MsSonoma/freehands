@@ -19,6 +19,11 @@ import {
   MASTERY_EVIDENCE_IDENTITY_SCHEMA_VERSION,
   TEACHING_PROTOCOL_VERSION,
 } from '../src/app/lib/masteryEvidence/identity.js'
+import {
+  ASSESSMENT_ISOLATION_STATUSES,
+  ASSESSMENT_ISOLATION_VERSION,
+  ASSESSMENT_ROLES,
+} from '../src/app/lib/masteryEvidence/assessmentIsolation.js'
 import { createLegacyItemFingerprint } from '../src/app/lib/masteryEvidence/items.js'
 
 const facilitatorId = '11111111-1111-1111-1111-111111111111'
@@ -187,6 +192,9 @@ async function createEvidenceSession(store) {
     lesson_content_hash: 'lesson-content-hash',
     teaching_protocol_version: TEACHING_PROTOCOL_VERSION,
     teaching_protocol_hash: 'protocol-hash',
+    assessment_isolation_version: ASSESSMENT_ISOLATION_VERSION,
+    assessment_isolation_status: ASSESSMENT_ISOLATION_STATUSES.ISOLATED,
+    reserved_assessment_count: 2,
     started_at: '2026-08-09T12:00:00.000Z',
   }), { createClientImpl: makeCreateClientImpl(store) })
   return response.json()
@@ -219,6 +227,9 @@ test('mastery evidence route creates an owned partial evidence session', async (
   assert.equal(result.evidence_session.lesson_content_hash, 'lesson-content-hash')
   assert.equal(result.evidence_session.teaching_protocol_version, TEACHING_PROTOCOL_VERSION)
   assert.equal(result.evidence_session.teaching_protocol_hash, 'protocol-hash')
+  assert.equal(result.evidence_session.assessment_isolation_version, ASSESSMENT_ISOLATION_VERSION)
+  assert.equal(result.evidence_session.assessment_isolation_status, ASSESSMENT_ISOLATION_STATUSES.ISOLATED)
+  assert.equal(result.evidence_session.reserved_assessment_count, 2)
   assert.equal(result.evidence_session.provider, 'openai')
   assert.equal(result.evidence_session.model, 'gpt-test')
   assert.equal(store.learning_evidence_sessions.length, 1)
@@ -270,6 +281,8 @@ test('stage 2 evidence events persist item, exposure, attempt, and sequence fiel
     stable_item_id: 'item:item-identity-v1:stable-abc123',
     item_content_hash: 'item-content-hash',
     item_identity_version: ITEM_IDENTITY_VERSION,
+    assessment_role: ASSESSMENT_ROLES.INSTRUCTIONAL,
+    pre_assessment_exposed: false,
     item_purpose: 'worksheet',
     item_exposure_id: 'worksheet-run1-q1-abc123',
     assistance_level: 'independent',
@@ -298,6 +311,8 @@ test('stage 2 evidence events persist item, exposure, attempt, and sequence fiel
   assert.equal(store.learning_evidence_events[0].stable_item_id, 'item:item-identity-v1:stable-abc123')
   assert.equal(store.learning_evidence_events[0].item_content_hash, 'item-content-hash')
   assert.equal(store.learning_evidence_events[0].item_identity_version, ITEM_IDENTITY_VERSION)
+  assert.equal(store.learning_evidence_events[0].assessment_role, ASSESSMENT_ROLES.INSTRUCTIONAL)
+  assert.equal(store.learning_evidence_events[0].pre_assessment_exposed, false)
   assert.equal(store.learning_evidence_events[0].item_exposure_id, 'worksheet-run1-q1-abc123')
   assert.equal(store.learning_evidence_events[0].attempt_number, 1)
   assert.equal(store.learning_evidence_events[0].is_first_response, true)
@@ -374,6 +389,16 @@ test('stage 3 evidence route rejects unsupported identity algorithm versions', a
   }), { createClientImpl: makeCreateClientImpl(store) })
   assert.equal(badSession.status, 400)
 
+  const badAssessmentSession = await POST(jsonRequest({
+    action: 'create_session',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    session_id: sessionId,
+    learner_id: learnerId,
+    lesson_key: 'generated/fractions.json',
+    assessment_isolation_status: 'future_isolation_status',
+  }), { createClientImpl: makeCreateClientImpl(store) })
+  assert.equal(badAssessmentSession.status, 400)
+
   const session = await createEvidenceSession(store)
   const badEvent = await POST(jsonRequest({
     action: 'record_event',
@@ -386,6 +411,18 @@ test('stage 3 evidence route rejects unsupported identity algorithm versions', a
     item_identity_version: 'future-item-identity-v9',
   }), { createClientImpl: makeCreateClientImpl(store) })
   assert.equal(badEvent.status, 400)
+
+  const badAssessmentRoleEvent = await POST(jsonRequest({
+    action: 'record_event',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    evidence_session_id: session.evidence_session.id,
+    event_type: STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED,
+    idempotency_key: 'bad-assessment-role-key',
+    occurred_at: '2026-08-09T12:02:00.000Z',
+    phase: 'worksheet',
+    assessment_role: 'future_assessment_role',
+  }), { createClientImpl: makeCreateClientImpl(store) })
+  assert.equal(badAssessmentRoleEvent.status, 400)
 }))
 
 test('client writer no-ops when disabled and suppresses duplicate local event writes', async () => {
@@ -418,6 +455,11 @@ test('client writer no-ops when disabled and suppresses duplicate local event wr
     learnerId,
     lessonKey: 'generated/fractions.json',
     lessonData: { title: 'Fractions' },
+    assessmentIsolation: {
+      version: ASSESSMENT_ISOLATION_VERSION,
+      status: ASSESSMENT_ISOLATION_STATUSES.ISOLATED,
+      reservedAssessmentCount: 1,
+    },
     startedAt: '2026-08-09T12:00:00.000Z',
   })
   await client.recordSessionStarted({ initialPhase: 'discussion' })
@@ -462,6 +504,11 @@ test('client writer records ordered stage 2 item and response evidence', async (
     learnerId,
     lessonKey: 'generated/fractions.json',
     lessonData: { title: 'Fractions' },
+    assessmentIsolation: {
+      version: ASSESSMENT_ISOLATION_VERSION,
+      status: ASSESSMENT_ISOLATION_STATUSES.ISOLATED,
+      reservedAssessmentCount: 1,
+    },
     startedAt: '2026-08-09T12:00:00.000Z',
   })
   await client.recordItemPresented({
@@ -470,6 +517,7 @@ test('client writer records ordered stage 2 item and response evidence', async (
     itemPurpose: 'worksheet',
     itemExposureId: 'worksheet-run1-q1',
     identityItem: question,
+    assessmentRole: ASSESSMENT_ROLES.INSTRUCTIONAL,
     legacyItemFingerprint: fingerprint,
     questionIndex: 0,
     totalQuestions: 1,
@@ -480,6 +528,7 @@ test('client writer records ordered stage 2 item and response evidence', async (
     itemPurpose: 'worksheet',
     itemExposureId: 'worksheet-run1-q1',
     identityItem: question,
+    assessmentRole: ASSESSMENT_ROLES.INSTRUCTIONAL,
     legacyItemFingerprint: fingerprint,
     attemptNumber: 1,
     isFirstResponse: true,
@@ -491,6 +540,7 @@ test('client writer records ordered stage 2 item and response evidence', async (
     itemPurpose: 'worksheet',
     itemExposureId: 'worksheet-run1-q1',
     identityItem: question,
+    assessmentRole: ASSESSMENT_ROLES.INSTRUCTIONAL,
     legacyItemFingerprint: fingerprint,
     attemptNumber: 1,
     isFirstResponse: true,
@@ -506,6 +556,9 @@ test('client writer records ordered stage 2 item and response evidence', async (
   assert.equal(createSession.identity_schema_version, MASTERY_EVIDENCE_IDENTITY_SCHEMA_VERSION)
   assert.equal(createSession.lesson_identity_version, LESSON_IDENTITY_VERSION)
   assert.equal(createSession.teaching_protocol_version, TEACHING_PROTOCOL_VERSION)
+  assert.equal(createSession.assessment_isolation_version, ASSESSMENT_ISOLATION_VERSION)
+  assert.equal(createSession.assessment_isolation_status, ASSESSMENT_ISOLATION_STATUSES.ISOLATED)
+  assert.equal(createSession.reserved_assessment_count, 1)
   assert.deepEqual(events.map((event) => event.event_type), [
     STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED,
     STAGE_2_EVIDENCE_EVENT_TYPES.LEARNER_RESPONSE,
@@ -515,7 +568,84 @@ test('client writer records ordered stage 2 item and response evidence', async (
   assert.ok(events.every((event) => event.stable_item_id?.startsWith('item:item-identity-v1:')))
   assert.ok(events.every((event) => event.item_content_hash))
   assert.ok(events.every((event) => event.item_identity_version === ITEM_IDENTITY_VERSION))
+  assert.ok(events.every((event) => event.assessment_role === ASSESSMENT_ROLES.INSTRUCTIONAL))
   assert.equal(events[1].attempt_number, 1)
   assert.equal(events[1].is_first_response, true)
   assert.equal(events[2].result.correct, false)
+})
+
+test('client writer marks repeated reserved assessment item presentation as pre-exposed', async () => {
+  const posted = []
+  const client = new MasteryEvidenceClient({
+    enabled: true,
+    getAuthToken: async () => 'valid-token',
+    now: () => '2026-08-09T12:00:00.000Z',
+    fetchImpl: async (_url, init) => {
+      const body = JSON.parse(init.body)
+      posted.push(body)
+      if (body.action === 'create_session') {
+        return Response.json({
+          ok: true,
+          evidence_session: { id: 'evidence-session-1', evidence_status: MASTERY_EVIDENCE_STATUSES.PARTIAL },
+          server_provenance: { provider: 'openai', model: 'gpt-test' },
+        })
+      }
+      if (body.action === 'record_event') return Response.json({ ok: true, duplicate: false })
+      return Response.json({ ok: true, evidence_session: { evidence_status: body.evidence_status } })
+    },
+  })
+  const reservedQuestion = {
+    id: 'test-q1',
+    type: 'short',
+    question: 'Explain the reserved assessment idea.',
+    answer: 'reserved answer',
+  }
+  const fingerprint = createLegacyItemFingerprint({
+    lessonKey: 'generated/fractions.json',
+    phase: 'test',
+    item: reservedQuestion,
+    questionIndex: 0,
+  })
+
+  client.initialize({
+    sessionId,
+    learnerId,
+    lessonKey: 'generated/fractions.json',
+    lessonData: { title: 'Fractions' },
+    assessmentIsolation: {
+      version: ASSESSMENT_ISOLATION_VERSION,
+      status: ASSESSMENT_ISOLATION_STATUSES.ISOLATED,
+      reservedAssessmentCount: 1,
+    },
+    startedAt: '2026-08-09T12:00:00.000Z',
+  })
+  await client.recordItemPresented({
+    phase: 'test',
+    itemId: fingerprint,
+    itemPurpose: 'test',
+    itemExposureId: 'test-run1-q1',
+    identityItem: reservedQuestion,
+    assessmentRole: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
+    legacyItemFingerprint: fingerprint,
+    questionIndex: 0,
+    totalQuestions: 1,
+  })
+  await client.recordItemPresented({
+    phase: 'test',
+    itemId: fingerprint,
+    itemPurpose: 'test',
+    itemExposureId: 'test-run2-q1',
+    identityItem: reservedQuestion,
+    assessmentRole: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
+    legacyItemFingerprint: fingerprint,
+    questionIndex: 0,
+    totalQuestions: 1,
+  })
+
+  const events = posted.filter((body) => body.action === 'record_event')
+  assert.equal(events.length, 2)
+  assert.equal(events[0].assessment_role, ASSESSMENT_ROLES.ASSESSMENT_RESERVED)
+  assert.equal(events[0].pre_assessment_exposed, false)
+  assert.equal(events[1].assessment_role, ASSESSMENT_ROLES.ASSESSMENT_RESERVED)
+  assert.equal(events[1].pre_assessment_exposed, true)
 })

@@ -14,6 +14,10 @@ import {
   buildTeachingProtocolIdentity,
   stableStringify,
 } from './identity.js';
+import {
+  ASSESSMENT_ISOLATION_VERSION,
+  ASSESSMENT_ROLES,
+} from './assessmentIsolation.js';
 import { inferLessonSource } from './schema.js';
 
 const DEFAULT_WRITE_TIMEOUT_MS = 4000;
@@ -96,6 +100,8 @@ export class MasteryEvidenceClient {
     this.pendingWrites = new Set();
     this.readyPromise = null;
     this.eventSequence = 0;
+    this.assessmentIsolation = null;
+    this.presentedItemIdentityKeys = new Set();
   }
 
   initialize({
@@ -105,6 +111,7 @@ export class MasteryEvidenceClient {
     lessonKey,
     lessonId,
     lessonData,
+    assessmentIsolation = null,
     startedAt,
   } = {}) {
     if (!this.enabled) {
@@ -129,8 +136,11 @@ export class MasteryEvidenceClient {
       lessonKey: normalizedLessonKey,
       lessonId: normalizeText(lessonId),
       lessonData: lessonData || null,
+      assessmentIsolation: assessmentIsolation || null,
       startedAt: startedAt || this.now(),
     };
+    this.assessmentIsolation = assessmentIsolation || null;
+    this.presentedItemIdentityKeys = new Set();
 
     this.readyPromise = this.#createSession();
     return this.readyPromise;
@@ -176,6 +186,7 @@ export class MasteryEvidenceClient {
     itemPurpose = null,
     itemExposureId,
     identityItem = null,
+    assessmentRole = null,
     legacyItemFingerprint,
     questionIndex = null,
     totalQuestions = null,
@@ -194,6 +205,7 @@ export class MasteryEvidenceClient {
       itemPurpose,
       itemExposureId,
       identityItem,
+      assessmentRole,
       payload: {
         source: 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
@@ -210,6 +222,7 @@ export class MasteryEvidenceClient {
     itemPurpose = null,
     itemExposureId,
     identityItem = null,
+    assessmentRole = null,
     legacyItemFingerprint,
     attemptNumber,
     isFirstResponse,
@@ -233,6 +246,7 @@ export class MasteryEvidenceClient {
       itemPurpose,
       itemExposureId,
       identityItem,
+      assessmentRole,
       attemptNumber: normalizedAttempt,
       isFirstResponse: !!isFirstResponse,
       payload: {
@@ -251,6 +265,7 @@ export class MasteryEvidenceClient {
     itemPurpose = null,
     itemExposureId,
     identityItem = null,
+    assessmentRole = null,
     legacyItemFingerprint,
     attemptNumber,
     isFirstResponse,
@@ -276,6 +291,7 @@ export class MasteryEvidenceClient {
       itemPurpose,
       itemExposureId,
       identityItem,
+      assessmentRole,
       attemptNumber: normalizedAttempt,
       isFirstResponse: !!isFirstResponse,
       result: {
@@ -298,6 +314,7 @@ export class MasteryEvidenceClient {
     itemPurpose = null,
     itemExposureId,
     identityItem = null,
+    assessmentRole = null,
     legacyItemFingerprint,
     attemptNumber,
     hintSource = 'current_phase_feedback',
@@ -320,6 +337,7 @@ export class MasteryEvidenceClient {
       itemPurpose,
       itemExposureId,
       identityItem,
+      assessmentRole,
       assistanceLevel: 'hinted',
       attemptNumber: normalizedAttempt,
       payload: {
@@ -338,6 +356,7 @@ export class MasteryEvidenceClient {
     itemPurpose = null,
     itemExposureId,
     identityItem = null,
+    assessmentRole = null,
     legacyItemFingerprint,
     attemptNumber,
     retrySource = 'current_phase_feedback',
@@ -359,6 +378,7 @@ export class MasteryEvidenceClient {
       itemPurpose,
       itemExposureId,
       identityItem,
+      assessmentRole,
       assistanceLevel: 'retry_no_hint',
       attemptNumber: normalizedAttempt,
       payload: {
@@ -376,6 +396,7 @@ export class MasteryEvidenceClient {
     itemPurpose = null,
     itemExposureId,
     identityItem = null,
+    assessmentRole = null,
     legacyItemFingerprint,
     attemptNumber = null,
     revealSource = 'current_phase_feedback',
@@ -397,6 +418,7 @@ export class MasteryEvidenceClient {
       itemPurpose,
       itemExposureId,
       identityItem,
+      assessmentRole,
       assistanceLevel: 'answer_revealed',
       attemptNumber,
       payload: {
@@ -415,6 +437,7 @@ export class MasteryEvidenceClient {
     itemPurpose = null,
     itemExposureId = null,
     identityItem = null,
+    assessmentRole = null,
     legacyItemFingerprint = null,
     askMode = 'freeform',
     prompt = null,
@@ -434,6 +457,7 @@ export class MasteryEvidenceClient {
       itemPurpose,
       itemExposureId,
       identityItem,
+      assessmentRole,
       assistanceLevel: answerRevealed ? 'answer_revealed' : 'reteach_or_scaffolded',
       payload: {
         source: 'session-v2',
@@ -454,6 +478,7 @@ export class MasteryEvidenceClient {
     itemPurpose = null,
     itemExposureId = null,
     identityItem = null,
+    assessmentRole = null,
     legacyItemFingerprint = null,
     payload = {},
   } = {}) {
@@ -466,6 +491,7 @@ export class MasteryEvidenceClient {
       itemPurpose,
       itemExposureId,
       identityItem,
+      assessmentRole,
       payload: {
         source: 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
@@ -557,6 +583,11 @@ export class MasteryEvidenceClient {
         lesson_content_hash: lessonIdentity.lessonContentHash,
         teaching_protocol_version: protocolIdentity.protocolVersion,
         teaching_protocol_hash: protocolIdentity.protocolHash,
+        assessment_isolation_version: this.assessmentIsolation?.version || ASSESSMENT_ISOLATION_VERSION,
+        assessment_isolation_status: this.assessmentIsolation?.status || null,
+        reserved_assessment_count: Number.isFinite(Number(this.assessmentIsolation?.reservedAssessmentCount))
+          ? Number(this.assessmentIsolation.reservedAssessmentCount)
+          : null,
         started_at: this.meta.startedAt,
       });
       if (!response?.ok || !response.evidence_session?.id) {
@@ -601,6 +632,24 @@ export class MasteryEvidenceClient {
     }
   }
 
+  #itemIdentityKeys(itemIdentity = {}) {
+    return [
+      itemIdentity?.stableItemId ? `stable:${itemIdentity.stableItemId}` : null,
+      itemIdentity?.itemContentHash ? `content:${itemIdentity.itemContentHash}` : null,
+    ].filter(Boolean);
+  }
+
+  #hasPresentedItem(itemIdentity = {}) {
+    return this.#itemIdentityKeys(itemIdentity)
+      .some((key) => this.presentedItemIdentityKeys.has(key));
+  }
+
+  #markPresentedItem(itemIdentity = {}) {
+    for (const key of this.#itemIdentityKeys(itemIdentity)) {
+      this.presentedItemIdentityKeys.add(key);
+    }
+  }
+
   async #recordEvent({
     eventType,
     occurredAt,
@@ -612,6 +661,8 @@ export class MasteryEvidenceClient {
     itemPurpose = null,
     itemExposureId = null,
     identityItem = null,
+    assessmentRole = null,
+    preAssessmentExposed = null,
     assistanceLevel = null,
     attemptNumber = null,
     isFirstResponse = null,
@@ -621,6 +672,13 @@ export class MasteryEvidenceClient {
       if (!this.evidenceSessionId || !this.meta) return { ok: false, status: this.status };
       const eventSequence = this.eventSequence + 1;
       const itemIdentity = await this.#resolveItemIdentity(identityItem);
+      const normalizedAssessmentRole = assessmentRole === ASSESSMENT_ROLES.ASSESSMENT_RESERVED
+        ? ASSESSMENT_ROLES.ASSESSMENT_RESERVED
+        : (assessmentRole === ASSESSMENT_ROLES.INSTRUCTIONAL ? ASSESSMENT_ROLES.INSTRUCTIONAL : null);
+      const computedPreAssessmentExposed = eventType === STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED
+        && normalizedAssessmentRole === ASSESSMENT_ROLES.ASSESSMENT_RESERVED
+        ? this.#hasPresentedItem(itemIdentity)
+        : preAssessmentExposed;
       const idempotencyKey = makeEvidenceIdempotencyKey({
         sessionId: this.meta.sessionId,
         eventType,
@@ -643,6 +701,10 @@ export class MasteryEvidenceClient {
         stable_item_id: itemIdentity.stableItemId,
         item_content_hash: itemIdentity.itemContentHash,
         item_identity_version: itemIdentity.itemIdentityVersion,
+        assessment_role: normalizedAssessmentRole,
+        pre_assessment_exposed: typeof computedPreAssessmentExposed === 'boolean'
+          ? computedPreAssessmentExposed
+          : null,
         item_purpose: itemPurpose,
         item_exposure_id: itemExposureId,
         assistance_level: assistanceLevel,
@@ -655,6 +717,9 @@ export class MasteryEvidenceClient {
       if (response?.ok) {
         this.eventSequence = eventSequence;
         this.recordedKeys.add(idempotencyKey);
+        if (eventType === STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED) {
+          this.#markPresentedItem(itemIdentity);
+        }
         return { ok: true, duplicate: !!response.duplicate, status: this.status };
       }
       this.hasFailedWrite = true;

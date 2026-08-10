@@ -84,6 +84,30 @@ Item content hashing excludes runtime exposure position, phase run, learner resp
 
 Provenance currently captures the Sonoma provider/model selection, app build id when available, the Stage 3 teaching protocol version/hash when provided by the client, and the server fallback protocol values for older clients.
 
+Stage 4 adds assessment-isolation infrastructure without changing learner behavior.
+
+The isolation model uses two centralized item roles:
+
+- `instructional`: Discussion, Exercise, Worksheet, and other learning-support exposures.
+- `assessment_reserved`: source-backed Test items that are held out until the Test phase.
+
+When the lesson source has a separable Test pool, Session V2 uses that pool for Test and sends a sanitized instructional lesson view to instructional AI endpoints. The sanitized view removes reserved assessment fields such as `test`, assessment pools, and answer-key fields before Discussion, Exercise, and Webb objective payloads are built. Ask remains context-only: before Test it receives the active instructional context, and during Test it may receive the active Test item because the item has already been presented. Visual-aid generation continues to use teaching notes/title/custom prompts rather than the full lesson object.
+
+Stage 4 session metadata records:
+
+- `assessment_isolation_version = assessment-isolation-v1`
+- `assessment_isolation_status`: `isolated`, `not_isolated`, or `unavailable`
+- `reserved_assessment_count`
+
+Stage 4 event metadata records:
+
+- `assessment_role`
+- `pre_assessment_exposed`
+
+`isolated` means a separable reserved Test pool exists and its Stage 3 stable/content item identities do not overlap the instructional phase sets for the session. `not_isolated` means deterministic identity overlap was found between instructional and reserved Test items. `unavailable` means the source does not expose a separable reserved Test pool, so the app preserves legacy behavior and does not falsely claim isolation.
+
+This is not cryptographic secrecy. The full lesson may still exist in browser memory. The boundary is a runtime projection and evidence classification boundary for instructional AI payloads and source-backed Test item exposure.
+
 Known Stage 2 boundary: retry-attempt continuity is only as reliable as current phase state. Active-session attempts are recorded from the authoritative phase controller. If a refresh/takeover happens after a wrong answer where the current snapshot does not preserve retry counters or current-question position accurately, Stage 2 does not invent continuity.
 
 ## What NOT To Do
@@ -91,7 +115,9 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - Do not use `lesson_session_events` as the mastery evidence store.
 - Do not reinterpret Stage 1 lifecycle events or existing production proof rows.
 - Do not create mastery percentages, independent mastery checks, concept state transitions, baseline results, or retention events in Stage 2.
-- Do not treat Stage 3 identity fields as proof of mastery, assessment isolation, independent measurement, or learner outcome improvement.
+- Do not treat Stage 3 identity fields as proof of mastery, independent measurement, or learner outcome improvement.
+- Do not treat Stage 4 assessment isolation as baseline, mastery, retention, or outcome evidence.
+- Do not claim assessment secrecy for unsupported legacy lessons with no separable reserved Test pool.
 - Do not change prompts, phase order, question selection, scoring, snapshots, transcripts, or completion behavior to serve evidence writes.
 - Do not mutate existing evidence events. Corrections belong in later appended events.
 - Do not infer evidence by parsing transcript prose after the fact; capture current behavior at runtime.
@@ -103,9 +129,11 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - `supabase/migrations/20260809000000_add_learning_evidence_foundation.sql`
 - `supabase/migrations/20260809010000_add_stage_2_learning_evidence_events.sql`
 - `supabase/migrations/20260809020000_add_stage_3_mastery_evidence_identity.sql`
+- `supabase/migrations/20260809030000_add_stage_4_assessment_isolation.sql`
 - `src/app/api/evidence/route.js`
 - `src/app/lib/masteryEvidence/constants.js`
 - `src/app/lib/masteryEvidence/identity.js`
+- `src/app/lib/masteryEvidence/assessmentIsolation.js`
 - `src/app/lib/masteryEvidence/schema.js`
 - `src/app/lib/masteryEvidence/provenance.js`
 - `src/app/lib/masteryEvidence/client.js`
@@ -118,3 +146,4 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - `src/app/session/components/SessionVisualAidsCarousel.js`
 - `scripts/test-mastery-evidence.mjs`
 - `scripts/test-stage3-identity.mjs`
+- `scripts/test-stage4-assessment-isolation.mjs`

@@ -13,6 +13,11 @@ import {
   MASTERY_EVIDENCE_IDENTITY_SCHEMA_VERSION,
 } from '../../lib/masteryEvidence/identity.js';
 import {
+  ASSESSMENT_ISOLATION_STATUSES,
+  ASSESSMENT_ISOLATION_VERSION,
+  ASSESSMENT_ROLES,
+} from '../../lib/masteryEvidence/assessmentIsolation.js';
+import {
   assertEvidenceStatus,
   assertSchemaVersion,
   assertStage1EventType,
@@ -101,6 +106,31 @@ function assertOptionalIdentityVersion(value, expected, fieldName) {
   return normalized;
 }
 
+function assertOptionalAssessmentIsolationStatus(value) {
+  const normalized = normalizeOptionalText(value);
+  if (normalized && !Object.values(ASSESSMENT_ISOLATION_STATUSES).includes(normalized)) {
+    throw new Error('Unsupported assessment isolation status');
+  }
+  return normalized;
+}
+
+function assertOptionalAssessmentRole(value) {
+  const normalized = normalizeOptionalText(value);
+  if (normalized && !Object.values(ASSESSMENT_ROLES).includes(normalized)) {
+    throw new Error('Unsupported assessment role');
+  }
+  return normalized;
+}
+
+function normalizeOptionalNonnegativeInteger(value, fieldName) {
+  if (value == null || value === '') return null;
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < 0) {
+    throw new Error(`${fieldName} must be a nonnegative integer`);
+  }
+  return number;
+}
+
 function normalizeSessionBody(body) {
   assertSchemaVersion(body?.schema_version);
   const sessionId = normalizeRequiredText(body?.session_id, 'session_id');
@@ -131,6 +161,16 @@ function normalizeSessionBody(body) {
     lesson_content_hash: normalizeOptionalText(body?.lesson_content_hash),
     teaching_protocol_version: normalizeOptionalText(body?.teaching_protocol_version),
     teaching_protocol_hash: normalizeOptionalText(body?.teaching_protocol_hash),
+    assessment_isolation_version: assertOptionalIdentityVersion(
+      body?.assessment_isolation_version,
+      ASSESSMENT_ISOLATION_VERSION,
+      'assessment_isolation_version',
+    ),
+    assessment_isolation_status: assertOptionalAssessmentIsolationStatus(body?.assessment_isolation_status),
+    reserved_assessment_count: normalizeOptionalNonnegativeInteger(
+      body?.reserved_assessment_count,
+      'reserved_assessment_count',
+    ),
     started_at: normalizeIsoTimestamp(body?.started_at, new Date().toISOString()),
     evidence_status: MASTERY_EVIDENCE_STATUSES.PARTIAL,
   };
@@ -157,6 +197,8 @@ function normalizeEventBody(body) {
       ITEM_IDENTITY_VERSION,
       'item_identity_version',
     ),
+    assessment_role: assertOptionalAssessmentRole(body?.assessment_role),
+    pre_assessment_exposed: normalizeOptionalBoolean(body?.pre_assessment_exposed),
     item_purpose: normalizeOptionalText(body?.item_purpose),
     item_exposure_id: normalizeOptionalText(body?.item_exposure_id),
     assistance_level: normalizeOptionalText(body?.assistance_level),
@@ -261,6 +303,8 @@ async function handleRecordEvent({ body, user, admin }) {
     stable_item_id: event.stable_item_id,
     item_content_hash: event.item_content_hash,
     item_identity_version: event.item_identity_version,
+    assessment_role: event.assessment_role,
+    pre_assessment_exposed: event.pre_assessment_exposed,
     item_purpose: event.item_purpose,
     item_exposure_id: event.item_exposure_id,
     assistance_level: event.assistance_level,

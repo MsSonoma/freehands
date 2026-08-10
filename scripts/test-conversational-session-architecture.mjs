@@ -62,6 +62,7 @@ test('DiscussionPhase is the active Socratic comprehension model', () => {
 
   assertIncludes(discussion, "const WEBB_OBJECTIVES_URL   = '/api/webb-objectives'")
   assertIncludes(discussion, "const SONOMA_DISCUSSION_URL = '/api/sonoma-discussion'")
+  assertIncludes(discussion, 'buildInstructionalLessonView')
   assertIncludes(discussion, 'async submitMessage(userText)')
   assertIncludes(discussion, "action: 'check'")
   assertIncludes(discussion, 'conversation:')
@@ -81,6 +82,8 @@ test('SessionPageV2 wires sentence playback, learner chat, and conversational ex
   const startExercisePhase = extractFunctionBody(session, 'startExercisePhase')
 
   assertIncludes(session, "import { ExerciseConversationPhase } from './ExerciseConversationPhase'")
+  assertIncludes(session, 'buildInstructionalLessonView')
+  assertIncludes(session, 'lessonData: instructionalLessonView || lessonData')
   assertIncludes(session, 'const [discussionSentenceInfo, setDiscussionSentenceInfo] = useState')
   assertIncludes(session, "eventBusRef.current.on('discussionSentenceChange'")
   assertIncludes(session, 'discussionPhaseRef.current.submitMessage(discussionResponse)')

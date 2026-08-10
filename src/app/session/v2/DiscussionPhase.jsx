@@ -24,6 +24,7 @@
 'use client';
 
 import { fetchTTS } from './services';
+import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js';
 
 const WEBB_OBJECTIVES_URL   = '/api/webb-objectives';
 const SONOMA_DISCUSSION_URL = '/api/sonoma-discussion';
@@ -71,7 +72,7 @@ export class DiscussionPhase {
     this.#eventBus    = options.eventBus;
     this.#learnerName = options.learnerName || 'friend';
     this.#lessonTitle = options.lessonTitle || 'this topic';
-    this.#lessonData  = options.lessonData  || null;
+    this.#lessonData  = buildInstructionalLessonView(options.lessonData) || null;
     this.#grade       = options.grade       || '';
 
     if (!this.#audioEngine) throw new Error('DiscussionPhase requires audioEngine');

@@ -60,6 +60,14 @@ import { useSessionTracking } from '@/app/hooks/useSessionTracking';
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js';
 import { STAGE_2_EVIDENCE_EVENT_TYPES } from '@/app/lib/masteryEvidence/constants.js';
 import { createLegacyItemFingerprint, summarizeEvidenceItem } from '@/app/lib/masteryEvidence/items.js';
+import {
+  ASSESSMENT_ROLES,
+  analyzeAssessmentIsolation,
+  buildInstructionalLessonView,
+  getReservedAssessmentItems,
+  roleForPhase,
+  tagItemsForPhase,
+} from '@/app/lib/masteryEvidence/assessmentIsolation.js';
 import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay';
@@ -1035,6 +1043,7 @@ function SessionPageV2Inner() {
   // on lesson change. Cleared explicitly on refresh. Prevents multiple calls within the
   // same session from producing different random draws (which caused print/audio mismatch).
   const buildAllPhaseSetsCache = useRef(null); // { lessonData, sets } | null
+  const assessmentIsolationRef = useRef(null);
   // Mirror refs for generated arrays — always hold the current value regardless of closure age.
   // Used by start*Phase (called from stale orchestrator closures) and download handlers
   // so they always see the latest sets even if captured before state updated.
@@ -1042,6 +1051,11 @@ function SessionPageV2Inner() {
   const generatedTestRef = useRef(null);
   const generatedComprehensionRef = useRef(null);
   const generatedExerciseRef = useRef(null);
+
+  const instructionalLessonView = useMemo(
+    () => buildInstructionalLessonView(lessonData),
+    [lessonData],
+  );
 
   // Persisting the full transcript via SnapshotService serializes a large object and writes
   // to localStorage; doing that on every caption update can cause noticeable jank over time.
@@ -1866,6 +1880,7 @@ function SessionPageV2Inner() {
       ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib', type: 'fib' })) : [];
     const sa = Array.isArray(lessonData.shortanswer)
       ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short', type: 'short' })) : [];
+    const reservedTestSource = getReservedAssessmentItems(lessonData);
 
     // Deduplicate by question text
     const seen = new Set();
@@ -1922,15 +1937,41 @@ function SessionPageV2Inner() {
       return questions.map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
     };
 
+    const buildReservedTestPhase = () => {
+      if (!reservedTestSource.length) return buildPhase(testTarget);
+      return dealPhase(reservedTestSource, testTarget)
+        .map((q, idx) => ({
+          ...q,
+          assessmentRole: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
+          assessment_role: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
+          sourceRole: q.sourceRole || 'test',
+          evidence_purpose: q.evidence_purpose || 'test',
+          number: q.number || (idx + 1),
+        }));
+    };
+
     const sets = {
-      comprehension: buildPhase(compTarget),
-      exercise:      buildPhase(exerciseTarget),
-      worksheet:     buildPhase(worksheetTarget),
-      test:          buildPhase(testTarget),
+      comprehension: tagItemsForPhase(buildPhase(compTarget), 'comprehension'),
+      exercise:      tagItemsForPhase(buildPhase(exerciseTarget), 'exercise'),
+      worksheet:     tagItemsForPhase(buildPhase(worksheetTarget), 'worksheet'),
+      test:          buildReservedTestPhase(),
     };
     buildAllPhaseSetsCache.current = { lessonData, sets };
     return sets;
   }, [lessonData, getLearnerTarget, questionKey]);
+
+  const resolveAssessmentIsolation = useCallback(async () => {
+    if (!lessonData) return null;
+    const phaseSets = buildAllPhaseSets() || {};
+    const analysis = await analyzeAssessmentIsolation({
+      lessonKey,
+      lessonId,
+      lessonData,
+      phaseSets,
+    });
+    assessmentIsolationRef.current = analysis;
+    return analysis;
+  }, [buildAllPhaseSets, lessonData, lessonId, lessonKey]);
 
   // Load persisted worksheet/test sets for printing (local+Supabase)
   useEffect(() => {
@@ -2740,6 +2781,7 @@ function SessionPageV2Inner() {
     setGeneratedWorksheet(null);
     setGeneratedTest(null);
     buildAllPhaseSetsCache.current = null; // force fresh random draw on next build
+    assessmentIsolationRef.current = null; // re-evaluate Stage 4 classification after refresh
     const key = getAssessmentStorageKey();
     const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
     if (key) {
@@ -3712,6 +3754,7 @@ function SessionPageV2Inner() {
     const phase = normalizePhaseAlias(phaseName);
     const phaseRun = ensureEvidencePhaseRun(phase);
     const index = Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : 0;
+    const assessmentRole = roleForPhase(phase);
     const legacyItemFingerprint = createLegacyItemFingerprint({
       lessonKey,
       lessonId,
@@ -3730,6 +3773,7 @@ function SessionPageV2Inner() {
       itemId: legacyItemFingerprint,
       itemPurpose: phase,
       itemExposureId,
+      assessmentRole,
       legacyItemFingerprint,
       questionIndex: index,
       identityItem: item || null,
@@ -4441,7 +4485,7 @@ function SessionPageV2Inner() {
     
     const controller = new TeachingController({
       audioEngine: audioEngineRef.current,
-      lessonData: lessonData,
+      lessonData: instructionalLessonView || lessonData,
       lessonMeta: {
         subject: subjectParam,
         difficulty: 'medium', // TODO: Parse from URL or lesson
@@ -4495,7 +4539,7 @@ function SessionPageV2Inner() {
       controller.destroy();
       teachingControllerRef.current = null;
     };
-  }, [lessonData, audioReady]);
+  }, [lessonData, instructionalLessonView, audioReady]);
   
   // Initialize PhaseOrchestrator when lesson loads
   useEffect(() => {
@@ -4915,7 +4959,7 @@ function SessionPageV2Inner() {
       eventBus: eventBusRef.current,
       learnerName: learnerName,
       lessonTitle: lessonTitle,
-      lessonData: lessonData,
+      lessonData: instructionalLessonView || lessonData,
       grade: (learnerProfile?.grade || lessonData?.grade || '').toString(),
       // Resume: pass saved conversation history so the overview is skipped
       resumeHistory: isDiscussionResume
@@ -5477,7 +5521,7 @@ function SessionPageV2Inner() {
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
       questions: questions,
-      lessonData: lessonData,
+      lessonData: instructionalLessonView || lessonData,
       learnerName: learnerName,
       resumeState: (!forceFresh && savedExercise) ? {
         questions,
@@ -6452,6 +6496,12 @@ function SessionPageV2Inner() {
       ? (options?.startPhase || null)
       : (options?.startPhase || resumePhaseRef.current);
     const target = normalizeResumePhase(resolvedPhase);
+    let assessmentIsolation = assessmentIsolationRef.current;
+    try {
+      assessmentIsolation = await resolveAssessmentIsolation();
+    } catch {
+      assessmentIsolation = assessmentIsolationRef.current;
+    }
 
     if (trackedSessionIdForEvidence) {
       try {
@@ -6464,6 +6514,7 @@ function SessionPageV2Inner() {
           lessonKey: lessonKey || null,
           lessonId,
           lessonData,
+          assessmentIsolation,
           startedAt: sessionStartedAtRef.current,
         });
         const initialPhase = target && target !== 'idle' ? target : 'discussion';

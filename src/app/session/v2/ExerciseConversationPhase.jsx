@@ -17,6 +17,7 @@
 import { fetchTTS } from './services'
 import { buildAcceptableList, judgeAnswer } from './judging'
 import { deriveCorrectAnswerText } from '../utils/questionFormatting'
+import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
 
 const EXERCISE_CONV_URL = '/api/sonoma-exercise'
 
@@ -45,7 +46,7 @@ export class ExerciseConversationPhase {
     this.#audioEngine  = options.audioEngine
     this.#eventBus     = options.eventBus
     this.#timerService = options.timerService
-    this.#lessonData   = options.lessonData  || null
+    this.#lessonData   = buildInstructionalLessonView(options.lessonData) || null
     this.#learnerName  = options.learnerName || 'student'
     this.#resumeState  = options.resumeState || null
 
