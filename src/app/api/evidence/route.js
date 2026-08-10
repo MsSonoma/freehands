@@ -22,6 +22,12 @@ import {
   BASELINE_STATUSES,
 } from '../../lib/masteryEvidence/baseline.js';
 import {
+  INDEPENDENT_MASTERY_PROTOCOL_VERSION,
+  INDEPENDENCE_STATUSES,
+  MASTERY_CHECK_ROLES,
+  MASTERY_OUTCOMES,
+} from '../../lib/masteryEvidence/mastery.js';
+import {
   assertEvidenceStatus,
   assertSchemaVersion,
   assertStage1EventType,
@@ -136,8 +142,32 @@ function assertOptionalBaselineStatus(value) {
 
 function assertOptionalEvidencePurpose(value) {
   const normalized = normalizeOptionalText(value);
-  if (normalized && normalized !== 'baseline') {
+  if (normalized && !['baseline', 'independent_mastery'].includes(normalized)) {
     throw new Error('Unsupported evidence purpose');
+  }
+  return normalized;
+}
+
+function assertOptionalMasteryCheckRole(value) {
+  const normalized = normalizeOptionalText(value);
+  if (normalized && !Object.values(MASTERY_CHECK_ROLES).includes(normalized)) {
+    throw new Error('Unsupported mastery check role');
+  }
+  return normalized;
+}
+
+function assertOptionalIndependenceStatus(value) {
+  const normalized = normalizeOptionalText(value);
+  if (normalized && !Object.values(INDEPENDENCE_STATUSES).includes(normalized)) {
+    throw new Error('Unsupported independence status');
+  }
+  return normalized;
+}
+
+function assertOptionalMasteryOutcome(value) {
+  const normalized = normalizeOptionalText(value);
+  if (normalized && !Object.values(MASTERY_OUTCOMES).includes(normalized)) {
+    throw new Error('Unsupported mastery outcome');
   }
   return normalized;
 }
@@ -202,6 +232,11 @@ function normalizeSessionBody(body) {
       'baseline_item_count',
     ),
     baseline_unavailable_reason: normalizeOptionalText(body?.baseline_unavailable_reason),
+    mastery_protocol_version: assertOptionalIdentityVersion(
+      body?.mastery_protocol_version,
+      INDEPENDENT_MASTERY_PROTOCOL_VERSION,
+      'mastery_protocol_version',
+    ),
     started_at: normalizeIsoTimestamp(body?.started_at, new Date().toISOString()),
     evidence_status: MASTERY_EVIDENCE_STATUSES.PARTIAL,
   };
@@ -233,6 +268,17 @@ function normalizeEventBody(body) {
     evidence_purpose: assertOptionalEvidencePurpose(body?.evidence_purpose),
     item_purpose: normalizeOptionalText(body?.item_purpose),
     item_exposure_id: normalizeOptionalText(body?.item_exposure_id),
+    mastery_protocol_version: assertOptionalIdentityVersion(
+      body?.mastery_protocol_version,
+      INDEPENDENT_MASTERY_PROTOCOL_VERSION,
+      'mastery_protocol_version',
+    ),
+    mastery_cycle_id: normalizeOptionalText(body?.mastery_cycle_id),
+    mastery_check_id: normalizeOptionalText(body?.mastery_check_id),
+    mastery_check_role: assertOptionalMasteryCheckRole(body?.mastery_check_role),
+    independence_status: assertOptionalIndependenceStatus(body?.independence_status),
+    independence_reason: normalizeOptionalText(body?.independence_reason),
+    mastery_outcome: assertOptionalMasteryOutcome(body?.mastery_outcome),
     assistance_level: normalizeOptionalText(body?.assistance_level),
     attempt_number: normalizeOptionalPositiveInteger(body?.attempt_number, 'attempt_number'),
     is_first_response: normalizeOptionalBoolean(body?.is_first_response),
@@ -340,6 +386,13 @@ async function handleRecordEvent({ body, user, admin }) {
     evidence_purpose: event.evidence_purpose,
     item_purpose: event.item_purpose,
     item_exposure_id: event.item_exposure_id,
+    mastery_protocol_version: event.mastery_protocol_version,
+    mastery_cycle_id: event.mastery_cycle_id,
+    mastery_check_id: event.mastery_check_id,
+    mastery_check_role: event.mastery_check_role,
+    independence_status: event.independence_status,
+    independence_reason: event.independence_reason,
+    mastery_outcome: event.mastery_outcome,
     assistance_level: event.assistance_level,
     attempt_number: event.attempt_number,
     is_first_response: event.is_first_response,

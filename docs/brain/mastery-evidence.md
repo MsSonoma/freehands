@@ -140,6 +140,29 @@ Stage 5 event metadata records:
 
 Baseline uses the existing item evidence primitives: `item_presented`, `learner_response`, and `answer_evaluated`, preserving stable item id, item content hash, exposure id, attempt number, first-response flag, result, and provenance.
 
+Stage 6 adds independent mastery and recovery evidence without changing scores, medals, or reporting.
+
+Stage 6 answers one narrow post-instruction question: can the learner demonstrate the target independently on a genuinely held-out reserved Test item? If the first clean held-out check fails, Stage 6 preserves that failure and can classify a later correct first response on a different clean held-out item as independent success after recovery. Same-item retries, hints, answer reveal, Ask assistance, generated visual assistance, prior exposure, baseline overlap, instructional exposure, or assessment-isolation failure prevent the item from being called independent evidence.
+
+The Stage 6 protocol is versioned as `independent-mastery-v1`. It separates correctness from independence qualification:
+
+- a correct answer after help is correct but not independent;
+- a wrong first response on a clean held-out item is valid independent evidence and produces `needs_recovery`;
+- a later correct retry on the same item is not independent mastery;
+- a different clean held-out item may support `independent_success_after_recovery`.
+
+Stage 6 adds append-only result events instead of mutating prior answer evidence. Result events use `mastery_check_result` and may carry:
+
+- `mastery_protocol_version`
+- `mastery_cycle_id`
+- `mastery_check_id`
+- `mastery_check_role`: `initial` or `recovery_verification`
+- `independence_status`
+- `independence_reason`
+- `mastery_outcome`: `independent_success`, `needs_recovery`, `independent_success_after_recovery`, `assisted_success`, or `unavailable`
+
+Recovery teaching must not receive future held-out verification items. The recovery payload helper includes the failed item, learner response, and correction context while using the instructional lesson projection so unused reserved Test items remain absent.
+
 Known Stage 2 boundary: retry-attempt continuity is only as reliable as current phase state. Active-session attempts are recorded from the authoritative phase controller. If a refresh/takeover happens after a wrong answer where the current snapshot does not preserve retry counters or current-question position accurately, Stage 2 does not invent continuity.
 
 ## What NOT To Do
@@ -150,6 +173,7 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - Do not treat Stage 3 identity fields as proof of mastery, independent measurement, or learner outcome improvement.
 - Do not treat Stage 4 assessment isolation as baseline, mastery, retention, or outcome evidence.
 - Do not treat Stage 5 baseline evidence as post-instruction mastery, retained knowledge, or outcome proof.
+- Do not treat Stage 6 independent mastery results as retention, causal learning proof, a facilitator dashboard, or a rewrite of legacy scores/medals.
 - Do not claim assessment secrecy for unsupported legacy lessons with no separable reserved Test pool.
 - Do not change prompts, phase order, question selection, scoring, snapshots, transcripts, or completion behavior to serve evidence writes.
 - Do not mutate existing evidence events. Corrections belong in later appended events.
@@ -164,11 +188,13 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - `supabase/migrations/20260809020000_add_stage_3_mastery_evidence_identity.sql`
 - `supabase/migrations/20260809030000_add_stage_4_assessment_isolation.sql`
 - `supabase/migrations/20260809040000_add_stage_5_baseline_evidence.sql`
+- `supabase/migrations/20260809050000_add_stage_6_independent_mastery.sql`
 - `src/app/api/evidence/route.js`
 - `src/app/lib/masteryEvidence/constants.js`
 - `src/app/lib/masteryEvidence/identity.js`
 - `src/app/lib/masteryEvidence/assessmentIsolation.js`
 - `src/app/lib/masteryEvidence/baseline.js`
+- `src/app/lib/masteryEvidence/mastery.js`
 - `src/app/lib/masteryEvidence/schema.js`
 - `src/app/lib/masteryEvidence/provenance.js`
 - `src/app/lib/masteryEvidence/client.js`
@@ -183,3 +209,4 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - `scripts/test-stage3-identity.mjs`
 - `scripts/test-stage4-assessment-isolation.mjs`
 - `scripts/test-stage5-baseline.mjs`
+- `scripts/test-stage6-independent-mastery.mjs`

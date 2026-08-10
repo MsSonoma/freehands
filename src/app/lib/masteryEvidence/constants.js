@@ -26,9 +26,16 @@ export const STAGE_2_EVIDENCE_EVENT_TYPES = Object.freeze({
   TIMELINE_JUMP: 'timeline_jump',
 });
 
+export const STAGE_6_EVIDENCE_EVENT_TYPES = Object.freeze({
+  MASTERY_CHECK_RESULT: 'mastery_check_result',
+  RECOVERY_STARTED: 'recovery_started',
+  RECOVERY_COMPLETED: 'recovery_completed',
+});
+
 export const MASTERY_EVIDENCE_EVENT_TYPES = Object.freeze({
   ...STAGE_1_EVIDENCE_EVENT_TYPES,
   ...STAGE_2_EVIDENCE_EVENT_TYPES,
+  ...STAGE_6_EVIDENCE_EVENT_TYPES,
 });
 
 export const STAGE_1_PHASES = Object.freeze([

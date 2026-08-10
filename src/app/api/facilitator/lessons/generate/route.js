@@ -77,7 +77,8 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   "truefalse": [{"question": "COMPLETE QUESTION TEXT HERE", "answer": true|false, "expectedAny": ["true"|"false"]}],
   "multiplechoice": [{"question": "string", "choices": ["A", "B", "C", "D"], "correct": 0-3, "expectedAny": ["correct answer text"]}],
   "fillintheblank": [{"question": "COMPLETE SENTENCE WITH _____ BLANK", "expectedAny": ["answer"]}],
-  "shortanswer": [{"question": "string", "expectedAny": ["answer"]}]
+  "shortanswer": [{"question": "string", "expectedAny": ["answer"]}],
+  "test": [{"id": "reserved-test-1", "question": "held-out test question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}]
 }
 
 FACTUAL ACCURACY REQUIREMENTS:
@@ -101,7 +102,8 @@ CRITICAL REQUIREMENTS:
    - Add common synonyms and alternative phrasings to increase leniency
    - Example: ["photosynthesis", "making food", "food production", "creating energy"]
 6. teachingNotes: Include key teaching strategies, common misconceptions, real-world connections, and differentiation tips (2-4 sentences)${notesGuidance}
-7. baseline: Include exactly 2 short, low-pressure pre-instruction questions. These must check what a learner may already know before teaching, not trick questions. They must be distinct from all truefalse, multiplechoice, fillintheblank, shortanswer, and any future test items. Do not call them a pretest.
+7. baseline: Include exactly 2 short, low-pressure pre-instruction questions. These must check what a learner may already know before teaching, not trick questions. They must be distinct from all truefalse, multiplechoice, fillintheblank, shortanswer, and test items. Do not call them a pretest.
+8. test: Include at least 6 reserved held-out Test questions. They must be distinct from baseline and all instructional question pools. Prefer multiple-choice or true/false with source-backed answers. These are for the final Test only and must not duplicate practice items.
 
 EXAMPLE truefalse format:
 {"question": "The sun rises in the east.", "answer": true, "expectedAny": ["true"]}
@@ -138,7 +140,15 @@ async function callModel(prompt){
       truefalse:[{question:'2 is even.', answer:true, expectedAny:['true']}],
       multiplechoice:[{question:'Pick 2', choices:['1','2','3','4'], correct:1, expectedAny:['2']}],
       fillintheblank:[{question:'__ is the result of 1+1.', expectedAny:['2']}],
-      shortanswer:[{question:'Explain even numbers.', expectedAny:['divisible by 2']}] 
+      shortanswer:[{question:'Explain even numbers.', expectedAny:['divisible by 2']}],
+      test:[
+        {id:'reserved-test-1', question:'Which number is even?', choices:['1','2','3','5'], correct:1, expectedAny:['2']},
+        {id:'reserved-test-2', question:'True or false: 4 is even.', answer:true, expectedAny:['true']},
+        {id:'reserved-test-3', question:'Which number is odd?', choices:['2','4','5','6'], correct:2, expectedAny:['5']},
+        {id:'reserved-test-4', question:'True or false: 3 is even.', answer:false, expectedAny:['false']},
+        {id:'reserved-test-5', question:'Pick another even number.', choices:['7','8','9','11'], correct:1, expectedAny:['8']},
+        {id:'reserved-test-6', question:'Pick another odd number.', choices:['10','12','13','14'], correct:2, expectedAny:['13']}
+      ]
     }
   }
   const body = {

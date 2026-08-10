@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
  * Generate lesson content items using AI with full lesson context.
  * Body: { lesson, type }
  *   lesson — full lesson JSON object
- *   type   — 'vocab' | 'baseline' | 'multiplechoice' | 'truefalse' | 'shortanswer' | 'fillintheblank'
+ *   type   — 'vocab' | 'baseline' | 'test' | 'multiplechoice' | 'truefalse' | 'shortanswer' | 'fillintheblank'
  * Returns: { items: [...] }
  */
 export async function POST(req) {
@@ -40,14 +40,23 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Missing lesson or type' }, { status: 400 })
     }
 
-    const validTypes = ['vocab', 'baseline', 'multiplechoice', 'truefalse', 'shortanswer', 'fillintheblank']
+    const validTypes = ['vocab', 'baseline', 'test', 'multiplechoice', 'truefalse', 'shortanswer', 'fillintheblank']
     if (!validTypes.includes(type)) {
       return NextResponse.json({ error: `Invalid type: ${type}` }, { status: 400 })
     }
 
-    // Strip reserved Test and baseline pools from generation context so instructional
-    // item generation cannot accidentally reuse pre-instruction or held-out items.
-    const lessonContext = JSON.stringify(buildInstructionalLessonView(lesson), null, 2)
+    // Strip reserved Test and baseline pools from instructional generation context so
+    // instructional item generation cannot accidentally reuse pre-instruction or
+    // held-out items. Test generation is not instructional, so it may see baseline
+    // prompts to avoid duplicating them while still excluding any existing Test pool.
+    const instructionalView = buildInstructionalLessonView(lesson)
+    const lessonContextSource = type === 'test'
+      ? {
+          ...instructionalView,
+          baseline: lesson?.baseline || lesson?.baselinePool || lesson?.baseline_items || null,
+        }
+      : instructionalView
+    const lessonContext = JSON.stringify(lessonContextSource, null, 2)
 
     const prompts = {
       vocab: {
@@ -84,6 +93,18 @@ LESSON:
 ${lessonContext}
 
 Return ONLY a JSON object: {"items": [{"id": "baseline-1", "question": "...", "expectedAny": ["answer1", "answer2"]}, ...]}`,
+      },
+
+      test: {
+        system: `You are an expert curriculum writer creating reserved held-out Test questions for elementary school lessons.
+Always return valid JSON as: {"items": [{"id": "reserved-test-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}
+Generate at least 6 items. Keep them distinct from baseline, instruction, worksheet, and practice items.`,
+        user: `Given this lesson, generate at least 6 reserved held-out Test questions. They must not duplicate any baseline or instructional practice question.
+
+LESSON:
+${lessonContext}
+
+Return ONLY a JSON object: {"items": [{"id": "reserved-test-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
       },
 
       truefalse: {

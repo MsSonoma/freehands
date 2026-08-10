@@ -62,6 +62,7 @@ import { useSessionTracking } from '@/app/hooks/useSessionTracking';
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js';
 import { STAGE_2_EVIDENCE_EVENT_TYPES } from '@/app/lib/masteryEvidence/constants.js';
 import { createLegacyItemFingerprint, summarizeEvidenceItem } from '@/app/lib/masteryEvidence/items.js';
+import { buildItemIdentity } from '@/app/lib/masteryEvidence/identity.js';
 import {
   ASSESSMENT_ROLES,
   analyzeAssessmentIsolation,
@@ -78,6 +79,14 @@ import {
   buildBaselinePlan,
   hasInstructionBegunFromSnapshot,
 } from '@/app/lib/masteryEvidence/baseline.js';
+import {
+  INDEPENDENT_MASTERY_PROTOCOL_VERSION,
+  INDEPENDENCE_REASONS,
+  MASTERY_CHECK_ROLES,
+  buildMasteryEligibilityContext,
+  classifyMasteryOutcome,
+  qualifyMasteryOpportunity,
+} from '@/app/lib/masteryEvidence/mastery.js';
 import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay';
@@ -665,6 +674,10 @@ function SessionPageV2Inner() {
   const [testReviewAnswer, setTestReviewAnswer] = useState(null);
   const [testReviewIndex, setTestReviewIndex] = useState(0);
   const [testTimerMode, setTestTimerMode] = useState('play');
+  const masteryEligibilityRef = useRef(null);
+  const masteryAssistanceByExposureRef = useRef(new Map());
+  const masteryPriorNeedsRecoveryRef = useRef(false);
+  const masteryUsedIdentityKeysRef = useRef(new Set());
   
   const [workPhaseCompletions, setWorkPhaseCompletions] = useState({
     discussion: false,
@@ -3834,6 +3847,118 @@ function SessionPageV2Inner() {
     getEvidenceItemContext,
   ]);
 
+  const addMasteryAssistanceForItem = useCallback((itemContext, event) => {
+    if (!itemContext?.itemExposureId) return;
+    const exposureId = itemContext.itemExposureId;
+    const existing = masteryAssistanceByExposureRef.current.get(exposureId) || [];
+    masteryAssistanceByExposureRef.current.set(exposureId, [...existing, event]);
+  }, []);
+
+  const prepareMasteryEligibility = useCallback(async (questions = [], phaseSets = null) => {
+    try {
+      const identities = [];
+      for (const item of questions || []) {
+        identities.push(await buildItemIdentity({ lessonKey, lessonId, lessonData, item }));
+      }
+      const prior = await masteryEvidenceClientRef.current?.checkPriorExposure?.({
+        learnerId: sessionLearnerIdRef.current || learnerProfile?.id || null,
+        itemIdentities: identities,
+      });
+      if (prior && !prior.ok) {
+        masteryEligibilityRef.current = {
+          ok: false,
+          reason: INDEPENDENCE_REASONS.PRIOR_EXPOSURE,
+          itemIdentities: identities,
+          priorExposedKeys: new Set(),
+          baselineIdentityKeys: new Set(),
+          instructionalExposureKeys: new Set(),
+        };
+        return;
+      }
+      const context = await buildMasteryEligibilityContext({
+        lessonKey,
+        lessonId,
+        lessonData,
+        phaseSets,
+        priorExposedKeys: prior?.exposedKeys || [],
+      });
+      masteryEligibilityRef.current = {
+        ok: true,
+        itemIdentities: identities,
+        ...context,
+      };
+    } catch {
+      masteryEligibilityRef.current = {
+        ok: false,
+        reason: INDEPENDENCE_REASONS.IDENTITY_UNAVAILABLE,
+        itemIdentities: [],
+        priorExposedKeys: new Set(),
+        baselineIdentityKeys: new Set(),
+        instructionalExposureKeys: new Set(),
+      };
+    }
+  }, [learnerProfile, lessonData, lessonId, lessonKey]);
+
+  const recordMasteryCheckResult = useCallback((phaseName, data = {}) => {
+    if (normalizePhaseAlias(phaseName) !== 'test') return;
+    const itemContext = getEvidenceItemContext('test', data.question, data.questionIndex);
+    const eligibility = masteryEligibilityRef.current || null;
+    const itemIdentity = eligibility?.itemIdentities?.[data.questionIndex] || null;
+    const assessmentStatus = assessmentIsolationRef.current?.status || null;
+    const assistanceEvents = masteryAssistanceByExposureRef.current.get(itemContext.itemExposureId) || [];
+    const qualification = eligibility?.ok === false
+      ? {
+          eligible: false,
+          independenceStatus: 'unavailable',
+          independenceReason: eligibility.reason || INDEPENDENCE_REASONS.IDENTITY_UNAVAILABLE,
+        }
+      : qualifyMasteryOpportunity({
+          itemIdentity,
+          assessmentRole: itemContext.assessmentRole,
+          assessmentIsolationStatus: assessmentStatus,
+          itemExposureId: itemContext.itemExposureId,
+          isFirstResponse: data.isFirstResponse === true || Number(data.attemptNumber || 1) === 1,
+          preAssessmentExposed: false,
+          priorExposedKeys: eligibility?.priorExposedKeys || [],
+          baselineIdentityKeys: eligibility?.baselineIdentityKeys || [],
+          instructionalExposureKeys: eligibility?.instructionalExposureKeys || [],
+          assistanceEventsBeforeResponse: assistanceEvents,
+        });
+    const checkRole = masteryPriorNeedsRecoveryRef.current
+      ? MASTERY_CHECK_ROLES.RECOVERY_VERIFICATION
+      : MASTERY_CHECK_ROLES.INITIAL;
+    const masteryOutcome = classifyMasteryOutcome({
+      qualification,
+      isCorrect: data.isCorrect === true,
+      checkRole,
+    });
+    if (masteryOutcome === 'needs_recovery') {
+      masteryPriorNeedsRecoveryRef.current = true;
+    }
+    if (itemIdentity) {
+      for (const key of [
+        itemIdentity.stableItemId ? `stable:${itemIdentity.stableItemId}` : null,
+        itemIdentity.itemContentHash ? `content:${itemIdentity.itemContentHash}` : null,
+      ].filter(Boolean)) {
+        masteryUsedIdentityKeysRef.current.add(key);
+      }
+    }
+    void masteryEvidenceClientRef.current?.recordMasteryCheckResult({
+      ...itemContext,
+      attemptNumber: data.attemptNumber || 1,
+      isFirstResponse: data.isFirstResponse === true || Number(data.attemptNumber || 1) === 1,
+      isCorrect: data.isCorrect === true,
+      masteryCheckRole: checkRole,
+      independenceStatus: qualification.independenceStatus,
+      independenceReason: qualification.independenceReason,
+      masteryOutcome,
+      response: data.answer,
+      correctAnswer: data.correctAnswer ?? null,
+      qualification,
+      questionIndex: data.questionIndex,
+    });
+  }, [getEvidenceItemContext]);
+
   const recordVisualAidUsed = useCallback((aid, meta = {}) => {
     const itemContext = getActiveEvidenceItemContext();
     const aidIdentifier = aid?.id || aid?.image_path || aid?.storage_path || aid?.url || aid?.description || 'visual-aid';
@@ -3848,7 +3973,13 @@ function SessionPageV2Inner() {
         use_mode: meta.viewMode || 'view',
       },
     });
-  }, [getActiveEvidenceItemContext]);
+    if (itemContext?.phase === 'test') {
+      addMasteryAssistanceForItem(itemContext, {
+        eventType: STAGE_2_EVIDENCE_EVENT_TYPES.VISUAL_AID_USED,
+        assistanceLevel: 'reteach_or_scaffolded',
+      });
+    }
+  }, [addMasteryAssistanceForItem, getActiveEvidenceItemContext]);
 
   const recordEvidenceItemPresented = useCallback((phaseName, data = {}) => {
     const itemContext = getEvidenceItemContext(phaseName, data.question, data.questionIndex);
@@ -3889,7 +4020,13 @@ function SessionPageV2Inner() {
       hintSource: data.hintSource || `${normalizePhaseAlias(phaseName)}-feedback`,
       hintText: data.hint || null,
     });
-  }, [getEvidenceItemContext]);
+    if (normalizePhaseAlias(phaseName) === 'test') {
+      addMasteryAssistanceForItem(itemContext, {
+        eventType: STAGE_2_EVIDENCE_EVENT_TYPES.HINT_GIVEN,
+        assistanceLevel: 'hinted',
+      });
+    }
+  }, [addMasteryAssistanceForItem, getEvidenceItemContext]);
 
   const recordEvidenceRetryRequested = useCallback((phaseName, data = {}) => {
     const itemContext = getEvidenceItemContext(phaseName, data.question, data.questionIndex);
@@ -3898,7 +4035,13 @@ function SessionPageV2Inner() {
       attemptNumber: data.attemptNumber,
       retrySource: data.retrySource || `${normalizePhaseAlias(phaseName)}-feedback`,
     });
-  }, [getEvidenceItemContext]);
+    if (normalizePhaseAlias(phaseName) === 'test') {
+      addMasteryAssistanceForItem(itemContext, {
+        eventType: STAGE_2_EVIDENCE_EVENT_TYPES.RETRY_REQUESTED,
+        assistanceLevel: 'retry_no_hint',
+      });
+    }
+  }, [addMasteryAssistanceForItem, getEvidenceItemContext]);
 
   const recordEvidenceAnswerRevealed = useCallback((phaseName, data = {}) => {
     const itemContext = getEvidenceItemContext(phaseName, data.question, data.questionIndex);
@@ -3908,7 +4051,13 @@ function SessionPageV2Inner() {
       revealSource: data.revealSource || `${normalizePhaseAlias(phaseName)}-feedback`,
       correctAnswer: data.correctAnswer,
     });
-  }, [getEvidenceItemContext]);
+    if (normalizePhaseAlias(phaseName) === 'test') {
+      addMasteryAssistanceForItem(itemContext, {
+        eventType: STAGE_2_EVIDENCE_EVENT_TYPES.ANSWER_REVEALED,
+        assistanceLevel: 'answer_revealed',
+      });
+    }
+  }, [addMasteryAssistanceForItem, getEvidenceItemContext]);
 
   const handleOpeningAskStart = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -3951,6 +4100,12 @@ function SessionPageV2Inner() {
           prompt: question,
           answerRevealed: false,
         });
+        if (itemContext?.phase === 'test') {
+          addMasteryAssistanceForItem(itemContext, {
+            eventType: STAGE_2_EVIDENCE_EVENT_TYPES.ASK_USED,
+            assistanceLevel: 'reteach_or_scaffolded',
+          });
+        }
       }
       setOpeningActionInput('');
       syncOpeningActionState();
@@ -3961,7 +4116,7 @@ function SessionPageV2Inner() {
       openingActionBusyRef.current = false;
       setOpeningActionBusy(false);
     }
-  }, [openingActionInput, syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext]);
+  }, [openingActionInput, syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext, addMasteryAssistanceForItem]);
 
   const handleOpeningAskWhatsTheAnswer = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -3992,6 +4147,12 @@ function SessionPageV2Inner() {
           revealSource: 'ask-current-answer-request',
           correctAnswer: result.answer || null,
         });
+        if (itemContext?.phase === 'test') {
+          addMasteryAssistanceForItem(itemContext, {
+            eventType: STAGE_2_EVIDENCE_EVENT_TYPES.ANSWER_REVEALED,
+            assistanceLevel: 'answer_revealed',
+          });
+        }
       }
       syncOpeningActionState();
     } catch (err) {
@@ -4003,7 +4164,7 @@ function SessionPageV2Inner() {
       askAnswerShortcutLoadingRef.current = false;
       setAskAnswerShortcutLoading(false);
     }
-  }, [syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext]);
+  }, [syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext, addMasteryAssistanceForItem]);
 
   const handleOpeningAskDone = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -6027,6 +6188,11 @@ function SessionPageV2Inner() {
     const testTarget = questions.length;
     if (!testTarget) return false;
     console.log('[SessionPageV2] startTestPhase built questions:', questions.length);
+    masteryAssistanceByExposureRef.current = new Map();
+    masteryPriorNeedsRecoveryRef.current = false;
+    masteryUsedIdentityKeysRef.current = new Set();
+    const phaseSetsForMastery = buildAllPhaseSets() || {};
+    void prepareMasteryEligibility(questions, phaseSetsForMastery);
 
     const resumeIndex = savedTest ? (savedTest.nextQuestionIndex ?? savedTest.questionIndex ?? 0) : 0;
     const clampedIndex = Math.min(Math.max(resumeIndex, 0), Math.max(questions.length - 1, 0));
@@ -6118,6 +6284,7 @@ function SessionPageV2Inner() {
       setTestScore(data.score);
       setTestAnswer('');
       recordEvidenceAnswerSubmitted('test', data);
+      recordMasteryCheckResult('test', data);
     });
 
     phase.on('answerRevealed', (data) => {
@@ -6750,6 +6917,9 @@ function SessionPageV2Inner() {
             status: null,
             baselineItemCount: null,
             reason: null,
+          },
+          mastery: {
+            protocolVersion: INDEPENDENT_MASTERY_PROTOCOL_VERSION,
           },
           startedAt: sessionStartedAtRef.current,
         });
@@ -8641,6 +8811,10 @@ function SessionPageV2Inner() {
                           setBaselineAnswer('');
                           setBaselineMessage('');
                           setBaselineState('idle');
+                          masteryEligibilityRef.current = null;
+                          masteryAssistanceByExposureRef.current = new Map();
+                          masteryPriorNeedsRecoveryRef.current = false;
+                          masteryUsedIdentityKeysRef.current = new Set();
                           // Auto-start will re-fire once resumePhase clears
                           setCurrentPhase('idle');
                           setDiscussionState('idle');

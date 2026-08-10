@@ -12,6 +12,7 @@ import {
   MASTERY_EVIDENCE_STATUSES,
   STAGE_1_EVIDENCE_EVENT_TYPES,
   STAGE_2_EVIDENCE_EVENT_TYPES,
+  STAGE_6_EVIDENCE_EVENT_TYPES,
 } from '../src/app/lib/masteryEvidence/constants.js'
 import {
   ITEM_IDENTITY_VERSION,
@@ -29,6 +30,12 @@ import {
   BASELINE_PROTOCOL_VERSION,
   BASELINE_STATUSES,
 } from '../src/app/lib/masteryEvidence/baseline.js'
+import {
+  INDEPENDENT_MASTERY_PROTOCOL_VERSION,
+  INDEPENDENCE_STATUSES,
+  MASTERY_CHECK_ROLES,
+  MASTERY_OUTCOMES,
+} from '../src/app/lib/masteryEvidence/mastery.js'
 import { createLegacyItemFingerprint } from '../src/app/lib/masteryEvidence/items.js'
 
 const facilitatorId = '11111111-1111-1111-1111-111111111111'
@@ -517,6 +524,55 @@ test('stage 5 evidence route updates baseline status and checks prior exposure b
   ])
 }))
 
+test('stage 6 evidence route persists independent mastery result metadata', async () => withEvidenceEnv(async () => {
+  const store = makeStore()
+  const session = await createEvidenceSession(store)
+  const result = await (await POST(jsonRequest({
+    action: 'record_event',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    evidence_session_id: session.evidence_session.id,
+    event_type: STAGE_6_EVIDENCE_EVENT_TYPES.MASTERY_CHECK_RESULT,
+    idempotency_key: 'stage6-mastery-check-result',
+    event_sequence: 9,
+    occurred_at: '2026-08-09T12:09:00.000Z',
+    phase: 'test',
+    stable_item_id: 'item:item-identity-v1:reserved-a',
+    item_content_hash: 'hash-reserved-a',
+    item_identity_version: ITEM_IDENTITY_VERSION,
+    assessment_role: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
+    evidence_purpose: 'independent_mastery',
+    item_exposure_id: 'test-run1-q1',
+    mastery_protocol_version: INDEPENDENT_MASTERY_PROTOCOL_VERSION,
+    mastery_cycle_id: 'mastery-cycle:independent-mastery-v1:abc',
+    mastery_check_id: 'mastery-check:independent-mastery-v1:def',
+    mastery_check_role: MASTERY_CHECK_ROLES.INITIAL,
+    independence_status: INDEPENDENCE_STATUSES.INDEPENDENT,
+    independence_reason: 'eligible',
+    mastery_outcome: MASTERY_OUTCOMES.INDEPENDENT_SUCCESS,
+    attempt_number: 1,
+    is_first_response: true,
+    result: { correct: true, mastery_outcome: MASTERY_OUTCOMES.INDEPENDENT_SUCCESS },
+  }), { createClientImpl: makeCreateClientImpl(store) })).json()
+  assert.equal(result.ok, true)
+  assert.equal(store.learning_evidence_events[0].event_type, STAGE_6_EVIDENCE_EVENT_TYPES.MASTERY_CHECK_RESULT)
+  assert.equal(store.learning_evidence_events[0].mastery_protocol_version, INDEPENDENT_MASTERY_PROTOCOL_VERSION)
+  assert.equal(store.learning_evidence_events[0].mastery_check_role, MASTERY_CHECK_ROLES.INITIAL)
+  assert.equal(store.learning_evidence_events[0].independence_status, INDEPENDENCE_STATUSES.INDEPENDENT)
+  assert.equal(store.learning_evidence_events[0].mastery_outcome, MASTERY_OUTCOMES.INDEPENDENT_SUCCESS)
+
+  const bad = await POST(jsonRequest({
+    action: 'record_event',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    evidence_session_id: session.evidence_session.id,
+    event_type: STAGE_6_EVIDENCE_EVENT_TYPES.MASTERY_CHECK_RESULT,
+    idempotency_key: 'bad-stage6-role',
+    occurred_at: '2026-08-09T12:10:00.000Z',
+    phase: 'test',
+    mastery_check_role: 'future_role',
+  }), { createClientImpl: makeCreateClientImpl(store) })
+  assert.equal(bad.status, 400)
+}))
+
 test('client writer no-ops when disabled and suppresses duplicate local event writes', async () => {
   const disabled = new MasteryEvidenceClient({ enabled: false })
   const disabledResult = await disabled.recordSessionStarted()
@@ -655,6 +711,22 @@ test('client writer records ordered stage 2 item and response evidence', async (
     response: 'five',
     correctAnswer: '4',
   })
+  await client.recordMasteryCheckResult({
+    phase: 'test',
+    itemPurpose: 'test',
+    itemExposureId: 'test-run1-q1',
+    identityItem: question,
+    assessmentRole: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
+    attemptNumber: 1,
+    isFirstResponse: true,
+    isCorrect: true,
+    masteryCheckRole: MASTERY_CHECK_ROLES.INITIAL,
+    independenceStatus: INDEPENDENCE_STATUSES.INDEPENDENT,
+    independenceReason: 'eligible',
+    masteryOutcome: MASTERY_OUTCOMES.INDEPENDENT_SUCCESS,
+    response: '4',
+    correctAnswer: '4',
+  })
 
   const events = posted.filter((body) => body.action === 'record_event')
   const createSession = posted.find((body) => body.action === 'create_session')
@@ -668,17 +740,25 @@ test('client writer records ordered stage 2 item and response evidence', async (
   assert.equal(createSession.reserved_assessment_count, 1)
   assert.equal(createSession.baseline_protocol_version, BASELINE_PROTOCOL_VERSION)
   assert.equal(createSession.baseline_status, BASELINE_STATUSES.UNAVAILABLE)
+  assert.equal(createSession.mastery_protocol_version, INDEPENDENT_MASTERY_PROTOCOL_VERSION)
   assert.deepEqual(events.map((event) => event.event_type), [
     STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED,
     STAGE_2_EVIDENCE_EVENT_TYPES.LEARNER_RESPONSE,
     STAGE_2_EVIDENCE_EVENT_TYPES.ANSWER_EVALUATED,
+    STAGE_6_EVIDENCE_EVENT_TYPES.MASTERY_CHECK_RESULT,
   ])
-  assert.deepEqual(events.map((event) => event.event_sequence), [1, 2, 3])
+  assert.deepEqual(events.map((event) => event.event_sequence), [1, 2, 3, 4])
   assert.ok(events.every((event) => event.stable_item_id?.startsWith('item:item-identity-v1:')))
   assert.ok(events.every((event) => event.item_content_hash))
   assert.ok(events.every((event) => event.item_identity_version === ITEM_IDENTITY_VERSION))
-  assert.ok(events.every((event) => event.assessment_role === ASSESSMENT_ROLES.INSTRUCTIONAL))
-  assert.ok(events.every((event) => event.evidence_purpose === BASELINE_EVIDENCE_PURPOSE))
+  assert.ok(events.slice(0, 3).every((event) => event.assessment_role === ASSESSMENT_ROLES.INSTRUCTIONAL))
+  assert.ok(events.slice(0, 3).every((event) => event.evidence_purpose === BASELINE_EVIDENCE_PURPOSE))
+  assert.equal(events[3].assessment_role, ASSESSMENT_ROLES.ASSESSMENT_RESERVED)
+  assert.equal(events[3].evidence_purpose, 'independent_mastery')
+  assert.equal(events[3].mastery_protocol_version, INDEPENDENT_MASTERY_PROTOCOL_VERSION)
+  assert.equal(events[3].mastery_check_role, MASTERY_CHECK_ROLES.INITIAL)
+  assert.equal(events[3].independence_status, INDEPENDENCE_STATUSES.INDEPENDENT)
+  assert.equal(events[3].mastery_outcome, MASTERY_OUTCOMES.INDEPENDENT_SUCCESS)
   assert.equal(events[1].attempt_number, 1)
   assert.equal(events[1].is_first_response, true)
   assert.equal(events[2].result.correct, false)
