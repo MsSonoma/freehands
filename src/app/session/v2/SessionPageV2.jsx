@@ -37,6 +37,7 @@ import { ClosingPhase } from './ClosingPhase';
 import { DiscussionPhase } from './DiscussionPhase';
 import { PhaseOrchestrator } from './PhaseOrchestrator';
 import { SnapshotService } from './SnapshotService';
+import { deriveResumePhaseFromSnapshot } from './resumePhase';
 import { TimerService } from './TimerService';
 import { KeyboardService } from './KeyboardService';
 import { OpeningActionsController } from './OpeningActionsController';
@@ -328,7 +329,6 @@ function deriveCanonicalLessonKey({ lessonData, lessonId }) {
 
 // Timeline constants
 const timelinePhases = ["discussion", "exercise", "worksheet", "test"];
-const orderedPhases = ["discussion", "teaching", "comprehension", "exercise", "worksheet", "test", "closing"];
 const phaseLabels = {
   discussion: "Discussion",
   exercise: "Exercise",
@@ -341,43 +341,6 @@ const normalizePhaseAlias = (phase) => {
   if (phase === "grading" || phase === "congrats") return "test";
   if (phase === "complete") return "closing";
   return phase;
-};
-
-const deriveResumePhaseFromSnapshot = (snapshot) => {
-  if (!snapshot) return null;
-
-  const rank = (phase) => {
-    const normalized = normalizePhaseAlias(phase);
-    const idx = orderedPhases.indexOf(normalized);
-    return idx === -1 ? -1 : idx;
-  };
-
-  const addCandidate = (set, value) => {
-    if (!value) return;
-    const normalized = normalizePhaseAlias(value);
-    if (!normalized) return;
-    set.add(normalized);
-  };
-
-  const candidates = new Set();
-  addCandidate(candidates, snapshot.currentPhase);
-
-  const completed = Array.isArray(snapshot.completedPhases) ? snapshot.completedPhases : [];
-  completed.forEach((p) => addCandidate(candidates, p));
-
-  const phaseData = snapshot.phaseData && typeof snapshot.phaseData === 'object' ? Object.keys(snapshot.phaseData) : [];
-  phaseData.forEach((p) => addCandidate(candidates, p));
-
-  if (!candidates.size) return null;
-
-  let best = null;
-  for (const candidate of candidates) {
-    if (best === null || rank(candidate) > rank(best)) {
-      best = candidate;
-    }
-  }
-
-  return best;
 };
 
 // Timeline component
@@ -843,6 +806,7 @@ function SessionPageV2Inner() {
 
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
+  const [snapshotResumeBlocked, setSnapshotResumeBlocked] = useState(false);
   
   const [workPhaseTime, setWorkPhaseTime] = useState('0:00');
   const [workPhaseRemaining, setWorkPhaseRemaining] = useState('0:00');
@@ -2061,6 +2025,7 @@ function SessionPageV2Inner() {
 
     let cancelled = false;
     setSnapshotLoaded(false);
+    setSnapshotResumeBlocked(false);
 
     const sessionId = browserSessionId;
     const learnerId = learnerProfile.id;
@@ -2084,10 +2049,23 @@ function SessionPageV2Inner() {
         if (cancelled) return;
         if (snapshot) {
           const normalizedResumePhase = deriveResumePhaseFromSnapshot(snapshot);
-          const resumePhaseName = normalizedResumePhase || snapshot.currentPhase || null;
+          if (!normalizedResumePhase) {
+            addEvent('💾 Saved progress found, but its resume phase could not be recognized.');
+            setStartSessionError('Saved progress exists for this lesson, but this version cannot determine where to resume it.');
+            setSnapshotResumeBlocked(true);
+            setResumePhase(null);
+            resumePhaseRef.current = null;
+            return;
+          }
 
-          if (normalizedResumePhase && snapshot.currentPhase && normalizedResumePhase !== snapshot.currentPhase) {
+          const resumePhaseName = normalizedResumePhase;
+
+          if (snapshot.currentPhase && normalizedResumePhase !== snapshot.currentPhase) {
             addEvent(`Loaded snapshot - resume normalized to ${normalizedResumePhase} (was ${snapshot.currentPhase})`);
+          } else if (snapshot.resume?.phase && normalizedResumePhase !== snapshot.resume.phase) {
+            addEvent(`Loaded legacy snapshot - resume normalized to ${normalizedResumePhase} (was ${snapshot.resume.phase})`);
+          } else if (snapshot.phase && normalizedResumePhase !== snapshot.phase) {
+            addEvent(`Loaded legacy snapshot - resume normalized to ${normalizedResumePhase} (was ${snapshot.phase})`);
           } else {
             addEvent(`💾 Loaded snapshot - Resume from: ${resumePhaseName || 'idle'}`);
           }
@@ -2135,6 +2113,7 @@ function SessionPageV2Inner() {
             }
           }
         } else {
+          setSnapshotResumeBlocked(false);
           resetTranscriptState();
           addEvent('💾 No snapshot found - Starting fresh');
         }
@@ -6540,10 +6519,10 @@ function SessionPageV2Inner() {
   // Auto-start the session as soon as the page is ready and no snapshot resume is pending.
   // This eliminates the initial "Begin" click — user goes straight to "Begin Discussion".
   useEffect(() => {
-    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase) {
+    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase && !snapshotResumeBlocked) {
       handleStartSessionClick();
     }
-  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, handleStartSessionClick]);
+  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, snapshotResumeBlocked, handleStartSessionClick]);
 
   // Auto-dismiss the objective complete toast after 3.5s
   useEffect(() => {
