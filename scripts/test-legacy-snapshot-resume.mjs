@@ -40,13 +40,15 @@ test('unrecognized existing snapshot is not interpreted as a resumable phase', (
   assert.equal(deriveResumePhaseFromSnapshot({ phase: 'unknown-legacy-phase' }), null)
 })
 
-test('SessionPageV2 blocks auto-start for loaded snapshots with unrecognized phase shape', () => {
+test('SessionPageV2 treats loaded snapshots with unrecognized phase shape as fresh starts', () => {
   const sessionSource = readFileSync(join(process.cwd(), 'src/app/session/v2/SessionPageV2.jsx'), 'utf8')
 
-  assert.match(sessionSource, /snapshotResumeBlocked/)
-  assert.match(sessionSource, /Saved progress found, but its resume phase could not be recognized/)
+  assert.doesNotMatch(sessionSource, /snapshotResumeBlocked/)
+  assert.doesNotMatch(sessionSource, /Saved progress found, but its resume phase could not be recognized/)
+  assert.doesNotMatch(sessionSource, /cannot determine where to resume/)
+  assert.match(sessionSource, /const resumePhaseName = normalizedResumePhase \|\| null/)
   assert.match(
     sessionSource,
-    /audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase && !snapshotResumeBlocked/,
+    /audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase/,
   )
 })
