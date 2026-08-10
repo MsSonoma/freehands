@@ -806,7 +806,6 @@ function SessionPageV2Inner() {
 
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
-  const [snapshotResumeBlocked, setSnapshotResumeBlocked] = useState(false);
   
   const [workPhaseTime, setWorkPhaseTime] = useState('0:00');
   const [workPhaseRemaining, setWorkPhaseRemaining] = useState('0:00');
@@ -2025,7 +2024,6 @@ function SessionPageV2Inner() {
 
     let cancelled = false;
     setSnapshotLoaded(false);
-    setSnapshotResumeBlocked(false);
 
     const sessionId = browserSessionId;
     const learnerId = learnerProfile.id;
@@ -2049,16 +2047,7 @@ function SessionPageV2Inner() {
         if (cancelled) return;
         if (snapshot) {
           const normalizedResumePhase = deriveResumePhaseFromSnapshot(snapshot);
-          if (!normalizedResumePhase) {
-            addEvent('💾 Saved progress found, but its resume phase could not be recognized.');
-            setStartSessionError('Saved progress exists for this lesson, but this version cannot determine where to resume it.');
-            setSnapshotResumeBlocked(true);
-            setResumePhase(null);
-            resumePhaseRef.current = null;
-            return;
-          }
-
-          const resumePhaseName = normalizedResumePhase;
+          const resumePhaseName = normalizedResumePhase || null;
 
           if (snapshot.currentPhase && normalizedResumePhase !== snapshot.currentPhase) {
             addEvent(`Loaded snapshot - resume normalized to ${normalizedResumePhase} (was ${snapshot.currentPhase})`);
@@ -2113,7 +2102,6 @@ function SessionPageV2Inner() {
             }
           }
         } else {
-          setSnapshotResumeBlocked(false);
           resetTranscriptState();
           addEvent('💾 No snapshot found - Starting fresh');
         }
@@ -6519,10 +6507,10 @@ function SessionPageV2Inner() {
   // Auto-start the session as soon as the page is ready and no snapshot resume is pending.
   // This eliminates the initial "Begin" click — user goes straight to "Begin Discussion".
   useEffect(() => {
-    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase && !snapshotResumeBlocked) {
+    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase) {
       handleStartSessionClick();
     }
-  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, snapshotResumeBlocked, handleStartSessionClick]);
+  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, handleStartSessionClick]);
 
   // Auto-dismiss the objective complete toast after 3.5s
   useEffect(() => {
