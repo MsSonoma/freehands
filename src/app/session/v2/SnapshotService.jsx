@@ -17,6 +17,8 @@
  *   const snapshot = await service.loadSnapshot();
  */
 
+import { shouldUseAccountPersistence } from '@/app/learn/demoLearner.mjs';
+
 export class SnapshotService {
   // Private state
   #sessionId = null;
@@ -81,6 +83,7 @@ export class SnapshotService {
     this.#learnerId = options.learnerId;
     this.#lessonKey = options.lessonKey;
     this.#supabaseClient = options.supabaseClient;
+    this.#forceLocalStorage = !shouldUseAccountPersistence(options.learnerId);
     
     if (!this.#sessionId) {
       throw new Error('SnapshotService requires sessionId');

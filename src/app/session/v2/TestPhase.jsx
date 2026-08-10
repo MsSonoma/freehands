@@ -129,6 +129,9 @@ export class TestPhase {
     });
   }
   
+  // Public API: Expose current internal state so callers can branch after start()
+  getState() { return this.#state; }
+
   // Public API: Start phase
   async start(options = {}) {
     const skipPlayPortion = options?.skipPlayPortion === true;
@@ -251,6 +254,13 @@ export class TestPhase {
       if (this.#state !== 'playing-intro') return;
       this.#playCurrentQuestion();
     };
+
+    // Stop any in-flight audio (e.g. the "play until timer runs out" line still
+    // speaking) BEFORE registering the audioEndListener.  That call to stop()
+    // fires 'end' synchronously with { skipped: true } right now, before our
+    // listener is attached, so it cannot prematurely trigger finishIntro() and
+    // advance to awaiting-answer before the intro TTS is ready.
+    this.#audioEngine.stop();
 
     if (this.#audioEndListener) {
       this.#audioEngine.off('end', this.#audioEndListener);

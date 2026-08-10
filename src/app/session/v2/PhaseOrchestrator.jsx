@@ -81,17 +81,17 @@ export class PhaseOrchestrator {
       return;
     }
 
-    // Start with discussion phase if enabled, otherwise skip to teaching
+    // Start with discussion phase if enabled, otherwise skip to exercise
     if (this.#useDiscussion) {
       this.#transitionTo('discussion');
     } else {
-      this.#transitionTo('teaching');
+      this.#transitionTo('exercise');
     }
   }
   
   // Public API: Phase completion handlers
   onDiscussionComplete() {
-    this.#transitionTo('teaching');
+    this.#transitionTo('exercise');
   }
   
   onTeachingComplete() {

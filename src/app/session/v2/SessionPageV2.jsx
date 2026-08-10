@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * Session Page V2 - Full Session Flow
@@ -30,6 +30,7 @@ import { AudioEngine } from './AudioEngine';
 import { TeachingController } from './TeachingController';
 import { ComprehensionPhase } from './ComprehensionPhase';
 import { ExercisePhase } from './ExercisePhase';
+import { ExerciseConversationPhase } from './ExerciseConversationPhase';
 import { WorksheetPhase } from './WorksheetPhase';
 import { TestPhase } from './TestPhase';
 import { ClosingPhase } from './ClosingPhase';
@@ -50,7 +51,7 @@ import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech
 import { getSnapshotStorageKey } from '../utils/snapshotPersistenceUtils';
 import { ensurePinAllowed } from '@/app/lib/pinGate';
 import { upsertMedal } from '@/app/lib/medalsClient';
-import { appendTranscriptSegment } from '@/app/lib/transcriptsClient';
+import { appendTranscriptSegment, updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
 import CaptionPanel from '../components/CaptionPanel';
 import SessionVisualAidsCarousel from '../components/SessionVisualAidsCarousel';
@@ -61,6 +62,7 @@ import { createLegacyItemFingerprint, summarizeEvidenceItem } from '@/app/lib/ma
 import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay';
+import { shouldAutoShowSessionTutorial } from '@/app/learn/demoLearner.mjs';
 
 const SESSION_TUTORIAL_STEPS = [
   {
@@ -100,8 +102,8 @@ const SESSION_TUTORIAL_STEPS = [
   },
   {
     icon: '\ud83c\udfaf',
-    title: 'Phase Targets',
-    body: 'Each phase has a target number of questions, set by your teacher. Hit your targets to complete the lesson and earn a medal!',
+    title: 'Questions per Phase',
+    body: 'Each phase has a set number of questions, configured by your teacher. Complete them all to finish the lesson and earn a medal!',
   },
 ];
 
@@ -115,7 +117,7 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
     if (pct >= 70) return 'bronze';
     return null;
   };
-  
+
   const emojiForTier = (tier) => {
     if (tier === 'gold') return '🥇';
     if (tier === 'silver') return '🥈';
@@ -325,11 +327,10 @@ function deriveCanonicalLessonKey({ lessonData, lessonId }) {
 }
 
 // Timeline constants
-const timelinePhases = ["discussion", "comprehension", "exercise", "worksheet", "test"];
+const timelinePhases = ["discussion", "exercise", "worksheet", "test"];
 const orderedPhases = ["discussion", "teaching", "comprehension", "exercise", "worksheet", "test", "closing"];
 const phaseLabels = {
   discussion: "Discussion",
-  comprehension: "Comp",
   exercise: "Exercise",
   worksheet: "Worksheet",
   test: "Test",
@@ -503,7 +504,9 @@ function SessionPageV2Inner() {
   // Auto-show session tutorial on first visit
   useEffect(() => {
     try {
-      if (!localStorage.getItem('ms_session_tutorial_seen')) {
+      const learnerId = localStorage.getItem('learner_id');
+      const tutorialSeen = Boolean(localStorage.getItem('ms_session_tutorial_seen'));
+      if (shouldAutoShowSessionTutorial({ learnerId, tutorialSeen })) {
         setShowTutorial(true);
       }
     } catch {}
@@ -634,6 +637,7 @@ function SessionPageV2Inner() {
   const [currentExerciseQuestion, setCurrentExerciseQuestion] = useState(null);
   const [exerciseScore, setExerciseScore] = useState(0);
   const [exerciseTotalQuestions, setExerciseTotalQuestions] = useState(0);
+  const [exerciseCurrentQuestionIndex, setExerciseCurrentQuestionIndex] = useState(0);
   const [selectedExerciseAnswer, setSelectedExerciseAnswer] = useState('');
   const [exerciseTimerMode, setExerciseTimerMode] = useState('play');
   
@@ -725,10 +729,17 @@ function SessionPageV2Inner() {
   const [closingMessage, setClosingMessage] = useState('');
   
   const [discussionState, setDiscussionState] = useState('idle');
+  const [discussionResuming, setDiscussionResuming] = useState(false); // true while auto-starting on resume (hides Begin button)
   const [discussionActivity, setDiscussionActivity] = useState(null);
   const [discussionPrompt, setDiscussionPrompt] = useState('');
   const [discussionResponse, setDiscussionResponse] = useState('');
   const [discussionActivityIndex, setDiscussionActivityIndex] = useState(0);
+  const [discussionObjectivesInfo, setDiscussionObjectivesInfo] = useState({ completed: 0, total: 0 });
+  const [discussionObjectivesList, setDiscussionObjectivesList] = useState([]);
+  const [discussionCompletedIndices, setDiscussionCompletedIndices] = useState([]);
+  const [showDiscussionObjectives, setShowDiscussionObjectives] = useState(false);
+  const [newlyCompletedDiscussionObj, setNewlyCompletedDiscussionObj] = useState(null); // {text, completedCount, totalCount}
+  const [discussionSentenceInfo, setDiscussionSentenceInfo] = useState({ type: 'overview', index: 0, total: 0, text: '', waitingForNext: false });
   
   // Opening actions state
   const [openingActionActive, setOpeningActionActive] = useState(false);
@@ -1046,6 +1057,7 @@ function SessionPageV2Inner() {
   const [currentCaption, setCurrentCaption] = useState('');
   const [transcriptLines, setTranscriptLines] = useState([]);
   const transcriptLinesRef = useRef([]); // ref mirror so stale-closure handlers read the latest lines
+  const discussionCompletedIndicesRef = useRef([]); // ref mirror for completed objective indices
   const [activeCaptionIndex, setActiveCaptionIndex] = useState(-1);
   const [engineState, setEngineState] = useState('idle');
   const [isMuted, setIsMuted] = useState(false);
@@ -1082,6 +1094,53 @@ function SessionPageV2Inner() {
       }
     };
   }, []);
+
+  // Best-effort save to Supabase Storage when the learner leaves the page before sessionComplete.
+  // pagehide is more reliable than beforeunload for this (fires on back/forward cache too).
+  useEffect(() => {
+    const handler = () => {
+      const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+      const allLines = transcriptLinesRef.current || [];
+      const lines = allLines.slice(sessionTranscriptStartIdxRef.current); // only lines from this session window
+      if (!learnerId || learnerId === 'demo' || !lessonId || lines.length === 0) return;
+      const learnerName = typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null;
+      const startedAt = sessionStartedAtRef.current || new Date().toISOString();
+      updateTranscriptLiveSegment({
+        learnerId,
+        learnerName,
+        lessonId,
+        lessonTitle: lessonData?.title || lessonId,
+        startedAt,
+        lines,
+        sessionId: browserSessionId || undefined,
+      }).catch(() => {});
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pagehide', handler);
+      return () => window.removeEventListener('pagehide', handler);
+    }
+  }, [lessonId, lessonData, browserSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save live transcript to Supabase Storage on every phase transition so incomplete sessions
+  // have a partial record in the facilitator hub (not just at sessionComplete).
+  useEffect(() => {
+    if (!currentPhase || currentPhase === 'idle' || currentPhase === 'complete') return;
+    const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+    const allLines = transcriptLinesRef.current || [];
+    const lines = allLines.slice(sessionTranscriptStartIdxRef.current); // only lines from this session window
+    if (!learnerId || learnerId === 'demo' || !lessonId || lines.length === 0) return;
+    const learnerName = typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null;
+    const startedAt = sessionStartedAtRef.current || new Date().toISOString();
+    updateTranscriptLiveSegment({
+      learnerId,
+      learnerName,
+      lessonId,
+      lessonTitle: lessonData?.title || lessonId,
+      startedAt,
+      lines,
+      sessionId: browserSessionId || undefined,
+    }).catch(() => {});
+  }, [currentPhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const persistTranscriptState = useCallback((lines, activeIdx, { immediate = false } = {}) => {
     if (!snapshotServiceRef.current) return;
@@ -1126,17 +1185,19 @@ function SessionPageV2Inner() {
     }, 500);
   }, []);
 
-  const appendTranscriptLine = useCallback((line, { updateActive = false } = {}) => {
+  const appendTranscriptLine = useCallback((line, { updateActive = false, immediate = false } = {}) => {
     const text = String(line?.text || '').trim();
     if (!text) return;
     const role = line?.role === 'user' ? 'user' : 'assistant';
+    const phase = line?.phase !== undefined ? line.phase : (currentPhaseRef.current || undefined);
     setTranscriptLines((prev) => {
-      const next = [...prev, { text, role }];
+      const newLine = { text, role, ...(phase ? { phase } : {}) };
+      const next = [...prev, newLine];
       const nextActive = updateActive || role === 'assistant' ? next.length - 1 : activeCaptionIndex;
       if (updateActive || role === 'assistant') {
         setActiveCaptionIndex(nextActive);
       }
-      persistTranscriptState(next, nextActive);
+      persistTranscriptState(next, nextActive, { immediate });
       return next;
     });
   }, [activeCaptionIndex, persistTranscriptState]);
@@ -1153,6 +1214,7 @@ function SessionPageV2Inner() {
     setTranscriptLines([]);
     setActiveCaptionIndex(-1);
     setCurrentCaption('');
+    sessionTranscriptStartIdxRef.current = 0; // all lines are new in a fresh session
     if (persist) {
       persistTranscriptState([], -1, { immediate: true });
     }
@@ -1162,8 +1224,10 @@ function SessionPageV2Inner() {
     const el = transcriptRef.current;
     if (!el) return;
     requestAnimationFrame(() => {
-      if (!transcriptRef.current) return;
-      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+      requestAnimationFrame(() => {
+        if (!transcriptRef.current) return;
+        transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+      });
     });
   }, []);
 
@@ -1206,10 +1270,12 @@ function SessionPageV2Inner() {
   // Keep transcript pinned to the newest line on initial load/refresh (V1 parity)
   useEffect(() => {
     scrollTranscriptToBottom();
-  }, [transcriptLines.length, snapshotLoaded, scrollTranscriptToBottom]);
+  }, [transcriptLines.length, snapshotLoaded, scrollTranscriptToBottom, activeCaptionIndex]);
 
   // Keep transcriptLinesRef in sync so event-handler closures always see the latest lines.
   useEffect(() => { transcriptLinesRef.current = transcriptLines; }, [transcriptLines]);
+  // Keep discussionCompletedIndicesRef in sync.
+  useEffect(() => { discussionCompletedIndicesRef.current = discussionCompletedIndices; }, [discussionCompletedIndices]);
 
   // Broadcast lesson title to HeaderBar so the header matches V1 in mobile landscape
   useEffect(() => {
@@ -1241,12 +1307,9 @@ function SessionPageV2Inner() {
   
   // Compute timeline highlight based on current phase
   const timelineHighlight = (() => {
-    // Group teaching with discussion; comprehension is its own segment on the timeline
-    if (["discussion", "teaching", "idle"].includes(currentPhase)) {
+    // Teaching, comprehension, and discussion are all grouped under the "discussion" segment
+    if (["discussion", "teaching", "comprehension", "idle"].includes(currentPhase)) {
       return "discussion";
-    }
-    if (currentPhase === "comprehension") {
-      return "comprehension";
     }
     if (currentPhase === "exercise") {
       return "exercise";
@@ -1360,6 +1423,10 @@ function SessionPageV2Inner() {
 
   // Load visual aids separately from database (facilitator-specific)
   useEffect(() => {
+    if (subjectParam === 'demo') {
+      setVisualAidsData(null);
+      return;
+    }
     if (!visualAidsLessonKey) {
       setVisualAidsData(null);
       return;
@@ -1408,7 +1475,7 @@ function SessionPageV2Inner() {
     return () => {
       cancelled = true;
     };
-  }, [visualAidsLessonKey]);
+  }, [subjectParam, visualAidsLessonKey]);
 
   const stopAudioSafe = useCallback((options = {}) => {
     const force = options?.force === true;
@@ -1770,7 +1837,7 @@ function SessionPageV2Inner() {
 
     const raw = [fromFlat, fromNested, fromLegacy, fromOverride].find(v => Number.isFinite(v) && v > 0) ?? null;
     if (!Number.isFinite(raw) || raw <= 0) {
-      setLearnerError(`Missing learner target for ${phaseName}. Update the learner targets and retry.`);
+      setLearnerError(`Missing question count for ${phaseName}. Update Questions per Phase and retry.`);
       setError(null);
       addEvent(`⚠️ Missing learner target for ${phaseName}`);
       return null;
@@ -2038,10 +2105,18 @@ function SessionPageV2Inner() {
           } else if (storedLines && storedLines.length) {
             const normalized = storedLines.map((l) => ({ text: String(l?.text || ''), role: l?.role === 'user' ? 'user' : 'assistant' }));
             setTranscriptLines(normalized);
+            // Mark how many lines came from prior sessions so the next save only includes new lines.
+            sessionTranscriptStartIdxRef.current = normalized.length;
             const nextActive = Number.isFinite(storedTranscript?.activeIndex) ? storedTranscript.activeIndex : (normalized.length ? normalized.length - 1 : -1);
             setActiveCaptionIndex(nextActive);
             const lastAssistant = [...normalized].reverse().find((l) => l.role !== 'user');
             setCurrentCaption(lastAssistant?.text || '');
+            // Restore discussion objective state so resume has the right badge/history
+            const savedObjIndices = snapshot?.phaseData?.discussion?.completedObjectiveIndices;
+            if (Array.isArray(savedObjIndices) && savedObjIndices.length > 0) {
+              setDiscussionCompletedIndices(savedObjIndices);
+              discussionCompletedIndicesRef.current = savedObjIndices;
+            }
           } else {
             resetTranscriptState({ persist: true });
           }
@@ -2768,21 +2843,13 @@ function SessionPageV2Inner() {
       ? !playEnabledForPhase(phaseName)
       : false;
     
-    // Special handling for discussion: prefetch greeting TTS before starting
+    // Discussion: unlock audio on this user gesture (required for iOS since auto-start fires
+    // without a gesture), then start sentence-by-sentence playback.
     if (phaseName === 'discussion') {
+      try { await audioEngineRef.current?.initialize(); } catch {}
       setDiscussionState('loading');
-      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'friend';
-      const lessonTitle = lessonData?.title || lessonId || 'this topic';
-      const greetingText = `Hi ${learnerName}, ready to learn about ${lessonTitle}?`;
-      
-      try {
-        // Prefetch greeting TTS
-        await fetchTTS(greetingText);
-      } catch (err) {
-        console.error('[SessionPageV2] Failed to prefetch greeting:', err);
-      }
-      
-      // Discussion work timer starts when Begin is clicked, not here
+      discussionPhaseRef.current?.start();
+      return;
     }
     
     const ref = getPhaseRef(phaseName);
@@ -2799,16 +2866,19 @@ function SessionPageV2Inner() {
       }
 
       // Q&A phases with play timers: after Begin, tell the learner they can play.
-      // (Exclude discussion; skipPlayPortion phases should not say this.)
+      // Only when start() actually landed in awaiting-go (not a resume straight into
+      // awaiting-answer/reviewing). Check via getState() so we don't rely on stale
+      // React state (which hasn't batched yet at this point in the async function).
+      // Fire-and-forget (no await): AudioEngine.stop() abandons #playHTMLAudio so
+      // awaiting playAudio() can hang forever if the learner clicks Go while the
+      // line is still speaking.
       if (!skipPlayPortion && ['comprehension', 'exercise', 'worksheet', 'test'].includes(phaseName)) {
-        const playLine = 'Now you can play until the play timer runs out.';
-        try {
-          const playAudio = await fetchTTS(playLine);
-          if (audioEngineRef.current) {
-            await audioEngineRef.current.playAudio(playAudio || '', [playLine]);
-          }
-        } catch (err) {
-          console.warn('[SessionPageV2] Failed to speak play timer line:', err);
+        const phaseStateAfterStart = ref.current?.getState?.() ?? null;
+        if (phaseStateAfterStart === 'awaiting-go') {
+          const playLine = 'Now you can play until the play timer runs out.';
+          fetchTTS(playLine)
+            .then(audio => audioEngineRef.current?.playAudio(audio || '', [playLine])?.catch?.(() => {}))
+            .catch(err => console.warn('[SessionPageV2] Failed to speak play timer line:', err));
         }
       }
     } else {
@@ -3576,10 +3646,7 @@ function SessionPageV2Inner() {
     return next;
   }, []);
 
-  const handleOpeningActionCancel = useCallback(async () => {
-    const actionType = openingActionState?.action || openingActionType;
-    const askReminder = actionType === 'ask' ? askReturnQuestionRef.current : '';
-
+  const handleOpeningActionCancel = useCallback(() => {
     const controller = openingActionsControllerRef.current;
     stopAudioSafe({ force: true });
     if (controller?.cancelCurrent) {
@@ -3593,17 +3660,8 @@ function SessionPageV2Inner() {
     setOpeningActionBusy(false);
     askAnswerShortcutLoadingRef.current = false;
     setAskAnswerShortcutLoading(false);
-
-    if (askReminder) {
-      askExitSpeechLockRef.current = true;
-      try {
-        await speakSystemLineHardened(askReminder);
-      } finally {
-        askExitSpeechLockRef.current = false;
-      }
-    }
     askReturnQuestionRef.current = '';
-  }, [openingActionState?.action, openingActionType, stopAudioSafe, speakSystemLineHardened]);
+  }, [stopAudioSafe]);
 
   const buildAskContext = useCallback(() => {
     const lessonTitle = (lessonData?.title || lessonKey || lessonId || 'this lesson').toString();
@@ -3717,7 +3775,7 @@ function SessionPageV2Inner() {
       return getEvidenceItemContext(phase, currentComprehensionQuestion, comprehensionPhaseRef.current?.currentQuestionIndex ?? 0);
     }
     if (phase === 'exercise' && currentExerciseQuestion) {
-      return getEvidenceItemContext(phase, currentExerciseQuestion, exercisePhaseRef.current?.currentQuestionIndex ?? 0);
+      return getEvidenceItemContext(phase, currentExerciseQuestion, exerciseCurrentQuestionIndex ?? 0);
     }
     if (phase === 'worksheet' && currentWorksheetQuestion) {
       return getEvidenceItemContext(phase, currentWorksheetQuestion, worksheetPhaseRef.current?.currentQuestionIndex ?? 0);
@@ -3732,6 +3790,7 @@ function SessionPageV2Inner() {
     currentExerciseQuestion,
     currentWorksheetQuestion,
     currentTestQuestion,
+    exerciseCurrentQuestionIndex,
     getEvidenceItemContext,
   ]);
 
@@ -3839,6 +3898,8 @@ function SessionPageV2Inner() {
     openingActionBusyRef.current = true;
     setOpeningActionBusy(true);
     setOpeningActionError('');
+    // Record the learner's question in the transcript (teacher reply comes via captionChange)
+    appendTranscriptLine({ text: question, role: 'user', phase: currentPhaseRef.current || undefined }, { immediate: true });
     try {
       const askContext = buildAskContext();
       const itemContext = getActiveEvidenceItemContext();
@@ -4360,7 +4421,8 @@ function SessionPageV2Inner() {
             persistTranscriptState(prev, nextActive);
             return prev;
           }
-          const next = [...prev, { text, role: 'assistant' }];
+          const captionPhase = currentPhaseRef.current || undefined;
+          const next = [...prev, { text, role: 'assistant', ...(captionPhase ? { phase: captionPhase } : {}) }];
           setActiveCaptionIndex(nextActive);
           persistTranscriptState(next, nextActive);
           return next;
@@ -4515,13 +4577,9 @@ function SessionPageV2Inner() {
       // Start phase-specific controller
       if (data.phase === 'discussion') {
         startDiscussionPhase();
-        // Discussion has no play timer - start directly in work mode
-        setCurrentTimerMode(prev => ({ ...prev, discussion: 'work' }));
-        setTimerRefreshKey(k => k + 1);
-        // If timeline jump, keep discussionState as 'idle' to show Begin button
-        if (!isTimelineJump && discussionPhaseRef.current) {
-          discussionPhaseRef.current.start();
-        }
+        // Do NOT auto-start: prefetch() fires in startDiscussionPhase();
+        // user must click Begin Discussion to call start().
+        // Timer mode is set in greetingPlaying once playback actually begins.
       } else if (data.phase === 'teaching') {
         startTeachingPhase();
         // Teaching uses discussion timer (grouped together, already in work mode)
@@ -4649,11 +4707,14 @@ function SessionPageV2Inner() {
       // Save transcript segment to mark lesson as completed.
       // Use the ref mirror (transcriptLinesRef) — this closure was created when lessonData
       // loaded and would otherwise capture the empty initial state via stale closure.
-      const liveTranscriptLines = transcriptLinesRef.current || [];
+      // Only save lines added in this session window (slice from sessionTranscriptStartIdxRef),
+      // not lines restored from prior sessions which are already in the ledger.
+      const allTranscriptLines = transcriptLinesRef.current || [];
+      const liveTranscriptLines = allTranscriptLines.slice(sessionTranscriptStartIdxRef.current);
       if (learnerId && learnerId !== 'demo' && lessonId && liveTranscriptLines.length > 0) {
         try {
           const learnerName = learnerProfile?.name || (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || null;
-          const startedAt = startSessionRef.current || new Date().toISOString();
+          const startedAt = sessionStartedAtRef.current || new Date().toISOString();
           const completedAt = new Date().toISOString();
           
           const txResult = await appendTranscriptSegment({
@@ -4663,12 +4724,14 @@ function SessionPageV2Inner() {
             lessonTitle: lessonData?.title || lessonId,
             segment: { startedAt, completedAt, lines: liveTranscriptLines },
             sessionId: browserSessionId || undefined,
+            teacher: undefined, // Sonoma uses flat path; explicit for clarity
           });
           if (txResult?.ok) {
             addEvent('📝 Transcript saved');
           } else {
+            const errMsg = txResult?.error?.message || txResult?.reason || 'unknown';
             console.error('[SessionPageV2] Transcript save failed:', txResult?.reason, txResult?.error);
-            addEvent('⚠️ Transcript save failed: ' + (txResult?.reason || 'unknown'));
+            addEvent('⚠️ Transcript save failed: ' + errMsg);
           }
         } catch (err) {
           console.error('[SessionPageV2] Failed to save transcript:', err);
@@ -4871,45 +4934,133 @@ function SessionPageV2Inner() {
     
     console.log('[SessionPageV2] Creating DiscussionPhase with learnerName:', learnerName, 'lessonTitle:', lessonTitle);
     
+    const isDiscussionResume = resumePhaseRef.current === 'discussion' && transcriptLinesRef.current.length > 0;
+    if (isDiscussionResume) setDiscussionResuming(true);
+    const savedDiscData = snapshotServiceRef.current?.snapshot?.phaseData?.discussion;
+    // Sentence-level resume: present when refreshed mid-overview/vocab (null means chat-level resume)
+    const resumeSentenceKey = (isDiscussionResume && typeof savedDiscData?.sentenceKey === 'string' && savedDiscData.sentenceKey)
+      ? savedDiscData.sentenceKey
+      : null;
+
     const phase = new DiscussionPhase({
       audioEngine: audioEngineRef.current,
       eventBus: eventBusRef.current,
       learnerName: learnerName,
-      lessonTitle: lessonTitle
+      lessonTitle: lessonTitle,
+      lessonData: lessonData,
+      grade: (learnerProfile?.grade || lessonData?.grade || '').toString(),
+      // Resume: pass saved conversation history so the overview is skipped
+      resumeHistory: isDiscussionResume
+        ? transcriptLinesRef.current.map(l => ({ role: l.role, content: l.text }))
+        : [],
+      resumeCompletedIndices: isDiscussionResume
+        ? discussionCompletedIndicesRef.current
+        : [],
+      // Sentence-level resume: replay at the exact sentence that was active on refresh
+      resumeSentenceKey: resumeSentenceKey,
     });
     
 
     discussionPhaseRef.current = phase;
+
+    // Begin background prefetch immediately so data is ready when user clicks Begin
+    phase.prefetch();
     
     console.log('[SessionPageV2] Setting up event listeners');
 
     let didComplete = false;
+
+    // discussionStateChange — sync DiscussionPhase internal state to React state
+    const unsubStateChange = eventBusRef.current.on('discussionStateChange', (data) => {
+      const stateMap = {
+        'idle':               'idle',
+        'prefetching':        'loading',
+        'loading-objectives': 'loading',
+        'ready':              'ready',
+        'playing-overview':   'playing-greeting',
+        'playing-vocab':      'playing-vocab',
+        'chatting':           'chatting',
+        'awaiting-response':  'awaiting-response',
+        'complete':           'complete',
+      };
+      setDiscussionState(stateMap[data.state] || data.state);
+      setDiscussionObjectivesInfo({
+        completed: data.completedObjectives || 0,
+        total:     data.totalObjectives     || 0,
+      });
+      if (Array.isArray(data.objectives))      setDiscussionObjectivesList(data.objectives);
+      if (Array.isArray(data.completedIndices)) setDiscussionCompletedIndices(data.completedIndices);
+      // Auto-start on resume: skip the 'Begin Discussion' button when prefetch completes
+      if (data.state === 'ready' && isDiscussionResume) {
+        audioEngineRef.current?.initialize().catch(() => {});
+        discussionPhaseRef.current?.start();
+      }
+      // Clear the resuming flag once the phase is actively playing (button can show normally if needed)
+      if (data.state !== 'idle' && data.state !== 'prefetching' && data.state !== 'loading-objectives' && data.state !== 'ready') {
+        setDiscussionResuming(false);
+      }
+    });
+
+    // discussionMessage — append each chat turn to the transcript and snap immediately
+    const unsubMessage = eventBusRef.current.on('discussionMessage', (data) => {
+      appendTranscriptLine({ text: data.text, role: data.role === 'user' ? 'user' : 'assistant' }, { immediate: true });
+      // Save completed-objective state alongside each sentence so resume is accurate
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.saveProgress('discussion-sentence', {
+          completedObjectiveIndices: discussionCompletedIndicesRef.current,
+          turnCount: (transcriptLinesRef.current?.length ?? 0) + 1,
+          // Save the sentence key so sentence-level resume can restart at the right position.
+          // Returns null when in chat/awaiting state — indicating chat-level resume instead.
+          sentenceKey: discussionPhaseRef.current?.currentSentenceKey ?? null,
+        }).catch(() => {});
+      }
+    });
+
+    // discussionSentenceChange — track current sentence for Repeat/Next UI
+    const unsubSentenceChange = eventBusRef.current.on('discussionSentenceChange', (data) => {
+      setDiscussionSentenceInfo(data);
+    });
+
     // Subscribe to events (capture unsubs so we can cleanly tear down)
     const unsubGreetingPlaying = eventBusRef.current.on('greetingPlaying', (data) => {
       addEvent(`ðŸ‘‹ Playing greeting: "${data.greetingText}"`);
       setDiscussionState('playing-greeting');
       
-      // Start discussion work timer when greeting begins (discussion has no play timer)
+      // Set timer mode + start the work timer now that discussion has actually begun
+      setCurrentTimerMode(prev => ({ ...prev, discussion: 'work' }));
+      setTimerRefreshKey(k => k + 1);
       if (timerServiceRef.current) {
         timerServiceRef.current.startWorkPhaseTimer('discussion');
       }
     });
     
-    const unsubGreetingComplete = eventBusRef.current.on('greetingComplete', (data) => {
-      addEvent('âœ… Greeting complete');
-      setDiscussionState('complete');
+    const unsubObjectiveComplete = eventBusRef.current.on('discussionObjectiveComplete', (data) => {
+      setNewlyCompletedDiscussionObj({
+        text:           data.objectiveText ?? null,
+        completedCount: data.completedCount,
+        totalCount:     data.totalCount,
+      });
+    });
+
+    const unsubGreetingComplete = eventBusRef.current.on('greetingComplete', () => {
+      addEvent('Overview complete — entering discussion chat');
+      setDiscussionState('chatting');
     });
     
     const unsubDiscussionComplete = eventBusRef.current.on('discussionComplete', (data) => {
       if (didComplete) return;
       didComplete = true;
 
-      addEvent('ðŸŽ‰ Discussion complete - proceeding to teaching');
+      addEvent('Discussion complete - proceeding to exercise');
       setDiscussionState('complete');
 
       // Cleanup FIRST to remove discussion audio end listener.
+      try { unsubStateChange?.(); } catch {}
+      try { unsubMessage?.(); } catch {}
+      try { unsubSentenceChange?.(); } catch {}
       try { unsubGreetingPlaying?.(); } catch {}
       try { unsubGreetingComplete?.(); } catch {}
+      try { unsubObjectiveComplete?.(); } catch {}
       try { unsubDiscussionComplete?.(); } catch {}
 
       try { phase.destroy(); } catch {}
@@ -5329,9 +5480,7 @@ function SessionPageV2Inner() {
     if (questions[clampedIndex]) {
       setCurrentExerciseQuestion(questions[clampedIndex]);
     }
-    if ((!exerciseState || exerciseState === 'idle') && savedExercise) {
-      setExerciseState('awaiting-answer');
-    }
+    // State will be set by the phase's own stateChange event on start()
     
     if (questions.length === 0) {
       // If no exercise questions, skip to worksheet
@@ -5354,11 +5503,14 @@ function SessionPageV2Inner() {
     }
     // (All-phase allocation already handled above in the fresh-build branch)
     
-    const phase = new ExercisePhase({
+    const learnerName = learnerProfile?.name || (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'student';
+    const phase = new ExerciseConversationPhase({
       audioEngine: audioEngineRef.current,
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
       questions: questions,
+      lessonData: lessonData,
+      learnerName: learnerName,
       resumeState: (!forceFresh && savedExercise) ? {
         questions,
         nextQuestionIndex: savedExercise.nextQuestionIndex ?? savedExercise.questionIndex ?? 0,
@@ -5373,6 +5525,18 @@ function SessionPageV2Inner() {
     // Subscribe to state changes
     phase.on('stateChange', (data) => {
       setExerciseState(data.state);
+      if (typeof data.questionIndex === 'number') {
+        setExerciseCurrentQuestionIndex(data.questionIndex);
+        if (questions[data.questionIndex]) {
+          setCurrentExerciseQuestion(questions[data.questionIndex]);
+        }
+      }
+      if (typeof data.totalQuestions === 'number') {
+        setExerciseTotalQuestions(data.totalQuestions);
+      }
+      if (typeof data.score === 'number') {
+        setExerciseScore(data.score);
+      }
       if (data.timerMode) {
         setExerciseTimerMode(data.timerMode);
         if (data.timerMode === 'play' || data.timerMode === 'work') {
@@ -5405,28 +5569,12 @@ function SessionPageV2Inner() {
       recordEvidenceAnswerRevealed('exercise', data);
     });
     
-    // Subscribe to question events
-    phase.on('questionStart', (data) => {
-      addEvent(`ðŸ“ Question ${data.questionIndex + 1}/${data.totalQuestions}`);
-      setCurrentExerciseQuestion(data.question);
-      setExerciseTotalQuestions(data.totalQuestions);
-    });
-    
-    phase.on('questionReady', (data) => {
-      setExerciseState('awaiting-answer');
-      addEvent('â“ Question ready for answer...');
-    });
-    
-    phase.on('answerSubmitted', (data) => {
-      const result = data.isCorrect ? 'âœ… Correct!' : 'âŒ Incorrect';
-      addEvent(`${result} (Score: ${data.score}/${data.totalQuestions})`);
-      setExerciseScore(data.score);
-      setSelectedExerciseAnswer('');
-    });
-    
-    phase.on('questionSkipped', (data) => {
-      addEvent(`â­ï¸ Skipped (Score: ${data.score}/${data.totalQuestions})`);
-      setSelectedExerciseAnswer('');
+    // Conversational exercise messages -> transcript
+    phase.on('exerciseConvMessage', (data) => {
+      appendTranscriptLine({ text: data.text, role: data.role === 'user' ? 'user' : 'assistant' }, { immediate: true });
+      if (data.role === 'user') {
+        setSelectedExerciseAnswer('');
+      }
     });
     
     phase.on('exerciseComplete', (data) => {
@@ -6286,6 +6434,11 @@ function SessionPageV2Inner() {
     if (options?.ignoreResume) {
       resetTranscriptState();
     }
+
+    // Record when this session window starts (used as startedAt for transcript segments).
+    // Must be set AFTER resetTranscriptState (which clears the start index) and BEFORE the
+    // orchestrator fires phaseChange events that trigger transcript autosaves.
+    sessionStartedAtRef.current = new Date().toISOString();
     
     // Start teaching prefetch immediately — must run synchronously before orchestratorRef.current.startSession()
     // because phaseChange('teaching') fires synchronously inside startSession and calls startTeachingPhase
@@ -6383,6 +6536,21 @@ function SessionPageV2Inner() {
       setStartSessionLoading(false);
     }
   }, [startSession]);
+
+  // Auto-start the session as soon as the page is ready and no snapshot resume is pending.
+  // This eliminates the initial "Begin" click — user goes straight to "Begin Discussion".
+  useEffect(() => {
+    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase) {
+      handleStartSessionClick();
+    }
+  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, handleStartSessionClick]);
+
+  // Auto-dismiss the objective complete toast after 3.5s
+  useEffect(() => {
+    if (!newlyCompletedDiscussionObj) return;
+    const t = setTimeout(() => setNewlyCompletedDiscussionObj(null), 3500);
+    return () => clearTimeout(t);
+  }, [newlyCompletedDiscussionObj]);
 
   const handleSessionTakeover = useCallback(async (pinCode) => {
     const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
@@ -6571,10 +6739,23 @@ function SessionPageV2Inner() {
     audioEngineRef.current.replay();
   };
 
+  const repeatDiscussionSentence = () => {
+    if (!discussionPhaseRef.current) return;
+    void masteryEvidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
+      phase: 'discussion',
+      suffix: `discussion-repeat:${Date.now()}`,
+      payload: {
+        repeat_surface: 'discussion_sentence',
+      },
+    });
+    discussionPhaseRef.current.repeatCurrentSentence();
+  };
+
   // Discussion handlers
   const submitDiscussionResponse = () => {
     if (!discussionPhaseRef.current) return;
-    discussionPhaseRef.current.submitResponse(discussionResponse);
+    discussionPhaseRef.current.submitMessage(discussionResponse);
     setDiscussionResponse(''); // Clear input after submit
   };
   
@@ -7112,7 +7293,8 @@ function SessionPageV2Inner() {
         </div>
       )}
       
-      {currentPhase === 'exercise' && (
+      {currentPhase === 'exercise' &&
+       (exerciseState === 'chatting' || exerciseState === 'awaiting-response') && (
         <div style={{ 
           position: 'absolute', 
           top: 8, 
@@ -7128,7 +7310,7 @@ function SessionPageV2Inner() {
           zIndex: 10000, 
           pointerEvents: 'none' 
         }}>
-          {exerciseScore}/{exerciseTotalQuestions}
+          Q {exerciseCurrentQuestionIndex + 1}/{exerciseTotalQuestions}
         </div>
       )}
       
@@ -7966,7 +8148,7 @@ function SessionPageV2Inner() {
           
           {/* Phase-specific Begin buttons */}
           {(() => {
-            const needBeginDiscussion = (currentPhase === 'idle') || (currentPhase === 'discussion' && (!discussionState || discussionState === 'idle'));
+            const needBeginDiscussion = (currentPhase === 'idle') || (currentPhase === 'discussion' && !discussionResuming && (!discussionState || discussionState === 'idle' || discussionState === 'ready' || discussionState === 'loading'));
             const needBeginComp = (currentPhase === 'comprehension' && (!comprehensionState || comprehensionState === 'idle'));
             const needBeginExercise = (currentPhase === 'exercise' && (!exerciseState || exerciseState === 'idle'));
             const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
@@ -8010,65 +8192,51 @@ function SessionPageV2Inner() {
                     {discussionState === 'loading' ? 'Loading...' : 'Begin Discussion'}
                   </button>
                 )}
-                {needBeginDiscussion && currentPhase === 'idle' && (
-                  offerResume ? (
-                    <>
-                      <button
-                        type="button"
-                        style={{...ctaStyle, opacity: (audioReady && snapshotLoaded) ? 1 : 0.5}}
-                        onClick={() => handleStartSessionClick()}
-                        disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
-                      >
-                        {startSessionLoading ? 'Loading...' : 'Resume'}
-                      </button>
-                      <button
-                        type="button"
-                        style={{
-                          ...ctaStyle,
-                          background: '#374151',
-                          boxShadow: '0 2px 12px rgba(17,24,39,0.24)',
-                          opacity: (audioReady && snapshotLoaded) ? 1 : 0.5
-                        }}
-                        onClick={async () => {
-                          // Debounce: prevent concurrent executions from rapid taps
-                          if (startOverInProgressRef.current) return;
-                          startOverInProgressRef.current = true;
-                          try {
-                            // Stop any in-progress audio/video first so the engine is in a
-                            // clean state before the session restarts. Without this, a playing
-                            // video.play() from the unlock sequence can race with the fresh
-                            // playVideoWithRetry() call that comes with the next Begin click.
-                            try { audioEngineRef.current?.stop(); } catch {}
-                            try { await snapshotServiceRef.current?.deleteSnapshot?.(); } catch {}
-                            resumePhaseRef.current = null;
-                            setResumePhase(null);
-                            resetTranscriptState();
-                            try { timerServiceRef.current?.reset?.(); } catch {}
-                            // Don't auto-start - let user click Begin button
-                            setCurrentPhase('idle');
-                            setDiscussionState('idle');
-                          } finally {
-                            startOverInProgressRef.current = false;
-                          }
-                        }}
-                        disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
-                      >
-                        Start Over
-                      </button>
-                    </>
-                  ) : (
+                {needBeginDiscussion && currentPhase === 'idle' && offerResume && (
+                  <>
                     <button
                       type="button"
                       style={{...ctaStyle, opacity: (audioReady && snapshotLoaded) ? 1 : 0.5}}
                       onClick={() => handleStartSessionClick()}
                       disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
                     >
-                      {(audioReady && snapshotLoaded)
-                        ? (startSessionLoading ? 'Loading...' : 'Begin')
-                        : (!snapshotLoaded ? 'Loading session...' : 'Preparing audio...')
-                      }
+                      {startSessionLoading ? 'Loading...' : 'Resume'}
                     </button>
-                  )
+                    <button
+                      type="button"
+                      style={{
+                        ...ctaStyle,
+                        background: '#374151',
+                        boxShadow: '0 2px 12px rgba(17,24,39,0.24)',
+                        opacity: (audioReady && snapshotLoaded) ? 1 : 0.5
+                      }}
+                      onClick={async () => {
+                        // Debounce: prevent concurrent executions from rapid taps
+                        if (startOverInProgressRef.current) return;
+                        startOverInProgressRef.current = true;
+                        try {
+                          // Stop any in-progress audio/video first so the engine is in a
+                          // clean state before the session restarts.
+                          try { audioEngineRef.current?.stop(); } catch {}
+                          try { await snapshotServiceRef.current?.deleteSnapshot?.(); } catch {}
+                          resumePhaseRef.current = null;
+                          setResumePhase(null);
+                          resetTranscriptState();
+                          try { timerServiceRef.current?.reset?.(); } catch {}
+                          setCurrentTimerMode({ discussion: null, comprehension: null, exercise: null, worksheet: null, test: null });
+                          setTimerRefreshKey(k => k + 1);
+                          // Auto-start will re-fire once resumePhase clears
+                          setCurrentPhase('idle');
+                          setDiscussionState('idle');
+                        } finally {
+                          startOverInProgressRef.current = false;
+                        }
+                      }}
+                      disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
+                    >
+                      Start Over
+                    </button>
+                  </>
                 )}
                 {needBeginDiscussion && currentPhase === 'idle' && startSessionError ? (
                   <div style={{
@@ -8112,6 +8280,55 @@ function SessionPageV2Inner() {
               </div>
             );
           })()}
+
+          {/* Discussion sentence controls — Repeat/Next during overview and vocab playback */}
+          {currentPhase === 'discussion' &&
+           (discussionState === 'playing-greeting' || discussionState === 'playing-vocab') && (
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              padding: '8px 4px'
+            }}>
+              <button
+                type="button"
+                onClick={repeatDiscussionSentence}
+                style={{
+                  padding: '12px 28px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(59,130,246,0.4)',
+                }}
+              >
+                Repeat
+              </button>
+              <button
+                type="button"
+                onClick={() => discussionPhaseRef.current?.nextSentence()}
+                style={{
+                  padding: '12px 28px',
+                  background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(34,197,94,0.4)',
+                }}
+              >
+                {discussionSentenceInfo.type === 'transition'
+                  ? 'Begin Discussion'
+                  : 'Next'}
+              </button>
+            </div>
+          )}
 
           {/* Teaching controls (footer) */}
           {currentPhase === 'teaching' && (
@@ -8175,12 +8392,161 @@ function SessionPageV2Inner() {
             </div>
           )}
           
+          {/* Exercise conversation chat input */}
+          {currentPhase === 'exercise' &&
+           (exerciseState === 'chatting' || exerciseState === 'awaiting-response') &&
+           !openingActionActive && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '4px 12px',
+              marginBottom: 4,
+            }}>
+              <input
+                type="text"
+                placeholder="Type your answer..."
+                value={selectedExerciseAnswer}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  border: '1px solid #bdbdbd',
+                  borderRadius: 6,
+                  fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)',
+                  outline: 'none',
+                  background: '#fff',
+                  color: '#111827',
+                }}
+                onChange={(e) => setSelectedExerciseAnswer(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (selectedExerciseAnswer.trim()) {
+                      exercisePhaseRef.current?.submitMessage(selectedExerciseAnswer);
+                    }
+                  }
+                }}
+              />
+              <button
+                type="button"
+                disabled={!selectedExerciseAnswer.trim()}
+                style={{
+                  background: '#c7442e',
+                  color: '#fff',
+                  borderRadius: 8,
+                  padding: '10px 20px',
+                  fontWeight: 700,
+                  fontSize: 'clamp(0.9rem, 1.5vw, 1rem)',
+                  border: 'none',
+                  cursor: !selectedExerciseAnswer.trim() ? 'not-allowed' : 'pointer',
+                  opacity: !selectedExerciseAnswer.trim() ? 0.6 : 1,
+                  boxShadow: '0 2px 8px rgba(199,68,46,0.28)',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={() => {
+                  if (selectedExerciseAnswer.trim()) {
+                    exercisePhaseRef.current?.submitMessage(selectedExerciseAnswer);
+                  }
+                }}
+              >
+                Send
+              </button>
+              <div style={{
+                fontSize: '0.8rem',
+                color: '#6b7280',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}>
+                Q {exerciseCurrentQuestionIndex + 1}/{exerciseTotalQuestions}
+              </div>
+            </div>
+          )}
+
+          {/* Discussion chat input — shown when in the Socratic conversation */}
+          {currentPhase === 'discussion' &&
+           (discussionState === 'chatting' || discussionState === 'awaiting-response') &&
+           !openingActionActive && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '4px 12px',
+              marginBottom: 4,
+            }}>
+              <input
+                type="text"
+                placeholder="Share your thoughts..."
+                value={discussionResponse}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  border: '1px solid #bdbdbd',
+                  borderRadius: 6,
+                  fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)',
+                  outline: 'none',
+                  background: '#fff',
+                  color: '#111827',
+                }}
+                onChange={(e) => setDiscussionResponse(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    submitDiscussionResponse();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                disabled={!discussionResponse.trim()}
+                style={{
+                  background: '#c7442e',
+                  color: '#fff',
+                  borderRadius: 8,
+                  padding: '10px 20px',
+                  fontWeight: 700,
+                  fontSize: 'clamp(0.9rem, 1.5vw, 1rem)',
+                  border: 'none',
+                  cursor: !discussionResponse.trim() ? 'not-allowed' : 'pointer',
+                  opacity: !discussionResponse.trim() ? 0.6 : 1,
+                  boxShadow: '0 2px 8px rgba(199,68,46,0.28)',
+                  whiteSpace: 'nowrap',
+                }}
+                onClick={submitDiscussionResponse}
+              >
+                Send
+              </button>
+              {discussionObjectivesInfo.total > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowDiscussionObjectives(true)}
+                  title="View learning objectives"
+                  style={{
+                    background: discussionObjectivesInfo.completed === discussionObjectivesInfo.total
+                      ? 'rgba(199,68,46,0.12)' : 'rgba(107,114,128,0.10)',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '4px 10px',
+                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    fontSize: '0.8rem',
+                    color: discussionObjectivesInfo.completed === discussionObjectivesInfo.total ? '#c7442e' : '#6b7280',
+                    whiteSpace: 'nowrap',
+                    fontWeight: 600,
+                  }}
+                >
+                  <span style={{ fontSize: 13 }}>&#9989;</span>
+                  {discussionObjectivesInfo.completed}/{discussionObjectivesInfo.total}
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Q&A footer for phases 2-5 */}
           {(() => {
             const qaPhase = ['comprehension', 'exercise', 'worksheet', 'test'].includes(currentPhase) ? currentPhase : null;
             const awaitingAnswer =
               (qaPhase === 'comprehension' && comprehensionState === 'awaiting-answer') ||
-              (qaPhase === 'exercise' && exerciseState === 'awaiting-answer') ||
+              (qaPhase === 'exercise' && (exerciseState === 'awaiting-answer' || exerciseState === 'chatting')) ||
               (qaPhase === 'worksheet' && worksheetState === 'awaiting-answer') ||
               (qaPhase === 'test' && testState === 'awaiting-answer');
 
@@ -8279,17 +8645,20 @@ function SessionPageV2Inner() {
                             style={quickButtonStyle}
                             onClick={() => {
                               setValue(val);
-                              appendTranscriptLine({ text: val, role: 'user' });
                               if (qaPhase === 'comprehension') {
+                                appendTranscriptLine({ text: val, role: 'user' });
                                 comprehensionPhaseRef.current?.submitAnswer(val);
                                 setComprehensionAnswer('');
                               } else if (qaPhase === 'exercise') {
-                                exercisePhaseRef.current?.submitAnswer(val);
+                                // submitMessage emits exerciseConvMessage which appends to transcript
+                                exercisePhaseRef.current?.submitMessage(val);
                                 setSelectedExerciseAnswer('');
                               } else if (qaPhase === 'worksheet') {
+                                appendTranscriptLine({ text: val, role: 'user' });
                                 worksheetPhaseRef.current?.submitAnswer(val);
                                 setWorksheetAnswer('');
                               } else if (qaPhase === 'test') {
+                                appendTranscriptLine({ text: val, role: 'user' });
                                 testPhaseRef.current?.submitAnswer(val);
                                 setTestAnswer('');
                               }
@@ -8314,17 +8683,20 @@ function SessionPageV2Inner() {
                               style={quickButtonStyle}
                               onClick={() => {
                                 setValue(val);
-                                appendTranscriptLine({ text: val, role: 'user' });
                                 if (qaPhase === 'comprehension') {
+                                  appendTranscriptLine({ text: val, role: 'user' });
                                   comprehensionPhaseRef.current?.submitAnswer(val);
                                   setComprehensionAnswer('');
                                 } else if (qaPhase === 'exercise') {
-                                  exercisePhaseRef.current?.submitAnswer(val);
+                                  // submitMessage emits exerciseConvMessage which appends to transcript
+                                  exercisePhaseRef.current?.submitMessage(val);
                                   setSelectedExerciseAnswer('');
                                 } else if (qaPhase === 'worksheet') {
+                                  appendTranscriptLine({ text: val, role: 'user' });
                                   worksheetPhaseRef.current?.submitAnswer(val);
                                   setWorksheetAnswer('');
                                 } else if (qaPhase === 'test') {
+                                  appendTranscriptLine({ text: val, role: 'user' });
                                   testPhaseRef.current?.submitAnswer(val);
                                   setTestAnswer('');
                                 }
@@ -8535,6 +8907,7 @@ function SessionPageV2Inner() {
           isOpen={showTimerSettingsEdit}
           learner={{ ...learnerProfile, initialTab: 'timers' }}
           zIndex={2147483647}
+          visibleTabs={['timers', 'targets']}
           onClose={() => setShowTimerSettingsEdit(false)}
           onSave={async (updates) => {
             await updateLearner(learnerProfile.id, updates);
@@ -8585,6 +8958,127 @@ function SessionPageV2Inner() {
           onCancel={handleCancelTakeover}
           isTakenOver={isTakenOverNotification}
         />
+      )}
+
+      {/* Discussion objective complete toast */}
+      {newlyCompletedDiscussionObj && (() => {
+        const { text, completedCount, totalCount } = newlyCompletedDiscussionObj;
+        return (
+          <div style={{
+            position: 'fixed',
+            bottom: 90, left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1999,
+            width: 'min(88vw, 340px)',
+            pointerEvents: 'none',
+          }}>
+            <div style={{
+              background: '#fff',
+              borderRadius: 16,
+              padding: '14px 18px',
+              boxShadow: '0 8px 32px rgba(199,68,46,0.18), 0 0 0 2px #c7442e',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: text ? 8 : 0 }}>
+                <span style={{ fontSize: 20 }}>✅</span>
+                <span style={{ color: '#c7442e', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>Goal Reached!</span>
+              </div>
+              {text && (
+                <p style={{ color: '#374151', fontSize: 13, lineHeight: 1.6, margin: '0 0 10px', fontStyle: 'italic' }}>
+                  &ldquo;{text}&rdquo;
+                </p>
+              )}
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                {Array.from({ length: totalCount }).map((_, i) => (
+                  <div key={i} style={{
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: i < completedCount ? '#c7442e' : '#e5e7eb',
+                    transition: 'background 0.3s',
+                  }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Discussion objectives overlay */}
+      {showDiscussionObjectives && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 2000,
+            background: 'rgba(0,0,0,0.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+          }}
+          onClick={() => setShowDiscussionObjectives(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 18,
+              width: 'min(92vw, 400px)',
+              maxHeight: '80dvh',
+              display: 'flex', flexDirection: 'column',
+              boxShadow: '0 12px 48px rgba(0,0,0,0.18), 0 0 0 2px #c7442e',
+              overflow: 'hidden',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px 12px',
+              borderBottom: '1px solid #f3f4f6',
+            }}>
+              <div>
+                <div style={{ color: '#c7442e', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Learning Goals</div>
+                <div style={{ color: '#6b7280', fontSize: 12 }}>{discussionObjectivesInfo.completed} of {discussionObjectivesInfo.total} completed</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDiscussionObjectives(false)}
+                style={{
+                  background: '#f3f4f6', border: 'none', color: '#6b7280',
+                  borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
+                  display: 'grid', placeItems: 'center', fontSize: 18, fontFamily: 'inherit',
+                }}
+                aria-label="Close"
+              >&#215;</button>
+            </div>
+            {/* Progress bar */}
+            <div style={{ height: 4, background: '#f3f4f6', flexShrink: 0 }}>
+              <div style={{
+                height: '100%',
+                width: `${discussionObjectivesInfo.total ? (discussionObjectivesInfo.completed / discussionObjectivesInfo.total) * 100 : 0}%`,
+                background: '#c7442e',
+                transition: 'width 0.4s ease',
+                borderRadius: '0 2px 2px 0',
+              }} />
+            </div>
+            {/* Objectives list */}
+            <div style={{ overflowY: 'auto', padding: '8px 0 16px' }}>
+              {discussionObjectivesList.length === 0 ? (
+                <div style={{ color: '#9ca3af', fontSize: 13, padding: '16px 20px' }}>Loading objectives…</div>
+              ) : discussionObjectivesList.map((obj, i) => {
+                const done = discussionCompletedIndices.includes(i);
+                return (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 10,
+                    padding: '11px 20px',
+                    borderBottom: '1px solid #f3f4f6',
+                  }}>
+                    <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{done ? '\u2705' : '\u2B1C'}</span>
+                    <span style={{
+                      color: done ? '#111827' : '#9ca3af',
+                      fontSize: 13, lineHeight: 1.5,
+                      transition: 'color 0.3s',
+                    }}>{obj}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

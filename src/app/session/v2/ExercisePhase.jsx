@@ -144,6 +144,9 @@ export class ExercisePhase {
     });
   }
   
+  // Public API: Expose current internal state so callers can branch after start()
+  getState() { return this.#state; }
+
   // Public API: Start phase
   async start(options = {}) {
     const skipPlayPortion = options?.skipPlayPortion === true;
@@ -258,6 +261,11 @@ export class ExercisePhase {
       this.#playCurrentQuestion();
     };
 
+    // Stop any in-flight audio before registering the listener so a stale
+    // 'end' event (e.g. play-line still speaking) cannot trigger finishIntro
+    // prematurely and advance the state before the intro TTS is ready.
+    this.#audioEngine.stop();
+
     // Advance to the first question when the intro completes OR is skipped.
     this.#setupAudioEndListener(finishIntro);
 
@@ -285,9 +293,7 @@ export class ExercisePhase {
     const isCorrect = await judgeAnswer(answer, acceptable, question);
 
     // Track wrong attempts before emitting so attempt count is accurate.
-    const priorWrongAttempts = this.#wrongAttempts.get(question.id) || 0;
-    let attempts = priorWrongAttempts;
-    const attemptNumber = priorWrongAttempts + 1;
+    let attempts = this.#wrongAttempts.get(question.id) || 0;
     if (!isCorrect) {
       attempts += 1;
       this.#wrongAttempts.set(question.id, attempts);
@@ -313,11 +319,7 @@ export class ExercisePhase {
     
     this.#emit('answerSubmitted', {
       questionIndex: this.#currentQuestionIndex,
-      question,
-      answer,
       isCorrect: isCorrect,
-      attemptNumber,
-      isFirstResponse: attemptNumber === 1,
       attempts,
       score: this.#score,
       totalQuestions: this.#questions.length,
@@ -366,13 +368,6 @@ export class ExercisePhase {
           const hintUrl = await fetchTTS(hint);
           if (hintUrl) {
             await this.#audioEngine.playAudio(hintUrl, [hint]);
-            this.#emit('hintGiven', {
-              questionIndex: this.#currentQuestionIndex,
-              question,
-              attemptNumber,
-              hint,
-              hintSource: 'exercise-feedback'
-            });
           }
         } catch (error) {
           console.warn('[ExercisePhase] Failed to play hint:', error);
@@ -381,20 +376,12 @@ export class ExercisePhase {
         // Return to awaiting-answer so learner can try again.
         this.#state = 'awaiting-answer';
         this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
-        this.#emit('retryRequested', {
-          questionIndex: this.#currentQuestionIndex,
-          question,
-          attemptNumber,
-          retrySource: 'exercise-feedback'
-        });
         return;
       }
 
       // Reveal and advance
       this.#emit('answerRevealed', {
         questionIndex: this.#currentQuestionIndex,
-        question,
-        attemptNumber,
         correctAnswer: correctText
       });
 

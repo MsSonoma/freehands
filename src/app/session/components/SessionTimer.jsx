@@ -227,13 +227,10 @@ export default function SessionTimer({
   // Determine emoji based on timer type
   const timerEmoji = TIMER_TYPE_EMOJI[timerType] || '⏱️';
 
-  // Build tooltip
-  let tooltipText = onTimerClick ? 'Click to adjust timer (requires PIN)' : undefined;
-  if (!tooltipText) {
-    tooltipText = timerType === 'play' 
-      ? 'Play time (for games before work)'
-      : 'Work time (complete phase tasks)';
-  }
+  // Build timer tooltip (type description only — gear button has its own tooltip)
+  const tooltipText = timerType === 'play'
+    ? 'Play time (for games before work)'
+    : 'Work time (complete phase tasks)';
 
   // Flash animation for play timer during last minute
   const shouldFlash = timerType === 'play' && remainingSeconds > 0 && remainingSeconds <= 60;
@@ -242,47 +239,65 @@ export default function SessionTimer({
     <div className={`session-timer ${className}`} style={{
       display: 'flex',
       alignItems: 'center',
-      gap: '8px',
-      padding: '6px 12px',
-      background: 'rgba(0, 0, 0, 0.75)',
-      borderRadius: '8px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-      fontFamily: 'monospace',
-      fontSize: 'clamp(1rem, 1.8vw, 1.2rem)',
-      fontWeight: 'bold',
-      color: color,
-      transition: 'color 0.3s ease',
-      backdropFilter: 'blur(4px)',
-      cursor: onTimerClick ? 'pointer' : 'default',
-      animation: shouldFlash ? 'timerFlash 1s ease-in-out infinite' : 'none'
-    }}
-    onClick={handleTimerClick}
-    title={tooltipText}
-    >
+      gap: '6px',
+    }}>
       <style>{`
         @keyframes timerFlash {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
         }
       `}</style>
-      <span title={timerType === 'play' ? 'Play' : 'Work'}>{timerEmoji}</span>
-      <span>{displayTime}</span>
-      {goldenKeyBonus > 0 && timerType === 'play' && (
-        <span style={{
-          fontSize: '0.75em',
-          color: '#fbbf24',
-          marginLeft: 4
-        }} title={`+${goldenKeyBonus} min golden key bonus`}>
-          🔑
-        </span>
+        {onTimerClick && (
+        <button
+          onClick={handleTimerClick}
+          title="Adjust timers (requires PIN)"
+          style={{
+            background: '#1f2937',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '1.1rem',
+            width: 'clamp(30px, 5vw, 42px)',
+            height: 'clamp(30px, 5vw, 42px)',
+            display: 'grid',
+            placeItems: 'center',
+            borderRadius: '50%',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            flexShrink: 0,
+          }}
+        >
+          ⚙️
+        </button>
       )}
-      <span style={{
-        fontSize: '1rem',
-        padding: '2px 6px',
-        opacity: 0.8
-      }}>
-        {isPaused ? '▶️' : '⏸️'}
-      </span>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '6px 12px',
+        background: 'rgba(0, 0, 0, 0.75)',
+        borderRadius: '8px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+        fontFamily: 'monospace',
+        fontSize: 'clamp(1rem, 1.8vw, 1.2rem)',
+        fontWeight: 'bold',
+        color: color,
+        transition: 'color 0.3s ease',
+        backdropFilter: 'blur(4px)',
+        animation: shouldFlash ? 'timerFlash 1s ease-in-out infinite' : 'none'
+      }}
+      title={tooltipText}
+      >
+        <span title={timerType === 'play' ? 'Play' : 'Work'}>{timerEmoji}</span>
+        <span>{displayTime}</span>
+        {goldenKeyBonus > 0 && timerType === 'play' && (
+          <span style={{
+            fontSize: '0.75em',
+            color: '#fbbf24',
+            marginLeft: 4
+          }} title={`+${goldenKeyBonus} min golden key bonus`}>
+            🔑
+          </span>
+        )}
+      </div>
     </div>
   );
 }

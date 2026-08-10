@@ -529,7 +529,7 @@ export default function TimerControlOverlay({
                 padding: 0
               }}
             >
-              ⚙️ Edit Timers &amp; Targets
+              ⚙️ Edit Timers &amp; Questions per Phase
             </button>
           </div>
         )}
