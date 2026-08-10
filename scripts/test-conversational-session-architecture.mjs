@@ -99,12 +99,17 @@ test('SessionPageV2 wires sentence playback, learner chat, and conversational ex
 test('Stage 2 evidence emitters remain attached to conversational session behavior', () => {
   const session = source('src/app/session/v2/SessionPageV2.jsx')
   const startExercisePhase = extractFunctionBody(session, 'startExercisePhase')
+  const startTestPhase = extractFunctionBody(session, 'startTestPhase')
 
   assertIncludes(session, 'STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED')
   assertIncludes(session, 'STAGE_2_EVIDENCE_EVENT_TYPES.VISUAL_AID_USED')
+  assertIncludes(session, 'recordAskUsed')
   assertIncludes(startExercisePhase, "recordEvidenceItemPresented('exercise', data)")
   assertIncludes(startExercisePhase, "recordEvidenceAnswerSubmitted('exercise', data)")
   assertIncludes(startExercisePhase, "recordEvidenceHintGiven('exercise', data)")
   assertIncludes(startExercisePhase, "recordEvidenceRetryRequested('exercise', data)")
   assertIncludes(startExercisePhase, "recordEvidenceAnswerRevealed('exercise', data)")
+  assertIncludes(startTestPhase, "recordEvidenceItemPresented('test', data)")
+  assertIncludes(startTestPhase, "recordEvidenceAnswerSubmitted('test', data)")
+  assertIncludes(startTestPhase, "recordEvidenceAnswerRevealed('test', data)")
 })

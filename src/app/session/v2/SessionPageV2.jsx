@@ -6046,6 +6046,10 @@ function SessionPageV2Inner() {
       setTestAnswer('');
       recordEvidenceAnswerSubmitted('test', data);
     });
+
+    phase.on('answerRevealed', (data) => {
+      recordEvidenceAnswerRevealed('test', data);
+    });
     
     phase.on('questionSkipped', (data) => {
       addEvent(`â­ï¸ Skipped (Score: ${data.score}/${data.totalQuestions})`);
