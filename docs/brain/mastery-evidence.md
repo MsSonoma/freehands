@@ -57,7 +57,32 @@ Idempotency is keyed by schema version, tracked session id, event type, and even
 
 Stage 2 adds `event_sequence`, a client-assigned monotonic sequence for attempted evidence events in the active browser writer. It is nullable so existing Stage 1 rows remain valid.
 
-Provenance currently captures the Sonoma provider/model selection, app build id when available, `session-v2` teaching protocol version, optional teaching protocol hash, and a client-side lesson content hash when browser crypto can produce one.
+Stage 3 adds stable identity infrastructure without changing learner behavior.
+
+Session identity now includes:
+
+- `identity_schema_version = mastery-identity-v1`
+- `lesson_identity_version = lesson-identity-v1`
+- `stable_lesson_key`, a canonical key beside the existing `lesson_key`
+- deterministic `lesson_content_hash`
+- deterministic UUID `lesson_version_id`
+- `teaching_protocol_version = session-v2-conversational-v1`
+- deterministic `teaching_protocol_hash`
+
+Lesson content hashing is canonicalized from instructional content fields only. Runtime/session metadata, timestamps, analytics-only fields, user interface state, evidence state, transcripts, snapshots, scoring, and learner responses are excluded. Existing `lesson_key` remains available for backward-compatible source references and queries.
+
+Event identity now preserves the Stage 2 legacy `item_id` / `legacy_item_fingerprint` and adds nullable Stage 3 fields beside it:
+
+- `stable_item_id`
+- `item_content_hash`
+- `item_identity_version = item-identity-v1`
+- source-backed `concept_id` when an explicit concept/objective/standard id exists on the source item
+
+`stable_item_id` identifies the source/content item across repeated exposures. `item_exposure_id` remains the exposure-level identifier for a specific presentation occurrence. This distinction is required for later analysis but does not introduce mastery scoring or assessment isolation by itself.
+
+Item content hashing excludes runtime exposure position, phase run, learner response, score, assistance state, and answer-attempt state. If the source item has an explicit id, the stable item id is anchored to that source id and the item content hash records content revisions. If the item has no explicit id, the stable item id falls back to lesson key plus item content hash.
+
+Provenance currently captures the Sonoma provider/model selection, app build id when available, the Stage 3 teaching protocol version/hash when provided by the client, and the server fallback protocol values for older clients.
 
 Known Stage 2 boundary: retry-attempt continuity is only as reliable as current phase state. Active-session attempts are recorded from the authoritative phase controller. If a refresh/takeover happens after a wrong answer where the current snapshot does not preserve retry counters or current-question position accurately, Stage 2 does not invent continuity.
 
@@ -66,6 +91,7 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - Do not use `lesson_session_events` as the mastery evidence store.
 - Do not reinterpret Stage 1 lifecycle events or existing production proof rows.
 - Do not create mastery percentages, independent mastery checks, concept state transitions, baseline results, or retention events in Stage 2.
+- Do not treat Stage 3 identity fields as proof of mastery, assessment isolation, independent measurement, or learner outcome improvement.
 - Do not change prompts, phase order, question selection, scoring, snapshots, transcripts, or completion behavior to serve evidence writes.
 - Do not mutate existing evidence events. Corrections belong in later appended events.
 - Do not infer evidence by parsing transcript prose after the fact; capture current behavior at runtime.
@@ -76,8 +102,10 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 
 - `supabase/migrations/20260809000000_add_learning_evidence_foundation.sql`
 - `supabase/migrations/20260809010000_add_stage_2_learning_evidence_events.sql`
+- `supabase/migrations/20260809020000_add_stage_3_mastery_evidence_identity.sql`
 - `src/app/api/evidence/route.js`
 - `src/app/lib/masteryEvidence/constants.js`
+- `src/app/lib/masteryEvidence/identity.js`
 - `src/app/lib/masteryEvidence/schema.js`
 - `src/app/lib/masteryEvidence/provenance.js`
 - `src/app/lib/masteryEvidence/client.js`
@@ -89,3 +117,4 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - `src/app/session/v2/TestPhase.jsx`
 - `src/app/session/components/SessionVisualAidsCarousel.js`
 - `scripts/test-mastery-evidence.mjs`
+- `scripts/test-stage3-identity.mjs`

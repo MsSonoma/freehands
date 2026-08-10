@@ -8,6 +8,11 @@ import {
   isMasteryEvidenceEnabled,
 } from '../../lib/masteryEvidence/constants.js';
 import {
+  ITEM_IDENTITY_VERSION,
+  LESSON_IDENTITY_VERSION,
+  MASTERY_EVIDENCE_IDENTITY_SCHEMA_VERSION,
+} from '../../lib/masteryEvidence/identity.js';
+import {
   assertEvidenceStatus,
   assertSchemaVersion,
   assertStage1EventType,
@@ -88,6 +93,14 @@ function forbidden(message = 'Forbidden') {
   return NextResponse.json({ ok: false, error: message }, { status: 403 });
 }
 
+function assertOptionalIdentityVersion(value, expected, fieldName) {
+  const normalized = normalizeOptionalText(value);
+  if (normalized && normalized !== expected) {
+    throw new Error(`${fieldName} must be ${expected}`);
+  }
+  return normalized;
+}
+
 function normalizeSessionBody(body) {
   assertSchemaVersion(body?.schema_version);
   const sessionId = normalizeRequiredText(body?.session_id, 'session_id');
@@ -96,13 +109,24 @@ function normalizeSessionBody(body) {
 
   return {
     schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    identity_schema_version: assertOptionalIdentityVersion(
+      body?.identity_schema_version,
+      MASTERY_EVIDENCE_IDENTITY_SCHEMA_VERSION,
+      'identity_schema_version',
+    ),
     session_id: sessionId,
     browser_session_id: normalizeOptionalText(body?.browser_session_id),
     learner_id: learnerId,
     lesson_key: normalizeRequiredText(body?.lesson_key, 'lesson_key'),
+    stable_lesson_key: normalizeOptionalText(body?.stable_lesson_key),
     lesson_id: normalizeOptionalText(body?.lesson_id),
     lesson_source: normalizeOptionalText(body?.lesson_source),
     lesson_version: normalizeOptionalText(body?.lesson_version),
+    lesson_identity_version: assertOptionalIdentityVersion(
+      body?.lesson_identity_version,
+      LESSON_IDENTITY_VERSION,
+      'lesson_identity_version',
+    ),
     lesson_version_id: isUuid(body?.lesson_version_id) ? body.lesson_version_id : null,
     lesson_content_hash: normalizeOptionalText(body?.lesson_content_hash),
     teaching_protocol_version: normalizeOptionalText(body?.teaching_protocol_version),
@@ -124,8 +148,15 @@ function normalizeEventBody(body) {
     event_sequence: normalizeOptionalPositiveInteger(body?.event_sequence, 'event_sequence'),
     occurred_at: normalizeIsoTimestamp(body?.occurred_at, new Date().toISOString()),
     phase: assertStage1Phase(body?.phase, { allowNull: true }),
-    concept_id: null,
+    concept_id: normalizeOptionalText(body?.concept_id),
     item_id: normalizeOptionalText(body?.item_id),
+    stable_item_id: normalizeOptionalText(body?.stable_item_id),
+    item_content_hash: normalizeOptionalText(body?.item_content_hash),
+    item_identity_version: assertOptionalIdentityVersion(
+      body?.item_identity_version,
+      ITEM_IDENTITY_VERSION,
+      'item_identity_version',
+    ),
     item_purpose: normalizeOptionalText(body?.item_purpose),
     item_exposure_id: normalizeOptionalText(body?.item_exposure_id),
     assistance_level: normalizeOptionalText(body?.assistance_level),
@@ -227,6 +258,9 @@ async function handleRecordEvent({ body, user, admin }) {
     phase: event.phase,
     concept_id: event.concept_id,
     item_id: event.item_id,
+    stable_item_id: event.stable_item_id,
+    item_content_hash: event.item_content_hash,
+    item_identity_version: event.item_identity_version,
     item_purpose: event.item_purpose,
     item_exposure_id: event.item_exposure_id,
     assistance_level: event.assistance_level,

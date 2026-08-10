@@ -104,6 +104,7 @@ test('Stage 2 evidence emitters remain attached to conversational session behavi
   assertIncludes(session, 'STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED')
   assertIncludes(session, 'STAGE_2_EVIDENCE_EVENT_TYPES.VISUAL_AID_USED')
   assertIncludes(session, 'recordAskUsed')
+  assertIncludes(session, 'identityItem: item || null')
   assertIncludes(startExercisePhase, "recordEvidenceItemPresented('exercise', data)")
   assertIncludes(startExercisePhase, "recordEvidenceAnswerSubmitted('exercise', data)")
   assertIncludes(startExercisePhase, "recordEvidenceHintGiven('exercise', data)")

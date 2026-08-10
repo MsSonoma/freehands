@@ -3732,6 +3732,7 @@ function SessionPageV2Inner() {
       itemExposureId,
       legacyItemFingerprint,
       questionIndex: index,
+      identityItem: item || null,
       item: summarizeEvidenceItem(item),
     };
   }, [ensureEvidencePhaseRun, lessonId, lessonKey]);

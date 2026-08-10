@@ -1,4 +1,4 @@
-import { stableStringify } from './client.js';
+import { stableStringify } from './identity.js';
 
 function normalizeTextPart(value) {
   return String(value ?? '')

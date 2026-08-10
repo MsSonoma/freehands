@@ -8,6 +8,12 @@ import {
   STAGE_2_EVIDENCE_EVENT_TYPES,
   isMasteryEvidenceEnabled,
 } from './constants.js';
+import {
+  buildItemIdentity,
+  buildLessonIdentity,
+  buildTeachingProtocolIdentity,
+  stableStringify,
+} from './identity.js';
 import { inferLessonSource } from './schema.js';
 
 const DEFAULT_WRITE_TIMEOUT_MS = 4000;
@@ -46,22 +52,13 @@ export function makeEvidenceIdempotencyKey({
   return normalizedSuffix ? `${base}:${normalizedSuffix}` : base;
 }
 
-export function stableStringify(value) {
-  if (value == null) return '';
-  if (typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map((entry) => stableStringify(entry)).join(',')}]`;
-  const keys = Object.keys(value).sort();
-  return `{${keys.map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(',')}}`;
-}
+export { stableStringify };
 
 export async function hashLessonContent(lessonData) {
-  if (!lessonData || !globalThis.crypto?.subtle || typeof TextEncoder === 'undefined') return null;
+  if (!lessonData) return null;
   try {
-    const bytes = new TextEncoder().encode(stableStringify(lessonData));
-    const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
-    return Array.from(new Uint8Array(digest))
-      .map((byte) => byte.toString(16).padStart(2, '0'))
-      .join('');
+    const lessonIdentity = await buildLessonIdentity({ lessonData });
+    return lessonIdentity.lessonContentHash;
   } catch {
     return null;
   }
@@ -178,6 +175,7 @@ export class MasteryEvidenceClient {
     itemId = null,
     itemPurpose = null,
     itemExposureId,
+    identityItem = null,
     legacyItemFingerprint,
     questionIndex = null,
     totalQuestions = null,
@@ -195,6 +193,7 @@ export class MasteryEvidenceClient {
       itemId: itemId || legacyItemFingerprint || null,
       itemPurpose,
       itemExposureId,
+      identityItem,
       payload: {
         source: 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
@@ -210,6 +209,7 @@ export class MasteryEvidenceClient {
     itemId = null,
     itemPurpose = null,
     itemExposureId,
+    identityItem = null,
     legacyItemFingerprint,
     attemptNumber,
     isFirstResponse,
@@ -232,6 +232,7 @@ export class MasteryEvidenceClient {
       itemId: itemId || legacyItemFingerprint || null,
       itemPurpose,
       itemExposureId,
+      identityItem,
       attemptNumber: normalizedAttempt,
       isFirstResponse: !!isFirstResponse,
       payload: {
@@ -249,6 +250,7 @@ export class MasteryEvidenceClient {
     itemId = null,
     itemPurpose = null,
     itemExposureId,
+    identityItem = null,
     legacyItemFingerprint,
     attemptNumber,
     isFirstResponse,
@@ -273,6 +275,7 @@ export class MasteryEvidenceClient {
       itemId: itemId || legacyItemFingerprint || null,
       itemPurpose,
       itemExposureId,
+      identityItem,
       attemptNumber: normalizedAttempt,
       isFirstResponse: !!isFirstResponse,
       result: {
@@ -294,6 +297,7 @@ export class MasteryEvidenceClient {
     itemId = null,
     itemPurpose = null,
     itemExposureId,
+    identityItem = null,
     legacyItemFingerprint,
     attemptNumber,
     hintSource = 'current_phase_feedback',
@@ -315,6 +319,7 @@ export class MasteryEvidenceClient {
       itemId: itemId || legacyItemFingerprint || null,
       itemPurpose,
       itemExposureId,
+      identityItem,
       assistanceLevel: 'hinted',
       attemptNumber: normalizedAttempt,
       payload: {
@@ -332,6 +337,7 @@ export class MasteryEvidenceClient {
     itemId = null,
     itemPurpose = null,
     itemExposureId,
+    identityItem = null,
     legacyItemFingerprint,
     attemptNumber,
     retrySource = 'current_phase_feedback',
@@ -352,6 +358,7 @@ export class MasteryEvidenceClient {
       itemId: itemId || legacyItemFingerprint || null,
       itemPurpose,
       itemExposureId,
+      identityItem,
       assistanceLevel: 'retry_no_hint',
       attemptNumber: normalizedAttempt,
       payload: {
@@ -368,6 +375,7 @@ export class MasteryEvidenceClient {
     itemId = null,
     itemPurpose = null,
     itemExposureId,
+    identityItem = null,
     legacyItemFingerprint,
     attemptNumber = null,
     revealSource = 'current_phase_feedback',
@@ -388,6 +396,7 @@ export class MasteryEvidenceClient {
       itemId: itemId || legacyItemFingerprint || null,
       itemPurpose,
       itemExposureId,
+      identityItem,
       assistanceLevel: 'answer_revealed',
       attemptNumber,
       payload: {
@@ -405,6 +414,7 @@ export class MasteryEvidenceClient {
     itemId = null,
     itemPurpose = null,
     itemExposureId = null,
+    identityItem = null,
     legacyItemFingerprint = null,
     askMode = 'freeform',
     prompt = null,
@@ -423,6 +433,7 @@ export class MasteryEvidenceClient {
       itemId: itemId || legacyItemFingerprint || null,
       itemPurpose,
       itemExposureId,
+      identityItem,
       assistanceLevel: answerRevealed ? 'answer_revealed' : 'reteach_or_scaffolded',
       payload: {
         source: 'session-v2',
@@ -442,6 +453,7 @@ export class MasteryEvidenceClient {
     itemId = null,
     itemPurpose = null,
     itemExposureId = null,
+    identityItem = null,
     legacyItemFingerprint = null,
     payload = {},
   } = {}) {
@@ -453,6 +465,7 @@ export class MasteryEvidenceClient {
       itemId: itemId || legacyItemFingerprint || null,
       itemPurpose,
       itemExposureId,
+      identityItem,
       payload: {
         source: 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
@@ -517,14 +530,21 @@ export class MasteryEvidenceClient {
 
   async #createSession() {
     try {
-      const lessonContentHash = await hashLessonContent(this.meta?.lessonData);
+      const lessonIdentity = await buildLessonIdentity({
+        lessonKey: this.meta?.lessonKey,
+        lessonId: this.meta?.lessonId,
+        lessonData: this.meta?.lessonData,
+      });
+      const protocolIdentity = await buildTeachingProtocolIdentity();
       const response = await this.#post({
         action: 'create_session',
         schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+        identity_schema_version: lessonIdentity.identitySchemaVersion,
         session_id: this.meta.sessionId,
         browser_session_id: this.meta.browserSessionId,
         learner_id: this.meta.learnerId,
         lesson_key: this.meta.lessonKey,
+        stable_lesson_key: lessonIdentity.stableLessonKey || this.meta.lessonKey,
         lesson_id: this.meta.lessonId,
         lesson_source: inferLessonSource({
           lessonKey: this.meta.lessonKey,
@@ -532,9 +552,11 @@ export class MasteryEvidenceClient {
           lessonData: this.meta.lessonData,
         }),
         lesson_version: normalizeText(this.meta.lessonData?.version || this.meta.lessonData?.updated_at),
-        lesson_content_hash: lessonContentHash,
-        teaching_protocol_version: 'session-v2',
-        teaching_protocol_hash: null,
+        lesson_identity_version: lessonIdentity.lessonIdentityVersion,
+        lesson_version_id: lessonIdentity.lessonVersionId,
+        lesson_content_hash: lessonIdentity.lessonContentHash,
+        teaching_protocol_version: protocolIdentity.protocolVersion,
+        teaching_protocol_hash: protocolIdentity.protocolHash,
         started_at: this.meta.startedAt,
       });
       if (!response?.ok || !response.evidence_session?.id) {
@@ -553,6 +575,32 @@ export class MasteryEvidenceClient {
     }
   }
 
+  async #resolveItemIdentity(identityItem) {
+    if (!identityItem) {
+      return {
+        stableItemId: null,
+        itemContentHash: null,
+        itemIdentityVersion: null,
+        conceptId: null,
+      };
+    }
+    try {
+      return await buildItemIdentity({
+        lessonKey: this.meta?.lessonKey,
+        lessonId: this.meta?.lessonId,
+        lessonData: this.meta?.lessonData,
+        item: identityItem,
+      });
+    } catch {
+      return {
+        stableItemId: null,
+        itemContentHash: null,
+        itemIdentityVersion: null,
+        conceptId: null,
+      };
+    }
+  }
+
   async #recordEvent({
     eventType,
     occurredAt,
@@ -563,6 +611,7 @@ export class MasteryEvidenceClient {
     itemId = null,
     itemPurpose = null,
     itemExposureId = null,
+    identityItem = null,
     assistanceLevel = null,
     attemptNumber = null,
     isFirstResponse = null,
@@ -571,6 +620,7 @@ export class MasteryEvidenceClient {
       if (this.readyPromise) await this.readyPromise;
       if (!this.evidenceSessionId || !this.meta) return { ok: false, status: this.status };
       const eventSequence = this.eventSequence + 1;
+      const itemIdentity = await this.#resolveItemIdentity(identityItem);
       const idempotencyKey = makeEvidenceIdempotencyKey({
         sessionId: this.meta.sessionId,
         eventType,
@@ -588,7 +638,11 @@ export class MasteryEvidenceClient {
         event_sequence: eventSequence,
         occurred_at: occurredAt,
         phase,
+        concept_id: itemIdentity.conceptId,
         item_id: itemId,
+        stable_item_id: itemIdentity.stableItemId,
+        item_content_hash: itemIdentity.itemContentHash,
+        item_identity_version: itemIdentity.itemIdentityVersion,
         item_purpose: itemPurpose,
         item_exposure_id: itemExposureId,
         assistance_level: assistanceLevel,
