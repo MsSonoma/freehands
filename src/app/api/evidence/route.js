@@ -18,6 +18,10 @@ import {
   ASSESSMENT_ROLES,
 } from '../../lib/masteryEvidence/assessmentIsolation.js';
 import {
+  BASELINE_PROTOCOL_VERSION,
+  BASELINE_STATUSES,
+} from '../../lib/masteryEvidence/baseline.js';
+import {
   assertEvidenceStatus,
   assertSchemaVersion,
   assertStage1EventType,
@@ -122,6 +126,22 @@ function assertOptionalAssessmentRole(value) {
   return normalized;
 }
 
+function assertOptionalBaselineStatus(value) {
+  const normalized = normalizeOptionalText(value);
+  if (normalized && !Object.values(BASELINE_STATUSES).includes(normalized)) {
+    throw new Error('Unsupported baseline status');
+  }
+  return normalized;
+}
+
+function assertOptionalEvidencePurpose(value) {
+  const normalized = normalizeOptionalText(value);
+  if (normalized && normalized !== 'baseline') {
+    throw new Error('Unsupported evidence purpose');
+  }
+  return normalized;
+}
+
 function normalizeOptionalNonnegativeInteger(value, fieldName) {
   if (value == null || value === '') return null;
   const number = Number(value);
@@ -171,6 +191,17 @@ function normalizeSessionBody(body) {
       body?.reserved_assessment_count,
       'reserved_assessment_count',
     ),
+    baseline_protocol_version: assertOptionalIdentityVersion(
+      body?.baseline_protocol_version,
+      BASELINE_PROTOCOL_VERSION,
+      'baseline_protocol_version',
+    ),
+    baseline_status: assertOptionalBaselineStatus(body?.baseline_status),
+    baseline_item_count: normalizeOptionalNonnegativeInteger(
+      body?.baseline_item_count,
+      'baseline_item_count',
+    ),
+    baseline_unavailable_reason: normalizeOptionalText(body?.baseline_unavailable_reason),
     started_at: normalizeIsoTimestamp(body?.started_at, new Date().toISOString()),
     evidence_status: MASTERY_EVIDENCE_STATUSES.PARTIAL,
   };
@@ -199,6 +230,7 @@ function normalizeEventBody(body) {
     ),
     assessment_role: assertOptionalAssessmentRole(body?.assessment_role),
     pre_assessment_exposed: normalizeOptionalBoolean(body?.pre_assessment_exposed),
+    evidence_purpose: assertOptionalEvidencePurpose(body?.evidence_purpose),
     item_purpose: normalizeOptionalText(body?.item_purpose),
     item_exposure_id: normalizeOptionalText(body?.item_exposure_id),
     assistance_level: normalizeOptionalText(body?.assistance_level),
@@ -305,6 +337,7 @@ async function handleRecordEvent({ body, user, admin }) {
     item_identity_version: event.item_identity_version,
     assessment_role: event.assessment_role,
     pre_assessment_exposed: event.pre_assessment_exposed,
+    evidence_purpose: event.evidence_purpose,
     item_purpose: event.item_purpose,
     item_exposure_id: event.item_exposure_id,
     assistance_level: event.assistance_level,
@@ -368,6 +401,84 @@ async function handleFinalizeSession({ body, user, admin }) {
   return NextResponse.json({ ok: true, evidence_session: data });
 }
 
+async function handleUpdateBaselineStatus({ body, user, admin }) {
+  const evidenceSessionId = normalizeRequiredText(body?.evidence_session_id, 'evidence_session_id');
+  const baselineStatus = assertOptionalBaselineStatus(body?.baseline_status);
+  if (!baselineStatus) throw new Error('baseline_status required');
+  const updates = {
+    baseline_protocol_version: assertOptionalIdentityVersion(
+      body?.baseline_protocol_version,
+      BASELINE_PROTOCOL_VERSION,
+      'baseline_protocol_version',
+    ) || BASELINE_PROTOCOL_VERSION,
+    baseline_status: baselineStatus,
+    baseline_item_count: normalizeOptionalNonnegativeInteger(body?.baseline_item_count, 'baseline_item_count'),
+    baseline_unavailable_reason: normalizeOptionalText(body?.baseline_unavailable_reason),
+    updated_at: new Date().toISOString(),
+  };
+  const { data, error } = await admin
+    .from('learning_evidence_sessions')
+    .update(updates)
+    .eq('id', evidenceSessionId)
+    .eq('facilitator_id', user.id)
+    .select('*')
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ ok: false, error: error.message || 'Baseline status update failed' }, { status: 500 });
+  }
+  if (!data) return forbidden('Evidence session not found or unauthorized');
+  return NextResponse.json({ ok: true, evidence_session: data });
+}
+
+async function handleCheckPriorExposure({ body, user, admin }) {
+  const learnerId = normalizeRequiredText(body?.learner_id, 'learner_id');
+  if (!isUuid(learnerId)) throw new Error('learner_id must be a UUID');
+  const ownsLearner = await verifyLearnerOwnership(admin, user.id, learnerId);
+  if (!ownsLearner) return forbidden('Learner not found or unauthorized');
+
+  const identities = Array.isArray(body?.item_identities) ? body.item_identities : [];
+  const stableIds = identities
+    .map((identity) => normalizeOptionalText(identity?.stable_item_id || identity?.stableItemId))
+    .filter(Boolean);
+  const contentHashes = identities
+    .map((identity) => normalizeOptionalText(identity?.item_content_hash || identity?.itemContentHash))
+    .filter(Boolean);
+
+  if (!stableIds.length && !contentHashes.length) {
+    return NextResponse.json({ ok: true, exposed: [], exposed_keys: [] });
+  }
+
+  let query = admin
+    .from('learning_evidence_events')
+    .select('stable_item_id,item_content_hash,occurred_at')
+    .eq('facilitator_id', user.id)
+    .eq('learner_id', learnerId)
+    .eq('event_type', MASTERY_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED);
+
+  const clauses = [];
+  if (stableIds.length) clauses.push(`stable_item_id.in.(${stableIds.map((id) => `"${id}"`).join(',')})`);
+  if (contentHashes.length) clauses.push(`item_content_hash.in.(${contentHashes.map((hash) => `"${hash}"`).join(',')})`);
+  query = query.or(clauses.join(','));
+
+  const { data, error } = await query.limit(1000);
+  if (error) {
+    return NextResponse.json({ ok: false, error: error.message || 'Prior exposure read failed' }, { status: 500 });
+  }
+
+  const exposedKeys = new Set();
+  for (const row of data || []) {
+    if (row.stable_item_id) exposedKeys.add(`stable:${row.stable_item_id}`);
+    if (row.item_content_hash) exposedKeys.add(`content:${row.item_content_hash}`);
+  }
+
+  return NextResponse.json({
+    ok: true,
+    exposed: data || [],
+    exposed_keys: Array.from(exposedKeys),
+  });
+}
+
 async function handleGetSession({ request, user, admin }) {
   const url = new URL(request.url);
   const evidenceSessionId = normalizeOptionalText(url.searchParams.get('evidence_session_id'));
@@ -413,6 +524,12 @@ export async function POST(request, deps = {}) {
     }
     if (action === 'finalize_session') {
       return await handleFinalizeSession({ body, user: auth.user, admin: auth.clients.admin });
+    }
+    if (action === 'update_baseline_status') {
+      return await handleUpdateBaselineStatus({ body, user: auth.user, admin: auth.clients.admin });
+    }
+    if (action === 'check_prior_exposure') {
+      return await handleCheckPriorExposure({ body, user: auth.user, admin: auth.clients.admin });
     }
 
     return badRequest('Unsupported evidence action');

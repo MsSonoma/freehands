@@ -108,6 +108,38 @@ Stage 4 event metadata records:
 
 This is not cryptographic secrecy. The full lesson may still exist in browser memory. The boundary is a runtime projection and evidence classification boundary for instructional AI payloads and source-backed Test item exposure.
 
+Stage 5 adds baseline evidence architecture without adding mastery state.
+
+Baseline answers one narrow question: what could the learner demonstrate before Ms. Sonoma taught this lesson? It runs as a short pre-instruction step before normal Socratic Discussion, not as a new major orchestrator phase or timeline lock. Eligible baseline items come only from an explicit source pool such as `baseline` / `baselinePool`; ordinary Discussion prompts are not reinterpreted as baseline.
+
+Newly generated facilitator lessons request a small explicit `baseline` pool, normally two low-pressure items. Legacy lessons without that pool continue normally and record baseline as unavailable when evidence is enabled.
+
+The baseline protocol is versioned as `baseline-v1`. Baseline eligibility requires deterministic non-overlap with instructional phase items and reserved Test items using Stage 3 stable/content identity. The prior-exposure check reads existing `item_presented` evidence for the same facilitator-owned learner and item identity; previously exposed baseline items are not treated as cold merely because Start Over or a new browser session reset local runtime state.
+
+Baseline interaction is measurement only:
+
+- present the item;
+- allow verbatim repeat/TTS;
+- accept one first response, including “I don’t know”;
+- evaluate and record the evidence chain;
+- acknowledge neutrally;
+- move on or begin normal Discussion.
+
+Baseline does not hint, reteach, reveal answers, retry, show a score, claim mastery, or create retention/proficiency state.
+
+Stage 5 session metadata records:
+
+- `baseline_protocol_version = baseline-v1`
+- `baseline_status`: `complete`, `partial`, or `unavailable`
+- `baseline_item_count`
+- `baseline_unavailable_reason`
+
+Stage 5 event metadata records:
+
+- `evidence_purpose = baseline`
+
+Baseline uses the existing item evidence primitives: `item_presented`, `learner_response`, and `answer_evaluated`, preserving stable item id, item content hash, exposure id, attempt number, first-response flag, result, and provenance.
+
 Known Stage 2 boundary: retry-attempt continuity is only as reliable as current phase state. Active-session attempts are recorded from the authoritative phase controller. If a refresh/takeover happens after a wrong answer where the current snapshot does not preserve retry counters or current-question position accurately, Stage 2 does not invent continuity.
 
 ## What NOT To Do
@@ -117,6 +149,7 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - Do not create mastery percentages, independent mastery checks, concept state transitions, baseline results, or retention events in Stage 2.
 - Do not treat Stage 3 identity fields as proof of mastery, independent measurement, or learner outcome improvement.
 - Do not treat Stage 4 assessment isolation as baseline, mastery, retention, or outcome evidence.
+- Do not treat Stage 5 baseline evidence as post-instruction mastery, retained knowledge, or outcome proof.
 - Do not claim assessment secrecy for unsupported legacy lessons with no separable reserved Test pool.
 - Do not change prompts, phase order, question selection, scoring, snapshots, transcripts, or completion behavior to serve evidence writes.
 - Do not mutate existing evidence events. Corrections belong in later appended events.
@@ -130,10 +163,12 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - `supabase/migrations/20260809010000_add_stage_2_learning_evidence_events.sql`
 - `supabase/migrations/20260809020000_add_stage_3_mastery_evidence_identity.sql`
 - `supabase/migrations/20260809030000_add_stage_4_assessment_isolation.sql`
+- `supabase/migrations/20260809040000_add_stage_5_baseline_evidence.sql`
 - `src/app/api/evidence/route.js`
 - `src/app/lib/masteryEvidence/constants.js`
 - `src/app/lib/masteryEvidence/identity.js`
 - `src/app/lib/masteryEvidence/assessmentIsolation.js`
+- `src/app/lib/masteryEvidence/baseline.js`
 - `src/app/lib/masteryEvidence/schema.js`
 - `src/app/lib/masteryEvidence/provenance.js`
 - `src/app/lib/masteryEvidence/client.js`
@@ -147,3 +182,4 @@ Known Stage 2 boundary: retry-attempt continuity is only as reliable as current 
 - `scripts/test-mastery-evidence.mjs`
 - `scripts/test-stage3-identity.mjs`
 - `scripts/test-stage4-assessment-isolation.mjs`
+- `scripts/test-stage5-baseline.mjs`

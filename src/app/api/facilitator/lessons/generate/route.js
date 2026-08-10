@@ -73,6 +73,7 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   "blurb": "string",
   "vocab": [{"term": "string", "definition": "string"}],
   "teachingNotes": "string",
+  "baseline": [{"id": "baseline-1", "question": "short, low-pressure pre-instruction question", "expectedAny": ["answer"]}],
   "truefalse": [{"question": "COMPLETE QUESTION TEXT HERE", "answer": true|false, "expectedAny": ["true"|"false"]}],
   "multiplechoice": [{"question": "string", "choices": ["A", "B", "C", "D"], "correct": 0-3, "expectedAny": ["correct answer text"]}],
   "fillintheblank": [{"question": "COMPLETE SENTENCE WITH _____ BLANK", "expectedAny": ["answer"]}],
@@ -100,6 +101,7 @@ CRITICAL REQUIREMENTS:
    - Add common synonyms and alternative phrasings to increase leniency
    - Example: ["photosynthesis", "making food", "food production", "creating energy"]
 6. teachingNotes: Include key teaching strategies, common misconceptions, real-world connections, and differentiation tips (2-4 sentences)${notesGuidance}
+7. baseline: Include exactly 2 short, low-pressure pre-instruction questions. These must check what a learner may already know before teaching, not trick questions. They must be distinct from all truefalse, multiplechoice, fillintheblank, shortanswer, and any future test items. Do not call them a pretest.
 
 EXAMPLE truefalse format:
 {"question": "The sun rises in the east.", "answer": true, "expectedAny": ["true"]}
@@ -129,6 +131,10 @@ async function callModel(prompt){
       id: 'Dev_Lesson', title: 'Dev Lesson', grade: '3rd', difficulty: 'Beginner',
       blurb: 'A development stub lesson.', vocab:[{term:'term',definition:'definition'}], 
       teachingNotes:'Use concrete examples and hands-on activities. Address common misconceptions. Connect to real-world scenarios.',
+      baseline:[
+        {id:'baseline-1', question:'What do you already know about this topic?', expectedAny:['something about the topic']},
+        {id:'baseline-2', question:'Can you name one idea related to this topic?', expectedAny:['related idea']}
+      ],
       truefalse:[{question:'2 is even.', answer:true, expectedAny:['true']}],
       multiplechoice:[{question:'Pick 2', choices:['1','2','3','4'], correct:1, expectedAny:['2']}],
       fillintheblank:[{question:'__ is the result of 1+1.', expectedAny:['2']}],

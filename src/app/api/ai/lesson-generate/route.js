@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
 import { createClient } from '@supabase/supabase-js'
 import { AI_MODEL } from '@/app/lib/aiModel'
+import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic'
  * Generate lesson content items using AI with full lesson context.
  * Body: { lesson, type }
  *   lesson — full lesson JSON object
- *   type   — 'vocab' | 'multiplechoice' | 'truefalse' | 'shortanswer' | 'fillintheblank'
+ *   type   — 'vocab' | 'baseline' | 'multiplechoice' | 'truefalse' | 'shortanswer' | 'fillintheblank'
  * Returns: { items: [...] }
  */
 export async function POST(req) {
@@ -39,13 +40,14 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Missing lesson or type' }, { status: 400 })
     }
 
-    const validTypes = ['vocab', 'multiplechoice', 'truefalse', 'shortanswer', 'fillintheblank']
+    const validTypes = ['vocab', 'baseline', 'multiplechoice', 'truefalse', 'shortanswer', 'fillintheblank']
     if (!validTypes.includes(type)) {
       return NextResponse.json({ error: `Invalid type: ${type}` }, { status: 400 })
     }
 
-    // Strip large arrays from lesson context to keep prompt focused but readable
-    const lessonContext = JSON.stringify(lesson, null, 2)
+    // Strip reserved Test and baseline pools from generation context so instructional
+    // item generation cannot accidentally reuse pre-instruction or held-out items.
+    const lessonContext = JSON.stringify(buildInstructionalLessonView(lesson), null, 2)
 
     const prompts = {
       vocab: {
@@ -70,6 +72,18 @@ LESSON:
 ${lessonContext}
 
 Return ONLY a JSON object: {"items": [{"question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0}, ...]}`,
+      },
+
+      baseline: {
+        system: `You are an expert curriculum writer creating brief, low-pressure pre-instruction baseline questions for elementary school lessons.
+Always return valid JSON as: {"items": [{"id": "baseline-1", "question": "...", "expectedAny": ["answer1", "answer2"]}, ...]}
+Do not call these a pretest. Do not make trick questions. Generate exactly 2 items.`,
+        user: `Given this lesson, generate exactly 2 short baseline questions that check what the learner may already know before teaching begins. They must be distinct from instructional practice and any later test questions.
+
+LESSON:
+${lessonContext}
+
+Return ONLY a JSON object: {"items": [{"id": "baseline-1", "question": "...", "expectedAny": ["answer1", "answer2"]}, ...]}`,
       },
 
       truefalse: {

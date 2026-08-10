@@ -24,6 +24,11 @@ import {
   ASSESSMENT_ISOLATION_VERSION,
   ASSESSMENT_ROLES,
 } from '../src/app/lib/masteryEvidence/assessmentIsolation.js'
+import {
+  BASELINE_EVIDENCE_PURPOSE,
+  BASELINE_PROTOCOL_VERSION,
+  BASELINE_STATUSES,
+} from '../src/app/lib/masteryEvidence/baseline.js'
 import { createLegacyItemFingerprint } from '../src/app/lib/masteryEvidence/items.js'
 
 const facilitatorId = '11111111-1111-1111-1111-111111111111'
@@ -69,6 +74,12 @@ class MockQuery {
   is(column, value) { this.filters.push({ column, value }); return this }
   or() { return this }
   limit() { return this }
+  then(resolve, reject) {
+    return Promise.resolve({
+      data: this.store[this.table].filter((row) => matches(row, this.filters)),
+      error: null,
+    }).then(resolve, reject)
+  }
 
   upsert(row) {
     this.pendingUpsert = row
@@ -195,6 +206,10 @@ async function createEvidenceSession(store) {
     assessment_isolation_version: ASSESSMENT_ISOLATION_VERSION,
     assessment_isolation_status: ASSESSMENT_ISOLATION_STATUSES.ISOLATED,
     reserved_assessment_count: 2,
+    baseline_protocol_version: BASELINE_PROTOCOL_VERSION,
+    baseline_status: BASELINE_STATUSES.UNAVAILABLE,
+    baseline_item_count: 0,
+    baseline_unavailable_reason: 'no_baseline_pool',
     started_at: '2026-08-09T12:00:00.000Z',
   }), { createClientImpl: makeCreateClientImpl(store) })
   return response.json()
@@ -230,6 +245,10 @@ test('mastery evidence route creates an owned partial evidence session', async (
   assert.equal(result.evidence_session.assessment_isolation_version, ASSESSMENT_ISOLATION_VERSION)
   assert.equal(result.evidence_session.assessment_isolation_status, ASSESSMENT_ISOLATION_STATUSES.ISOLATED)
   assert.equal(result.evidence_session.reserved_assessment_count, 2)
+  assert.equal(result.evidence_session.baseline_protocol_version, BASELINE_PROTOCOL_VERSION)
+  assert.equal(result.evidence_session.baseline_status, BASELINE_STATUSES.UNAVAILABLE)
+  assert.equal(result.evidence_session.baseline_item_count, 0)
+  assert.equal(result.evidence_session.baseline_unavailable_reason, 'no_baseline_pool')
   assert.equal(result.evidence_session.provider, 'openai')
   assert.equal(result.evidence_session.model, 'gpt-test')
   assert.equal(store.learning_evidence_sessions.length, 1)
@@ -283,6 +302,7 @@ test('stage 2 evidence events persist item, exposure, attempt, and sequence fiel
     item_identity_version: ITEM_IDENTITY_VERSION,
     assessment_role: ASSESSMENT_ROLES.INSTRUCTIONAL,
     pre_assessment_exposed: false,
+    evidence_purpose: BASELINE_EVIDENCE_PURPOSE,
     item_purpose: 'worksheet',
     item_exposure_id: 'worksheet-run1-q1-abc123',
     assistance_level: 'independent',
@@ -313,6 +333,7 @@ test('stage 2 evidence events persist item, exposure, attempt, and sequence fiel
   assert.equal(store.learning_evidence_events[0].item_identity_version, ITEM_IDENTITY_VERSION)
   assert.equal(store.learning_evidence_events[0].assessment_role, ASSESSMENT_ROLES.INSTRUCTIONAL)
   assert.equal(store.learning_evidence_events[0].pre_assessment_exposed, false)
+  assert.equal(store.learning_evidence_events[0].evidence_purpose, BASELINE_EVIDENCE_PURPOSE)
   assert.equal(store.learning_evidence_events[0].item_exposure_id, 'worksheet-run1-q1-abc123')
   assert.equal(store.learning_evidence_events[0].attempt_number, 1)
   assert.equal(store.learning_evidence_events[0].is_first_response, true)
@@ -399,6 +420,16 @@ test('stage 3 evidence route rejects unsupported identity algorithm versions', a
   }), { createClientImpl: makeCreateClientImpl(store) })
   assert.equal(badAssessmentSession.status, 400)
 
+  const badBaselineSession = await POST(jsonRequest({
+    action: 'create_session',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    session_id: sessionId,
+    learner_id: learnerId,
+    lesson_key: 'generated/fractions.json',
+    baseline_status: 'future_baseline_status',
+  }), { createClientImpl: makeCreateClientImpl(store) })
+  assert.equal(badBaselineSession.status, 400)
+
   const session = await createEvidenceSession(store)
   const badEvent = await POST(jsonRequest({
     action: 'record_event',
@@ -423,6 +454,67 @@ test('stage 3 evidence route rejects unsupported identity algorithm versions', a
     assessment_role: 'future_assessment_role',
   }), { createClientImpl: makeCreateClientImpl(store) })
   assert.equal(badAssessmentRoleEvent.status, 400)
+
+  const badEvidencePurposeEvent = await POST(jsonRequest({
+    action: 'record_event',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    evidence_session_id: session.evidence_session.id,
+    event_type: STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED,
+    idempotency_key: 'bad-evidence-purpose-key',
+    occurred_at: '2026-08-09T12:02:00.000Z',
+    phase: 'worksheet',
+    evidence_purpose: 'future_purpose',
+  }), { createClientImpl: makeCreateClientImpl(store) })
+  assert.equal(badEvidencePurposeEvent.status, 400)
+}))
+
+test('stage 5 evidence route updates baseline status and checks prior exposure by learner', async () => withEvidenceEnv(async () => {
+  const store = makeStore()
+  const session = await createEvidenceSession(store)
+  const update = await (await POST(jsonRequest({
+    action: 'update_baseline_status',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    evidence_session_id: session.evidence_session.id,
+    baseline_protocol_version: BASELINE_PROTOCOL_VERSION,
+    baseline_status: BASELINE_STATUSES.COMPLETE,
+    baseline_item_count: 2,
+  }), { createClientImpl: makeCreateClientImpl(store) })).json()
+  assert.equal(update.ok, true)
+  assert.equal(update.evidence_session.baseline_status, BASELINE_STATUSES.COMPLETE)
+  assert.equal(update.evidence_session.baseline_item_count, 2)
+
+  store.learning_evidence_events.push({
+    event_id: 'prior-event-1',
+    facilitator_id: facilitatorId,
+    learner_id: learnerId,
+    event_type: STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED,
+    stable_item_id: 'item:item-identity-v1:baseline-a',
+    item_content_hash: 'hash-baseline-a',
+    occurred_at: '2026-08-09T11:00:00.000Z',
+  })
+  store.learning_evidence_events.push({
+    event_id: 'other-learner-event',
+    facilitator_id: facilitatorId,
+    learner_id: '99999999-9999-9999-9999-999999999999',
+    event_type: STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED,
+    stable_item_id: 'item:item-identity-v1:baseline-other',
+    item_content_hash: 'hash-other',
+    occurred_at: '2026-08-09T11:00:00.000Z',
+  })
+
+  const prior = await (await POST(jsonRequest({
+    action: 'check_prior_exposure',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    learner_id: learnerId,
+    item_identities: [
+      { stable_item_id: 'item:item-identity-v1:baseline-a', item_content_hash: 'hash-baseline-a' },
+    ],
+  }), { createClientImpl: makeCreateClientImpl(store) })).json()
+  assert.equal(prior.ok, true)
+  assert.deepEqual(prior.exposed_keys.sort(), [
+    'content:hash-baseline-a',
+    'stable:item:item-identity-v1:baseline-a',
+  ])
 }))
 
 test('client writer no-ops when disabled and suppresses duplicate local event writes', async () => {
@@ -459,6 +551,12 @@ test('client writer no-ops when disabled and suppresses duplicate local event wr
       version: ASSESSMENT_ISOLATION_VERSION,
       status: ASSESSMENT_ISOLATION_STATUSES.ISOLATED,
       reservedAssessmentCount: 1,
+    },
+    baseline: {
+      protocolVersion: BASELINE_PROTOCOL_VERSION,
+      status: BASELINE_STATUSES.UNAVAILABLE,
+      baselineItemCount: 0,
+      reason: 'no_baseline_pool',
     },
     startedAt: '2026-08-09T12:00:00.000Z',
   })
@@ -509,6 +607,12 @@ test('client writer records ordered stage 2 item and response evidence', async (
       status: ASSESSMENT_ISOLATION_STATUSES.ISOLATED,
       reservedAssessmentCount: 1,
     },
+    baseline: {
+      protocolVersion: BASELINE_PROTOCOL_VERSION,
+      status: BASELINE_STATUSES.UNAVAILABLE,
+      baselineItemCount: 0,
+      reason: 'no_baseline_pool',
+    },
     startedAt: '2026-08-09T12:00:00.000Z',
   })
   await client.recordItemPresented({
@@ -518,6 +622,7 @@ test('client writer records ordered stage 2 item and response evidence', async (
     itemExposureId: 'worksheet-run1-q1',
     identityItem: question,
     assessmentRole: ASSESSMENT_ROLES.INSTRUCTIONAL,
+    evidencePurpose: BASELINE_EVIDENCE_PURPOSE,
     legacyItemFingerprint: fingerprint,
     questionIndex: 0,
     totalQuestions: 1,
@@ -529,6 +634,7 @@ test('client writer records ordered stage 2 item and response evidence', async (
     itemExposureId: 'worksheet-run1-q1',
     identityItem: question,
     assessmentRole: ASSESSMENT_ROLES.INSTRUCTIONAL,
+    evidencePurpose: BASELINE_EVIDENCE_PURPOSE,
     legacyItemFingerprint: fingerprint,
     attemptNumber: 1,
     isFirstResponse: true,
@@ -541,6 +647,7 @@ test('client writer records ordered stage 2 item and response evidence', async (
     itemExposureId: 'worksheet-run1-q1',
     identityItem: question,
     assessmentRole: ASSESSMENT_ROLES.INSTRUCTIONAL,
+    evidencePurpose: BASELINE_EVIDENCE_PURPOSE,
     legacyItemFingerprint: fingerprint,
     attemptNumber: 1,
     isFirstResponse: true,
@@ -559,6 +666,8 @@ test('client writer records ordered stage 2 item and response evidence', async (
   assert.equal(createSession.assessment_isolation_version, ASSESSMENT_ISOLATION_VERSION)
   assert.equal(createSession.assessment_isolation_status, ASSESSMENT_ISOLATION_STATUSES.ISOLATED)
   assert.equal(createSession.reserved_assessment_count, 1)
+  assert.equal(createSession.baseline_protocol_version, BASELINE_PROTOCOL_VERSION)
+  assert.equal(createSession.baseline_status, BASELINE_STATUSES.UNAVAILABLE)
   assert.deepEqual(events.map((event) => event.event_type), [
     STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED,
     STAGE_2_EVIDENCE_EVENT_TYPES.LEARNER_RESPONSE,
@@ -569,6 +678,7 @@ test('client writer records ordered stage 2 item and response evidence', async (
   assert.ok(events.every((event) => event.item_content_hash))
   assert.ok(events.every((event) => event.item_identity_version === ITEM_IDENTITY_VERSION))
   assert.ok(events.every((event) => event.assessment_role === ASSESSMENT_ROLES.INSTRUCTIONAL))
+  assert.ok(events.every((event) => event.evidence_purpose === BASELINE_EVIDENCE_PURPOSE))
   assert.equal(events[1].attempt_number, 1)
   assert.equal(events[1].is_first_response, true)
   assert.equal(events[2].result.correct, false)

@@ -49,6 +49,8 @@ import GamesOverlay from '../components/games/GamesOverlay';
 import EventBus from './EventBus';
 import { loadLesson, fetchTTS } from './services';
 import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech, ensureQuestionMark } from '../utils/questionFormatting';
+import { buildAcceptableList, judgeAnswer } from './judging';
+import { deriveCorrectAnswerText } from '../utils/questionFormatting';
 import { getSnapshotStorageKey } from '../utils/snapshotPersistenceUtils';
 import { ensurePinAllowed } from '@/app/lib/pinGate';
 import { upsertMedal } from '@/app/lib/medalsClient';
@@ -68,6 +70,14 @@ import {
   roleForPhase,
   tagItemsForPhase,
 } from '@/app/lib/masteryEvidence/assessmentIsolation.js';
+import {
+  BASELINE_EVIDENCE_PURPOSE,
+  BASELINE_PROTOCOL_VERSION,
+  BASELINE_STATUSES,
+  BASELINE_UNAVAILABLE_REASONS,
+  buildBaselinePlan,
+  hasInstructionBegunFromSnapshot,
+} from '@/app/lib/masteryEvidence/baseline.js';
 import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay';
@@ -588,6 +598,24 @@ function SessionPageV2Inner() {
   const [sentenceIndex, setSentenceIndex] = useState(0);
   const [totalSentences, setTotalSentences] = useState(0);
   const [isInSentenceMode, setIsInSentenceMode] = useState(true);
+
+  const [baselineState, setBaselineState] = useState('idle'); // idle | awaiting-response | complete | unavailable
+  const baselineStateRef = useRef('idle');
+  useEffect(() => {
+    baselineStateRef.current = baselineState;
+  }, [baselineState]);
+  const [baselinePlan, setBaselinePlan] = useState(null);
+  const baselinePlanRef = useRef(null);
+  const [baselineIndex, setBaselineIndex] = useState(0);
+  const baselineIndexRef = useRef(0);
+  useEffect(() => {
+    baselineIndexRef.current = baselineIndex;
+  }, [baselineIndex]);
+  const [baselineAnswer, setBaselineAnswer] = useState('');
+  const [baselineMessage, setBaselineMessage] = useState('');
+  const [baselineSubmitting, setBaselineSubmitting] = useState(false);
+  const baselineInstructionTargetRef = useRef(null);
+  const baselineResponsesRef = useRef([]);
   
   const [comprehensionState, setComprehensionState] = useState('idle');
   const comprehensionStateRef = useRef('idle');
@@ -6373,6 +6401,218 @@ function SessionPageV2Inner() {
       stopAudio();
     }
   };
+
+  const beginInstruction = useCallback(async (target = null) => {
+    if (teachingControllerRef.current) {
+      try {
+        teachingControllerRef.current.prefetchAll();
+        addEvent('📄 Started background prefetch of teaching content');
+      } catch {
+        // Silent
+      }
+    }
+
+    if (target && target !== 'idle') {
+      try {
+        masteryEvidenceSkipNextPhaseTransitionRef.current = true;
+        await orchestratorRef.current.startSession({ startPhase: target });
+      } catch (e) {
+        console.warn('[SessionPageV2] Resume startSession(startPhase) failed; starting fresh:', e);
+        masteryEvidenceSkipNextPhaseTransitionRef.current = false;
+        await orchestratorRef.current.startSession();
+      }
+    } else {
+      masteryEvidenceSkipNextPhaseTransitionRef.current = false;
+      await orchestratorRef.current.startSession();
+    }
+  }, []);
+
+  const getBaselineEvidenceContext = useCallback((item, questionIndex = 0) => {
+    const index = Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : 0;
+    const legacyItemFingerprint = createLegacyItemFingerprint({
+      lessonKey,
+      lessonId,
+      phase: BASELINE_EVIDENCE_PURPOSE,
+      item,
+      questionIndex: index,
+    });
+    return {
+      phase: 'idle',
+      itemId: legacyItemFingerprint,
+      itemPurpose: BASELINE_EVIDENCE_PURPOSE,
+      itemExposureId: `baseline-run1-q${index + 1}-${legacyItemFingerprint.replace(/^legacy:/, '')}`,
+      assessmentRole: ASSESSMENT_ROLES.INSTRUCTIONAL,
+      evidencePurpose: BASELINE_EVIDENCE_PURPOSE,
+      legacyItemFingerprint,
+      questionIndex: index,
+      identityItem: item || null,
+      item: summarizeEvidenceItem(item),
+    };
+  }, [lessonId, lessonKey]);
+
+  const speakBaselineText = useCallback(async (text) => {
+    const spoken = String(text || '').trim();
+    if (!spoken) return;
+    try {
+      const audio = await fetchTTS(spoken);
+      await audioEngineRef.current?.playAudio?.(audio || '', [spoken]);
+    } catch {
+      try { await audioEngineRef.current?.speak?.(spoken); } catch {}
+    }
+  }, []);
+
+  const presentBaselineItem = useCallback(async (index, item, { speak = true } = {}) => {
+    if (!item) return;
+    const context = getBaselineEvidenceContext(item, index);
+    void masteryEvidenceClientRef.current?.recordItemPresented({
+      ...context,
+      totalQuestions: baselinePlanRef.current?.selectedItems?.length || 0,
+    });
+    if (snapshotServiceRef.current) {
+      try {
+        await snapshotServiceRef.current.saveProgress('baseline-presented', {
+          phaseOverride: BASELINE_EVIDENCE_PURPOSE,
+          protocolVersion: BASELINE_PROTOCOL_VERSION,
+          status: 'active',
+          currentIndex: index,
+          items: baselinePlanRef.current?.selectedItems || [],
+          responses: baselineResponsesRef.current,
+        });
+      } catch {}
+    }
+    if (speak) {
+      await speakBaselineText(formatQuestionForSpeech(item, { layout: 'multiline' }));
+    }
+  }, [getBaselineEvidenceContext, speakBaselineText]);
+
+  const completeBaselineAndBeginInstruction = useCallback(async (status = BASELINE_STATUSES.COMPLETE, reason = null) => {
+    setBaselineState(status === BASELINE_STATUSES.UNAVAILABLE ? 'unavailable' : 'complete');
+    const itemCount = baselineResponsesRef.current.length || baselinePlanRef.current?.selectedItems?.length || 0;
+    void masteryEvidenceClientRef.current?.updateBaselineStatus({
+      baselineStatus: status,
+      baselineItemCount: itemCount,
+      baselineUnavailableReason: reason,
+    });
+    if (snapshotServiceRef.current && status === BASELINE_STATUSES.COMPLETE) {
+      try {
+        await snapshotServiceRef.current.savePhaseCompletion(BASELINE_EVIDENCE_PURPOSE, {
+          protocolVersion: BASELINE_PROTOCOL_VERSION,
+          status,
+          itemCount,
+          responses: baselineResponsesRef.current,
+        });
+      } catch {}
+    }
+    await beginInstruction(baselineInstructionTargetRef.current);
+  }, [beginInstruction]);
+
+  const activateBaseline = useCallback(async (plan, target = null, savedBaseline = null) => {
+    const selectedItems = Array.isArray(plan?.selectedItems) ? plan.selectedItems : [];
+    baselinePlanRef.current = plan;
+    baselineInstructionTargetRef.current = target || null;
+    const savedResponses = Array.isArray(savedBaseline?.responses) ? savedBaseline.responses : [];
+    baselineResponsesRef.current = savedResponses;
+    const startIndex = Math.min(savedResponses.length, Math.max(0, selectedItems.length - 1));
+    setBaselinePlan(plan);
+    setBaselineIndex(startIndex);
+    setBaselineAnswer('');
+    setBaselineMessage("Before we start, I want to see what you already know. It's completely okay if you don't know this yet.");
+    setBaselineState('awaiting-response');
+    await presentBaselineItem(startIndex, selectedItems[startIndex], { speak: true });
+  }, [presentBaselineItem]);
+
+  const handleBaselineRepeat = useCallback(async () => {
+    const item = baselinePlanRef.current?.selectedItems?.[baselineIndexRef.current];
+    if (!item) return;
+    const context = getBaselineEvidenceContext(item, baselineIndexRef.current);
+    void masteryEvidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
+      ...context,
+      suffix: `baseline-repeat:${baselineIndexRef.current}:${Date.now()}`,
+      payload: { repeat_mode: 'verbatim_baseline_item' },
+    });
+    await speakBaselineText(formatQuestionForSpeech(item, { layout: 'multiline' }));
+  }, [getBaselineEvidenceContext, speakBaselineText]);
+
+  const handleBaselineSubmit = useCallback(async () => {
+    if (baselineSubmitting) return;
+    const item = baselinePlanRef.current?.selectedItems?.[baselineIndexRef.current];
+    if (!item) return;
+    const response = String(baselineAnswer || '').trim() || "I don't know";
+    setBaselineSubmitting(true);
+    try {
+      const acceptable = buildAcceptableList(item);
+      let isCorrect = false;
+      try {
+        isCorrect = await judgeAnswer(response, acceptable, item);
+      } catch {
+        isCorrect = false;
+      }
+      const correctAnswer = deriveCorrectAnswerText(item, acceptable) || null;
+      const context = getBaselineEvidenceContext(item, baselineIndexRef.current);
+      void masteryEvidenceClientRef.current?.recordLearnerResponse({
+        ...context,
+        attemptNumber: 1,
+        isFirstResponse: true,
+        response,
+      });
+      void masteryEvidenceClientRef.current?.recordAnswerEvaluated({
+        ...context,
+        attemptNumber: 1,
+        isFirstResponse: true,
+        isCorrect,
+        evaluationMode: 'baseline_v1_current_app_judgment',
+        response,
+        correctAnswer,
+      });
+
+      const nextResponses = [
+        ...baselineResponsesRef.current,
+        {
+          questionIndex: baselineIndexRef.current,
+          response,
+          isCorrect,
+          answeredAt: new Date().toISOString(),
+        },
+      ];
+      baselineResponsesRef.current = nextResponses;
+      const nextIndex = baselineIndexRef.current + 1;
+      const total = baselinePlanRef.current?.selectedItems?.length || 0;
+      setBaselineAnswer('');
+      setBaselineMessage('Thanks.');
+
+      if (snapshotServiceRef.current) {
+        try {
+          await snapshotServiceRef.current.saveProgress('baseline-answer', {
+            phaseOverride: BASELINE_EVIDENCE_PURPOSE,
+            protocolVersion: BASELINE_PROTOCOL_VERSION,
+            status: nextIndex >= total ? BASELINE_STATUSES.COMPLETE : 'active',
+            currentIndex: nextIndex,
+            items: baselinePlanRef.current?.selectedItems || [],
+            responses: nextResponses,
+          });
+        } catch {}
+      }
+
+      if (nextIndex >= total) {
+        const finalStatus = baselinePlanRef.current?.status === BASELINE_STATUSES.PARTIAL
+          ? BASELINE_STATUSES.PARTIAL
+          : BASELINE_STATUSES.COMPLETE;
+        await completeBaselineAndBeginInstruction(finalStatus, finalStatus === BASELINE_STATUSES.PARTIAL ? 'baseline_pool_partially_available' : null);
+        return;
+      }
+      setBaselineIndex(nextIndex);
+      await presentBaselineItem(nextIndex, baselinePlanRef.current.selectedItems[nextIndex], { speak: true });
+    } finally {
+      setBaselineSubmitting(false);
+    }
+  }, [
+    baselineAnswer,
+    baselineSubmitting,
+    completeBaselineAndBeginInstruction,
+    getBaselineEvidenceContext,
+    presentBaselineItem,
+  ]);
   
   const startSession = async (options = {}) => {
     // Stop pre-Begin conflict watch — tracking takes over from here
@@ -6456,18 +6696,6 @@ function SessionPageV2Inner() {
     // orchestrator fires phaseChange events that trigger transcript autosaves.
     sessionStartedAtRef.current = new Date().toISOString();
     
-    // Start teaching prefetch immediately — must run synchronously before orchestratorRef.current.startSession()
-    // because phaseChange('teaching') fires synchronously inside startSession and calls startTeachingPhase
-    // directly (not via useEffect). If prefetchAll is deferred, #conceptGptPromise is null when teaching starts.
-    if (teachingControllerRef.current) {
-      try {
-        teachingControllerRef.current.prefetchAll();
-        addEvent('📄 Started background prefetch of teaching content');
-      } catch {
-        // Silent
-      }
-    }
-    
     // Prep video element (load + seek to first frame). The actual iOS autoplay unlock
     // is handled inside AudioEngine.initialize() (play() during gesture, pause on 'playing').
     try {
@@ -6503,9 +6731,11 @@ function SessionPageV2Inner() {
       assessmentIsolation = assessmentIsolationRef.current;
     }
 
+    let evidenceClientForBaseline = null;
     if (trackedSessionIdForEvidence) {
       try {
         const evidenceClient = new MasteryEvidenceClient();
+        evidenceClientForBaseline = evidenceClient;
         masteryEvidenceClientRef.current = evidenceClient;
         evidenceClient.initialize({
           sessionId: trackedSessionIdForEvidence,
@@ -6515,6 +6745,12 @@ function SessionPageV2Inner() {
           lessonId,
           lessonData,
           assessmentIsolation,
+          baseline: {
+            protocolVersion: BASELINE_PROTOCOL_VERSION,
+            status: null,
+            baselineItemCount: null,
+            reason: null,
+          },
           startedAt: sessionStartedAtRef.current,
         });
         const initialPhase = target && target !== 'idle' ? target : 'discussion';
@@ -6526,21 +6762,80 @@ function SessionPageV2Inner() {
       masteryEvidenceClientRef.current = null;
     }
 
-    // Resume flow (snapshot): start the orchestrator directly at the target phase.
-    // Critical: do NOT start Discussion first then skip, because Discussion/Teaching can still complete
-    // and override the manual skip later.
+    const markBaselineUnavailableAndBegin = async (reason) => {
+      void masteryEvidenceClientRef.current?.updateBaselineStatus({
+        baselineStatus: BASELINE_STATUSES.UNAVAILABLE,
+        baselineItemCount: 0,
+        baselineUnavailableReason: reason,
+      });
+      await beginInstruction(target);
+    };
+
     if (target && target !== 'idle') {
-      try {
-        masteryEvidenceSkipNextPhaseTransitionRef.current = true;
-        await orchestratorRef.current.startSession({ startPhase: target });
-      } catch (e) {
-        console.warn('[SessionPageV2] Resume startSession(startPhase) failed; starting fresh:', e);
-        masteryEvidenceSkipNextPhaseTransitionRef.current = false;
-        await orchestratorRef.current.startSession();
+      await markBaselineUnavailableAndBegin(BASELINE_UNAVAILABLE_REASONS.RESUME_AFTER_INSTRUCTION);
+      return;
+    }
+
+    const snapshot = snapshotServiceRef.current?.snapshot || null;
+    if (hasInstructionBegunFromSnapshot(snapshot)) {
+      await markBaselineUnavailableAndBegin(BASELINE_UNAVAILABLE_REASONS.LEGACY_OR_AMBIGUOUS_SNAPSHOT);
+      return;
+    }
+
+    try {
+      const phaseSets = buildAllPhaseSets() || {};
+      let plan = await buildBaselinePlan({
+        lessonKey,
+        lessonId,
+        lessonData,
+        phaseSets,
+      });
+      const savedBaseline = snapshot?.currentPhase === BASELINE_EVIDENCE_PURPOSE
+        ? snapshot?.phaseData?.[BASELINE_EVIDENCE_PURPOSE]
+        : null;
+      if (
+        (plan.status === 'available' || plan.status === BASELINE_STATUSES.PARTIAL)
+        && savedBaseline?.status === 'active'
+        && Array.isArray(savedBaseline?.responses)
+        && savedBaseline.responses.length > 0
+      ) {
+        await activateBaseline(plan, null, savedBaseline);
+        return;
       }
-    } else {
-      masteryEvidenceSkipNextPhaseTransitionRef.current = false;
-      await orchestratorRef.current.startSession();
+      if (plan.candidateIdentities?.length && evidenceClientForBaseline) {
+        const prior = await evidenceClientForBaseline.checkPriorExposure({
+          learnerId: sessionLearnerIdRef.current || learnerProfile?.id || null,
+          itemIdentities: plan.candidateIdentities,
+        });
+        if (!prior.ok) {
+          await markBaselineUnavailableAndBegin(BASELINE_UNAVAILABLE_REASONS.EVIDENCE_UNAVAILABLE);
+          return;
+        }
+        plan = await buildBaselinePlan({
+          lessonKey,
+          lessonId,
+          lessonData,
+          phaseSets,
+          priorExposedKeys: prior.exposedKeys,
+        });
+      } else if (plan.candidateIdentities?.length && !evidenceClientForBaseline) {
+        await markBaselineUnavailableAndBegin(BASELINE_UNAVAILABLE_REASONS.EVIDENCE_UNAVAILABLE);
+        return;
+      }
+
+      if (plan.status === 'available' || plan.status === BASELINE_STATUSES.PARTIAL) {
+        await activateBaseline(plan, null, savedBaseline);
+        return;
+      }
+
+      void masteryEvidenceClientRef.current?.updateBaselineStatus({
+        baselineStatus: BASELINE_STATUSES.UNAVAILABLE,
+        baselineItemCount: 0,
+        baselineUnavailableReason: plan.reason || BASELINE_UNAVAILABLE_REASONS.NO_BASELINE_POOL,
+      });
+      await beginInstruction(null);
+    } catch {
+      await markBaselineUnavailableAndBegin(BASELINE_UNAVAILABLE_REASONS.EVIDENCE_UNAVAILABLE);
     }
   };
 
@@ -6563,10 +6858,10 @@ function SessionPageV2Inner() {
   // Auto-start the session as soon as the page is ready and no snapshot resume is pending.
   // This eliminates the initial "Begin" click — user goes straight to "Begin Discussion".
   useEffect(() => {
-    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase) {
+    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase && baselineState === 'idle') {
       handleStartSessionClick();
     }
-  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, handleStartSessionClick]);
+  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, baselineState, handleStartSessionClick]);
 
   // Auto-dismiss the objective complete toast after 3.5s
   useEffect(() => {
@@ -8140,6 +8435,96 @@ function SessionPageV2Inner() {
             return null;
           })()}
           
+          {/* Stage 5 baseline: short pre-instruction evidence step, not a teaching phase */}
+          {baselineState === 'awaiting-response' && (() => {
+            const item = baselinePlan?.selectedItems?.[baselineIndex] || null;
+            const total = baselinePlan?.selectedItems?.length || 0;
+            if (!item) return null;
+            const prompt = formatQuestionForSpeech(item, { layout: 'multiline' });
+            return (
+              <div style={{ padding: '8px 12px 10px' }}>
+                <div style={{
+                  maxWidth: 720,
+                  margin: '0 auto',
+                  border: '1px solid rgba(59,130,246,0.25)',
+                  borderRadius: 16,
+                  background: 'rgba(239,246,255,0.92)',
+                  boxShadow: '0 8px 28px rgba(30,64,175,0.10)',
+                  padding: 16
+                }}>
+                  <div style={{ color: '#1e3a8a', fontWeight: 800, fontSize: 14, marginBottom: 6 }}>
+                    Before we start {total ? `• ${baselineIndex + 1} of ${total}` : ''}
+                  </div>
+                  <div style={{ color: '#374151', fontSize: 14, marginBottom: 12 }}>
+                    {baselineMessage || "It's completely okay if you don't know this yet."}
+                  </div>
+                  <div style={{
+                    whiteSpace: 'pre-wrap',
+                    color: '#111827',
+                    fontSize: 'clamp(1rem, 2.5vw, 1.15rem)',
+                    fontWeight: 750,
+                    marginBottom: 12
+                  }}>
+                    {prompt}
+                  </div>
+                  <textarea
+                    value={baselineAnswer}
+                    onChange={(event) => setBaselineAnswer(event.target.value)}
+                    placeholder={"Type your answer, or write I don't know."}
+                    disabled={baselineSubmitting}
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      borderRadius: 12,
+                      border: '1px solid #bfdbfe',
+                      padding: 12,
+                      fontSize: 16,
+                      resize: 'vertical',
+                      marginBottom: 10
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={handleBaselineRepeat}
+                      disabled={baselineSubmitting}
+                      style={{
+                        background: '#2563eb',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '10px 16px',
+                        fontWeight: 800,
+                        cursor: baselineSubmitting ? 'not-allowed' : 'pointer',
+                        opacity: baselineSubmitting ? 0.7 : 1
+                      }}
+                    >
+                      Repeat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBaselineSubmit}
+                      disabled={baselineSubmitting}
+                      style={{
+                        background: '#c7442e',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '10px 18px',
+                        fontWeight: 800,
+                        cursor: baselineSubmitting ? 'not-allowed' : 'pointer',
+                        opacity: baselineSubmitting ? 0.7 : 1
+                      }}
+                    >
+                      {baselineSubmitting ? 'Saving...' : 'Continue'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Complete Lesson button during test review */}
           {currentPhase === 'test' && testState === 'reviewing' && testGrade && (
             <div style={{
@@ -8177,6 +8562,7 @@ function SessionPageV2Inner() {
             const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
             const needBeginTest = (currentPhase === 'test' && (!testState || testState === 'idle'));
             if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest)) return null;
+            if (baselineState === 'awaiting-response') return null;
             // Hide Begin while the play-time-expired countdown is running — clicking Begin
             // at this point would restart the play timer and give double time.
             if (showPlayTimeExpired) return null;
@@ -8248,6 +8634,13 @@ function SessionPageV2Inner() {
                           try { timerServiceRef.current?.reset?.(); } catch {}
                           setCurrentTimerMode({ discussion: null, comprehension: null, exercise: null, worksheet: null, test: null });
                           setTimerRefreshKey(k => k + 1);
+                          baselinePlanRef.current = null;
+                          baselineResponsesRef.current = [];
+                          setBaselinePlan(null);
+                          setBaselineIndex(0);
+                          setBaselineAnswer('');
+                          setBaselineMessage('');
+                          setBaselineState('idle');
                           // Auto-start will re-fire once resumePhase clears
                           setCurrentPhase('idle');
                           setDiscussionState('idle');

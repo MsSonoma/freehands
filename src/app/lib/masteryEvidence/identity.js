@@ -63,6 +63,11 @@ const LESSON_CONTENT_FIELDS = Object.freeze([
   'exercise',
   'worksheet',
   'test',
+  'baseline',
+  'baselinePool',
+  'baseline_pool',
+  'baselineItems',
+  'baseline_items',
   'discussion',
 ]);
 
