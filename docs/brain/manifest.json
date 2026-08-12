@@ -154,6 +154,7 @@
       "/api/lesson-schedule",
       "/api/lesson-assign",
       "/api/generate-lesson-outline",
+      "/api/facilitator/learners/[id]/evidence",
       "instructions-field",
       "innertext-field",
       "session-field",
@@ -165,7 +166,7 @@
       "/api/visual-aids",
       "/api/content-safety"
     ],
-    "last_updated": "2026-01-20T16:13:47Z",
+    "last_updated": "2026-08-12T14:34:24Z",
     "status": "canonical"
   },
   "mastery-evidence": {
@@ -196,9 +197,17 @@
       "evidence_status",
       "idempotency_key",
       "provider-model-provenance",
-      "lesson_content_hash"
+      "lesson_content_hash",
+      "facilitator-evidence-v1",
+      "/api/facilitator/learners/[id]/evidence",
+      "EvidenceHistorySection",
+      "observed-inferred-proposed",
+      "keyset-pagination",
+      "score-separation",
+      "retention-reporting",
+      "legacy-session-reporting"
     ],
-    "last_updated": "2026-08-09T15:14:05Z",
+    "last_updated": "2026-08-12T14:34:24Z",
     "status": "active-development"
   },
   "portfolio-generation": {

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ensurePinAllowed } from '@/app/lib/pinGate';
 import { getLearner } from '@/app/facilitator/learners/clientApi';
 import { getSupabaseClient } from '@/app/lib/supabaseClient';
+import EvidenceHistorySection from './EvidenceHistorySection';
 
 const TEACHERS = [
   { key: 'sonoma', label: 'Ms. Sonoma', emoji: '👩🏻‍🦰', color: '#c7442e' },
@@ -256,6 +257,12 @@ export default function LearnerTranscriptsPage({ params }) {
   const [activeTab, setActiveTab] = useState('sonoma');
   const [sortOrder, setSortOrder] = useState('date'); // 'date' | 'name'
   const [viewItem, setViewItem] = useState(null); // item being viewed in overlay
+  const [evidenceEnabled, setEvidenceEnabled] = useState(true);
+  const [evidenceReports, setEvidenceReports] = useState([]);
+  const [evidenceLoading, setEvidenceLoading] = useState(true);
+  const [evidenceError, setEvidenceError] = useState('');
+  const [evidenceNextCursor, setEvidenceNextCursor] = useState(null);
+  const [loadingMoreEvidence, setLoadingMoreEvidence] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -277,10 +284,12 @@ export default function LearnerTranscriptsPage({ params }) {
     (async () => {
       try {
         setLoading(true);
+        setEvidenceLoading(true);
+        setEvidenceError('');
         const supabase = getSupabaseClient?.();
         const { data: { session } = {} } = supabase ? await supabase.auth.getSession() : {};
         const token = session?.access_token || '';
-        const [meta, listResp] = await Promise.all([
+        const [meta, listResp, evidenceResult] = await Promise.all([
           getLearner(learnerId),
           fetch(`/api/facilitator/learners/${encodeURIComponent(learnerId)}/transcripts`, {
             cache: 'no-store',
@@ -292,6 +301,14 @@ export default function LearnerTranscriptsPage({ params }) {
             }
             return r.json();
           }),
+          fetch(`/api/facilitator/learners/${encodeURIComponent(learnerId)}/evidence?limit=10`, {
+            cache: 'no-store',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          }).then(async (r) => {
+            const payload = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(payload?.error || `Status ${r.status}`);
+            return { payload, error: null };
+          }).catch((requestError) => ({ payload: null, error: requestError })),
         ]);
         if (!mounted) return;
         setLearnerName(meta?.name || '');
@@ -299,11 +316,25 @@ export default function LearnerTranscriptsPage({ params }) {
         const items = Array.isArray(listResp?.items) ? listResp.items : [];
         const firstWithData = TEACHERS.find(t => items.some(it => it.teacher === t.key));
         if (firstWithData) setActiveTab(firstWithData.key);
+        if (evidenceResult?.error) {
+          setEvidenceEnabled(true);
+          setEvidenceReports([]);
+          setEvidenceNextCursor(null);
+          setEvidenceError(evidenceResult.error?.message || 'Failed to load learning evidence');
+        } else {
+          const evidencePayload = evidenceResult?.payload || {};
+          setEvidenceEnabled(evidencePayload.enabled === true);
+          setEvidenceReports(Array.isArray(evidencePayload.items) ? evidencePayload.items : []);
+          setEvidenceNextCursor(evidencePayload?.pagination?.next_cursor || null);
+        }
       } catch (e) {
         if (!mounted) return;
         setError(e?.message || 'Failed to load transcripts');
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          setEvidenceLoading(false);
+        }
       }
     })();
     return () => { mounted = false; };
@@ -320,6 +351,36 @@ export default function LearnerTranscriptsPage({ params }) {
 
   const handleView = useCallback(item => setViewItem(item), []);
   const handleCloseViewer = useCallback(() => setViewItem(null), []);
+
+  const handleLoadMoreEvidence = useCallback(async () => {
+    if (!evidenceNextCursor || loadingMoreEvidence) return;
+    setLoadingMoreEvidence(true);
+    setEvidenceError('');
+    try {
+      const supabase = getSupabaseClient?.();
+      const { data: { session } = {} } = supabase ? await supabase.auth.getSession() : {};
+      const token = session?.access_token || '';
+      const response = await fetch(
+        `/api/facilitator/learners/${encodeURIComponent(learnerId)}/evidence?limit=10&cursor=${encodeURIComponent(evidenceNextCursor)}`,
+        {
+          cache: 'no-store',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error || `Status ${response.status}`);
+      const incoming = Array.isArray(payload.items) ? payload.items : [];
+      setEvidenceReports((current) => {
+        const seen = new Set(current.map((item) => String(item?.session?.id || '')));
+        return [...current, ...incoming.filter((item) => !seen.has(String(item?.session?.id || '')))];
+      });
+      setEvidenceNextCursor(payload?.pagination?.next_cursor || null);
+    } catch (requestError) {
+      setEvidenceError(requestError?.message || 'Failed to load older learning evidence');
+    } finally {
+      setLoadingMoreEvidence(false);
+    }
+  }, [evidenceNextCursor, learnerId, loadingMoreEvidence]);
 
   const cardStyle = {
     border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff',
@@ -343,7 +404,7 @@ export default function LearnerTranscriptsPage({ params }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>
-            Transcripts{learnerName ? ` — ${learnerName}` : ''}
+            Learning History{learnerName ? ` — ${learnerName}` : ''}
           </h1>
           <Link href="/facilitator/learners"
             style={{ textDecoration: 'none', color: '#111', border: '1px solid #111',
@@ -352,12 +413,31 @@ export default function LearnerTranscriptsPage({ params }) {
           </Link>
         </div>
 
+        <EvidenceHistorySection
+          enabled={evidenceEnabled}
+          loading={evidenceLoading}
+          error={evidenceError}
+          reports={evidenceReports}
+          transcripts={allItems}
+          hasMore={!!evidenceNextCursor}
+          loadingMore={loadingMoreEvidence}
+          onLoadMore={handleLoadMoreEvidence}
+          onOpenTranscript={handleView}
+        />
+
         {loading ? (
           <p style={{ color: '#555' }}>Loading…</p>
         ) : error ? (
           <p style={{ color: '#b00020' }}>{error}</p>
         ) : (
           <>
+            <div id="transcripts" style={{ marginBottom: 12 }}>
+              <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700 }}>Session transcripts</h2>
+              <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 14 }}>
+                Open the underlying session context where a transcript was saved.
+              </p>
+            </div>
+
             {/* Teacher tabs */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
               {TEACHERS.map(t => {

@@ -105,6 +105,20 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 **Purpose**: Generate new lesson content via LLM  
 **Status**: Legacy route, may be superseded by facilitator lesson editor
 
+### `/api/facilitator/learners/[id]/evidence`
+**Purpose**: Return deterministic, educator-safe Stage 8 evidence summaries for one facilitator-owned learner
+**Status**: Operational when mastery evidence is enabled
+
+- **Location**: `src/app/api/facilitator/learners/[id]/evidence/route.js`
+- **Method**: GET
+- **Auth**: Bearer token required; learner ownership is verified before history queries
+- **Filters**: optional `session_id`, `lesson_key`, `limit`, and opaque keyset `cursor`
+- **Bounds**: 10 sessions by default, 25 maximum
+- **Response**: whitelisted derived summaries and pagination metadata; never raw evidence rows
+- **Privacy**: service-role reads re-apply facilitator, learner, tracked-session, and evidence-session boundaries
+- **Feature flag**: returns a calm empty disabled response when the existing mastery-evidence flag is off
+- **Failure isolation**: reporting failure does not affect learner sessions or transcript history
+
 ### `/api/tts`
 **Purpose**: Text-to-speech conversion (Google TTS)  
 **Status**: Operational, used for all Ms. Sonoma audio

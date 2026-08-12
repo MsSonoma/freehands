@@ -97,7 +97,13 @@ export async function GET(req, { params }) {
     // RTF is omitted: transcriptsClient.js removes RTF files on every write,
     // so probing for them just adds unnecessary round trips.
     async function collectLessonTranscripts(lessonBase, lessonId, teacher) {
-      const tag = { lessonId, teacher, teacherName: TEACHER_DISPLAY[teacher] || teacher };
+      const tag = {
+        lessonId,
+        lessonKey: lessonId,
+        sessionId: null,
+        teacher,
+        teacherName: TEACHER_DISPLAY[teacher] || teacher,
+      };
       const collected = [];
 
       // List lesson-level files and sessions in parallel.
@@ -124,7 +130,11 @@ export async function GET(req, { params }) {
           .filter((ses) => ses && typeof ses.name === 'string')
           .map(async (ses) => {
             const sessionBase = `${lessonBase}/sessions/${ses.name}`;
-            const sessionTag = { ...tag, lessonId: `${lessonId} \u2014 ${ses.name}` };
+            const sessionTag = {
+              ...tag,
+              lessonId: `${lessonId} \u2014 ${ses.name}`,
+              sessionId: ses.name,
+            };
             // r-{ms} folder names encode the session start timestamp
             const tsMatch = ses.name.match(/^r-(\d+)$/);
             const updatedAt = tsMatch

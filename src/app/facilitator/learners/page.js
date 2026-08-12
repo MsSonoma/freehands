@@ -513,7 +513,7 @@ export default function LearnersPage() {
 										e.stopPropagation();
 										router.push(`/facilitator/learners/${learner.id}/transcripts`);
 									}}
-									title="Transcripts"
+									title="Learning history"
 									style={{
 										border: 'none',
 										background: '#6b7280',
@@ -528,7 +528,7 @@ export default function LearnersPage() {
 									}}
 								>
 									<span>📄</span>
-									<span style={{ display: 'none' }} className="button-text-tablet">Transcripts</span>
+									<span style={{ display: 'none' }} className="button-text-tablet">History</span>
 								</button>
 								</div>
 								</div>

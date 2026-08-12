@@ -2,7 +2,7 @@
 
 ## How It Works
 
-The mastery evidence system creates a durable, additive evidence substrate for future mastery reporting. It does not change learner instruction, phase progression, scoring, medals, transcripts, snapshots, prompts, question selection, or facilitator UI.
+The mastery evidence system creates a durable, additive evidence substrate and a deterministic facilitator reporting view. Stages 1-7 collect and qualify evidence. Stage 8 reads that evidence into educator-visible session history. It does not change learner instruction, phase progression, scoring, medals, transcripts, snapshots, prompts, or question selection.
 
 The system is disabled unless `NEXT_PUBLIC_MASTERY_EVIDENCE_ENABLED` or `MASTERY_EVIDENCE_ENABLED` is set to `true`, `1`, `yes`, or `on`.
 
@@ -202,6 +202,67 @@ Legacy lessons without a retention pool continue normally and do not produce fak
 
 New facilitator-generated lessons request a small explicit retention pool, normally two delayed-retention-reserved items. The retention pool participates in the deterministic lesson content hash/version, but it is excluded from instructional AI payloads, recovery payloads, visual-aid payloads, and Stage 6 Test item selection.
 
+Stage 8 adds facilitator evidence reporting without adding a database table, cache, write path, scheduler, or learner-flow mutation.
+
+The integration extends the existing learner transcript route into Learning History. The existing transcript list remains intact. When the mastery-evidence feature flag is enabled, the page also requests `/api/facilitator/learners/[id]/evidence` and shows compact chronological evidence cards. When reporting is disabled, the evidence section stays hidden and transcript history behaves as before. A reporting failure shows a calm local error and does not affect transcripts or learner sessions.
+
+`src/app/lib/masteryEvidence/reporting.js` is the only interpretation layer. It deterministically derives a whitelisted `facilitator-evidence-v1` summary from a tracked `lesson_sessions` row, its authorized `learning_evidence_sessions` row, and append-only structured events. Browser components display the returned states; they do not reinterpret raw evidence or parse transcript prose.
+
+Each session report separates:
+
+- session and lesson identity;
+- source-backed concept scope when exactly one `concept_id` is present, otherwise honest lesson or multi-concept scope;
+- evidence completeness (`complete`, `partial`, or `unavailable`) separately from whether a particular measurement exists;
+- baseline evidence;
+- notable assistance/recovery, with Repeat/TTS retained as accessibility/control context rather than hint dependency;
+- Stage 6 independent evidence;
+- Stage 7 retention evidence with exact `retention_delay_seconds` and an educator-readable duration;
+- legacy Test score, explicitly separate from independent evidence;
+- facilitator timeline jumps and question refreshes as neutral context;
+- inferred interpretations;
+- rule-based, educator-controlled options;
+- supporting facts and protocol/item provenance.
+
+Baseline reporting uses Stage 5 session metadata and baseline `answer_evaluated` first-response chains:
+
+- all intended first responses correct: `Prior knowledge observed`;
+- one or more first responses not correct: `Not demonstrated before instruction`, with the exact observed count;
+- missing or incomplete response chain: `Baseline incomplete`;
+- legacy, contaminated, prior-exposed, ambiguous, or unavailable measurement: `Prior-knowledge evidence unavailable` with a bounded reason.
+
+If baseline was not demonstrated and a later clean independent result succeeded, Stage 8 may infer that independent performance improved between the two measurements. If baseline was already demonstrated and the later check succeeded, Stage 8 says the learner demonstrated the target before instruction and again later. Neither case attributes learning causally to Ms. Sonoma.
+
+Stage 6 reporting preserves outcome distinctions:
+
+- `independent_success`: `Demonstrated independently`;
+- `independent_success_after_recovery`: `Demonstrated independently after recovery`, with the initial unsuccessful check, recovery, and fresh verification kept visible;
+- `assisted_success`: `Correct with assistance`, never independent evidence;
+- `needs_recovery`: `Independent demonstration not yet established`, never permanent failure;
+- `unavailable`: `Independent evidence unavailable`, never failure.
+
+Stage 7 reporting preserves delayed-check meaning:
+
+- `retained`: `Retained after <exact recorded interval>`;
+- `needs_review`: `Review recommended after <interval>`, while the explicit prior Stage 6 anchor remains visible;
+- `assisted_review`: `Retention not independently established`;
+- no result under the known retention protocol: `Retention not yet measured`, with no invented schedule;
+- `unavailable`: a bounded unavailable explanation, never failure.
+
+The API is a narrow authenticated server read. It verifies the bearer token and learner ownership before any history query. It then queries tracked sessions only for that learner, re-applies `facilitator_id`, `learner_id`, tracked-session, and evidence-session boundaries to returned evidence rows, and returns derived summaries rather than raw database rows. Client-provided learner, session, lesson, and cursor filters cannot bypass ownership. The service role is used only after explicit authorization.
+
+History is bounded to 10 sessions by default and 25 maximum. Keyset pagination orders by `started_at desc, id desc`; the next cursor contains only the final authorized tracked-session timestamp and id. Each page performs one tracked-session query, one evidence-session query, and one event query, avoiding browser raw-event reconstruction and N+1 per-session reads. Existing Stage 1, Stage 5, and Stage 7 indexes already support these access patterns, so Stage 8 requires no migration.
+
+Unknown newer baseline, independent-mastery, or retention protocol versions use a safe fallback: evidence is acknowledged, detailed interpretation is unavailable, and completeness is partial. Protocol versions and item references remain in advanced details for auditability.
+
+Stage 8 reporting vocabulary is deliberate:
+
+- **Observed**: direct structured events or recorded result states.
+- **Inferred**: deterministic comparisons such as baseline-to-later improvement or recovery before success.
+- **Proposed**: optional next actions such as considering review.
+- **Verified**: reserved; Stage 8 does not invent a general verified-mastery claim.
+
+Claim boundaries are absolute. Stage 8 does not claim causal learning attribution, permanent mastery, guaranteed retention, human-vs-AI superiority, an invented mastery percentage, a global learner score, AI confidence, learner ranking, or diagnostic inference. Session completion, scores, medals, and transcripts remain separate from mastery-evidence qualification.
+
 ## What NOT To Do
 
 - Do not use `lesson_session_events` as the mastery evidence store.
@@ -211,7 +272,12 @@ New facilitator-generated lessons request a small explicit retention pool, norma
 - Do not treat Stage 4 assessment isolation as baseline, mastery, retention, or outcome evidence.
 - Do not treat Stage 5 baseline evidence as post-instruction mastery, retained knowledge, or outcome proof.
 - Do not treat Stage 6 independent mastery results as retention, causal learning proof, a facilitator dashboard, or a rewrite of legacy scores/medals.
-- Do not treat Stage 7 retention evidence as a scheduler, spaced-repetition system, causal proof, dashboard report, or general mastery percentage.
+- Do not treat Stage 7 retention evidence as a scheduler, spaced-repetition system, causal proof, or general mastery percentage.
+- Do not let a Stage 8 UI component reinterpret raw events; change the centralized reporting derivation and its deterministic tests.
+- Do not expose raw evidence rows, provider/model fields, response text, answer keys, service metadata, or secrets through the facilitator reporting API.
+- Do not call session completion, a Test score, a medal, an assisted answer, or missing evidence independent mastery.
+- Do not turn Stage 8 interpretations or options into automatic lesson assignment, scheduling, curriculum mutation, notification, or learner-setting changes.
+- Do not add causal attribution, permanent-mastery language, human-vs-AI claims, mastery percentages, rankings, confidence scores, or diagnostic labels to reports.
 - Do not claim assessment secrecy for unsupported legacy lessons with no separable reserved Test pool.
 - Do not change prompts, phase order, question selection, scoring, snapshots, transcripts, or completion behavior to serve evidence writes.
 - Do not mutate existing evidence events. Corrections belong in later appended events.
@@ -235,6 +301,7 @@ New facilitator-generated lessons request a small explicit retention pool, norma
 - `src/app/lib/masteryEvidence/baseline.js`
 - `src/app/lib/masteryEvidence/mastery.js`
 - `src/app/lib/masteryEvidence/retention.js`
+- `src/app/lib/masteryEvidence/reporting.js`
 - `src/app/lib/masteryEvidence/schema.js`
 - `src/app/lib/masteryEvidence/provenance.js`
 - `src/app/lib/masteryEvidence/client.js`
@@ -245,9 +312,15 @@ New facilitator-generated lessons request a small explicit retention pool, norma
 - `src/app/session/v2/WorksheetPhase.jsx`
 - `src/app/session/v2/TestPhase.jsx`
 - `src/app/session/components/SessionVisualAidsCarousel.js`
+- `src/app/api/facilitator/learners/[id]/evidence/route.js`
+- `src/app/api/facilitator/learners/[id]/transcripts/route.js`
+- `src/app/facilitator/learners/[id]/transcripts/page.js`
+- `src/app/facilitator/learners/[id]/transcripts/EvidenceHistorySection.jsx`
+- `src/app/facilitator/learners/[id]/transcripts/evidenceHistory.module.css`
 - `scripts/test-mastery-evidence.mjs`
 - `scripts/test-stage3-identity.mjs`
 - `scripts/test-stage4-assessment-isolation.mjs`
 - `scripts/test-stage5-baseline.mjs`
 - `scripts/test-stage6-independent-mastery.mjs`
 - `scripts/test-stage7-retention.mjs`
+- `scripts/test-stage8-facilitator-reporting.mjs`
