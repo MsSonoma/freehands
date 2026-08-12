@@ -9,7 +9,6 @@ import {
 	getDefaultPhaseTimers
 } from '@/app/session/utils/phaseTimerDefaults';
 import { InlineExplainer } from '@/components/FacilitatorHelp';
-import { followUpsFeatureEnabled } from '@/app/lib/followUpsClient';
 
 const GRADES = ['K', ...Array.from({length: 12}, (_, i) => String(i + 1))];
 const TARGETS = Array.from({length: 18}, (_, i) => String(i + 3)); // 3-20
@@ -40,7 +39,7 @@ const normalizeHumorLevel = (value) => {
 };
 
 export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, onDelete, onPatch, zIndex: zIndexProp = 1000, visibleTabs = null }) {
-	const [activeTab, setActiveTab] = useState(learner?.initialTab || 'basic'); // 'basic' | 'targets' | 'ai-features' | 'timers'
+	const [activeTab, setActiveTab] = useState(learner?.initialTab || 'basic'); // 'basic' | 'targets' | 'ai-features' | 'timers' | 'reviews'
 	
 	// Form state
 	const [name, setName] = useState('');
@@ -79,6 +78,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [weeklyReviewsEnabled, setWeeklyReviewsEnabled] = useState(false);
 	const [weeklyReviewDay, setWeeklyReviewDay] = useState('friday');
 	const [savingFollowUps, setSavingFollowUps] = useState(false);
+	const [followUpError, setFollowUpError] = useState('');
 	
 	const [saving, setSaving] = useState(false);
 
@@ -117,6 +117,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setDailyFollowUpsEnabled(learner.daily_followups_enabled === true);
 		setWeeklyReviewsEnabled(learner.weekly_reviews_enabled === true);
 		setWeeklyReviewDay(WEEKDAYS.includes(learner.weekly_review_day) ? learner.weekly_review_day : 'friday');
+		setFollowUpError('');
 	}, [isOpen, learner?.id, learner?.initialTab]);
 
 	const handleTimerChange = (phase, type, value) => {
@@ -151,6 +152,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		{ id: 'targets', label: '🎯 Questions per Phase' },
 		{ id: 'ai-features', label: '🤖 AI Features' },
 		{ id: 'timers', label: '⏱️ Timers' },
+		{ id: 'reviews', label: 'Review Settings' },
 	];
 	const tabsToShow = visibleTabs
 		? ALL_TABS.filter(t => visibleTabs.includes(t.id))
@@ -184,9 +186,6 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 				tts_unskippable: ttsUnskippable,
 				auto_advance_phases: autoAdvancePhases,
 				slate_settings: slateSettings,
-				daily_followups_enabled: dailyFollowUpsEnabled,
-				weekly_reviews_enabled: weeklyReviewsEnabled,
-				weekly_review_day: weeklyReviewDay,
 				...phaseTimers,
 			});
 			onClose();
@@ -197,18 +196,38 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		}
 	};
 
-	const patchFollowUps = async (patch) => {
+	const patchFollowUps = async (patch, rollback = {}) => {
 		if (typeof onPatch !== 'function' || !learner?.id) return;
 		setSavingFollowUps(true);
+		setFollowUpError('');
 		try {
 			await onPatch(patch);
 		} catch (err) {
-			if (patch.daily_followups_enabled !== undefined) setDailyFollowUpsEnabled(!patch.daily_followups_enabled);
-			if (patch.weekly_reviews_enabled !== undefined) setWeeklyReviewsEnabled(!patch.weekly_reviews_enabled);
-			alert(err?.message || 'Failed to update Follow-Up settings');
+			if (rollback.daily_followups_enabled !== undefined) setDailyFollowUpsEnabled(rollback.daily_followups_enabled);
+			if (rollback.weekly_reviews_enabled !== undefined) setWeeklyReviewsEnabled(rollback.weekly_reviews_enabled);
+			if (rollback.weekly_review_day !== undefined) setWeeklyReviewDay(rollback.weekly_review_day);
+			setFollowUpError(err?.message || 'Failed to update Review Settings');
 		} finally {
 			setSavingFollowUps(false);
 		}
+	};
+
+	const patchDailyFollowUps = (next) => {
+		const previous = dailyFollowUpsEnabled;
+		setDailyFollowUpsEnabled(next);
+		patchFollowUps({ daily_followups_enabled: next }, { daily_followups_enabled: previous });
+	};
+
+	const patchWeeklyReviews = (next) => {
+		const previous = weeklyReviewsEnabled;
+		setWeeklyReviewsEnabled(next);
+		patchFollowUps({ weekly_reviews_enabled: next }, { weekly_reviews_enabled: previous });
+	};
+
+	const patchWeeklyReviewDay = (next) => {
+		const previous = weeklyReviewDay;
+		setWeeklyReviewDay(next);
+		patchFollowUps({ weekly_review_day: next }, { weekly_review_day: previous });
 	};
 
 	const handleTogglePlayTimersEnabled = async () => {
@@ -431,8 +450,16 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 			case 'targets': return '🎯 Questions per Phase';
 			case 'ai-features': return '🤖 AI Features';
 			case 'timers': return '⏱️ Timers';
+			case 'reviews': return 'Review Settings';
 			default: return 'Edit Learner';
 		}
+	};
+
+	const reviewSettingBoxStyle = {
+		border: '1px solid #dbeafe',
+		borderRadius: 10,
+		padding: 14,
+		background: '#f8fbff'
 	};
 
 	return (
@@ -522,58 +549,6 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 										</select>
 									</div>
 								</div>
-
-								{followUpsFeatureEnabled() && (
-									<div style={{ ...fieldStyle, border: '1px solid #dbeafe', borderRadius: 10, padding: 14, background: '#f8fbff' }}>
-										<label style={labelStyle}>Learning Follow-Ups</label>
-										<p style={{ margin: '2px 0 12px', fontSize: 13, color: '#64748b' }}>
-											Optional retrieval checks shown as separate cards in Learn. They do not reopen or add lessons.
-										</p>
-										<label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, cursor: savingFollowUps ? 'wait' : 'pointer' }}>
-											<input
-												type="checkbox"
-												checked={dailyFollowUpsEnabled}
-												disabled={savingFollowUps || saving}
-												onChange={(event) => {
-													const next = event.target.checked;
-													setDailyFollowUpsEnabled(next);
-													patchFollowUps({ daily_followups_enabled: next });
-												}}
-											/>
-											<span style={{ fontSize: 14, color: '#334155' }}><strong>Daily Follow-Ups</strong> — a strict check after at least 24 hours</span>
-										</label>
-										<label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, cursor: savingFollowUps ? 'wait' : 'pointer' }}>
-											<input
-												type="checkbox"
-												checked={weeklyReviewsEnabled}
-												disabled={savingFollowUps || saving}
-												onChange={(event) => {
-													const next = event.target.checked;
-													setWeeklyReviewsEnabled(next);
-													patchFollowUps({ weekly_reviews_enabled: next });
-												}}
-											/>
-											<span style={{ fontSize: 14, color: '#334155' }}><strong>Weekly Reviews</strong> — a short mixed review of recent learning</span>
-										</label>
-										<div style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: weeklyReviewsEnabled ? 1 : 0.55 }}>
-											<label htmlFor="weekly-review-day" style={{ fontSize: 13, color: '#475569' }}>Review day</label>
-											<select
-												id="weekly-review-day"
-												value={weeklyReviewDay}
-												disabled={!weeklyReviewsEnabled || savingFollowUps || saving}
-												onChange={(event) => {
-													const next = event.target.value;
-													setWeeklyReviewDay(next);
-													patchFollowUps({ weekly_review_day: next });
-												}}
-												style={{ ...selectStyle, width: 'auto', minWidth: 140, textTransform: 'capitalize' }}
-											>
-												{WEEKDAYS.map((day) => <option key={day} value={day}>{day.charAt(0).toUpperCase() + day.slice(1)}</option>)}
-											</select>
-											{savingFollowUps && <span style={{ fontSize: 12, color: '#64748b' }}>Saving…</span>}
-										</div>
-									</div>
-								)}
 
 								<div style={fieldStyle}>
 									<label style={labelStyle}>Golden Keys</label>
@@ -856,6 +831,88 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 										>
 											🗑️ Delete Learner
 										</button>
+									)}
+								</div>
+							</div>
+						)}
+
+						{activeTab === 'reviews' && (
+							<div>
+								<div style={reviewSettingBoxStyle}>
+									<h3 style={{ margin: '0 0 6px', fontSize: 17, color: '#111827' }}>Review Settings</h3>
+									<p style={{ margin: '0 0 16px', fontSize: 13, color: '#64748b', lineHeight: 1.45 }}>
+										Choose which short review cards appear for this learner in Learn.
+									</p>
+
+									<div style={{ display: 'grid', gap: 14 }}>
+										<label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: savingFollowUps ? 'wait' : 'pointer' }}>
+											<input
+												type="checkbox"
+												checked={dailyFollowUpsEnabled}
+												disabled={savingFollowUps || saving}
+												onChange={(event) => patchDailyFollowUps(event.target.checked)}
+												style={{ marginTop: 3 }}
+											/>
+											<span>
+												<span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#1f2937' }}>
+													Daily Follow-Ups
+												</span>
+												<span style={{ display: 'block', fontSize: 13, color: '#64748b', lineHeight: 1.35 }}>
+													Show short follow-ups after a learner has had time to remember a lesson.
+												</span>
+											</span>
+										</label>
+
+										<label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: savingFollowUps ? 'wait' : 'pointer' }}>
+											<input
+												type="checkbox"
+												checked={weeklyReviewsEnabled}
+												disabled={savingFollowUps || saving}
+												onChange={(event) => patchWeeklyReviews(event.target.checked)}
+												style={{ marginTop: 3 }}
+											/>
+											<span>
+												<span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#1f2937' }}>
+													Weekly Reviews
+												</span>
+												<span style={{ display: 'block', fontSize: 13, color: '#64748b', lineHeight: 1.35 }}>
+													Give this learner a mixed review of recent learning each week.
+												</span>
+											</span>
+										</label>
+
+										<div style={{ display: 'grid', gap: 6, opacity: weeklyReviewsEnabled ? 1 : 0.6 }}>
+											<label htmlFor={`weekly-review-day-${learner?.id || 'learner'}`} style={labelStyle}>
+												Weekly Review Day
+											</label>
+											<select
+												id={`weekly-review-day-${learner?.id || 'learner'}`}
+												value={weeklyReviewDay}
+												disabled={!weeklyReviewsEnabled || savingFollowUps || saving}
+												onChange={(event) => patchWeeklyReviewDay(event.target.value)}
+												style={{ ...selectStyle, textTransform: 'capitalize' }}
+											>
+												{WEEKDAYS.map((day) => (
+													<option key={day} value={day}>
+														{day.charAt(0).toUpperCase() + day.slice(1)}
+													</option>
+												))}
+											</select>
+											<p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>
+												The selected day is preserved when Weekly Reviews are turned off.
+											</p>
+										</div>
+									</div>
+
+									{savingFollowUps && (
+										<p style={{ margin: '14px 0 0', fontSize: 13, color: '#64748b' }} role="status">
+											Saving Review Settings...
+										</p>
+									)}
+									{followUpError && (
+										<p style={{ margin: '14px 0 0', fontSize: 13, color: '#b91c1c' }} role="alert">
+											{followUpError}
+										</p>
 									)}
 								</div>
 							</div>
@@ -1391,16 +1448,16 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 							<button
 								onClick={onClose}
 								style={secondaryButtonStyle}
-								disabled={saving}
+								disabled={saving || savingFollowUps}
 							>
 								Cancel
 							</button>
 							<button
-								onClick={handleSave}
+								onClick={activeTab === 'reviews' ? onClose : handleSave}
 								style={buttonStyle}
-								disabled={saving}
+								disabled={saving || savingFollowUps}
 							>
-								{saving ? 'Saving…' : 'Save Changes'}
+								{activeTab === 'reviews' ? 'Done' : (saving ? 'Saving…' : 'Save Changes')}
 							</button>
 						</div>
 					</div>

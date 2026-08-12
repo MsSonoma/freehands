@@ -491,9 +491,12 @@
       "optimistic toggle",
       "daily_followups_enabled",
       "weekly_reviews_enabled",
-      "weekly_review_day"
+      "weekly_review_day",
+      "Review Settings",
+      "Follow-Up settings API",
+      "per-learner card action"
     ],
-    "last_updated": "2026-08-12T15:59:44Z",
+    "last_updated": "2026-08-12T18:42:09Z",
     "status": "canonical"
   },
   "lesson-assessment-architecture": {

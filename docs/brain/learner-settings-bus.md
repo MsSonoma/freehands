@@ -1,7 +1,7 @@
 # Learner Settings Bus
 
 **Status**: Canonical
-**Last Updated**: 2026-08-12T15:59:44Z
+**Last Updated**: 2026-08-12T18:42:09Z
 
 ## How It Works
 
@@ -34,7 +34,7 @@ Daily/Weekly Follow-Up settings use the same per-learner success-only patch tran
 - `weekly_reviews_enabled` (default `false`)
 - `weekly_review_day` (default `friday`)
 
-The facilitator Basic settings panel persists these through the authenticated Follow-Up settings API, then broadcasts the successful patch. These fields are stripped from the shared-device learner local cache.
+The facilitator learner list exposes these as a per-learner **Review Settings** action on each learner card. The action opens `LearnerEditOverlay` directly on its Review Settings tab. Toggling Daily Follow-Ups, Weekly Reviews, or Weekly Review Day persists through the authenticated Follow-Up settings API only, then broadcasts the successful patch. These fields are stripped from the shared-device learner local cache and are not written through the generic learner update path.
 
 ### Transport
 
