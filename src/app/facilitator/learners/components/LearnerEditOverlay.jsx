@@ -9,10 +9,12 @@ import {
 	getDefaultPhaseTimers
 } from '@/app/session/utils/phaseTimerDefaults';
 import { InlineExplainer } from '@/components/FacilitatorHelp';
+import { followUpsFeatureEnabled } from '@/app/lib/followUpsClient';
 
 const GRADES = ['K', ...Array.from({length: 12}, (_, i) => String(i + 1))];
 const TARGETS = Array.from({length: 18}, (_, i) => String(i + 3)); // 3-20
 const HUMOR_LEVELS = ['calm', 'funny', 'hilarious'];
+const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 const DEFAULT_SLATE_SETTINGS = {
 	scoreGoal: 10,
@@ -73,6 +75,10 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [savingPlayPortions, setSavingPlayPortions] = useState(false);
 	// Mr. Slate drill settings
 	const [slateSettings, setSlateSettings] = useState(DEFAULT_SLATE_SETTINGS);
+	const [dailyFollowUpsEnabled, setDailyFollowUpsEnabled] = useState(false);
+	const [weeklyReviewsEnabled, setWeeklyReviewsEnabled] = useState(false);
+	const [weeklyReviewDay, setWeeklyReviewDay] = useState('friday');
+	const [savingFollowUps, setSavingFollowUps] = useState(false);
 	
 	const [saving, setSaving] = useState(false);
 
@@ -108,6 +114,9 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setPhaseTimers({ ...getDefaultPhaseTimers(), ...loadPhaseTimersForLearner(learner) });
 		setAutoAdvancePhases(learner.auto_advance_phases !== false); // Default true if not set
 		setSlateSettings({ ...DEFAULT_SLATE_SETTINGS, ...(learner.slate_settings || {}) });
+		setDailyFollowUpsEnabled(learner.daily_followups_enabled === true);
+		setWeeklyReviewsEnabled(learner.weekly_reviews_enabled === true);
+		setWeeklyReviewDay(WEEKDAYS.includes(learner.weekly_review_day) ? learner.weekly_review_day : 'friday');
 	}, [isOpen, learner?.id, learner?.initialTab]);
 
 	const handleTimerChange = (phase, type, value) => {
@@ -175,6 +184,9 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 				tts_unskippable: ttsUnskippable,
 				auto_advance_phases: autoAdvancePhases,
 				slate_settings: slateSettings,
+				daily_followups_enabled: dailyFollowUpsEnabled,
+				weekly_reviews_enabled: weeklyReviewsEnabled,
+				weekly_review_day: weeklyReviewDay,
 				...phaseTimers,
 			});
 			onClose();
@@ -182,6 +194,20 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 			alert(error?.message || 'Failed to save changes');
 		} finally {
 			setSaving(false);
+		}
+	};
+
+	const patchFollowUps = async (patch) => {
+		if (typeof onPatch !== 'function' || !learner?.id) return;
+		setSavingFollowUps(true);
+		try {
+			await onPatch(patch);
+		} catch (err) {
+			if (patch.daily_followups_enabled !== undefined) setDailyFollowUpsEnabled(!patch.daily_followups_enabled);
+			if (patch.weekly_reviews_enabled !== undefined) setWeeklyReviewsEnabled(!patch.weekly_reviews_enabled);
+			alert(err?.message || 'Failed to update Follow-Up settings');
+		} finally {
+			setSavingFollowUps(false);
 		}
 	};
 
@@ -496,6 +522,58 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 										</select>
 									</div>
 								</div>
+
+								{followUpsFeatureEnabled() && (
+									<div style={{ ...fieldStyle, border: '1px solid #dbeafe', borderRadius: 10, padding: 14, background: '#f8fbff' }}>
+										<label style={labelStyle}>Learning Follow-Ups</label>
+										<p style={{ margin: '2px 0 12px', fontSize: 13, color: '#64748b' }}>
+											Optional retrieval checks shown as separate cards in Learn. They do not reopen or add lessons.
+										</p>
+										<label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, cursor: savingFollowUps ? 'wait' : 'pointer' }}>
+											<input
+												type="checkbox"
+												checked={dailyFollowUpsEnabled}
+												disabled={savingFollowUps || saving}
+												onChange={(event) => {
+													const next = event.target.checked;
+													setDailyFollowUpsEnabled(next);
+													patchFollowUps({ daily_followups_enabled: next });
+												}}
+											/>
+											<span style={{ fontSize: 14, color: '#334155' }}><strong>Daily Follow-Ups</strong> — a strict check after at least 24 hours</span>
+										</label>
+										<label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, cursor: savingFollowUps ? 'wait' : 'pointer' }}>
+											<input
+												type="checkbox"
+												checked={weeklyReviewsEnabled}
+												disabled={savingFollowUps || saving}
+												onChange={(event) => {
+													const next = event.target.checked;
+													setWeeklyReviewsEnabled(next);
+													patchFollowUps({ weekly_reviews_enabled: next });
+												}}
+											/>
+											<span style={{ fontSize: 14, color: '#334155' }}><strong>Weekly Reviews</strong> — a short mixed review of recent learning</span>
+										</label>
+										<div style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: weeklyReviewsEnabled ? 1 : 0.55 }}>
+											<label htmlFor="weekly-review-day" style={{ fontSize: 13, color: '#475569' }}>Review day</label>
+											<select
+												id="weekly-review-day"
+												value={weeklyReviewDay}
+												disabled={!weeklyReviewsEnabled || savingFollowUps || saving}
+												onChange={(event) => {
+													const next = event.target.value;
+													setWeeklyReviewDay(next);
+													patchFollowUps({ weekly_review_day: next });
+												}}
+												style={{ ...selectStyle, width: 'auto', minWidth: 140, textTransform: 'capitalize' }}
+											>
+												{WEEKDAYS.map((day) => <option key={day} value={day}>{day.charAt(0).toUpperCase() + day.slice(1)}</option>)}
+											</select>
+											{savingFollowUps && <span style={{ fontSize: 12, color: '#64748b' }}>Saving…</span>}
+										</div>
+									</div>
+								)}
 
 								<div style={fieldStyle}>
 									<label style={labelStyle}>Golden Keys</label>

@@ -60,6 +60,9 @@ function writeLocal(list) {
       play_exercise_enabled,
       play_worksheet_enabled,
       play_test_enabled,
+      daily_followups_enabled,
+      weekly_reviews_enabled,
+      weekly_review_day,
       ...rest
     } = item;
     return rest;
@@ -269,6 +272,9 @@ export async function updateLearner(id, updates) {
         ...(updates.fill_in_fun_disabled !== undefined ? { fill_in_fun_disabled: !!updates.fill_in_fun_disabled } : {}),
         ...(updates.auto_advance_phases !== undefined ? { auto_advance_phases: !!updates.auto_advance_phases } : {}),
         ...(updates.tts_unskippable !== undefined ? { tts_unskippable: !!updates.tts_unskippable } : {}),
+        ...(updates.daily_followups_enabled !== undefined ? { daily_followups_enabled: !!updates.daily_followups_enabled } : {}),
+        ...(updates.weekly_reviews_enabled !== undefined ? { weekly_reviews_enabled: !!updates.weekly_reviews_enabled } : {}),
+        ...(updates.weekly_review_day !== undefined ? { weekly_review_day: String(updates.weekly_review_day).toLowerCase() } : {}),
         // Phase timer fields (11 total)
         ...(updates.discussion_play_min !== undefined ? { discussion_play_min: Number(updates.discussion_play_min) } : {}),
         ...(updates.discussion_work_min !== undefined ? { discussion_work_min: Number(updates.discussion_work_min) } : {}),
@@ -307,6 +313,9 @@ export async function updateLearner(id, updates) {
       ...(updates.play_timers_enabled !== undefined ? { play_timers_enabled: !!updates.play_timers_enabled } : {}),
       ...(updates.play_dependent_on_work !== undefined ? { play_dependent_on_work: !!updates.play_dependent_on_work } : {}),
       ...(updates.tts_unskippable !== undefined ? { tts_unskippable: !!updates.tts_unskippable } : {}),
+      ...(updates.daily_followups_enabled !== undefined ? { daily_followups_enabled: !!updates.daily_followups_enabled } : {}),
+      ...(updates.weekly_reviews_enabled !== undefined ? { weekly_reviews_enabled: !!updates.weekly_reviews_enabled } : {}),
+      ...(updates.weekly_review_day !== undefined ? { weekly_review_day: String(updates.weekly_review_day).toLowerCase() } : {}),
     };
     const { data: data2, error: error2 } = await updateWithOwner(supabase, id, jsonPayload, uid);
     if (!error2) { supabaseLearnersMode = 'json'; return normalizeRow(data2); }
@@ -384,6 +393,9 @@ function normalizeRow(row) {
     fill_in_fun_disabled: !!row.fill_in_fun_disabled,
     auto_advance_phases: row.auto_advance_phases !== false,
     tts_unskippable: !!row.tts_unskippable,
+    daily_followups_enabled: row.daily_followups_enabled === true,
+    weekly_reviews_enabled: row.weekly_reviews_enabled === true,
+    weekly_review_day: typeof row.weekly_review_day === 'string' ? row.weekly_review_day : 'friday',
     // Phase timer fields
     discussion_play_min: c(row.discussion_play_min),
     discussion_work_min: c(row.discussion_work_min),

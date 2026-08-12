@@ -73,6 +73,18 @@ const LESSON_CONTENT_FIELDS = Object.freeze([
   'retention_pool',
   'retentionItems',
   'retention_items',
+  'dailyFollowup',
+  'dailyFollowups',
+  'daily_followup',
+  'daily_followups',
+  'dailyFollowupPool',
+  'daily_followup_pool',
+  'weeklyReview',
+  'weeklyReviews',
+  'weekly_review',
+  'weekly_reviews',
+  'weeklyReviewPool',
+  'weekly_review_pool',
   'discussion',
 ]);
 

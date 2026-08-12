@@ -7,6 +7,7 @@ import {
   decodeReportCursor,
   encodeReportCursor,
 } from '../../../../../lib/masteryEvidence/reporting.js';
+import { buildReviewRunSummary } from '../../../../../lib/masteryEvidence/followUps.js';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -182,7 +183,81 @@ function createSupabaseReportingRepository(admin) {
       if (error) throw new Error('Evidence event history query failed');
       return Array.isArray(data) ? data : [];
     },
+
+    async listReviewRuns({ userId, learnerId }) {
+      const { data, error } = await admin
+        .from('learning_review_runs')
+        .select('*')
+        .eq('facilitator_id', userId)
+        .eq('learner_id', learnerId)
+        .order('started_at', { ascending: false })
+        .limit(50);
+      if (error?.code === '42P01') return [];
+      if (error) throw new Error('Review history query failed');
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listReviewItems({ userId, learnerId, runIds }) {
+      if (!runIds.length) return [];
+      const { data, error } = await admin
+        .from('learning_review_items')
+        .select('*')
+        .eq('facilitator_id', userId)
+        .eq('learner_id', learnerId)
+        .in('run_id', runIds)
+        .order('ordinal', { ascending: true });
+      if (error) throw new Error('Review item history query failed');
+      return Array.isArray(data) ? data : [];
+    },
+
+    async listReviewEvents({ userId, learnerId, runIds }) {
+      if (!runIds.length) return [];
+      const { data, error } = await admin
+        .from('learning_review_events')
+        .select('*')
+        .eq('facilitator_id', userId)
+        .eq('learner_id', learnerId)
+        .in('run_id', runIds)
+        .order('occurred_at', { ascending: true });
+      if (error) throw new Error('Review event history query failed');
+      return Array.isArray(data) ? data : [];
+    },
   };
+}
+
+export async function loadFacilitatorReviewHistory({ repository, userId, learnerId, lessonKey = null } = {}) {
+  if (typeof repository.listReviewRuns !== 'function') return [];
+  const runs = await repository.listReviewRuns({ userId, learnerId });
+  const authorizedRuns = runs.filter((run) => (
+    String(run?.facilitator_id) === String(userId)
+      && String(run?.learner_id) === String(learnerId)
+  ));
+  const runIds = authorizedRuns.map((run) => run.id);
+  const [items, events] = await Promise.all([
+    repository.listReviewItems({ userId, learnerId, runIds }),
+    repository.listReviewEvents({ userId, learnerId, runIds }),
+  ]);
+  const itemsByRun = new Map();
+  const eventsByRun = new Map();
+  for (const item of items) {
+    if (!runIds.some((id) => String(id) === String(item?.run_id))) continue;
+    const key = String(item.run_id);
+    if (!itemsByRun.has(key)) itemsByRun.set(key, []);
+    itemsByRun.get(key).push(item);
+  }
+  for (const event of events) {
+    if (!runIds.some((id) => String(id) === String(event?.run_id))) continue;
+    const key = String(event.run_id);
+    if (!eventsByRun.has(key)) eventsByRun.set(key, []);
+    eventsByRun.get(key).push(event);
+  }
+  return authorizedRuns
+    .map((run) => buildReviewRunSummary({
+      run,
+      items: itemsByRun.get(String(run.id)) || [],
+      events: eventsByRun.get(String(run.id)) || [],
+    }))
+    .filter((report) => !lessonKey || report.items.some((item) => item.lesson_key === lessonKey));
 }
 
 export async function loadFacilitatorEvidenceHistory({
@@ -276,6 +351,7 @@ export async function GET(request, context = {}) {
         enabled: false,
         learner: null,
         items: [],
+        reviews: [],
         pagination: { limit: DEFAULT_LIMIT, has_more: false, next_cursor: null },
       });
     }
@@ -314,11 +390,15 @@ export async function GET(request, context = {}) {
     if (result.kind === 'not_found') {
       return NextResponse.json({ ok: false, error: 'Session not found' }, { status: 404 });
     }
+    const reviews = !cursor && !sessionId
+      ? await loadFacilitatorReviewHistory({ repository, userId: auth.user.id, learnerId, lessonKey })
+      : [];
     return NextResponse.json({
       ok: true,
       enabled: true,
       learner: { id: learnerId },
       items: result.items,
+      reviews,
       pagination: result.pagination,
     });
   } catch (error) {

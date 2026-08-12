@@ -213,11 +213,45 @@ function EvidenceCard({ report, transcripts, onOpenTranscript }) {
   );
 }
 
+function ReviewCard({ report }) {
+  const isWeekly = report.review?.type === 'weekly_review';
+  const reviewLabel = isWeekly ? 'Weekly Review' : 'Daily Follow-Up';
+  return (
+    <article className={styles.card} data-completeness={report.review?.status === 'completed' ? 'complete' : 'partial'}>
+      <header className={styles.cardHeader}>
+        <div>
+          <h3>{report.label || reviewLabel}</h3>
+          <div className={styles.sessionDate}>{formatSessionDate(report.review?.started_at)}</div>
+        </div>
+        <span className={styles.completeness}>{report.review?.status === 'completed' ? 'Complete' : 'In progress'}</span>
+      </header>
+      <p className={styles.facetDetail}>
+        {isWeekly
+          ? 'A separate mixed review of recent learning. Daily retrieval is noted when it preceded a weekly item.'
+          : 'A strict delayed check tied to earlier independent evidence. It does not reopen the lesson.'}
+      </p>
+      <div className={styles.facetGrid}>
+        {(report.items || []).map((item, index) => (
+          <Facet
+            key={`${item.anchor_mastery_check_id || item.lesson_key}-${index}`}
+            title={item.lesson_id || item.lesson_key || `Item ${index + 1}`}
+            value={{ state: item.state, label: item.label }}
+          />
+        ))}
+      </div>
+      {isWeekly && (report.items || []).some((item) => item.prior_daily_retrieval_observed) && (
+        <div className={styles.contextBlock}>Prior Daily Follow-Up retrieval was observed for at least one weekly item.</div>
+      )}
+    </article>
+  );
+}
+
 export default function EvidenceHistorySection({
   enabled,
   loading,
   error,
   reports = [],
+  reviews = [],
   transcripts = [],
   hasMore,
   loadingMore,
@@ -241,12 +275,13 @@ export default function EvidenceHistorySection({
         <div className={styles.stateBox} role="status">
           Learning evidence is temporarily unavailable. Transcript history is still available below.
         </div>
-      ) : reports.length === 0 ? (
+      ) : reports.length === 0 && reviews.length === 0 ? (
         <div className={styles.stateBox}>
           No learning-evidence sessions yet. Transcript history remains available below.
         </div>
       ) : (
         <div className={styles.cardList}>
+          {reviews.map((report) => <ReviewCard key={report.review?.id} report={report} />)}
           {reports.map((report, index) => (
             <EvidenceCard
               key={`${report.session?.id || 'legacy'}-${index}`}

@@ -12,6 +12,7 @@ import { getActiveLessonSession } from '@/app/lib/sessionTracking'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
+import { getFollowUps, startFollowUp } from '@/app/lib/followUpsClient'
 import { getMasteryForLearner, slateEmojiForTier } from '@/app/lib/masteryClient'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay'
@@ -178,6 +179,9 @@ function LessonsPageInner(){
   const [ownedSubjectFilter, setOwnedSubjectFilter] = useState('')
   const [ownedSort, setOwnedSort] = useState('title-asc')
   const [historyLessons, setHistoryLessons] = useState({}) // lessonKey → metadata for history-only lessons
+  const [followUpCards, setFollowUpCards] = useState([])
+  const [followUpsLoading, setFollowUpsLoading] = useState(false)
+  const [followUpStarting, setFollowUpStarting] = useState(null)
 
   const {
     sessions: lessonHistorySessions,
@@ -191,6 +195,43 @@ function LessonsPageInner(){
 
   const completedLessonCount = useMemo(() => Object.keys(lessonHistoryLastCompleted || {}).length, [lessonHistoryLastCompleted])
   const activeLessonCount = useMemo(() => Object.keys(lessonHistoryInProgress || {}).length, [lessonHistoryInProgress])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!learnerId || learnerId === 'demo') {
+      setFollowUpCards([])
+      return () => { cancelled = true }
+    }
+    setFollowUpsLoading(true)
+    getFollowUps(learnerId)
+      .then((result) => {
+        if (!cancelled) setFollowUpCards(Array.isArray(result?.cards) ? result.cards : [])
+      })
+      .catch(() => {
+        if (!cancelled) setFollowUpCards([])
+      })
+      .finally(() => {
+        if (!cancelled) setFollowUpsLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [learnerId, refreshTrigger])
+
+  const openFollowUp = async (card) => {
+    if (!card || followUpStarting) return
+    setFollowUpStarting(card.id)
+    try {
+      if (card.run_id) {
+        router.push(`/learn/follow-ups/${card.run_id}`)
+        return
+      }
+      const result = await startFollowUp(learnerId, card.id)
+      if (!result?.run?.id) throw new Error('Follow-Up could not start')
+      router.push(`/learn/follow-ups/${result.run.id}`)
+    } catch (error) {
+      alert(error?.message || 'Follow-Up could not start')
+      setFollowUpStarting(null)
+    }
+  }
 
   const lessonTitleLookup = useMemo(() => {
     const map = {}
@@ -1292,7 +1333,7 @@ function LessonsPageInner(){
         <>
           {/* ── Active tab ── */}
           {(listTab === 'active' || learnerId === 'demo') && (
-            !hasLessons ? (
+            !hasLessons && followUpCards.length === 0 ? (
               <div style={{ textAlign:'center', marginTop:32 }}>
                 <p style={{ color:'#6b7280' }}>No lessons available yet.</p>
                 <p style={{ color:'#9ca3af', fontSize:14 }}>
@@ -1301,6 +1342,42 @@ function LessonsPageInner(){
               </div>
             ) : (
           <div style={list}>
+            {followUpsLoading && followUpCards.length === 0 && (
+              <div style={{ ...row, color: '#6b7280', justifyContent: 'center' }}>
+                Checking for Follow-Ups…
+              </div>
+            )}
+            {followUpCards.map((card) => {
+              const daily = card.review_type === 'daily_followup'
+              const busy = followUpStarting === card.id
+              return (
+                <button
+                  key={card.id}
+                  style={{
+                    ...row,
+                    border: `1px solid ${daily ? '#bfdbfe' : '#ddd6fe'}`,
+                    background: daily ? '#eff6ff' : '#f5f3ff',
+                    cursor: busy ? 'wait' : 'pointer',
+                  }}
+                  onClick={() => openFollowUp(card)}
+                  disabled={!!followUpStarting}
+                >
+                  <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 3 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: daily ? '#1d4ed8' : '#6d28d9' }}>
+                        {daily ? 'DAILY FOLLOW-UP' : 'WEEKLY REVIEW'}
+                      </span>
+                      {card.resume && <span style={{ fontSize: 11, color: '#047857', fontWeight: 700 }}>Resume</span>}
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>{card.title}</div>
+                    <div style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>
+                      {card.subtitle} · {card.remaining_count} {card.remaining_count === 1 ? 'question' : 'questions'}
+                    </div>
+                  </div>
+                  <span style={{ color: '#6b7280', fontSize: 14 }}>{busy ? 'Opening…' : 'Start →'}</span>
+                </button>
+              )
+            })}
             {/* Show demo lessons first if they exist */}
             {lessonsBySubject['demo'] && lessonsBySubject['demo'].map((l) => {
               const lessonKey = `demo/${l.file}`

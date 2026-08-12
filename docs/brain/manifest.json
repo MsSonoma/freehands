@@ -155,6 +155,8 @@
       "/api/lesson-assign",
       "/api/generate-lesson-outline",
       "/api/facilitator/learners/[id]/evidence",
+      "/api/learner/follow-ups",
+      "/api/learner/follow-ups/[runId]",
       "instructions-field",
       "innertext-field",
       "session-field",
@@ -166,7 +168,7 @@
       "/api/visual-aids",
       "/api/content-safety"
     ],
-    "last_updated": "2026-08-12T14:34:24Z",
+    "last_updated": "2026-08-12T15:59:44Z",
     "status": "canonical"
   },
   "mastery-evidence": {
@@ -205,9 +207,15 @@
       "keyset-pagination",
       "score-separation",
       "retention-reporting",
-      "legacy-session-reporting"
+      "legacy-session-reporting",
+      "daily-followup-v1",
+      "weekly-review-v1",
+      "learning_review_runs",
+      "learning_review_items",
+      "learning_review_events",
+      "daily-weekly-independence"
     ],
-    "last_updated": "2026-08-12T14:34:24Z",
+    "last_updated": "2026-08-12T15:59:44Z",
     "status": "active-development"
   },
   "portfolio-generation": {
@@ -480,9 +488,12 @@
       "loading flash",
       "toast gating",
       "LearnerEditOverlay",
-      "optimistic toggle"
+      "optimistic toggle",
+      "daily_followups_enabled",
+      "weekly_reviews_enabled",
+      "weekly_review_day"
     ],
-    "last_updated": "2026-01-08T03:44:22Z",
+    "last_updated": "2026-08-12T15:59:44Z",
     "status": "canonical"
   },
   "lesson-assessment-architecture": {
@@ -496,9 +507,12 @@
       "exercise-questions",
       "worksheet-questions",
       "test-questions",
-      "localStorage-assessment-caching"
+      "localStorage-assessment-caching",
+      "dailyFollowup",
+      "weeklyReview",
+      "held-out review pools"
     ],
-    "last_updated": "2025-12-31T16:00:00Z",
+    "last_updated": "2026-08-12T15:59:44Z",
     "status": "canonical"
   },
   "session-takeover": {

@@ -11,6 +11,7 @@ import { useAccessControl } from '@/app/hooks/useAccessControl';
 import GatedOverlay from '@/app/components/GatedOverlay';
 import TutorialGuard from '@/components/TutorialGuard';
 import LearnerEditOverlay from './components/LearnerEditOverlay';
+import { updateFollowUpSettings } from '@/app/lib/followUpsClient';
 import { PageHeader, InlineExplainer } from '@/components/FacilitatorHelp';
 import { broadcastLearnerSettingsPatch } from '@/app/lib/learnerSettingsBus';
 
@@ -555,7 +556,11 @@ export default function LearnersPage() {
 				const idx = items.findIndex(item => item.id === editingBasicInfo.id);
 				if (idx === -1) return;
 				const learner = items[idx];
-				await updateLearner(learner.id, patch);
+				const isFollowUpPatch = Object.keys(patch).some((key) => (
+					['daily_followups_enabled', 'weekly_reviews_enabled', 'weekly_review_day'].includes(key)
+				));
+				if (isFollowUpPatch) await updateFollowUpSettings(learner.id, patch);
+				else await updateLearner(learner.id, patch);
 				setItems(prev => prev.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
 				broadcastLearnerSettingsPatch(learner.id, patch);
 			}}

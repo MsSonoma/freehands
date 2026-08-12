@@ -114,10 +114,31 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 - **Auth**: Bearer token required; learner ownership is verified before history queries
 - **Filters**: optional `session_id`, `lesson_key`, `limit`, and opaque keyset `cursor`
 - **Bounds**: 10 sessions by default, 25 maximum
-- **Response**: whitelisted derived summaries and pagination metadata; never raw evidence rows
+- **Response**: whitelisted derived session summaries, separately typed Daily/Weekly review summaries, and pagination metadata; never raw evidence rows
 - **Privacy**: service-role reads re-apply facilitator, learner, tracked-session, and evidence-session boundaries
 - **Feature flag**: returns a calm empty disabled response when the existing mastery-evidence flag is off
 - **Failure isolation**: reporting failure does not affect learner sessions or transcript history
+
+### `/api/learner/follow-ups`
+**Purpose**: Read/start learner Daily Follow-Up and Weekly Review cards and update facilitator-controlled per-learner settings
+**Status**: Operational only when the existing mastery-evidence flag is enabled and the Follow-Up migration is installed
+
+- **Location**: `src/app/api/learner/follow-ups/route.js`
+- **Methods**: `GET` availability, `POST` with `action=start`, `PATCH` settings
+- **Auth**: Bearer token required; learner ownership is verified before reads or writes
+- **Selection**: Server time, profile timezone, source-backed evidence, deterministic identity, and durable run state are authoritative
+- **Privacy**: Responses omit answer keys, raw responses, private item payloads, service credentials, and unselected held-out items
+- **Settings**: Accepts only `daily_followups_enabled`, `weekly_reviews_enabled`, and a validated weekday
+
+### `/api/learner/follow-ups/[runId]`
+**Purpose**: Resume and append interactions to one authorized review run
+**Status**: Operational only when the existing mastery-evidence flag is enabled
+
+- **Location**: `src/app/api/learner/follow-ups/[runId]/route.js`
+- **Methods**: `GET` current state; `POST` `present`, `assist`, or `respond`
+- **Integrity**: Stable run/items, idempotent presentation/first-response/evaluation/result facts, and server-side answer evaluation
+- **Controls**: Repeat is non-disqualifying; answer reveal is assistance; disabled settings block new presentation but do not discard an already presented first-response opportunity
+- **Isolation**: Prior exposure is rechecked at presentation time; the route never creates lesson sessions or snapshots
 
 ### `/api/tts`
 **Purpose**: Text-to-speech conversion (Google TTS)  

@@ -74,7 +74,9 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   "vocab": [{"term": "string", "definition": "string"}],
   "teachingNotes": "string",
   "baseline": [{"id": "baseline-1", "question": "short, low-pressure pre-instruction question", "expectedAny": ["answer"]}],
-  "retention": [{"id": "retention-1", "question": "delayed retention question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}],
+  "retention": [{"id": "retention-1", "question": "legacy delayed retention question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}],
+  "dailyFollowup": [{"id": "daily-followup-1", "question": "daily follow-up question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}],
+  "weeklyReview": [{"id": "weekly-review-1", "question": "weekly review question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}],
   "truefalse": [{"question": "COMPLETE QUESTION TEXT HERE", "answer": true|false, "expectedAny": ["true"|"false"]}],
   "multiplechoice": [{"question": "string", "choices": ["A", "B", "C", "D"], "correct": 0-3, "expectedAny": ["correct answer text"]}],
   "fillintheblank": [{"question": "COMPLETE SENTENCE WITH _____ BLANK", "expectedAny": ["answer"]}],
@@ -105,7 +107,9 @@ CRITICAL REQUIREMENTS:
 6. teachingNotes: Include key teaching strategies, common misconceptions, real-world connections, and differentiation tips (2-4 sentences)${notesGuidance}
 7. baseline: Include exactly 2 short, low-pressure pre-instruction questions. These must check what a learner may already know before teaching, not trick questions. They must be distinct from all truefalse, multiplechoice, fillintheblank, shortanswer, and test items. Do not call them a pretest.
 8. test: Include at least 6 reserved held-out Test questions. They must be distinct from baseline and all instructional question pools. Prefer multiple-choice or true/false with source-backed answers. These are for the final Test only and must not duplicate practice items.
-9. retention: Include exactly 2 delayed-retention-reserved questions. They must be distinct from baseline, all instructional pools, and test. These are for a future delayed revisit only.
+9. retention: Include exactly 2 delayed-retention-reserved questions. They must be distinct from baseline, all instructional pools, test, dailyFollowup, and weeklyReview. These preserve the existing in-session Stage 7 path.
+10. dailyFollowup: Include exactly 2 Daily Follow-Up-reserved questions. They must be distinct from baseline, all instructional pools, test, retention, and weeklyReview. These are held out for a strict delayed follow-up only.
+11. weeklyReview: Include exactly 5 Weekly Review-reserved questions. They must be distinct from baseline, all instructional pools, test, retention, and dailyFollowup. These are held out for a separate weekly review only.
 
 EXAMPLE truefalse format:
 {"question": "The sun rises in the east.", "answer": true, "expectedAny": ["true"]}
@@ -142,6 +146,17 @@ async function callModel(prompt){
       retention:[
         {id:'retention-1', question:'Which number is even?', choices:['15','16','17','19'], correct:1, expectedAny:['16']},
         {id:'retention-2', question:'True or false: 18 is even.', answer:true, expectedAny:['true']}
+      ],
+      dailyFollowup:[
+        {id:'daily-followup-1', question:'Which number can be divided into two equal groups?', choices:['15','16','17','19'], correct:1, expectedAny:['16']},
+        {id:'daily-followup-2', question:'True or false: 18 can be split into two equal groups.', answer:true, expectedAny:['true']}
+      ],
+      weeklyReview:[
+        {id:'weekly-review-1', question:'Which number has no remainder when divided by 2?', choices:['21','22','23','25'], correct:1, expectedAny:['22']},
+        {id:'weekly-review-2', question:'True or false: 14 is an even number.', answer:true, expectedAny:['true']},
+        {id:'weekly-review-3', question:'Which number is odd?', choices:['20','24','27','28'], correct:2, expectedAny:['27']},
+        {id:'weekly-review-4', question:'Complete the pattern of even numbers: 2, 4, 6, ___.', expectedAny:['8','eight']},
+        {id:'weekly-review-5', question:'Is 30 even or odd?', expectedAny:['even']}
       ],
       truefalse:[{question:'2 is even.', answer:true, expectedAny:['true']}],
       multiplechoice:[{question:'Pick 2', choices:['1','2','3','4'], correct:1, expectedAny:['2']}],

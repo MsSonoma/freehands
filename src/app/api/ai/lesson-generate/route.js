@@ -40,14 +40,14 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Missing lesson or type' }, { status: 400 })
     }
 
-    const validTypes = ['vocab', 'baseline', 'retention', 'test', 'multiplechoice', 'truefalse', 'shortanswer', 'fillintheblank']
+    const validTypes = ['vocab', 'baseline', 'retention', 'dailyFollowup', 'weeklyReview', 'test', 'multiplechoice', 'truefalse', 'shortanswer', 'fillintheblank']
     if (!validTypes.includes(type)) {
       return NextResponse.json({ error: `Invalid type: ${type}` }, { status: 400 })
     }
 
-    // Strip reserved Test, retention, and baseline pools from instructional generation
+    // Strip every reserved pool from instructional generation
     // context so instructional item generation cannot accidentally reuse protected
-    // items. Test/retention generation may see sibling protected pools only to avoid
+    // items. Protected-pool generation may see sibling protected pools only to avoid
     // duplication while still excluding the pool it is generating.
     const instructionalView = buildInstructionalLessonView(lesson)
     const lessonContextSource = type === 'test'
@@ -55,11 +55,31 @@ export async function POST(req) {
           ...instructionalView,
           baseline: lesson?.baseline || lesson?.baselinePool || lesson?.baseline_items || null,
           retention: lesson?.retention || lesson?.retentionPool || lesson?.retention_items || null,
+          dailyFollowup: lesson?.dailyFollowup || lesson?.daily_followup || lesson?.daily_followup_pool || null,
+          weeklyReview: lesson?.weeklyReview || lesson?.weekly_review || lesson?.weekly_review_pool || null,
         }
       : type === 'retention'
         ? {
           ...instructionalView,
           baseline: lesson?.baseline || lesson?.baselinePool || lesson?.baseline_items || null,
+          test: lesson?.test || null,
+          dailyFollowup: lesson?.dailyFollowup || lesson?.daily_followup || lesson?.daily_followup_pool || null,
+          weeklyReview: lesson?.weeklyReview || lesson?.weekly_review || lesson?.weekly_review_pool || null,
+        }
+      : type === 'dailyFollowup'
+        ? {
+          ...instructionalView,
+          baseline: lesson?.baseline || lesson?.baselinePool || lesson?.baseline_items || null,
+          retention: lesson?.retention || lesson?.retentionPool || lesson?.retention_items || null,
+          weeklyReview: lesson?.weeklyReview || lesson?.weekly_review || lesson?.weekly_review_pool || null,
+          test: lesson?.test || null,
+        }
+      : type === 'weeklyReview'
+        ? {
+          ...instructionalView,
+          baseline: lesson?.baseline || lesson?.baselinePool || lesson?.baseline_items || null,
+          retention: lesson?.retention || lesson?.retentionPool || lesson?.retention_items || null,
+          dailyFollowup: lesson?.dailyFollowup || lesson?.daily_followup || lesson?.daily_followup_pool || null,
           test: lesson?.test || null,
         }
       : instructionalView
@@ -124,6 +144,30 @@ LESSON:
 ${lessonContext}
 
 Return ONLY a JSON object: {"items": [{"id": "retention-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
+      },
+
+      dailyFollowup: {
+        system: `You are an expert curriculum writer creating Daily Follow-Up-reserved questions for elementary school lessons.
+Always return valid JSON as: {"items": [{"id": "daily-followup-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}
+Generate exactly 2 items. Keep them distinct from baseline, instruction, worksheet, practice, Test, legacy retention, and Weekly Review items.`,
+        user: `Given this lesson, generate exactly 2 held-out Daily Follow-Up questions for a strict delayed retrieval opportunity. Do not duplicate any other question.
+
+LESSON:
+${lessonContext}
+
+Return ONLY a JSON object: {"items": [{"id": "daily-followup-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
+      },
+
+      weeklyReview: {
+        system: `You are an expert curriculum writer creating Weekly Review-reserved questions for elementary school lessons.
+Always return valid JSON as: {"items": [{"id": "weekly-review-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}
+Generate exactly 5 items. Keep them distinct from baseline, instruction, worksheet, practice, Test, legacy retention, and Daily Follow-Up items.`,
+        user: `Given this lesson, generate exactly 5 held-out Weekly Review questions for later mixed retrieval. Do not duplicate any other question.
+
+LESSON:
+${lessonContext}
+
+Return ONLY a JSON object: {"items": [{"id": "weekly-review-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
       },
 
       truefalse: {

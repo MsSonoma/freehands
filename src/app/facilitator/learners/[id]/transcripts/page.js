@@ -259,6 +259,7 @@ export default function LearnerTranscriptsPage({ params }) {
   const [viewItem, setViewItem] = useState(null); // item being viewed in overlay
   const [evidenceEnabled, setEvidenceEnabled] = useState(true);
   const [evidenceReports, setEvidenceReports] = useState([]);
+  const [evidenceReviews, setEvidenceReviews] = useState([]);
   const [evidenceLoading, setEvidenceLoading] = useState(true);
   const [evidenceError, setEvidenceError] = useState('');
   const [evidenceNextCursor, setEvidenceNextCursor] = useState(null);
@@ -325,6 +326,7 @@ export default function LearnerTranscriptsPage({ params }) {
           const evidencePayload = evidenceResult?.payload || {};
           setEvidenceEnabled(evidencePayload.enabled === true);
           setEvidenceReports(Array.isArray(evidencePayload.items) ? evidencePayload.items : []);
+          setEvidenceReviews(Array.isArray(evidencePayload.reviews) ? evidencePayload.reviews : []);
           setEvidenceNextCursor(evidencePayload?.pagination?.next_cursor || null);
         }
       } catch (e) {
@@ -418,6 +420,7 @@ export default function LearnerTranscriptsPage({ params }) {
           loading={evidenceLoading}
           error={evidenceError}
           reports={evidenceReports}
+          reviews={evidenceReviews}
           transcripts={allItems}
           hasMore={!!evidenceNextCursor}
           loadingMore={loadingMoreEvidence}

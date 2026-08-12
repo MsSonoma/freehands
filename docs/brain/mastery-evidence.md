@@ -200,7 +200,7 @@ Stage 7 records append-only `retention_check_result` events. These may carry:
 
 Legacy lessons without a retention pool continue normally and do not produce fake retention evidence. Evidence API failures or ineligible histories are nonblocking and fall through to the existing pre-instruction path.
 
-New facilitator-generated lessons request a small explicit retention pool, normally two delayed-retention-reserved items. The retention pool participates in the deterministic lesson content hash/version, but it is excluded from instructional AI payloads, recovery payloads, visual-aid payloads, and Stage 6 Test item selection.
+Existing lessons with an explicit retention pool keep the `retention-v1` in-session path. New facilitator-generated lessons now reserve separate Daily Follow-Up and Weekly Review pools instead of adding new legacy-retention items. All three reserved roles participate in deterministic lesson identity and are excluded from instructional AI payloads, recovery payloads, visual-aid payloads, and Stage 6 Test item selection.
 
 Stage 8 adds facilitator evidence reporting without adding a database table, cache, write path, scheduler, or learner-flow mutation.
 
@@ -263,6 +263,23 @@ Stage 8 reporting vocabulary is deliberate:
 
 Claim boundaries are absolute. Stage 8 does not claim causal learning attribution, permanent mastery, guaranteed retention, human-vs-AI superiority, an invented mastery percentage, a global learner score, AI confidence, learner ranking, or diagnostic inference. Session completion, scores, medals, and transcripts remain separate from mastery-evidence qualification.
 
+Daily Follow-Ups and Weekly Reviews extend the evidence system without changing the lesson lifecycle.
+
+They are learner-facing cards in Learn, not lessons, assignments, notifications, or curriculum objects. They do not increment lesson quotas, reopen a completed lesson, create lesson snapshots, change scores/medals, or mutate the Stage 1-8 session evidence rows. Both are off by default and independently controlled per learner under the existing mastery-evidence feature flag.
+
+The protocols and pools are deliberately separate:
+
+- `daily-followup-v1` uses only `dailyFollowup` aliases and is anchored to one eligible Stage 6 success. Presentation must occur at least 24 hours after the anchor. An existing `retention-v1` result or Daily result consumes the anchor for another Daily opportunity. A clean correct first response records `retained`; a clean incorrect first response records `needs_review`. It does not trigger automatic reteaching.
+- `weekly-review-v1` uses only `weeklyReview` aliases. It selects at most five distinct recent targets from the seven-local-day learning window ending at the configured weekday activation. The current weekly activation remains available until the next activation; missed weeks do not stack. Selection is deterministic and never pads with filler.
+- Completing Daily never consumes Weekly. Weekly result facts record whether prior Daily retrieval was observed for the same Stage 6 anchor.
+- Legacy `retention-v1`, Daily, and Weekly questions are mutually protected by stable/content identity. Reserved fields are stripped from instructional/recovery payloads. Prior learner exposure is checked during selection and again immediately before presentation.
+
+The facilitator profile `timezone` is authoritative for weekly boundaries, with `UTC` as the safe fallback. Weekday activation is local midnight. Runs and selected items are durable in `learning_review_runs` and `learning_review_items`; append-only interactions/results are stored in `learning_review_events`. The service-role API is the only writer. Authenticated clients receive RLS-scoped reads but no direct write policies.
+
+The first learner response is immutable through an idempotency key and database uniqueness. Resume uses the same run and selected item. Verbatim Repeat is recorded but remains non-disqualifying. Answer reveal is recorded before response and prevents an independent interpretation. Refresh, Start Over, and lesson-session state cannot reset a review run because review persistence is separate from snapshots and lesson local storage.
+
+Stage 8 returns review summaries separately from session reports. Daily and Weekly labels, protocol versions, exact delay, qualification, outcome, earlier Stage 6 anchor, intervening instruction/review flags, and prior Daily context remain distinct from Test scores and legacy retention.
+
 ## What NOT To Do
 
 - Do not use `lesson_session_events` as the mastery evidence store.
@@ -284,6 +301,9 @@ Claim boundaries are absolute. Stage 8 does not claim causal learning attributio
 - Do not infer evidence by parsing transcript prose after the fact; capture current behavior at runtime.
 - Do not claim complete mastery, safety, comparative outcome, or audit guarantees from these Stage 1 tables.
 - Do not enable evidence by default without an explicit environment flag.
+- Do not treat Daily or Weekly cards as lessons, count them against lesson quotas, create snapshots for them, or auto-assign/reopen curriculum.
+- Do not share a held-out item identity across baseline, instruction, Test, legacy retention, Daily, or Weekly roles.
+- Do not let Daily completion consume Weekly eligibility or stack missed weekly cycles.
 
 ## Key Files
 
@@ -294,6 +314,7 @@ Claim boundaries are absolute. Stage 8 does not claim causal learning attributio
 - `supabase/migrations/20260809040000_add_stage_5_baseline_evidence.sql`
 - `supabase/migrations/20260809050000_add_stage_6_independent_mastery.sql`
 - `supabase/migrations/20260809060000_add_stage_7_retention_evidence.sql`
+- `supabase/migrations/20260812090000_add_daily_followups_weekly_reviews.sql`
 - `src/app/api/evidence/route.js`
 - `src/app/lib/masteryEvidence/constants.js`
 - `src/app/lib/masteryEvidence/identity.js`
@@ -302,6 +323,9 @@ Claim boundaries are absolute. Stage 8 does not claim causal learning attributio
 - `src/app/lib/masteryEvidence/mastery.js`
 - `src/app/lib/masteryEvidence/retention.js`
 - `src/app/lib/masteryEvidence/reporting.js`
+- `src/app/lib/masteryEvidence/followUps.js`
+- `src/app/lib/masteryEvidence/followUps.server.js`
+- `src/app/lib/masteryEvidence/followUps.service.js`
 - `src/app/lib/masteryEvidence/schema.js`
 - `src/app/lib/masteryEvidence/provenance.js`
 - `src/app/lib/masteryEvidence/client.js`
@@ -313,6 +337,9 @@ Claim boundaries are absolute. Stage 8 does not claim causal learning attributio
 - `src/app/session/v2/TestPhase.jsx`
 - `src/app/session/components/SessionVisualAidsCarousel.js`
 - `src/app/api/facilitator/learners/[id]/evidence/route.js`
+- `src/app/api/learner/follow-ups/route.js`
+- `src/app/api/learner/follow-ups/[runId]/route.js`
+- `src/app/learn/follow-ups/[runId]/page.js`
 - `src/app/api/facilitator/learners/[id]/transcripts/route.js`
 - `src/app/facilitator/learners/[id]/transcripts/page.js`
 - `src/app/facilitator/learners/[id]/transcripts/EvidenceHistorySection.jsx`
@@ -324,3 +351,4 @@ Claim boundaries are absolute. Stage 8 does not claim causal learning attributio
 - `scripts/test-stage6-independent-mastery.mjs`
 - `scripts/test-stage7-retention.mjs`
 - `scripts/test-stage8-facilitator-reporting.mjs`
+- `scripts/test-follow-ups.mjs`

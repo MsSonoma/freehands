@@ -380,7 +380,8 @@ test('authorized reporting API returns a stable whitelist and filters foreign ro
   assert.equal(body.items[0].score.value, 90);
   const serialized = JSON.stringify(body);
   assert.doesNotMatch(serialized, /private-provider|private-model|raw_secret|malicious-other-user|response_value|correct_answer/i);
-  assert.deepEqual(Object.keys(body).sort(), ['enabled', 'items', 'learner', 'ok', 'pagination']);
+  assert.deepEqual(Object.keys(body).sort(), ['enabled', 'items', 'learner', 'ok', 'pagination', 'reviews']);
+  assert.deepEqual(body.reviews, []);
 });
 
 test('cross-account learner and lesson-key tampering fail before evidence reads', async () => {
