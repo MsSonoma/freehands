@@ -26,6 +26,8 @@ import {
   loadFollowUpRunState,
   normalizeFollowUpSettings,
   presentFollowUpItem,
+  publicAvailability,
+  publicRunState,
   recordFollowUpAssistance,
   respondToFollowUpItem,
   startFollowUpRun,
@@ -212,6 +214,24 @@ test('availability can show Daily and Weekly together without making either a le
   assert.ok(result.cards.every((card) => card.item_count <= WEEKLY_REVIEW_MAX_ITEMS))
 })
 
+test('public availability never exposes reserved review selections or item payloads', async () => {
+  const repository = createRepository()
+  const availability = await buildFollowUpAvailability({ repository, userId, learnerId, loadLesson, now, includePrivate: true })
+  assert.ok(availability.cards.some((card) => Array.isArray(card._selections)))
+
+  const publicResult = publicAvailability(availability)
+  assert.ok(publicResult.cards.length > 0)
+  for (const card of publicResult.cards) {
+    assert.equal(card._selections, undefined)
+    assert.equal(card.item_payload, undefined)
+    assert.equal(card.question, undefined)
+    assert.equal(card.choices, undefined)
+    assert.equal(card.expectedAny, undefined)
+    assert.equal(card.correct, undefined)
+    assert.equal(card.answer, undefined)
+  }
+})
+
 test('completing Daily does not consume Weekly and Weekly records prior Daily retrieval', async () => {
   const repository = createRepository()
   let availability = await buildFollowUpAvailability({ repository, userId, learnerId, loadLesson, now, includePrivate: true })
@@ -231,6 +251,58 @@ test('completing Daily does not consume Weekly and Weekly records prior Daily re
   const weeklyResult = await respondToFollowUpItem({ repository, userId, runId: weeklyRun.id, itemId: weeklyState.currentItem.id, response: '1/2', now })
   assert.equal(weeklyResult.result.review_outcome, WEEKLY_REVIEW_OUTCOMES.DEMONSTRATED)
   assert.equal(weeklyResult.result.prior_daily_retrieval_observed, true)
+})
+
+test('public run state exposes only the current sanitized item and hides future held-out payloads', async () => {
+  const repository = createRepository({
+    settings: { daily_followups_enabled: false },
+    evidenceEvents: [
+      anchor(),
+      anchor({
+        event_id: 'anchor-event-2',
+        mastery_cycle_id: 'cycle-2',
+        mastery_check_id: 'mastery-check-2',
+        concept_id: 'fractions:equivalence',
+      }),
+    ],
+  })
+  const availability = await buildFollowUpAvailability({ repository, userId, learnerId, loadLesson, now, includePrivate: true })
+  const weeklyCard = availability.cards.find((card) => card.review_type === REVIEW_TYPES.WEEKLY_REVIEW)
+  assert.ok(weeklyCard)
+  const run = await startFollowUpRun({ repository, userId, learnerId, card: weeklyCard, now })
+  const privateItems = repository.data.items.filter((item) => item.run_id === run.id)
+  assert.equal(privateItems.length, 2)
+  assert.deepEqual(privateItems.map((item) => item.item_payload.question), [
+    'Which fraction is one half?',
+    'True or false: 2/4 equals one half.',
+  ])
+  assert.equal(privateItems[0].item_payload.correct, 1)
+  assert.deepEqual(privateItems[0].item_payload.expectedAny, ['1/2'])
+
+  const state = await loadFollowUpRunState({ repository, userId, runId: run.id })
+  const publicState = publicRunState(state)
+  assert.equal(publicState.current_item.content.question, 'Which fraction is one half?')
+  assert.deepEqual(publicState.current_item.content.choices, ['3/4', '1/2'])
+  assert.equal(JSON.stringify(publicState).includes('True or false: 2/4 equals one half.'), false)
+  assert.equal(JSON.stringify(publicState).includes('"correct"'), false)
+  assert.equal(JSON.stringify(publicState).includes('expectedAny'), false)
+  assert.equal(JSON.stringify(publicState).includes('item_payload'), false)
+})
+
+test('resume returns the same authorized current item without exposing answers', async () => {
+  const repository = createRepository({ settings: { weekly_reviews_enabled: false } })
+  const availability = await buildFollowUpAvailability({ repository, userId, learnerId, loadLesson, now, includePrivate: true })
+  const run = await startFollowUpRun({ repository, userId, learnerId, card: availability.cards[0], now })
+  let state = await loadFollowUpRunState({ repository, userId, runId: run.id })
+  await presentFollowUpItem({ repository, userId, runId: run.id, itemId: state.currentItem.id, now })
+
+  state = await loadFollowUpRunState({ repository, userId, runId: run.id })
+  const resumed = publicRunState(state)
+  assert.equal(resumed.current_item.presented, true)
+  assert.equal(resumed.current_item.content.question, 'Name a fraction equal to one half.')
+  assert.equal(JSON.stringify(resumed).includes('expectedAny'), false)
+  assert.equal(JSON.stringify(resumed).includes('2/4'), false)
+  assert.equal(JSON.stringify(resumed).includes('item_payload'), false)
 })
 
 test('Repeat is non-disqualifying but answer reveal makes the first response assisted', async () => {
@@ -321,7 +393,11 @@ test('migration is additive, secure by default, and exposes no authenticated wri
   assert.match(migrationSource, /weekly_reviews_enabled boolean not null default false/)
   assert.match(migrationSource, /learning_review_runs_unique_cycle/)
   assert.match(migrationSource, /enable row level security/)
+  assert.match(migrationSource, /grant select on table public\.learning_review_runs to authenticated/)
   assert.match(migrationSource, /grant select on table public\.learning_review_events to authenticated/)
+  assert.doesNotMatch(migrationSource, /learning_review_items_select_own/)
+  assert.doesNotMatch(migrationSource, /learning_review_items for select/)
+  assert.doesNotMatch(migrationSource, /grant select on table public\.learning_review_items to authenticated/)
   assert.doesNotMatch(migrationSource, /grant (insert|update|delete)/i)
   assert.doesNotMatch(migrationSource, /for (insert|update|delete)/i)
 })

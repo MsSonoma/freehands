@@ -127,7 +127,7 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 - **Methods**: `GET` availability, `POST` with `action=start`, `PATCH` settings
 - **Auth**: Bearer token required; learner ownership is verified before reads or writes
 - **Selection**: Server time, profile timezone, source-backed evidence, deterministic identity, and durable run state are authoritative
-- **Privacy**: Responses omit answer keys, raw responses, private item payloads, service credentials, and unselected held-out items
+- **Privacy**: Responses omit answer keys, raw responses, private item payloads, service credentials, and unselected held-out items; availability cards never include reserved selections
 - **Settings**: Accepts only `daily_followups_enabled`, `weekly_reviews_enabled`, and a validated weekday
 
 ### `/api/learner/follow-ups/[runId]`
@@ -138,7 +138,7 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 - **Methods**: `GET` current state; `POST` `present`, `assist`, or `respond`
 - **Integrity**: Stable run/items, idempotent presentation/first-response/evaluation/result facts, and server-side answer evaluation
 - **Controls**: Repeat is non-disqualifying; answer reveal is assistance; disabled settings block new presentation but do not discard an already presented first-response opportunity
-- **Isolation**: Prior exposure is rechecked at presentation time; the route never creates lesson sessions or snapshots
+- **Isolation**: Prior exposure is rechecked at presentation time; the route returns only the sanitized current item and never exposes future review items or raw `item_payload`; it never creates lesson sessions or snapshots
 
 ### `/api/tts`
 **Purpose**: Text-to-speech conversion (Google TTS)  

@@ -168,7 +168,7 @@
       "/api/visual-aids",
       "/api/content-safety"
     ],
-    "last_updated": "2026-08-12T15:59:44Z",
+    "last_updated": "2026-08-12T16:39:34Z",
     "status": "canonical"
   },
   "mastery-evidence": {
@@ -215,7 +215,7 @@
       "learning_review_events",
       "daily-weekly-independence"
     ],
-    "last_updated": "2026-08-12T15:59:44Z",
+    "last_updated": "2026-08-12T16:39:34Z",
     "status": "active-development"
   },
   "portfolio-generation": {

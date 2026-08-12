@@ -170,18 +170,12 @@ create policy "learning_review_runs_select_own"
   on public.learning_review_runs for select
   using (auth.uid() = facilitator_id);
 
-drop policy if exists "learning_review_items_select_own" on public.learning_review_items;
-create policy "learning_review_items_select_own"
-  on public.learning_review_items for select
-  using (auth.uid() = facilitator_id);
-
 drop policy if exists "learning_review_events_select_own" on public.learning_review_events;
 create policy "learning_review_events_select_own"
   on public.learning_review_events for select
   using (auth.uid() = facilitator_id);
 
 grant select on table public.learning_review_runs to authenticated;
-grant select on table public.learning_review_items to authenticated;
 grant select on table public.learning_review_events to authenticated;
 
 comment on column public.learners.daily_followups_enabled is
