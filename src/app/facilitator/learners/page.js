@@ -559,8 +559,8 @@ export default function LearnersPage() {
 										gap: 6
 									}}
 								>
-									<span aria-hidden="true">R</span>
-									<span style={{ display: 'none' }} className="button-text-tablet">Review</span>
+									<span aria-hidden="true">🔁</span>
+									<span style={{ display: 'none' }} className="button-text-tablet">Reviews</span>
 								</button>
 								<button
 									onClick={(e) => {
