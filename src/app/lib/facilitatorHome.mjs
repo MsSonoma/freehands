@@ -13,6 +13,20 @@ export function lessonKeyForGenerated(lesson) {
   return lesson?.file ? `generated/${lesson.file}` : null
 }
 
+export function countEducatorApprovedLessons(lessons = []) {
+  if (!Array.isArray(lessons)) return 0
+  return lessons.filter((lesson) => lesson?.approved === true).length
+}
+
+export function countLearnerActiveLessons(learners = []) {
+  if (!Array.isArray(learners)) return 0
+  const activeKeys = new Set()
+  learners.forEach((learner) => {
+    Object.keys(normalizeApprovedLessons(learner?.approved_lessons)).forEach((key) => activeKeys.add(key))
+  })
+  return activeKeys.size
+}
+
 export function isRecoverablePreparationSnapshot(snapshot, learners = []) {
   if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return false
   if (Number(snapshot.version) !== FACILITATOR_PREPARATION_VERSION) return false

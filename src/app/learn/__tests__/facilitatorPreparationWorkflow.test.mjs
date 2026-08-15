@@ -7,7 +7,11 @@ import {
   FACILITATOR_PREPARATION_STAGES,
   canTransitionPreparationStage,
 } from '../../lib/facilitatorPreparation.mjs'
-import { resolveFacilitatorHomeDecision } from '../../lib/facilitatorHome.mjs'
+import {
+  countEducatorApprovedLessons,
+  countLearnerActiveLessons,
+  resolveFacilitatorHomeDecision,
+} from '../../lib/facilitatorHome.mjs'
 
 test('approval can advance from draft content review to session choice', () => {
   assert.equal(
@@ -34,6 +38,32 @@ test('facilitator home no longer describes an approved lesson as pending review'
   assert.equal(decision.label, 'Choose session option')
   assert.equal(decision.title, 'An approved lesson is waiting')
   assert.doesNotMatch(`${decision.label} ${decision.title}`, /delivery|review/i)
+})
+
+test('dashboard approved lesson count is educator approval, not learner-active availability', () => {
+  const generatedLessons = [
+    { file: 'approved-not-active.json', approved: true },
+    { file: 'draft-active-elsewhere.json', approved: false },
+    { file: 'missing-approval-flag.json' },
+  ]
+  const learners = [
+    {
+      id: 'learner-1',
+      approved_lessons: {
+        'generated/draft-active-elsewhere.json': true,
+        'generated/another-active.json': true,
+      },
+    },
+    {
+      id: 'learner-2',
+      approved_lessons: {
+        'generated/another-active.json': true,
+      },
+    },
+  ]
+
+  assert.equal(countEducatorApprovedLessons(generatedLessons), 1)
+  assert.equal(countLearnerActiveLessons(learners), 2)
 })
 
 test('review settings ownership does not use a hard facilitator_id OR query', () => {

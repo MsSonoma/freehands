@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
-import { resolveFacilitatorHomeDecision } from '@/app/lib/facilitatorHome.mjs'
+import { countEducatorApprovedLessons, resolveFacilitatorHomeDecision } from '@/app/lib/facilitatorHome.mjs'
 import {
   FACILITATOR_HOME_SHELL_STATES,
   loadFacilitatorHomeSchedules,
@@ -287,7 +287,7 @@ export default function FacilitatorPage() {
           <div className={styles.statusLabel}>Learners</div>
         </div>
         <div className={styles.statusItem}>
-          <strong className={styles.statusValue}>{lessonStatus === 'ready' ? generatedLessons.filter((lesson) => lesson.approved === true).length : '—'}</strong>
+          <strong className={styles.statusValue}>{lessonStatus === 'ready' ? countEducatorApprovedLessons(generatedLessons) : '—'}</strong>
           <div className={styles.statusLabel}>Approved lessons</div>
         </div>
         <div className={styles.statusItem}>
