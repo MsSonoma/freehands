@@ -211,6 +211,12 @@ export function buildCanonicalLessonIdentity({ file, ownerId, storagePath } = {}
 }
 
 export function canTransitionPreparationStage(fromStage, toStage) {
+  if (
+    fromStage === FACILITATOR_PREPARATION_STAGES.DRAFT
+    && toStage === FACILITATOR_PREPARATION_STAGES.DELIVERY
+  ) {
+    return true
+  }
   const fromIndex = STAGE_ORDER.indexOf(fromStage)
   const toIndex = STAGE_ORDER.indexOf(toStage)
   if (fromIndex === -1 || toIndex === -1) return false

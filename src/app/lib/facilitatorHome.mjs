@@ -72,8 +72,8 @@ function resolveSnapshotDecision(snapshot, learners, preparePath) {
     const lessonKey = snapshot.lessonIdentity?.lessonKey || ''
     return {
       kind: 'CHOOSE_DELIVERY',
-      label: 'Choose delivery',
-      title: 'An approved lesson needs a delivery choice',
+      label: 'Choose session option',
+      title: 'An approved lesson is waiting',
       body: snapshot.proposal?.generationSpec?.title || snapshot.lessonIdentity?.file || 'Choose when the learner receives this approved lesson.',
       href: lessonKey
         ? `${preparePath}?stage=DELIVERY&learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}`

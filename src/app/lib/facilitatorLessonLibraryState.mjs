@@ -63,8 +63,8 @@ export function resolveLibraryLessonState({
   const isExplicitGeneratedDraft = lesson?.isGenerated === true && lesson?.approved === false
   const isApprovedGenerated = lesson?.isGenerated === true && lesson?.approved === true
 
-  // Precedence: ownership/download state first; learner outcome state beats delivery state;
-  // scheduled state beats available; delivery decisions beat generic saved lessons.
+  // Precedence: ownership/download state first; learner outcome state beats session-choice state;
+  // scheduled state beats available; session choices beat generic saved lessons.
   if (isDownloadableNotOwned) {
     return {
       stateKey: LIBRARY_LESSON_STATES.DOWNLOADABLE,
@@ -156,7 +156,7 @@ export function resolveLibraryLessonState({
   if (isApprovedGenerated) {
     return {
       stateKey: LIBRARY_LESSON_STATES.APPROVED,
-      label: 'Approved - choose delivery',
+      label: 'Approved - choose session option',
       primaryActionType: LIBRARY_PRIMARY_ACTIONS.DELIVERY,
       preparationStage: 'DELIVERY',
       href: buildPreparationActionHref({ learnerId, lessonKey: canonicalKey, stage: 'DELIVERY' }),

@@ -40,7 +40,7 @@ async function contextFor(request, deps = {}) {
       ),
     };
   }
-  const repository = deps.repository || createSupabaseFollowUpRepository(auth.admin);
+  const repository = deps.repository || createSupabaseFollowUpRepository(auth.admin, { client: auth.client });
   const loadLesson = deps.loadLesson || ((lessonKey) => loadLessonForFollowUp({
     lessonKey,
     facilitatorId: auth.user.id,

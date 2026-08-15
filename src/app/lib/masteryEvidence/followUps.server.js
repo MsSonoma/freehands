@@ -32,34 +32,71 @@ export async function authenticateFollowUpRequest(request, deps = {}) {
   if (!token) return { user: null, error: 'Missing authorization', status: 401 };
   const clients = getFollowUpClients(deps);
   if (!clients) return { user: null, error: 'Follow-Ups are not configured', status: 503 };
-  const { data, error } = await clients.pub.auth.getUser(token);
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const createClientImpl = deps.createClientImpl || createClient;
+  const scopedClient = createClientImpl(url, anon, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false },
+  });
+  const { data, error } = await scopedClient.auth.getUser(token);
   if (error || !data?.user?.id) return { user: null, error: 'Unauthorized', status: 401 };
-  return { user: data.user, admin: clients.admin };
+  return { user: data.user, admin: clients.admin, client: scopedClient };
 }
 
-export function createSupabaseFollowUpRepository(admin) {
+const LEARNER_SETTINGS_SELECT = 'id,name,daily_followups_enabled,weekly_reviews_enabled,weekly_review_day';
+const LEARNER_OWNER_COLUMNS = ['facilitator_id', 'owner_id', 'user_id'];
+
+function isUndefinedColumnOrTable(error) {
+  const message = error?.message || '';
+  return (
+    error?.code === '42703'
+    || error?.code === '42P01'
+    || /column .* does not exist/i.test(message)
+    || /could not find .* column/i.test(message)
+    || /relation .* does not exist/i.test(message)
+    || /schema cache/i.test(message)
+  );
+}
+
+async function runLearnerSettingsQuery({ client, userId, learnerId, settings = null, ownerColumn = null }) {
+  let query = settings
+    ? client.from('learners').update(settings).eq('id', learnerId)
+    : client.from('learners').select(LEARNER_SETTINGS_SELECT).eq('id', learnerId);
+
+  if (ownerColumn) query = query.eq(ownerColumn, userId);
+  if (settings) query = query.select(LEARNER_SETTINGS_SELECT);
+  return query.maybeSingle();
+}
+
+async function ownedLearnerSettingsQuery({ admin, client, userId, learnerId, settings = null }) {
+  if (client) {
+    const scoped = await runLearnerSettingsQuery({ client, userId, learnerId, settings });
+    if (!scoped.error) return scoped.data || null;
+    if (!isUndefinedColumnOrTable(scoped.error)) {
+      throw new Error(scoped.error.message || 'Learner ownership check failed');
+    }
+  }
+
+  for (const ownerColumn of LEARNER_OWNER_COLUMNS) {
+    const owned = await runLearnerSettingsQuery({ client: admin, userId, learnerId, settings, ownerColumn });
+    if (!owned.error) return owned.data || null;
+    if (!isUndefinedColumnOrTable(owned.error)) {
+      throw new Error(owned.error.message || 'Learner ownership check failed');
+    }
+  }
+
+  return null;
+}
+
+export function createSupabaseFollowUpRepository(admin, { client = null } = {}) {
   return {
     async findOwnedLearner({ userId, learnerId }) {
-      const { data, error } = await admin
-        .from('learners')
-        .select('id,name,facilitator_id,daily_followups_enabled,weekly_reviews_enabled,weekly_review_day')
-        .eq('id', learnerId)
-        .or(`facilitator_id.eq.${userId},owner_id.eq.${userId},user_id.eq.${userId}`)
-        .maybeSingle();
-      if (error) throw new Error('Learner ownership check failed');
-      return data || null;
+      return ownedLearnerSettingsQuery({ admin, client, userId, learnerId });
     },
 
     async updateSettings({ userId, learnerId, settings }) {
-      const { data, error } = await admin
-        .from('learners')
-        .update(settings)
-        .eq('id', learnerId)
-        .or(`facilitator_id.eq.${userId},owner_id.eq.${userId},user_id.eq.${userId}`)
-        .select('id,daily_followups_enabled,weekly_reviews_enabled,weekly_review_day')
-        .maybeSingle();
-      if (error) throw new Error(error.message || 'Follow-Up settings update failed');
-      return data || null;
+      return ownedLearnerSettingsQuery({ admin, client, userId, learnerId, settings });
     },
 
     async getProfileTimezone({ userId }) {

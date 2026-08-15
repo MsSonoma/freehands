@@ -852,7 +852,7 @@ export default function FacilitatorLessonsPage() {
                 const primaryLabel = libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.REVIEW
                   ? 'Review lesson'
                   : libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.DELIVERY
-                    ? 'Choose delivery'
+                    ? 'Choose session option'
                     : libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.DOWNLOAD
                       ? 'Download'
                       : ''

@@ -3,16 +3,6 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    return await fetch(url, { ...options, signal: controller.signal })
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
 async function getSupabaseAdmin(){
   try {
     const { createClient } = await import('@supabase/supabase-js')
@@ -41,7 +31,6 @@ export async function GET(request){
     const authHeader = request.headers.get('authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       if (debug) {
-        // eslint-disable-next-line no-console
         console.log('[api/facilitator/lessons/list]', '401 missing bearer')
       }
       return NextResponse.json({ error: 'Unauthorized - login required' }, { status: 401 })
@@ -51,7 +40,6 @@ export async function GET(request){
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     if (authError || !user) {
       if (debug) {
-        // eslint-disable-next-line no-console
         console.log('[api/facilitator/lessons/list]', '401 invalid token', {
           authError: authError?.message || null,
           ms: Date.now() - startedAt,
@@ -63,7 +51,6 @@ export async function GET(request){
     const userId = user.id
 
     if (debug) {
-      // eslint-disable-next-line no-console
       console.log('[api/facilitator/lessons/list]', 'start', {
         userId,
         ms: Date.now() - startedAt,
@@ -82,14 +69,12 @@ export async function GET(request){
     
     if (listError) {
       if (debug) {
-        // eslint-disable-next-line no-console
         console.log('[api/facilitator/lessons/list]', 'list error', { message: listError?.message || String(listError) })
       }
       return NextResponse.json([])
     }
 
     if (debug) {
-      // eslint-disable-next-line no-console
       console.log('[api/facilitator/lessons/list]', 'listed', { count: (files || []).length, ms: Date.now() - startedAt })
     }
     
@@ -106,23 +91,20 @@ export async function GET(request){
       
       try {
         const oneStartedAt = Date.now()
-        // Bypass storage SDK and use direct REST API with service role
         const filePath = `facilitator-lessons/${userId}/${fileObj.name}`
-        const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/lessons/${filePath}`
-        
-        const response = await fetchWithTimeout(storageUrl, {
-          headers: {
-            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-            'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY
-          }
-        }, 15000)
-        
-        if (!response.ok) {
+        const downloadPromise = supabase.storage
+          .from('lessons')
+          .download(filePath)
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Lesson download timed out')), 15000)
+        })
+        const { data: fileData, error: downloadError } = await Promise.race([downloadPromise, timeoutPromise])
+
+        if (downloadError || !fileData) {
           if (debug) {
-            // eslint-disable-next-line no-console
-            console.log('[api/facilitator/lessons/list]', 'skip file (status)', {
+            console.log('[api/facilitator/lessons/list]', 'skip file (download)', {
               name: fileObj.name,
-              status: response.status,
+              message: downloadError?.message || null,
               ms: Date.now() - oneStartedAt,
             })
           }
@@ -130,7 +112,7 @@ export async function GET(request){
           continue
         }
         
-        const raw = await response.text()
+        const raw = await fileData.text()
         const js = JSON.parse(raw)
         const subj = (js.subject || '').toString().toLowerCase()
         const approved = js.approved === true
@@ -147,7 +129,6 @@ export async function GET(request){
         })
 
         if (debug) {
-          // eslint-disable-next-line no-console
           console.log('[api/facilitator/lessons/list]', 'loaded file', {
             name: fileObj.name,
             subject: subj || null,
@@ -156,7 +137,6 @@ export async function GET(request){
         }
       } catch (parseError) {
         if (debug) {
-          // eslint-disable-next-line no-console
           console.log('[api/facilitator/lessons/list]', 'skip file (error)', {
             name: fileObj?.name,
             message: parseError?.message || String(parseError),
@@ -166,13 +146,11 @@ export async function GET(request){
       }
     }
     if (debug) {
-      // eslint-disable-next-line no-console
       console.log('[api/facilitator/lessons/list]', 'done', { count: out.length, ms: Date.now() - startedAt })
     }
     return NextResponse.json(out)
   } catch (e) {
     if (debug) {
-      // eslint-disable-next-line no-console
       console.log('[api/facilitator/lessons/list]', 'ERR', { message: e?.message || String(e), ms: Date.now() - startedAt })
     }
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })

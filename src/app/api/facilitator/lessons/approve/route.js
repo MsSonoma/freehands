@@ -83,16 +83,39 @@ export async function POST(request, deps = {}){
       .upload(storagePath, blob, {
         contentType: 'application/json',
         upsert: true,
-        cacheControl: '3600'
+        cacheControl: '0'
       })
     
     if (updateError) {
       return NextResponse.json({ error: 'Failed to update lesson' }, { status: 500 })
     }
+
+    const { data: confirmedData, error: confirmError } = await supabase.storage
+      .from('lessons')
+      .download(storagePath)
+
+    if (confirmError || !confirmedData) {
+      return NextResponse.json({ error: 'Approval saved but could not be confirmed' }, { status: 500 })
+    }
+
+    const confirmedLesson = JSON.parse(await confirmedData.text())
+    if (confirmedLesson?.approved !== true) {
+      return NextResponse.json({ error: 'Approval did not persist' }, { status: 500 })
+    }
     
     const totalTime = Date.now() - startTime
     const identity = buildCanonicalLessonIdentity({ file, ownerId: user.id, storagePath })
-    return NextResponse.json({ ok:true, file, identity, lessonKey: identity?.lessonKey, storagePath, ownerId: user.id, timeMs: totalTime })
+    return NextResponse.json({
+      ok: true,
+      approved: true,
+      file,
+      identity,
+      lessonKey: identity?.lessonKey,
+      storagePath,
+      ownerId: user.id,
+      lesson: confirmedLesson,
+      timeMs: totalTime,
+    })
   } catch (e) {
     // General exception
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })

@@ -49,6 +49,158 @@ function splitLessonKey(lessonKey) {
   return { subject: subject || 'generated', file: rest.join('/') }
 }
 
+const INSTRUCTIONAL_REVIEW_SECTIONS = [
+  { key: 'truefalse', title: 'True/False' },
+  { key: 'multiplechoice', title: 'Multiple Choice' },
+  { key: 'fillintheblank', title: 'Fill in the Blank' },
+  { key: 'shortanswer', title: 'Short Answer' },
+  { key: 'worksheet', title: 'Worksheet' },
+]
+
+const RESERVED_REVIEW_SECTIONS = [
+  { key: 'baseline', title: 'Baseline Pool' },
+  { key: 'test', title: 'Reserved Test Pool' },
+  { key: 'retention', title: 'Delayed Retention Pool' },
+  { key: 'dailyFollowup', title: 'Daily Follow-Up Pool' },
+  { key: 'weeklyReview', title: 'Weekly Review Pool' },
+]
+
+function asArray(value) {
+  return Array.isArray(value) ? value.filter(Boolean) : []
+}
+
+function textValue(value) {
+  if (value == null) return ''
+  if (Array.isArray(value)) return value.map(textValue).filter(Boolean).join(', ')
+  if (typeof value === 'object') return ''
+  return String(value)
+}
+
+function questionText(item) {
+  return textValue(item?.question ?? item?.prompt ?? item?.Q ?? item?.q)
+}
+
+function expectedAnswers(item) {
+  const answers = []
+  ;[
+    item?.expectedAny,
+    item?.acceptableAnswers,
+    item?.acceptable_answers,
+    item?.expected,
+    item?.answer,
+    item?.A,
+    item?.a,
+  ].forEach((value) => {
+    if (Array.isArray(value)) answers.push(...value.map(textValue).filter(Boolean))
+    else {
+      const text = textValue(value)
+      if (text) answers.push(text)
+    }
+  })
+  if (Array.isArray(item?.choices) && Number.isInteger(item?.correct)) {
+    const correctChoice = item.choices[item.correct]
+    const text = textValue(correctChoice)
+    if (text) answers.push(text)
+  }
+  return Array.from(new Set(answers))
+}
+
+function supportText(item) {
+  const parts = []
+  ;[item?.hint, item?.hints, item?.explanation, item?.rationale].forEach((value) => {
+    const text = textValue(value)
+    if (text) parts.push(text)
+  })
+  return Array.from(new Set(parts))
+}
+
+function LessonContentReview({ lesson }) {
+  const title = lesson?.title || 'Lesson content'
+  const vocab = asArray(lesson?.vocab)
+  const instructionalSections = INSTRUCTIONAL_REVIEW_SECTIONS
+    .map((section) => ({ ...section, items: asArray(lesson?.[section.key]) }))
+    .filter((section) => section.items.length > 0)
+  const reservedSections = RESERVED_REVIEW_SECTIONS
+    .map((section) => ({ ...section, count: asArray(lesson?.[section.key]).length }))
+    .filter((section) => section.count > 0)
+
+  return (
+    <div style={{ display: 'grid', gap: 12 }}>
+      <div style={{ border: '1px solid #d1d5db', borderRadius: 8, padding: 12, background: '#fff' }}>
+        <strong>{title}</strong>
+        {lesson?.blurb && <p style={{ margin: '6px 0 0', color: '#4b5563', lineHeight: 1.5 }}>{lesson.blurb}</p>}
+        {lesson?.teachingNotes && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: '#374151' }}>Teaching Notes</div>
+            <p style={{ margin: '4px 0 0', color: '#4b5563', lineHeight: 1.5 }}>{lesson.teachingNotes}</p>
+          </div>
+        )}
+      </div>
+
+      {vocab.length > 0 && (
+        <section style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#fff' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 16 }}>Vocabulary</h3>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {vocab.map((entry, index) => (
+              <div key={`${entry?.term || 'term'}-${index}`} style={{ borderTop: index ? '1px solid #f3f4f6' : 'none', paddingTop: index ? 8 : 0 }}>
+                <strong>{entry?.term || `Term ${index + 1}`}</strong>
+                {entry?.definition && <p style={{ margin: '3px 0 0', color: '#4b5563' }}>{entry.definition}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {instructionalSections.map((section) => (
+        <section key={section.key} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#fff' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 16 }}>{section.title}</h3>
+          <div style={{ display: 'grid', gap: 10 }}>
+            {section.items.map((item, index) => {
+              const answers = expectedAnswers(item)
+              const support = supportText(item)
+              return (
+                <div key={`${section.key}-${index}`} style={{ borderTop: index ? '1px solid #f3f4f6' : 'none', paddingTop: index ? 10 : 0 }}>
+                  <div style={{ fontWeight: 700, color: '#111827' }}>{index + 1}. {questionText(item) || 'Question text unavailable'}</div>
+                  {Array.isArray(item?.choices) && item.choices.length > 0 && (
+                    <ol style={{ margin: '6px 0 0', paddingLeft: 22, color: '#374151' }}>
+                      {item.choices.map((choice, choiceIndex) => (
+                        <li key={`${section.key}-${index}-${choiceIndex}`}>{textValue(choice)}</li>
+                      ))}
+                    </ol>
+                  )}
+                  {answers.length > 0 && (
+                    <p style={{ margin: '6px 0 0', color: '#065f46' }}>
+                      <strong>Expected answer:</strong> {answers.join('; ')}
+                    </p>
+                  )}
+                  {support.length > 0 && (
+                    <p style={{ margin: '6px 0 0', color: '#4b5563' }}>
+                      <strong>Hint/explanation:</strong> {support.join(' ')}
+                    </p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      ))}
+
+      {reservedSections.length > 0 && (
+        <section style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#f9fafb' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 16 }}>Reserved Assessment Pools</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {reservedSections.map((section) => (
+              <span key={section.key} style={{ border: '1px solid #d1d5db', borderRadius: 999, padding: '4px 8px', background: '#fff', fontSize: 13 }}>
+                {section.title}: {section.count}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  )
+}
+
 export default function FacilitatorPreparePage() {
   const router = useRouter()
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: 'required' })
@@ -71,6 +223,8 @@ export default function FacilitatorPreparePage() {
   const [intentSnapshot, setIntentSnapshot] = useState(null)
   const [lessonIdentity, setLessonIdentity] = useState(null)
   const [lessonDraft, setLessonDraft] = useState(null)
+  const [lessonContentLoading, setLessonContentLoading] = useState(false)
+  const [lessonContentError, setLessonContentError] = useState('')
   const [scheduleDate, setScheduleDate] = useState(todayDate())
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
@@ -166,6 +320,36 @@ export default function FacilitatorPreparePage() {
     return () => { cancelled = true }
   }, [isAuthenticated, pinChecked])
 
+  useEffect(() => {
+    if (!pinChecked || !isAuthenticated || !lessonIdentity?.file) return
+    if (![STAGES.DRAFT, STAGES.DELIVERY].includes(stage)) return
+    if (lessonDraft?.__file === lessonIdentity.file) return
+    let cancelled = false
+    ;(async () => {
+      setLessonContentLoading(true)
+      setLessonContentError('')
+      try {
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token) throw new Error('Sign in required')
+        const params = new URLSearchParams({ file: lessonIdentity.file })
+        const response = await fetch(`/api/facilitator/lessons/get?${params}`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const json = await response.json().catch(() => ({}))
+        if (!response.ok) throw new Error(json?.error || 'Could not load lesson content')
+        if (!cancelled) setLessonDraft({ ...json, __file: lessonIdentity.file })
+      } catch (error) {
+        if (!cancelled) setLessonContentError(error?.message || 'Could not load lesson content')
+      } finally {
+        if (!cancelled) setLessonContentLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [isAuthenticated, lessonDraft?.__file, lessonIdentity?.file, pinChecked, stage])
+
   const selectedLearner = useMemo(() => learners.find((learner) => learner.id === learnerId) || null, [learners, learnerId])
   const hasLearnerRecovery = !!recoveryStage && !!missingLearnerId
 
@@ -249,7 +433,7 @@ export default function FacilitatorPreparePage() {
       const json = await response.json().catch(() => ({}))
       if (!response.ok || !json?.identity) throw new Error(json?.error || 'Lesson generation failed')
       setLessonIdentity(json.identity)
-      setLessonDraft(json.lesson || null)
+      setLessonDraft(json.lesson ? { ...json.lesson, __file: json.identity.file } : null)
       setStage(STAGES.DRAFT)
       persist(STAGES.DRAFT, { lessonIdentity: json.identity })
     } catch (error) {
@@ -277,9 +461,10 @@ export default function FacilitatorPreparePage() {
         body: JSON.stringify({ file: lessonIdentity.file }),
       })
       const json = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(json?.error || 'Approval failed')
+      if (!response.ok || json?.approved !== true) throw new Error(json?.error || 'Approval failed')
       const identity = json.identity || lessonIdentity
       setLessonIdentity(identity)
+      if (json.lesson) setLessonDraft({ ...json.lesson, __file: identity.file })
       moveStage(STAGES.DELIVERY, { lessonIdentity: identity })
     } catch (error) {
       setMessage(error?.message || 'Approval failed')
@@ -289,7 +474,7 @@ export default function FacilitatorPreparePage() {
   }
 
   async function setAvailability(available = true) {
-    if (!selectedLearner) throw new Error('Choose a learner before choosing delivery.')
+    if (!selectedLearner) throw new Error('Choose a learner before choosing a session option.')
     const token = await getToken()
     const response = await fetch('/api/facilitator/learners/lesson-availability', {
       method: 'POST',
@@ -364,7 +549,7 @@ export default function FacilitatorPreparePage() {
 
   function saveForLater() {
     if (!selectedLearner) {
-      setMessage('Choose a learner before saving this delivery decision.')
+      setMessage('Choose a learner before saving this session choice.')
       return
     }
     setMessage('The lesson is approved and saved. It is not available or scheduled yet.')
@@ -439,11 +624,11 @@ export default function FacilitatorPreparePage() {
           gateType={gateType || 'auth'}
           feature="Lesson Preparation"
           emoji="🔒"
-          description="Sign in to prepare, approve, and deliver lessons for your learners."
+          description="Sign in to prepare, approve, and start learning sessions for your learners."
           benefits={[
             'Restore saved lesson preparation',
             'Generate and review learner-specific lessons',
-            'Choose delivery after approving lesson content',
+            'Choose a session option after approving lesson content',
           ]}
         />
       </main>
@@ -515,7 +700,7 @@ export default function FacilitatorPreparePage() {
           </label>
           <div style={{ border: '1px solid #f0c9c0', borderRadius: 8, padding: 12, background: '#fff' }}>
             <strong>{proposal?.generationSpec?.title || lessonIdentity?.file || 'Saved lesson'}</strong>
-            <p style={{ marginBottom: 0, color: '#4b5563' }}>{recoveryStage === STAGES.DELIVERY ? 'Delivery, scheduling, and Start now are disabled until a learner is selected.' : 'Approval is disabled until a learner is selected.'}</p>
+            <p style={{ marginBottom: 0, color: '#4b5563' }}>{recoveryStage === STAGES.DELIVERY ? 'Session choices, scheduling, and Start now are disabled until a learner is selected.' : 'Approval is disabled until a learner is selected.'}</p>
           </div>
           <button type="submit" disabled={busy || !learnerId} style={{ ...button, opacity: busy || !learnerId ? 0.7 : 1 }}>Continue with selected learner</button>
         </form>
@@ -548,13 +733,19 @@ export default function FacilitatorPreparePage() {
         <section style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>Review draft</h2>
           {selectedLearner && <p style={{ margin: 0, color: '#374151', fontWeight: 700 }}>Learner: {selectedLearner.name}</p>}
-          <p style={{ margin: 0, color: '#4b5563' }}>This lesson is a draft. The learner will not see it until you approve the content and choose delivery.</p>
-          <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#f9fafb' }}>
-            <strong>{lessonDraft?.title || proposal?.generationSpec?.title || lessonIdentity.file}</strong>
-            <p style={{ marginBottom: 0 }}>{lessonDraft?.blurb || proposal?.generationSpec?.description}</p>
-          </div>
+          <p style={{ margin: 0, color: '#4b5563' }}>This lesson is a draft. The learner will not see it until you approve the content and choose a session option.</p>
+          {lessonContentLoading && <p style={{ margin: 0, color: '#6b7280' }}>Loading lesson content...</p>}
+          {lessonContentError && <p role="alert" style={{ margin: 0, color: '#b91c1c' }}>{lessonContentError}</p>}
+          {lessonDraft ? (
+            <LessonContentReview lesson={lessonDraft} />
+          ) : (
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#f9fafb' }}>
+              <strong>{proposal?.generationSpec?.title || lessonIdentity.file}</strong>
+              <p style={{ marginBottom: 0 }}>{proposal?.generationSpec?.description || 'Lesson content is still loading.'}</p>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button type="button" onClick={approveLesson} disabled={busy || !selectedLearner} style={button}>{busy ? 'Approving...' : 'Approve lesson content'}</button>
+            <button type="button" onClick={approveLesson} disabled={busy || !selectedLearner || lessonContentLoading || !lessonDraft} style={button}>{busy ? 'Approving...' : 'Approve lesson content'}</button>
             <Link href={`/facilitator/lessons/edit?key=${encodeURIComponent(lessonIdentity.lessonKey)}`} style={{ ...secondaryButton, textDecoration: 'none' }}>Edit draft</Link>
             <button type="button" onClick={saveDraftAndLeave} style={secondaryButton}>Save and leave</button>
             <button type="button" onClick={abandonFlow} style={secondaryButton}>Discard draft setup</button>
@@ -564,7 +755,7 @@ export default function FacilitatorPreparePage() {
 
       {stage === STAGES.DELIVERY && lessonIdentity && !hasLearnerRecovery && (
         <section style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
-          <h2 style={{ margin: 0, fontSize: 18 }}>Choose delivery</h2>
+          <h2 style={{ margin: 0, fontSize: 18 }}>Choose session option</h2>
           {selectedLearner && <p style={{ margin: 0, color: '#374151', fontWeight: 700 }}>Learner: {selectedLearner.name}</p>}
           <p style={{ margin: 0, color: '#4b5563' }}>The lesson content is approved. Choose when the learner receives it.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
