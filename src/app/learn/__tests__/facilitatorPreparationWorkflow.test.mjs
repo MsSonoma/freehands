@@ -99,3 +99,14 @@ test('approval page renders lesson content review before the approve action', ()
   assert.ok(buttonIndex > 0)
   assert.ok(contentIndex < buttonIndex)
 })
+
+test('approval page keeps long lesson review scrollable above visible controls', () => {
+  const source = fs.readFileSync(
+    path.resolve('src', 'app', 'facilitator', 'prepare', 'page.js'),
+    'utf8',
+  )
+
+  assert.match(source, /maxHeight: 'calc\(100vh - 120px\)'/)
+  assert.match(source, /overflowY: 'auto'/)
+  assert.match(source, /flexShrink: 0/)
+})

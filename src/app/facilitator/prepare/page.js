@@ -730,21 +730,25 @@ export default function FacilitatorPreparePage() {
       )}
 
       {stage === STAGES.DRAFT && lessonIdentity && !hasLearnerRecovery && (
-        <section style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 'calc(100vh - 120px)', minHeight: 0, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>Review draft</h2>
           {selectedLearner && <p style={{ margin: 0, color: '#374151', fontWeight: 700 }}>Learner: {selectedLearner.name}</p>}
           <p style={{ margin: 0, color: '#4b5563' }}>This lesson is a draft. The learner will not see it until you approve the content and choose a session option.</p>
           {lessonContentLoading && <p style={{ margin: 0, color: '#6b7280' }}>Loading lesson content...</p>}
           {lessonContentError && <p role="alert" style={{ margin: 0, color: '#b91c1c' }}>{lessonContentError}</p>}
-          {lessonDraft ? (
-            <LessonContentReview lesson={lessonDraft} />
-          ) : (
-            <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#f9fafb' }}>
-              <strong>{proposal?.generationSpec?.title || lessonIdentity.file}</strong>
-              <p style={{ marginBottom: 0 }}>{proposal?.generationSpec?.description || 'Lesson content is still loading.'}</p>
+          <div style={{ minHeight: 180, overflowY: 'auto', paddingRight: 4, border: '1px solid #e5e7eb', borderRadius: 8, background: '#f9fafb' }}>
+            <div style={{ padding: 12 }}>
+              {lessonDraft ? (
+                <LessonContentReview lesson={lessonDraft} />
+              ) : (
+                <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#f9fafb' }}>
+                  <strong>{proposal?.generationSpec?.title || lessonIdentity.file}</strong>
+                  <p style={{ marginBottom: 0 }}>{proposal?.generationSpec?.description || 'Lesson content is still loading.'}</p>
+                </div>
+              )}
             </div>
-          )}
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', flexShrink: 0, borderTop: '1px solid #e5e7eb', paddingTop: 14, background: '#fff' }}>
             <button type="button" onClick={approveLesson} disabled={busy || !selectedLearner || lessonContentLoading || !lessonDraft} style={button}>{busy ? 'Approving...' : 'Approve lesson content'}</button>
             <Link href={`/facilitator/lessons/edit?key=${encodeURIComponent(lessonIdentity.lessonKey)}`} style={{ ...secondaryButton, textDecoration: 'none' }}>Edit draft</Link>
             <button type="button" onClick={saveDraftAndLeave} style={secondaryButton}>Save and leave</button>
