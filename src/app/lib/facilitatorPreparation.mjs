@@ -224,6 +224,17 @@ export function canTransitionPreparationStage(fromStage, toStage) {
   return toIndex === fromIndex || toIndex === fromIndex + 1 || toStage === FACILITATOR_PREPARATION_STAGES.NEED
 }
 
+export function resolveConfirmedLessonApproval(response = {}, fallbackIdentity = null) {
+  if (response?.approved !== true || response?.lesson?.approved !== true) return null
+  const lessonIdentity = response.identity || fallbackIdentity
+  if (!lessonIdentity?.file || !lessonIdentity?.lessonKey) return null
+  return {
+    stage: FACILITATOR_PREPARATION_STAGES.DELIVERY,
+    lessonIdentity,
+    lesson: response.lesson,
+  }
+}
+
 export function snapshotLearnerId(snapshot = {}) {
   return cleanString(snapshot?.learnerId || snapshot?.intent?.learnerId || snapshot?.proposal?.learnerId, 120)
 }

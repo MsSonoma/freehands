@@ -55,12 +55,9 @@ export async function POST(request, deps = {}){
   if (!file || file.includes('..') || file.includes('/') || file.includes('\\\\')) return NextResponse.json({ error:'Invalid file' }, { status: 400 })
 
   try {
-    // Download from Supabase Storage
     const storagePath = `facilitator-lessons/${user.id}/${file}`
-    const downloadStart = Date.now()
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from('lessons')
-      .download(storagePath)
+    const lessonStorage = supabase.storage.from('lessons')
+    const { data: fileData, error: downloadError } = await lessonStorage.download(storagePath)
     
     if (downloadError || !fileData) {
       return NextResponse.json({ error:'Lesson not found in storage' }, { status: 404 })
@@ -73,16 +70,12 @@ export async function POST(request, deps = {}){
     js.approved = true
     if (js.needsUpdate) delete js.needsUpdate
     
-    // Update the original file to mark it as approved
-    const uploadStart = Date.now()
     const updatedContent = JSON.stringify(js, null, 2)
-    const blob = new Blob([updatedContent], { type: 'application/json' })
-    
-    const { error: updateError } = await supabase.storage
-      .from('lessons')
-      .upload(storagePath, blob, {
+
+    // This object already exists. Use Storage's replacement operation so the
+    // successful write and the canonical readback refer to the same version.
+    const { error: updateError } = await lessonStorage.update(storagePath, updatedContent, {
         contentType: 'application/json',
-        upsert: true,
         cacheControl: '0'
       })
     
@@ -90,9 +83,7 @@ export async function POST(request, deps = {}){
       return NextResponse.json({ error: 'Failed to update lesson' }, { status: 500 })
     }
 
-    const { data: confirmedData, error: confirmError } = await supabase.storage
-      .from('lessons')
-      .download(storagePath)
+    const { data: confirmedData, error: confirmError } = await lessonStorage.download(storagePath)
 
     if (confirmError || !confirmedData) {
       return NextResponse.json({ error: 'Approval saved but could not be confirmed' }, { status: 500 })

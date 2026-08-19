@@ -6,7 +6,9 @@ import test from 'node:test'
 import {
   FACILITATOR_PREPARATION_STAGES,
   canTransitionPreparationStage,
+  resolveConfirmedLessonApproval,
 } from '../../lib/facilitatorPreparation.mjs'
+import { POST as approveLessonRequest } from '../../api/facilitator/lessons/approve/route.js'
 import {
   countEducatorApprovedLessons,
   countLearnerActiveLessons,
@@ -77,14 +79,80 @@ test('review settings ownership does not use a hard facilitator_id OR query', ()
   assert.match(source, /isUndefinedColumnOrTable/)
 })
 
-test('approval route confirms persisted approved state before returning success', () => {
-  const source = fs.readFileSync(
-    path.resolve('src', 'app', 'api', 'facilitator', 'lessons', 'approve', 'route.js'),
-    'utf8',
-  )
+test('fresh draft is approved in canonical storage on the first request and preparation advances', async () => {
+  const ownerId = 'facilitator-1'
+  const file = 'fresh-draft.json'
+  const canonicalPath = `facilitator-lessons/${ownerId}/${file}`
+  const objects = new Map([[canonicalPath, JSON.stringify({ title: 'Fresh draft', approved: false, needsUpdate: true })]])
+  let delayedUpload = null
+  const paths = []
+  const lessonStorage = {
+    async download(storagePath) {
+      paths.push(['download', storagePath])
+      return { data: new Blob([objects.get(storagePath)]), error: null }
+    },
+    async upload(storagePath, content) {
+      paths.push(['upload', storagePath])
+      delayedUpload = [storagePath, await content.text()]
+      return { data: { path: storagePath }, error: null }
+    },
+    async update(storagePath, content) {
+      paths.push(['update', storagePath])
+      objects.set(storagePath, String(content))
+      return { data: { path: storagePath }, error: null }
+    },
+  }
+  const supabase = {
+    auth: { getUser: async () => ({ data: { user: { id: ownerId } } }) },
+    from: () => ({
+      select() { return this },
+      eq() { return this },
+      maybeSingle: async () => ({ data: { plan_tier: 'pro' } }),
+    }),
+    storage: {
+      from(bucket) {
+        assert.equal(bucket, 'lessons')
+        return lessonStorage
+      },
+    },
+  }
+  const createClientImpl = () => supabase
+  const request = () => new Request('http://localhost/api/facilitator/lessons/approve', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file }),
+  })
 
-  assert.match(source, /confirmedLesson\?\.approved !== true/)
-  assert.match(source, /approved: true/)
+  const firstResponse = await approveLessonRequest(request(), { createClientImpl })
+  const firstJson = await firstResponse.json()
+  const storedAfterFirstRequest = JSON.parse(objects.get(canonicalPath))
+  const approval = resolveConfirmedLessonApproval(firstJson)
+
+  assert.equal(firstResponse.status, 200)
+  assert.equal(firstJson.approved, true)
+  assert.equal(firstJson.lesson.approved, true)
+  assert.equal(storedAfterFirstRequest.approved, true)
+  assert.equal('needsUpdate' in storedAfterFirstRequest, false)
+  assert.deepEqual(paths, [
+    ['download', canonicalPath],
+    ['update', canonicalPath],
+    ['download', canonicalPath],
+  ])
+  assert.equal(delayedUpload, null)
+  assert.equal(approval?.stage, FACILITATOR_PREPARATION_STAGES.DELIVERY)
+  assert.equal(approval?.lessonIdentity?.storagePath, canonicalPath)
+
+  paths.length = 0
+  const secondResponse = await approveLessonRequest(request(), { createClientImpl })
+  const secondJson = await secondResponse.json()
+  assert.equal(secondResponse.status, 200)
+  assert.equal(secondJson.approved, true)
+  assert.equal(JSON.parse(objects.get(canonicalPath)).approved, true)
+  assert.deepEqual(paths, [
+    ['download', canonicalPath],
+    ['update', canonicalPath],
+    ['download', canonicalPath],
+  ])
 })
 
 test('approval page renders lesson content review before the approve action', () => {

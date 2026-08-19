@@ -14,6 +14,7 @@ import {
   FACILITATOR_PREPARATION_VERSION,
   canTransitionPreparationStage,
   reassignPreparationSnapshotLearner,
+  resolveConfirmedLessonApproval,
   resolvePreparationLearnerRecovery,
 } from '@/app/lib/facilitatorPreparation.mjs'
 import { clearPreparationSnapshot, readPreparationSnapshot, writePreparationSnapshot } from './preparationSnapshot'
@@ -461,11 +462,11 @@ export default function FacilitatorPreparePage() {
         body: JSON.stringify({ file: lessonIdentity.file }),
       })
       const json = await response.json().catch(() => ({}))
-      if (!response.ok || json?.approved !== true) throw new Error(json?.error || 'Approval failed')
-      const identity = json.identity || lessonIdentity
-      setLessonIdentity(identity)
-      if (json.lesson) setLessonDraft({ ...json.lesson, __file: identity.file })
-      moveStage(STAGES.DELIVERY, { lessonIdentity: identity })
+      const approval = resolveConfirmedLessonApproval(json, lessonIdentity)
+      if (!response.ok || !approval) throw new Error(json?.error || 'Approval failed')
+      setLessonIdentity(approval.lessonIdentity)
+      setLessonDraft({ ...approval.lesson, __file: approval.lessonIdentity.file })
+      moveStage(approval.stage, { lessonIdentity: approval.lessonIdentity })
     } catch (error) {
       setMessage(error?.message || 'Approval failed')
     } finally {
