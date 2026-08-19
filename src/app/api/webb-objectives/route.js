@@ -67,7 +67,7 @@ async function generateObjectives(apiKey, lesson) {
 
 // ── Check whether the student just demonstrated any uncompleted objectives ────
 // Returns: { newlyCompleted: number[], qualifyingText: Record<number, string> }
-async function checkObjectives(apiKey, objectives, completedIndices, conversation, quick = false) {
+async function checkObjectives(apiKey, objectives, completedIndices, conversation, lesson = {}, quick = false) {
   const incomplete = objectives
     .map((obj, i) => ({ obj, i }))
     .filter(({ i }) => !completedIndices.includes(i))
@@ -85,40 +85,68 @@ async function checkObjectives(apiKey, objectives, completedIndices, conversatio
   if (!recentTurns.length) return { newlyCompleted: [], qualifyingText: {} }
 
   const system =
-    `You are checking whether a student has demonstrated an understanding of lesson objectives ` +
-    `in their own words — NOT just from hearing the teacher say it. ` +
-    `The student must use their own words, paraphrase, or give an example. ` +
-    `They do NOT need to use exact terminology — a clear conceptual demonstration counts. ` +
-    `For each demonstrated objective, output one line: INDEX|SENTENCE_OK|STUDENT_QUOTE ` +
-    `where INDEX is the objective number, SENTENCE_OK is "yes" if the student quote is a complete sentence suitable for use in an essay (subject + predicate, full thought), or "no" if it is a fragment, single word, or phrase, and STUDENT_QUOTE is the verbatim student sentence(s) that best demonstrate it. ` +
-    `If no objectives are demonstrated, return "none".`
+    `You are evaluating whether a student has mastered lesson objectives. ` +
+    `Evaluate meaning flexibly, but correctness strictly. ` +
+    `The student may use any age-appropriate wording, paraphrase, explanation, or valid example. NEVER require exact terminology, a memorized definition, or wording that matches the lesson. ` +
+    `Judge semantic meaning, not textual similarity. A materially correct explanation that differs from the lesson wording should pass. ` +
+    `An objective is correct only when the student's own words materially and accurately demonstrate the objective, are sufficient to show understanding, and contain no material misconception or contradiction. ` +
+    `Do not infer missing understanding merely because a response is related to the topic. Partial, vague, guessed, or conceptually wrong answers are NOT complete. ` +
+    `Use the instructional lesson context to help judge meaning and factual or conceptual correctness, never as a required answer key. ` +
+    `For each remaining objective that the recent student messages address enough to evaluate, output one line: INDEX|ACCURACY|SENTENCE_OK|STUDENT_QUOTE ` +
+    `where ACCURACY is exactly "correct", "partial", or "incorrect". Judge ACCURACY from conceptual meaning alone, independently of grammar or sentence form. A fragment may be ACCURACY "correct" when it contains the full materially correct concept; SENTENCE_OK must separately reject the fragment. Never downgrade ACCURACY merely because the response is not a complete sentence or has poor grammar. ` +
+    `SENTENCE_OK is "yes" only when the student's quoted response is a complete, grammatically coherent sentence suitable for the child's essay with at most minor spelling, capitalization, or punctuation fixes. ` +
+    `Use SENTENCE_OK "no" for a fragment, single word, phrase, materially broken grammar, garbled or repeated wording, or anything that would require rephrasing, restructuring, or adding missing words. ` +
+    `STUDENT_QUOTE must contain the student's verbatim sentence or sentences relevant to that objective. ` +
+    `If a response contains a material contradiction or misconception, do not cherry-pick one correct phrase and call the objective correct. ` +
+    `If no remaining objective is addressed enough to evaluate, return "none".`
 
   const objList = incomplete.map(({ obj, i }) => `${i}: ${obj}`).join('\n')
   const studentSaid = recentTurns.map(t => `Student: "${t.text}"`).join('\n')
+  const lessonContext = JSON.stringify(lesson || {})
 
   const raw = await callGPT(apiKey, system,
-    `Remaining objectives (number: text):\n${objList}\n\nRecent student messages:\n${studentSaid}`,
+    `Instructional lesson context (use for meaning and correctness, never as required wording):\n${lessonContext}\n\nRemaining objectives (number: text):\n${objList}\n\nRecent student messages:\n${studentSaid}`,
     300, 0)
 
   const newlyCompleted = []
   const qualifyingText = {}
   const sentenceQuality = {}
+  const needsSentence = []
+  const evaluationStatus = {}
 
   for (const line of raw.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.toLowerCase() === 'none') continue
-    const parts = trimmed.split('|')
-    if (parts.length < 2) continue
-    const n = parseInt(parts[0].trim(), 10)
-    const sentenceOk = (parts[1]?.trim() || '').toLowerCase() === 'yes'
-    const quote = parts.slice(2).join('|').trim()
-    if (isNaN(n) || completedIndices.includes(n) || !objectives[n]) continue
 
-    newlyCompleted.push(n)
-    if (quote) qualifyingText[n] = quote
+    const parts = trimmed.split('|')
+    if (parts.length < 4) continue
+
+    const n = parseInt(parts[0].trim(), 10)
+    const accuracy = (parts[1]?.trim() || '').toLowerCase()
+    const sentenceOk = (parts[2]?.trim() || '').toLowerCase() === 'yes'
+    const quote = parts.slice(3).join('|').trim()
+
+    if (isNaN(n) || completedIndices.includes(n) || !objectives[n]) continue
+    if (!['correct', 'partial', 'incorrect'].includes(accuracy)) continue
+
+    evaluationStatus[n] = accuracy
     sentenceQuality[n] = sentenceOk
+
+    if (accuracy === 'correct' && sentenceOk) {
+      newlyCompleted.push(n)
+      if (quote) qualifyingText[n] = quote
+    } else if (accuracy === 'correct' && !sentenceOk) {
+      needsSentence.push(n)
+    }
   }
-  return { newlyCompleted, qualifyingText, sentenceQuality }
+
+  return {
+    newlyCompleted,
+    qualifyingText,
+    sentenceQuality,
+    needsSentence,
+    evaluationStatus
+  }
 }
 
 // ── Check if a student's text is a complete sentence usable in an essay ───────
@@ -142,7 +170,7 @@ async function generateEssay(apiKey, objectives, responses, lesson) {
   const system =
     `You are a copy editor, NOT a writer. Your job is to arrange a child's spoken answers into essay form WITHOUT changing what they said. ` +
     `WHAT YOU ARE ALLOWED TO DO (nothing else): ` +
-    `(1) Copy the student's exact words into essay paragraphs. ` +
+    `(1) Copy the student's exact words into essay paragraphs. If the exact same student sentence appears for more than one objective, include that sentence only once. ` +
     `(2) Fix only clear spelling errors (e.g. "beleive" → "believe"). ` +
     `(3) Fix only obvious grammar errors that change nothing else: missing end punctuation, wrong capitalization, or a broken verb agreement (e.g. "they was" → "they were"). ` +
     `(4) Add only the tiniest connective glue between the student's sentences WHEN needed — short words or phrases like "also", "and", "because", "for example", or "another thing is". ` +
@@ -173,14 +201,28 @@ export async function POST(req) {
     }
 
     if (body.action === 'check') {
-      const { newlyCompleted, qualifyingText, sentenceQuality } = await checkObjectives(
+      const {
+        newlyCompleted,
+        qualifyingText,
+        sentenceQuality,
+        needsSentence,
+        evaluationStatus,
+      } = await checkObjectives(
         apiKey,
-        body.objectives    || [],
+        body.objectives || [],
         body.completedIndices || [],
-        body.conversation  || [],
-        body.quick         || false,
+        body.conversation || [],
+        buildInstructionalLessonView(body.lesson || {}),
+        body.quick || false,
       )
-      return NextResponse.json({ newlyCompleted, qualifyingText, sentenceQuality })
+
+      return NextResponse.json({
+        newlyCompleted,
+        qualifyingText,
+        sentenceQuality,
+        needsSentence,
+        evaluationStatus,
+      })
     }
 
     if (body.action === 'check-sentence') {

@@ -34,7 +34,7 @@ function buildResearchSystem(lesson, targetObjective, media) {
   return lines.join('\n')
 }
 
-function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, needSentenceForObj = null) {
+function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, needSentenceForObj = null, masteryStatus = null) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
@@ -87,9 +87,19 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
       remainingObjectives.slice(0, 6).map((o, i) => `${i + 1}. ${o}`).join('\n'),
       `IMPORTANT — End EVERY reply with ONE focused question that steers the student toward explaining goal #1 in their own words.`,
       `- Do NOT wait for a video or article. Ask about goal #1 in every response until the student demonstrates it.`,
-      `- SELF-CHECK: Before writing your question, read the student's most recent message. If it already demonstrates understanding of goal #1 (even partially or informally), treat goal #1 as complete RIGHT NOW — acknowledge it warmly and immediately probe goal #2 instead. Do NOT ask about goal #1 again once the student has answered it.`,
+      `- SELF-CHECK: Treat the remaining-goals list above as authoritative. Do NOT independently declare a goal complete, and do NOT move on merely because an answer is related, partial, or informal. Flexible child wording is welcome, but the meaning must be materially correct. If the latest answer is partial, vague, or contains a misconception, acknowledge what is right without calling the answer correct, briefly teach or correct the missing point, and ask the student to try again in their own words. Never praise an incorrect answer as correct. Stay on goal #1 until it disappears from the remaining-goals list.`,
       `- Bridge naturally from what the student just said: "That's interesting! Can you also tell me..." or "Speaking of that, what do you know about..."`,
       `- Never use the words "objective", "goal", or "check". Sound warm and curious, not like a quiz.`,
+    )
+  }
+
+  if (masteryStatus === 'partial') {
+    lines.push(
+      `\nThe mastery evaluator has already determined that the student's latest response to goal #1 is PARTIAL. Treat that classification as authoritative; do not re-grade it. Identify and acknowledge the specific part that is actually correct, but do not imply that the whole answer is correct. Briefly teach the missing or unclear part, then ask the student to try the idea again in their own words. Keep the tone warm and matter-of-fact, not congratulatory.`,
+    )
+  } else if (masteryStatus === 'incorrect') {
+    lines.push(
+      `\nThe mastery evaluator has already determined that the student's latest response to goal #1 is INCORRECT. Treat that classification as authoritative; do not re-grade it. Do NOT use generic or qualified praise for an incorrect response or for any of its wording; never call it a "good start", "on the right track", "close", "almost", "great", or similar. If there is a genuinely correct factual element, state only that element neutrally and immediately contrast it with what is missing or wrong, for example: "A sentence does use words, but words alone do not make it complete." Otherwise move directly to a calm correction. Briefly explain the key correction without shaming the student, then ask them to try again in their own words. Kindness must not imply that an incorrect answer was correct.`,
     )
   }
 
@@ -128,7 +138,7 @@ function buildDirectTeachSystem(lesson, targetObjective) {
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', needSentenceForObj = null } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', needSentenceForObj = null, masteryStatus = null } = await req.json()
 
     // ── Seek request: "show me the part where..." ─────────────────────────
     // Client sends { seekRequest: { momentList }, messages } instead of going through
@@ -218,7 +228,7 @@ export async function POST(req) {
     }
 
     const oaiMessages = [
-      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, needSentenceForObj) },
+      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, needSentenceForObj, masteryStatus) },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 

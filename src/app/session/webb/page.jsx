@@ -983,6 +983,7 @@ export default function WebbPage() {
           objectives:       currentObjectives,
           completedIndices: currentCompleted,
           conversation:     updatedMessages,
+          lesson:           selectedLesson,
         }),
       })
       const data = await res.json()
@@ -1007,7 +1008,7 @@ export default function WebbPage() {
       pendingCheckRef.current = null
       checkObjectivesAfterTurn(pending.updatedMessages, pending.currentObjectives, pending.currentCompleted)
     }
-  }, [])
+  }, [selectedLesson])
 
   // Auto-dismiss the tablet toast after 3.5 s
   useEffect(() => {
@@ -1226,6 +1227,7 @@ export default function WebbPage() {
       // next question targets the NEXT incomplete goal, not the one just shown.
       let freshCompleted = [...completedObj]
       let needSentenceForObj = null
+      let masteryStatus = null
       if (objectives.length && completedObj.length < objectives.length) {
         try {
           const checkRes = await fetch('/api/webb-objectives', {
@@ -1236,26 +1238,42 @@ export default function WebbPage() {
               objectives,
               completedIndices: completedObj,
               conversation:     nextHistory,
+              lesson:           selectedLesson,
               quick:            true,   // only scan last 2 user turns — keeps this fast
             }),
           })
           const checkData = await checkRes.json()
           const newly = checkData.newlyCompleted || []
+          const needsSentence = checkData.needsSentence || []
+          const qt = checkData.qualifyingText || {}
+          const evaluationStatus = checkData.evaluationStatus || {}
+
           if (newly.length) {
-            const qt = checkData.qualifyingText || {}
-            const sq = checkData.sentenceQuality || {}
             const firstNew = newly.find(i => !completedObj.includes(i))
-            if (firstNew !== undefined && sq[firstNew] === false) {
-              // Answer is correct but not a sentence — don't credit yet.
-              // Pass a hint to webb-chat so Mrs. Webb asks naturally in her reply.
-              needSentenceForObj = objectives[firstNew]
-            } else {
-              freshCompleted = [...new Set([...completedObj, ...newly])]
-              setObjResponses(prev => ({ ...prev, ...qt }))
-              setCompletedObj(freshCompleted)
-              if (firstNew !== undefined) {
-                setNewlyCompletedObj({ idx: firstNew, text: objectives[firstNew] })
-              }
+            freshCompleted = [...new Set([...completedObj, ...newly])]
+
+            setObjResponses(prev => ({ ...prev, ...qt }))
+            setCompletedObj(freshCompleted)
+
+            if (firstNew !== undefined) {
+              setNewlyCompletedObj({ idx: firstNew, text: objectives[firstNew] })
+            }
+          }
+
+          const firstNeedsSentence =
+            needsSentence.find(i => !freshCompleted.includes(i))
+
+          if (firstNeedsSentence !== undefined) {
+            needSentenceForObj = objectives[firstNeedsSentence]
+          }
+
+          const firstRemainingIndex =
+            objectives.findIndex((_, i) => !freshCompleted.includes(i))
+
+          if (firstRemainingIndex !== -1) {
+            const status = evaluationStatus[firstRemainingIndex]
+            if (status === 'partial' || status === 'incorrect') {
+              masteryStatus = status
             }
           }
         } catch { /* fail silently — chat still proceeds */ }
@@ -1275,6 +1293,7 @@ export default function WebbPage() {
           remainingObjectives: objectives.filter((_, i) => !freshCompleted.includes(i)),
           allObjectivesMet: objectives.length > 0 && freshCompleted.length >= objectives.length,
           needSentenceForObj,
+          masteryStatus,
         }),
       })
       const data = await res.json()
