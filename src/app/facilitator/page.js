@@ -240,6 +240,7 @@ export default function FacilitatorPage() {
 
   const advancedTools = [
     { label: 'Learners', href: '/facilitator/learners', icon: '👥' },
+    { label: 'Syllabus', href: '/facilitator/syllabus', icon: '🧭' },
     { label: 'Detailed lesson builder', href: '/facilitator/generator?advanced=1' },
     { label: 'Lesson Library', href: '/facilitator/lessons', icon: '📚' },
     { label: 'Calendar', href: '/facilitator/calendar', icon: '📅' },
