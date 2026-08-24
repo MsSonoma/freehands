@@ -7,6 +7,8 @@ import GatedOverlay from '@/app/components/GatedOverlay'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
+import { syllabusEntitlementsFor } from '@/app/lib/syllabus/timeline.mjs'
+import { resolveEffectiveTier } from '@/app/lib/entitlements'
 import styles from './syllabus.module.css'
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
@@ -79,6 +81,10 @@ function guidanceEntries(guidance) {
   return rows
 }
 
+function masteryChanges(items) {
+  return (items || []).filter((item) => item?.origin === 'mastery_reforecast' && item?.metadata?.mastery_reforecast)
+}
+
 export default function SyllabusPage() {
   const router = useRouter()
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: 'required' })
@@ -86,7 +92,10 @@ export default function SyllabusPage() {
   const [learners, setLearners] = useState([])
   const [learnerId, setLearnerId] = useState('')
   const [token, setToken] = useState('')
+  const [planTier, setPlanTier] = useState('free')
   const [syllabus, setSyllabus] = useState(null)
+  const [masteryProposal, setMasteryProposal] = useState(null)
+  const [masteryMessage, setMasteryMessage] = useState('')
   const [draft, setDraft] = useState(null)
   const [newSubject, setNewSubject] = useState('')
   const [availableSubjects, setAvailableSubjects] = useState([])
@@ -119,6 +128,10 @@ export default function SyllabusPage() {
         const safeItems = Array.isArray(items) ? items.filter((item) => /^[0-9a-f-]{36}$/i.test(String(item.id))) : []
         const remembered = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : ''
         setToken(session?.access_token || '')
+        if (session?.user) {
+          const { data: profile } = await supabase.from('profiles').select('plan_tier,subscription_tier').eq('id', session.user.id).maybeSingle()
+          if (!cancelled) setPlanTier(resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier))
+        }
         setLearners(safeItems)
         setLearnerId(safeItems.some((item) => String(item.id) === remembered) ? remembered : (safeItems[0]?.id || ''))
       } catch (cause) {
@@ -139,6 +152,12 @@ export default function SyllabusPage() {
       const json = await response.json()
       if (!response.ok) throw new Error(json.error || 'Could not load Syllabus')
       setSyllabus(json)
+      setMasteryProposal(json.proposed_reforecast ? {
+        proposal_revision: json.proposed_reforecast.revision,
+        forecast_items: json.proposed_reforecast.forecast_items,
+        changes: masteryChanges(json.proposed_reforecast.forecast_items),
+      } : null)
+      setMasteryMessage('')
       setDraft(null)
       setNewSubject('')
       setAvailableSubjects([])
@@ -176,7 +195,9 @@ export default function SyllabusPage() {
       const response = await fetch('/api/syllabus/activate', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ learnerId, snapshot: draft }),
+        body: JSON.stringify(planningAccess.can_change_intent
+          ? { learnerId, snapshot: draft }
+          : { learnerId, establishFromCurrentPlan: true }),
       })
       const json = await response.json()
       if (!response.ok) throw new Error(json.error || 'Could not activate Syllabus')
@@ -188,7 +209,58 @@ export default function SyllabusPage() {
     }
   }
 
+  async function checkMasteryEvidence() {
+    setWorking(true)
+    setError('')
+    setMasteryMessage('')
+    try {
+      const response = await fetch('/api/syllabus/reforecast', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId, expectedActiveRevisionId: syllabus.active_revision.id }),
+      })
+      const json = await response.json()
+      if (!response.ok) throw new Error(json.error || 'Could not check mastery evidence')
+      if (json.kind === 'no_action') {
+        setMasteryMessage(json.message)
+        return
+      }
+      setMasteryProposal(json)
+      setMasteryMessage('A proposed reforecast is ready for review. The current active Syllabus has not changed.')
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  async function activateMasteryProposal() {
+    setWorking(true)
+    setError('')
+    try {
+      const response = await fetch('/api/syllabus/activate', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          learnerId,
+          proposalRevisionId: masteryProposal.proposal_revision.id,
+          expectedActiveRevisionId: syllabus.active_revision.id,
+        }),
+      })
+      const json = await response.json()
+      if (!response.ok) throw new Error(json.error || 'Could not activate proposed reforecast')
+      await loadCurrent()
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setWorking(false)
+    }
+  }
+
   const selectedLearner = learners.find((item) => String(item.id) === String(learnerId))
+  const planningAccess = syllabusEntitlementsFor({ role: 'facilitator', planTier })
+  const establishingFirstSyllabus = !syllabus?.has_active_syllabus
+  const canActivateDraft = establishingFirstSyllabus ? planningAccess.can_establish_syllabus : planningAccess.can_change_intent
   const displayRevision = draft || syllabus?.active_revision
   const displayForecast = useMemo(() => draft?.forecast_items || syllabus?.forecast_items || [], [draft?.forecast_items, syllabus?.forecast_items])
   const forecastGroups = useMemo(() => groupForecast(displayForecast), [displayForecast])
@@ -227,6 +299,7 @@ export default function SyllabusPage() {
       </header>
 
       {error && <div className={styles.error} role="alert">{error}</div>}
+      {!planningAccess.can_change_intent && <p className={styles.masteryMessage}>{establishingFirstSyllabus ? 'Every plan can establish an initial Syllabus through explicit facilitator activation. Future replanning remains locked.' : 'The complete Syllabus remains visible. Future replanning and mastery proposal actions are locked for this plan.'}</p>}
       {!loading && learners.length === 0 && <section className={styles.empty}><h2>No learners yet</h2><p>Add a learner before building a Syllabus.</p></section>}
       {loading && <p className={styles.muted}>Loading {selectedLearner?.name || 'learner'}&apos;s Syllabus…</p>}
 
@@ -241,10 +314,22 @@ export default function SyllabusPage() {
       {!loading && displayRevision && (
         <>
           <section className={styles.statusBar}>
-            <div><strong>{draft ? 'Proposal' : 'Current Syllabus'}</strong><span>{draft ? 'Not active yet' : `Revision ${displayRevision.revision_number}`}</span></div>
+            <div><strong>{draft ? 'Proposal' : 'Current active Syllabus'}</strong><span>{draft ? 'Not active yet' : `Revision ${displayRevision.revision_number}`}</span></div>
             <div><strong>Effective</strong><span>{dateOnly(displayRevision.effective_from)}</span></div>
-            {!draft && <button className={styles.secondaryButton} onClick={() => { setDraft(activeToDraft(syllabus.active_revision, syllabus.forecast_items)); setNewSubject('') }}>Edit Syllabus</button>}
+            {!draft && <div className={styles.statusActions}><button className={styles.secondaryButton} onClick={checkMasteryEvidence} disabled={working || !planningAccess.can_change_intent}>{working ? 'Checking…' : 'Check mastery evidence'}</button><button className={styles.secondaryButton} disabled={!planningAccess.can_change_intent} onClick={() => { setDraft(activeToDraft(syllabus.active_revision, syllabus.forecast_items)); setNewSubject('') }}>Edit Syllabus</button></div>}
           </section>
+
+          {!draft && masteryMessage && <p className={styles.masteryMessage}>{masteryMessage}</p>}
+
+          {!draft && masteryProposal && <section className={styles.masteryProposal}>
+            <div className={styles.proposalHeading}><div><p className={styles.eyebrow}>Proposed reforecast</p><h2>Mastery evidence suggests a small future-plan change</h2><p>The current active Syllabus has not changed. Review this inactive proposal before deciding whether to activate it.</p></div><span>Revision {masteryProposal.proposal_revision.revision_number}</span></div>
+            <div className={styles.changeList}>{(masteryProposal.changes || masteryChanges(masteryProposal.forecast_items)).map((item) => {
+              const evidence = item.metadata?.mastery_reforecast || item
+              return <article key={`${item.lineage_id || item.title}-${item.planned_date}`}><strong>{item.subject}: {item.title}</strong><p>{evidence.finding?.label || 'Mastery reporting identified a supported follow-up.'}</p><small>{evidence.recommendation?.label} Planned for {dateOnly(item.planned_date)}.</small></article>
+            })}</div>
+            <details className={styles.proposedForecast}><summary>Compare the complete proposed forecast</summary>{groupForecast(masteryProposal.forecast_items).map(([label, items]) => <div className={styles.forecastWeek} key={label}><h3>{label}</h3><ul>{items.map((item) => <li key={item.id || `${item.lineage_id}-${item.planned_date}`}><span className={styles.forecastDate}>{dateOnly(item.planned_date)}</span><div><strong>{item.subject}:</strong> {item.title}{item.origin === 'mastery_reforecast' && <em> Proposed from mastery evidence</em>}</div></li>)}</ul></div>)}</details>
+            <div className={styles.proposalDecision}><p>Activation uses the existing explicit Syllabus activation path and makes this immutable revision active today.</p><button className={styles.primaryButton} onClick={activateMasteryProposal} disabled={working || !planningAccess.can_change_intent}>{working ? 'Activating…' : 'Activate proposed reforecast'}</button></div>
+          </section>}
 
           {draft && <section className={styles.proposalBanner}><div><strong>Syllabus proposal</strong><p>Review the complete plan. Activation creates a new immutable revision effective today.</p></div><div className={styles.effectiveDate}><strong>Effective today</strong><span>{dateOnly(draft.effective_from)}</span></div></section>}
 
@@ -253,12 +338,12 @@ export default function SyllabusPage() {
               <section className={styles.section}>
                 <h2>Goals</h2>
                 <p className={styles.sectionIntro}>Current educator notes, preserved as legacy seed material.</p>
-                {draft ? <textarea rows={6} value={draft.goals?.legacy_notes || ''} onChange={(event) => setDraft({ ...draft, goals: { ...draft.goals, legacy_notes: event.target.value } })} placeholder="Goals and notes for this learner" /> : <p className={styles.prewrap}>{displayRevision.goals?.legacy_notes || 'No goals notes yet.'}</p>}
+                {draft && planningAccess.can_change_intent ? <textarea rows={6} value={draft.goals?.legacy_notes || ''} onChange={(event) => setDraft({ ...draft, goals: { ...draft.goals, legacy_notes: event.target.value } })} placeholder="Goals and notes for this learner" /> : <p className={styles.prewrap}>{displayRevision.goals?.legacy_notes || 'No goals notes yet.'}</p>}
               </section>
 
               <section className={styles.section}>
                 <h2>Subjects</h2>
-                {draft ? <><ul className={styles.subjectEditor}>{draft.subjects.map((subject) => {
+                {draft && planningAccess.can_change_intent ? <><ul className={styles.subjectEditor}>{draft.subjects.map((subject) => {
                   const referenced = referencedSubjects.has(subject.name.toLocaleLowerCase())
                   return <li key={subject.name}><span>{subject.name}{referenced && <small>Used in this plan</small>}</span><button type="button" disabled={referenced} title={referenced ? 'Reconcile weekly pattern and forecast references before removing this subject.' : `Remove ${subject.name}`} onClick={() => removeDraftSubject(subject.name)}>Remove</button></li>
                 })}</ul><div className={styles.addSubject}><input value={newSubject} onChange={(event) => setNewSubject(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addDraftSubject() } }} aria-label="New subject name" placeholder="Add a subject" /><button type="button" className={styles.secondaryButton} onClick={addDraftSubject}>Add</button></div><p className={styles.hint}>Subjects used by the weekly pattern or forecast cannot be removed here. Available catalog: {availableSubjects.map((item) => item.name).join(', ') || 'none'}</p></> : <ul className={styles.simpleList}>{(displayRevision.subjects || []).map((item) => <li key={item.name}>{item.name}</li>)}</ul>}
@@ -286,7 +371,7 @@ export default function SyllabusPage() {
             </section>
           </div>
 
-          {draft && <section className={styles.actions}><label>Reason for this revision<input value={draft.change_reason || ''} onChange={(event) => setDraft({ ...draft, change_reason: event.target.value })} placeholder="Optional" /></label><div><button className={styles.secondaryButton} onClick={() => setDraft(null)} disabled={working}>Cancel proposal</button><button className={styles.primaryButton} onClick={activate} disabled={working}>{working ? 'Activating…' : 'Activate Syllabus'}</button></div></section>}
+          {draft && <section className={styles.actions}><label>Reason for this revision<input value={draft.change_reason || ''} disabled={!planningAccess.can_change_intent} onChange={(event) => setDraft({ ...draft, change_reason: event.target.value })} placeholder={planningAccess.can_change_intent ? 'Optional' : 'Initial seed retained as proposed'} /></label><div><button className={styles.secondaryButton} onClick={() => setDraft(null)} disabled={working}>Cancel proposal</button><button className={styles.primaryButton} onClick={activate} disabled={working || !canActivateDraft}>{working ? 'Activating…' : 'Activate Syllabus'}</button></div></section>}
         </>
       )}
     </main>

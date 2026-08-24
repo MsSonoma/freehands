@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import { featuresForTier } from '@/app/lib/entitlements'
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
 import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
@@ -16,6 +16,8 @@ import { getFollowUps, startFollowUp } from '@/app/lib/followUpsClient'
 import { getMasteryForLearner, slateEmojiForTier } from '@/app/lib/masteryClient'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay'
+import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
+import { resolveSyllabusReadModel } from '@/app/lib/syllabus/timeline.mjs'
 import {
   buildLessonSessionRoute,
   getLessonListRequest,
@@ -134,6 +136,9 @@ function LessonsPageInner(){
   const [learnerName, setLearnerName] = useState(null)
   const [learnerId, setLearnerId] = useState(null)
   const [planTier, setPlanTier] = useState('free')
+  const [syllabusPayload, setSyllabusPayload] = useState(null)
+  const [syllabusStatus, setSyllabusStatus] = useState('idle')
+  const [syllabusError, setSyllabusError] = useState('')
   const [todaysCount, setTodaysCount] = useState(0)
   const [sessionLoading, setSessionLoading] = useState(false)
   const [goldenKeySelected, setGoldenKeySelected] = useState(false)
@@ -290,6 +295,46 @@ function LessonsPageInner(){
     return () => clearTimeout(timer)
   }, [])
 
+  useEffect(() => {
+    if (!learnerId) {
+      setSyllabusPayload(null)
+      setSyllabusStatus('idle')
+      setSyllabusError('')
+      return
+    }
+    if (isDemoLearnerId(learnerId)) {
+      setSyllabusPayload(null)
+      setSyllabusStatus('ready')
+      setSyllabusError('')
+      return
+    }
+    let cancelled = false
+    setSyllabusStatus('loading')
+    setSyllabusError('')
+    ;(async () => {
+      try {
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) throw new Error('Syllabus access is unavailable in this session')
+        const response = await fetch(`/api/syllabus?learnerId=${encodeURIComponent(learnerId)}`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+        const json = await response.json()
+        if (!response.ok) throw new Error(json.error || 'Could not load the Syllabus')
+        if (!cancelled) setSyllabusPayload(json)
+      } catch (cause) {
+        if (!cancelled) {
+          setSyllabusPayload(null)
+          setSyllabusError(cause.message || 'Could not load the Syllabus')
+        }
+      } finally {
+        if (!cancelled) setSyllabusStatus('ready')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [learnerId])
+
   // Poll for newly scheduled lessons every 30 seconds
   useEffect(() => {
     if (!learnerId) return
@@ -392,8 +437,8 @@ function LessonsPageInner(){
         if (supabase) {
           const { data: { session } } = await supabase.auth.getSession()
           if (session?.user) {
-            const { data } = await supabase.from('profiles').select('plan_tier').eq('id', session.user.id).maybeSingle()
-            if (data?.plan_tier) setPlanTier(data.plan_tier)
+            const { data } = await supabase.from('profiles').select('subscription_tier,plan_tier').eq('id', session.user.id).maybeSingle()
+            setPlanTier(resolveEffectiveTier(data?.subscription_tier, data?.plan_tier))
           }
         }
       } catch {}
@@ -901,6 +946,24 @@ function LessonsPageInner(){
     })
     return map
   }, [allLessons, allGeneratedLessons, historyLessons])
+  const syllabusModel = resolveSyllabusReadModel(syllabusPayload)
+
+  function syllabusLessonState(item) {
+    const lessonKey = item?.lesson_key
+    return {
+      hasLessonArtifact: Boolean(lessonKey && recentMetaLookup[lessonKey] && activeSet.has(lessonKey)),
+      hasProgress: Boolean(lessonKey && (lessonSnapshots[lessonKey] || lessonHistoryInProgress?.[lessonKey])),
+    }
+  }
+
+  function openSyllabusLesson(item) {
+    const lessonKey = item?.lesson_key
+    const lesson = lessonKey ? recentMetaLookup[lessonKey] : null
+    if (!lesson || !activeSet.has(lessonKey)) return
+    const subject = lesson.isGenerated ? 'generated' : (lesson.subject || lessonKey.split('/')[0] || 'general')
+    setSelectedLesson({ l: lesson, subject, lessonKey, isDemo: false })
+    setOverlayNoteEditing(false)
+  }
 
   // Recent tab: union of completed + in-progress + scheduled keys, most recent first
   const recentList = useMemo(() => {
@@ -1097,6 +1160,34 @@ function LessonsPageInner(){
           >×</button>
         </div>
       )}
+
+      <section aria-label="My active Syllabus" style={{ marginBottom: 28 }}>
+        {syllabusStatus === 'loading' && <div style={{ minHeight: 220, display: 'grid', placeItems: 'center', border: '1px solid #ded8cb', background: '#fffdf8', color: '#6b7280' }}>Opening your Syllabus…</div>}
+        {syllabusStatus === 'ready' && syllabusModel.kind === 'active' && (
+          <SyllabusDocument
+            revision={syllabusModel.revision}
+            forecastItems={syllabusModel.forecast_items}
+            role="learner"
+            planTier={planTier}
+            learnerName={learnerName || ''}
+            lessonState={syllabusLessonState}
+            onOpenLesson={openSyllabusLesson}
+          />
+        )}
+        {syllabusStatus === 'ready' && syllabusModel.kind === 'fallback' && (
+          <div style={{ padding: '28px 30px', border: '1px solid #ded8cb', background: '#fffdf8', boxShadow: '0 12px 36px rgba(65,52,36,.08)' }}>
+            <p style={{ margin: 0, color: '#9a4634', fontSize: 11, fontWeight: 800, letterSpacing: '.09em' }}>MY SYLLABUS</p>
+            <h1 style={{ margin: '5px 0 8px', font: '500 30px Georgia, serif', color: '#2d2924' }}>{syllabusError ? 'Your Syllabus could not be opened' : 'Your learning place is being prepared'}</h1>
+            <p style={{ margin: 0, maxWidth: 680, color: '#655d54', lineHeight: 1.6 }}>{syllabusError ? 'The existing lesson library remains available below.' : 'You can keep using the lesson library below. When your facilitator activates a Syllabus, this page will open centered on NOW.'}</p>
+          </div>
+        )}
+        {syllabusError && <p role="status" style={{ margin: '8px 0 0', color: '#7c5f25', fontSize: 13 }}>The Syllabus could not be opened, so the existing lesson library remains available. {syllabusError}</p>}
+      </section>
+
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16, margin: '0 0 10px' }}>
+        <h2 style={{ margin: 0, fontSize: 17, color: '#252525' }}>Lesson library and learning tools</h2>
+        <span style={{ color: '#7b7b7b', fontSize: 12 }}>Supporting the active Syllabus</span>
+      </div>
 
       {/* ── Sidebar + Content layout ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>

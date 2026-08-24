@@ -16,6 +16,9 @@ import {
 import { readPreparationSnapshot } from './prepare/preparationSnapshot'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
+import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
+import { resolveSyllabusReadModel } from '@/app/lib/syllabus/timeline.mjs'
+import { resolveEffectiveTier } from '@/app/lib/entitlements'
 import styles from './facilitatorHome.module.css'
 
 const PREPARE_PATH = '/facilitator/prepare'
@@ -27,6 +30,10 @@ export default function FacilitatorPage() {
   const [facilitatorName, setFacilitatorName] = useState('')
   const [plan, setPlan] = useState('free')
   const [learners, setLearners] = useState([])
+  const [learnerId, setLearnerId] = useState('')
+  const [syllabusPayload, setSyllabusPayload] = useState(null)
+  const [syllabusStatus, setSyllabusStatus] = useState('idle')
+  const [syllabusError, setSyllabusError] = useState('')
   const [generatedLessons, setGeneratedLessons] = useState([])
   const [scheduledKeys, setScheduledKeys] = useState({})
   const [preparationSnapshot, setPreparationSnapshot] = useState(null)
@@ -88,7 +95,7 @@ export default function FacilitatorPage() {
         if (!cancelled && profileResult.ok) {
           const profile = profileResult.value?.data
           if (profile?.full_name) setFacilitatorName(profile.full_name)
-          setPlan((profile?.plan_tier || profile?.subscription_tier || 'free').toString().toLowerCase())
+          setPlan(resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier))
         }
       }
     })()
@@ -113,6 +120,9 @@ export default function FacilitatorPage() {
       })
       if (cancelled) return
       setLearners(Array.isArray(result.value) ? result.value : [])
+      const safeLearners = Array.isArray(result.value) ? result.value : []
+      const remembered = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : ''
+      setLearnerId((current) => current || (safeLearners.some((learner) => String(learner.id) === remembered) ? remembered : (safeLearners[0]?.id || '')))
       if (!result.ok) {
         setLearnerError('We could not load learner information. You can still use Advanced Tools or try again.')
         setLearnerStatus('error')
@@ -122,6 +132,46 @@ export default function FacilitatorPage() {
     })()
     return () => { cancelled = true }
   }, [isAuthenticated, learnerRetry, pinChecked])
+
+  useEffect(() => {
+    if (!learnerId) {
+      setSyllabusPayload(null)
+      setSyllabusStatus('ready')
+      return
+    }
+    if (sessionStatus !== 'ready') {
+      setSyllabusStatus('loading')
+      return
+    }
+    if (!authToken) {
+      setSyllabusPayload(null)
+      setSyllabusError('The authenticated Syllabus read path is unavailable.')
+      setSyllabusStatus('ready')
+      return
+    }
+    let cancelled = false
+    setSyllabusStatus('loading')
+    setSyllabusError('')
+    ;(async () => {
+      try {
+        const response = await fetch(`/api/syllabus?learnerId=${encodeURIComponent(learnerId)}`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${authToken}` },
+        })
+        const json = await response.json()
+        if (!response.ok) throw new Error(json.error || 'Could not load the Syllabus')
+        if (!cancelled) setSyllabusPayload(json)
+      } catch (cause) {
+        if (!cancelled) {
+          setSyllabusPayload(null)
+          setSyllabusError(cause.message || 'Could not load the Syllabus')
+        }
+      } finally {
+        if (!cancelled) setSyllabusStatus('ready')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [authToken, learnerId, sessionStatus])
 
   useEffect(() => {
     if (!pinChecked || !isAuthenticated || sessionStatus !== 'ready') return
@@ -250,22 +300,52 @@ export default function FacilitatorPage() {
     { label: 'Account', href: '/facilitator/account', icon: '⚙️' },
     { label: 'Mr. Mentor', href: '/facilitator/mr-mentor', icon: '🧠' },
   ]
+  const selectedLearner = learners.find((learner) => String(learner.id) === String(learnerId))
+  const syllabusModel = resolveSyllabusReadModel(syllabusPayload)
 
   return (
     <main className={styles.page}>
       <header className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>
-          {facilitatorName ? `Hi, ${facilitatorName}` : 'Facilitator Home'}
-        </h1>
-        <p className={styles.pageSubtitle}>Your next facilitator decision is first. Advanced tools stay available below.</p>
+        <div>
+          <h1 className={styles.pageTitle}>{facilitatorName ? `Hi, ${facilitatorName}` : 'Facilitator Home'}</h1>
+          <p className={styles.pageSubtitle}>The active Syllabus is the center of the learner&apos;s educational work.</p>
+        </div>
+        {learners.length > 0 && <label className={styles.learnerPicker}>Learner
+          <select value={learnerId} onChange={(event) => { setLearnerId(event.target.value); localStorage.setItem('learner_id', event.target.value) }}>
+            {learners.map((learner) => <option key={learner.id} value={learner.id}>{learner.name}</option>)}
+          </select>
+        </label>}
       </header>
 
       {scheduleWarning && <div role="status" className={styles.warning}>{scheduleWarning}</div>}
 
+      <section className={styles.syllabusHome} aria-label="Selected learner Syllabus">
+        {syllabusStatus === 'loading' && <p className={styles.syllabusLoading}>Opening {selectedLearner?.name || 'learner'}&apos;s Syllabus…</p>}
+        {syllabusError && <div role="alert" className={styles.warning}>{syllabusError}</div>}
+        {syllabusStatus === 'ready' && syllabusModel.kind === 'active' && (
+          <SyllabusDocument
+            revision={syllabusModel.revision}
+            forecastItems={syllabusModel.forecast_items}
+            proposedReforecast={syllabusModel.proposed_reforecast}
+            learnerName={selectedLearner?.name || ''}
+            role="facilitator"
+            planTier={plan}
+          />
+        )}
+        {syllabusStatus === 'ready' && learnerId && !syllabusError && syllabusModel.kind === 'fallback' && (
+          <div className={styles.syllabusFallback}>
+            <p className={styles.eyebrow}>Syllabus not active</p>
+            <h2>Build {selectedLearner?.name || 'this learner'}&apos;s first Syllabus</h2>
+            <p>The existing weekly pattern, planning guidance, goals notes, and future planned lessons remain available as one-time seed material. Nothing changes until you explicitly activate the proposal.</p>
+            <Link href="/facilitator/syllabus" className={styles.primaryAction}>Review seed proposal</Link>
+          </div>
+        )}
+      </section>
+
       <section className={styles.primaryCard}>
         <div className={styles.primaryLayout}>
           <div className={styles.primaryCopy}>
-            <div className={styles.eyebrow}>Primary decision</div>
+            <div className={styles.eyebrow}>Supporting action</div>
             <h2 className={styles.decisionTitle}>{decision.title}</h2>
             <p className={styles.decisionBody}>{decision.body}</p>
           </div>
@@ -301,8 +381,8 @@ export default function FacilitatorPage() {
         </div>
       </section>
 
-      <section aria-labelledby="advanced-tools-heading">
-        <h2 id="advanced-tools-heading" className={styles.toolsHeading}>Advanced Tools</h2>
+      <section aria-labelledby="advanced-tools-heading" className={styles.siblingTools}>
+        <h2 id="advanced-tools-heading" className={styles.toolsHeading}>Other facilitator functions</h2>
         <div className={styles.toolsGrid}>
           {advancedTools.map(({ label, href, icon }) => (
             <Link key={href} href={href} className={styles.toolCard}>

@@ -31,6 +31,37 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load Syllabus revision')
       return data
     },
+    async findLatestMasteryProposal(syllabusId, baseRevisionId) {
+      const { data, error } = await admin.from('syllabus_revisions').select('*')
+        .eq('syllabus_id', syllabusId)
+        .eq('base_revision_id', baseRevisionId)
+        .is('activated_at', null)
+        .eq('proposal_kind', 'mastery_reforecast')
+        .order('revision_number', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      throwOn(error, 'Failed to load proposed Syllabus reforecast')
+      return data
+    },
+    async replaceMasteryProposal({ syllabusId, expectedActiveRevisionId, planning, proposalKey }) {
+      const { data, error } = await admin.rpc('replace_syllabus_mastery_proposal', {
+        p_syllabus_id: syllabusId,
+        p_expected_active_revision_id: expectedActiveRevisionId,
+        p_effective_from: planning.effective_from,
+        p_schema_version: planning.schema_version,
+        p_goals: planning.goals,
+        p_subjects: planning.subjects,
+        p_weekly_pattern: planning.weekly_pattern,
+        p_teaching_guidance: planning.teaching_guidance,
+        p_planning_policy: planning.planning_policy,
+        p_legacy_provenance: planning.legacy_provenance,
+        p_change_reason: planning.change_reason,
+        p_proposal_key: proposalKey,
+        p_forecast_items: planning.forecast_items,
+      })
+      throwOn(error, 'Failed to replace mastery reforecast proposal')
+      return data
+    },
     async nextRevisionNumber(syllabusId) {
       const { data, error } = await admin.from('syllabus_revisions').select('revision_number').eq('syllabus_id', syllabusId).order('revision_number', { ascending: false }).limit(1)
       throwOn(error, 'Failed to determine revision number')
@@ -63,6 +94,36 @@ export function createSyllabusRepository(admin) {
     async listForecastItems(revisionId) {
       const { data, error } = await admin.from('syllabus_forecast_items').select('*').eq('revision_id', revisionId).order('planned_date').order('sort_order').order('created_at')
       throwOn(error, 'Failed to load Syllabus forecast')
+      return data || []
+    },
+    async listRecentTrackedSessions(learnerId, limit = 25) {
+      const { data, error } = await admin.from('lesson_sessions')
+        .select('id,session_id,learner_id,lesson_id,started_at,ended_at')
+        .eq('learner_id', learnerId)
+        .order('started_at', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(limit)
+      throwOn(error, 'Failed to load recent lesson sessions')
+      return data || []
+    },
+    async listEvidenceSessions(facilitatorId, learnerId, sessionIds) {
+      if (!sessionIds.length) return []
+      const { data, error } = await admin.from('learning_evidence_sessions').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .in('session_id', sessionIds)
+      throwOn(error, 'Failed to load mastery evidence sessions')
+      return data || []
+    },
+    async listEvidenceEvents(facilitatorId, learnerId, evidenceSessionIds) {
+      if (!evidenceSessionIds.length) return []
+      const { data, error } = await admin.from('learning_evidence_events').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .in('evidence_session_id', evidenceSessionIds)
+        .order('occurred_at', { ascending: true })
+        .order('event_sequence', { ascending: true, nullsFirst: false })
+      throwOn(error, 'Failed to load mastery evidence events')
       return data || []
     },
     async readLegacyPlanning({ facilitatorId, learnerId, today }) {
