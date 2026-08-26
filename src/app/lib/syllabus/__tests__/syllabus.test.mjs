@@ -8,6 +8,12 @@ import { createMasteryReforecastProposal } from '../proposals.server.mjs'
 import { buildMasteryReforecast } from '../reforecast.mjs'
 import { activateProposedSyllabus, activateSyllabus, establishSyllabusFromLegacyPlan, getActiveSyllabus } from '../revisions.server.mjs'
 import { isCalendarDate, validateSnapshot } from '../schema.mjs'
+import {
+  applyTeachingGuidanceOverride,
+  teachingGuidanceOverrideFrom,
+  TEACHING_GUIDANCE_FIELDS,
+  updateTeachingGuidanceList,
+} from '../teachingGuidance.mjs'
 import { GET as getSyllabusRoute } from '../../../api/syllabus/route.js'
 import { POST as activateSyllabusRoute } from '../../../api/syllabus/activate/route.js'
 
@@ -205,7 +211,13 @@ function memoryRepository() {
     async readLegacyPlanning() {
       return clone({
         scheduleTemplates: [{ id: 'template-1', active: true, pattern: { monday: [{ subject: 'math' }] } }],
-        curriculumPreferences: { id: 'prefs-1', banned_words: ['spoiler'], focus_topics: ['fractions'], subject_preferences: { math: { focusTopics: ['ratios'] } } },
+        curriculumPreferences: {
+          id: 'prefs-1',
+          banned_words: ['spoiler'],
+          focus_topics: ['fractions'],
+          legacy_source_mode: 'preserve-me',
+          subject_preferences: { math: { focusTopics: ['ratios'], legacySubjectMode: 'preserve-me-too' } },
+        },
         plannedLessons: [
           { id: 'past', scheduled_date: '2026-08-22', lesson_data: { title: 'Past lesson', subject: 'math' } },
           { id: 'future', scheduled_date: '2026-08-25', lesson_data: { title: 'Future lesson', subject: 'science' } },
@@ -239,7 +251,7 @@ test('legacy seed is read-only, preserves guidance, offers catalog subjects, and
   assert.deepEqual(seed.available_subjects, [{ id: 'catalog-1', name: 'Robotics' }])
   assert.equal(seed.forecast_items.length, 1)
   assert.equal(seed.forecast_items[0].title, 'Future lesson')
-  assert.deepEqual(seed.teaching_guidance.curriculum_preferences.subject_preferences, { math: { focusTopics: ['ratios'] } })
+  assert.deepEqual(seed.teaching_guidance.curriculum_preferences.subject_preferences, { math: { focusTopics: ['ratios'], legacySubjectMode: 'preserve-me-too' } })
 })
 
 test('first and second activation append revisions and preserve prior revision and forecast rows', async () => {
@@ -285,6 +297,7 @@ test('Free establishment uses the canonical legacy seed and rejects arbitrary au
 
 test('activation route rebuilds Free establishment server-side and preserves paid authored activation', async () => {
   const freeRepository = memoryRepository()
+  const canonicalSeed = await buildLegacySeed({ repository: freeRepository, facilitatorId: FACILITATOR, learnerId: LEARNER, now: NOW })
   const injected = snapshot('Injected future intent')
   injected.goals.legacy_notes = 'Injected goals'
   const rejectedAuthoredResponse = await activateSyllabusRoute(
@@ -307,7 +320,20 @@ test('activation route rebuilds Free establishment server-side and preserves pai
     new Request('http://localhost/api/syllabus/activate', {
       method: 'POST',
       headers: { Authorization: 'Bearer test', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ learnerId: LEARNER, establishFromCurrentPlan: true, snapshot: injected }),
+      body: JSON.stringify({
+        learnerId: LEARNER,
+        establishFromCurrentPlan: true,
+        snapshot: injected,
+        teachingGuidanceOverride: {
+          curriculum_preferences: {
+            focus_topics: ['geometry'],
+            banned_words: [],
+            subject_preferences: {
+              math: { focusTopics: [], bannedConcepts: ['unsupported shortcut'] },
+            },
+          },
+        },
+      }),
     }),
     {
       requestContext: { user: { id: FACILITATOR }, admin: {} },
@@ -319,8 +345,21 @@ test('activation route rebuilds Free establishment server-side and preserves pai
   assert.equal(freeResponse.status, 201)
   const freeResult = await freeResponse.json()
   assert.equal(freeResult.active_revision.goals.legacy_notes, 'Read more.')
+  assert.deepEqual(freeResult.active_revision.subjects, canonicalSeed.subjects)
+  assert.deepEqual(freeResult.active_revision.weekly_pattern, canonicalSeed.weekly_pattern)
+  assert.deepEqual(freeResult.active_revision.planning_policy, canonicalSeed.planning_policy)
+  assert.deepEqual(freeResult.active_revision.legacy_provenance, canonicalSeed.legacy_provenance)
+  assert.equal(freeResult.active_revision.effective_from, canonicalSeed.effective_from)
   assert.deepEqual(freeResult.forecast_items.map((item) => item.title), ['Future lesson'])
+  assert.deepEqual(freeResult.forecast_items.map((item) => item.lineage_id), canonicalSeed.forecast_items.map((item) => item.lineage_id))
   assert.equal(freeResult.forecast_items.some((item) => item.title === 'Injected future intent'), false)
+  const preferences = freeResult.active_revision.teaching_guidance.curriculum_preferences
+  assert.deepEqual(preferences.focus_topics, ['geometry'])
+  assert.deepEqual(preferences.banned_words, [])
+  assert.equal(preferences.legacy_source_mode, 'preserve-me')
+  assert.deepEqual(preferences.subject_preferences.math.focusTopics, [])
+  assert.deepEqual(preferences.subject_preferences.math.bannedConcepts, ['unsupported shortcut'])
+  assert.equal(preferences.subject_preferences.math.legacySubjectMode, 'preserve-me-too')
 
   const secondFreeResponse = await activateSyllabusRoute(
     new Request('http://localhost/api/syllabus/activate', {
@@ -354,6 +393,54 @@ test('activation route rebuilds Free establishment server-side and preserves pai
   )
   assert.equal(paidResponse.status, 201)
   assert.equal((await paidResponse.json()).forecast_items[0].title, 'Injected future intent')
+})
+
+test('Teaching Guidance override rejects future-intent smuggling and invalid payloads before writes', async () => {
+  const invalidOverrides = [
+    { curriculum_preferences: { focus_topics: [], forecast_items: [{ title: 'smuggled' }] } },
+    { curriculum_preferences: { focus_topics: [], weekly_pattern: { monday: [] } } },
+    { curriculum_preferences: { focus_topics: [], subjects: [{ name: 'smuggled' }] } },
+    { curriculum_preferences: { focus_topics: 'not-an-array' } },
+  ]
+  for (const teachingGuidanceOverride of invalidOverrides) {
+    const repository = memoryRepository()
+    const response = await activateSyllabusRoute(
+      new Request('http://localhost/api/syllabus/activate', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer test', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId: LEARNER, establishFromCurrentPlan: true, teachingGuidanceOverride }),
+      }),
+      {
+        requestContext: { user: { id: FACILITATOR }, admin: {} },
+        repository,
+        syllabusAccess: { can_change_intent: false },
+        now: NOW,
+      },
+    )
+    assert.equal(response.status, 400)
+    assert.equal(repository.state.writes, 0)
+    assert.equal(repository.state.revisions.length, 0)
+  }
+})
+
+test('Teaching Guidance helpers edit known fields, preserve unknown fields, and support empty arrays', () => {
+  const initial = {
+    curriculum_preferences: {
+      id: 'prefs-1',
+      focus_topics: ['fractions'],
+      unknownGlobal: { preserve: true },
+      subject_preferences: { math: { focusTopics: ['ratios'], unknownSubject: 'preserve' } },
+    },
+  }
+  const field = TEACHING_GUIDANCE_FIELDS.find((item) => item.subjectKey === 'focusTopics')
+  const edited = updateTeachingGuidanceList(initial, { field, subject: 'math', values: [] })
+  assert.deepEqual(edited.curriculum_preferences.subject_preferences.math.focusTopics, [])
+  assert.deepEqual(initial.curriculum_preferences.subject_preferences.math.focusTopics, ['ratios'])
+  const override = teachingGuidanceOverrideFrom(edited)
+  const applied = applyTeachingGuidanceOverride(initial, override)
+  assert.deepEqual(applied.curriculum_preferences.subject_preferences.math.focusTopics, [])
+  assert.equal(applied.curriculum_preferences.subject_preferences.math.unknownSubject, 'preserve')
+  assert.deepEqual(applied.curriculum_preferences.unknownGlobal, { preserve: true })
 })
 
 test('activation route keeps authentication and learner ownership protections', async () => {
@@ -878,6 +965,17 @@ test('the conservative subject editor does not offer free-form replacement or fu
   assert.match(source, /referencedSubjects\.has/)
 })
 
+test('Syllabus Teaching Guidance uses connected human-readable controls instead of raw subject JSON', () => {
+  const source = fs.readFileSync(path.resolve('src', 'app', 'facilitator', 'syllabus', 'page.js'), 'utf8')
+  assert.doesNotMatch(source, /JSON\.stringify\(preferences\.subject_preferences/)
+  assert.match(source, /teaching_guidance: updateTeachingGuidanceList\(current\.teaching_guidance/)
+  assert.match(source, /teachingGuidanceOverride: teachingGuidanceOverrideFrom\(normalizedGuidance\)/)
+  assert.match(source, /<GuidanceListEditor/)
+  assert.deepEqual(TEACHING_GUIDANCE_FIELDS.map((field) => field.label), [
+    'Focus topics', 'Focus concepts', 'Focus keywords', 'Avoid topics', 'Avoid concepts', 'Avoid words',
+  ])
+})
+
 test('future Syllabus mutations enforce the canonical entitlement on the server routes', () => {
   const activationRoute = fs.readFileSync(path.join(process.cwd(), 'src/app/api/syllabus/activate/route.js'), 'utf8')
   const reforecastRoute = fs.readFileSync(path.join(process.cwd(), 'src/app/api/syllabus/reforecast/route.js'), 'utf8')
@@ -886,6 +984,7 @@ test('future Syllabus mutations enforce the canonical entitlement on the server 
   assert.match(activationRoute, /requireSyllabusFuturePlanning\(access\)/)
   assert.match(activationRoute, /establishFromCurrentPlan/)
   assert.match(activationRoute, /establishSyllabusFromLegacyPlan/)
+  assert.match(activationRoute, /teachingGuidanceOverride: body\?\.teachingGuidanceOverride/)
   assert.match(reforecastRoute, /loadSyllabusAccess/)
   assert.match(reforecastRoute, /requireSyllabusFuturePlanning\(access\)/)
   assert.match(revisionsService, /buildLegacySeed/)

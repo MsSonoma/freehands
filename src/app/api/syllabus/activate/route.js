@@ -35,6 +35,7 @@ export async function POST(request, deps = {}) {
         repository,
         facilitatorId: context.user.id,
         learnerId,
+        teachingGuidanceOverride: body?.teachingGuidanceOverride,
         now,
       })
     } else {

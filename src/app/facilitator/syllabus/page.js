@@ -8,6 +8,12 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
 import { syllabusEntitlementsFor } from '@/app/lib/syllabus/timeline.mjs'
+import {
+  normalizedTeachingGuidance,
+  teachingGuidanceOverrideFrom,
+  TEACHING_GUIDANCE_FIELDS,
+  updateTeachingGuidanceList,
+} from '@/app/lib/syllabus/teachingGuidance.mjs'
 import { resolveEffectiveTier } from '@/app/lib/entitlements'
 import styles from './syllabus.module.css'
 
@@ -66,19 +72,65 @@ function activeToDraft(active, items) {
   }
 }
 
-function guidanceEntries(guidance) {
+function subjectLabel(value) {
+  return String(value || '').split(' ').map((word) => word ? word[0].toUpperCase() + word.slice(1) : '').join(' ')
+}
+
+function guidanceSubjectNames(guidance, subjects = []) {
+  const names = new Map()
+  for (const item of subjects || []) {
+    const name = String(typeof item === 'string' ? item : item?.name || '').trim()
+    if (name) names.set(name.toLocaleLowerCase(), name)
+  }
+  for (const name of Object.keys(guidance?.curriculum_preferences?.subject_preferences || {})) {
+    if (name.trim() && !names.has(name.toLocaleLowerCase())) names.set(name.toLocaleLowerCase(), name)
+  }
+  return [...names.values()]
+}
+
+function guidanceValues(guidance, field, subject = null) {
   const preferences = guidance?.curriculum_preferences
-  if (!preferences) return []
-  const labels = {
-    focus_topics: 'Focus topics', focus_concepts: 'Focus concepts', focus_keywords: 'Focus keywords',
-    banned_topics: 'Avoid topics', banned_concepts: 'Avoid concepts', banned_words: 'Avoid words',
-  }
-  const rows = Object.entries(labels).flatMap(([key, label]) => Array.isArray(preferences[key]) && preferences[key].length
-    ? [{ label, value: preferences[key].join(', ') }] : [])
-  if (preferences.subject_preferences && Object.keys(preferences.subject_preferences).length) {
-    rows.push({ label: 'Subject-specific guidance', value: JSON.stringify(preferences.subject_preferences, null, 2) })
-  }
-  return rows
+  const values = subject === null
+    ? preferences?.[field.globalKey]
+    : preferences?.subject_preferences?.[subject]?.[field.subjectKey]
+  return Array.isArray(values) ? values : []
+}
+
+function GuidanceListEditor({ field, values, subject, onChange }) {
+  return (
+    <div className={styles.guidanceField}>
+      <strong>{field.label}</strong>
+      {values.length === 0 && <span className={styles.muted}>None</span>}
+      {values.map((value, index) => (
+        <div className={styles.guidanceItem} key={`${field.subjectKey}-${index}`}>
+          <input
+            aria-label={`${subject ? `${subjectLabel(subject)} ` : ''}${field.label} item ${index + 1}`}
+            value={value}
+            onChange={(event) => onChange(values.map((item, itemIndex) => itemIndex === index ? event.target.value : item))}
+          />
+          <button type="button" onClick={() => onChange(values.filter((_, itemIndex) => itemIndex !== index))}>Remove</button>
+        </div>
+      ))}
+      <button type="button" className={styles.guidanceAdd} onClick={() => onChange([...values, ''])}>Add {field.label.toLocaleLowerCase()}</button>
+    </div>
+  )
+}
+
+function GuidanceReadOnly({ guidance }) {
+  const globalRows = TEACHING_GUIDANCE_FIELDS.map((field) => ({ field, values: guidanceValues(guidance, field) }))
+    .filter(({ values }) => values.length)
+  const subjectGroups = guidanceSubjectNames(guidance).map((subject) => ({
+    subject,
+    rows: TEACHING_GUIDANCE_FIELDS.map((field) => ({ field, values: guidanceValues(guidance, field, subject) }))
+      .filter(({ values }) => values.length),
+  })).filter(({ rows }) => rows.length)
+  if (!globalRows.length && !subjectGroups.length) return <p className={styles.muted}>No curriculum preferences are currently saved.</p>
+  return (
+    <div className={styles.guidanceReadOnly}>
+      {globalRows.length > 0 && <section><h3>All subjects</h3><dl>{globalRows.map(({ field, values }) => <div key={field.globalKey}><dt>{field.label}</dt><dd>{values.join(', ')}</dd></div>)}</dl></section>}
+      {subjectGroups.map(({ subject, rows }) => <section key={subject}><h3>{subjectLabel(subject)}</h3><dl>{rows.map(({ field, values }) => <div key={field.subjectKey}><dt>{field.label}</dt><dd>{values.join(', ')}</dd></div>)}</dl></section>)}
+    </div>
+  )
 }
 
 function masteryChanges(items) {
@@ -192,12 +244,17 @@ export default function SyllabusPage() {
     setWorking(true)
     setError('')
     try {
+      const normalizedGuidance = normalizedTeachingGuidance(draft?.teaching_guidance)
       const response = await fetch('/api/syllabus/activate', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(planningAccess.can_change_intent
-          ? { learnerId, snapshot: draft }
-          : { learnerId, establishFromCurrentPlan: true }),
+          ? { learnerId, snapshot: { ...draft, teaching_guidance: normalizedGuidance } }
+          : {
+              learnerId,
+              establishFromCurrentPlan: true,
+              teachingGuidanceOverride: teachingGuidanceOverrideFrom(normalizedGuidance),
+            }),
       })
       const json = await response.json()
       if (!response.ok) throw new Error(json.error || 'Could not activate Syllabus')
@@ -264,7 +321,7 @@ export default function SyllabusPage() {
   const displayRevision = draft || syllabus?.active_revision
   const displayForecast = useMemo(() => draft?.forecast_items || syllabus?.forecast_items || [], [draft?.forecast_items, syllabus?.forecast_items])
   const forecastGroups = useMemo(() => groupForecast(displayForecast), [displayForecast])
-  const guidance = guidanceEntries(displayRevision?.teaching_guidance)
+  const guidanceSubjects = guidanceSubjectNames(displayRevision?.teaching_guidance, displayRevision?.subjects)
   const referencedSubjects = useMemo(() => referencedSubjectKeys(draft?.weekly_pattern, draft?.forecast_items), [draft?.weekly_pattern, draft?.forecast_items])
 
   function addDraftSubject() {
@@ -278,6 +335,13 @@ export default function SyllabusPage() {
   function removeDraftSubject(name) {
     if (!draft || referencedSubjects.has(name.toLocaleLowerCase())) return
     setDraft({ ...draft, subjects: draft.subjects.filter((subject) => subject.name.toLocaleLowerCase() !== name.toLocaleLowerCase()) })
+  }
+
+  function updateDraftGuidance(field, values, subject = null) {
+    setDraft((current) => current ? {
+      ...current,
+      teaching_guidance: updateTeachingGuidanceList(current.teaching_guidance, { field, subject, values }),
+    } : current)
   }
 
   if (authLoading || (isAuthenticated && !pinChecked)) return <main className={styles.page}><p>Loading…</p></main>
@@ -337,7 +401,7 @@ export default function SyllabusPage() {
             <div className={styles.sideColumn}>
               <section className={styles.section}>
                 <h2>Goals</h2>
-                <p className={styles.sectionIntro}>Current educator notes, preserved as legacy seed material.</p>
+                <p className={styles.sectionIntro}>Current learner goals notes, preserved as legacy seed material.</p>
                 {draft && planningAccess.can_change_intent ? <textarea rows={6} value={draft.goals?.legacy_notes || ''} onChange={(event) => setDraft({ ...draft, goals: { ...draft.goals, legacy_notes: event.target.value } })} placeholder="Goals and notes for this learner" /> : <p className={styles.prewrap}>{displayRevision.goals?.legacy_notes || 'No goals notes yet.'}</p>}
               </section>
 
@@ -361,7 +425,10 @@ export default function SyllabusPage() {
               <details className={styles.guidance} open>
                 <summary>Teaching Guidance</summary>
                 <p className={styles.sectionIntro}>Facilitator-facing curriculum and source guidance, kept separate from learner goals.</p>
-                {guidance.length ? <dl>{guidance.map((item) => <div key={item.label}><dt>{item.label}</dt><dd className={styles.prewrap}>{item.value}</dd></div>)}</dl> : <p className={styles.muted}>No curriculum preferences are currently saved.</p>}
+                {draft ? <div className={styles.guidanceEditor}>
+                  <section><h3>All subjects</h3>{TEACHING_GUIDANCE_FIELDS.map((field) => <GuidanceListEditor key={field.globalKey} field={field} values={guidanceValues(draft.teaching_guidance, field)} onChange={(values) => updateDraftGuidance(field, values)} />)}</section>
+                  {guidanceSubjects.map((subject) => <section key={subject}><h3>{subjectLabel(subject)}</h3>{TEACHING_GUIDANCE_FIELDS.map((field) => <GuidanceListEditor key={field.subjectKey} field={field} subject={subject} values={guidanceValues(draft.teaching_guidance, field, subject)} onChange={(values) => updateDraftGuidance(field, values, subject)} />)}</section>)}
+                </div> : <GuidanceReadOnly guidance={displayRevision.teaching_guidance} />}
               </details>
             </div>
 

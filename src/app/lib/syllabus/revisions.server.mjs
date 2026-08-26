@@ -1,5 +1,6 @@
 import { SyllabusError, validateSnapshot } from './schema.mjs'
 import { buildLegacySeed } from './legacySeed.server.mjs'
+import { applyTeachingGuidanceOverride } from './teachingGuidance.mjs'
 
 async function requireOwnedLearner(repository, learnerId, facilitatorId) {
   const learner = await repository.findOwnedLearner(learnerId, facilitatorId)
@@ -143,7 +144,7 @@ export async function activateSyllabus({ repository, facilitatorId, learnerId, s
   return persistSyllabusActivation({ repository, facilitatorId, learnerId, snapshot, now })
 }
 
-export async function establishSyllabusFromLegacyPlan({ repository, facilitatorId, learnerId, now = new Date() }) {
+export async function establishSyllabusFromLegacyPlan({ repository, facilitatorId, learnerId, teachingGuidanceOverride, now = new Date() }) {
   await requireOwnedLearner(repository, learnerId, facilitatorId)
   const existing = await repository.findSyllabus(facilitatorId, learnerId)
   if (existing?.active_revision_id) {
@@ -156,6 +157,9 @@ export async function establishSyllabusFromLegacyPlan({ repository, facilitatorI
     throw new SyllabusError("The learner's current plan could not be read safely for Syllabus establishment", 500, 'LEGACY_SEED_UNAVAILABLE')
   }
   if (!seed) throw new SyllabusError("The learner's current plan could not be safely established as a Syllabus", 500, 'LEGACY_SEED_UNAVAILABLE')
+  if (teachingGuidanceOverride !== undefined) {
+    seed.teaching_guidance = applyTeachingGuidanceOverride(seed.teaching_guidance, teachingGuidanceOverride)
+  }
   return persistSyllabusActivation({
     repository,
     facilitatorId,

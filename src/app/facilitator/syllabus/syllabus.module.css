@@ -66,6 +66,16 @@
 .guidance dl { gap: 12px; margin: 0; }
 .guidance dt { color: #374151; font-size: 12px; font-weight: 800; text-transform: uppercase; }
 .guidance dd { margin: 0; color: #4b5563; font-size: 14px; }
+.guidanceReadOnly, .guidanceEditor { display: grid; gap: 18px; }
+.guidanceReadOnly section + section, .guidanceEditor section + section { padding-top: 16px; border-top: 1px solid #e5e7eb; }
+.guidanceReadOnly h3, .guidanceEditor h3 { margin: 0 0 12px; color: #374151; font: 700 14px/1.4 Montserrat, sans-serif; }
+.guidanceField { display: grid; gap: 7px; margin-bottom: 14px; }
+.guidanceField > strong { color: #374151; font-size: 12px; }
+.guidanceItem { display: grid; grid-template-columns:minmax(0, 1fr) auto; gap: 7px; }
+.guidanceItem input { width: 100%; box-sizing: border-box; padding: 9px 10px; border: 1px solid #d1d5db; border-radius: 8px; color: #111827; font: inherit; }
+.guidanceItem button, .guidanceAdd { border: 0; background: transparent; cursor: pointer; font: 700 12px/1.3 Roboto, sans-serif; }
+.guidanceItem button { color: #b42318; }
+.guidanceAdd { justify-self: start; padding: 0; color: #6b382c; }
 .prewrap { white-space: pre-wrap; }
 .forecast { min-height: 520px; padding: 24px; }
 .forecastHeader { display: flex; align-items: start; justify-content: space-between; padding-bottom: 16px; border-bottom: 2px solid #f3f4f6; }
