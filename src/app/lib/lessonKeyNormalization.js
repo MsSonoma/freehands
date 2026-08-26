@@ -38,3 +38,20 @@ export function normalizeLessonKey(rawKey) {
 
   return key
 }
+
+export function lessonKeyBasename(rawKey) {
+  const key = normalizeLessonKey(rawKey)
+  if (!key) return ''
+  return String(key).split('/').at(-1).replace(/\.json$/i, '').toLocaleLowerCase()
+}
+
+export function resolveLessonKeyAgainst(rawKey, knownKeys = []) {
+  const normalized = normalizeLessonKey(rawKey)
+  if (!normalized) return normalized
+  const canonical = [...new Set((knownKeys || []).map(normalizeLessonKey).filter(Boolean))]
+  if (canonical.includes(normalized)) return normalized
+  if (normalized.includes('/')) return normalized
+  const basename = lessonKeyBasename(normalized)
+  const matches = canonical.filter((key) => lessonKeyBasename(key) === basename)
+  return matches.length === 1 ? matches[0] : normalized
+}

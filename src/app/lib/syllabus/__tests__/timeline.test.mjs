@@ -62,7 +62,7 @@ test('canonical active Syllabus ignores legacy planner-shaped input', () => {
 
 test('no active Syllabus selects compatibility fallback without fabricating a plan', () => {
   assert.deepEqual(resolveSyllabusReadModel({ has_active_syllabus: false }), {
-    kind: 'fallback', source: 'legacy_compatibility', revision: null, forecast_items: [],
+    kind: 'fallback', source: 'legacy_compatibility', revision: null, forecast_items: [], timeline_items: [],
   })
 })
 

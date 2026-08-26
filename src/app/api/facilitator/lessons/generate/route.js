@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server.js'
 import { resolveEffectiveTier, featuresForTier } from '../../../../lib/entitlements.js'
 import { AI_MODEL } from '../../../../lib/aiModel.js'
 import { buildCanonicalLessonIdentity, normalizeGenerationRequest } from '../../../../lib/facilitatorPreparation.mjs'
+import { requireAssociationLearner, upsertLessonAssociation } from '../../../../lib/syllabus/lessonAssociations.server.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -233,6 +234,14 @@ export async function POST(request, deps = {}){
 
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
+  const learnerId = String(body?.learnerId || body?.proposal?.learnerId || '').trim()
+  if (learnerId) {
+    try {
+      await requireAssociationLearner(supabase, user.id, learnerId)
+    } catch (error) {
+      return NextResponse.json({ error: error.message || 'Learner not found or unauthorized' }, { status: error.status || 403 })
+    }
+  }
   const proposalMode = body?.mode === 'proposal'
   const normalized = normalizeGenerationRequest(body || {})
   if (!normalized.ok) return NextResponse.json({ error: normalized.error }, { status: 400 })
@@ -290,6 +299,19 @@ export async function POST(request, deps = {}){
       return NextResponse.json({ error: `Lesson storage failed: ${storageError}` }, { status: 500 })
     }
     const identity = storageError ? null : buildCanonicalLessonIdentity({ file, ownerId: user.id, storagePath })
+    if (identity && learnerId) {
+      await upsertLessonAssociation({
+        admin: supabase,
+        facilitatorId: user.id,
+        learnerId,
+        lessonKey: identity.lessonKey,
+        subject: lesson.subject || subject,
+        title: lesson.title || title,
+        readinessState: 'draft',
+        associationSource: 'generator',
+        verifyLearner: false,
+      })
+    }
     
     // Increment lifetime_generations_used for finite-limit tiers (e.g. free)
     if (Number.isFinite(lifetimeLimit) && supabase) {

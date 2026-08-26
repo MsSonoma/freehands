@@ -6,6 +6,17 @@ function throwOn(error, fallback) {
   }
 }
 
+export async function readAllSupabaseRows(queryFactory, { pageSize = 500 } = {}) {
+  const rows = []
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await queryFactory().range(offset, offset + pageSize - 1)
+    if (error) throw error
+    const page = Array.isArray(data) ? data : []
+    rows.push(...page)
+    if (page.length < pageSize) return rows
+  }
+}
+
 export function createSyllabusRepository(admin) {
   return {
     async findOwnedLearner(learnerId, facilitatorId) {
@@ -95,6 +106,46 @@ export function createSyllabusRepository(admin) {
       const { data, error } = await admin.from('syllabus_forecast_items').select('*').eq('revision_id', revisionId).order('planned_date').order('sort_order').order('created_at')
       throwOn(error, 'Failed to load Syllabus forecast')
       return data || []
+    },
+    async listLessonAssociations(facilitatorId, learnerId) {
+      const { data, error } = await admin.from('syllabus_lesson_associations').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .order('created_at')
+      throwOn(error, 'Failed to load learner lesson associations')
+      return data || []
+    },
+    async listLessonSchedule(facilitatorId, learnerId, effectiveFrom) {
+      const { data, error } = await admin.from('lesson_schedule').select('*')
+        .eq('learner_id', learnerId)
+        .or(`facilitator_id.eq.${facilitatorId},facilitator_id.is.null`)
+        .gte('scheduled_date', String(effectiveFrom || '').slice(0, 10))
+        .order('scheduled_date')
+      throwOn(error, 'Failed to load learner lesson schedule')
+      return data || []
+    },
+    async listAllLessonSessionEvents(learnerId) {
+      try {
+        return await readAllSupabaseRows(() => admin.from('lesson_session_events')
+          .select('id,session_id,lesson_id,event_type,occurred_at')
+          .eq('learner_id', learnerId)
+          .order('occurred_at', { ascending: true })
+          .order('id', { ascending: true }))
+      } catch (error) {
+        if (error?.code === '42P01') return []
+        throwOn(error, 'Failed to load lesson session events')
+      }
+    },
+    async listAllTrackedSessions(learnerId) {
+      try {
+        return await readAllSupabaseRows(() => admin.from('lesson_sessions')
+          .select('id,session_id,lesson_id,started_at,ended_at')
+          .eq('learner_id', learnerId)
+          .order('started_at', { ascending: true })
+          .order('id', { ascending: true }))
+      } catch (error) {
+        throwOn(error, 'Failed to load learner lesson sessions')
+      }
     },
     async listRecentTrackedSessions(learnerId, limit = 25) {
       const { data, error } = await admin.from('lesson_sessions')

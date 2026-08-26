@@ -29,7 +29,7 @@ test('generated unapproved draft resolves to Review lesson with DRAFT handoff', 
 test('approved undelivered lesson resolves to Choose delivery with DELIVERY handoff', () => {
   const state = resolveLibraryLessonState({ ...base, lesson: { ...base.lesson, approved: true } })
   assert.equal(state.stateKey, LIBRARY_LESSON_STATES.APPROVED)
-  assert.equal(state.label, 'Approved - choose delivery')
+  assert.equal(state.label, 'Approved - choose session option')
   assert.equal(state.primaryActionType, LIBRARY_PRIMARY_ACTIONS.DELIVERY)
   assert.equal(state.preparationStage, 'DELIVERY')
   assert.equal(state.href, '/facilitator/prepare?learnerId=learner-2&lessonKey=generated%2Ffractions.json&stage=DELIVERY')

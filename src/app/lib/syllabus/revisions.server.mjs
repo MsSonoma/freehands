@@ -1,6 +1,7 @@
 import { SyllabusError, validateSnapshot } from './schema.mjs'
 import { buildLegacySeed } from './legacySeed.server.mjs'
 import { applyTeachingGuidanceOverride } from './teachingGuidance.mjs'
+import { composeSyllabusLessonTimeline } from './lessonTimeline.mjs'
 
 async function requireOwnedLearner(repository, learnerId, facilitatorId) {
   const learner = await repository.findOwnedLearner(learnerId, facilitatorId)
@@ -9,7 +10,7 @@ async function requireOwnedLearner(repository, learnerId, facilitatorId) {
 }
 
 export async function getActiveSyllabus({ repository, facilitatorId, learnerId }) {
-  await requireOwnedLearner(repository, learnerId, facilitatorId)
+  const learner = await requireOwnedLearner(repository, learnerId, facilitatorId)
   const syllabus = await repository.findSyllabus(facilitatorId, learnerId)
   if (!syllabus?.active_revision_id) {
     return { has_active_syllabus: false, syllabus: syllabus || null, active_revision: null, forecast_items: [] }
@@ -17,6 +18,22 @@ export async function getActiveSyllabus({ repository, facilitatorId, learnerId }
   const activeRevision = await repository.findRevision(syllabus.active_revision_id, syllabus.id)
   if (!activeRevision) throw new SyllabusError('The active Syllabus revision could not be found', 500, 'ACTIVE_REVISION_MISSING')
   const forecastItems = await repository.listForecastItems(activeRevision.id)
+  const optionalList = async (name, ...args) => typeof repository[name] === 'function' ? repository[name](...args) : []
+  const [associations, schedules, sessions, sessionEvents] = await Promise.all([
+    optionalList('listLessonAssociations', facilitatorId, learnerId),
+    optionalList('listLessonSchedule', facilitatorId, learnerId, activeRevision.effective_from),
+    optionalList('listAllTrackedSessions', learnerId),
+    optionalList('listAllLessonSessionEvents', learnerId),
+  ])
+  const timelineItems = composeSyllabusLessonTimeline({
+    activeRevision,
+    forecastItems,
+    associations,
+    approvedLessons: learner.approved_lessons || {},
+    schedules,
+    sessions,
+    sessionEvents,
+  })
   const proposedRevision = typeof repository.findLatestMasteryProposal === 'function'
     ? await repository.findLatestMasteryProposal(syllabus.id, activeRevision.id)
     : null
@@ -26,6 +43,7 @@ export async function getActiveSyllabus({ repository, facilitatorId, learnerId }
     syllabus,
     active_revision: activeRevision,
     forecast_items: forecastItems,
+    timeline_items: timelineItems,
     proposed_reforecast: proposedRevision ? {
       revision: proposedRevision,
       forecast_items: proposedForecast,

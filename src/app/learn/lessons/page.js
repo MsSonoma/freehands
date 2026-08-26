@@ -950,16 +950,17 @@ function LessonsPageInner(){
 
   function syllabusLessonState(item) {
     const lessonKey = item?.lesson_key
+    const hasProgress = Boolean(lessonKey && (item?.readiness_state === 'in_progress' || lessonSnapshots[lessonKey] || lessonHistoryInProgress?.[lessonKey]))
     return {
-      hasLessonArtifact: Boolean(lessonKey && recentMetaLookup[lessonKey] && activeSet.has(lessonKey)),
-      hasProgress: Boolean(lessonKey && (lessonSnapshots[lessonKey] || lessonHistoryInProgress?.[lessonKey])),
+      hasLessonArtifact: Boolean(lessonKey && recentMetaLookup[lessonKey] && (activeSet.has(lessonKey) || hasProgress)),
+      hasProgress,
     }
   }
 
   function openSyllabusLesson(item) {
     const lessonKey = item?.lesson_key
     const lesson = lessonKey ? recentMetaLookup[lessonKey] : null
-    if (!lesson || !activeSet.has(lessonKey)) return
+    if (!lesson || (!activeSet.has(lessonKey) && item?.readiness_state !== 'in_progress')) return
     const subject = lesson.isGenerated ? 'generated' : (lesson.subject || lessonKey.split('/')[0] || 'general')
     setSelectedLesson({ l: lesson, subject, lessonKey, isDemo: false })
     setOverlayNoteEditing(false)
@@ -1167,7 +1168,9 @@ function LessonsPageInner(){
           <SyllabusDocument
             revision={syllabusModel.revision}
             forecastItems={syllabusModel.forecast_items}
+            timelineItems={syllabusModel.timeline_items}
             role="learner"
+            learnerId={learnerId || ''}
             planTier={planTier}
             learnerName={learnerName || ''}
             lessonState={syllabusLessonState}
@@ -1184,13 +1187,13 @@ function LessonsPageInner(){
         {syllabusError && <p role="status" style={{ margin: '8px 0 0', color: '#7c5f25', fontSize: 13 }}>The Syllabus could not be opened, so the existing lesson library remains available. {syllabusError}</p>}
       </section>
 
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16, margin: '0 0 10px' }}>
+      {syllabusModel.kind !== 'active' && <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16, margin: '0 0 10px' }}>
         <h2 style={{ margin: 0, fontSize: 17, color: '#252525' }}>Lesson library and learning tools</h2>
-        <span style={{ color: '#7b7b7b', fontSize: 12 }}>Supporting the active Syllabus</span>
-      </div>
+        <span style={{ color: '#7b7b7b', fontSize: 12 }}>Available while the Syllabus is being established</span>
+      </div>}
 
       {/* ── Sidebar + Content layout ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
+      <div data-syllabus-supporting-library style={{ display: syllabusModel.kind === 'active' && !selectedLesson ? 'none' : 'flex', alignItems: 'flex-start', gap: 0 }}>
 
         {/* Sidebar */}
         <div style={{

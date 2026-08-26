@@ -26,8 +26,9 @@
 .entries { display:flex; flex-direction:column; }
 .entryRow { display:grid; grid-template-columns:145px minmax(180px,1fr) auto; gap:18px; align-items:center; padding:18px 0; border-bottom:1px solid #ded8cf; }
 .entryRow>time { color:#6d6359; font:13px Roboto,sans-serif; }.entryBody h4 { margin:3px 0 0; font-size:18px; font-weight:500; }.subject { margin:0;color:#6b382c; }
-.statusLabel,.preparing { display:inline-block; margin-top:6px; color:#756b61; font:700 11px Roboto,sans-serif; }
-.lessonAction { padding:8px 18px; border:1px solid #6b382c; background:#6b382c; color:#fff; cursor:pointer; font:700 13px Montserrat,sans-serif; }
+.statusLabel,.placementLabel,.preparing { display:inline-block; margin:6px 8px 0 0; color:#756b61; font:700 11px Roboto,sans-serif; text-transform:capitalize; }
+.placementLabel { font-weight:500; font-style:italic; text-transform:none; }
+.lessonAction { padding:8px 18px; border:1px solid #6b382c; background:#6b382c; color:#fff; cursor:pointer; font:700 13px Montserrat,sans-serif; text-decoration:none; text-align:center; }
 .marginNote { grid-column:2 / -1; border-left:3px solid #d39a4a; padding:8px 12px; background:#fff9eb; display:grid; gap:3px; font:13px Roboto,sans-serif; }
 .marginNote a { color:#7b3f32;font-weight:700; }.emptyWeek { margin:0;padding:28px 0;color:#7b7268;font-style:italic; }
 .unmatchedNotes { margin-top:18px; border-left:3px solid #d39a4a; padding:10px 12px; background:#fff9eb; display:grid; gap:4px; font:13px Roboto,sans-serif; }

@@ -424,7 +424,7 @@ export default function LessonMakerPage(){
       const res = await fetch('/api/facilitator/lessons/generate', {
         method:'POST',
         headers:{ 'Content-Type':'application/json', ...(token ? { Authorization:`Bearer ${token}` } : {}) },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, learnerId: intendedLearnerId })
       })
       const js = await res.json().catch(()=>null)
       if (!res.ok) { 

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { normalizeLessonKey } from '../../../../lib/lessonKeyNormalization.js'
 import { applyLessonAvailability } from '../../../../lib/lessonAvailability.mjs'
 import { verifyFacilitatorLessonAccess } from '../../../../lib/serverLessonAccess.mjs'
+import { upsertLessonAssociation } from '../../../../lib/syllabus/lessonAssociations.server.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -60,8 +61,9 @@ export async function POST(request, deps = {}) {
       return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
     }
 
+    let lessonAccess = null
     if (available) {
-      const lessonAccess = await verifyFacilitatorLessonAccess({
+      lessonAccess = await verifyFacilitatorLessonAccess({
         admin,
         userId: user.id,
         lessonKey: normalizedLessonKey,
@@ -82,6 +84,20 @@ export async function POST(request, deps = {}) {
       .eq('id', learnerId)
 
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
+
+    if (available && lessonAccess) {
+      await upsertLessonAssociation({
+        admin,
+        facilitatorId: user.id,
+        learnerId,
+        lessonKey: lessonAccess.lessonKey,
+        subject: lessonAccess.subject,
+        title: lessonAccess.title,
+        readinessState: 'available',
+        associationSource: 'availability',
+        verifyLearner: false,
+      })
+    }
 
     return NextResponse.json({
       ok: true,

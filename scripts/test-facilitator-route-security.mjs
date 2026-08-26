@@ -40,12 +40,14 @@ test('availability route verifies lesson access when making a lesson available',
   assert.match(source, /applyLessonAvailability/)
 })
 
-test('Facilitator Home visibly contains the reconstructed primary decision experience', () => {
+test('Facilitator Home visibly centers the active Syllabus while preserving supporting decisions', () => {
   const source = read('src/app/facilitator/page.js')
   assert.match(source, /resolveFacilitatorHomeDecision/)
   assert.match(source, /readPreparationSnapshot/)
-  assert.match(source, /Primary decision/)
-  assert.match(source, /Advanced Tools/)
+  assert.match(source, /The active Syllabus is the center of the learner/)
+  assert.match(source, /SyllabusDocument/)
+  assert.match(source, /Supporting action/)
+  assert.match(source, /Other facilitator functions/)
   assert.match(source, /\/facilitator\/prepare/)
   assert.doesNotMatch(source, /Choose a section to manage your homeschool or classroom/)
 })
@@ -227,7 +229,7 @@ test('missing learner recovery renders selector and blocks lesson actions until 
   assert.match(preparePage, /stage === STAGES\.DRAFT && lessonIdentity && !hasLearnerRecovery/)
   assert.match(preparePage, /stage === STAGES\.DELIVERY && lessonIdentity && !hasLearnerRecovery/)
   assert.match(preparePage, /if \(!selectedLearner\) \{[\s\S]*Choose a learner before approving this lesson/)
-  assert.match(preparePage, /if \(!selectedLearner\) throw new Error\('Choose a learner before choosing delivery\.'\)/)
+  assert.match(preparePage, /if \(!selectedLearner\) throw new Error\('Choose a learner before choosing a session option\.'\)/)
   assert.match(preparePage, /onClick=\{startNow\} disabled=\{busy \|\| !selectedLearner\}/)
   assert.match(preparePage, /onClick=\{makeAvailable\} disabled=\{busy \|\| !selectedLearner\}/)
   assert.match(preparePage, /onClick=\{scheduleLesson\} disabled=\{busy \|\| !scheduleDate \|\| !selectedLearner\}/)

@@ -466,6 +466,7 @@ export default function FacilitatorPreparePage() {
       if (!response.ok || !approval) throw new Error(json?.error || 'Approval failed')
       setLessonIdentity(approval.lessonIdentity)
       setLessonDraft({ ...approval.lesson, __file: approval.lessonIdentity.file })
+      await preserveLessonAssociation(approval.lessonIdentity.lessonKey)
       moveStage(approval.stage, { lessonIdentity: approval.lessonIdentity })
     } catch (error) {
       setMessage(error?.message || 'Approval failed')
@@ -484,6 +485,19 @@ export default function FacilitatorPreparePage() {
     })
     const json = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(json?.error || 'Could not update lesson availability')
+    return json
+  }
+
+  async function preserveLessonAssociation(explicitLessonKey = lessonIdentity?.lessonKey) {
+    if (!selectedLearner || !explicitLessonKey) throw new Error('Choose a learner and lesson first.')
+    const token = await getToken()
+    const response = await fetch('/api/syllabus/lesson-associations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ learnerId, lessonKey: explicitLessonKey }),
+    })
+    const json = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(json?.error || 'Could not preserve this lesson in the learner Syllabus')
     return json
   }
 
@@ -548,23 +562,39 @@ export default function FacilitatorPreparePage() {
     }
   }
 
-  function saveForLater() {
+  async function saveForLater() {
     if (!selectedLearner) {
       setMessage('Choose a learner before saving this session choice.')
       return
     }
-    setMessage('The lesson is approved and saved. It is not available or scheduled yet.')
-    persist(STAGES.DELIVERY, { lessonIdentity })
-    router.push('/facilitator')
+    setBusy(true)
+    try {
+      await preserveLessonAssociation()
+      setMessage('The lesson is approved and remains in this learner\'s Syllabus forecast.')
+      persist(STAGES.DELIVERY, { lessonIdentity })
+      router.push('/facilitator')
+    } catch (error) {
+      setMessage(error?.message || 'Could not save this lesson in the Syllabus')
+    } finally {
+      setBusy(false)
+    }
   }
 
-  function saveDraftAndLeave() {
+  async function saveDraftAndLeave() {
     if (!selectedLearner) {
       setMessage('Choose a learner before saving this draft.')
       return
     }
-    persist(STAGES.DRAFT, { lessonIdentity })
-    router.push('/facilitator')
+    setBusy(true)
+    try {
+      await preserveLessonAssociation()
+      persist(STAGES.DRAFT, { lessonIdentity })
+      router.push('/facilitator')
+    } catch (error) {
+      setMessage(error?.message || 'Could not save this draft in the Syllabus')
+    } finally {
+      setBusy(false)
+    }
   }
 
   function finishFlow() {

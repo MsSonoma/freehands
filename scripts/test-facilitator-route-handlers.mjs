@@ -6,6 +6,7 @@ import { POST as generateLesson } from '../src/app/api/facilitator/lessons/gener
 import { POST as updateAvailability } from '../src/app/api/facilitator/learners/lesson-availability/route.js'
 import { POST as proposeLesson } from '../src/app/api/facilitator/lessons/propose/route.js'
 import { POST as scheduleLesson } from '../src/app/api/lesson-schedule/route.js'
+import { POST as preserveLessonAssociation } from '../src/app/api/syllabus/lesson-associations/route.js'
 
 function withSupabaseEnv() {
   const previous = {
@@ -34,7 +35,7 @@ function jsonRequest(body) {
   })
 }
 
-function createTableMock({ profile = { plan_tier: 'pro', subscription_tier: null }, learner = null, updateCapture = null, scheduleCapture = null } = {}) {
+function createTableMock({ profile = { plan_tier: 'pro', subscription_tier: null }, learner = null, updateCapture = null, scheduleCapture = null, associationCapture = null, associationState = null } = {}) {
   return function from(table) {
     if (table === 'profiles') {
       return {
@@ -70,6 +71,26 @@ function createTableMock({ profile = { plan_tier: 'pro', subscription_tier: null
               return { data: { id: 'schedule-1', ...value }, error: null }
             },
           }),
+        }),
+      }
+    }
+
+    if (table === 'syllabus_lesson_associations') {
+      const filters = {}
+      const selection = {
+        eq: (column, value) => {
+          filters[column] = value
+          return selection
+        },
+        maybeSingle: async () => ({ data: associationState ? { readiness_state: associationState } : null, error: null }),
+      }
+      return {
+        select: () => selection,
+        upsert: (value) => ({
+          select: () => ({ single: async () => {
+            if (associationCapture) associationCapture.value = value
+            return { data: { id: 1, ...value }, error: null }
+          } }),
         }),
       }
     }
@@ -140,7 +161,7 @@ test('generation proposal mode fails on storage failure without returning identi
     }), {
       createClientImpl: createClientMock({
         admin: {
-          from: createTableMock(),
+          from: createTableMock({ learner: { id: 'learner-1' } }),
           storage: { from: () => ({ upload: async () => ({ error: { message: 'storage offline' } }) }) },
         },
       }),
@@ -160,6 +181,7 @@ test('generation proposal mode fails on storage failure without returning identi
 test('approval derives storage ownership from authenticated user', async () => {
   const restore = withSupabaseEnv()
   const paths = []
+  let approved = false
   try {
     const response = await approveLesson(jsonRequest({ file: 'fractions.json', userId: 'attacker-user' }), {
       createClientImpl: createClientMock({
@@ -169,10 +191,11 @@ test('approval derives storage ownership from authenticated user', async () => {
           storage: { from: () => ({
             download: async (path) => {
               paths.push(['download', path])
-              return { data: new Blob([JSON.stringify({ title: 'Fractions', approved: false })], { type: 'application/json' }), error: null }
+              return { data: new Blob([JSON.stringify({ title: 'Fractions', approved })], { type: 'application/json' }), error: null }
             },
-            upload: async (path) => {
-              paths.push(['upload', path])
+            update: async (path) => {
+              paths.push(['update', path])
+              approved = true
               return { error: null }
             },
           }) },
@@ -184,6 +207,7 @@ test('approval derives storage ownership from authenticated user', async () => {
     assert.equal(response.status, 200)
     assert.equal(json.ownerId, 'real-user')
     assert.deepEqual(paths.map((item) => item[1]), [
+      'facilitator-lessons/real-user/fractions.json',
       'facilitator-lessons/real-user/fractions.json',
       'facilitator-lessons/real-user/fractions.json',
     ])
@@ -240,6 +264,25 @@ test('inaccessible or deleted lesson can still be removed from availability', as
   } finally {
     restore()
   }
+})
+
+test('association API derives draft readiness and source instead of trusting client claims', async () => {
+  const learnerId = '11111111-1111-4111-8111-111111111111'
+  const associationCapture = {}
+  const admin = {
+    from: createTableMock({ learner: { id: learnerId }, associationCapture }),
+    storage: generatedLessonStorage({ approved: false, subject: 'math', title: 'Draft fractions' }),
+  }
+  const response = await preserveLessonAssociation(jsonRequest({
+    learnerId,
+    lessonKey: 'generated/fractions.json',
+    readinessState: 'available',
+    associationSource: 'availability',
+  }), { requestContext: { user: { id: 'facilitator-1' }, admin } })
+
+  assert.equal(response.status, 200)
+  assert.equal(associationCapture.value.readiness_state, 'draft')
+  assert.equal(associationCapture.value.association_source, 'prepare')
 })
 
 test('schedule API still rejects missing authorization before entitlement checks', async () => {

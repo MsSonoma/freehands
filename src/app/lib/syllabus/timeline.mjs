@@ -63,13 +63,14 @@ export function moveSyllabusTimeline({ index, nowIndex, weekCount }, action) {
 
 export function resolveSyllabusReadModel(payload) {
   if (!payload?.has_active_syllabus || !payload?.active_revision) {
-    return { kind: 'fallback', source: 'legacy_compatibility', revision: null, forecast_items: [] }
+    return { kind: 'fallback', source: 'legacy_compatibility', revision: null, forecast_items: [], timeline_items: [] }
   }
   return {
     kind: 'active',
     source: 'canonical_syllabus',
     revision: payload.active_revision,
     forecast_items: Array.isArray(payload.forecast_items) ? payload.forecast_items : [],
+    timeline_items: Array.isArray(payload.timeline_items) ? payload.timeline_items : (Array.isArray(payload.forecast_items) ? payload.forecast_items : []),
     proposed_reforecast: payload.proposed_reforecast || null,
   }
 }

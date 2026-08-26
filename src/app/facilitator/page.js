@@ -326,9 +326,11 @@ export default function FacilitatorPage() {
           <SyllabusDocument
             revision={syllabusModel.revision}
             forecastItems={syllabusModel.forecast_items}
+            timelineItems={syllabusModel.timeline_items}
             proposedReforecast={syllabusModel.proposed_reforecast}
             learnerName={selectedLearner?.name || ''}
             role="facilitator"
+            learnerId={learnerId}
             planTier={plan}
           />
         )}

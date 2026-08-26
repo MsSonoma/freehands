@@ -13,7 +13,7 @@ import {
 import styles from './SyllabusDocument.module.css'
 
 const STATE_COPY = {
-  past: { eyebrow: 'PAST / SYLLABUS RECORD', title: 'Earlier Syllabus intentions', note: 'Only retained canonical Syllabus entries appear here. Detailed learning evidence belongs in History and Portfolio.' },
+  past: { eyebrow: 'PAST / SYLLABUS RECORD', title: 'Learning record', note: 'Actual learner starts, completions, and incomplete work appear here. Detailed evidence belongs in History and Portfolio.' },
   now: { eyebrow: 'NOW / YOU ARE HERE', title: 'This week', note: 'The current educational position.' },
   future: { eyebrow: 'FUTURE / FORECAST', title: 'A week ahead', note: 'This is an intention and may change as learning unfolds.' },
 }
@@ -29,7 +29,9 @@ function subjectName(subject) {
 export default function SyllabusDocument({
   revision,
   forecastItems,
+  timelineItems = null,
   role,
+  learnerId = '',
   planTier = 'free',
   learnerName = '',
   proposedReforecast = null,
@@ -39,7 +41,8 @@ export default function SyllabusDocument({
   planningHref = '/facilitator/syllabus',
   today = new Date().toISOString().slice(0, 10),
 }) {
-  const timeline = useMemo(() => buildSyllabusTimeline(forecastItems, { today }), [forecastItems, today])
+  const visibleItems = Array.isArray(timelineItems) ? timelineItems : forecastItems
+  const timeline = useMemo(() => buildSyllabusTimeline(visibleItems, { today }), [visibleItems, today])
   const [viewIndex, setViewIndex] = useState(timeline.now_index)
   useEffect(() => setViewIndex(timeline.now_index), [revision?.id, timeline.now_index])
   const week = timeline.weeks[viewIndex] || timeline.weeks[timeline.now_index]
@@ -99,10 +102,13 @@ export default function SyllabusDocument({
         </header>
 
         <div className={styles.entries}>
-          {week.items.length === 0 && <p className={styles.emptyWeek}>{week.state === 'past' ? 'No retained Syllabus entries are available for this week. This view does not create a historical record.' : 'No Syllabus intentions are recorded for this week.'}</p>}
+          {week.items.length === 0 && <p className={styles.emptyWeek}>{week.state === 'past' ? 'No actual learner activity is recorded for this week.' : 'No Syllabus intentions are recorded for this week.'}</p>}
           {week.items.map((item) => {
             const currentLesson = lessonState(item) || {}
             const action = timelineItemAction({ role, weekState: week.state, ...currentLesson })
+            const prepareHref = role === 'facilitator' && learnerId && item.lesson_key
+              ? `/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}`
+              : null
             const notes = proposalAnnotations.get(item.id || item.lineage_id || `${dateOnly(item.planned_date)}:${item.subject}:${item.title}`) || []
             return (
               <div className={styles.entryRow} key={item.id || `${item.lineage_id}-${item.planned_date}`}>
@@ -110,10 +116,17 @@ export default function SyllabusDocument({
                 <div className={styles.entryBody}>
                   <p className={styles.subject}>{item.subject}</p>
                   <h4>{item.title}</h4>
+                  {item.readiness_state && <span className={styles.statusLabel}>{String(item.readiness_state).replace('_', ' ')}</span>}
+                  {item.placement_kind === 'scheduled' && <span className={styles.placementLabel}>Calendar date</span>}
+                  {item.placement_kind === 'inferred' && <span className={styles.placementLabel}>Provisional weekly-pattern forecast</span>}
+                  {item.needs_placement && <span className={styles.placementLabel}>{role === 'facilitator' ? 'Needs placement' : 'Timing to be confirmed'}</span>}
+                  {item.actual_kind === 'incomplete' && <span className={styles.placementLabel}>Incomplete</span>}
+                  {item.is_overdue_intent && <span className={styles.placementLabel}>Carried into NOW from {prettyDate(item.original_placement_date, { month: 'short', day: 'numeric' })}</span>}
                   {item.origin === 'mastery_reforecast' && <span className={styles.statusLabel}>Mastery follow-up</span>}
                 </div>
                 {action && <button type="button" className={styles.lessonAction} onClick={() => onOpenLesson?.(item)}>{action === 'continue' ? 'Continue' : 'Start'}</button>}
-                {role === 'learner' && week.state === 'now' && item.lesson_key && !currentLesson.hasLessonArtifact && <span className={styles.preparing}>Preparing</span>}
+                {prepareHref && ['draft', 'approved', 'saved'].includes(item.readiness_state) && <a className={styles.lessonAction} href={prepareHref}>{item.readiness_state === 'draft' ? 'Prepare / review' : 'Open lesson details'}</a>}
+                {role === 'learner' && week.state === 'now' && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && !currentLesson.hasLessonArtifact && <span className={styles.preparing}>Preparing</span>}
                 {role === 'facilitator' && notes.length > 0 && <aside className={styles.marginNote}><strong>Mastery note</strong>{notes.map((note) => <span key={note.id || note.lineage_id}>{note.title}</span>)}<a href={proposalHref}>Review proposed change</a></aside>}
               </div>
             )

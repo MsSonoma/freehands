@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server.js'
 import { normalizeLessonKey } from '../../lib/lessonKeyNormalization.js'
 import { featuresForTier, resolveEffectiveTier } from '../../lib/entitlements.js'
 import { verifyFacilitatorLessonAccess } from '../../lib/serverLessonAccess.mjs'
+import { upsertLessonAssociation } from '../../lib/syllabus/lessonAssociations.server.mjs'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -224,6 +225,18 @@ export async function POST(request, deps = {}) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    await upsertLessonAssociation({
+      admin: adminSupabase,
+      facilitatorId: user.id,
+      learnerId,
+      lessonKey: lessonAccess.lessonKey,
+      subject: lessonAccess.subject,
+      title: lessonAccess.title,
+      readinessState: 'approved',
+      associationSource: 'schedule',
+      verifyLearner: false,
+    })
 
     const normalizedData = data ? { ...data, lesson_key: normalizeLessonKey(data.lesson_key) } : null
 
