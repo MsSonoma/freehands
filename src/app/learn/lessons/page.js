@@ -796,7 +796,7 @@ function LessonsPageInner(){
       setSessionLoading(true)
       const lessonKey = `${subject}/${fileBaseName}`
       try { sessionStorage.setItem('slate_pending_lesson_key', lessonKey) } catch {}
-      router.push(buildLessonSessionRoute({ learnerId, subject, fileName: fileBaseName, selectedTeacher: currentTeacher }))
+      router.push(buildLessonSessionRoute({ learnerId, subject, fileName: fileBaseName, selectedTeacher: currentTeacher, occurrenceId: syllabusOccurrence?.occurrence_id || '' }))
       return
     }
 
@@ -804,7 +804,7 @@ function LessonsPageInner(){
       setSessionLoading(true)
       const lessonKey = `${subject}/${fileBaseName}`
       try { sessionStorage.setItem('webb_pending_lesson_key', lessonKey) } catch {}
-      router.push(buildLessonSessionRoute({ learnerId, subject, fileName: fileBaseName, selectedTeacher: currentTeacher }))
+      router.push(buildLessonSessionRoute({ learnerId, subject, fileName: fileBaseName, selectedTeacher: currentTeacher, occurrenceId: syllabusOccurrence?.occurrence_id || '' }))
       return
     }
 
@@ -1994,7 +1994,7 @@ function LessonsPageInner(){
           const fname = hk.split('/').pop()?.replace(/\.json$/i, '')
           return s.lesson_id === fname || s.lesson_id === hk
         })
-        const sonomaCompleted = sonomaSessions.filter(s => s.ended_at).length
+        const sonomaCompleted = sonomaSessions.filter(s => s.status === 'completed').length
         const sonomaBest = medals[hk]?.medalTier ? emojiForTier(medals[hk].medalTier) : null
         const sonomaLastAt = lessonHistoryLastCompleted?.[hk]
         const sonomaInProgress = lessonHistoryInProgress?.[hk]

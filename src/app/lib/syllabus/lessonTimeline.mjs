@@ -1,6 +1,7 @@
 import { lessonKeyBasename, normalizeLessonKey, resolveLessonKeyAgainst } from '../lessonKeyNormalization.js'
 import { dateOnly } from './timeline.mjs'
 import { calendarDateInTimeZone } from '../calendarDate.mjs'
+import { latestExplicitLessonSessionEvent, lifecycleEventActualKind, resolveLessonSessionLifecycle } from '../lessonSessionLifecycle.mjs'
 
 const DAY_MS = 86400000
 const DAY_KEYS = Object.freeze(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'])
@@ -129,17 +130,16 @@ export function composeSyllabusLessonTimeline({
   }
   for (const item of forecastItems || []) if (item?.lesson_key) ensureMetadata(item.lesson_key, item)
 
-  const terminalEventsBySession = new Map()
+  const lifecycleEventsBySession = new Map()
   const occurrenceBySession = new Map()
   for (const event of sessionEvents || []) {
     const sessionId = clean(event?.session_id)
     const occurrenceId = clean(event?.metadata?.syllabus_occurrence_id)
     if (sessionId && occurrenceId) occurrenceBySession.set(sessionId, occurrenceId)
-    if (!['completed', 'incomplete'].includes(event?.event_type) || !event?.occurred_at) continue
     if (!sessionId) continue
-    const current = terminalEventsBySession.get(sessionId)
-    if (!current || compareTimestamp(event.occurred_at, current.occurred_at) > 0
-      || (compareTimestamp(event.occurred_at, current.occurred_at) === 0 && clean(event.id).localeCompare(clean(current.id)) > 0)) terminalEventsBySession.set(sessionId, event)
+    const rows = lifecycleEventsBySession.get(sessionId) || []
+    rows.push(event)
+    lifecycleEventsBySession.set(sessionId, rows)
   }
   const actuals = []
   const actualDate = (value) => {
@@ -150,20 +150,21 @@ export function composeSyllabusLessonTimeline({
   for (const session of sessions || []) {
     const sessionIds = [session?.id, session?.session_id].map(clean).filter(Boolean)
     sessionIds.forEach((id) => knownSessionIds.add(id))
-    const terminal = sessionIds.map((id) => terminalEventsBySession.get(id)).filter(Boolean)
-      .sort((left, right) => compareTimestamp(right.occurred_at, left.occurred_at) || clean(right.id).localeCompare(clean(left.id)))[0]
+    const sessionLifecycleEvents = sessionIds.flatMap((id) => lifecycleEventsBySession.get(id) || [])
+    const lifecycle = resolveLessonSessionLifecycle(session, sessionLifecycleEvents)
+    const terminal = lifecycle.event
     const key = resolveKey(terminal?.lesson_id || terminal?.lesson_key || session?.lesson_id || session?.lesson_key)
     if (!key) continue
     const identity = clean(session?.id || session?.session_id) || clean(terminal?.id)
     const occurrenceId = sessionIds.map((id) => occurrenceBySession.get(id)).find(Boolean) || clean(session?.syllabus_occurrence_id)
-    if (terminal) actuals.push({ key, id: identity, occurrenceId, kind: terminal.event_type, occurred_at: terminal.occurred_at, started_at: session.started_at || terminal.occurred_at })
-    else if (session?.ended_at) actuals.push({ key, id: identity, occurrenceId, kind: 'completed', occurred_at: session.ended_at, started_at: session.started_at || session.ended_at })
+    if (terminal) actuals.push({ key, id: identity, occurrenceId, kind: lifecycle.status, occurred_at: lifecycle.occurredAt, started_at: session.started_at || lifecycle.occurredAt })
+    else if (lifecycle.status === 'completed') actuals.push({ key, id: identity, occurrenceId, kind: 'completed', occurred_at: lifecycle.occurredAt, started_at: session.started_at || lifecycle.occurredAt })
     else if (session?.started_at) actuals.push({ key, id: identity, occurrenceId, kind: 'in_progress', occurred_at: session.started_at, started_at: session.started_at })
   }
   for (const event of sessionEvents || []) {
-    if (!['completed', 'incomplete'].includes(event?.event_type) || !event?.occurred_at || knownSessionIds.has(clean(event.session_id))) continue
+    if (!event?.occurred_at || knownSessionIds.has(clean(event.session_id)) || !latestExplicitLessonSessionEvent([event])) continue
     const key = resolveKey(event.lesson_id || event.lesson_key)
-    if (key) actuals.push({ key, id: clean(event.id) || `${key}:${event.occurred_at}:${event.event_type}`, kind: event.event_type, occurred_at: event.occurred_at, started_at: event.occurred_at })
+    if (key) actuals.push({ key, id: clean(event.id) || `${key}:${event.occurred_at}:${event.event_type}`, kind: lifecycleEventActualKind(event.event_type), occurred_at: event.occurred_at, started_at: event.occurred_at })
   }
   actuals.sort((left, right) => compareTimestamp(left.started_at, right.started_at) || compareTimestamp(left.occurred_at, right.occurred_at) || left.id.localeCompare(right.id))
   const latestCompletionByKey = new Map()
@@ -283,6 +284,7 @@ export function composeSyllabusLessonTimeline({
     return {
       ...details, id: `actual:${actual.id}`, occurrence_id: `actual:${actual.id}`, planned_date: actualDate(actual.occurred_at), sort_order: capacity?.slot?.index ?? 0,
       item_type: 'lesson', placement_kind: 'actual', actual_kind: actual.kind, actual_at: actual.occurred_at,
+      source_occurrence_id: actual.occurrenceId || null,
       actual_started_date: actualDate(actual.started_at),
       readiness_state: actual.kind === 'completed' ? 'completed' : (actual.kind === 'in_progress' ? 'in_progress' : details.readiness_state),
       is_explicit_schedule: false, is_provisional: false, needs_placement: false, capacity_conflict: capacity?.capacity_conflict || null,

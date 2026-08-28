@@ -4,7 +4,7 @@
  * Tracks lesson sessions, repeat events, and facilitator notes for Beta program analytics.
  */
 
-import { getSupabaseClient, hasSupabaseEnv } from './supabaseClient';
+import { getSupabaseClient, hasSupabaseEnv } from './supabaseClient.js';
 
 const SESSION_EVENT_TYPES = {
   STARTED: 'started',
@@ -15,59 +15,6 @@ const SESSION_EVENT_TYPES = {
 };
 
 const STALE_EXIT_MINUTES = 60;
-
-function minutesBetween(startIso, endIso) {
-  if (!startIso || !endIso) return null;
-  try {
-    const start = new Date(startIso);
-    const end = new Date(endIso);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
-    const diffMs = end.getTime() - start.getTime();
-    return Math.max(0, Math.round(diffMs / 60000));
-  } catch {
-    return null;
-  }
-}
-
-async function logLessonSessionEvent({
-  supabase,
-  sessionId,
-  learnerId,
-  lessonId,
-  eventType,
-  occurredAt,
-  metadata,
-}) {
-  if (!sessionId || !learnerId || !lessonId || !eventType || !hasSupabaseEnv()) {
-    return false;
-  }
-
-  const payload = {
-    session_id: sessionId,
-    learner_id: learnerId,
-    lesson_id: lessonId,
-    event_type: eventType,
-    occurred_at: occurredAt || new Date().toISOString(),
-  };
-
-  if (metadata && typeof metadata === 'object' && Object.keys(metadata).length > 0) {
-    payload.metadata = metadata;
-  }
-
-  try {
-    const { error } = await supabase
-      .from('lesson_session_events')
-      .insert(payload);
-
-    if (error) {
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    return false;
-  }
-}
 
 /**
  * Check-only: returns conflict info if another device owns an active session for this learner+lesson.
@@ -147,74 +94,32 @@ export async function startLessonSession(learnerId, lessonId, browserSessionId =
  */
 export async function endLessonSession(sessionId, options = {}) {
   if (!sessionId || !hasSupabaseEnv()) return false;
-
-  const supabase = getSupabaseClient();
   const reason = (options?.reason || SESSION_EVENT_TYPES.COMPLETED).toLowerCase();
-  const nowIso = new Date().toISOString();
+  if (reason !== SESSION_EVENT_TYPES.COMPLETED) return false;
+  const learnerId = String(options?.learnerId || '').trim();
+  const lessonId = String(options?.lessonId || '').trim();
+  const occurrenceId = String(options?.occurrenceId || '').trim();
+  if (!learnerId || !lessonId || !occurrenceId) return false;
 
   try {
-    const { data: sessionRow, error: fetchError } = await supabase
-      .from('lesson_sessions')
-      .select('id, learner_id, lesson_id, started_at, ended_at')
-      .eq('id', sessionId)
-      .maybeSingle();
-
-    if (fetchError) {
-      return false;
-    }
-
-    if (!sessionRow) {
-      return false;
-    }
-
-    if (!sessionRow.ended_at) {
-      const { error: updateError } = await supabase
-        .from('lesson_sessions')
-        .update({ ended_at: nowIso })
-        .eq('id', sessionId);
-
-      if (updateError) {
-        return false;
-      }
-    } else if (!options?.force) {
-      if (reason === SESSION_EVENT_TYPES.COMPLETED) {
-        const { data: existingEvent } = await supabase
-          .from('lesson_session_events')
-          .select('id')
-          .eq('session_id', sessionId)
-          .eq('event_type', SESSION_EVENT_TYPES.COMPLETED)
-          .limit(1);
-
-        if (Array.isArray(existingEvent) && existingEvent.length > 0) {
-          return true;
-        }
-      }
-    }
-
-    const minutesActive = minutesBetween(sessionRow.started_at, nowIso);
-
-    const eventType = (
-      reason === SESSION_EVENT_TYPES.COMPLETED ? SESSION_EVENT_TYPES.COMPLETED :
-      reason === SESSION_EVENT_TYPES.EXITED ? SESSION_EVENT_TYPES.EXITED :
-      reason === SESSION_EVENT_TYPES.RESTARTED ? SESSION_EVENT_TYPES.RESTARTED :
-      reason === SESSION_EVENT_TYPES.INCOMPLETE ? SESSION_EVENT_TYPES.INCOMPLETE :
-      SESSION_EVENT_TYPES.COMPLETED
-    );
-
-    await logLessonSessionEvent({
-      supabase,
-      sessionId,
-      learnerId: sessionRow.learner_id,
-      lessonId: sessionRow.lesson_id,
-      eventType,
-      occurredAt: nowIso,
-      metadata: {
-        ...options?.metadata,
-        minutes_active: minutesActive,
-      },
+    const supabase = getSupabaseClient();
+    const { data: sessionResult } = await supabase.auth.getSession();
+    const token = sessionResult?.session?.access_token;
+    if (!token) return false;
+    const response = await fetch('/api/syllabus/execution/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        sessionId,
+        learnerId,
+        lessonId,
+        occurrenceId,
+        source: options?.metadata?.source,
+        testPercentage: options?.metadata?.test_percentage,
+      }),
     });
-
-    return true;
+    const result = await response.json().catch(() => null);
+    return Boolean(response.ok && result?.ok);
   } catch (err) {
     return false;
   }

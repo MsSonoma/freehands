@@ -29,7 +29,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
   const [tracking, setTracking] = useState(false);
   const [conflictingSession, setConflictingSession] = useState(null);
   const sessionIdRef = useRef(null);
-  const sessionMetaRef = useRef({ learnerId, lessonId });
+  const sessionMetaRef = useRef({ learnerId, lessonId, occurrenceId: null });
   const pollIntervalRef = useRef(null);
   const realtimeChannelRef = useRef(null);
   const isMountedRef = useRef(true);
@@ -73,7 +73,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
       if (result?.id) {
         sessionIdRef.current = result.id;
         setSessionId(result.id);
-        sessionMetaRef.current = { learnerId, lessonId };
+        sessionMetaRef.current = { learnerId, lessonId, occurrenceId };
         console.log('[SESSION] sessionIdRef.current set to:', result.id);
         return result;
       }
@@ -98,12 +98,13 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
       metadata,
       learnerId: meta.learnerId,
       lessonId: meta.lessonId,
+      occurrenceId: meta.occurrenceId,
     });
     
     if (success) {
       sessionIdRef.current = null;
       setSessionId(null);
-      sessionMetaRef.current = { learnerId, lessonId };
+      sessionMetaRef.current = { learnerId, lessonId, occurrenceId: null };
     }
 
     return success;

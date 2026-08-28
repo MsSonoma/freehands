@@ -102,6 +102,16 @@ Both watchers stop after takeover is detected or session tracking is torn down. 
 
 Snapshot/checkpoint writes are not the protected-start authority and cannot grant takeover.
 
+## Protected Completion Authority
+
+Instructional completion for Ms. Sonoma and Mrs. Webb uses `POST /api/syllabus/execution/complete` and `public.complete_lesson_session_transactional(...)`. The route authenticates the facilitator, verifies learner ownership, and passes the exact session, lesson, and Syllabus occurrence identities to the service-role-only RPC.
+
+The RPC locks the session row, verifies that the protected `started` event bound the same occurrence, and atomically sets `ended_at` plus inserts one `completed` event. A retry returns the existing completed event. An event-insert failure rolls back the session end. Authenticated clients cannot insert lifecycle events or change `ended_at`; their remaining session update access supports heartbeat/checkpoint activity only.
+
+Completion UI, browser-local Webb cache, transcript finalization, medals, and navigation are downstream of this canonical commit. On failure the instructional page retains work and offers an idempotent retry. Mr. Slate authorizes the occurrence before practice but never starts or completes an instructional lesson session; its mastery evidence remains separate.
+
+When no active Syllabus exists, Webb and Slate may begin authorization with an empty occurrence ID. They never fabricate compatibility identity in the browser. `/api/syllabus/execution` applies the existing approved/scheduled/PIN rules and returns the canonical `legacy:<lesson-key>:<today>` occurrence. Webb binds its protected session start and completion to that returned value; Slate retains it only as authorized practice context.
+
 ## Snapshot, Timer, and Transcript Continuity
 
 Session authority is settled before the learning orchestrator proceeds. On successful takeover, the new device reloads from the shared snapshot rather than trusting its own stale local cache.
@@ -127,6 +137,8 @@ The current guard trigger does not perform automatic deactivation or takeover. I
 
 - Do not restore a browser-side read/check followed by direct insert or update as the start authority.
 - Do not directly insert active `lesson_sessions` from authenticated browser code.
+- Do not directly end `lesson_sessions` or insert canonical lifecycle events from authenticated browser code.
+- Do not treat transcripts, Webb local completion cache, or Slate mastery as instructional completion authority.
 - Do not recreate automatic session replacement in an insert trigger.
 - Do not treat a client-visible conflict as sufficient takeover authority.
 - Do not allow a stale expected conflict ID to replace a newer session.
@@ -139,7 +151,9 @@ The current guard trigger does not perform automatic deactivation or takeover. I
 ## Key Files
 
 - `supabase/migrations/20260827174540_transactional_lesson_session_start.sql` - Transactional RPC, guarded active inserts, trigger removal, and grants.
+- `supabase/migrations/20260828130000_transactional_lesson_session_completion.sql` - Transactional, occurrence-bound, idempotent completion plus server-only end/event guards.
 - `src/app/api/syllabus/execution/start/route.js` - Authenticated, owned, proof-bound, fail-closed protected start route.
+- `src/app/api/syllabus/execution/complete/route.js` - Authenticated, owned, service-role protected completion route.
 - `src/app/api/syllabus/execution/route.js` - Scoped Syllabus execution authorization.
 - `src/app/lib/facilitatorPin.server.mjs` - Fresh server-side Facilitator PIN verification.
 - `src/app/lib/sessionTracking.js` - Protected start client, lifecycle operations, and read-only status check.
@@ -160,6 +174,9 @@ The current guard trigger does not perform automatic deactivation or takeover. I
 - Replacement failure preserves prior active sessions through transaction rollback.
 - Protected creation requires browser and canonical occurrence identities plus a valid scoped execution proof.
 - Authenticated clients cannot directly insert active session rows or execute the transactional RPC.
+- Authenticated clients cannot directly change `ended_at`, insert lifecycle events, or execute the completion RPC.
+- Sonoma and Webb success UI waits for canonical completion; retries cannot duplicate the completed event.
+- Slate practice/mastery never manufactures instructional completion.
 - Realtime is the immediate detection path when available; a 15-second read-only poll is the fallback.
 - The removed automatic deactivation trigger has no current authority.
 - The database receives no raw PIN and the AI controls no session authority.

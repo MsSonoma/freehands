@@ -135,6 +135,10 @@ V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical 
 
 ## V2 Architectural Decisions
 
+### Canonical Completion Gate (2026-08-28)
+
+`SessionPageV2` does not enter its success state, delete the snapshot, write secondary completion artifacts, or navigate until the protected completion route confirms the atomic `lesson_sessions` plus `lesson_session_events` commit. While the commit is pending, the learner sees a recording state. Failure preserves work and exposes an idempotent retry; an ambiguous successful network attempt is safe because the database returns the existing completed event on retry.
+
 ### Phase Entry Gating (Begin Buttons) (2026-01-02)
 
 **Decision:** Each Q&A phase (Comprehension, Exercise, Worksheet, Test) uses an explicit **Begin** gate before showing Opening Actions and the **Go** control.

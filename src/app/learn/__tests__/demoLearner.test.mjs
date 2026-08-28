@@ -78,8 +78,16 @@ test('Demo Learner is pinned to Ms. Sonoma when a lesson launches', () => {
 })
 
 test('real learner lesson routes retain Slate and Webb behavior', () => {
-  assert.equal(buildLessonSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', selectedTeacher: 'slate' }), '/session/slate')
-  assert.equal(buildLessonSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', selectedTeacher: 'webb' }), '/session/webb')
+  assert.equal(buildLessonSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', selectedTeacher: 'slate' }), '/session/slate?subject=math&lesson=one.json&learnerId=real')
+  assert.equal(buildLessonSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', selectedTeacher: 'webb' }), '/session/webb?subject=math&lesson=one.json&learnerId=real')
+  assert.equal(
+    buildLessonSessionRoute({ learnerId: 'real', subject: 'language-arts', fileName: 'grammar.json', selectedTeacher: 'webb', occurrenceId: 'syllabus:thursday-grammar' }),
+    '/session/webb?subject=language-arts&lesson=grammar.json&learnerId=real&occurrenceId=syllabus%3Athursday-grammar',
+  )
+  assert.equal(
+    buildLessonSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', selectedTeacher: 'slate', occurrenceId: 'syllabus:practice-context' }),
+    '/session/slate?subject=math&lesson=one.json&learnerId=real&occurrenceId=syllabus%3Apractice-context',
+  )
 })
 
 test('Demo Learner uses the anonymous demo lesson endpoint only', () => {

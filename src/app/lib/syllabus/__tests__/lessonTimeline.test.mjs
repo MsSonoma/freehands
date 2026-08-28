@@ -248,6 +248,22 @@ test('explicit incomplete event overrides ended_at completion fallback for its a
   assert.equal(item.actual_at, '2026-08-18T10:45:00Z')
 })
 
+for (const eventType of ['restarted', 'exited']) {
+  test(`explicit ${eventType} event preserves the attempt without ended_at completion fallback`, () => {
+    const item = composeSyllabusLessonTimeline({
+      activeRevision: REVISION,
+      associations: [association()],
+      sessions: [{ id: `${eventType}-session`, lesson_id: 'generated/fractions.json', started_at: '2026-08-18T10:00:00Z', ended_at: '2026-08-18T11:00:00Z' }],
+      sessionEvents: [{ id: `${eventType}-event`, session_id: `${eventType}-session`, lesson_id: 'generated/fractions.json', event_type: eventType, occurred_at: '2026-08-18T10:45:00Z', metadata: { syllabus_occurrence_id: 'syllabus:original' } }],
+      today: '2026-08-26',
+    })[0]
+    assert.equal(item.actual_kind, 'incomplete')
+    assert.equal(item.readiness_state, 'draft')
+    assert.equal(item.actual_at, '2026-08-18T10:45:00Z')
+    assert.equal(item.source_occurrence_id, 'syllabus:original')
+  })
+}
+
 test('a newer in-progress attempt preserves the older completion occurrence', () => {
   const items = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
@@ -349,7 +365,8 @@ test('paged Syllabus history reads include rows beyond the first page', async ()
 
 test('Syllabus terminal semantics remain aligned with the learner lesson-history route', () => {
   const route = fs.readFileSync(path.resolve('src/app/api/learner/lesson-history/route.js'), 'utf8')
-  assert.match(route, /status: endedAt \? 'completed' : 'in-progress'/)
+  assert.match(route, /resolveLessonSessionLifecycle/)
+  assert.doesNotMatch(route, /status: endedAt \? 'completed' : 'in-progress'/)
   assert.match(route, /event_type: 'incomplete'/)
   assert.match(route, /session\.status = 'incomplete'/)
 })

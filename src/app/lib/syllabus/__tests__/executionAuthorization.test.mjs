@@ -208,6 +208,33 @@ test('no-active-Syllabus execution compatibility does not require artifact enric
   assert.equal(resolverCalls, 0)
 })
 
+test('no-active-Syllabus route canonicalizes an empty occurrence while active Syllabus rejects invented identity even with PIN', async () => {
+  const legacyRepository = {
+    ...repository(),
+    async findOwnedLearner() { return { id: LEARNER, approved_lessons: { 'generated/legacy.json': true } } },
+    async findSyllabus() { return null },
+  }
+  const legacy = await authorizeExecution(request({ learnerId: LEARNER, lessonKey: 'generated/legacy.json', occurrenceId: '' }), {
+    requestContext: { user: { id: FACILITATOR }, admin: {} },
+    repository: legacyRepository,
+    now: new Date('2026-08-23T16:00:00Z'),
+    proofSecret: 'test-secret',
+  })
+  assert.equal(legacy.status, 200)
+  assert.equal((await legacy.json()).occurrenceId, 'legacy:generated/legacy.json:2026-08-23')
+
+  const activeRepository = repository({ forecast: [forecast('real', 'math/real.json', '2026-08-23')] })
+  const invented = await authorizeExecution(request({ learnerId: LEARNER, lessonKey: 'math/real.json', occurrenceId: 'syllabus:invented', exceptionPin: '2468' }), {
+    requestContext: { user: { id: FACILITATOR }, admin: {} },
+    repository: activeRepository,
+    now: new Date('2026-08-23T16:00:00Z'),
+    proofSecret: 'test-secret',
+    verifyFacilitatorPinForUser: async () => true,
+  })
+  assert.equal(invented.status, 403)
+  assert.equal((await invented.json()).code, 'SYLLABUS_OCCURRENCE_REQUIRED')
+})
+
 test('direct session authorization PIN-gates future and completed historical occurrences', async () => {
   const futureRepo = repository({ forecast: [forecast('future', 'math/future.json', '2026-08-25')] })
   const baseDeps = { requestContext: { user: { id: FACILITATOR }, admin: {} }, repository: futureRepo, now: new Date('2026-08-23T16:00:00Z'), proofSecret: 'test-secret', verifyFacilitatorPinForUser: async (_admin, _user, pin) => pin === '2468' }

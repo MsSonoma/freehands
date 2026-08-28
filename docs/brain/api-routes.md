@@ -152,6 +152,19 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 - **Takeover**: A fresh Facilitator PIN plus the exact `expectedConflictingSessionId` are required before the route sends `allowTakeover=true`
 - **Atomicity**: One service-role call to `start_lesson_session_transactional` locks the learner and every active learner session, closes prior lessons, and returns `started`, `reused`, `conflict`, or `taken_over`; the route has no JavaScript check/insert fallback
 - **Database boundary**: The RPC accepts no raw PIN and is executable only by `service_role`
+- **Legacy compatibility**: Webb/Sonoma instructional clients may initially authorize with an empty occurrence only when the server has no active Syllabus; the authorization route returns the canonical `legacy:<lesson-key>:<today>` identity used by protected start and completion. Active-Syllabus occurrence matching remains exact and fail-closed.
+
+### `/api/syllabus/execution/complete`
+**Purpose**: Commit truthful instructional completion for an already protected Sonoma or Webb session
+**Status**: Operational after `20260828130000_transactional_lesson_session_completion.sql` is applied
+
+- **Location**: `src/app/api/syllabus/execution/complete/route.js`
+- **Method**: POST
+- **Auth**: Bearer token and facilitator-owned learner are required
+- **Identity**: Valid session UUID, canonical lesson key, and exact Syllabus occurrence ID are mandatory
+- **Atomicity**: One service-role call locks the session, verifies its protected-start occurrence, sets `ended_at`, and inserts the completed event in one transaction
+- **Idempotency**: A retry for an already completed session returns the existing completion; an ended-but-uncompleted or mismatched session fails closed
+- **Database boundary**: Only `service_role` can execute the RPC; browser clients cannot directly insert lifecycle events or change `ended_at`
 
 ### `/api/tts`
 **Purpose**: Text-to-speech conversion (Google TTS)  

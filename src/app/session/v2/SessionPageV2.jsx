@@ -649,6 +649,9 @@ function SessionPageV2Inner() {
   }, [lessonId, lessonData?.key, lessonKey]);
   
   const [currentPhase, setCurrentPhase] = useState('idle');
+  const [completionCommitState, setCompletionCommitState] = useState('idle');
+  const completionPayloadRef = useRef(null);
+  const completionCommitInFlightRef = useRef(false);
   const currentPhaseRef = useRef('idle');
   useEffect(() => {
     currentPhaseRef.current = currentPhase;
@@ -4935,6 +4938,24 @@ function SessionPageV2Inner() {
     });
     
     orchestrator.on('sessionComplete', async (data) => {
+      completionPayloadRef.current = data;
+      if (completionCommitInFlightRef.current) return;
+      completionCommitInFlightRef.current = true;
+      setCompletionCommitState('saving');
+      let canonicalCompletion = false;
+      try {
+        canonicalCompletion = await endTrackedSession('completed', {
+          source: 'session-v2',
+          test_percentage: data?.testGrade?.percentage ?? testGrade?.percentage ?? null,
+        });
+      } catch {}
+      completionCommitInFlightRef.current = false;
+      if (!canonicalCompletion) {
+        setCompletionCommitState('failed');
+        addEvent('Canonical lesson completion failed; work retained for retry.');
+        return;
+      }
+      setCompletionCommitState('committed');
       addEvent('ðŸ Session complete!');
       setCurrentPhase('complete');
       
@@ -5088,14 +5109,8 @@ function SessionPageV2Inner() {
         });
       } catch {}
 
-      // End tracked session (so Calendar history can detect this completion).
+      // Canonical completion was committed before any success UI or cleanup.
       try { stopSessionPolling?.(); } catch {}
-      try {
-        await endTrackedSession('completed', {
-          source: 'session-v2',
-          test_percentage: testGrade?.percentage ?? null,
-        });
-      } catch {}
       
       // Navigate to lessons page
       console.log('[SessionPageV2] Attempting navigation to lessons page');
@@ -7676,19 +7691,9 @@ function SessionPageV2Inner() {
   
   const skipTestReview = async () => {
     if (!testPhaseRef.current) return;
-    
-    // Play prefetched congrats TTS immediately for responsive feel
-    if (congratsTtsUrl && audioEngineRef.current) {
-      try {
-        // Prevent the ClosingPhase farewell from interrupting this message.
-        deferClosingStartUntilAudioEndRef.current = true;
-        audioEngineRef.current.playAudio(congratsTtsUrl, ['Great job completing the lesson!']);
-      } catch (err) {
-        console.warn('[SessionPageV2] Failed to play congrats TTS:', err);
-      }
-    }
-    
-    // Let completion logic happen in background (don't await)
+
+    // The canonical completion event controls final success feedback. Advancing
+    // review here must not claim the lesson was recorded before that commit.
     testPhaseRef.current.skipReview();
   };
   
@@ -7709,6 +7714,26 @@ function SessionPageV2Inner() {
           <h2 style={{ fontWeight: 700, marginBottom: 8 }}>Syllabus authorization required</h2>
           <p>{executionAuthorizationError}</p>
           <a href="/learn/lessons" style={{ color: '#991b1b', fontWeight: 700 }}>Return to the Syllabus</a>
+        </div>
+      </div>
+    );
+  }
+  if (completionCommitState === 'saving' || completionCommitState === 'failed') {
+    const completionFailed = completionCommitState === 'failed';
+    return (
+      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ background: '#fff7ed', color: '#9a3412', padding: 24, borderRadius: 8, maxWidth: 520, textAlign: 'center' }}>
+          <h2 style={{ fontWeight: 700, marginBottom: 8 }}>{completionFailed ? 'Completion still needs to be recorded' : 'Recording lesson completion…'}</h2>
+          <p>{completionFailed ? 'Your lesson work and transcript are still here. Retry before leaving this page.' : 'Please keep this page open while the canonical lesson history is updated.'}</p>
+          {completionFailed && (
+            <button
+              type="button"
+              onClick={() => eventBusRef.current?.emit('sessionComplete', completionPayloadRef.current)}
+              style={{ marginTop: 12, padding: '10px 18px', border: 0, borderRadius: 8, background: '#c2410c', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Retry completion
+            </button>
+          )}
         </div>
       </div>
     );

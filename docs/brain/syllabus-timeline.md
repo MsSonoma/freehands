@@ -42,6 +42,9 @@ The pure composer does not load generated lesson JSON or infer generated subject
 - Actual session evidence remains on its local-calendar activity date.
 - Completed history does not create a new future obligation unless later explicit intent proves a deliberate repeat.
 - Starting or completing a lesson upgrades readiness without erasing earlier occurrence history.
+- Protected Sonoma and Webb sessions are the shared instructional history: their transactional completed event creates actual completion evidence independently of transcript storage or browser-local persona caches.
+- Slate drill mastery is practice evidence and does not create an instructional session or completed Syllabus occurrence.
+- Explicit lifecycle events outrank `ended_at`: `completed` is completed, while `incomplete`, `restarted`, and `exited` preserve a non-completed attempt as `incomplete`. Only historical ended sessions with no relevant lifecycle event use the legacy completion fallback.
 
 ### No active Syllabus
 
@@ -58,6 +61,7 @@ The active composer is not a replacement for the no-active-Syllabus compatibilit
 - Do not let supplemental artifact metadata create membership or become canonical key-resolution authority.
 - Do not display the `generated` storage namespace as an educational subject.
 - Do not bulk-backfill historical approved lessons into Syllabus associations.
+- Do not infer completion from transcript timestamps, farewell text, Webb localStorage, or Slate mastery.
 - Do not change weekly capacity, PIN gates, or execution authorization to repair composition.
 - Do not remove approved lesson keys from canonical resolution without proving legacy alias safety.
 - Do not change the no-active-Syllabus legacy compatibility behavior here.

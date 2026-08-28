@@ -21,9 +21,11 @@
  */
 
 import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { getMasteryForLearner, saveMastery } from '@/app/lib/masteryClient'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
+import { requestFacilitatorPinException } from '@/app/lib/pinGate'
+import { authorizeProtectedOccurrence } from '@/app/lib/syllabus/executionClient'
 
 // --- Constants ---------------------------------------------------------------
 
@@ -437,6 +439,9 @@ async function playSlateAudio(text, audioEl, videoEl, onDone, isSpeakingRef, mut
 
 function SlateDrillInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const routeLearnerId = searchParams?.get('learnerId') || ''
+  const routeOccurrenceId = searchParams?.get('occurrenceId') || ''
 
   // Page state
   // Phases: loading | list | ready | asking | feedback | won | error
@@ -487,6 +492,7 @@ function SlateDrillInner() {
   const soundRef = useRef(true)
   const learnerIdRef = useRef(null)
   const lessonKeyRef = useRef('')
+  const authorizedOccurrenceRef = useRef('')
 
   const timerInterval = useRef(null)
   const feedbackTimeout = useRef(null)
@@ -670,7 +676,7 @@ function SlateDrillInner() {
   }, [pagePhase, offerResume, router])
 
   // Select a lesson from the list — skip the ready screen, go straight to drilling
-  const selectLesson = useCallback((lesson) => {
+  const selectLesson = useCallback(async (lesson) => {
     clearInterval(timerInterval.current)
     clearTimeout(feedbackTimeout.current)
     const p = buildPool(lesson)
@@ -684,9 +690,23 @@ function SlateDrillInner() {
       setPagePhase('error')
       return
     }
+    const lk = lesson.lessonKey || `${lesson.subject || 'general'}/${lesson.file || ''}`
+    try {
+      const authorization = await authorizeProtectedOccurrence({
+        learnerId: routeLearnerId || learnerIdRef.current,
+        lessonKey: lk,
+        occurrenceId: routeOccurrenceId,
+        requestPin: requestFacilitatorPinException,
+      })
+      authorizedOccurrenceRef.current = authorization.occurrenceId
+    } catch (cause) {
+      setErrorMsg(cause?.message || 'This Syllabus practice occurrence is not authorized.')
+      phaseRef.current = 'error'
+      setPagePhase('error')
+      return
+    }
     poolRef.current = p
     setPool(p)
-    const lk = lesson.lessonKey || `${lesson.subject || 'general'}/${lesson.file || ''}`
     lessonKeyRef.current = lk
     setLessonData(lesson)
     setScore(0)
@@ -713,7 +733,7 @@ function SlateDrillInner() {
         }, slateIsSpeakingRef, m)
       }, 120)
     }
-  }, [])
+  }, [routeLearnerId, routeOccurrenceId])
 
   // Advance the deck, reshuffling when 80%+ has been used
   const advanceDeck = useCallback(() => {
@@ -948,12 +968,20 @@ function SlateDrillInner() {
   }, [router])
 
   // ── Snapshot save/restore (survive navigation) ────────────────────────
-  function handleSlateResume() {
+  async function handleSlateResume() {
     try {
       const saved = JSON.parse(localStorage.getItem('slate_session') || 'null')
       if (!saved?.lessonData) { setOfferResume(false); return }
       const p = buildPool(saved.lessonData)
       if (!p.length) { setOfferResume(false); return }
+      const savedLessonKey = saved.lessonKey || saved.lessonData.lessonKey || `${saved.lessonData.subject || 'general'}/${saved.lessonData.file || ''}`
+      const authorization = await authorizeProtectedOccurrence({
+        learnerId: routeLearnerId || learnerIdRef.current,
+        lessonKey: savedLessonKey,
+        occurrenceId: routeOccurrenceId,
+        requestPin: requestFacilitatorPinException,
+      })
+      authorizedOccurrenceRef.current = authorization.occurrenceId
       poolRef.current = p
       setPool(p)
       lessonKeyRef.current = saved.lessonKey || ''
@@ -982,7 +1010,11 @@ function SlateDrillInner() {
       // Also discard any pending lesson key — user chose to resume the old session
       try { sessionStorage.removeItem('slate_pending_lesson_key') } catch {}
       setOfferResume(false)
-    } catch { setOfferResume(false) }
+    } catch (cause) {
+      setErrorMsg(cause?.message || 'This Syllabus practice occurrence is not authorized.')
+      phaseRef.current = 'error'
+      setPagePhase('error')
+    }
   }
 
   function handleSlateRestart() {
@@ -1014,6 +1046,7 @@ function SlateDrillInner() {
         localStorage.setItem('slate_session', JSON.stringify({
           lessonData,
           lessonKey: lessonKeyRef.current,
+          authorizedOccurrenceId: authorizedOccurrenceRef.current,
           score,
           qCount,
           drillTranscript: drillTranscriptRef.current,

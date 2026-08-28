@@ -13,9 +13,15 @@
       "generated lesson metadata enrichment",
       "shared read and execution composition",
       "provisional weekly placement",
-      "canonical lesson key resolution"
+      "canonical lesson key resolution",
+      "transactional instructional completion",
+      "Webb canonical history",
+      "Slate mastery separation",
+      "explicit lifecycle precedence",
+      "restarted session non-completion",
+      "legacy ended-session fallback"
     ],
-    "last_updated": "2026-08-28T14:41:37Z",
+    "last_updated": "2026-08-28T17:33:08Z",
     "status": "canonical"
   },
   "facilitator-hub": {
@@ -177,8 +183,11 @@
       "/api/learner/follow-ups",
       "/api/learner/follow-ups/[runId]",
       "/api/syllabus/execution/start",
+      "/api/syllabus/execution/complete",
       "start_lesson_session_transactional",
+      "complete_lesson_session_transactional",
       "requested occurrence binding",
+      "server-owned legacy occurrence compatibility",
       "instructions-field",
       "innertext-field",
       "session-field",
@@ -190,7 +199,7 @@
       "/api/visual-aids",
       "/api/content-safety"
     ],
-    "last_updated": "2026-08-27T15:09:18Z",
+    "last_updated": "2026-08-28T17:33:08Z",
     "status": "canonical"
   },
   "mastery-evidence": {
@@ -446,10 +455,12 @@
       "protected start sequencing",
       "takeover restore handoff",
       "complete lesson cleanup",
+      "canonical completion gate",
+      "completion retry",
       "transcript persistence",
       "caption panel"
     ],
-    "last_updated": "2026-08-28T01:39:23Z",
+    "last_updated": "2026-08-28T16:44:41Z",
     "status": "canonical"
   },
   "timer-system": {
@@ -559,9 +570,14 @@
       "guarded active inserts",
       "fail-closed protected start",
       "one active lesson per learner",
-      "requested occurrence binding"
+      "requested occurrence binding",
+      "transactional session completion",
+      "truthful completion UI",
+      "Webb instructional lifecycle",
+      "Slate practice separation",
+      "server-owned legacy occurrence compatibility"
     ],
-    "last_updated": "2026-08-28T01:39:23Z",
+    "last_updated": "2026-08-28T17:33:08Z",
     "status": "canonical"
   },
   "MentorInterceptor": {

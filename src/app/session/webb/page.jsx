@@ -1,9 +1,12 @@
 'use client'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { getWebbCompletionForLearner, saveWebbCompletion } from '@/app/lib/webbCompletionClient'
+import { requestFacilitatorPinException } from '@/app/lib/pinGate'
+import { endLessonSession } from '@/app/lib/sessionTracking'
+import { startProtectedInstructionalSession } from '@/app/lib/syllabus/executionClient'
 
 // CSS animations
 if (typeof document !== 'undefined' && !document.getElementById('webb-spin-style')) {
@@ -156,8 +159,11 @@ function isNo(text) {
 }
 
 // ── Root page ─────────────────────────────────────────────────────────────────
-export default function WebbPage() {
+function WebbPageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const routeLearnerId = searchParams?.get('learnerId') || ''
+  const routeOccurrenceId = searchParams?.get('occurrenceId') || ''
 
   // ── Lesson browser state ─────────────────────────────────────────────
   const [phase, setPhase]                       = useState(PHASE.LIST)
@@ -195,6 +201,9 @@ export default function WebbPage() {
   const [generatingEssay,    setGeneratingEssay]   = useState(false)
   const [webbCompletionMap,  setWebbCompletionMap] = useState({}) // {[lessonKey]: {completed, completedAt}}
   const [justCompletedLesson, setJustCompletedLesson] = useState(null) // lesson title shown as completion toast
+  const [completionState, setCompletionState] = useState('idle') // idle | saving | failed
+  const [completionError, setCompletionError] = useState('')
+  const canonicalSessionRef = useRef(null)
   const [articleSources,     setArticleSources]    = useState(() => {
     const ALL = ['simple-wikipedia','wikipedia','kiddle','ducksters','wikijunior']
     if (typeof window === 'undefined') return ALL
@@ -356,11 +365,19 @@ export default function WebbPage() {
     return k ? `webb_session_${k}` : null
   }
 
-  function handleResume() {
+  async function handleResume() {
     try {
       const key = snapKey(selectedLesson)
       const saved = key ? JSON.parse(localStorage.getItem(key) || 'null') : null
       if (!saved) { setOfferResume(false); return }
+      const lessonKey = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
+      const tracked = await startProtectedInstructionalSession({
+        learnerId: routeLearnerId || learnerId,
+        lessonKey,
+        occurrenceId: routeOccurrenceId,
+        requestPin: requestFacilitatorPinException,
+      })
+      canonicalSessionRef.current = { id: tracked.id, learnerId: routeLearnerId || learnerId, lessonKey, occurrenceId: tracked.occurrenceId }
       setChatMessages(saved.chatMessages || [])
       setTranscript(saved.transcript || [])
       setObjectives(saved.objectives || [])
@@ -373,7 +390,9 @@ export default function WebbPage() {
       const resumeLk = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
       try { if (resumeLk) sessionStorage.setItem('webb_active_lesson_key', resumeLk) } catch {}
       preloadResources(selectedLesson)
-    } catch { setOfferResume(false) }
+    } catch (cause) {
+      setPageError(cause?.message || 'Could not securely resume this lesson.')
+    }
   }
 
   function handleRestartFromPrompt() {
@@ -1049,6 +1068,21 @@ export default function WebbPage() {
     setEssay(null)
     webbSessionStartRef.current = new Date().toISOString()
 
+    try {
+      const lessonKey = lesson.lessonKey || lesson.lesson_id || lesson.id
+      const tracked = await startProtectedInstructionalSession({
+        learnerId: routeLearnerId || learnerId,
+        lessonKey,
+        occurrenceId: routeOccurrenceId,
+        requestPin: requestFacilitatorPinException,
+      })
+      canonicalSessionRef.current = { id: tracked.id, learnerId: routeLearnerId || learnerId, lessonKey, occurrenceId: tracked.occurrenceId }
+    } catch (cause) {
+      setPageError(cause?.message || 'Could not securely start this lesson.')
+      setPhase(PHASE.LIST)
+      return
+    }
+
     // Get Mrs. Webb's opening greeting
     try {
       const res = await fetch('/api/webb-chat', {
@@ -1076,7 +1110,7 @@ export default function WebbPage() {
     // Preload media + generate objectives in background
     preloadResources(lesson)
     generateObjectives(lesson)
-  }, [preloadResources, generateObjectives])
+  }, [preloadResources, generateObjectives, learnerId, routeLearnerId, routeOccurrenceId])
 
   // ── Send chat message ─────────────────────────────────────────────────
   const sendMessage = useCallback(async (text) => {
@@ -1637,8 +1671,28 @@ export default function WebbPage() {
 
   // ── Complete lesson via Mrs. Webb ─────────────────────────────────────
   async function handleCompleteLesson() {
-    if (!learnerId || !selectedLesson) return
+    if (!learnerId || !selectedLesson || completionState === 'saving') return
+    const tracked = canonicalSessionRef.current
+    if (!tracked?.id) {
+      setCompletionState('failed')
+      setCompletionError('The protected lesson session is missing. Keep this work open and try again.')
+      return
+    }
+    setCompletionState('saving')
+    setCompletionError('')
     const lk = selectedLesson.lessonKey || selectedLesson.lesson_id || selectedLesson.id || 'unknown'
+    const completed = await endLessonSession(tracked.id, {
+      reason: 'completed',
+      learnerId: tracked.learnerId,
+      lessonId: tracked.lessonKey,
+      occurrenceId: tracked.occurrenceId,
+      metadata: { source: 'webb' },
+    })
+    if (!completed) {
+      setCompletionState('failed')
+      setCompletionError('Your work is safe, but lesson completion could not be recorded. Please try again.')
+      return
+    }
     saveWebbCompletion(learnerId, lk)
     setWebbCompletionMap(getWebbCompletionForLearner(learnerId))
     // Close the essay overlay immediately
@@ -1649,6 +1703,7 @@ export default function WebbPage() {
     addMsg(farewell)
     await waitForTTSIdle()
     setJustCompletedLesson(lessonTitle)
+    setCompletionState('idle')
     handleBack()
   }
 
@@ -2922,9 +2977,11 @@ export default function WebbPage() {
               const lk = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
               const alreadyDone = lk && webbCompletionMap[lk]?.completed
               return (
+                <>
                 <button
                   type="button"
                   onClick={() => { if (!alreadyDone) handleCompleteLesson() }}
+                  disabled={completionState === 'saving'}
                   style={{
                     marginTop: 20,
                     width: '100%',
@@ -2944,8 +3001,12 @@ export default function WebbPage() {
                   }}
                 >
                   <span style={{ fontSize: 20 }}>👩🏻‍🏫</span>
-                  {alreadyDone ? 'Lesson Completed ✓' : 'Complete Lesson'}
+                  {alreadyDone ? 'Lesson Completed ✓' : completionState === 'saving' ? 'Recording completion…' : completionState === 'failed' ? 'Retry completion' : 'Complete Lesson'}
                 </button>
+                {completionState === 'failed' && (
+                  <p role="alert" style={{ color: C.danger, fontWeight: 700, margin: '10px 0 0' }}>{completionError}</p>
+                )}
+                </>
               )
             })()}
           </div>
@@ -3043,6 +3104,14 @@ const footerStyle = {
 }
 
 // ── WebbLessonBrowser ─────────────────────────────────────────────────────────
+export default function WebbPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#f8fafc' }} />}>
+      <WebbPageInner />
+    </Suspense>
+  )
+}
+
 function WebbLessonBrowser({
   availableLessons, allOwnedLessons, recentSessions, historyLessons,
   listTab, setListTab, ownedFilters, setOwnedFilters,
