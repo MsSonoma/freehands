@@ -1,4 +1,23 @@
 {
+  "syllabus-timeline": {
+    "file": "syllabus-timeline.md",
+    "systems": [
+      "active Syllabus timeline",
+      "composeSyllabusLessonTimeline",
+      "lesson membership authority",
+      "approved_lessons readiness only",
+      "syllabus_lesson_associations",
+      "forecast lesson intent",
+      "lesson schedules",
+      "actual learner history",
+      "generated lesson metadata enrichment",
+      "shared read and execution composition",
+      "provisional weekly placement",
+      "canonical lesson key resolution"
+    ],
+    "last_updated": "2026-08-28T14:41:37Z",
+    "status": "canonical"
+  },
   "facilitator-hub": {
     "file": "facilitator-hub.md",
     "systems": [

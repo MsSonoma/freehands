@@ -34,6 +34,7 @@ export async function POST(request, deps = {}) {
     const repository = deps.repository || createSyllabusRepository(context.admin)
     const decision = await resolveSyllabusExecution({
       repository,
+      admin: context.admin,
       facilitatorId: context.user.id,
       learnerId,
       lessonKey,

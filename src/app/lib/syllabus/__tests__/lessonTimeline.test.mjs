@@ -6,6 +6,7 @@ import test from 'node:test'
 import { lessonKeyBasename, normalizeLessonKey, resolveLessonKeyAgainst } from '../../lessonKeyNormalization.js'
 import { preserveReadinessState } from '../lessonAssociations.server.mjs'
 import { composeSyllabusLessonTimeline } from '../lessonTimeline.mjs'
+import { resolveSyllabusLessonMetadata } from '../lessonTimelineInputs.server.mjs'
 import { readAllSupabaseRows } from '../supabaseRepository.server.mjs'
 
 const REVISION = {
@@ -30,6 +31,132 @@ const association = (overrides = {}) => ({
 test('facilitator-owned artifacts without learner association do not enter the learner Syllabus', () => {
   const items = composeSyllabusLessonTimeline({ activeRevision: REVISION, today: '2026-08-26' })
   assert.deepEqual(items, [])
+})
+
+test('approved-only generated and public lessons do not become active Syllabus members', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    approvedLessons: {
+      'generated/fractions.json': true,
+      'math/public-fractions.json': true,
+    },
+    today: '2026-08-26',
+  })
+  assert.deepEqual(items, [])
+})
+
+test('approved lesson keys remain resolution candidates for legitimate shortened actual evidence', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    approvedLessons: { 'generated/fractions.json': true },
+    sessions: [{
+      id: 'legacy-short-key', lesson_id: 'fractions',
+      started_at: '2026-08-25T10:00:00Z', ended_at: null,
+    }],
+    today: '2026-08-26',
+  })
+  assert.equal(items.length, 1)
+  assert.equal(items[0].lesson_key, 'generated/fractions.json')
+  assert.equal(items[0].placement_kind, 'actual')
+  assert.equal(items[0].readiness_state, 'in_progress')
+})
+
+test('stored generated lesson metadata labels legitimate actual history without creating membership', () => {
+  const metadata = [{ lesson_key: 'generated/water-cycle.json', subject: 'science', title: 'The Water Cycle' }]
+  assert.deepEqual(composeSyllabusLessonTimeline({ activeRevision: REVISION, lessonMetadata: metadata, today: '2026-08-26' }), [])
+
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    sessions: [{ id: 'historical-lesson', lesson_id: 'generated/water-cycle.json', started_at: '2026-08-25T10:00:00Z', ended_at: '2026-08-25T11:00:00Z' }],
+    lessonMetadata: metadata,
+    today: '2026-08-26',
+  })
+  assert.equal(items.length, 1)
+  assert.equal(items[0].placement_kind, 'actual')
+  assert.equal(items[0].subject, 'science')
+  assert.equal(items[0].title, 'The Water Cycle')
+})
+
+test('explicit composition metadata wins over supplemental storage metadata', () => {
+  const [item] = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    associations: [association({ subject: 'mathematics', title: 'Facilitator-selected title' })],
+    lessonMetadata: [{ lesson_key: 'generated/fractions.json', subject: 'science', title: 'Stored title' }],
+    today: '2026-08-26',
+  })
+  assert.equal(item.subject, 'mathematics')
+  assert.equal(item.title, 'Facilitator-selected title')
+})
+
+test('general remains a valid stored subject and generated is never displayed as an educational subject', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    sessions: [
+      { id: 'general', lesson_id: 'generated/general-topic.json', started_at: '2026-08-25T10:00:00Z' },
+      { id: 'namespace', lesson_id: 'generated/namespace-topic.json', started_at: '2026-08-25T11:00:00Z' },
+    ],
+    lessonMetadata: [
+      { lesson_key: 'generated/general-topic.json', subject: 'general', title: 'General Topic' },
+      { lesson_key: 'generated/namespace-topic.json', subject: 'generated', title: 'Namespace Topic' },
+    ],
+    today: '2026-08-26',
+  })
+  assert.equal(items.find((item) => item.lesson_key.endsWith('general-topic.json')).subject, 'general')
+  assert.equal(items.find((item) => item.lesson_key.endsWith('namespace-topic.json')).subject, 'general')
+  assert.ok(items.every((item) => item.subject !== 'generated'))
+})
+
+test('generated metadata resolution deduplicates legitimate keys and supports a unique legacy short key', async () => {
+  const calls = []
+  const metadata = await resolveSyllabusLessonMetadata({
+    admin: {},
+    facilitatorId: 'facilitator-1',
+    approvedLessons: { 'generated/short.json': true },
+    sessions: [
+      { lesson_id: 'generated/repeated.json' },
+      { lesson_id: 'generated/repeated.json' },
+      { lesson_id: 'short' },
+    ],
+    sessionEvents: [{ lesson_id: 'generated/repeated.json' }],
+    verifyLessonAccess: async ({ lessonKey, requireApproved }) => {
+      calls.push([lessonKey, requireApproved])
+      return { ok: true, lesson: { subject: 'history', title: `Stored ${lessonKey}` } }
+    },
+  })
+  assert.deepEqual(calls.sort(), [
+    ['generated/repeated.json', false],
+    ['generated/short.json', false],
+  ])
+  assert.deepEqual(metadata.map((row) => row.lesson_key).sort(), ['generated/repeated.json', 'generated/short.json'])
+})
+
+test('ambiguous short keys are not guessed and resolver failures fail soft', async () => {
+  const calls = []
+  const metadata = await resolveSyllabusLessonMetadata({
+    admin: {},
+    facilitatorId: 'facilitator-1',
+    approvedLessons: { 'generated/shared.json': true, 'math/shared.json': true },
+    sessions: [{ lesson_id: 'shared' }, { lesson_id: 'generated/missing.json' }],
+    verifyLessonAccess: async ({ lessonKey }) => {
+      calls.push(lessonKey)
+      throw new Error('storage unavailable')
+    },
+  })
+  assert.deepEqual(calls, ['generated/missing.json'])
+  assert.deepEqual(metadata, [])
+})
+
+test('generated artifacts with complete explicit metadata do not trigger a storage read', async () => {
+  let calls = 0
+  const metadata = await resolveSyllabusLessonMetadata({
+    admin: {},
+    facilitatorId: 'facilitator-1',
+    forecastItems: [{ lesson_key: 'generated/complete.json', subject: 'science', title: 'Complete metadata' }],
+    sessions: [{ lesson_id: 'generated/complete.json' }],
+    verifyLessonAccess: async () => { calls += 1; return { ok: true } },
+  })
+  assert.equal(calls, 0)
+  assert.deepEqual(metadata, [])
 })
 
 test('learner-specific unscheduled lessons receive distinct provisional weekly-pattern slots', () => {
@@ -240,6 +367,76 @@ test('draft, approved, and available readiness stays separate from placement', (
   })
   assert.deepEqual(items.map((item) => item.readiness_state), ['draft', 'approved', 'available'])
   assert.ok(items.every((item) => item.placement_kind === 'inferred'))
+})
+
+test('literal true availability upgrades an associated draft without manufacturing placement', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    associations: [association()],
+    approvedLessons: { 'facilitator/fractions.json': true },
+    today: '2026-08-26',
+  })
+  assert.equal(items.length, 1)
+  assert.equal(items[0].lesson_key, 'generated/fractions.json')
+  assert.equal(items[0].readiness_state, 'available')
+  assert.equal(items[0].placement_kind, 'inferred')
+  assert.equal(items[0].subject, 'math')
+  assert.equal(items[0].title, 'Fractions')
+})
+
+test('only literal true availability upgrades an existing Syllabus member', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    associations: [
+      association({ id: 1, lesson_key: 'generated/false.json', title: 'False availability' }),
+      association({ id: 2, lesson_key: 'generated/null.json', title: 'Null availability' }),
+      association({ id: 3, lesson_key: 'generated/string.json', title: 'String availability' }),
+    ],
+    approvedLessons: {
+      'generated/false.json': false,
+      'generated/null.json': null,
+      'generated/string.json': 'true',
+    },
+    today: '2026-08-26',
+  })
+  assert.deepEqual(items.map((item) => item.readiness_state), ['draft', 'draft', 'draft'])
+})
+
+test('availability upgrades legitimate forecast, schedule, and actual members without replacing their metadata', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [{
+      id: 'forecast-science', lesson_key: 'generated/cells.json', planned_date: '2026-08-31',
+      subject: 'science', title: 'Cell Structure',
+    }],
+    schedules: [{
+      id: 'schedule-history', lesson_key: 'generated/civics.json', scheduled_date: '2026-09-07',
+      subject: 'social studies', title: 'Local Civics',
+    }],
+    associations: [association({ lesson_key: 'generated/baking.json', subject: 'cooking', title: 'Bread Baking' })],
+    sessions: [{
+      id: 'actual-cooking', lesson_id: 'generated/baking.json',
+      started_at: '2026-08-25T10:00:00Z', ended_at: '2026-08-25T11:00:00Z',
+    }],
+    approvedLessons: {
+      'generated/cells.json': true,
+      'generated/civics.json': true,
+      'generated/baking.json': true,
+      'generated/approved-only.json': true,
+    },
+    today: '2026-08-26',
+  })
+
+  assert.equal(items.length, 3)
+  assert.deepEqual(items.map((item) => item.lesson_key).sort(), [
+    'generated/baking.json', 'generated/cells.json', 'generated/civics.json',
+  ])
+  const forecast = items.find((item) => item.lesson_key === 'generated/cells.json')
+  const scheduled = items.find((item) => item.lesson_key === 'generated/civics.json')
+  const actual = items.find((item) => item.lesson_key === 'generated/baking.json')
+  assert.deepEqual([forecast.subject, forecast.title, forecast.readiness_state], ['science', 'Cell Structure', 'available'])
+  assert.deepEqual([scheduled.subject, scheduled.title, scheduled.readiness_state], ['social studies', 'Local Civics', 'available'])
+  assert.deepEqual([actual.subject, actual.title, actual.readiness_state], ['cooking', 'Bread Baking', 'completed'])
 })
 
 test('historical key aliases reconcile only when the identity is defensible', () => {
@@ -535,12 +732,14 @@ test('Prepare save-for-later persists learner presence and the learner page has 
 
 test('active Syllabus composition does not live-read legacy planned lessons', () => {
   const revisions = fs.readFileSync(path.resolve('src/app/lib/syllabus/revisions.server.mjs'), 'utf8')
+  const timelineInputs = fs.readFileSync(path.resolve('src/app/lib/syllabus/lessonTimelineInputs.server.mjs'), 'utf8')
   const repository = fs.readFileSync(path.resolve('src/app/lib/syllabus/supabaseRepository.server.mjs'), 'utf8')
   assert.doesNotMatch(revisions, /listPlannedLessons|plannedLessons/)
-  assert.match(revisions, /listLessonSchedule', facilitatorId, learnerId, activeRevision\.effective_from/)
-  assert.match(revisions, /listAllTrackedSessions', learnerId/)
-  assert.match(revisions, /listAllLessonSessionEvents', learnerId/)
-  assert.doesNotMatch(revisions, /optionalList\('listRecentTrackedSessions'|optionalList\('listLessonSessionEvents'/)
+  assert.doesNotMatch(timelineInputs, /listPlannedLessons|plannedLessons/)
+  assert.match(timelineInputs, /listLessonSchedule', facilitatorId, learner\.id, activeRevision\.effective_from/)
+  assert.match(timelineInputs, /listAllTrackedSessions', learner\.id/)
+  assert.match(timelineInputs, /listAllLessonSessionEvents', learner\.id/)
+  assert.doesNotMatch(timelineInputs, /optionalList\('listRecentTrackedSessions'|optionalList\('listLessonSessionEvents'/)
   assert.match(repository, /listLessonSchedule\(facilitatorId, learnerId, effectiveFrom\)[\s\S]*\.gte\('scheduled_date', String\(effectiveFrom \|\| ''\)\.slice\(0, 10\)\)/)
 })
 

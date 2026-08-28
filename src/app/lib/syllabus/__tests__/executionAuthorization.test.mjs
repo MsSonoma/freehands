@@ -7,6 +7,7 @@ import { POST as authorizeExecution } from '../../../api/syllabus/execution/rout
 import { POST as startExecution } from '../../../api/syllabus/execution/start/route.js'
 import { requireProtectedSessionCreation } from '../../../session/v2/protectedSessionBoundary.mjs'
 import { createSyllabusExecutionProof, resolveSyllabusExecution } from '../executionAuthorization.server.mjs'
+import { getActiveSyllabus } from '../revisions.server.mjs'
 
 const FACILITATOR = '11111111-1111-4111-8111-111111111111'
 const LEARNER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
@@ -130,6 +131,81 @@ test('local-calendar midnight authorization uses the profile timezone rather tha
   })
   assert.equal(decision.calendar.today, '2026-08-23')
   assert.equal(decision.allowedWithoutPin, true)
+})
+
+test('active read and execution resolution share stored metadata enrichment for actual history', async () => {
+  const historyRepository = repository({
+    sessions: [{ id: 'generated-history', lesson_id: 'generated/ocean-life.json', started_at: '2026-08-23T14:00:00Z' }],
+  })
+  const verifyLessonAccess = async ({ lessonKey, requireApproved }) => {
+    assert.equal(lessonKey, 'generated/ocean-life.json')
+    assert.equal(requireApproved, false)
+    return { ok: true, lesson: { subject: 'marine biology', title: 'Life in a Tide Pool' } }
+  }
+  const active = await getActiveSyllabus({
+    repository: historyRepository,
+    admin: {},
+    facilitatorId: FACILITATOR,
+    learnerId: LEARNER,
+    now: new Date('2026-08-23T16:00:00Z'),
+    verifyLessonAccess,
+  })
+  const decision = await resolveSyllabusExecution({
+    repository: historyRepository,
+    admin: {},
+    facilitatorId: FACILITATOR,
+    learnerId: LEARNER,
+    lessonKey: 'generated/ocean-life.json',
+    occurrenceId: 'actual:generated-history',
+    now: new Date('2026-08-23T16:00:00Z'),
+    verifyLessonAccess,
+  })
+  assert.equal(active.timeline_items[0].subject, 'marine biology')
+  assert.equal(active.timeline_items[0].title, 'Life in a Tide Pool')
+  assert.equal(decision.occurrence.lesson_key, active.timeline_items[0].lesson_key)
+  assert.equal(decision.occurrence.subject, active.timeline_items[0].subject)
+  assert.equal(decision.occurrence.title, active.timeline_items[0].title)
+  assert.equal(decision.occurrence.planned_date, active.timeline_items[0].planned_date)
+  assert.equal(decision.occurrence.occurrence_id, active.timeline_items[0].occurrence_id)
+})
+
+test('historical artifact resolution failure leaves active reads on safe fallback metadata', async () => {
+  const historyRepository = repository({
+    sessions: [{ id: 'missing-history', lesson_id: 'generated/missing.json', started_at: '2026-08-23T14:00:00Z' }],
+  })
+  const active = await getActiveSyllabus({
+    repository: historyRepository,
+    admin: {},
+    facilitatorId: FACILITATOR,
+    learnerId: LEARNER,
+    now: new Date('2026-08-23T16:00:00Z'),
+    verifyLessonAccess: async () => { throw new Error('missing artifact') },
+  })
+  assert.equal(active.timeline_items.length, 1)
+  assert.equal(active.timeline_items[0].lesson_key, 'generated/missing.json')
+  assert.equal(active.timeline_items[0].subject, 'general')
+  assert.equal(active.timeline_items[0].occurrence_id, 'actual:missing-history')
+})
+
+test('no-active-Syllabus execution compatibility does not require artifact enrichment', async () => {
+  let resolverCalls = 0
+  const legacyRepository = {
+    ...repository(),
+    async findOwnedLearner() { return { id: LEARNER, approved_lessons: { 'generated/legacy.json': true } } },
+    async findSyllabus() { return null },
+  }
+  const decision = await resolveSyllabusExecution({
+    repository: legacyRepository,
+    admin: {},
+    facilitatorId: FACILITATOR,
+    learnerId: LEARNER,
+    lessonKey: 'generated/legacy.json',
+    now: new Date('2026-08-23T16:00:00Z'),
+    verifyLessonAccess: async () => { resolverCalls += 1; return { ok: false } },
+  })
+  assert.equal(decision.reason, 'legacy_available')
+  assert.equal(decision.allowedWithoutPin, true)
+  assert.equal(resolverCalls, 0)
 })
 
 test('direct session authorization PIN-gates future and completed historical occurrences', async () => {

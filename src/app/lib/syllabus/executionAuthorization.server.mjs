@@ -3,6 +3,7 @@ import { normalizeLessonKey, resolveLessonKeyAgainst } from '../lessonKeyNormali
 import { resolveCalendarContext } from '../calendarDate.mjs'
 import { SyllabusError } from './schema.mjs'
 import { composeSyllabusLessonTimeline } from './lessonTimeline.mjs'
+import { loadSyllabusTimelineInputs } from './lessonTimelineInputs.server.mjs'
 
 export const SYLLABUS_EXECUTION_COOKIE = 'syllabus_execution'
 const PROOF_TTL_SECONDS = 120
@@ -48,12 +49,14 @@ export function executionProofMatches(proof, scope) {
 
 export async function resolveSyllabusExecution({
   repository,
+  admin,
   facilitatorId,
   learnerId,
   lessonKey,
   occurrenceId = '',
   now = new Date(),
   fallbackTimeZone,
+  verifyLessonAccess,
 }) {
   const learner = await repository.findOwnedLearner(learnerId, facilitatorId)
   if (!learner) throw new SyllabusError('Learner not found or unauthorized', 403, 'FORBIDDEN')
@@ -83,14 +86,9 @@ export async function resolveSyllabusExecution({
   }
   const revision = await repository.findRevision(syllabus.active_revision_id, syllabus.id)
   if (!revision) throw new SyllabusError('The active Syllabus revision could not be found', 500, 'ACTIVE_REVISION_MISSING')
-  const optionalList = async (name, ...args) => typeof repository[name] === 'function' ? repository[name](...args) : []
-  const [forecastItems, associations, schedules, sessions, sessionEvents] = await Promise.all([
-    repository.listForecastItems(revision.id),
-    optionalList('listLessonAssociations', facilitatorId, learnerId),
-    optionalList('listLessonSchedule', facilitatorId, learnerId, revision.effective_from),
-    optionalList('listAllTrackedSessions', learnerId),
-    optionalList('listAllLessonSessionEvents', learnerId),
-  ])
+  const { forecastItems, associations, schedules, sessions, sessionEvents, lessonMetadata } = await loadSyllabusTimelineInputs({
+    repository, admin, facilitatorId, learner, activeRevision: revision, verifyLessonAccess,
+  })
   const timeline = composeSyllabusLessonTimeline({
     activeRevision: revision,
     forecastItems,
@@ -99,6 +97,7 @@ export async function resolveSyllabusExecution({
     schedules,
     sessions,
     sessionEvents,
+    lessonMetadata,
     today: calendar.today,
     timeZone: calendar.timeZone,
   })

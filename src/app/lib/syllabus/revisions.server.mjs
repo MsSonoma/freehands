@@ -2,6 +2,7 @@ import { SyllabusError, validateSnapshot } from './schema.mjs'
 import { buildLegacySeed } from './legacySeed.server.mjs'
 import { applyTeachingGuidanceOverride } from './teachingGuidance.mjs'
 import { composeSyllabusLessonTimeline } from './lessonTimeline.mjs'
+import { loadSyllabusTimelineInputs } from './lessonTimelineInputs.server.mjs'
 import { resolveCalendarContext } from '../calendarDate.mjs'
 import { findSnapshotCapacityConflict } from './capacity.mjs'
 
@@ -26,7 +27,7 @@ async function enforceActivationCapacity({ repository, facilitatorId, learnerId,
   }
 }
 
-export async function getActiveSyllabus({ repository, facilitatorId, learnerId, now = new Date(), fallbackTimeZone }) {
+export async function getActiveSyllabus({ repository, admin, facilitatorId, learnerId, now = new Date(), fallbackTimeZone, verifyLessonAccess }) {
   const learner = await requireOwnedLearner(repository, learnerId, facilitatorId)
   const profileTimeZone = typeof repository.findFacilitatorTimeZone === 'function' ? await repository.findFacilitatorTimeZone(facilitatorId) : null
   const calendar = resolveCalendarContext({ now, profileTimeZone, fallbackTimeZone })
@@ -36,14 +37,9 @@ export async function getActiveSyllabus({ repository, facilitatorId, learnerId, 
   }
   const activeRevision = await repository.findRevision(syllabus.active_revision_id, syllabus.id)
   if (!activeRevision) throw new SyllabusError('The active Syllabus revision could not be found', 500, 'ACTIVE_REVISION_MISSING')
-  const forecastItems = await repository.listForecastItems(activeRevision.id)
-  const optionalList = async (name, ...args) => typeof repository[name] === 'function' ? repository[name](...args) : []
-  const [associations, schedules, sessions, sessionEvents] = await Promise.all([
-    optionalList('listLessonAssociations', facilitatorId, learnerId),
-    optionalList('listLessonSchedule', facilitatorId, learnerId, activeRevision.effective_from),
-    optionalList('listAllTrackedSessions', learnerId),
-    optionalList('listAllLessonSessionEvents', learnerId),
-  ])
+  const { forecastItems, associations, schedules, sessions, sessionEvents, lessonMetadata } = await loadSyllabusTimelineInputs({
+    repository, admin, facilitatorId, learner, activeRevision, verifyLessonAccess,
+  })
   const timelineItems = composeSyllabusLessonTimeline({
     activeRevision,
     forecastItems,
@@ -52,6 +48,7 @@ export async function getActiveSyllabus({ repository, facilitatorId, learnerId, 
     schedules,
     sessions,
     sessionEvents,
+    lessonMetadata,
     today: calendar.today,
     timeZone: calendar.timeZone,
   })

@@ -54,8 +54,9 @@ function inferredSubjectSlot({ weeklyPattern, subject, afterDate, occupied }) {
 function defaultMetadata(key, row = {}) {
   const normalized = normalizeLessonKey(key)
   const prefix = normalized?.includes('/') ? normalized.split('/')[0] : ''
+  const suppliedSubject = clean(row.subject)
   return {
-    subject: clean(row.subject) || (prefix && prefix !== 'generated' ? prefix : 'general'),
+    subject: suppliedSubject && subjectKey(suppliedSubject) !== 'generated' ? suppliedSubject : (prefix && prefix !== 'generated' ? prefix : 'general'),
     title: clean(row.title) || lessonKeyBasename(normalized).replace(/[_-]+/g, ' ') || 'Lesson',
   }
 }
@@ -80,6 +81,7 @@ function intentOccurrenceId(intent) {
 
 export function composeSyllabusLessonTimeline({
   activeRevision = {}, forecastItems = [], associations = [], approvedLessons = {}, schedules = [], sessions = [], sessionEvents = [],
+  lessonMetadata = [],
   today = new Date().toISOString().slice(0, 10),
   timeZone = 'UTC',
 } = {}) {
@@ -89,18 +91,34 @@ export function composeSyllabusLessonTimeline({
     ...sessionEvents.map((row) => row?.lesson_id || row?.lesson_key),
   ].map(normalizeLessonKey).filter((key) => key?.includes('/'))
   const resolveKey = (value) => resolveLessonKeyAgainst(value, concreteKeys)
+  const availableLessonKeys = new Set(Object.entries(approvedLessons || {})
+    .filter(([, available]) => available === true)
+    .map(([rawKey]) => resolveKey(rawKey))
+    .filter(Boolean))
+  const supplementalMetadata = new Map()
+  for (const row of lessonMetadata || []) {
+    const key = resolveKey(row?.lesson_key)
+    if (!key) continue
+    const subject = clean(row?.subject)
+    const title = clean(row?.title)
+    supplementalMetadata.set(key, {
+      ...(subject && subjectKey(subject) !== 'generated' ? { subject } : {}),
+      ...(title ? { title } : {}),
+    })
+  }
   const metadata = new Map()
+  const setReadiness = (entry, state) => {
+    if (entry && readinessRank(state) >= readinessRank(entry.readiness_state)) entry.readiness_state = state
+  }
   const ensureMetadata = (rawKey, row = {}) => {
     const key = resolveKey(rawKey)
     if (!key) return null
-    if (!metadata.has(key)) metadata.set(key, { lesson_key: key, ...defaultMetadata(key, row), readiness_state: 'saved' })
+    if (!metadata.has(key)) metadata.set(key, { lesson_key: key, ...defaultMetadata(key, supplementalMetadata.get(key)), readiness_state: 'saved' })
     const entry = metadata.get(key)
-    if (clean(row.subject)) entry.subject = clean(row.subject)
+    if (clean(row.subject) && subjectKey(row.subject) !== 'generated') entry.subject = clean(row.subject)
     if (clean(row.title)) entry.title = clean(row.title)
+    if (availableLessonKeys.has(key)) setReadiness(entry, 'available')
     return entry
-  }
-  const setReadiness = (entry, state) => {
-    if (entry && readinessRank(state) >= readinessRank(entry.readiness_state)) entry.readiness_state = state
   }
   for (const association of associations || []) {
     const entry = ensureMetadata(association.lesson_key, association)
@@ -109,7 +127,6 @@ export function composeSyllabusLessonTimeline({
     entry.association_source = association.association_source
     setReadiness(entry, association.readiness_state || 'saved')
   }
-  for (const rawKey of Object.keys(approvedLessons || {})) setReadiness(ensureMetadata(rawKey), 'available')
   for (const item of forecastItems || []) if (item?.lesson_key) ensureMetadata(item.lesson_key, item)
 
   const terminalEventsBySession = new Map()

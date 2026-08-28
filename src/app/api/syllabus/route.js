@@ -14,6 +14,7 @@ export async function GET(request, deps = {}) {
     const repository = deps.repository || createSyllabusRepository(context.admin)
     const result = await getActiveSyllabus({
       repository,
+      admin: context.admin,
       facilitatorId: context.user.id,
       learnerId,
       fallbackTimeZone: context.user?.user_metadata?.timezone,
