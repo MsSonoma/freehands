@@ -157,6 +157,9 @@
       "/api/facilitator/learners/[id]/evidence",
       "/api/learner/follow-ups",
       "/api/learner/follow-ups/[runId]",
+      "/api/syllabus/execution/start",
+      "start_lesson_session_transactional",
+      "requested occurrence binding",
       "instructions-field",
       "innertext-field",
       "session-field",
@@ -168,7 +171,7 @@
       "/api/visual-aids",
       "/api/content-safety"
     ],
-    "last_updated": "2026-08-12T16:39:34Z",
+    "last_updated": "2026-08-27T15:09:18Z",
     "status": "canonical"
   },
   "mastery-evidence": {
@@ -421,12 +424,13 @@
       "checkpoint gates",
       "cross-device sync",
       "snapshot restore",
-      "first-interaction gate",
+      "protected start sequencing",
+      "takeover restore handoff",
       "complete lesson cleanup",
       "transcript persistence",
       "caption panel"
     ],
-    "last_updated": "2026-01-27T14:42:45Z",
+    "last_updated": "2026-08-28T01:39:23Z",
     "status": "canonical"
   },
   "timer-system": {
@@ -524,16 +528,21 @@
       "session ownership",
       "device conflict detection",
       "PIN-validated takeover",
-      "early conflict check",
+      "Realtime takeover detection",
+      "15-second polling fallback",
       "snapshot restore sequencing",
       "timer state persistence",
       "cross-device session transfer",
       "learner lesson sessions",
-      "sessionConflictChecked",
-      "settlement order",
-      "transcript splits prevention"
+      "transactional session start",
+      "expected conflicting session identity",
+      "service-role session RPC",
+      "guarded active inserts",
+      "fail-closed protected start",
+      "one active lesson per learner",
+      "requested occurrence binding"
     ],
-    "last_updated": "2026-01-15T02:00:00Z",
+    "last_updated": "2026-08-28T01:39:23Z",
     "status": "canonical"
   },
   "MentorInterceptor": {

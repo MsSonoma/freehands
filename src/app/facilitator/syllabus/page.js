@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
+import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import { ensurePinAllowed } from '@/app/lib/pinGate'
+import { ensurePinAllowed, ensureFacilitatorPinException, requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
-import { syllabusEntitlementsFor } from '@/app/lib/syllabus/timeline.mjs'
+import { addWeeklyPatternSlot, removeWeeklyPatternSlot, syllabusEntitlementsFor, weeklyPatternCapacity } from '@/app/lib/syllabus/timeline.mjs'
 import {
   normalizedTeachingGuidance,
   teachingGuidanceOverrideFrom,
@@ -57,8 +58,8 @@ function referencedSubjectKeys(weeklyPattern, forecastItems) {
   return keys
 }
 
-function activeToDraft(active, items) {
-  const today = new Date().toISOString().slice(0, 10)
+function activeToDraft(active, items, resolvedToday) {
+  const today = dateOnly(resolvedToday || active?.effective_from)
   return {
     effective_from: today,
     goals: structuredClone(active.goals),
@@ -151,6 +152,7 @@ export default function SyllabusPage() {
   const [draft, setDraft] = useState(null)
   const [newSubject, setNewSubject] = useState('')
   const [availableSubjects, setAvailableSubjects] = useState([])
+  const [slotSubjects, setSlotSubjects] = useState({})
   const [loading, setLoading] = useState(true)
   const [working, setWorking] = useState(false)
   const [error, setError] = useState('')
@@ -200,7 +202,10 @@ export default function SyllabusPage() {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch(`/api/syllabus?learnerId=${encodeURIComponent(id)}`, { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } })
+      const response = await fetch(`/api/syllabus?learnerId=${encodeURIComponent(id)}`, {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` },
+      })
       const json = await response.json()
       if (!response.ok) throw new Error(json.error || 'Could not load Syllabus')
       setSyllabus(json)
@@ -245,18 +250,25 @@ export default function SyllabusPage() {
     setError('')
     try {
       const normalizedGuidance = normalizedTeachingGuidance(draft?.teaching_guidance)
-      const response = await fetch('/api/syllabus/activate', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(planningAccess.can_change_intent
+      const activationBody = planningAccess.can_change_intent
           ? { learnerId, snapshot: { ...draft, teaching_guidance: normalizedGuidance } }
           : {
               learnerId,
               establishFromCurrentPlan: true,
               teachingGuidanceOverride: teachingGuidanceOverrideFrom(normalizedGuidance),
-            }),
+            }
+      const postActivation = (exceptionPin) => fetch('/api/syllabus/activate', {
+        method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...activationBody, ...(exceptionPin ? { exceptionPin } : {}) }),
       })
-      const json = await response.json()
+      let response = await postActivation()
+      let json = await response.json()
+      if (response.status === 409 && json?.code === 'SYLLABUS_CAPACITY_PIN_REQUIRED') {
+        const pin = await requestFacilitatorPinException({ message: json.error })
+        if (!pin) throw new Error('The placement exception was not approved.')
+        response = await postActivation(pin)
+        json = await response.json()
+      }
       if (!response.ok) throw new Error(json.error || 'Could not activate Syllabus')
       await loadCurrent()
     } catch (cause) {
@@ -295,16 +307,24 @@ export default function SyllabusPage() {
     setWorking(true)
     setError('')
     try {
-      const response = await fetch('/api/syllabus/activate', {
+      const postActivation = (exceptionPin) => fetch('/api/syllabus/activate', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           learnerId,
           proposalRevisionId: masteryProposal.proposal_revision.id,
           expectedActiveRevisionId: syllabus.active_revision.id,
+          ...(exceptionPin ? { exceptionPin } : {}),
         }),
       })
-      const json = await response.json()
+      let response = await postActivation()
+      let json = await response.json()
+      if (response.status === 409 && json?.code === 'SYLLABUS_CAPACITY_PIN_REQUIRED') {
+        const pin = await requestFacilitatorPinException({ message: json.error })
+        if (!pin) throw new Error('The placement exception was not approved.')
+        response = await postActivation(pin)
+        json = await response.json()
+      }
       if (!response.ok) throw new Error(json.error || 'Could not activate proposed reforecast')
       await loadCurrent()
     } catch (cause) {
@@ -344,6 +364,26 @@ export default function SyllabusPage() {
     } : current)
   }
 
+  function addPatternSlot(day) {
+    const subject = slotSubjects[day] || draft?.subjects?.[0]?.name || ''
+    if (!draft || !subject) return
+    setDraft({ ...draft, weekly_pattern: addWeeklyPatternSlot(draft.weekly_pattern, day, subject) })
+  }
+
+  function removePatternSlot(day, index) {
+    if (!draft) return
+    setDraft({ ...draft, weekly_pattern: removeWeeklyPatternSlot(draft.weekly_pattern, day, index) })
+  }
+
+  async function handleLessonAction(item, action) {
+    if (!item?.lesson_key || action?.id !== 'repeat') return
+    const allowed = await ensureFacilitatorPinException({
+      message: `You already completed ${item.title || 'this lesson'}. Enter the Facilitator PIN to prepare it as a deliberate repeat.`,
+    })
+    if (!allowed) return
+    router.push(`/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=DELIVERY&repeat=1`)
+  }
+
   if (authLoading || (isAuthenticated && !pinChecked)) return <main className={styles.page}><p>Loading…</p></main>
   if (!isAuthenticated) return <main className={styles.page}><GatedOverlay show gateType={gateType || 'auth'} feature="Syllabus" emoji="🧭" description="Sign in to view and activate a learner's educational plan." /></main>
 
@@ -380,7 +420,7 @@ export default function SyllabusPage() {
           <section className={styles.statusBar}>
             <div><strong>{draft ? 'Proposal' : 'Current active Syllabus'}</strong><span>{draft ? 'Not active yet' : `Revision ${displayRevision.revision_number}`}</span></div>
             <div><strong>Effective</strong><span>{dateOnly(displayRevision.effective_from)}</span></div>
-            {!draft && <div className={styles.statusActions}><button className={styles.secondaryButton} onClick={checkMasteryEvidence} disabled={working || !planningAccess.can_change_intent}>{working ? 'Checking…' : 'Check mastery evidence'}</button><button className={styles.secondaryButton} disabled={!planningAccess.can_change_intent} onClick={() => { setDraft(activeToDraft(syllabus.active_revision, syllabus.forecast_items)); setNewSubject('') }}>Edit Syllabus</button></div>}
+            {!draft && <div className={styles.statusActions}><button className={styles.secondaryButton} onClick={checkMasteryEvidence} disabled={working || !planningAccess.can_change_intent}>{working ? 'Checking…' : 'Check mastery evidence'}</button><button className={styles.secondaryButton} disabled={!planningAccess.can_change_intent} onClick={() => { setDraft(activeToDraft(syllabus.active_revision, syllabus.forecast_items, syllabus.resolved_today)); setNewSubject('') }}>Edit Syllabus</button></div>}
           </section>
 
           {!draft && masteryMessage && <p className={styles.masteryMessage}>{masteryMessage}</p>}
@@ -397,7 +437,7 @@ export default function SyllabusPage() {
 
           {draft && <section className={styles.proposalBanner}><div><strong>Syllabus proposal</strong><p>Review the complete plan. Activation creates a new immutable revision effective today.</p></div><div className={styles.effectiveDate}><strong>Effective today</strong><span>{dateOnly(draft.effective_from)}</span></div></section>}
 
-          <div className={styles.contentGrid}>
+          {draft ? <div className={styles.contentGrid}>
             <div className={styles.sideColumn}>
               <section className={styles.section}>
                 <h2>Goals</h2>
@@ -415,10 +455,16 @@ export default function SyllabusPage() {
 
               <section className={styles.section}>
                 <h2>Weekly Pattern</h2>
+                <p className={styles.sectionIntro}>Each entry is one automatic lesson slot. Duplicate subjects are allowed; two Math entries means two Math slots that day.</p>
                 <div className={styles.weekPattern}>{DAYS.map((day) => {
                   const subjects = displayRevision.weekly_pattern?.[day] || []
-                  if (!subjects.length) return null
-                  return <div key={day}><strong>{DAY_LABELS[day]}</strong><span>{subjects.map((item) => typeof item === 'string' ? item : item.subject).join(', ')}</span></div>
+                  const capacity = weeklyPatternCapacity(displayRevision.weekly_pattern, day)
+                  return <div key={day} className={styles.patternDay}><strong>{DAY_LABELS[day]} <small>{capacity} automatic lesson slot{capacity === 1 ? '' : 's'}</small></strong>
+                    {draft && planningAccess.can_change_intent ? <>
+                      <ul>{subjects.map((item, index) => <li key={`${day}-${index}`}><span>{typeof item === 'string' ? item : item.subject}</span><button type="button" onClick={() => removePatternSlot(day, index)}>Remove</button></li>)}</ul>
+                      <div className={styles.patternAdd}><select aria-label={`Subject slot for ${DAY_LABELS[day]}`} value={slotSubjects[day] || draft.subjects?.[0]?.name || ''} onChange={(event) => setSlotSubjects({ ...slotSubjects, [day]: event.target.value })}>{(draft.subjects || []).map((subject) => <option key={subject.name} value={subject.name}>{subject.name}</option>)}</select><button type="button" onClick={() => addPatternSlot(day)}>Add slot</button></div>
+                    </> : <span>{subjects.map((item) => typeof item === 'string' ? item : item.subject).join(', ') || 'No automatic lessons'}</span>}
+                  </div>
                 })}</div>
               </section>
 
@@ -436,7 +482,18 @@ export default function SyllabusPage() {
               <div className={styles.forecastHeader}><div><p className={styles.eyebrow}>{draft ? 'Future direction' : 'Educational record and forecast'}</p><h2>{draft ? 'Forecast' : 'Lesson timeline'}</h2></div><span>{displayForecast.length} item{displayForecast.length === 1 ? '' : 's'}</span></div>
               {forecastGroups.length ? forecastGroups.map(([label, items]) => <div className={styles.forecastWeek} key={label}><h3>{label}</h3><ul>{items.map((item) => <li key={item.id || `${item.lineage_id}-${item.planned_date}`}><span className={styles.forecastDate}>{new Date(`${dateOnly(item.planned_date)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><div><strong>{item.subject}:</strong> {item.title}{!draft && item.placement_kind === 'inferred' && <em> Provisional weekly-pattern forecast</em>}{!draft && item.placement_kind === 'scheduled' && <em> Explicit calendar date</em>}{!draft && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && <><br /><a href={`/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}`}>{item.readiness_state === 'draft' ? 'Prepare / review draft' : 'Open lesson details'}</a></>}</div></li>)}</ul></div>) : <p className={styles.muted}>No learner-specific lessons are recorded yet.</p>}
             </section>
-          </div>
+          </div> : <SyllabusDocument
+              revision={syllabus.active_revision}
+              forecastItems={syllabus.forecast_items}
+              timelineItems={syllabus.timeline_items}
+              role="facilitator"
+              learnerId={learnerId}
+              planTier={planTier}
+              learnerName={selectedLearner?.name || ''}
+              proposedReforecast={syllabus.proposed_reforecast}
+              onLessonAction={handleLessonAction}
+              today={syllabus.resolved_today}
+            />}
 
           {draft && <section className={styles.actions}><label>Reason for this revision<input value={draft.change_reason || ''} disabled={!planningAccess.can_change_intent} onChange={(event) => setDraft({ ...draft, change_reason: event.target.value })} placeholder={planningAccess.can_change_intent ? 'Optional' : 'Initial seed retained as proposed'} /></label><div><button className={styles.secondaryButton} onClick={() => setDraft(null)} disabled={working}>Cancel proposal</button><button className={styles.primaryButton} onClick={activate} disabled={working || !canActivateDraft}>{working ? 'Activating…' : 'Activate Syllabus'}</button></div></section>}
         </>

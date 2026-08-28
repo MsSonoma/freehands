@@ -140,6 +140,19 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 - **Controls**: Repeat is non-disqualifying; answer reveal is assistance; disabled settings block new presentation but do not discard an already presented first-response opportunity
 - **Isolation**: Prior exposure is rechecked at presentation time; the route returns only the sanitized current item and never exposes future review items or raw `item_payload`; it never creates lesson sessions or snapshots
 
+### `/api/syllabus/execution/start`
+**Purpose**: Settle an authorized Syllabus lesson-session start without a check-then-insert takeover race
+**Status**: Operational after `20260827174540_transactional_lesson_session_start.sql` is applied
+
+- **Location**: `src/app/api/syllabus/execution/start/route.js`
+- **Method**: POST
+- **Auth**: Bearer token, facilitator-owned learner, and signed scoped Syllabus execution proof are all required
+- **Browser identity**: A valid `browserSessionId` UUID is mandatory for protected non-demo starts
+- **Occurrence identity**: The page sends the canonical occurrence returned by its authorization decision; the route requires that independent value to match the signed proof, so another tab's proof cannot authorize this page's occurrence
+- **Takeover**: A fresh Facilitator PIN plus the exact `expectedConflictingSessionId` are required before the route sends `allowTakeover=true`
+- **Atomicity**: One service-role call to `start_lesson_session_transactional` locks the learner and every active learner session, closes prior lessons, and returns `started`, `reused`, `conflict`, or `taken_over`; the route has no JavaScript check/insert fallback
+- **Database boundary**: The RPC accepts no raw PIN and is executable only by `service_role`
+
 ### `/api/tts`
 **Purpose**: Text-to-speech conversion (Google TTS)  
 **Status**: Operational, used for all Ms. Sonoma audio

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ensurePinAllowed } from '@/app/lib/pinGate'
+import { ensurePinAllowed, requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
 import { preparationDeliveryActionsForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
@@ -227,6 +227,8 @@ export default function FacilitatorPreparePage() {
   const [lessonContentLoading, setLessonContentLoading] = useState(false)
   const [lessonContentError, setLessonContentError] = useState('')
   const [scheduleDate, setScheduleDate] = useState(todayDate())
+  const [scheduleId, setScheduleId] = useState('')
+  const [originalScheduledDate, setOriginalScheduledDate] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [recoveryStage, setRecoveryStage] = useState('')
@@ -281,6 +283,11 @@ export default function FacilitatorPreparePage() {
         const paramLearnerId = params.get('learnerId') || ''
         const paramLessonKey = params.get('lessonKey') || ''
         const paramStage = params.get('stage') || ''
+        const paramScheduleId = params.get('scheduleId') || ''
+        const paramOriginalScheduledDate = params.get('originalScheduledDate') || ''
+        setScheduleId(paramScheduleId)
+        setOriginalScheduledDate(paramOriginalScheduledDate)
+        if (paramOriginalScheduledDate) setScheduleDate(paramOriginalScheduledDate)
         if (paramLearnerId) setLearnerId(paramLearnerId)
         if (paramLessonKey) {
           const file = paramLessonKey.replace(/^generated\//, '')
@@ -546,14 +553,27 @@ export default function FacilitatorPreparePage() {
     setMessage('')
     try {
       const token = await getToken()
-      const response = await fetch('/api/lesson-schedule', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ learnerId, lessonKey: lessonIdentity.lessonKey, scheduledDate: scheduleDate }),
+      const postSchedule = (exceptionPin) => fetch('/api/lesson-schedule', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          learnerId,
+          lessonKey: lessonIdentity.lessonKey,
+          scheduledDate: scheduleDate,
+          ...(scheduleId ? { scheduleId } : {}),
+          ...(!scheduleId && originalScheduledDate ? { originalScheduledDate } : {}),
+          ...(exceptionPin ? { exceptionPin } : {}),
+        }),
       })
-      const json = await response.json().catch(() => ({}))
+      let response = await postSchedule()
+      let json = await response.json().catch(() => ({}))
+      if (response.status === 409 && json?.code === 'SYLLABUS_CAPACITY_PIN_REQUIRED') {
+        const pin = await requestFacilitatorPinException({ message: json.error })
+        if (!pin) throw new Error('The placement exception was not approved.')
+        response = await postSchedule(pin)
+        json = await response.json().catch(() => ({}))
+      }
       if (!response.ok) throw new Error(json?.error || 'Could not schedule the lesson')
-      setMessage(`The lesson is scheduled for ${scheduleDate}.`)
+      setMessage((scheduleId || originalScheduledDate) ? `The lesson was rescheduled for ${scheduleDate}.` : `The lesson is scheduled for ${scheduleDate}.`)
       finishFlow()
     } catch (error) {
       setMessage(error?.message || 'Could not schedule the lesson')

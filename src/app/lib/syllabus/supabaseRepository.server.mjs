@@ -19,6 +19,11 @@ export async function readAllSupabaseRows(queryFactory, { pageSize = 500 } = {})
 
 export function createSyllabusRepository(admin) {
   return {
+    async findFacilitatorTimeZone(facilitatorId) {
+      const { data, error } = await admin.from('profiles').select('timezone').eq('id', facilitatorId).maybeSingle()
+      throwOn(error, 'Failed to resolve facilitator timezone')
+      return data?.timezone || null
+    },
     async findOwnedLearner(learnerId, facilitatorId) {
       const { data, error } = await admin.from('learners').select('*').eq('id', learnerId).maybeSingle()
       throwOn(error, 'Failed to load learner')

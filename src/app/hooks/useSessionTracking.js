@@ -35,7 +35,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
   const isMountedRef = useRef(true);
   const takenOverRef = useRef(false); // guard: fire callback once per takeover
 
-  const startSession = async (browserSessionId = null, deviceName = null) => {
+  const startSession = async (browserSessionId = null, deviceName = null, takeoverPin = null, expectedConflictingSessionId = null, occurrenceId = null) => {
     if (!learnerId || !lessonId) {
       return null;
     }
@@ -59,7 +59,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
     setTracking(true);
     try {
       const result = await withTimeout(
-        startLessonSession(learnerId, lessonId, browserSessionId, deviceName),
+        startLessonSession(learnerId, lessonId, browserSessionId, deviceName, takeoverPin, expectedConflictingSessionId, occurrenceId),
         10000,
         'startLessonSession'
       );
@@ -81,7 +81,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
       return null;
     } catch (err) {
       console.error('[SESSION] startSession failed:', err);
-      return null;
+      throw err;
     } finally {
       setTracking(false);
     }

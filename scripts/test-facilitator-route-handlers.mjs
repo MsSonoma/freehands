@@ -5,7 +5,7 @@ import { POST as approveLesson } from '../src/app/api/facilitator/lessons/approv
 import { POST as generateLesson } from '../src/app/api/facilitator/lessons/generate/route.js'
 import { POST as updateAvailability } from '../src/app/api/facilitator/learners/lesson-availability/route.js'
 import { POST as proposeLesson } from '../src/app/api/facilitator/lessons/propose/route.js'
-import { POST as scheduleLesson } from '../src/app/api/lesson-schedule/route.js'
+import { GET as getLessonSchedule, POST as scheduleLesson } from '../src/app/api/lesson-schedule/route.js'
 import { POST as preserveLessonAssociation } from '../src/app/api/syllabus/lesson-associations/route.js'
 
 function withSupabaseEnv() {
@@ -35,7 +35,7 @@ function jsonRequest(body) {
   })
 }
 
-function createTableMock({ profile = { plan_tier: 'pro', subscription_tier: null }, learner = null, updateCapture = null, scheduleCapture = null, associationCapture = null, associationState = null } = {}) {
+function createTableMock({ profile = { plan_tier: 'pro', subscription_tier: null }, learner = null, updateCapture = null, scheduleCapture = null, scheduleUpdateCapture = null, existingSchedule = null, associationCapture = null, associationState = null } = {}) {
   return function from(table) {
     if (table === 'profiles') {
       return {
@@ -63,13 +63,27 @@ function createTableMock({ profile = { plan_tier: 'pro', subscription_tier: null
     }
 
     if (table === 'lesson_schedule') {
+      const selection = {
+        eq: () => selection,
+        or: () => selection,
+        maybeSingle: async () => ({ data: existingSchedule, error: null }),
+      }
       return {
+        select: () => selection,
         upsert: (value) => ({
           select: () => ({
             single: async () => {
               if (scheduleCapture) scheduleCapture.value = value
               return { data: { id: 'schedule-1', ...value }, error: null }
             },
+          }),
+        }),
+        update: (value) => ({
+          eq: () => ({
+            select: () => ({ single: async () => {
+              if (scheduleUpdateCapture) scheduleUpdateCapture.value = value
+              return { data: { id: existingSchedule?.id || 'schedule-1', ...value }, error: null }
+            } }),
           }),
         }),
       }
@@ -344,6 +358,7 @@ test('schedule API enforces centralized scheduling entitlement behavior', async 
     ]) {
       const scheduleCapture = {}
       const response = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'facilitator-lessons/live.json', scheduledDate: '2026-08-06' }), {
+        inspectLearnerSyllabusPlacement: async () => ({ allowed: true }),
         createClientImpl: createClientMock({
           admin: {
             from: createTableMock({ profile, learner: { id: 'learner-1' }, scheduleCapture }),
@@ -372,6 +387,92 @@ test('schedule API enforces centralized scheduling entitlement behavior', async 
       assert.equal(unauthorizedResponse.status, 403, planTier)
       assert.equal((await unauthorizedResponse.json()).error, 'Learner not found or unauthorized', planTier)
     }
+  } finally {
+    restore()
+  }
+})
+
+test('action=active authorizes learner ownership before querying service-role schedule data', async () => {
+  const restore = withSupabaseEnv()
+  try {
+    let scheduleQueries = 0
+    const response = await getLessonSchedule(new Request('http://localhost.test/api/lesson-schedule?action=active&learnerId=other-learner', {
+      headers: { Authorization: 'Bearer test-token' },
+    }), {
+      createClientImpl: () => ({
+        auth: { getUser: async () => ({ data: { user: { id: 'facilitator-1' } }, error: null }) },
+        from: (table) => {
+          if (table === 'learners') return { select: () => ({ eq: () => ({ or: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) }) }
+          if (table === 'lesson_schedule') { scheduleQueries += 1; throw new Error('schedule must not be queried') }
+          throw new Error(`Unexpected table: ${table}`)
+        },
+      }),
+    })
+    assert.equal(response.status, 403)
+    assert.equal(scheduleQueries, 0)
+  } finally {
+    restore()
+  }
+})
+
+test('schedule API requires a valid Facilitator PIN for a Syllabus capacity exception', async () => {
+  const restore = withSupabaseEnv()
+  try {
+    const admin = {
+      from: createTableMock({ profile: { plan_tier: 'standard', subscription_tier: null }, learner: { id: 'learner-1' }, scheduleCapture: {} }),
+      storage: generatedLessonStorage(),
+    }
+    const deps = {
+      createClientImpl: createClientMock({ admin }),
+      inspectLearnerSyllabusPlacement: async () => ({ allowed: false, conflict: 'daily_capacity', message: 'Tuesday is full. Enter the Facilitator PIN.' }),
+      verifyFacilitatorPinForUser: async (_admin, userId, pin) => userId === 'facilitator-1' && pin === '2468',
+    }
+    const blocked = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'facilitator-lessons/live.json', scheduledDate: '2026-08-06' }), deps)
+    assert.equal(blocked.status, 409)
+    assert.equal((await blocked.json()).code, 'SYLLABUS_CAPACITY_PIN_REQUIRED')
+
+    const rejected = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'facilitator-lessons/live.json', scheduledDate: '2026-08-06', exceptionPin: '0000' }), deps)
+    assert.equal(rejected.status, 403)
+    assert.equal((await rejected.json()).code, 'INVALID_FACILITATOR_PIN')
+
+    const approved = await scheduleLesson(jsonRequest({ learnerId: 'learner-1', lessonKey: 'facilitator-lessons/live.json', scheduledDate: '2026-08-06', exceptionPin: '2468' }), deps)
+    assert.equal(approved.status, 200)
+    assert.equal((await approved.json()).success, true)
+  } finally {
+    restore()
+  }
+})
+
+test('reschedule updates the identified occurrence instead of inserting a duplicate date row', async () => {
+  const restore = withSupabaseEnv()
+  try {
+    const scheduleCapture = {}
+    const scheduleUpdateCapture = {}
+    let excludedId = null
+    const response = await scheduleLesson(jsonRequest({
+      learnerId: 'learner-1',
+      lessonKey: 'facilitator-lessons/live.json',
+      scheduledDate: '2026-08-07',
+      scheduleId: 'schedule-existing',
+    }), {
+      createClientImpl: createClientMock({ admin: {
+        from: createTableMock({
+          profile: { plan_tier: 'standard', subscription_tier: null },
+          learner: { id: 'learner-1' },
+          existingSchedule: { id: 'schedule-existing', learner_id: 'learner-1', lesson_key: 'generated/live.json', scheduled_date: '2026-08-06' },
+          scheduleCapture,
+          scheduleUpdateCapture,
+        }),
+        storage: generatedLessonStorage(),
+      } }),
+      inspectLearnerSyllabusPlacement: async ({ excludeScheduleId }) => { excludedId = excludeScheduleId; return { allowed: true } },
+    })
+    assert.equal(response.status, 200)
+    assert.equal(excludedId, 'schedule-existing')
+    assert.equal(scheduleCapture.value, undefined)
+    assert.deepEqual(scheduleUpdateCapture.value, {
+      facilitator_id: 'facilitator-1', learner_id: 'learner-1', lesson_key: 'generated/live.json', scheduled_date: '2026-08-07',
+    })
   } finally {
     restore()
   }

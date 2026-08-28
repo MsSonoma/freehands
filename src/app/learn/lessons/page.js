@@ -5,7 +5,7 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
 import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi'
-import { ensurePinAllowed } from '@/app/lib/pinGate'
+import { ensurePinAllowed, ensureFacilitatorPinException } from '@/app/lib/pinGate'
 import LoadingProgress from '@/components/LoadingProgress'
 import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
 import { getActiveLessonSession } from '@/app/lib/sessionTracking'
@@ -58,6 +58,10 @@ const LESSONS_TUTORIAL_STEPS = [
     body: 'Complete a lesson to earn a medal. Score high enough on the test to earn a Mastery badge. All achievements show up on the Awards page!',
   },
 ]
+
+function localCalendarDate(now = new Date()) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
 
 const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general', 'generated']
 
@@ -443,7 +447,7 @@ function LessonsPageInner(){
         }
       } catch {}
       try {
-        const dateKey = new Date().toISOString().slice(0,10)
+        const dateKey = localCalendarDate()
         const key = `lesson_unique:${dateKey}`
         const raw = localStorage.getItem(key)
         if (raw) {
@@ -678,13 +682,6 @@ function LessonsPageInner(){
         // Load today's scheduled lessons
         let scheduled = {}
         try {
-          // Get today's date in local timezone, not UTC
-          const now = new Date()
-          const year = now.getFullYear()
-          const month = String(now.getMonth() + 1).padStart(2, '0')
-          const day = String(now.getDate()).padStart(2, '0')
-          const today = `${year}-${month}-${day}`
-          
           const { data: { session } } = await supabase.auth.getSession()
           const token = session?.access_token
           
@@ -692,7 +689,7 @@ function LessonsPageInner(){
           } else {
             const scheduleResponse = await fetch(`/api/lesson-schedule?learnerId=${learnerId}&action=active`, {
               headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
               }
             })
             if (scheduleResponse.ok) {
@@ -730,7 +727,7 @@ function LessonsPageInner(){
     return () => { cancelled = true }
   }, [learnerId, refreshTrigger, sessionGateReady])
 
-  async function openLesson(subject, fileBaseName){
+  async function openLesson(subject, fileBaseName, syllabusOccurrence = null){
     const ent = featuresForTier(planTier)
     
     // Skip quota checks for demo lessons - they're unlimited
@@ -738,7 +735,7 @@ function LessonsPageInner(){
     
     if (!isDemoLesson) {
       try {
-        const dateKey = new Date().toISOString().slice(0,10)
+        const dateKey = localCalendarDate()
         const key = `lesson_unique:${dateKey}`
         const raw = localStorage.getItem(key)
         const set = new Set(raw ? JSON.parse(raw) : [])
@@ -818,6 +815,7 @@ function LessonsPageInner(){
       fileName: fileBaseName,
       selectedTeacher: currentTeacher,
       goldenKey: goldenKeysEnabled === true && (goldenKeySelected || alreadyHasPendingKey),
+      occurrenceId: syllabusOccurrence?.occurrence_id || '',
     })
     router.push(withKey)
   }
@@ -952,17 +950,29 @@ function LessonsPageInner(){
     const lessonKey = item?.lesson_key
     const hasProgress = Boolean(lessonKey && (item?.readiness_state === 'in_progress' || lessonSnapshots[lessonKey] || lessonHistoryInProgress?.[lessonKey]))
     return {
-      hasLessonArtifact: Boolean(lessonKey && recentMetaLookup[lessonKey] && (activeSet.has(lessonKey) || hasProgress)),
+      hasLessonArtifact: Boolean(lessonKey && recentMetaLookup[lessonKey]
+        && (hasProgress || ['approved', 'available', 'in_progress', 'completed'].includes(item?.readiness_state))),
       hasProgress,
     }
   }
 
-  function openSyllabusLesson(item) {
+  async function openSyllabusLesson(item, action = { id: 'view', requires_pin: false }) {
     const lessonKey = item?.lesson_key
     const lesson = lessonKey ? recentMetaLookup[lessonKey] : null
-    if (!lesson || (!activeSet.has(lessonKey) && item?.readiness_state !== 'in_progress')) return
+    if (!lesson) return
+    let exceptionApproved = false
+    if (action?.requires_pin) {
+      const completed = item.actual_kind === 'completed'
+      const planned = new Date(`${dateOnly(item.planned_date)}T12:00:00.000Z`).toLocaleDateString(undefined, { weekday: 'long' })
+      exceptionApproved = await ensureFacilitatorPinException({
+        message: completed
+          ? `You already completed ${item.title || 'this lesson'}. Enter the Facilitator PIN to do it again.`
+          : `This lesson is planned for ${planned}. Enter the Facilitator PIN to do it today.`,
+      })
+      if (!exceptionApproved) return
+    }
     const subject = lesson.isGenerated ? 'generated' : (lesson.subject || lessonKey.split('/')[0] || 'general')
-    setSelectedLesson({ l: lesson, subject, lessonKey, isDemo: false })
+    setSelectedLesson({ l: lesson, subject, lessonKey, isDemo: false, syllabusItem: item, syllabusExceptionApproved: exceptionApproved })
     setOverlayNoteEditing(false)
   }
 
@@ -1175,6 +1185,7 @@ function LessonsPageInner(){
             learnerName={learnerName || ''}
             lessonState={syllabusLessonState}
             onOpenLesson={openSyllabusLesson}
+            today={syllabusModel.resolved_today}
           />
         )}
         {syllabusStatus === 'ready' && syllabusModel.kind === 'fallback' && (
@@ -1715,7 +1726,7 @@ function LessonsPageInner(){
 
           {/* Lesson detail overlay */}
           {selectedLesson && (() => {
-            const { l, subject, lessonKey, isDemo } = selectedLesson
+            const { l, subject, lessonKey, isDemo, syllabusItem, syllabusExceptionApproved } = selectedLesson
             const ent = featuresForTier(planTier)
             const cap = ent.lessonsPerDay
             const capped = !isDemo && Number.isFinite(cap) && todaysCount >= cap
@@ -1751,7 +1762,7 @@ function LessonsPageInner(){
             const handleStartLesson = async () => {
               if (isDemo) { openLesson('demo', l.file); return }
               // PIN gate for lessons not currently active (not approved/scheduled)
-              if (!activeSet.has(lessonKey)) {
+              if (!syllabusItem && !activeSet.has(lessonKey) && !syllabusExceptionApproved) {
                 const ok = await ensurePinAllowed('facilitator-key')
                 if (!ok) return
               }
@@ -1767,15 +1778,15 @@ function LessonsPageInner(){
                   body: JSON.stringify({ lesson_key: lessonKey, timezone: tz })
                 })
                 if (res.ok) {
-                  openLesson(subject, l.file)
+                  openLesson(subject, l.file, syllabusItem)
                 } else if (res.status === 429) {
                   const js = await res.json()
                   alert(js.error || 'Daily lesson limit reached')
                 } else {
-                  openLesson(subject, l.file)
+                  openLesson(subject, l.file, syllabusItem)
                 }
               } catch {
-                openLesson(subject, l.file)
+                openLesson(subject, l.file, syllabusItem)
               }
             }
 

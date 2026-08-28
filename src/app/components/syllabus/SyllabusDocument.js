@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
-  buildSyllabusTimeline,
   dateOnly,
   matchMasteryAnnotations,
-  moveSyllabusTimeline,
+  moveSyllabusWeek,
+  selectSyllabusWeek,
   syllabusEntitlementsFor,
-  timelineItemAction,
+  syllabusItemActions,
+  syllabusItemState,
   weeklyPatternRows,
 } from '@/app/lib/syllabus/timeline.mjs'
 import styles from './SyllabusDocument.module.css'
@@ -20,6 +21,10 @@ const STATE_COPY = {
 
 function prettyDate(value, options) {
   return new Date(`${dateOnly(value)}T12:00:00.000Z`).toLocaleDateString(undefined, { timeZone: 'UTC', ...options })
+}
+
+function localCalendarDate(now = new Date()) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 }
 
 function subjectName(subject) {
@@ -37,25 +42,35 @@ export default function SyllabusDocument({
   proposedReforecast = null,
   lessonState = () => ({ hasLessonArtifact: false, hasProgress: false }),
   onOpenLesson = null,
+  onLessonAction = null,
   proposalHref = '/facilitator/syllabus',
   planningHref = '/facilitator/syllabus',
-  today = new Date().toISOString().slice(0, 10),
+  today = localCalendarDate(),
 }) {
   const visibleItems = Array.isArray(timelineItems) ? timelineItems : forecastItems
-  const timeline = useMemo(() => buildSyllabusTimeline(visibleItems, { today }), [visibleItems, today])
-  const [viewIndex, setViewIndex] = useState(timeline.now_index)
-  useEffect(() => setViewIndex(timeline.now_index), [revision?.id, timeline.now_index])
-  const week = timeline.weeks[viewIndex] || timeline.weeks[timeline.now_index]
+  const [selectedWeekStart, setSelectedWeekStart] = useState(() => moveSyllabusWeek(null, 'now', today))
+  useEffect(() => setSelectedWeekStart(moveSyllabusWeek(null, 'now', today)), [revision?.id, today])
+  const week = useMemo(() => selectSyllabusWeek(visibleItems, { weekStart: selectedWeekStart, today }), [visibleItems, selectedWeekStart, today])
   const copy = STATE_COPY[week.state]
   const entitlements = syllabusEntitlementsFor({ role, planTier })
   const pattern = weeklyPatternRows(revision?.weekly_pattern)
   const proposalItems = proposedReforecast?.forecast_items || []
   const { assignments: proposalAnnotations, unmatched: unmatchedProposals } = matchMasteryAnnotations(forecastItems, proposalItems)
-  const move = (action) => setViewIndex((index) => moveSyllabusTimeline({
-    index,
-    nowIndex: timeline.now_index,
-    weekCount: timeline.weeks.length,
-  }, action))
+  const move = (action) => setSelectedWeekStart((weekStart) => moveSyllabusWeek(weekStart, action, today))
+  const actionHref = (item, actionId) => {
+    if (role !== 'facilitator' || !learnerId || !item.lesson_key) return null
+    const key = encodeURIComponent(item.lesson_key)
+    const learner = encodeURIComponent(learnerId)
+    if (actionId === 'edit') return `/facilitator/lessons/edit?key=${key}`
+    if (actionId === 'history') return `/facilitator/learners/${learner}/transcripts?lessonKey=${key}`
+    if (['view', 'execute', 'prepare', 'schedule', 'reschedule', 'make_available'].includes(actionId)) {
+      const scheduleContext = actionId === 'reschedule'
+        ? `&action=schedule&scheduleId=${encodeURIComponent(item.id || '')}&originalScheduledDate=${encodeURIComponent(item.original_scheduled_date || item.planned_date || '')}`
+        : (actionId === 'schedule' ? '&action=schedule' : '')
+      return `/facilitator/prepare?learnerId=${learner}&lessonKey=${key}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}${scheduleContext}`
+    }
+    return null
+  }
 
   return (
     <article className={styles.document} aria-label={`${learnerName || 'Learner'} Syllabus`}>
@@ -85,11 +100,10 @@ export default function SyllabusDocument({
       </details>
 
       <nav className={styles.timelineNav} aria-label="Syllabus timeline navigation">
-        <button type="button" onClick={() => move('earlier')} disabled={viewIndex === 0}>&lt; Earlier</button>
-        <button type="button" className={week.state === 'now' ? styles.nowButton : ''} onClick={() => move('now')}>NOW</button>
-        <button type="button" onClick={() => move('later')} disabled={viewIndex === timeline.weeks.length - 1}>Later &gt;</button>
+        <button type="button" onClick={() => move('earlier')}>&larr; Previous week</button>
+        <button type="button" className={week.state === 'now' ? styles.nowButton : ''} onClick={() => move('now')}>This week</button>
+        <button type="button" onClick={() => move('later')}>Next week &rarr;</button>
       </nav>
-      {week.state !== 'now' && <button type="button" className={styles.returnNow} onClick={() => move('now')}>Return to NOW</button>}
 
       <section className={`${styles.week} ${styles[week.state]}`} aria-live="polite">
         <header className={styles.weekHeader}>
@@ -101,18 +115,17 @@ export default function SyllabusDocument({
           <time dateTime={week.week_start}>Week of {prettyDate(week.week_start, { month: 'long', day: 'numeric', year: 'numeric' })}</time>
         </header>
 
-        <div className={styles.entries}>
-          {week.items.length === 0 && <p className={styles.emptyWeek}>{week.state === 'past' ? 'No actual learner activity is recorded for this week.' : 'No Syllabus intentions are recorded for this week.'}</p>}
-          {week.items.map((item) => {
+        <div className={styles.entries} data-selected-week={week.week_start}>
+          {week.days.map((day) => <section className={styles.day} key={day.date} data-syllabus-day={day.date}>
+            <header><time dateTime={day.date}>{prettyDate(day.date, { weekday: 'long', month: 'short', day: 'numeric' })}</time>{day.date === dateOnly(today) && <span>Today</span>}</header>
+            {day.items.length === 0 && <p className={styles.emptyDay}>No lessons</p>}
+            {day.items.map((item) => {
             const currentLesson = lessonState(item) || {}
-            const action = timelineItemAction({ role, weekState: week.state, ...currentLesson })
-            const prepareHref = role === 'facilitator' && learnerId && item.lesson_key
-              ? `/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}`
-              : null
+            const state = syllabusItemState({ item, today, hasProgress: currentLesson.hasProgress })
+            const actions = syllabusItemActions({ role, state, hasLessonArtifact: currentLesson.hasLessonArtifact, readinessState: item.readiness_state, isScheduled: item.is_explicit_schedule, isToday: dateOnly(item.planned_date) === dateOnly(today) })
             const notes = proposalAnnotations.get(item.id || item.lineage_id || `${dateOnly(item.planned_date)}:${item.subject}:${item.title}`) || []
             return (
-              <div className={styles.entryRow} key={item.id || `${item.lineage_id}-${item.planned_date}`}>
-                <time dateTime={dateOnly(item.planned_date)}>{prettyDate(item.planned_date, { weekday: 'long', month: 'short', day: 'numeric' })}</time>
+              <div className={styles.entryRow} key={item.occurrence_id || item.id || `${item.lineage_id}-${item.planned_date}`} data-syllabus-state={state}>
                 <div className={styles.entryBody}>
                   <p className={styles.subject}>{item.subject}</p>
                   <h4>{item.title}</h4>
@@ -121,16 +134,21 @@ export default function SyllabusDocument({
                   {item.placement_kind === 'inferred' && <span className={styles.placementLabel}>Provisional weekly-pattern forecast</span>}
                   {item.needs_placement && <span className={styles.placementLabel}>{role === 'facilitator' ? 'Needs placement' : 'Timing to be confirmed'}</span>}
                   {item.actual_kind === 'incomplete' && <span className={styles.placementLabel}>Incomplete</span>}
+                  {item.capacity_conflict && <span className={styles.placementLabel}>Manual capacity exception</span>}
                   {item.is_overdue_intent && <span className={styles.placementLabel}>Carried into NOW from {prettyDate(item.original_placement_date, { month: 'short', day: 'numeric' })}</span>}
                   {item.origin === 'mastery_reforecast' && <span className={styles.statusLabel}>Mastery follow-up</span>}
                 </div>
-                {action && <button type="button" className={styles.lessonAction} onClick={() => onOpenLesson?.(item)}>{action === 'continue' ? 'Continue' : 'Start'}</button>}
-                {prepareHref && ['draft', 'approved', 'saved'].includes(item.readiness_state) && <a className={styles.lessonAction} href={prepareHref}>{item.readiness_state === 'draft' ? 'Prepare / review' : 'Open lesson details'}</a>}
+                <div className={styles.lessonActions}>{actions.map((action) => {
+                  const href = actionHref(item, action.id)
+                  if (href && !action.requires_pin) return <a key={action.id} className={styles.lessonAction} href={href}>{action.label}</a>
+                  return <button key={action.id} type="button" className={styles.lessonAction} onClick={() => (onLessonAction || onOpenLesson)?.(item, action)}>{action.label}{action.requires_pin ? ' · PIN' : ''}</button>
+                })}</div>
                 {role === 'learner' && week.state === 'now' && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && !currentLesson.hasLessonArtifact && <span className={styles.preparing}>Preparing</span>}
                 {role === 'facilitator' && notes.length > 0 && <aside className={styles.marginNote}><strong>Mastery note</strong>{notes.map((note) => <span key={note.id || note.lineage_id}>{note.title}</span>)}<a href={proposalHref}>Review proposed change</a></aside>}
               </div>
             )
           })}
+          </section>)}
         </div>
       </section>
 

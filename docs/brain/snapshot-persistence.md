@@ -4,9 +4,9 @@
 
 ## Core Architecture
 
-**ATOMIC GATES, NOT POLLING**
+**ATOMIC SNAPSHOT GATES, NOT SNAPSHOT POLLING**
 
-Snapshots save at explicit checkpoints only. No autosave, no polling, no drift correction.
+Snapshots save at explicit checkpoints only. Snapshot persistence does not use autosave, polling, or drift correction. Session ownership detection is separate: Realtime is primary, with a 15-second polling fallback documented in [session-takeover.md](session-takeover.md).
 
 **Scope:** This document covers snapshot saves and restores for lesson state persistence. For session ownership and device conflict detection, see [session-takeover.md](session-takeover.md).
 
@@ -53,7 +53,7 @@ With guard in place, completion cleanup is atomic - either all persistence clear
 
 ### Transcript Persistence (Captions + Answers)
 - Restore path pins the transcript scroller to the bottom after loading so the latest caption is visible immediately after refresh (no manual scroll needed).
-- Saves use the existing granular `saveProgress('transcript', ...)` gate; no polling/intervals added.
+- Saves use the existing granular `saveProgress('transcript', ...)` gate without adding an independent transcript-save interval.
 - Restore path normalizes old string arrays to `{ text, role:'assistant' }` objects and seeds `currentCaption`/highlight before Begin/Resume is shown.
 
 ### Restore Strategy: localStorage First
@@ -161,11 +161,13 @@ Deleted ~200 lines of complexity:
 - Signature comparison
 - Debouncing (save immediately at checkpoints)
 
-**DO NOT USE:**
-- Session takeover polling
-- checkSessionStatus intervals
-- SessionTakeoverDialog overlay
-- Device detection for sync
+**DO NOT MOVE INTO SNAPSHOT PERSISTENCE:**
+- The Realtime session-ownership subscription
+- The 15-second `checkSessionStatus` fallback interval
+- `SessionTakeoverDialog` ownership controls
+- Browser/device ownership decisions
+
+Those mechanisms belong to the session-takeover system. Snapshot persistence carries shared learning state after the protected server/RPC path settles ownership.
 
 ## Why Gates Not Polling
 
@@ -190,7 +192,7 @@ When user switches devices:
 4. Snapshot written to new device's localStorage
 5. Subsequent saves/restores use localStorage (fast)
 
-**Session conflicts** (same learner+lesson on two devices simultaneously): Handled by session-takeover system, see [session-takeover.md](session-takeover.md). Takeover dialog appears at first gate when conflict detected, requires PIN validation.
+**Session conflicts** (same learner+lesson on two devices simultaneously): The protected Begin start is settled by the transactional session-start RPC before the learning orchestrator proceeds. A same-lesson cross-device conflict blocks continuation and requires the server-authorized exact-conflict PIN path described in [session-takeover.md](session-takeover.md).
 ## V2 Assessment Print System
 
 **Integration:** SessionPageV2 registers print handlers directly (no separate hook) and persists worksheet/test decks via `assessmentStore` (localStorage + Supabase) keyed by `lesson_assessments:{learnerId}:{lessonKey}`.

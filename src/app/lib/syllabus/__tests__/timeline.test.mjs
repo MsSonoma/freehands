@@ -7,10 +7,14 @@ import {
   buildSyllabusTimeline,
   classifySyllabusWeek,
   matchMasteryAnnotations,
+  moveSyllabusWeek,
   moveSyllabusTimeline,
   resolveSyllabusReadModel,
+  selectSyllabusWeek,
   startOfSyllabusWeek,
   syllabusEntitlementsFor,
+  syllabusItemActions,
+  syllabusItemState,
   timelineItemAction,
 } from '../timeline.mjs'
 import { syllabusAccessFromProfile } from '../entitlements.server.mjs'
@@ -46,6 +50,34 @@ test('Return to NOW restores the current-week index', () => {
   assert.equal(moveSyllabusTimeline(state, 'now'), 1)
   assert.equal(moveSyllabusTimeline(state, 'earlier'), 2)
   assert.equal(moveSyllabusTimeline({ ...state, index: 0 }, 'earlier'), 0)
+})
+
+test('selected-week navigation moves exactly seven days across month and year boundaries', () => {
+  assert.equal(moveSyllabusWeek('2026-12-28', 'later', '2026-12-30'), '2027-01-04')
+  assert.equal(moveSyllabusWeek('2027-01-04', 'earlier', '2026-12-30'), '2026-12-28')
+  assert.equal(moveSyllabusWeek('2027-02-01', 'now', '2026-12-30'), '2026-12-28')
+})
+
+test('selected Syllabus week defaults to current Monday and represents exactly seven days', () => {
+  const week = selectSyllabusWeek([
+    { id: 'past', planned_date: '2026-08-23' },
+    { id: 'inside', planned_date: '2026-08-26' },
+    { id: 'future', planned_date: '2026-08-31' },
+  ], { today: '2026-08-26' })
+  assert.equal(week.week_start, '2026-08-24')
+  assert.equal(week.days.length, 7)
+  assert.deepEqual(week.days.map((day) => day.date), ['2026-08-24', '2026-08-25', '2026-08-26', '2026-08-27', '2026-08-28', '2026-08-29', '2026-08-30'])
+  assert.deepEqual(week.items.map((item) => item.id), ['inside'])
+})
+
+test('history-only completion is discoverable by navigating backward and empty weeks remain seven-day pages', () => {
+  const items = [{ id: 'history', actual_kind: 'completed', planned_date: '2026-08-19' }]
+  const previousStart = moveSyllabusWeek('2026-08-24', 'earlier', '2026-08-26')
+  const historyWeek = selectSyllabusWeek(items, { weekStart: previousStart, today: '2026-08-26' })
+  assert.deepEqual(historyWeek.items.map((item) => item.id), ['history'])
+  const emptyWeek = selectSyllabusWeek([], { weekStart: '2026-09-07', today: '2026-08-26' })
+  assert.equal(emptyWeek.days.length, 7)
+  assert.equal(emptyWeek.items.length, 0)
 })
 
 test('canonical active Syllabus ignores legacy planner-shaped input', () => {
@@ -147,13 +179,44 @@ test('only a current lesson artifact receives Start or Continue', () => {
   assert.equal(timelineItemAction({ role: 'facilitator', weekState: 'now', hasLessonArtifact: true, hasProgress: false }), null)
 })
 
+test('today ready Syllabus artifact starts without legacy availability while unready material does not', () => {
+  assert.deepEqual(syllabusItemActions({ role: 'learner', state: 'today_unfinished', hasLessonArtifact: true, readinessState: 'available' }), [
+    { id: 'execute', label: 'Start', requires_pin: false },
+  ])
+  assert.deepEqual(syllabusItemActions({ role: 'learner', state: 'today_unfinished', hasLessonArtifact: false, readinessState: 'draft' }), [
+    { id: 'view', label: 'View' },
+  ])
+  const learnerPage = fs.readFileSync(path.resolve(TEST_DIR, '../../../learn/lessons/page.js'), 'utf8')
+  const stateStart = learnerPage.indexOf('function syllabusLessonState')
+  const stateEnd = learnerPage.indexOf('async function openSyllabusLesson', stateStart)
+  const stateSource = learnerPage.slice(stateStart, stateEnd)
+  assert.match(stateSource, /recentMetaLookup\[lessonKey\]/)
+  assert.doesNotMatch(stateSource, /activeSet/)
+})
+
+test('role action matrix keeps learner exceptions PIN-gated and facilitator controls distinct', () => {
+  const completed = syllabusItemState({ item: { actual_kind: 'completed', planned_date: '2026-08-20' }, today: '2026-08-26' })
+  assert.equal(completed, 'completed_historical')
+  assert.deepEqual(syllabusItemActions({ role: 'learner', state: completed, hasLessonArtifact: true }), [
+    { id: 'review', label: 'View / Review' }, { id: 'repeat', label: 'Do again', requires_pin: true },
+  ])
+  assert.equal(syllabusItemActions({ role: 'facilitator', state: completed }).find((action) => action.id === 'repeat').requires_pin, true)
+  assert.equal(syllabusItemActions({ role: 'learner', state: 'today_unfinished', hasLessonArtifact: true, isToday: true })[0].requires_pin, false)
+  assert.equal(syllabusItemActions({ role: 'learner', state: 'future_unfinished', hasLessonArtifact: true })[1].requires_pin, true)
+  assert.ok(syllabusItemActions({ role: 'facilitator', state: 'future_unfinished', readinessState: 'approved' }).some((action) => action.id === 'schedule'))
+  assert.equal(syllabusItemActions({ role: 'learner', state: 'future_unfinished', hasLessonArtifact: true }).some((action) => action.id === 'schedule'), false)
+  assert.equal(syllabusItemActions({ role: 'learner', state: 'incomplete_historical', hasLessonArtifact: true })[1].label, 'Retry')
+})
+
 test('new Syllabus UI source contains required readable labels and no mojibake', () => {
   const source = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/SyllabusDocument.js'), 'utf8')
-  for (const label of ['PAST / SYLLABUS RECORD', 'NOW / YOU ARE HERE', 'FUTURE / FORECAST', 'Ms. Sonoma / Living Syllabus', 'Earlier', 'Later', 'Locked / Upgrade to plan']) {
+  for (const label of ['PAST / SYLLABUS RECORD', 'NOW / YOU ARE HERE', 'FUTURE / FORECAST', 'Ms. Sonoma / Living Syllabus', 'Previous week', 'This week', 'Next week', 'Locked / Upgrade to plan']) {
     assert.match(source, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   }
   assert.doesNotMatch(source, /\uFFFD|Ã|Â|â€|â€™|â†/u)
   assert.match(source, /could not be linked confidently to one specific Syllabus lesson/)
+  assert.match(source, /week\.days\.map/)
+  assert.doesNotMatch(source, /timeline\.weeks\.map/)
 })
 
 test('Free initial Syllabus establishment is review-only in the retained editor', () => {

@@ -81,7 +81,7 @@ All 9 features touch the snapshot. This is the canonical payload shape. **Do not
 | Table | Owner Feature(s) | Key Columns |
 |-------|-----------------|-------------|
 | `snapshots` | Snapshot, Takeover, Timers | `(learner_id, lesson_key)` |
-| `lesson_sessions` | Takeover | `(learner_id, lesson_key)` + `device_id`, `ended_at` |
+| `lesson_sessions` | Takeover | `(learner_id, lesson_id)` + `session_id`, `ended_at` |
 | `lesson_session_events` | Takeover, Transcripts | `session_id`, `event_type` |
 | `learner_assessments` | Persistent Sets | `(user_id, learner_id, lesson_key)` |
 | `learners` | Learners List | `id` (all per-learner settings columns) |
@@ -230,5 +230,6 @@ These are the actual ways features have broken each other. Use these as anti-pat
 | Live-updating learner settings without bus handler | Timers Overlay stale | `patchLearner` handler missing new column |
 | Clearing assessments on session start | Persistent Sets broken | `clearAssessments()` called before `getStoredAssessments()` |
 | Adding transcript lines to ledger on every save | Transcript duplication | Using `appendTranscriptSegment()` instead of `updateTranscriptLiveSegment()` |
-| Polling for session ownership | Takeover performance | DO NOT add polling; gates only |
+| Moving ownership settlement into snapshot gates | Takeover race or unauthorized replacement | Protected starts settle only through the transactional RPC |
+| Removing either ownership watcher | Delayed takeover detection | Keep Realtime primary with the 15-second read-only polling fallback |
 | Writing timer state to sessionStorage outside TimerService | Double-write race | Only TimerService owns timer sessionStorage keys |

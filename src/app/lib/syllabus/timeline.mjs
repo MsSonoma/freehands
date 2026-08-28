@@ -19,9 +19,14 @@ export function startOfSyllabusWeek(value) {
   return new Date(date.getTime() - (mondayOffset * DAY_MS)).toISOString().slice(0, 10)
 }
 
+export function addSyllabusDays(value, count) {
+  const date = dateAtUtcNoon(value)
+  if (!date) return null
+  return new Date(date.getTime() + (count * DAY_MS)).toISOString().slice(0, 10)
+}
+
 function addWeeks(weekStart, count) {
-  const date = dateAtUtcNoon(weekStart)
-  return new Date(date.getTime() + (count * 7 * DAY_MS)).toISOString().slice(0, 10)
+  return addSyllabusDays(weekStart, count * 7)
 }
 
 export function classifySyllabusWeek(weekStart, today) {
@@ -61,6 +66,33 @@ export function moveSyllabusTimeline({ index, nowIndex, weekCount }, action) {
   return index
 }
 
+export function moveSyllabusWeek(weekStart, action, today = new Date().toISOString().slice(0, 10)) {
+  const current = startOfSyllabusWeek(today)
+  if (action === 'now') return current
+  if (action === 'earlier') return addSyllabusDays(weekStart || current, -7)
+  if (action === 'later') return addSyllabusDays(weekStart || current, 7)
+  return weekStart || current
+}
+
+export function selectSyllabusWeek(items = [], { weekStart, today = new Date().toISOString().slice(0, 10) } = {}) {
+  const selectedStart = startOfSyllabusWeek(weekStart || today)
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = addSyllabusDays(selectedStart, index)
+    return {
+      date,
+      items: (items || []).filter((item) => dateOnly(item?.planned_date) === date)
+        .sort((left, right) => Number(left.sort_order || 0) - Number(right.sort_order || 0)
+          || String(left.occurrence_id || left.id || left.title || '').localeCompare(String(right.occurrence_id || right.id || right.title || ''))),
+    }
+  })
+  return {
+    week_start: selectedStart,
+    state: classifySyllabusWeek(selectedStart, today),
+    days,
+    items: days.flatMap((day) => day.items),
+  }
+}
+
 export function resolveSyllabusReadModel(payload) {
   if (!payload?.has_active_syllabus || !payload?.active_revision) {
     return { kind: 'fallback', source: 'legacy_compatibility', revision: null, forecast_items: [], timeline_items: [] }
@@ -72,6 +104,8 @@ export function resolveSyllabusReadModel(payload) {
     forecast_items: Array.isArray(payload.forecast_items) ? payload.forecast_items : [],
     timeline_items: Array.isArray(payload.timeline_items) ? payload.timeline_items : (Array.isArray(payload.forecast_items) ? payload.forecast_items : []),
     proposed_reforecast: payload.proposed_reforecast || null,
+    resolved_today: dateOnly(payload.resolved_today),
+    resolved_timezone: payload.resolved_timezone || 'UTC',
   }
 }
 
@@ -125,6 +159,59 @@ export function weeklyPatternRows(pattern) {
     const subjects = entries.map((entry) => String(typeof entry === 'string' ? entry : entry?.subject || '').trim()).filter(Boolean)
     return subjects.length ? [{ day, subjects }] : []
   })
+}
+
+export function addWeeklyPatternSlot(pattern, day, subject) {
+  if (!DAY_KEYS.includes(day) || !String(subject || '').trim()) return structuredClone(pattern || {})
+  const next = structuredClone(pattern || {})
+  const entries = Array.isArray(next[day]) ? next[day] : []
+  next[day] = [...entries, { subject: String(subject).trim() }]
+  return next
+}
+
+export function removeWeeklyPatternSlot(pattern, day, index) {
+  const next = structuredClone(pattern || {})
+  if (!DAY_KEYS.includes(day) || !Array.isArray(next[day])) return next
+  next[day] = next[day].filter((_, entryIndex) => entryIndex !== Number(index))
+  return next
+}
+
+export function weeklyPatternCapacity(pattern, day) {
+  return Array.isArray(pattern?.[day]) ? pattern[day].length : 0
+}
+
+export function syllabusItemState({ item, today = new Date().toISOString().slice(0, 10), hasProgress = false }) {
+  if (item?.actual_kind === 'completed') return 'completed_historical'
+  if (item?.actual_kind === 'incomplete') return 'incomplete_historical'
+  if (item?.actual_kind === 'in_progress' || (hasProgress && dateOnly(item?.planned_date) === dateOnly(today))) return 'in_progress'
+  if (item?.needs_placement) return 'needs_placement'
+  const plannedDate = dateOnly(item?.planned_date)
+  if (plannedDate === dateOnly(today)) return 'today_unfinished'
+  if (plannedDate > dateOnly(today)) return 'future_unfinished'
+  return 'incomplete_historical'
+}
+
+export function syllabusItemActions({ role, state, hasLessonArtifact = false, readinessState = 'saved', isScheduled = false, isToday = false }) {
+  if (role === 'learner') {
+    if (state === 'completed_historical') return [{ id: 'review', label: 'View / Review' }, { id: 'repeat', label: 'Do again', requires_pin: true }]
+    if (state === 'needs_placement') return [{ id: 'view', label: 'View' }]
+    if (!hasLessonArtifact) return [{ id: 'view', label: 'View' }]
+    if (state === 'today_unfinished') return [{ id: 'execute', label: 'Start', requires_pin: false }]
+    if (state === 'in_progress') return [{ id: 'execute', label: 'Continue', requires_pin: !isToday }]
+    return [{ id: 'view', label: 'View' }, { id: 'execute', label: state === 'incomplete_historical' ? 'Retry' : 'Start', requires_pin: true }]
+  }
+  if (role !== 'facilitator') return []
+  if (state === 'completed_historical') return [
+    { id: 'view', label: 'View' }, { id: 'history', label: 'Review history' }, { id: 'repeat', label: 'Repeat', requires_pin: true },
+  ]
+  if (state === 'incomplete_historical' || state === 'in_progress') return [
+    { id: 'view', label: 'Open' }, { id: 'history', label: 'Review history' }, { id: 'execute', label: state === 'in_progress' ? 'Continue' : 'Retry' },
+  ]
+  if (state === 'needs_placement') return [{ id: 'view', label: 'Open' }, { id: 'prepare', label: 'Prepare' }, { id: 'schedule', label: 'Schedule' }]
+  const actions = [{ id: 'view', label: 'Open' }, { id: 'edit', label: 'Edit' }, { id: 'prepare', label: 'Prepare' }]
+  actions.push({ id: isScheduled ? 'reschedule' : 'schedule', label: isScheduled ? 'Reschedule' : 'Schedule' })
+  if (readinessState !== 'available') actions.push({ id: 'make_available', label: 'Make available' })
+  return actions
 }
 
 export function timelineItemAction({ role, weekState, hasLessonArtifact, hasProgress }) {

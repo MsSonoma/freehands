@@ -53,11 +53,14 @@ export function shouldUseAccountPersistence(learnerId) {
   return Boolean(learnerId && !isDemoLearnerId(learnerId))
 }
 
-export function buildLessonSessionRoute({ learnerId, subject, fileName, selectedTeacher, goldenKey = false }) {
+export function buildLessonSessionRoute({ learnerId, subject, fileName, selectedTeacher, goldenKey = false, occurrenceId = '' }) {
   const teacher = resolveTeacherForLearner(learnerId, selectedTeacher)
   if (teacher === 'slate') return '/session/slate'
   if (teacher === 'webb') return '/session/webb'
 
-  const url = `/session?subject=${encodeURIComponent(subject)}&lesson=${encodeURIComponent(fileName)}`
-  return goldenKey ? `${url}&goldenKey=true` : url
+  const params = new URLSearchParams({ subject, lesson: fileName })
+  if (learnerId && !isDemoLearnerId(learnerId)) params.set('learnerId', learnerId)
+  if (occurrenceId) params.set('occurrenceId', occurrenceId)
+  if (goldenKey) params.set('goldenKey', 'true')
+  return `/session?${params.toString()}`
 }

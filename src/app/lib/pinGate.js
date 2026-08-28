@@ -123,6 +123,41 @@ export function checkFacilitatorSection() {
 
 // Global lock to prevent multiple simultaneous PIN prompts
 let activePinPrompt = null;
+let activeExceptionPrompt = null;
+
+export async function requestFacilitatorPinException({ title = 'Facilitator PIN required', message = 'Enter the Facilitator PIN to approve this exception', ...overrides } = {}) {
+	const isBrowser = overrides.isBrowser ?? (typeof window !== 'undefined');
+	if (!isBrowser) return null;
+	if (activeExceptionPrompt) return activeExceptionPrompt;
+	activeExceptionPrompt = (async () => {
+		try {
+			const fetchPreferences = overrides.fetchServerPrefsAndHasPin || fetchServerPrefsAndHasPin;
+			const promptForPin = overrides.promptForPinMasked || promptForPinMasked;
+			const verifyPin = overrides.verifyPinServer || verifyPinServer;
+			const { hasPin } = await fetchPreferences();
+			if (!hasPin) {
+				try { alert('A Facilitator PIN must be configured before approving this exception.'); } catch {}
+				return null;
+			}
+			const input = await promptForPin({ title, message });
+			if (!input) return null;
+			if (await verifyPin(input) !== true) {
+				try { alert('Incorrect PIN.'); } catch {}
+				return null;
+			}
+			return input;
+		} catch {
+			return null;
+		} finally {
+			activeExceptionPrompt = null;
+		}
+	})();
+	return activeExceptionPrompt;
+}
+
+export async function ensureFacilitatorPinException(options = {}) {
+	return Boolean(await requestFacilitatorPinException(options));
+}
 
 export async function ensurePinAllowed(action = 'action', overrides = {}) {
 	const isBrowser = overrides.isBrowser ?? (typeof window !== 'undefined');
@@ -185,7 +220,7 @@ export async function ensurePinAllowed(action = 'action', overrides = {}) {
 	}
 }
 
-const pinGateApi = { ensurePinAllowed, setFacilitatorPin, clearFacilitatorPin, getPinPrefsLocal, setPinPrefsLocal, setInFacilitatorSection };
+const pinGateApi = { ensurePinAllowed, ensureFacilitatorPinException, requestFacilitatorPinException, setFacilitatorPin, clearFacilitatorPin, getPinPrefsLocal, setPinPrefsLocal, setInFacilitatorSection };
 export default pinGateApi;
 
 // Lightweight, dependency-free masked PIN modal. Returns Promise<string|null>.

@@ -12,7 +12,12 @@ export async function GET(request, deps = {}) {
     if (context.error) return NextResponse.json({ error: context.error }, { status: context.status })
     const learnerId = validateLearnerId(new URL(request.url).searchParams.get('learnerId'))
     const repository = deps.repository || createSyllabusRepository(context.admin)
-    const result = await getActiveSyllabus({ repository, facilitatorId: context.user.id, learnerId })
+    const result = await getActiveSyllabus({
+      repository,
+      facilitatorId: context.user.id,
+      learnerId,
+      fallbackTimeZone: context.user?.user_metadata?.timezone,
+    })
     return NextResponse.json(result)
   } catch (error) {
     const status = error instanceof SyllabusError ? error.status : 500

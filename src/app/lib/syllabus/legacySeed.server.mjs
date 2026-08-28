@@ -1,10 +1,10 @@
 import { legacyForecastItems, normalizeWeeklyPattern, subjectsFromLegacy } from './forecast.mjs'
 import { todayDate } from './schema.mjs'
 
-export async function buildLegacySeed({ repository, facilitatorId, learnerId, now = new Date() }) {
+export async function buildLegacySeed({ repository, facilitatorId, learnerId, now = new Date(), today: suppliedToday = null }) {
   const learner = await repository.findOwnedLearner(learnerId, facilitatorId)
   if (!learner) return null
-  const today = todayDate(now)
+  const today = suppliedToday || todayDate(now)
   const source = await repository.readLegacyPlanning({ facilitatorId, learnerId, today })
   const activeTemplate = (source.scheduleTemplates || []).find((item) => item.active) || source.scheduleTemplates?.[0] || null
   const weeklyPattern = normalizeWeeklyPattern(activeTemplate?.pattern)

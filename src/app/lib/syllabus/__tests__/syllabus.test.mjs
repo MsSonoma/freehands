@@ -210,7 +210,7 @@ function memoryRepository() {
     },
     async readLegacyPlanning() {
       return clone({
-        scheduleTemplates: [{ id: 'template-1', active: true, pattern: { monday: [{ subject: 'math' }] } }],
+        scheduleTemplates: [{ id: 'template-1', active: true, pattern: { monday: [{ subject: 'math' }], tuesday: [{ subject: 'science' }] } }],
         curriculumPreferences: {
           id: 'prefs-1',
           banned_words: ['spoiler'],
@@ -467,6 +467,72 @@ test('activation route keeps authentication and learner ownership protections', 
   assert.equal(repository.state.writes, 0)
 })
 
+test('manual activation counts existing Calendar occupancy and a valid PIN authorizes only that activation', async () => {
+  const repository = memoryRepository()
+  repository.listLessonSchedule = async () => [{ id: 'calendar-1', lesson_key: 'math/calendar.json', subject: 'math', scheduled_date: '2026-08-24' }]
+  repository.listLessonAssociations = async () => []
+  const deps = {
+    requestContext: { user: { id: FACILITATOR }, admin: {} },
+    repository,
+    syllabusAccess: { can_change_intent: true },
+    now: NOW,
+    verifyFacilitatorPinForUser: async (_admin, _user, pin) => pin === '2468',
+  }
+  const makeRequest = (exceptionPin) => new Request('http://localhost/api/syllabus/activate', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ learnerId: LEARNER, snapshot: snapshot(), ...(exceptionPin ? { exceptionPin } : {}) }),
+  })
+  const blocked = await activateSyllabusRoute(makeRequest(), deps)
+  assert.equal(blocked.status, 409)
+  assert.equal((await blocked.json()).code, 'SYLLABUS_CAPACITY_PIN_REQUIRED')
+  const allowed = await activateSyllabusRoute(makeRequest('2468'), deps)
+  assert.equal(allowed.status, 201)
+  assert.deepEqual((await allowed.json()).active_revision.weekly_pattern, { monday: [{ subject: 'math' }] })
+})
+
+test('mastery proposal activation cannot bypass existing Calendar capacity', async () => {
+  const repository = memoryRepository()
+  const active = await activateSyllabus({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, snapshot: snapshot(), now: NOW })
+  const proposal = {
+    ...structuredClone(active.active_revision),
+    id: 'mastery-capacity-proposal',
+    revision_number: 2,
+    base_revision_id: active.active_revision.id,
+    proposal_kind: 'mastery_reforecast',
+    effective_from: '2026-08-23',
+    activated_at: null,
+  }
+  repository.state.revisions.push(proposal)
+  repository.state.forecast.push({ ...snapshot().forecast_items[0], id: 'proposal-forecast', revision_id: proposal.id })
+  repository.listLessonSchedule = async () => [{ id: 'calendar-1', lesson_key: 'math/calendar.json', subject: 'math', scheduled_date: '2026-08-24' }]
+  repository.listLessonAssociations = async () => []
+  await assert.rejects(
+    activateProposedSyllabus({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, proposalRevisionId: proposal.id, expectedActiveRevisionId: active.active_revision.id, now: NOW }),
+    (error) => error?.code === 'SYLLABUS_CAPACITY_PIN_REQUIRED',
+  )
+  assert.equal(repository.state.syllabi[0].active_revision_id, active.active_revision.id)
+})
+
+test('initial establishment cannot silently activate an over-capacity canonical seed', async () => {
+  const repository = memoryRepository()
+  repository.readLegacyPlanning = async () => ({
+    scheduleTemplates: [{ id: 'one-slot', active: true, pattern: { monday: [{ subject: 'math' }] } }],
+    curriculumPreferences: null,
+    plannedLessons: [
+      { id: 'one', scheduled_date: '2026-08-24', lesson_data: { title: 'One', subject: 'math' } },
+      { id: 'two', scheduled_date: '2026-08-24', lesson_data: { title: 'Two', subject: 'math' } },
+    ],
+    customSubjects: [],
+  })
+  await assert.rejects(
+    establishSyllabusFromLegacyPlan({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, now: NOW }),
+    (error) => error?.code === 'SYLLABUS_CAPACITY_PIN_REQUIRED',
+  )
+  assert.equal(repository.state.writes, 0)
+  const allowed = await establishSyllabusFromLegacyPlan({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, now: NOW, allowCapacityException: true })
+  assert.equal(allowed.active_revision.revision_number, 1)
+})
+
 test('Free establishment fails explicitly when the legacy plan cannot be read safely', async () => {
   const repository = memoryRepository()
   repository.readLegacyPlanning = async () => { throw new Error('legacy storage unavailable') }
@@ -486,7 +552,7 @@ test('active retrieval follows the pointer and forecast ordering is date then so
     { ...secondSnapshot.forecast_items[0], lineage_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', planned_date: '2026-08-26', title: 'Second', sort_order: 2 },
     { ...secondSnapshot.forecast_items[0], lineage_id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', planned_date: '2026-08-26', title: 'First', sort_order: 1 },
   ]
-  const second = await activateSyllabus({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, snapshot: secondSnapshot, now: NOW })
+  const second = await activateSyllabus({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, snapshot: secondSnapshot, now: NOW, allowCapacityException: true })
   repository.state.syllabi[0].active_revision_id = first.active_revision.id
 
   const active = await getActiveSyllabus({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER })
@@ -652,7 +718,7 @@ test('unsafe slot projection performs no proposal writes and returns the reason 
   const repository = memoryRepository()
   const input = snapshot()
   input.weekly_pattern = {}
-  const active = await activateSyllabus({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, snapshot: input, now: NOW })
+  const active = await activateSyllabus({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, snapshot: input, now: NOW, allowCapacityException: true })
   const writesBefore = repository.state.writes
   const result = await createMasteryReforecastProposal({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: active.active_revision.id, reports: [masteryReport('consider_review_then_check')], now: NOW })
   assert.equal(result.kind, 'no_action')

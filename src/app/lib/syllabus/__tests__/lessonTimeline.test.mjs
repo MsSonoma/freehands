@@ -81,14 +81,14 @@ test('completed evidence outranks prior schedule and immutable forecast placemen
   assert.equal(items[0].actual_at, '2026-08-20T10:50:00Z')
 })
 
-test('open session is in progress in NOW', () => {
+test('open session remains on its actual start date', () => {
   const current = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
     associations: [association()],
     sessions: [{ lesson_id: 'generated/fractions.json', started_at: '2026-08-18T10:00:00Z', ended_at: null }],
     today: '2026-08-26',
   })[0]
-  assert.equal(current.planned_date, '2026-08-26')
+  assert.equal(current.planned_date, '2026-08-18')
   assert.equal(current.actual_started_date, '2026-08-18')
   assert.equal(current.readiness_state, 'in_progress')
   assert.equal(current.actual_kind, 'in_progress')
@@ -121,8 +121,8 @@ test('explicit incomplete event overrides ended_at completion fallback for its a
   assert.equal(item.actual_at, '2026-08-18T10:45:00Z')
 })
 
-test('a newer in-progress attempt is not hidden by older completion evidence for the same lesson', () => {
-  const item = composeSyllabusLessonTimeline({
+test('a newer in-progress attempt preserves the older completion occurrence', () => {
+  const items = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
     associations: [association()],
     sessions: [
@@ -131,28 +131,32 @@ test('a newer in-progress attempt is not hidden by older completion evidence for
     ],
     sessionEvents: [{ session_id: 'old-session', lesson_id: 'generated/fractions.json', event_type: 'completed', occurred_at: '2026-08-10T11:00:00Z' }],
     today: '2026-08-26',
-  })[0]
+  })
+  assert.deepEqual(items.map((item) => item.actual_kind), ['completed', 'in_progress'])
+  const item = items.at(-1)
   assert.equal(item.actual_kind, 'in_progress')
   assert.equal(item.readiness_state, 'in_progress')
-  assert.equal(item.planned_date, '2026-08-26')
+  assert.equal(item.planned_date, '2026-08-25')
 })
 
-test('newer in-progress attempt outranks older ended-at fallback completion', () => {
-  const item = composeSyllabusLessonTimeline({
+test('newer in-progress attempt coexists with older ended-at fallback completion', () => {
+  const items = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
     sessions: [
       { id: 'legacy-ended', lesson_id: 'math/fractions.json', started_at: '2026-08-10T10:00:00Z', ended_at: '2026-08-10T11:00:00Z' },
       { id: 'new-open', lesson_id: 'math/fractions.json', started_at: '2026-08-25T10:00:00Z', ended_at: null },
     ],
     today: '2026-08-26',
-  })[0]
+  })
+  assert.equal(items.length, 2)
+  const item = items.at(-1)
   assert.equal(item.actual_kind, 'in_progress')
   assert.equal(item.actual_at, '2026-08-25T10:00:00Z')
-  assert.equal(item.planned_date, '2026-08-26')
+  assert.equal(item.planned_date, '2026-08-25')
 })
 
-test('newer explicit incomplete attempt outranks older completion', () => {
-  const item = composeSyllabusLessonTimeline({
+test('newer explicit incomplete attempt preserves older completion', () => {
+  const items = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
     sessions: [
       { id: 'old-complete', lesson_id: 'math/fractions.json', started_at: '2026-08-10T10:00:00Z', ended_at: '2026-08-10T11:00:00Z' },
@@ -163,13 +167,15 @@ test('newer explicit incomplete attempt outranks older completion', () => {
       { session_id: 'new-incomplete', lesson_id: 'math/fractions.json', event_type: 'incomplete', occurred_at: '2026-08-20T10:45:00Z' },
     ],
     today: '2026-08-26',
-  })[0]
+  })
+  assert.deepEqual(items.map((item) => item.actual_kind), ['completed', 'incomplete'])
+  const item = items.at(-1)
   assert.equal(item.actual_kind, 'incomplete')
   assert.equal(item.actual_at, '2026-08-20T10:45:00Z')
 })
 
-test('newer completed attempt outranks older incomplete', () => {
-  const item = composeSyllabusLessonTimeline({
+test('newer completed attempt preserves older incomplete', () => {
+  const items = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
     sessions: [
       { id: 'old-incomplete', lesson_id: 'math/fractions.json', started_at: '2026-08-10T10:00:00Z', ended_at: '2026-08-10T11:00:00Z' },
@@ -180,7 +186,9 @@ test('newer completed attempt outranks older incomplete', () => {
       { session_id: 'new-complete', lesson_id: 'math/fractions.json', event_type: 'completed', occurred_at: '2026-08-20T10:50:00Z' },
     ],
     today: '2026-08-26',
-  })[0]
+  })
+  assert.deepEqual(items.map((item) => item.actual_kind), ['incomplete', 'completed'])
+  const item = items.at(-1)
   assert.equal(item.actual_kind, 'completed')
   assert.equal(item.actual_at, '2026-08-20T10:50:00Z')
   assert.equal(item.readiness_state, 'completed')
@@ -254,15 +262,118 @@ test('past entries come from actual learner history rather than pre-effective fo
   assert.equal(items[0].placement_kind, 'actual')
 })
 
-test('old active-revision forecast intent is carried into NOW instead of fabricating PAST', () => {
+test('old active-revision forecast intent is carried through the next eligible open slot instead of fabricating PAST', () => {
   const items = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
     forecastItems: [{ lesson_key: 'generated/fractions.json', planned_date: '2026-08-10', subject: 'math', title: 'Fractions' }],
     today: '2026-08-26',
   })
-  assert.ok(items.every((item) => item.planned_date === '2026-08-26'))
+  assert.ok(items.every((item) => item.planned_date === '2026-08-31'))
   assert.ok(items.every((item) => item.is_overdue_intent))
   assert.deepEqual(items.map((item) => item.original_placement_date), ['2026-08-10'])
+})
+
+test('overdue unfinished intentions spread through finite future capacity instead of stacking today', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [
+      { id: 'old-a', lesson_key: 'generated/a.json', planned_date: '2026-08-10', subject: 'math', title: 'A' },
+      { id: 'old-b', lesson_key: 'generated/b.json', planned_date: '2026-08-11', subject: 'math', title: 'B' },
+    ],
+    today: '2026-08-26',
+  })
+  assert.deepEqual(items.map((item) => item.planned_date), ['2026-08-31', '2026-09-07'])
+  assert.ok(items.every((item) => item.is_overdue_intent))
+})
+
+test('an overdue intent actually started today is consumed instead of rolling forward again', () => {
+  const activeRevision = { ...REVISION, effective_from: '2026-08-01', weekly_pattern: { monday: [{ subject: 'math' }] } }
+  const items = composeSyllabusLessonTimeline({
+    activeRevision,
+    forecastItems: [{ id: 'overdue-monday', lesson_key: 'generated/fractions.json', planned_date: '2026-08-17', subject: 'math', title: 'Fractions' }],
+    sessions: [{ id: 'today-start', lesson_id: 'generated/fractions.json', started_at: '2026-08-24T14:00:00Z', ended_at: null }],
+    today: '2026-08-24',
+  })
+  assert.deepEqual(items.map((item) => [item.occurrence_id, item.planned_date, item.placement_kind]), [
+    ['actual:today-start', '2026-08-24', 'actual'],
+  ])
+})
+
+test('actual occurrence provenance consumes only its overdue intent and preserves a distinct repeat', () => {
+  const activeRevision = { ...REVISION, effective_from: '2026-08-01', weekly_pattern: { monday: [{ subject: 'math' }, { subject: 'math' }] } }
+  const items = composeSyllabusLessonTimeline({
+    activeRevision,
+    forecastItems: [
+      { id: 'overdue-a', lesson_key: 'generated/fractions.json', planned_date: '2026-08-10', subject: 'math', title: 'Fractions A' },
+      { id: 'repeat-b', lesson_key: 'generated/fractions.json', planned_date: '2026-08-17', subject: 'math', title: 'Fractions B' },
+    ],
+    sessions: [{ id: 'today-start', lesson_id: 'generated/fractions.json', started_at: '2026-08-24T14:00:00Z', ended_at: null }],
+    sessionEvents: [{ session_id: 'today-start', lesson_id: 'generated/fractions.json', event_type: 'started', occurred_at: '2026-08-24T14:00:00Z', metadata: { syllabus_occurrence_id: 'syllabus:overdue-a' } }],
+    today: '2026-08-24',
+  })
+  assert.equal(items.filter((item) => item.placement_kind === 'actual').length, 1)
+  assert.equal(items.some((item) => item.occurrence_id === 'syllabus:overdue-a'), false)
+  assert.equal(items.filter((item) => item.occurrence_id === 'syllabus:repeat-b').length, 1)
+  assert.equal(items.find((item) => item.occurrence_id === 'syllabus:repeat-b').planned_date, '2026-08-24')
+})
+
+test('actual work today reserves capacity and reconciles its corresponding intent before inference', () => {
+  const activeRevision = { ...REVISION, effective_from: '2026-08-01', weekly_pattern: { monday: [{ subject: 'math' }, { subject: 'math' }] } }
+  const items = composeSyllabusLessonTimeline({
+    activeRevision,
+    associations: [association({ id: 'waiting', lesson_key: 'generated/waiting.json', title: 'Waiting' })],
+    schedules: [
+      { id: 'same', lesson_key: 'generated/fractions.json', subject: 'math', scheduled_date: '2026-08-24' },
+      { id: 'explicit', lesson_key: 'generated/explicit.json', subject: 'math', scheduled_date: '2026-08-24' },
+    ],
+    sessions: [{ id: 'started', lesson_id: 'generated/fractions.json', started_at: '2026-08-24T14:00:00Z', ended_at: null }],
+    today: '2026-08-24',
+  })
+  assert.equal(items.filter((item) => item.lesson_key === 'generated/fractions.json').length, 1)
+  assert.deepEqual(items.map((item) => [item.placement_kind, item.planned_date]), [
+    ['actual', '2026-08-24'], ['scheduled', '2026-08-24'], ['inferred', '2026-08-31'],
+  ])
+})
+
+test('two actual lessons consume a two-slot day and force a third inference forward', () => {
+  const activeRevision = { ...REVISION, effective_from: '2026-08-01', weekly_pattern: { monday: [{ subject: 'math' }, { subject: 'math' }] } }
+  const items = composeSyllabusLessonTimeline({
+    activeRevision,
+    associations: [association({ id: 'third', lesson_key: 'generated/third.json', title: 'Third' })],
+    sessions: [
+      { id: 'one', lesson_id: 'generated/one.json', started_at: '2026-08-24T13:00:00Z', ended_at: null },
+      { id: 'two', lesson_id: 'generated/two.json', started_at: '2026-08-24T14:00:00Z', ended_at: null },
+    ],
+    today: '2026-08-24',
+  })
+  assert.equal(items.find((item) => item.lesson_key === 'generated/third.json').planned_date, '2026-08-31')
+})
+
+test('a moved explicit schedule reconciles one unique forecast occurrence across dates', () => {
+  const activeRevision = { ...REVISION, effective_from: '2026-08-01', weekly_pattern: { thursday: [{ subject: 'math' }], friday: [{ subject: 'math' }] } }
+  const items = composeSyllabusLessonTimeline({
+    activeRevision,
+    forecastItems: [{ id: 'forecast-thursday', lesson_key: 'generated/fractions.json', subject: 'math', title: 'Fractions', planned_date: '2026-08-27' }],
+    schedules: [{ id: 'schedule-friday', lesson_key: 'generated/fractions.json', subject: 'math', scheduled_date: '2026-08-28' }],
+    today: '2026-08-24',
+  })
+  assert.equal(items.length, 1)
+  assert.equal(items[0].planned_date, '2026-08-28')
+  assert.equal(items[0].reconciled_forecast_id, 'forecast-thursday')
+})
+
+test('deliberate repeated forecast occurrence remains distinct when one repeat is explicitly scheduled', () => {
+  const activeRevision = { ...REVISION, effective_from: '2026-08-01', weekly_pattern: { thursday: [{ subject: 'math' }], friday: [{ subject: 'math' }] } }
+  const items = composeSyllabusLessonTimeline({
+    activeRevision,
+    forecastItems: [
+      { id: 'repeat-a', lesson_key: 'generated/fractions.json', subject: 'math', title: 'Fractions A', planned_date: '2026-08-27' },
+      { id: 'repeat-b', lesson_key: 'generated/fractions.json', subject: 'math', title: 'Fractions B', planned_date: '2026-09-03' },
+    ],
+    schedules: [{ id: 'scheduled-a', lesson_key: 'generated/fractions.json', subject: 'math', scheduled_date: '2026-08-27' }],
+    today: '2026-08-24',
+  })
+  assert.deepEqual(items.map((item) => item.occurrence_id), ['scheduled:scheduled-a', 'syllabus:repeat-b'])
 })
 
 test('pre-effective schedule-only intent is not resurrected into NOW', () => {
@@ -297,6 +408,107 @@ test('associated lessons with no weekly-pattern subject remain visible for place
   assert.equal(item.placement_kind, 'needs_placement')
   assert.equal(item.needs_placement, true)
   assert.equal(item.is_explicit_schedule, false)
+})
+
+test('completed history is preserved without an inferred future obligation', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    associations: [association()],
+    sessions: [{ id: 'done-once', lesson_id: 'generated/fractions.json', started_at: '2026-08-18T10:00:00Z', ended_at: '2026-08-18T11:00:00Z' }],
+    today: '2026-08-26',
+  })
+  assert.equal(items.length, 1)
+  assert.deepEqual(items.map((item) => [item.occurrence_id, item.planned_date, item.placement_kind]), [['actual:done-once', '2026-08-18', 'actual']])
+})
+
+test('a deliberate later repeat preserves the original completion and receives its own occurrence identity', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: { ...REVISION, activated_at: '2026-08-25T09:00:00Z' },
+    associations: [association()],
+    forecastItems: [{ id: 'repeat-item', lesson_key: 'generated/fractions.json', subject: 'math', title: 'Fractions again', planned_date: '2026-08-31', sort_order: 0, created_at: '2026-08-25T09:00:00Z' }],
+    sessions: [{ id: 'original-attempt', lesson_id: 'generated/fractions.json', started_at: '2026-08-18T10:00:00Z', ended_at: '2026-08-18T11:00:00Z' }],
+    today: '2026-08-26',
+  })
+  assert.equal(items.length, 2)
+  assert.deepEqual(items.map((item) => item.occurrence_id), ['actual:original-attempt', 'syllabus:repeat-item'])
+  assert.equal(items[1].is_deliberate_repeat, true)
+})
+
+test('a schedule genuinely rescheduled after completion remains as deliberate repeat intent', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    schedules: [{
+      id: 'rescheduled-after-completion', lesson_key: 'generated/fractions.json', subject: 'math', scheduled_date: '2026-08-31',
+      created_at: '2026-08-20T09:00:00Z', updated_at: '2026-08-26T09:00:00Z',
+    }],
+    sessions: [{ id: 'completed', lesson_id: 'generated/fractions.json', started_at: '2026-08-25T10:00:00Z', ended_at: '2026-08-25T11:00:00Z' }],
+    today: '2026-08-26',
+  })
+  assert.deepEqual(items.map((item) => item.occurrence_id), ['actual:completed', 'scheduled:rescheduled-after-completion'])
+  assert.equal(items[1].is_deliberate_repeat, true)
+})
+
+test('an untouched pre-completion schedule remains suppressed after completion', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    schedules: [{
+      id: 'old-schedule', lesson_key: 'generated/fractions.json', subject: 'math', scheduled_date: '2026-08-31',
+      created_at: '2026-08-20T09:00:00Z', updated_at: '2026-08-20T09:00:00Z',
+    }],
+    sessions: [{ id: 'completed', lesson_id: 'generated/fractions.json', started_at: '2026-08-25T10:00:00Z', ended_at: '2026-08-25T11:00:00Z' }],
+    today: '2026-08-26',
+  })
+  assert.deepEqual(items.map((item) => item.occurrence_id), ['actual:completed'])
+})
+
+test('finite daily and subject capacity overflows deterministically into later weeks', () => {
+  const activeRevision = { ...REVISION, weekly_pattern: { monday: [{ subject: 'math' }, { subject: 'science' }] } }
+  const associations = [
+    association({ id: 'a', lesson_key: 'generated/math-a.json', title: 'Math A' }),
+    association({ id: 'b', lesson_key: 'generated/science-a.json', subject: 'science', title: 'Science A' }),
+    association({ id: 'c', lesson_key: 'generated/math-b.json', title: 'Math B' }),
+  ]
+  const items = composeSyllabusLessonTimeline({ activeRevision, associations, today: '2026-08-26' })
+  assert.deepEqual(items.map((item) => [item.lesson_key, item.planned_date, item.sort_order]), [
+    ['generated/math-a.json', '2026-08-31', 0],
+    ['generated/science-a.json', '2026-08-31', 1],
+    ['generated/math-b.json', '2026-09-07', 0],
+  ])
+})
+
+test('five same-subject lessons distribute across five one-slot Mondays', () => {
+  const associations = Array.from({ length: 5 }, (_, index) => association({ id: String(index + 1), lesson_key: `generated/math-${index + 1}.json`, title: `Math ${index + 1}` }))
+  const items = composeSyllabusLessonTimeline({ activeRevision: REVISION, associations, today: '2026-08-26' })
+  assert.deepEqual(items.map((item) => item.planned_date), ['2026-08-31', '2026-09-07', '2026-09-14', '2026-09-21', '2026-09-28'])
+  assert.equal(new Set(items.map((item) => `${item.planned_date}:${item.sort_order}`)).size, 5)
+})
+
+test('explicit schedule and explicit Syllabus positions consume slots before inference', () => {
+  const activeRevision = { ...REVISION, weekly_pattern: { monday: [{ subject: 'math' }, { subject: 'math' }] } }
+  const associations = [association({ id: 'waiting', lesson_key: 'generated/waiting.json', title: 'Waiting' })]
+  const items = composeSyllabusLessonTimeline({
+    activeRevision,
+    associations,
+    schedules: [{ id: 'scheduled', lesson_key: 'generated/scheduled.json', subject: 'math', title: 'Scheduled', scheduled_date: '2026-08-31' }],
+    forecastItems: [{ id: 'placed', lesson_key: 'generated/placed.json', subject: 'math', title: 'Placed', planned_date: '2026-08-31', sort_order: 1 }],
+    today: '2026-08-26',
+  })
+  assert.deepEqual(items.map((item) => [item.placement_kind, item.planned_date, item.sort_order]), [
+    ['scheduled', '2026-08-31', 0], ['syllabus', '2026-08-31', 1], ['inferred', '2026-09-07', 0],
+  ])
+})
+
+test('completed history consumes no future slot and unchanged inference is deterministic', () => {
+  const input = {
+    activeRevision: REVISION,
+    associations: [association(), association({ id: 'next', lesson_key: 'generated/next.json', title: 'Next' })],
+    sessions: [{ id: 'done', lesson_id: 'generated/fractions.json', started_at: '2026-08-18T10:00:00Z', ended_at: '2026-08-18T11:00:00Z' }],
+    today: '2026-08-26',
+  }
+  const first = composeSyllabusLessonTimeline(input)
+  const second = composeSyllabusLessonTimeline(structuredClone(input))
+  assert.deepEqual(first, second)
+  assert.equal(first.find((item) => item.lesson_key === 'generated/next.json').planned_date, '2026-08-31')
 })
 
 test('association schema and API cannot create manual or inferred placement dates', () => {

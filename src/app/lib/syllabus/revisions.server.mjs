@@ -2,6 +2,8 @@ import { SyllabusError, validateSnapshot } from './schema.mjs'
 import { buildLegacySeed } from './legacySeed.server.mjs'
 import { applyTeachingGuidanceOverride } from './teachingGuidance.mjs'
 import { composeSyllabusLessonTimeline } from './lessonTimeline.mjs'
+import { resolveCalendarContext } from '../calendarDate.mjs'
+import { findSnapshotCapacityConflict } from './capacity.mjs'
 
 async function requireOwnedLearner(repository, learnerId, facilitatorId) {
   const learner = await repository.findOwnedLearner(learnerId, facilitatorId)
@@ -9,11 +11,28 @@ async function requireOwnedLearner(repository, learnerId, facilitatorId) {
   return learner
 }
 
-export async function getActiveSyllabus({ repository, facilitatorId, learnerId }) {
+async function enforceActivationCapacity({ repository, facilitatorId, learnerId, snapshot, allowCapacityException }) {
+  if (allowCapacityException) return
+  const optionalList = async (name, ...args) => typeof repository[name] === 'function' ? repository[name](...args) : []
+  const [schedules, associations] = await Promise.all([
+    optionalList('listLessonSchedule', facilitatorId, learnerId, snapshot.effective_from),
+    optionalList('listLessonAssociations', facilitatorId, learnerId),
+  ])
+  const conflict = findSnapshotCapacityConflict(snapshot, { schedules, associations })
+  if (conflict) {
+    const error = new SyllabusError(conflict.message, 409, 'SYLLABUS_CAPACITY_PIN_REQUIRED')
+    error.conflict = conflict.conflict
+    throw error
+  }
+}
+
+export async function getActiveSyllabus({ repository, facilitatorId, learnerId, now = new Date(), fallbackTimeZone }) {
   const learner = await requireOwnedLearner(repository, learnerId, facilitatorId)
+  const profileTimeZone = typeof repository.findFacilitatorTimeZone === 'function' ? await repository.findFacilitatorTimeZone(facilitatorId) : null
+  const calendar = resolveCalendarContext({ now, profileTimeZone, fallbackTimeZone })
   const syllabus = await repository.findSyllabus(facilitatorId, learnerId)
   if (!syllabus?.active_revision_id) {
-    return { has_active_syllabus: false, syllabus: syllabus || null, active_revision: null, forecast_items: [] }
+    return { has_active_syllabus: false, syllabus: syllabus || null, active_revision: null, forecast_items: [], resolved_today: calendar.today, resolved_timezone: calendar.timeZone }
   }
   const activeRevision = await repository.findRevision(syllabus.active_revision_id, syllabus.id)
   if (!activeRevision) throw new SyllabusError('The active Syllabus revision could not be found', 500, 'ACTIVE_REVISION_MISSING')
@@ -33,6 +52,8 @@ export async function getActiveSyllabus({ repository, facilitatorId, learnerId }
     schedules,
     sessions,
     sessionEvents,
+    today: calendar.today,
+    timeZone: calendar.timeZone,
   })
   const proposedRevision = typeof repository.findLatestMasteryProposal === 'function'
     ? await repository.findLatestMasteryProposal(syllabus.id, activeRevision.id)
@@ -48,6 +69,8 @@ export async function getActiveSyllabus({ repository, facilitatorId, learnerId }
       revision: proposedRevision,
       forecast_items: proposedForecast,
     } : null,
+    resolved_today: calendar.today,
+    resolved_timezone: calendar.timeZone,
   }
 }
 
@@ -58,6 +81,8 @@ export async function activateProposedSyllabus({
   proposalRevisionId,
   expectedActiveRevisionId,
   now = new Date(),
+  today = now.toISOString().slice(0, 10),
+  allowCapacityException = false,
 }) {
   await requireOwnedLearner(repository, learnerId, facilitatorId)
   const syllabus = await repository.findSyllabus(facilitatorId, learnerId)
@@ -74,9 +99,17 @@ export async function activateProposedSyllabus({
       throw new SyllabusError('This mastery reforecast has been superseded. Review the current proposal instead.', 409, 'PROPOSAL_SUPERSEDED')
     }
   }
-  if (String(proposal.effective_from).slice(0, 10) !== now.toISOString().slice(0, 10)) {
+  if (String(proposal.effective_from).slice(0, 10) !== today) {
     throw new SyllabusError('This proposed reforecast was prepared on an earlier date. Check mastery evidence again before activation.', 409, 'PROPOSAL_STALE')
   }
+  const proposalForecast = await repository.listForecastItems(proposal.id)
+  await enforceActivationCapacity({
+    repository,
+    facilitatorId,
+    learnerId,
+    snapshot: { ...proposal, forecast_items: proposalForecast },
+    allowCapacityException,
+  })
   try {
     const revision = await repository.commitRevisionActivation({
       syllabusId: syllabus.id,
@@ -96,10 +129,10 @@ export async function activateProposedSyllabus({
   }
 }
 
-async function persistSyllabusActivation({ repository, facilitatorId, learnerId, snapshot, now, requireNoActiveRevision = false }) {
+async function persistSyllabusActivation({ repository, facilitatorId, learnerId, snapshot, now, today = now.toISOString().slice(0, 10), requireNoActiveRevision = false, allowCapacityException = false }) {
   await requireOwnedLearner(repository, learnerId, facilitatorId)
-  const activationDate = now.toISOString().slice(0, 10)
-  const planning = validateSnapshot(snapshot, { today: activationDate })
+  const planning = validateSnapshot(snapshot, { today })
+  await enforceActivationCapacity({ repository, facilitatorId, learnerId, snapshot: planning, allowCapacityException })
   let syllabus = await repository.findSyllabus(facilitatorId, learnerId)
   if (!syllabus) syllabus = await repository.createOrFindSyllabus(facilitatorId, learnerId)
   if (requireNoActiveRevision && syllabus.active_revision_id) {
@@ -155,14 +188,14 @@ async function persistSyllabusActivation({ repository, facilitatorId, learnerId,
   return { syllabus, active_revision: revision, forecast_items: await repository.listForecastItems(revision.id) }
 }
 
-export async function activateSyllabus({ repository, facilitatorId, learnerId, snapshot, now = new Date(), allowFutureIntentChanges = true }) {
+export async function activateSyllabus({ repository, facilitatorId, learnerId, snapshot, now = new Date(), today = now.toISOString().slice(0, 10), allowFutureIntentChanges = true, allowCapacityException = false }) {
   if (!allowFutureIntentChanges) {
     throw new SyllabusError('Future Syllabus planning requires the current Lesson Planner entitlement', 403, 'SYLLABUS_PLANNING_REQUIRED')
   }
-  return persistSyllabusActivation({ repository, facilitatorId, learnerId, snapshot, now })
+  return persistSyllabusActivation({ repository, facilitatorId, learnerId, snapshot, now, today, allowCapacityException })
 }
 
-export async function establishSyllabusFromLegacyPlan({ repository, facilitatorId, learnerId, teachingGuidanceOverride, now = new Date() }) {
+export async function establishSyllabusFromLegacyPlan({ repository, facilitatorId, learnerId, teachingGuidanceOverride, now = new Date(), today = now.toISOString().slice(0, 10), allowCapacityException = false }) {
   await requireOwnedLearner(repository, learnerId, facilitatorId)
   const existing = await repository.findSyllabus(facilitatorId, learnerId)
   if (existing?.active_revision_id) {
@@ -170,7 +203,7 @@ export async function establishSyllabusFromLegacyPlan({ repository, facilitatorI
   }
   let seed
   try {
-    seed = await buildLegacySeed({ repository, facilitatorId, learnerId, now })
+    seed = await buildLegacySeed({ repository, facilitatorId, learnerId, now, today })
   } catch {
     throw new SyllabusError("The learner's current plan could not be read safely for Syllabus establishment", 500, 'LEGACY_SEED_UNAVAILABLE')
   }
@@ -184,6 +217,8 @@ export async function establishSyllabusFromLegacyPlan({ repository, facilitatorI
     learnerId,
     snapshot: seed,
     now,
+    today,
     requireNoActiveRevision: true,
+    allowCapacityException,
   })
 }

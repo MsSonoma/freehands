@@ -38,6 +38,7 @@ import { DiscussionPhase } from './DiscussionPhase';
 import { PhaseOrchestrator } from './PhaseOrchestrator';
 import { SnapshotService } from './SnapshotService';
 import { deriveResumePhaseFromSnapshot } from './resumePhase';
+import { requireProtectedSessionCreation } from './protectedSessionBoundary.mjs';
 import { TimerService } from './TimerService';
 import { KeyboardService } from './KeyboardService';
 import { OpeningActionsController } from './OpeningActionsController';
@@ -52,7 +53,7 @@ import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech
 import { buildAcceptableList, judgeAnswer } from './judging';
 import { deriveCorrectAnswerText } from '../utils/questionFormatting';
 import { getSnapshotStorageKey } from '../utils/snapshotPersistenceUtils';
-import { ensurePinAllowed } from '@/app/lib/pinGate';
+import { ensurePinAllowed, requestFacilitatorPinException } from '@/app/lib/pinGate';
 import { upsertMedal } from '@/app/lib/medalsClient';
 import { appendTranscriptSegment, updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
@@ -512,6 +513,8 @@ function SessionPageV2Inner() {
 
   const lessonId = searchParams?.get('lesson') || '';
   const subjectParam = searchParams?.get('subject') || 'math'; // Subject folder for lesson lookup
+  const learnerIdParam = searchParams?.get('learnerId') || '';
+  const occurrenceIdParam = searchParams?.get('occurrenceId') || '';
   const regenerateParam = searchParams?.get('regenerate'); // Support generated lessons
   const goldenKeyFromUrl = searchParams?.get('goldenKey') === 'true';
 
@@ -569,6 +572,56 @@ function SessionPageV2Inner() {
   const [lessonData, setLessonData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [executionAuthorization, setExecutionAuthorization] = useState(subjectParam === 'demo' ? 'allowed' : 'pending');
+  const [executionAuthorizationError, setExecutionAuthorizationError] = useState(null);
+  const [authorizedOccurrenceId, setAuthorizedOccurrenceId] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    async function authorizeExecution() {
+      if (subjectParam === 'demo') {
+        setExecutionAuthorization('allowed');
+        return;
+      }
+      setExecutionAuthorization('pending');
+      setExecutionAuthorizationError(null);
+      try {
+        const learnerId = learnerIdParam || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : '');
+        if (!learnerId || !lessonId) throw new Error('A learner and Syllabus lesson occurrence are required.');
+        const supabase = getSupabaseClient();
+        const { data: sessionResult } = await supabase?.auth.getSession() || {};
+        const token = sessionResult?.session?.access_token;
+        if (!token) throw new Error('Sign in is required to authorize this Syllabus lesson.');
+        const lessonKey = `${subjectParam}/${lessonId.endsWith('.json') ? lessonId : `${lessonId}.json`}`;
+        const requestAuthorization = async (exceptionPin) => {
+          const response = await fetch('/api/syllabus/execution', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ learnerId, lessonKey, occurrenceId: occurrenceIdParam, ...(exceptionPin ? { exceptionPin } : {}) }),
+          });
+          return { response, json: await response.json().catch(() => ({})) };
+        };
+        let result = await requestAuthorization();
+        if (result.response.status === 409 && result.json?.code === 'SYLLABUS_EXECUTION_PIN_REQUIRED') {
+          const pin = await requestFacilitatorPinException({ message: result.json.error });
+          if (!pin) throw new Error('This Syllabus occurrence was not authorized.');
+          result = await requestAuthorization(pin);
+        }
+        if (!result.response.ok || !result.json?.ok || !result.json?.occurrenceId) throw new Error(result.json?.error || 'This Syllabus occurrence is not authorized.');
+        if (!cancelled) {
+          setAuthorizedOccurrenceId(result.json.occurrenceId);
+          setExecutionAuthorization('allowed');
+        }
+      } catch (cause) {
+        if (!cancelled) {
+          setExecutionAuthorization('denied');
+          setExecutionAuthorizationError(cause?.message || 'This Syllabus occurrence is not authorized.');
+        }
+      }
+    }
+    authorizeExecution();
+    return () => { cancelled = true; };
+  }, [learnerIdParam, lessonId, occurrenceIdParam, subjectParam]);
 
   // Canonical per-lesson persistence key (lesson == session identity)
   const lessonKey = useMemo(() => deriveCanonicalLessonKey({ lessonData, lessonId }), [lessonData, lessonId]);
@@ -1385,6 +1438,7 @@ function SessionPageV2Inner() {
   // Load lesson data
   useEffect(() => {
     async function loadLessonData() {
+      if (executionAuthorization !== 'allowed') return;
       try {
         setLoading(true);
         setError(null);
@@ -1462,7 +1516,7 @@ function SessionPageV2Inner() {
     }
     
     loadLessonData();
-  }, [lessonId, subjectParam, regenerateParam]);
+  }, [executionAuthorization, lessonId, subjectParam, regenerateParam]);
 
   // Load visual aids separately from database (facilitator-specific)
   useEffect(() => {
@@ -1548,11 +1602,12 @@ function SessionPageV2Inner() {
   // Load learner profile (REQUIRED - no defaults or fallback)
   useEffect(() => {
     async function loadLearnerProfile() {
+      if (executionAuthorization !== 'allowed') return;
       try {
         setLearnerLoading(true);
         setLearnerError(null);
         
-        const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+        const learnerId = learnerIdParam || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
         
         if (!learnerId) {
           throw new Error('No learner selected. Please select a learner from the dashboard.');
@@ -1694,7 +1749,7 @@ function SessionPageV2Inner() {
   // planEnt?.goldenKeyFeatures intentionally omitted: it's read via planGoldenKeyFeaturesRef to avoid
   // a third re-load when the profiles query resolves. The plan-tier effect above handles post-load sync.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lessonId, subjectParam, goldenKeyFromUrl, goldenKeyLessonKey]);
+  }, [executionAuthorization, lessonId, subjectParam, goldenKeyFromUrl, goldenKeyLessonKey, learnerIdParam]);
 
   // Live-update learner settings (no localStorage persistence)
   useEffect(() => {
@@ -7048,26 +7103,22 @@ function SessionPageV2Inner() {
 
     // Start (or conflict-check) session tracking before the orchestrator begins.
     // This is required for Calendar history to detect completions reliably.
-    try {
-      const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
-      const trackingLessonId = lessonKey || null;
-      if (trackingLearnerId && trackingLearnerId !== 'demo' && trackingLessonId && browserSessionId) {
-        const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
-        const sessionResult = await withTimeout(
-          startTrackedSession(browserSessionId, deviceName),
-          12000,
-          'Session tracking'
-        );
-        if (sessionResult?.conflict) {
-          setConflictingSession(sessionResult.existingSession);
-          setShowTakeoverDialog(true);
-          return;
-        }
-        trackedSessionIdForEvidence = sessionResult?.id || null;
-        try { startSessionPolling?.(); } catch {}
+    const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
+    const trackingLessonId = lessonKey || null;
+    if (trackingLearnerId && trackingLearnerId !== 'demo' && trackingLessonId && browserSessionId) {
+      const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+      const sessionResult = await requireProtectedSessionCreation(() => withTimeout(
+        startTrackedSession(browserSessionId, deviceName, null, null, authorizedOccurrenceId),
+        12000,
+        'Secure lesson start'
+      ));
+      if (sessionResult?.conflict) {
+        setConflictingSession(sessionResult.existingSession);
+        setShowTakeoverDialog(true);
+        return;
       }
-    } catch {
-      // Tracking failures should not block the lesson.
+      trackedSessionIdForEvidence = sessionResult.id;
+      try { startSessionPolling?.(); } catch {}
     }
 
     if (options?.ignoreResume) {
@@ -7314,56 +7365,31 @@ function SessionPageV2Inner() {
     }
 
     const supabase = getSupabaseClient();
-    const { data: sessionResult } = await supabase?.auth.getSession() || {};
-    const token = sessionResult?.session?.access_token;
-    if (!token) {
-      throw new Error('Not logged in');
-    }
-
-    const res = await fetch('/api/facilitator/pin/verify', {
+    const { data: authSession } = await supabase?.auth.getSession() || {};
+    const token = authSession?.session?.access_token;
+    if (!token) throw new Error('Sign in is required to authorize this takeover.');
+    const authorizationLessonKey = `${subjectParam}/${lessonId.endsWith('.json') ? lessonId : `${lessonId}.json`}`;
+    const authorizationResponse = await fetch('/api/syllabus/execution', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ pin: pinCode })
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        learnerId: trackingLearnerId,
+        lessonKey: authorizationLessonKey,
+        occurrenceId: occurrenceIdParam,
+        exceptionPin: pinCode,
+      }),
     });
-
-    const result = await res.json().catch(() => null);
-    if (!res.ok || !result?.ok) {
-      throw new Error('Invalid PIN');
+    const authorizationResult = await authorizationResponse.json().catch(() => null);
+    if (!authorizationResponse.ok || !authorizationResult?.ok) {
+      throw new Error(authorizationResult?.error || 'This Syllabus occurrence could not be authorized for takeover.');
     }
 
-    // End all currently active sessions for this learner+lesson regardless of which
-    // device owns them. This covers both directions:
-    //   (a) new device arriving to take over from Device A
-    //   (b) Device A reclaiming after its polling notification (conflictingSession.id
-    //       would be Device A's own dead session — not Device B's live one — so
-    //       endLessonSession(conflictingSession.id) was a no-op and startTrackedSession
-    //       would find Device B still active and throw "still active on another device").
-    const effectiveLessonId = goldenKeyLessonKey || trackingLessonId;
-    try {
-      const nowIso = new Date().toISOString();
-      const { data: activeSessions } = await supabase
-        .from('lesson_sessions')
-        .select('id')
-        .eq('learner_id', trackingLearnerId)
-        .eq('lesson_id', effectiveLessonId)
-        .is('ended_at', null);
-      if (Array.isArray(activeSessions) && activeSessions.length > 0) {
-        for (const row of activeSessions) {
-          await supabase.from('lesson_sessions').update({ ended_at: nowIso }).eq('id', row.id);
-        }
-      }
-    } catch {}
-
-    try {
-      const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
-      await startTrackedSession(browserSessionId, deviceName);
-      try { startSessionPolling?.(); } catch {}
-    } catch (err) {
-      throw err;
+    const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+    const result = await startTrackedSession(browserSessionId, deviceName, pinCode, conflictingSession?.id, authorizedOccurrenceId);
+    if (!result?.id || result?.conflict) {
+      throw new Error('Unable to take over this lesson session. The existing session is still active.');
     }
+    try { startSessionPolling?.(); } catch {}
 
     // Clear local snapshot so reload pulls the latest remote snapshot.
     // Also set a one-shot sessionStorage flag so SnapshotService skips the
@@ -7381,7 +7407,7 @@ function SessionPageV2Inner() {
     if (typeof window !== 'undefined') {
       window.location.reload();
     }
-  }, [browserSessionId, conflictingSession, goldenKeyLessonKey, learnerProfile?.id, lessonKey, startTrackedSession, startSessionPolling]);
+  }, [authorizedOccurrenceId, browserSessionId, conflictingSession?.id, learnerProfile?.id, lessonId, lessonKey, occurrenceIdParam, startTrackedSession, startSessionPolling, subjectParam]);
 
   const handleCancelTakeover = useCallback(() => {
     setIsTakenOverNotification(false);
@@ -7667,11 +7693,22 @@ function SessionPageV2Inner() {
   };
   
   // Loading state: both lesson AND learner must be loaded
-  if (loading || learnerLoading) {
+  if (executionAuthorization === 'pending' || (executionAuthorization === 'allowed' && (loading || learnerLoading))) {
     return (
       <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontSize: '1.125rem', color: '#1f2937' }}>
-          {loading ? 'Loading lesson...' : 'Loading learner profile...'}
+          {executionAuthorization === 'pending' ? 'Authorizing Syllabus lesson...' : (loading ? 'Loading lesson...' : 'Loading learner profile...')}
+        </div>
+      </div>
+    );
+  }
+  if (executionAuthorization === 'denied') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: '#fef2f2', color: '#b91c1c', padding: 24, borderRadius: 8, maxWidth: 448, textAlign: 'center' }}>
+          <h2 style={{ fontWeight: 700, marginBottom: 8 }}>Syllabus authorization required</h2>
+          <p>{executionAuthorizationError}</p>
+          <a href="/learn/lessons" style={{ color: '#991b1b', fontWeight: 700 }}>Return to the Syllabus</a>
         </div>
       </div>
     );

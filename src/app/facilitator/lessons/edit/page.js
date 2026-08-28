@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import LessonEditor from '@/components/LessonEditor'
 import VisualAidsCarousel from '@/components/VisualAidsCarousel'
-import { ensurePinAllowed } from '@/app/lib/pinGate'
+import { ensurePinAllowed, requestFacilitatorPinException } from '@/app/lib/pinGate'
 
 function EditLessonContent() {
   const router = useRouter()
@@ -925,7 +925,7 @@ function EditLessonContent() {
                       return
                     }
                     
-                    const response = await fetch('/api/lesson-schedule', {
+                    const postSchedule = (exceptionPin) => fetch('/api/lesson-schedule', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -934,13 +934,21 @@ function EditLessonContent() {
                       body: JSON.stringify({
                         learnerId: selectedLearnerId,
                         lessonKey: lessonKey,
-                        scheduledDate: selectedDate
+                        scheduledDate: selectedDate,
+                        ...(exceptionPin ? { exceptionPin } : {})
                       })
                     })
+                    let response = await postSchedule()
+                    let responseData = await response.json().catch(() => ({}))
+                    if (response.status === 409 && responseData?.code === 'SYLLABUS_CAPACITY_PIN_REQUIRED') {
+                      const pin = await requestFacilitatorPinException({ message: responseData.error })
+                      if (!pin) throw new Error('The placement exception was not approved.')
+                      response = await postSchedule(pin)
+                      responseData = await response.json().catch(() => ({}))
+                    }
                     
                     if (!response.ok) {
-                      const errorData = await response.json()
-                      throw new Error(errorData.error || 'Failed to schedule')
+                      throw new Error(responseData.error || 'Failed to schedule')
                     }
                     
                     alert(`Lesson scheduled for ${selectedDate}`)
