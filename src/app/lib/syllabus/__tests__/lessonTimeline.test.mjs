@@ -6,7 +6,8 @@ import test from 'node:test'
 import { lessonKeyBasename, normalizeLessonKey, resolveLessonKeyAgainst } from '../../lessonKeyNormalization.js'
 import { preserveReadinessState } from '../lessonAssociations.server.mjs'
 import { composeSyllabusLessonTimeline } from '../lessonTimeline.mjs'
-import { resolveSyllabusLessonMetadata } from '../lessonTimelineInputs.server.mjs'
+import { syllabusTeacherLabel } from '../instructionalTeacher.mjs'
+import { loadSlateEvidenceInputs, resolveSyllabusLessonMetadata } from '../lessonTimelineInputs.server.mjs'
 import { readAllSupabaseRows } from '../supabaseRepository.server.mjs'
 
 const REVISION = {
@@ -26,6 +27,26 @@ const association = (overrides = {}) => ({
   readiness_state: 'draft',
   association_source: 'prepare',
   ...overrides,
+})
+
+const forecastLesson = (overrides = {}) => ({
+  id: 'forecast-1',
+  lesson_key: 'generated/fractions.json',
+  subject: 'math',
+  title: 'Fractions',
+  planned_date: '2026-09-07',
+  sort_order: 0,
+  item_type: 'lesson',
+  ...overrides,
+})
+
+const slateReport = ({ state = 'independent_success', retentionState = 'not_measured', occurrenceId = 'syllabus:forecast-1' } = {}) => ({
+  session: { id: 'slate:activity-1' },
+  lesson: { key: 'generated/fractions.json' },
+  syllabus_occurrence_id: occurrenceId,
+  independent_evidence: { state },
+  retention: { state: retentionState },
+  provenance: { evidence_session_id: 'evidence-1' },
 })
 
 test('facilitator-owned artifacts without learner association do not enter the learner Syllabus', () => {
@@ -782,4 +803,141 @@ test('generation now transmits the explicit learner and preserves a draft associ
   assert.match(route, /requireAssociationLearner/)
   assert.match(route, /readinessState: 'draft'/)
   assert.match(route, /associationSource: 'generator'/)
+})
+
+test('future Sonoma lesson exposes the canonical assigned-teacher label', () => {
+  const [item] = composeSyllabusLessonTimeline({ activeRevision: REVISION, forecastItems: [forecastLesson()], associations: [association({ instructional_teacher: 'sonoma' })], today: '2026-08-26' })
+  assert.equal(item.assigned_instructional_teacher, 'sonoma')
+  assert.equal(syllabusTeacherLabel(item), 'Assigned teacher: Ms. Sonoma')
+})
+
+test('future Webb lesson exposes the canonical assigned-teacher label', () => {
+  const [item] = composeSyllabusLessonTimeline({ activeRevision: REVISION, forecastItems: [forecastLesson()], associations: [association({ instructional_teacher: 'webb' })], today: '2026-08-26' })
+  assert.equal(item.assigned_instructional_teacher, 'webb')
+  assert.equal(syllabusTeacherLabel(item), 'Assigned teacher: Mrs. Webb')
+})
+
+test('completed Webb history uses its immutable session teacher despite a later Sonoma assignment', () => {
+  const [item] = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    associations: [association({ instructional_teacher: 'sonoma' })],
+    sessions: [{ id: 'webb-session', lesson_id: 'generated/fractions.json', instructional_teacher: 'webb', started_at: '2026-08-20T10:00:00Z', ended_at: '2026-08-20T11:00:00Z' }],
+    sessionEvents: [{ session_id: 'webb-session', lesson_id: 'generated/fractions.json', event_type: 'completed', occurred_at: '2026-08-20T11:00:00Z' }],
+    today: '2026-08-26',
+  })
+  assert.equal(item.assigned_instructional_teacher, 'sonoma')
+  assert.equal(item.actual_instructional_teacher, 'webb')
+  assert.equal(syllabusTeacherLabel(item), 'Taught by Mrs. Webb')
+})
+
+test('completed Sonoma history displays its immutable session teacher', () => {
+  const [item] = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    sessions: [{ id: 'sonoma-session', lesson_id: 'generated/fractions.json', instructional_teacher: 'sonoma', started_at: '2026-08-20T10:00:00Z', ended_at: '2026-08-20T11:00:00Z' }],
+    sessionEvents: [{ session_id: 'sonoma-session', lesson_id: 'generated/fractions.json', event_type: 'completed', occurred_at: '2026-08-20T11:00:00Z' }],
+    today: '2026-08-26',
+  })
+  assert.equal(item.actual_instructional_teacher, 'sonoma')
+  assert.equal(syllabusTeacherLabel(item), 'Taught by Ms. Sonoma')
+})
+
+test('historical NULL session teacher remains unknown even when legacy event metadata names a source', () => {
+  const [item] = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    associations: [association({ instructional_teacher: 'webb' })],
+    sessions: [{ id: 'legacy-session', lesson_id: 'generated/fractions.json', instructional_teacher: null, started_at: '2026-08-20T10:00:00Z', ended_at: '2026-08-20T11:00:00Z' }],
+    sessionEvents: [{ session_id: 'legacy-session', lesson_id: 'generated/fractions.json', event_type: 'completed', occurred_at: '2026-08-20T11:00:00Z', metadata: { source: 'session-v2', instructional_teacher: 'sonoma' } }],
+    today: '2026-08-26',
+  })
+  assert.equal(item.assigned_instructional_teacher, 'webb')
+  assert.equal(item.actual_instructional_teacher, null)
+  assert.equal(syllabusTeacherLabel(item), 'Taught by unknown')
+})
+
+test('canonical Slate mastery and recovery outcomes create separate annotations', () => {
+  const mastered = composeSyllabusLessonTimeline({ activeRevision: REVISION, forecastItems: [forecastLesson()], slateEvidenceReports: [slateReport()], today: '2026-08-26' })[0]
+  assert.deepEqual(mastered.slate_annotations.map((row) => row.label), ['Mastery: Completed with Mr. Slate'])
+  const recovered = composeSyllabusLessonTimeline({ activeRevision: REVISION, forecastItems: [forecastLesson()], slateEvidenceReports: [slateReport({ state: 'independent_success_after_recovery' })], today: '2026-08-26' })[0]
+  assert.deepEqual(recovered.slate_annotations.map((row) => row.label), ['Mastery: Recovered with Mr. Slate'])
+})
+
+test('canonical Slate recovery need is represented without completing instruction', () => {
+  const [item] = composeSyllabusLessonTimeline({ activeRevision: REVISION, forecastItems: [forecastLesson()], slateEvidenceReports: [slateReport({ state: 'needs_recovery' })], today: '2026-08-26' })
+  assert.deepEqual(item.slate_annotations.map((row) => row.label), ['Mastery: Recovery needed'])
+  assert.equal(item.readiness_state, 'saved')
+  assert.equal(item.actual_kind, undefined)
+  assert.equal(item.assigned_instructional_teacher, 'sonoma')
+})
+
+test('canonical Slate retention and review success create a separate retention annotation', () => {
+  const fromRetention = composeSyllabusLessonTimeline({ activeRevision: REVISION, forecastItems: [forecastLesson()], slateEvidenceReports: [slateReport({ state: 'unavailable', retentionState: 'retained' })], today: '2026-08-26' })[0]
+  assert.deepEqual(fromRetention.slate_annotations.map((row) => row.label), ['Retention: Completed with Mr. Slate'])
+  const fromReview = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [forecastLesson()],
+    slateReviewReports: [{ review: { id: 'review-1' }, items: [{ lesson_key: 'generated/fractions.json', syllabus_occurrence_id: 'syllabus:forecast-1', state: 'demonstrated' }] }],
+    today: '2026-08-26',
+  })[0]
+  assert.deepEqual(fromReview.slate_annotations.map((row) => row.label), ['Retention: Completed with Mr. Slate'])
+})
+
+test('Slate drill completion and points cannot manufacture mastery or instructional completion', () => {
+  const report = { ...slateReport({ state: 'unavailable' }), session: { id: 'slate:drill', completion_state: 'ended' }, score: { points: 500, correct: 20 } }
+  const [item] = composeSyllabusLessonTimeline({ activeRevision: REVISION, forecastItems: [forecastLesson()], slateEvidenceReports: [report], today: '2026-08-26' })
+  assert.deepEqual(item.slate_annotations, [])
+  assert.equal(item.readiness_state, 'saved')
+  assert.equal(item.actual_instructional_teacher, undefined)
+  assert.equal(item.assigned_instructional_teacher, 'sonoma')
+})
+
+test('Slate occurrence proof annotates only the matching repeated Syllabus occurrence', () => {
+  const forecasts = [forecastLesson(), forecastLesson({ id: 'forecast-2', planned_date: '2026-09-14' })]
+  const items = composeSyllabusLessonTimeline({ activeRevision: REVISION, forecastItems: forecasts, slateEvidenceReports: [slateReport({ occurrenceId: 'syllabus:forecast-2' })], today: '2026-08-26' })
+  assert.deepEqual(items.find((item) => item.id === 'forecast-1').slate_annotations, [])
+  assert.deepEqual(items.find((item) => item.id === 'forecast-2').slate_annotations.map((row) => row.label), ['Mastery: Completed with Mr. Slate'])
+  const ambiguous = composeSyllabusLessonTimeline({ activeRevision: REVISION, forecastItems: forecasts, slateEvidenceReports: [slateReport({ occurrenceId: null })], today: '2026-08-26' })
+  assert.ok(ambiguous.every((item) => item.slate_annotations.length === 0))
+})
+
+test('Slate evidence loader uses canonical resolvers and carries the server-owned occurrence into reviews', async () => {
+  const evidenceSession = {
+    id: 'evidence-1', session_id: 'slate:activity-1', browser_session_id: 'slate:activity-1', facilitator_id: 'facilitator-1', learner_id: 'learner-1',
+    lesson_key: 'generated/fractions.json', teaching_protocol_version: 'slate-mastery-retention-v1', mastery_protocol_version: 'independent-mastery-v1',
+    syllabus_occurrence_id: 'syllabus:forecast-1', started_at: '2026-08-27T10:00:00Z', ended_at: '2026-08-27T10:30:00Z',
+  }
+  const masteryEvent = { evidence_session_id: 'evidence-1', event_type: 'mastery_check_result', mastery_protocol_version: 'independent-mastery-v1', mastery_outcome: 'independent_success', mastery_check_id: 'mastery-check-1', occurred_at: '2026-08-27T10:20:00Z' }
+  const repository = {
+    async listAllSlateEvidenceSessions() { return [evidenceSession] },
+    async listEvidenceEvents() { return [masteryEvent] },
+    async listAllLearningReviewRuns() { return [{ id: 'review-1', facilitator_id: 'facilitator-1', learner_id: 'learner-1', review_type: 'weekly_review', status: 'completed' }] },
+    async listLearningReviewItems() { return [{ id: 'review-item-1', run_id: 'review-1', lesson_key: 'generated/fractions.json', anchor_mastery_check_id: 'mastery-check-1' }] },
+    async listLearningReviewEvents() { return [{ run_id: 'review-1', review_item_id: 'review-item-1', event_type: 'review_item_result', review_outcome: 'demonstrated' }] },
+  }
+  const loaded = await loadSlateEvidenceInputs({ repository, facilitatorId: 'facilitator-1', learnerId: 'learner-1' })
+  assert.equal(loaded.slateEvidenceReports[0].independent_evidence.state, 'independent_success')
+  assert.equal(loaded.slateEvidenceReports[0].syllabus_occurrence_id, 'syllabus:forecast-1')
+  assert.equal(loaded.slateReviewReports[0].items[0].syllabus_occurrence_id, 'syllabus:forecast-1')
+})
+
+test('Slate history is loaded for Syllabus display but cannot become an execution dependency', () => {
+  const revisions = fs.readFileSync(path.resolve('src/app/lib/syllabus/revisions.server.mjs'), 'utf8')
+  const execution = fs.readFileSync(path.resolve('src/app/lib/syllabus/executionAuthorization.server.mjs'), 'utf8')
+  assert.match(revisions, /includeSlateEvidence: true/)
+  assert.doesNotMatch(execution, /includeSlateEvidence: true/)
+})
+
+test('Slate occurrence storage is server-owned, immutable, and never backfilled by the migration', () => {
+  const route = fs.readFileSync(path.resolve('src/app/api/evidence/route.js'), 'utf8')
+  const migration = fs.readFileSync(path.resolve('supabase/migrations/20260829193425_bind_slate_evidence_to_syllabus_occurrence.sql'), 'utf8')
+  assert.match(route, /syllabus_occurrence_id: isSlateActivity \? authorizedOccurrenceId : null/)
+  assert.match(migration, /add column syllabus_occurrence_id text/i)
+  assert.match(migration, /before update of syllabus_occurrence_id/i)
+  assert.doesNotMatch(migration, /update public\.learning_evidence_sessions[\s\S]*syllabus_occurrence_id/i)
+})
+
+test('SyllabusDocument renders teacher and Slate labels from the separated read-model fields', () => {
+  const document = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusDocument.js'), 'utf8')
+  assert.match(document, /syllabusTeacherLabel\(item\)/)
+  assert.match(document, /item\.slate_annotations/)
+  assert.doesNotMatch(document, /localStorage|getItem\('selected_teacher'\)/)
 })

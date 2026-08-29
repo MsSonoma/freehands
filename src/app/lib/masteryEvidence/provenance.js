@@ -45,12 +45,43 @@ export function resolveSlateProviderProvenance(env = process.env) {
   };
 }
 
-export function mergeProvenance(base, incoming) {
+export const SERVER_OWNED_PROVENANCE_FIELDS = Object.freeze([
+  'provider',
+  'model',
+  'app_build_id',
+  'teaching_protocol_version',
+  'teaching_protocol_hash',
+]);
+
+export function resolveEvidenceSessionProvenance(evidenceSession, env = process.env) {
+  const sessionId = String(evidenceSession?.session_id || '').trim().toLowerCase();
+  const protocol = String(evidenceSession?.teaching_protocol_version || '').trim().toLowerCase();
+  const fallback = sessionId.startsWith('slate:') || protocol.startsWith('slate-')
+    ? resolveSlateProviderProvenance(env)
+    : (protocol.startsWith('webb-')
+      ? resolveWebbProviderProvenance(env)
+      : resolveSonomaProviderProvenance(env));
+
+  return {
+    provider: evidenceSession?.provider || fallback.provider,
+    model: evidenceSession?.model || fallback.model,
+    app_build_id: evidenceSession?.app_build_id || fallback.app_build_id,
+    teaching_protocol_version: evidenceSession?.teaching_protocol_version || fallback.teaching_protocol_version,
+    teaching_protocol_hash: evidenceSession?.teaching_protocol_hash || fallback.teaching_protocol_hash,
+  };
+}
+
+export function mergeProvenance(base, incoming, { protectedFields = [] } = {}) {
   const cleanIncoming = incoming && typeof incoming === 'object' && !Array.isArray(incoming)
     ? incoming
     : {};
+  const cleanBase = base && typeof base === 'object' && !Array.isArray(base) ? base : {};
+  const merged = { ...cleanBase, ...cleanIncoming };
+  for (const field of protectedFields) {
+    if (Object.prototype.hasOwnProperty.call(cleanBase, field)) merged[field] = cleanBase[field];
+  }
   return Object.fromEntries(
-    Object.entries({ ...(base || {}), ...cleanIncoming })
+    Object.entries(merged)
       .filter(([, value]) => value !== undefined)
   );
 }

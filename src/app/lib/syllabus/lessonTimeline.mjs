@@ -3,6 +3,7 @@ import { dateOnly } from './timeline.mjs'
 import { calendarDateInTimeZone } from '../calendarDate.mjs'
 import { latestExplicitLessonSessionEvent, lifecycleEventActualKind, resolveLessonSessionLifecycle } from '../lessonSessionLifecycle.mjs'
 import { normalizeInstructionalTeacher } from './instructionalTeacher.mjs'
+import { annotateSyllabusItemsWithSlateEvidence } from './slateEvidenceAnnotations.mjs'
 
 const DAY_MS = 86400000
 const DAY_KEYS = Object.freeze(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'])
@@ -60,6 +61,7 @@ function defaultMetadata(key, row = {}) {
   return {
     subject: suppliedSubject && subjectKey(suppliedSubject) !== 'generated' ? suppliedSubject : (prefix && prefix !== 'generated' ? prefix : 'general'),
     title: clean(row.title) || lessonKeyBasename(normalized).replace(/[_-]+/g, ' ') || 'Lesson',
+    assigned_instructional_teacher: 'sonoma',
   }
 }
 function readinessRank(state) {
@@ -83,7 +85,7 @@ function intentOccurrenceId(intent) {
 
 export function composeSyllabusLessonTimeline({
   activeRevision = {}, forecastItems = [], associations = [], approvedLessons = {}, schedules = [], sessions = [], sessionEvents = [],
-  lessonMetadata = [],
+  lessonMetadata = [], slateEvidenceReports = [], slateReviewReports = [],
   today = new Date().toISOString().slice(0, 10),
   timeZone = 'UTC',
 } = {}) {
@@ -127,7 +129,7 @@ export function composeSyllabusLessonTimeline({
     if (!entry) continue
     entry.association_id = association.id
     entry.association_source = association.association_source
-    entry.instructional_teacher = normalizeInstructionalTeacher(association.instructional_teacher) || 'sonoma'
+    entry.assigned_instructional_teacher = normalizeInstructionalTeacher(association.instructional_teacher) || 'sonoma'
     setReadiness(entry, association.readiness_state || 'saved')
   }
   for (const item of forecastItems || []) if (item?.lesson_key) ensureMetadata(item.lesson_key, item)
@@ -160,8 +162,6 @@ export function composeSyllabusLessonTimeline({
     const identity = clean(session?.id || session?.session_id) || clean(terminal?.id)
     const occurrenceId = sessionIds.map((id) => occurrenceBySession.get(id)).find(Boolean) || clean(session?.syllabus_occurrence_id)
     const historicalTeacher = normalizeInstructionalTeacher(session?.instructional_teacher)
-      || normalizeInstructionalTeacher(terminal?.metadata?.instructional_teacher)
-      || (terminal?.metadata?.source === 'webb' ? 'webb' : (terminal?.metadata?.source === 'session-v2' ? 'sonoma' : null))
     if (terminal) actuals.push({ key, id: identity, occurrenceId, instructionalTeacher: historicalTeacher, kind: lifecycle.status, occurred_at: lifecycle.occurredAt, started_at: session.started_at || lifecycle.occurredAt })
     else if (lifecycle.status === 'completed') actuals.push({ key, id: identity, occurrenceId, instructionalTeacher: historicalTeacher, kind: 'completed', occurred_at: lifecycle.occurredAt, started_at: session.started_at || lifecycle.occurredAt })
     else if (session?.started_at) actuals.push({ key, id: identity, occurrenceId, instructionalTeacher: historicalTeacher, kind: 'in_progress', occurred_at: session.started_at, started_at: session.started_at })
@@ -290,7 +290,7 @@ export function composeSyllabusLessonTimeline({
       ...details, id: `actual:${actual.id}`, occurrence_id: `actual:${actual.id}`, planned_date: actualDate(actual.occurred_at), sort_order: capacity?.slot?.index ?? 0,
       item_type: 'lesson', placement_kind: 'actual', actual_kind: actual.kind, actual_at: actual.occurred_at,
       source_occurrence_id: actual.occurrenceId || null,
-      instructional_teacher: actual.instructionalTeacher || null,
+      actual_instructional_teacher: actual.instructionalTeacher || null,
       actual_started_date: actualDate(actual.started_at),
       readiness_state: actual.kind === 'completed' ? 'completed' : (actual.kind === 'in_progress' ? 'in_progress' : details.readiness_state),
       is_explicit_schedule: false, is_provisional: false, needs_placement: false, capacity_conflict: capacity?.capacity_conflict || null,
@@ -310,6 +310,7 @@ export function composeSyllabusLessonTimeline({
       is_deliberate_repeat: latestCompletionByKey.has(intent.key),
       reconciled_forecast_id: intent.reconciled_forecast_id || null,
       original_scheduled_date: intent.kind === 'scheduled' ? intent.planned_date : null,
+      assigned_instructional_teacher: details.assigned_instructional_teacher || 'sonoma',
     })
   }
 
@@ -336,9 +337,11 @@ export function composeSyllabusLessonTimeline({
       planned_date: capacity?.rendered_date || item.planned_date, sort_order: capacity?.slot?.index ?? Number(item.sort_order || 0),
       placement_kind: 'syllabus', readiness_state: 'saved', is_explicit_schedule: false, capacity_conflict: capacity?.capacity_conflict || null,
       is_provisional: false, needs_placement: Boolean(capacity?.needs_placement), is_overdue_intent: overdue, original_placement_date: overdue ? isoDate(item.planned_date) : null,
+      ...((item.item_type || 'lesson') === 'lesson' ? { assigned_instructional_teacher: 'sonoma' } : {}),
     })
   }
-  return output.sort((left, right) => left.planned_date.localeCompare(right.planned_date)
+  const ordered = output.sort((left, right) => left.planned_date.localeCompare(right.planned_date)
     || Number(left.sort_order || 0) - Number(right.sort_order || 0)
     || String(left.occurrence_id || left.id || '').localeCompare(String(right.occurrence_id || right.id || '')))
+  return annotateSyllabusItemsWithSlateEvidence(ordered, slateEvidenceReports, slateReviewReports)
 }

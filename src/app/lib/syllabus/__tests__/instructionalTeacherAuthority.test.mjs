@@ -10,7 +10,7 @@ import { GET as getLessonAssociation } from '../../../api/syllabus/lesson-associ
 
 const FACILITATOR = '11111111-1111-4111-8111-111111111111'
 const LEARNER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
-const MIGRATION_PATH = path.resolve('supabase/migrations/20260829010000_add_instructional_teacher_authority.sql')
+const MIGRATION_PATH = path.resolve('supabase/migrations/20260829190809_add_instructional_teacher_authority.sql')
 
 function instructionalTeacherMigration() {
   return fs.readFileSync(MIGRATION_PATH, 'utf8')
@@ -117,8 +117,9 @@ test('timeline exposes current assignment but preserves the actual historical te
   })
   const historical = items.find((item) => item.occurrence_id === 'actual:session-1')
   const currentIntent = items.find((item) => item.placement_kind === 'syllabus')
-  assert.equal(historical.instructional_teacher, 'sonoma')
-  assert.equal(currentIntent.instructional_teacher, 'webb')
+  assert.equal(historical.assigned_instructional_teacher, 'webb')
+  assert.equal(historical.actual_instructional_teacher, 'sonoma')
+  assert.equal(currentIntent.assigned_instructional_teacher, 'webb')
 })
 
 test('instructional routing permits Sonoma and Webb, never Slate', () => {
@@ -135,7 +136,7 @@ test('learner home is canonical, clears stale preference, and legacy route redir
   assert.match(legacyPage, /redirect\('\/learn'\)/)
   assert.match(home, /localStorage\.removeItem\('selected_teacher'\)/)
   assert.doesNotMatch(home, /localStorage\.getItem\('selected_teacher'\)|setSelectedTeacher|value=\{selectedTeacher\}/)
-  assert.match(home, /syllabusOccurrence\?\.instructional_teacher/)
+  assert.match(home, /syllabusOccurrence\?\.assigned_instructional_teacher/)
 })
 
 test('lesson association GET rejects a malformed lesson key with the canonical client error', async () => {

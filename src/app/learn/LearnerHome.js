@@ -750,7 +750,7 @@ function LessonsPageInner(){
     const alreadyHasPendingKey = pendingKeyLessonKey === thisLessonKey
     const currentTeacher = isDemoLearnerId(learnerId)
       ? 'sonoma'
-      : (syllabusOccurrence?.instructional_teacher || 'sonoma')
+      : (syllabusOccurrence?.assigned_instructional_teacher || syllabusOccurrence?.instructional_teacher || 'sonoma')
     if (currentTeacher === 'sonoma' && goldenKeysEnabled === true && (goldenKeySelected || alreadyHasPendingKey) && learnerId) {
       if (goldenKeySelected && !alreadyHasPendingKey) {
         // First application — decrement DB and lock key to this lesson
@@ -1648,7 +1648,7 @@ function LessonsPageInner(){
             const ent = featuresForTier(planTier)
             const cap = ent.lessonsPerDay
             const capped = !isDemo && Number.isFinite(cap) && todaysCount >= cap
-            const assignedInstructionalTeacher = isDemo ? 'sonoma' : (syllabusItem?.instructional_teacher || l.instructional_teacher || 'sonoma')
+            const assignedInstructionalTeacher = isDemo ? 'sonoma' : (syllabusItem?.assigned_instructional_teacher || syllabusItem?.instructional_teacher || l.instructional_teacher || 'sonoma')
             const hasSnapshot = (() => {
               if (isDemo) return false
               if (assignedInstructionalTeacher === 'webb') {

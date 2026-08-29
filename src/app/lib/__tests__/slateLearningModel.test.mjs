@@ -108,10 +108,14 @@ test('canonical Slate mastery ignores point caches, partial sessions, and non-Sl
 
 test('Daily and Weekly runs route into Slate while protected APIs remain authoritative', () => {
   const learn = fs.readFileSync(path.resolve('src/app/learn/LearnerHome.js'), 'utf8')
+  const legacyLearn = fs.readFileSync(path.resolve('src/app/learn/lessons/page.js'), 'utf8')
   const slateReview = fs.readFileSync(path.resolve('src/app/session/slate/SlateReviewExperience.jsx'), 'utf8')
   const slate = fs.readFileSync(path.resolve('src/app/session/slate/page.jsx'), 'utf8')
   const legacy = fs.readFileSync(path.resolve('src/app/learn/follow-ups/[runId]/page.js'), 'utf8')
   assert.match(learn, /\/session\/slate\?reviewRunId=/)
+  assert.match(learn, /followUpCards\.map/)
+  assert.match(legacyLearn, /redirect\(['"]\/learn['"]\)/)
+  assert.doesNotMatch(legacyLearn, /followUpCards\.map|reviewRunId|getFollowUpRun|actOnFollowUp|useEffect/)
   assert.match(slate, /reviewRunId[\s\S]*SlateReviewExperience/)
   assert.match(slateReview, /getFollowUpRun[\s\S]*actOnFollowUp/)
   assert.doesNotMatch(slateReview, /localStorage|expectedAny|correctAnswer/)

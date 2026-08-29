@@ -141,7 +141,7 @@ export function createSyllabusRepository(admin) {
     async listAllLessonSessionEvents(learnerId) {
       try {
         return await readAllSupabaseRows(() => admin.from('lesson_session_events')
-          .select('id,session_id,lesson_id,event_type,occurred_at')
+          .select('id,session_id,lesson_id,event_type,occurred_at,metadata')
           .eq('learner_id', learnerId)
           .order('occurred_at', { ascending: true })
           .order('id', { ascending: true }))
@@ -189,6 +189,47 @@ export function createSyllabusRepository(admin) {
         .order('occurred_at', { ascending: true })
         .order('event_sequence', { ascending: true, nullsFirst: false })
       throwOn(error, 'Failed to load mastery evidence events')
+      return data || []
+    },
+    async listAllSlateEvidenceSessions(facilitatorId, learnerId) {
+      return readAllSupabaseRows(() => admin.from('learning_evidence_sessions').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .like('session_id', 'slate:%')
+        .order('started_at', { ascending: true })
+        .order('id', { ascending: true }))
+    },
+    async listAllLearningReviewRuns(facilitatorId, learnerId) {
+      try {
+        return await readAllSupabaseRows(() => admin.from('learning_review_runs').select('*')
+          .eq('facilitator_id', facilitatorId)
+          .eq('learner_id', learnerId)
+          .order('started_at', { ascending: true })
+          .order('id', { ascending: true }))
+      } catch (error) {
+        if (error?.code === '42P01') return []
+        throwOn(error, 'Failed to load learner review runs')
+      }
+    },
+    async listLearningReviewItems(facilitatorId, learnerId, runIds) {
+      if (!runIds.length) return []
+      const { data, error } = await admin.from('learning_review_items').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .in('run_id', runIds)
+        .order('ordinal', { ascending: true })
+      throwOn(error, 'Failed to load learner review items')
+      return data || []
+    },
+    async listLearningReviewEvents(facilitatorId, learnerId, runIds) {
+      if (!runIds.length) return []
+      const { data, error } = await admin.from('learning_review_events').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .in('run_id', runIds)
+        .order('occurred_at', { ascending: true })
+        .order('event_id', { ascending: true })
+      throwOn(error, 'Failed to load learner review events')
       return data || []
     },
     async readLegacyPlanning({ facilitatorId, learnerId, today }) {

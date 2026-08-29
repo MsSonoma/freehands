@@ -49,7 +49,14 @@ import {
   normalizeOptionalPositiveInteger,
   normalizeRequiredText,
 } from '../../lib/masteryEvidence/schema.js';
-import { mergeProvenance, resolveSlateProviderProvenance, resolveSonomaProviderProvenance, resolveWebbProviderProvenance } from '../../lib/masteryEvidence/provenance.js';
+import {
+  mergeProvenance,
+  resolveEvidenceSessionProvenance,
+  resolveSlateProviderProvenance,
+  resolveSonomaProviderProvenance,
+  resolveWebbProviderProvenance,
+  SERVER_OWNED_PROVENANCE_FIELDS,
+} from '../../lib/masteryEvidence/provenance.js';
 import { normalizeLessonKey } from '../../lib/lessonKeyNormalization.js';
 import {
   readSyllabusExecutionProof,
@@ -396,6 +403,7 @@ async function handleCreateSession({ request, body, user, admin, now, proofSecre
   const row = {
     ...session,
     facilitator_id: user.id,
+    syllabus_occurrence_id: isSlateActivity ? authorizedOccurrenceId : null,
     provider: provider.provider,
     model: provider.model,
     app_build_id: provider.app_build_id,
@@ -426,6 +434,7 @@ async function handleCreateSession({ request, body, user, admin, now, proofSecre
       app_build_id: data.app_build_id || null,
       teaching_protocol_version: data.teaching_protocol_version || null,
       teaching_protocol_hash: data.teaching_protocol_hash || null,
+      syllabus_occurrence_id: data.syllabus_occurrence_id || null,
     },
   });
 }
@@ -442,7 +451,7 @@ async function handleRecordEvent({ body, user, admin }) {
 
   if (sessionError || !evidenceSession) return forbidden('Evidence session not found or unauthorized');
 
-  const provider = resolveSonomaProviderProvenance();
+  const provider = resolveEvidenceSessionProvenance(evidenceSession);
   const payload = {
     schema_version: event.schema_version,
     event_type: event.event_type,
@@ -487,12 +496,12 @@ async function handleRecordEvent({ body, user, admin }) {
     result: event.result,
     payload: event.payload,
     provenance: mergeProvenance({
-      provider: evidenceSession.provider || provider.provider,
-      model: evidenceSession.model || provider.model,
+      provider: provider.provider,
+      model: provider.model,
       app_build_id: provider.app_build_id,
-      teaching_protocol_version: evidenceSession.teaching_protocol_version || provider.teaching_protocol_version,
-      teaching_protocol_hash: evidenceSession.teaching_protocol_hash || provider.teaching_protocol_hash,
-    }, event.provenance),
+      teaching_protocol_version: provider.teaching_protocol_version,
+      teaching_protocol_hash: provider.teaching_protocol_hash,
+    }, event.provenance, { protectedFields: SERVER_OWNED_PROVENANCE_FIELDS }),
   };
 
   const { data, error } = await admin

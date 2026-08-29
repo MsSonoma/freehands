@@ -119,7 +119,7 @@ export async function resolveSyllabusExecution({
   }
   const isToday = clean(occurrence.planned_date).slice(0, 10) === calendar.today
   const completedRepeat = occurrence.actual_kind === 'completed'
-  const instructionalTeacher = normalizeInstructionalTeacher(occurrence.instructional_teacher) || DEFAULT_INSTRUCTIONAL_TEACHER
+  const instructionalTeacher = normalizeInstructionalTeacher(occurrence.assigned_instructional_teacher || occurrence.instructional_teacher) || DEFAULT_INSTRUCTIONAL_TEACHER
   return {
     allowedWithoutPin: isToday && !completedRepeat,
     requiresPin: !isToday || completedRepeat,

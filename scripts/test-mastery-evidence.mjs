@@ -191,6 +191,8 @@ function withEvidenceEnv(callback) {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     SONOMA_PROVIDER: process.env.SONOMA_PROVIDER,
     SONOMA_OPENAI_MODEL: process.env.SONOMA_OPENAI_MODEL,
+    WEBB_OPENAI_MODEL: process.env.WEBB_OPENAI_MODEL,
+    VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
   }
   process.env.NEXT_PUBLIC_MASTERY_EVIDENCE_ENABLED = 'true'
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
@@ -198,6 +200,8 @@ function withEvidenceEnv(callback) {
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-key'
   process.env.SONOMA_PROVIDER = 'openai'
   process.env.SONOMA_OPENAI_MODEL = 'gpt-test'
+  process.env.WEBB_OPENAI_MODEL = 'gpt-webb-test'
+  process.env.VERCEL_GIT_COMMIT_SHA = 'build-test'
   return Promise.resolve(callback()).finally(() => {
     for (const [key, value] of Object.entries(previous)) {
       if (value == null) delete process.env[key]
@@ -231,6 +235,21 @@ async function createEvidenceSession(store) {
     baseline_unavailable_reason: 'no_baseline_pool',
     retention_protocol_version: RETENTION_PROTOCOL_VERSION,
     started_at: '2026-08-09T12:00:00.000Z',
+  }), { createClientImpl: makeCreateClientImpl(store) })
+  return response.json()
+}
+
+async function recordEvidenceEvent(store, evidenceSessionId, idempotencyKey, provenance = {}) {
+  const response = await POST(jsonRequest({
+    action: 'record_event',
+    schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    evidence_session_id: evidenceSessionId,
+    event_type: STAGE_1_EVIDENCE_EVENT_TYPES.PHASE_TRANSITION,
+    idempotency_key: idempotencyKey,
+    occurred_at: '2026-08-29T12:01:00.000Z',
+    phase: 'teaching',
+    payload: { previous_phase: 'discussion', phase: 'teaching' },
+    provenance,
   }), { createClientImpl: makeCreateClientImpl(store) })
   return response.json()
 }
@@ -302,6 +321,7 @@ test('Slate activity evidence is authorized without creating an instructional le
   assert.equal(store.lesson_sessions.length, 1)
   assert.equal(store.learning_evidence_sessions[0].session_id, 'slate:activity-1')
   assert.equal(store.learning_evidence_sessions[0].provider, 'deterministic_app')
+  assert.equal(store.learning_evidence_sessions[0].syllabus_occurrence_id, 'syllabus:slate-practice')
 
   const rejected = await POST(jsonRequest({
     ...slateBody, session_id: 'slate:spoofed', teaching_protocol_version: TEACHING_PROTOCOL_VERSION,
@@ -320,6 +340,7 @@ test('Slate activity evidence is authorized without creating an instructional le
     ...slateBody, session_id: 'slate:wrong-occurrence', authorized_occurrence_id: 'syllabus:other',
   }, { cookie }), { ...deps, now: new Date('2026-08-29T12:00:30Z'), proofSecret: 'service-key' })
   assert.equal(wrongOccurrence.status, 403)
+  assert.equal(store.learning_evidence_sessions.length, 1)
 }))
 
 test('mastery evidence events are append-only and idempotent by key', async () => withEvidenceEnv(async () => {
@@ -349,6 +370,60 @@ test('mastery evidence events are append-only and idempotent by key', async () =
   assert.equal(store.learning_evidence_events[0].event_type, STAGE_1_EVIDENCE_EVENT_TYPES.PHASE_TRANSITION)
   assert.equal(store.learning_evidence_events[0].concept_id, null)
   assert.equal(store.learning_evidence_events[0].item_id, null)
+}))
+
+test('evidence event provenance follows the authoritative session and resists client rewrites', async () => withEvidenceEnv(async () => {
+  const store = makeStore()
+  const base = {
+    facilitator_id: facilitatorId,
+    learner_id: learnerId,
+    browser_session_id: 'browser-1',
+    lesson_key: 'math/fractions.json',
+    lesson_id: 'fractions.json',
+  }
+  store.learning_evidence_sessions.push(
+    { id: 'evidence-slate', ...base, session_id: 'slate:proof-bound', lesson_source: 'generated' },
+    {
+      id: 'evidence-webb', ...base, session_id: 'webb-session', lesson_source: 'webb',
+      teaching_protocol_version: 'webb-conversation-v1',
+    },
+    { id: 'evidence-sonoma', ...base, session_id: 'sonoma-session', lesson_source: 'generated' },
+    {
+      id: 'evidence-stored', ...base, session_id: 'stored-session', lesson_source: 'generated',
+      provider: 'anthropic', model: 'stored-model', app_build_id: 'stored-build',
+      teaching_protocol_version: 'session-v2', teaching_protocol_hash: 'stored-hash',
+    },
+  )
+
+  await recordEvidenceEvent(store, 'evidence-slate', 'provenance-slate')
+  await recordEvidenceEvent(store, 'evidence-webb', 'provenance-webb')
+  await recordEvidenceEvent(store, 'evidence-sonoma', 'provenance-sonoma')
+  const stored = await recordEvidenceEvent(store, 'evidence-stored', 'provenance-stored', {
+    provider: 'client-provider',
+    model: 'client-model',
+    app_build_id: 'client-build',
+    teaching_protocol_version: 'client-protocol',
+    teaching_protocol_hash: 'client-hash',
+    client: 'legitimate-enrichment',
+  })
+
+  const [slateEvent, webbEvent, sonomaEvent] = store.learning_evidence_events
+  assert.equal(slateEvent.provenance.provider, 'deterministic_app')
+  assert.equal(slateEvent.provenance.teaching_protocol_version, 'slate-mastery-retention-v1')
+  assert.equal(webbEvent.provenance.provider, 'openai')
+  assert.equal(webbEvent.provenance.model, 'gpt-webb-test')
+  assert.equal(webbEvent.provenance.teaching_protocol_version, 'webb-conversation-v1')
+  assert.equal(sonomaEvent.provenance.provider, 'openai')
+  assert.equal(sonomaEvent.provenance.model, 'gpt-test')
+  assert.equal(sonomaEvent.provenance.teaching_protocol_version, 'session-v2')
+  assert.deepEqual(stored.event.provenance, {
+    provider: 'anthropic',
+    model: 'stored-model',
+    app_build_id: 'stored-build',
+    teaching_protocol_version: 'session-v2',
+    teaching_protocol_hash: 'stored-hash',
+    client: 'legitimate-enrichment',
+  })
 }))
 
 test('stage 2 evidence events persist item, exposure, attempt, and sequence fields', async () => withEvidenceEnv(async () => {

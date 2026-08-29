@@ -13,6 +13,16 @@ export function instructionalTeacherLabel(value) {
   return normalizeInstructionalTeacher(value) === 'webb' ? 'Mrs. Webb' : 'Ms. Sonoma'
 }
 
+export function syllabusTeacherLabel(item = {}) {
+  if (item?.placement_kind === 'actual') {
+    const actual = normalizeInstructionalTeacher(item.actual_instructional_teacher)
+    return actual ? `Taught by ${instructionalTeacherLabel(actual)}` : 'Taught by unknown'
+  }
+  const assigned = normalizeInstructionalTeacher(item?.assigned_instructional_teacher || item?.instructional_teacher)
+    || DEFAULT_INSTRUCTIONAL_TEACHER
+  return `Assigned teacher: ${instructionalTeacherLabel(assigned)}`
+}
+
 export function buildInstructionalSessionRoute({
   learnerId,
   subject,
