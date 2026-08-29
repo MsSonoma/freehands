@@ -49,7 +49,12 @@ import {
   normalizeOptionalPositiveInteger,
   normalizeRequiredText,
 } from '../../lib/masteryEvidence/schema.js';
-import { mergeProvenance, resolveSonomaProviderProvenance } from '../../lib/masteryEvidence/provenance.js';
+import { mergeProvenance, resolveSlateProviderProvenance, resolveSonomaProviderProvenance, resolveWebbProviderProvenance } from '../../lib/masteryEvidence/provenance.js';
+import { normalizeLessonKey } from '../../lib/lessonKeyNormalization.js';
+import {
+  readSyllabusExecutionProof,
+  SYLLABUS_EXECUTION_COOKIE,
+} from '../../lib/syllabus/executionAuthorization.server.mjs';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -115,6 +120,30 @@ function badRequest(message) {
 
 function forbidden(message = 'Forbidden') {
   return NextResponse.json({ ok: false, error: message }, { status: 403 });
+}
+
+function cookieValue(request, name) {
+  const prefix = `${name}=`;
+  const row = String(request?.headers?.get?.('cookie') || '')
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix));
+  return row ? decodeURIComponent(row.slice(prefix.length)) : '';
+}
+
+function verifySlateActivityProof({ request, userId, session, authorizedOccurrenceId, now, secret }) {
+  if (!session.session_id.startsWith('slate:') || session.teaching_protocol_version !== 'slate-mastery-retention-v1') return false;
+  if (!authorizedOccurrenceId) return false;
+  const proof = readSyllabusExecutionProof(
+    cookieValue(request, SYLLABUS_EXECUTION_COOKIE),
+    secret,
+    now || new Date(),
+  );
+  return Boolean(proof
+    && proof.facilitatorId === userId
+    && proof.learnerId === session.learner_id
+    && normalizeLessonKey(proof.lessonKey) === normalizeLessonKey(session.lesson_key)
+    && proof.occurrenceId === authorizedOccurrenceId);
 }
 
 function assertOptionalIdentityVersion(value, expected, fieldName) {
@@ -340,8 +369,9 @@ function normalizeFinalizeBody(body) {
   };
 }
 
-async function handleCreateSession({ body, user, admin }) {
+async function handleCreateSession({ request, body, user, admin, now, proofSecret }) {
   const session = normalizeSessionBody(body);
+  const authorizedOccurrenceId = normalizeOptionalText(body?.authorized_occurrence_id);
 
   const ownsLearner = await verifyLearnerOwnership(admin, user.id, session.learner_id);
   if (!ownsLearner) return forbidden('Learner not found or unauthorized');
@@ -350,9 +380,19 @@ async function handleCreateSession({ body, user, admin }) {
     sessionId: session.session_id,
     learnerId: session.learner_id,
   });
-  if (!hasTrackedSession) return forbidden('Lesson session not found or unauthorized');
+  const isSlateActivity = verifySlateActivityProof({
+    request,
+    userId: user.id,
+    session,
+    authorizedOccurrenceId,
+    now: now || new Date(),
+    secret: proofSecret || process.env.SUPABASE_SERVICE_ROLE_KEY,
+  });
+  if (!hasTrackedSession && !isSlateActivity) return forbidden('Lesson session not found or unauthorized');
 
-  const provider = resolveSonomaProviderProvenance();
+  const provider = String(session.teaching_protocol_version || '').startsWith('webb-')
+    ? resolveWebbProviderProvenance()
+    : (isSlateActivity ? resolveSlateProviderProvenance() : resolveSonomaProviderProvenance());
   const row = {
     ...session,
     facilitator_id: user.id,
@@ -447,8 +487,8 @@ async function handleRecordEvent({ body, user, admin }) {
     result: event.result,
     payload: event.payload,
     provenance: mergeProvenance({
-      provider: provider.provider,
-      model: provider.model,
+      provider: evidenceSession.provider || provider.provider,
+      model: evidenceSession.model || provider.model,
       app_build_id: provider.app_build_id,
       teaching_protocol_version: evidenceSession.teaching_protocol_version || provider.teaching_protocol_version,
       teaching_protocol_hash: evidenceSession.teaching_protocol_hash || provider.teaching_protocol_hash,
@@ -744,7 +784,14 @@ export async function POST(request, deps = {}) {
     const action = normalizeRequiredText(body.action, 'action');
 
     if (action === 'create_session') {
-      return await handleCreateSession({ body, user: auth.user, admin: auth.clients.admin });
+      return await handleCreateSession({
+        request,
+        body,
+        user: auth.user,
+        admin: auth.clients.admin,
+        now: deps.now,
+        proofSecret: deps.proofSecret,
+      });
     }
     if (action === 'record_event') {
       return await handleRecordEvent({ body, user: auth.user, admin: auth.clients.admin });

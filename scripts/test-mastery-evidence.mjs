@@ -44,17 +44,22 @@ import {
   RETENTION_REASONS,
 } from '../src/app/lib/masteryEvidence/retention.js'
 import { createLegacyItemFingerprint } from '../src/app/lib/masteryEvidence/items.js'
+import {
+  createSyllabusExecutionProof,
+  SYLLABUS_EXECUTION_COOKIE,
+} from '../src/app/lib/syllabus/executionAuthorization.server.mjs'
 
 const facilitatorId = '11111111-1111-1111-1111-111111111111'
 const learnerId = '22222222-2222-2222-2222-222222222222'
 const sessionId = 'session-row-1'
 
-function jsonRequest(body, { token = 'valid-token', method = 'POST', url = 'https://mssonoma.app/api/evidence' } = {}) {
+function jsonRequest(body, { token = 'valid-token', method = 'POST', url = 'https://mssonoma.app/api/evidence', cookie = '' } = {}) {
   return new Request(url, {
     method,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      ...(cookie ? { Cookie: cookie } : {}),
     },
     body: method === 'GET' ? undefined : JSON.stringify(body),
   })
@@ -268,6 +273,53 @@ test('mastery evidence route creates an owned partial evidence session', async (
   assert.equal(result.evidence_session.provider, 'openai')
   assert.equal(result.evidence_session.model, 'gpt-test')
   assert.equal(store.learning_evidence_sessions.length, 1)
+}))
+
+test('Slate activity evidence is authorized without creating an instructional lesson session', async () => withEvidenceEnv(async () => {
+  const store = makeStore()
+  const deps = { createClientImpl: makeCreateClientImpl(store) }
+  const slateBody = {
+    action: 'create_session', schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
+    identity_schema_version: MASTERY_EVIDENCE_IDENTITY_SCHEMA_VERSION,
+    session_id: 'slate:activity-1', learner_id: learnerId,
+    lesson_key: 'math/fractions.json', stable_lesson_key: 'math/fractions.json',
+    authorized_occurrence_id: 'syllabus:slate-practice',
+    teaching_protocol_version: 'slate-mastery-retention-v1',
+    assessment_isolation_version: ASSESSMENT_ISOLATION_VERSION,
+    assessment_isolation_status: ASSESSMENT_ISOLATION_STATUSES.ISOLATED,
+    mastery_protocol_version: INDEPENDENT_MASTERY_PROTOCOL_VERSION,
+    retention_protocol_version: RETENTION_PROTOCOL_VERSION,
+  }
+  const proof = createSyllabusExecutionProof({
+    facilitatorId, learnerId, lessonKey: 'math/fractions.json',
+    occurrenceId: 'syllabus:slate-practice', today: '2026-08-29',
+  }, 'service-key', new Date('2026-08-29T12:00:00Z'))
+  const cookie = `${SYLLABUS_EXECUTION_COOKIE}=${encodeURIComponent(proof)}`
+  const accepted = await POST(jsonRequest(slateBody, { cookie }), {
+    ...deps, now: new Date('2026-08-29T12:00:30Z'), proofSecret: 'service-key',
+  })
+  assert.equal(accepted.status, 200)
+  assert.equal(store.lesson_sessions.length, 1)
+  assert.equal(store.learning_evidence_sessions[0].session_id, 'slate:activity-1')
+  assert.equal(store.learning_evidence_sessions[0].provider, 'deterministic_app')
+
+  const rejected = await POST(jsonRequest({
+    ...slateBody, session_id: 'slate:spoofed', teaching_protocol_version: TEACHING_PROTOCOL_VERSION,
+  }), deps)
+  assert.equal(rejected.status, 403)
+
+  const prefixOnly = await POST(jsonRequest({ ...slateBody, session_id: 'slate:prefix-only' }), deps)
+  assert.equal(prefixOnly.status, 403)
+
+  const wrongProtocol = await POST(jsonRequest({
+    ...slateBody, session_id: 'slate:wrong-protocol', teaching_protocol_version: 'slate-fabricated-v1',
+  }, { cookie }), { ...deps, now: new Date('2026-08-29T12:00:30Z'), proofSecret: 'service-key' })
+  assert.equal(wrongProtocol.status, 403)
+
+  const wrongOccurrence = await POST(jsonRequest({
+    ...slateBody, session_id: 'slate:wrong-occurrence', authorized_occurrence_id: 'syllabus:other',
+  }, { cookie }), { ...deps, now: new Date('2026-08-29T12:00:30Z'), proofSecret: 'service-key' })
+  assert.equal(wrongOccurrence.status, 403)
 }))
 
 test('mastery evidence events are append-only and idempotent by key', async () => withEvidenceEnv(async () => {

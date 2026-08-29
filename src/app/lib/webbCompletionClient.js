@@ -5,7 +5,8 @@
  * Stored in localStorage (key: webb_completion_v1) so it persists
  * across page reloads without requiring a DB migration.
  *
- * Schema: { [learnerId]: { [lessonKey]: { completed: true, completedAt: ISO } } }
+ * Schema: { [learnerId]: { [lessonKey]: { completed, completedAt, masterySummary? } } }
+ * masterySummary preserves unresolved concepts separately; it does not alter completion.
  *
  * lessonKey format matches the lesson's lessonKey / lesson_id field.
  */
@@ -41,10 +42,15 @@ export function isWebbCompleted(learnerId, lessonKey) {
 /**
  * Records essay completion for a learner + lesson. Idempotent — safe to call multiple times.
  */
-export function saveWebbCompletion(learnerId, lessonKey) {
+export function saveWebbCompletion(learnerId, lessonKey, details = {}) {
   if (!learnerId || !lessonKey) return
   const all = read()
   if (!all[learnerId]) all[learnerId] = {}
-  all[learnerId][lessonKey] = { completed: true, completedAt: new Date().toISOString() }
+  all[learnerId][lessonKey] = {
+    ...(all[learnerId][lessonKey] || {}),
+    completed: true,
+    completedAt: new Date().toISOString(),
+    ...(details && typeof details === 'object' ? details : {}),
+  }
   write(all)
 }

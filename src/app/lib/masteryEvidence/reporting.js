@@ -52,6 +52,8 @@ const MASTERY_REASON_LABELS = Object.freeze({
   reteach_before_first_response: 'Reteaching or scaffolding occurred before the response.',
   identity_unavailable: 'Stable item identity was unavailable.',
   insufficient_clean_reserved_pool: 'There were not enough clean held-out items.',
+  clear_answer_reproduction: 'The learner response clearly reproduced wording already supplied in the conversation.',
+  recovery_not_completed: 'A recovery verification was attempted before recorded recovery teaching completed.',
 });
 
 const RETENTION_REASON_LABELS = Object.freeze({
@@ -654,7 +656,16 @@ function buildInterpretations(baseline, independentEvidence, retention) {
   return interpretations;
 }
 
-function buildOptions(independentEvidence, retention) {
+function buildOptions(independentEvidence, retention, conceptEvidence = []) {
+  const pendingConcepts = conceptEvidence.filter((concept) => concept.mastery === 'pending');
+  if (pendingConcepts.length) {
+    return [{
+      kind: 'consider_future_independent_check',
+      evidence_kind: 'proposed',
+      label: `Consider a future independent opportunity for ${pendingConcepts.length} concept${pendingConcepts.length === 1 ? '' : 's'}.`,
+      concept_ids: pendingConcepts.map((concept) => concept.concept_id).filter(Boolean),
+    }];
+  }
   if (retention.state === 'needs_review') {
     return [{ kind: 'consider_review', evidence_kind: 'proposed', label: 'Consider a review session.' }];
   }
@@ -671,6 +682,39 @@ function buildOptions(independentEvidence, retention) {
     return [{ kind: 'continue_normally', evidence_kind: 'proposed', label: 'Continue normally; retention has not yet been measured.' }];
   }
   return [];
+}
+
+export function summarizeWebbConceptEvidence(events = []) {
+  const groups = new Map();
+  for (const event of events || []) {
+    if (event?.event_type !== STAGE_6_EVIDENCE_EVENT_TYPES.MASTERY_CHECK_RESULT) continue;
+    const classification = event?.payload?.qualification?.webb_classification;
+    if (!classification) continue;
+    const key = asText(event.concept_id) || asText(event.stable_item_id) || asText(event.item_id);
+    if (!key) continue;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ event, classification });
+  }
+  return Array.from(groups.entries()).map(([key, entries]) => {
+    const mastered = entries.some(({ event }) => [
+      MASTERY_OUTCOMES.INDEPENDENT_SUCCESS,
+      MASTERY_OUTCOMES.INDEPENDENT_SUCCESS_AFTER_RECOVERY,
+    ].includes(event.mastery_outcome));
+    const understood = entries.some(({ classification }) => classification.comprehension === 'demonstrated');
+    const covered = entries.some(({ classification }) => classification.coverage === 'covered');
+    const latest = entries.slice().sort((left, right) => compareEvents(left.event, right.event)).at(-1);
+    return {
+      concept_id: asText(latest?.event?.concept_id),
+      stable_item_id: asText(latest?.event?.stable_item_id),
+      coverage: covered ? 'covered' : 'not_covered',
+      comprehension: understood ? 'demonstrated' : 'not_demonstrated',
+      mastery: mastered ? 'mastered' : 'pending',
+      retention: 'not_measured',
+      latest_outcome: asText(latest?.event?.mastery_outcome),
+      evidence_kind: 'observed',
+      target_key: key,
+    };
+  });
 }
 
 function buildTarget(events) {
@@ -705,6 +749,7 @@ export function aggregateFacilitatorEvidenceSession({ trackedSession = {}, evide
   const baseline = summarizeBaseline(evidenceSession, orderedEvents);
   const independent_evidence = summarizeIndependentEvidence(evidenceSession, orderedEvents, interventions);
   const retention = summarizeRetention(evidenceSession, orderedEvents);
+  const concept_evidence = summarizeWebbConceptEvidence(orderedEvents);
   const assistance = summarizeAssistance(evidenceSession, orderedEvents, independent_evidence, retention);
   const completeness = summarizeCompleteness(evidenceSession, [baseline, independent_evidence, retention]);
   const startedAt = asTimestamp(evidenceSession?.started_at || trackedSession?.started_at);
@@ -736,10 +781,11 @@ export function aggregateFacilitatorEvidenceSession({ trackedSession = {}, evide
     assistance,
     independent_evidence,
     retention,
+    concept_evidence,
     score: summarizeScore(orderedEvents),
     interventions,
     interpretations: buildInterpretations(baseline, independent_evidence, retention),
-    options: buildOptions(independent_evidence, retention),
+    options: buildOptions(independent_evidence, retention, concept_evidence),
     provenance: {
       evidence_session_id: asText(evidenceSession?.id),
       evidence_schema_version: asText(evidenceSession?.schema_version),

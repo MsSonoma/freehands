@@ -6,7 +6,29 @@ import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { getWebbCompletionForLearner, saveWebbCompletion } from '@/app/lib/webbCompletionClient'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { endLessonSession } from '@/app/lib/sessionTracking'
-import { startProtectedInstructionalSession } from '@/app/lib/syllabus/executionClient'
+import { getProtectedBrowserSessionId, startProtectedInstructionalSession } from '@/app/lib/syllabus/executionClient'
+import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js'
+import { ASSESSMENT_ROLES } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
+import { MASTERY_CHECK_ROLES } from '@/app/lib/masteryEvidence/mastery.js'
+import { INDEPENDENT_MASTERY_PROTOCOL_VERSION } from '@/app/lib/masteryEvidence/mastery.js'
+import { RETENTION_PROTOCOL_VERSION } from '@/app/lib/masteryEvidence/retention.js'
+import { buildItemIdentity } from '@/app/lib/masteryEvidence/identity.js'
+import { identityKeys } from '@/app/lib/masteryEvidence/mastery.js'
+import {
+  WEBB_SNAPSHOT_VERSION,
+  assembleLearnerEssay,
+  createWritingAttempt,
+  migrateWebbSnapshot,
+  nextWritingObjectiveIndex,
+  sanitizeWritingGuidance,
+} from '@/app/lib/webbLearningModel.mjs'
+import {
+  WEBB_ASSISTANCE_TYPES,
+  addWebbAssistance,
+  detectsAnswerRequest,
+  mergeWebbMasterySummaries,
+  summarizeWebbMastery,
+} from '@/app/lib/webbMasteryModel.mjs'
 
 // CSS animations
 if (typeof document !== 'undefined' && !document.getElementById('webb-spin-style')) {
@@ -34,6 +56,18 @@ const C = {
 }
 
 const PHASE = { LIST: 'list', STARTING: 'starting', CHATTING: 'chatting' }
+
+function makeWebbObjectiveItem(objective, index, sessionId = 'unknown-session') {
+  const normalizedObjective = String(objective || '').trim().toLowerCase()
+  return {
+    sourceType: 'webb_conversation',
+    sourceId: `webb-opportunity:${sessionId}:${index}`,
+    opportunityId: `webb-opportunity:${sessionId}:${index}`,
+    // Concept identity survives a pending-only revisit where objective ordering changes.
+    objectiveId: `webb-objective:${normalizedObjective}`,
+    prompt: objective || '',
+  }
+}
 
 // ── UI FAQ: feature explanations in Mrs. Webb's voice ─────────────────────────
 const UI_FAQ = {
@@ -188,22 +222,30 @@ function WebbPageInner() {
 
   // ── Research objectives ──────────────────────────────────────────────
   const [objectives,         setObjectives]        = useState([])  // string[]
-  const [completedObj,       setCompletedObj]      = useState([])  // number[] of completed indices
-  const [objResponses,       setObjResponses]      = useState({})  // Record<idx, studentText> — what they said
-  const [newlyCompletedObj,  setNewlyCompletedObj] = useState(null) // {idx, text} — drives tablet toast
+  const [coveredObj,          setCoveredObj]         = useState([]) // instructional obligation completed
+  const [understoodObj,       setUnderstoodObj]      = useState([]) // comprehension demonstrated, possibly assisted
+  const [objectiveEvidence,   setObjectiveEvidence]  = useState({}) // covered/understood/mastered/retained provenance
+  const [learnerNotes,        setLearnerNotes]       = useState({})  // Record<idx, verbatim note + source provenance>
+  const [writingMode,         setWritingMode]        = useState(false)
+  const [writingIndex,        setWritingIndex]       = useState(0)
+  const [writingAttempts,     setWritingAttempts]    = useState({}) // Record<idx, verbatim attempt[]>
+  const [acceptedSentences,   setAcceptedSentences]  = useState({}) // Record<idx, accepted verbatim attempt>
+  const [newlySavedNote,  setNewlySavedNote] = useState(null) // {idx, text} — drives tablet toast
   const [expandedObj,        setExpandedObj]       = useState(null) // number|null — accordion open index
   const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
   const [showSourceSettings, setShowSourceSettings] = useState(false) // settings overlay
   const [settingsTab,        setSettingsTab]        = useState('settings') // 'settings' | 'article'
   const [offerResume,        setOfferResume]        = useState(false) // shown after lesson is selected, if a per-lesson snapshot exists
   const [essayMode,          setEssayMode]         = useState(false) // essay copy-down screen
-  const [essay,              setEssay]             = useState(null)  // generated essay string
-  const [generatingEssay,    setGeneratingEssay]   = useState(false)
+  const [essay,              setEssay]             = useState(null)  // deterministic assembly of accepted learner sentences
+  const [writingEvaluating,    setWritingEvaluating]   = useState(false) // writing evaluation in flight
   const [webbCompletionMap,  setWebbCompletionMap] = useState({}) // {[lessonKey]: {completed, completedAt}}
   const [justCompletedLesson, setJustCompletedLesson] = useState(null) // lesson title shown as completion toast
   const [completionState, setCompletionState] = useState('idle') // idle | saving | failed
   const [completionError, setCompletionError] = useState('')
   const canonicalSessionRef = useRef(null)
+  const masteryEvidenceClientRef = useRef(null)
+  const priorObjectiveExposureRef = useRef({})
   const [articleSources,     setArticleSources]    = useState(() => {
     const ALL = ['simple-wikipedia','wikipedia','kiddle','ducksters','wikijunior']
     if (typeof window === 'undefined') return ALL
@@ -236,7 +278,6 @@ function WebbPageInner() {
   const lowTierMsgSentRef  = useRef(false) // true once the "limited results" message has been said for the current video
   const noVideoMsgSentRef  = useRef(false) // true once the "no relevant video" message has been said for the current lesson
   const videosWatchedRef   = useRef(0)    // count of times the video overlay was opened this lesson (for per-objectives rate limit)
-  const essayAbortRef      = useRef(null)  // AbortController for in-flight essay generation
   const articleIframeRef   = useRef(null)
   // Media overlay position + fullscreen
   const [mediaPos, setMediaPos]               = useState('video') // 'video'|'chat'
@@ -365,11 +406,38 @@ function WebbPageInner() {
     return k ? `webb_session_${k}` : null
   }
 
+  async function initializeWebbEvidence(tracked, lesson) {
+    if (!tracked?.id || !lesson) {
+      masteryEvidenceClientRef.current = null
+      return
+    }
+    try {
+      const client = new MasteryEvidenceClient()
+      masteryEvidenceClientRef.current = client
+      await client.initialize({
+        sessionId: tracked.id,
+        browserSessionId: getProtectedBrowserSessionId(),
+        learnerId: routeLearnerId || learnerId,
+        lessonKey: lesson.lessonKey || lesson.lesson_id || lesson.id,
+        lessonId: lesson.lesson_id || lesson.id || null,
+        lessonData: lesson,
+        mastery: { protocolVersion: INDEPENDENT_MASTERY_PROTOCOL_VERSION },
+        retention: { protocolVersion: RETENTION_PROTOCOL_VERSION },
+        teachingProtocol: { protocolVersion: 'webb-conversation-v1', protocolHash: null },
+        startedAt: webbSessionStartRef.current || new Date().toISOString(),
+      })
+      void client.recordSessionStarted({ initialPhase: 'discussion' })
+    } catch {
+      masteryEvidenceClientRef.current = null
+    }
+  }
+
   async function handleResume() {
     try {
       const key = snapKey(selectedLesson)
-      const saved = key ? JSON.parse(localStorage.getItem(key) || 'null') : null
-      if (!saved) { setOfferResume(false); return }
+      const rawSaved = key ? JSON.parse(localStorage.getItem(key) || 'null') : null
+      if (!rawSaved) { setOfferResume(false); return }
+      const saved = migrateWebbSnapshot(rawSaved)
       const lessonKey = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
       const tracked = await startProtectedInstructionalSession({
         learnerId: routeLearnerId || learnerId,
@@ -378,11 +446,21 @@ function WebbPageInner() {
         requestPin: requestFacilitatorPinException,
       })
       canonicalSessionRef.current = { id: tracked.id, learnerId: routeLearnerId || learnerId, lessonKey, occurrenceId: tracked.occurrenceId }
+      webbSessionStartRef.current = saved.webbSessionStartedAt || new Date().toISOString()
+      await initializeWebbEvidence(canonicalSessionRef.current, selectedLesson)
       setChatMessages(saved.chatMessages || [])
       setTranscript(saved.transcript || [])
       setObjectives(saved.objectives || [])
-      setCompletedObj(saved.completedObj || [])
-      setObjResponses(saved.objResponses || {})
+      priorObjectiveExposureRef.current = Object.fromEntries((saved.objectives || []).map((_, index) => [index, true]))
+      await loadPriorObjectiveExposure(saved.objectives || [], selectedLesson)
+      setCoveredObj(saved.coveredObj || [])
+      setUnderstoodObj(saved.understoodObj || [])
+      setObjectiveEvidence(saved.objectiveEvidence || {})
+      setLearnerNotes(saved.learnerNotes || {})
+      setWritingMode(!!saved.writingMode)
+      setWritingIndex(saved.writingIndex || 0)
+      setWritingAttempts(saved.writingAttempts || {})
+      setAcceptedSentences(saved.acceptedSentences || {})
       if (saved.essay) setEssay(saved.essay)
       if (saved.essayMode) setEssayMode(saved.essayMode)
       setPhase(PHASE.CHATTING)
@@ -411,10 +489,13 @@ function WebbPageInner() {
     if (!key) return
     try {
       localStorage.setItem(key, JSON.stringify({
-        selectedLesson, chatMessages, transcript, objectives, completedObj, objResponses, essay, essayMode,
+        snapshotVersion: WEBB_SNAPSHOT_VERSION,
+        webbSessionStartedAt: webbSessionStartRef.current,
+        selectedLesson, chatMessages, transcript, objectives, coveredObj, understoodObj, objectiveEvidence, learnerNotes,
+        writingMode, writingIndex, writingAttempts, acceptedSentences, essay, essayMode,
       }))
     } catch { /* ignore quota errors */ }
-  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, completedObj, objResponses, essay, essayMode])
+  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, coveredObj, understoodObj, objectiveEvidence, learnerNotes, writingMode, writingIndex, writingAttempts, acceptedSentences, essay, essayMode])
 
   // Redirect to /learn/lessons when lesson list is shown (list selection is now handled there)
   useEffect(() => {
@@ -701,10 +782,10 @@ function WebbPageInner() {
       return
     }
     // Video rate limit: first watch is free; each additional watch requires 2 more completed objectives.
-    // maxAllowed = 1 + floor(completedObj.length / 2)
-    const maxVideos  = 1 + Math.floor(completedObj.length / 2)
+    // maxAllowed = 1 + floor(coveredObj.length / 2)
+    const maxVideos  = 1 + Math.floor(coveredObj.length / 2)
     if (videosWatchedRef.current >= maxVideos) {
-      const objsNeeded = videosWatchedRef.current * 2 - completedObj.length
+      const objsNeeded = videosWatchedRef.current * 2 - coveredObj.length
       addMsg(
         objsNeeded === 1
           ? `I love that you want to keep watching! Here's our deal — I open the video once for every two objectives we work through together. You're almost there: show me you understand just one more objective and I'll open it right back up!`
@@ -737,6 +818,8 @@ function WebbPageInner() {
     }
 
     setInterpretingVideo(true)
+    const targetIndex = objectives.findIndex((_, index) => !coveredObj.includes(index))
+    if (targetIndex >= 0) markObjectiveAssistance(targetIndex, WEBB_ASSISTANCE_TYPES.VISUAL_EXPOSURE)
     setMediaOverlay('video')
     setVideoMoments([])
     try {
@@ -749,7 +832,7 @@ function WebbPageInner() {
           grade:            selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
           learnerName:      learnerName.current || '',
           objectives,
-          completedIndices: completedObj,
+          completedIndices: coveredObj,
         }),
       })
       const data = await res.json()
@@ -788,7 +871,7 @@ function WebbPageInner() {
 
       // ── Assessment push: ask the student to demonstrate objective comprehension ──
       // Build snapshot of remaining objectives at the moment the tour ends
-      const remaining = objectives.filter((_, i) => !completedObj.includes(i))
+      const remaining = objectives.filter((_, i) => !coveredObj.includes(i))
       try {
         const assessRes = await fetch('/api/webb-chat', {
           method: 'POST',
@@ -810,7 +893,7 @@ function WebbPageInner() {
           await waitForTTSIdle()
           // Check if the student's previous responses already covered anything
           setObjectives(obj => {
-            setCompletedObj(comp => {
+            setCoveredObj(comp => {
               checkObjectivesAfterTurn([...videoResearchHistory, aMsg], obj, comp)
               return comp
             })
@@ -961,34 +1044,157 @@ function WebbPageInner() {
   // Fall back silently if the API is unavailable.
   const generateObjectives = useCallback(async (lesson) => {
     setObjectives([])
-    setCompletedObj([])
-    setNewlyCompletedObj(null)
-    setObjResponses({})
+    setCoveredObj([])
+    setUnderstoodObj([])
+    setObjectiveEvidence({})
+    setNewlySavedNote(null)
+    setLearnerNotes({})
+    setWritingMode(false)
+    setWritingIndex(0)
+    setWritingAttempts({})
+    setAcceptedSentences({})
     setExpandedObj(null)
     setEssayMode(false)
     setEssay(null)
     try {
+      const lessonKey = lesson?.lessonKey || lesson?.lesson_id || lesson?.id
+      const currentLearnerId = (() => { try { return localStorage.getItem('learner_id') || null } catch { return null } })()
+      const pendingObjectives = getWebbCompletionForLearner(currentLearnerId)?.[lessonKey]?.masterySummary?.masteryPending || []
       const res  = await fetch('/api/webb-objectives', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', lesson }),
+        body: JSON.stringify({ action: 'generate', lesson, pendingObjectives }),
       })
       const data = await res.json()
       if (Array.isArray(data.objectives) && data.objectives.length) {
+        priorObjectiveExposureRef.current = Object.fromEntries(data.objectives.map((_, index) => [index, true]))
         setObjectives(data.objectives)
+        await loadPriorObjectiveExposure(data.objectives, lesson)
       }
     } catch { /* objectives are optional — fail silently */ }
   }, [])
 
+  function webbObjectiveItem(index) {
+    return makeWebbObjectiveItem(objectives[index], index, canonicalSessionRef.current?.id)
+  }
+
+  async function loadPriorObjectiveExposure(objectiveList, lesson) {
+    const client = masteryEvidenceClientRef.current
+    if (!client || !objectiveList?.length) {
+      priorObjectiveExposureRef.current = {}
+      return
+    }
+    try {
+      const lessonKey = lesson?.lessonKey || lesson?.lesson_id || lesson?.id || ''
+      const identities = await Promise.all(objectiveList.map((objective, index) => buildItemIdentity({
+        lessonKey,
+        lessonId: lesson?.lesson_id || lesson?.id || '',
+        lessonData: lesson,
+        item: makeWebbObjectiveItem(objective, index, canonicalSessionRef.current?.id),
+      })))
+      const prior = await client.checkPriorExposure({ learnerId: routeLearnerId || learnerId, itemIdentities: identities })
+      if (!prior.ok) {
+        priorObjectiveExposureRef.current = Object.fromEntries(objectiveList.map((_, index) => [index, true]))
+        return
+      }
+      const exposed = new Set(prior.exposedKeys || [])
+      priorObjectiveExposureRef.current = Object.fromEntries(identities.map((identity, index) => [
+        index,
+        identityKeys(identity).some(key => exposed.has(key)),
+      ]))
+    } catch {
+      // Unknown prior exposure must not be upgraded into clean independence.
+      priorObjectiveExposureRef.current = Object.fromEntries(objectiveList.map((_, index) => [index, true]))
+    }
+  }
+
+  function recordWebbClassification(index, classification) {
+    const client = masteryEvidenceClientRef.current
+    const attempt = classification?.latestAttempt
+    const tracked = canonicalSessionRef.current
+    if (!client || !attempt || !tracked?.id) return
+    const identityItem = webbObjectiveItem(index)
+    const attemptNumber = classification.attempts?.length || 1
+    const itemExposureId = `webb:${tracked.id}:${index}:${attemptNumber}`
+    void (async () => {
+      await client.recordItemPresented({
+        phase: 'discussion', itemPurpose: 'webb_objective', itemExposureId,
+        identityItem, assessmentRole: ASSESSMENT_ROLES.CONVERSATIONAL_OPPORTUNITY,
+        evidencePurpose: 'independent_mastery', questionIndex: index,
+        item: { objective: objectives[index], interaction_model: 'webb_conversation' },
+      })
+      await client.recordLearnerResponse({
+        phase: 'discussion', itemPurpose: 'webb_objective', itemExposureId,
+        identityItem, assessmentRole: ASSESSMENT_ROLES.CONVERSATIONAL_OPPORTUNITY,
+        evidencePurpose: 'independent_mastery', attemptNumber,
+        isFirstResponse: attempt.isFirstResponse, response: attempt.text, questionIndex: index,
+      })
+      await client.recordAnswerEvaluated({
+        phase: 'discussion', itemPurpose: 'webb_objective', itemExposureId,
+        identityItem, assessmentRole: ASSESSMENT_ROLES.CONVERSATIONAL_OPPORTUNITY,
+        evidencePurpose: 'independent_mastery', attemptNumber,
+        isFirstResponse: attempt.isFirstResponse, isCorrect: attempt.accuracy === 'correct',
+        evaluationMode: 'webb_semantic_evaluator', response: attempt.text, questionIndex: index,
+      })
+      await client.recordMasteryCheckResult({
+        phase: 'discussion', itemPurpose: 'webb_objective', itemExposureId,
+        identityItem, assessmentRole: ASSESSMENT_ROLES.CONVERSATIONAL_OPPORTUNITY,
+        attemptNumber, isFirstResponse: attempt.isFirstResponse,
+        isCorrect: attempt.accuracy === 'correct', masteryCheckRole: MASTERY_CHECK_ROLES.INITIAL,
+        independenceStatus: attempt.independenceStatus,
+        independenceReason: attempt.independenceReason,
+        masteryOutcome: attempt.masteryOutcome,
+        response: attempt.text, questionIndex: index,
+        qualification: {
+          interaction_model: 'webb_conversation',
+          webb_classification: {
+            coverage: classification.coverage,
+            comprehension: classification.comprehension,
+            mastery: classification.mastery,
+            retention: 'not_measured',
+            reproduction: attempt.reproduction || null,
+            assistance_before_response: attempt.assistanceBeforeResponse || [],
+          },
+        },
+      })
+    })()
+  }
+
+  function markObjectiveAssistance(index, type, sourceMessageIndex = null) {
+    if (!Number.isInteger(index) || index < 0 || !objectives[index]) return
+    const assistance = {
+      type,
+      sourceMessageIndex,
+      occurredAt: new Date().toISOString(),
+    }
+    setObjectiveEvidence(prev => ({
+      ...prev,
+      [index]: addWebbAssistance(prev[index] || { objectiveIndex: index, objective: objectives[index] }, assistance),
+    }))
+    const client = masteryEvidenceClientRef.current
+    const tracked = canonicalSessionRef.current
+    if (client && tracked?.id) {
+      void client.recordAskUsed({
+        phase: 'discussion', itemPurpose: 'webb_objective',
+        itemExposureId: `webb:${tracked.id}:${index}:assistance`,
+        identityItem: webbObjectiveItem(index),
+        assessmentRole: ASSESSMENT_ROLES.CONVERSATIONAL_OPPORTUNITY,
+        evidencePurpose: 'independent_mastery',
+        askMode: type,
+        answerRevealed: [WEBB_ASSISTANCE_TYPES.ANSWER_REVEALED, WEBB_ASSISTANCE_TYPES.DIRECT_TEACHING, WEBB_ASSISTANCE_TYPES.CORRECTION].includes(type),
+      })
+    }
+  }
+
   // ── Objectives: check after each student turn ─────────────────────────
   // Runs in the background after a normal chat turn; never blocks the UI.
-  const checkObjectivesAfterTurn = useCallback(async (updatedMessages, currentObjectives, currentCompleted) => {
+  const checkObjectivesAfterTurn = useCallback(async (updatedMessages, currentObjectives, currentCovered) => {
     if (!currentObjectives.length) return
-    if (currentCompleted.length >= currentObjectives.length) return
+    if (currentCovered.length >= currentObjectives.length) return
     if (checkingObjRef.current) {
       // A check is already in-flight — park the latest args so we retry once it finishes.
       // Using the latest args (most recent conversation) means we never lose a qualifying turn.
-      pendingCheckRef.current = { updatedMessages, currentObjectives, currentCompleted }
+      pendingCheckRef.current = { updatedMessages, currentObjectives, currentCovered }
       return
     }
     checkingObjRef.current = true
@@ -1000,21 +1206,34 @@ function WebbPageInner() {
         body: JSON.stringify({
           action:           'check',
           objectives:       currentObjectives,
-          completedIndices: currentCompleted,
+          coveredIndices:    currentCovered,
+          objectiveEvidence,
+          priorPromptExposure: priorObjectiveExposureRef.current,
           conversation:     updatedMessages,
           lesson:           selectedLesson,
         }),
       })
       const data = await res.json()
-      const newly = data.newlyCompleted || []
-      const qualifyingText = data.qualifyingText || {}
+      const newly = data.newlyCovered || data.newlyCompleted || []
+      const newlyUnderstood = data.newlyUnderstood || []
+      const notes = data.learnerNotes || {}
+      const nextEvidence = data.objectiveEvidence || {}
+      for (const [rawIndex, classification] of Object.entries(nextEvidence)) {
+        const index = Number(rawIndex)
+        const priorCount = objectiveEvidence[index]?.attempts?.length || 0
+        if ((classification?.attempts?.length || 0) > priorCount) recordWebbClassification(index, classification)
+      }
+      setObjectiveEvidence(nextEvidence)
+      if (newlyUnderstood.length) {
+        setUnderstoodObj(prev => [...new Set([...prev, ...newlyUnderstood])])
+      }
       if (newly.length) {
-        setObjResponses(prev => ({ ...prev, ...qualifyingText }))
-        setCompletedObj(prev => {
+        setLearnerNotes(prev => ({ ...prev, ...notes }))
+        setCoveredObj(prev => {
           const next = [...new Set([...prev, ...newly])]
           const firstIdx = newly.find(i => !prev.includes(i))
           if (firstIdx !== undefined) {
-            setNewlyCompletedObj({ idx: firstIdx, text: currentObjectives[firstIdx] })
+            setNewlySavedNote({ idx: firstIdx, text: notes[firstIdx]?.text || '' })
           }
           return next
         })
@@ -1025,16 +1244,16 @@ function WebbPageInner() {
     if (pendingCheckRef.current) {
       const pending = pendingCheckRef.current
       pendingCheckRef.current = null
-      checkObjectivesAfterTurn(pending.updatedMessages, pending.currentObjectives, pending.currentCompleted)
+      checkObjectivesAfterTurn(pending.updatedMessages, pending.currentObjectives, pending.currentCovered)
     }
-  }, [selectedLesson])
+  }, [selectedLesson, objectiveEvidence])
 
   // Auto-dismiss the tablet toast after 3.5 s
   useEffect(() => {
-    if (!newlyCompletedObj) return
-    const t = setTimeout(() => setNewlyCompletedObj(null), 3500)
+    if (!newlySavedNote) return
+    const t = setTimeout(() => setNewlySavedNote(null), 3500)
     return () => clearTimeout(t)
-  }, [newlyCompletedObj])
+  }, [newlySavedNote])
 
   // ── Select lesson → start AI chat ─────────────────────────────────────
   // forceNew: skip snapshot check (used by handleRestartFromPrompt)
@@ -1060,9 +1279,15 @@ function WebbPageInner() {
     setMediaOverlay(null)
     setPageError('')
     setObjectives([])
-    setCompletedObj([])
-    setNewlyCompletedObj(null)
-    setObjResponses({})
+    setCoveredObj([])
+    setUnderstoodObj([])
+    setObjectiveEvidence({})
+    setNewlySavedNote(null)
+    setLearnerNotes({})
+    setWritingMode(false)
+    setWritingIndex(0)
+    setWritingAttempts({})
+    setAcceptedSentences({})
     setExpandedObj(null)
     setEssayMode(false)
     setEssay(null)
@@ -1077,6 +1302,7 @@ function WebbPageInner() {
         requestPin: requestFacilitatorPinException,
       })
       canonicalSessionRef.current = { id: tracked.id, learnerId: routeLearnerId || learnerId, lessonKey, occurrenceId: tracked.occurrenceId }
+      await initializeWebbEvidence(canonicalSessionRef.current, lesson)
     } catch (cause) {
       setPageError(cause?.message || 'Could not securely start this lesson.')
       setPhase(PHASE.LIST)
@@ -1250,19 +1476,92 @@ function WebbPageInner() {
       return
     }
     // ── Normal API call ───────────────────────────────────────────────────
-    const userMsg = { role: 'user', content: text }
+    const userMsg = {
+      role: 'user',
+      content: text,
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `webb-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    }
     const nextHistory = [...chatMessages, userMsg]
     setChatMessages(nextHistory)
     setChatLoading(true)
     try {
+      if (writingMode) {
+        setWritingEvaluating(true)
+        const note = learnerNotes[writingIndex]
+        const evaluationRes = await fetch('/api/webb-objectives', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'check-writing',
+            objective: objectives[writingIndex],
+            note: note?.text || '',
+            text,
+            lesson: selectedLesson,
+          }),
+        })
+        const evaluation = await evaluationRes.json()
+        const attempt = createWritingAttempt({
+          objectiveIndex: writingIndex,
+          text,
+          message: userMsg,
+          accuracy: evaluation.accuracy,
+          sentenceOk: evaluation.sentenceOk,
+        })
+        setWritingAttempts(prev => ({
+          ...prev,
+          [writingIndex]: [...(prev[writingIndex] || []), attempt],
+        }))
+
+        if (attempt.accepted) {
+          const nextAccepted = { ...acceptedSentences, [writingIndex]: attempt }
+          setAcceptedSentences(nextAccepted)
+          const nextIndex = nextWritingObjectiveIndex(objectives, nextAccepted)
+          if (nextIndex === -1) {
+            const finalEssay = assembleLearnerEssay(objectives, nextAccepted)
+            const reply = 'You turned every rough note into your own writing. Your essay is ready!'
+            setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
+            addMsg(reply)
+            setEssay(finalEssay)
+            setWritingMode(false)
+            setEssayMode(!!finalEssay)
+          } else {
+            const reply = `That sentence is ready for your essay. Here is your next note: “${learnerNotes[nextIndex]?.text || ''}” How could you turn that thought into a complete sentence?`
+            setWritingIndex(nextIndex)
+            setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
+            addMsg(reply)
+          }
+        } else {
+          const guidanceRes = await fetch('/api/webb-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: nextHistory,
+              lesson: selectedLesson,
+              writingMode: true,
+              writingNote: note?.text || '',
+              writingEvaluation: { accuracy: evaluation.accuracy, sentenceOk: evaluation.sentenceOk },
+            }),
+          })
+          const guidance = await guidanceRes.json()
+          const reply = sanitizeWritingGuidance(guidance.reply)
+          setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
+          addMsg(reply)
+        }
+        setWritingEvaluating(false)
+        setChatLoading(false)
+        return
+      }
+
       // ── Step 1: check objectives NOW (before calling webb-chat) ──────────
       // This ensures webb-chat receives the correct remaining-objectives list
       // (i.e. already-completed objectives are excluded) so Mrs. Webb's very
       // next question targets the NEXT incomplete goal, not the one just shown.
-      let freshCompleted = [...completedObj]
-      let needSentenceForObj = null
+      let freshCovered = [...coveredObj]
       let masteryStatus = null
-      if (objectives.length && completedObj.length < objectives.length) {
+      let assistanceTargetIndex = null
+      const answerRequested = detectsAnswerRequest(text)
+      if (objectives.length && coveredObj.length < objectives.length) {
         try {
           const checkRes = await fetch('/api/webb-objectives', {
             method: 'POST',
@@ -1270,45 +1569,55 @@ function WebbPageInner() {
             body: JSON.stringify({
               action:           'check',
               objectives,
-              completedIndices: completedObj,
+              coveredIndices: coveredObj,
+              objectiveEvidence,
+              priorPromptExposure: priorObjectiveExposureRef.current,
               conversation:     nextHistory,
               lesson:           selectedLesson,
               quick:            true,   // only scan last 2 user turns — keeps this fast
             }),
           })
           const checkData = await checkRes.json()
-          const newly = checkData.newlyCompleted || []
-          const needsSentence = checkData.needsSentence || []
-          const qt = checkData.qualifyingText || {}
+          const newly = checkData.newlyCovered || checkData.newlyCompleted || []
+          const newlyUnderstood = checkData.newlyUnderstood || []
+          const notes = checkData.learnerNotes || {}
           const evaluationStatus = checkData.evaluationStatus || {}
+          const nextEvidence = checkData.objectiveEvidence || objectiveEvidence
+
+          for (const [rawIndex, classification] of Object.entries(nextEvidence)) {
+            const index = Number(rawIndex)
+            const priorCount = objectiveEvidence[index]?.attempts?.length || 0
+            if ((classification?.attempts?.length || 0) > priorCount) recordWebbClassification(index, classification)
+          }
+          setObjectiveEvidence(nextEvidence)
+          if (newlyUnderstood.length) {
+            setUnderstoodObj(prev => [...new Set([...prev, ...newlyUnderstood])])
+          }
 
           if (newly.length) {
-            const firstNew = newly.find(i => !completedObj.includes(i))
-            freshCompleted = [...new Set([...completedObj, ...newly])]
+            const firstNew = newly.find(i => !coveredObj.includes(i))
+            freshCovered = [...new Set([...coveredObj, ...newly])]
 
-            setObjResponses(prev => ({ ...prev, ...qt }))
-            setCompletedObj(freshCompleted)
+            setLearnerNotes(prev => ({ ...prev, ...notes }))
+            setCoveredObj(freshCovered)
 
             if (firstNew !== undefined) {
-              setNewlyCompletedObj({ idx: firstNew, text: objectives[firstNew] })
+              setNewlySavedNote({ idx: firstNew, text: notes[firstNew]?.text || '' })
             }
           }
 
-          const firstNeedsSentence =
-            needsSentence.find(i => !freshCompleted.includes(i))
-
-          if (firstNeedsSentence !== undefined) {
-            needSentenceForObj = objectives[firstNeedsSentence]
-          }
-
           const firstRemainingIndex =
-            objectives.findIndex((_, i) => !freshCompleted.includes(i))
+            objectives.findIndex((_, i) => !freshCovered.includes(i))
 
           if (firstRemainingIndex !== -1) {
             const status = evaluationStatus[firstRemainingIndex]
             if (status === 'partial' || status === 'incorrect') {
               masteryStatus = status
+              assistanceTargetIndex = firstRemainingIndex
             }
+          }
+          if (answerRequested && assistanceTargetIndex === null) {
+            assistanceTargetIndex = objectives.findIndex((_, i) => !freshCovered.includes(i))
           }
         } catch { /* fail silently — chat still proceeds */ }
       }
@@ -1324,33 +1633,44 @@ function WebbPageInner() {
             video:   videoResource   || null,
             article: articleResource ? { title: articleResource.title, source: articleResource.source } : null,
           },
-          remainingObjectives: objectives.filter((_, i) => !freshCompleted.includes(i)),
-          allObjectivesMet: objectives.length > 0 && freshCompleted.length >= objectives.length,
-          needSentenceForObj,
+          remainingObjectives: objectives.filter((_, i) => !freshCovered.includes(i)),
+          allObjectivesMet: objectives.length > 0 && freshCovered.length >= objectives.length,
           masteryStatus,
         }),
       })
       const data = await res.json()
       const reply = data.reply || "That's great! Keep exploring this topic with me."
-      const assistantMsg = { role: 'assistant', content: reply }
+      const assistantMsg = {
+        role: 'assistant', content: reply,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `webb-${Date.now()}-assistant`,
+        createdAt: new Date().toISOString(),
+      }
       const finalHistory = [...nextHistory, assistantMsg]
       setChatMessages(finalHistory)
       addMsg(reply)
+      if (assistanceTargetIndex !== null && assistanceTargetIndex >= 0) {
+        markObjectiveAssistance(
+          assistanceTargetIndex,
+          answerRequested ? WEBB_ASSISTANCE_TYPES.ANSWER_REVEALED : WEBB_ASSISTANCE_TYPES.CORRECTION,
+          finalHistory.length - 1,
+        )
+      }
     } catch {
       const err = "I had a little trouble thinking. Can you say that again?"
       setChatMessages(prev => [...prev, { role: 'assistant', content: err }])
       addMsg(err)
     }
+    setWritingEvaluating(false)
     setChatLoading(false)
-  }, [chatLoading, chatMessages, selectedLesson, videoResource, articleResource, objectives, completedObj, objResponses])
+  }, [chatLoading, chatMessages, selectedLesson, videoResource, articleResource, objectives, coveredObj, objectiveEvidence, learnerNotes, writingMode, writingIndex, acceptedSentences])
 
   // ── Refresh a media resource (context-aware) ──────────────────────────
   async function refreshMedia(type) {
     // Video refreshes count the same as opens — one per two objectives completed.
     if (type === 'video') {
-      const maxVideos = 1 + Math.floor(completedObj.length / 2)
+      const maxVideos = 1 + Math.floor(coveredObj.length / 2)
       if (videosWatchedRef.current >= maxVideos) {
-        const objsNeeded = videosWatchedRef.current * 2 - completedObj.length
+        const objsNeeded = videosWatchedRef.current * 2 - coveredObj.length
         addMsg(
           objsNeeded === 1
             ? `I love that you want to explore more! Here's our deal — I show a new video once for every two objectives we work through together. You're almost there: show me you understand just one more objective and I'll find a fresh one!`
@@ -1373,7 +1693,7 @@ function WebbPageInner() {
       .join('. ')
     // Narrow search to remaining (incomplete) objectives
     const remaining = objectives
-      .filter((_, i) => !completedObj.includes(i))
+      .filter((_, i) => !coveredObj.includes(i))
       .join('; ')
     const contextWithObj = [remaining, recentContext].filter(Boolean).join('. ')
     try {
@@ -1384,7 +1704,7 @@ function WebbPageInner() {
           lesson: selectedLesson,
           type,
           context: contextWithObj,
-          objectives:             objectives.filter((_, i) => !completedObj.includes(i)),
+          objectives:             objectives.filter((_, i) => !coveredObj.includes(i)),
           excludeSourceId:        type === 'article' ? (articleResource?.sourceId || '') : undefined,
           preferredSources:       type === 'article' ? articleSources : undefined,
           excludeVideoIds:        type === 'video'   ? shownVideoIdsRef.current      : [],
@@ -1411,13 +1731,8 @@ function WebbPageInner() {
     setRefreshingMedia(false)
   }
 
-  // ── Close objectives panel (aborts essay generation if in progress) ───
+  // ── Close objectives panel ─────────────────────────────────────────────
   function closeObjectivesPanel() {
-    if (generatingEssay && essayAbortRef.current) {
-      essayAbortRef.current.abort()
-      essayAbortRef.current = null
-      setGeneratingEssay(false)
-    }
     setShowObjectives(false)
   }
 
@@ -1429,6 +1744,7 @@ function WebbPageInner() {
     closeObjectivesPanel()
     setMediaOverlay(null)
     const obj = objectives[objIdx]
+    markObjectiveAssistance(objIdx, WEBB_ASSISTANCE_TYPES.DIRECT_TEACHING)
     setChatLoading(true)
     try {
       // ── Try to get navigable video chapters ──────────────────────────
@@ -1448,7 +1764,7 @@ function WebbPageInner() {
                 grade:            selectedLesson?.grade,
                 learnerName:      learnerName.current || '',
                 objectives,
-                completedIndices: completedObj,
+                completedIndices: coveredObj,
               }),
             })
             const d = await r.json()
@@ -1639,34 +1955,22 @@ function WebbPageInner() {
     setChatLoading(false)
   }
 
-  // ── Generate essay from all objective responses ───────────────────────
-  async function handleGenerateEssay() {
-    if (generatingEssay) return
-    const ctrl = new AbortController()
-    essayAbortRef.current = ctrl
-    setGeneratingEssay(true)
-    try {
-      const res = await fetch('/api/webb-objectives', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action:    'generate-essay',
-          objectives,
-          responses: objResponses,
-          lesson:    selectedLesson,
-        }),
-        signal: ctrl.signal,
-      })
-      const data = await res.json()
-      if (data.essay) {
-        setEssay(data.essay)
-        setEssayMode(true)
-      }
-    } catch (e) {
-      if (e?.name !== 'AbortError') { /* fail silently */ }
+  // ── Begin the distinct composition stage from verbatim learner notes ──
+  async function handleStartWriting() {
+    if (writingEvaluating || coveredObj.length !== objectives.length) return
+    const nextIndex = nextWritingObjectiveIndex(objectives, acceptedSentences)
+    if (nextIndex === -1) {
+      const finalEssay = assembleLearnerEssay(objectives, acceptedSentences)
+      setEssay(finalEssay)
+      setEssayMode(!!finalEssay)
+      return
     }
-    essayAbortRef.current = null
-    setGeneratingEssay(false)
+    setWritingIndex(nextIndex)
+    setWritingMode(true)
+    setEssayMode(false)
+    const reply = `You already know the material. Now we’ll turn your rough notes into writing, one at a time. Your first note is: “${learnerNotes[nextIndex]?.text || ''}” How could you turn that thought into a complete sentence for someone reading your essay?`
+    setChatMessages(prev => [...prev, { role: 'assistant', content: reply }])
+    addMsg(reply)
   }
 
   // ── Complete lesson via Mrs. Webb ─────────────────────────────────────
@@ -1693,7 +1997,11 @@ function WebbPageInner() {
       setCompletionError('Your work is safe, but lesson completion could not be recorded. Please try again.')
       return
     }
-    saveWebbCompletion(learnerId, lk)
+    const currentSummary = summarizeWebbMastery(objectives, objectiveEvidence)
+    const previousSummary = getWebbCompletionForLearner(learnerId)?.[lk]?.masterySummary || null
+    const masterySummary = mergeWebbMasterySummaries(previousSummary, currentSummary)
+    try { await masteryEvidenceClientRef.current?.recordSessionEnded({ reason: 'completed' }) } catch {}
+    saveWebbCompletion(learnerId, lk, { masterySummary })
     setWebbCompletionMap(getWebbCompletionForLearner(learnerId))
     // Close the essay overlay immediately
     setEssayMode(false)
@@ -1764,6 +2072,8 @@ function WebbPageInner() {
   async function interpretArticle() {
     if (!articleResource?.html || interpretingArticle) return
     setInterpretingArticle(true)
+    const targetIndex = objectives.findIndex((_, index) => !coveredObj.includes(index))
+    if (targetIndex >= 0) markObjectiveAssistance(targetIndex, WEBB_ASSISTANCE_TYPES.VISUAL_EXPOSURE)
     // Ensure article overlay is open so the iframe exists in the DOM
     setMediaOverlay('article')
     // Reset so auto-scroll works cleanly on each new interpret run
@@ -1779,7 +2089,7 @@ function WebbPageInner() {
           grade:            selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
           learnerName:      learnerName.current || '',
           objectives,
-          completedIndices: completedObj,
+          completedIndices: coveredObj,
         }),
       })
       const data = await res.json()
@@ -2097,13 +2407,13 @@ function WebbPageInner() {
                 style={{
                   ...headerBtn,
                   display: 'flex', alignItems: 'center', gap: 5,
-                  background: completedObj.length === objectives.length
+                  background: coveredObj.length === objectives.length
                     ? 'rgba(13,148,136,0.45)'
                     : 'rgba(255,255,255,0.15)',
                 }}
               >
                 <span style={{ fontSize: 14 }}>&#9989;</span>
-                <span style={{ fontSize: 12 }}>{completedObj.length}/{objectives.length}</span>
+                <span style={{ fontSize: 12 }}>{coveredObj.length}/{objectives.length}</span>
               </button>
             )}
             {isChatting && (
@@ -2370,21 +2680,39 @@ function WebbPageInner() {
       {/* Footer: chat input */}
       {isChatting && (
         <div style={footerStyle}>
-          {/* Write-essay strip — shown when all objectives are met */}
-          {objectives.length > 0 && completedObj.length === objectives.length && (
+          {writingMode && (
+            <div style={{ marginBottom: 10, background: '#ecfeff', border: '1px solid #99f6e4', borderRadius: 10, padding: '10px 12px' }}>
+              <div style={{ color: '#0f766e', fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Your notes</div>
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>
+                {objectives.map((_, index) => (
+                  <span key={index} style={{
+                    background: index === writingIndex ? '#0d9488' : '#fff',
+                    color: index === writingIndex ? '#fff' : '#475569',
+                    border: '1px solid #99f6e4', borderRadius: 999, padding: '3px 8px', fontSize: 11,
+                    textDecoration: acceptedSentences[index] ? 'line-through' : 'none',
+                  }}>{learnerNotes[index]?.text || 'Note unavailable'}</span>
+                ))}
+              </div>
+              <div style={{ color: '#334155', fontSize: 13, marginTop: 8 }}>
+                <strong>Your note:</strong> “{learnerNotes[writingIndex]?.text || ''}”
+              </div>
+            </div>
+          )}
+          {/* Composition starts only after comprehension is complete. */}
+          {objectives.length > 0 && coveredObj.length === objectives.length && !writingMode && !essayMode && (
             <div style={{ marginBottom: 10 }}>
               <button
                 type="button"
-                onClick={handleGenerateEssay}
-                disabled={generatingEssay}
+                onClick={handleStartWriting}
+                disabled={writingEvaluating}
                 style={{
                   width: '100%',
-                  background: generatingEssay ? '#e5e7eb' : '#0d9488',
-                  color: generatingEssay ? '#9ca3af' : '#fff',
+                  background: writingEvaluating ? '#e5e7eb' : '#0d9488',
+                  color: writingEvaluating ? '#9ca3af' : '#fff',
                   border: 'none',
                   borderRadius: 10,
                   padding: '10px 16px',
-                  cursor: generatingEssay ? 'default' : 'pointer',
+                  cursor: writingEvaluating ? 'default' : 'pointer',
                   fontWeight: 800,
                   fontSize: 14,
                   fontFamily: 'inherit',
@@ -2394,7 +2722,7 @@ function WebbPageInner() {
                   gap: 6,
                 }}
               >
-                {generatingEssay ? '✍️ Writing your essay…' : '✨ Make my essay'}
+                {Object.keys(acceptedSentences).length === objectives.length ? 'View my essay' : 'Start writing from my notes'}
               </button>
             </div>
           )}
@@ -2786,7 +3114,7 @@ function WebbPageInner() {
             }}>
               <div>
                 <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Learning Goals</div>
-                <div style={{ color: '#94a3b8', fontSize: 12 }}>{completedObj.length} of {objectives.length} completed</div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>{coveredObj.length} of {objectives.length} completed</div>
               </div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 {/* Gear button — settings */}
@@ -2822,7 +3150,7 @@ function WebbPageInner() {
             <div style={{ height: 4, background: '#1e293b', flexShrink: 0 }}>
               <div style={{
                 height: '100%',
-                width: `${objectives.length ? (completedObj.length / objectives.length) * 100 : 0}%`,
+                width: `${objectives.length ? (coveredObj.length / objectives.length) * 100 : 0}%`,
                 background: '#0d9488',
                 transition: 'width 0.4s ease',
                 borderRadius: '0 2px 2px 0',
@@ -2831,7 +3159,7 @@ function WebbPageInner() {
             {/* Objectives list — accordion */}
             <div style={{ overflowY: 'auto', padding: '8px 0 16px' }}>
               {objectives.map((obj, i) => {
-                const done = completedObj.includes(i)
+                const done = coveredObj.includes(i)
                 const open = expandedObj === i
                 return (
                   <div key={i} style={{ borderBottom: '1px solid #1e293b' }}>
@@ -2867,7 +3195,7 @@ function WebbPageInner() {
                             fontSize: 13,
                             lineHeight: 1.6,
                           }}>
-                            &ldquo;{objResponses[i] || '...'}&rdquo;
+                            &ldquo;{learnerNotes[i]?.text || '...'}&rdquo;
                           </blockquote>
                         ) : (
                           <button
@@ -2887,21 +3215,21 @@ function WebbPageInner() {
                   </div>
                 )
               })}
-              {/* Generate essay button — appears when all objectives complete */}
-              {objectives.length > 0 && completedObj.length === objectives.length && (
+              {/* Composition button — appears when comprehension is complete */}
+              {objectives.length > 0 && coveredObj.length === objectives.length && !writingMode && (
                 <div style={{ padding: '16px 20px 4px' }}>
                   <button
                     type="button"
-                    onClick={handleGenerateEssay}
-                    disabled={generatingEssay}
+                    onClick={handleStartWriting}
+                    disabled={writingEvaluating}
                     style={{
-                      width: '100%', background: generatingEssay ? '#1e293b' : '#0d9488',
+                      width: '100%', background: writingEvaluating ? '#1e293b' : '#0d9488',
                       color: '#fff', border: 'none', borderRadius: 10,
-                      padding: '11px 20px', cursor: generatingEssay ? 'default' : 'pointer',
+                      padding: '11px 20px', cursor: writingEvaluating ? 'default' : 'pointer',
                       fontWeight: 800, fontSize: 14, fontFamily: 'inherit',
                     }}
                   >
-                    {generatingEssay ? '✍️ Writing your essay…' : '✨ Make my essay'}
+                    {Object.keys(acceptedSentences).length === objectives.length ? 'View my essay' : 'Start writing from my notes'}
                   </button>
                 </div>
               )}
@@ -3014,7 +3342,7 @@ function WebbPageInner() {
         document.body
       )}
 
-      {newlyCompletedObj && createPortal(
+      {newlySavedNote && createPortal(
         <div style={{
           position: 'fixed',
           bottom: 80, left: '50%',
@@ -3044,18 +3372,18 @@ function WebbPageInner() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <span style={{ fontSize: 22 }}>✅</span>
-                <span style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>Objective Complete</span>
+                <span style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>Note saved</span>
               </div>
               <p style={{
                 color: '#e2e8f0', fontSize: 13, lineHeight: 1.6,
                 margin: 0, fontStyle: 'italic',
-              }}>“{newlyCompletedObj.text}”</p>
+              }}>“{newlySavedNote.text}”</p>
               {/* completed tally */}
               <div style={{ marginTop: 12, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                 {objectives.map((_, i) => (
                   <div key={i} style={{
                     width: 10, height: 10, borderRadius: '50%',
-                    background: completedObj.includes(i) ? '#0d9488' : '#374151',
+                    background: coveredObj.includes(i) ? '#0d9488' : '#374151',
                     transition: 'background 0.3s',
                   }} />
                 ))}

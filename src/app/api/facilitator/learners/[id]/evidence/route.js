@@ -170,6 +170,15 @@ function createSupabaseReportingRepository(admin) {
       return Array.isArray(data) ? data : [];
     },
 
+    async listStandaloneEvidenceSessions({ userId, learnerId, lessonKey, limit }) {
+      let query = admin.from('learning_evidence_sessions').select(EVIDENCE_SESSION_FIELDS)
+        .eq('facilitator_id', userId).eq('learner_id', learnerId).like('session_id', 'slate:%')
+      if (lessonKey) query = query.eq('lesson_key', lessonKey)
+      const { data, error } = await query.order('started_at', { ascending: false }).limit(limit)
+      if (error) throw new Error('Slate evidence history query failed')
+      return Array.isArray(data) ? data : []
+    },
+
     async listEvidenceEvents({ userId, learnerId, evidenceSessionIds }) {
       if (!evidenceSessionIds.length) return [];
       const { data, error } = await admin
@@ -283,14 +292,27 @@ export async function loadFacilitatorEvidenceHistory({
   const authorizedTrackedRows = trackedRows.filter((row) => String(row?.learner_id) === String(learnerId));
   if (sessionId && authorizedTrackedRows.length === 0) return { kind: 'not_found' };
 
+  const standaloneEvidenceRows = !sessionId && !cursor && typeof repository.listStandaloneEvidenceSessions === 'function'
+    ? await repository.listStandaloneEvidenceSessions({ userId, learnerId, lessonKey, limit: requestedLimit })
+    : [];
+  const standaloneTrackedRows = standaloneEvidenceRows.map((row) => ({
+    id: row.session_id, session_id: row.session_id, learner_id: row.learner_id,
+    lesson_id: row.lesson_key, started_at: row.started_at, ended_at: row.ended_at,
+  }));
+  const combinedRows = [...authorizedTrackedRows, ...standaloneTrackedRows]
+    .sort((left, right) => String(right.started_at || '').localeCompare(String(left.started_at || '')));
   const hasMore = authorizedTrackedRows.length > requestedLimit;
-  const pageRows = authorizedTrackedRows.slice(0, requestedLimit);
+  const pageRows = combinedRows.slice(0, requestedLimit);
   const trackedIds = new Set(pageRows.map((row) => String(row.id)));
-  const evidenceRows = await repository.listEvidenceSessions({
+  const trackedEvidenceRows = await repository.listEvidenceSessions({
     userId,
     learnerId,
     sessionIds: Array.from(trackedIds),
   });
+  const trackedEvidenceIds = new Set(trackedEvidenceRows.map((row) => String(row.id)));
+  const evidenceRows = [...trackedEvidenceRows, ...standaloneEvidenceRows.filter((row) => (
+    trackedIds.has(String(row.session_id)) && !trackedEvidenceIds.has(String(row.id))
+  ))];
   const authorizedEvidenceRows = evidenceRows.filter((row) => (
     String(row?.facilitator_id) === String(userId)
       && String(row?.learner_id) === String(learnerId)

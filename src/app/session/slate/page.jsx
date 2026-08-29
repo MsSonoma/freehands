@@ -3,15 +3,14 @@
 /**
  * Mr. Slate -- Skills & Practice Coach
  *
- * A quiz-mode drill session. Questions are drawn from the same lesson JSON
- * as Ms. Sonoma (sample, truefalse, multiplechoice, fillintheblank pools).
- * The learner accumulates points (goal: 10) to earn the robot mastery icon.
+ * A mastery-aware drill session. Points pace the learner experience only;
+ * canonical mastery and retention come from append-only shared evidence.
  *
  * Rules:
  *   - Correct answer within time limit  -> +1 (min 0, max 10)
  *   - Wrong answer                      -> -1 (min 0)
  *   - Timeout (15s default)             -> +/-0
- *   - Reach 10 -> mastery confirmed
+ *   - Reach 10 -> drill complete (never automatic mastery)
  *
  * Questions rotate through the full pool without repeats until ~80% have
  * been asked, then the deck reshuffles.
@@ -22,10 +21,28 @@
 
 import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getMasteryForLearner, saveMastery } from '@/app/lib/masteryClient'
+import { getCanonicalMasteryForLearner } from '@/app/lib/masteryClient'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { authorizeProtectedOccurrence } from '@/app/lib/syllabus/executionClient'
+import SlateReviewExperience from './SlateReviewExperience'
+import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js'
+import { STAGE_6_EVIDENCE_EVENT_TYPES } from '@/app/lib/masteryEvidence/constants.js'
+import { buildItemIdentity } from '@/app/lib/masteryEvidence/identity.js'
+import { analyzeAssessmentIsolation, ASSESSMENT_ISOLATION_STATUSES } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
+import { buildRecoveryTeachingPayload, INDEPENDENT_MASTERY_PROTOCOL_VERSION, MASTERY_OUTCOMES } from '@/app/lib/masteryEvidence/mastery.js'
+import {
+  SLATE_PROTOCOL_VERSION,
+  SLATE_RUN_PURPOSES,
+  buildSlatePool,
+  classifySlateMasteryResponse,
+  createSlateRunState,
+  markSlateRecoveryCompleted,
+  markSlateRecoveryStarted,
+  pointGoalMessage,
+  slateCompletionAudioOptions,
+  slateRunPurpose,
+} from '@/app/lib/slateLearningModel.mjs'
 
 // --- Constants ---------------------------------------------------------------
 
@@ -75,33 +92,7 @@ const C = {
 // --- Question pool helpers ----------------------------------------------------
 
 function buildPool(lessonData) {
-  const pool = []
-  for (const q of lessonData?.sample || []) {
-    if (q?.question) pool.push({ type: 'shortanswer', question: q.question, expectedAny: q.expectedAny || [] })
-  }
-  for (const q of lessonData?.truefalse || []) {
-    if (!q?.question) continue
-    if (typeof q.answer === 'boolean') {
-      pool.push({ type: 'truefalse', question: q.question, answer: q.answer })
-    } else if (q.expectedAny?.length) {
-      pool.push({ type: 'shortanswer', question: q.question, expectedAny: q.expectedAny })
-    }
-  }
-  for (const q of lessonData?.multiplechoice || []) {
-    if (!q?.question) continue
-    if (Array.isArray(q.choices) && q.choices.length) {
-      pool.push({ type: 'multiplechoice', question: q.question, choices: q.choices, correct: q.correct ?? 0 })
-    } else if (q.expectedAny?.length) {
-      pool.push({ type: 'shortanswer', question: q.question, expectedAny: q.expectedAny })
-    }
-  }
-  for (const q of lessonData?.fillintheblank || []) {
-    if (q?.question) pool.push({ type: 'fillintheblank', question: q.question, expectedAny: q.expectedAny || [] })
-  }
-  for (const q of lessonData?.shortanswer || []) {
-    if (q?.question) pool.push({ type: 'shortanswer', question: q.question, expectedAny: q.expectedAny || [] })
-  }
-  return pool
+  return buildSlatePool(lessonData, SLATE_RUN_PURPOSES.PRACTICE)
 }
 
 function shuffleArr(arr) {
@@ -251,20 +242,6 @@ const TIMEOUT_MSGS = [
   'Time penalty applied. Next.',
   'Zero seconds remaining. Advancing.',
 ]
-const CONGRATS_MSGS = [
-  'Mastery confirmed. Well done.',
-  'Drill sequence complete. Excellent work.',
-  'You have reached mastery level.',
-  'Outstanding. Mastery achieved.',
-  'All systems confirm mastery. Great job.',
-  'Target score reached. Drill complete.',
-  'Congratulations. Mastery unlocked.',
-  'You have passed the drill protocol.',
-  'Mission complete. Mastery confirmed.',
-  'Well done. You have earned the robot badge.',
-  'Impressive performance. Mastery achieved.',
-]
-
 // --- Sub-components ----------------------------------------------------------
 
 const SlateVideo = forwardRef(function SlateVideo({ size = 180, style: extraStyle }, ref) {
@@ -442,6 +419,7 @@ function SlateDrillInner() {
   const searchParams = useSearchParams()
   const routeLearnerId = searchParams?.get('learnerId') || ''
   const routeOccurrenceId = searchParams?.get('occurrenceId') || ''
+  const routeRunPurpose = slateRunPurpose(searchParams?.get('purpose'))
 
   // Page state
   // Phases: loading | list | ready | asking | feedback | won | error
@@ -474,6 +452,8 @@ function SlateDrillInner() {
   const drillTranscriptRef = useRef([])
   const slateSessionStartRef = useRef(null) // ISO timestamp set when drill starts
   const [txStatus, setTxStatus] = useState(null) // null | 'saving' | 'ok' | 'failed'
+  const [, setEvidenceStatus] = useState('unavailable')
+  const [completionMessage, setCompletionMessage] = useState('Drill complete.')
   const [offerResume, setOfferResume] = useState(() => {
     if (typeof window === 'undefined') return false
     try {
@@ -493,6 +473,14 @@ function SlateDrillInner() {
   const learnerIdRef = useRef(null)
   const lessonKeyRef = useRef('')
   const authorizedOccurrenceRef = useRef('')
+  const evidenceClientRef = useRef(null)
+  const isolationRef = useRef(null)
+  const runStateRef = useRef(createSlateRunState(routeRunPurpose))
+  const currentExposureRef = useRef(null)
+  const exposureSequenceRef = useRef(0)
+  const presentedItemIdsRef = useRef(new Set())
+  const priorExposedKeysRef = useRef(new Set())
+  const latestMasteryOutcomeRef = useRef(null)
 
   const timerInterval = useRef(null)
   const feedbackTimeout = useRef(null)
@@ -559,8 +547,7 @@ function SlateDrillInner() {
     const id = localStorage.getItem('learner_id')
     setLearnerId(id)
     if (id) {
-      const mm = getMasteryForLearner(id)
-      setMasteryMap(mm)
+      getCanonicalMasteryForLearner(id).then(setMasteryMap).catch(() => setMasteryMap({}))
       learnerIdRef.current = id
       if (!id || id === 'demo') {
         // No pending lesson key for demo — go to list (redirect handled below)
@@ -675,11 +662,31 @@ function SlateDrillInner() {
     }
   }, [pagePhase, offerResume, router])
 
+  const recordQuestionPresented = useCallback((q) => {
+    if (!q) return
+    exposureSequenceRef.current += 1
+    const stableLocalId = String(q.id || q.question || 'item')
+    const preExposed = presentedItemIdsRef.current.has(stableLocalId)
+    presentedItemIdsRef.current.add(stableLocalId)
+    const exposureId = `slate-exposure:${exposureSequenceRef.current}:${stableLocalId}`
+    currentExposureRef.current = { id: exposureId, preExposed }
+    evidenceClientRef.current?.recordItemPresented({
+      phase: runStateRef.current.runPurpose,
+      itemId: q.id || null,
+      itemPurpose: q.sourceRole || runStateRef.current.runPurpose,
+      itemExposureId: exposureId,
+      identityItem: q,
+      assessmentRole: q.assessmentRole,
+      evidencePurpose: runStateRef.current.runPurpose,
+      item: { question: q.question, type: q.type },
+    })
+  }, [])
+
   // Select a lesson from the list — skip the ready screen, go straight to drilling
   const selectLesson = useCallback(async (lesson) => {
     clearInterval(timerInterval.current)
     clearTimeout(feedbackTimeout.current)
-    const p = buildPool(lesson)
+    const p = buildSlatePool(lesson, routeRunPurpose)
     if (!p.length) {
       setListError('This lesson has no drill questions. Ask your facilitator to add quiz questions to it.')
       return
@@ -691,6 +698,7 @@ function SlateDrillInner() {
       return
     }
     const lk = lesson.lessonKey || `${lesson.subject || 'general'}/${lesson.file || ''}`
+    let activityAuthorization = null
     try {
       const authorization = await authorizeProtectedOccurrence({
         learnerId: routeLearnerId || learnerIdRef.current,
@@ -699,11 +707,50 @@ function SlateDrillInner() {
         requestPin: requestFacilitatorPinException,
       })
       authorizedOccurrenceRef.current = authorization.occurrenceId
+      activityAuthorization = authorization
     } catch (cause) {
       setErrorMsg(cause?.message || 'This Syllabus practice occurrence is not authorized.')
       phaseRef.current = 'error'
       setPagePhase('error')
       return
+    }
+    const isolation = await analyzeAssessmentIsolation({
+      lessonKey: lk,
+      lessonId: lesson.id || lesson.lessonId || lk,
+      lessonData: lesson,
+      phaseSets: {
+        discussion: lesson.discussion || [], comprehension: lesson.comprehension || [],
+        exercise: lesson.exercise || [], worksheet: buildPool(lesson),
+      },
+    })
+    isolationRef.current = isolation
+    runStateRef.current = createSlateRunState(routeRunPurpose)
+    priorExposedKeysRef.current = new Set()
+    presentedItemIdsRef.current = new Set()
+    latestMasteryOutcomeRef.current = null
+    const activityId = `slate:${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`}`
+    const evidenceClient = new MasteryEvidenceClient()
+    evidenceClientRef.current = evidenceClient
+    const initialized = await evidenceClient.initialize({
+      sessionId: activityId,
+      browserSessionId: activityId,
+      learnerId: routeLearnerId || learnerIdRef.current,
+      lessonKey: lk,
+      lessonId: lesson.id || lesson.lessonId || lk,
+      lessonData: lesson,
+      assessmentIsolation: isolation,
+      mastery: { protocolVersion: INDEPENDENT_MASTERY_PROTOCOL_VERSION },
+      teachingProtocol: { protocolVersion: SLATE_PROTOCOL_VERSION, protocolHash: null },
+      activityAuthorization: { occurrenceId: activityAuthorization?.occurrenceId || null },
+    })
+    setEvidenceStatus(initialized?.status || 'unavailable')
+    if (initialized?.ok) {
+      await evidenceClient.recordSessionStarted({ initialPhase: routeRunPurpose })
+      if (routeRunPurpose === SLATE_RUN_PURPOSES.MASTERY) {
+        const identities = await Promise.all(p.map((item) => buildItemIdentity({ lessonKey: lk, lessonId: lesson.id || lk, lessonData: lesson, item })))
+        const prior = await evidenceClient.checkPriorExposure({ learnerId: routeLearnerId || learnerIdRef.current, itemIdentities: identities })
+        priorExposedKeysRef.current = new Set(prior?.exposedKeys || [])
+      }
     }
     poolRef.current = p
     setPool(p)
@@ -720,6 +767,7 @@ function SlateDrillInner() {
       deckIdxRef.current = 1
       currentQRef.current = q
       setCurrentQ(q)
+      recordQuestionPresented(q)
       setUserAnswer('')
       setLastResult(null)
       setSecondsLeft(settingsRef.current.questionSecs)
@@ -733,7 +781,7 @@ function SlateDrillInner() {
         }, slateIsSpeakingRef, m)
       }, 120)
     }
-  }, [routeLearnerId, routeOccurrenceId])
+  }, [recordQuestionPresented, routeLearnerId, routeOccurrenceId, routeRunPurpose])
 
   // Advance the deck, reshuffling when 80%+ has been used
   const advanceDeck = useCallback(() => {
@@ -745,9 +793,20 @@ function SlateDrillInner() {
       const newDeck = shuffleArr(p)
       deckRef.current = newDeck
       deckIdxRef.current = 1
+      if (runStateRef.current.recoveryNeeded) {
+        return newDeck.find((item) => String(item.id || item.question) !== String(currentQRef.current?.id || currentQRef.current?.question)) || newDeck[0]
+      }
       return newDeck[0]
     }
     deckIdxRef.current = idx + 1
+    if (runStateRef.current.recoveryNeeded) {
+      for (let offset = idx; offset < cur.length; offset += 1) {
+        if (String(cur[offset]?.id || cur[offset]?.question) !== String(currentQRef.current?.id || currentQRef.current?.question)) {
+          deckIdxRef.current = offset + 1
+          return cur[offset]
+        }
+      }
+    }
     return cur[idx]
   }, [])
 
@@ -757,6 +816,7 @@ function SlateDrillInner() {
     setIsJudging(false)
     currentQRef.current = q
     setCurrentQ(q)
+    recordQuestionPresented(q)
     setUserAnswer('')
     setLastResult(null)
     setSecondsLeft(settingsRef.current.questionSecs)
@@ -764,7 +824,7 @@ function SlateDrillInner() {
     setPagePhase('asking')
     setTimeout(() => inputEl.current?.focus?.(), 80)
     if (!skipAudio) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current), 120)
-  }, [])
+  }, [recordQuestionPresented])
 
   // Start / restart the drill
   const startDrill = useCallback(() => {
@@ -791,6 +851,112 @@ function SlateDrillInner() {
       }, 120)
     }
   }, [advanceDeck, showQuestion])
+
+  const recordSlateResponse = useCallback(async ({ q, correct, timeout, rawAnswer, correctAnswer }) => {
+    const client = evidenceClientRef.current
+    const exposure = currentExposureRef.current
+    if (!client || !q || !exposure?.id) return { ok: false, status: 'unavailable' }
+    const common = {
+      phase: runStateRef.current.runPurpose,
+      itemId: q.id || null,
+      itemPurpose: q.sourceRole || runStateRef.current.runPurpose,
+      itemExposureId: exposure.id,
+      identityItem: q,
+      assessmentRole: q.assessmentRole,
+      evidencePurpose: runStateRef.current.runPurpose,
+      attemptNumber: 1,
+      isFirstResponse: true,
+    }
+    const responseWrite = await client.recordLearnerResponse({ ...common, response: timeout ? null : rawAnswer, responseType: timeout ? 'timeout' : q.type })
+    const evaluationWrite = await client.recordAnswerEvaluated({
+      ...common, isCorrect: correct === true && !timeout, response: timeout ? null : rawAnswer,
+      correctAnswer, evaluationMode: q.type === 'shortanswer' || q.type === 'fillintheblank' ? 'semantic_or_local_fallback' : 'deterministic',
+    })
+    let masteryWrite = null
+    if ([SLATE_RUN_PURPOSES.MASTERY, SLATE_RUN_PURPOSES.RECOVERY].includes(runStateRef.current.runPurpose)) {
+      const identity = await buildItemIdentity({
+        lessonKey: lessonKeyRef.current, lessonId: lessonKeyRef.current,
+        lessonData: client.meta?.lessonData, item: q,
+      })
+      const classification = classifySlateMasteryResponse({
+        runState: runStateRef.current,
+        itemIdentity: identity,
+        itemExposureId: exposure.id,
+        isCorrect: correct === true && !timeout,
+        priorExposedKeys: priorExposedKeysRef.current,
+        preAssessmentExposed: exposure.preExposed,
+        assessmentIsolationStatus: isolationRef.current?.status || ASSESSMENT_ISOLATION_STATUSES.UNAVAILABLE,
+      })
+      if (classification.masteryOutcome) {
+        masteryWrite = await client.recordMasteryCheckResult({
+          ...common,
+          isCorrect: correct === true && !timeout,
+          masteryCheckRole: classification.checkRole,
+          independenceStatus: classification.qualification?.independenceStatus,
+          independenceReason: classification.qualification?.independenceReason,
+          masteryOutcome: classification.masteryOutcome,
+          response: timeout ? null : rawAnswer,
+          correctAnswer,
+          qualification: { ...classification.qualification, slate_run_purpose: runStateRef.current.runPurpose },
+        })
+        if (classification.masteryOutcome === MASTERY_OUTCOMES.NEEDS_RECOVERY) {
+          runStateRef.current = {
+            ...runStateRef.current,
+            recoveryNeeded: true,
+            recoveryStarted: false,
+            recoveryCompleted: false,
+          }
+          latestMasteryOutcomeRef.current = null
+        }
+        if ([MASTERY_OUTCOMES.INDEPENDENT_SUCCESS, MASTERY_OUTCOMES.INDEPENDENT_SUCCESS_AFTER_RECOVERY].includes(classification.masteryOutcome) && masteryWrite?.ok) {
+          latestMasteryOutcomeRef.current = classification.masteryOutcome
+          runStateRef.current = {
+            ...runStateRef.current,
+            recoveryNeeded: false,
+            recoveryStarted: false,
+            recoveryCompleted: false,
+          }
+        }
+      }
+    }
+    let revealWrite = null
+    if (!correct && correctAnswer) {
+      revealWrite = await client.recordAnswerRevealed({ ...common, correctAnswer, revealSource: timeout ? 'slate_timeout_teaching' : 'slate_correction' })
+    }
+    const writesBeforeRecovery = responseWrite?.ok && evaluationWrite?.ok && (!masteryWrite || masteryWrite.ok) && (!revealWrite || revealWrite.ok)
+    let recoveryContext = null
+    if (writesBeforeRecovery && masteryWrite?.ok && runStateRef.current.recoveryNeeded && correctAnswer) {
+      const teachingPayload = buildRecoveryTeachingPayload({
+        lessonData: client.meta?.lessonData,
+        failedItem: q,
+        learnerResponse: timeout ? null : rawAnswer,
+        correctAnswer,
+        recoveryMode: 'slate_spoken_correction',
+      })
+      const recoveryStartedWrite = await client.recordInteractionEvent({
+        eventType: STAGE_6_EVIDENCE_EVENT_TYPES.RECOVERY_STARTED,
+        ...common,
+        suffix: `${exposure.id}:recovery-started`,
+        payload: { ...teachingPayload, timeout: timeout === true },
+      })
+      runStateRef.current = markSlateRecoveryStarted(runStateRef.current, recoveryStartedWrite?.ok === true)
+      if (recoveryStartedWrite?.ok) recoveryContext = { common, teachingPayload, timeout }
+    }
+    const ok = writesBeforeRecovery && (!runStateRef.current.recoveryNeeded || runStateRef.current.recoveryStarted)
+    return { ok, status: ok ? client.status : 'partial', recoveryStarted: !!recoveryContext, recoveryContext }
+  }, [])
+
+  const completeSlateRecovery = useCallback(async (context) => {
+    if (!context || !runStateRef.current.recoveryStarted) return false
+    const write = await evidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_6_EVIDENCE_EVENT_TYPES.RECOVERY_COMPLETED,
+      ...context.common,
+      suffix: `${context.common.itemExposureId}:recovery-completed`,
+      payload: { ...context.teachingPayload, timeout: context.timeout === true, completion: 'spoken_correction_completed' },
+    })
+    runStateRef.current = markSlateRecoveryCompleted(runStateRef.current, write?.ok === true)
+    return write?.ok === true
+  }, [])
 
   // Handle answer result (correct / wrong / timeout)
   const handleResult = useCallback((correct, timeout = false, rawAnswer = '') => {
@@ -833,6 +999,7 @@ function SlateDrillInner() {
     const msgs = timeout ? TIMEOUT_MSGS : correct ? CORRECT_MSGS : WRONG_MSGS
     const feedbackText = pick(msgs)
     const correctAnswer = !correct && q ? getCorrectText(q) : ''
+    const evidenceWrite = recordSlateResponse({ q, correct, timeout, rawAnswer, correctAnswer })
     setLastResult({ correct, timeout, text: feedbackText, correctAnswer })
     phaseRef.current = 'feedback'
     setPagePhase('feedback')
@@ -846,19 +1013,20 @@ function SlateDrillInner() {
 
     if (!timeout && newScore >= settingsRef.current.scoreGoal) {
       // Won — fire after a short delay so the feedback text is visible briefly
-      feedbackTimeout.current = setTimeout(() => {
+      feedbackTimeout.current = setTimeout(async () => {
+        await evidenceWrite
+        const finalized = await evidenceClientRef.current?.recordSessionEnded({ reason: 'drill_goal_reached' })
+        const finalEvidenceStatus = finalized?.status || 'unavailable'
+        setEvidenceStatus(finalEvidenceStatus)
+        setCompletionMessage(pointGoalMessage({ evidenceStatus: finalEvidenceStatus, masteryOutcome: latestMasteryOutcomeRef.current }))
+        const completionAudioOptions = slateCompletionAudioOptions({
+          evidenceStatus: finalEvidenceStatus,
+          masteryOutcome: latestMasteryOutcomeRef.current,
+        })
         const lid = learnerIdRef.current
-        const lk = lessonKeyRef.current
-        if (lid && lk) {
-          const nonTimeoutTries = drillTranscriptRef.current.filter(e => !e.timeout).length
-          const percent = nonTimeoutTries > 0
-            ? Math.round(settingsRef.current.scoreGoal / nonTimeoutTries * 100)
-            : 100
-          saveMastery(lid, lk, percent)
-          setMasteryMap(getMasteryForLearner(lid))
-        }
+        if (lid) getCanonicalMasteryForLearner(lid).then(setMasteryMap).catch(() => {})
         const doWon = () => { phaseRef.current = 'won'; setPagePhase('won') }
-        playSlateAudio(pick(CONGRATS_MSGS), audioEl.current, slateVideoRef.current, doWon, slateIsSpeakingRef, !soundRef.current)
+        playSlateAudio(pick(completionAudioOptions), audioEl.current, slateVideoRef.current, doWon, slateIsSpeakingRef, !soundRef.current)
       }, FEEDBACK_DELAY_MS)
     } else if (correctAnswer) {
       // Wrong answer: chain feedback → correct answer → advance (muted if sound off)
@@ -866,7 +1034,19 @@ function SlateDrillInner() {
       const m = !soundRef.current
       playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, () => {
         playSlateAudio(`The correct answer was ${correctAnswer}.`, audioEl.current, slateVideoRef.current, () => {
-          feedbackTimeout.current = setTimeout(doAdvance, 600)
+          void evidenceWrite.then((evidence) => {
+            if (!evidence?.recoveryStarted) {
+              feedbackTimeout.current = setTimeout(doAdvance, 600)
+              return
+            }
+            const recoveryText = `Let us review the idea. The question was: ${q?.question || 'this item'}. The correct response is ${correctAnswer}. Connect the question to that answer before the next query.`
+            setLastResult((previous) => previous ? { ...previous, recoveryText } : previous)
+            playSlateAudio(recoveryText, audioEl.current, slateVideoRef.current, () => {
+              void completeSlateRecovery(evidence.recoveryContext).finally(() => {
+                feedbackTimeout.current = setTimeout(doAdvance, 600)
+              })
+            }, slateIsSpeakingRef, !soundRef.current)
+          })
         }, slateIsSpeakingRef, !soundRef.current)
       }, slateIsSpeakingRef, m)
     } else {
@@ -874,7 +1054,7 @@ function SlateDrillInner() {
       playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current)
       feedbackTimeout.current = setTimeout(doAdvance, FEEDBACK_DELAY_MS)
     }
-  }, [advanceDeck, showQuestion])
+  }, [advanceDeck, completeSlateRecovery, recordSlateResponse, showQuestion])
 
   // Countdown timer
   useEffect(() => {
@@ -972,44 +1152,12 @@ function SlateDrillInner() {
     try {
       const saved = JSON.parse(localStorage.getItem('slate_session') || 'null')
       if (!saved?.lessonData) { setOfferResume(false); return }
-      const p = buildPool(saved.lessonData)
-      if (!p.length) { setOfferResume(false); return }
-      const savedLessonKey = saved.lessonKey || saved.lessonData.lessonKey || `${saved.lessonData.subject || 'general'}/${saved.lessonData.file || ''}`
-      const authorization = await authorizeProtectedOccurrence({
-        learnerId: routeLearnerId || learnerIdRef.current,
-        lessonKey: savedLessonKey,
-        occurrenceId: routeOccurrenceId,
-        requestPin: requestFacilitatorPinException,
-      })
-      authorizedOccurrenceRef.current = authorization.occurrenceId
-      poolRef.current = p
-      setPool(p)
-      lessonKeyRef.current = saved.lessonKey || ''
-      setLessonData(saved.lessonData)
-      const sc = saved.score || 0
-      const qc = saved.qCount || 0
-      scoreRef.current = sc
-      setScore(sc)
-      setQCount(qc)
-      drillTranscriptRef.current = saved.drillTranscript || []
-      setDrillTranscript(saved.drillTranscript || [])
-      const newDeck = shuffleArr(p)
-      deckRef.current = newDeck
-      deckIdxRef.current = 1
-      const q = newDeck[0]
-      if (q) {
-        currentQRef.current = q
-        setCurrentQ(q)
-        setUserAnswer('')
-        setLastResult(null)
-        setSecondsLeft(settingsRef.current.questionSecs)
-        phaseRef.current = 'asking'
-        setPagePhase('asking')
-        setTimeout(() => inputEl.current?.focus?.(), 80)
-      }
-      // Also discard any pending lesson key — user chose to resume the old session
-      try { sessionStorage.removeItem('slate_pending_lesson_key') } catch {}
+      // Legacy snapshots did not carry a durable evidence-session identity.
+      // Restart the drill through the canonical initializer instead of letting
+      // a resumed local-only score manufacture an educational claim.
+      try { localStorage.removeItem('slate_session') } catch {}
       setOfferResume(false)
+      await selectLesson(saved.lessonData)
     } catch (cause) {
       setErrorMsg(cause?.message || 'This Syllabus practice occurrence is not authorized.')
       phaseRef.current = 'error'
@@ -1553,18 +1701,18 @@ ${rows}
             <SlateVideo size={120} />
           </div>
           <div style={{ color: C.green, fontWeight: 900, fontSize: 26, letterSpacing: 4, marginBottom: 4 }}>
-            MASTERY CONFIRMED
+            DRILL COMPLETE
           </div>
           <div style={{ color: C.muted, fontSize: 12, letterSpacing: 2, marginBottom: 28 }}>DRILL SEQUENCE COMPLETE</div>
 
           <div style={{ background: C.surface, border: `1px solid ${C.green}`, borderRadius: 12, padding: 28, marginBottom: 24 }}>
             <ScorePips score={settings.scoreGoal} goal={settings.scoreGoal} />
             <div style={{ color: C.text, fontWeight: 700, fontSize: 16, marginTop: 14 }}>{lessonTitle}</div>
-            <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>{qCount} QUERIES PROCESSED TO REACH MASTERY</div>
+            <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>{qCount} QUERIES PROCESSED</div>
           </div>
 
           <div style={{ color: C.muted, fontSize: 12, letterSpacing: 1, marginBottom: txStatus ? 8 : 28 }}>
-            🤖 MASTERY ICON WILL APPEAR ON YOUR LESSON CARD.
+            {completionMessage}
           </div>
           {txStatus && (
             <div style={{ fontSize: 11, letterSpacing: 1, marginBottom: 28, color: txStatus === 'ok' ? C.green : txStatus === 'failed' ? '#ef4444' : C.muted }}>
@@ -1575,7 +1723,7 @@ ${rows}
           )}
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={startDrill} style={ghostBtn}>DRILL AGAIN</button>
+            <button onClick={() => selectLesson(lessonData)} style={ghostBtn}>DRILL AGAIN</button>
             <button onClick={backToList} style={ghostBtn}>LESSON LIST</button>
             {drillTranscript.length > 0 && (
               <button onClick={openTranscript} style={ghostBtn}>TRANSCRIPT</button>
@@ -1764,6 +1912,11 @@ ${rows}
                       EXPECTED: <strong style={{ color: C.text }}>{lastResult.correctAnswer}</strong>
                     </div>
                   )}
+                  {lastResult.recoveryText && (
+                    <div style={{ marginTop: 10, color: C.text, fontSize: 13, lineHeight: 1.5 }}>
+                      {lastResult.recoveryText}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1786,7 +1939,13 @@ export default function SlateDrillPage() {
         <span>LOADING...</span>
       </div>
     }>
-      <SlateDrillInner />
+      <SlatePageContent />
     </Suspense>
   )
+}
+
+function SlatePageContent() {
+  const searchParams = useSearchParams()
+  const reviewRunId = searchParams?.get('reviewRunId')
+  return reviewRunId ? <SlateReviewExperience runId={reviewRunId} /> : <SlateDrillInner />
 }

@@ -13,7 +13,7 @@ import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
 import { getFollowUps, startFollowUp } from '@/app/lib/followUpsClient'
-import { getMasteryForLearner, slateEmojiForTier } from '@/app/lib/masteryClient'
+import { getCanonicalMasteryForLearner, slateEmojiForTier } from '@/app/lib/masteryClient'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
@@ -230,12 +230,12 @@ function LessonsPageInner(){
     setFollowUpStarting(card.id)
     try {
       if (card.run_id) {
-        router.push(`/learn/follow-ups/${card.run_id}`)
+        router.push(`/session/slate?reviewRunId=${encodeURIComponent(card.run_id)}`)
         return
       }
       const result = await startFollowUp(learnerId, card.id)
       if (!result?.run?.id) throw new Error('Follow-Up could not start')
-      router.push(`/learn/follow-ups/${result.run.id}`)
+      router.push(`/session/slate?reviewRunId=${encodeURIComponent(result.run.id)}`)
     } catch (error) {
       alert(error?.message || 'Follow-Up could not start')
       setFollowUpStarting(null)
@@ -431,7 +431,7 @@ function LessonsPageInner(){
           setShowTutorial(false)
         }
         setLearnerId(id)
-        setMasteryMap(getMasteryForLearner(id))
+        getCanonicalMasteryForLearner(id).then(setMasteryMap).catch(() => setMasteryMap({}))
         setWebbMap(getWebbCompletionForLearner(id))
       }
     } catch {}

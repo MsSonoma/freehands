@@ -107,6 +107,7 @@ const ITEM_CONTENT_FIELDS = Object.freeze([
   'keyTerms',
   'minKeywords',
   'hint',
+  'opportunityId',
 ]);
 
 const EXPLICIT_ITEM_ID_FIELDS = Object.freeze([

@@ -41,6 +41,8 @@ export const INDEPENDENCE_REASONS = Object.freeze({
   RETEACH_BEFORE_RESPONSE: 'reteach_before_first_response',
   IDENTITY_UNAVAILABLE: 'identity_unavailable',
   INSUFFICIENT_CLEAN_POOL: 'insufficient_clean_reserved_pool',
+  CLEAR_ANSWER_REPRODUCTION: 'clear_answer_reproduction',
+  RECOVERY_NOT_COMPLETED: 'recovery_not_completed',
 });
 
 export const MASTERY_OUTCOMES = Object.freeze({
@@ -190,6 +192,40 @@ export function qualifyMasteryOpportunity({
     };
   }
 
+  return {
+    eligible: true,
+    independenceStatus: INDEPENDENCE_STATUSES.INDEPENDENT,
+    independenceReason: INDEPENDENCE_REASONS.ELIGIBLE,
+  };
+}
+
+/**
+ * Additive qualification path for a natural conversational opportunity.
+ * It preserves the same assistance/first-response independence semantics as
+ * held-out checks without falsely labeling the conversation as a reserved test.
+ */
+export function qualifyConversationalMasteryOpportunity({
+  hasStableConceptIdentity = false,
+  isFirstResponse = true,
+  priorPromptExposed = false,
+  assistanceEventsBeforeResponse = [],
+  answerRequested = false,
+  answerReproduction = false,
+} = {}) {
+  const fail = (reason, status = INDEPENDENCE_STATUSES.UNAVAILABLE) => ({
+    eligible: false,
+    independenceStatus: status,
+    independenceReason: reason,
+  });
+  if (!hasStableConceptIdentity) return fail(INDEPENDENCE_REASONS.IDENTITY_UNAVAILABLE);
+  if (priorPromptExposed) return fail(INDEPENDENCE_REASONS.PRIOR_EXPOSURE);
+  if (!isFirstResponse) return fail(INDEPENDENCE_REASONS.NOT_FIRST_RESPONSE, INDEPENDENCE_STATUSES.RETRY_NO_HINT);
+  if (answerRequested) return fail(INDEPENDENCE_REASONS.ASK_ASSISTANCE_BEFORE_RESPONSE, INDEPENDENCE_STATUSES.ANSWER_REVEALED);
+  if (answerReproduction) return fail(INDEPENDENCE_REASONS.CLEAR_ANSWER_REPRODUCTION, INDEPENDENCE_STATUSES.ANSWER_REVEALED);
+  const assistance = classifyAssistanceBeforeFirstResponse(assistanceEventsBeforeResponse);
+  if (assistance.independenceStatus !== INDEPENDENCE_STATUSES.INDEPENDENT) {
+    return { eligible: false, ...assistance };
+  }
   return {
     eligible: true,
     independenceStatus: INDEPENDENCE_STATUSES.INDEPENDENT,

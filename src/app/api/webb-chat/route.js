@@ -6,6 +6,7 @@
  */
 import { NextResponse } from 'next/server'
 import { validateInput } from '@/lib/contentSafety'
+import { buildWritingGuidanceInstructions } from '@/app/lib/webbLearningModel.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL } from '@/app/lib/aiModel'
@@ -34,7 +35,7 @@ function buildResearchSystem(lesson, targetObjective, media) {
   return lines.join('\n')
 }
 
-function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, needSentenceForObj = null, masteryStatus = null) {
+function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
@@ -49,6 +50,11 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
     `- Gently redirect off-topic questions back to the lesson.`,
     `- Celebrate curiosity and effort.`,
   ]
+
+  if (writingMode) {
+    lines.push(`\n${buildWritingGuidanceInstructions(writingNote, writingEvaluation || {})}`)
+    return lines.filter(Boolean).join('\n')
+  }
 
   if (media?.video && !media.video.unavailable) {
     lines.push(
@@ -71,11 +77,11 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
 
   if (allObjectivesMet) {
     lines.push(
-      `\nThe student has just demonstrated ALL of the lesson's learning goals — every single one!`,
+      `\nThe instructional conversation has now been completed for every lesson concept. Some concepts may have required teaching or assistance, so do not claim the learner independently mastered everything.`,
       `Your ONLY job in this response:`,
-      `1. Celebrate warmly and specifically (1-2 sentences). Be genuinely excited for them.`,
-      `2. Tell them it's now time to write their essay using their own words — mention the big "✨ Make my essay" button they'll see below the chat.`,
-      `3. Do NOT ask any question. Do NOT probe any more topics. The lesson is complete.`,
+      `1. Celebrate the learner's work and persistence warmly (1-2 sentences) without making a mastery claim.`,
+      `2. Tell them it's now time to turn their own notes into essay sentences — mention the big "Start writing from my notes" button they'll see below the chat.`,
+      `3. Do NOT ask any question or probe any more research topics. The research part is complete; the writing part comes next.`,
       `Keep it to 2-3 sentences. Natural spoken language — no markdown, no bullet points.`,
     )
     return lines.filter(Boolean).join('\n')
@@ -100,12 +106,6 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
   } else if (masteryStatus === 'incorrect') {
     lines.push(
       `\nThe mastery evaluator has already determined that the student's latest response to goal #1 is INCORRECT. Treat that classification as authoritative; do not re-grade it. Do NOT use generic or qualified praise for an incorrect response or for any of its wording; never call it a "good start", "on the right track", "close", "almost", "great", or similar. If there is a genuinely correct factual element, state only that element neutrally and immediately contrast it with what is missing or wrong, for example: "A sentence does use words, but words alone do not make it complete." Otherwise move directly to a calm correction. Briefly explain the key correction without shaming the student, then ask them to try again in their own words. Kindness must not imply that an incorrect answer was correct.`,
-    )
-  }
-
-  if (needSentenceForObj) {
-    lines.push(
-      `\nIMPORTANT: The student just showed they understand "${needSentenceForObj}" but said it as a fragment or single word, not a full sentence. Warmly acknowledge that they've got the right idea, then ask them to say it again in a complete sentence — their own words, full sentence — because that's what goes in their essay. Do this naturally, not like a correction.`,
     )
   }
 
@@ -138,7 +138,7 @@ function buildDirectTeachSystem(lesson, targetObjective) {
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', needSentenceForObj = null, masteryStatus = null } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null } = await req.json()
 
     // ── Seek request: "show me the part where..." ─────────────────────────
     // Client sends { seekRequest: { momentList }, messages } instead of going through
@@ -228,7 +228,7 @@ export async function POST(req) {
     }
 
     const oaiMessages = [
-      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, needSentenceForObj, masteryStatus) },
+      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation) },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 

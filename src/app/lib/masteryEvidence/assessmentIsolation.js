@@ -11,6 +11,7 @@ export const ASSESSMENT_ISOLATION_STATUSES = Object.freeze({
 export const ASSESSMENT_ROLES = Object.freeze({
   INSTRUCTIONAL: 'instructional',
   ASSESSMENT_RESERVED: 'assessment_reserved',
+  CONVERSATIONAL_OPPORTUNITY: 'conversational_opportunity',
 });
 
 const RESERVED_LESSON_FIELDS = Object.freeze([

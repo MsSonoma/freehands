@@ -61,7 +61,7 @@ test('completion route fails closed for ownership, missing occurrence, and trans
 })
 
 test('transactional completion contract is idempotent and rolls back partial completion', () => {
-  const migration = fs.readFileSync(path.resolve('supabase/migrations/20260828130000_transactional_lesson_session_completion.sql'), 'utf8')
+  const migration = fs.readFileSync(path.resolve('supabase/migrations/20260828192109_transactional_lesson_session_completion.sql'), 'utf8')
   assert.match(migration, /from public\.lesson_sessions[\s\S]*for update/i)
   assert.match(migration, /new\.ended_at is distinct from old\.ended_at[\s\S]*current_user not in \('service_role', 'postgres'\)/i)
   assert.match(migration, /metadata ->> 'syllabus_occurrence_id' = btrim\(p_syllabus_occurrence_id\)/i)
@@ -86,7 +86,9 @@ test('Webb completion waits for canonical success while Slate never creates inst
   assert.match(slate, /authorizeProtectedOccurrence/)
   assert.match(slate, /authorizedOccurrenceRef\.current = authorization\.occurrenceId/)
   assert.doesNotMatch(slate, /startProtectedInstructionalSession|startLessonSession|endLessonSession|complete_lesson_session/)
-  assert.match(slate, /saveMastery/)
+  assert.doesNotMatch(slate, /saveMastery|startProtectedInstructionalSession|complete_lesson_session/)
+  assert.match(slate, /MasteryEvidenceClient/)
+  assert.match(slate, /sessionId: activityId/)
 })
 
 test('Sonoma success cleanup is downstream of canonical completion and exposes retry', () => {

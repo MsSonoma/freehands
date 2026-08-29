@@ -1,23 +1,13 @@
 /**
  * masteryClient.js
  *
- * Tracks Mr. Slate mastery status per learner per lesson.
- * Stored in localStorage (key: slate_mastery_v1) so it persists
- * across page reloads without requiring a DB migration.
+ * Legacy Mr. Slate compatibility helpers.
  *
- * Schema: { [learnerId]: { [lessonKey]: { mastered: true, masteredAt: ISO } } }
+ * `slate_mastery_v1` is no longer educational authority. Canonical mastery is
+ * loaded from append-only mastery evidence through getCanonicalMasteryForLearner.
  *
  * lessonKey format: "<subject>/<filename>.json"  e.g. "math/4th_Geometry_Angles_Classification_Beginner.json"
  */
-
-const LS_KEY = 'slate_mastery_v1'
-
-function tierForPercent(p) {
-  if (p >= 90) return 'gold'
-  if (p >= 80) return 'silver'
-  if (p >= 70) return 'bronze'
-  return null
-}
 
 export function slateEmojiForTier(tier) {
   if (tier === 'gold')   return '🏅'
@@ -26,50 +16,39 @@ export function slateEmojiForTier(tier) {
   return '�'
 }
 
-function read() {
-  if (typeof window === 'undefined') return {}
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') } catch { return {} }
-}
-
-function write(obj) {
-  if (typeof window === 'undefined') return
-  try { localStorage.setItem(LS_KEY, JSON.stringify(obj)) } catch {}
-}
-
 /**
  * Returns the mastery map for one learner: { [lessonKey]: { mastered, masteredAt } }
  */
-export function getMasteryForLearner(learnerId) {
-  if (!learnerId) return {}
-  return read()[learnerId] || {}
+export function getMasteryForLearner() {
+  return {}
 }
 
 /**
  * Returns true if this learner has mastered this lesson.
  */
-export function isMastered(learnerId, lessonKey) {
-  if (!learnerId || !lessonKey) return false
-  return !!(read()[learnerId]?.[lessonKey]?.mastered)
+export function isMastered() {
+  return false
 }
 
 /**
- * Records mastery for a learner + lesson. Stores the best (highest) percent achieved.
- * @param {string} learnerId
- * @param {string} lessonKey
- * @param {number} [percent] - scoreGoal / nonTimeoutTries * 100, rounded
+ * Deprecated point-score writer. It deliberately fails closed.
  */
-export function saveMastery(learnerId, lessonKey, percent) {
-  if (!learnerId || !lessonKey) return
-  const all = read()
-  if (!all[learnerId]) all[learnerId] = {}
-  const existing = all[learnerId][lessonKey] || {}
-  const newPercent = typeof percent === 'number' && isFinite(percent) ? Math.min(100, percent) : null
-  const isBetter = newPercent !== null && (existing.bestPercent == null || newPercent > existing.bestPercent)
-  all[learnerId][lessonKey] = {
-    mastered: true,
-    masteredAt: existing.masteredAt || new Date().toISOString(),
-    bestPercent: isBetter ? newPercent : (existing.bestPercent ?? null),
-    medalTier:   isBetter ? tierForPercent(newPercent) : (existing.medalTier ?? null),
-  }
-  write(all)
+export function saveMastery() {
+  // Intentionally does not write. Retained only so older callers fail closed.
+  return { ok: false, canonical: false, reason: 'legacy_point_mastery_disabled' }
+}
+
+export async function getCanonicalMasteryForLearner(learnerId) {
+  if (!learnerId || learnerId === 'demo') return {}
+  const { getSupabaseClient } = await import('./supabaseClient.js')
+  const supabase = getSupabaseClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return {}
+  const response = await fetch(`/api/learner/mastery-status?learner_id=${encodeURIComponent(learnerId)}`, {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    cache: 'no-store',
+  })
+  if (!response.ok) return {}
+  const body = await response.json().catch(() => ({}))
+  return body?.mastery || {}
 }

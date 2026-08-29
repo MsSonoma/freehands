@@ -38,6 +38,7 @@ const generatorSource = readFileSync(new URL('../src/app/api/facilitator/lessons
 const incrementalSource = readFileSync(new URL('../src/app/api/ai/lesson-generate/route.js', import.meta.url), 'utf8')
 const learnSource = readFileSync(new URL('../src/app/learn/lessons/page.js', import.meta.url), 'utf8')
 const reviewPageSource = readFileSync(new URL('../src/app/learn/follow-ups/[runId]/page.js', import.meta.url), 'utf8')
+const slateReviewSource = readFileSync(new URL('../src/app/session/slate/SlateReviewExperience.jsx', import.meta.url), 'utf8')
 const reportUiSource = readFileSync(new URL('../src/app/facilitator/learners/[id]/transcripts/EvidenceHistorySection.jsx', import.meta.url), 'utf8')
 
 const lesson = {
@@ -410,9 +411,11 @@ test('generation, learner cards, focused flow, and reporting are wired without l
   assert.match(incrementalSource, /'dailyFollowup'/)
   assert.match(incrementalSource, /'weeklyReview'/)
   assert.match(learnSource, /followUpCards\.map/)
-  assert.match(reviewPageSource, /Repeat/)
-  assert.match(reviewPageSource, /Show answer/)
-  assert.doesNotMatch(reviewPageSource, /Start Over/i)
+  assert.match(reviewPageSource, /redirect\(`\/session\/slate\?reviewRunId=/)
+  assert.doesNotMatch(reviewPageSource, /getFollowUpRun|actOnFollowUp|useEffect/)
+  assert.match(slateReviewSource, /REPEAT/)
+  assert.match(slateReviewSource, /SHOW ANSWER/)
+  assert.doesNotMatch(slateReviewSource, /Start Over/i)
   assert.match(reportUiSource, /Daily Follow-Up/)
   assert.match(reportUiSource, /Weekly Review/)
 })

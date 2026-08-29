@@ -25,6 +25,26 @@ export function resolveSonomaProviderProvenance(env = process.env) {
   };
 }
 
+export function resolveWebbProviderProvenance(env = process.env) {
+  return {
+    provider: 'openai',
+    model: env.WEBB_OPENAI_MODEL || AI_MODEL || null,
+    app_build_id: env.VERCEL_GIT_COMMIT_SHA || env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || env.VERCEL_GIT_COMMIT_REF || null,
+    teaching_protocol_version: 'webb-conversation-v1',
+    teaching_protocol_hash: null,
+  };
+}
+
+export function resolveSlateProviderProvenance(env = process.env) {
+  return {
+    provider: 'deterministic_app',
+    model: env.SONOMA_OPENAI_MODEL || AI_MODEL || null,
+    app_build_id: env.VERCEL_GIT_COMMIT_SHA || env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || env.VERCEL_GIT_COMMIT_REF || null,
+    teaching_protocol_version: 'slate-mastery-retention-v1',
+    teaching_protocol_hash: null,
+  };
+}
+
 export function mergeProvenance(base, incoming) {
   const cleanIncoming = incoming && typeof incoming === 'object' && !Array.isArray(incoming)
     ? incoming

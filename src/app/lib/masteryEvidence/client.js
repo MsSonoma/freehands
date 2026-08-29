@@ -132,6 +132,8 @@ export class MasteryEvidenceClient {
     baseline = null,
     mastery = null,
     retention = null,
+    teachingProtocol = null,
+    activityAuthorization = null,
     startedAt,
   } = {}) {
     if (!this.enabled) {
@@ -160,6 +162,8 @@ export class MasteryEvidenceClient {
       baseline: baseline || null,
       mastery: mastery || null,
       retention: retention || null,
+      teachingProtocol: teachingProtocol || null,
+      activityAuthorization: activityAuthorization || null,
       startedAt: startedAt || this.now(),
     };
     this.assessmentIsolation = assessmentIsolation || null;
@@ -828,7 +832,7 @@ export class MasteryEvidenceClient {
         lessonId: this.meta?.lessonId,
         lessonData: this.meta?.lessonData,
       });
-      const protocolIdentity = await buildTeachingProtocolIdentity();
+      const protocolIdentity = this.meta?.teachingProtocol || await buildTeachingProtocolIdentity();
       const response = await this.#post({
         action: 'create_session',
         schema_version: MASTERY_EVIDENCE_SCHEMA_VERSION,
@@ -850,6 +854,7 @@ export class MasteryEvidenceClient {
         lesson_content_hash: lessonIdentity.lessonContentHash,
         teaching_protocol_version: protocolIdentity.protocolVersion,
         teaching_protocol_hash: protocolIdentity.protocolHash,
+        authorized_occurrence_id: this.meta?.activityAuthorization?.occurrenceId || null,
         assessment_isolation_version: this.assessmentIsolation?.version || ASSESSMENT_ISOLATION_VERSION,
         assessment_isolation_status: this.assessmentIsolation?.status || null,
         reserved_assessment_count: Number.isFinite(Number(this.assessmentIsolation?.reservedAssessmentCount))
@@ -964,7 +969,11 @@ export class MasteryEvidenceClient {
       const itemIdentity = await this.#resolveItemIdentity(identityItem);
       const normalizedAssessmentRole = assessmentRole === ASSESSMENT_ROLES.ASSESSMENT_RESERVED
         ? ASSESSMENT_ROLES.ASSESSMENT_RESERVED
-        : (assessmentRole === ASSESSMENT_ROLES.INSTRUCTIONAL ? ASSESSMENT_ROLES.INSTRUCTIONAL : null);
+        : (assessmentRole === ASSESSMENT_ROLES.INSTRUCTIONAL
+          ? ASSESSMENT_ROLES.INSTRUCTIONAL
+          : (assessmentRole === ASSESSMENT_ROLES.CONVERSATIONAL_OPPORTUNITY
+            ? ASSESSMENT_ROLES.CONVERSATIONAL_OPPORTUNITY
+            : null));
       const computedPreAssessmentExposed = eventType === STAGE_2_EVIDENCE_EVENT_TYPES.ITEM_PRESENTED
         && normalizedAssessmentRole === ASSESSMENT_ROLES.ASSESSMENT_RESERVED
         ? this.#hasPresentedItem(itemIdentity)
