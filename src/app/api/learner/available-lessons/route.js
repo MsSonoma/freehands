@@ -75,6 +75,15 @@ export async function GET(request) {
     const facilitatorId = learnerData.facilitator_id
     const { normalized: approvedNormalizedMap } = buildApprovedLookup(approvedLessons)
     const approvedKeys = Object.keys(approvedNormalizedMap)
+    const { data: associationRows } = await supabase
+      .from('syllabus_lesson_associations')
+      .select('lesson_key,instructional_teacher')
+      .eq('facilitator_id', facilitatorId)
+      .eq('learner_id', learnerId)
+    const instructionalTeacherByLesson = new Map((associationRows || []).map((row) => [
+      normalizeLessonKey(row.lesson_key),
+      row.instructional_teacher === 'webb' ? 'webb' : 'sonoma',
+    ]))
 
     // Get today's scheduled lessons using local date (not UTC)
     const now = new Date()
@@ -224,6 +233,7 @@ export async function GET(request) {
 
       if (lessonData) {
         lessonData.lessonKey = normalizedKey
+        lessonData.instructional_teacher = instructionalTeacherByLesson.get(normalizedKey) || 'sonoma'
         lessonData.subject = lessonData.subject || subject || rawSubject || 'general'
         lessonData.file = lessonData.file || filename
         lessons.push(lessonData)
@@ -302,6 +312,7 @@ export async function GET(request) {
               lessonData.subject = lessonData.subject || 'generated'
               lessonData.file = fileObj.name
               lessonData.lessonKey = normalizeLessonKey(`generated/${fileObj.name}`)
+              lessonData.instructional_teacher = instructionalTeacherByLesson.get(lessonData.lessonKey) || 'sonoma'
               return lessonData
             } catch {
               return null

@@ -5,23 +5,22 @@ import test from 'node:test'
 
 import {
   DEMO_LEARNER,
-  SONOMA_TEACHER_ID,
-  buildLessonSessionRoute,
   canUseAnonymousTeacher,
   getLessonListRequest,
   initializeDemoLearner,
   requiresDemoAuthGate,
-  resolveTeacherForLearner,
   shouldAutoShowLearnerTutorial,
   shouldAutoShowSessionTutorial,
   shouldUseAccountPersistence,
 } from '../demoLearner.mjs'
+import { buildInstructionalSessionRoute } from '../../lib/syllabus/instructionalTeacher.mjs'
 
 function memoryStorage(initial = {}) {
   const values = new Map(Object.entries(initial))
   return {
     getItem: (key) => values.get(key) ?? null,
     setItem: (key, value) => values.set(key, String(value)),
+    removeItem: (key) => values.delete(key),
     values,
   }
 }
@@ -34,14 +33,14 @@ test('Demo Learner initialization writes the canonical local identity', () => {
   assert.equal(storage.getItem('learner_id'), 'demo')
   assert.equal(storage.getItem('learner_name'), 'Demo Learner')
   assert.equal(storage.getItem('learner_grade'), '4')
-  assert.equal(storage.getItem('selected_teacher'), SONOMA_TEACHER_ID)
+  assert.equal(storage.getItem('selected_teacher'), null)
 })
 
 for (const staleTeacher of ['slate', 'webb']) {
-  test(`Demo Learner overwrites stale ${staleTeacher} teacher state`, () => {
+  test(`Demo Learner removes stale ${staleTeacher} teacher state`, () => {
     const storage = memoryStorage({ selected_teacher: staleTeacher })
     initializeDemoLearner(storage)
-    assert.equal(storage.getItem('selected_teacher'), SONOMA_TEACHER_ID)
+    assert.equal(storage.getItem('selected_teacher'), null)
   })
 }
 
@@ -59,35 +58,26 @@ test('unsupported Demo Learner teachers remain authentication gated', () => {
   assert.equal(requiresDemoAuthGate('real-learner-id', 'sonoma'), false)
 })
 
-test('real learners retain their selected teacher behavior', () => {
-  assert.equal(resolveTeacherForLearner('real-learner-id', 'slate'), 'slate')
-  assert.equal(resolveTeacherForLearner('real-learner-id', 'webb'), 'webb')
-})
-
 test('Demo Learner is pinned to Ms. Sonoma when a lesson launches', () => {
-  assert.equal(resolveTeacherForLearner('demo', 'slate'), 'sonoma')
   assert.equal(
-    buildLessonSessionRoute({
+    buildInstructionalSessionRoute({
       learnerId: 'demo',
       subject: 'demo',
       fileName: 'welcome_to_math.json',
-      selectedTeacher: 'slate',
+      instructionalTeacher: 'sonoma',
     }),
     '/session?subject=demo&lesson=welcome_to_math.json'
   )
 })
 
-test('real learner lesson routes retain Slate and Webb behavior', () => {
-  assert.equal(buildLessonSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', selectedTeacher: 'slate' }), '/session/slate?subject=math&lesson=one.json&learnerId=real')
-  assert.equal(buildLessonSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', selectedTeacher: 'webb' }), '/session/webb?subject=math&lesson=one.json&learnerId=real')
+test('real learner routes follow only Sonoma or Webb facilitator assignments', () => {
+  assert.equal(buildInstructionalSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', instructionalTeacher: 'sonoma' }), '/session?subject=math&lesson=one.json&learnerId=real')
+  assert.equal(buildInstructionalSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', instructionalTeacher: 'webb' }), '/session/webb?subject=math&lesson=one.json&learnerId=real')
   assert.equal(
-    buildLessonSessionRoute({ learnerId: 'real', subject: 'language-arts', fileName: 'grammar.json', selectedTeacher: 'webb', occurrenceId: 'syllabus:thursday-grammar' }),
+    buildInstructionalSessionRoute({ learnerId: 'real', subject: 'language-arts', fileName: 'grammar.json', instructionalTeacher: 'webb', occurrenceId: 'syllabus:thursday-grammar' }),
     '/session/webb?subject=language-arts&lesson=grammar.json&learnerId=real&occurrenceId=syllabus%3Athursday-grammar',
   )
-  assert.equal(
-    buildLessonSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', selectedTeacher: 'slate', occurrenceId: 'syllabus:practice-context' }),
-    '/session/slate?subject=math&lesson=one.json&learnerId=real&occurrenceId=syllabus%3Apractice-context',
-  )
+  assert.throws(() => buildInstructionalSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', instructionalTeacher: 'slate' }), /valid instructional teacher/i)
 })
 
 test('Demo Learner uses the anonymous demo lesson endpoint only', () => {
@@ -171,7 +161,7 @@ test('all four curated demo lessons exist and carry the expected session identit
     assert.ok(lesson.title)
     assert.ok(Array.isArray(lesson.multiplechoice) && lesson.multiplechoice.length > 0)
     assert.equal(
-      buildLessonSessionRoute({ learnerId: 'demo', subject: 'demo', fileName: file, selectedTeacher: 'webb' }),
+      buildInstructionalSessionRoute({ learnerId: 'demo', subject: 'demo', fileName: file, instructionalTeacher: 'sonoma' }),
       `/session?subject=demo&lesson=${file}`
     )
   }

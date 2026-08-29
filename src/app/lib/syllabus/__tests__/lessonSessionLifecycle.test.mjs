@@ -32,7 +32,7 @@ test('open session remains in progress', () => {
 
 test('learner-history and learner completion count consume the shared resolved status', () => {
   const route = fs.readFileSync(path.resolve('src/app/api/learner/lesson-history/route.js'), 'utf8')
-  const lessons = fs.readFileSync(path.resolve('src/app/learn/lessons/page.js'), 'utf8')
+  const lessons = fs.readFileSync(path.resolve('src/app/learn/LearnerHome.js'), 'utf8')
   const webb = fs.readFileSync(path.resolve('src/app/session/webb/page.jsx'), 'utf8')
   const slate = fs.readFileSync(path.resolve('src/app/session/slate/page.jsx'), 'utf8')
   const counselorCalendar = fs.readFileSync(path.resolve('src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx'), 'utf8')

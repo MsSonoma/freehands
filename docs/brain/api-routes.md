@@ -146,23 +146,24 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 
 - **Location**: `src/app/api/syllabus/execution/start/route.js`
 - **Method**: POST
-- **Auth**: Bearer token, facilitator-owned learner, and signed scoped Syllabus execution proof are all required
+- **Auth**: Bearer token, facilitator-owned learner, and signed scoped Syllabus execution proof are all required; the proof binds the facilitator, learner, lesson, occurrence, local date, and server-resolved instructional teacher
 - **Browser identity**: A valid `browserSessionId` UUID is mandatory for protected non-demo starts
 - **Occurrence identity**: The page sends the canonical occurrence returned by its authorization decision; the route requires that independent value to match the signed proof, so another tab's proof cannot authorize this page's occurrence
 - **Takeover**: A fresh Facilitator PIN plus the exact `expectedConflictingSessionId` are required before the route sends `allowTakeover=true`
+- **Teacher identity**: `instructionalTeacher` must be `sonoma` or `webb`, must match the proof, and is written immutably to the canonical session plus started event
 - **Atomicity**: One service-role call to `start_lesson_session_transactional` locks the learner and every active learner session, closes prior lessons, and returns `started`, `reused`, `conflict`, or `taken_over`; the route has no JavaScript check/insert fallback
 - **Database boundary**: The RPC accepts no raw PIN and is executable only by `service_role`
 - **Legacy compatibility**: Webb/Sonoma instructional clients may initially authorize with an empty occurrence only when the server has no active Syllabus; the authorization route returns the canonical `legacy:<lesson-key>:<today>` identity used by protected start and completion. Active-Syllabus occurrence matching remains exact and fail-closed.
 
 ### `/api/syllabus/execution/complete`
 **Purpose**: Commit truthful instructional completion for an already protected Sonoma or Webb session
-**Status**: Operational after `20260828130000_transactional_lesson_session_completion.sql` is applied
+**Status**: Teacher-bound after `20260829010000_add_instructional_teacher_authority.sql` is applied
 
 - **Location**: `src/app/api/syllabus/execution/complete/route.js`
 - **Method**: POST
 - **Auth**: Bearer token and facilitator-owned learner are required
-- **Identity**: Valid session UUID, canonical lesson key, and exact Syllabus occurrence ID are mandatory
-- **Atomicity**: One service-role call locks the session, verifies its protected-start occurrence, sets `ended_at`, and inserts the completed event in one transaction
+- **Identity**: Valid session UUID, canonical lesson key, exact Syllabus occurrence ID, and a canonical Sonoma (`session-v2`) or Webb (`webb`) source are mandatory
+- **Atomicity**: One service-role call locks the session, verifies its protected-start occurrence and immutable instructional teacher, rejects a conflicting source, sets `ended_at`, and inserts the completed event in one transaction
 - **Idempotency**: A retry for an already completed session returns the existing completion; an ended-but-uncompleted or mismatched session fails closed
 - **Database boundary**: Only `service_role` can execute the RPC; browser clients cannot directly insert lifecycle events or change `ended_at`
 

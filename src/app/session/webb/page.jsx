@@ -443,6 +443,7 @@ function WebbPageInner() {
         learnerId: routeLearnerId || learnerId,
         lessonKey,
         occurrenceId: routeOccurrenceId,
+        instructionalTeacher: 'webb',
         requestPin: requestFacilitatorPinException,
       })
       canonicalSessionRef.current = { id: tracked.id, learnerId: routeLearnerId || learnerId, lessonKey, occurrenceId: tracked.occurrenceId }
@@ -497,10 +498,10 @@ function WebbPageInner() {
     } catch { /* ignore quota errors */ }
   }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, coveredObj, understoodObj, objectiveEvidence, learnerNotes, writingMode, writingIndex, writingAttempts, acceptedSentences, essay, essayMode])
 
-  // Redirect to /learn/lessons when lesson list is shown (list selection is now handled there)
+  // Redirect to the canonical learner home when lesson list is shown.
   useEffect(() => {
     if (phase === PHASE.LIST && !listLoading && !offerResume) {
-      router.replace('/learn/lessons')
+      router.replace('/learn')
     }
   }, [phase, listLoading, offerResume, router])
 
@@ -953,7 +954,7 @@ function WebbPageInner() {
       }
 
       // Check for a mid-session lesson key first — set when a session starts and
-      // survives page refresh so users return to resume/restart instead of /learn/lessons.
+      // survives page refresh so users return to resume/restart instead of /learn.
       const activeKey = (() => { try { return sessionStorage.getItem('webb_active_lesson_key') } catch { return null } })()
       if (activeKey) {
         const match = lessons.find(l => (l.lessonKey || l.lesson_id || l.id || `${l.subject || 'general'}/${l.file || ''}`) === activeKey)
@@ -971,7 +972,7 @@ function WebbPageInner() {
         try { sessionStorage.removeItem('webb_active_lesson_key') } catch {}
       }
 
-      // Check for a pending lesson key from /learn/lessons teacher selection
+      // Check for a pending lesson key from the server-assigned learner launch.
       const pendingKey = (() => { try { return sessionStorage.getItem('webb_pending_lesson_key') } catch { return null } })()
       if (pendingKey) {
         const match = lessons.find(l => (l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`) === pendingKey)
@@ -1299,6 +1300,7 @@ function WebbPageInner() {
         learnerId: routeLearnerId || learnerId,
         lessonKey,
         occurrenceId: routeOccurrenceId,
+        instructionalTeacher: 'webb',
         requestPin: requestFacilitatorPinException,
       })
       canonicalSessionRef.current = { id: tracked.id, learnerId: routeLearnerId || learnerId, lessonKey, occurrenceId: tracked.occurrenceId }
@@ -1329,7 +1331,7 @@ function WebbPageInner() {
 
     setPhase(PHASE.CHATTING)
     // Record the active lesson key so a page refresh brings the user back to the
-    // resume/restart prompt rather than redirecting to /learn/lessons.
+    // resume/restart prompt rather than redirecting to /learn.
     const activeLk = lesson.lessonKey || lesson.lesson_id || lesson.id
     try { if (activeLk) sessionStorage.setItem('webb_active_lesson_key', activeLk) } catch {}
 
@@ -2242,7 +2244,7 @@ function WebbPageInner() {
     if (!await ensurePinAllowed('session-exit')) return
     skipTTS()
     try { sessionStorage.removeItem('webb_active_lesson_key') } catch {}
-    router.push('/learn/lessons')
+    router.push('/learn')
   }
 
   function handleBack() {
@@ -2250,7 +2252,7 @@ function WebbPageInner() {
     try { sessionStorage.removeItem('webb_active_lesson_key') } catch {}
     setSelectedLesson(null)
     setMediaOverlay(null)
-    router.push('/learn/lessons')
+    router.push('/learn')
   }
 
   // ── Layout styles ─────────────────────────────────────────────────────

@@ -72,7 +72,7 @@ export default function SlateReviewExperience({ runId }) {
         <video src={VIDEO} muted playsInline autoPlay loop style={{ width: 52, height: 52, objectFit: 'contain' }} />
         <div><div style={styles.name}>MR. SLATE</div><div style={styles.label}>{label}</div></div>
       </div>
-      <button style={styles.ghost} onClick={() => router.push('/learn/lessons')}>← BACK</button>
+      <button style={styles.ghost} onClick={() => router.push('/learn')}>← BACK</button>
     </header>
     <section style={styles.card}>
       {!state && !error && <p style={styles.muted}>Loading review…</p>}
@@ -81,9 +81,9 @@ export default function SlateReviewExperience({ runId }) {
         <div style={styles.progress}>{state.progress?.completed || 0} OF {state.progress?.total || 0}</div>
         {feedback ? <div style={{ textAlign: 'center' }}>
           <h1 style={styles.title}>{feedback.text}</h1>
-          <button style={styles.primary} onClick={feedback.complete ? () => router.push('/learn/lessons') : next}>{feedback.complete ? 'DONE' : 'NEXT QUESTION'}</button>
+          <button style={styles.primary} onClick={feedback.complete ? () => router.push('/learn') : next}>{feedback.complete ? 'DONE' : 'NEXT QUESTION'}</button>
         </div> : state.complete ? <div style={{ textAlign: 'center' }}>
-          <h1 style={styles.title}>Review complete.</h1><button style={styles.primary} onClick={() => router.push('/learn/lessons')}>DONE</button>
+          <h1 style={styles.title}>Review complete.</h1><button style={styles.primary} onClick={() => router.push('/learn')}>DONE</button>
         </div> : item ? <>
           <h1 style={styles.title}>{item.content?.question}</h1>
           {Array.isArray(item.content?.choices) && <div style={{ display: 'grid', gap: 9, marginBottom: 14 }}>{item.content.choices.map((choice) =>

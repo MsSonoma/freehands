@@ -40,8 +40,12 @@ test('Webb protected start uses only the occurrence returned by server authoriza
     learnerId: LEARNER,
     lessonKey: 'generated/legacy.json',
     occurrenceId: '',
+    instructionalTeacher: 'webb',
   }, {
-    authorizeProtectedOccurrence: async () => ({ ok: true, occurrenceId: LEGACY_OCCURRENCE }),
+    authorizeProtectedOccurrence: async (scope) => {
+      assert.equal(scope.instructionalTeacher, 'webb')
+      return { ok: true, occurrenceId: LEGACY_OCCURRENCE, instructionalTeacher: 'webb' }
+    },
     getProtectedBrowserSessionId: () => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
     startLessonSession: async (...args) => {
       starts.push(args)
@@ -50,5 +54,6 @@ test('Webb protected start uses only the occurrence returned by server authoriza
   })
   assert.equal(starts.length, 1)
   assert.equal(starts[0][6], LEGACY_OCCURRENCE)
+  assert.equal(starts[0][7], 'webb')
   assert.equal(result.occurrenceId, LEGACY_OCCURRENCE)
 })

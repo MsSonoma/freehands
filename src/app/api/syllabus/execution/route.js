@@ -42,6 +42,13 @@ export async function POST(request, deps = {}) {
       now,
       fallbackTimeZone: context.user?.user_metadata?.timezone,
     })
+    const requestedInstructionalTeacher = String(body?.instructionalTeacher || '').trim().toLowerCase()
+    if (requestedInstructionalTeacher && requestedInstructionalTeacher !== decision.instructionalTeacher) {
+      return NextResponse.json({
+        error: 'This lesson is assigned to a different instructional teacher.',
+        code: 'INSTRUCTIONAL_TEACHER_MISMATCH',
+      }, { status: 403 })
+    }
     const secret = deps.proofSecret || process.env.SUPABASE_SERVICE_ROLE_KEY
     const existingProof = readSyllabusExecutionProof(cookieValue(request, SYLLABUS_EXECUTION_COOKIE), secret, now)
     let authorization = decision.allowedWithoutPin ? 'today' : null
@@ -67,6 +74,7 @@ export async function POST(request, deps = {}) {
       authorization,
       occurrenceId: decision.scope.occurrenceId,
       lessonKey: decision.scope.lessonKey,
+      instructionalTeacher: decision.instructionalTeacher,
       today: decision.calendar.today,
       timeZone: decision.calendar.timeZone,
     })

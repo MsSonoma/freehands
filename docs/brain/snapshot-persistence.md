@@ -23,7 +23,7 @@ When user clicks "Complete Lesson" button:
 5. **Clear golden key** - Remove active golden key for this lesson if used
 6. **End tracked session** - Close `lesson_sessions` and write a `lesson_session_events` row (`event_type='completed'`) so Calendar history can detect completion
 7. **Save transcript** - Persist final transcript segment to Supabase Storage
-8. **Navigate away** - Redirect to /learn/lessons
+8. **Navigate away** - Redirect to `/learn`
 
 The prevention flag ensures no snapshot saves occur between clicking Complete Lesson and finishing cleanup. This prevents the lesson from showing "Continue" instead of "Start Lesson" on next visit.
 

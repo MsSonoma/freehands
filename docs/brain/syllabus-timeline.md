@@ -17,6 +17,12 @@ A lesson enters the active Syllabus timeline only through a learner-specific lea
 
 Forecast items without a lesson artifact remain standalone Syllabus intentions. They are composed separately and do not depend on legacy availability.
 
+### Instructional teacher authority
+
+`syllabus_lesson_associations.instructional_teacher` is the facilitator-owned current assignment for a learner and lesson. Its only values are `sonoma` and `webb`; existing and new associations default to Sonoma. Association writes that omit the teacher update readiness and metadata without resetting an existing Webb assignment. Prepare is the editing surface for viewing, changing, and explicitly saving this assignment.
+
+Current and future runnable association-backed items expose the assignment. A provisional forecast with no real association does not acquire teacher metadata merely from composition. Historical actuals instead use the immutable `lesson_sessions.instructional_teacher` recorded at protected start (or the canonical event source for pre-column history), so changing future intent never rewrites who conducted an earlier session.
+
 ### Availability is not membership
 
 `learners.approved_lessons` is a legacy readiness/availability map. It does not admit a lesson to the active Syllabus timeline, create metadata, create inferred placement, or create an occurrence.
@@ -62,6 +68,7 @@ The active composer is not a replacement for the no-active-Syllabus compatibilit
 - Do not display the `generated` storage namespace as an educational subject.
 - Do not bulk-backfill historical approved lessons into Syllabus associations.
 - Do not infer completion from transcript timestamps, farewell text, Webb localStorage, or Slate mastery.
+- Do not infer instructional teacher authority from learner localStorage, URLs, or Slate mastery.
 - Do not change weekly capacity, PIN gates, or execution authorization to repair composition.
 - Do not remove approved lesson keys from canonical resolution without proving legacy alias safety.
 - Do not change the no-active-Syllabus legacy compatibility behavior here.

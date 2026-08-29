@@ -19,9 +19,26 @@
       "Slate mastery separation",
       "explicit lifecycle precedence",
       "restarted session non-completion",
-      "legacy ended-session fallback"
+      "legacy ended-session fallback",
+      "facilitator instructional teacher assignment",
+      "immutable historical instructor identity"
     ],
-    "last_updated": "2026-08-28T17:33:08Z",
+    "last_updated": "2026-08-29T18:17:47Z",
+    "status": "canonical"
+  },
+  "learner-home": {
+    "file": "learner-home.md",
+    "systems": [
+      "/learn",
+      "/learn/lessons redirect",
+      "LearnerHome",
+      "facilitator-owned instructional teacher",
+      "Sonoma and Webb routing",
+      "Slate mastery boundary",
+      "selected_teacher retirement",
+      "anonymous Sonoma demo"
+    ],
+    "last_updated": "2026-08-29T18:17:47Z",
     "status": "canonical"
   },
   "facilitator-hub": {
@@ -186,6 +203,7 @@
       "/api/syllabus/execution/complete",
       "start_lesson_session_transactional",
       "complete_lesson_session_transactional",
+      "instructional teacher proof binding",
       "requested occurrence binding",
       "server-owned legacy occurrence compatibility",
       "instructions-field",
@@ -199,7 +217,7 @@
       "/api/visual-aids",
       "/api/content-safety"
     ],
-    "last_updated": "2026-08-28T17:33:08Z",
+    "last_updated": "2026-08-29T18:17:47Z",
     "status": "canonical"
   },
   "mastery-evidence": {
@@ -460,7 +478,7 @@
       "transcript persistence",
       "caption panel"
     ],
-    "last_updated": "2026-08-28T16:44:41Z",
+    "last_updated": "2026-08-29T18:17:47Z",
     "status": "canonical"
   },
   "timer-system": {
@@ -530,7 +548,7 @@
       "Follow-Up settings API",
       "per-learner card action"
     ],
-    "last_updated": "2026-08-12T18:42:09Z",
+    "last_updated": "2026-08-29T18:17:47Z",
     "status": "canonical"
   },
   "lesson-assessment-architecture": {
@@ -547,9 +565,10 @@
       "localStorage-assessment-caching",
       "dailyFollowup",
       "weeklyReview",
-      "held-out review pools"
+      "held-out review pools",
+      "Slate mastery-only boundary"
     ],
-    "last_updated": "2026-08-12T15:59:44Z",
+    "last_updated": "2026-08-29T18:17:47Z",
     "status": "canonical"
   },
   "session-takeover": {
@@ -575,9 +594,12 @@
       "truthful completion UI",
       "Webb instructional lifecycle",
       "Slate practice separation",
-      "server-owned legacy occurrence compatibility"
+      "server-owned legacy occurrence compatibility",
+      "instructional teacher proof scope",
+      "immutable canonical session teacher",
+      "teacher-source completion binding"
     ],
-    "last_updated": "2026-08-28T17:33:08Z",
+    "last_updated": "2026-08-29T18:17:47Z",
     "status": "canonical"
   },
   "MentorInterceptor": {

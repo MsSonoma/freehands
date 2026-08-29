@@ -29,13 +29,13 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
   const [tracking, setTracking] = useState(false);
   const [conflictingSession, setConflictingSession] = useState(null);
   const sessionIdRef = useRef(null);
-  const sessionMetaRef = useRef({ learnerId, lessonId, occurrenceId: null });
+  const sessionMetaRef = useRef({ learnerId, lessonId, occurrenceId: null, instructionalTeacher: null });
   const pollIntervalRef = useRef(null);
   const realtimeChannelRef = useRef(null);
   const isMountedRef = useRef(true);
   const takenOverRef = useRef(false); // guard: fire callback once per takeover
 
-  const startSession = async (browserSessionId = null, deviceName = null, takeoverPin = null, expectedConflictingSessionId = null, occurrenceId = null) => {
+  const startSession = async (browserSessionId = null, deviceName = null, takeoverPin = null, expectedConflictingSessionId = null, occurrenceId = null, instructionalTeacher = null) => {
     if (!learnerId || !lessonId) {
       return null;
     }
@@ -59,7 +59,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
     setTracking(true);
     try {
       const result = await withTimeout(
-        startLessonSession(learnerId, lessonId, browserSessionId, deviceName, takeoverPin, expectedConflictingSessionId, occurrenceId),
+        startLessonSession(learnerId, lessonId, browserSessionId, deviceName, takeoverPin, expectedConflictingSessionId, occurrenceId, instructionalTeacher),
         10000,
         'startLessonSession'
       );
@@ -73,7 +73,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
       if (result?.id) {
         sessionIdRef.current = result.id;
         setSessionId(result.id);
-        sessionMetaRef.current = { learnerId, lessonId, occurrenceId };
+        sessionMetaRef.current = { learnerId, lessonId, occurrenceId, instructionalTeacher };
         console.log('[SESSION] sessionIdRef.current set to:', result.id);
         return result;
       }
@@ -104,7 +104,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
     if (success) {
       sessionIdRef.current = null;
       setSessionId(null);
-      sessionMetaRef.current = { learnerId, lessonId, occurrenceId: null };
+      sessionMetaRef.current = { learnerId, lessonId, occurrenceId: null, instructionalTeacher: null };
     }
 
     return success;

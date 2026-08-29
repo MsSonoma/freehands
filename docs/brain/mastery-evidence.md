@@ -30,6 +30,8 @@ Stage 2 records current learning behavior without changing it. Current Stage 2 e
 
 Evidence writes go through `/api/evidence`. The browser does not write directly to evidence tables. The route authenticates the bearer token, verifies learner ownership, verifies that the tracked `lesson_sessions` row exists for the learner, and writes through the service role.
 
+Mr. Slate remains mastery, recovery, Daily/Weekly review, and retention authority. He is intentionally excluded from `instructional_teacher`, never starts or completes the Sonoma/Webb canonical instructional session, and cannot become a normal lesson teacher through learner preference or URL state.
+
 `learning_evidence_sessions` stores identity, lesson references, provenance, and integrity status. `learning_evidence_events` is append-only and stores versioned event records with lifecycle fields plus Stage 2 fields for event sequence, item, exposure, assistance, attempt, first-response, result, payload, and provenance.
 
 Stage 2 item identity is deliberately not the final Stage 3 concept/item model. It uses `legacy_item_fingerprint`, a deterministic hash derived from current lesson/item fields: lesson key or lesson id, phase, source id/type, question index, normalized prompt, options, answer, and accepted-answer list. The fingerprint is for within-current-architecture correlation only and does not mutate lesson JSON.

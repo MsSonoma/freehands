@@ -49,6 +49,10 @@ export async function POST(request, deps = {}) {
     if (!occurrenceId) {
       return NextResponse.json({ error: 'A Syllabus occurrenceId is required', code: 'SYLLABUS_OCCURRENCE_REQUIRED' }, { status: 400 })
     }
+    const instructionalTeacher = String(body?.instructionalTeacher || '').trim().toLowerCase()
+    if (!['sonoma', 'webb'].includes(instructionalTeacher)) {
+      return NextResponse.json({ error: 'A valid instructionalTeacher is required', code: 'INSTRUCTIONAL_TEACHER_REQUIRED' }, { status: 400 })
+    }
     const now = deps.now || new Date()
     const secret = deps.proofSecret || process.env.SUPABASE_SERVICE_ROLE_KEY
     const proof = readSyllabusExecutionProof(cookieValue(request, SYLLABUS_EXECUTION_COOKIE), secret, now)
@@ -57,6 +61,7 @@ export async function POST(request, deps = {}) {
       learnerId,
       lessonKey,
       occurrenceId,
+      instructionalTeacher,
       today: proof.today,
     }))
     if (!proofAllowed) {
@@ -91,6 +96,7 @@ export async function POST(request, deps = {}) {
       p_allow_takeover: allowTakeover,
       p_expected_conflicting_session_id: expectedConflictingSessionId,
       p_syllabus_occurrence_id: occurrenceId,
+      p_instructional_teacher: instructionalTeacher,
     })
     return NextResponse.json(result)
   } catch (error) {

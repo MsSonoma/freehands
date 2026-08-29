@@ -18,6 +18,7 @@ import {
   resolvePreparationLearnerRecovery,
 } from '@/app/lib/facilitatorPreparation.mjs'
 import { clearPreparationSnapshot, readPreparationSnapshot, writePreparationSnapshot } from './preparationSnapshot'
+import { buildInstructionalSessionRoute, instructionalTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
 
 const STAGES = FACILITATOR_PREPARATION_STAGES
 
@@ -223,6 +224,7 @@ export default function FacilitatorPreparePage() {
   const [proposal, setProposal] = useState(null)
   const [intentSnapshot, setIntentSnapshot] = useState(null)
   const [lessonIdentity, setLessonIdentity] = useState(null)
+  const [instructionalTeacher, setInstructionalTeacher] = useState('sonoma')
   const [lessonDraft, setLessonDraft] = useState(null)
   const [lessonContentLoading, setLessonContentLoading] = useState(false)
   const [lessonContentError, setLessonContentError] = useState('')
@@ -357,6 +359,28 @@ export default function FacilitatorPreparePage() {
     })()
     return () => { cancelled = true }
   }, [isAuthenticated, lessonDraft?.__file, lessonIdentity?.file, pinChecked, stage])
+
+  useEffect(() => {
+    if (!pinChecked || !isAuthenticated || !learnerId || !lessonIdentity?.lessonKey) return
+    let cancelled = false
+    setInstructionalTeacher('sonoma')
+    ;(async () => {
+      try {
+        const token = await getToken()
+        const params = new URLSearchParams({ learnerId, lessonKey: lessonIdentity.lessonKey })
+        const response = await fetch(`/api/syllabus/lesson-associations?${params}`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const json = await response.json().catch(() => ({}))
+        if (!response.ok) throw new Error(json?.error || 'Could not load the instructional teacher assignment')
+        if (!cancelled) setInstructionalTeacher(json?.association?.instructional_teacher === 'webb' ? 'webb' : 'sonoma')
+      } catch (error) {
+        if (!cancelled) setMessage(error?.message || 'Could not load the instructional teacher assignment')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [isAuthenticated, learnerId, lessonIdentity?.lessonKey, pinChecked])
 
   const selectedLearner = useMemo(() => learners.find((learner) => learner.id === learnerId) || null, [learners, learnerId])
   const hasLearnerRecovery = !!recoveryStage && !!missingLearnerId
@@ -495,13 +519,13 @@ export default function FacilitatorPreparePage() {
     return json
   }
 
-  async function preserveLessonAssociation(explicitLessonKey = lessonIdentity?.lessonKey) {
+  async function preserveLessonAssociation(explicitLessonKey = lessonIdentity?.lessonKey, explicitTeacher = instructionalTeacher) {
     if (!selectedLearner || !explicitLessonKey) throw new Error('Choose a learner and lesson first.')
     const token = await getToken()
     const response = await fetch('/api/syllabus/lesson-associations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ learnerId, lessonKey: explicitLessonKey }),
+      body: JSON.stringify({ learnerId, lessonKey: explicitLessonKey, instructionalTeacher: explicitTeacher }),
     })
     const json = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(json?.error || 'Could not preserve this lesson in the learner Syllabus')
@@ -512,6 +536,7 @@ export default function FacilitatorPreparePage() {
     setBusy(true)
     setMessage('')
     try {
+      await preserveLessonAssociation()
       await setAvailability(true)
       setMessage('The lesson is now available to the learner.')
       finishFlow()
@@ -526,6 +551,7 @@ export default function FacilitatorPreparePage() {
     setBusy(true)
     setMessage('')
     try {
+      await preserveLessonAssociation()
       await setAvailability(true)
       try {
         localStorage.setItem('learner_id', learnerId)
@@ -533,7 +559,12 @@ export default function FacilitatorPreparePage() {
       } catch {}
       clearPreparationSnapshot()
       const { subject, file } = splitLessonKey(lessonIdentity.lessonKey)
-      router.push(`/session?subject=${encodeURIComponent(subject)}&lesson=${encodeURIComponent(file)}`)
+      router.push(buildInstructionalSessionRoute({
+        learnerId,
+        subject,
+        fileName: file,
+        instructionalTeacher,
+      }))
     } catch (error) {
       setMessage(error?.message || 'Could not start the lesson')
       setBusy(false)
@@ -552,6 +583,7 @@ export default function FacilitatorPreparePage() {
     setBusy(true)
     setMessage('')
     try {
+      await preserveLessonAssociation()
       const token = await getToken()
       const postSchedule = (exceptionPin) => fetch('/api/lesson-schedule', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -612,6 +644,19 @@ export default function FacilitatorPreparePage() {
       router.push('/facilitator')
     } catch (error) {
       setMessage(error?.message || 'Could not save this draft in the Syllabus')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function saveInstructionalTeacher() {
+    setBusy(true)
+    setMessage('')
+    try {
+      await preserveLessonAssociation()
+      setMessage(`${instructionalTeacherLabel(instructionalTeacher)} is assigned to teach this learner's lesson.`)
+    } catch (error) {
+      setMessage(error?.message || 'Could not save the instructional teacher assignment')
     } finally {
       setBusy(false)
     }
@@ -784,6 +829,16 @@ export default function FacilitatorPreparePage() {
         <section style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 'calc(100vh - 120px)', minHeight: 0, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>Review draft</h2>
           {selectedLearner && <p style={{ margin: 0, color: '#374151', fontWeight: 700 }}>Learner: {selectedLearner.name}</p>}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'end' }}>
+            <label style={{ display: 'grid', gap: 4 }}>
+              <span style={{ fontWeight: 700 }}>Instructional teacher</span>
+              <select value={instructionalTeacher} onChange={(event) => setInstructionalTeacher(event.target.value)} style={{ padding: 10, border: '1px solid #d1d5db', borderRadius: 8 }}>
+                <option value="sonoma">Ms. Sonoma</option>
+                <option value="webb">Mrs. Webb</option>
+              </select>
+            </label>
+            <button type="button" onClick={saveInstructionalTeacher} disabled={busy || !selectedLearner} style={secondaryButton}>Save teacher assignment</button>
+          </div>
           <p style={{ margin: 0, color: '#4b5563' }}>This lesson is a draft. The learner will not see it until you approve the content and choose a session option.</p>
           {lessonContentLoading && <p style={{ margin: 0, color: '#6b7280' }}>Loading lesson content...</p>}
           {lessonContentError && <p role="alert" style={{ margin: 0, color: '#b91c1c' }}>{lessonContentError}</p>}
@@ -812,6 +867,16 @@ export default function FacilitatorPreparePage() {
         <section style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>Choose session option</h2>
           {selectedLearner && <p style={{ margin: 0, color: '#374151', fontWeight: 700 }}>Learner: {selectedLearner.name}</p>}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'end' }}>
+            <label style={{ display: 'grid', gap: 4 }}>
+              <span style={{ fontWeight: 700 }}>Instructional teacher</span>
+              <select value={instructionalTeacher} onChange={(event) => setInstructionalTeacher(event.target.value)} style={{ padding: 10, border: '1px solid #d1d5db', borderRadius: 8 }}>
+                <option value="sonoma">Ms. Sonoma</option>
+                <option value="webb">Mrs. Webb</option>
+              </select>
+            </label>
+            <button type="button" onClick={saveInstructionalTeacher} disabled={busy || !selectedLearner} style={secondaryButton}>Save teacher assignment</button>
+          </div>
           <p style={{ margin: 0, color: '#4b5563' }}>The lesson content is approved. Choose when the learner receives it.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
             {deliveryActions.startNow && <button type="button" onClick={startNow} disabled={busy || !selectedLearner} style={button}>Start now</button>}

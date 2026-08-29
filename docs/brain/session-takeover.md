@@ -30,8 +30,9 @@ Non-demo protected starts use `POST /api/syllabus/execution/start`. The route fa
 2. A learner owned by that facilitator.
 3. A valid `browserSessionId` UUID.
 4. An independently supplied canonical Syllabus occurrence ID.
-5. A valid signed execution proof scoped to the facilitator, learner, lesson, and occurrence.
-6. For takeover, a fresh Facilitator PIN and the exact expected conflicting session ID.
+5. An instructional teacher identity (`sonoma` or `webb`) matching the server-resolved assignment.
+6. A valid signed execution proof scoped to the facilitator, learner, lesson, occurrence, local date, and instructional teacher.
+7. For takeover, a fresh Facilitator PIN and the exact expected conflicting session ID.
 
 The page cannot authorize itself with cached facilitator state. The route validates the request and then calls the RPC through the server service-role client. It does not retain a JavaScript check-then-insert fallback.
 
@@ -41,15 +42,15 @@ The Facilitator PIN never enters PostgreSQL. The route verifies it before passin
 
 `public.start_lesson_session_transactional(...)` performs the conflict decision and any mutation in one PostgreSQL transaction:
 
-1. Reject a null browser session identity or blank lesson identity.
+1. Reject a null browser session identity, blank lesson identity, or teacher outside Sonoma/Webb.
 2. Lock the learner row with `FOR UPDATE`. This learner row is the serialization point for competing protected starts, including starts for different lessons.
 3. Lock every active `lesson_sessions` row for the learner.
 4. Inspect the active row for the requested lesson.
-5. Reuse and touch it when the same browser owns it.
+5. Reuse and touch it when the same browser owns it and its immutable teacher matches.
 6. Return `conflict` without mutation when another browser owns it and takeover is not authorized.
 7. Return a stale conflict without mutation when the expected conflict ID is missing, no longer active, or no longer identifies the observed same-lesson conflict.
 8. For an authorized exact-match takeover, end prior active rows and insert the replacement atomically.
-9. For a new lesson, end prior active learner sessions and insert the new session atomically without treating the move as a PIN takeover.
+9. For a new lesson, end prior active learner sessions and insert the new session with its instructional teacher atomically without treating the move as a PIN takeover.
 
 Ending prior sessions, recording restart/start events, and inserting the replacement are part of the same transaction. If insertion or event recording fails, PostgreSQL rolls back the earlier endings.
 
@@ -57,7 +58,7 @@ The RPC returns JSON containing the resulting state (`started`, `reused`, `confl
 
 ### Database boundary
 
-The migration `20260827174540_transactional_lesson_session_start.sql` establishes the current boundary:
+The migrations `20260827174540_transactional_lesson_session_start.sql` and `20260829010000_add_instructional_teacher_authority.sql` establish the current boundary:
 
 - `EXECUTE` on the start RPC is revoked from `PUBLIC`, `anon`, and `authenticated`, then granted to `service_role`.
 - Direct `INSERT` on `lesson_sessions` is revoked from `authenticated`.
@@ -106,7 +107,7 @@ Snapshot/checkpoint writes are not the protected-start authority and cannot gran
 
 Instructional completion for Ms. Sonoma and Mrs. Webb uses `POST /api/syllabus/execution/complete` and `public.complete_lesson_session_transactional(...)`. The route authenticates the facilitator, verifies learner ownership, and passes the exact session, lesson, and Syllabus occurrence identities to the service-role-only RPC.
 
-The RPC locks the session row, verifies that the protected `started` event bound the same occurrence, and atomically sets `ended_at` plus inserts one `completed` event. A retry returns the existing completed event. An event-insert failure rolls back the session end. Authenticated clients cannot insert lifecycle events or change `ended_at`; their remaining session update access supports heartbeat/checkpoint activity only.
+The RPC locks the session row, verifies that the protected `started` event bound the same occurrence and teacher, verifies that `session-v2` means Sonoma and `webb` means Webb, and atomically sets `ended_at` plus inserts one `completed` event. A retry returns the existing completed event. An event-insert failure rolls back the session end. Authenticated clients cannot insert lifecycle events or change `ended_at`; their remaining session update access supports heartbeat/checkpoint activity only.
 
 Completion UI, browser-local Webb cache, transcript finalization, medals, and navigation are downstream of this canonical commit. On failure the instructional page retains work and offers an idempotent retry. Mr. Slate authorizes the occurrence before practice but never starts or completes an instructional lesson session; its mastery evidence remains separate.
 
@@ -151,7 +152,8 @@ The current guard trigger does not perform automatic deactivation or takeover. I
 ## Key Files
 
 - `supabase/migrations/20260827174540_transactional_lesson_session_start.sql` - Transactional RPC, guarded active inserts, trigger removal, and grants.
-- `supabase/migrations/20260828130000_transactional_lesson_session_completion.sql` - Transactional, occurrence-bound, idempotent completion plus server-only end/event guards.
+- `supabase/migrations/20260828192109_transactional_lesson_session_completion.sql` - Transactional, occurrence-bound, idempotent completion plus server-only end/event guards.
+- `supabase/migrations/20260829010000_add_instructional_teacher_authority.sql` - Facilitator-owned assignment constraint, immutable session teacher, and teacher-bound start/completion RPC signatures.
 - `src/app/api/syllabus/execution/start/route.js` - Authenticated, owned, proof-bound, fail-closed protected start route.
 - `src/app/api/syllabus/execution/complete/route.js` - Authenticated, owned, service-role protected completion route.
 - `src/app/api/syllabus/execution/route.js` - Scoped Syllabus execution authorization.
@@ -172,11 +174,12 @@ The current guard trigger does not perform automatic deactivation or takeover. I
 - Stale takeover approval cannot replace a newer or disappeared conflict.
 - Moving to another lesson atomically replaces prior learner sessions without being mislabeled as PIN takeover.
 - Replacement failure preserves prior active sessions through transaction rollback.
-- Protected creation requires browser and canonical occurrence identities plus a valid scoped execution proof.
+- Protected creation requires browser, canonical occurrence, and instructional-teacher identities plus a valid teacher-bound scoped execution proof.
 - Authenticated clients cannot directly insert active session rows or execute the transactional RPC.
 - Authenticated clients cannot directly change `ended_at`, insert lifecycle events, or execute the completion RPC.
 - Sonoma and Webb success UI waits for canonical completion; retries cannot duplicate the completed event.
 - Slate practice/mastery never manufactures instructional completion.
+- A PIN can authorize an occurrence or takeover but cannot substitute a different instructional teacher.
 - Realtime is the immediate detection path when available; a 15-second read-only poll is the fallback.
 - The removed automatic deactivation trigger has no current authority.
 - The database receives no raw PIN and the AI controls no session authority.

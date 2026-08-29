@@ -1,11 +1,35 @@
 import { NextResponse } from 'next/server.js'
 import { getSyllabusRequestContext } from '../../../lib/syllabus/request.server.mjs'
-import { upsertLessonAssociation } from '../../../lib/syllabus/lessonAssociations.server.mjs'
+import { requireAssociationLearner, upsertLessonAssociation } from '../../../lib/syllabus/lessonAssociations.server.mjs'
 import { SyllabusError, validateLearnerId } from '../../../lib/syllabus/schema.mjs'
 import { verifyFacilitatorLessonAccess } from '../../../lib/serverLessonAccess.mjs'
+import { normalizeLessonKey } from '../../../lib/lessonKeyNormalization.js'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+
+export async function GET(request, deps = {}) {
+  try {
+    const context = await getSyllabusRequestContext(request, deps)
+    if (context.error) return NextResponse.json({ error: context.error }, { status: context.status })
+    const params = new URL(request.url).searchParams
+    const learnerId = validateLearnerId(params.get('learnerId'))
+    const lessonKey = normalizeLessonKey(params.get('lessonKey'))
+    if (!lessonKey) throw new SyllabusError('A valid lesson key is required', 400, 'INVALID_LESSON_KEY')
+    await requireAssociationLearner(context.admin, context.user.id, learnerId)
+    const { data, error } = await context.admin.from('syllabus_lesson_associations')
+      .select('*')
+      .eq('facilitator_id', context.user.id)
+      .eq('learner_id', learnerId)
+      .eq('lesson_key', lessonKey)
+      .maybeSingle()
+    if (error) throw error
+    return NextResponse.json({ ok: true, association: data || null })
+  } catch (error) {
+    const status = error instanceof SyllabusError ? error.status : 500
+    return NextResponse.json({ error: error.message || 'Internal server error', ...(error instanceof SyllabusError ? { code: error.code } : {}) }, { status })
+  }
+}
 
 export async function POST(request, deps = {}) {
   try {
@@ -31,6 +55,7 @@ export async function POST(request, deps = {}) {
       title: lesson.title || access.title,
       readinessState: !access.lessonKey.startsWith('generated/') || lesson.approved === true ? 'approved' : 'draft',
       associationSource: 'prepare',
+      instructionalTeacher: body?.instructionalTeacher,
     })
     return NextResponse.json({ ok: true, association })
   } catch (error) {

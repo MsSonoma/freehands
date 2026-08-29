@@ -25,7 +25,7 @@ function repository({ forecast = [], sessions = [], events = [], timezone = 'Ame
       } }
     },
     async listForecastItems() { return structuredClone(forecast) },
-    async listLessonAssociations() { return forecast.map((item, index) => ({ id: index + 1, lesson_key: item.lesson_key, subject: item.subject, title: item.title, readiness_state: 'available' })) },
+    async listLessonAssociations() { return forecast.map((item, index) => ({ id: index + 1, lesson_key: item.lesson_key, subject: item.subject, title: item.title, readiness_state: 'available', instructional_teacher: item.instructional_teacher || 'sonoma' })) },
     async listLessonSchedule() { return [] },
     async listAllTrackedSessions() { return structuredClone(sessions) },
     async listAllLessonSessionEvents() { return structuredClone(events) },
@@ -40,12 +40,12 @@ function request(body, cookie = '') {
   return new Request('http://localhost/api/syllabus/execution', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer token', ...(cookie ? { Cookie: cookie } : {}) },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ instructionalTeacher: 'sonoma', ...body }),
   })
 }
 
 function executionCookie(scope, now = new Date('2026-08-23T16:00:00Z'), secret = 'test-secret') {
-  return `syllabus_execution=${createSyllabusExecutionProof(scope, secret, now)}`
+  return `syllabus_execution=${createSyllabusExecutionProof({ instructionalTeacher: 'sonoma', ...scope }, secret, now)}`
 }
 
 function fakeTransactionalStarter(active = [], options = {}) {
@@ -87,6 +87,7 @@ function fakeTransactionalStarter(active = [], options = {}) {
         learner_id: values.p_learner_id,
         lesson_id: values.p_lesson_id,
         session_id: values.p_browser_session_id,
+        instructional_teacher: values.p_instructional_teacher,
       }
       state.active.push(row)
       state.created.push(row)
@@ -118,6 +119,23 @@ test('today Syllabus occurrence is authorized without legacy availability or Cal
   })
   assert.equal(decision.allowedWithoutPin, true)
   assert.equal(decision.reason, 'today')
+})
+
+test('authorization returns the facilitator assignment and rejects a learner-requested substitute', async () => {
+  const assigned = { ...forecast('today-webb', 'math/today-webb.json', '2026-08-23'), instructional_teacher: 'webb' }
+  const deps = {
+    requestContext: { user: { id: FACILITATOR }, admin: {} },
+    repository: repository({ forecast: [assigned] }),
+    now: new Date('2026-08-23T16:00:00Z'),
+    proofSecret: 'test-secret',
+  }
+  const allowed = await authorizeExecution(request({ learnerId: LEARNER, lessonKey: assigned.lesson_key, occurrenceId: 'syllabus:today-webb', instructionalTeacher: 'webb' }), deps)
+  assert.equal(allowed.status, 200)
+  assert.equal((await allowed.json()).instructionalTeacher, 'webb')
+
+  const denied = await authorizeExecution(request({ learnerId: LEARNER, lessonKey: assigned.lesson_key, occurrenceId: 'syllabus:today-webb', instructionalTeacher: 'sonoma' }), deps)
+  assert.equal(denied.status, 403)
+  assert.equal((await denied.json()).code, 'INSTRUCTIONAL_TEACHER_MISMATCH')
 })
 
 test('local-calendar midnight authorization uses the profile timezone rather than UTC', async () => {
@@ -321,6 +339,20 @@ test('protected start binds the signed proof and started-event metadata to the r
   assert.equal(mismatchStore.state.calls.length, 0)
 })
 
+test('protected start rejects an instructional teacher that differs from the signed proof', async () => {
+  const sessions = fakeTransactionalStarter()
+  const scope = { facilitatorId: FACILITATOR, learnerId: LEARNER, lessonKey: 'math/today.json', occurrenceId: 'syllabus:today', today: '2026-08-23' }
+  const response = await startExecution(request({
+    learnerId: LEARNER,
+    lessonId: 'math/today.json',
+    browserSessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    occurrenceId: 'syllabus:today',
+    instructionalTeacher: 'webb',
+  }, executionCookie(scope)), startDeps(sessions))
+  assert.equal(response.status, 403)
+  assert.equal(sessions.state.calls.length, 0)
+})
+
 test('a different tab proof cannot start or take over the current page occurrence', async () => {
   const pageOccurrence = 'syllabus:today-a'
   const overwrittenScope = { facilitatorId: FACILITATOR, learnerId: LEARNER, lessonKey: 'math/today.json', occurrenceId: 'syllabus:today-b', today: '2026-08-23' }
@@ -507,10 +539,10 @@ test('session boundary uses server authorization and does not accept cached faci
   assert.doesNotMatch(route, /ensurePinAllowed/)
   assert.match(startRoute, /readSyllabusExecutionProof/)
   assert.match(startRoute, /SYLLABUS_EXECUTION_DENIED/)
-  assert.match(startRoute, /lessonKey,\s+occurrenceId,\s+today: proof\.today/)
+  assert.match(startRoute, /lessonKey,\s+occurrenceId,\s+instructionalTeacher,\s+today: proof\.today/)
   assert.doesNotMatch(startRoute, /occurrenceId:\s*proof\.occurrenceId/)
-  assert.match(session, /startTrackedSession\(browserSessionId, deviceName, null, null, authorizedOccurrenceId\)/)
-  assert.match(session, /startTrackedSession\(browserSessionId, deviceName, pinCode, conflictingSession\?\.id, authorizedOccurrenceId\)/)
+  assert.match(session, /startTrackedSession\(browserSessionId, deviceName, null, null, authorizedOccurrenceId, 'sonoma'\)/)
+  assert.match(session, /startTrackedSession\(browserSessionId, deviceName, pinCode, conflictingSession\?\.id, authorizedOccurrenceId, 'sonoma'\)/)
   assert.match(startRoute, /start_lesson_session_transactional/)
   assert.doesNotMatch(startRoute, /from\('lesson_sessions'\)/)
   assert.doesNotMatch(startRoute, /createSessionStore|listActiveForLesson|listActiveForLearner/)

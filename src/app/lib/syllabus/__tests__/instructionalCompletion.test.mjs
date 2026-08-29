@@ -47,6 +47,7 @@ test('completion route owns, scopes, and forwards the exact canonical identities
     p_lesson_id: 'language-arts/grammar.json',
     p_syllabus_occurrence_id: 'syllabus:thursday-grammar',
     p_source: 'webb',
+    p_instructional_teacher: 'webb',
     p_test_percentage: null,
   }])
 })
@@ -56,6 +57,8 @@ test('completion route fails closed for ownership, missing occurrence, and trans
   assert.equal(unauthorized.status, 403)
   const missing = await completeExecution(request({ ...validBody, occurrenceId: '' }), deps(async () => ({ ok: true })))
   assert.equal(missing.status, 400)
+  const slate = await completeExecution(request({ ...validBody, source: 'slate' }), deps(async () => ({ ok: true })))
+  assert.equal(slate.status, 400)
   const mismatch = await completeExecution(request(validBody), deps(async () => ({ ok: false, state: 'occurrence_mismatch' })))
   assert.equal(mismatch.status, 409)
 })

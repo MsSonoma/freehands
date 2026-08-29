@@ -597,7 +597,7 @@ function SessionPageV2Inner() {
           const response = await fetch('/api/syllabus/execution', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ learnerId, lessonKey, occurrenceId: occurrenceIdParam, ...(exceptionPin ? { exceptionPin } : {}) }),
+            body: JSON.stringify({ learnerId, lessonKey, occurrenceId: occurrenceIdParam, instructionalTeacher: 'sonoma', ...(exceptionPin ? { exceptionPin } : {}) }),
           });
           return { response, json: await response.json().catch(() => ({})) };
         };
@@ -607,7 +607,7 @@ function SessionPageV2Inner() {
           if (!pin) throw new Error('This Syllabus occurrence was not authorized.');
           result = await requestAuthorization(pin);
         }
-        if (!result.response.ok || !result.json?.ok || !result.json?.occurrenceId) throw new Error(result.json?.error || 'This Syllabus occurrence is not authorized.');
+        if (!result.response.ok || !result.json?.ok || !result.json?.occurrenceId || result.json?.instructionalTeacher !== 'sonoma') throw new Error(result.json?.error || 'This lesson is not assigned to Ms. Sonoma.');
         if (!cancelled) {
           setAuthorizedOccurrenceId(result.json.occurrenceId);
           setExecutionAuthorization('allowed');
@@ -626,7 +626,7 @@ function SessionPageV2Inner() {
   // Canonical per-lesson persistence key (lesson == session identity)
   const lessonKey = useMemo(() => deriveCanonicalLessonKey({ lessonData, lessonId }), [lessonData, lessonId]);
 
-  // Golden Key lookup/persistence key MUST match V1 + /learn/lessons convention.
+  // Golden Key lookup/persistence key MUST match V1 + /learn convention.
   // V1 stored golden keys under `${subject}/${lesson}` (including .json when present).
   const goldenKeyLessonKey = useMemo(() => {
     if (!subjectParam || !lessonId) return '';
@@ -1706,7 +1706,7 @@ function SessionPageV2Inner() {
         });
         
         // Check for active golden key on this lesson (only affects play timers when Golden Keys are enabled)
-        // Key format must match V1 + /learn/lessons: `${subject}/${lesson}`.
+        // Key format must match V1 + /learn: `${subject}/${lesson}`.
         if (!goldenKeyLessonKey) {
           throw new Error('Missing lesson key for golden key lookup.');
         }
@@ -1716,7 +1716,7 @@ function SessionPageV2Inner() {
           setIsGoldenKeySuspended(false);
           setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
         } else if (learner.golden_keys_enabled && goldenKeyFromUrl) {
-          // Golden key consumed on /learn/lessons; session must persist the per-lesson flag.
+          // Golden key consumed on /learn; session must persist the per-lesson flag.
           setHasGoldenKey(true);
           setIsGoldenKeySuspended(false);
           setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
@@ -5046,7 +5046,7 @@ function SessionPageV2Inner() {
         : false;
 
       // If golden key was earned, persist it to the learner inventory (Supabase)
-      // NOTE: The toast on /learn/lessons is driven by sessionStorage; that alone does NOT update the DB.
+      // NOTE: The toast on /learn is driven by sessionStorage; that alone does NOT update the DB.
       if (earnedKey) {
         const awardLearnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
         if (awardLearnerId && awardLearnerId !== 'demo') {
@@ -5119,15 +5119,15 @@ function SessionPageV2Inner() {
       try {
         if (router && typeof router.push === 'function') {
           console.log('[SessionPageV2] Using router.push');
-          router.push('/learn/lessons');
+          router.push('/learn');
         } else if (typeof window !== 'undefined') {
           console.log('[SessionPageV2] Using window.location.href');
-          window.location.href = '/learn/lessons';
+          window.location.href = '/learn';
         }
       } catch (err) {
         console.error('[SessionPageV2] Navigation error:', err);
         if (typeof window !== 'undefined') {
-          try { window.location.href = '/learn/lessons'; } catch {}
+          try { window.location.href = '/learn'; } catch {}
         }
       }
     });
@@ -7123,7 +7123,7 @@ function SessionPageV2Inner() {
     if (trackingLearnerId && trackingLearnerId !== 'demo' && trackingLessonId && browserSessionId) {
       const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
       const sessionResult = await requireProtectedSessionCreation(() => withTimeout(
-        startTrackedSession(browserSessionId, deviceName, null, null, authorizedOccurrenceId),
+        startTrackedSession(browserSessionId, deviceName, null, null, authorizedOccurrenceId, 'sonoma'),
         12000,
         'Secure lesson start'
       ));
@@ -7391,6 +7391,7 @@ function SessionPageV2Inner() {
         learnerId: trackingLearnerId,
         lessonKey: authorizationLessonKey,
         occurrenceId: occurrenceIdParam,
+        instructionalTeacher: 'sonoma',
         exceptionPin: pinCode,
       }),
     });
@@ -7400,7 +7401,7 @@ function SessionPageV2Inner() {
     }
 
     const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
-    const result = await startTrackedSession(browserSessionId, deviceName, pinCode, conflictingSession?.id, authorizedOccurrenceId);
+    const result = await startTrackedSession(browserSessionId, deviceName, pinCode, conflictingSession?.id, authorizedOccurrenceId, 'sonoma');
     if (!result?.id || result?.conflict) {
       throw new Error('Unable to take over this lesson session. The existing session is still active.');
     }
@@ -7429,7 +7430,7 @@ function SessionPageV2Inner() {
     setShowTakeoverDialog(false);
     setConflictingSession(null);
     if (typeof window !== 'undefined') {
-      window.location.href = '/learn/lessons';
+      window.location.href = '/learn';
     }
   }, []);
 
@@ -7713,7 +7714,7 @@ function SessionPageV2Inner() {
         <div style={{ background: '#fef2f2', color: '#b91c1c', padding: 24, borderRadius: 8, maxWidth: 448, textAlign: 'center' }}>
           <h2 style={{ fontWeight: 700, marginBottom: 8 }}>Syllabus authorization required</h2>
           <p>{executionAuthorizationError}</p>
-          <a href="/learn/lessons" style={{ color: '#991b1b', fontWeight: 700 }}>Return to the Syllabus</a>
+          <a href="/learn" style={{ color: '#991b1b', fontWeight: 700 }}>Return to the Syllabus</a>
         </div>
       </div>
     );

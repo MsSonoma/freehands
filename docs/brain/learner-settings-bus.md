@@ -105,7 +105,7 @@ This bus is intentionally "dumb": it does not do retries, persistence, or reconc
 - `src/app/lib/followUpsClient.js`
   - Authenticated settings and learner Follow-Up client calls.
 
-- `src/app/learn/lessons/page.js`
+- `src/app/learn/LearnerHome.js`
   - Subscribes and hides Golden Key UI immediately when disabled.
 
 - `src/app/session/page.js`

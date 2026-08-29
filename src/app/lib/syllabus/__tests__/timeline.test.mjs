@@ -186,7 +186,7 @@ test('today ready Syllabus artifact starts without legacy availability while unr
   assert.deepEqual(syllabusItemActions({ role: 'learner', state: 'today_unfinished', hasLessonArtifact: false, readinessState: 'draft' }), [
     { id: 'view', label: 'View' },
   ])
-  const learnerPage = fs.readFileSync(path.resolve(TEST_DIR, '../../../learn/lessons/page.js'), 'utf8')
+  const learnerPage = fs.readFileSync(path.resolve(TEST_DIR, '../../../learn/LearnerHome.js'), 'utf8')
   const stateStart = learnerPage.indexOf('function syllabusLessonState')
   const stateEnd = learnerPage.indexOf('async function openSyllabusLesson', stateStart)
   const stateSource = learnerPage.slice(stateStart, stateEnd)

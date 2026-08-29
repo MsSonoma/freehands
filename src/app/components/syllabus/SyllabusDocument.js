@@ -31,6 +31,10 @@ function subjectName(subject) {
   return String(typeof subject === 'string' ? subject : subject?.name || '').trim()
 }
 
+function teacherName(value) {
+  return value === 'webb' ? 'Mrs. Webb' : value === 'sonoma' ? 'Ms. Sonoma' : ''
+}
+
 export default function SyllabusDocument({
   revision,
   forecastItems,
@@ -129,6 +133,7 @@ export default function SyllabusDocument({
                 <div className={styles.entryBody}>
                   <p className={styles.subject}>{item.subject}</p>
                   <h4>{item.title}</h4>
+                  {teacherName(item.instructional_teacher) && <span className={styles.placementLabel}>Instructional teacher: {teacherName(item.instructional_teacher)}</span>}
                   {item.readiness_state && <span className={styles.statusLabel}>{String(item.readiness_state).replace('_', ' ')}</span>}
                   {item.placement_kind === 'scheduled' && <span className={styles.placementLabel}>Calendar date</span>}
                   {item.placement_kind === 'inferred' && <span className={styles.placementLabel}>Provisional weekly-pattern forecast</span>}

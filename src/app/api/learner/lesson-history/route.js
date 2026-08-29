@@ -188,7 +188,7 @@ export async function GET(request) {
 
     let sessionsQuery = supabase
       .from('lesson_sessions')
-      .select('id, learner_id, lesson_id, started_at, ended_at')
+      .select('id, learner_id, lesson_id, instructional_teacher, started_at, ended_at')
       .eq('learner_id', learnerId)
 
     if (fromIso) {
@@ -221,6 +221,7 @@ export async function GET(request) {
             id: row?.id || null,
             learner_id: row?.learner_id || null,
             lesson_id: row?.lesson_id || null,
+            instructional_teacher: row?.instructional_teacher || null,
             started_at: startedAt,
             ended_at: endedAt,
             status: null,

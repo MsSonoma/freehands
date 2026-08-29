@@ -616,7 +616,7 @@ function SlateDrillInner() {
             }).catch(() => {})
           }
 
-          // Check for a pending lesson key from /learn/lessons teacher selection.
+          // Check for a pending mastery lesson key.
           // Only auto-start if there is no saved session to resume — if offerResume is
           // true we fall through to the overlay so the user can choose resume vs new.
           const pendingKey = (() => { try { return sessionStorage.getItem('slate_pending_lesson_key') } catch { return null } })()
@@ -654,11 +654,10 @@ function SlateDrillInner() {
     if (audioEl.current) { audioEl.current.pause(); audioEl.current.src = '' }
   }, [])
 
-  // Redirect to /learn/lessons when in list phase with no resume offer
-  // (Lesson selection is now handled by /learn/lessons)
+  // Redirect to the canonical learner home when in list phase with no resume offer.
   useEffect(() => {
     if (pagePhase === 'list' && !offerResume) {
-      router.replace('/learn/lessons')
+      router.replace('/learn')
     }
   }, [pagePhase, offerResume, router])
 
@@ -1138,13 +1137,13 @@ function SlateDrillInner() {
     setCurrentQ(null)
     setLessonData(null)
     lessonKeyRef.current = ''
-    router.push('/learn/lessons')
+    router.push('/learn')
   }, [router])
 
   const exitToLessons = useCallback(() => {
     clearInterval(timerInterval.current)
     clearTimeout(feedbackTimeout.current)
-    router.push('/learn/lessons')
+    router.push('/learn')
   }, [router])
 
   // ── Snapshot save/restore (survive navigation) ────────────────────────
@@ -1167,7 +1166,7 @@ function SlateDrillInner() {
 
   function handleSlateRestart() {
     try { localStorage.removeItem('slate_session') } catch {}
-    // If the user arrived with a pending lesson key (re-entry from /learn/lessons),
+    // If the user arrived with a pending mastery lesson key,
     // start that lesson now instead of redirecting back to lesson selection.
     const pendingKey = (() => { try { return sessionStorage.getItem('slate_pending_lesson_key') } catch { return null } })()
     if (pendingKey) {

@@ -4,6 +4,7 @@ import { resolveCalendarContext } from '../calendarDate.mjs'
 import { SyllabusError } from './schema.mjs'
 import { composeSyllabusLessonTimeline } from './lessonTimeline.mjs'
 import { loadSyllabusTimelineInputs } from './lessonTimelineInputs.server.mjs'
+import { DEFAULT_INSTRUCTIONAL_TEACHER, normalizeInstructionalTeacher } from './instructionalTeacher.mjs'
 
 export const SYLLABUS_EXECUTION_COOKIE = 'syllabus_execution'
 const PROOF_TTL_SECONDS = 120
@@ -44,6 +45,7 @@ export function executionProofMatches(proof, scope) {
     && proof.learnerId === scope.learnerId
     && proof.lessonKey === scope.lessonKey
     && proof.occurrenceId === scope.occurrenceId
+    && proof.instructionalTeacher === scope.instructionalTeacher
     && proof.today === scope.today)
 }
 
@@ -75,12 +77,17 @@ export async function resolveSyllabusExecution({
       : []
     const scheduledToday = legacySchedules.some((row) => normalizeLessonKey(row?.lesson_key) === normalizedKey && String(row?.scheduled_date || '').slice(0, 10) === calendar.today)
     const legacyOccurrenceId = `legacy:${normalizedKey}:${calendar.today}`
+    const association = typeof repository.findLessonAssociation === 'function'
+      ? await repository.findLessonAssociation(facilitatorId, learnerId, normalizedKey)
+      : null
+    const instructionalTeacher = normalizeInstructionalTeacher(association?.instructional_teacher) || DEFAULT_INSTRUCTIONAL_TEACHER
     return {
       allowedWithoutPin: approved || scheduledToday,
       requiresPin: !approved && !scheduledToday,
       reason: approved || scheduledToday ? 'legacy_available' : 'legacy_exception',
       occurrence: { occurrence_id: legacyOccurrenceId, lesson_key: normalizedKey, planned_date: calendar.today },
-      scope: { facilitatorId, learnerId, lessonKey: normalizedKey, occurrenceId: legacyOccurrenceId, today: calendar.today },
+      instructionalTeacher,
+      scope: { facilitatorId, learnerId, lessonKey: normalizedKey, occurrenceId: legacyOccurrenceId, instructionalTeacher, today: calendar.today },
       calendar,
     }
   }
@@ -112,16 +119,19 @@ export async function resolveSyllabusExecution({
   }
   const isToday = clean(occurrence.planned_date).slice(0, 10) === calendar.today
   const completedRepeat = occurrence.actual_kind === 'completed'
+  const instructionalTeacher = normalizeInstructionalTeacher(occurrence.instructional_teacher) || DEFAULT_INSTRUCTIONAL_TEACHER
   return {
     allowedWithoutPin: isToday && !completedRepeat,
     requiresPin: !isToday || completedRepeat,
     reason: completedRepeat ? 'completed_repeat' : (!isToday ? 'non_today' : 'today'),
     occurrence,
+    instructionalTeacher,
     scope: {
       facilitatorId,
       learnerId,
       lessonKey: normalizedKey,
       occurrenceId: occurrence.occurrence_id,
+      instructionalTeacher,
       today: calendar.today,
     },
     calendar,
