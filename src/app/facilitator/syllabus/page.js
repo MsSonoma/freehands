@@ -16,6 +16,7 @@ import {
   updateTeachingGuidanceList,
 } from '@/app/lib/syllabus/teachingGuidance.mjs'
 import { resolveEffectiveTier } from '@/app/lib/entitlements'
+import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import styles from './syllabus.module.css'
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
@@ -155,6 +156,9 @@ export default function SyllabusPage() {
   const [slotSubjects, setSlotSubjects] = useState({})
   const [loading, setLoading] = useState(true)
   const [working, setWorking] = useState(false)
+  const [teacherAssignmentBusy, setTeacherAssignmentBusy] = useState('')
+  const [historicalActivityBusy, setHistoricalActivityBusy] = useState('')
+  const [legacyWebbCompletions, setLegacyWebbCompletions] = useState({})
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -209,6 +213,7 @@ export default function SyllabusPage() {
       const json = await response.json()
       if (!response.ok) throw new Error(json.error || 'Could not load Syllabus')
       setSyllabus(json)
+      setLegacyWebbCompletions(getWebbCompletionForLearner(id))
       setMasteryProposal(json.proposed_reforecast ? {
         proposal_revision: json.proposed_reforecast.revision,
         forecast_items: json.proposed_reforecast.forecast_items,
@@ -384,6 +389,58 @@ export default function SyllabusPage() {
     router.push(`/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=DELIVERY&repeat=1`)
   }
 
+  async function handleTeacherAssignment(item, instructionalTeacher) {
+    const occurrenceKey = item?.occurrence_id || item?.id || ''
+    if (!occurrenceKey || !item?.lesson_key) return
+    setTeacherAssignmentBusy(occurrenceKey)
+    setError('')
+    try {
+      const response = await fetch('/api/syllabus/lesson-associations', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          learnerId,
+          lessonKey: item.lesson_key,
+          occurrenceId: occurrenceKey,
+          instructionalTeacher,
+        }),
+      })
+      const json = await response.json()
+      if (!response.ok) throw new Error(json.error || 'Could not assign the instructional teacher')
+      await loadCurrent()
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setTeacherAssignmentBusy('')
+    }
+  }
+
+  async function handleRecordHistoricalActivity(item, activity) {
+    const occurrenceKey = item?.source_occurrence_id || item?.occurrence_id || item?.id || ''
+    if (!occurrenceKey || !item?.lesson_key) return
+    setHistoricalActivityBusy(occurrenceKey)
+    setError('')
+    try {
+      const response = await fetch('/api/syllabus/historical-activities', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          learnerId,
+          lessonKey: item.lesson_key,
+          occurrenceId: occurrenceKey,
+          ...activity,
+        }),
+      })
+      const json = await response.json()
+      if (!response.ok) throw new Error(json.error || 'Could not record historical activity')
+      await loadCurrent()
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setHistoricalActivityBusy('')
+    }
+  }
+
   if (authLoading || (isAuthenticated && !pinChecked)) return <main className={styles.page}><p>Loading…</p></main>
   if (!isAuthenticated) return <main className={styles.page}><GatedOverlay show gateType={gateType || 'auth'} feature="Syllabus" emoji="🧭" description="Sign in to view and activate a learner's educational plan." /></main>
 
@@ -492,6 +549,11 @@ export default function SyllabusPage() {
               learnerName={selectedLearner?.name || ''}
               proposedReforecast={syllabus.proposed_reforecast}
               onLessonAction={handleLessonAction}
+              onTeacherAssignment={handleTeacherAssignment}
+              teacherAssignmentBusy={teacherAssignmentBusy}
+              onRecordHistoricalActivity={handleRecordHistoricalActivity}
+              historicalActivityBusy={historicalActivityBusy}
+              legacyWebbCompletions={legacyWebbCompletions}
               today={syllabus.resolved_today}
             />}
 

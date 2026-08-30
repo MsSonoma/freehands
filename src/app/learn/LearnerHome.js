@@ -1455,6 +1455,7 @@ function LessonsPageInner(){
                 const subjectBadge = subject === 'generated' && l.subject
                   ? l.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
                   : displaySubject
+                const cardInstructionalTeacher = l.instructional_teacher === 'webb' ? 'webb' : 'sonoma'
                 return (
                   <button
                     key={`${subject}-${l.file}`}
@@ -1472,6 +1473,7 @@ function LessonsPageInner(){
                       <div style={{ fontWeight: 600, fontSize: 15, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {l.title}{achievementMarks ? ` ${achievementMarks}` : ''}
                       </div>
+                      <div style={{ marginTop: 3, fontSize: 12, color: '#4b5563', fontWeight: 600 }}>Your teacher: {instructionalTeacherLabel(cardInstructionalTeacher)}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                       {isScheduled && <span style={{ fontSize: 16 }} title="Scheduled for today">📅</span>}
@@ -1516,6 +1518,7 @@ function LessonsPageInner(){
                   const rSubjectBadge = meta.isGenerated
                     ? (meta.subject && meta.subject !== 'generated' ? meta.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Generated')
                     : (meta.subject || 'general').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                  const recentInstructionalTeacher = meta.instructional_teacher === 'webb' ? 'webb' : 'sonoma'
                   return (
                     <button
                       key={rk}
@@ -1533,6 +1536,7 @@ function LessonsPageInner(){
                         <div style={{ fontWeight: 600, fontSize: 15, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {meta.title || rk}{rAchievementMarks ? ` ${rAchievementMarks}` : ''}
                         </div>
+                        <div style={{ marginTop: 3, fontSize: 12, color: '#4b5563', fontWeight: 600 }}>Your teacher: {instructionalTeacherLabel(recentInstructionalTeacher)}</div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                         {lessonHistoryInProgress?.[rk] && <span style={{ fontSize: 11, background: '#d1fae5', color: '#065f46', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>In progress</span>}
@@ -1608,6 +1612,7 @@ function LessonsPageInner(){
                       const oSubjectBadge = ol.subject && ol.subject !== 'generated'
                         ? ol.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
                         : 'Generated'
+                      const ownedInstructionalTeacher = ol.instructional_teacher === 'webb' ? 'webb' : 'sonoma'
                       return (
                         <button
                           key={olk}
@@ -1625,6 +1630,7 @@ function LessonsPageInner(){
                             <div style={{ fontWeight: 600, fontSize: 15, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {ol.title || olk}{oAchievementMarks ? ` ${oAchievementMarks}` : ''}
                             </div>
+                            <div style={{ marginTop: 3, fontSize: 12, color: '#4b5563', fontWeight: 600 }}>Your teacher: {instructionalTeacherLabel(ownedInstructionalTeacher)}</div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                             {isActive
@@ -1886,7 +1892,7 @@ function LessonsPageInner(){
                       disabled={capped}
                       onClick={handleStartLesson}
                     >
-                      {!isDemo && !activeSet.has(lessonKey) ? '🔒 ' : ''}{hasSnapshot ? 'Continue' : 'Start Lesson'}
+                      {!isDemo && !activeSet.has(lessonKey) ? '🔒 ' : ''}{hasSnapshot ? `Continue with ${instructionalTeacherLabel(assignedInstructionalTeacher)}` : `Start with ${instructionalTeacherLabel(assignedInstructionalTeacher)}`}
                     </button>
                     {capped && (
                       <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 13, marginTop: 8, marginBottom: 0 }}>

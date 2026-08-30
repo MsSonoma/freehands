@@ -11,7 +11,7 @@ import {
   syllabusItemState,
   weeklyPatternRows,
 } from '@/app/lib/syllabus/timeline.mjs'
-import { syllabusTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { instructionalTeacherLabel, normalizeInstructionalTeacher, syllabusTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
 import styles from './SyllabusDocument.module.css'
 
 const STATE_COPY = {
@@ -32,6 +32,55 @@ function subjectName(subject) {
   return String(typeof subject === 'string' ? subject : subject?.name || '').trim()
 }
 
+function HistoricalActivityControl({ item, legacyWebbCompletion, busy, onRecord }) {
+  const [activityType, setActivityType] = useState('instructional_completion')
+  const [instructionalTeacher, setInstructionalTeacher] = useState('sonoma')
+  const [occurredAt, setOccurredAt] = useState('')
+  const instructionalCompletionAllowed = item?.placement_kind !== 'actual'
+  const selectedActivityType = instructionalCompletionAllowed ? activityType : 'slate_drill_completion'
+  const validLegacyWebb = instructionalCompletionAllowed
+    && legacyWebbCompletion?.completed === true
+    && Number.isFinite(Date.parse(legacyWebbCompletion?.completedAt))
+  const submit = () => {
+    if (!occurredAt) return
+    onRecord(item, {
+      activityType: selectedActivityType,
+      instructionalTeacher: selectedActivityType === 'instructional_completion' ? instructionalTeacher : undefined,
+      occurredAt: new Date(occurredAt).toISOString(),
+      provenance: 'facilitator_recorded_legacy_activity',
+    })
+  }
+  return (
+    <details className={styles.historicalControl}>
+      <summary>Record historical activity</summary>
+      {validLegacyWebb && <button type="button" disabled={busy} onClick={() => onRecord(item, {
+        activityType: 'instructional_completion',
+        instructionalTeacher: 'webb',
+        occurredAt: new Date(legacyWebbCompletion.completedAt).toISOString(),
+        provenance: 'facilitator_attested_webb_completion_v1_import',
+        legacyCompletion: legacyWebbCompletion,
+      })}>Import facilitator-attested legacy Webb completion from {prettyDate(legacyWebbCompletion.completedAt, { month: 'short', day: 'numeric', year: 'numeric' })}</button>}
+      {instructionalCompletionAllowed
+        ? <label>Activity
+          <select value={activityType} onChange={(event) => setActivityType(event.target.value)}>
+            <option value="instructional_completion">Instructional lesson completed</option>
+            <option value="slate_drill_completion">Mr. Slate drill completed</option>
+          </select>
+        </label>
+        : <p>Activity: Mr. Slate drill completed</p>}
+      {instructionalCompletionAllowed && selectedActivityType === 'instructional_completion' && <label>Teacher
+        <select value={instructionalTeacher} onChange={(event) => setInstructionalTeacher(event.target.value)}>
+          <option value="sonoma">Ms. Sonoma</option>
+          <option value="webb">Mrs. Webb</option>
+        </select>
+      </label>}
+      <label>Completed at<input type="datetime-local" value={occurredAt} onChange={(event) => setOccurredAt(event.target.value)} /></label>
+      <button type="button" disabled={busy || !occurredAt} onClick={submit}>{busy ? 'Recording…' : 'Add historical record'}</button>
+      <small>Historical records do not create transcripts, mastery, retention, or canonical lesson-session evidence.</small>
+    </details>
+  )
+}
+
 export default function SyllabusDocument({
   revision,
   forecastItems,
@@ -44,11 +93,19 @@ export default function SyllabusDocument({
   lessonState = () => ({ hasLessonArtifact: false, hasProgress: false }),
   onOpenLesson = null,
   onLessonAction = null,
+  onTeacherAssignment = null,
+  teacherAssignmentBusy = '',
+  onRecordHistoricalActivity = null,
+  historicalActivityBusy = '',
+  legacyWebbCompletions = {},
   proposalHref = '/facilitator/syllabus',
   planningHref = '/facilitator/syllabus',
   today = localCalendarDate(),
 }) {
   const visibleItems = Array.isArray(timelineItems) ? timelineItems : forecastItems
+  const startedOccurrenceIds = useMemo(() => new Set(visibleItems
+    .filter((item) => item?.placement_kind === 'actual' && item?.historical_record !== true && item?.source_occurrence_id)
+    .map((item) => String(item.source_occurrence_id))), [visibleItems])
   const [selectedWeekStart, setSelectedWeekStart] = useState(() => moveSyllabusWeek(null, 'now', today))
   useEffect(() => setSelectedWeekStart(moveSyllabusWeek(null, 'now', today)), [revision?.id, today])
   const week = useMemo(() => selectSyllabusWeek(visibleItems, { weekStart: selectedWeekStart, today }), [visibleItems, selectedWeekStart, today])
@@ -123,15 +180,35 @@ export default function SyllabusDocument({
             {day.items.map((item) => {
             const currentLesson = lessonState(item) || {}
             const state = syllabusItemState({ item, today, hasProgress: currentLesson.hasProgress })
-            const actions = syllabusItemActions({ role, state, hasLessonArtifact: currentLesson.hasLessonArtifact, readinessState: item.readiness_state, isScheduled: item.is_explicit_schedule, isToday: dateOnly(item.planned_date) === dateOnly(today) })
+            const actions = item.historical_record ? [] : syllabusItemActions({ role, state, hasLessonArtifact: currentLesson.hasLessonArtifact, readinessState: item.readiness_state, isScheduled: item.is_explicit_schedule, isToday: dateOnly(item.planned_date) === dateOnly(today) })
             const notes = proposalAnnotations.get(item.id || item.lineage_id || `${dateOnly(item.planned_date)}:${item.subject}:${item.title}`) || []
+            const occurrenceKey = item.occurrence_id || item.id || `${item.lineage_id}-${item.planned_date}`
+            const assignedTeacher = normalizeInstructionalTeacher(item.assigned_instructional_teacher || item.instructional_teacher) || 'sonoma'
+            const historicalActivityAllowed = item.historical_record !== true
+              && (item.placement_kind !== 'actual' || Boolean(item.source_occurrence_id))
+            const teacherEditable = role === 'facilitator'
+              && item.lesson_key
+              && item.placement_kind !== 'actual'
+              && item.historical_record !== true
+              && !startedOccurrenceIds.has(String(occurrenceKey))
+              && typeof onTeacherAssignment === 'function'
             return (
-              <div className={styles.entryRow} key={item.occurrence_id || item.id || `${item.lineage_id}-${item.planned_date}`} data-syllabus-state={state}>
+              <div className={styles.entryRow} key={occurrenceKey} data-syllabus-state={state}>
                 <div className={styles.entryBody}>
                   <p className={styles.subject}>{item.subject}</p>
                   <h4>{item.title}</h4>
-                  {(item.item_type || 'lesson') === 'lesson' && <span className={styles.placementLabel}>{syllabusTeacherLabel(item)}</span>}
+                  {(item.item_type || 'lesson') === 'lesson' && item.historical_record
+                    ? <span className={styles.placementLabel}>Completed with {instructionalTeacherLabel(item.actual_instructional_teacher)} · historical record</span>
+                    : (item.item_type || 'lesson') === 'lesson' && teacherEditable
+                      ? <label className={styles.teacherControl}>Assigned teacher
+                        <select aria-label={`Assigned teacher for ${item.title}`} value={assignedTeacher} disabled={teacherAssignmentBusy === occurrenceKey} onChange={(event) => onTeacherAssignment(item, event.target.value)}>
+                          <option value="sonoma">Ms. Sonoma</option>
+                          <option value="webb">Mrs. Webb</option>
+                        </select>
+                      </label>
+                      : (item.item_type || 'lesson') === 'lesson' && <span className={styles.placementLabel}>{role === 'learner' && item.placement_kind !== 'actual' ? `Your teacher: ${instructionalTeacherLabel(assignedTeacher)}` : syllabusTeacherLabel(item)}</span>}
                   {(item.slate_annotations || []).map((annotation) => <span className={styles.placementLabel} key={`${annotation.kind}:${annotation.label}`}>{annotation.label}</span>)}
+                  {(item.historical_activity_annotations || []).map((annotation) => <span className={styles.placementLabel} key={`${annotation.kind}:${annotation.label}`}>{annotation.label}</span>)}
                   {item.readiness_state && <span className={styles.statusLabel}>{String(item.readiness_state).replace('_', ' ')}</span>}
                   {item.placement_kind === 'scheduled' && <span className={styles.placementLabel}>Calendar date</span>}
                   {item.placement_kind === 'inferred' && <span className={styles.placementLabel}>Provisional weekly-pattern forecast</span>}
@@ -147,6 +224,12 @@ export default function SyllabusDocument({
                   return <button key={action.id} type="button" className={styles.lessonAction} onClick={() => (onLessonAction || onOpenLesson)?.(item, action)}>{action.label}{action.requires_pin ? ' · PIN' : ''}</button>
                 })}</div>
                 {role === 'learner' && week.state === 'now' && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && !currentLesson.hasLessonArtifact && <span className={styles.preparing}>Preparing</span>}
+                {role === 'facilitator' && item.lesson_key && historicalActivityAllowed && typeof onRecordHistoricalActivity === 'function' && <HistoricalActivityControl
+                  item={item}
+                  legacyWebbCompletion={legacyWebbCompletions[item.lesson_key]}
+                  busy={historicalActivityBusy === occurrenceKey}
+                  onRecord={onRecordHistoricalActivity}
+                />}
                 {role === 'facilitator' && notes.length > 0 && <aside className={styles.marginNote}><strong>Mastery note</strong>{notes.map((note) => <span key={note.id || note.lineage_id}>{note.title}</span>)}<a href={proposalHref}>Review proposed change</a></aside>}
               </div>
             )

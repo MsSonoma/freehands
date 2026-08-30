@@ -35,6 +35,15 @@
 .placementLabel { font-weight:500; font-style:italic; text-transform:none; }
 .lessonActions { display:flex; flex-wrap:wrap; gap:5px; }
 .lessonAction { padding:6px 9px; border:1px solid #6b382c; background:#6b382c; color:#fff; cursor:pointer; font:700 10px Montserrat,sans-serif; text-decoration:none; text-align:center; }
+.teacherControl { display:grid; gap:4px; margin-top:7px; color:#655d54; font:700 11px Roboto,sans-serif; }
+.teacherControl select { width:100%; min-width:0; padding:6px 7px; border:1px solid #b9ab98; background:#fffdf8; color:#2d2924; font:600 12px Roboto,sans-serif; }
+.historicalControl { border-top:1px dashed #cfc6b8; padding-top:8px; font:12px Roboto,sans-serif; }
+.historicalControl summary { color:#6b382c; cursor:pointer; font-weight:700; }
+.historicalControl label { display:grid; gap:3px; margin-top:7px; }
+.historicalControl select,.historicalControl input { min-width:0; padding:6px; border:1px solid #cfc6b8; background:#fff; font:12px Roboto,sans-serif; }
+.historicalControl button { margin-top:7px; padding:6px 8px; border:1px solid #6b382c; background:#fff; color:#6b382c; cursor:pointer; font-weight:700; }
+.historicalControl button:disabled { opacity:.55; cursor:wait; }
+.historicalControl small { display:block; margin-top:7px; color:#756b61; line-height:1.35; }
 .marginNote { border-left:3px solid #d39a4a; padding:8px 12px; background:#fff9eb; display:grid; gap:3px; font:13px Roboto,sans-serif; }
 .marginNote a { color:#7b3f32;font-weight:700; }.emptyWeek { margin:0;padding:28px 0;color:#7b7268;font-style:italic; }
 .unmatchedNotes { margin-top:18px; border-left:3px solid #d39a4a; padding:10px 12px; background:#fff9eb; display:grid; gap:4px; font:13px Roboto,sans-serif; }

@@ -3,7 +3,7 @@ import { SyllabusError } from './schema.mjs'
 import { DEFAULT_INSTRUCTIONAL_TEACHER, normalizeInstructionalTeacher } from './instructionalTeacher.mjs'
 
 const READINESS = new Set(['draft', 'approved', 'available', 'saved'])
-const SOURCES = new Set(['generator', 'prepare', 'availability', 'schedule'])
+const SOURCES = new Set(['generator', 'prepare', 'availability', 'schedule', 'syllabus'])
 const READINESS_RANK = Object.freeze({ saved: 0, draft: 1, approved: 2, available: 3 })
 
 function clean(value, max = 240) {

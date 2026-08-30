@@ -4,6 +4,8 @@ import { requireAssociationLearner, upsertLessonAssociation } from '../../../lib
 import { SyllabusError, validateLearnerId } from '../../../lib/syllabus/schema.mjs'
 import { verifyFacilitatorLessonAccess } from '../../../lib/serverLessonAccess.mjs'
 import { normalizeLessonKey } from '../../../lib/lessonKeyNormalization.js'
+import { createSyllabusRepository } from '../../../lib/syllabus/supabaseRepository.server.mjs'
+import { requireAssignableSyllabusOccurrence } from '../../../lib/syllabus/syllabusMembership.server.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -61,5 +63,46 @@ export async function POST(request, deps = {}) {
   } catch (error) {
     const status = error instanceof SyllabusError ? error.status : 500
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status })
+  }
+}
+
+export async function PATCH(request, deps = {}) {
+  try {
+    const context = await getSyllabusRequestContext(request, deps)
+    if (context.error) return NextResponse.json({ error: context.error }, { status: context.status })
+    const body = await request.json().catch(() => null)
+    const learnerId = validateLearnerId(body?.learnerId)
+    const lessonKey = normalizeLessonKey(body?.lessonKey)
+    if (!lessonKey) throw new SyllabusError('A valid lesson key is required', 400, 'INVALID_LESSON_KEY')
+    const repository = deps.repository || createSyllabusRepository(context.admin)
+    const membership = await requireAssignableSyllabusOccurrence({
+      repository,
+      admin: context.admin,
+      facilitatorId: context.user.id,
+      learnerId,
+      lessonKey,
+      occurrenceId: body?.occurrenceId,
+      fallbackTimeZone: context.user?.user_metadata?.timezone,
+      now: deps.now || new Date(),
+    })
+    const association = await upsertLessonAssociation({
+      admin: context.admin,
+      facilitatorId: context.user.id,
+      learnerId,
+      lessonKey: membership.lessonKey,
+      subject: membership.item.subject,
+      title: membership.item.title,
+      readinessState: membership.item.readiness_state || 'saved',
+      associationSource: 'syllabus',
+      instructionalTeacher: body?.instructionalTeacher,
+      verifyLearner: false,
+    })
+    return NextResponse.json({ ok: true, association, occurrenceId: membership.occurrenceId })
+  } catch (error) {
+    const status = error instanceof SyllabusError ? error.status : 500
+    return NextResponse.json({
+      error: error.message || 'Internal server error',
+      ...(error instanceof SyllabusError ? { code: error.code } : {}),
+    }, { status })
   }
 }

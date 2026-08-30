@@ -899,6 +899,122 @@ test('Slate occurrence proof annotates only the matching repeated Syllabus occur
   assert.ok(ambiguous.every((item) => item.slate_annotations.length === 0))
 })
 
+test('facilitator-recorded Webb completion is separate historical instruction and does not rewrite current assignment', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [
+      forecastLesson({ created_at: '2026-08-25T15:00:00Z' }),
+      forecastLesson({ id: 'forecast-2', planned_date: '2026-09-14', created_at: '2026-08-25T16:00:00Z' }),
+    ],
+    associations: [association({ instructional_teacher: 'sonoma' })],
+    legacyActivities: [{
+      id: 'legacy-webb-1', lesson_key: 'generated/fractions.json', syllabus_occurrence_id: 'syllabus:forecast-1',
+      activity_type: 'instructional_completion', instructional_teacher: 'webb', occurred_at: '2026-08-20T15:00:00Z',
+      provenance: 'facilitator_recorded_legacy_activity',
+    }],
+    today: '2026-08-26',
+  })
+  const historical = items.find((item) => item.historical_record)
+  const satisfied = items.find((item) => item.id === 'forecast-1')
+  const current = items.find((item) => item.id === 'forecast-2')
+  assert.equal(historical.actual_kind, 'completed')
+  assert.equal(historical.actual_instructional_teacher, 'webb')
+  assert.equal(historical.historical_provenance, 'facilitator_recorded_legacy_activity')
+  assert.equal(historical.source_occurrence_id, 'syllabus:forecast-1')
+  assert.equal(satisfied, undefined)
+  assert.equal(current.assigned_instructional_teacher, 'sonoma')
+  assert.equal(current.is_deliberate_repeat, false)
+})
+
+test('historical instructional completion consumes only its exact repeated occurrence', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [forecastLesson(), forecastLesson({ id: 'forecast-2', planned_date: '2026-09-14' })],
+    legacyActivities: [{
+      id: 'legacy-webb-repeat', lesson_key: 'generated/fractions.json', syllabus_occurrence_id: 'syllabus:forecast-1',
+      activity_type: 'instructional_completion', instructional_teacher: 'webb', occurred_at: '2026-08-20T15:00:00Z',
+      provenance: 'facilitator_recorded_legacy_activity',
+    }],
+    today: '2026-08-26',
+  })
+  const historical = items.find((item) => item.historical_record)
+  assert.equal(historical.placement_kind, 'historical')
+  assert.notEqual(historical.readiness_state, 'completed')
+  assert.equal(historical.source_occurrence_id, 'syllabus:forecast-1')
+  assert.equal(items.some((item) => item.id === 'forecast-1'), false)
+  assert.equal(items.some((item) => item.id === 'forecast-2'), true)
+  assert.equal(items.find((item) => item.id === 'forecast-2').is_deliberate_repeat, false)
+})
+
+test('legacy Slate drill is labeled only as history and cannot manufacture mastery or instruction', () => {
+  const [item] = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [forecastLesson()],
+    legacyActivities: [{
+      id: 'legacy-slate-1', lesson_key: 'generated/fractions.json', syllabus_occurrence_id: 'syllabus:forecast-1',
+      activity_type: 'slate_drill_completion', instructional_teacher: null, occurred_at: '2026-08-20T15:00:00Z',
+      provenance: 'facilitator_recorded_legacy_activity',
+    }],
+    today: '2026-08-26',
+  })
+  assert.deepEqual(item.historical_activity_annotations.map((row) => row.label), ['Mr. Slate drill completed · historical record'])
+  assert.deepEqual(item.slate_annotations, [])
+  assert.equal(item.actual_kind, undefined)
+  assert.equal(item.actual_instructional_teacher, undefined)
+  assert.equal(item.assigned_instructional_teacher, 'sonoma')
+})
+
+test('legacy activity occurrence binding never annotates a different repeated lesson', () => {
+  const forecasts = [forecastLesson(), forecastLesson({ id: 'forecast-2', planned_date: '2026-09-14' })]
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: forecasts,
+    legacyActivities: [{
+      id: 'legacy-slate-2', lesson_key: 'generated/fractions.json', syllabus_occurrence_id: 'syllabus:forecast-2',
+      activity_type: 'slate_drill_completion', occurred_at: '2026-08-20T15:00:00Z', provenance: 'facilitator_recorded_legacy_activity',
+    }],
+    today: '2026-08-26',
+  })
+  assert.deepEqual(items.find((item) => item.id === 'forecast-1').historical_activity_annotations, [])
+  assert.deepEqual(items.find((item) => item.id === 'forecast-2').historical_activity_annotations.map((row) => row.label), ['Mr. Slate drill completed · historical record'])
+})
+
+test('legacy Slate history prefers the exact canonical actual source occurrence and never cross-binds a repeat', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [
+      forecastLesson({ id: 'forecast-1', created_at: '2026-08-24T10:00:00Z' }),
+      forecastLesson({ id: 'forecast-2', planned_date: '2026-09-14', created_at: '2026-08-28T10:00:00Z' }),
+    ],
+    associations: [association({ instructional_teacher: 'webb' })],
+    sessions: [{
+      id: 'completed-webb',
+      lesson_id: 'generated/fractions.json',
+      syllabus_occurrence_id: 'syllabus:forecast-1',
+      instructional_teacher: 'webb',
+      started_at: '2026-08-27T13:00:00Z',
+      ended_at: '2026-08-27T14:00:00Z',
+    }],
+    legacyActivities: [{
+      id: 'legacy-slate-actual',
+      lesson_key: 'generated/fractions.json',
+      syllabus_occurrence_id: 'syllabus:forecast-1',
+      activity_type: 'slate_drill_completion',
+      occurred_at: '2026-08-27T15:00:00Z',
+      provenance: 'facilitator_recorded_legacy_activity',
+    }],
+    today: '2026-08-29',
+  })
+  const actual = items.find((item) => item.id === 'actual:completed-webb')
+  const repeat = items.find((item) => item.id === 'forecast-2')
+  assert.deepEqual(actual.historical_activity_annotations.map((row) => row.label), ['Mr. Slate drill completed · historical record'])
+  assert.deepEqual(actual.slate_annotations, [])
+  assert.equal(actual.actual_kind, 'completed')
+  assert.equal(actual.actual_instructional_teacher, 'webb')
+  assert.deepEqual(repeat.historical_activity_annotations, [])
+  assert.equal(repeat.assigned_instructional_teacher, 'webb')
+})
+
 test('Slate evidence loader uses canonical resolvers and carries the server-owned occurrence into reviews', async () => {
   const evidenceSession = {
     id: 'evidence-1', session_id: 'slate:activity-1', browser_session_id: 'slate:activity-1', facilitator_id: 'facilitator-1', learner_id: 'learner-1',
@@ -928,7 +1044,7 @@ test('Slate history is loaded for Syllabus display but cannot become an executio
 
 test('Slate occurrence storage is server-owned, immutable, and never backfilled by the migration', () => {
   const route = fs.readFileSync(path.resolve('src/app/api/evidence/route.js'), 'utf8')
-  const migration = fs.readFileSync(path.resolve('supabase/migrations/20260829193425_bind_slate_evidence_to_syllabus_occurrence.sql'), 'utf8')
+  const migration = fs.readFileSync(path.resolve('supabase/migrations/20260829203631_bind_slate_evidence_to_syllabus_occurrence.sql'), 'utf8')
   assert.match(route, /syllabus_occurrence_id: isSlateActivity \? authorizedOccurrenceId : null/)
   assert.match(migration, /add column syllabus_occurrence_id text/i)
   assert.match(migration, /before update of syllabus_occurrence_id/i)
@@ -939,5 +1055,26 @@ test('SyllabusDocument renders teacher and Slate labels from the separated read-
   const document = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusDocument.js'), 'utf8')
   assert.match(document, /syllabusTeacherLabel\(item\)/)
   assert.match(document, /item\.slate_annotations/)
+  assert.match(document, /onTeacherAssignment/)
+  assert.match(document, /<option value="sonoma">Ms\. Sonoma<\/option>/)
+  assert.match(document, /<option value="webb">Mrs\. Webb<\/option>/)
+  assert.doesNotMatch(document, /<option value="slate">/i)
+  assert.match(document, /item\.historical_activity_annotations/)
+  assert.match(document, /startedOccurrenceIds\.has\(String\(occurrenceKey\)\)/)
+  assert.match(document, /instructionalCompletionAllowed = item\?\.placement_kind !== 'actual'/)
+  assert.match(document, /selectedActivityType = instructionalCompletionAllowed \? activityType : 'slate_drill_completion'/)
+  assert.match(document, /item\.placement_kind !== 'actual' \|\| Boolean\(item\.source_occurrence_id\)/)
+  const facilitatorPage = fs.readFileSync(path.resolve('src/app/facilitator/syllabus/page.js'), 'utf8')
+  assert.match(facilitatorPage, /item\?\.source_occurrence_id \|\| item\?\.occurrence_id/)
+  assert.match(document, /facilitator-attested legacy Webb completion/)
+  assert.doesNotMatch(document, /verified legacy Webb completion/i)
   assert.doesNotMatch(document, /localStorage|getItem\('selected_teacher'\)/)
+})
+
+test('learner cards and start action make the server-assigned teacher conspicuous', () => {
+  const home = fs.readFileSync(path.resolve('src/app/learn/LearnerHome.js'), 'utf8')
+  assert.match(home, /Your teacher: \{instructionalTeacherLabel\(cardInstructionalTeacher\)\}/)
+  assert.match(home, /Continue with \$\{instructionalTeacherLabel\(assignedInstructionalTeacher\)\}/)
+  assert.match(home, /Start with \$\{instructionalTeacherLabel\(assignedInstructionalTeacher\)\}/)
+  assert.doesNotMatch(home, /setSelectedTeacher|localStorage\.getItem\('selected_teacher'\)/)
 })

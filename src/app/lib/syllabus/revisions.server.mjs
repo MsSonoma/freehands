@@ -37,7 +37,7 @@ export async function getActiveSyllabus({ repository, admin, facilitatorId, lear
   }
   const activeRevision = await repository.findRevision(syllabus.active_revision_id, syllabus.id)
   if (!activeRevision) throw new SyllabusError('The active Syllabus revision could not be found', 500, 'ACTIVE_REVISION_MISSING')
-  const { forecastItems, associations, schedules, sessions, sessionEvents, lessonMetadata, slateEvidenceReports, slateReviewReports } = await loadSyllabusTimelineInputs({
+  const { forecastItems, associations, schedules, sessions, sessionEvents, legacyActivities, lessonMetadata, slateEvidenceReports, slateReviewReports } = await loadSyllabusTimelineInputs({
     repository, admin, facilitatorId, learner, activeRevision, verifyLessonAccess, includeSlateEvidence: true,
   })
   const timelineItems = composeSyllabusLessonTimeline({
@@ -48,6 +48,7 @@ export async function getActiveSyllabus({ repository, admin, facilitatorId, lear
     schedules,
     sessions,
     sessionEvents,
+    legacyActivities,
     lessonMetadata,
     slateEvidenceReports,
     slateReviewReports,

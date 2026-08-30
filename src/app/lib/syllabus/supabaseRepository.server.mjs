@@ -120,6 +120,34 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load learner lesson associations')
       return data || []
     },
+    async listLegacyActivityRecords(facilitatorId, learnerId) {
+      const { data, error } = await admin.from('syllabus_legacy_activity_records').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .order('occurred_at', { ascending: true })
+        .order('id', { ascending: true })
+      if (error?.code === '42P01') return []
+      throwOn(error, 'Failed to load historical Syllabus activity records')
+      return data || []
+    },
+    async insertLegacyActivityRecord(row) {
+      const result = await admin.from('syllabus_legacy_activity_records').insert(row).select('*').single()
+      if (!result.error) return result.data
+      if (result.error.code !== '23505') throwOn(result.error, 'Failed to record historical Syllabus activity')
+      const { data, error } = await admin.from('syllabus_legacy_activity_records').select('*')
+        .eq('facilitator_id', row.facilitator_id)
+        .eq('learner_id', row.learner_id)
+        .eq('source_identity', row.source_identity)
+        .maybeSingle()
+      throwOn(error, 'Failed to read historical Syllabus activity')
+      if (data && data.syllabus_occurrence_id !== row.syllabus_occurrence_id) {
+        const collision = new Error('This legacy activity was already recorded against a different Syllabus occurrence')
+        collision.code = 'HISTORICAL_ACTIVITY_OCCURRENCE_CONFLICT'
+        collision.status = 409
+        throw collision
+      }
+      return data
+    },
     async findLessonAssociation(facilitatorId, learnerId, lessonKey) {
       const { data, error } = await admin.from('syllabus_lesson_associations').select('*')
         .eq('facilitator_id', facilitatorId)

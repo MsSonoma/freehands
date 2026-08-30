@@ -85,7 +85,7 @@ function intentOccurrenceId(intent) {
 
 export function composeSyllabusLessonTimeline({
   activeRevision = {}, forecastItems = [], associations = [], approvedLessons = {}, schedules = [], sessions = [], sessionEvents = [],
-  lessonMetadata = [], slateEvidenceReports = [], slateReviewReports = [],
+  legacyActivities = [], lessonMetadata = [], slateEvidenceReports = [], slateReviewReports = [],
   today = new Date().toISOString().slice(0, 10),
   timeZone = 'UTC',
 } = {}) {
@@ -93,6 +93,7 @@ export function composeSyllabusLessonTimeline({
     ...forecastItems.map((row) => row?.lesson_key), ...associations.map((row) => row?.lesson_key), ...Object.keys(approvedLessons || {}),
     ...schedules.map((row) => row?.lesson_key), ...sessions.map((row) => row?.lesson_id || row?.lesson_key),
     ...sessionEvents.map((row) => row?.lesson_id || row?.lesson_key),
+    ...legacyActivities.map((row) => row?.lesson_key),
   ].map(normalizeLessonKey).filter((key) => key?.includes('/'))
   const resolveKey = (value) => resolveLessonKeyAgainst(value, concreteKeys)
   const availableLessonKeys = new Set(Object.entries(approvedLessons || {})
@@ -229,6 +230,26 @@ export function composeSyllabusLessonTimeline({
       || left.planned_date.localeCompare(right.planned_date) || left.sort_order - right.sort_order
       || clean(left.row?.id || left.row?.lineage_id).localeCompare(clean(right.row?.id || right.row?.lineage_id)))
 
+  const legacyInstructionalRows = []
+  const historicallySatisfiedIntents = new Set()
+  for (const record of legacyActivities || []) {
+    if (record?.activity_type !== 'instructional_completion' || !record?.occurred_at) continue
+    const key = resolveKey(record.lesson_key)
+    const occurrenceId = clean(record.syllabus_occurrence_id)
+    const instructionalTeacher = normalizeInstructionalTeacher(record.instructional_teacher)
+    if (!key || !occurrenceId || !instructionalTeacher) continue
+    const exactIntents = activeIntents.filter((intent) => intent.key === key && intentOccurrenceId(intent) === occurrenceId)
+    if (exactIntents.length === 1) historicallySatisfiedIntents.add(exactIntents[0])
+    legacyInstructionalRows.push({
+      key,
+      id: clean(record.id) || clean(record.source_identity),
+      occurrenceId,
+      instructionalTeacher,
+      occurred_at: record.occurred_at,
+      provenance: clean(record.provenance),
+    })
+  }
+
   const occupied = new Set()
   const actualCapacity = new Map()
   for (const actual of actuals) {
@@ -242,7 +263,7 @@ export function composeSyllabusLessonTimeline({
       occupied,
     }))
   }
-  const consumedIntents = new Set()
+  const consumedIntents = new Set(historicallySatisfiedIntents)
   for (const actual of actuals.filter((row) => actualDate(row.occurred_at) === today)) {
     const candidates = activeIntents.filter((intent) => !consumedIntents.has(intent) && intent.key === actual.key)
     const proven = actual.occurrenceId
@@ -291,11 +312,36 @@ export function composeSyllabusLessonTimeline({
       item_type: 'lesson', placement_kind: 'actual', actual_kind: actual.kind, actual_at: actual.occurred_at,
       source_occurrence_id: actual.occurrenceId || null,
       actual_instructional_teacher: actual.instructionalTeacher || null,
+      historical_record: actual.historicalRecord === true,
+      historical_provenance: actual.provenance || null,
       actual_started_date: actualDate(actual.started_at),
       readiness_state: actual.kind === 'completed' ? 'completed' : (actual.kind === 'in_progress' ? 'in_progress' : details.readiness_state),
       is_explicit_schedule: false, is_provisional: false, needs_placement: false, capacity_conflict: capacity?.capacity_conflict || null,
     }
   })
+
+  for (const historical of legacyInstructionalRows) {
+    const details = metadata.get(historical.key) || defaultMetadata(historical.key)
+    output.push({
+      ...details,
+      id: `historical:${historical.id}`,
+      occurrence_id: `historical:${historical.id}`,
+      planned_date: actualDate(historical.occurred_at),
+      sort_order: 0,
+      item_type: 'lesson',
+      placement_kind: 'historical',
+      actual_kind: 'completed',
+      actual_at: historical.occurred_at,
+      source_occurrence_id: historical.occurrenceId,
+      actual_instructional_teacher: historical.instructionalTeacher,
+      historical_record: true,
+      historical_provenance: historical.provenance || null,
+      is_explicit_schedule: false,
+      is_provisional: false,
+      needs_placement: false,
+      capacity_conflict: null,
+    })
+  }
 
   for (const intent of placedIntents) {
     const details = metadata.get(intent.key) || defaultMetadata(intent.key, intent.row)
@@ -343,5 +389,37 @@ export function composeSyllabusLessonTimeline({
   const ordered = output.sort((left, right) => left.planned_date.localeCompare(right.planned_date)
     || Number(left.sort_order || 0) - Number(right.sort_order || 0)
     || String(left.occurrence_id || left.id || '').localeCompare(String(right.occurrence_id || right.id || '')))
-  return annotateSyllabusItemsWithSlateEvidence(ordered, slateEvidenceReports, slateReviewReports)
+  const canonical = annotateSyllabusItemsWithSlateEvidence(ordered, slateEvidenceReports, slateReviewReports)
+  const historicalSlateByOccurrence = new Map()
+  for (const record of legacyActivities || []) {
+    if (record?.activity_type !== 'slate_drill_completion') continue
+    const occurrenceId = clean(record.syllabus_occurrence_id)
+    const lessonKey = resolveKey(record.lesson_key)
+    if (!occurrenceId || !lessonKey) continue
+    const canonicalActualMatches = canonical.filter((item) => (
+      item?.placement_kind === 'actual'
+        && item?.historical_record !== true
+        && normalizeLessonKey(item?.lesson_key) === lessonKey
+        && clean(item?.source_occurrence_id) === occurrenceId
+    ))
+    const nonActualMatches = canonical.filter((item) => (
+      item?.placement_kind !== 'actual'
+        && item?.historical_record !== true
+        && normalizeLessonKey(item?.lesson_key) === lessonKey
+        && clean(item?.occurrence_id) === occurrenceId
+    ))
+    if (canonicalActualMatches.length > 1 || nonActualMatches.length > 1) continue
+    const match = canonicalActualMatches[0] || nonActualMatches[0]
+    if (!match) continue
+    historicalSlateByOccurrence.set(clean(match.occurrence_id || match.id), [{
+      kind: 'slate_drill_history',
+      label: 'Mr. Slate drill completed · historical record',
+      provenance: clean(record.provenance),
+      historical_activity_id: clean(record.id) || null,
+    }])
+  }
+  return canonical.map((item) => ({
+    ...item,
+    historical_activity_annotations: historicalSlateByOccurrence.get(clean(item.occurrence_id || item.id)) || [],
+  }))
 }
