@@ -39,6 +39,7 @@ export function legacyForecastItems(plannedLessons, { today }) {
         planned_date: plannedDate,
         subject,
         title,
+        description: String(lesson.description || lesson.blurb || '').trim() || null,
         lesson_key: lessonKey,
         item_type: 'lesson',
         origin: 'legacy_import',

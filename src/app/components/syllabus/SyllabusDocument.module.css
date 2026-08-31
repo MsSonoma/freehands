@@ -31,6 +31,7 @@
 .emptyDay { margin:10px 0 0; color:#9a9187; font:italic 11px Georgia,serif; }
 .entryRow { display:grid; gap:10px; align-items:start; margin-top:10px; padding:12px 0 0; border-top:1px solid #ded8cf; }
 .entryBody h4 { margin:3px 0 0; font-size:16px; font-weight:500; overflow-wrap:anywhere; }.subject { margin:0;color:#6b382c; }
+.description { margin:6px 0 0; color:#655d54; font:12px/1.45 Roboto,sans-serif; }
 .statusLabel,.placementLabel,.preparing { display:inline-block; margin:6px 8px 0 0; color:#756b61; font:700 11px Roboto,sans-serif; text-transform:capitalize; }
 .placementLabel { font-weight:500; font-style:italic; text-transform:none; }
 .lessonActions { display:flex; flex-wrap:wrap; gap:5px; }

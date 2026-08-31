@@ -197,6 +197,7 @@ export default function SyllabusDocument({
                 <div className={styles.entryBody}>
                   <p className={styles.subject}>{item.subject}</p>
                   <h4>{item.title}</h4>
+                  {item.description && <p className={styles.description}>{item.description}</p>}
                   {(item.item_type || 'lesson') === 'lesson' && item.historical_record
                     ? (item.actual_instructional_teacher
                         ? <span className={styles.placementLabel}>Completed with {instructionalTeacherLabel(item.actual_instructional_teacher)} · historical record</span>
@@ -219,6 +220,7 @@ export default function SyllabusDocument({
                   {item.capacity_conflict && <span className={styles.placementLabel}>Manual capacity exception</span>}
                   {item.is_overdue_intent && <span className={styles.placementLabel}>Carried into NOW from {prettyDate(item.original_placement_date, { month: 'short', day: 'numeric' })}</span>}
                   {item.origin === 'mastery_reforecast' && <span className={styles.statusLabel}>Mastery follow-up</span>}
+                  {item.origin === 'learning_forecast' && !item.lesson_key && <span className={styles.statusLabel}>Planned concept</span>}
                 </div>
                 <div className={styles.lessonActions}>{actions.map((action) => {
                   const href = actionHref(item, action.id)

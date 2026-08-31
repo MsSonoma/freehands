@@ -155,6 +155,32 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 - **Database boundary**: The RPC accepts no raw PIN and is executable only by `service_role`
 - **Legacy compatibility**: Webb/Sonoma instructional clients may initially authorize with an empty occurrence only when the server has no active Syllabus; the authorization route returns the canonical `legacy:<lesson-key>:<today>` identity used by protected start and completion. Active-Syllabus occurrence matching remains exact and fail-closed.
 
+### `/api/syllabus/forecast`
+**Purpose**: Create or reuse one inactive, next-week instructional learning forecast from canonical Syllabus intent and deterministic evidence summaries
+**Status**: Operational after `20260831201314_add_learning_forecast_foundation.sql` is applied
+
+- **Location**: `src/app/api/syllabus/forecast/route.js`
+- **Method**: POST with `{ learnerId, expectedActiveRevisionId }`
+- **Auth**: Bearer token, learner ownership, and existing Syllabus future-planning entitlement are required
+- **Authority**: Server weekly-pattern slots own dates, subjects, and count; the model returns title and description only
+- **Idempotency**: Unchanged authoritative inputs reuse the current `learning_forecast` proposal without another model call
+- **Mutation boundary**: Writes an inactive proposal only; it does not change the active pointer, generate a full lesson, consume generation quota, or create schedule rows
+
+### `/api/syllabus/materialize`
+**Purpose**: Materialize one exact adopted or proposed learning-forecast lineage as a canonical generated lesson
+**Status**: Operational after `20260831201314_add_learning_forecast_foundation.sql` is applied
+
+- **Location**: `src/app/api/syllabus/materialize/route.js`
+- **Method**: POST with `{ learnerId, lineageId, expectedActiveRevisionId, proposalRevisionId? }`
+- **Auth**: Bearer token, learner ownership, Syllabus future-planning entitlement, and the canonical generator's own entitlement/quota checks are required
+- **Lineage**: The server validates the exact `lineage_id`; it never matches by title
+- **One-lineage adoption**: Selecting one proposed concept creates a fresh active revision containing only that selected proposal change, immediately rebases non-conflicting siblings onto that adopted revision before generation, and rebases that current remainder again if lesson-key binding advances the active pointer
+- **Carry-forward boundary**: Rebase preserves exact sibling lineages and concept fields, invokes neither forecast nor lesson generation, consumes no quota, and drops a sibling whose date/sort slot is occupied by active educator intent
+- **Grade authority**: Full generation requires the owned learner's authoritative `learners.grade`; a missing grade returns a bounded error before adoption or generation
+- **Generator reuse**: Delegates to `POST /api/facilitator/lessons/generate` in proposal mode, preserving storage, canonical `lesson_key`, draft association, and normal quota authority
+- **Retry**: Generator or binding failure leaves the post-adoption sibling proposal current. A server-only durable receipt retains a successful artifact across binding failure, so retry binds that key and rebases the remainder without generating another artifact
+- **Scheduling**: Neither materialization nor forecast adoption creates `lesson_schedule` rows
+
 ### `/api/syllabus/execution/complete`
 **Purpose**: Commit truthful instructional completion for an already protected Sonoma or Webb session
 **Status**: Teacher-bound after `20260829010000_add_instructional_teacher_authority.sql` is applied

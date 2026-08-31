@@ -265,6 +265,8 @@ Stage 8 reporting vocabulary is deliberate:
 
 Claim boundaries are absolute. Stage 8 does not claim causal learning attribution, permanent mastery, guaranteed retention, human-vs-AI superiority, an invented mastery percentage, a global learner score, AI confidence, learner ranking, or diagnostic inference. Session completion, scores, medals, and transcripts remain separate from mastery-evidence qualification.
 
+The Syllabus instructional forecast may consume a bounded projection of authorized `facilitator-evidence-v1` reports to choose instructional progression and pacing. `reporting.js` remains the only mastery interpretation authority: the forecast receives whitelisted report states and learning-summary text, not raw events or transcripts. This does not make instructional forecasting a mastery reforecast. Slate retains Daily Follow-Up, Weekly Review, recovery, retention, and mastery-check authority; Stage 8 options are not automatically converted into new instructional lessons.
+
 Daily Follow-Ups and Weekly Reviews extend the evidence system without changing the lesson lifecycle.
 
 They are learner-facing cards in Learn, not lessons, assignments, notifications, or curriculum objects. They do not increment lesson quotas, reopen a completed lesson, create lesson snapshots, change scores/medals, or mutate the Stage 1-8 session evidence rows. Both are off by default and independently controlled per learner under the existing mastery-evidence feature flag.

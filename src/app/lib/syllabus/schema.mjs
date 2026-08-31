@@ -2,7 +2,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 const REQUIRED_SECTIONS = ['goals', 'subjects', 'weekly_pattern', 'teaching_guidance', 'planning_policy', 'legacy_provenance', 'forecast_items']
 const ITEM_TYPES = new Set(['lesson', 'review', 'check', 'unit'])
-const ORIGINS = new Set(['legacy_import', 'generated', 'facilitator', 'mastery_reforecast'])
+const ORIGINS = new Set(['legacy_import', 'generated', 'facilitator', 'mastery_reforecast', 'learning_forecast'])
 
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value)
 const cleanText = (value) => typeof value === 'string' ? value.trim() : ''
@@ -93,6 +93,7 @@ export function validateSnapshot(input, { today = todayDate() } = {}) {
     const plannedDate = cleanText(item.planned_date)
     const subject = cleanText(item.subject)
     const title = cleanText(item.title)
+    const description = cleanText(item.description)
     const itemType = cleanText(item.item_type)
     const origin = cleanText(item.origin)
     if (!isCalendarDate(plannedDate)) throw new SyllabusError(`forecast_items[${index}].planned_date is invalid`)
@@ -104,12 +105,14 @@ export function validateSnapshot(input, { today = todayDate() } = {}) {
     if (!ITEM_TYPES.has(itemType)) throw new SyllabusError(`forecast_items[${index}].item_type is invalid`)
     if (!ORIGINS.has(origin)) throw new SyllabusError(`forecast_items[${index}].origin is invalid`)
     if (!UUID.test(String(item.lineage_id || ''))) throw new SyllabusError(`forecast_items[${index}].lineage_id is invalid`)
+    if (description.length > 2000) throw new SyllabusError(`forecast_items[${index}].description is too long`)
     if (item.metadata !== undefined && !isObject(item.metadata)) throw new SyllabusError(`forecast_items[${index}].metadata must be an object`)
     return {
       lineage_id: item.lineage_id,
       planned_date: plannedDate,
       subject,
       title,
+      description: description || null,
       lesson_key: cleanText(item.lesson_key) || null,
       item_type: itemType,
       origin,

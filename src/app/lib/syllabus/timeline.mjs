@@ -104,6 +104,7 @@ export function resolveSyllabusReadModel(payload) {
     forecast_items: Array.isArray(payload.forecast_items) ? payload.forecast_items : [],
     timeline_items: Array.isArray(payload.timeline_items) ? payload.timeline_items : (Array.isArray(payload.forecast_items) ? payload.forecast_items : []),
     proposed_reforecast: payload.proposed_reforecast || null,
+    proposed_learning_forecast: payload.proposed_learning_forecast || null,
     resolved_today: dateOnly(payload.resolved_today),
     resolved_timezone: payload.resolved_timezone || 'UTC',
   }
@@ -216,6 +217,12 @@ export function syllabusItemActions({ role, state, hasLessonArtifact = false, re
 
 export function syllabusItemActionsFor({ item, ...actionContext }) {
   if (item?.historical_activity_only === true) return []
+  if (
+    actionContext.role === 'facilitator'
+    && (item?.item_type || 'lesson') === 'lesson'
+    && item?.origin === 'learning_forecast'
+    && !item?.lesson_key
+  ) return [{ id: 'materialize', label: 'Generate lesson' }]
   return syllabusItemActions(actionContext)
 }
 

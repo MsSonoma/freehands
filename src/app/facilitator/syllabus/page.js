@@ -150,6 +150,9 @@ export default function SyllabusPage() {
   const [syllabus, setSyllabus] = useState(null)
   const [masteryProposal, setMasteryProposal] = useState(null)
   const [masteryMessage, setMasteryMessage] = useState('')
+  const [learningProposal, setLearningProposal] = useState(null)
+  const [learningMessage, setLearningMessage] = useState('')
+  const [materializingLineage, setMaterializingLineage] = useState('')
   const [draft, setDraft] = useState(null)
   const [newSubject, setNewSubject] = useState('')
   const [availableSubjects, setAvailableSubjects] = useState([])
@@ -220,6 +223,11 @@ export default function SyllabusPage() {
         changes: masteryChanges(json.proposed_reforecast.forecast_items),
       } : null)
       setMasteryMessage('')
+      setLearningProposal(json.proposed_learning_forecast ? {
+        proposal_revision: json.proposed_learning_forecast.revision,
+        forecast_items: json.proposed_learning_forecast.forecast_items,
+      } : null)
+      setLearningMessage('')
       setDraft(null)
       setNewSubject('')
       setAvailableSubjects([])
@@ -339,6 +347,82 @@ export default function SyllabusPage() {
     }
   }
 
+  async function createLearningForecast() {
+    setWorking(true)
+    setError('')
+    setLearningMessage('')
+    try {
+      const response = await fetch('/api/syllabus/forecast', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId, expectedActiveRevisionId: syllabus.active_revision.id }),
+      })
+      const json = await response.json()
+      if (!response.ok) throw new Error(json.error || 'Could not prepare the instructional forecast')
+      if (json.kind === 'no_action') {
+        setLearningMessage(json.message)
+        return
+      }
+      setLearningProposal(json)
+      setLearningMessage(json.reused
+        ? 'The current instructional forecast already reflects the authoritative Syllabus and evidence inputs.'
+        : 'A one-week instructional forecast is ready for review. The active Syllabus has not changed.')
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  async function activateLearningProposal() {
+    setWorking(true)
+    setError('')
+    try {
+      const response = await fetch('/api/syllabus/activate', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          learnerId,
+          proposalRevisionId: learningProposal.proposal_revision.id,
+          expectedActiveRevisionId: syllabus.active_revision.id,
+        }),
+      })
+      const json = await response.json()
+      if (!response.ok) throw new Error(json.error || 'Could not adopt the instructional forecast')
+      await loadCurrent()
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  async function materializeForecast(item, { proposal = null } = {}) {
+    const lineageId = item?.lineage_id
+    if (!lineageId) return
+    setMaterializingLineage(lineageId)
+    setError('')
+    try {
+      const response = await fetch('/api/syllabus/materialize', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          learnerId,
+          lineageId,
+          expectedActiveRevisionId: syllabus.active_revision.id,
+          ...(proposal ? { proposalRevisionId: proposal.proposal_revision.id } : {}),
+        }),
+      })
+      const json = await response.json()
+      if (!response.ok) throw new Error(json.error || 'Could not generate this forecast lesson')
+      await loadCurrent()
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setMaterializingLineage('')
+    }
+  }
+
   const selectedLearner = learners.find((item) => String(item.id) === String(learnerId))
   const planningAccess = syllabusEntitlementsFor({ role: 'facilitator', planTier })
   const establishingFirstSyllabus = !syllabus?.has_active_syllabus
@@ -381,6 +465,10 @@ export default function SyllabusPage() {
   }
 
   async function handleLessonAction(item, action) {
+    if (action?.id === 'materialize' && item?.lineage_id) {
+      await materializeForecast(item)
+      return
+    }
     if (!item?.lesson_key || action?.id !== 'repeat') return
     const allowed = await ensureFacilitatorPinException({
       message: `You already completed ${item.title || 'this lesson'}. Enter the Facilitator PIN to prepare it as a deliberate repeat.`,
@@ -477,10 +565,22 @@ export default function SyllabusPage() {
           <section className={styles.statusBar}>
             <div><strong>{draft ? 'Proposal' : 'Current active Syllabus'}</strong><span>{draft ? 'Not active yet' : `Revision ${displayRevision.revision_number}`}</span></div>
             <div><strong>Effective</strong><span>{dateOnly(displayRevision.effective_from)}</span></div>
-            {!draft && <div className={styles.statusActions}><button className={styles.secondaryButton} onClick={checkMasteryEvidence} disabled={working || !planningAccess.can_change_intent}>{working ? 'Checking…' : 'Check mastery evidence'}</button><button className={styles.secondaryButton} disabled={!planningAccess.can_change_intent} onClick={() => { setDraft(activeToDraft(syllabus.active_revision, syllabus.forecast_items, syllabus.resolved_today)); setNewSubject('') }}>Edit Syllabus</button></div>}
+            {!draft && <div className={styles.statusActions}><button className={styles.secondaryButton} onClick={createLearningForecast} disabled={working || !planningAccess.can_change_intent}>{working ? 'Forecasting…' : 'Forecast next week'}</button><button className={styles.secondaryButton} onClick={checkMasteryEvidence} disabled={working || !planningAccess.can_change_intent}>{working ? 'Checking…' : 'Check mastery evidence'}</button><button className={styles.secondaryButton} disabled={!planningAccess.can_change_intent} onClick={() => { setDraft(activeToDraft(syllabus.active_revision, syllabus.forecast_items, syllabus.resolved_today)); setNewSubject('') }}>Edit Syllabus</button></div>}
           </section>
 
           {!draft && masteryMessage && <p className={styles.masteryMessage}>{masteryMessage}</p>}
+          {!draft && learningMessage && <p className={styles.masteryMessage}>{learningMessage}</p>}
+
+          {!draft && learningProposal && <section className={styles.learningProposal}>
+            <div className={styles.proposalHeading}><div><p className={styles.eyebrow}>Proposed instructional forecast</p><h2>Next week&apos;s open Syllabus slots</h2><p>Dates, subjects, and slot count come from the active weekly pattern. These title-and-description concepts remain inactive until you adopt them.</p></div><span>Revision {learningProposal.proposal_revision.revision_number}</span></div>
+            <div className={styles.changeList}>{learningProposal.forecast_items.filter((item) => item.origin === 'learning_forecast').map((item) => <article key={item.lineage_id}>
+              <strong>{item.subject}: {item.title}</strong>
+              <p>{item.description}</p>
+              <small>Planned for {dateOnly(item.planned_date)}.</small>
+              <button className={styles.secondaryButton} disabled={Boolean(materializingLineage) || working} onClick={() => materializeForecast(item, { proposal: learningProposal })}>{materializingLineage === item.lineage_id ? 'Generating…' : 'Adopt forecast and generate lesson'}</button>
+            </article>)}</div>
+            <div className={styles.proposalDecision}><p>Adoption creates an immutable active Syllabus revision. It does not generate or schedule lessons.</p><button className={styles.primaryButton} onClick={activateLearningProposal} disabled={working || Boolean(materializingLineage) || !planningAccess.can_change_intent}>{working ? 'Adopting…' : 'Adopt instructional forecast'}</button></div>
+          </section>}
 
           {!draft && masteryProposal && <section className={styles.masteryProposal}>
             <div className={styles.proposalHeading}><div><p className={styles.eyebrow}>Proposed reforecast</p><h2>Mastery evidence suggests a small future-plan change</h2><p>The current active Syllabus has not changed. Review this inactive proposal before deciding whether to activate it.</p></div><span>Revision {masteryProposal.proposal_revision.revision_number}</span></div>
@@ -537,7 +637,7 @@ export default function SyllabusPage() {
 
             <section className={`${styles.section} ${styles.forecast}`}>
               <div className={styles.forecastHeader}><div><p className={styles.eyebrow}>{draft ? 'Future direction' : 'Educational record and forecast'}</p><h2>{draft ? 'Forecast' : 'Lesson timeline'}</h2></div><span>{displayForecast.length} item{displayForecast.length === 1 ? '' : 's'}</span></div>
-              {forecastGroups.length ? forecastGroups.map(([label, items]) => <div className={styles.forecastWeek} key={label}><h3>{label}</h3><ul>{items.map((item) => <li key={item.id || `${item.lineage_id}-${item.planned_date}`}><span className={styles.forecastDate}>{new Date(`${dateOnly(item.planned_date)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><div><strong>{item.subject}:</strong> {item.title}{!draft && item.placement_kind === 'inferred' && <em> Provisional weekly-pattern forecast</em>}{!draft && item.placement_kind === 'scheduled' && <em> Explicit calendar date</em>}{!draft && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && <><br /><a href={`/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}`}>{item.readiness_state === 'draft' ? 'Prepare / review draft' : 'Open lesson details'}</a></>}</div></li>)}</ul></div>) : <p className={styles.muted}>No learner-specific lessons are recorded yet.</p>}
+              {forecastGroups.length ? forecastGroups.map(([label, items]) => <div className={styles.forecastWeek} key={label}><h3>{label}</h3><ul>{items.map((item) => <li key={item.id || `${item.lineage_id}-${item.planned_date}`}><span className={styles.forecastDate}>{new Date(`${dateOnly(item.planned_date)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><div><strong>{item.subject}:</strong> {item.title}{item.description && <p>{item.description}</p>}{!draft && item.placement_kind === 'inferred' && <em> Provisional weekly-pattern forecast</em>}{!draft && item.placement_kind === 'scheduled' && <em> Explicit calendar date</em>}{!draft && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && <><br /><a href={`/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}`}>{item.readiness_state === 'draft' ? 'Prepare / review draft' : 'Open lesson details'}</a></>}</div></li>)}</ul></div>) : <p className={styles.muted}>No learner-specific lessons are recorded yet.</p>}
             </section>
           </div> : <SyllabusDocument
               revision={syllabus.active_revision}

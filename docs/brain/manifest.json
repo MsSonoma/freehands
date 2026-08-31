@@ -21,9 +21,13 @@
       "restarted session non-completion",
       "legacy ended-session fallback",
       "facilitator instructional teacher assignment",
-      "immutable historical instructor identity"
+      "immutable historical instructor identity",
+      "instructional learning forecast",
+      "learning_forecast proposals",
+      "lineage-safe materialization",
+      "forecast descriptions"
     ],
-    "last_updated": "2026-08-29T18:17:47Z",
+    "last_updated": "2026-08-31T17:28:33Z",
     "status": "canonical"
   },
   "learner-home": {
@@ -201,6 +205,8 @@
       "/api/learner/follow-ups/[runId]",
       "/api/syllabus/execution/start",
       "/api/syllabus/execution/complete",
+      "/api/syllabus/forecast",
+      "/api/syllabus/materialize",
       "start_lesson_session_transactional",
       "complete_lesson_session_transactional",
       "instructional teacher proof binding",
@@ -217,7 +223,7 @@
       "/api/visual-aids",
       "/api/content-safety"
     ],
-    "last_updated": "2026-08-29T18:17:47Z",
+    "last_updated": "2026-08-31T17:28:33Z",
     "status": "canonical"
   },
   "mastery-evidence": {
@@ -262,9 +268,10 @@
       "learning_review_runs",
       "learning_review_items",
       "learning_review_events",
-      "daily-weekly-independence"
+      "daily-weekly-independence",
+      "instructional forecast evidence boundary"
     ],
-    "last_updated": "2026-08-12T16:39:34Z",
+    "last_updated": "2026-08-31T17:28:33Z",
     "status": "active-development"
   },
   "portfolio-generation": {
