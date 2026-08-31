@@ -14,6 +14,7 @@ import {
   startOfSyllabusWeek,
   syllabusEntitlementsFor,
   syllabusItemActions,
+  syllabusItemActionsFor,
   syllabusItemState,
   timelineItemAction,
 } from '../timeline.mjs'
@@ -206,6 +207,80 @@ test('role action matrix keeps learner exceptions PIN-gated and facilitator cont
   assert.ok(syllabusItemActions({ role: 'facilitator', state: 'future_unfinished', readinessState: 'approved' }).some((action) => action.id === 'schedule'))
   assert.equal(syllabusItemActions({ role: 'learner', state: 'future_unfinished', hasLessonArtifact: true }).some((action) => action.id === 'schedule'), false)
   assert.equal(syllabusItemActions({ role: 'learner', state: 'incomplete_historical', hasLessonArtifact: true })[1].label, 'Retry')
+})
+
+test('recovered instructional history receives completed actions while standalone Slate history remains actionless', () => {
+  const recoveredWebb = {
+    item_type: 'lesson',
+    lesson_key: 'generated/grammar.json',
+    placement_kind: 'historical',
+    planned_date: '2026-08-27',
+    actual_kind: 'completed',
+    actual_instructional_teacher: 'webb',
+    historical_record: true,
+    historical_activity_only: false,
+    historical_provenance: 'server_verified_legacy_transcript_v1',
+  }
+  const recoveredState = syllabusItemState({ item: recoveredWebb, today: '2026-08-31' })
+  assert.equal(recoveredState, 'completed_historical')
+  assert.deepEqual(syllabusItemActionsFor({ item: recoveredWebb, role: 'facilitator', state: recoveredState }), [
+    { id: 'view', label: 'View' },
+    { id: 'history', label: 'Review history' },
+    { id: 'repeat', label: 'Repeat', requires_pin: true },
+  ])
+  assert.deepEqual(syllabusItemActionsFor({ item: recoveredWebb, role: 'learner', state: recoveredState, hasLessonArtifact: true }), [
+    { id: 'review', label: 'View / Review' },
+    { id: 'repeat', label: 'Do again', requires_pin: true },
+  ])
+  assert.equal(recoveredWebb.historical_provenance, 'server_verified_legacy_transcript_v1')
+  assert.equal(recoveredWebb.actual_instructional_teacher, 'webb')
+
+  const standaloneSlate = {
+    item_type: 'lesson',
+    lesson_key: 'generated/grammar.json',
+    placement_kind: 'historical',
+    planned_date: '2026-08-27',
+    actual_kind: null,
+    actual_instructional_teacher: null,
+    historical_record: true,
+    historical_activity_only: true,
+    historical_provenance: 'server_verified_legacy_transcript_v1',
+    historical_activity_annotations: [{ kind: 'slate_drill_history' }],
+    slate_annotations: [],
+  }
+  const slateState = syllabusItemState({ item: standaloneSlate, today: '2026-08-31' })
+  assert.deepEqual(syllabusItemActionsFor({ item: standaloneSlate, role: 'facilitator', state: slateState }), [])
+  assert.deepEqual(syllabusItemActionsFor({ item: standaloneSlate, role: 'learner', state: slateState, hasLessonArtifact: true }), [])
+  assert.equal(standaloneSlate.actual_kind, null)
+  assert.equal(standaloneSlate.actual_instructional_teacher, null)
+  assert.deepEqual(standaloneSlate.slate_annotations, [])
+})
+
+test('canonical completed, incomplete, current, and future action contracts are unchanged by display gating', () => {
+  const cases = [
+    { item: { actual_kind: 'completed' }, role: 'facilitator', state: 'completed_historical' },
+    { item: { actual_kind: 'incomplete' }, role: 'learner', state: 'incomplete_historical', hasLessonArtifact: true },
+    { item: {}, role: 'learner', state: 'today_unfinished', hasLessonArtifact: true, isToday: true },
+    { item: {}, role: 'facilitator', state: 'future_unfinished', readinessState: 'approved' },
+  ]
+  for (const entry of cases) {
+    const { item, ...context } = entry
+    assert.deepEqual(syllabusItemActionsFor({ item, ...context }), syllabusItemActions(context))
+  }
+})
+
+test('historical instructional actions preserve non-editable provenance and existing fail-closed handlers', () => {
+  const document = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/SyllabusDocument.js'), 'utf8')
+  const facilitatorPage = fs.readFileSync(path.resolve(TEST_DIR, '../../../facilitator/syllabus/page.js'), 'utf8')
+  const learnerHome = fs.readFileSync(path.resolve(TEST_DIR, '../../../learn/LearnerHome.js'), 'utf8')
+  assert.match(document, /syllabusItemActionsFor\(\{ item, role, state/)
+  assert.doesNotMatch(document, /item\.historical_record \? \[\] : syllabusItemActions/)
+  assert.match(document, /const historicalActivityAllowed = item\.historical_record !== true/)
+  assert.match(document, /const teacherEditable = role === 'facilitator'[\s\S]*item\.historical_record !== true/)
+  assert.match(facilitatorPage, /action\?\.id !== 'repeat'/)
+  assert.match(facilitatorPage, /ensureFacilitatorPinException/)
+  assert.match(learnerHome, /if \(action\?\.requires_pin\)/)
+  assert.match(learnerHome, /occurrenceId: syllabusOccurrence\?\.occurrence_id \|\| ''/)
 })
 
 test('new Syllabus UI source contains required readable labels and no mojibake', () => {

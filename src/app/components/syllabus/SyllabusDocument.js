@@ -7,7 +7,7 @@ import {
   moveSyllabusWeek,
   selectSyllabusWeek,
   syllabusEntitlementsFor,
-  syllabusItemActions,
+  syllabusItemActionsFor,
   syllabusItemState,
   weeklyPatternRows,
 } from '@/app/lib/syllabus/timeline.mjs'
@@ -180,7 +180,7 @@ export default function SyllabusDocument({
             {day.items.map((item) => {
             const currentLesson = lessonState(item) || {}
             const state = syllabusItemState({ item, today, hasProgress: currentLesson.hasProgress })
-            const actions = item.historical_record ? [] : syllabusItemActions({ role, state, hasLessonArtifact: currentLesson.hasLessonArtifact, readinessState: item.readiness_state, isScheduled: item.is_explicit_schedule, isToday: dateOnly(item.planned_date) === dateOnly(today) })
+            const actions = syllabusItemActionsFor({ item, role, state, hasLessonArtifact: currentLesson.hasLessonArtifact, readinessState: item.readiness_state, isScheduled: item.is_explicit_schedule, isToday: dateOnly(item.planned_date) === dateOnly(today) })
             const notes = proposalAnnotations.get(item.id || item.lineage_id || `${dateOnly(item.planned_date)}:${item.subject}:${item.title}`) || []
             const occurrenceKey = item.occurrence_id || item.id || `${item.lineage_id}-${item.planned_date}`
             const assignedTeacher = normalizeInstructionalTeacher(item.assigned_instructional_teacher || item.instructional_teacher) || 'sonoma'

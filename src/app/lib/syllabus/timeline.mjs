@@ -214,6 +214,11 @@ export function syllabusItemActions({ role, state, hasLessonArtifact = false, re
   return actions
 }
 
+export function syllabusItemActionsFor({ item, ...actionContext }) {
+  if (item?.historical_activity_only === true) return []
+  return syllabusItemActions(actionContext)
+}
+
 export function timelineItemAction({ role, weekState, hasLessonArtifact, hasProgress }) {
   if (role !== 'learner' || weekState !== 'now' || !hasLessonArtifact) return null
   return hasProgress ? 'continue' : 'start'
