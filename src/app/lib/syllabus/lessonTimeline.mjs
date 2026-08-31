@@ -8,6 +8,8 @@ import { annotateSyllabusItemsWithSlateEvidence } from './slateEvidenceAnnotatio
 const DAY_MS = 86400000
 const DAY_KEYS = Object.freeze(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'])
 const FORECAST_HORIZON_DAYS = 371
+const LEGACY_SESSION_V2_SONOMA_CUTOFF = Date.parse('2026-08-29T00:00:00.000Z')
+const SERVER_VERIFIED_LEGACY_PROVENANCE = 'server_verified_legacy_transcript_v1'
 
 function clean(value) { return String(value || '').trim() }
 function subjectKey(value) { return clean(value).toLocaleLowerCase() }
@@ -163,9 +165,28 @@ export function composeSyllabusLessonTimeline({
     const identity = clean(session?.id || session?.session_id) || clean(terminal?.id)
     const occurrenceId = sessionIds.map((id) => occurrenceBySession.get(id)).find(Boolean) || clean(session?.syllabus_occurrence_id)
     const historicalTeacher = normalizeInstructionalTeacher(session?.instructional_teacher)
-    if (terminal) actuals.push({ key, id: identity, occurrenceId, instructionalTeacher: historicalTeacher, kind: lifecycle.status, occurred_at: lifecycle.occurredAt, started_at: session.started_at || lifecycle.occurredAt })
-    else if (lifecycle.status === 'completed') actuals.push({ key, id: identity, occurrenceId, instructionalTeacher: historicalTeacher, kind: 'completed', occurred_at: lifecycle.occurredAt, started_at: session.started_at || lifecycle.occurredAt })
-    else if (session?.started_at) actuals.push({ key, id: identity, occurrenceId, instructionalTeacher: historicalTeacher, kind: 'in_progress', occurred_at: session.started_at, started_at: session.started_at })
+    const startedAt = session.started_at || lifecycle.occurredAt
+    const legacySessionV2SonomaCandidate = session?.instructional_teacher === null
+      && terminal?.event_type === 'completed'
+      && clean(terminal?.metadata?.source) === 'session-v2'
+      && Number.isFinite(Date.parse(session?.started_at))
+      && Date.parse(session.started_at) < LEGACY_SESSION_V2_SONOMA_CUTOFF
+      && Number.isFinite(Date.parse(terminal?.occurred_at))
+      && Date.parse(terminal.occurred_at) < LEGACY_SESSION_V2_SONOMA_CUTOFF
+    const actual = {
+      key,
+      id: identity,
+      occurrenceId,
+      instructionalTeacher: legacySessionV2SonomaCandidate ? 'sonoma' : historicalTeacher,
+      storedInstructionalTeacher: session?.instructional_teacher ?? null,
+      instructionalTeacherProvenance: legacySessionV2SonomaCandidate ? 'legacy_session_v2_sonoma_attribution' : null,
+      kind: lifecycle.status,
+      occurred_at: lifecycle.occurredAt,
+      started_at: startedAt,
+    }
+    if (terminal) actuals.push(actual)
+    else if (lifecycle.status === 'completed') actuals.push({ ...actual, kind: 'completed' })
+    else if (session?.started_at) actuals.push({ ...actual, kind: 'in_progress', occurred_at: session.started_at, started_at: session.started_at })
   }
   for (const event of sessionEvents || []) {
     if (!event?.occurred_at || knownSessionIds.has(clean(event.session_id)) || !latestExplicitLessonSessionEvent([event])) continue
@@ -238,8 +259,10 @@ export function composeSyllabusLessonTimeline({
     const occurrenceId = clean(record.syllabus_occurrence_id)
     const instructionalTeacher = normalizeInstructionalTeacher(record.instructional_teacher)
     if (!key || !occurrenceId || !instructionalTeacher) continue
-    const exactIntents = activeIntents.filter((intent) => intent.key === key && intentOccurrenceId(intent) === occurrenceId)
-    if (exactIntents.length === 1) historicallySatisfiedIntents.add(exactIntents[0])
+    if (clean(record.provenance) !== SERVER_VERIFIED_LEGACY_PROVENANCE) {
+      const exactIntents = activeIntents.filter((intent) => intent.key === key && intentOccurrenceId(intent) === occurrenceId)
+      if (exactIntents.length === 1) historicallySatisfiedIntents.add(exactIntents[0])
+    }
     legacyInstructionalRows.push({
       key,
       id: clean(record.id) || clean(record.source_identity),
@@ -312,6 +335,8 @@ export function composeSyllabusLessonTimeline({
       item_type: 'lesson', placement_kind: 'actual', actual_kind: actual.kind, actual_at: actual.occurred_at,
       source_occurrence_id: actual.occurrenceId || null,
       actual_instructional_teacher: actual.instructionalTeacher || null,
+      stored_instructional_teacher: actual.storedInstructionalTeacher ?? null,
+      actual_instructional_teacher_provenance: actual.instructionalTeacherProvenance || null,
       historical_record: actual.historicalRecord === true,
       historical_provenance: actual.provenance || null,
       actual_started_date: actualDate(actual.started_at),
@@ -326,6 +351,7 @@ export function composeSyllabusLessonTimeline({
       ...details,
       id: `historical:${historical.id}`,
       occurrence_id: `historical:${historical.id}`,
+      lesson_key: historical.key,
       planned_date: actualDate(historical.occurred_at),
       sort_order: 0,
       item_type: 'lesson',
@@ -391,16 +417,19 @@ export function composeSyllabusLessonTimeline({
     || String(left.occurrence_id || left.id || '').localeCompare(String(right.occurrence_id || right.id || '')))
   const canonical = annotateSyllabusItemsWithSlateEvidence(ordered, slateEvidenceReports, slateReviewReports)
   const historicalSlateByOccurrence = new Map()
+  const standaloneHistoricalSlate = []
   for (const record of legacyActivities || []) {
     if (record?.activity_type !== 'slate_drill_completion') continue
     const occurrenceId = clean(record.syllabus_occurrence_id)
     const lessonKey = resolveKey(record.lesson_key)
     if (!occurrenceId || !lessonKey) continue
+    const serverVerified = clean(record.provenance) === SERVER_VERIFIED_LEGACY_PROVENANCE
+    const evidenceDate = actualDate(record.occurred_at)
     const canonicalActualMatches = canonical.filter((item) => (
       item?.placement_kind === 'actual'
         && item?.historical_record !== true
         && normalizeLessonKey(item?.lesson_key) === lessonKey
-        && clean(item?.source_occurrence_id) === occurrenceId
+        && (!serverVerified && clean(item?.source_occurrence_id) === occurrenceId)
     ))
     const nonActualMatches = canonical.filter((item) => (
       item?.placement_kind !== 'actual'
@@ -408,18 +437,65 @@ export function composeSyllabusLessonTimeline({
         && normalizeLessonKey(item?.lesson_key) === lessonKey
         && clean(item?.occurrence_id) === occurrenceId
     ))
-    if (canonicalActualMatches.length > 1 || nonActualMatches.length > 1) continue
-    const match = canonicalActualMatches[0] || nonActualMatches[0]
-    if (!match) continue
-    historicalSlateByOccurrence.set(clean(match.occurrence_id || match.id), [{
+    let match = null
+    if (serverVerified) {
+      const instructionalRepresentations = canonical.filter((item) => (
+        normalizeLessonKey(item?.lesson_key) === lessonKey
+          && ((item?.placement_kind === 'actual' && item?.historical_record !== true)
+            || (item?.placement_kind === 'historical' && item?.actual_instructional_teacher))
+      ))
+      const sameDate = instructionalRepresentations.filter((item) => item?.planned_date === evidenceDate)
+      if (sameDate.length === 1) match = sameDate[0]
+      else if (sameDate.length > 1) {
+        const completed = sameDate.filter((item) => item?.actual_kind === 'completed')
+        if (completed.length === 1) match = completed[0]
+      } else if (instructionalRepresentations.length === 1) match = instructionalRepresentations[0]
+    } else {
+      const matches = [...canonicalActualMatches, ...nonActualMatches]
+      if (matches.length === 1) match = matches[0]
+    }
+    const annotation = {
       kind: 'slate_drill_history',
       label: 'Mr. Slate drill completed · historical record',
       provenance: clean(record.provenance),
       historical_activity_id: clean(record.id) || null,
-    }])
+    }
+    if (match) {
+      const identity = clean(match.occurrence_id || match.id)
+      historicalSlateByOccurrence.set(identity, [...(historicalSlateByOccurrence.get(identity) || []), annotation])
+      continue
+    }
+    if (!serverVerified || !record?.occurred_at) continue
+    const details = metadata.get(lessonKey) || defaultMetadata(lessonKey)
+    standaloneHistoricalSlate.push({
+      ...details,
+      id: `historical:${clean(record.id) || clean(record.source_identity)}`,
+      occurrence_id: `historical:${clean(record.id) || clean(record.source_identity)}`,
+      lesson_key: lessonKey,
+      planned_date: evidenceDate,
+      sort_order: 0,
+      item_type: 'lesson',
+      placement_kind: 'historical',
+      actual_kind: null,
+      actual_at: record.occurred_at,
+      source_occurrence_id: occurrenceId,
+      assigned_instructional_teacher: null,
+      actual_instructional_teacher: null,
+      historical_record: true,
+      historical_activity_only: true,
+      historical_provenance: clean(record.provenance),
+      is_explicit_schedule: false,
+      is_provisional: false,
+      needs_placement: false,
+      capacity_conflict: null,
+      slate_annotations: [],
+      historical_activity_annotations: [annotation],
+    })
   }
-  return canonical.map((item) => ({
+  return [...canonical.map((item) => ({
     ...item,
     historical_activity_annotations: historicalSlateByOccurrence.get(clean(item.occurrence_id || item.id)) || [],
-  }))
+  })), ...standaloneHistoricalSlate].sort((left, right) => left.planned_date.localeCompare(right.planned_date)
+    || Number(left.sort_order || 0) - Number(right.sort_order || 0)
+    || String(left.occurrence_id || left.id || '').localeCompare(String(right.occurrence_id || right.id || '')))
 }

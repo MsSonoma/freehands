@@ -841,17 +841,85 @@ test('completed Sonoma history displays its immutable session teacher', () => {
   assert.equal(syllabusTeacherLabel(item), 'Taught by Ms. Sonoma')
 })
 
-test('historical NULL session teacher remains unknown even when legacy event metadata names a source', () => {
-  const [item] = composeSyllabusLessonTimeline({
+test('one legacy Session V2 completion with a NULL stored teacher is display-attributed to Sonoma without rewriting history', () => {
+  const session = { id: 'legacy-session', lesson_id: 'generated/fractions.json', instructional_teacher: null, started_at: '2026-08-20T10:00:00Z', ended_at: '2026-08-20T11:00:00Z' }
+  const items = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
     associations: [association({ instructional_teacher: 'webb' })],
-    sessions: [{ id: 'legacy-session', lesson_id: 'generated/fractions.json', instructional_teacher: null, started_at: '2026-08-20T10:00:00Z', ended_at: '2026-08-20T11:00:00Z' }],
+    sessions: [session],
     sessionEvents: [{ session_id: 'legacy-session', lesson_id: 'generated/fractions.json', event_type: 'completed', occurred_at: '2026-08-20T11:00:00Z', metadata: { source: 'session-v2', instructional_teacher: 'sonoma' } }],
     today: '2026-08-26',
   })
+  assert.equal(items.length, 1)
+  const [item] = items
   assert.equal(item.assigned_instructional_teacher, 'webb')
-  assert.equal(item.actual_instructional_teacher, null)
-  assert.equal(syllabusTeacherLabel(item), 'Taught by unknown')
+  assert.equal(item.actual_instructional_teacher, 'sonoma')
+  assert.equal(item.stored_instructional_teacher, null)
+  assert.equal(item.actual_instructional_teacher_provenance, 'legacy_session_v2_sonoma_attribution')
+  assert.equal(session.instructional_teacher, null)
+  assert.equal(syllabusTeacherLabel(item), 'Taught by Ms. Sonoma')
+})
+
+test('repeated qualifying Session V2 completions are each display-attributed to Sonoma without mutating stored history', () => {
+  const sessions = [
+    { id: 'july-completion', lesson_id: 'generated/fractions.json', instructional_teacher: null, started_at: '2026-07-31T18:00:00Z' },
+    { id: 'august-completion', lesson_id: 'generated/fractions.json', instructional_teacher: null, started_at: '2026-08-17T20:00:00Z' },
+  ]
+  const originalSessions = structuredClone(sessions)
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    sessions,
+    sessionEvents: [
+      { session_id: 'july-completion', lesson_id: 'generated/fractions.json', event_type: 'completed', occurred_at: '2026-07-31T19:15:10.210Z', metadata: { source: 'session-v2' } },
+      { session_id: 'august-completion', lesson_id: 'generated/fractions.json', event_type: 'completed', occurred_at: '2026-08-17T21:54:41.372Z', metadata: { source: 'session-v2' } },
+    ],
+    today: '2026-09-02',
+  })
+  assert.equal(items.length, 2)
+  assert.ok(items.every((item) => item.actual_instructional_teacher === 'sonoma'))
+  assert.ok(items.every((item) => item.stored_instructional_teacher === null))
+  assert.ok(items.every((item) => item.actual_instructional_teacher_provenance === 'legacy_session_v2_sonoma_attribution'))
+  assert.deepEqual(sessions, originalSessions)
+})
+
+test('legacy Sonoma attribution remains per-session and fails closed for wrong source, fallback, and cutoff', () => {
+  const compose = (sessions, sessionEvents) => composeSyllabusLessonTimeline({ activeRevision: REVISION, sessions, sessionEvents, today: '2026-09-02' })
+  const base = { lesson_id: 'generated/fractions.json', instructional_teacher: null, started_at: '2026-08-20T10:00:00Z', ended_at: '2026-08-20T11:00:00Z' }
+  const event = { lesson_id: base.lesson_id, event_type: 'completed', occurred_at: '2026-08-20T11:00:00Z', metadata: { source: 'session-v2' } }
+
+  const mixedSource = compose(
+    [{ ...base, id: 'valid-source' }, { ...base, id: 'wrong-source' }],
+    [{ ...event, session_id: 'valid-source' }, { ...event, session_id: 'wrong-source', metadata: { source: 'webb' } }],
+  )
+  assert.equal(mixedSource.find((item) => item.id === 'actual:valid-source').actual_instructional_teacher, 'sonoma')
+  assert.equal(mixedSource.find((item) => item.id === 'actual:wrong-source').actual_instructional_teacher, null)
+
+  const [postCutoff] = compose(
+    [{ ...base, id: 'post-cutoff', started_at: '2026-08-29T10:00:00Z', ended_at: '2026-08-29T11:00:00Z' }],
+    [{ ...event, session_id: 'post-cutoff', occurred_at: '2026-08-29T11:00:00Z' }],
+  )
+  assert.equal(postCutoff.actual_instructional_teacher, null)
+
+  const [fallbackOnly] = compose([{ ...base, id: 'no-event' }], [])
+  assert.equal(fallbackOnly.actual_kind, 'completed')
+  assert.equal(fallbackOnly.actual_instructional_teacher, null)
+
+  const [supersededCompletion] = compose(
+    [{ ...base, id: 'superseded-completion' }],
+    [
+      { ...event, id: 'completed-first', session_id: 'superseded-completion' },
+      { ...event, id: 'incomplete-later', session_id: 'superseded-completion', event_type: 'incomplete', occurred_at: '2026-08-20T11:30:00Z' },
+    ],
+  )
+  assert.equal(supersededCompletion.actual_kind, 'incomplete')
+  assert.equal(supersededCompletion.actual_instructional_teacher, null)
+
+  const mixedFallback = compose(
+    [{ ...base, id: 'valid-event' }, { ...base, id: 'fallback-only' }],
+    [{ ...event, session_id: 'valid-event' }],
+  )
+  assert.equal(mixedFallback.find((item) => item.id === 'actual:valid-event').actual_instructional_teacher, 'sonoma')
+  assert.equal(mixedFallback.find((item) => item.id === 'actual:fallback-only').actual_instructional_teacher, null)
 })
 
 test('canonical Slate mastery and recovery outcomes create separate annotations', () => {
@@ -1077,4 +1145,272 @@ test('learner cards and start action make the server-assigned teacher conspicuou
   assert.match(home, /Continue with \$\{instructionalTeacherLabel\(assignedInstructionalTeacher\)\}/)
   assert.match(home, /Start with \$\{instructionalTeacherLabel\(assignedInstructionalTeacher\)\}/)
   assert.doesNotMatch(home, /setSelectedTeacher|localStorage\.getItem\('selected_teacher'\)/)
+})
+
+test('server-verified pre-Syllabus Webb history renders without consuming a future occurrence', () => {
+  const lessonKey = 'generated/grammar.json'
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [forecastLesson({ id: 'future-grammar', lesson_key: lessonKey, title: 'Grammar', planned_date: '2026-08-30' })],
+    legacyActivities: [{
+      id: 'verified-webb', lesson_key: lessonKey, syllabus_occurrence_id: 'legacy-evidence:webb',
+      activity_type: 'instructional_completion', instructional_teacher: 'webb', occurred_at: '2026-08-27T15:50:27Z',
+      provenance: 'server_verified_legacy_transcript_v1', source_identity: 'webb-source',
+    }],
+    today: '2026-08-30',
+  })
+  const historical = items.find((item) => item.id === 'historical:verified-webb')
+  const future = items.find((item) => item.id === 'future-grammar')
+  assert.equal(historical.historical_record, true)
+  assert.equal(historical.actual_instructional_teacher, 'webb')
+  assert.equal(historical.source_occurrence_id, 'legacy-evidence:webb')
+  assert.ok(future, 'the current/future occurrence remains visible')
+  assert.equal(future.actual_kind, undefined)
+})
+
+test('server-verified pre-Syllabus Slate history renders standalone as drill history, never mastery', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    legacyActivities: [{
+      id: 'verified-slate', lesson_key: 'generated/decimal.json', syllabus_occurrence_id: 'legacy-evidence:slate',
+      activity_type: 'slate_drill_completion', instructional_teacher: null, occurred_at: '2026-08-24T16:10:32Z',
+      provenance: 'server_verified_legacy_transcript_v1', source_identity: 'slate-source',
+    }],
+    today: '2026-08-30',
+  })
+  assert.equal(items.length, 1)
+  assert.equal(items[0].historical_activity_only, true)
+  assert.equal(items[0].actual_kind, null)
+  assert.equal(items[0].assigned_instructional_teacher, null)
+  assert.equal(items[0].actual_instructional_teacher, null)
+  assert.deepEqual(items[0].slate_annotations, [])
+  assert.deepEqual(items[0].historical_activity_annotations.map((row) => row.label), ['Mr. Slate drill completed · historical record'])
+})
+
+test('verified Slate history groups only with one unambiguous same-day historical instruction', () => {
+  const lessonKey = 'generated/grammar.json'
+  const base = {
+    lesson_key: lessonKey,
+    occurred_at: '2026-08-27T15:50:27Z',
+    provenance: 'server_verified_legacy_transcript_v1',
+  }
+  const grouped = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    legacyActivities: [
+      { ...base, id: 'webb-1', syllabus_occurrence_id: 'legacy-evidence:webb-1', activity_type: 'instructional_completion', instructional_teacher: 'webb' },
+      { ...base, id: 'slate-1', syllabus_occurrence_id: 'legacy-evidence:slate-1', activity_type: 'slate_drill_completion', instructional_teacher: null },
+    ],
+    today: '2026-08-30',
+  })
+  assert.equal(grouped.length, 1)
+  assert.equal(grouped[0].actual_instructional_teacher, 'webb')
+  assert.deepEqual(grouped[0].historical_activity_annotations.map((row) => row.label), ['Mr. Slate drill completed · historical record'])
+
+  const repeated = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    legacyActivities: [
+      { ...base, id: 'webb-1', syllabus_occurrence_id: 'legacy-evidence:webb-1', activity_type: 'instructional_completion', instructional_teacher: 'webb' },
+      { ...base, id: 'webb-2', syllabus_occurrence_id: 'legacy-evidence:webb-2', activity_type: 'instructional_completion', instructional_teacher: 'webb' },
+      { ...base, id: 'slate-1', syllabus_occurrence_id: 'legacy-evidence:slate-1', activity_type: 'slate_drill_completion', instructional_teacher: null },
+    ],
+    today: '2026-08-30',
+  })
+  assert.equal(repeated.filter((item) => item.actual_instructional_teacher === 'webb').length, 2)
+  const standaloneSlate = repeated.find((item) => item.historical_activity_only)
+  assert.ok(standaloneSlate, 'ambiguous repeated evidence remains standalone')
+  assert.equal(repeated.filter((item) => item.historical_activity_annotations.length > 0).length, 1)
+})
+
+test('verified Slate history targets the unique completed same-day attempt while preserving Science, Community, and Water state', () => {
+  const science = 'generated/science-review.json'
+  const community = 'generated/community-helpers.json'
+  const water = 'generated/water-cycle.json'
+  const verifiedSlate = (id, lessonKey, occurredAt) => ({
+    id,
+    lesson_key: lessonKey,
+    syllabus_occurrence_id: `legacy-evidence:${id}`,
+    activity_type: 'slate_drill_completion',
+    instructional_teacher: null,
+    occurred_at: occurredAt,
+    provenance: 'server_verified_legacy_transcript_v1',
+  })
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    sessions: [
+      { id: 'science-completed', lesson_id: science, instructional_teacher: 'sonoma', started_at: '2026-08-18T18:00:00Z' },
+      { id: 'science-incomplete', lesson_id: science, instructional_teacher: 'sonoma', started_at: '2026-08-18T20:00:00Z' },
+      { id: 'community-incomplete', lesson_id: community, instructional_teacher: 'sonoma', started_at: '2026-08-27T12:00:00Z' },
+      { id: 'water-completed', lesson_id: water, instructional_teacher: 'sonoma', started_at: '2026-08-26T14:00:00Z' },
+    ],
+    sessionEvents: [
+      { session_id: 'science-completed', lesson_id: science, event_type: 'completed', occurred_at: '2026-08-18T19:00:00Z' },
+      { session_id: 'science-incomplete', lesson_id: science, event_type: 'incomplete', occurred_at: '2026-08-18T21:00:00Z' },
+      { session_id: 'community-incomplete', lesson_id: community, event_type: 'incomplete', occurred_at: '2026-08-27T13:00:00Z' },
+      { session_id: 'water-completed', lesson_id: water, event_type: 'completed', occurred_at: '2026-08-26T15:00:00Z' },
+    ],
+    legacyActivities: [
+      verifiedSlate('science-slate', science, '2026-08-18T22:57:03.981Z'),
+      verifiedSlate('community-slate', community, '2026-08-27T13:42:22.749Z'),
+      verifiedSlate('water-slate', water, '2026-08-27T13:53:53.558Z'),
+    ],
+    today: '2026-08-30',
+  })
+  const scienceCompleted = items.find((item) => item.id === 'actual:science-completed')
+  const scienceIncomplete = items.find((item) => item.id === 'actual:science-incomplete')
+  assert.equal(scienceCompleted.actual_kind, 'completed')
+  assert.equal(scienceCompleted.historical_activity_annotations.length, 1)
+  assert.equal(scienceIncomplete.actual_kind, 'incomplete')
+  assert.deepEqual(scienceIncomplete.historical_activity_annotations, [])
+  assert.equal(items.some((item) => item.historical_activity_only && item.lesson_key === science), false)
+
+  const communityItem = items.find((item) => item.id === 'actual:community-incomplete')
+  assert.equal(communityItem.actual_kind, 'incomplete')
+  assert.equal(communityItem.historical_activity_annotations.length, 1)
+  assert.equal(items.some((item) => item.historical_activity_only && item.lesson_key === community), false)
+
+  const waterItem = items.find((item) => item.id === 'actual:water-completed')
+  assert.equal(waterItem.planned_date, '2026-08-26')
+  assert.equal(waterItem.historical_activity_annotations.length, 1)
+  assert.equal(items.some((item) => item.historical_activity_only && item.lesson_key === water), false)
+})
+
+test('verified Slate history remains standalone for same-day and cross-date instructional ambiguity', () => {
+  const lessonKey = 'generated/ambiguous-history.json'
+  const compose = ({ sessions, sessionEvents, occurredAt }) => composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    sessions,
+    sessionEvents,
+    legacyActivities: [{
+      id: 'ambiguous-slate', lesson_key: lessonKey, syllabus_occurrence_id: 'legacy-evidence:ambiguous-slate',
+      activity_type: 'slate_drill_completion', instructional_teacher: null, occurred_at: occurredAt,
+      provenance: 'server_verified_legacy_transcript_v1',
+    }],
+    today: '2026-08-30',
+  })
+  const session = (id, startedAt) => ({ id, lesson_id: lessonKey, instructional_teacher: 'sonoma', started_at: startedAt })
+  const event = (sessionId, eventType, occurredAt) => ({ session_id: sessionId, lesson_id: lessonKey, event_type: eventType, occurred_at: occurredAt })
+  const assertStandalone = (items) => {
+    assert.equal(items.filter((item) => item.historical_activity_only).length, 1)
+    assert.ok(items.filter((item) => item.placement_kind === 'actual').every((item) => item.historical_activity_annotations.length === 0))
+  }
+
+  assertStandalone(compose({
+    sessions: [session('completed-a', '2026-08-18T10:00:00Z'), session('completed-b', '2026-08-18T12:00:00Z')],
+    sessionEvents: [event('completed-a', 'completed', '2026-08-18T11:00:00Z'), event('completed-b', 'completed', '2026-08-18T13:00:00Z')],
+    occurredAt: '2026-08-18T14:00:00Z',
+  }))
+  assertStandalone(compose({
+    sessions: [session('cross-date-a', '2026-08-17T10:00:00Z'), session('cross-date-b', '2026-08-19T10:00:00Z')],
+    sessionEvents: [event('cross-date-a', 'completed', '2026-08-17T11:00:00Z'), event('cross-date-b', 'completed', '2026-08-19T11:00:00Z')],
+    occurredAt: '2026-08-18T14:00:00Z',
+  }))
+  assertStandalone(compose({
+    sessions: [session('incomplete-a', '2026-08-18T10:00:00Z'), session('incomplete-b', '2026-08-18T12:00:00Z')],
+    sessionEvents: [event('incomplete-a', 'incomplete', '2026-08-18T11:00:00Z'), event('incomplete-b', 'incomplete', '2026-08-18T13:00:00Z')],
+    occurredAt: '2026-08-18T14:00:00Z',
+  }))
+})
+
+test('the Aug 17–23 recovery composes four instructional representations with two Sonoma, two Webb, and four Slate drills', () => {
+  const multiply = 'generated/5_Multiplying_Fractions_intermediate.json'
+  const science = 'generated/5_4th_Grade_Review_of_Science_intermediate.json'
+  const language = 'generated/5_Review_of_4th_Grade_Language_Arts_intermediate.json'
+  const social = 'generated/5_4th_Grade_Review_for_5th_Grade_Social_Studies_intermediate.json'
+  const sessions = [
+    { id: 'multiply-jul-14', lesson_id: multiply, instructional_teacher: null, started_at: '2026-07-14T18:00:00Z' },
+    { id: 'multiply-jul-31', lesson_id: multiply, instructional_teacher: null, started_at: '2026-07-31T18:00:00Z' },
+    { id: 'multiply-aug-1', lesson_id: multiply, instructional_teacher: null, started_at: '2026-08-01T18:00:00Z' },
+    { id: 'multiply-aug-17', lesson_id: multiply, instructional_teacher: null, started_at: '2026-08-17T20:00:00Z' },
+    { id: 'science-completed', lesson_id: science, instructional_teacher: null, started_at: '2026-08-18T20:00:00Z' },
+    { id: 'science-incomplete', lesson_id: science, instructional_teacher: null, started_at: '2026-08-18T22:00:00Z' },
+  ]
+  const sessionEvents = [
+    { session_id: 'multiply-jul-14', lesson_id: multiply, event_type: 'incomplete', occurred_at: '2026-07-14T19:00:00Z', metadata: { source: 'session-v2' } },
+    { session_id: 'multiply-jul-31', lesson_id: multiply, event_type: 'completed', occurred_at: '2026-07-31T19:15:10.210Z', metadata: { source: 'session-v2' } },
+    { session_id: 'multiply-aug-1', lesson_id: multiply, event_type: 'incomplete', occurred_at: '2026-08-01T19:00:00Z', metadata: { source: 'session-v2' } },
+    { session_id: 'multiply-aug-17', lesson_id: multiply, event_type: 'completed', occurred_at: '2026-08-17T21:54:41.372Z', metadata: { source: 'session-v2' } },
+    { session_id: 'science-completed', lesson_id: science, event_type: 'completed', occurred_at: '2026-08-18T21:59:52.870Z', metadata: { source: 'session-v2' } },
+    { session_id: 'science-incomplete', lesson_id: science, event_type: 'incomplete', occurred_at: '2026-08-18T22:30:00Z', metadata: { source: 'session-v2' } },
+  ]
+  const verified = (id, lessonKey, activityType, occurredAt, teacher = null) => ({
+    id, lesson_key: lessonKey, syllabus_occurrence_id: `legacy-evidence:${id}`, activity_type: activityType,
+    instructional_teacher: teacher, occurred_at: occurredAt, provenance: 'server_verified_legacy_transcript_v1', source_identity: `${id}-source`,
+  })
+  const legacyActivities = [
+    verified('language-webb', language, 'instructional_completion', '2026-08-19T17:46:05.427Z', 'webb'),
+    verified('social-webb', social, 'instructional_completion', '2026-08-21T22:12:24.493Z', 'webb'),
+    verified('multiply-slate', multiply, 'slate_drill_completion', '2026-08-17T20:26:39.243Z'),
+    verified('science-slate', science, 'slate_drill_completion', '2026-08-18T22:57:03.981Z'),
+    verified('language-slate', language, 'slate_drill_completion', '2026-08-19T20:10:02.770Z'),
+    verified('social-slate', social, 'slate_drill_completion', '2026-08-21T22:45:31.584Z'),
+  ]
+  const items = composeSyllabusLessonTimeline({ activeRevision: REVISION, sessions, sessionEvents, legacyActivities, today: '2026-08-30' })
+  const expectedTarget = new Map([
+    [multiply, { date: '2026-08-17', teacher: 'sonoma', slateId: 'multiply-slate' }],
+    [science, { date: '2026-08-18', teacher: 'sonoma', slateId: 'science-slate' }],
+    [language, { date: '2026-08-19', teacher: 'webb', slateId: 'language-slate' }],
+    [social, { date: '2026-08-21', teacher: 'webb', slateId: 'social-slate' }],
+  ])
+  const targetCompleted = items.filter((item) => {
+    const expected = expectedTarget.get(item.lesson_key)
+    return expected && item.planned_date === expected.date && item.actual_kind === 'completed'
+  })
+  assert.equal(targetCompleted.length, 4)
+  assert.equal(targetCompleted.filter((item) => item.actual_instructional_teacher === 'sonoma').length, 2)
+  assert.equal(targetCompleted.filter((item) => item.actual_instructional_teacher === 'webb').length, 2)
+  for (const item of targetCompleted) {
+    const expected = expectedTarget.get(item.lesson_key)
+    assert.equal(item.actual_instructional_teacher, expected.teacher)
+    assert.deepEqual(item.historical_activity_annotations.map((row) => row.historical_activity_id), [expected.slateId])
+    assert.deepEqual(item.historical_activity_annotations.map((row) => row.label), ['Mr. Slate drill completed · historical record'])
+  }
+
+  const scienceIncomplete = items.find((item) => item.id === 'actual:science-incomplete')
+  assert.equal(scienceIncomplete.actual_kind, 'incomplete')
+  assert.deepEqual(scienceIncomplete.historical_activity_annotations, [])
+  const multiplyingHistory = items.filter((item) => item.lesson_key === multiply && item.placement_kind === 'actual')
+  assert.equal(multiplyingHistory.length, 4)
+  assert.equal(items.find((item) => item.id === 'actual:multiply-jul-31').actual_instructional_teacher, 'sonoma')
+  assert.deepEqual(items.find((item) => item.id === 'actual:multiply-jul-14').historical_activity_annotations, [])
+  assert.deepEqual(items.find((item) => item.id === 'actual:multiply-aug-1').historical_activity_annotations, [])
+  assert.equal(items.filter((item) => item.historical_activity_only).length, 0)
+  assert.ok(items.every((item) => item.slate_annotations.length === 0))
+})
+
+test('the Aug 24–30 recovery preserves canonical instruction state while rendering four historical Slate facts', () => {
+  const decimal = 'generated/5_Decimal_Operations_Addition_and_Subtraction_intermediate.json'
+  const water = 'generated/5_The_Water_Cycle_intermediate.json'
+  const community = 'generated/5_Emma_A_social_studies_lesson_on_community_helpers_intermediate.json'
+  const grammar = 'generated/5_Grammar_Their_Theyre_There_intermediate.json'
+  const sessions = [
+    { id: 'decimal-session', lesson_id: decimal, instructional_teacher: 'sonoma', started_at: '2026-08-24T14:00:00Z', ended_at: '2026-08-24T15:00:00Z' },
+    { id: 'water-session', lesson_id: water, instructional_teacher: 'sonoma', started_at: '2026-08-26T14:00:00Z', ended_at: '2026-08-26T15:00:00Z' },
+    { id: 'community-session', lesson_id: community, instructional_teacher: 'sonoma', started_at: '2026-08-27T12:00:00Z', ended_at: '2026-08-27T13:00:00Z' },
+  ]
+  const sessionEvents = [
+    { session_id: 'decimal-session', lesson_id: decimal, event_type: 'completed', occurred_at: '2026-08-24T15:00:00Z', metadata: { source: 'session-v2' } },
+    { session_id: 'water-session', lesson_id: water, event_type: 'completed', occurred_at: '2026-08-26T15:00:00Z', metadata: { source: 'session-v2' } },
+    { session_id: 'community-session', lesson_id: community, event_type: 'incomplete', occurred_at: '2026-08-27T13:00:00Z', metadata: { source: 'session-v2' } },
+  ]
+  const verified = (id, lessonKey, activityType, occurredAt, teacher = null) => ({
+    id, lesson_key: lessonKey, syllabus_occurrence_id: `legacy-evidence:${id}`, activity_type: activityType,
+    instructional_teacher: teacher, occurred_at: occurredAt, provenance: 'server_verified_legacy_transcript_v1', source_identity: `${id}-source`,
+  })
+  const legacyActivities = [
+    verified('grammar-webb', grammar, 'instructional_completion', '2026-08-27T15:50:27.408Z', 'webb'),
+    verified('decimal-slate', decimal, 'slate_drill_completion', '2026-08-24T16:10:32.749Z'),
+    verified('water-slate', water, 'slate_drill_completion', '2026-08-27T13:53:53.558Z'),
+    verified('community-slate', community, 'slate_drill_completion', '2026-08-27T13:42:22.749Z'),
+    verified('grammar-slate', grammar, 'slate_drill_completion', '2026-08-27T16:02:59.369Z'),
+  ]
+  const items = composeSyllabusLessonTimeline({ activeRevision: REVISION, sessions, sessionEvents, legacyActivities, today: '2026-08-30' })
+  const byKey = (lessonKey) => items.find((item) => item.lesson_key === lessonKey && !item.historical_activity_only)
+  assert.equal(byKey(decimal).historical_activity_annotations.length, 1)
+  assert.equal(byKey(water).historical_activity_annotations.length, 1)
+  assert.equal(byKey(community).actual_kind, 'incomplete')
+  assert.equal(byKey(community).historical_activity_annotations.length, 1)
+  assert.equal(byKey(grammar).actual_instructional_teacher, 'webb')
+  assert.equal(byKey(grammar).historical_activity_annotations.length, 1)
+  assert.equal(items.filter((item) => item.actual_kind === 'completed').length, 3)
+  assert.ok(items.every((item) => item.slate_annotations.length === 0))
 })
