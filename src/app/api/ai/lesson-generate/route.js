@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
 import { createClient } from '@supabase/supabase-js'
 import { AI_MODEL } from '@/app/lib/aiModel'
+import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic'
  * Generate lesson content items using AI with full lesson context.
  * Body: { lesson, type }
  *   lesson — full lesson JSON object
- *   type   — 'vocab' | 'multiplechoice' | 'truefalse' | 'shortanswer' | 'fillintheblank'
+ *   type   — 'vocab' | 'baseline' | 'retention' | 'test' | 'multiplechoice' | 'truefalse' | 'shortanswer' | 'fillintheblank'
  * Returns: { items: [...] }
  */
 export async function POST(req) {
@@ -39,13 +40,50 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Missing lesson or type' }, { status: 400 })
     }
 
-    const validTypes = ['vocab', 'multiplechoice', 'truefalse', 'shortanswer', 'fillintheblank']
+    const validTypes = ['vocab', 'baseline', 'retention', 'dailyFollowup', 'weeklyReview', 'test', 'multiplechoice', 'truefalse', 'shortanswer', 'fillintheblank']
     if (!validTypes.includes(type)) {
       return NextResponse.json({ error: `Invalid type: ${type}` }, { status: 400 })
     }
 
-    // Strip large arrays from lesson context to keep prompt focused but readable
-    const lessonContext = JSON.stringify(lesson, null, 2)
+    // Strip every reserved pool from instructional generation
+    // context so instructional item generation cannot accidentally reuse protected
+    // items. Protected-pool generation may see sibling protected pools only to avoid
+    // duplication while still excluding the pool it is generating.
+    const instructionalView = buildInstructionalLessonView(lesson)
+    const lessonContextSource = type === 'test'
+      ? {
+          ...instructionalView,
+          baseline: lesson?.baseline || lesson?.baselinePool || lesson?.baseline_items || null,
+          retention: lesson?.retention || lesson?.retentionPool || lesson?.retention_items || null,
+          dailyFollowup: lesson?.dailyFollowup || lesson?.daily_followup || lesson?.daily_followup_pool || null,
+          weeklyReview: lesson?.weeklyReview || lesson?.weekly_review || lesson?.weekly_review_pool || null,
+        }
+      : type === 'retention'
+        ? {
+          ...instructionalView,
+          baseline: lesson?.baseline || lesson?.baselinePool || lesson?.baseline_items || null,
+          test: lesson?.test || null,
+          dailyFollowup: lesson?.dailyFollowup || lesson?.daily_followup || lesson?.daily_followup_pool || null,
+          weeklyReview: lesson?.weeklyReview || lesson?.weekly_review || lesson?.weekly_review_pool || null,
+        }
+      : type === 'dailyFollowup'
+        ? {
+          ...instructionalView,
+          baseline: lesson?.baseline || lesson?.baselinePool || lesson?.baseline_items || null,
+          retention: lesson?.retention || lesson?.retentionPool || lesson?.retention_items || null,
+          weeklyReview: lesson?.weeklyReview || lesson?.weekly_review || lesson?.weekly_review_pool || null,
+          test: lesson?.test || null,
+        }
+      : type === 'weeklyReview'
+        ? {
+          ...instructionalView,
+          baseline: lesson?.baseline || lesson?.baselinePool || lesson?.baseline_items || null,
+          retention: lesson?.retention || lesson?.retentionPool || lesson?.retention_items || null,
+          dailyFollowup: lesson?.dailyFollowup || lesson?.daily_followup || lesson?.daily_followup_pool || null,
+          test: lesson?.test || null,
+        }
+      : instructionalView
+    const lessonContext = JSON.stringify(lessonContextSource, null, 2)
 
     const prompts = {
       vocab: {
@@ -70,6 +108,66 @@ LESSON:
 ${lessonContext}
 
 Return ONLY a JSON object: {"items": [{"question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0}, ...]}`,
+      },
+
+      baseline: {
+        system: `You are an expert curriculum writer creating brief, low-pressure pre-instruction baseline questions for elementary school lessons.
+Always return valid JSON as: {"items": [{"id": "baseline-1", "question": "...", "expectedAny": ["answer1", "answer2"]}, ...]}
+Do not call these a pretest. Do not make trick questions. Generate exactly 2 items.`,
+        user: `Given this lesson, generate exactly 2 short baseline questions that check what the learner may already know before teaching begins. They must be distinct from instructional practice and any later test questions.
+
+LESSON:
+${lessonContext}
+
+Return ONLY a JSON object: {"items": [{"id": "baseline-1", "question": "...", "expectedAny": ["answer1", "answer2"]}, ...]}`,
+      },
+
+      test: {
+        system: `You are an expert curriculum writer creating reserved held-out Test questions for elementary school lessons.
+Always return valid JSON as: {"items": [{"id": "reserved-test-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}
+Generate at least 6 items. Keep them distinct from baseline, instruction, worksheet, and practice items.`,
+        user: `Given this lesson, generate at least 6 reserved held-out Test questions. They must not duplicate any baseline or instructional practice question.
+
+LESSON:
+${lessonContext}
+
+Return ONLY a JSON object: {"items": [{"id": "reserved-test-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
+      },
+
+      retention: {
+        system: `You are an expert curriculum writer creating delayed-retention-reserved questions for elementary school lessons.
+Always return valid JSON as: {"items": [{"id": "retention-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}
+Generate exactly 2 items. Keep them distinct from baseline, instruction, worksheet, practice, and Test items.`,
+        user: `Given this lesson, generate exactly 2 delayed-retention-reserved questions. They must not duplicate any baseline, instructional practice, or Test question.
+
+LESSON:
+${lessonContext}
+
+Return ONLY a JSON object: {"items": [{"id": "retention-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
+      },
+
+      dailyFollowup: {
+        system: `You are an expert curriculum writer creating Daily Follow-Up-reserved questions for elementary school lessons.
+Always return valid JSON as: {"items": [{"id": "daily-followup-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}
+Generate exactly 2 items. Keep them distinct from baseline, instruction, worksheet, practice, Test, legacy retention, and Weekly Review items.`,
+        user: `Given this lesson, generate exactly 2 held-out Daily Follow-Up questions for a strict delayed retrieval opportunity. Do not duplicate any other question.
+
+LESSON:
+${lessonContext}
+
+Return ONLY a JSON object: {"items": [{"id": "daily-followup-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
+      },
+
+      weeklyReview: {
+        system: `You are an expert curriculum writer creating Weekly Review-reserved questions for elementary school lessons.
+Always return valid JSON as: {"items": [{"id": "weekly-review-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}
+Generate exactly 5 items. Keep them distinct from baseline, instruction, worksheet, practice, Test, legacy retention, and Daily Follow-Up items.`,
+        user: `Given this lesson, generate exactly 5 held-out Weekly Review questions for later mixed retrieval. Do not duplicate any other question.
+
+LESSON:
+${lessonContext}
+
+Return ONLY a JSON object: {"items": [{"id": "weekly-review-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
       },
 
       truefalse: {

@@ -1,7 +1,13 @@
 // API endpoint for lesson schedule management
 import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
-import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
+import { NextResponse } from 'next/server.js'
+import { normalizeLessonKey } from '../../lib/lessonKeyNormalization.js'
+import { featuresForTier, resolveEffectiveTier } from '../../lib/entitlements.js'
+import { verifyFacilitatorLessonAccess } from '../../lib/serverLessonAccess.mjs'
+import { upsertLessonAssociation } from '../../lib/syllabus/lessonAssociations.server.mjs'
+import { inspectLearnerSyllabusPlacement } from '../../lib/syllabus/capacity.mjs'
+import { verifyFacilitatorPinForUser } from '../../lib/facilitatorPin.server.mjs'
+import { resolveCalendarContext } from '../../lib/calendarDate.mjs'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -26,7 +32,7 @@ const normalizeScheduledDate = (value) => {
   return str
 }
 
-export async function GET(request) {
+export async function GET(request, deps = {}) {
   try {
     const { searchParams } = new URL(request.url)
     const learnerId = searchParams.get('learnerId')
@@ -48,7 +54,8 @@ export async function GET(request) {
     }
     
     // Use service key for admin operations, but verify user's token
-    const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
+    const createClientImpl = deps.createClientImpl || createClient
+    const adminSupabase = createClientImpl(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false }
     })
     
@@ -58,18 +65,33 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized', details: userError?.message }, { status: 401 })
     }
 
+    if (!learnerId) {
+      return NextResponse.json({ error: 'learnerId required' }, { status: 400 })
+    }
+
+    // Authorization must precede every service-role schedule query, including action=active.
+    const { data: learner, error: learnerError } = await adminSupabase
+      .from('learners')
+      .select('id')
+      .eq('id', learnerId)
+      .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle()
+
+    if (learnerError || !learner) {
+      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
+    }
+
     // Get active lessons for today (used by learner view)
     if (action === 'active' && learnerId) {
-      // Use local date, not UTC
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      const day = String(now.getDate()).padStart(2, '0')
-      const today = `${year}-${month}-${day}`
+      const { data: profile } = await adminSupabase.from('profiles').select('timezone').eq('id', user.id).maybeSingle()
+      const { today } = resolveCalendarContext({
+        profileTimeZone: profile?.timezone,
+        fallbackTimeZone: user?.user_metadata?.timezone,
+      })
       
       const { data, error } = await adminSupabase
         .from('lesson_schedule')
-        .select('lesson_key')
+        .select('lesson_key, scheduled_date, created_at, updated_at')
         .eq('learner_id', learnerId)
         .eq('scheduled_date', today)
 
@@ -83,24 +105,6 @@ export async function GET(request) {
       }))
 
       return NextResponse.json({ lessons })
-    }
-
-    // Get schedule for date range
-    if (!learnerId) {
-      return NextResponse.json({ error: 'learnerId required' }, { status: 400 })
-    }
-
-    // Verify the learner belongs to this facilitator.
-    // (GET previously relied only on facilitator_id filtering, which can hide legacy schedule rows.)
-    const { data: learner, error: learnerError } = await adminSupabase
-      .from('learners')
-      .select('id')
-      .eq('id', learnerId)
-      .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
-      .maybeSingle()
-
-    if (learnerError || !learner) {
-      return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
     }
 
     let query = adminSupabase
@@ -138,10 +142,10 @@ export async function GET(request) {
   }
 }
 
-export async function POST(request) {
+export async function POST(request, deps = {}) {
   try {
     const body = await request.json()
-    const { learnerId, lessonKey, scheduledDate } = body
+    const { learnerId, lessonKey, scheduledDate, exceptionPin, scheduleId, originalScheduledDate } = body
 
     if (!learnerId || !lessonKey || !scheduledDate) {
       return NextResponse.json(
@@ -159,7 +163,8 @@ export async function POST(request) {
     }
 
     const token = authHeader.replace('Bearer ', '')
-    const adminSupabase = createClient(
+    const createClientImpl = deps.createClientImpl || createClient
+    const adminSupabase = createClientImpl(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { persistSession: false, autoRefreshToken: false } }
@@ -183,23 +188,90 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
     }
 
+    const { data: profile } = await adminSupabase
+      .from('profiles')
+      .select('subscription_tier, plan_tier')
+      .eq('id', user.id)
+      .maybeSingle()
+    const effectiveTier = resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier)
+    if (!featuresForTier(effectiveTier).lessonScheduling) {
+      return NextResponse.json({ error: 'Scheduling requires a Standard plan or higher' }, { status: 403 })
+    }
+
+    const lessonAccess = await verifyFacilitatorLessonAccess({
+      admin: adminSupabase,
+      userId: user.id,
+      lessonKey: normalizedLessonKey,
+      fileExistsSync: deps.fileExistsSync,
+      unapprovedError: 'Approve the lesson content before scheduling it',
+    })
+    if (!lessonAccess.ok) {
+      return NextResponse.json({ error: lessonAccess.error || 'Lesson not found or unauthorized' }, { status: 403 })
+    }
+
+    let existingSchedule = null
+    if (scheduleId || originalScheduledDate) {
+      let existingQuery = adminSupabase.from('lesson_schedule').select('*').eq('learner_id', learnerId)
+        .or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
+      existingQuery = scheduleId
+        ? existingQuery.eq('id', scheduleId)
+        : existingQuery.eq('lesson_key', normalizedLessonKey).eq('scheduled_date', normalizeScheduledDate(originalScheduledDate))
+      const { data: row, error: existingError } = await existingQuery.maybeSingle()
+      if (existingError || !row) return NextResponse.json({ error: 'Schedule occurrence not found or unauthorized' }, { status: 404 })
+      existingSchedule = row
+    }
+
+    const inspectPlacement = deps.inspectLearnerSyllabusPlacement || inspectLearnerSyllabusPlacement
+    const capacity = await inspectPlacement({
+      admin: adminSupabase,
+      facilitatorId: user.id,
+      learnerId,
+      lessonKey: normalizedLessonKey,
+      subject: lessonAccess.subject,
+      date: normalizeScheduledDate(scheduledDate),
+      excludeScheduleId: existingSchedule?.id || null,
+    })
+    if (!capacity.allowed) {
+      if (!exceptionPin) {
+        return NextResponse.json({
+          error: capacity.message,
+          code: 'SYLLABUS_CAPACITY_PIN_REQUIRED',
+          conflict: capacity.conflict,
+        }, { status: 409 })
+      }
+      const verifyPin = deps.verifyFacilitatorPinForUser || verifyFacilitatorPinForUser
+      if (!await verifyPin(adminSupabase, user.id, exceptionPin)) {
+        return NextResponse.json({ error: 'Invalid Facilitator PIN', code: 'INVALID_FACILITATOR_PIN' }, { status: 403 })
+      }
+    }
+
     // Insert or update schedule entry
-    const { data, error } = await adminSupabase
-      .from('lesson_schedule')
-      .upsert({
+    const schedulePayload = {
         facilitator_id: user.id,
         learner_id: learnerId,
         lesson_key: normalizedLessonKey,
-        scheduled_date: scheduledDate
-      }, {
-        onConflict: 'learner_id,lesson_key,scheduled_date'
-      })
-      .select()
-      .single()
+        scheduled_date: normalizeScheduledDate(scheduledDate),
+    }
+    const mutation = existingSchedule
+      ? adminSupabase.from('lesson_schedule').update(schedulePayload).eq('id', existingSchedule.id)
+      : adminSupabase.from('lesson_schedule').upsert(schedulePayload, { onConflict: 'learner_id,lesson_key,scheduled_date' })
+    const { data, error } = await mutation.select().single()
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    await upsertLessonAssociation({
+      admin: adminSupabase,
+      facilitatorId: user.id,
+      learnerId,
+      lessonKey: lessonAccess.lessonKey,
+      subject: lessonAccess.subject,
+      title: lessonAccess.title,
+      readinessState: 'approved',
+      associationSource: 'schedule',
+      verifyLearner: false,
+    })
 
     const normalizedData = data ? { ...data, lesson_key: normalizeLessonKey(data.lesson_key) } : null
 

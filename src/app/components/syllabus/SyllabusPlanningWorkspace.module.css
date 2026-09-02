@@ -1,0 +1,24 @@
+.backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; background: rgba(17, 24, 39, .48); }
+.workspace { width: min(1040px, 100%); max-height: calc(100vh - 48px); overflow: auto; padding: 24px; border-radius: 14px; background: #f8fafc; box-shadow: 0 24px 70px rgba(0, 0, 0, .25); color: #1f2937; }
+.workspace > header { display: flex; justify-content: space-between; gap: 24px; padding-bottom: 18px; border-bottom: 1px solid #d1d5db; }
+.workspace header p { margin: 0; color: #9a3412; font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+.workspace header h2 { margin: 4px 0; }
+.workspace header span { color: #64748b; font-size: 13px; }
+.workspace button { min-height: 40px; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 7px; background: white; cursor: pointer; }
+.error { padding:10px 12px; border:1px solid #fecaca; border-radius:8px; background:#fef2f2; color:#991b1b; font-size:13px; }
+.horizon { display: flex; align-items: center; gap: 8px; margin: 16px 0; font-weight: 700; }
+.horizon select { padding: 7px; border: 1px solid #cbd5e1; border-radius: 7px; }
+.weeks { display: grid; gap: 20px; }
+.weeks > section { padding: 18px; border: 1px solid #e2e8f0; border-radius: 10px; background: white; }
+.weeks h3 { margin: 0 0 12px; }
+.weeks article { display: grid; grid-template-columns: 140px minmax(220px, 1fr) auto; gap: 14px; padding: 12px 0; border-top: 1px solid #f1f5f9; }
+.weeks article > div:first-child { display: grid; align-content: start; gap: 3px; }
+.weeks small { color: #64748b; }
+.concept span { font-weight: 700; }
+.concept p, .empty { margin: 4px 0; color: #475569; font-size: 13px; }
+.rowActions { display: flex; align-items: start; gap: 6px; }
+.editor { position: sticky; bottom: 0; margin-top: 18px; padding: 18px; border: 1px solid #fdba74; border-radius: 10px; background: #fff7ed; }
+.editor label { display: grid; gap: 5px; margin-top: 10px; font-size: 12px; font-weight: 700; }
+.editor input, .editor textarea { box-sizing: border-box; width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 7px; font: inherit; }
+.editor > div { display: flex; justify-content: end; gap: 8px; margin-top: 12px; }
+@media (max-width: 720px) { .backdrop { padding: 8px; } .workspace { max-height: calc(100vh - 16px); padding: 14px; } .workspace > header { align-items:flex-start; } .weeks article { grid-template-columns: 1fr; } .rowActions { flex-wrap: wrap; } .rowActions button { flex:1 1 140px; } }

@@ -1,17 +1,23 @@
-import { NextResponse } from 'next/server'
-import { resolveEffectiveTier, featuresForTier } from '@/app/lib/entitlements'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { NextResponse } from 'next/server.js'
+import { resolveEffectiveTier, featuresForTier } from '../../../../lib/entitlements.js'
+import { AI_MODEL } from '../../../../lib/aiModel.js'
+import { buildCanonicalLessonIdentity, normalizeGenerationRequest } from '../../../../lib/facilitatorPreparation.mjs'
+import { requireAssociationLearner, upsertLessonAssociation } from '../../../../lib/syllabus/lessonAssociations.server.mjs'
+import {
+  MaterializationGenerationError,
+  recoverOrGenerateMaterializationArtifact,
+} from '../../../../lib/syllabus/materializationGenerator.server.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 export const maxDuration = 60 // Extended timeout for OpenAI lesson generation
 
-async function readUserAndTier(request){
+async function readUserAndTier(request, { createClientImpl = null } = {}){
   try {
     const auth = request.headers.get('authorization') || ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
     if (!token) return { user: null, tier: 'free', token: null, supabase: null }
-    const { createClient } = await import('@supabase/supabase-js')
+    const createClient = createClientImpl || (await import('@supabase/supabase-js')).createClient
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -72,10 +78,15 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   "blurb": "string",
   "vocab": [{"term": "string", "definition": "string"}],
   "teachingNotes": "string",
+  "baseline": [{"id": "baseline-1", "question": "short, low-pressure pre-instruction question", "expectedAny": ["answer"]}],
+  "retention": [{"id": "retention-1", "question": "legacy delayed retention question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}],
+  "dailyFollowup": [{"id": "daily-followup-1", "question": "daily follow-up question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}],
+  "weeklyReview": [{"id": "weekly-review-1", "question": "weekly review question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}],
   "truefalse": [{"question": "COMPLETE QUESTION TEXT HERE", "answer": true|false, "expectedAny": ["true"|"false"]}],
   "multiplechoice": [{"question": "string", "choices": ["A", "B", "C", "D"], "correct": 0-3, "expectedAny": ["correct answer text"]}],
   "fillintheblank": [{"question": "COMPLETE SENTENCE WITH _____ BLANK", "expectedAny": ["answer"]}],
-  "shortanswer": [{"question": "string", "expectedAny": ["answer"]}]
+  "shortanswer": [{"question": "string", "expectedAny": ["answer"]}],
+  "test": [{"id": "reserved-test-1", "question": "held-out test question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}]
 }
 
 FACTUAL ACCURACY REQUIREMENTS:
@@ -99,6 +110,11 @@ CRITICAL REQUIREMENTS:
    - Add common synonyms and alternative phrasings to increase leniency
    - Example: ["photosynthesis", "making food", "food production", "creating energy"]
 6. teachingNotes: Include key teaching strategies, common misconceptions, real-world connections, and differentiation tips (2-4 sentences)${notesGuidance}
+7. baseline: Include exactly 2 short, low-pressure pre-instruction questions. These must check what a learner may already know before teaching, not trick questions. They must be distinct from all truefalse, multiplechoice, fillintheblank, shortanswer, and test items. Do not call them a pretest.
+8. test: Include at least 6 reserved held-out Test questions. They must be distinct from baseline and all instructional question pools. Prefer multiple-choice or true/false with source-backed answers. These are for the final Test only and must not duplicate practice items.
+9. retention: Include exactly 2 delayed-retention-reserved questions. They must be distinct from baseline, all instructional pools, test, dailyFollowup, and weeklyReview. These preserve the existing in-session Stage 7 path.
+10. dailyFollowup: Include exactly 2 Daily Follow-Up-reserved questions. They must be distinct from baseline, all instructional pools, test, retention, and weeklyReview. These are held out for a strict delayed follow-up only.
+11. weeklyReview: Include exactly 5 Weekly Review-reserved questions. They must be distinct from baseline, all instructional pools, test, retention, and dailyFollowup. These are held out for a separate weekly review only.
 
 EXAMPLE truefalse format:
 {"question": "The sun rises in the east.", "answer": true, "expectedAny": ["true"]}
@@ -128,10 +144,37 @@ async function callModel(prompt){
       id: 'Dev_Lesson', title: 'Dev Lesson', grade: '3rd', difficulty: 'Beginner',
       blurb: 'A development stub lesson.', vocab:[{term:'term',definition:'definition'}], 
       teachingNotes:'Use concrete examples and hands-on activities. Address common misconceptions. Connect to real-world scenarios.',
+      baseline:[
+        {id:'baseline-1', question:'What do you already know about this topic?', expectedAny:['something about the topic']},
+        {id:'baseline-2', question:'Can you name one idea related to this topic?', expectedAny:['related idea']}
+      ],
+      retention:[
+        {id:'retention-1', question:'Which number is even?', choices:['15','16','17','19'], correct:1, expectedAny:['16']},
+        {id:'retention-2', question:'True or false: 18 is even.', answer:true, expectedAny:['true']}
+      ],
+      dailyFollowup:[
+        {id:'daily-followup-1', question:'Which number can be divided into two equal groups?', choices:['15','16','17','19'], correct:1, expectedAny:['16']},
+        {id:'daily-followup-2', question:'True or false: 18 can be split into two equal groups.', answer:true, expectedAny:['true']}
+      ],
+      weeklyReview:[
+        {id:'weekly-review-1', question:'Which number has no remainder when divided by 2?', choices:['21','22','23','25'], correct:1, expectedAny:['22']},
+        {id:'weekly-review-2', question:'True or false: 14 is an even number.', answer:true, expectedAny:['true']},
+        {id:'weekly-review-3', question:'Which number is odd?', choices:['20','24','27','28'], correct:2, expectedAny:['27']},
+        {id:'weekly-review-4', question:'Complete the pattern of even numbers: 2, 4, 6, ___.', expectedAny:['8','eight']},
+        {id:'weekly-review-5', question:'Is 30 even or odd?', expectedAny:['even']}
+      ],
       truefalse:[{question:'2 is even.', answer:true, expectedAny:['true']}],
       multiplechoice:[{question:'Pick 2', choices:['1','2','3','4'], correct:1, expectedAny:['2']}],
       fillintheblank:[{question:'__ is the result of 1+1.', expectedAny:['2']}],
-      shortanswer:[{question:'Explain even numbers.', expectedAny:['divisible by 2']}] 
+      shortanswer:[{question:'Explain even numbers.', expectedAny:['divisible by 2']}],
+      test:[
+        {id:'reserved-test-1', question:'Which number is even?', choices:['1','2','3','5'], correct:1, expectedAny:['2']},
+        {id:'reserved-test-2', question:'True or false: 4 is even.', answer:true, expectedAny:['true']},
+        {id:'reserved-test-3', question:'Which number is odd?', choices:['2','4','5','6'], correct:2, expectedAny:['5']},
+        {id:'reserved-test-4', question:'True or false: 3 is even.', answer:false, expectedAny:['false']},
+        {id:'reserved-test-5', question:'Pick another even number.', choices:['7','8','9','11'], correct:1, expectedAny:['8']},
+        {id:'reserved-test-6', question:'Pick another odd number.', choices:['10','12','13','14'], correct:2, expectedAny:['13']}
+      ]
     }
   }
   const body = {
@@ -168,8 +211,59 @@ async function callModel(prompt){
   }
 }
 
-export async function POST(request){
-  const { user, tier, supabase } = await readUserAndTier(request)
+function normalizedGeneratedLesson(lesson, { title, subject, difficulty, grade }, userId) {
+  lesson.id = lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g, '_')
+  lesson.title = lesson.title || title
+  lesson.grade = lesson.grade || grade
+  lesson.difficulty = lesson.difficulty || difficulty
+  lesson.subject = (lesson.subject || subject || '').toString().toLowerCase()
+  lesson.userId = userId
+  lesson.approved = false
+  return lesson
+}
+
+async function verifiedMaterializationOperation(admin, raw, { facilitatorId, learnerId }) {
+  if (!raw) return null
+  const operationId = String(raw.id || '').trim()
+  const syllabusId = String(raw.syllabusId || '').trim()
+  const lineageId = String(raw.lineageId || '').trim()
+  const generationInputHash = String(raw.generationInputHash || '').trim()
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuid.test(operationId) || !uuid.test(syllabusId) || !uuid.test(lineageId) || !/^[0-9a-f]{64}$/i.test(generationInputHash)) {
+    throw new MaterializationGenerationError('Invalid materialization operation identity', 'MATERIALIZATION_OPERATION_INVALID', 400)
+  }
+  const receiptResult = await admin.from('syllabus_forecast_materializations').select('*')
+    .eq('id', operationId).eq('syllabus_id', syllabusId).eq('lineage_id', lineageId)
+    .eq('generation_input_hash', generationInputHash).maybeSingle()
+  if (receiptResult.error || !receiptResult.data) {
+    throw new MaterializationGenerationError('Materialization operation not found', 'MATERIALIZATION_OPERATION_NOT_FOUND', 404)
+  }
+  const syllabusResult = await admin.from('syllabi').select('id,facilitator_id,learner_id')
+    .eq('id', syllabusId).eq('facilitator_id', facilitatorId).eq('learner_id', learnerId).maybeSingle()
+  if (syllabusResult.error || !syllabusResult.data) {
+    throw new MaterializationGenerationError('Materialization operation not found', 'MATERIALIZATION_OPERATION_NOT_FOUND', 404)
+  }
+  return {
+    id: operationId,
+    syllabusId,
+    lineageId,
+    generationInputHash,
+    facilitatorId,
+    learnerId,
+    recoverOnly: raw.recoverOnly === true,
+    receipt: receiptResult.data,
+  }
+}
+
+async function storageLessonText(value) {
+  if (typeof value?.text === 'function') return value.text()
+  if (typeof value === 'string') return value
+  if (value instanceof Uint8Array) return new TextDecoder().decode(value)
+  throw new Error('Stored lesson content could not be read')
+}
+
+export async function POST(request, deps = {}){
+  const { user, tier, supabase } = await readUserAndTier(request, deps)
   if (!user) return NextResponse.json({ error:'Unauthorized' }, { status: 401 })
   
   // Check if user has lessonGenerator entitlement
@@ -185,9 +279,6 @@ export async function POST(request){
     try {
       const { data: p } = await supabase.from('profiles').select('lifetime_generations_used').eq('id', user.id).maybeSingle()
       lifetimeUsed = p?.lifetime_generations_used || 0
-      if (lifetimeUsed >= lifetimeLimit) {
-        return NextResponse.json({ error: `You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.` }, { status: 429 })
-      }
     } catch {
       // Swallow — do not block generation if quota read fails
     }
@@ -195,12 +286,115 @@ export async function POST(request){
 
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
-  const { title, subject, difficulty, grade, description, notes, vocab } = body || {}
-  if (!title || !subject || !difficulty || !grade) return NextResponse.json({ error:'Missing fields' }, { status: 400 })
+  const learnerId = String(body?.learnerId || body?.proposal?.learnerId || '').trim()
+  if (learnerId) {
+    try {
+      await requireAssociationLearner(supabase, user.id, learnerId)
+    } catch (error) {
+      return NextResponse.json({ error: error.message || 'Learner not found or unauthorized' }, { status: error.status || 403 })
+    }
+  }
+  const proposalMode = body?.mode === 'proposal'
+  const normalized = normalizeGenerationRequest(body || {})
+  if (!normalized.ok) return NextResponse.json({ error: normalized.error }, { status: 400 })
+  const { title, subject, difficulty, grade, description, notes, vocab } = normalized.request
+
+  let operation
+  try {
+    operation = await verifiedMaterializationOperation(supabase, deps.materializationOperation, { facilitatorId: user.id, learnerId })
+  } catch (error) {
+    return NextResponse.json({ error: error.message, code: error.code }, { status: error.status || 500 })
+  }
+
+  if (operation) {
+    const storage = supabase.storage.from('lessons')
+    const loadArtifact = async (identity) => {
+      const { data, error } = await storage.download(identity.storagePath)
+      if (error) {
+        const missing = error.statusCode === 404 || /not found|does not exist/i.test(String(error.message || ''))
+        if (missing) return null
+        throw new Error(error.message || 'Lesson artifact recovery failed')
+      }
+      return JSON.parse(await storageLessonText(data))
+    }
+    try {
+      const generated = await recoverOrGenerateMaterializationArtifact({
+        operation,
+        recoverOnly: operation.recoverOnly,
+        loadArtifact,
+        generateArtifact: async () => {
+          if (Number.isFinite(lifetimeLimit) && lifetimeUsed >= lifetimeLimit) {
+            throw new MaterializationGenerationError(`You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.`, 'LESSON_GENERATION_QUOTA_EXHAUSTED', 429)
+          }
+          const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
+          return normalizedGeneratedLesson(await (deps.callModel || callModel)(prompt), { title, subject, difficulty, grade }, user.id)
+        },
+        createArtifact: async (identity, lesson) => {
+          const { error } = await storage.upload(identity.storagePath, JSON.stringify(lesson, null, 2), {
+            contentType: 'application/json',
+            upsert: false,
+          })
+          if (!error) return true
+          if (error.statusCode === 409 || /already exists|duplicate/i.test(String(error.message || ''))) return false
+          throw new Error(error.message || 'Lesson storage failed')
+        },
+        associateArtifact: ({ identity, lesson }) => upsertLessonAssociation({
+          admin: supabase,
+          facilitatorId: user.id,
+          learnerId,
+          lessonKey: identity.lessonKey,
+          subject: lesson.subject || subject,
+          title: lesson.title || title,
+          readinessState: 'draft',
+          associationSource: 'generator',
+          verifyLearner: false,
+        }),
+        finalizeOperation: async ({ identity }) => {
+          const { data, error } = await supabase.rpc('complete_syllabus_materialization_generation', {
+            p_receipt_id: operation.id,
+            p_facilitator_id: user.id,
+            p_learner_id: learnerId,
+            p_generation_input_hash: operation.generationInputHash,
+            p_lesson_key: identity.lessonKey,
+            p_storage_path: identity.storagePath,
+            p_charge_quota: Number.isFinite(lifetimeLimit),
+          })
+          if (error) throw new Error(error.message || 'Materialization generation could not be finalized')
+          return data
+        },
+        afterArtifactCreated: deps.afterMaterializationArtifactCreated,
+      })
+      const { data: urlData } = storage.getPublicUrl(generated.identity.storagePath)
+      return NextResponse.json({
+        ok: true,
+        file: generated.identity.file,
+        identity: generated.identity,
+        lessonKey: generated.identity.lessonKey,
+        storagePath: generated.identity.storagePath,
+        ownerId: user.id,
+        lesson: generated.lesson,
+        storageUrl: urlData?.publicUrl || null,
+        storageError: null,
+        path: urlData?.publicUrl || null,
+        userId: user.id,
+        recovered: generated.recovered,
+      })
+    } catch (error) {
+      const status = error instanceof MaterializationGenerationError ? error.status : 500
+      return NextResponse.json({
+        error: error?.message || String(error),
+        code: error?.code,
+        ...(error?.code === 'MATERIALIZATION_RECOVERY_REQUIRED' ? { operation: { id: operation.id, lineageId: operation.lineageId } } : {}),
+      }, { status })
+    }
+  }
   
   try {
+    if (Number.isFinite(lifetimeLimit) && lifetimeUsed >= lifetimeLimit) {
+      return NextResponse.json({ error: `You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.` }, { status: 429 })
+    }
     const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
-    const lesson = await callModel(prompt)
+    const lesson = await (deps.callModel || callModel)(prompt)
   // Normalize core fields
     lesson.id = lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g,'_')
     lesson.title = lesson.title || title
@@ -210,6 +404,7 @@ export async function POST(request){
     lesson.subject = (lesson.subject || subject || '').toString().toLowerCase()
     // Store the creator's userId for filtering
     lesson.userId = user.id
+    lesson.approved = false
     
     const base = safeFileName(`${grade}_${lesson.title}_${difficulty}`)
     const file = `${base}.json`
@@ -218,9 +413,10 @@ export async function POST(request){
     // Store in Supabase Storage in user's generated-lessons folder
     let storageUrl = null
     let storageError = null
+    let storagePath = null
     if (supabase) {
       try {
-        const storagePath = `facilitator-lessons/${user.id}/${file}`
+        storagePath = `facilitator-lessons/${user.id}/${file}`
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('lessons')
           .upload(storagePath, lessonJson, {
@@ -244,6 +440,23 @@ export async function POST(request){
     } else {
       storageError = 'Supabase client not initialized'
     }
+    if (proposalMode && storageError) {
+      return NextResponse.json({ error: `Lesson storage failed: ${storageError}` }, { status: 500 })
+    }
+    const identity = storageError ? null : buildCanonicalLessonIdentity({ file, ownerId: user.id, storagePath })
+    if (identity && learnerId) {
+      await upsertLessonAssociation({
+        admin: supabase,
+        facilitatorId: user.id,
+        learnerId,
+        lessonKey: identity.lessonKey,
+        subject: lesson.subject || subject,
+        title: lesson.title || title,
+        readinessState: 'draft',
+        associationSource: 'generator',
+        verifyLearner: false,
+      })
+    }
     
     // Increment lifetime_generations_used for finite-limit tiers (e.g. free)
     if (Number.isFinite(lifetimeLimit) && supabase) {
@@ -257,6 +470,10 @@ export async function POST(request){
     return NextResponse.json({ 
       ok: true, 
       file, 
+      identity,
+      lessonKey: identity?.lessonKey || null,
+      storagePath: identity?.storagePath || storagePath,
+      ownerId: user.id,
       lesson,
       storageUrl,
       storageError,

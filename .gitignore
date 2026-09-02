@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# Windows filesystem metadata
+**/desktop.ini
+**/Thumbs.db
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -43,6 +47,13 @@ next-env.d.ts
 # repo-specific secrets (do not commit)
 google-tts-key.json
 nice-symbol-472120-v7-30781ef9b517.json
+
+# local upload/cache scratch files
+.tmp.driveupload/
+
+# Local Sidekick runtime output
+/sidekick_pack.md
+/sidekick_rounds.jsonl
 
 # repository hygiene: ignore oversized video not needed in repo
 public/media/ms-sonoma.mp4

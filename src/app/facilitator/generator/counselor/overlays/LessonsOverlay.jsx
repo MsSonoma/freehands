@@ -101,6 +101,8 @@ export default function LessonsOverlay({ learnerId }) {
   const [rewritingDescription, setRewritingDescription] = useState(false)
   const [rewritingTeachingNotes, setRewritingTeachingNotes] = useState(false)
   const [rewritingVocabDefinition, setRewritingVocabDefinition] = useState({})
+  const [generatingDescriptionFromTitle, setGeneratingDescriptionFromTitle] = useState(false)
+  const [generatingNotesFromDescription, setGeneratingNotesFromDescription] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
 
@@ -953,6 +955,33 @@ export default function LessonsOverlay({ learnerId }) {
     }
   }
 
+  const handleGenerateDescriptionFromTitle = async (title) => {
+    setGeneratingDescriptionFromTitle(true)
+    const generated = await handleRewriteDescription(title, '', 'generate-description-from-title')
+    setGeneratingDescriptionFromTitle(false)
+
+    if (generated) {
+      setLessonEditorData(prev => ({
+        ...prev,
+        blurb: generated
+      }))
+    }
+  }
+
+  const handleGenerateNotesFromDescription = async (description) => {
+    setGeneratingNotesFromDescription(true)
+    const lessonTitle = lessonEditorData?.title || 'Lesson'
+    const generated = await handleRewriteDescription(description, lessonTitle, 'generate-notes-from-description')
+    setGeneratingNotesFromDescription(false)
+
+    if (generated) {
+      setLessonEditorData(prev => ({
+        ...prev,
+        teachingNotes: generated
+      }))
+    }
+  }
+
   const handleRewriteVocabDefinition = async (definition, term, index) => {
     setRewritingVocabDefinition(prev => ({ ...prev, [index]: true }))
     const lessonTitle = lessonEditorData?.title || 'Lesson'
@@ -1645,6 +1674,10 @@ export default function LessonsOverlay({ learnerId }) {
                     rewritingDescription={rewritingDescription}
                     rewritingTeachingNotes={rewritingTeachingNotes}
                     rewritingVocabDefinition={rewritingVocabDefinition}
+                    onGenerateDescriptionFromTitle={handleGenerateDescriptionFromTitle}
+                    generatingDescriptionFromTitle={generatingDescriptionFromTitle}
+                    onGenerateNotesFromDescription={handleGenerateNotesFromDescription}
+                    generatingNotesFromDescription={generatingNotesFromDescription}
                   />
                 </div>
               </>

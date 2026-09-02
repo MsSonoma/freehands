@@ -1032,6 +1032,29 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Cohere: Sidekick Watch (MsSonoma)",
+			"type": "shell",
+			"command": "C:\\Users\\atari\\Cohere\\.venv\\Scripts\\python.exe",
+			"args": [
+				"-m", "cohere", "sk", "watch",
+				"-a", "MsSonoma",
+				"-p", "freehands",
+				"--ext", ".py,.md,.json,.jsonl,.toml,.txt"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}",
+				"env": {
+					"COHERE_HOME": "${env:USERPROFILE}\\.coherence_apps\\ms_sonoma",
+					"PYTHONPATH": "C:\\Users\\atari\\Cohere\\src"
+				}
+			},
+			"isBackground": true,
+			"runOptions": {
+				"runOn": "folderOpen"
+			},
+			"problemMatcher": []
 		}
 	]
 }

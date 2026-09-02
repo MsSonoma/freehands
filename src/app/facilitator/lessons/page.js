@@ -2,16 +2,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
+import { resolveLibraryLessonState, resolveInitialLibraryLearner, LIBRARY_PRIMARY_ACTIONS } from '@/app/lib/facilitatorLessonLibraryState.mjs'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
-import { PageHeader, WorkflowGuide } from '@/components/FacilitatorHelp'
-import OnboardingBanner from '@/app/components/OnboardingBanner'
-import { useOnboarding } from '@/app/hooks/useOnboarding'
 
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 
@@ -35,19 +32,9 @@ function normalizeApprovedLessonKeys(map = {}) {
 
 export default function FacilitatorLessonsPage() {
   const router = useRouter()
-  // Read ?onboarding=1 client-side to avoid Suspense boundary requirement
-  const [isOnboardingParam, setIsOnboardingParam] = useState(false)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsOnboardingParam(new URLSearchParams(window.location.search).get('onboarding') === '1')
-    }
-  }, [])
-  const { step, advanceStep, STEPS } = useOnboarding()
-  const showOnboarding = isOnboardingParam || step === STEPS.ACTIVATE_LESSON
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
   const { coreSubjects, subjectsWithoutGenerated: subjectDropdownOptions } = useFacilitatorSubjects({ includeGenerated: true })
   const [pinChecked, setPinChecked] = useState(false)
-  const [tier, setTier] = useState('free')
   const [learners, setLearners] = useState([])
   const [selectedLearnerId, setSelectedLearnerId] = useState(null)
   const [allLessons, setAllLessons] = useState({}) // { subject: [lessons] }
@@ -67,11 +54,10 @@ export default function FacilitatorLessonsPage() {
   const [selectedSubject, setSelectedSubject] = useState('all')
   const [selectedGrade, setSelectedGrade] = useState('all')
   const [editingNote, setEditingNote] = useState(null) // lesson key currently being edited
-  const [scheduling, setScheduling] = useState(null) // lesson key currently being scheduled
   const [refreshTrigger, setRefreshTrigger] = useState(0) // Used to force refresh at midnight and on schedule changes
   const [selectedLearner, setSelectedLearner] = useState(null) // Store full learner object
   const [learnerDataLoading, setLearnerDataLoading] = useState(false) // Loading learner-specific data
-  const [showLessons, setShowLessons] = useState(false) // Whether to show lessons list
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
 
   const {
@@ -83,14 +69,6 @@ export default function FacilitatorLessonsPage() {
     error: lessonHistoryError,
     refresh: refreshLessonHistory,
   } = useLessonHistory(selectedLearnerId, { limit: 150, refreshKey: refreshTrigger })
-
-  const completedLessonCount = useMemo(() => {
-    return Object.keys(lessonHistoryLastCompleted || {}).length
-  }, [lessonHistoryLastCompleted])
-
-  const activeLessonCount = useMemo(() => {
-    return Object.keys(lessonHistoryInProgress || {}).length
-  }, [lessonHistoryInProgress])
 
   const lessonTitleLookup = useMemo(() => {
     const map = {}
@@ -185,20 +163,17 @@ export default function FacilitatorLessonsPage() {
         const supabase = getSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.user) {
-          const { data } = await supabase.from('profiles').select('subscription_tier, plan_tier').eq('id', session.user.id).maybeSingle()
-          if (!cancelled && data) setTier(resolveEffectiveTier(data.subscription_tier, data.plan_tier))
-          
           // Fetch learners
           const { data: learnersData } = await supabase.from('learners').select('*').order('created_at', { ascending: false })
           if (!cancelled && learnersData) {
             setLearners(learnersData)
-            // Auto-select the active learner from localStorage
-            const activeLearnerIdFromStorage = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null
-            if (activeLearnerIdFromStorage) {
-              const match = learnersData.find(l => l.id === activeLearnerIdFromStorage)
-              if (match) {
-                setSelectedLearnerId(match.id)
-                setSelectedLearner(match)
+            const onlyLearner = resolveInitialLibraryLearner(learnersData)
+            if (onlyLearner) {
+              setSelectedLearnerId(onlyLearner.id)
+              setSelectedLearner(onlyLearner)
+              if (onlyLearner?.grade) {
+                const learnerGrade = String(onlyLearner.grade).trim().replace(/(?:st|nd|rd|th)$/i, '').toUpperCase()
+                setSelectedGrade(learnerGrade)
               }
             }
           }
@@ -238,7 +213,7 @@ export default function FacilitatorLessonsPage() {
       // Initialize generated bucket even if we haven't loaded owned lessons yet.
       lessonsMap['generated'] = []
 
-      // Publish public lessons ASAP so Load Lessons feels instant.
+      // Publish public lessons ASAP so the library appears immediately.
       if (!cancelled) {
         setAllLessons({ ...lessonsMap })
         setLessonsLoading(false)
@@ -501,57 +476,6 @@ export default function FacilitatorLessonsPage() {
     return () => { cancelled = true }
   }, [selectedLearnerId, refreshTrigger]) // Load immediately when learner selected
 
-  async function toggleAvailability(lessonKey) {
-    if (!selectedLearnerId) return
-    
-    try {
-      setSaving(true)
-      const supabase = getSupabaseClient()
-      
-      const { data: currentData } = await supabase
-        .from('learners')
-        .select('approved_lessons')
-        .eq('id', selectedLearnerId)
-        .maybeSingle()
-      
-      const { normalized: currentApproved, changed } = normalizeApprovedLessonKeys(currentData?.approved_lessons || {})
-      const newApproved = { ...currentApproved }
-      
-      const legacyKey = lessonKey.replace('general/', 'facilitator/')
-      const isCurrentlyChecked = newApproved[lessonKey] || newApproved[legacyKey]
-      
-      if (isCurrentlyChecked) {
-        delete newApproved[lessonKey]
-        delete newApproved[legacyKey]
-      } else {
-        newApproved[lessonKey] = true
-      }
-      
-      const updatePayload = { approved_lessons: newApproved }
-      if (changed) {
-        updatePayload.approved_lessons = newApproved
-      }
-      const { error } = await supabase
-        .from('learners')
-        .update(updatePayload)
-        .eq('id', selectedLearnerId)
-      
-      if (error) throw error
-      
-      setAvailableLessons(newApproved)
-
-      // If this was an activation (not a deactivation) and we're in the onboarding flow,
-      // advance to the calendar tour step.
-      if (showOnboarding && !isCurrentlyChecked) {
-        await advanceStep(STEPS.CALENDAR_TOUR)
-      }
-    } catch (err) {
-      // Silent fail
-    } finally {
-      setSaving(false)
-    }
-  }
-
   function getFilteredLessons() {
     const filtered = []
     
@@ -653,49 +577,6 @@ export default function FacilitatorLessonsPage() {
     }
   }
 
-  async function scheduleLesson(lessonKey, scheduledDate) {
-    if (!scheduledDate) return
-    
-    setScheduling(lessonKey)
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-
-      if (!token) {
-        alert('Not authenticated')
-        return
-      }
-
-      const response = await fetch('/api/lesson-schedule', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          learnerId: selectedLearnerId,
-          lessonKey: lessonKey,
-          scheduledDate: scheduledDate
-        })
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to schedule')
-      }
-
-      setRefreshTrigger(prev => prev + 1)
-      setScheduling(null)
-      alert(`Lesson scheduled for ${scheduledDate}`)
-    } catch (e) {
-      alert('Failed to schedule: ' + e.message)
-      setScheduling(null)
-    }
-  }
-
-  const ent = featuresForTier(tier)
-
   if (!pinChecked || authLoading || loading) {
     return <main style={{ padding: '12px 24px' }}><p>Loading…</p></main>
   }
@@ -716,94 +597,28 @@ export default function FacilitatorLessonsPage() {
     <>
       <main style={{ padding: 7, maxWidth: 1200, margin: '0 auto', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
         <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
-          {showOnboarding && (
-            <OnboardingBanner
-              step={3}
-              title="Activate or schedule your lesson"
-              message="Select your learner, load lessons, then check the box next to a lesson to activate it. Or schedule it on the calendar for a future date."
-              action={
-                <a
-                  href="/facilitator/calendar?onboarding=1"
-                  style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'7px 14px', background:'#6366f1', color:'#fff', borderRadius:8, fontSize:13, fontWeight:600, textDecoration:'none' }}
-                >
-                  📅 Go to Calendar
-                </a>
-              }
-            />
-          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 12 }}>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <h1 style={{ marginTop: 0, marginBottom: 4, textAlign: 'left', fontSize: 22 }}>Lesson Library</h1>
-                <WorkflowGuide
-                  workflowKey="lesson-approval-workflow"
-                  title="How Lesson Approval & Scheduling Works"
-                  steps={[
-                    { 
-                      step: 'Select a learner', 
-                      description: 'Choose which student you want to manage lessons for' 
-                    },
-                    { 
-                      step: 'Load and browse lessons', 
-                      description: 'Click "Load Lessons" to see available curriculum filtered by grade' 
-                    },
-                    { 
-                      step: 'Make lessons available', 
-                      description: 'Check "Available" to show a lesson in the learner\'s lesson list (they can start it anytime)' 
-                    },
-                    { 
-                      step: 'Schedule for specific dates (optional)', 
-                      description: 'Click the calendar icon to assign a lesson to a specific date. This makes it appear on that day.' 
-                    }
-                  ]}
-                />
               </div>
               <p style={{ color: '#6b7280', marginTop: 0, marginBottom: 0, textAlign: 'left', fontSize: 14 }}>
-                Browse, approve, and schedule lessons for your learners
+                Choose a learner to see what is ready, scheduled, or completed.
               </p>
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => router.push('/facilitator/lessons/edit?new=1')}
-                style={{
-                  padding: '10px 16px',
-                  background: '#fff',
-                  color: '#374151',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontSize: 14,
-                  whiteSpace: 'nowrap'
-                }}
-                title="Create a new lesson from scratch"
-              >
-                📝 New Lesson
-              </button>
-              <button
-                onClick={() => router.push('/facilitator/generator')}
-                style={{
-                  padding: '10px 16px',
-                  background: '#3b82f6',
-                  color: '#fff',
-                  border: '1px solid #3b82f6',
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontSize: 14,
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#2563eb'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#3b82f6'
-                }}
-              >
-                ✨ Generate Lesson
-              </button>
-            </div>
+            <details style={{ position: 'relative' }}>
+              <summary style={{ listStyle: 'none', cursor: 'pointer', padding: '9px 13px', border: '1px solid #d1d5db', borderRadius: 8, background: '#fff', color: '#374151', fontWeight: 700, fontSize: 13 }}>
+                Advanced library tools
+              </summary>
+              <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 5, display: 'grid', gap: 6, minWidth: 210, padding: 8, border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', boxShadow: '0 8px 24px rgba(15,23,42,0.12)' }}>
+                <button type="button" onClick={() => router.push('/facilitator/lessons/edit?new=1')} style={{ textAlign: 'left', padding: '9px 10px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#374151', fontWeight: 600, cursor: 'pointer' }}>
+                  New lesson from scratch
+                </button>
+                <button type="button" onClick={() => router.push('/facilitator/generator?advanced=1')} style={{ textAlign: 'left', padding: '9px 10px', border: '1px solid #dbeafe', borderRadius: 6, background: '#eff6ff', color: '#1d4ed8', fontWeight: 600, cursor: 'pointer' }}>
+                  Detailed lesson builder
+                </button>
+              </div>
+            </details>
           </div>
         </div>
       
@@ -862,8 +677,6 @@ export default function FacilitatorLessonsPage() {
                     setSelectedGrade(learnerGrade)
                   }
                   
-                  // Reset showLessons when changing learner
-                  setShowLessons(false)
                 }}
                 style={{
                   padding: '8px 12px',
@@ -884,71 +697,46 @@ export default function FacilitatorLessonsPage() {
                 ))}
               </select>
 
-              <select
-                value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  background: '#fff',
-                  cursor: 'pointer',
-                  minWidth: '130px',
-                  flex: '1 1 130px'
-                }}
-              >
-                <option value="all">All Subjects</option>
-                {subjectDropdownOptions.map(subject => (
-                  <option key={subject} value={subject} style={{ textTransform: 'capitalize' }}>
-                    {subject === 'language arts' ? 'Language Arts' : 
-                     subject === 'social studies' ? 'Social Studies' :
-                     subject.charAt(0).toUpperCase() + subject.slice(1)}
-                  </option>
-                ))}
-              </select>
-              
-              <select
-                value={selectedGrade}
-                onChange={(e) => setSelectedGrade(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  background: '#fff',
-                  cursor: 'pointer',
-                  minWidth: '110px',
-                  flex: '1 1 110px'
-                }}
-              >
-                <option value="all">All Grades</option>
-                {GRADES.map(grade => (
-                  <option key={grade} value={grade}>
-                    Grade {grade}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={lessonLibraryScope}
-                onChange={(e) => setLessonLibraryScope(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  background: '#fff',
-                  cursor: 'pointer',
-                  minWidth: '130px',
-                  flex: '1 1 130px'
-                }}
-              >
-                <option value="owned">Owned</option>
-                <option value="downloadable">Downloadable</option>
-                <option value="all">All Lessons</option>
-              </select>
+              <button type="button" onClick={() => setAdvancedFiltersOpen(open => !open)} style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, background: '#fff', color: '#374151', cursor: 'pointer', fontWeight: 600 }}>
+                {advancedFiltersOpen ? 'Hide filters' : 'Advanced filters'}
+              </button>
             </div>
+
+            {advancedFiltersOpen && (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', padding: '10px 14px 0' }}>
+                <select
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, background: '#fff', cursor: 'pointer', minWidth: '130px', flex: '1 1 130px' }}
+                >
+                  <option value="all">All Subjects</option>
+                  {subjectDropdownOptions.map(subject => (
+                    <option key={subject} value={subject} style={{ textTransform: 'capitalize' }}>
+                      {subject === 'language arts' ? 'Language Arts' : 
+                       subject === 'social studies' ? 'Social Studies' :
+                       subject.charAt(0).toUpperCase() + subject.slice(1)}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedGrade}
+                  onChange={(e) => setSelectedGrade(e.target.value)}
+                  style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, background: '#fff', cursor: 'pointer', minWidth: '110px', flex: '1 1 110px' }}
+                >
+                  <option value="all">All Grades</option>
+                  {GRADES.map(grade => <option key={grade} value={grade}>Grade {grade}</option>)}
+                </select>
+                <select
+                  value={lessonLibraryScope}
+                  onChange={(e) => setLessonLibraryScope(e.target.value)}
+                  style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, background: '#fff', cursor: 'pointer', minWidth: '130px', flex: '1 1 130px' }}
+                >
+                  <option value="owned">Owned</option>
+                  <option value="downloadable">Downloadable</option>
+                  <option value="all">All Lessons</option>
+                </select>
+              </div>
+            )}
 
             {/* Row 2: search + action buttons */}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', padding: '10px 14px 2px' }}>
@@ -967,54 +755,7 @@ export default function FacilitatorLessonsPage() {
                 }}
               />
 
-              <button
-                onClick={() => setShowLessons(true)}
-                disabled={showLessons}
-                style={{
-                  padding: '9px 20px',
-                  background: showLessons ? '#e5e7eb' : '#111827',
-                  color: showLessons ? '#9ca3af' : '#fff',
-                  border: 'none',
-                  borderRadius: 6,
-                  fontWeight: 700,
-                  cursor: showLessons ? 'default' : 'pointer',
-                  fontSize: 13,
-                  whiteSpace: 'nowrap',
-                  letterSpacing: '0.02em',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Load Lessons
-              </button>
-
-              {selectedLearnerId && showLessons && (
-                <button
-                  onClick={() => setShowHistoryModal(true)}
-                  style={{
-                    padding: '9px 18px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: 6,
-                    background: '#fff',
-                    color: '#374151',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: lessonHistoryLoading ? 'wait' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    whiteSpace: 'nowrap'
-                  }}
-                  disabled={lessonHistoryLoading && !lessonHistorySessions.length}
-                  title={lessonHistoryLoading ? 'Loading history…' : 'View recent completions'}
-                >
-                  ✅ Completed Lessons{completedLessonCount ? ` (${completedLessonCount})` : ''}
-                  {activeLessonCount > 0 && (
-                    <span style={{ fontSize: 12, color: '#d97706' }}>⏳ {activeLessonCount}</span>
-                  )}
-                </button>
-              )}
-
-              {showLessons && !lessonsLoading && (
+              {!lessonsLoading && (
                 <div style={{ 
                   fontSize: 13, 
                   color: '#6b7280',
@@ -1030,30 +771,7 @@ export default function FacilitatorLessonsPage() {
           {saving && <p style={{ color: '#555' }}>Saving...</p>}
 
           {/* Show appropriate state based on loading */}
-          {!showLessons ? (
-            <div style={{
-              background: '#fff',
-              border: '1px solid #e5e7eb',
-              borderRadius: 10,
-              padding: '48px 32px',
-              textAlign: 'center',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
-            }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>📚</div>
-              <div style={{ fontWeight: 600, fontSize: 15, color: '#111827', marginBottom: selectedLearnerId ? 8 : 12 }}>
-                {selectedLearnerId ? 'Ready to load' : 'Select a learner to get started'}
-              </div>
-              {selectedLearnerId ? (
-                <div style={{ fontSize: 13, color: '#6b7280' }}>
-                  Click <strong>Load Lessons</strong> above to browse the curriculum.
-                </div>
-              ) : (
-                <div style={{ fontSize: 13, color: '#6b7280' }}>
-                  Choose a learner from the dropdown, then click <strong>Load Lessons</strong>.
-                </div>
-              )}
-            </div>
-          ) : lessonsLoading ? (
+          {lessonsLoading ? (
             <div style={{
               background: '#fff',
               border: '1px solid #e5e7eb',
@@ -1113,55 +831,46 @@ export default function FacilitatorLessonsPage() {
                   : `${(subject || '').toString().toLowerCase()}/${fileName || ''}`
                 const ownedByKey = Boolean(fileName && ownedLessonKeys?.[ownedKey])
                 const isDownloadableNotOwned = !isOwned && !ownedByKey
-                const isScheduled = learnerSelected && !isDownloadableNotOwned && !!scheduledLessons[lessonKey]
-                const futureDate = learnerSelected && !isDownloadableNotOwned ? futureScheduledLessons[lessonKey] : null
                 const hasActiveKey = learnerSelected && !isDownloadableNotOwned && activeGoldenKeys[lessonKey] === true
                 const medalInfo = learnerSelected && !isDownloadableNotOwned ? medals[lessonKey] : null
-                const hasCompleted = Boolean(learnerSelected && medalInfo && medalInfo.bestPercent > 0)
-                const medalEmoji = learnerSelected && medalInfo?.medalTier ? emojiForTier(medalInfo.medalTier) : null
                 const noteText = learnerSelected && !isDownloadableNotOwned ? (lessonNotes[lessonKey] || '') : ''
                 const isEditingThisNote = learnerSelected && !isDownloadableNotOwned && editingNote === lessonKey
-                const isSchedulingThis = learnerSelected && !isDownloadableNotOwned && scheduling === lessonKey
                 const lastCompletedAt = learnerSelected && !isDownloadableNotOwned ? lessonHistoryLastCompleted?.[lessonKey] : null
                 const inProgressAt = learnerSelected && !isDownloadableNotOwned ? lessonHistoryInProgress?.[lessonKey] : null
                 const hasHistory = Boolean(learnerSelected && !isDownloadableNotOwned && (lastCompletedAt || inProgressAt))
+                const libraryState = resolveLibraryLessonState({
+                  lesson,
+                  lessonKey,
+                  learnerId: selectedLearnerId || '',
+                  isDownloadableNotOwned,
+                  availableLessons,
+                  scheduledToday: scheduledLessons,
+                  futureScheduledLessons,
+                  inProgressLessons: lessonHistoryInProgress,
+                  completedLessons: lessonHistoryLastCompleted,
+                })
+                const primaryLabel = libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.REVIEW
+                  ? 'Review lesson'
+                  : libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.DELIVERY
+                    ? 'Choose session option'
+                    : libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.DOWNLOAD
+                      ? 'Download'
+                      : ''
                 
                 return (
-                  <div key={`${subject}-${lessonKey}`} style={{
+                  <div key={`${subject}-${lessonKey}`} data-library-row="true" data-state-key={libraryState.stateKey} style={{
                     padding: '13px 16px',
                     borderBottom: '1px solid #f3f4f6',
                     borderLeft: `3px solid ${subjectAccent(subject).border}`,
                     transition: 'background 0.15s'
                   }}>
-                    {/* Main lesson info with floating buttons */}
+                    {/* Main lesson info */}
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'flex-start', 
                       gap: 8,
                       flexWrap: 'wrap'
                     }}>
-                      {/* Checkbox for making lesson available to learner */}
-                      {learnerSelected && !isDownloadableNotOwned && (
-                        <input
-                          type="checkbox"
-                          checked={!!availableLessons[lessonKey] || !!availableLessons[lessonKey.replace('general/', 'facilitator/')]}
-                          onChange={() => toggleAvailability(lessonKey)}
-                          disabled={saving}
-                          style={{
-                            marginTop: 4,
-                            cursor: saving ? 'not-allowed' : 'pointer',
-                            width: 18,
-                            height: 18
-                          }}
-                          title="Show this lesson to learner"
-                        />
-                      )}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                        {isScheduled && <span style={{ fontSize: 12 }} title="Scheduled for today">📅</span>}
-                        {!isScheduled && futureDate && <span style={{ fontSize: 12, opacity: 0.5 }} title={`Scheduled for ${futureDate}`}>📅</span>}
-                        {hasActiveKey && <span style={{ fontSize: 12 }} title="Golden Key Active">🔑</span>}
-                        {medalEmoji && <span style={{ fontSize: 12 }} title={`${medalInfo.medalTier} - ${medalInfo.bestPercent}%`}>{medalEmoji}</span>}
-                      </div>
                       <div style={{ flex: 1, minWidth: 150 }}>
                         <div style={{ fontWeight: 600, color: '#111827', fontSize: 15, lineHeight: '1.3' }}>
                           {lesson.isGenerated && '✨ '}{lesson.title}
@@ -1189,42 +898,27 @@ export default function FacilitatorLessonsPage() {
                               {lesson.difficulty.charAt(0).toUpperCase() + lesson.difficulty.slice(1)}
                             </span>
                           )}
-                          {hasCompleted && medalInfo.bestPercent && (
-                            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: '#ecfdf5', color: '#065f46', border: '1px solid #6ee7b733' }}>
-                              Best: {medalInfo.bestPercent}%
-                            </span>
-                          )}
                         </div>
-                        {hasHistory && (
-                          <div style={{ color: '#4b5563', fontSize: 12, marginTop: 4 }}>
-                            {inProgressAt && (
-                              <span>
-                                In progress since {formatDateTime(inProgressAt)}
-                              </span>
-                            )}
-                            {inProgressAt && lastCompletedAt && <span> • </span>}
-                            {lastCompletedAt && (
-                              <span>
-                                Last completed {formatDateOnly(lastCompletedAt)}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                        <div style={{ color: '#374151', fontSize: 13, marginTop: 6, fontWeight: 600 }}>
+                          {libraryState.label}
+                        </div>
                       </div>
 
-                      {/* Compact action buttons - grouped to prevent breaking apart */}
+                      {/* Primary action plus collapsed uncommon tools */}
                       <div style={{ 
                         display: 'flex', 
                         gap: 8,
+                        alignItems: 'flex-start',
                         flexShrink: 0
                       }}>
-                        {isDownloadableNotOwned ? (
+                        {libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.DOWNLOAD ? (
                           <button
                             onClick={(e) => {
                               e.preventDefault()
                               e.stopPropagation()
                               downloadLesson(subject, lesson.file)
                             }}
+                            data-primary-action="download"
                             disabled={downloadingLesson === `${subject}/${lesson.file}`}
                             style={{
                               padding: '6px 12px',
@@ -1241,106 +935,72 @@ export default function FacilitatorLessonsPage() {
                             }}
                             title="Unlock this lesson to edit and assign"
                           >
-                            ⬇️ <span className="button-text-tablet">{downloadingLesson === `${subject}/${lesson.file}` ? 'Downloading...' : 'Download'}</span>
+                            {downloadingLesson === `${subject}/${lesson.file}` ? 'Downloading...' : primaryLabel}
                           </button>
-                        ) : (
+                        ) : libraryState.primaryActionType !== LIBRARY_PRIMARY_ACTIONS.NONE && libraryState.href ? (
                           <button
                             onClick={(e) => {
                               e.preventDefault()
                               e.stopPropagation()
-                              router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)
+                              router.push(libraryState.href)
                             }}
+                            data-primary-action={libraryState.primaryActionType}
                             style={{
-                              padding: '4px 10px',
-                              border: '1px solid #d1d5db',
+                              padding: '6px 12px',
+                              border: '1px solid #111827',
                               borderRadius: 4,
-                              background: '#fff',
-                              color: '#6b7280',
+                              background: '#111827',
+                              color: '#fff',
                               fontSize: 12,
                               cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 4
+                              fontWeight: 700
                             }}
-                            title="Edit lesson"
                           >
-                            ✏️ <span className="button-text-tablet">Edit</span>
+                            {primaryLabel}
                           </button>
-                        )}
+                        ) : null}
 
-                        {learnerSelected && !isDownloadableNotOwned && (
-                          <>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                setEditingNote(isEditingThisNote ? null : lessonKey)
-                              }}
-                              style={{
-                                padding: '4px 10px',
-                                border: '1px solid #d1d5db',
-                                borderRadius: 4,
-                                background: noteText ? '#fef3c7' : '#fff',
-                                color: '#6b7280',
-                                fontSize: 12,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 4
-                              }}
-                              title={noteText ? 'Edit note' : 'Add note'}
-                            >
-                              📝 <span className="button-text-tablet">{noteText ? 'Note' : 'Notes'}</span>
-                            </button>
-
-                            {ent.lessonScheduling ? (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  setScheduling(isSchedulingThis ? null : lessonKey)
-                                }}
-                                style={{
-                                  padding: '4px 10px',
-                                  border: '1px solid #d1d5db',
-                                  borderRadius: 4,
-                                  background: '#fff',
-                                  color: '#6b7280',
-                                  fontSize: 12,
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 4
-                                }}
-                                title="Schedule lesson"
-                              >
-                                📅 <span className="button-text-tablet">Schedule</span>
+                        {!isDownloadableNotOwned && (
+                          <details data-more-actions="true" style={{ position: 'relative' }}>
+                            <summary style={{ listStyle: 'none', padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 4, background: '#fff', color: '#374151', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                              More
+                            </summary>
+                            <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 4, display: 'grid', gap: 6, minWidth: 190, padding: 8, border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', boxShadow: '0 8px 24px rgba(15,23,42,0.12)' }}>
+                              <button type="button" onClick={() => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)} style={{ textAlign: 'left', padding: '7px 9px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#374151', fontSize: 12, cursor: 'pointer' }}>
+                                Edit
                               </button>
-                            ) : (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  router.push('/facilitator/account/plan')
-                                }}
-                                style={{
-                                  padding: '4px 10px',
-                                  border: '1px solid #e5e7eb',
-                                  borderRadius: 4,
-                                  background: '#f9fafb',
-                                  color: '#9ca3af',
-                                  fontSize: 12,
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 4
-                                }}
-                                title="Scheduling requires Standard — click to upgrade"
-                              >
-                                🔒 <span className="button-text-tablet">Schedule</span>
-                              </button>
-                            )}
-                          </>
+                              {learnerSelected && (
+                                <button type="button" onClick={() => setEditingNote(isEditingThisNote ? null : lessonKey)} style={{ textAlign: 'left', padding: '7px 9px', border: '1px solid #e5e7eb', borderRadius: 6, background: noteText ? '#fef3c7' : '#fff', color: '#374151', fontSize: 12, cursor: 'pointer' }}>
+                                  {noteText ? 'Edit note' : 'Notes'}
+                                </button>
+                              )}
+                              {learnerSelected && hasHistory && (
+                                <button type="button" onClick={() => setShowHistoryModal(true)} style={{ textAlign: 'left', padding: '7px 9px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#374151', fontSize: 12, cursor: 'pointer' }}>
+                                  Detailed history
+                                </button>
+                              )}
+                              {learnerSelected && inProgressAt && (
+                                <div style={{ padding: '7px 9px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#f9fafb', color: '#374151', fontSize: 12 }}>
+                                  In progress since {formatDateTime(inProgressAt)}
+                                </div>
+                              )}
+                              {learnerSelected && lastCompletedAt && (
+                                <div style={{ padding: '7px 9px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#f9fafb', color: '#374151', fontSize: 12 }}>
+                                  Last completed {formatDateOnly(lastCompletedAt)}
+                                </div>
+                              )}
+                              {learnerSelected && medalInfo?.medalTier && (
+                                <div style={{ padding: '7px 9px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#f9fafb', color: '#374151', fontSize: 12 }}>
+                                  Medal: {emojiForTier(medalInfo.medalTier)} {medalInfo.bestPercent || 0}%
+                                </div>
+                              )}
+                              {learnerSelected && hasActiveKey && (
+                                <div style={{ padding: '7px 9px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fefce8', color: '#854d0e', fontSize: 12 }}>
+                                  Golden Key active
+                                </div>
+                              )}
+                            </div>
+                          </details>
                         )}
                       </div>
                     </div>
@@ -1405,100 +1065,6 @@ export default function FacilitatorLessonsPage() {
                       </div>
                     )}
 
-                    {/* Schedule selector overlay */}
-                    {isSchedulingThis && (
-                      <div 
-                        style={{ 
-                          position: 'fixed',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background: 'rgba(0,0,0,0.3)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          zIndex: 10000
-                        }}
-                        onClick={() => setScheduling(null)}
-                      >
-                        <div 
-                          style={{
-                            background: '#fff',
-                            borderRadius: 8,
-                            padding: 20,
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                            maxWidth: 320,
-                            width: '90%'
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1f2937' }}>
-                            📅 Schedule Lesson
-                          </div>
-                          <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 16 }}>
-                            {lesson.title}
-                          </div>
-                          
-                          <input
-                            type="date"
-                            defaultValue={new Date().toISOString().split('T')[0]}
-                            style={{
-                              width: '100%',
-                              padding: '10px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: 6,
-                              fontSize: 14,
-                              marginBottom: 16,
-                              boxSizing: 'border-box'
-                            }}
-                            id={`schedule-date-${lessonKey}`}
-                          />
-
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button
-                              onClick={() => {
-                                const dateInput = document.getElementById(`schedule-date-${lessonKey}`)
-                                if (dateInput?.value) {
-                                  scheduleLesson(lessonKey, dateInput.value)
-                                }
-                              }}
-                              disabled={saving}
-                              style={{
-                                flex: 1,
-                                padding: '10px',
-                                border: 'none',
-                                borderRadius: 6,
-                                background: '#2563eb',
-                                color: '#fff',
-                                fontSize: 14,
-                                fontWeight: 600,
-                                cursor: saving ? 'wait' : 'pointer'
-                              }}
-                            >
-                              {saving ? 'Scheduling...' : 'Schedule'}
-                            </button>
-                            <button
-                              onClick={() => setScheduling(null)}
-                              disabled={saving}
-                              style={{
-                                flex: 1,
-                                padding: '10px',
-                                border: '1px solid #d1d5db',
-                                borderRadius: 6,
-                                background: '#fff',
-                                color: '#374151',
-                                fontSize: 14,
-                                fontWeight: 600,
-                                cursor: saving ? 'wait' : 'pointer'
-                              }}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )
               })}

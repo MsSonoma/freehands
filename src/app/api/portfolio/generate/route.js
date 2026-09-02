@@ -199,6 +199,21 @@ export async function POST(req) {
       }
     }
 
+    // Medal fallback: for lessons that have no session events (e.g. legacy completions),
+    // a medal record proves the learner completed it. Use the scheduled_date as the completion date.
+    const { data: medalRows } = await svc
+      .from('learner_medals')
+      .select('lesson_key')
+      .eq('learner_id', learnerId)
+
+    const medalLessonIds = new Set()
+    if (Array.isArray(medalRows)) {
+      for (const m of medalRows) {
+        const key = canonicalLessonId(m?.lesson_key)
+        if (key) medalLessonIds.add(key)
+      }
+    }
+
     const completed = []
     const skipped = []
 
@@ -214,7 +229,10 @@ export async function POST(req) {
       const windowEnd = addDaysUtc(scheduledDate, 7)
       const makeup = Boolean(windowEnd && dates.some(d => d > scheduledDate && d <= windowEnd))
 
-      if (direct || makeup) completed.push(item)
+      // Medal fallback: if no session event found, check for a medal record
+      const hasMedal = Boolean(canonical && medalLessonIds.has(canonical))
+
+      if (direct || makeup || hasMedal) completed.push(item)
       else skipped.push(item)
     }
 

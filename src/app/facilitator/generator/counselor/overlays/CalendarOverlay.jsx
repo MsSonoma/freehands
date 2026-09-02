@@ -630,7 +630,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
             for (const session of sessions) {
               const endedAt = session?.ended_at || null
               const startedAt = session?.started_at || null
-              const status = session?.status || (endedAt ? 'completed' : null)
+              const status = session?.status || null
               if (status !== 'completed' || (!endedAt && !startedAt)) continue
 
               const completedDate = toLocalDateStr(endedAt || startedAt)

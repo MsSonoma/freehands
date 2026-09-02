@@ -11,29 +11,30 @@ import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/l
 import AIRewriteButton from '@/components/AIRewriteButton'
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
-import OnboardingBanner from '@/app/components/OnboardingBanner'
-import { useOnboarding } from '@/app/hooks/useOnboarding'
+import { FACILITATOR_PREPARATION_STAGES, FACILITATOR_PREPARATION_VERSION } from '@/app/lib/facilitatorPreparation.mjs'
+import { writePreparationSnapshot } from '@/app/facilitator/prepare/preparationSnapshot'
 
 const difficulties = ['beginner','intermediate','advanced']
 const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
 export default function LessonMakerPage(){
   const router = useRouter()
-  // Read ?onboarding=1 and ?grade=X client-side to avoid Suspense boundary requirement
-  const [isOnboardingParam, setIsOnboardingParam] = useState(false)
+  const [advancedAllowed, setAdvancedAllowed] = useState(false)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.scrollTo(0, 0)
       const params = new URLSearchParams(window.location.search)
-      setIsOnboardingParam(params.get('onboarding') === '1')
+      if (params.get('advanced') !== '1') {
+        router.replace('/facilitator/prepare')
+        return
+      }
+      setAdvancedAllowed(true)
       const gradeParam = params.get('grade')
       if (gradeParam) {
         setForm(f => ({ ...f, grade: gradeParam }))
       }
     }
-  }, [])
-  const { step, advanceStep, STEPS } = useOnboarding()
-  const showOnboarding = isOnboardingParam || step === STEPS.GENERATE_LESSON
+  }, [router])
   const { loading, hasAccess, gateType, tier, isAuthenticated } = useAccessControl({
     requiredAuth: 'required',
      requiredFeature: 'lessonGenerator'
@@ -50,13 +51,16 @@ export default function LessonMakerPage(){
   const [toast, setToast] = useState(null) // { message, type }
   const [generatedLessonKey, setGeneratedLessonKey] = useState(null) // Track last generated lesson
   const [learners, setLearners] = useState([])
-  const [makeActiveFor, setMakeActiveFor] = useState('none')
+  const [intendedLearnerId, setIntendedLearnerId] = useState('')
 
   // AI Rewrite loading states
   const [rewritingTitle, setRewritingTitle] = useState(false)
   const [rewritingDescription, setRewritingDescription] = useState(false)
   const [rewritingVocab, setRewritingVocab] = useState(false)
   const [rewritingNotes, setRewritingNotes] = useState(false)
+  const [generatingDescriptionFromTitle, setGeneratingDescriptionFromTitle] = useState(false)
+  const [generatingNotesFromDescription, setGeneratingNotesFromDescription] = useState(false)
+  const [generatingVocabFromDescription, setGeneratingVocabFromDescription] = useState(false)
 
   // The quota API uses the service role key, immune to client-side RLS issues.
   // Use its plan_tier as the authoritative tier; fall back to useAccessControl's if higher.
@@ -73,7 +77,7 @@ export default function LessonMakerPage(){
 
   // hasAccess may be false when the client-side profiles query is blocked by RLS.
   // If the quota API (service role) confirms lessonGenerator entitlement, honour that.
-  const resolvedHasAccess = hasAccess || (!quotaLoading && ent.lessonGenerator)
+  const resolvedHasAccess = isAuthenticated && (hasAccess || (!quotaLoading && ent.lessonGenerator))
 
   const quotaAllowed = useMemo(() => {
     if (!quotaInfo) return true
@@ -89,6 +93,7 @@ export default function LessonMakerPage(){
 
   // Check PIN requirement on mount
   useEffect(() => {
+    if (loading || !isAuthenticated) return
     let cancelled = false;
     (async () => {
       try {
@@ -103,12 +108,12 @@ export default function LessonMakerPage(){
       }
     })();
     return () => { cancelled = true; };
-  }, [router]);
+  }, [isAuthenticated, loading, router]);
 
-  // Load quota info — check session directly, NOT via isAuthenticated from useAccessControl.
-  // useAccessControl resets isAuthenticated=false in its catch block (e.g. on RLS errors),
-  // which would prevent this effect from ever running. We go to Supabase directly instead.
+  // Load quota only after account authentication and the facilitator PIN boundary.
+  // Read the session directly here because the quota API needs the access token.
   useEffect(() => {
+    if (loading || !isAuthenticated || !pinChecked) return
     let cancelled = false;
     (async () => {
       try {
@@ -136,10 +141,11 @@ export default function LessonMakerPage(){
       }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [isAuthenticated, loading, pinChecked])
 
-  // Load learners for "Make Active for" dropdown
+  // Load learners for intended learner context
   useEffect(() => {
+    if (loading || !isAuthenticated || !pinChecked) return
     let cancelled = false
     ;(async () => {
       try {
@@ -150,7 +156,7 @@ export default function LessonMakerPage(){
       }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [isAuthenticated, loading, pinChecked])
 
   // AI Rewrite handlers
   const handleRewriteTitle = async () => {
@@ -220,6 +226,40 @@ export default function LessonMakerPage(){
     }
   }
 
+  const handleGenerateVocabFromDescription = async () => {
+    if (!form.description.trim()) return
+    setGeneratingVocabFromDescription(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: form.description,
+          context: form.title || 'Lesson',
+          purpose: 'generate-vocab-from-description'
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.rewritten) {
+          setForm(f => ({ ...f, vocab: data.rewritten }))
+        }
+      }
+    } catch (err) {
+      // Silent error handling
+    } finally {
+      setGeneratingVocabFromDescription(false)
+    }
+  }
+
   const handleRewriteVocab = async () => {
     if (!form.vocab.trim()) return
     setRewritingVocab(true)
@@ -251,6 +291,74 @@ export default function LessonMakerPage(){
       // Silent error handling
     } finally {
       setRewritingVocab(false)
+    }
+  }
+
+  const handleGenerateDescriptionFromTitle = async () => {
+    if (!form.title.trim()) return
+    setGeneratingDescriptionFromTitle(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: form.title,
+          context: '',
+          purpose: 'generate-description-from-title'
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.rewritten) {
+          setForm(f => ({ ...f, description: data.rewritten }))
+        }
+      }
+    } catch (err) {
+      // Silent error handling
+    } finally {
+      setGeneratingDescriptionFromTitle(false)
+    }
+  }
+
+  const handleGenerateNotesFromDescription = async () => {
+    if (!form.description.trim()) return
+    setGeneratingNotesFromDescription(true)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const res = await fetch('/api/ai/rewrite-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          text: form.description,
+          context: form.title || 'Lesson',
+          purpose: 'generate-notes-from-description'
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.rewritten) {
+          setForm(f => ({ ...f, notes: data.rewritten }))
+        }
+      }
+    } catch (err) {
+      // Silent error handling
+    } finally {
+      setGeneratingNotesFromDescription(false)
     }
   }
 
@@ -316,7 +424,7 @@ export default function LessonMakerPage(){
       const res = await fetch('/api/facilitator/lessons/generate', {
         method:'POST',
         headers:{ 'Content-Type':'application/json', ...(token ? { Authorization:`Bearer ${token}` } : {}) },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, learnerId: intendedLearnerId })
       })
       const js = await res.json().catch(()=>null)
       if (!res.ok) { 
@@ -327,10 +435,11 @@ export default function LessonMakerPage(){
 
       generatedFile = js?.file
       generatedUserId = js?.userId
+      const storedLessonKey = js?.storageError ? null : (js?.lessonKey || (generatedFile ? `generated/${generatedFile}` : null))
       if (js?.lessonKey) {
         setGeneratedLessonKey(js.lessonKey)
-      } else if (generatedFile) {
-        setGeneratedLessonKey(`generated/${generatedFile}`)
+      } else if (storedLessonKey) {
+        setGeneratedLessonKey(storedLessonKey)
       }
 
       // STEP 2: Validate lesson quality
@@ -359,42 +468,40 @@ export default function LessonMakerPage(){
 
       setToast({ message: 'Lesson ready!', type: 'success' })
       setMessage('')
-
-      // Activate for selected learner(s) — run regardless of onboarding so we don't skip it
-      const lessonKeyToActivate = js?.lessonKey || (generatedFile ? `generated/${generatedFile}` : null)
-      const didActivate = lessonKeyToActivate && makeActiveFor !== 'none'
-      if (didActivate) {
-        try {
-          const supabase = getSupabaseClient()
-          const targetIds = makeActiveFor === 'all'
-            ? learners.map(l => l.id)
-            : [makeActiveFor]
-          await Promise.all(targetIds.map(async (lid) => {
-            const { data: row } = await supabase
-              .from('learners')
-              .select('approved_lessons')
-              .eq('id', lid)
-              .maybeSingle()
-            const current = row?.approved_lessons || {}
-            await supabase
-              .from('learners')
-              .update({ approved_lessons: { ...current, [lessonKeyToActivate]: true } })
-              .eq('id', lid)
-          }))
-        } catch {
-          // Silent — generation succeeded; activation failure is non-critical
-        }
-      }
-
-      // If in onboarding flow, advance wizard and navigate
-      if (showOnboarding) {
-        // If the user already activated the lesson here, skip straight to calendar tour step
-        const nextStep = didActivate ? STEPS.CALENDAR_TOUR : STEPS.ACTIVATE_LESSON
-        const nextPath = didActivate ? '/facilitator/calendar?onboarding=1' : '/facilitator/lessons?onboarding=1'
-        await advanceStep(nextStep)
-        router.push(nextPath)
+      const identity = js?.identity || (storedLessonKey ? {
+        file: generatedFile,
+        lessonKey: storedLessonKey,
+        storagePath: js?.storagePath || '',
+        ownerId: js?.ownerId || generatedUserId || '',
+      } : null)
+      if (!identity?.lessonKey) {
+        setMessage('Lesson generated, but storage was not available for review. Please try again.')
+        setToast({ message: 'Lesson storage failed', type: 'error' })
         return
       }
+
+      const intent = intendedLearnerId ? {
+        version: FACILITATOR_PREPARATION_VERSION,
+        learnerId: intendedLearnerId,
+        need: form.description || form.title,
+        boundaries: {},
+      } : null
+      const proposal = {
+        version: FACILITATOR_PREPARATION_VERSION,
+        learnerId: intendedLearnerId,
+        summary: `Review the detailed lesson draft for ${form.title}.`,
+        generationSpec: { ...form },
+        assumptions: ['Created in the detailed lesson builder.'],
+      }
+      writePreparationSnapshot({
+        version: FACILITATOR_PREPARATION_VERSION,
+        stage: FACILITATOR_PREPARATION_STAGES.DRAFT,
+        learnerId: intendedLearnerId,
+        intent,
+        proposal,
+        lessonIdentity: identity,
+      })
+      router.push('/facilitator/prepare')
     } catch (err) {
       setMessage(`Generation error: ${err?.message || String(err) || 'Unknown error'}`)
       setToast({ message: 'Generation failed', type: 'error' })
@@ -409,11 +516,12 @@ export default function LessonMakerPage(){
     if (busy) return false
     if (!resolvedHasAccess || !ent.lessonGenerator) return false
     if (!form.grade || !form.title || !form.subject || !form.difficulty) return false
+    if (learners.length > 0 && !intendedLearnerId) return false
     if (quotaInfo && !quotaAllowed) return false
     return true
-  }, [busy, form, quotaInfo, resolvedHasAccess, ent.lessonGenerator, quotaAllowed])
+  }, [busy, form, learners.length, intendedLearnerId, quotaInfo, resolvedHasAccess, ent.lessonGenerator, quotaAllowed])
 
-  if (loading || !pinChecked) {
+  if (!advancedAllowed || loading || (isAuthenticated && (!pinChecked || quotaLoading))) {
     return (
       <main style={{ padding: 24, minHeight: '60vh' }}>
         <p style={{ color: '#6b7280' }}>Loading...</p>
@@ -421,17 +529,23 @@ export default function LessonMakerPage(){
     )
   }
 
+  if (!isAuthenticated) {
+    return (
+      <main style={{ minHeight: 320 }}>
+        <GatedOverlay
+          show
+          gateType={gateType || 'auth'}
+          feature="Lesson Generator"
+          benefits={["Generate custom lessons instantly", "Edit and assign lessons", "Build a full curriculum over time"]}
+          emoji="✨"
+        />
+      </main>
+    )
+  }
+
   return (
     <>
     <main style={{ padding: '24px 24px 48px', maxWidth: 860, margin: '0 auto' }}>
-      {showOnboarding && (
-        <OnboardingBanner
-          step={2}
-          title="Generate your first lesson"
-          message="Fill in the subject, grade, and topic below. Ms. Sonoma will write a complete lesson with questions for each phase. You can edit it afterward."
-        />
-      )}
-
       {/* ── Header banner ── */}
       <div style={{
         background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 50%, #faf5ff 100%)',
@@ -600,7 +714,17 @@ export default function LessonMakerPage(){
                   style={{ flex: 1, padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, minHeight: 88, fontSize: 14, background: '#f9fafb', color: '#111827', resize: 'vertical' }}
                   placeholder="What should the learner learn?"
                 />
-                <AIRewriteButton text={form.description} onRewrite={handleRewriteDescription} loading={rewritingDescription} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={handleGenerateDescriptionFromTitle}
+                    disabled={generatingDescriptionFromTitle || !form.title.trim()}
+                    style={{ background: generatingDescriptionFromTitle ? '#9ca3af' : '#0891b2', color: '#fff', border: 'none', borderRadius: 6, cursor: (generatingDescriptionFromTitle || !form.title.trim()) ? 'not-allowed' : 'pointer', fontWeight: 600, opacity: !form.title.trim() ? 0.5 : 1, whiteSpace: 'nowrap', padding: '4px 12px', fontSize: 12 }}
+                  >
+                    {generatingDescriptionFromTitle ? '✨ Generating...' : '✨ Generate from title'}
+                  </button>
+                  <AIRewriteButton text={form.description} onRewrite={handleRewriteDescription} loading={rewritingDescription} />
+                </div>
               </div>
             </label>
 
@@ -613,7 +737,17 @@ export default function LessonMakerPage(){
                   style={{ flex: 1, padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, minHeight: 108, fontSize: 14, background: '#f9fafb', color: '#111827', resize: 'vertical' }}
                   placeholder="Facilitator notes, examples, reminders..."
                 />
-                <AIRewriteButton text={form.notes} onRewrite={handleRewriteNotes} loading={rewritingNotes} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={handleGenerateNotesFromDescription}
+                    disabled={generatingNotesFromDescription || !form.description.trim()}
+                    style={{ background: generatingNotesFromDescription ? '#9ca3af' : '#0891b2', color: '#fff', border: 'none', borderRadius: 6, cursor: (generatingNotesFromDescription || !form.description.trim()) ? 'not-allowed' : 'pointer', fontWeight: 600, opacity: !form.description.trim() ? 0.5 : 1, whiteSpace: 'nowrap', padding: '4px 12px', fontSize: 12 }}
+                  >
+                    {generatingNotesFromDescription ? '✨ Generating...' : '✨ Generate from description'}
+                  </button>
+                  <AIRewriteButton text={form.notes} onRewrite={handleRewriteNotes} loading={rewritingNotes} />
+                </div>
               </div>
             </label>
 
@@ -629,7 +763,17 @@ export default function LessonMakerPage(){
                   style={{ flex: 1, padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, minHeight: 80, fontSize: 14, background: '#f9fafb', color: '#111827', resize: 'vertical' }}
                   placeholder="Comma-separated terms, or term: definition pairs"
                 />
-                <AIRewriteButton text={form.vocab} onRewrite={handleRewriteVocab} loading={rewritingVocab} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={handleGenerateVocabFromDescription}
+                    disabled={generatingVocabFromDescription || !form.description.trim()}
+                    style={{ background: generatingVocabFromDescription ? '#9ca3af' : '#0891b2', color: '#fff', border: 'none', borderRadius: 6, cursor: (generatingVocabFromDescription || !form.description.trim()) ? 'not-allowed' : 'pointer', fontWeight: 600, opacity: !form.description.trim() ? 0.5 : 1, whiteSpace: 'nowrap', padding: '4px 12px', fontSize: 12 }}
+                  >
+                    {generatingVocabFromDescription ? '✨ Generating...' : '✨ Generate from description'}
+                  </button>
+                  <AIRewriteButton text={form.vocab} onRewrite={handleRewriteVocab} loading={rewritingVocab} />
+                </div>
               </div>
             </label>
           </div>
@@ -649,17 +793,16 @@ export default function LessonMakerPage(){
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             {learners.length > 0 && (
               <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontWeight: 600, fontSize: 13, color: '#374151', whiteSpace: 'nowrap' }}>Make Active for</span>
+                <span style={{ fontWeight: 600, fontSize: 13, color: '#374151', whiteSpace: 'nowrap' }}>Intended learner</span>
                 <select
-                  value={makeActiveFor}
-                  onChange={e => setMakeActiveFor(e.target.value)}
+                  value={intendedLearnerId}
+                  onChange={e => setIntendedLearnerId(e.target.value)}
                   style={{ padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, background: '#f9fafb', color: '#111827' }}
                 >
-                  <option value="none">None</option>
+                  <option value="">Choose learner</option>
                   {learners.map(l => (
                     <option key={l.id} value={l.id}>{l.name}</option>
                   ))}
-                  <option value="all">All learners</option>
                 </select>
               </label>
             )}
@@ -725,7 +868,7 @@ export default function LessonMakerPage(){
                   setForm({ grade: '', difficulty: 'intermediate', subject: 'math', title: '', description: '', notes: '', vocab: '' })
                   setMessage('')
                   setToast(null)
-                  setMakeActiveFor('none')
+                  setIntendedLearnerId('')
                 }}
                 style={{
                   background: 'none',
@@ -761,10 +904,10 @@ export default function LessonMakerPage(){
 
       {/* ── Planner promo card ── */}
       <div
-        onClick={() => router.push('/facilitator/calendar')}
+        onClick={() => router.push('/facilitator/calendar?tab=planner')}
         role="button"
         tabIndex={0}
-        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator/calendar')}
+        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator/calendar?tab=planner')}
         style={{
           marginTop: 20,
           padding: '16px 22px',

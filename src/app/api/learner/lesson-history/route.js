@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import fs from 'node:fs'
 import path from 'node:path'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
+import { resolveLessonSessionLifecycle } from '@/app/lib/lessonSessionLifecycle.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -146,7 +147,10 @@ function buildSummary(sessions = [], events = []) {
     for (const session of sessions) {
       const lessonId = session?.lesson_id
       if (!lessonId) continue
-      if (!session?.ended_at && session?.started_at) {
+      if (session?.status === 'completed' && session?.ended_at) {
+        const existing = lastCompleted[lessonId]
+        if (!existing || new Date(session.ended_at) > new Date(existing)) lastCompleted[lessonId] = session.ended_at
+      } else if (session?.status === 'in-progress' && session?.started_at) {
         const existing = inProgress[lessonId]
         if (!existing || new Date(session.started_at) > new Date(existing)) {
           inProgress[lessonId] = session.started_at
@@ -184,7 +188,7 @@ export async function GET(request) {
 
     let sessionsQuery = supabase
       .from('lesson_sessions')
-      .select('id, learner_id, lesson_id, started_at, ended_at')
+      .select('id, learner_id, lesson_id, instructional_teacher, started_at, ended_at')
       .eq('learner_id', learnerId)
 
     if (fromIso) {
@@ -217,9 +221,10 @@ export async function GET(request) {
             id: row?.id || null,
             learner_id: row?.learner_id || null,
             lesson_id: row?.lesson_id || null,
+            instructional_teacher: row?.instructional_teacher || null,
             started_at: startedAt,
             ended_at: endedAt,
-            status: endedAt ? 'completed' : 'in-progress',
+            status: null,
             duration_seconds: durationSeconds
           }
         })
@@ -289,6 +294,10 @@ export async function GET(request) {
         event.lesson_id = canonicalizeLessonId(event.lesson_id, medalsLessonKeySet)
       }
       eventsBySession.get(sessionId).push(event)
+    }
+
+    for (const session of sessions) {
+      session.status = resolveLessonSessionLifecycle(session, eventsBySession.get(session.id) || []).status
     }
 
     const nowMs = Date.now()

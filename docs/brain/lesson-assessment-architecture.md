@@ -48,6 +48,8 @@ Phase rendering (use arrays[phaseIndex])
 - `teachingNotes` - Content for Teaching phase
 - `questions` - Source array for generating shuffled question arrays
 
+Modern generated lessons may also contain reserved, non-instructional pools: `baseline`, `test`, legacy `retention`, `dailyFollowup`, and `weeklyReview`. Daily/Weekly pools are never added to the four lesson phase arrays or stored in lesson-progress localStorage. They are selected later by the authorized Follow-Up service and persisted in review tables.
+
 **lessonData is READ-ONLY after load** - it provides reference content but does NOT drive phase rendering. The 4 generated arrays are what determine which questions appear in each phase.
 
 ### Pools Are Eliminated
@@ -130,6 +132,9 @@ localStorage is persistence layer. React state is runtime layer. No database sto
 
 ### ❌ Don't use lessonData.questions for phase rendering
 lessonData is reference data for title/vocab/teachingNotes and source for array generation. Once arrays are generated, lessonData.questions is not touched.
+
+### Don't mix Follow-Up pools into lesson arrays
+`dailyFollowup` and `weeklyReview` are held-out roles. Keep them out of comprehension, exercise, worksheet, Test, recovery, refresh, and snapshot selection.
 
 ## Key Files
 

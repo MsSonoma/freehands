@@ -13,6 +13,7 @@ import { InlineExplainer } from '@/components/FacilitatorHelp';
 const GRADES = ['K', ...Array.from({length: 12}, (_, i) => String(i + 1))];
 const TARGETS = Array.from({length: 18}, (_, i) => String(i + 3)); // 3-20
 const HUMOR_LEVELS = ['calm', 'funny', 'hilarious'];
+const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 const DEFAULT_SLATE_SETTINGS = {
 	scoreGoal: 10,
@@ -37,8 +38,8 @@ const normalizeHumorLevel = (value) => {
 	return HUMOR_LEVELS.includes(v) ? v : 'calm';
 };
 
-export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, onDelete, onPatch, zIndex: zIndexProp = 1000 }) {
-	const [activeTab, setActiveTab] = useState(learner?.initialTab || 'basic'); // 'basic' | 'targets' | 'ai-features' | 'timers'
+export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, onDelete, onPatch, zIndex: zIndexProp = 1000, visibleTabs = null }) {
+	const [activeTab, setActiveTab] = useState(learner?.initialTab || 'basic'); // 'basic' | 'targets' | 'ai-features' | 'timers' | 'reviews'
 	
 	// Form state
 	const [name, setName] = useState('');
@@ -73,6 +74,11 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [savingPlayPortions, setSavingPlayPortions] = useState(false);
 	// Mr. Slate drill settings
 	const [slateSettings, setSlateSettings] = useState(DEFAULT_SLATE_SETTINGS);
+	const [dailyFollowUpsEnabled, setDailyFollowUpsEnabled] = useState(false);
+	const [weeklyReviewsEnabled, setWeeklyReviewsEnabled] = useState(false);
+	const [weeklyReviewDay, setWeeklyReviewDay] = useState('friday');
+	const [savingFollowUps, setSavingFollowUps] = useState(false);
+	const [followUpError, setFollowUpError] = useState('');
 	
 	const [saving, setSaving] = useState(false);
 
@@ -108,6 +114,10 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setPhaseTimers({ ...getDefaultPhaseTimers(), ...loadPhaseTimersForLearner(learner) });
 		setAutoAdvancePhases(learner.auto_advance_phases !== false); // Default true if not set
 		setSlateSettings({ ...DEFAULT_SLATE_SETTINGS, ...(learner.slate_settings || {}) });
+		setDailyFollowUpsEnabled(learner.daily_followups_enabled === true);
+		setWeeklyReviewsEnabled(learner.weekly_reviews_enabled === true);
+		setWeeklyReviewDay(WEEKDAYS.includes(learner.weekly_review_day) ? learner.weekly_review_day : 'friday');
+		setFollowUpError('');
 	}, [isOpen, learner?.id, learner?.initialTab]);
 
 	const handleTimerChange = (phase, type, value) => {
@@ -136,6 +146,17 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	};
 
 	const showTooltip = (key) => hoveredTooltip === key || clickedTooltip === key;
+
+	const ALL_TABS = [
+		{ id: 'basic', label: '👤 Basic' },
+		{ id: 'targets', label: '🎯 Questions per Phase' },
+		{ id: 'ai-features', label: '🤖 AI Features' },
+		{ id: 'timers', label: '⏱️ Timers' },
+		{ id: 'reviews', label: 'Review Settings' },
+	];
+	const tabsToShow = visibleTabs
+		? ALL_TABS.filter(t => visibleTabs.includes(t.id))
+		: ALL_TABS;
 
 	const handleSave = async () => {
 		setSaving(true);
@@ -173,6 +194,40 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		} finally {
 			setSaving(false);
 		}
+	};
+
+	const patchFollowUps = async (patch, rollback = {}) => {
+		if (typeof onPatch !== 'function' || !learner?.id) return;
+		setSavingFollowUps(true);
+		setFollowUpError('');
+		try {
+			await onPatch(patch);
+		} catch (err) {
+			if (rollback.daily_followups_enabled !== undefined) setDailyFollowUpsEnabled(rollback.daily_followups_enabled);
+			if (rollback.weekly_reviews_enabled !== undefined) setWeeklyReviewsEnabled(rollback.weekly_reviews_enabled);
+			if (rollback.weekly_review_day !== undefined) setWeeklyReviewDay(rollback.weekly_review_day);
+			setFollowUpError(err?.message || 'Failed to update Review Settings');
+		} finally {
+			setSavingFollowUps(false);
+		}
+	};
+
+	const patchDailyFollowUps = (next) => {
+		const previous = dailyFollowUpsEnabled;
+		setDailyFollowUpsEnabled(next);
+		patchFollowUps({ daily_followups_enabled: next }, { daily_followups_enabled: previous });
+	};
+
+	const patchWeeklyReviews = (next) => {
+		const previous = weeklyReviewsEnabled;
+		setWeeklyReviewsEnabled(next);
+		patchFollowUps({ weekly_reviews_enabled: next }, { weekly_reviews_enabled: previous });
+	};
+
+	const patchWeeklyReviewDay = (next) => {
+		const previous = weeklyReviewDay;
+		setWeeklyReviewDay(next);
+		patchFollowUps({ weekly_review_day: next }, { weekly_review_day: previous });
 	};
 
 	const handleTogglePlayTimersEnabled = async () => {
@@ -392,11 +447,19 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const getTitle = () => {
 		switch (activeTab) {
 			case 'basic': return '👤 Basic Info';
-			case 'targets': return '🎯 Learning Targets';
+			case 'targets': return '🎯 Questions per Phase';
 			case 'ai-features': return '🤖 AI Features';
 			case 'timers': return '⏱️ Timers';
+			case 'reviews': return 'Review Settings';
 			default: return 'Edit Learner';
 		}
+	};
+
+	const reviewSettingBoxStyle = {
+		border: '1px solid #dbeafe',
+		borderRadius: 10,
+		padding: 14,
+		background: '#f8fbff'
 	};
 
 	return (
@@ -426,6 +489,21 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 							×
 						</button>
 					</div>
+
+				{/* Tab bar */}
+				{tabsToShow.length > 1 && (
+					<div style={tabsStyle}>
+						{tabsToShow.map(tab => (
+							<button
+								key={tab.id}
+								onClick={() => setActiveTab(tab.id)}
+								style={tabStyle(activeTab === tab.id)}
+							>
+								{tab.label}
+							</button>
+						))}
+					</div>
+				)}
 
 					{/* Content */}
 					<div style={contentStyle}>
@@ -573,15 +651,6 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 
 									{/* Individual phase checkboxes — greyed when master is off */}
 									<div style={{ display: 'grid', gap: 10, opacity: playTimersEnabled ? 1 : 0.45, transition: 'opacity 0.2s' }}>
-										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151', cursor: playTimersEnabled ? 'pointer' : 'not-allowed' }}>
-											<input
-												type="checkbox"
-												checked={playComprehensionEnabled}
-												disabled={!playTimersEnabled || savingPlayPortions || saving}
-												onChange={(e) => handleTogglePlayPortion('play_comprehension_enabled', e.target.checked)}
-											/>
-											<span>Comprehension play portion</span>
-										</label>
 										<label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151', cursor: playTimersEnabled ? 'pointer' : 'not-allowed' }}>
 											<input
 												type="checkbox"
@@ -767,25 +836,94 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 							</div>
 						)}
 
+						{activeTab === 'reviews' && (
+							<div>
+								<div style={reviewSettingBoxStyle}>
+									<h3 style={{ margin: '0 0 6px', fontSize: 17, color: '#111827' }}>Review Settings</h3>
+									<p style={{ margin: '0 0 16px', fontSize: 13, color: '#64748b', lineHeight: 1.45 }}>
+										Choose which short review cards appear for this learner in Learn.
+									</p>
+
+									<div style={{ display: 'grid', gap: 14 }}>
+										<label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: savingFollowUps ? 'wait' : 'pointer' }}>
+											<input
+												type="checkbox"
+												checked={dailyFollowUpsEnabled}
+												disabled={savingFollowUps || saving}
+												onChange={(event) => patchDailyFollowUps(event.target.checked)}
+												style={{ marginTop: 3 }}
+											/>
+											<span>
+												<span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#1f2937' }}>
+													Daily Follow-Ups
+												</span>
+												<span style={{ display: 'block', fontSize: 13, color: '#64748b', lineHeight: 1.35 }}>
+													Show short follow-ups after a learner has had time to remember a lesson.
+												</span>
+											</span>
+										</label>
+
+										<label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: savingFollowUps ? 'wait' : 'pointer' }}>
+											<input
+												type="checkbox"
+												checked={weeklyReviewsEnabled}
+												disabled={savingFollowUps || saving}
+												onChange={(event) => patchWeeklyReviews(event.target.checked)}
+												style={{ marginTop: 3 }}
+											/>
+											<span>
+												<span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#1f2937' }}>
+													Weekly Reviews
+												</span>
+												<span style={{ display: 'block', fontSize: 13, color: '#64748b', lineHeight: 1.35 }}>
+													Give this learner a mixed review of recent learning each week.
+												</span>
+											</span>
+										</label>
+
+										<div style={{ display: 'grid', gap: 6, opacity: weeklyReviewsEnabled ? 1 : 0.6 }}>
+											<label htmlFor={`weekly-review-day-${learner?.id || 'learner'}`} style={labelStyle}>
+												Weekly Review Day
+											</label>
+											<select
+												id={`weekly-review-day-${learner?.id || 'learner'}`}
+												value={weeklyReviewDay}
+												disabled={!weeklyReviewsEnabled || savingFollowUps || saving}
+												onChange={(event) => patchWeeklyReviewDay(event.target.value)}
+												style={{ ...selectStyle, textTransform: 'capitalize' }}
+											>
+												{WEEKDAYS.map((day) => (
+													<option key={day} value={day}>
+														{day.charAt(0).toUpperCase() + day.slice(1)}
+													</option>
+												))}
+											</select>
+											<p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>
+												The selected day is preserved when Weekly Reviews are turned off.
+											</p>
+										</div>
+									</div>
+
+									{savingFollowUps && (
+										<p style={{ margin: '14px 0 0', fontSize: 13, color: '#64748b' }} role="status">
+											Saving Review Settings...
+										</p>
+									)}
+									{followUpError && (
+										<p style={{ margin: '14px 0 0', fontSize: 13, color: '#b91c1c' }} role="alert">
+											{followUpError}
+										</p>
+									)}
+								</div>
+							</div>
+						)}
+
 						{activeTab === 'targets' && (
 							<div>
 								<p style={{ margin: '0 0 16px', fontSize: 14, color: '#6b7280' }}>
 									Set the number of questions for each activity type
 								</p>
 								<div style={gridStyle}>
-									<div style={fieldStyle}>
-										<label style={labelStyle}>Comprehension</label>
-										<select
-											value={comprehension}
-											onChange={(e) => setComprehension(e.target.value)}
-											style={selectStyle}
-										>
-											{TARGETS.map(t => (
-												<option key={t} value={t}>{t} questions</option>
-											))}
-										</select>
-									</div>
-
 									<div style={fieldStyle}>
 										<label style={labelStyle}>Exercise</label>
 										<select
@@ -826,35 +964,38 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 									</div>
 								</div>
 
-								{/* Mr. Slate drill settings */}
-								<div style={{ marginTop: 24 }}>
-									<p style={{ margin: '0 0 12px', fontSize: 14, color: '#374151', fontWeight: 700 }}>
-										🤖 Mr. Slate
-									</p>
-									<p style={{ margin: '0 0 12px', fontSize: 13, color: '#6b7280' }}>
-										Configure drill scoring and timing for Mr. Slate sessions
-									</p>
-									<div style={gridStyle}>
-										{SLATE_SETTINGS_CONFIG.map(({ label, key, min, max, unit }) => (
-											<div key={key} style={fieldStyle}>
-												<label style={labelStyle}>{label}</label>
-												<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-													<input
-														type="range"
-														min={min}
-														max={max}
-														value={slateSettings[key] ?? DEFAULT_SLATE_SETTINGS[key]}
-														onChange={e => setSlateSettings(s => ({ ...s, [key]: Number(e.target.value) }))}
-														style={{ flex: 1, accentColor: '#6366f1', cursor: 'pointer' }}
-													/>
-													<span style={{ fontSize: 13, fontWeight: 700, color: '#111', minWidth: 36, textAlign: 'right' }}>
-														{slateSettings[key] ?? DEFAULT_SLATE_SETTINGS[key]}{unit}
-													</span>
+								{/* Mr. Slate drill settings — only shown in full learner settings, not session overlay */}
+								{!visibleTabs && (
+									<div style={{ marginTop: 24 }}>
+										<p style={{ margin: '0 0 12px', fontSize: 14, color: '#374151', fontWeight: 700 }}>
+											🤖 Mr. Slate
+										</p>
+										<p style={{ margin: '0 0 12px', fontSize: 13, color: '#6b7280' }}>
+											Configure drill scoring and timing for Mr. Slate sessions
+										</p>
+										<div style={gridStyle}>
+											{SLATE_SETTINGS_CONFIG.map(({ label, key, min, max, unit }) => (
+												<div key={key} style={fieldStyle}>
+													<label style={labelStyle}>{label}</label>
+													<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+														<input
+															type="range"
+															min={min}
+															max={max}
+															value={slateSettings[key] ?? DEFAULT_SLATE_SETTINGS[key]}
+															onChange={e => setSlateSettings(s => ({ ...s, [key]: Number(e.target.value) }))}
+															style={{ flex: 1, accentColor: '#6366f1', cursor: 'pointer' }}
+														/>
+														<span style={{ fontSize: 13, fontWeight: 700, color: '#111', minWidth: 36, textAlign: 'right' }}>
+															{slateSettings[key] ?? DEFAULT_SLATE_SETTINGS[key]}{unit}
+														</span>
+													</div>
 												</div>
-											</div>
-										))}
+											))}
+										</div>
 									</div>
-								</div>
+								)}
+
 							</div>
 						)}
 
@@ -973,7 +1114,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 								Click phase names for details.
 							</p>
 						</div>						{/* Phase timers */}
-						{['discussion', 'comprehension', 'exercise', 'worksheet', 'test'].map((phase) => (
+						{['discussion', 'exercise', 'worksheet', 'test'].map((phase) => (
 							<div key={phase} style={{ marginBottom: 12 }}>
 								{/* Phase header with tooltip */}
 								<div style={{ position: 'relative', marginBottom: 6 }}>
@@ -1280,8 +1421,8 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 									}}>
 										{activeTab === 'targets' && (
 											<>
-												<p><strong>Learning Targets</strong></p>
-												<p style={{ marginTop: 8 }}>Set how many questions appear in each lesson phase (Comprehension, Exercise, Worksheet, Test).</p>
+												<p><strong>Questions per Phase</strong></p>
+												<p style={{ marginTop: 8 }}>Set how many questions appear in each lesson phase (Exercise, Worksheet, Test).</p>
 												<p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>Higher numbers = more practice, longer lessons.</p>
 											</>
 										)}
@@ -1307,16 +1448,16 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 							<button
 								onClick={onClose}
 								style={secondaryButtonStyle}
-								disabled={saving}
+								disabled={saving || savingFollowUps}
 							>
 								Cancel
 							</button>
 							<button
-								onClick={handleSave}
+								onClick={activeTab === 'reviews' ? onClose : handleSave}
 								style={buttonStyle}
-								disabled={saving}
+								disabled={saving || savingFollowUps}
 							>
-								{saving ? 'Saving…' : 'Save Changes'}
+								{activeTab === 'reviews' ? 'Done' : (saving ? 'Saving…' : 'Save Changes')}
 							</button>
 						</div>
 					</div>

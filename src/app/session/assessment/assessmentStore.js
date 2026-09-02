@@ -2,6 +2,8 @@
 // Shape: { worksheet: [...], test: [...], comprehension: [...], exercise: [...], savedAt: ISO }
 // Falls back to localStorage when remote is unavailable. Backward compatible with older shape.
 
+import { shouldUseAccountPersistence } from '@/app/learn/demoLearner.mjs';
+
 const KEY_PREFIX = 'lesson_assessments:';
 
 function buildKey(lessonId) {
@@ -14,7 +16,7 @@ export async function getStoredAssessments(lessonId, { learnerId } = {}) {
 	try {
 		const supabase = (await import('@/app/lib/supabaseClient')).getSupabaseClient?.();
 		const hasEnv = (await import('@/app/lib/supabaseClient')).hasSupabaseEnv?.();
-		if (supabase && hasEnv) {
+		if (shouldUseAccountPersistence(learnerId) && supabase && hasEnv) {
 			const { data: { session } } = await supabase.auth.getSession();
 			const token = session?.access_token;
 			if (token && learnerId) {
@@ -102,7 +104,7 @@ export async function saveAssessments(lessonId, incoming = {}, { learnerId } = {
 		const supabaseMod = await import('@/app/lib/supabaseClient');
 		const supabase = supabaseMod.getSupabaseClient?.();
 		const hasEnv = supabaseMod.hasSupabaseEnv?.();
-		if (supabase && hasEnv && learnerId) {
+		if (shouldUseAccountPersistence(learnerId) && supabase && hasEnv) {
 			const { data: { session } } = await supabase.auth.getSession();
 			const token = session?.access_token;
 			if (token) {
@@ -130,7 +132,7 @@ export async function clearAssessments(lessonId, { learnerId } = {}) {
 		const supabaseMod = await import('@/app/lib/supabaseClient');
 		const supabase = supabaseMod.getSupabaseClient?.();
 		const hasEnv = supabaseMod.hasSupabaseEnv?.();
-		if (supabase && hasEnv && learnerId) {
+		if (shouldUseAccountPersistence(learnerId) && supabase && hasEnv) {
 			const { data: { session } } = await supabase.auth.getSession();
 			const token = session?.access_token;
 			if (token) {

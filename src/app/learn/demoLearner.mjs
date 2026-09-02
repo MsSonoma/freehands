@@ -14,7 +14,7 @@ export function initializeDemoLearner(storage) {
   storage?.setItem?.('learner_id', DEMO_LEARNER.id)
   storage?.setItem?.('learner_name', DEMO_LEARNER.name)
   storage?.setItem?.('learner_grade', String(DEMO_LEARNER.grade))
-  storage?.setItem?.('selected_teacher', SONOMA_TEACHER_ID)
+  storage?.removeItem?.('selected_teacher')
   return { ...DEMO_LEARNER }
 }
 
@@ -24,11 +24,6 @@ export function canUseAnonymousTeacher(learnerId, teacherId) {
 
 export function requiresDemoAuthGate(learnerId, teacherId) {
   return isDemoLearnerId(learnerId) && !canUseAnonymousTeacher(learnerId, teacherId)
-}
-
-export function resolveTeacherForLearner(learnerId, selectedTeacher) {
-  if (isDemoLearnerId(learnerId)) return SONOMA_TEACHER_ID
-  return selectedTeacher || SONOMA_TEACHER_ID
 }
 
 export function shouldAutoShowLearnerTutorial({ learnerResolved, learnerId, tutorialSeen }) {
@@ -51,13 +46,4 @@ export function getLessonListRequest(learnerId) {
 
 export function shouldUseAccountPersistence(learnerId) {
   return Boolean(learnerId && !isDemoLearnerId(learnerId))
-}
-
-export function buildLessonSessionRoute({ learnerId, subject, fileName, selectedTeacher, goldenKey = false }) {
-  const teacher = resolveTeacherForLearner(learnerId, selectedTeacher)
-  if (teacher === 'slate') return '/session/slate'
-  if (teacher === 'webb') return '/session/webb'
-
-  const url = `/session?subject=${encodeURIComponent(subject)}&lesson=${encodeURIComponent(fileName)}`
-  return goldenKey ? `${url}&goldenKey=true` : url
 }

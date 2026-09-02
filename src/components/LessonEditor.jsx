@@ -20,6 +20,10 @@ export default function LessonEditor({
   rewritingDescription = false,
   rewritingTeachingNotes = false,
   rewritingVocabDefinition = {},
+  onGenerateDescriptionFromTitle,
+  generatingDescriptionFromTitle = false,
+  onGenerateNotesFromDescription,
+  generatingNotesFromDescription = false,
   // Additional action buttons
   onNotes,
   onSchedule,
@@ -851,14 +855,36 @@ export default function LessonEditor({
           onChange={(e) => updateField('blurb', e.target.value)}
           placeholder="Brief overview of the lesson"
         />
-        {onRewriteDescription && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 6 }}>
-            <AIRewriteButton
-              text={lesson.blurb || ''}
-              onRewrite={() => onRewriteDescription(lesson.blurb || '')}
-              loading={rewritingDescription}
-              size="small"
-            />
+        {(onGenerateDescriptionFromTitle || onRewriteDescription) && (
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-start', marginTop: 6, flexWrap: 'wrap' }}>
+            {onGenerateDescriptionFromTitle && (
+              <button
+                onClick={() => onGenerateDescriptionFromTitle(lesson.title || '')}
+                disabled={generatingDescriptionFromTitle || !lesson.title?.trim()}
+                style={{
+                  background: generatingDescriptionFromTitle ? '#9ca3af' : '#0891b2',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: (generatingDescriptionFromTitle || !lesson.title?.trim()) ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  opacity: (!lesson.title?.trim()) ? 0.5 : 1,
+                  whiteSpace: 'nowrap',
+                  padding: '4px 12px',
+                  fontSize: 12
+                }}
+              >
+                {generatingDescriptionFromTitle ? '✨ Generating...' : '✨ Generate from title'}
+              </button>
+            )}
+            {onRewriteDescription && (
+              <AIRewriteButton
+                text={lesson.blurb || ''}
+                onRewrite={() => onRewriteDescription(lesson.blurb || '')}
+                loading={rewritingDescription}
+                size="small"
+              />
+            )}
           </div>
         )}
 
@@ -869,14 +895,36 @@ export default function LessonEditor({
           onChange={(e) => updateField('teachingNotes', e.target.value)}
           placeholder="Notes for the teacher"
         />
-        {onRewriteTeachingNotes && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 6 }}>
-            <AIRewriteButton
-              text={lesson.teachingNotes || ''}
-              onRewrite={() => onRewriteTeachingNotes(lesson.teachingNotes || '')}
-              loading={rewritingTeachingNotes}
-              size="small"
-            />
+        {(onGenerateNotesFromDescription || onRewriteTeachingNotes) && (
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-start', marginTop: 6, flexWrap: 'wrap' }}>
+            {onGenerateNotesFromDescription && (
+              <button
+                onClick={() => onGenerateNotesFromDescription(lesson.blurb || '')}
+                disabled={generatingNotesFromDescription || !lesson.blurb?.trim()}
+                style={{
+                  background: generatingNotesFromDescription ? '#9ca3af' : '#0891b2',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: (generatingNotesFromDescription || !lesson.blurb?.trim()) ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  opacity: (!lesson.blurb?.trim()) ? 0.5 : 1,
+                  whiteSpace: 'nowrap',
+                  padding: '4px 12px',
+                  fontSize: 12
+                }}
+              >
+                {generatingNotesFromDescription ? '✨ Generating...' : '✨ Generate from description'}
+              </button>
+            )}
+            {onRewriteTeachingNotes && (
+              <AIRewriteButton
+                text={lesson.teachingNotes || ''}
+                onRewrite={() => onRewriteTeachingNotes(lesson.teachingNotes || '')}
+                loading={rewritingTeachingNotes}
+                size="small"
+              />
+            )}
           </div>
         )}
         </div>

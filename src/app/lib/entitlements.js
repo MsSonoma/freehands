@@ -107,6 +107,16 @@ export function featuresForTier(tier) {
   return ENTITLEMENTS[key] || ENTITLEMENTS.free;
 }
 
+export function preparationDeliveryActionsForTier(tier) {
+  const features = featuresForTier(tier);
+  return {
+    startNow: true,
+    makeAvailable: true,
+    saveForLater: true,
+    schedule: features.lessonScheduling === true,
+  };
+}
+
 /**
  * Resolve the effective tier for entitlement checks.
  * Beta users get Pro-level features automatically.
@@ -137,5 +147,5 @@ export function resolveEffectiveTier(subscriptionTier, paidTier) {
   return normalizedSubscription || 'free';
 }
 
-const entitlementsApi = { ENTITLEMENTS, featuresForTier, resolveEffectiveTier };
+const entitlementsApi = { ENTITLEMENTS, featuresForTier, preparationDeliveryActionsForTier, resolveEffectiveTier };
 export default entitlementsApi;

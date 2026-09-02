@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
+import { DEMO_LEARNER, initializeDemoLearner, isDemoLearnerId } from './demoLearner.mjs'
 
 // Contract:
 // - Props:
@@ -55,9 +56,13 @@ export default function LearnerSelector({ onSelect, compact = false }) {
       const currentId = localStorage.getItem('learner_id')
       
       // Set new learner info
-      localStorage.setItem('learner_id', l.id)
-      localStorage.setItem('learner_name', l.name)
-      if (l.grade != null) localStorage.setItem('learner_grade', String(l.grade))
+      if (isDemoLearnerId(l.id)) {
+        initializeDemoLearner(localStorage)
+      } else {
+        localStorage.setItem('learner_id', l.id)
+        localStorage.setItem('learner_name', l.name)
+        if (l.grade != null) localStorage.setItem('learner_grade', String(l.grade))
+      }
       
       // Clear any global target overrides so learner-specific targets are used
       localStorage.removeItem('target_comprehension')
@@ -103,10 +108,11 @@ export default function LearnerSelector({ onSelect, compact = false }) {
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e5e7eb' }}>
           <p style={{ marginTop: 0, marginBottom: 8, fontSize: '0.9rem', color: '#6b7280' }}>Or try without an account:</p>
           <button
-            onClick={() => pick({ id: 'demo', name: 'Demo Learner', grade: 4 })}
+            onClick={() => pick(DEMO_LEARNER)}
+            aria-label="Use Demo Learner — try Ms. Sonoma without an account"
             style={{ padding:'8px 12px', border:'1px solid #ddd', borderRadius:8 }}
           >
-            Use Demo Learner
+            Use Demo Learner — try Ms. Sonoma without an account
           </button>
         </div>
       </div>
@@ -127,10 +133,11 @@ export default function LearnerSelector({ onSelect, compact = false }) {
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e5e7eb' }}>
           <p style={{ marginTop: 0, marginBottom: 8, fontSize: '0.9rem', color: '#6b7280' }}>Or try with a demo:</p>
           <button
-            onClick={() => pick({ id: 'demo', name: 'Demo Learner', grade: 4 })}
+            onClick={() => pick(DEMO_LEARNER)}
+            aria-label="Use Demo Learner — try Ms. Sonoma without an account"
             style={{ padding:'8px 12px', border:'1px solid #ddd', borderRadius:8 }}
           >
-            Use Demo Learner
+            Use Demo Learner — try Ms. Sonoma without an account
           </button>
         </div>
       </div>

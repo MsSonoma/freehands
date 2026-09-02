@@ -37,6 +37,16 @@ export function useAccessControl({
         }
 
         if (uid) {
+          // Authentication-only surfaces do not need profile or entitlement data.
+          // Resolve them immediately so a slow profile request cannot hold the UI.
+          if (!requiredFeature && !minimumTier) {
+            if (!cancelled) {
+              setHasAccess(true)
+              setGateType(null)
+            }
+            return
+          }
+
           // User is authenticated, check tier
           const { data } = await supabase
             .from('profiles')

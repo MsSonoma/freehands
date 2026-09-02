@@ -393,11 +393,11 @@ export default function HeaderBar() {
 		// About page returns to home
 		if (pathname === '/about') return '/';
 
-		// Learner chain: / -> /learn -> /learn/lessons -> /session
+		// Learner chain: / -> /learn -> /session
 		// Mr. Slate and Mrs. Webb have their own top bar; their back button goes to /learn
 		if (pathname.startsWith('/session/slate')) return '/learn';
 		if (pathname.startsWith('/session/webb')) return '/learn';
-		if (pathname.startsWith('/session')) return '/learn/lessons';
+		if (pathname.startsWith('/session')) return '/learn';
 		if (pathname.startsWith('/learn/awards')) return '/learn';
 		if (pathname.startsWith('/learn/lessons')) return '/learn';
 		if (pathname.startsWith('/learn')) return '/';

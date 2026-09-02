@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
+import { verifyFacilitatorPinForUser } from '../../../../lib/facilitatorPin.server.mjs';
 
 export const runtime = 'nodejs';
 
@@ -23,17 +23,6 @@ async function getUserFromAuthHeader(req) {
   return data?.user || null;
 }
 
-function verifyPin(pin, stored) {
-  if (typeof stored !== 'string') return false;
-  const parts = stored.split('$');
-  if (parts.length !== 3 || parts[0] !== 's1') return false;
-  const [, salt, hex] = parts;
-  const keyLen = 64;
-  const derived = crypto.scryptSync(pin, salt, keyLen, { N: 16384, r: 8, p: 1 });
-  const recomputed = `s1$${salt}$${derived.toString('hex')}`;
-  return crypto.timingSafeEqual(Buffer.from(recomputed), Buffer.from(`s1$${salt}$${hex}`));
-}
-
 export async function POST(req) {
   try {
     const { url, service } = getEnv();
@@ -44,10 +33,7 @@ export async function POST(req) {
     const pin = typeof body?.pin === 'string' ? body.pin : '';
     if (!pin) return NextResponse.json({ error: 'pin required' }, { status: 400 });
     const svc = createClient(url, service, { auth: { persistSession: false } });
-    const { data, error } = await svc.from('profiles').select('facilitator_pin_hash').eq('id', user.id).maybeSingle();
-    if (error) return NextResponse.json({ error: error.message || 'Failed to read' }, { status: 500 });
-    if (!data?.facilitator_pin_hash) return NextResponse.json({ error: 'No PIN set' }, { status: 404 });
-    const ok = verifyPin(pin, data.facilitator_pin_hash);
+    const ok = await verifyFacilitatorPinForUser(svc, user.id, pin);
     if (!ok) return NextResponse.json({ error: 'Invalid PIN' }, { status: 403 });
     return NextResponse.json({ ok: true });
   } catch (e) {

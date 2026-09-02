@@ -1,7 +1,7 @@
 # Learner Settings Bus
 
 **Status**: Canonical
-**Last Updated**: 2026-01-08T03:44:22Z
+**Last Updated**: 2026-08-12T18:42:09Z
 
 ## How It Works
 
@@ -27,6 +27,14 @@ Example:
 Also used for play portion flags (phases 2-5 only):
 
 - `{"type":"learner-settings-patch","learnerId":"<uuid>","patch":{"play_test_enabled":false}}`
+
+Daily/Weekly Follow-Up settings use the same per-learner success-only patch transport:
+
+- `daily_followups_enabled` (default `false`)
+- `weekly_reviews_enabled` (default `false`)
+- `weekly_review_day` (default `friday`)
+
+The facilitator learner list exposes these as a per-learner **Review Settings** action on each learner card. The action opens `LearnerEditOverlay` directly on its Review Settings tab. Toggling Daily Follow-Ups, Weekly Reviews, or Weekly Review Day persists through the authenticated Follow-Up settings API only, then broadcasts the successful patch. These fields are stripped from the shared-device learner local cache and are not written through the generic learner update path.
 
 ### Transport
 
@@ -60,6 +68,7 @@ Keep behavior strict:
 - Do not create local fallback state that can diverge from Supabase.
 - Treat settings as **unknown until loaded**. For example, `golden_keys_enabled` should start as `null` (unknown), then become `true`/`false` once loaded.
 - Treat `play_*_enabled` the same way: required booleans loaded from Supabase (no local fallback).
+- Treat Follow-Up toggles as disabled until the database load says `true`; never infer them from a card, local storage, or an unfinished browser request.
 - Avoid UI flashes: do not render Golden Key UI until `golden_keys_enabled === true` and the page is done loading learner settings.
 - Hide per-lesson Golden Key indicators (like a "🔑 Active" badge) unless `golden_keys_enabled === true`.
 - Avoid toast loss: do not clear `sessionStorage.just_earned_golden_key` while `golden_keys_enabled` is unknown; only clear/suppress once it is explicitly `false`.
@@ -82,6 +91,7 @@ This bus is intentionally "dumb": it does not do retries, persistence, or reconc
 - Do not treat the bus as a database or long-lived state. It is only for immediate UI reaction.
 - Do not broadcast before Supabase writes succeed.
 - Do not rely on the bus for initial state; always load initial state from Supabase.
+- Do not use the bus as a scheduler. Weekly boundaries come from the facilitator profile timezone and server time.
 
 ## Key Files
 
@@ -92,7 +102,10 @@ This bus is intentionally "dumb": it does not do retries, persistence, or reconc
 - `src/app/facilitator/learners/page.js`
   - Broadcasts patches after updating learner settings.
 
-- `src/app/learn/lessons/page.js`
+- `src/app/lib/followUpsClient.js`
+  - Authenticated settings and learner Follow-Up client calls.
+
+- `src/app/learn/LearnerHome.js`
   - Subscribes and hides Golden Key UI immediately when disabled.
 
 - `src/app/session/page.js`

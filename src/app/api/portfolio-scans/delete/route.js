@@ -34,6 +34,11 @@ export async function POST(req) {
     const owner = learnerRow?.facilitator_id || learnerRow?.owner_id || learnerRow?.user_id
     if (!owner || owner !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+    // Validate path is scoped to this user to prevent arbitrary file deletion
+    if (!path.startsWith(`v1/${user.id}/`)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const bucket = getBucketName()
 
     const { error: delErr } = await svc.storage.from(bucket).remove([path])

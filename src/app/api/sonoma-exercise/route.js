@@ -12,6 +12,7 @@
 import { NextResponse } from 'next/server'
 import { validateInput } from '@/lib/contentSafety'
 import { AI_MODEL } from '@/app/lib/aiModel'
+import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = AI_MODEL
@@ -143,7 +144,7 @@ export async function POST(request) {
 
   const {
     action,
-    lesson,
+    lesson: rawLesson,
     learnerName,
     question,
     questionIndex,
@@ -154,6 +155,7 @@ export async function POST(request) {
     isLastQuestion,
     userAnswer,
   } = body
+  const lesson = buildInstructionalLessonView(rawLesson)
 
   // ── Ask action ────────────────────────────────────────────────────────────
   if (action === 'ask') {

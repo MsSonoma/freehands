@@ -60,6 +60,9 @@ function writeLocal(list) {
       play_exercise_enabled,
       play_worksheet_enabled,
       play_test_enabled,
+      daily_followups_enabled,
+      weekly_reviews_enabled,
+      weekly_review_day,
       ...rest
     } = item;
     return rest;
@@ -98,17 +101,22 @@ export async function listLearners() {
 
 export async function createLearner(payload) {
   const supabase = getSupabaseClient();
-  if (supabase && hasSupabaseEnv()) {
+  if (!supabase || !hasSupabaseEnv()) {
+    throw new Error('Please log in to create learners');
+  }
+
+  if (supabase) {
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr) throw new Error(userErr.message || 'Auth error');
+    const uid = userData?.user?.id;
+    if (!uid) throw new Error('Please log in to create learners');
+
     if (supabaseLearnersMode === 'disabled') {
       // In local mode, still respect the user's actual plan tier if available
       const list = readLocal();
       let tier = 'free';
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        const uid = userData?.user?.id;
-        if (uid) {
-          tier = await getPlanTier(supabase, uid);
-        }
+        tier = await getPlanTier(supabase, uid);
       } catch {}
       const ent = featuresForTier(tier);
       if (Number.isFinite(ent.learnersMax) && list.length >= ent.learnersMax) {
@@ -116,11 +124,6 @@ export async function createLearner(payload) {
       }
       return createLocal(payload);
     }
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
-    if (userErr) throw new Error(userErr.message || 'Auth error');
-    const uid = userData?.user?.id;
-    if (!uid) throw new Error('Please log in to create learners');
-
     // Gate by plan: read plan tier and current count
     const planTier = await getPlanTier(supabase, uid);
     const ent = featuresForTier(planTier);
@@ -177,7 +180,7 @@ export async function createLearner(payload) {
     if (isUndefinedColumnOrTable(error2)) { supabaseLearnersMode = 'disabled'; return createLocal(payload); }
     throw new Error(error2.message || 'Failed to create learner');
   }
-  return createLocal(payload);
+  throw new Error('Please log in to create learners');
 }
 
 export async function getLearner(id) {
@@ -337,6 +340,27 @@ export async function deleteLearner(id) {
   return deleteLocal(id);
 }
 
+export async function setLearnerLessonAvailability({ learnerId, lessonKey, available }) {
+  if (!learnerId || !lessonKey || typeof available !== 'boolean') {
+    throw new Error('learnerId, lessonKey, and available are required');
+  }
+  const supabase = getSupabaseClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error('Please log in to update lesson availability');
+
+  const response = await fetch('/api/facilitator/learners/lesson-availability', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ learnerId, lessonKey, available }),
+  });
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok || !json?.ok) {
+    throw new Error(json?.error || 'Failed to update lesson availability');
+  }
+  return json;
+}
+
 // Helpers
 function normalizeRow(row) {
   if (!row) return row;
@@ -363,6 +387,9 @@ function normalizeRow(row) {
     fill_in_fun_disabled: !!row.fill_in_fun_disabled,
     auto_advance_phases: row.auto_advance_phases !== false,
     tts_unskippable: !!row.tts_unskippable,
+    daily_followups_enabled: row.daily_followups_enabled === true,
+    weekly_reviews_enabled: row.weekly_reviews_enabled === true,
+    weekly_review_day: typeof row.weekly_review_day === 'string' ? row.weekly_review_day : 'friday',
     // Phase timer fields
     discussion_play_min: c(row.discussion_play_min),
     discussion_work_min: c(row.discussion_work_min),

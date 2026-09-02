@@ -4,7 +4,7 @@
  * Tracks lesson sessions, repeat events, and facilitator notes for Beta program analytics.
  */
 
-import { getSupabaseClient, hasSupabaseEnv } from './supabaseClient';
+import { getSupabaseClient, hasSupabaseEnv } from './supabaseClient.js';
 
 const SESSION_EVENT_TYPES = {
   STARTED: 'started',
@@ -15,59 +15,6 @@ const SESSION_EVENT_TYPES = {
 };
 
 const STALE_EXIT_MINUTES = 60;
-
-function minutesBetween(startIso, endIso) {
-  if (!startIso || !endIso) return null;
-  try {
-    const start = new Date(startIso);
-    const end = new Date(endIso);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
-    const diffMs = end.getTime() - start.getTime();
-    return Math.max(0, Math.round(diffMs / 60000));
-  } catch {
-    return null;
-  }
-}
-
-async function logLessonSessionEvent({
-  supabase,
-  sessionId,
-  learnerId,
-  lessonId,
-  eventType,
-  occurredAt,
-  metadata,
-}) {
-  if (!sessionId || !learnerId || !lessonId || !eventType || !hasSupabaseEnv()) {
-    return false;
-  }
-
-  const payload = {
-    session_id: sessionId,
-    learner_id: learnerId,
-    lesson_id: lessonId,
-    event_type: eventType,
-    occurred_at: occurredAt || new Date().toISOString(),
-  };
-
-  if (metadata && typeof metadata === 'object' && Object.keys(metadata).length > 0) {
-    payload.metadata = metadata;
-  }
-
-  try {
-    const { error } = await supabase
-      .from('lesson_session_events')
-      .insert(payload);
-
-    if (error) {
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    return false;
-  }
-}
 
 /**
  * Check-only: returns conflict info if another device owns an active session for this learner+lesson.
@@ -98,134 +45,45 @@ export async function checkLessonSessionConflict(learnerId, lessonId, browserSes
  * @param {string} deviceName - Optional device name for display
  * @returns {Promise<{id: string}|{conflict: true, existingSession: object}>} Session result
  */
-export async function startLessonSession(learnerId, lessonId, browserSessionId = null, deviceName = null) {
-  if (!learnerId || !lessonId || !hasSupabaseEnv()) return null;
+export async function startLessonSession(learnerId, lessonId, browserSessionId = null, deviceName = null, takeoverPin = null, expectedConflictingSessionId = null, occurrenceId = null, instructionalTeacher = null) {
+  if (learnerId === 'demo') return null;
+  if (!learnerId || !lessonId || !hasSupabaseEnv()) {
+    throw new Error('Unable to start this lesson securely. Return to the Syllabus and try again.');
+  }
 
   const supabase = getSupabaseClient();
-  const nowIso = new Date().toISOString();
-
   try {
-    // Check for existing active session (conflict detection at Begin)
-    const { data: existingActive, error: checkError } = await supabase
-      .from('lesson_sessions')
-      .select('id, session_id, device_name, last_activity_at, started_at')
-      .eq('learner_id', learnerId)
-      .eq('lesson_id', lessonId)
-      .is('ended_at', null)
-      .maybeSingle();
-
-    if (checkError) {
-      console.error('[SESSION] Conflict check error:', checkError);
-    }
-
-    // If active session exists with different session_id, return conflict
-    if (existingActive && browserSessionId && existingActive.session_id !== browserSessionId) {
-      console.log('[SESSION] Conflict detected - existing session:', existingActive.session_id, 'new:', browserSessionId);
-      return {
-        conflict: true,
-        existingSession: existingActive
-      };
-    }
-
-    // If an active session already exists for this learner+lesson and it belongs to this browserSessionId,
-    // treat this as idempotent (retry-safe) and reuse the existing session instead of creating a new one.
-    if (existingActive && browserSessionId && existingActive.session_id === browserSessionId) {
-      try {
-        await supabase
-          .from('lesson_sessions')
-          .update({
-            last_activity_at: nowIso,
-            device_name: deviceName || existingActive.device_name || null
-          })
-          .eq('id', existingActive.id);
-      } catch {
-        // Best-effort
-      }
-      return { id: existingActive.id };
-    }
-
-    // Close any existing active sessions for this learner+lesson (safety cleanup)
-    const { data: existingSessions, error: existingError } = await supabase
-      .from('lesson_sessions')
-      .select('id, lesson_id, started_at')
-      .eq('learner_id', learnerId)
-      .is('ended_at', null);
-
-    if (existingError) {
-      // Silent fail on check
-    }
-
-    const activeSessions = Array.isArray(existingSessions) ? existingSessions : [];
-
-    if (activeSessions.length > 0) {
-      for (const session of activeSessions) {
-        const { id: activeId, lesson_id: activeLessonId, started_at: activeStartedAt } = session;
-
-        const { error: closeError } = await supabase
-          .from('lesson_sessions')
-          .update({ ended_at: nowIso })
-          .eq('id', activeId);
-
-        if (closeError) {
-          continue;
-        }
-
-        const minutesActive = minutesBetween(activeStartedAt, nowIso);
-        await logLessonSessionEvent({
-          supabase,
-          sessionId: activeId,
-          learnerId,
-          lessonId: activeLessonId,
-          eventType: SESSION_EVENT_TYPES.RESTARTED,
-          occurredAt: nowIso,
-          metadata: {
-            resumed_with_lesson_id: lessonId,
-            minutes_active: minutesActive,
-          },
-        });
-      }
-    }
-
-    // Create new session with ownership fields
-    const insertPayload = {
-      learner_id: learnerId,
-      lesson_id: lessonId,
-      started_at: nowIso,
-      last_activity_at: nowIso,
-    };
-
-    if (browserSessionId) {
-      insertPayload.session_id = browserSessionId;
-    }
-
-    if (deviceName) {
-      insertPayload.device_name = deviceName;
-    }
-
-    const { data, error } = await supabase
-      .from('lesson_sessions')
-      .insert(insertPayload)
-      .select('id')
-      .single();
-
-    if (error) {
-      console.error('[SESSION] Insert error:', error);
-      return null;
-    }
-
-    await logLessonSessionEvent({
-      supabase,
-      sessionId: data.id,
-      learnerId,
-      lessonId,
-      eventType: SESSION_EVENT_TYPES.STARTED,
-      occurredAt: nowIso,
+    const { data: sessionResult } = await supabase.auth.getSession();
+    const token = sessionResult?.session?.access_token;
+    if (!token) throw new Error('Your session expired. Return to the Syllabus and sign in again.');
+    const response = await fetch('/api/syllabus/execution/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        learnerId,
+        lessonId,
+        browserSessionId,
+        deviceName,
+        occurrenceId,
+        instructionalTeacher,
+        ...(takeoverPin ? { takeoverPin, expectedConflictingSessionId } : {}),
+      }),
     });
-
-    return { id: data.id };
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      const error = new Error(response.status === 403
+        ? 'This lesson is no longer authorized. Return to the Syllabus and try again.'
+        : 'Unable to start this lesson securely. Please try again.');
+      error.code = payload?.code || 'SESSION_START_FAILED';
+      throw error;
+    }
+    if (!payload?.id && !payload?.conflict) {
+      throw new Error('Unable to confirm this lesson session. Please try again.');
+    }
+    return payload;
   } catch (err) {
     console.error('[SESSION] Start session error:', err);
-    return null;
+    throw err;
   }
 }
 
@@ -237,74 +95,32 @@ export async function startLessonSession(learnerId, lessonId, browserSessionId =
  */
 export async function endLessonSession(sessionId, options = {}) {
   if (!sessionId || !hasSupabaseEnv()) return false;
-
-  const supabase = getSupabaseClient();
   const reason = (options?.reason || SESSION_EVENT_TYPES.COMPLETED).toLowerCase();
-  const nowIso = new Date().toISOString();
+  if (reason !== SESSION_EVENT_TYPES.COMPLETED) return false;
+  const learnerId = String(options?.learnerId || '').trim();
+  const lessonId = String(options?.lessonId || '').trim();
+  const occurrenceId = String(options?.occurrenceId || '').trim();
+  if (!learnerId || !lessonId || !occurrenceId) return false;
 
   try {
-    const { data: sessionRow, error: fetchError } = await supabase
-      .from('lesson_sessions')
-      .select('id, learner_id, lesson_id, started_at, ended_at')
-      .eq('id', sessionId)
-      .maybeSingle();
-
-    if (fetchError) {
-      return false;
-    }
-
-    if (!sessionRow) {
-      return false;
-    }
-
-    if (!sessionRow.ended_at) {
-      const { error: updateError } = await supabase
-        .from('lesson_sessions')
-        .update({ ended_at: nowIso })
-        .eq('id', sessionId);
-
-      if (updateError) {
-        return false;
-      }
-    } else if (!options?.force) {
-      if (reason === SESSION_EVENT_TYPES.COMPLETED) {
-        const { data: existingEvent } = await supabase
-          .from('lesson_session_events')
-          .select('id')
-          .eq('session_id', sessionId)
-          .eq('event_type', SESSION_EVENT_TYPES.COMPLETED)
-          .limit(1);
-
-        if (Array.isArray(existingEvent) && existingEvent.length > 0) {
-          return true;
-        }
-      }
-    }
-
-    const minutesActive = minutesBetween(sessionRow.started_at, nowIso);
-
-    const eventType = (
-      reason === SESSION_EVENT_TYPES.COMPLETED ? SESSION_EVENT_TYPES.COMPLETED :
-      reason === SESSION_EVENT_TYPES.EXITED ? SESSION_EVENT_TYPES.EXITED :
-      reason === SESSION_EVENT_TYPES.RESTARTED ? SESSION_EVENT_TYPES.RESTARTED :
-      reason === SESSION_EVENT_TYPES.INCOMPLETE ? SESSION_EVENT_TYPES.INCOMPLETE :
-      SESSION_EVENT_TYPES.COMPLETED
-    );
-
-    await logLessonSessionEvent({
-      supabase,
-      sessionId,
-      learnerId: sessionRow.learner_id,
-      lessonId: sessionRow.lesson_id,
-      eventType,
-      occurredAt: nowIso,
-      metadata: {
-        ...options?.metadata,
-        minutes_active: minutesActive,
-      },
+    const supabase = getSupabaseClient();
+    const { data: sessionResult } = await supabase.auth.getSession();
+    const token = sessionResult?.session?.access_token;
+    if (!token) return false;
+    const response = await fetch('/api/syllabus/execution/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        sessionId,
+        learnerId,
+        lessonId,
+        occurrenceId,
+        source: options?.metadata?.source,
+        testPercentage: options?.metadata?.test_percentage,
+      }),
     });
-
-    return true;
+    const result = await response.json().catch(() => null);
+    return Boolean(response.ok && result?.ok);
   } catch (err) {
     return false;
   }

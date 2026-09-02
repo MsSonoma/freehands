@@ -62,6 +62,7 @@ test('DiscussionPhase is the active Socratic comprehension model', () => {
 
   assertIncludes(discussion, "const WEBB_OBJECTIVES_URL   = '/api/webb-objectives'")
   assertIncludes(discussion, "const SONOMA_DISCUSSION_URL = '/api/sonoma-discussion'")
+  assertIncludes(discussion, 'buildInstructionalLessonView')
   assertIncludes(discussion, 'async submitMessage(userText)')
   assertIncludes(discussion, "action: 'check'")
   assertIncludes(discussion, 'conversation:')
@@ -81,6 +82,8 @@ test('SessionPageV2 wires sentence playback, learner chat, and conversational ex
   const startExercisePhase = extractFunctionBody(session, 'startExercisePhase')
 
   assertIncludes(session, "import { ExerciseConversationPhase } from './ExerciseConversationPhase'")
+  assertIncludes(session, 'buildInstructionalLessonView')
+  assertIncludes(session, 'lessonData: instructionalLessonView || lessonData')
   assertIncludes(session, 'const [discussionSentenceInfo, setDiscussionSentenceInfo] = useState')
   assertIncludes(session, "eventBusRef.current.on('discussionSentenceChange'")
   assertIncludes(session, 'discussionPhaseRef.current.submitMessage(discussionResponse)')
@@ -104,6 +107,7 @@ test('Stage 2 evidence emitters remain attached to conversational session behavi
   assertIncludes(session, 'STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED')
   assertIncludes(session, 'STAGE_2_EVIDENCE_EVENT_TYPES.VISUAL_AID_USED')
   assertIncludes(session, 'recordAskUsed')
+  assertIncludes(session, 'identityItem: item || null')
   assertIncludes(startExercisePhase, "recordEvidenceItemPresented('exercise', data)")
   assertIncludes(startExercisePhase, "recordEvidenceAnswerSubmitted('exercise', data)")
   assertIncludes(startExercisePhase, "recordEvidenceHintGiven('exercise', data)")

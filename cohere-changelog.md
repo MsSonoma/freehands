@@ -1,3 +1,35 @@
+2026-08-07T10:48:14-04:00 | chore(guidance): Closed out current Ms. Sonoma cleanup from existing worktree. Reviewed scoped diffs in freehands, Cohere, and Signal_Pusher; validated Paigr profile JSON; confirmed Photo Generator files were not touched; reran active-source stale-framing searches; preserved unrelated Cohere Relay gui.py modification outside the cleanup commit. Recon prompt: "Finish current Ms. Sonoma cleanup from existing worktree: review diffs in freehands Cohere Signal_Pusher, confirm only intended guidance/documentation changes, Photo Generator untouched, validate Paigr JSON, search active sources for obsolete framing, run diff checks, commit intended cleanup changes preserving unrelated Relay gui.py".
+
+2026-08-07T13:35:00Z | chore(guidance): Finished Ms. Sonoma current-source cleanup after active guidance rewrite. Corrected Paigr audience drift to learner-through-educator framing, reconciled active Cohere ms_sonoma retrieval library around the central hypothesis, replaced the stale technical teaching-system brain file with source-verified implementation notes, and marked retained generated reports as historical rather than current authority. Did not modify Photo Generator guidance or product mechanics. Recon prompt: "Finish Ms. Sonoma guidance and source cleanup: learner mastery first, active AI facilitation, educator authority, evidence boundary; update Paigr audience drift, retained messaging docs, technical explanation, retrieval sources; audit Cohere commit 542fda19; do not modify Photo Generator or product mechanics."
+
+2026-08-07T12:50:54Z | chore(guidance): Second conceptual pass for Ms. Sonoma guidance. Recentered active guidance on the question "Can AI facilitate learning better than humans while empowering educators?" while preserving current product mechanics. Updated DB instructions, DB propagate_to Signal_Pusher target, recovery script, Copilot GL block, AGENTS guidance, Paigr live profile guidance, and Bridge folder instructions without invoking Guiding Light propagation. Recon prompt: "Second conceptual pass: rewrite Ms. Sonoma guidance around Can AI facilitate learning better than humans while empowering educators, update live DB propagate_to current Signal_Pusher profile brain target without Guiding Light propagation, audit prior Paigr profile diff".
+
+2026-08-07T12:26:41Z | chore(guidance): Reconciled Ms. Sonoma guidance surfaces directly without Guiding Light propagation. Updated Cohere DB profile instructions, Cohere recovery script text, freehands Copilot GL block, tracked AGENTS guidance, Signal_Pusher live Ms. Sonoma profile brain/guidance, and Bridge folder instructions for Verdict - Ms. Sonoma and Paigr App - MSB. Verified readbacks, JSON/Python parsing, shared-profile equality, DB GL propagate_to preservation, and high-risk phrase search. Recon prompt: "Reconcile Ms. Sonoma guidance surfaces across Cohere Bridge profile, recovery script, freehands Copilot instructions, AGENTS, Signal_Pusher profile brain, bridge_store folder instructions, and ChatGPT project instructions without Guiding Light propagation".
+
+2026-08-06 | fix(facilitator): Commit 2 simplified Lesson Library and Calendar surfaces. Lesson Library now loads lessons immediately, auto-selects only a single learner, requires explicit selection when multiple learners exist, removes the Load Lessons gate, and collapses advanced filters plus scratch/detailed-builder tools. Calendar now defaults to Scheduler without peer tabs or tour controls; planner, custom subjects, and portfolio generation appear only through route-state advanced URLs and are gated before rendering when the account lacks planner access. Validation: focused facilitator tests 40 pass, lint 0 errors/33 warnings, Next build passed. Recon prompt: "Commit 2 Simplify facilitator library and calendar surfaces: Lesson Library auto-load one learner explicit multi-learner selection no Load Lessons gate, Calendar default Scheduler only with advanced route-state surfaces and entitlement boundaries".
+
+2026-08-06 | fix(facilitator): Commit 1 removed remaining ordinary-parent workflow gates. Facilitator layout no longer mounts the old checklist; signup/account/add-learner/generator/lessons/calendar no longer start or advance the retired onboarding sequence; Detailed lesson builder is advanced-only and writes a DRAFT preparation snapshot before returning to Prepare; Prepare hides scheduling controls for Free/Trial with a Standard plan note; schedule POST now enforces centralized scheduling entitlements server-side. Deleted unused onboarding checklist/banner/hook and calendar tutorial component. Validation: focused facilitator tests 38 pass, lint 0 errors/33 warnings, Next build passed. Recon prompt: "Continue Commit 1 after first patch: validate facilitator entry gates, generator advanced DRAFT handoff, schedule entitlement API, and remove old onboarding references".
+
+2026-08-06 | fix(facilitator): Completed missing-learner recovery for saved preparation snapshots. Prepare now detects DRAFT/DELIVERY snapshots whose learner is no longer in the facilitator's learner list, shows an explicit learner-selection recovery screen, keeps lesson identity/proposal/intent intact, blocks approval/delivery/scheduling before reassignment, and writes the selected learner into the saved snapshot before restoring the original stage. Browser verified two-learner DELIVERY save -> remove second learner -> Home Choose learner -> empty selector -> choose first learner -> same lesson returns to delivery and availability posts learner-1. Recon prompt: "Complete missing-learner recovery: saved DRAFT or DELIVERY preparation snapshot references deleted learner, Home says Choose learner, prepare page must show learner selector without discarding lesson identity or silently selecting first learner".
+
+2026-08-06 | fix(facilitator): Stabilized facilitator reconstruction after correction pass. Home resolver is snapshot-led so DELIVERY/DRAFT recovery preserves the selected learner and legacy generated lessons cannot hijack the primary decision. Save for later now preserves DELIVERY snapshots, Advanced Tools route to existing calendar/planner/subjects/portfolio surfaces, calendar query params open the intended tab/modal, and focused tests cover two-learner recovery, missing learners, legacy lesson non-hijack, and route destinations. Browser verified with two mocked learners: Home shows Choose delivery for Second Learner, prepare recovery retains Second Learner, planner/subjects/portfolio URLs render with no 404. Recon prompt: "Stabilize current facilitator reconstruction: repair Advanced Tools calendar links, calendar query params, Save for later snapshot preservation, resolver snapshot-stage decisions, learner preservation, legacy generated lesson hijack prevention, and tests."
+
+2026-05-22 | feat(lessons): Teacher-aware medal badges + per-teacher completion emoji + all-teacher achievement row in overlay + per-lesson history sub-overlay. On lesson cards (active/recent/owned tabs): medal/trophy changes per dropdown (🥇🥈🥉 Sonoma, 🏅 Slate, 🏆 Webb); three teacher-identity badges (👩🏻‍🦰🤖👩🏻‍🏫) always shown when earned regardless of dropdown. In lesson detail overlay header: title is clean, all three teachers' achievements shown as colored chips (Sonoma amber, Slate violet, Webb green). "📋 View all attempts" button opens per-lesson history sub-overlay showing Ms. Sonoma sessions/best grade/last completed, Mr. Slate mastery + date, Mrs. Webb completion + date. New state: `webbMap`, `showLessonDetailHistory`. New import: `getWebbCompletionForLearner`. Commit: ee3e906. Recon prompt: "medal emoji teacher badges lesson cards overlay history all attempts dynamic dropdown sonoma slate webb".
+
+2026-05-21 | fix(lessons/recent-tab): Recent tab now includes scheduled lessons, not just completed/in-progress. `action=active` in `lesson-schedule/route.js` now selects `lesson_key, scheduled_date, created_at, updated_at` instead of just `lesson_key`. `scheduledLessons` state changed from `{ key: true }` to `{ key: isoTimestamp }` using `updated_at || created_at || scheduled_date + 'T00:00:00Z'`. Three `=== true` checks changed to `!!` truthy checks. `recentList` useMemo adds `scheduledKeys` to the union and picks the max timestamp across completed, in-progress, and scheduled dates for each lesson key. Commit: 88b2839. Recon prompt: "Recent tab on /learn/lessons page showing recently used lessons including completed scheduled attempted".
+
+2026-05-19 | fix(session/v2): Two interrelated bugs fixed in all Q&A phase go() methods (Test/Comprehension/Exercise/Worksheet). (1) Race in go(): audioEndListener was registered BEFORE fetchTTS() await, so the "play until timer runs out" audio ending during that gap fired finishIntro() prematurely, set #state='awaiting-answer', then when the intro TTS played and ended the finishIntro() guard blocked the first question — phase stuck. Fix: call audioEngine.stop() synchronously BEFORE registering audioEndListener so the play-line's 'end' fires before the listener exists. (2) Stuck await in handleBeginPhase: await playAudio(playLine) never resolved if stop() was called mid-playback (abandoned #playHTMLAudio Promise). Fix: fire-and-forget the play line. (3) Wrong play line on timeline-jump resume into work mode: start() resumed directly into awaiting-answer and handleBeginPhase incorrectly spoke the play line. Fix: check getState() after start() and only play the line when state is 'awaiting-go'. getState() added to all four phase controllers. Commit: 17ddc1d. Recon prompt: "test phase first question never fires, skipping to test shows play line then blank screen".
+
+2026-05-17 | fix(portfolio): Three bugs fixed. (1) Completion detection: after querying `lesson_session_events` for completed events, also query `learner_medals` as fallback — scheduled lessons with a medal record (legacy completions) are now included even if no session event exists. (2) Lesson title hyphens: `buildLessonTitleFromKey` in `lib.js` now replaces both `_` and `-` with spaces (`/[_-]/g`). (3) Security: `portfolio-scans/delete/route.js` now validates that `path` starts with `v1/${user.id}/` after the learner-ownership check, preventing service-role delete from targeting other users' files. Bug #5 (no `facilitator_id` in `lesson_session_events`) is not fixable without a join to `lesson_sessions` — deferred. Commit: 7cb3476. Recon prompt: "portfolio generate route medal fallback completion detection buildLessonTitleFromKey hyphen fix portfolio-scans delete path security".
+
+2026-05-XX | fix(transcripts): V2 transcript system — 5 improvements. (1) Periodic saves: `updateTranscriptLiveSegment` now called on every `currentPhase` change and on `pagehide` in `SessionPageV2.jsx`, so incomplete sessions no longer lose their transcript. (2) Phase labels: each `{role,text}` line now tagged with `{phase: currentPhaseRef.current}` in `captionChange` handler and `appendTranscriptLine`; `sanitizeTranscriptLines` in `transcriptsClient.js` preserves the field; TXT and PDF renderers insert section headers when phase changes. (3) Ask feature capture: learner's typed question is now added to `transcriptLines` in `handleOpeningAskSubmit` before `controller.submitAskQuestion` is called; teacher's reply was already captured via `captionChange`. (4) Teacher param: `appendTranscriptSegment` in `sessionComplete` now explicitly passes `teacher: undefined` for Sonoma. (5) `formatPhaseLabel` utility added to `transcriptsClient.js` for consistent display names. Commit: 600e8f8. Recon prompt: "transcript autosave phase transitions pagehide session complete phase labels ask feature capture teacher param".
+
+2026-05-17 | feat(generator): Add "Generate from title" and "Generate from description" buttons to lesson editor. Two new cyan buttons appear alongside existing "Rewrite with AI" buttons: (1) next to Description field: "✨ Generate from title" — enabled when title is non-empty, calls `/api/ai/rewrite-text` with purpose `generate-description-from-title`; (2) next to Teaching Notes field: "✨ Generate from description" — enabled when description/blurb is non-empty, calls `/api/ai/rewrite-text` with purpose `generate-notes-from-description`. New prompt purposes added to `rewrite-text/route.js`. `LessonEditor.jsx` accepts 4 new props: `onGenerateDescriptionFromTitle`, `generatingDescriptionFromTitle`, `onGenerateNotesFromDescription`, `generatingNotesFromDescription`. Handlers + states added to both `LessonsOverlay.jsx` and `GeneratedLessonsOverlay.jsx`. Commit: 4f4ff7e. Recon prompt: "lesson generator description title notes rewrite with AI buttons".
+
+2026-05-XX | feat(discussion): Webb-style Socratic discussion phase replaces Discussion+Teaching+Comprehension. New flow: Discussion (overview TTS + vocab + objectives conversation) → Exercise → Worksheet → Test → Closing. Created `/api/sonoma-discussion/route.js` (overview + chat actions, Ms. Sonoma persona). Rewrote `DiscussionPhase.jsx` (V3): fetches objectives via `/api/webb-objectives`, generates overview via `/api/sonoma-discussion`, plays TTS, then runs Socratic Q&A until all objectives met, emits `discussionComplete`. `PhaseOrchestrator.jsx`: `onDiscussionComplete()` now → `exercise` (was `teaching`). `constants.js`: `timelinePhases` removes `"comprehension"`. `SessionPageV2.jsx`: passes `lessonData`/`grade` to DiscussionPhase, adds `discussionStateChange`/`discussionMessage` event handlers, adds discussion chat input footer (Send button + objectives progress counter), updates timelineHighlight to merge comprehension into discussion segment. Teaching and Comprehension phases remain in codebase (orphaned, still reachable via timeline jumps). Commit: a72b106. Recon prompt: "redo discussion phase Webb-style objectives conversation Socratic questioning comprehension merged into discussion flow now discussion to exercise".
+
+2026-05-13 | fix(slate): Mr. Slate SA/FITB always judged false — `judge-short-answer/route.js` used `max_tokens: 20` (rejected by gpt-4.1-mini and gpt-5.4-mini) causing 400 errors, 3x retries, fallback to local judge which always returns false for SA/FITB. Fix: `max_tokens` → `max_completion_tokens: 20`; hardcoded model replaced with `AI_MODEL` import. Commit: 5a10e07. Recon prompt: "Mr. Slate judging SA FITB short answer fill in the blank always false before user answers max_completion_tokens gpt-5.4-mini".
+
 2026-05-12 | arch(brain): Feature drift prevention — created Feature Edge Map and 4 missing brain files. Root problem: 9 session features (Snapshot, Takeover, Persistent Sets, Timers, Play-Dependent-on-Work, Timers Overlay, Learners List, Golden Key, Transcripts) were breaking each other because the AI context couldn't hold all 9 simultaneously. Solution: (1) `docs/brain/feature-edge-map.md` — hub document listing all 9 features as nodes with dependency edges, shared storage registry (snapshot payload, sessionStorage keys, DB columns), and anti-drift protocol with 9-feature checklist. Cohere will pull this into every session-related pack via keyword overlap. (2) New brain files for 4 undocumented features: `persistent-sets.md`, `play-dependent-on-work.md`, `timers-overlay.md`, `transcripts.md`. (3) Cross-reference banner added to top of snapshot-persistence.md, session-takeover.md, timer-system.md. All 8 files ingested (92 chunks). Recon prompt: "state persistence across devices takeover snapshot timers persistent sets golden key transcripts learners list".
 
 2026-05-12 | feat(learners,session): Add per-learner "Unskippable Voice" setting (`tts_unskippable`). SQL migration in `scripts/add-tts-unskippable-column.sql` adds boolean column (default false). Toggle in `LearnerEditOverlay` AI Features tab. `clientApi.js` wired in `normalizeRow`, `createLearner` (flat), and `updateLearner` (flat). `SessionPageV2` reads the flag on learner load and via live-update patch bus; when on: skip button hidden in video overlay, Next Sentence disabled while `engineState=playing`, PageDown hotkey blocked in `skipSentence()` via `ttsUnskippableRef`. Commit: 8242408. Recon prompt: "learners list per-learner settings toggle TTS unskippable skip button next sentence session video overlay".
@@ -139,7 +171,11 @@ Files: `src/app/session/v2/SessionPageV2.jsx`, `src/app/session/v2/TimerService.
 2026-02-27T17:39:00Z | Fix: quota false-positives for premium/pro. Recon prompt: "Quota hit when generating lessons (calendar + lesson generator) even though account is premium; gating other accounts may have affected entitlement." Updated `/api/lessons/quota` to return `allowed` and updated `/api/usage/check-lesson-quota` to use `plan_tier` + `lessonsPerDay`; generator now computes allowance robustly. See `sidekick_pack.md`.
 
 # Cohere Investigations Changelog
-## 2026-03-10 — Mr. Slate: wire GPT judging for short-answer and fill-in-the-blank
+## 2026-05-17 — feat(webb): Video re-watch rate limit
+Recon: `Mrs. Webb session video watching objectives limit`
+Problem: Students could repeatedly open the video overlay without restriction.
+Fix: Added `videosWatchedRef` (starts at 0, resets on new lesson in `preloadResources`). `handleVideoButtonClick` now enforces `maxVideos = 1 + floor(completedObj.length / 2)`. First video is free; each additional watch requires 2 more completed objectives. Mrs. Webb explains the rule and how many objectives are needed when blocked.
+File: `src/app/session/webb/page.jsx` — `handleVideoButtonClick` + `preloadResources` + refs block.## 2026-03-10 — Mr. Slate: wire GPT judging for short-answer and fill-in-the-blank
 - **Recon prompt**: "How does Ms. Sonoma judge short answer and fill-in-the-blank answers? What API endpoint does she call? What is the request format, grading rules, and how is the result used in the session flow?"
 - **Change**: `checkAnswer` in `src/app/session/slate/page.jsx` was a sync local string-normalizer. Replaced with async version mirroring `src/app/session/v2/judging.js`: MC/TF stay local+sync; SA/FIB POST to `/api/judge-short-answer` (GPT-4o-mini, same leniency rules as Ms. Sonoma) with 3 attempts / 5s timeout / 2s retry. Falls back to local judge if API unavailable. `onTextSubmit` changed to `async` with phase-guard after `await`.
 - **Files**: `src/app/session/slate/page.jsx`
@@ -198,6 +234,22 @@ Topic:
 Recon prompt (exact string):
 
 Key evidence:
+
+Date (UTC): 2026-08-06T00:00:00Z
+
+Topic: Facilitator preparation path reconstruction slice
+
+Recon prompt (exact string): Reconstruct the Ms. Sonoma facilitator path: inspect facilitator prepare flow, lesson proposal, generator, approval, availability, scheduling, learner creation, facilitator home, ownership authorization, tests
+
+Key evidence: Added `/facilitator/prepare`, stateless `/api/facilitator/lessons/propose`, centralized `/api/facilitator/learners/lesson-availability`, canonical lesson identity helpers, deterministic facilitator home, simplified learner creation, and focused route/security/flow tests. Build and lint completed; existing session engine files were read back but not edited.
+
+Date (UTC): 2026-08-06T00:00:00Z
+
+Topic: Facilitator reconstruction correction after 957201e
+
+Recon prompt (exact string): Copilot Correction Task: Complete the Facilitator Reconstruction. Audit current source after commit 957201e; repair facilitator home primary decision, prepare link, onboarding path, save-and-leave snapshot behavior, proposal storage failure, availability removal, and add route-level tests.
+
+Key evidence: Repaired Facilitator Home recovery snapshot decision ordering, Draft Save and leave snapshot preservation, proposal-mode storage failure handling, availability removal behavior, advanced generator storage fallback keys, and added mocked route-handler tests for proposal/generation/approval/availability routes.
 - sidekick_pack: (optional) `sidekick_pack.md`
 - rounds journal: (optional) `sidekick_rounds.jsonl` (search by prompt)
 
@@ -544,6 +596,25 @@ Follow-ups:
 
 ---
 
+Date (UTC): 2026-05-21T00:00:00Z
+
+Topic: Hide retired lesson selection screen during Mrs. Webb session loading
+
+Recon prompt (exact string):
+Mrs. Webb session loading screen retired lesson selection screen snapshot handling
+
+Key evidence:
+- sidekick_pack: sidekick_pack.md
+- rounds journal: sidekick_rounds.jsonl
+
+Result:
+- Root cause: `/session/webb` starts in `PHASE.LIST` with `listLoading=true`, rendering the full retired lesson-browser shell before the redirect or auto-lesson-select could fire.
+- Fix: Added early-return loading screen when `phase === PHASE.LIST && listLoading`. Shows a teal full-page spinner with the Mrs. Webb header instead of the lesson browser page shell.
+- The `offerResume` portal (dark full-screen overlay) already covered the page correctly — no change needed there.
+- Files changed: src/app/session/webb/page.jsx
+
+---
+
 Date (UTC): 2026-02-22T19:03:42.3423235Z
 
 Topic: App slowness from unnecessary base64 audio payloads
@@ -740,5 +811,74 @@ ext param so email-confirm redirects land on add-learner
 - Root cause: uildAllPhaseSets, persistAssessments, getLearnerTarget, getAssessmentStorageKey, questionKey, and ddEvent were declared at lines 2035-2215 of SessionPageV2.jsx, but uildAllPhaseSets and persistAssessments appeared in a useEffect dependency array at line 1773 (363 lines before their declarations). In dev builds the webpack scope hoisting coincidentally resolved the name to a hoisted unction nC(){} from ClosingPhase; in the Vercel production build the minifier assigned 
 C to the let buildAllPhaseSets = useCallback(...) inside the component function, hitting TDZ on the dep array evaluation.
 - Fix: moved the entire block (addEvent + getLearnerTarget + getAssessmentStorageKey + persistAssessments + questionKey + buildAllPhaseSets) to just before the first useEffect that references them (now line 1701, useEffect now at line 1884). Build passes, pushed commit 8d0f87a.
+
+## 2026-05-12 � takeover ping-pong fix
+Recon: `SessionTakeoverDialog takeover session ping pong device lesson_sessions startLessonSession conflict detection`
+Fix 1 (ping-pong): Replaced `endLessonSession(conflictingSession.id)` + conflict-check throw with direct Supabase query to end all active sessions for learner+lesson before calling `startTrackedSession`. Commit: c5f9762
+Fix 2 (dialog messaging): Added `isTakenOver` prop to `SessionTakeoverDialog` � switches title/body/warning/button for polling-notification vs arriving-conflict cases. `isTakenOverNotification` state added to `SessionPageV2`, set in `onSessionTakenOver` callback, reset on takeover success and cancel.
+
+## 2026-05-12 � takeover page-load conflict check
+Problem: conflict check only ran on Begin/Resume click; Resume could bypass it if session was already past idle.
+Fix: Added `checkLessonSessionConflict` (read-only, no session creation) to sessionTracking.js. Added page-load useEffect in SessionPageV2 guarded by `initialConflictCheckedRef` - fires once when learnerId+lessonId+browserSessionId are ready; shows takeover dialog immediately on page load if another device is active. Commit: c9f09fc
+
+## 2026-05-12 � pre-Begin repeating conflict watch
+Problem: page-load conflict check ran once (guarded by initialConflictCheckedRef). Device A at the Begin screen had no active polling, so Device B taking over was invisible to Device A until the page was manually refreshed.
+Fix: Replaced one-shot check with a 4s setInterval (preBeginConflictIntervalRef). Immediate first check on deps ready, then every 4s. Self-clears when dialog shows or when Begin is clicked (startSession clears it at entry). Session post-Begin polling (useSessionTracking) covers the mid-session case. Commit: 9bf08a9
+
+## 2026-05-12 � Realtime takeover detection
+Replaced 8s polling in useSessionTracking with Supabase Realtime (postgres_changes UPDATE on lesson_sessions filtered by session id). When Device B sets ended_at, Device A fires onSessionTakenOver in ~100-300ms. 15s polling retained as fallback if WS drops. takenOverRef guards against double-fire. SQL to enable: scripts/enable-realtime-lesson-sessions.sql (REPLICA IDENTITY FULL + supabase_realtime publication). Commit: a6756a5
+
+## 2026-05-12 � pre-Begin async race fix + transcript seam analysis
+Fix: Added double-guard to runCheck in preBeginConflictIntervalRef useEffect. Check preBeginConflictIntervalRef.current at entry AND after the async checkLessonSessionConflict resolves. If Begin was clicked during the fetch, interval is null and dialog is suppressed. Commit: fd0097b
+Transcript seam: Investigated appendTranscriptSegment � it uses browserSessionId (sessionStorage, survives reload) not the DB lesson_sessions.id. No seam exists. Consolidated ledger is always append-only per browserSessionId. No code change needed.
+
+2026-05-16 | feat(session): Add Timers/Targets tab bar to session Edit overlay. LearnerEditOverlay now accepts visibleTabs prop; when provided, renders a tab bar showing only those tabs. SessionPageV2 passes visibleTabs=['timers','targets'] so the 'Edit Timers & Targets' button opens both tabs. Recon prompt: 'Timers overlay Edit timer and Target tabs session'. Commit: 05b0ce8.
+
+## 2026-05-17 � Ask Cancel/Done fix
+Recon: `Ask feature done and cancel buttons same behavior cancel breaking flow`
+Root cause: handleOpeningActionCancel spoke the in-flow question reminder (askReturnQuestionRef) via speakSystemLineHardened � identical to Done. This unexpected speech after state reset broke flow.
+Fix: Removed all reminder/speech logic from handleOpeningActionCancel. Cancel is now a synchronous clean close (stops audio, resets state, clears ref). Done retains the re-anchor speech.
+File: src/app/session/v2/SessionPageV2.jsx line ~3559
+
+## 2026-05-17 - Curriculum preferences semantics fix
+Recon: `curriculum preferences focus concepts topics terms banned concepts topics terms`
+Root cause: All three categories (concepts/topics/terms) lacked distinct semantic meaning in UI labels and AI prompts � they appeared to do the same thing.
+Fix: Renamed in UI and updated AI prompt instructions to reflect:
+  - Term = specific exact word (was 'Keywords'/'Words')
+  - Concept = idea + synonyms (was already 'Concepts', now described properly)
+  - Subject = lesson subject/topic, not word filtering (was 'Topics')
+Files: CurriculumPreferencesOverlay.jsx, generate-lesson-outline/route.js, DayViewOverlay.jsx, LessonPlanner.jsx
+
+## 2026-05-17 - TTS fraction and contraction fixes
+Recon: `TTS reads fractions as divided by and contractions lose apostrophe We'll becomes Well`
+Root cause:
+  - Fractions (1/4): no preprocessing; Google TTS interprets '/' as 'divided by'.
+  - Contractions (We'll?Well): stripEmojiForSpeech catch-all regex strips U+2019 curly apostrophe, collapsing 'We\u2019ll' to 'Well'.
+Fix:
+  - Added normalizeFractionsForSpeech() to all 4 TTS routes (tts, mentor-tts, slate-tts, webb-tts). Converts n/d to word form (one fourth, two thirds, etc.) when n < d and denominator is a known ordinal.
+  - Added U+2018-201F curly quote normalization to straight ASCII before the catch-all in stripEmojiForSpeech (tts/route.js) and before escaping in the other routes.
+Files: src/app/api/tts/route.js, mentor-tts/route.js, slate-tts/route.js, webb-tts/route.js
+
+## 2026-05-17 - Resend email list setup
+Recon: `Resend email list audience contacts subscribe route`
+Setup: Domain mssonoma.app verified in Resend. DNS records added via Vercel CLI (DKIM, SPF, DMARC, MX).
+Audience created: 'Ms. Sonoma Email List' (id: 1743ddf7-62ae-4a05-99db-103d95da4daf).
+Backfill: scripts/backfill-resend-audience.mjs -- synced 11 existing users from Supabase auth.
+API route: src/app/api/email/subscribe/route.js -- POST /api/email/subscribe for ongoing signups.
+
+## 2026-06-06 � Exercise quick answer buttons fix
+- Recon: `exercise phase quick answer buttons a b c d t/f conversational questions mc tf sa fitb`
+- Problem: 3 root causes blocking buttons in ExerciseConversationPhase:
+  1. awaitingAnswer gate checked 'awaiting-answer' but conv phase uses 'chatting'
+  2. Click handlers called submitAnswer() (ExercisePhase API), conv phase only has submitMessage()
+  3. stateChange handler didn't update currentExerciseQuestion as questions advanced (stale options)
+- Fix: SessionPageV2.jsx � awaitingAnswer includes chatting; exercise branch calls submitMessage(); stateChange updates currentExerciseQuestion; skips duplicate appendTranscriptLine for exercise
+
+## 2026-07-18 - Git sync large temp upload cleanup
+- Recon: `I need you to fix the git. It won't sync`
+- Problem: `git push origin dev` was rejected by GitHub GH001 because the unpushed commit tracked `.tmp.driveupload` blobs, including one over 100 MB.
+- Fix: removed `.tmp.driveupload` from the unpushed commit, added `.tmp.driveupload/` to `.gitignore`, restored Cohere working files out of the commit, amended, and pushed `dev` successfully.
+
+2026-08-06 | fix(facilitator): Completed facilitator Library simplification. Ordinary Lesson Library rows now resolve through a parent-facing state helper, expose at most one primary Review/Choose delivery/Download action, suppress direct availability and schedule controls, and keep item tools inside More. Entitlement coverage now exercises the central matrix plus schedule POST behavior for Free, Trial, Standard, Pro, Beta, and unauthorized learners. Browser verified with mocked Standard, Free, and Beta sessions: multi-learner Library starts unselected, Learner Two handoffs route to Prepare with canonical params, Free shows the Standard scheduling boundary before any date field, and Beta reaches Planner plus scheduling. Validation: focused node tests 57 pass, lint 0 errors/33 warnings, Next build passed. Recon prompt: "Complete facilitator library simplification: parent-facing lesson state resolver, one primary action per ordinary row, executable entitlement matrix, schedule POST behavior tests, browser verification Free Standard Beta".
 
 2026-08-08 | fix(about): Replaced the stale safety-first About page with a mastery-first product explanation grounded in current Sonoma provider routing, session progression, educator controls, persistence, and bounded safety/privacy claims. Preserved the global navigation, Learn/Facilitator links, mssonoma.com relationship, and `/about#ai-features` deep link. Recon prompt: "Rewrite src/app/about/page.js to match current mastery-first product truth, remove stale six-layer safety and only-Ask claims, verify provider, persistence, educator-control, privacy, and safety wording, then test, commit, deploy, and verify mssonoma.app/about."

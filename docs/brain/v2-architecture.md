@@ -135,6 +135,10 @@ V2 underwent comprehensive audit comparing to V1 (9,797 lines) and all critical 
 
 ## V2 Architectural Decisions
 
+### Canonical Completion Gate (2026-08-28)
+
+`SessionPageV2` does not enter its success state, delete the snapshot, write secondary completion artifacts, or navigate until the protected completion route confirms the atomic `lesson_sessions` plus `lesson_session_events` commit. While the commit is pending, the learner sees a recording state. Failure preserves work and exposes an idempotent retry; an ambiguous successful network attempt is safe because the database returns the existing completed event on retry.
+
 ### Phase Entry Gating (Begin Buttons) (2026-01-02)
 
 **Decision:** Each Q&A phase (Comprehension, Exercise, Worksheet, Test) uses an explicit **Begin** gate before showing Opening Actions and the **Go** control.
@@ -781,7 +785,7 @@ When user presses Next/Skip during intro audio (e.g., "First let's go over some 
   - Test controls: Answer input in fixed footer (Enter submits); no on-video Test Q&A overlays
   - Test grading: Letter grade (A-F), percentage, on-time status
   - Test review: Question-by-question review with correct answers highlighted, Previous/Next navigation
-  - Golden key award: Eligibility is displayed when 3 work phases complete on-time; on Complete Lesson, SessionPageV2 increments the learner's `golden_keys` inventory in Supabase (the /learn/lessons toast is only a notification flag and is not the source of truth)
+  - Golden key award: Eligibility is displayed when 3 work phases complete on-time; on Complete Lesson, SessionPageV2 increments the learner's `golden_keys` inventory in Supabase (the `/learn` toast is only a notification flag and is not the source of truth)
   - Closing phase: Displays encouraging message
   - Audio transport controls: Stop, Pause, Resume, Mute (with Space hotkey)
   - Snapshot auto-save: Saves after discussion, teaching, comprehension, exercise, worksheet, test completion

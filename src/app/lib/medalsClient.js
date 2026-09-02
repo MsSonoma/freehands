@@ -1,4 +1,5 @@
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
+import { shouldUseAccountPersistence } from '@/app/learn/demoLearner.mjs';
 
 // Local storage fallback shape:
 // medals_by_learner = {
@@ -109,7 +110,7 @@ async function ownerScopedSelectOne(supabase, uid, where) {
 export async function getMedalsForLearner(learnerId) {
   if (!learnerId) return {};
   const supabase = getSupabaseClient();
-  if (supabase && hasSupabaseEnv()) {
+  if (shouldUseAccountPersistence(learnerId) && supabase && hasSupabaseEnv()) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
@@ -171,7 +172,7 @@ export async function upsertMedal(learnerId, lessonKey, percent) {
   writeLocal(all);
   // Then push to DB via API.
   const supabase = getSupabaseClient();
-  if (supabase && hasSupabaseEnv()) {
+  if (shouldUseAccountPersistence(learnerId) && supabase && hasSupabaseEnv()) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;

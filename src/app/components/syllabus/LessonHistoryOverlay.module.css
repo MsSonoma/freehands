@@ -1,0 +1,46 @@
+.backdrop { position:fixed; inset:0; z-index:130; display:grid; place-items:center; padding:18px; background:rgba(39,34,29,.62); font-family:Roboto,sans-serif; }
+.dialog { position:relative; width:min(780px,100%); max-height:92vh; overflow:hidden; border:1px solid #cfc6b8; border-radius:16px; background:#fffdf8; box-shadow:0 28px 80px rgba(30,25,20,.3); color:#2d2924; }
+.scrollBody { max-height:92vh; overflow:auto; overscroll-behavior:contain; padding:clamp(24px,5vw,46px); overflow-wrap:anywhere; }
+.closeButton { position:absolute; top:14px; right:14px; z-index:2; width:40px; height:40px; border:1px solid #d8d0c5; border-radius:50%; background:#fff; color:#403830; cursor:pointer; font-size:24px; line-height:1; }
+.header { padding:0 48px 24px 0; border-bottom:2px solid #39342e; }
+.header h2,.transcriptHeading h2 { margin:5px 0 12px; font:500 clamp(27px,5vw,39px)/1.12 Georgia,serif; }
+.kicker,.sectionLabel { margin:0; color:#8b3f30; font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+.meta { display:flex; flex-wrap:wrap; gap:8px 18px; color:#655d54; font-size:13px; }
+.section { padding:22px 0; border-bottom:1px solid #ded8cf; }
+.section h3 { margin:5px 0 7px; font:600 21px/1.3 Georgia,serif; }
+.section p { margin:5px 0 0; color:#595149; line-height:1.55; }
+.summary { margin-top:20px; padding:22px; border-bottom:0; background:#f5efe4; }
+.summary h3 { font-size:25px; }
+.reviewCard,.slateCard { display:flex; justify-content:space-between; gap:18px; margin-top:10px; padding:13px; border:1px solid #ded8cf; background:#fff; }
+.reviewCard>div,.slateCard { font-size:13px; }
+.reviewCard span,.slateCard span { display:block; margin-top:3px; color:#756b61; }
+.reviewCard ul { margin:0; padding-left:20px; }
+.records { display:grid; gap:8px; margin-top:10px; }
+.records button { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:44px; width:100%; padding:13px 14px; border:1px solid #cfc6b8; background:#fff; color:#2d2924; cursor:pointer; text-align:left; }
+.records span { display:grid; gap:4px; }
+.records small { color:#756b61; }
+.records b { color:#7b3f32; }
+.details { padding:18px 0; border-bottom:1px solid #ded8cf; }
+.details summary { cursor:pointer; color:#6b382c; font-weight:800; }
+.facetGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding-top:14px; }
+.facet { display:grid; gap:5px; padding:13px; border:1px solid #ded8cf; background:#fff; }
+.facet span { font-weight:700; }
+.facet p { margin:0; color:#655d54; font-size:13px; line-height:1.45; }
+.status { padding:55px 0; color:#756b61; text-align:center; }
+.error { padding:45px 0; }
+.error h2 { font:500 28px Georgia,serif; }
+.error p,.localError { color:#991b1b; }
+.error button,.backButton { min-height:40px; border:1px solid #b9a99b; background:#fff; color:#7b3f32; cursor:pointer; font-weight:800; }
+.backButton { margin:0 0 18px; padding:8px 12px; }
+.transcriptHeading { display:flex; align-items:start; justify-content:space-between; gap:18px; padding-right:42px; }
+.transcriptHeading>span { padding:5px 9px; border-radius:99px; background:#6b382c; color:#fff; font-size:12px; font-weight:700; }
+.transcriptText { min-height:320px; margin:18px 0 0; padding:20px; overflow:auto; border:1px solid #ded8cf; background:#fff; color:#2d2924; font:14px/1.65 Georgia,serif; white-space:pre-wrap; }
+.pdfFrame { width:100%; min-height:620px; margin-top:18px; border:1px solid #ded8cf; background:#fff; }
+@media (max-width:620px) {
+  .backdrop { padding:0; }
+  .dialog,.scrollBody { width:100%; max-height:100dvh; border-radius:0; }
+  .scrollBody { padding:24px 18px 40px; }
+  .facetGrid { grid-template-columns:1fr; }
+  .reviewCard,.transcriptHeading { flex-direction:column; }
+  .pdfFrame { min-height:70dvh; }
+}

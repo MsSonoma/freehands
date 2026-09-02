@@ -48,7 +48,6 @@ export async function POST(request){
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
   const file = (body?.file || '').toString()
-  const userId = body?.userId || user.id
   if (!file || file.includes('..') || file.includes('/') || file.includes('\\')) return NextResponse.json({ error:'Invalid file' }, { status: 400 })
   
   try {
@@ -60,7 +59,7 @@ export async function POST(request){
     const supabase = createClient(url, svc, { auth: { persistSession: false } })
     
     // Delete from Supabase Storage
-    const storagePath = `facilitator-lessons/${userId}/${file}`
+    const storagePath = `facilitator-lessons/${user.id}/${file}`
     const { error: deleteError } = await supabase.storage
       .from('lessons')
       .remove([storagePath])

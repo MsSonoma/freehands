@@ -4,11 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 
-/** Mark the user's browser as mid-onboarding so every redirect finds step 1. */
-function flagOnboardingStart() {
-	try { localStorage.setItem('ms_sonoma_onboarding_v1', '1'); } catch {}
-}
-
 export default function SignupPage() {
 	const router = useRouter();
 	const [email, setEmail] = useState('');
@@ -26,8 +21,7 @@ export default function SignupPage() {
 			if (!hasSupabaseEnv()) {
 				// Dev-friendly fallback
 				try { sessionStorage.setItem('facilitator_section_active', '1'); } catch {}
-				flagOnboardingStart();
-				router.push('/facilitator/learners/add?onboarding=1');
+				router.push('/facilitator/learners/add');
 				return;
 			}
 			const supabase = getSupabaseClient();
@@ -41,17 +35,16 @@ export default function SignupPage() {
 						options: emailRedirectTo ? { emailRedirectTo } : undefined,
 					});
 			if (signUpError) throw new Error(signUpError.message || 'Sign up failed');
+			// Subscribe to email list (fire-and-forget, never blocks signup)
+			try { fetch('/api/email/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }); } catch {}
 			// If email confirmation is enabled, Supabase returns a session=null and sends an email
 					if (!data?.session) {
-						// Flag so that when they click the confirmation link they land on step 1
-						flagOnboardingStart();
 						setInfo('Account created! Check your inbox for a confirmation email. After clicking the link, come back to mssonoma.app and sign in — we\'ll walk you through setup from there.');
 						return; // do not redirect if confirmation required
 					}
 					// Mark facilitator section as active to skip PIN on redirect
 					try { sessionStorage.setItem('facilitator_section_active', '1'); } catch {}
-					flagOnboardingStart();
-					router.push('/facilitator/learners/add?onboarding=1');
+					router.push('/facilitator/learners/add');
 		} catch (err) {
 			setError(err?.message || 'Sign up failed');
 		} finally {

@@ -1,7 +1,6 @@
 "use client";
 import { usePathname } from 'next/navigation';
 import LegalFooter from '@/components/LegalFooter';
-import OnboardingChecklist from '@/app/components/OnboardingChecklist';
 
 /** @param {{ children: React.ReactNode }} props */
 export default function FacilitatorLayout({ children }) {
@@ -14,7 +13,6 @@ export default function FacilitatorLayout({ children }) {
         {children}
       </main>
       {!hideFooter && <LegalFooter compact styleOverrides={{ marginTop: 0, padding: '0 12px' }} />}
-      <OnboardingChecklist />
     </div>
   );
 }

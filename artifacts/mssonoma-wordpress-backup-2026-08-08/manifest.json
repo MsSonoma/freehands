@@ -1,0 +1,58 @@
+{
+  "captured_at": "2026-08-08",
+  "site": "https://mssonoma.com",
+  "route": "/index.php?rest_route=/",
+  "site_settings_before": {
+    "title": "Ms. Sonoma",
+    "description": "Teach with Structure. Learn with Calm.",
+    "show_on_front": "page",
+    "page_on_front": 15
+  },
+  "pages": [
+    {
+      "id": 15,
+      "slug": "home-version-2",
+      "status": "publish",
+      "modified": "2026-06-05T16:55:10",
+      "template": "blank",
+      "title": "Home",
+      "backup_file": "home-before.html"
+    },
+    {
+      "id": 9,
+      "slug": "about",
+      "status": "publish",
+      "modified": "2026-06-05T16:55:13",
+      "template": "page-no-title",
+      "title": "About",
+      "backup_file": "about-before.html"
+    },
+    {
+      "id": 8,
+      "slug": "watch",
+      "status": "publish",
+      "modified": "2026-06-05T16:50:27",
+      "template": "page-no-title",
+      "title": "Watch",
+      "backup_file": "watch-before.html"
+    },
+    {
+      "id": 11,
+      "slug": "sign-up",
+      "status": "publish",
+      "modified": "2026-06-05T16:44:47",
+      "template": "page-no-title",
+      "title": "Sign Up",
+      "backup_file": "sign-up-before.html"
+    }
+  ],
+  "template_parts": [
+    {
+      "id": "bluehost-blueprint//footer",
+      "slug": "footer",
+      "status": "publish",
+      "backup_file": "footer-before.html"
+    }
+  ],
+  "note": "Full editable content captured before the live rewrite. WordPress revisions are also created by updates."
+}

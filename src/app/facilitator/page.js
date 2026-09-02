@@ -1,360 +1,399 @@
-"use client";
-import Link from 'next/link';
-import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ensurePinAllowed } from '@/app/lib/pinGate';
-import { useOnboarding, ONBOARDING_STEPS } from '@/app/hooks/useOnboarding';
+'use client'
 
-// Facilitator Hub
+import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { getSupabaseClient } from '@/app/lib/supabaseClient'
+import { ensurePinAllowed } from '@/app/lib/pinGate'
+import { listLearners } from '@/app/facilitator/learners/clientApi'
+import { countEducatorApprovedLessons, resolveFacilitatorHomeDecision } from '@/app/lib/facilitatorHome.mjs'
+import {
+  FACILITATOR_HOME_SHELL_STATES,
+  loadFacilitatorHomeSchedules,
+  resolveFacilitatorHomeShellState,
+  settleFacilitatorHomeTask,
+} from '@/app/lib/facilitatorHomeLoading.mjs'
+import { readPreparationSnapshot } from './prepare/preparationSnapshot'
+import { useAccessControl } from '@/app/hooks/useAccessControl'
+import GatedOverlay from '@/app/components/GatedOverlay'
+import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
+import { resolveSyllabusReadModel } from '@/app/lib/syllabus/timeline.mjs'
+import { resolveEffectiveTier } from '@/app/lib/entitlements'
+import styles from './facilitatorHome.module.css'
+
+const PREPARE_PATH = '/facilitator/prepare'
+
 export default function FacilitatorPage() {
-  const router = useRouter();
+  const router = useRouter()
+  const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: 'required' })
+  const [pinChecked, setPinChecked] = useState(false)
+  const [facilitatorName, setFacilitatorName] = useState('')
+  const [plan, setPlan] = useState('free')
+  const [learners, setLearners] = useState([])
+  const [learnerId, setLearnerId] = useState('')
+  const [syllabusPayload, setSyllabusPayload] = useState(null)
+  const [syllabusStatus, setSyllabusStatus] = useState('idle')
+  const [syllabusError, setSyllabusError] = useState('')
+  const [generatedLessons, setGeneratedLessons] = useState([])
+  const [scheduledKeys, setScheduledKeys] = useState({})
+  const [preparationSnapshot, setPreparationSnapshot] = useState(null)
+  const [sessionStatus, setSessionStatus] = useState('idle')
+  const [learnerStatus, setLearnerStatus] = useState('idle')
+  const [lessonStatus, setLessonStatus] = useState('idle')
+  const [scheduleStatus, setScheduleStatus] = useState('idle')
+  const [authToken, setAuthToken] = useState('')
+  const [learnerError, setLearnerError] = useState('')
+  const [scheduleWarning, setScheduleWarning] = useState('')
+  const [learnerRetry, setLearnerRetry] = useState(0)
 
-  const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState(null);
-  const [facilitatorName, setFacilitatorName] = useState('');
-  const [plan, setPlan] = useState(null);
-  const [pinChecked, setPinChecked] = useState(false);
-  const { step: onboardingStep, loaded: onboardingLoaded } = useOnboarding();
-
-  // Check PIN requirement on mount - this is the main entry point to facilitator section
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
+    if (authLoading || !isAuthenticated) return
+    let cancelled = false
+    ;(async () => {
       try {
-        const allowed = await ensurePinAllowed('facilitator-page');
+        const allowed = await ensurePinAllowed('facilitator-page')
         if (!allowed) {
-          router.push('/');
-          return;
+          router.push('/')
+          return
         }
-        if (!cancelled) setPinChecked(true);
-      } catch (e) {
-        if (!cancelled) setPinChecked(true);
+        if (!cancelled) setPinChecked(true)
+      } catch {
+        if (!cancelled) setPinChecked(true)
       }
-    })();
-    return () => { cancelled = true; };
-  }, [router]);
+    })()
+    return () => { cancelled = true }
+  }, [authLoading, isAuthenticated, router])
 
   useEffect(() => {
-    let cancelled = false;
-    let authSub = null;
-    (async () => {
-      try {
-        const supabase = getSupabaseClient();
-        if (supabase) {
-          const { data: { session } } = await supabase.auth.getSession();
-          setSession(session || null);
-          if (session?.user) {
-            // Fetch plan tier
-            try {
-              const { data: planRow } = await supabase
-                .from('profiles')
-                .select('plan_tier')
-                .eq('id', session.user.id)
-                .maybeSingle();
-              if (!cancelled && planRow?.plan_tier) setPlan(planRow.plan_tier);
-            } catch (e) {}
-            // Load name from profiles.full_name first, then fallback to auth metadata
-            try {
-              const { data: profRow } = await supabase
-                .from('profiles')
-                .select('full_name')
-                .eq('id', session.user.id)
-                .maybeSingle();
-              if (!cancelled) {
-                let name = '';
-                if (profRow && typeof profRow.full_name === 'string' && profRow.full_name.trim()) {
-                  name = profRow.full_name.trim();
-                }
-                if (!name) {
-                  const meta = session?.user?.user_metadata || {};
-                  name = (meta.full_name || meta.display_name || meta.name || '').trim();
-                }
-                setFacilitatorName(name);
-              }
-            } catch (e) {
-              if (!cancelled) {
-                const meta = session?.user?.user_metadata || {};
-                const name = (meta.full_name || meta.display_name || meta.name || '').trim();
-                setFacilitatorName(name);
-              }
-            }
-            // Try to get the canonical/effective tier from the billing summary API
-            try {
-              const token = session?.access_token || (await supabase.auth.getSession())?.data?.session?.access_token;
-              if (token) {
-                const res = await fetch('/api/billing/manage/summary', { headers: { Authorization: `Bearer ${token}` } });
-                const js = await res.json().catch((_e) => null);
-                if (res.ok && js) {
-                  const eff = (js?.effective_tier || js?.subscription?.tier || js?.plan_tier || null);
-                  if (eff) {
-                    if (!cancelled) setPlan(String(eff).toLowerCase());
-                  }
-                }
-              }
-            } catch (e) {}
-          }
-          // Subscribe to auth changes to keep UI in sync
-          const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-            if (!cancelled) setSession(s || null);
-          });
-          authSub = sub?.subscription;
+    if (!pinChecked || !isAuthenticated) return
+    let cancelled = false
+    setSessionStatus('loading')
+    ;(async () => {
+      const sessionResult = await settleFacilitatorHomeTask(async () => {
+        const supabase = getSupabaseClient()
+        return supabase.auth.getSession()
+      }, { fallback: null, label: 'Facilitator session' })
+      if (cancelled) return
+
+      const authSession = sessionResult.value?.data?.session || null
+      const token = authSession?.access_token || ''
+      setAuthToken(token)
+      setSessionStatus('ready')
+
+      if (authSession?.user) {
+        const meta = authSession.user.user_metadata || {}
+        setFacilitatorName((meta.full_name || meta.display_name || meta.name || '').trim())
+
+        const profileResult = await settleFacilitatorHomeTask(async () => {
+          const supabase = getSupabaseClient()
+          return supabase
+              .from('profiles')
+              .select('full_name, subscription_tier, plan_tier')
+              .eq('id', authSession.user.id)
+              .maybeSingle()
+        }, { fallback: null, label: 'Facilitator profile' })
+        if (!cancelled && profileResult.ok) {
+          const profile = profileResult.value?.data
+          if (profile?.full_name) setFacilitatorName(profile.full_name)
+          setPlan(resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier))
         }
-      } catch (e) {}
-      if (!cancelled) setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-      try { authSub?.unsubscribe?.() } catch (e) {}
-    };
-  }, []);
+      }
+    })()
+    return () => { cancelled = true }
+  }, [isAuthenticated, pinChecked])
 
-  // Listen for profile name updates (from Account page)
   useEffect(() => {
-    const onNameUpdate = (e) => {
-      try {
-        const detail = e?.detail || {};
-        if (detail?.name) setFacilitatorName(String(detail.name));
-      } catch (e) {}
-    };
-    window.addEventListener('ms:profile:name:updated', onNameUpdate);
-    return () => window.removeEventListener('ms:profile:name:updated', onNameUpdate);
-  }, []);
-
-  // Clean up cache-busting param from trampoline
-  useEffect(() => {
+    if (!pinChecked || !isAuthenticated) return
+    let cancelled = false
+    setLearnerStatus('loading')
+    setLearnerError('')
     try {
-      if (typeof window === 'undefined') return;
-      const url = new URL(window.location.href);
-      if (url.searchParams.has('rts')) {
-        // User just returned from OAuth, mark facilitator section as active to skip PIN
-        try { sessionStorage.setItem('facilitator_section_active', '1'); } catch {}
-        url.searchParams.delete('rts');
-        window.history.replaceState(null, '', url.toString());
-      }
-    } catch (e) {}
-  }, []);
-
-  // Clear any stale Stripe action locks when this page becomes visible again
-  useEffect(() => {
-    const clearLocks = () => {
-      try {
-        const keys = Object.keys(sessionStorage || {});
-        for (const k of keys) if (k.startsWith('stripe_action_lock_')) sessionStorage.removeItem(k);
-      } catch (e) {}
-    };
-    const onVis = () => {
-      if (document.visibilityState === 'visible') {
-        try {
-          const pending = sessionStorage.getItem('stripe_nav_pending');
-          if (pending) {
-            sessionStorage.removeItem('stripe_nav_pending');
-            window.location.reload();
-            return;
-          }
-        } catch (e) {}
-        clearLocks();
-      }
-    };
-    const onShow = (e) => {
-      if (e && e.persisted) {
-        try { window.location.reload(); return; } catch (e) {}
-        clearLocks();
-      }
-    };
-    document.addEventListener('visibilitychange', onVis);
-    window.addEventListener('pageshow', onShow);
-    window.addEventListener('focus', onVis);
-    return () => {
-      document.removeEventListener('visibilitychange', onVis);
-      window.removeEventListener('pageshow', onShow);
-      window.removeEventListener('focus', onVis);
-    };
-  }, []);
-
-  // Auto-redirect first-time users to the learners setup page
-  useEffect(() => {
-    if (!pinChecked || !onboardingLoaded) return;
-    if (onboardingStep === ONBOARDING_STEPS.CREATE_LEARNER) {
-      router.replace('/facilitator/learners/add?onboarding=1');
+      setPreparationSnapshot(readPreparationSnapshot())
+    } catch {
+      setPreparationSnapshot(null)
     }
-  }, [pinChecked, onboardingLoaded, onboardingStep, router]);
 
-  // Don't render page content until PIN check is complete
-  if (!pinChecked) {
-    return <div style={{ padding: '12px 24px 0', textAlign: 'center' }}><p>Loading…</p></div>;
+    ;(async () => {
+      const result = await settleFacilitatorHomeTask(() => listLearners(), {
+        fallback: [],
+        label: 'Learner list',
+      })
+      if (cancelled) return
+      setLearners(Array.isArray(result.value) ? result.value : [])
+      const safeLearners = Array.isArray(result.value) ? result.value : []
+      const remembered = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : ''
+      setLearnerId((current) => current || (safeLearners.some((learner) => String(learner.id) === remembered) ? remembered : (safeLearners[0]?.id || '')))
+      if (!result.ok) {
+        setLearnerError('We could not load learner information. You can still use Advanced Tools or try again.')
+        setLearnerStatus('error')
+        return
+      }
+      setLearnerStatus('ready')
+    })()
+    return () => { cancelled = true }
+  }, [isAuthenticated, learnerRetry, pinChecked])
+
+  useEffect(() => {
+    if (!learnerId) {
+      setSyllabusPayload(null)
+      setSyllabusStatus('ready')
+      return
+    }
+    if (sessionStatus !== 'ready') {
+      setSyllabusStatus('loading')
+      return
+    }
+    if (!authToken) {
+      setSyllabusPayload(null)
+      setSyllabusError('The authenticated Syllabus read path is unavailable.')
+      setSyllabusStatus('ready')
+      return
+    }
+    let cancelled = false
+    setSyllabusStatus('loading')
+    setSyllabusError('')
+    ;(async () => {
+      try {
+        const response = await fetch(`/api/syllabus?learnerId=${encodeURIComponent(learnerId)}`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${authToken}` },
+        })
+        const json = await response.json()
+        if (!response.ok) throw new Error(json.error || 'Could not load the Syllabus')
+        if (!cancelled) setSyllabusPayload(json)
+      } catch (cause) {
+        if (!cancelled) {
+          setSyllabusPayload(null)
+          setSyllabusError(cause.message || 'Could not load the Syllabus')
+        }
+      } finally {
+        if (!cancelled) setSyllabusStatus('ready')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [authToken, learnerId, sessionStatus])
+
+  useEffect(() => {
+    if (!pinChecked || !isAuthenticated || sessionStatus !== 'ready') return
+    let cancelled = false
+    if (!authToken) {
+      setGeneratedLessons([])
+      setLessonStatus('ready')
+      return
+    }
+    setLessonStatus('loading')
+
+    ;(async () => {
+      const result = await settleFacilitatorHomeTask(async ({ signal }) => {
+        const response = await fetch('/api/facilitator/lessons/list', {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${authToken}` },
+          signal,
+        })
+        if (!response.ok) throw new Error(`Lesson list returned ${response.status}`)
+        const lessons = await response.json()
+        return Array.isArray(lessons) ? lessons : []
+      }, { fallback: [], label: 'Lesson list' })
+      if (!cancelled) {
+        setGeneratedLessons(result.value)
+        setLessonStatus('ready')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [authToken, isAuthenticated, pinChecked, sessionStatus])
+
+  useEffect(() => {
+    if (!pinChecked || !isAuthenticated || sessionStatus !== 'ready') return
+    if (learnerStatus !== 'ready' && learnerStatus !== 'error') return
+    let cancelled = false
+
+    if (!authToken || learnerStatus === 'error' || learners.length === 0) {
+      setScheduledKeys({})
+      setScheduleWarning('')
+      setScheduleStatus('ready')
+      return
+    }
+
+    setScheduleStatus('loading')
+    setScheduleWarning('')
+    const today = new Date().toISOString().slice(0, 10)
+    const future = new Date()
+    future.setFullYear(future.getFullYear() + 1)
+    const endDate = future.toISOString().slice(0, 10)
+
+    ;(async () => {
+      const result = await loadFacilitatorHomeSchedules({
+        learners,
+        loadSchedule: async (learner, { signal }) => {
+          const response = await fetch(`/api/lesson-schedule?learnerId=${encodeURIComponent(learner.id)}&startDate=${today}&endDate=${endDate}&includeAll=1`, {
+            cache: 'no-store',
+            headers: { Authorization: `Bearer ${authToken}` },
+            signal,
+          })
+          if (!response.ok) throw new Error(`Schedule returned ${response.status}`)
+          return response.json()
+        },
+      })
+      if (!cancelled) {
+        setScheduledKeys(result.scheduledKeys)
+        setScheduleWarning(result.failures > 0
+          ? `Some schedule information is unavailable (${result.failures} request${result.failures === 1 ? '' : 's'}).`
+          : '')
+        setScheduleStatus('ready')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [authToken, isAuthenticated, learnerStatus, learners, pinChecked, sessionStatus])
+
+  const decision = useMemo(() => {
+    if (learnerStatus === 'idle' || learnerStatus === 'loading' || sessionStatus !== 'ready' || scheduleStatus === 'idle' || scheduleStatus === 'loading') {
+      return {
+        kind: 'LOADING',
+        title: 'Loading your next decision…',
+        body: 'The Home page is ready while learner and schedule information finishes loading.',
+      }
+    }
+    if (learnerError) {
+      return {
+        kind: 'LOAD_ERROR',
+        title: 'Learner information is unavailable',
+        body: learnerError,
+      }
+    }
+    return resolveFacilitatorHomeDecision({ learners, scheduledKeys, preparationSnapshot, preparePath: PREPARE_PATH })
+  }, [learnerError, learnerStatus, learners, preparationSnapshot, scheduleStatus, scheduledKeys, sessionStatus])
+
+  const shellState = resolveFacilitatorHomeShellState({ authLoading, isAuthenticated, pinChecked })
+
+  if (shellState === FACILITATOR_HOME_SHELL_STATES.LOADING) {
+    return <main style={{ padding: '12px 24px' }}><p style={{ color: '#6b7280' }}>Loading...</p></main>
   }
 
-  const mainCardStyle = {
-    background: '#fff',
-    border: '1px solid #e5e7eb',
-    borderRadius: 8,
-    padding: '14px',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-    textDecoration: 'none',
-    color: 'inherit'
+  if (shellState === FACILITATOR_HOME_SHELL_STATES.AUTH_GATE) {
+    return (
+      <main style={{ minHeight: 320 }}>
+        <GatedOverlay
+          show
+          gateType={gateType || 'auth'}
+          feature="Facilitator Home"
+          emoji="🔒"
+          description="Sign in to manage learners, prepare lessons, schedule learning, and review progress."
+          benefits={[
+            'Create and manage learner profiles',
+            'Prepare and approve personalized lessons',
+            'Schedule lessons and review saved progress',
+          ]}
+        />
+      </main>
+    )
   }
 
-  const iconStyle = {
-    fontSize: 24,
-    flexShrink: 0,
-    width: 36,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  }
+  const advancedTools = [
+    { label: 'Learners', href: '/facilitator/learners', icon: '👥' },
+    { label: 'Syllabus', href: '/facilitator/syllabus', icon: '🧭' },
+    { label: 'Detailed lesson builder', href: '/facilitator/generator?advanced=1' },
+    { label: 'Lesson Library', href: '/facilitator/lessons', icon: '📚' },
+    { label: 'Calendar', href: '/facilitator/calendar', icon: '📅' },
+    { label: 'Lesson Planner', href: '/facilitator/calendar?tab=planner', icon: '📅' },
+    { label: 'Custom Subjects', href: '/facilitator/calendar?tab=subjects' },
+    { label: 'Portfolio tools', href: '/facilitator/calendar?portfolio=1' },
+    { label: 'Account', href: '/facilitator/account', icon: '⚙️' },
+    { label: 'Mr. Mentor', href: '/facilitator/mr-mentor', icon: '🧠' },
+  ]
+  const selectedLearner = learners.find((learner) => String(learner.id) === String(learnerId))
+  const syllabusModel = resolveSyllabusReadModel(syllabusPayload)
 
   return (
-    <div style={{ padding: '7px' }}>
-      <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
-        <h1 style={{ marginTop: 0, marginBottom: 4, textAlign: 'left', fontSize: 22 }}>
-          {facilitatorName ? `Hi, ${facilitatorName}!` : 'Facilitator'}
-        </h1>
-        <p style={{ color: '#6b7280', marginTop: 0, marginBottom: 16, textAlign: 'left', fontSize: 14 }}>
-          Choose a section to manage your homeschool or classroom.
-        </p>
-
-        {/* Main sections grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: 12,
-          marginBottom: 16
-        }}>
-          {/* Account */}
-          <Link
-            href="/facilitator/account"
-            style={mainCardStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-              e.currentTarget.style.borderColor = '#111'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
-              e.currentTarget.style.borderColor = '#e5e7eb'
-            }}
-          >
-            <div style={iconStyle}>⚙️</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Account</div>
-              <div style={{ fontSize: 13, color: '#6b7280' }}>Manage profile, security, preferences, and billing</div>
-              <div style={{ fontSize: 13, color: '#6b7280' }}>Subscription: {loading ? '…' : (plan || 'free')}</div>
-            </div>
-          </Link>
-
-          {/* Learners */}
-          <Link
-            href="/facilitator/learners"
-            style={mainCardStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-              e.currentTarget.style.borderColor = '#111'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
-              e.currentTarget.style.borderColor = '#e5e7eb'
-            }}
-          >
-            <div style={iconStyle}>👥</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Learners</div>
-              <div style={{ fontSize: 13, color: '#6b7280' }}>Add and manage your students</div>
-            </div>
-          </Link>
-
-          {/* Lessons */}
-          <Link
-            href="/facilitator/lessons"
-            style={mainCardStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-              e.currentTarget.style.borderColor = '#111'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
-              e.currentTarget.style.borderColor = '#e5e7eb'
-            }}
-          >
-            <div style={iconStyle}>📚</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Lessons</div>
-              <div style={{ fontSize: 13, color: '#6b7280' }}>Browse and assign lesson content</div>
-            </div>
-          </Link>
-
-          {/* Calendar */}
-          <Link
-            href="/facilitator/calendar"
-            style={mainCardStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-              e.currentTarget.style.borderColor = '#111'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)'
-              e.currentTarget.style.borderColor = '#e5e7eb'
-            }}
-          >
-            <div style={iconStyle}>📅</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: 15, color: '#111', marginBottom: 2 }}>Calendar</div>
-              <div style={{ fontSize: 13, color: '#6b7280' }}>View scheduled lessons</div>
-            </div>
-          </Link>
+    <main className={styles.page}>
+      <header className={styles.pageHeader}>
+        <div>
+          <h1 className={styles.pageTitle}>{facilitatorName ? `Hi, ${facilitatorName}` : 'Facilitator Home'}</h1>
+          <p className={styles.pageSubtitle}>The active Syllabus is the center of the learner&apos;s educational work.</p>
         </div>
+        {learners.length > 0 && <label className={styles.learnerPicker}>Learner
+          <select value={learnerId} onChange={(event) => { setLearnerId(event.target.value); localStorage.setItem('learner_id', event.target.value) }}>
+            {learners.map((learner) => <option key={learner.id} value={learner.id}>{learner.name}</option>)}
+          </select>
+        </label>}
+      </header>
 
-        {/* Mr. Mentor video button */}
-        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
-          <Link 
-            href="/facilitator/mr-mentor"
-            title="Mr. Mentor"
-            style={{
-              display: 'block',
-              width: 80,
-              height: 80,
-              border: '2px solid #111',
-              borderRadius: 12,
-              overflow: 'hidden',
-              padding: 0,
-              textDecoration: 'none',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.05)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-            }}
-          >
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: 'block'
-              }}
-            >
-              <source src="/media/Mr Mentor.mp4" type="video/mp4" />
-            </video>
-          </Link>
+      {scheduleWarning && <div role="status" className={styles.warning}>{scheduleWarning}</div>}
+
+      <section className={styles.syllabusHome} aria-label="Selected learner Syllabus">
+        {syllabusStatus === 'loading' && <p className={styles.syllabusLoading}>Opening {selectedLearner?.name || 'learner'}&apos;s Syllabus…</p>}
+        {syllabusError && <div role="alert" className={styles.warning}>{syllabusError}</div>}
+        {syllabusStatus === 'ready' && syllabusModel.kind === 'active' && (
+          <SyllabusDocument
+            revision={syllabusModel.revision}
+            forecastItems={syllabusModel.forecast_items}
+            timelineItems={syllabusModel.timeline_items}
+            proposedReforecast={syllabusModel.proposed_reforecast}
+            learnerName={selectedLearner?.name || ''}
+            role="facilitator"
+            learnerId={learnerId}
+            planTier={plan}
+          />
+        )}
+        {syllabusStatus === 'ready' && learnerId && !syllabusError && syllabusModel.kind === 'fallback' && (
+          <div className={styles.syllabusFallback}>
+            <p className={styles.eyebrow}>Syllabus not active</p>
+            <h2>Build {selectedLearner?.name || 'this learner'}&apos;s first Syllabus</h2>
+            <p>The existing weekly pattern, planning guidance, goals notes, and future planned lessons remain available as one-time seed material. Nothing changes until you explicitly activate the proposal.</p>
+            <Link href="/facilitator/syllabus" className={styles.primaryAction}>Review seed proposal</Link>
+          </div>
+        )}
+      </section>
+
+      <section className={styles.primaryCard}>
+        <div className={styles.primaryLayout}>
+          <div className={styles.primaryCopy}>
+            <div className={styles.eyebrow}>Supporting action</div>
+            <h2 className={styles.decisionTitle}>{decision.title}</h2>
+            <p className={styles.decisionBody}>{decision.body}</p>
+          </div>
+          {decision.kind === 'LOAD_ERROR' && (
+            <button type="button" onClick={() => setLearnerRetry((value) => value + 1)} className={styles.primaryAction}>
+              Try again
+            </button>
+          )}
+          {decision.href && (
+            <Link href={decision.href} className={styles.primaryAction}>
+              {decision.label}
+            </Link>
+          )}
         </div>
-        <p style={{ textAlign: 'center', color: '#555', fontSize: 14, marginTop: 8 }}>
-          Talk to Mr. Mentor
-        </p>
-      </div>
-    </div>
-  );
+      </section>
+
+      <section className={styles.statusGrid} aria-label="Facilitator status">
+        <div className={styles.statusItem}>
+          <strong className={styles.statusValue}>{learnerStatus === 'ready' ? learners.length : '—'}</strong>
+          <div className={styles.statusLabel}>Learners</div>
+        </div>
+        <div className={styles.statusItem}>
+          <strong className={styles.statusValue}>{lessonStatus === 'ready' ? countEducatorApprovedLessons(generatedLessons) : '—'}</strong>
+          <div className={styles.statusLabel}>Approved lessons</div>
+        </div>
+        <div className={styles.statusItem}>
+          <strong className={styles.statusValue}>{scheduleStatus === 'ready' ? Object.keys(scheduledKeys).length : '—'}</strong>
+          <div className={styles.statusLabel}>Scheduled</div>
+        </div>
+        <div className={styles.statusItem}>
+          <strong className={styles.statusValue}>{sessionStatus === 'ready' ? plan : '—'}</strong>
+          <div className={styles.statusLabel}>Plan</div>
+        </div>
+      </section>
+
+      <section aria-labelledby="advanced-tools-heading" className={styles.siblingTools}>
+        <h2 id="advanced-tools-heading" className={styles.toolsHeading}>Other facilitator functions</h2>
+        <div className={styles.toolsGrid}>
+          {advancedTools.map(({ label, href, icon }) => (
+            <Link key={href} href={href} className={styles.toolCard}>
+              {icon && <span aria-hidden="true" className={styles.toolIcon}>{icon}</span>}
+              <span className={styles.toolName}>{label}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+    </main>
+  )
 }
-

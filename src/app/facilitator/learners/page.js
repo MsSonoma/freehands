@@ -11,6 +11,7 @@ import { useAccessControl } from '@/app/hooks/useAccessControl';
 import GatedOverlay from '@/app/components/GatedOverlay';
 import TutorialGuard from '@/components/TutorialGuard';
 import LearnerEditOverlay from './components/LearnerEditOverlay';
+import { updateFollowUpSettings } from '@/app/lib/followUpsClient';
 import { PageHeader, InlineExplainer } from '@/components/FacilitatorHelp';
 import { broadcastLearnerSettingsPatch } from '@/app/lib/learnerSettingsBus';
 
@@ -28,6 +29,7 @@ export default function LearnersPage() {
 	const [editingTargets, setEditingTargets] = useState(null);
 	const [editingAiFeatures, setEditingAiFeatures] = useState(null);
 	const [editingTimers, setEditingTimers] = useState(null);
+	const [editingReviewSettings, setEditingReviewSettings] = useState(null);
 
 	// Check PIN requirement on mount
 	useEffect(() => {
@@ -175,6 +177,19 @@ export default function LearnersPage() {
 		}
 	};
 
+	const handlePatchLearner = async (learner, patch) => {
+		if (!learner?.id || !patch || typeof patch !== 'object') return;
+		const idx = items.findIndex(item => item.id === learner.id);
+		if (idx === -1) return;
+		const isFollowUpPatch = Object.keys(patch).some((key) => (
+			['daily_followups_enabled', 'weekly_reviews_enabled', 'weekly_review_day'].includes(key)
+		));
+		if (isFollowUpPatch) await updateFollowUpSettings(learner.id, patch);
+		else await updateLearner(learner.id, patch);
+		setItems(prev => prev.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
+		broadcastLearnerSettingsPatch(learner.id, patch);
+	};
+
 	// Card styling matching Account page
 	const cardStyle = {
 		background: '#fff',
@@ -209,9 +224,25 @@ export default function LearnersPage() {
 				.button-text-tablet {
 					display: none !important;
 				}
+				.learner-card-actions {
+					position: static !important;
+					top: auto !important;
+					right: auto !important;
+					transform: none !important;
+					margin-top: 10px;
+					flex-wrap: wrap;
+				}
 				@media (min-width: 640px) {
 					.button-text-tablet {
 						display: inline !important;
+					}
+					.learner-card-actions {
+						position: absolute !important;
+						top: 50% !important;
+						right: 8px !important;
+						transform: translateY(-50%) !important;
+						margin-top: 0;
+						flex-wrap: nowrap;
 					}
 				}
 			`}</style>
@@ -403,7 +434,7 @@ export default function LearnersPage() {
 											Grade {learner.grade || 'K'} • {learner.humor_level || 'calm'}
 										</div>
 										<div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
-											{learner.golden_keys || 0} 🔑 • Targets: {learner.targets?.comprehension ?? learner.comprehension ?? '–'}-{learner.targets?.test ?? learner.test ?? '–'}
+											{learner.golden_keys || 0} 🔑 • Questions/phase: {learner.targets?.exercise ?? learner.exercise ?? '–'}-{learner.targets?.test ?? learner.test ?? '–'}
 										</div>
 									</div>
 
@@ -447,7 +478,7 @@ export default function LearnersPage() {
 										e.stopPropagation();
 										setEditingTargets(learner);
 									}}
-									title="Learning Targets"
+									title="Questions per Phase"
 									style={{
 										border: 'none',
 										background: '#3b82f6',
@@ -462,7 +493,7 @@ export default function LearnersPage() {
 									}}
 								>
 									<span>🎯</span>
-									<span style={{ display: 'none' }} className="button-text-tablet">Targets</span>
+									<span style={{ display: 'none' }} className="button-text-tablet">Questions</span>
 								</button>
 								<button
 									onClick={(e) => {
@@ -511,9 +542,32 @@ export default function LearnersPage() {
 								<button
 									onClick={(e) => {
 										e.stopPropagation();
+										setEditingReviewSettings(learner);
+									}}
+									title="Review Settings"
+									aria-label={`Review Settings for ${learner.name || 'learner'}`}
+									style={{
+										border: 'none',
+										background: '#059669',
+										color: '#fff',
+										borderRadius: 6,
+										padding: '4px 8px',
+										fontSize: 14,
+										cursor: 'pointer',
+										display: 'flex',
+										alignItems: 'center',
+										gap: 6
+									}}
+								>
+									<span aria-hidden="true">🔁</span>
+									<span style={{ display: 'none' }} className="button-text-tablet">Reviews</span>
+								</button>
+								<button
+									onClick={(e) => {
+										e.stopPropagation();
 										router.push(`/facilitator/learners/${learner.id}/transcripts`);
 									}}
-									title="Transcripts"
+									title="Learning history"
 									style={{
 										border: 'none',
 										background: '#6b7280',
@@ -528,7 +582,7 @@ export default function LearnersPage() {
 									}}
 								>
 									<span>📄</span>
-									<span style={{ display: 'none' }} className="button-text-tablet">Transcripts</span>
+									<span style={{ display: 'none' }} className="button-text-tablet">History</span>
 								</button>
 								</div>
 								</div>
@@ -552,12 +606,7 @@ export default function LearnersPage() {
 				}
 			}}
 			onPatch={async (patch) => {
-				const idx = items.findIndex(item => item.id === editingBasicInfo.id);
-				if (idx === -1) return;
-				const learner = items[idx];
-				await updateLearner(learner.id, patch);
-				setItems(prev => prev.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
-				broadcastLearnerSettingsPatch(learner.id, patch);
+				await handlePatchLearner(editingBasicInfo, patch);
 			}}
 			onDelete={handleDelete}
 		/>
@@ -573,6 +622,9 @@ export default function LearnersPage() {
 					await handleSaveLearner(idx, updates);
 				}
 			}}
+			onPatch={async (patch) => {
+				await handlePatchLearner(editingTargets, patch);
+			}}
 		/>
 
 		{/* AI Features Overlay */}
@@ -585,6 +637,9 @@ export default function LearnersPage() {
 				if (idx !== -1) {
 					await handleSaveLearner(idx, updates);
 				}
+			}}
+			onPatch={async (patch) => {
+				await handlePatchLearner(editingAiFeatures, patch);
 			}}
 		/>
 
@@ -599,6 +654,25 @@ export default function LearnersPage() {
 					await handleSaveLearner(idx, updates);
 				}
 			}}
+			onPatch={async (patch) => {
+				await handlePatchLearner(editingTimers, patch);
+			}}
+		/>
+
+		{/* Review Settings Overlay */}
+		<LearnerEditOverlay
+			isOpen={!!editingReviewSettings}
+			learner={editingReviewSettings ? { ...editingReviewSettings, initialTab: 'reviews' } : null}
+			onClose={() => setEditingReviewSettings(null)}
+			onSave={async (updates) => {
+				const idx = items.findIndex(item => item.id === editingReviewSettings.id);
+				if (idx !== -1) {
+					await handleSaveLearner(idx, updates);
+				}
+			}}
+			onPatch={async (patch) => {
+				await handlePatchLearner(editingReviewSettings, patch);
+			}}
 		/>
 		
 		<GatedOverlay
@@ -610,7 +684,7 @@ export default function LearnersPage() {
 			benefits={[
 				'Create and manage multiple learners',
 				'Track progress and performance across lessons',
-				'Customize grade levels and learning targets',
+				'Customize grade levels and questions per phase',
 				'Sync learner data across all your devices'
 			]}
 		/>

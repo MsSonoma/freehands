@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * Session Page V2 - Full Session Flow
@@ -38,6 +38,7 @@ import { DiscussionPhase } from './DiscussionPhase';
 import { PhaseOrchestrator } from './PhaseOrchestrator';
 import { SnapshotService } from './SnapshotService';
 import { deriveResumePhaseFromSnapshot } from './resumePhase';
+import { requireProtectedSessionCreation } from './protectedSessionBoundary.mjs';
 import { TimerService } from './TimerService';
 import { KeyboardService } from './KeyboardService';
 import { OpeningActionsController } from './OpeningActionsController';
@@ -49,8 +50,10 @@ import GamesOverlay from '../components/games/GamesOverlay';
 import EventBus from './EventBus';
 import { loadLesson, fetchTTS } from './services';
 import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech, ensureQuestionMark } from '../utils/questionFormatting';
+import { buildAcceptableList, judgeAnswer } from './judging';
+import { deriveCorrectAnswerText } from '../utils/questionFormatting';
 import { getSnapshotStorageKey } from '../utils/snapshotPersistenceUtils';
-import { ensurePinAllowed } from '@/app/lib/pinGate';
+import { ensurePinAllowed, requestFacilitatorPinException } from '@/app/lib/pinGate';
 import { upsertMedal } from '@/app/lib/medalsClient';
 import { appendTranscriptSegment, updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
@@ -60,6 +63,39 @@ import { useSessionTracking } from '@/app/hooks/useSessionTracking';
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js';
 import { STAGE_2_EVIDENCE_EVENT_TYPES } from '@/app/lib/masteryEvidence/constants.js';
 import { createLegacyItemFingerprint, summarizeEvidenceItem } from '@/app/lib/masteryEvidence/items.js';
+import { buildItemIdentity } from '@/app/lib/masteryEvidence/identity.js';
+import {
+  ASSESSMENT_ROLES,
+  analyzeAssessmentIsolation,
+  buildInstructionalLessonView,
+  getReservedAssessmentItems,
+  roleForPhase,
+  tagItemsForPhase,
+} from '@/app/lib/masteryEvidence/assessmentIsolation.js';
+import {
+  BASELINE_EVIDENCE_PURPOSE,
+  BASELINE_PROTOCOL_VERSION,
+  BASELINE_STATUSES,
+  BASELINE_UNAVAILABLE_REASONS,
+  buildBaselinePlan,
+  hasInstructionBegunFromSnapshot,
+} from '@/app/lib/masteryEvidence/baseline.js';
+import {
+  INDEPENDENT_MASTERY_PROTOCOL_VERSION,
+  INDEPENDENCE_REASONS,
+  MASTERY_CHECK_ROLES,
+  buildMasteryEligibilityContext,
+  classifyMasteryOutcome,
+  qualifyMasteryOpportunity,
+} from '@/app/lib/masteryEvidence/mastery.js';
+import {
+  RETENTION_EVIDENCE_PURPOSE,
+  RETENTION_PROTOCOL_VERSION,
+  RETENTION_QUALIFICATION_STATUSES,
+  buildRetentionPlan,
+  classifyRetentionOutcome,
+  qualifyRetentionOpportunity,
+} from '@/app/lib/masteryEvidence/retention.js';
 import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay';
@@ -118,7 +154,7 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
     if (pct >= 70) return 'bronze';
     return null;
   };
-
+  
   const emojiForTier = (tier) => {
     if (tier === 'gold') return '🥇';
     if (tier === 'silver') return '🥈';
@@ -477,6 +513,8 @@ function SessionPageV2Inner() {
 
   const lessonId = searchParams?.get('lesson') || '';
   const subjectParam = searchParams?.get('subject') || 'math'; // Subject folder for lesson lookup
+  const learnerIdParam = searchParams?.get('learnerId') || '';
+  const occurrenceIdParam = searchParams?.get('occurrenceId') || '';
   const regenerateParam = searchParams?.get('regenerate'); // Support generated lessons
   const goldenKeyFromUrl = searchParams?.get('goldenKey') === 'true';
 
@@ -534,11 +572,61 @@ function SessionPageV2Inner() {
   const [lessonData, setLessonData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [executionAuthorization, setExecutionAuthorization] = useState(subjectParam === 'demo' ? 'allowed' : 'pending');
+  const [executionAuthorizationError, setExecutionAuthorizationError] = useState(null);
+  const [authorizedOccurrenceId, setAuthorizedOccurrenceId] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    async function authorizeExecution() {
+      if (subjectParam === 'demo') {
+        setExecutionAuthorization('allowed');
+        return;
+      }
+      setExecutionAuthorization('pending');
+      setExecutionAuthorizationError(null);
+      try {
+        const learnerId = learnerIdParam || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : '');
+        if (!learnerId || !lessonId) throw new Error('A learner and Syllabus lesson occurrence are required.');
+        const supabase = getSupabaseClient();
+        const { data: sessionResult } = await supabase?.auth.getSession() || {};
+        const token = sessionResult?.session?.access_token;
+        if (!token) throw new Error('Sign in is required to authorize this Syllabus lesson.');
+        const lessonKey = `${subjectParam}/${lessonId.endsWith('.json') ? lessonId : `${lessonId}.json`}`;
+        const requestAuthorization = async (exceptionPin) => {
+          const response = await fetch('/api/syllabus/execution', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ learnerId, lessonKey, occurrenceId: occurrenceIdParam, instructionalTeacher: 'sonoma', ...(exceptionPin ? { exceptionPin } : {}) }),
+          });
+          return { response, json: await response.json().catch(() => ({})) };
+        };
+        let result = await requestAuthorization();
+        if (result.response.status === 409 && result.json?.code === 'SYLLABUS_EXECUTION_PIN_REQUIRED') {
+          const pin = await requestFacilitatorPinException({ message: result.json.error });
+          if (!pin) throw new Error('This Syllabus occurrence was not authorized.');
+          result = await requestAuthorization(pin);
+        }
+        if (!result.response.ok || !result.json?.ok || !result.json?.occurrenceId || result.json?.instructionalTeacher !== 'sonoma') throw new Error(result.json?.error || 'This lesson is not assigned to Ms. Sonoma.');
+        if (!cancelled) {
+          setAuthorizedOccurrenceId(result.json.occurrenceId);
+          setExecutionAuthorization('allowed');
+        }
+      } catch (cause) {
+        if (!cancelled) {
+          setExecutionAuthorization('denied');
+          setExecutionAuthorizationError(cause?.message || 'This Syllabus occurrence is not authorized.');
+        }
+      }
+    }
+    authorizeExecution();
+    return () => { cancelled = true; };
+  }, [learnerIdParam, lessonId, occurrenceIdParam, subjectParam]);
 
   // Canonical per-lesson persistence key (lesson == session identity)
   const lessonKey = useMemo(() => deriveCanonicalLessonKey({ lessonData, lessonId }), [lessonData, lessonId]);
 
-  // Golden Key lookup/persistence key MUST match V1 + /learn/lessons convention.
+  // Golden Key lookup/persistence key MUST match V1 + /learn convention.
   // V1 stored golden keys under `${subject}/${lesson}` (including .json when present).
   const goldenKeyLessonKey = useMemo(() => {
     if (!subjectParam || !lessonId) return '';
@@ -561,6 +649,9 @@ function SessionPageV2Inner() {
   }, [lessonId, lessonData?.key, lessonKey]);
   
   const [currentPhase, setCurrentPhase] = useState('idle');
+  const [completionCommitState, setCompletionCommitState] = useState('idle');
+  const completionPayloadRef = useRef(null);
+  const completionCommitInFlightRef = useRef(false);
   const currentPhaseRef = useRef('idle');
   useEffect(() => {
     currentPhaseRef.current = currentPhase;
@@ -580,6 +671,24 @@ function SessionPageV2Inner() {
   const [sentenceIndex, setSentenceIndex] = useState(0);
   const [totalSentences, setTotalSentences] = useState(0);
   const [isInSentenceMode, setIsInSentenceMode] = useState(true);
+
+  const [baselineState, setBaselineState] = useState('idle'); // idle | awaiting-response | complete | unavailable
+  const baselineStateRef = useRef('idle');
+  useEffect(() => {
+    baselineStateRef.current = baselineState;
+  }, [baselineState]);
+  const [baselinePlan, setBaselinePlan] = useState(null);
+  const baselinePlanRef = useRef(null);
+  const [baselineIndex, setBaselineIndex] = useState(0);
+  const baselineIndexRef = useRef(0);
+  useEffect(() => {
+    baselineIndexRef.current = baselineIndex;
+  }, [baselineIndex]);
+  const [baselineAnswer, setBaselineAnswer] = useState('');
+  const [baselineMessage, setBaselineMessage] = useState('');
+  const [baselineSubmitting, setBaselineSubmitting] = useState(false);
+  const baselineInstructionTargetRef = useRef(null);
+  const baselineResponsesRef = useRef([]);
   
   const [comprehensionState, setComprehensionState] = useState('idle');
   const comprehensionStateRef = useRef('idle');
@@ -629,6 +738,27 @@ function SessionPageV2Inner() {
   const [testReviewAnswer, setTestReviewAnswer] = useState(null);
   const [testReviewIndex, setTestReviewIndex] = useState(0);
   const [testTimerMode, setTestTimerMode] = useState('play');
+  const masteryEligibilityRef = useRef(null);
+  const masteryAssistanceByExposureRef = useRef(new Map());
+  const masteryPriorNeedsRecoveryRef = useRef(false);
+  const masteryUsedIdentityKeysRef = useRef(new Set());
+  const [retentionState, setRetentionState] = useState('idle');
+  const retentionStateRef = useRef('idle');
+  useEffect(() => {
+    retentionStateRef.current = retentionState;
+  }, [retentionState]);
+  const [retentionPlan, setRetentionPlan] = useState(null);
+  const retentionPlanRef = useRef(null);
+  const [retentionIndex, setRetentionIndex] = useState(0);
+  const retentionIndexRef = useRef(0);
+  useEffect(() => {
+    retentionIndexRef.current = retentionIndex;
+  }, [retentionIndex]);
+  const [retentionAnswer, setRetentionAnswer] = useState('');
+  const [retentionMessage, setRetentionMessage] = useState('');
+  const [retentionSubmitting, setRetentionSubmitting] = useState(false);
+  const retentionResponsesRef = useRef([]);
+  const retentionEligibilityRef = useRef(null);
   
   const [workPhaseCompletions, setWorkPhaseCompletions] = useState({
     discussion: false,
@@ -1035,6 +1165,7 @@ function SessionPageV2Inner() {
   // on lesson change. Cleared explicitly on refresh. Prevents multiple calls within the
   // same session from producing different random draws (which caused print/audio mismatch).
   const buildAllPhaseSetsCache = useRef(null); // { lessonData, sets } | null
+  const assessmentIsolationRef = useRef(null);
   // Mirror refs for generated arrays — always hold the current value regardless of closure age.
   // Used by start*Phase (called from stale orchestrator closures) and download handlers
   // so they always see the latest sets even if captured before state updated.
@@ -1042,6 +1173,11 @@ function SessionPageV2Inner() {
   const generatedTestRef = useRef(null);
   const generatedComprehensionRef = useRef(null);
   const generatedExerciseRef = useRef(null);
+
+  const instructionalLessonView = useMemo(
+    () => buildInstructionalLessonView(lessonData),
+    [lessonData],
+  );
 
   // Persisting the full transcript via SnapshotService serializes a large object and writes
   // to localStorage; doing that on every caption update can cause noticeable jank over time.
@@ -1305,6 +1441,7 @@ function SessionPageV2Inner() {
   // Load lesson data
   useEffect(() => {
     async function loadLessonData() {
+      if (executionAuthorization !== 'allowed') return;
       try {
         setLoading(true);
         setError(null);
@@ -1382,7 +1519,7 @@ function SessionPageV2Inner() {
     }
     
     loadLessonData();
-  }, [lessonId, subjectParam, regenerateParam]);
+  }, [executionAuthorization, lessonId, subjectParam, regenerateParam]);
 
   // Load visual aids separately from database (facilitator-specific)
   useEffect(() => {
@@ -1468,11 +1605,12 @@ function SessionPageV2Inner() {
   // Load learner profile (REQUIRED - no defaults or fallback)
   useEffect(() => {
     async function loadLearnerProfile() {
+      if (executionAuthorization !== 'allowed') return;
       try {
         setLearnerLoading(true);
         setLearnerError(null);
         
-        const learnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null;
+        const learnerId = learnerIdParam || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
         
         if (!learnerId) {
           throw new Error('No learner selected. Please select a learner from the dashboard.');
@@ -1568,7 +1706,7 @@ function SessionPageV2Inner() {
         });
         
         // Check for active golden key on this lesson (only affects play timers when Golden Keys are enabled)
-        // Key format must match V1 + /learn/lessons: `${subject}/${lesson}`.
+        // Key format must match V1 + /learn: `${subject}/${lesson}`.
         if (!goldenKeyLessonKey) {
           throw new Error('Missing lesson key for golden key lookup.');
         }
@@ -1578,7 +1716,7 @@ function SessionPageV2Inner() {
           setIsGoldenKeySuspended(false);
           setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
         } else if (learner.golden_keys_enabled && goldenKeyFromUrl) {
-          // Golden key consumed on /learn/lessons; session must persist the per-lesson flag.
+          // Golden key consumed on /learn; session must persist the per-lesson flag.
           setHasGoldenKey(true);
           setIsGoldenKeySuspended(false);
           setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
@@ -1614,7 +1752,7 @@ function SessionPageV2Inner() {
   // planEnt?.goldenKeyFeatures intentionally omitted: it's read via planGoldenKeyFeaturesRef to avoid
   // a third re-load when the profiles query resolves. The plan-tier effect above handles post-load sync.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lessonId, subjectParam, goldenKeyFromUrl, goldenKeyLessonKey]);
+  }, [executionAuthorization, lessonId, subjectParam, goldenKeyFromUrl, goldenKeyLessonKey, learnerIdParam]);
 
   // Live-update learner settings (no localStorage persistence)
   useEffect(() => {
@@ -1866,6 +2004,7 @@ function SessionPageV2Inner() {
       ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib', type: 'fib' })) : [];
     const sa = Array.isArray(lessonData.shortanswer)
       ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short', type: 'short' })) : [];
+    const reservedTestSource = getReservedAssessmentItems(lessonData);
 
     // Deduplicate by question text
     const seen = new Set();
@@ -1922,15 +2061,41 @@ function SessionPageV2Inner() {
       return questions.map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
     };
 
+    const buildReservedTestPhase = () => {
+      if (!reservedTestSource.length) return buildPhase(testTarget);
+      return dealPhase(reservedTestSource, testTarget)
+        .map((q, idx) => ({
+          ...q,
+          assessmentRole: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
+          assessment_role: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
+          sourceRole: q.sourceRole || 'test',
+          evidence_purpose: q.evidence_purpose || 'test',
+          number: q.number || (idx + 1),
+        }));
+    };
+
     const sets = {
-      comprehension: buildPhase(compTarget),
-      exercise:      buildPhase(exerciseTarget),
-      worksheet:     buildPhase(worksheetTarget),
-      test:          buildPhase(testTarget),
+      comprehension: tagItemsForPhase(buildPhase(compTarget), 'comprehension'),
+      exercise:      tagItemsForPhase(buildPhase(exerciseTarget), 'exercise'),
+      worksheet:     tagItemsForPhase(buildPhase(worksheetTarget), 'worksheet'),
+      test:          buildReservedTestPhase(),
     };
     buildAllPhaseSetsCache.current = { lessonData, sets };
     return sets;
   }, [lessonData, getLearnerTarget, questionKey]);
+
+  const resolveAssessmentIsolation = useCallback(async () => {
+    if (!lessonData) return null;
+    const phaseSets = buildAllPhaseSets() || {};
+    const analysis = await analyzeAssessmentIsolation({
+      lessonKey,
+      lessonId,
+      lessonData,
+      phaseSets,
+    });
+    assessmentIsolationRef.current = analysis;
+    return analysis;
+  }, [buildAllPhaseSets, lessonData, lessonId, lessonKey]);
 
   // Load persisted worksheet/test sets for printing (local+Supabase)
   useEffect(() => {
@@ -2740,6 +2905,7 @@ function SessionPageV2Inner() {
     setGeneratedWorksheet(null);
     setGeneratedTest(null);
     buildAllPhaseSetsCache.current = null; // force fresh random draw on next build
+    assessmentIsolationRef.current = null; // re-evaluate Stage 4 classification after refresh
     const key = getAssessmentStorageKey();
     const learnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
     if (key) {
@@ -3712,6 +3878,7 @@ function SessionPageV2Inner() {
     const phase = normalizePhaseAlias(phaseName);
     const phaseRun = ensureEvidencePhaseRun(phase);
     const index = Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : 0;
+    const assessmentRole = roleForPhase(phase);
     const legacyItemFingerprint = createLegacyItemFingerprint({
       lessonKey,
       lessonId,
@@ -3730,8 +3897,10 @@ function SessionPageV2Inner() {
       itemId: legacyItemFingerprint,
       itemPurpose: phase,
       itemExposureId,
+      assessmentRole,
       legacyItemFingerprint,
       questionIndex: index,
+      identityItem: item || null,
       item: summarizeEvidenceItem(item),
     };
   }, [ensureEvidencePhaseRun, lessonId, lessonKey]);
@@ -3742,7 +3911,7 @@ function SessionPageV2Inner() {
       return getEvidenceItemContext(phase, currentComprehensionQuestion, comprehensionPhaseRef.current?.currentQuestionIndex ?? 0);
     }
     if (phase === 'exercise' && currentExerciseQuestion) {
-      return getEvidenceItemContext(phase, currentExerciseQuestion, exerciseCurrentQuestionIndex ?? 0);
+      return getEvidenceItemContext(phase, currentExerciseQuestion, exercisePhaseRef.current?.currentQuestionIndex ?? 0);
     }
     if (phase === 'worksheet' && currentWorksheetQuestion) {
       return getEvidenceItemContext(phase, currentWorksheetQuestion, worksheetPhaseRef.current?.currentQuestionIndex ?? 0);
@@ -3757,9 +3926,120 @@ function SessionPageV2Inner() {
     currentExerciseQuestion,
     currentWorksheetQuestion,
     currentTestQuestion,
-    exerciseCurrentQuestionIndex,
     getEvidenceItemContext,
   ]);
+
+  const addMasteryAssistanceForItem = useCallback((itemContext, event) => {
+    if (!itemContext?.itemExposureId) return;
+    const exposureId = itemContext.itemExposureId;
+    const existing = masteryAssistanceByExposureRef.current.get(exposureId) || [];
+    masteryAssistanceByExposureRef.current.set(exposureId, [...existing, event]);
+  }, []);
+
+  const prepareMasteryEligibility = useCallback(async (questions = [], phaseSets = null) => {
+    try {
+      const identities = [];
+      for (const item of questions || []) {
+        identities.push(await buildItemIdentity({ lessonKey, lessonId, lessonData, item }));
+      }
+      const prior = await masteryEvidenceClientRef.current?.checkPriorExposure?.({
+        learnerId: sessionLearnerIdRef.current || learnerProfile?.id || null,
+        itemIdentities: identities,
+      });
+      if (prior && !prior.ok) {
+        masteryEligibilityRef.current = {
+          ok: false,
+          reason: INDEPENDENCE_REASONS.PRIOR_EXPOSURE,
+          itemIdentities: identities,
+          priorExposedKeys: new Set(),
+          baselineIdentityKeys: new Set(),
+          instructionalExposureKeys: new Set(),
+        };
+        return;
+      }
+      const context = await buildMasteryEligibilityContext({
+        lessonKey,
+        lessonId,
+        lessonData,
+        phaseSets,
+        priorExposedKeys: prior?.exposedKeys || [],
+      });
+      masteryEligibilityRef.current = {
+        ok: true,
+        itemIdentities: identities,
+        ...context,
+      };
+    } catch {
+      masteryEligibilityRef.current = {
+        ok: false,
+        reason: INDEPENDENCE_REASONS.IDENTITY_UNAVAILABLE,
+        itemIdentities: [],
+        priorExposedKeys: new Set(),
+        baselineIdentityKeys: new Set(),
+        instructionalExposureKeys: new Set(),
+      };
+    }
+  }, [learnerProfile, lessonData, lessonId, lessonKey]);
+
+  const recordMasteryCheckResult = useCallback((phaseName, data = {}) => {
+    if (normalizePhaseAlias(phaseName) !== 'test') return;
+    const itemContext = getEvidenceItemContext('test', data.question, data.questionIndex);
+    const eligibility = masteryEligibilityRef.current || null;
+    const itemIdentity = eligibility?.itemIdentities?.[data.questionIndex] || null;
+    const assessmentStatus = assessmentIsolationRef.current?.status || null;
+    const assistanceEvents = masteryAssistanceByExposureRef.current.get(itemContext.itemExposureId) || [];
+    const qualification = eligibility?.ok === false
+      ? {
+          eligible: false,
+          independenceStatus: 'unavailable',
+          independenceReason: eligibility.reason || INDEPENDENCE_REASONS.IDENTITY_UNAVAILABLE,
+        }
+      : qualifyMasteryOpportunity({
+          itemIdentity,
+          assessmentRole: itemContext.assessmentRole,
+          assessmentIsolationStatus: assessmentStatus,
+          itemExposureId: itemContext.itemExposureId,
+          isFirstResponse: data.isFirstResponse === true || Number(data.attemptNumber || 1) === 1,
+          preAssessmentExposed: false,
+          priorExposedKeys: eligibility?.priorExposedKeys || [],
+          baselineIdentityKeys: eligibility?.baselineIdentityKeys || [],
+          instructionalExposureKeys: eligibility?.instructionalExposureKeys || [],
+          assistanceEventsBeforeResponse: assistanceEvents,
+        });
+    const checkRole = masteryPriorNeedsRecoveryRef.current
+      ? MASTERY_CHECK_ROLES.RECOVERY_VERIFICATION
+      : MASTERY_CHECK_ROLES.INITIAL;
+    const masteryOutcome = classifyMasteryOutcome({
+      qualification,
+      isCorrect: data.isCorrect === true,
+      checkRole,
+    });
+    if (masteryOutcome === 'needs_recovery') {
+      masteryPriorNeedsRecoveryRef.current = true;
+    }
+    if (itemIdentity) {
+      for (const key of [
+        itemIdentity.stableItemId ? `stable:${itemIdentity.stableItemId}` : null,
+        itemIdentity.itemContentHash ? `content:${itemIdentity.itemContentHash}` : null,
+      ].filter(Boolean)) {
+        masteryUsedIdentityKeysRef.current.add(key);
+      }
+    }
+    void masteryEvidenceClientRef.current?.recordMasteryCheckResult({
+      ...itemContext,
+      attemptNumber: data.attemptNumber || 1,
+      isFirstResponse: data.isFirstResponse === true || Number(data.attemptNumber || 1) === 1,
+      isCorrect: data.isCorrect === true,
+      masteryCheckRole: checkRole,
+      independenceStatus: qualification.independenceStatus,
+      independenceReason: qualification.independenceReason,
+      masteryOutcome,
+      response: data.answer,
+      correctAnswer: data.correctAnswer ?? null,
+      qualification,
+      questionIndex: data.questionIndex,
+    });
+  }, [getEvidenceItemContext]);
 
   const recordVisualAidUsed = useCallback((aid, meta = {}) => {
     const itemContext = getActiveEvidenceItemContext();
@@ -3775,7 +4055,13 @@ function SessionPageV2Inner() {
         use_mode: meta.viewMode || 'view',
       },
     });
-  }, [getActiveEvidenceItemContext]);
+    if (itemContext?.phase === 'test') {
+      addMasteryAssistanceForItem(itemContext, {
+        eventType: STAGE_2_EVIDENCE_EVENT_TYPES.VISUAL_AID_USED,
+        assistanceLevel: 'reteach_or_scaffolded',
+      });
+    }
+  }, [addMasteryAssistanceForItem, getActiveEvidenceItemContext]);
 
   const recordEvidenceItemPresented = useCallback((phaseName, data = {}) => {
     const itemContext = getEvidenceItemContext(phaseName, data.question, data.questionIndex);
@@ -3816,7 +4102,13 @@ function SessionPageV2Inner() {
       hintSource: data.hintSource || `${normalizePhaseAlias(phaseName)}-feedback`,
       hintText: data.hint || null,
     });
-  }, [getEvidenceItemContext]);
+    if (normalizePhaseAlias(phaseName) === 'test') {
+      addMasteryAssistanceForItem(itemContext, {
+        eventType: STAGE_2_EVIDENCE_EVENT_TYPES.HINT_GIVEN,
+        assistanceLevel: 'hinted',
+      });
+    }
+  }, [addMasteryAssistanceForItem, getEvidenceItemContext]);
 
   const recordEvidenceRetryRequested = useCallback((phaseName, data = {}) => {
     const itemContext = getEvidenceItemContext(phaseName, data.question, data.questionIndex);
@@ -3825,7 +4117,13 @@ function SessionPageV2Inner() {
       attemptNumber: data.attemptNumber,
       retrySource: data.retrySource || `${normalizePhaseAlias(phaseName)}-feedback`,
     });
-  }, [getEvidenceItemContext]);
+    if (normalizePhaseAlias(phaseName) === 'test') {
+      addMasteryAssistanceForItem(itemContext, {
+        eventType: STAGE_2_EVIDENCE_EVENT_TYPES.RETRY_REQUESTED,
+        assistanceLevel: 'retry_no_hint',
+      });
+    }
+  }, [addMasteryAssistanceForItem, getEvidenceItemContext]);
 
   const recordEvidenceAnswerRevealed = useCallback((phaseName, data = {}) => {
     const itemContext = getEvidenceItemContext(phaseName, data.question, data.questionIndex);
@@ -3835,7 +4133,13 @@ function SessionPageV2Inner() {
       revealSource: data.revealSource || `${normalizePhaseAlias(phaseName)}-feedback`,
       correctAnswer: data.correctAnswer,
     });
-  }, [getEvidenceItemContext]);
+    if (normalizePhaseAlias(phaseName) === 'test') {
+      addMasteryAssistanceForItem(itemContext, {
+        eventType: STAGE_2_EVIDENCE_EVENT_TYPES.ANSWER_REVEALED,
+        assistanceLevel: 'answer_revealed',
+      });
+    }
+  }, [addMasteryAssistanceForItem, getEvidenceItemContext]);
 
   const handleOpeningAskStart = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -3878,6 +4182,12 @@ function SessionPageV2Inner() {
           prompt: question,
           answerRevealed: false,
         });
+        if (itemContext?.phase === 'test') {
+          addMasteryAssistanceForItem(itemContext, {
+            eventType: STAGE_2_EVIDENCE_EVENT_TYPES.ASK_USED,
+            assistanceLevel: 'reteach_or_scaffolded',
+          });
+        }
       }
       setOpeningActionInput('');
       syncOpeningActionState();
@@ -3888,7 +4198,7 @@ function SessionPageV2Inner() {
       openingActionBusyRef.current = false;
       setOpeningActionBusy(false);
     }
-  }, [openingActionInput, syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext]);
+  }, [openingActionInput, syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext, addMasteryAssistanceForItem]);
 
   const handleOpeningAskWhatsTheAnswer = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -3919,6 +4229,12 @@ function SessionPageV2Inner() {
           revealSource: 'ask-current-answer-request',
           correctAnswer: result.answer || null,
         });
+        if (itemContext?.phase === 'test') {
+          addMasteryAssistanceForItem(itemContext, {
+            eventType: STAGE_2_EVIDENCE_EVENT_TYPES.ANSWER_REVEALED,
+            assistanceLevel: 'answer_revealed',
+          });
+        }
       }
       syncOpeningActionState();
     } catch (err) {
@@ -3930,7 +4246,7 @@ function SessionPageV2Inner() {
       askAnswerShortcutLoadingRef.current = false;
       setAskAnswerShortcutLoading(false);
     }
-  }, [syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext]);
+  }, [syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext, addMasteryAssistanceForItem]);
 
   const handleOpeningAskDone = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -4440,7 +4756,7 @@ function SessionPageV2Inner() {
     
     const controller = new TeachingController({
       audioEngine: audioEngineRef.current,
-      lessonData: lessonData,
+      lessonData: instructionalLessonView || lessonData,
       lessonMeta: {
         subject: subjectParam,
         difficulty: 'medium', // TODO: Parse from URL or lesson
@@ -4494,7 +4810,7 @@ function SessionPageV2Inner() {
       controller.destroy();
       teachingControllerRef.current = null;
     };
-  }, [lessonData, audioReady]);
+  }, [lessonData, instructionalLessonView, audioReady]);
   
   // Initialize PhaseOrchestrator when lesson loads
   useEffect(() => {
@@ -4621,6 +4937,24 @@ function SessionPageV2Inner() {
     });
     
     orchestrator.on('sessionComplete', async (data) => {
+      completionPayloadRef.current = data;
+      if (completionCommitInFlightRef.current) return;
+      completionCommitInFlightRef.current = true;
+      setCompletionCommitState('saving');
+      let canonicalCompletion = false;
+      try {
+        canonicalCompletion = await endTrackedSession('completed', {
+          source: 'session-v2',
+          test_percentage: data?.testGrade?.percentage ?? testGrade?.percentage ?? null,
+        });
+      } catch {}
+      completionCommitInFlightRef.current = false;
+      if (!canonicalCompletion) {
+        setCompletionCommitState('failed');
+        addEvent('Canonical lesson completion failed; work retained for retry.');
+        return;
+      }
+      setCompletionCommitState('committed');
       addEvent('ðŸ Session complete!');
       setCurrentPhase('complete');
       
@@ -4711,7 +5045,7 @@ function SessionPageV2Inner() {
         : false;
 
       // If golden key was earned, persist it to the learner inventory (Supabase)
-      // NOTE: The toast on /learn/lessons is driven by sessionStorage; that alone does NOT update the DB.
+      // NOTE: The toast on /learn is driven by sessionStorage; that alone does NOT update the DB.
       if (earnedKey) {
         const awardLearnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
         if (awardLearnerId && awardLearnerId !== 'demo') {
@@ -4774,14 +5108,8 @@ function SessionPageV2Inner() {
         });
       } catch {}
 
-      // End tracked session (so Calendar history can detect this completion).
+      // Canonical completion was committed before any success UI or cleanup.
       try { stopSessionPolling?.(); } catch {}
-      try {
-        await endTrackedSession('completed', {
-          source: 'session-v2',
-          test_percentage: testGrade?.percentage ?? null,
-        });
-      } catch {}
       
       // Navigate to lessons page
       console.log('[SessionPageV2] Attempting navigation to lessons page');
@@ -4790,15 +5118,15 @@ function SessionPageV2Inner() {
       try {
         if (router && typeof router.push === 'function') {
           console.log('[SessionPageV2] Using router.push');
-          router.push('/learn/lessons');
+          router.push('/learn');
         } else if (typeof window !== 'undefined') {
           console.log('[SessionPageV2] Using window.location.href');
-          window.location.href = '/learn/lessons';
+          window.location.href = '/learn';
         }
       } catch (err) {
         console.error('[SessionPageV2] Navigation error:', err);
         if (typeof window !== 'undefined') {
-          try { window.location.href = '/learn/lessons'; } catch {}
+          try { window.location.href = '/learn'; } catch {}
         }
       }
     });
@@ -4914,7 +5242,7 @@ function SessionPageV2Inner() {
       eventBus: eventBusRef.current,
       learnerName: learnerName,
       lessonTitle: lessonTitle,
-      lessonData: lessonData,
+      lessonData: instructionalLessonView || lessonData,
       grade: (learnerProfile?.grade || lessonData?.grade || '').toString(),
       // Resume: pass saved conversation history so the overview is skipped
       resumeHistory: isDiscussionResume
@@ -5476,7 +5804,7 @@ function SessionPageV2Inner() {
       eventBus: eventBusRef.current,
       timerService: timerServiceRef.current,
       questions: questions,
-      lessonData: lessonData,
+      lessonData: instructionalLessonView || lessonData,
       learnerName: learnerName,
       resumeState: (!forceFresh && savedExercise) ? {
         questions,
@@ -5954,6 +6282,11 @@ function SessionPageV2Inner() {
     const testTarget = questions.length;
     if (!testTarget) return false;
     console.log('[SessionPageV2] startTestPhase built questions:', questions.length);
+    masteryAssistanceByExposureRef.current = new Map();
+    masteryPriorNeedsRecoveryRef.current = false;
+    masteryUsedIdentityKeysRef.current = new Set();
+    const phaseSetsForMastery = buildAllPhaseSets() || {};
+    void prepareMasteryEligibility(questions, phaseSetsForMastery);
 
     const resumeIndex = savedTest ? (savedTest.nextQuestionIndex ?? savedTest.questionIndex ?? 0) : 0;
     const clampedIndex = Math.min(Math.max(resumeIndex, 0), Math.max(questions.length - 1, 0));
@@ -6045,6 +6378,7 @@ function SessionPageV2Inner() {
       setTestScore(data.score);
       setTestAnswer('');
       recordEvidenceAnswerSubmitted('test', data);
+      recordMasteryCheckResult('test', data);
     });
 
     phase.on('answerRevealed', (data) => {
@@ -6328,6 +6662,409 @@ function SessionPageV2Inner() {
       stopAudio();
     }
   };
+
+  const beginInstruction = useCallback(async (target = null) => {
+    if (teachingControllerRef.current) {
+      try {
+        teachingControllerRef.current.prefetchAll();
+        addEvent('📄 Started background prefetch of teaching content');
+      } catch {
+        // Silent
+      }
+    }
+
+    if (target && target !== 'idle') {
+      try {
+        masteryEvidenceSkipNextPhaseTransitionRef.current = true;
+        await orchestratorRef.current.startSession({ startPhase: target });
+      } catch (e) {
+        console.warn('[SessionPageV2] Resume startSession(startPhase) failed; starting fresh:', e);
+        masteryEvidenceSkipNextPhaseTransitionRef.current = false;
+        await orchestratorRef.current.startSession();
+      }
+    } else {
+      masteryEvidenceSkipNextPhaseTransitionRef.current = false;
+      await orchestratorRef.current.startSession();
+    }
+  }, []);
+
+  const getRetentionEvidenceContext = useCallback((item, questionIndex = 0) => {
+    const index = Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : 0;
+    const legacyItemFingerprint = createLegacyItemFingerprint({
+      lessonKey,
+      lessonId,
+      phase: RETENTION_EVIDENCE_PURPOSE,
+      item,
+      questionIndex: index,
+    });
+    const itemExposureId = `retention-q${index + 1}-${legacyItemFingerprint.replace(/^legacy:/, '')}`;
+    return {
+      phase: 'idle',
+      itemId: legacyItemFingerprint,
+      itemPurpose: RETENTION_EVIDENCE_PURPOSE,
+      evidencePurpose: RETENTION_EVIDENCE_PURPOSE,
+      itemExposureId,
+      assessmentRole: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
+      legacyItemFingerprint,
+      questionIndex: index,
+      identityItem: item || null,
+      item: summarizeEvidenceItem(item),
+    };
+  }, [lessonId, lessonKey]);
+
+  const speakRetentionText = useCallback(async (text) => {
+    const spoken = String(text || '').trim();
+    if (!spoken || !audioEngineRef.current) return;
+    try {
+      const audio = await fetchTTS(spoken);
+      await audioEngineRef.current.playAudio(audio || '', [spoken]);
+    } catch {}
+  }, []);
+
+  const presentRetentionItem = useCallback(async (index, item, { speak = true } = {}) => {
+    if (!item) return;
+    const context = getRetentionEvidenceContext(item, index);
+    void masteryEvidenceClientRef.current?.recordItemPresented({
+      ...context,
+      totalQuestions: retentionPlanRef.current?.selectedItems?.length || 0,
+    });
+    if (snapshotServiceRef.current) {
+      try {
+        await snapshotServiceRef.current.saveProgress('retention-presented', {
+          phaseOverride: RETENTION_EVIDENCE_PURPOSE,
+          protocolVersion: RETENTION_PROTOCOL_VERSION,
+          status: 'active',
+          currentIndex: index,
+          plan: retentionPlanRef.current || null,
+          eligibility: retentionEligibilityRef.current || null,
+          responses: retentionResponsesRef.current,
+        });
+      } catch {}
+    }
+    if (speak) {
+      await speakRetentionText(formatQuestionForSpeech(item, { layout: 'multiline' }));
+    }
+  }, [getRetentionEvidenceContext, speakRetentionText]);
+
+  const activateRetention = useCallback(async (plan, eligibility, savedRetention = null) => {
+    const selectedItems = Array.isArray(plan?.selectedItems) ? plan.selectedItems : [];
+    if (!selectedItems.length) return false;
+    retentionPlanRef.current = plan;
+    retentionEligibilityRef.current = eligibility || null;
+    const savedResponses = Array.isArray(savedRetention?.responses) ? savedRetention.responses : [];
+    retentionResponsesRef.current = savedResponses;
+    const startIndex = Math.min(savedResponses.length, Math.max(0, selectedItems.length - 1));
+    setRetentionPlan(plan);
+    setRetentionIndex(startIndex);
+    setRetentionAnswer('');
+    setRetentionMessage('Before we review, try this one. It is okay if you are not sure.');
+    setRetentionState('awaiting-response');
+    await presentRetentionItem(startIndex, selectedItems[startIndex], { speak: true });
+    return true;
+  }, [presentRetentionItem]);
+
+  const finishRetentionAndContinue = useCallback(async () => {
+    setRetentionState('complete');
+    await beginInstruction(null);
+  }, [beginInstruction]);
+
+  const handleRetentionRepeat = useCallback(async () => {
+    const item = retentionPlanRef.current?.selectedItems?.[retentionIndexRef.current];
+    if (!item) return;
+    const context = getRetentionEvidenceContext(item, retentionIndexRef.current);
+    void masteryEvidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
+      ...context,
+      suffix: `retention-repeat:${retentionIndexRef.current}:${Date.now()}`,
+      payload: { repeat_mode: 'verbatim_retention_item' },
+    });
+    await speakRetentionText(formatQuestionForSpeech(item, { layout: 'multiline' }));
+  }, [getRetentionEvidenceContext, speakRetentionText]);
+
+  const handleRetentionSubmit = useCallback(async () => {
+    if (retentionSubmitting) return;
+    const item = retentionPlanRef.current?.selectedItems?.[retentionIndexRef.current];
+    const identity = retentionPlanRef.current?.selectedIdentities?.[retentionIndexRef.current] || null;
+    const eligibility = retentionEligibilityRef.current || null;
+    if (!item || !eligibility?.anchor) return;
+    const response = String(retentionAnswer || '').trim() || "I don't know";
+    setRetentionSubmitting(true);
+    try {
+      const acceptable = buildAcceptableList(item);
+      let isCorrect = false;
+      try {
+        isCorrect = await judgeAnswer(response, acceptable, item);
+      } catch {
+        isCorrect = false;
+      }
+      const correctAnswer = deriveCorrectAnswerText(item, acceptable) || null;
+      const context = getRetentionEvidenceContext(item, retentionIndexRef.current);
+      const qualification = qualifyRetentionOpportunity({
+        anchor: eligibility.anchor,
+        delaySeconds: eligibility.retentionDelaySeconds,
+        itemIdentity: identity,
+        itemExposureId: context.itemExposureId,
+        isFirstResponse: true,
+        priorExposedKeys: eligibility.exposedKeys || [],
+        assistanceEventsBeforeResponse: [],
+        interveningSameTargetInstruction: false,
+      });
+      const retentionOutcome = classifyRetentionOutcome({ qualification, isCorrect });
+
+      void masteryEvidenceClientRef.current?.recordLearnerResponse({
+        ...context,
+        attemptNumber: 1,
+        isFirstResponse: true,
+        response,
+      });
+      void masteryEvidenceClientRef.current?.recordAnswerEvaluated({
+        ...context,
+        attemptNumber: 1,
+        isFirstResponse: true,
+        isCorrect,
+        evaluationMode: 'retention_v1_current_app_judgment',
+        response,
+        correctAnswer,
+      });
+      void masteryEvidenceClientRef.current?.recordRetentionCheckResult({
+        ...context,
+        attemptNumber: 1,
+        isFirstResponse: true,
+        isCorrect,
+        retentionAnchorMasteryCheckId: eligibility.anchor.mastery_check_id,
+        retentionDelaySeconds: eligibility.retentionDelaySeconds,
+        retentionQualificationStatus: qualification.retentionQualificationStatus,
+        retentionQualificationReason: qualification.retentionQualificationReason,
+        retentionOutcome,
+        independenceStatus: qualification.independenceStatus,
+        independenceReason: qualification.independenceReason,
+        response,
+        correctAnswer,
+        qualification,
+      });
+
+      const nextResponses = [
+        ...retentionResponsesRef.current,
+        {
+          questionIndex: retentionIndexRef.current,
+          response,
+          isCorrect,
+          retentionOutcome,
+          answeredAt: new Date().toISOString(),
+        },
+      ];
+      retentionResponsesRef.current = nextResponses;
+      setRetentionAnswer('');
+      setRetentionMessage('Thanks.');
+      if (snapshotServiceRef.current) {
+        try {
+          await snapshotServiceRef.current.savePhaseCompletion(RETENTION_EVIDENCE_PURPOSE, {
+            protocolVersion: RETENTION_PROTOCOL_VERSION,
+            status: RETENTION_QUALIFICATION_STATUSES.ELIGIBLE,
+            itemCount: nextResponses.length,
+            anchor: eligibility.anchor,
+            retentionDelaySeconds: eligibility.retentionDelaySeconds,
+            responses: nextResponses,
+          });
+        } catch {}
+      }
+      await finishRetentionAndContinue();
+    } finally {
+      setRetentionSubmitting(false);
+    }
+  }, [
+    finishRetentionAndContinue,
+    getRetentionEvidenceContext,
+    retentionAnswer,
+    retentionSubmitting,
+  ]);
+
+  const getBaselineEvidenceContext = useCallback((item, questionIndex = 0) => {
+    const index = Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : 0;
+    const legacyItemFingerprint = createLegacyItemFingerprint({
+      lessonKey,
+      lessonId,
+      phase: BASELINE_EVIDENCE_PURPOSE,
+      item,
+      questionIndex: index,
+    });
+    return {
+      phase: 'idle',
+      itemId: legacyItemFingerprint,
+      itemPurpose: BASELINE_EVIDENCE_PURPOSE,
+      itemExposureId: `baseline-run1-q${index + 1}-${legacyItemFingerprint.replace(/^legacy:/, '')}`,
+      assessmentRole: ASSESSMENT_ROLES.INSTRUCTIONAL,
+      evidencePurpose: BASELINE_EVIDENCE_PURPOSE,
+      legacyItemFingerprint,
+      questionIndex: index,
+      identityItem: item || null,
+      item: summarizeEvidenceItem(item),
+    };
+  }, [lessonId, lessonKey]);
+
+  const speakBaselineText = useCallback(async (text) => {
+    const spoken = String(text || '').trim();
+    if (!spoken) return;
+    try {
+      const audio = await fetchTTS(spoken);
+      await audioEngineRef.current?.playAudio?.(audio || '', [spoken]);
+    } catch {
+      try { await audioEngineRef.current?.speak?.(spoken); } catch {}
+    }
+  }, []);
+
+  const presentBaselineItem = useCallback(async (index, item, { speak = true } = {}) => {
+    if (!item) return;
+    const context = getBaselineEvidenceContext(item, index);
+    void masteryEvidenceClientRef.current?.recordItemPresented({
+      ...context,
+      totalQuestions: baselinePlanRef.current?.selectedItems?.length || 0,
+    });
+    if (snapshotServiceRef.current) {
+      try {
+        await snapshotServiceRef.current.saveProgress('baseline-presented', {
+          phaseOverride: BASELINE_EVIDENCE_PURPOSE,
+          protocolVersion: BASELINE_PROTOCOL_VERSION,
+          status: 'active',
+          currentIndex: index,
+          items: baselinePlanRef.current?.selectedItems || [],
+          responses: baselineResponsesRef.current,
+        });
+      } catch {}
+    }
+    if (speak) {
+      await speakBaselineText(formatQuestionForSpeech(item, { layout: 'multiline' }));
+    }
+  }, [getBaselineEvidenceContext, speakBaselineText]);
+
+  const completeBaselineAndBeginInstruction = useCallback(async (status = BASELINE_STATUSES.COMPLETE, reason = null) => {
+    setBaselineState(status === BASELINE_STATUSES.UNAVAILABLE ? 'unavailable' : 'complete');
+    const itemCount = baselineResponsesRef.current.length || baselinePlanRef.current?.selectedItems?.length || 0;
+    void masteryEvidenceClientRef.current?.updateBaselineStatus({
+      baselineStatus: status,
+      baselineItemCount: itemCount,
+      baselineUnavailableReason: reason,
+    });
+    if (snapshotServiceRef.current && status === BASELINE_STATUSES.COMPLETE) {
+      try {
+        await snapshotServiceRef.current.savePhaseCompletion(BASELINE_EVIDENCE_PURPOSE, {
+          protocolVersion: BASELINE_PROTOCOL_VERSION,
+          status,
+          itemCount,
+          responses: baselineResponsesRef.current,
+        });
+      } catch {}
+    }
+    await beginInstruction(baselineInstructionTargetRef.current);
+  }, [beginInstruction]);
+
+  const activateBaseline = useCallback(async (plan, target = null, savedBaseline = null) => {
+    const selectedItems = Array.isArray(plan?.selectedItems) ? plan.selectedItems : [];
+    baselinePlanRef.current = plan;
+    baselineInstructionTargetRef.current = target || null;
+    const savedResponses = Array.isArray(savedBaseline?.responses) ? savedBaseline.responses : [];
+    baselineResponsesRef.current = savedResponses;
+    const startIndex = Math.min(savedResponses.length, Math.max(0, selectedItems.length - 1));
+    setBaselinePlan(plan);
+    setBaselineIndex(startIndex);
+    setBaselineAnswer('');
+    setBaselineMessage("Before we start, I want to see what you already know. It's completely okay if you don't know this yet.");
+    setBaselineState('awaiting-response');
+    await presentBaselineItem(startIndex, selectedItems[startIndex], { speak: true });
+  }, [presentBaselineItem]);
+
+  const handleBaselineRepeat = useCallback(async () => {
+    const item = baselinePlanRef.current?.selectedItems?.[baselineIndexRef.current];
+    if (!item) return;
+    const context = getBaselineEvidenceContext(item, baselineIndexRef.current);
+    void masteryEvidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
+      ...context,
+      suffix: `baseline-repeat:${baselineIndexRef.current}:${Date.now()}`,
+      payload: { repeat_mode: 'verbatim_baseline_item' },
+    });
+    await speakBaselineText(formatQuestionForSpeech(item, { layout: 'multiline' }));
+  }, [getBaselineEvidenceContext, speakBaselineText]);
+
+  const handleBaselineSubmit = useCallback(async () => {
+    if (baselineSubmitting) return;
+    const item = baselinePlanRef.current?.selectedItems?.[baselineIndexRef.current];
+    if (!item) return;
+    const response = String(baselineAnswer || '').trim() || "I don't know";
+    setBaselineSubmitting(true);
+    try {
+      const acceptable = buildAcceptableList(item);
+      let isCorrect = false;
+      try {
+        isCorrect = await judgeAnswer(response, acceptable, item);
+      } catch {
+        isCorrect = false;
+      }
+      const correctAnswer = deriveCorrectAnswerText(item, acceptable) || null;
+      const context = getBaselineEvidenceContext(item, baselineIndexRef.current);
+      void masteryEvidenceClientRef.current?.recordLearnerResponse({
+        ...context,
+        attemptNumber: 1,
+        isFirstResponse: true,
+        response,
+      });
+      void masteryEvidenceClientRef.current?.recordAnswerEvaluated({
+        ...context,
+        attemptNumber: 1,
+        isFirstResponse: true,
+        isCorrect,
+        evaluationMode: 'baseline_v1_current_app_judgment',
+        response,
+        correctAnswer,
+      });
+
+      const nextResponses = [
+        ...baselineResponsesRef.current,
+        {
+          questionIndex: baselineIndexRef.current,
+          response,
+          isCorrect,
+          answeredAt: new Date().toISOString(),
+        },
+      ];
+      baselineResponsesRef.current = nextResponses;
+      const nextIndex = baselineIndexRef.current + 1;
+      const total = baselinePlanRef.current?.selectedItems?.length || 0;
+      setBaselineAnswer('');
+      setBaselineMessage('Thanks.');
+
+      if (snapshotServiceRef.current) {
+        try {
+          await snapshotServiceRef.current.saveProgress('baseline-answer', {
+            phaseOverride: BASELINE_EVIDENCE_PURPOSE,
+            protocolVersion: BASELINE_PROTOCOL_VERSION,
+            status: nextIndex >= total ? BASELINE_STATUSES.COMPLETE : 'active',
+            currentIndex: nextIndex,
+            items: baselinePlanRef.current?.selectedItems || [],
+            responses: nextResponses,
+          });
+        } catch {}
+      }
+
+      if (nextIndex >= total) {
+        const finalStatus = baselinePlanRef.current?.status === BASELINE_STATUSES.PARTIAL
+          ? BASELINE_STATUSES.PARTIAL
+          : BASELINE_STATUSES.COMPLETE;
+        await completeBaselineAndBeginInstruction(finalStatus, finalStatus === BASELINE_STATUSES.PARTIAL ? 'baseline_pool_partially_available' : null);
+        return;
+      }
+      setBaselineIndex(nextIndex);
+      await presentBaselineItem(nextIndex, baselinePlanRef.current.selectedItems[nextIndex], { speak: true });
+    } finally {
+      setBaselineSubmitting(false);
+    }
+  }, [
+    baselineAnswer,
+    baselineSubmitting,
+    completeBaselineAndBeginInstruction,
+    getBaselineEvidenceContext,
+    presentBaselineItem,
+  ]);
   
   const startSession = async (options = {}) => {
     // Stop pre-Begin conflict watch — tracking takes over from here
@@ -6380,26 +7117,22 @@ function SessionPageV2Inner() {
 
     // Start (or conflict-check) session tracking before the orchestrator begins.
     // This is required for Calendar history to detect completions reliably.
-    try {
-      const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
-      const trackingLessonId = lessonKey || null;
-      if (trackingLearnerId && trackingLearnerId !== 'demo' && trackingLessonId && browserSessionId) {
-        const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
-        const sessionResult = await withTimeout(
-          startTrackedSession(browserSessionId, deviceName),
-          12000,
-          'Session tracking'
-        );
-        if (sessionResult?.conflict) {
-          setConflictingSession(sessionResult.existingSession);
-          setShowTakeoverDialog(true);
-          return;
-        }
-        trackedSessionIdForEvidence = sessionResult?.id || null;
-        try { startSessionPolling?.(); } catch {}
+    const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
+    const trackingLessonId = lessonKey || null;
+    if (trackingLearnerId && trackingLearnerId !== 'demo' && trackingLessonId && browserSessionId) {
+      const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+      const sessionResult = await requireProtectedSessionCreation(() => withTimeout(
+        startTrackedSession(browserSessionId, deviceName, null, null, authorizedOccurrenceId, 'sonoma'),
+        12000,
+        'Secure lesson start'
+      ));
+      if (sessionResult?.conflict) {
+        setConflictingSession(sessionResult.existingSession);
+        setShowTakeoverDialog(true);
+        return;
       }
-    } catch {
-      // Tracking failures should not block the lesson.
+      trackedSessionIdForEvidence = sessionResult.id;
+      try { startSessionPolling?.(); } catch {}
     }
 
     if (options?.ignoreResume) {
@@ -6410,18 +7143,6 @@ function SessionPageV2Inner() {
     // Must be set AFTER resetTranscriptState (which clears the start index) and BEFORE the
     // orchestrator fires phaseChange events that trigger transcript autosaves.
     sessionStartedAtRef.current = new Date().toISOString();
-    
-    // Start teaching prefetch immediately — must run synchronously before orchestratorRef.current.startSession()
-    // because phaseChange('teaching') fires synchronously inside startSession and calls startTeachingPhase
-    // directly (not via useEffect). If prefetchAll is deferred, #conceptGptPromise is null when teaching starts.
-    if (teachingControllerRef.current) {
-      try {
-        teachingControllerRef.current.prefetchAll();
-        addEvent('📄 Started background prefetch of teaching content');
-      } catch {
-        // Silent
-      }
-    }
     
     // Prep video element (load + seek to first frame). The actual iOS autoplay unlock
     // is handled inside AudioEngine.initialize() (play() during gesture, pause on 'playing').
@@ -6451,10 +7172,18 @@ function SessionPageV2Inner() {
       ? (options?.startPhase || null)
       : (options?.startPhase || resumePhaseRef.current);
     const target = normalizeResumePhase(resolvedPhase);
+    let assessmentIsolation = assessmentIsolationRef.current;
+    try {
+      assessmentIsolation = await resolveAssessmentIsolation();
+    } catch {
+      assessmentIsolation = assessmentIsolationRef.current;
+    }
 
+    let evidenceClientForBaseline = null;
     if (trackedSessionIdForEvidence) {
       try {
         const evidenceClient = new MasteryEvidenceClient();
+        evidenceClientForBaseline = evidenceClient;
         masteryEvidenceClientRef.current = evidenceClient;
         evidenceClient.initialize({
           sessionId: trackedSessionIdForEvidence,
@@ -6463,6 +7192,19 @@ function SessionPageV2Inner() {
           lessonKey: lessonKey || null,
           lessonId,
           lessonData,
+          assessmentIsolation,
+          baseline: {
+            protocolVersion: BASELINE_PROTOCOL_VERSION,
+            status: null,
+            baselineItemCount: null,
+            reason: null,
+          },
+          mastery: {
+            protocolVersion: INDEPENDENT_MASTERY_PROTOCOL_VERSION,
+          },
+          retention: {
+            protocolVersion: RETENTION_PROTOCOL_VERSION,
+          },
           startedAt: sessionStartedAtRef.current,
         });
         const initialPhase = target && target !== 'idle' ? target : 'discussion';
@@ -6474,21 +7216,126 @@ function SessionPageV2Inner() {
       masteryEvidenceClientRef.current = null;
     }
 
-    // Resume flow (snapshot): start the orchestrator directly at the target phase.
-    // Critical: do NOT start Discussion first then skip, because Discussion/Teaching can still complete
-    // and override the manual skip later.
+    const markBaselineUnavailableAndBegin = async (reason) => {
+      void masteryEvidenceClientRef.current?.updateBaselineStatus({
+        baselineStatus: BASELINE_STATUSES.UNAVAILABLE,
+        baselineItemCount: 0,
+        baselineUnavailableReason: reason,
+      });
+      await beginInstruction(target);
+    };
+
     if (target && target !== 'idle') {
+      await markBaselineUnavailableAndBegin(BASELINE_UNAVAILABLE_REASONS.RESUME_AFTER_INSTRUCTION);
+      return;
+    }
+
+    const snapshot = snapshotServiceRef.current?.snapshot || null;
+    if (hasInstructionBegunFromSnapshot(snapshot)) {
+      await markBaselineUnavailableAndBegin(BASELINE_UNAVAILABLE_REASONS.LEGACY_OR_AMBIGUOUS_SNAPSHOT);
+      return;
+    }
+
+    try {
+      const phaseSets = buildAllPhaseSets() || {};
+      const savedRetention = snapshot?.currentPhase === RETENTION_EVIDENCE_PURPOSE
+        ? snapshot?.phaseData?.[RETENTION_EVIDENCE_PURPOSE]
+        : null;
       try {
-        masteryEvidenceSkipNextPhaseTransitionRef.current = true;
-        await orchestratorRef.current.startSession({ startPhase: target });
-      } catch (e) {
-        console.warn('[SessionPageV2] Resume startSession(startPhase) failed; starting fresh:', e);
-        masteryEvidenceSkipNextPhaseTransitionRef.current = false;
-        await orchestratorRef.current.startSession();
+        let retentionPlanCandidate = await buildRetentionPlan({
+          lessonKey,
+          lessonId,
+          lessonData,
+          phaseSets,
+        });
+        if (
+          retentionPlanCandidate.status === RETENTION_QUALIFICATION_STATUSES.ELIGIBLE
+          && savedRetention?.status === 'active'
+          && Array.isArray(savedRetention?.responses)
+          && savedRetention.responses.length === 0
+          && savedRetention?.plan
+        ) {
+          await activateRetention(savedRetention.plan, savedRetention.eligibility || retentionEligibilityRef.current, savedRetention);
+          return;
+        }
+        if (retentionPlanCandidate.candidateIdentities?.length && evidenceClientForBaseline) {
+          const eligibility = await evidenceClientForBaseline.checkRetentionEligibility({
+            learnerId: sessionLearnerIdRef.current || learnerProfile?.id || null,
+            lessonKey,
+            currentSessionId: trackedSessionIdForEvidence,
+            itemIdentities: retentionPlanCandidate.candidateIdentities,
+          });
+          if (eligibility.ok && eligibility.eligible) {
+            retentionPlanCandidate = await buildRetentionPlan({
+              lessonKey,
+              lessonId,
+              lessonData,
+              phaseSets,
+              priorExposedKeys: eligibility.exposedKeys,
+            });
+            if (retentionPlanCandidate.status === RETENTION_QUALIFICATION_STATUSES.ELIGIBLE) {
+              await activateRetention(retentionPlanCandidate, eligibility, savedRetention);
+              return;
+            }
+          }
+        }
+      } catch {
+        // Retention evidence is additive. If historical read/qualification fails,
+        // continue with the existing pre-instruction path and do not invent retention.
       }
-    } else {
-      masteryEvidenceSkipNextPhaseTransitionRef.current = false;
-      await orchestratorRef.current.startSession();
+
+      let plan = await buildBaselinePlan({
+        lessonKey,
+        lessonId,
+        lessonData,
+        phaseSets,
+      });
+      const savedBaseline = snapshot?.currentPhase === BASELINE_EVIDENCE_PURPOSE
+        ? snapshot?.phaseData?.[BASELINE_EVIDENCE_PURPOSE]
+        : null;
+      if (
+        (plan.status === 'available' || plan.status === BASELINE_STATUSES.PARTIAL)
+        && savedBaseline?.status === 'active'
+        && Array.isArray(savedBaseline?.responses)
+        && savedBaseline.responses.length > 0
+      ) {
+        await activateBaseline(plan, null, savedBaseline);
+        return;
+      }
+      if (plan.candidateIdentities?.length && evidenceClientForBaseline) {
+        const prior = await evidenceClientForBaseline.checkPriorExposure({
+          learnerId: sessionLearnerIdRef.current || learnerProfile?.id || null,
+          itemIdentities: plan.candidateIdentities,
+        });
+        if (!prior.ok) {
+          await markBaselineUnavailableAndBegin(BASELINE_UNAVAILABLE_REASONS.EVIDENCE_UNAVAILABLE);
+          return;
+        }
+        plan = await buildBaselinePlan({
+          lessonKey,
+          lessonId,
+          lessonData,
+          phaseSets,
+          priorExposedKeys: prior.exposedKeys,
+        });
+      } else if (plan.candidateIdentities?.length && !evidenceClientForBaseline) {
+        await markBaselineUnavailableAndBegin(BASELINE_UNAVAILABLE_REASONS.EVIDENCE_UNAVAILABLE);
+        return;
+      }
+
+      if (plan.status === 'available' || plan.status === BASELINE_STATUSES.PARTIAL) {
+        await activateBaseline(plan, null, savedBaseline);
+        return;
+      }
+
+      void masteryEvidenceClientRef.current?.updateBaselineStatus({
+        baselineStatus: BASELINE_STATUSES.UNAVAILABLE,
+        baselineItemCount: 0,
+        baselineUnavailableReason: plan.reason || BASELINE_UNAVAILABLE_REASONS.NO_BASELINE_POOL,
+      });
+      await beginInstruction(null);
+    } catch {
+      await markBaselineUnavailableAndBegin(BASELINE_UNAVAILABLE_REASONS.EVIDENCE_UNAVAILABLE);
     }
   };
 
@@ -6511,10 +7358,10 @@ function SessionPageV2Inner() {
   // Auto-start the session as soon as the page is ready and no snapshot resume is pending.
   // This eliminates the initial "Begin" click — user goes straight to "Begin Discussion".
   useEffect(() => {
-    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase) {
+    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase && baselineState === 'idle' && retentionState === 'idle') {
       handleStartSessionClick();
     }
-  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, handleStartSessionClick]);
+  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, baselineState, retentionState, handleStartSessionClick]);
 
   // Auto-dismiss the objective complete toast after 3.5s
   useEffect(() => {
@@ -6532,56 +7379,32 @@ function SessionPageV2Inner() {
     }
 
     const supabase = getSupabaseClient();
-    const { data: sessionResult } = await supabase?.auth.getSession() || {};
-    const token = sessionResult?.session?.access_token;
-    if (!token) {
-      throw new Error('Not logged in');
-    }
-
-    const res = await fetch('/api/facilitator/pin/verify', {
+    const { data: authSession } = await supabase?.auth.getSession() || {};
+    const token = authSession?.session?.access_token;
+    if (!token) throw new Error('Sign in is required to authorize this takeover.');
+    const authorizationLessonKey = `${subjectParam}/${lessonId.endsWith('.json') ? lessonId : `${lessonId}.json`}`;
+    const authorizationResponse = await fetch('/api/syllabus/execution', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ pin: pinCode })
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        learnerId: trackingLearnerId,
+        lessonKey: authorizationLessonKey,
+        occurrenceId: occurrenceIdParam,
+        instructionalTeacher: 'sonoma',
+        exceptionPin: pinCode,
+      }),
     });
-
-    const result = await res.json().catch(() => null);
-    if (!res.ok || !result?.ok) {
-      throw new Error('Invalid PIN');
+    const authorizationResult = await authorizationResponse.json().catch(() => null);
+    if (!authorizationResponse.ok || !authorizationResult?.ok) {
+      throw new Error(authorizationResult?.error || 'This Syllabus occurrence could not be authorized for takeover.');
     }
 
-    // End all currently active sessions for this learner+lesson regardless of which
-    // device owns them. This covers both directions:
-    //   (a) new device arriving to take over from Device A
-    //   (b) Device A reclaiming after its polling notification (conflictingSession.id
-    //       would be Device A's own dead session — not Device B's live one — so
-    //       endLessonSession(conflictingSession.id) was a no-op and startTrackedSession
-    //       would find Device B still active and throw "still active on another device").
-    const effectiveLessonId = goldenKeyLessonKey || trackingLessonId;
-    try {
-      const nowIso = new Date().toISOString();
-      const { data: activeSessions } = await supabase
-        .from('lesson_sessions')
-        .select('id')
-        .eq('learner_id', trackingLearnerId)
-        .eq('lesson_id', effectiveLessonId)
-        .is('ended_at', null);
-      if (Array.isArray(activeSessions) && activeSessions.length > 0) {
-        for (const row of activeSessions) {
-          await supabase.from('lesson_sessions').update({ ended_at: nowIso }).eq('id', row.id);
-        }
-      }
-    } catch {}
-
-    try {
-      const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
-      await startTrackedSession(browserSessionId, deviceName);
-      try { startSessionPolling?.(); } catch {}
-    } catch (err) {
-      throw err;
+    const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+    const result = await startTrackedSession(browserSessionId, deviceName, pinCode, conflictingSession?.id, authorizedOccurrenceId, 'sonoma');
+    if (!result?.id || result?.conflict) {
+      throw new Error('Unable to take over this lesson session. The existing session is still active.');
     }
+    try { startSessionPolling?.(); } catch {}
 
     // Clear local snapshot so reload pulls the latest remote snapshot.
     // Also set a one-shot sessionStorage flag so SnapshotService skips the
@@ -6599,14 +7422,14 @@ function SessionPageV2Inner() {
     if (typeof window !== 'undefined') {
       window.location.reload();
     }
-  }, [browserSessionId, conflictingSession, goldenKeyLessonKey, learnerProfile?.id, lessonKey, startTrackedSession, startSessionPolling]);
+  }, [authorizedOccurrenceId, browserSessionId, conflictingSession?.id, learnerProfile?.id, lessonId, lessonKey, occurrenceIdParam, startTrackedSession, startSessionPolling, subjectParam]);
 
   const handleCancelTakeover = useCallback(() => {
     setIsTakenOverNotification(false);
     setShowTakeoverDialog(false);
     setConflictingSession(null);
     if (typeof window !== 'undefined') {
-      window.location.href = '/learn/lessons';
+      window.location.href = '/learn';
     }
   }, []);
 
@@ -6722,7 +7545,7 @@ function SessionPageV2Inner() {
     });
     discussionPhaseRef.current.repeatCurrentSentence();
   };
-
+  
   // Discussion handlers
   const submitDiscussionResponse = () => {
     if (!discussionPhaseRef.current) return;
@@ -6868,28 +7691,49 @@ function SessionPageV2Inner() {
   
   const skipTestReview = async () => {
     if (!testPhaseRef.current) return;
-    
-    // Play prefetched congrats TTS immediately for responsive feel
-    if (congratsTtsUrl && audioEngineRef.current) {
-      try {
-        // Prevent the ClosingPhase farewell from interrupting this message.
-        deferClosingStartUntilAudioEndRef.current = true;
-        audioEngineRef.current.playAudio(congratsTtsUrl, ['Great job completing the lesson!']);
-      } catch (err) {
-        console.warn('[SessionPageV2] Failed to play congrats TTS:', err);
-      }
-    }
-    
-    // Let completion logic happen in background (don't await)
+
+    // The canonical completion event controls final success feedback. Advancing
+    // review here must not claim the lesson was recorded before that commit.
     testPhaseRef.current.skipReview();
   };
   
   // Loading state: both lesson AND learner must be loaded
-  if (loading || learnerLoading) {
+  if (executionAuthorization === 'pending' || (executionAuthorization === 'allowed' && (loading || learnerLoading))) {
     return (
       <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontSize: '1.125rem', color: '#1f2937' }}>
-          {loading ? 'Loading lesson...' : 'Loading learner profile...'}
+          {executionAuthorization === 'pending' ? 'Authorizing Syllabus lesson...' : (loading ? 'Loading lesson...' : 'Loading learner profile...')}
+        </div>
+      </div>
+    );
+  }
+  if (executionAuthorization === 'denied') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: '#fef2f2', color: '#b91c1c', padding: 24, borderRadius: 8, maxWidth: 448, textAlign: 'center' }}>
+          <h2 style={{ fontWeight: 700, marginBottom: 8 }}>Syllabus authorization required</h2>
+          <p>{executionAuthorizationError}</p>
+          <a href="/learn" style={{ color: '#991b1b', fontWeight: 700 }}>Return to the Syllabus</a>
+        </div>
+      </div>
+    );
+  }
+  if (completionCommitState === 'saving' || completionCommitState === 'failed') {
+    const completionFailed = completionCommitState === 'failed';
+    return (
+      <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ background: '#fff7ed', color: '#9a3412', padding: 24, borderRadius: 8, maxWidth: 520, textAlign: 'center' }}>
+          <h2 style={{ fontWeight: 700, marginBottom: 8 }}>{completionFailed ? 'Completion still needs to be recorded' : 'Recording lesson completion…'}</h2>
+          <p>{completionFailed ? 'Your lesson work and transcript are still here. Retry before leaving this page.' : 'Please keep this page open while the canonical lesson history is updated.'}</p>
+          {completionFailed && (
+            <button
+              type="button"
+              onClick={() => eventBusRef.current?.emit('sessionComplete', completionPayloadRef.current)}
+              style={{ marginTop: 12, padding: '10px 18px', border: 0, borderRadius: 8, background: '#c2410c', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Retry completion
+            </button>
+          )}
         </div>
       </div>
     );
@@ -8088,6 +8932,186 @@ function SessionPageV2Inner() {
             return null;
           })()}
           
+          {/* Stage 7 retention: short delayed pre-review evidence step, not a canonical phase */}
+          {retentionState === 'awaiting-response' && (() => {
+            const item = retentionPlan?.selectedItems?.[retentionIndex] || null;
+            const total = retentionPlan?.selectedItems?.length || 0;
+            if (!item) return null;
+            const prompt = formatQuestionForSpeech(item, { layout: 'multiline' });
+            return (
+              <div style={{ padding: '8px 12px 10px' }}>
+                <div style={{
+                  maxWidth: 720,
+                  margin: '0 auto',
+                  border: '1px solid rgba(15,118,110,0.25)',
+                  borderRadius: 16,
+                  background: 'rgba(240,253,250,0.94)',
+                  boxShadow: '0 8px 28px rgba(15,118,110,0.10)',
+                  padding: 16
+                }}>
+                  <div style={{ color: '#115e59', fontWeight: 800, fontSize: 14, marginBottom: 6 }}>
+                    Before we review {total ? `• ${retentionIndex + 1} of ${total}` : ''}
+                  </div>
+                  <div style={{ color: '#374151', fontSize: 14, marginBottom: 12 }}>
+                    {retentionMessage || 'Try this one. It is okay if you are not sure.'}
+                  </div>
+                  <div style={{
+                    whiteSpace: 'pre-wrap',
+                    color: '#111827',
+                    fontSize: 'clamp(1rem, 2.5vw, 1.15rem)',
+                    fontWeight: 750,
+                    marginBottom: 12
+                  }}>
+                    {prompt}
+                  </div>
+                  <textarea
+                    value={retentionAnswer}
+                    onChange={(event) => setRetentionAnswer(event.target.value)}
+                    placeholder={"Type your answer, or write I don't know."}
+                    disabled={retentionSubmitting}
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      borderRadius: 12,
+                      border: '1px solid #99f6e4',
+                      padding: 12,
+                      fontSize: 16,
+                      resize: 'vertical',
+                      marginBottom: 10
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={handleRetentionRepeat}
+                      disabled={retentionSubmitting}
+                      style={{
+                        background: '#0f766e',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '10px 16px',
+                        fontWeight: 800,
+                        cursor: retentionSubmitting ? 'not-allowed' : 'pointer',
+                        opacity: retentionSubmitting ? 0.7 : 1
+                      }}
+                    >
+                      Repeat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRetentionSubmit}
+                      disabled={retentionSubmitting}
+                      style={{
+                        background: '#c7442e',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '10px 18px',
+                        fontWeight: 800,
+                        cursor: retentionSubmitting ? 'not-allowed' : 'pointer',
+                        opacity: retentionSubmitting ? 0.7 : 1
+                      }}
+                    >
+                      {retentionSubmitting ? 'Saving...' : 'Continue'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Stage 5 baseline: short pre-instruction evidence step, not a teaching phase */}
+          {baselineState === 'awaiting-response' && (() => {
+            const item = baselinePlan?.selectedItems?.[baselineIndex] || null;
+            const total = baselinePlan?.selectedItems?.length || 0;
+            if (!item) return null;
+            const prompt = formatQuestionForSpeech(item, { layout: 'multiline' });
+            return (
+              <div style={{ padding: '8px 12px 10px' }}>
+                <div style={{
+                  maxWidth: 720,
+                  margin: '0 auto',
+                  border: '1px solid rgba(59,130,246,0.25)',
+                  borderRadius: 16,
+                  background: 'rgba(239,246,255,0.92)',
+                  boxShadow: '0 8px 28px rgba(30,64,175,0.10)',
+                  padding: 16
+                }}>
+                  <div style={{ color: '#1e3a8a', fontWeight: 800, fontSize: 14, marginBottom: 6 }}>
+                    Before we start {total ? `• ${baselineIndex + 1} of ${total}` : ''}
+                  </div>
+                  <div style={{ color: '#374151', fontSize: 14, marginBottom: 12 }}>
+                    {baselineMessage || "It's completely okay if you don't know this yet."}
+                  </div>
+                  <div style={{
+                    whiteSpace: 'pre-wrap',
+                    color: '#111827',
+                    fontSize: 'clamp(1rem, 2.5vw, 1.15rem)',
+                    fontWeight: 750,
+                    marginBottom: 12
+                  }}>
+                    {prompt}
+                  </div>
+                  <textarea
+                    value={baselineAnswer}
+                    onChange={(event) => setBaselineAnswer(event.target.value)}
+                    placeholder={"Type your answer, or write I don't know."}
+                    disabled={baselineSubmitting}
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      borderRadius: 12,
+                      border: '1px solid #bfdbfe',
+                      padding: 12,
+                      fontSize: 16,
+                      resize: 'vertical',
+                      marginBottom: 10
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={handleBaselineRepeat}
+                      disabled={baselineSubmitting}
+                      style={{
+                        background: '#2563eb',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '10px 16px',
+                        fontWeight: 800,
+                        cursor: baselineSubmitting ? 'not-allowed' : 'pointer',
+                        opacity: baselineSubmitting ? 0.7 : 1
+                      }}
+                    >
+                      Repeat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBaselineSubmit}
+                      disabled={baselineSubmitting}
+                      style={{
+                        background: '#c7442e',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '10px 18px',
+                        fontWeight: 800,
+                        cursor: baselineSubmitting ? 'not-allowed' : 'pointer',
+                        opacity: baselineSubmitting ? 0.7 : 1
+                      }}
+                    >
+                      {baselineSubmitting ? 'Saving...' : 'Continue'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Complete Lesson button during test review */}
           {currentPhase === 'test' && testState === 'reviewing' && testGrade && (
             <div style={{
@@ -8125,6 +9149,7 @@ function SessionPageV2Inner() {
             const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
             const needBeginTest = (currentPhase === 'test' && (!testState || testState === 'idle'));
             if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest)) return null;
+            if (baselineState === 'awaiting-response' || retentionState === 'awaiting-response') return null;
             // Hide Begin while the play-time-expired countdown is running — clicking Begin
             // at this point would restart the play timer and give double time.
             if (showPlayTimeExpired) return null;
@@ -8196,6 +9221,25 @@ function SessionPageV2Inner() {
                           try { timerServiceRef.current?.reset?.(); } catch {}
                           setCurrentTimerMode({ discussion: null, comprehension: null, exercise: null, worksheet: null, test: null });
                           setTimerRefreshKey(k => k + 1);
+                          baselinePlanRef.current = null;
+                          baselineResponsesRef.current = [];
+                          setBaselinePlan(null);
+                          setBaselineIndex(0);
+                          setBaselineAnswer('');
+                          setBaselineMessage('');
+                          setBaselineState('idle');
+                          retentionPlanRef.current = null;
+                          retentionEligibilityRef.current = null;
+                          retentionResponsesRef.current = [];
+                          setRetentionPlan(null);
+                          setRetentionIndex(0);
+                          setRetentionAnswer('');
+                          setRetentionMessage('');
+                          setRetentionState('idle');
+                          masteryEligibilityRef.current = null;
+                          masteryAssistanceByExposureRef.current = new Map();
+                          masteryPriorNeedsRecoveryRef.current = false;
+                          masteryUsedIdentityKeysRef.current = new Set();
                           // Auto-start will re-fire once resumePhase clears
                           setCurrentPhase('idle');
                           setDiscussionState('idle');
