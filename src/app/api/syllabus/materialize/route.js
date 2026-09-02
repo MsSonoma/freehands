@@ -41,18 +41,24 @@ export async function POST(request, deps = {}) {
     if (!lineageId) throw new SyllabusError('A valid forecast lineage is required')
     const authorization = request.headers.get('authorization') || ''
     const generateLesson = deps.generateLesson || (async (spec) => {
+      const { materializationOperation, ...generationSpec } = spec
       const generatorRequest = new Request(new URL('/api/facilitator/lessons/generate', request.url), {
         method: 'POST',
         headers: { Authorization: authorization, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: 'proposal',
           learnerId,
-          proposal: { version: 1, learnerId, generationSpec: spec },
+          proposal: { version: 1, learnerId, generationSpec },
         }),
       })
-      const response = await generateFacilitatorLesson(generatorRequest)
+      const response = await generateFacilitatorLesson(generatorRequest, { materializationOperation })
       const payload = await response.json().catch(() => ({}))
-      if (!response.ok || !payload?.lessonKey) throw new Error(payload?.error || 'Lesson generation failed')
+      if (!response.ok || !payload?.lessonKey) {
+        const failure = new Error(payload?.error || 'Lesson generation failed')
+        failure.code = payload?.code
+        failure.operation = payload?.operation
+        throw failure
+      }
       return payload
     })
     const result = await materializeForecastOccurrence({
@@ -75,6 +81,11 @@ export async function POST(request, deps = {}) {
       sourceProposalRevisionId: error.sourceProposalRevisionId,
       expectedActiveRevisionId: error.expectedActiveRevisionId,
     } : undefined
-    return NextResponse.json({ error: error.message || 'Forecast materialization failed', code: error.code, ...(recovery ? { recovery } : {}) }, { status })
+    return NextResponse.json({
+      error: error.message || 'Forecast materialization failed',
+      code: error.code,
+      ...(recovery ? { recovery } : {}),
+      ...(error.operation ? { operation: error.operation } : {}),
+    }, { status })
   }
 }

@@ -43,6 +43,10 @@ export async function POST(request, deps = {}) {
       fallbackTimeZone: context.user?.user_metadata?.timezone,
     })
     const requestedInstructionalTeacher = String(body?.instructionalTeacher || '').trim().toLowerCase()
+    const activityKind = String(body?.activityKind || 'instruction').trim().toLowerCase()
+    if (!['instruction', 'slate_practice'].includes(activityKind)) {
+      throw new SyllabusError('Invalid Syllabus activity kind', 400, 'INVALID_ACTIVITY_KIND')
+    }
     if (requestedInstructionalTeacher && requestedInstructionalTeacher !== decision.instructionalTeacher) {
       return NextResponse.json({
         error: 'This lesson is assigned to a different instructional teacher.',
@@ -51,7 +55,8 @@ export async function POST(request, deps = {}) {
     }
     const secret = deps.proofSecret || process.env.SUPABASE_SERVICE_ROLE_KEY
     const existingProof = readSyllabusExecutionProof(cookieValue(request, SYLLABUS_EXECUTION_COOKIE), secret, now)
-    let authorization = decision.allowedWithoutPin ? 'today' : null
+    const slateOnDemand = activityKind === 'slate_practice' && decision.reason !== 'legacy_exception'
+    let authorization = slateOnDemand ? 'slate_on_demand' : (decision.allowedWithoutPin ? 'today' : null)
     if (!authorization && executionProofMatches(existingProof, decision.scope)) authorization = 'scoped_pin_proof'
     if (!authorization && body?.exceptionPin) {
       const verifyPin = deps.verifyFacilitatorPinForUser || verifyFacilitatorPinForUser
@@ -78,13 +83,15 @@ export async function POST(request, deps = {}) {
       today: decision.calendar.today,
       timeZone: decision.calendar.timeZone,
     })
-    response.cookies.set(SYLLABUS_EXECUTION_COOKIE, createSyllabusExecutionProof(decision.scope, secret, now), {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: PROOF_TTL_SECONDS,
-    })
+    if (activityKind === 'instruction') {
+      response.cookies.set(SYLLABUS_EXECUTION_COOKIE, createSyllabusExecutionProof(decision.scope, secret, now), {
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: PROOF_TTL_SECONDS,
+      })
+    }
     return response
   } catch (error) {
     const status = error instanceof SyllabusError ? error.status : 500

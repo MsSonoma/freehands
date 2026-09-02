@@ -69,13 +69,14 @@ export async function getActiveSyllabus({ repository, admin, facilitatorId, lear
   }
   const activeRevision = await repository.findRevision(syllabus.active_revision_id, syllabus.id)
   if (!activeRevision) throw new SyllabusError('The active Syllabus revision could not be found', 500, 'ACTIVE_REVISION_MISSING')
-  const { forecastItems, associations, schedules, sessions, sessionEvents, legacyActivities, lessonMetadata, slateEvidenceReports, slateReviewReports } = await loadSyllabusTimelineInputs({
+  const { forecastItems, associations, slateAssignments, schedules, sessions, sessionEvents, legacyActivities, lessonMetadata, slateEvidenceReports, slateReviewReports } = await loadSyllabusTimelineInputs({
     repository, admin, facilitatorId, learner, activeRevision, verifyLessonAccess, includeSlateEvidence: true,
   })
   const timelineItems = composeSyllabusLessonTimeline({
     activeRevision,
     forecastItems,
     associations,
+    slateAssignments,
     approvedLessons: learner.approved_lessons || {},
     schedules,
     sessions,
@@ -259,11 +260,11 @@ async function persistSyllabusActivation({ repository, facilitatorId, learnerId,
   return { syllabus, active_revision: revision, forecast_items: await repository.listForecastItems(revision.id) }
 }
 
-export async function activateSyllabus({ repository, facilitatorId, learnerId, snapshot, now = new Date(), today = now.toISOString().slice(0, 10), allowFutureIntentChanges = true, allowCapacityException = false }) {
+export async function activateSyllabus({ repository, facilitatorId, learnerId, snapshot, now = new Date(), today = now.toISOString().slice(0, 10), allowFutureIntentChanges = true, allowCapacityException = false, expectedActiveRevisionId = undefined }) {
   if (!allowFutureIntentChanges) {
     throw new SyllabusError('Future Syllabus planning requires the current Lesson Planner entitlement', 403, 'SYLLABUS_PLANNING_REQUIRED')
   }
-  return persistSyllabusActivation({ repository, facilitatorId, learnerId, snapshot, now, today, allowCapacityException })
+  return persistSyllabusActivation({ repository, facilitatorId, learnerId, snapshot, now, today, allowCapacityException, expectedActiveRevisionId })
 }
 
 export async function carryForwardLearningForecastProposal({
@@ -475,7 +476,7 @@ export async function bindMaterializedForecast({
   if (!activeRevision) throw new SyllabusError('The active Syllabus revision could not be found', 500, 'ACTIVE_REVISION_MISSING')
   const forecastItems = await repository.listForecastItems(activeRevision.id)
   const matches = forecastItems.filter((item) => String(item?.lineage_id || '') === String(lineageId || ''))
-  if (matches.length !== 1 || matches[0].origin !== 'learning_forecast' || (matches[0].item_type || 'lesson') !== 'lesson') {
+  if (matches.length !== 1 || !['learning_forecast', 'facilitator'].includes(matches[0].origin) || (matches[0].item_type || 'lesson') !== 'lesson') {
     throw new SyllabusError('Forecast occurrence not found or ambiguous', 404, 'FORECAST_OCCURRENCE_NOT_FOUND')
   }
   if (matches[0].lesson_key && matches[0].lesson_key !== lessonKey) {

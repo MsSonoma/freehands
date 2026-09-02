@@ -191,6 +191,38 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load learner lesson associations')
       return data || []
     },
+    async listSlateAssignments(facilitatorId, learnerId) {
+      const { data, error } = await admin.from('syllabus_slate_assignments').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .order('assigned_at')
+        .order('id')
+      if (error?.code === '42P01') return []
+      throwOn(error, 'Failed to load Mr. Slate assignments')
+      return data || []
+    },
+    async createSlateAssignment(row) {
+      const result = await admin.from('syllabus_slate_assignments').insert(row).select('*').single()
+      if (!result.error) return result.data
+      if (result.error.code !== '23505') throwOn(result.error, 'Failed to assign Mr. Slate')
+      const { data, error } = await admin.from('syllabus_slate_assignments').select('*')
+        .eq('facilitator_id', row.facilitator_id)
+        .eq('learner_id', row.learner_id)
+        .eq('syllabus_occurrence_id', row.syllabus_occurrence_id)
+        .maybeSingle()
+      throwOn(error, 'Failed to read Mr. Slate assignment')
+      return data
+    },
+    async deleteSlateAssignment(facilitatorId, learnerId, assignmentId) {
+      const { data, error } = await admin.from('syllabus_slate_assignments').delete()
+        .eq('id', assignmentId)
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .select('id')
+        .maybeSingle()
+      throwOn(error, 'Failed to remove Mr. Slate assignment')
+      return data
+    },
     async listLegacyActivityRecords(facilitatorId, learnerId) {
       const { data, error } = await admin.from('syllabus_legacy_activity_records').select('*')
         .eq('facilitator_id', facilitatorId)

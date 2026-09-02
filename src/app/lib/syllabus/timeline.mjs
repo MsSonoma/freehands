@@ -217,13 +217,34 @@ export function syllabusItemActions({ role, state, hasLessonArtifact = false, re
 
 export function syllabusItemActionsFor({ item, ...actionContext }) {
   if (item?.historical_activity_only === true) return []
+  if (item?.item_type === 'slate_assignment') {
+    return actionContext.role === 'learner'
+      ? [{ id: 'practice_slate', label: 'Start Mr. Slate' }]
+      : (actionContext.role === 'facilitator' ? [{ id: 'unassign_slate', label: 'Remove assignment' }] : [])
+  }
   if (
     actionContext.role === 'facilitator'
     && (item?.item_type || 'lesson') === 'lesson'
-    && item?.origin === 'learning_forecast'
+    && ['learning_forecast', 'facilitator'].includes(item?.origin)
     && !item?.lesson_key
-  ) return [{ id: 'materialize', label: 'Generate lesson' }]
-  return syllabusItemActions(actionContext)
+  ) return item.origin === 'facilitator'
+    ? [{ id: 'edit_concept', label: 'Edit concept' }, { id: 'materialize', label: 'Generate lesson' }]
+    : [{ id: 'materialize', label: 'Generate lesson' }]
+  const actions = syllabusItemActions(actionContext)
+  if ((item?.item_type || 'lesson') !== 'lesson') return actions
+  if (actionContext.role === 'learner' && actionContext.hasLessonArtifact) return [...actions, { id: 'practice_slate', label: 'Practice with Mr. Slate' }]
+  if (actionContext.role === 'facilitator' && item?.lesson_key && item?.historical_record !== true && item?.slate_assigned !== true) {
+    return [...actions, { id: 'assign_slate', label: 'Assign Mr. Slate' }]
+  }
+  return actions
+}
+
+export function syllabusActionPresentation({ action, href = null, role, capabilities = {} } = {}) {
+  if (!action?.id) return 'hidden'
+  if (action.id === 'history') return capabilities.reviewHistory === true ? 'button' : 'hidden'
+  if (href && !action.requires_pin) return 'link'
+  if (role === 'learner') return capabilities.openLesson === true ? 'button' : 'hidden'
+  return capabilities.lessonActions === true ? 'button' : 'hidden'
 }
 
 export function timelineItemAction({ role, weekState, hasLessonArtifact, hasProgress }) {

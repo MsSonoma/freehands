@@ -159,7 +159,7 @@ export async function materializeForecastOccurrence({
   const activeRevision = await repository.findRevision(bindingRevisionId, syllabus.id)
   const items = await repository.listForecastItems(bindingRevisionId)
   const matches = items.filter((item) => clean(item?.lineage_id) === clean(lineageId))
-  if (matches.length !== 1 || matches[0].item_type !== 'lesson' || matches[0].origin !== 'learning_forecast') {
+  if (matches.length !== 1 || matches[0].item_type !== 'lesson' || !['learning_forecast', 'facilitator'].includes(matches[0].origin)) {
     throw new SyllabusError('Forecast occurrence not found', 404, 'FORECAST_OCCURRENCE_NOT_FOUND')
   }
   const item = matches[0]
@@ -173,13 +173,10 @@ export async function materializeForecastOccurrence({
   const claim = await repository.claimForecastMaterialization({ syllabusId: syllabus.id, lineageId: item.lineage_id, generationInputHash: inputHash })
   const receipt = claim?.receipt
   if (!receipt?.id) throw new SyllabusError('Materialization could not be reserved', 500, 'MATERIALIZATION_CLAIM_FAILED')
-  if (receipt.lesson_key && receipt.generation_input_hash !== inputHash) {
+  if (receipt.generation_input_hash !== inputHash) {
     throw new SyllabusError('This forecast intent changed after a lesson artifact was generated. Review the current concept before binding.', 409, 'MATERIALIZATION_INPUT_CHANGED')
   }
   let lessonKey = clean(receipt.lesson_key)
-  if (!lessonKey && claim.claimed !== true) {
-    throw new SyllabusError('This forecast lesson is already being generated. Try again shortly.', 409, 'MATERIALIZATION_IN_PROGRESS')
-  }
 
   if (!lessonKey) {
     let result
@@ -192,10 +189,26 @@ export async function materializeForecastOccurrence({
         grade: learnerGrade,
         difficulty: clean(activeRevision.planning_policy?.difficulty) || 'intermediate',
         notes: JSON.stringify(activeRevision.teaching_guidance || {}).slice(0, 3000),
+        materializationOperation: {
+          id: receipt.id,
+          syllabusId: syllabus.id,
+          lineageId: item.lineage_id,
+          generationInputHash: inputHash,
+          recoverOnly: claim.claimed !== true,
+        },
       })
       lessonKey = clean(result?.lessonKey)
       if (!lessonKey) throw new Error('The generator returned no canonical lesson identity')
     } catch (error) {
+      if (error?.code === 'MATERIALIZATION_RECOVERY_REQUIRED') {
+        await repository.updateForecastMaterialization(receipt.id, {
+          status: 'recovery_required',
+          last_error: clean(error?.message).slice(0, 500) || 'Materialization generation recovery is required',
+        }).catch(() => {})
+        const failure = new SyllabusError('Generation completion is ambiguous and no exact canonical artifact can be proven. Blind regeneration is disabled.', 409, 'MATERIALIZATION_RECOVERY_REQUIRED')
+        failure.operation = error.operation || { id: receipt.id, lineageId: item.lineage_id }
+        throw failure
+      }
       await repository.updateForecastMaterialization(receipt.id, { status: 'generation_failed', last_error: clean(error?.message).slice(0, 500) || 'Lesson generation failed' }).catch(() => {})
       throw new SyllabusError('The planned concept was preserved, but the full lesson could not be generated.', 502, 'MATERIALIZATION_GENERATION_FAILED')
     }

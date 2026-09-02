@@ -70,6 +70,44 @@ export async function requireAssignableSyllabusOccurrence({
   return { syllabus, item: matches[0], lessonKey: canonicalKey, occurrenceId: canonicalOccurrence }
 }
 
+export async function requireSlateAssignableSyllabusOccurrence({
+  repository,
+  admin,
+  facilitatorId,
+  learnerId,
+  lessonKey,
+  occurrenceId,
+  fallbackTimeZone,
+  now = new Date(),
+}) {
+  const { syllabus, canonicalKey, canonicalOccurrence } = await loadSyllabusOccurrenceContext({
+    repository,
+    admin,
+    facilitatorId,
+    learnerId,
+    lessonKey,
+    occurrenceId,
+    fallbackTimeZone,
+    now,
+  })
+  const matches = (syllabus.timeline_items || []).filter((item) => (
+    normalizeLessonKey(item?.lesson_key) === canonicalKey
+      && (clean(item?.occurrence_id) === canonicalOccurrence || clean(item?.source_occurrence_id) === canonicalOccurrence)
+      && (item?.item_type || 'lesson') === 'lesson'
+      && item?.historical_activity_only !== true
+  ))
+  if (matches.length !== 1) {
+    throw new SyllabusError('This lesson occurrence cannot receive a Mr. Slate assignment', 403, 'LESSON_NOT_IN_ACTIVE_SYLLABUS')
+  }
+  const item = matches[0]
+  return {
+    syllabus,
+    item,
+    lessonKey: canonicalKey,
+    occurrenceId: clean(item.source_occurrence_id) || canonicalOccurrence,
+  }
+}
+
 
 export async function requireHistoricalSyllabusOccurrence({
   repository,

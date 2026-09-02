@@ -67,6 +67,7 @@ export async function POST(request, deps = {}) {
         now,
         today,
         allowCapacityException,
+        expectedActiveRevisionId: body?.expectedActiveRevisionId,
       })
     }
     return NextResponse.json({ ok: true, ...result }, { status: 201 })

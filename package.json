@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001 -H 0.0.0.0",
+    "dev:syllabus-qa": "cross-env SYLLABUS_QA_ENABLED=true NEXT_PUBLIC_SYLLABUS_QA_ENABLED=true next dev -p 3001 -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

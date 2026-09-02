@@ -9,6 +9,7 @@ import { composeSyllabusLessonTimeline } from '../lessonTimeline.mjs'
 import { syllabusTeacherLabel } from '../instructionalTeacher.mjs'
 import { loadSlateEvidenceInputs, resolveSyllabusLessonMetadata } from '../lessonTimelineInputs.server.mjs'
 import { readAllSupabaseRows } from '../supabaseRepository.server.mjs'
+import { syllabusItemActionsFor } from '../timeline.mjs'
 
 const REVISION = {
   id: 'revision-1',
@@ -52,6 +53,40 @@ const slateReport = ({ state = 'independent_success', retentionState = 'not_meas
 test('facilitator-owned artifacts without learner association do not enter the learner Syllabus', () => {
   const items = composeSyllabusLessonTimeline({ activeRevision: REVISION, today: '2026-08-26' })
   assert.deepEqual(items, [])
+})
+
+test('occurrence-bound Mr. Slate assignment renders as a separate supplemental event', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [forecastLesson()],
+    associations: [association({ readiness_state: 'available', instructional_teacher: 'webb' })],
+    slateAssignments: [{
+      id: '22222222-2222-4222-8222-222222222222',
+      lesson_key: 'generated/fractions.json',
+      syllabus_occurrence_id: 'syllabus:forecast-1',
+      assigned_at: '2026-09-01T12:00:00Z',
+    }],
+    today: '2026-09-07',
+  })
+  assert.equal(items.length, 2)
+  const lesson = items.find((item) => item.item_type === 'lesson')
+  const slate = items.find((item) => item.item_type === 'slate_assignment')
+  assert.equal(lesson.assigned_instructional_teacher, 'webb')
+  assert.equal(lesson.slate_assigned, true)
+  assert.equal(slate.title, 'Mr. Slate: Fractions')
+  assert.equal(slate.parent_occurrence_id, lesson.occurrence_id)
+  assert.equal(slate.practice_occurrence_id, lesson.occurrence_id)
+  assert.equal(slate.planned_date, lesson.planned_date)
+})
+
+test('Mr. Slate stays supplemental in learner and facilitator Syllabus actions', () => {
+  const item = { item_type: 'lesson', lesson_key: 'math/fractions.json', readiness_state: 'available' }
+  const learnerActions = syllabusItemActionsFor({ item, role: 'learner', state: 'completed_historical', hasLessonArtifact: true })
+  assert.deepEqual(learnerActions.map((action) => action.id), ['review', 'repeat', 'practice_slate'])
+  assert.equal(learnerActions.at(-1).requires_pin, undefined)
+  const facilitatorActions = syllabusItemActionsFor({ item, role: 'facilitator', state: 'today_unfinished', hasLessonArtifact: true })
+  assert.ok(facilitatorActions.some((action) => action.id === 'assign_slate'))
+  assert.deepEqual(syllabusItemActionsFor({ item: { item_type: 'slate_assignment' }, role: 'learner' }), [{ id: 'practice_slate', label: 'Start Mr. Slate' }])
 })
 
 test('approved-only generated and public lessons do not become active Syllabus members', () => {

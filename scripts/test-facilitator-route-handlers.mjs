@@ -100,6 +100,22 @@ function createTableMock({ profile = { plan_tier: 'pro', subscription_tier: null
       }
       return {
         select: () => selection,
+        insert: (value) => ({
+          select: () => ({ single: async () => {
+            if (associationCapture) associationCapture.value = value
+            return { data: { id: 1, ...value }, error: null }
+          } }),
+        }),
+        update: (value) => {
+          const updateSelection = {
+            eq: () => updateSelection,
+            select: () => ({ single: async () => {
+              if (associationCapture) associationCapture.value = value
+              return { data: { id: 1, ...value }, error: null }
+            } }),
+          }
+          return updateSelection
+        },
         upsert: (value) => ({
           select: () => ({ single: async () => {
             if (associationCapture) associationCapture.value = value

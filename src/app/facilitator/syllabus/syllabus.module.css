@@ -102,5 +102,16 @@
 .actions { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-top: 18px; padding: 18px; border: 1px solid #e5e7eb; border-radius: 12px; background: white; }
 .actions label { display: grid; flex: 1; gap: 5px; color: #4b5563; font-size: 12px; font-weight: 700; }
 .actions div { display: flex; gap: 10px; }
+.conceptActions { display: flex; gap: 7px; margin-top: 10px; }
+.editorBackdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: rgba(17, 24, 39, .45); }
+.sectionEditor { width: min(680px, 100%); max-height: calc(100vh - 40px); overflow: auto; box-sizing: border-box; padding: 22px; border-radius: 13px; background: white; box-shadow: 0 24px 70px rgba(0, 0, 0, .25); }
+.sectionEditor > header, .sectionEditor > footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sectionEditor > header { margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb; }
+.sectionEditor > header h2 { margin: 0; }
+.sectionEditor > header button { border: 0; background: transparent; cursor: pointer; }
+.sectionEditor button { min-height: 40px; }
+.sectionEditor > label { display: grid; gap: 6px; color: #4b5563; font-size: 12px; font-weight: 700; }
+.sectionEditor input, .sectionEditor textarea, .sectionEditor select { box-sizing: border-box; width: 100%; padding: 9px; border: 1px solid #d1d5db; border-radius: 7px; color: #111827; font: inherit; }
+.sectionEditor > footer { justify-content: end; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e5e7eb; }
 @media (max-width: 800px) { .header, .proposalBanner, .actions, .proposalHeading, .proposalDecision { align-items: stretch; flex-direction: column; } .learnerPicker { min-width: 0; } .contentGrid { grid-template-columns: 1fr; } .forecast { min-height: 0; } .statusBar { flex-wrap: wrap; } .statusBar button { margin-left: 0; } .statusActions { margin-left: 0; } }
-@media (max-width: 520px) { .page { padding: 18px 12px 40px; } .forecastWeek li { grid-template-columns: 1fr; gap: 2px; } .actions div { flex-direction: column; } }
+@media (max-width: 520px) { .page { padding: 18px 12px 40px; } .editorBackdrop { padding:8px; } .sectionEditor { max-height:calc(100vh - 16px); padding:16px; } .forecastWeek li { grid-template-columns: 1fr; gap: 2px; } .actions div { flex-direction: column; } }

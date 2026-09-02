@@ -231,6 +231,7 @@ test('recovered instructional history receives completed actions while standalon
   assert.deepEqual(syllabusItemActionsFor({ item: recoveredWebb, role: 'learner', state: recoveredState, hasLessonArtifact: true }), [
     { id: 'review', label: 'View / Review' },
     { id: 'repeat', label: 'Do again', requires_pin: true },
+    { id: 'practice_slate', label: 'Practice with Mr. Slate' },
   ])
   assert.equal(recoveredWebb.historical_provenance, 'server_verified_legacy_transcript_v1')
   assert.equal(recoveredWebb.actual_instructional_teacher, 'webb')
@@ -256,7 +257,7 @@ test('recovered instructional history receives completed actions while standalon
   assert.deepEqual(standaloneSlate.slate_annotations, [])
 })
 
-test('canonical completed, incomplete, current, and future action contracts are unchanged by display gating', () => {
+test('canonical actions are preserved while eligible lessons gain supplemental Slate actions', () => {
   const cases = [
     { item: { actual_kind: 'completed' }, role: 'facilitator', state: 'completed_historical' },
     { item: { actual_kind: 'incomplete' }, role: 'learner', state: 'incomplete_historical', hasLessonArtifact: true },
@@ -265,7 +266,16 @@ test('canonical completed, incomplete, current, and future action contracts are 
   ]
   for (const entry of cases) {
     const { item, ...context } = entry
-    assert.deepEqual(syllabusItemActionsFor({ item, ...context }), syllabusItemActions(context))
+    const actions = syllabusItemActionsFor({ item, ...context })
+    assert.deepEqual(actions.slice(0, syllabusItemActions(context).length), syllabusItemActions(context))
+    const supplemental = actions.slice(syllabusItemActions(context).length)
+    if (context.hasLessonArtifact && context.role === 'learner') {
+      assert.deepEqual(supplemental, [{ id: 'practice_slate', label: 'Practice with Mr. Slate' }])
+    } else if (item.lesson_key && context.role === 'facilitator' && item.historical_record !== true) {
+      assert.deepEqual(supplemental, [{ id: 'assign_slate', label: 'Assign Mr. Slate' }])
+    } else {
+      assert.deepEqual(supplemental, [])
+    }
   }
 })
 

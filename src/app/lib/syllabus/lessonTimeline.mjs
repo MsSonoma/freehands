@@ -87,7 +87,7 @@ function intentOccurrenceId(intent) {
 
 export function composeSyllabusLessonTimeline({
   activeRevision = {}, forecastItems = [], associations = [], approvedLessons = {}, schedules = [], sessions = [], sessionEvents = [],
-  legacyActivities = [], lessonMetadata = [], slateEvidenceReports = [], slateReviewReports = [],
+  legacyActivities = [], lessonMetadata = [], slateAssignments = [], slateEvidenceReports = [], slateReviewReports = [],
   today = new Date().toISOString().slice(0, 10),
   timeZone = 'UTC',
 } = {}) {
@@ -412,7 +412,49 @@ export function composeSyllabusLessonTimeline({
       ...((item.item_type || 'lesson') === 'lesson' ? { assigned_instructional_teacher: 'sonoma' } : {}),
     })
   }
-  const ordered = output.sort((left, right) => left.planned_date.localeCompare(right.planned_date)
+  const instructionalOutput = output.sort((left, right) => left.planned_date.localeCompare(right.planned_date)
+    || Number(left.sort_order || 0) - Number(right.sort_order || 0)
+    || String(left.occurrence_id || left.id || '').localeCompare(String(right.occurrence_id || right.id || '')))
+  const assignedParentIds = new Set()
+  const assignmentEvents = []
+  for (const assignment of slateAssignments || []) {
+    const parentOccurrenceId = clean(assignment?.syllabus_occurrence_id)
+    const lessonKey = resolveKey(assignment?.lesson_key)
+    if (!assignment?.id || !parentOccurrenceId || !lessonKey) continue
+    const parents = instructionalOutput.filter((item) => (
+      normalizeLessonKey(item?.lesson_key) === lessonKey
+        && (clean(item?.occurrence_id) === parentOccurrenceId || clean(item?.source_occurrence_id) === parentOccurrenceId)
+        && item?.historical_activity_only !== true
+    ))
+    if (parents.length !== 1) continue
+    const parent = parents[0]
+    assignedParentIds.add(clean(parent.occurrence_id || parent.id))
+    assignmentEvents.push({
+      id: `slate-assignment:${assignment.id}`,
+      occurrence_id: `slate-assignment:${assignment.id}`,
+      assignment_id: assignment.id,
+      parent_occurrence_id: parentOccurrenceId,
+      practice_occurrence_id: clean(parent.occurrence_id || parent.id),
+      lesson_key: lessonKey,
+      subject: parent.subject,
+      title: `Mr. Slate: ${parent.title}`,
+      description: 'Assigned practice with Mr. Slate.',
+      planned_date: parent.planned_date,
+      sort_order: Number(parent.sort_order || 0) + 0.5,
+      item_type: 'slate_assignment',
+      placement_kind: 'slate_assignment',
+      readiness_state: parent.readiness_state,
+      assigned_at: assignment.assigned_at || assignment.created_at || null,
+      is_explicit_schedule: false,
+      is_provisional: false,
+      needs_placement: false,
+      capacity_conflict: null,
+    })
+  }
+  const ordered = [...instructionalOutput.map((item) => ({
+    ...item,
+    slate_assigned: assignedParentIds.has(clean(item.occurrence_id || item.id)),
+  })), ...assignmentEvents].sort((left, right) => left.planned_date.localeCompare(right.planned_date)
     || Number(left.sort_order || 0) - Number(right.sort_order || 0)
     || String(left.occurrence_id || left.id || '').localeCompare(String(right.occurrence_id || right.id || '')))
   const canonical = annotateSyllabusItemsWithSlateEvidence(ordered, slateEvidenceReports, slateReviewReports)

@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
 
-import { buildInstructionalForecastPlan, buildLearningForecastSnapshot, instructionalSlotsForWeek } from '../learningForecast.mjs'
+import { buildInstructionalForecastPlan, buildLearningForecastSnapshot, instructionalEvidenceContext, instructionalSlotsForWeek } from '../learningForecast.mjs'
+import { aggregateFacilitatorEvidenceSession } from '../../masteryEvidence/reporting.js'
 import { createLearningForecastProposal } from '../learningForecast.server.mjs'
 import { materializeForecastOccurrence, reconstructForecastCarryForward } from '../materialization.server.mjs'
 import { composeSyllabusLessonTimeline } from '../lessonTimeline.mjs'
@@ -150,6 +151,26 @@ test('weekly pattern owns next-week slot count and snapshot preserves existing i
   assert.equal(built.snapshot.forecast_items.find((row) => row.lineage_id === LINEAGE_A).title, existing.title)
   assert.equal(built.additions[0].origin, 'learning_forecast')
   assert.equal(built.additions[0].description, 'Trace energy through a simple system.')
+})
+
+test('production facilitator evidence projects deterministic learning summary without raw authority inputs', () => {
+  const report = aggregateFacilitatorEvidenceSession({
+    trackedSession: { id: 'real-session', lesson_id: 'math/fractions.json', lesson_title: 'Fractions', subject: 'math', ended_at: '2026-08-28T13:00:00Z' },
+    evidenceSession: { session_id: 'real-session', lesson_key: 'math/fractions.json', mastery_protocol_version: 'independent-mastery-v1', retention_protocol_version: 'retention-v1', evidence_status: 'complete' },
+    events: [{
+      event_type: 'mastery_check_result', event_sequence: 1, occurred_at: '2026-08-28T12:00:00.000Z', concept_id: 'equivalent-fractions',
+      stable_item_id: 'fraction-item', item_exposure_id: 'fraction-exposure', assessment_role: 'conversational_mastery_opportunity',
+      mastery_outcome: 'independent_success', mastery_check_id: 'fraction-check', mastery_protocol_version: 'independent-mastery-v1',
+      payload: { qualification: { interaction_model: 'webb_conversation', webb_classification: { coverage: 'covered', comprehension: 'demonstrated', mastery: 'mastered', retention: 'not_measured' } }, transcript: 'SECRET' },
+    }],
+  })
+  assert.equal(report.learning_summary.headline, report.independent_evidence.label)
+  assert.equal(report.learning_summary.narrative, report.independent_evidence.detail)
+  const projected = instructionalEvidenceContext([report, ...Array.from({ length: 20 }, () => report)])
+  assert.equal(projected.length, 12)
+  assert.equal(projected[0].learning_summary.headline, report.independent_evidence.label)
+  assert.deepEqual(Object.keys(projected[0]).sort(), ['baseline', 'completeness', 'independent', 'learning_summary', 'lesson', 'report_version', 'retention'])
+  assert.doesNotMatch(JSON.stringify(projected), /SECRET|events|transcript|medal|score/i)
 })
 
 test('model output cannot recast Slate follow-up work as instructional lessons', () => {
@@ -557,6 +578,49 @@ test('generation failure preserves planned concept and successful binding retry 
   const repaired = await materializeForecastOccurrence({ repository: retry, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW, generateLesson: async () => { calls++; return { lessonKey: 'generated/duplicate.json' } } })
   assert.equal(calls, 1)
   assert.equal(repaired.lesson_key, 'generated/fractions.json')
+})
+
+test('a generating receipt retry is recovery-only and binds the exact recovered artifact', async () => {
+  const repository = forecastRepository({ forecast: [item({ origin: 'learning_forecast' })] })
+  repository.claimForecastMaterialization = async ({ syllabusId, lineageId, generationInputHash }) => {
+    const receipt = { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', syllabus_id: syllabusId, lineage_id: lineageId, generation_input_hash: generationInputHash, lesson_key: null, status: 'generating' }
+    repository.state.receipts.push(receipt)
+    return { claimed: false, receipt: structuredClone(receipt) }
+  }
+  let recoveryCalls = 0
+  const result = await materializeForecastOccurrence({
+    repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW,
+    generateLesson: async ({ materializationOperation }) => {
+      recoveryCalls++
+      assert.equal(materializationOperation.recoverOnly, true)
+      assert.equal(materializationOperation.lineageId, LINEAGE_A)
+      return { lessonKey: 'generated/syllabus-materialization-dddddddd-dddd-4ddd-8ddd-dddddddddddd.json', recovered: true }
+    },
+  })
+  assert.equal(recoveryCalls, 1)
+  assert.equal(result.lesson_key, 'generated/syllabus-materialization-dddddddd-dddd-4ddd-8ddd-dddddddddddd.json')
+  assert.equal(repository.state.receipts[0].status, 'bound')
+})
+
+test('true materialization ambiguity enters recovery-required without blind regeneration', async () => {
+  const repository = forecastRepository({ forecast: [item({ origin: 'learning_forecast' })] })
+  repository.claimForecastMaterialization = async ({ syllabusId, lineageId, generationInputHash }) => {
+    const receipt = { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', syllabus_id: syllabusId, lineage_id: lineageId, generation_input_hash: generationInputHash, lesson_key: null, status: 'generating' }
+    repository.state.receipts.push(receipt)
+    return { claimed: false, receipt: structuredClone(receipt) }
+  }
+  let attempts = 0
+  await assert.rejects(materializeForecastOccurrence({
+    repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW,
+    generateLesson: async ({ materializationOperation }) => {
+      attempts++
+      assert.equal(materializationOperation.recoverOnly, true)
+      throw Object.assign(new Error('No exact artifact exists at the deterministic path.'), { code: 'MATERIALIZATION_RECOVERY_REQUIRED', operation: { id: materializationOperation.id, lineageId: LINEAGE_A } })
+    },
+  }), { code: 'MATERIALIZATION_RECOVERY_REQUIRED' })
+  assert.equal(attempts, 1)
+  assert.equal(repository.state.receipts[0].status, 'recovery_required')
+  assert.equal(repository.state.receipts[0].lesson_key, null)
 })
 
 test('missing authoritative learner grade fails before adoption or generation', async () => {

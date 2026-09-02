@@ -25,9 +25,24 @@
       "instructional learning forecast",
       "learning_forecast proposals",
       "lineage-safe materialization",
-      "forecast descriptions"
+      "forecast descriptions",
+      "unified facilitator planning surface",
+      "exact-slot concept planning",
+      "Plan Ahead 1-4 weeks",
+      "/api/syllabus/planning",
+      "occurrence-scoped Review History",
+      "LessonHistoryOverlay",
+      "exact occurrence history resolution",
+      "standalone Slate history separation",
+      "host action capabilities",
+      "forecast selected-week response identity",
+      "deterministic materialization artifact recovery",
+      "recovery_required receipts",
+      "syllabus_slate_assignments",
+      "separate Slate assignment events",
+      "on-demand Slate practice"
     ],
-    "last_updated": "2026-08-31T17:28:33Z",
+    "last_updated": "2026-09-02T16:21:37Z",
     "status": "canonical"
   },
   "learner-home": {
@@ -39,10 +54,12 @@
       "facilitator-owned instructional teacher",
       "Sonoma and Webb routing",
       "Slate mastery boundary",
+      "on-demand Slate practice",
+      "assigned Slate Syllabus events",
       "selected_teacher retirement",
       "anonymous Sonoma demo"
     ],
-    "last_updated": "2026-08-29T18:17:47Z",
+    "last_updated": "2026-09-02T16:21:37Z",
     "status": "canonical"
   },
   "facilitator-hub": {
@@ -201,12 +218,17 @@
       "/api/lesson-assign",
       "/api/generate-lesson-outline",
       "/api/facilitator/learners/[id]/evidence",
+      "/api/facilitator/learners/[id]/lesson-history/[occurrenceId]",
+      "standalone Slate Review History rejection",
       "/api/learner/follow-ups",
       "/api/learner/follow-ups/[runId]",
       "/api/syllabus/execution/start",
       "/api/syllabus/execution/complete",
+      "/api/syllabus/execution",
+      "/api/syllabus/slate-assignments",
       "/api/syllabus/forecast",
       "/api/syllabus/materialize",
+      "complete_syllabus_materialization_generation",
       "start_lesson_session_transactional",
       "complete_lesson_session_transactional",
       "instructional teacher proof binding",
@@ -223,7 +245,7 @@
       "/api/visual-aids",
       "/api/content-safety"
     ],
-    "last_updated": "2026-08-31T17:28:33Z",
+    "last_updated": "2026-09-02T16:21:37Z",
     "status": "canonical"
   },
   "mastery-evidence": {
@@ -269,9 +291,12 @@
       "learning_review_items",
       "learning_review_events",
       "daily-weekly-independence",
-      "instructional forecast evidence boundary"
+      "instructional forecast evidence boundary",
+      "occurrence-scoped evidence reporting",
+      "deterministic learning_summary",
+      "instructionalEvidenceContext"
     ],
-    "last_updated": "2026-08-31T17:28:33Z",
+    "last_updated": "2026-09-01T16:17:32Z",
     "status": "active-development"
   },
   "portfolio-generation": {

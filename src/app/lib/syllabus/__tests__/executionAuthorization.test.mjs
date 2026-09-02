@@ -121,6 +121,33 @@ test('today Syllabus occurrence is authorized without legacy availability or Cal
   assert.equal(decision.reason, 'today')
 })
 
+test('Mr. Slate practice is authorized on demand without weakening instructional PIN rules', async () => {
+  const assigned = forecast('future-practice', 'math/future-practice.json', '2026-08-25')
+  const deps = {
+    requestContext: { user: { id: FACILITATOR }, admin: {} },
+    repository: repository({ forecast: [assigned] }),
+    now: new Date('2026-08-23T16:00:00Z'),
+    proofSecret: 'test-secret',
+  }
+  const slate = await authorizeExecution(request({
+    learnerId: LEARNER,
+    lessonKey: assigned.lesson_key,
+    occurrenceId: 'syllabus:future-practice',
+    activityKind: 'slate_practice',
+  }), deps)
+  assert.equal(slate.status, 200)
+  assert.equal((await slate.json()).authorization, 'slate_on_demand')
+  assert.equal(slate.headers.get('set-cookie'), null)
+
+  const instruction = await authorizeExecution(request({
+    learnerId: LEARNER,
+    lessonKey: assigned.lesson_key,
+    occurrenceId: 'syllabus:future-practice',
+  }), deps)
+  assert.equal(instruction.status, 409)
+  assert.equal((await instruction.json()).code, 'SYLLABUS_EXECUTION_PIN_REQUIRED')
+})
+
 test('authorization returns the facilitator assignment and rejects a learner-requested substitute', async () => {
   const assigned = { ...forecast('today-webb', 'math/today-webb.json', '2026-08-23'), instructional_teacher: 'webb' }
   const deps = {

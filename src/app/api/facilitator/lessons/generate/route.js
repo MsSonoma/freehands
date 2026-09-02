@@ -3,6 +3,10 @@ import { resolveEffectiveTier, featuresForTier } from '../../../../lib/entitleme
 import { AI_MODEL } from '../../../../lib/aiModel.js'
 import { buildCanonicalLessonIdentity, normalizeGenerationRequest } from '../../../../lib/facilitatorPreparation.mjs'
 import { requireAssociationLearner, upsertLessonAssociation } from '../../../../lib/syllabus/lessonAssociations.server.mjs'
+import {
+  MaterializationGenerationError,
+  recoverOrGenerateMaterializationArtifact,
+} from '../../../../lib/syllabus/materializationGenerator.server.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -207,6 +211,57 @@ async function callModel(prompt){
   }
 }
 
+function normalizedGeneratedLesson(lesson, { title, subject, difficulty, grade }, userId) {
+  lesson.id = lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g, '_')
+  lesson.title = lesson.title || title
+  lesson.grade = lesson.grade || grade
+  lesson.difficulty = lesson.difficulty || difficulty
+  lesson.subject = (lesson.subject || subject || '').toString().toLowerCase()
+  lesson.userId = userId
+  lesson.approved = false
+  return lesson
+}
+
+async function verifiedMaterializationOperation(admin, raw, { facilitatorId, learnerId }) {
+  if (!raw) return null
+  const operationId = String(raw.id || '').trim()
+  const syllabusId = String(raw.syllabusId || '').trim()
+  const lineageId = String(raw.lineageId || '').trim()
+  const generationInputHash = String(raw.generationInputHash || '').trim()
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuid.test(operationId) || !uuid.test(syllabusId) || !uuid.test(lineageId) || !/^[0-9a-f]{64}$/i.test(generationInputHash)) {
+    throw new MaterializationGenerationError('Invalid materialization operation identity', 'MATERIALIZATION_OPERATION_INVALID', 400)
+  }
+  const receiptResult = await admin.from('syllabus_forecast_materializations').select('*')
+    .eq('id', operationId).eq('syllabus_id', syllabusId).eq('lineage_id', lineageId)
+    .eq('generation_input_hash', generationInputHash).maybeSingle()
+  if (receiptResult.error || !receiptResult.data) {
+    throw new MaterializationGenerationError('Materialization operation not found', 'MATERIALIZATION_OPERATION_NOT_FOUND', 404)
+  }
+  const syllabusResult = await admin.from('syllabi').select('id,facilitator_id,learner_id')
+    .eq('id', syllabusId).eq('facilitator_id', facilitatorId).eq('learner_id', learnerId).maybeSingle()
+  if (syllabusResult.error || !syllabusResult.data) {
+    throw new MaterializationGenerationError('Materialization operation not found', 'MATERIALIZATION_OPERATION_NOT_FOUND', 404)
+  }
+  return {
+    id: operationId,
+    syllabusId,
+    lineageId,
+    generationInputHash,
+    facilitatorId,
+    learnerId,
+    recoverOnly: raw.recoverOnly === true,
+    receipt: receiptResult.data,
+  }
+}
+
+async function storageLessonText(value) {
+  if (typeof value?.text === 'function') return value.text()
+  if (typeof value === 'string') return value
+  if (value instanceof Uint8Array) return new TextDecoder().decode(value)
+  throw new Error('Stored lesson content could not be read')
+}
+
 export async function POST(request, deps = {}){
   const { user, tier, supabase } = await readUserAndTier(request, deps)
   if (!user) return NextResponse.json({ error:'Unauthorized' }, { status: 401 })
@@ -224,9 +279,6 @@ export async function POST(request, deps = {}){
     try {
       const { data: p } = await supabase.from('profiles').select('lifetime_generations_used').eq('id', user.id).maybeSingle()
       lifetimeUsed = p?.lifetime_generations_used || 0
-      if (lifetimeUsed >= lifetimeLimit) {
-        return NextResponse.json({ error: `You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.` }, { status: 429 })
-      }
     } catch {
       // Swallow — do not block generation if quota read fails
     }
@@ -246,10 +298,103 @@ export async function POST(request, deps = {}){
   const normalized = normalizeGenerationRequest(body || {})
   if (!normalized.ok) return NextResponse.json({ error: normalized.error }, { status: 400 })
   const { title, subject, difficulty, grade, description, notes, vocab } = normalized.request
+
+  let operation
+  try {
+    operation = await verifiedMaterializationOperation(supabase, deps.materializationOperation, { facilitatorId: user.id, learnerId })
+  } catch (error) {
+    return NextResponse.json({ error: error.message, code: error.code }, { status: error.status || 500 })
+  }
+
+  if (operation) {
+    const storage = supabase.storage.from('lessons')
+    const loadArtifact = async (identity) => {
+      const { data, error } = await storage.download(identity.storagePath)
+      if (error) {
+        const missing = error.statusCode === 404 || /not found|does not exist/i.test(String(error.message || ''))
+        if (missing) return null
+        throw new Error(error.message || 'Lesson artifact recovery failed')
+      }
+      return JSON.parse(await storageLessonText(data))
+    }
+    try {
+      const generated = await recoverOrGenerateMaterializationArtifact({
+        operation,
+        recoverOnly: operation.recoverOnly,
+        loadArtifact,
+        generateArtifact: async () => {
+          if (Number.isFinite(lifetimeLimit) && lifetimeUsed >= lifetimeLimit) {
+            throw new MaterializationGenerationError(`You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.`, 'LESSON_GENERATION_QUOTA_EXHAUSTED', 429)
+          }
+          const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
+          return normalizedGeneratedLesson(await (deps.callModel || callModel)(prompt), { title, subject, difficulty, grade }, user.id)
+        },
+        createArtifact: async (identity, lesson) => {
+          const { error } = await storage.upload(identity.storagePath, JSON.stringify(lesson, null, 2), {
+            contentType: 'application/json',
+            upsert: false,
+          })
+          if (!error) return true
+          if (error.statusCode === 409 || /already exists|duplicate/i.test(String(error.message || ''))) return false
+          throw new Error(error.message || 'Lesson storage failed')
+        },
+        associateArtifact: ({ identity, lesson }) => upsertLessonAssociation({
+          admin: supabase,
+          facilitatorId: user.id,
+          learnerId,
+          lessonKey: identity.lessonKey,
+          subject: lesson.subject || subject,
+          title: lesson.title || title,
+          readinessState: 'draft',
+          associationSource: 'generator',
+          verifyLearner: false,
+        }),
+        finalizeOperation: async ({ identity }) => {
+          const { data, error } = await supabase.rpc('complete_syllabus_materialization_generation', {
+            p_receipt_id: operation.id,
+            p_facilitator_id: user.id,
+            p_learner_id: learnerId,
+            p_generation_input_hash: operation.generationInputHash,
+            p_lesson_key: identity.lessonKey,
+            p_storage_path: identity.storagePath,
+            p_charge_quota: Number.isFinite(lifetimeLimit),
+          })
+          if (error) throw new Error(error.message || 'Materialization generation could not be finalized')
+          return data
+        },
+        afterArtifactCreated: deps.afterMaterializationArtifactCreated,
+      })
+      const { data: urlData } = storage.getPublicUrl(generated.identity.storagePath)
+      return NextResponse.json({
+        ok: true,
+        file: generated.identity.file,
+        identity: generated.identity,
+        lessonKey: generated.identity.lessonKey,
+        storagePath: generated.identity.storagePath,
+        ownerId: user.id,
+        lesson: generated.lesson,
+        storageUrl: urlData?.publicUrl || null,
+        storageError: null,
+        path: urlData?.publicUrl || null,
+        userId: user.id,
+        recovered: generated.recovered,
+      })
+    } catch (error) {
+      const status = error instanceof MaterializationGenerationError ? error.status : 500
+      return NextResponse.json({
+        error: error?.message || String(error),
+        code: error?.code,
+        ...(error?.code === 'MATERIALIZATION_RECOVERY_REQUIRED' ? { operation: { id: operation.id, lineageId: operation.lineageId } } : {}),
+      }, { status })
+    }
+  }
   
   try {
+    if (Number.isFinite(lifetimeLimit) && lifetimeUsed >= lifetimeLimit) {
+      return NextResponse.json({ error: `You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.` }, { status: 429 })
+    }
     const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
-    const lesson = await callModel(prompt)
+    const lesson = await (deps.callModel || callModel)(prompt)
   // Normalize core fields
     lesson.id = lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g,'_')
     lesson.title = lesson.title || title

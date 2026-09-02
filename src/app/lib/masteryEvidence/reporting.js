@@ -684,6 +684,32 @@ function buildOptions(independentEvidence, retention, conceptEvidence = []) {
   return [];
 }
 
+function countedAssistance(assistance = {}) {
+  const events = asArray(assistance.events);
+  return {
+    hints: events.filter((event) => event?.type === STAGE_2_EVIDENCE_EVENT_TYPES.HINT_GIVEN).length,
+    retries: events.filter((event) => event?.type === STAGE_2_EVIDENCE_EVENT_TYPES.RETRY_REQUESTED).length,
+  };
+}
+
+export function buildFacilitatorLearningSummary({ independentEvidence, assistance, retention, options = [] } = {}) {
+  const independent = independentEvidence || {
+    state: 'unavailable',
+    label: 'Independent evidence unavailable',
+    detail: 'Learning evidence is unavailable for this session.',
+  };
+  const delayed = retention || { state: 'unavailable', label: 'Retention evidence unavailable', detail: null };
+  return {
+    headline: independent.label || 'Independent evidence unavailable',
+    narrative: independent.detail || 'Learning evidence is unavailable for this session.',
+    unresolved: ['not_measured', 'unavailable', 'unknown_protocol'].includes(delayed.state)
+      ? { label: delayed.label, detail: delayed.detail || null }
+      : null,
+    planning_meaning: options[0]?.label || null,
+    assistance_counts: countedAssistance(assistance),
+  };
+}
+
 export function summarizeWebbConceptEvidence(events = []) {
   const groups = new Map();
   for (const event of events || []) {
@@ -752,6 +778,7 @@ export function aggregateFacilitatorEvidenceSession({ trackedSession = {}, evide
   const concept_evidence = summarizeWebbConceptEvidence(orderedEvents);
   const assistance = summarizeAssistance(evidenceSession, orderedEvents, independent_evidence, retention);
   const completeness = summarizeCompleteness(evidenceSession, [baseline, independent_evidence, retention]);
+  const options = buildOptions(independent_evidence, retention, concept_evidence);
   const startedAt = asTimestamp(evidenceSession?.started_at || trackedSession?.started_at);
   const endedAt = asTimestamp(evidenceSession?.ended_at || trackedSession?.ended_at);
   const durationSeconds = startedAt && endedAt
@@ -785,7 +812,13 @@ export function aggregateFacilitatorEvidenceSession({ trackedSession = {}, evide
     score: summarizeScore(orderedEvents),
     interventions,
     interpretations: buildInterpretations(baseline, independent_evidence, retention),
-    options: buildOptions(independent_evidence, retention, concept_evidence),
+    options,
+    learning_summary: buildFacilitatorLearningSummary({
+      independentEvidence: independent_evidence,
+      assistance,
+      retention,
+      options,
+    }),
     provenance: {
       evidence_session_id: asText(evidenceSession?.id),
       evidence_schema_version: asText(evidenceSession?.schema_version),

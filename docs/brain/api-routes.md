@@ -119,6 +119,20 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 - **Feature flag**: returns a calm empty disabled response when the existing mastery-evidence flag is off
 - **Failure isolation**: reporting failure does not affect learner sessions or transcript history
 
+### `/api/facilitator/learners/[id]/lesson-history/[occurrenceId]`
+**Purpose**: Return read-only history for one exact Syllabus occurrence selected by an authenticated facilitator
+**Status**: Operational without an additional migration
+
+- **Location**: `src/app/api/facilitator/learners/[id]/lesson-history/[occurrenceId]/route.js`
+- **Method**: GET
+- **Authorization**: Bearer authentication, facilitator-owned learner, active Syllabus composition, and exact occurrence membership are all required before evidence or transcript reads
+- **Occurrence authority**: Accepts only a unique composed `actual:<lesson_sessions.id>` or `historical:<legacy-record-id>` occurrence; title, subject, lesson key, date, and latest-session matching are never fallbacks
+- **Instruction boundary**: A historical occurrence must be a canonical instructional-completion record. Standalone historical Slate-only activity is non-instructional, has no Review History action, and receives the same non-disclosing 404 if requested directly
+- **Evidence boundary**: Canonical instructional evidence joins through the exact `lesson_sessions.id`; Slate evidence requires the selected occurrence anchor, while Daily/Weekly reviews require mastery-check anchors belonging to authorized occurrence evidence
+- **Transcript boundary**: Server code derives the authorized storage location and returns a short-lived signed URL. Raw storage paths are not response authority, and a missing transcript does not erase session/evidence history
+- **Failure behavior**: Unauthorized learners and unknown occurrences share the same non-disclosing 404 response. Evidence and transcript failures degrade independently
+- **Mutation**: Read-only; it does not change Syllabus revisions, proposals, planning, sessions, evidence, transcripts, readiness, or scheduling
+
 ### `/api/learner/follow-ups`
 **Purpose**: Read/start learner Daily Follow-Up and Weekly Review cards and update facilitator-controlled per-learner settings
 **Status**: Operational only when the existing mastery-evidence flag is enabled and the Follow-Up migration is installed
@@ -155,9 +169,29 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 - **Database boundary**: The RPC accepts no raw PIN and is executable only by `service_role`
 - **Legacy compatibility**: Webb/Sonoma instructional clients may initially authorize with an empty occurrence only when the server has no active Syllabus; the authorization route returns the canonical `legacy:<lesson-key>:<today>` identity used by protected start and completion. Active-Syllabus occurrence matching remains exact and fail-closed.
 
+### `/api/syllabus/execution`
+**Purpose**: Authorize an exact Syllabus occurrence for instruction or supplemental Slate practice
+**Status**: Operational
+
+- **Location**: `src/app/api/syllabus/execution/route.js`
+- **Method**: POST
+- **Instruction**: The default `instruction` activity preserves today/repeat PIN rules and the server-resolved Sonoma/Webb assignment.
+- **Slate practice**: `activityKind=slate_practice` permits on-demand practice for an exact owned Syllabus occurrence without an instructional exception PIN. It returns scoped occurrence context but never mints the instructional proof cookie or calls the protected instructional start/completion routes.
+- **Boundary**: Slate remains invalid as `instructionalTeacher`; the supplemental activity mode cannot substitute for Sonoma or Webb.
+
+### `/api/syllabus/slate-assignments`
+**Purpose**: Add or remove a separately visible Mr. Slate practice event for one exact lesson occurrence
+**Status**: Operational after `20260902161410_add_syllabus_slate_assignments.sql` is applied
+
+- **Location**: `src/app/api/syllabus/slate-assignments/route.js`
+- **Methods**: POST assigns by learner, lesson, and exact composed occurrence; DELETE removes by owned assignment ID.
+- **Auth**: Bearer authentication, facilitator-owned learner, and exact active-Syllabus membership are required before the service-role write.
+- **Idempotency**: One assignment may exist per facilitator, learner, and parent occurrence; repeated POST returns the existing assignment.
+- **Separation**: The row creates no lesson session, completion, mastery, schedule, capacity use, or instructional-teacher change.
+
 ### `/api/syllabus/forecast`
 **Purpose**: Create or reuse one inactive, next-week instructional learning forecast from canonical Syllabus intent and deterministic evidence summaries
-**Status**: Operational after `20260831201314_add_learning_forecast_foundation.sql` is applied
+**Status**: Operational after `20260831201314_add_learning_forecast_foundation.sql` and `20260901160538_add_materialization_generation_recovery.sql` are applied
 
 - **Location**: `src/app/api/syllabus/forecast/route.js`
 - **Method**: POST with `{ learnerId, expectedActiveRevisionId }`
@@ -178,8 +212,25 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 - **Carry-forward boundary**: Rebase preserves exact sibling lineages and concept fields, invokes neither forecast nor lesson generation, consumes no quota, and drops a sibling whose date/sort slot is occupied by active educator intent
 - **Grade authority**: Full generation requires the owned learner's authoritative `learners.grade`; a missing grade returns a bounded error before adoption or generation
 - **Generator reuse**: Delegates to `POST /api/facilitator/lessons/generate` in proposal mode, preserving storage, canonical `lesson_key`, draft association, and normal quota authority
-- **Retry**: Generator or binding failure leaves the post-adoption sibling proposal current. A server-only durable receipt retains a successful artifact across binding failure, so retry binds that key and rebases the remainder without generating another artifact
+- **Recovery identity**: The server-verified receipt UUID determines one exact facilitator Storage path/key and is bound to the owned learner, Syllabus, exact lineage, and generation-input hash; browser JSON cannot supply this trusted generator dependency
+- **Retry**: Generator or binding failure leaves the post-adoption sibling proposal current. A `generating` retry is recovery-only and validates the exact embedded operation metadata before reuse; it never performs a second model call or title/path search
+- **Quota**: The service-role completion RPC locks the receipt and records the finite-tier charge atomically at most once. New materializations retain normal quota; exact recovery cannot charge twice
+- **Ambiguity**: If no exact artifact can be proven, the receipt becomes `recovery_required`, normal generation remains disabled, and the authorized response returns only non-secret operation/lineage identity for reconciliation
 - **Scheduling**: Neither materialization nor forecast adoption creates `lesson_schedule` rows
+
+### `/api/syllabus/planning`
+**Purpose**: Apply exact-slot facilitator planning actions from the unified Syllabus surface
+**Status**: Operational; no additional migration beyond the current Syllabus foundation is required
+
+- **Location**: `src/app/api/syllabus/planning/route.js`
+- **Method**: POST with `learnerId`, `expectedActiveRevisionId`, an action, and action-specific fields
+- **Auth**: Bearer token, learner ownership, and Syllabus future-planning entitlement are required
+- **Actions**: Create, edit, or remove eligible facilitator concepts; edit or replace an exact inactive forecast lineage; return transient explicit Plan Ahead suggestions
+- **Concurrency**: Every action validates the exact active revision and fails closed after a concurrent pointer change
+- **Authority**: Persisted planning actions create canonical immutable Syllabus revisions or the existing inactive `learning_forecast` proposal kind; no `plannedLessons`-style store is used
+- **AI boundary**: Replacement preserves exact lineage/date/subject/sort slot. Farther-out suggestions use current evidence summaries but explicitly do not assume future completion or mastery and are not persisted until the facilitator saves them
+- **Artifact boundary**: Concept creation leaves `lesson_key = null`; full generation remains `/api/syllabus/materialize`
+- **Scheduling**: The route does not create or update `lesson_schedule`
 
 ### `/api/syllabus/execution/complete`
 **Purpose**: Commit truthful instructional completion for an already protected Sonoma or Webb session

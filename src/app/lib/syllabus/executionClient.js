@@ -21,7 +21,7 @@ async function accessToken() {
   return token
 }
 
-export async function authorizeProtectedOccurrence({ learnerId, lessonKey, occurrenceId = '', instructionalTeacher, requestPin }, deps = {}) {
+export async function authorizeProtectedOccurrence({ learnerId, lessonKey, occurrenceId = '', instructionalTeacher, activityKind, requestPin }, deps = {}) {
   if (!learnerId || !lessonKey) throw new Error('A learner and lesson are required.')
   const token = await (deps.accessToken || accessToken)()
   const fetchImpl = deps.fetch || fetch
@@ -29,7 +29,7 @@ export async function authorizeProtectedOccurrence({ learnerId, lessonKey, occur
     const response = await fetchImpl('/api/syllabus/execution', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ learnerId, lessonKey, occurrenceId: String(occurrenceId || '').trim(), ...(instructionalTeacher ? { instructionalTeacher } : {}), ...(exceptionPin ? { exceptionPin } : {}) }),
+      body: JSON.stringify({ learnerId, lessonKey, occurrenceId: String(occurrenceId || '').trim(), ...(instructionalTeacher ? { instructionalTeacher } : {}), ...(activityKind ? { activityKind } : {}), ...(exceptionPin ? { exceptionPin } : {}) }),
     })
     return { response, result: await response.json().catch(() => ({})) }
   }

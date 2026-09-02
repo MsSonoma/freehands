@@ -939,6 +939,11 @@ function LessonsPageInner(){
     const lessonKey = item?.lesson_key
     const lesson = lessonKey ? recentMetaLookup[lessonKey] : null
     if (!lesson) return
+    if (action?.id === 'practice_slate') {
+      const occurrenceId = item?.practice_occurrence_id || item?.occurrence_id || ''
+      router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=practice`)
+      return
+    }
     let exceptionApproved = false
     if (action?.requires_pin) {
       const completed = item.actual_kind === 'completed'
@@ -1164,6 +1169,7 @@ function LessonsPageInner(){
             learnerName={learnerName || ''}
             lessonState={syllabusLessonState}
             onOpenLesson={openSyllabusLesson}
+            actionCapabilities={{ openLesson: true }}
             today={syllabusModel.resolved_today}
           />
         )}

@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto'
-import { FACILITATOR_EVIDENCE_REPORT_VERSION } from '../masteryEvidence/reporting.js'
 import { addSyllabusDays, startOfSyllabusWeek } from './timeline.mjs'
+import { instructionalEvidenceContext } from './evidenceProjection.mjs'
+
+export { instructionalEvidenceContext } from './evidenceProjection.mjs'
 
 const DAY_KEYS = Object.freeze(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'])
 
@@ -13,26 +15,6 @@ function stableUuid(value) {
   hex[12] = '4'
   hex[16] = ['8', '9', 'a', 'b'][parseInt(hex[16], 16) % 4]
   return `${hex.slice(0, 8).join('')}-${hex.slice(8, 12).join('')}-${hex.slice(12, 16).join('')}-${hex.slice(16, 20).join('')}-${hex.slice(20).join('')}`
-}
-
-function evidenceContext(reports = []) {
-  return reports.filter((report) => report?.report_version === FACILITATOR_EVIDENCE_REPORT_VERSION).slice(0, 12).map((report) => ({
-    report_version: report.report_version,
-    lesson: {
-      key: clean(report.lesson?.key || report.lesson?.source_key) || null,
-      title: clean(report.lesson?.title) || null,
-      subject: clean(report.lesson?.subject) || null,
-    },
-    completeness: clean(report.completeness?.state) || null,
-    baseline: clean(report.baseline?.state) || null,
-    independent: clean(report.independent_evidence?.state) || null,
-    retention: clean(report.retention?.state) || null,
-    learning_summary: report.learning_summary ? {
-      headline: clean(report.learning_summary.headline) || null,
-      narrative: clean(report.learning_summary.narrative) || null,
-      unresolved: clean(report.learning_summary.unresolved?.label) || null,
-    } : null,
-  }))
 }
 
 export function nextInstructionalForecastWeek(today) {
@@ -83,7 +65,7 @@ function inputIdentity({ activeRevision, forecastItems, timelineItems, reports, 
       sort_order: item.sort_order,
       lesson_key: item.lesson_key || null,
     })),
-    evidence: evidenceContext(reports),
+    evidence: instructionalEvidenceContext(reports),
   })).digest('hex')
 }
 
@@ -104,7 +86,7 @@ export function buildInstructionalForecastPlan({ activeRevision, forecastItems =
     target_week_end: targetWeekEnd,
     slots,
     unfilled_slots: unfilledSlots,
-    evidence_context: evidenceContext(reports),
+    evidence_context: instructionalEvidenceContext(reports),
   }
 }
 

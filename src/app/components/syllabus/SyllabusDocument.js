@@ -6,6 +6,7 @@ import {
   matchMasteryAnnotations,
   moveSyllabusWeek,
   selectSyllabusWeek,
+  syllabusActionPresentation,
   syllabusEntitlementsFor,
   syllabusItemActionsFor,
   syllabusItemState,
@@ -30,6 +31,19 @@ function localCalendarDate(now = new Date()) {
 
 function subjectName(subject) {
   return String(typeof subject === 'string' ? subject : subject?.name || '').trim()
+}
+
+function teachingGuidanceSummary(guidance) {
+  const preferences = guidance?.curriculum_preferences || {}
+  const values = []
+  for (const [key, value] of Object.entries(preferences)) {
+    if (key === 'subject_preferences' || !Array.isArray(value)) continue
+    if (value.length) values.push(`${key.replaceAll('_', ' ')}: ${value.join(', ')}`)
+  }
+  for (const [subject, fields] of Object.entries(preferences.subject_preferences || {})) {
+    for (const [key, value] of Object.entries(fields || {})) if (Array.isArray(value) && value.length) values.push(`${subject} ${key.replaceAll('_', ' ')}: ${value.join(', ')}`)
+  }
+  return values
 }
 
 function HistoricalActivityControl({ item, legacyWebbCompletion, busy, onRecord }) {
@@ -93,6 +107,9 @@ export default function SyllabusDocument({
   lessonState = () => ({ hasLessonArtifact: false, hasProgress: false }),
   onOpenLesson = null,
   onLessonAction = null,
+  onReviewHistory = null,
+  resolveActionHref = null,
+  isActionDisabled = () => false,
   onTeacherAssignment = null,
   teacherAssignmentBusy = '',
   onRecordHistoricalActivity = null,
@@ -100,6 +117,10 @@ export default function SyllabusDocument({
   legacyWebbCompletions = {},
   proposalHref = '/facilitator/syllabus',
   planningHref = '/facilitator/syllabus',
+  onOpenPlanning = null,
+  onEditSection = null,
+  actionCapabilities = {},
+  onWeekChange = null,
   today = localCalendarDate(),
 }) {
   const visibleItems = Array.isArray(timelineItems) ? timelineItems : forecastItems
@@ -107,20 +128,22 @@ export default function SyllabusDocument({
     .filter((item) => item?.placement_kind === 'actual' && item?.historical_record !== true && item?.source_occurrence_id)
     .map((item) => String(item.source_occurrence_id))), [visibleItems])
   const [selectedWeekStart, setSelectedWeekStart] = useState(() => moveSyllabusWeek(null, 'now', today))
-  useEffect(() => setSelectedWeekStart(moveSyllabusWeek(null, 'now', today)), [revision?.id, today])
+  useEffect(() => setSelectedWeekStart(moveSyllabusWeek(null, 'now', today)), [learnerId, today])
   const week = useMemo(() => selectSyllabusWeek(visibleItems, { weekStart: selectedWeekStart, today }), [visibleItems, selectedWeekStart, today])
+  useEffect(() => { onWeekChange?.(week.week_start, week.state) }, [onWeekChange, week.week_start, week.state])
   const copy = STATE_COPY[week.state]
   const entitlements = syllabusEntitlementsFor({ role, planTier })
   const pattern = weeklyPatternRows(revision?.weekly_pattern)
+  const guidanceSummary = teachingGuidanceSummary(revision?.teaching_guidance)
   const proposalItems = proposedReforecast?.forecast_items || []
   const { assignments: proposalAnnotations, unmatched: unmatchedProposals } = matchMasteryAnnotations(forecastItems, proposalItems)
   const move = (action) => setSelectedWeekStart((weekStart) => moveSyllabusWeek(weekStart, action, today))
   const actionHref = (item, actionId) => {
+    if (typeof resolveActionHref === 'function') return resolveActionHref(item, actionId)
     if (role !== 'facilitator' || !learnerId || !item.lesson_key) return null
     const key = encodeURIComponent(item.lesson_key)
     const learner = encodeURIComponent(learnerId)
     if (actionId === 'edit') return `/facilitator/lessons/edit?key=${key}`
-    if (actionId === 'history') return `/facilitator/learners/${learner}/transcripts?lessonKey=${key}`
     if (['view', 'execute', 'prepare', 'schedule', 'reschedule', 'make_available'].includes(actionId)) {
       const scheduleContext = actionId === 'reschedule'
         ? `&action=schedule&scheduleId=${encodeURIComponent(item.id || '')}&originalScheduledDate=${encodeURIComponent(item.original_scheduled_date || item.planned_date || '')}`
@@ -143,18 +166,23 @@ export default function SyllabusDocument({
 
       <div className={styles.summaryRule}>
         <section>
-          <h3>Goals</h3>
+          <h3>Goals {role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('goals')}>Edit</button>}</h3>
           <p>{revision?.goals?.legacy_notes || 'No goal notes are recorded yet.'}</p>
         </section>
         <section>
-          <h3>Subjects</h3>
+          <h3>Subjects {role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('subjects')}>Manage</button>}</h3>
           <p>{(revision?.subjects || []).map(subjectName).filter(Boolean).join(' / ') || 'No subjects declared.'}</p>
         </section>
       </div>
 
       <details className={styles.pattern}>
-        <summary>Weekly pattern</summary>
+        <summary>Weekly pattern {role === 'facilitator' && onEditSection && <button type="button" onClick={(event) => { event.preventDefault(); onEditSection('weekly_pattern') }}>Edit</button>}</summary>
         <div>{pattern.map((row) => <p key={row.day}><strong>{row.day}</strong><span>{row.subjects.join(' / ')}</span></p>)}</div>
+      </details>
+
+      <details className={styles.pattern}>
+        <summary>Teaching guidance {role === 'facilitator' && onEditSection && <button type="button" onClick={(event) => { event.preventDefault(); onEditSection('teaching_guidance') }}>Edit</button>}</summary>
+        <div>{guidanceSummary.length ? guidanceSummary.map((value) => <p key={value}>{value}</p>) : <p>No curriculum preferences are currently saved.</p>}</div>
       </details>
 
       <nav className={styles.timelineNav} aria-label="Syllabus timeline navigation">
@@ -198,6 +226,7 @@ export default function SyllabusDocument({
                   <p className={styles.subject}>{item.subject}</p>
                   <h4>{item.title}</h4>
                   {item.description && <p className={styles.description}>{item.description}</p>}
+                  {item.item_type === 'slate_assignment' && <span className={styles.statusLabel}>Assigned Mr. Slate practice</span>}
                   {(item.item_type || 'lesson') === 'lesson' && item.historical_record
                     ? (item.actual_instructional_teacher
                         ? <span className={styles.placementLabel}>Completed with {instructionalTeacherLabel(item.actual_instructional_teacher)} · historical record</span>
@@ -224,7 +253,21 @@ export default function SyllabusDocument({
                 </div>
                 <div className={styles.lessonActions}>{actions.map((action) => {
                   const href = actionHref(item, action.id)
-                  if (href && !action.requires_pin) return <a key={action.id} className={styles.lessonAction} href={href}>{action.label}</a>
+                  const disabled = isActionDisabled(item, action.id)
+                  const presentation = syllabusActionPresentation({
+                    action,
+                    href,
+                    role,
+                    capabilities: {
+                      reviewHistory: actionCapabilities.reviewHistory === true && typeof onReviewHistory === 'function',
+                      lessonActions: actionCapabilities.lessonActions === true && (typeof onLessonAction === 'function' || typeof onOpenLesson === 'function'),
+                      openLesson: actionCapabilities.openLesson === true && (Boolean(href) || typeof onLessonAction === 'function' || typeof onOpenLesson === 'function'),
+                    },
+                  })
+                  if (presentation === 'hidden') return null
+                  if (action.id === 'history') return <button key={action.id} type="button" className={styles.lessonAction} disabled={disabled} onClick={() => onReviewHistory?.(item)}>{action.label}</button>
+                  if (disabled) return <button key={action.id} type="button" className={styles.lessonAction} disabled>{action.label}{action.requires_pin ? ' · PIN' : ''}</button>
+                  if (presentation === 'link') return <a key={action.id} className={styles.lessonAction} href={href}>{action.label}</a>
                   return <button key={action.id} type="button" className={styles.lessonAction} onClick={() => (onLessonAction || onOpenLesson)?.(item, action)}>{action.label}{action.requires_pin ? ' · PIN' : ''}</button>
                 })}</div>
                 {role === 'learner' && week.state === 'now' && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && !currentLesson.hasLessonArtifact && <span className={styles.preparing}>Preparing</span>}
@@ -254,7 +297,9 @@ export default function SyllabusDocument({
       {week.state === 'future' && role === 'facilitator' && (
         <div className={styles.futurePlanning}>
           <div><strong>Future planning</strong><span>{entitlements.can_change_intent ? 'Use the current planning workflow while Syllabus editing matures.' : 'Visible on the free plan; planning changes are locked.'}</span></div>
-          {entitlements.can_change_intent ? <a href={planningHref}>Open planning</a> : <span className={styles.locked}>Locked / Upgrade to plan</span>}
+          {entitlements.can_change_intent
+            ? (onOpenPlanning ? <button type="button" onClick={onOpenPlanning}>Open planning</button> : <a href={planningHref}>Open planning</a>)
+            : <span className={styles.locked}>Locked / Upgrade to plan</span>}
         </div>
       )}
       {week.state === 'future' && role === 'learner' && <p className={styles.learnerFuture}>You can see where learning may go next. Your facilitator manages changes to this forecast.</p>}

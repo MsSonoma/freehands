@@ -16,7 +16,8 @@
  * been asked, then the deck reshuffles.
  *
  * Lessons are loaded from /api/learner/available-lessons (handles static,
- * generated, and Supabase-stored lessons uniformly). No URL params required.
+ * generated, and Supabase-stored lessons uniformly). A Syllabus launch may
+ * supply learnerId, lessonKey, and occurrenceId to start one exact lesson.
  */
 
 import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
@@ -418,6 +419,7 @@ function SlateDrillInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const routeLearnerId = searchParams?.get('learnerId') || ''
+  const routeLessonKey = searchParams?.get('lessonKey') || ''
   const routeOccurrenceId = searchParams?.get('occurrenceId') || ''
   const routeRunPurpose = slateRunPurpose(searchParams?.get('purpose'))
 
@@ -544,7 +546,7 @@ function SlateDrillInner() {
   // Load learner + mastery + available lessons
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const id = localStorage.getItem('learner_id')
+    const id = routeLearnerId || localStorage.getItem('learner_id')
     setLearnerId(id)
     if (id) {
       getCanonicalMasteryForLearner(id).then(setMasteryMap).catch(() => setMasteryMap({}))
@@ -562,12 +564,25 @@ function SlateDrillInner() {
           .then(r => r.ok ? r.json() : null).catch(() => null),
         fetch(`/api/learner/lesson-history?learner_id=${encodeURIComponent(id)}&limit=200`)
           .then(r => r.ok ? r.json() : null).catch(() => null),
+        routeLessonKey
+          ? fetch('/api/lessons/meta', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keys: [routeLessonKey], learner_id: id }),
+            }).then(r => r.ok ? r.json() : null).catch(() => null)
+          : Promise.resolve(null),
       ])
-        .then(([availRes, settingsRes, historyRes]) => {
+        .then(([availRes, settingsRes, historyRes, routeLessonRes]) => {
           const { lessons = [], staleApprovedKeys = [] } = availRes || {}
-          const drillable = (lessons || []).filter(l => buildPool(l).length > 0)
+          const routeLesson = routeLessonRes?.lessons?.find((lesson) => (
+            (lesson.lessonKey || `${lesson.subject || 'general'}/${lesson.file || ''}`) === routeLessonKey
+          ))
+          const loadedLessons = routeLesson && !(lessons || []).some((lesson) => (
+            (lesson.lessonKey || `${lesson.subject || 'general'}/${lesson.file || ''}`) === routeLessonKey
+          )) ? [...(lessons || []), routeLesson] : (lessons || [])
+          const drillable = loadedLessons.filter(l => buildPool(l).length > 0)
           setAvailableLessons(drillable)
-          setAllOwnedLessons(lessons || [])
+          setAllOwnedLessons(loadedLessons)
           if (settingsRes?.settings) {
             const merged = { ...DEFAULT_SLATE_SETTINGS, ...settingsRes.settings }
             setSettings(merged)
@@ -577,7 +592,7 @@ function SlateDrillInner() {
 
           // Build the key set that available-lessons already resolved
           const approvedKeySet = new Set(
-            (lessons || []).map(l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`)
+            loadedLessons.map(l => l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`)
           )
 
           // Collect history session lesson_ids
@@ -619,13 +634,17 @@ function SlateDrillInner() {
           // Check for a pending mastery lesson key.
           // Only auto-start if there is no saved session to resume — if offerResume is
           // true we fall through to the overlay so the user can choose resume vs new.
-          const pendingKey = (() => { try { return sessionStorage.getItem('slate_pending_lesson_key') } catch { return null } })()
+          const pendingKey = routeLessonKey || (() => { try { return sessionStorage.getItem('slate_pending_lesson_key') } catch { return null } })()
           const hasSavedSession = (() => { try { return !!(localStorage.getItem('slate_session') && JSON.parse(localStorage.getItem('slate_session'))?.lessonData) } catch { return false } })()
-          if (pendingKey && !hasSavedSession) {
-            const allLessons = lessons || []
+          if (pendingKey && (!hasSavedSession || routeLessonKey)) {
+            const allLessons = loadedLessons
             const match = allLessons.find(l => (l.lessonKey || `${l.subject || 'general'}/${l.file || ''}`) === pendingKey)
             if (match && buildPool(match).length > 0) {
               try { sessionStorage.removeItem('slate_pending_lesson_key') } catch {}
+              if (routeLessonKey) {
+                try { localStorage.removeItem('slate_session') } catch {}
+                setOfferResume(false)
+              }
               // Auto-start drill with the pending lesson
               selectLesson(match)
               return
@@ -703,6 +722,7 @@ function SlateDrillInner() {
         learnerId: routeLearnerId || learnerIdRef.current,
         lessonKey: lk,
         occurrenceId: routeOccurrenceId,
+        activityKind: 'slate_practice',
         requestPin: requestFacilitatorPinException,
       })
       authorizedOccurrenceRef.current = authorization.occurrenceId
