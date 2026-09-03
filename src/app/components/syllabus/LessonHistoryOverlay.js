@@ -22,6 +22,27 @@ function EvidenceFacet({ title, value }) {
   </div>
 }
 
+function summaryText(value) {
+  if (typeof value === 'string') return value.trim()
+  return String(value?.label || '').trim()
+}
+
+function SummaryConclusion({ summary }) {
+  const unresolved = summaryText(summary?.unresolved)
+  const unresolvedDetail = String(summary?.unresolved?.detail || '').trim()
+  const planningMeaning = String(summary?.planning_meaning || '').trim()
+  const hints = Number(summary?.assistance_counts?.hints || 0)
+  const retries = Number(summary?.assistance_counts?.retries || 0)
+  const assistance = [hints > 0 ? `${hints} ${hints === 1 ? 'hint' : 'hints'}` : '', retries > 0 ? `${retries} ${retries === 1 ? 'retry' : 'retries'}` : ''].filter(Boolean).join(' · ')
+  return <>
+    <h3>{summary?.headline || 'Structured learning evidence unavailable'}</h3>
+    <p>{summary?.narrative || 'This occurrence is part of the Syllabus record, but structured learning evidence is unavailable.'}</p>
+    {unresolved && <div className={styles.summaryNote}><strong>Still unknown</strong><span>{unresolved}</span>{unresolvedDetail && <p>{unresolvedDetail}</p>}</div>}
+    {planningMeaning && <div className={styles.summaryNote}><strong>What to consider next</strong><span>{planningMeaning}</span></div>}
+    {assistance && <p className={styles.assistanceCount}>Assistance recorded: {assistance}</p>}
+  </>
+}
+
 function ReviewSection({ title, reports = [] }) {
   if (!reports.length) return null
   return <section className={styles.section}>
@@ -161,9 +182,8 @@ export default function LessonHistoryOverlay({ learnerId, occurrenceId, accessTo
               </header>
 
               <section className={`${styles.section} ${styles.summary}`}>
-                <p className={styles.sectionLabel}>What happened</p>
-                <h3>{report?.independent_evidence?.label || 'Learning evidence not recorded'}</h3>
-                <p>{report?.independent_evidence?.detail || 'This occurrence is part of the Syllabus record, but no structured learning evidence is available for it.'}</p>
+                <p className={styles.sectionLabel}>What this tells us</p>
+                <SummaryConclusion summary={report?.learning_summary} />
               </section>
 
               <ReviewSection title="Daily Follow-Up" reports={detail.reviews?.daily} />
@@ -171,7 +191,11 @@ export default function LessonHistoryOverlay({ learnerId, occurrenceId, accessTo
               {(detail.evidence?.slate || []).length > 0 && <section className={styles.section}>
                 <h3>Mr. Slate activity</h3>
                 {detail.evidence.slate.map((slate) => <div className={styles.slateCard} key={slate.session?.id}>
-                  <strong>{slate.independent_evidence?.label || 'Activity recorded'}</strong>
+                  <div>
+                    <strong>{slate.learning_summary?.headline || 'Structured learning evidence unavailable'}</strong>
+                    {slate.learning_summary?.narrative && <p>{slate.learning_summary.narrative}</p>}
+                    {summaryText(slate.learning_summary?.unresolved) && <span>Still unknown: {summaryText(slate.learning_summary.unresolved)}</span>}
+                  </div>
                   <span>{formatDate(slate.session?.started_at, true)}</span>
                 </div>)}
               </section>}

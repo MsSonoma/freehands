@@ -32,6 +32,8 @@
       "/api/syllabus/planning",
       "occurrence-scoped Review History",
       "LessonHistoryOverlay",
+      "conclusion-first Review History",
+      "learning_summary presentation",
       "exact occurrence history resolution",
       "standalone Slate history separation",
       "host action capabilities",
@@ -42,7 +44,7 @@
       "separate Slate assignment events",
       "on-demand Slate practice"
     ],
-    "last_updated": "2026-09-02T16:21:37Z",
+    "last_updated": "2026-09-03T15:44:18Z",
     "status": "canonical"
   },
   "learner-home": {
@@ -294,9 +296,11 @@
       "instructional forecast evidence boundary",
       "occurrence-scoped evidence reporting",
       "deterministic learning_summary",
+      "Review History conclusion authority",
+      "Slate learning_summary isolation",
       "instructionalEvidenceContext"
     ],
-    "last_updated": "2026-09-01T16:17:32Z",
+    "last_updated": "2026-09-03T15:44:18Z",
     "status": "active-development"
   },
   "portfolio-generation": {

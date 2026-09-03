@@ -68,6 +68,7 @@ function repository(overrides = {}) {
     async findFacilitatorTimeZone() { return 'UTC' },
     async listForecastItems() { return overrides.forecastItems || [] },
     async listLessonAssociations() { return [{ id: 'association-1', lesson_key: LESSON, subject: 'math', title: 'Multiplying Fractions', instructional_teacher: 'sonoma', readiness_state: 'available' }] },
+    async listSlateAssignments() { return overrides.slateAssignments || [] },
     async listLessonSchedule() { return [] },
     async listAllTrackedSessions() { state.historyReads += 1; return sessions },
     async listAllLessonSessionEvents() { return sessionEvents },
@@ -96,6 +97,7 @@ test('exact repeated occurrence resolves only its own canonical session, evidenc
   assert.equal(result.detail.occurrence.id, 'actual:session-a')
   assert.equal(result.detail.evidence.primary.session.id, 'session-a')
   assert.equal(result.detail.evidence.primary.independent_evidence.label, 'Demonstrated independently')
+  assert.equal(result.detail.evidence.primary.learning_summary.headline, 'Demonstrated independently')
   assert.equal(result.detail.sessionRecords[0].transcript.url, 'https://example.test/browser-a')
   assert.doesNotMatch(JSON.stringify(result), /session-b|browser-b|check-b|never-send-this-answer|answer_key/)
 })
@@ -192,6 +194,22 @@ test('Mr. Slate evidence remains separate and requires an exact occurrence ancho
   assert.doesNotMatch(JSON.stringify(result), /slate:two|slate-browser-b|slate-check-b/)
 })
 
+test('a scheduled Slate assignment without completed evidence remains planning intent only', async () => {
+  const result = await load('actual:session-a', {
+    repository: repository({
+      slateAssignments: [{
+        id: 'scheduled-only', facilitator_id: FACILITATOR, learner_id: LEARNER,
+        lesson_key: LESSON, syllabus_occurrence_id: 'actual:session-a',
+        scheduled_date: '2026-09-04', run_purpose: 'practice',
+      }],
+      slateEvidence: [],
+    }),
+  })
+  assert.equal(result.kind, 'ok')
+  assert.deepEqual(result.detail.evidence.slate, [])
+  assert.doesNotMatch(JSON.stringify(result.detail.evidence), /scheduled-only|2026-09-04/)
+})
+
 test('legacy instructional occurrence resolves by exact historical id without a canonical session', async () => {
   const repo = repository({
     sessions: [], sessionEvents: [], evidence: [], evidenceEvents: [],
@@ -269,4 +287,33 @@ test('Review History integration is read-only, local, exact-identity, and race g
   assert.doesNotMatch(overlaySource, /mastery.*percent|transcript.*mastery|lessonKey=.*history/i)
   assert.match(pageSource, /planningRequest\.current/)
   assert.match(pageSource, /forecastAttempt\.current/)
+})
+
+test('Review History presents authoritative learning summaries before supporting evidence facets', () => {
+  const overlaySource = fs.readFileSync(path.resolve('src/app/components/syllabus/LessonHistoryOverlay.js'), 'utf8')
+  const primaryStart = overlaySource.indexOf('What this tells us')
+  const reviewsStart = overlaySource.indexOf('<ReviewSection title="Daily Follow-Up"')
+  const primarySource = overlaySource.slice(primaryStart, reviewsStart)
+  assert.match(primarySource, /SummaryConclusion summary=\{report\?\.learning_summary\}/)
+  assert.doesNotMatch(primarySource, /independent_evidence/)
+
+  const summaryStart = overlaySource.indexOf('function SummaryConclusion')
+  const summaryEnd = overlaySource.indexOf('function ReviewSection', summaryStart)
+  const summarySource = overlaySource.slice(summaryStart, summaryEnd)
+  assert.match(summarySource, /summary\?\.headline/)
+  assert.match(summarySource, /summary\?\.narrative/)
+  assert.match(summarySource, /Still unknown/)
+  assert.match(summarySource, /What to consider next/)
+  assert.match(summarySource, /Structured learning evidence unavailable/)
+  assert.match(summarySource, /assistance_counts/)
+  assert.doesNotMatch(summarySource, /independent_evidence|baseline|retention/)
+
+  assert.match(overlaySource, /slate\.learning_summary\?\.headline/)
+  assert.doesNotMatch(overlaySource, /slate\.independent_evidence\?\.label/)
+  assert.match(overlaySource, /<summary>Evidence details<\/summary>/)
+  for (const facet of ['Starting knowledge', 'Assistance', 'Independent demonstration', 'Retention']) {
+    assert.match(overlaySource, new RegExp(`title="${facet}"`))
+  }
+  assert.match(overlaySource, /<ReviewSection title="Daily Follow-Up"/)
+  assert.match(overlaySource, /<ReviewSection title="Weekly Review"/)
 })

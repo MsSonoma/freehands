@@ -38,6 +38,7 @@ test('fixture identities and repeated occurrences are deterministic and non-prod
   assert.equal(repeats.length, 2)
   assert.notEqual(repeats[0].occurrence_id, repeats[1].occurrence_id)
   assert.notEqual(first.historyByOccurrence[repeats[0].occurrence_id].evidence.primary.session.id, first.historyByOccurrence[repeats[1].occurrence_id].evidence.primary.session.id)
+  assert.equal(first.historyByOccurrence[repeats[0].occurrence_id].evidence.slate[0].learning_summary.headline, 'Correct with assistance')
 })
 
 test('QA harness uses actual Syllabus components and has no production-capable data adapter', () => {

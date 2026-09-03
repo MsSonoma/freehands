@@ -98,16 +98,26 @@ const productionEvidenceReport = aggregateFacilitatorEvidenceSession({
 })
 const productionForecastEvidence = instructionalEvidenceContext([productionEvidenceReport])
 
-function evidenceReport({ sessionId, state, label, detail, retention = 'not_measured' }) {
+function evidenceReport({ sessionId, state, label, detail, retention = 'not_measured', authority = 'instructional_session', startedAt = '2026-08-17T14:00:00Z' }) {
+  const retentionSummary = retention === 'retained'
+    ? null
+    : { label: 'Not yet measured', detail: 'No delayed retention result is linked to this occurrence.' }
   return {
-    authority: 'instructional_session',
-    session: { id: sessionId, started_at: '2026-08-17T14:00:00Z', ended_at: '2026-08-17T15:00:00Z' },
+    authority,
+    session: { id: sessionId, started_at: startedAt, ended_at: startedAt },
     baseline: { state: 'not_demonstrated', label: 'Not yet demonstrated', detail: 'The opening check did not yet show the target independently.' },
     assistance: { state: 'recorded', label: 'Guidance recorded', detail: 'Hints and a worked visual model were recorded.' },
     independent_evidence: { state, label, detail },
     retention: retention === 'retained'
       ? { state: 'retained', label: 'Retained', detail: 'A later independent review was successful.' }
       : { state: 'not_measured', label: 'Not yet measured', detail: 'No delayed retention result is linked to this occurrence.' },
+    learning_summary: {
+      headline: label,
+      narrative: detail,
+      unresolved: retentionSummary,
+      planning_meaning: state === 'needs_recovery' ? 'Consider recovery before another independent check.' : null,
+      assistance_counts: { hints: 0, retries: 0 },
+    },
   }
 }
 
@@ -115,7 +125,11 @@ const historyByOccurrence = {
   'actual:qa-session-fractions-a': {
     ok: true,
     occurrence: { id: 'actual:qa-session-fractions-a', lessonTitle: 'Fraction Stories', subject: 'Mathematics', occurrenceDate: date(-14), completionState: 'completed', actualInstructionalTeacher: { id: 'webb', label: 'Mrs. Webb' } },
-    evidence: { status: 'available', primary: evidenceReport({ sessionId: 'qa-session-fractions-a', state: 'independent_success', label: 'Demonstrated independently', detail: 'The learner explained two equivalent representations without assistance.', retention: 'retained' }), slate: [] },
+    evidence: {
+      status: 'available',
+      primary: evidenceReport({ sessionId: 'qa-session-fractions-a', state: 'independent_success', label: 'Demonstrated independently', detail: 'The learner explained two equivalent representations without assistance.', retention: 'retained' }),
+      slate: [evidenceReport({ sessionId: 'slate:qa-fractions-practice', state: 'assisted_success', label: 'Correct with assistance', detail: 'The learner completed the supplemental practice after one hint.', authority: 'slate', startedAt: '2026-08-19T14:00:00Z' })],
+    },
     reviews: { daily: [], weekly: [] },
     sessionRecords: [{ kind: 'instructional_transcript', teacher: 'webb', teacherName: 'Mrs. Webb', startedAt: `${date(-14)}T14:00:00Z`, endedAt: `${date(-14)}T15:00:00Z`, transcript: { kind: 'txt', url: 'qa-fixture://fraction-a' } }],
     transcriptStatus: 'available',

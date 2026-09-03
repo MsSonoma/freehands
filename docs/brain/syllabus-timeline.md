@@ -63,6 +63,10 @@ The facilitator's `Review history` action is contextual to one composed occurren
 
 Only after that proof may the server load deterministic reporting for the exact canonical session, occurrence-anchored Slate evidence, and Daily/Weekly review items linked through mastery-check anchors from the authorized evidence. Transcript storage paths are derived server-side and exposed only as short-lived signed URLs. Evidence and transcript absence degrade independently. This GET is observational and cannot mutate Syllabus, planning, forecast, scheduling, session, transcript, or mastery state.
 
+Review History presents the authoritative `report.learning_summary` first under `What this tells us`: its headline and narrative, any unresolved `Still unknown` state, and any `What to consider next` planning meaning. Assistance counts are subordinate context and appear only when nonzero. If an older report lacks `learning_summary`, the overlay states neutrally that structured learning evidence is unavailable; it never promotes raw facets into a new conclusion. The collapsible Evidence details section retains the four authoritative facets for auditability.
+
+Completed occurrence-bound Slate activity is rendered separately and uses each Slate report's own `learning_summary`. Assigned or scheduled Slate intent is not learning evidence and never appears as a completed Slate evidence card. Daily Follow-Up and Weekly Review reporting remain separate from both instructional and Slate summaries.
+
 Standalone historical Slate-only rows remain visible as non-instructional activity where the timeline supports them, but expose no lesson actions and are rejected by the Review History detail boundary. They cannot become instructional history through a direct occurrence request.
 
 ### Instructional learning forecast

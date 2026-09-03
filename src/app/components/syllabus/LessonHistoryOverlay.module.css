@@ -11,8 +11,15 @@
 .section p { margin:5px 0 0; color:#595149; line-height:1.55; }
 .summary { margin-top:20px; padding:22px; border-bottom:0; background:#f5efe4; }
 .summary h3 { font-size:25px; }
+.summaryNote { display:grid; gap:4px; margin-top:16px; padding-top:13px; border-top:1px solid #d8cdbc; }
+.summaryNote strong { color:#6b382c; font-size:12px; letter-spacing:.03em; }
+.summaryNote span { line-height:1.45; }
+.summaryNote p { margin:0; font-size:13px; }
+.assistanceCount { font-size:12px; }
 .reviewCard,.slateCard { display:flex; justify-content:space-between; gap:18px; margin-top:10px; padding:13px; border:1px solid #ded8cf; background:#fff; }
 .reviewCard>div,.slateCard { font-size:13px; }
+.slateCard>div { min-width:0; }
+.slateCard p { margin:4px 0 0; font-size:13px; }
 .reviewCard span,.slateCard span { display:block; margin-top:3px; color:#756b61; }
 .reviewCard ul { margin:0; padding-left:20px; }
 .records { display:grid; gap:8px; margin-top:10px; }
