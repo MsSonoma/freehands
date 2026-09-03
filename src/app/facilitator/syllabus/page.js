@@ -143,10 +143,6 @@ function GuidanceReadOnly({ guidance }) {
   )
 }
 
-function masteryChanges(items) {
-  return (items || []).filter((item) => item?.origin === 'mastery_reforecast' && item?.metadata?.mastery_reforecast)
-}
-
 export default function SyllabusPage() {
   const router = useRouter()
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: 'required' })
@@ -156,8 +152,6 @@ export default function SyllabusPage() {
   const [token, setToken] = useState('')
   const [planTier, setPlanTier] = useState('free')
   const [syllabus, setSyllabus] = useState(null)
-  const [masteryProposal, setMasteryProposal] = useState(null)
-  const [masteryMessage, setMasteryMessage] = useState('')
   const [learningProposal, setLearningProposal] = useState(null)
   const [learningMessage, setLearningMessage] = useState('')
   const [forecastError, setForecastError] = useState('')
@@ -253,12 +247,6 @@ export default function SyllabusPage() {
       if (sequence !== loadSequence.current || !pageIdentity.current.startsWith(`${id}:`)) return
       setSyllabus(json)
       setLegacyWebbCompletions(getWebbCompletionForLearner(id))
-      setMasteryProposal(json.proposed_reforecast ? {
-        proposal_revision: json.proposed_reforecast.revision,
-        forecast_items: json.proposed_reforecast.forecast_items,
-        changes: masteryChanges(json.proposed_reforecast.forecast_items),
-      } : null)
-      setMasteryMessage('')
       setLearningProposal(json.proposed_learning_forecast ? {
         proposal_revision: json.proposed_learning_forecast.revision,
         forecast_items: json.proposed_learning_forecast.forecast_items,
@@ -350,62 +338,6 @@ export default function SyllabusPage() {
     }
   }
 
-  async function checkMasteryEvidence() {
-    setWorking(true)
-    setError('')
-    setMasteryMessage('')
-    try {
-      const response = await fetch('/api/syllabus/reforecast', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ learnerId, expectedActiveRevisionId: syllabus.active_revision.id }),
-      })
-      const json = await response.json()
-      if (!response.ok) throw new Error(json.error || 'Could not check mastery evidence')
-      if (json.kind === 'no_action') {
-        setMasteryMessage(json.message)
-        return
-      }
-      setMasteryProposal(json)
-      setMasteryMessage('A proposed reforecast is ready for review. The current active Syllabus has not changed.')
-    } catch (cause) {
-      setError(cause.message)
-    } finally {
-      setWorking(false)
-    }
-  }
-
-  async function activateMasteryProposal() {
-    setWorking(true)
-    setError('')
-    try {
-      const postActivation = (exceptionPin) => fetch('/api/syllabus/activate', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          learnerId,
-          proposalRevisionId: masteryProposal.proposal_revision.id,
-          expectedActiveRevisionId: syllabus.active_revision.id,
-          ...(exceptionPin ? { exceptionPin } : {}),
-        }),
-      })
-      let response = await postActivation()
-      let json = await response.json()
-      if (response.status === 409 && json?.code === 'SYLLABUS_CAPACITY_PIN_REQUIRED') {
-        const pin = await requestFacilitatorPinException({ message: json.error })
-        if (!pin) throw new Error('The placement exception was not approved.')
-        response = await postActivation(pin)
-        json = await response.json()
-      }
-      if (!response.ok) throw new Error(json.error || 'Could not activate proposed reforecast')
-      await loadCurrent()
-    } catch (cause) {
-      setError(cause.message)
-    } finally {
-      setWorking(false)
-    }
-  }
-
   async function createLearningForecast({ automatic = false } = {}) {
     const requestIdentity = forecastViewIdentity.current
     const requestSequence = ++forecastRequestSequence.current
@@ -427,15 +359,15 @@ export default function SyllabusPage() {
       })
       const json = await response.json()
       if (!responseIsCurrent()) return
-      if (!response.ok) throw new Error(json.error || 'Could not prepare the instructional forecast')
+      if (!response.ok) throw new Error(json.error || 'Could not prepare the forecast')
       if (json.kind === 'no_action') {
         setLearningMessage(json.message)
         return
       }
       setLearningProposal(json)
       setLearningMessage(json.reused
-        ? 'The current instructional forecast already reflects the authoritative Syllabus and evidence inputs.'
-        : 'A one-week instructional forecast is ready for review. The active Syllabus has not changed.')
+        ? 'The current forecast already reflects the authoritative Syllabus and evidence inputs.'
+        : 'A one-week forecast is ready for review. The active Syllabus has not changed.')
     } catch (cause) {
       if (!responseIsCurrent()) return
       setError(cause.message)
@@ -510,7 +442,7 @@ export default function SyllabusPage() {
         }),
       })
       const json = await response.json()
-      if (!response.ok) throw new Error(json.error || 'Could not adopt the instructional forecast')
+      if (!response.ok) throw new Error(json.error || 'Could not adopt the forecast')
       await loadCurrent()
     } catch (cause) {
       setError(cause.message)
@@ -764,7 +696,7 @@ export default function SyllabusPage() {
       </header>
 
       {error && <div className={styles.error} role="alert">{error}</div>}
-      {!planningAccess.can_change_intent && <p className={styles.masteryMessage}>{establishingFirstSyllabus ? 'Every plan can establish an initial Syllabus through explicit facilitator activation. Future replanning remains locked.' : 'The complete Syllabus remains visible. Future replanning and mastery proposal actions are locked for this plan.'}</p>}
+      {!planningAccess.can_change_intent && <p className={styles.statusMessage}>{establishingFirstSyllabus ? 'Every plan can establish an initial Syllabus through explicit facilitator activation. Future replanning remains locked.' : 'The complete Syllabus remains visible. Future replanning is locked for this plan.'}</p>}
       {!loading && learners.length === 0 && <section className={styles.empty}><h2>No learners yet</h2><p>Add a learner before building a Syllabus.</p></section>}
       {loading && <p className={styles.muted}>Loading {selectedLearner?.name || 'learner'}&apos;s Syllabus…</p>}
 
@@ -781,14 +713,13 @@ export default function SyllabusPage() {
           <section className={styles.statusBar}>
             <div><strong>{draft && !editingActiveSyllabus ? 'Proposal' : 'Current active Syllabus'}</strong><span>{draft && !editingActiveSyllabus ? 'Not active yet' : `Revision ${displayRevision.revision_number}`}</span></div>
             <div><strong>Effective</strong><span>{dateOnly(displayRevision.effective_from)}</span></div>
-            {!draft && <div className={styles.statusActions}>{forecastError && <button className={styles.secondaryButton} onClick={() => { forecastAttempt.current = ''; createLearningForecast() }} disabled={working || !planningAccess.can_change_intent}>Retry forecast</button>}<button className={styles.secondaryButton} onClick={checkMasteryEvidence} disabled={working || !planningAccess.can_change_intent}>{working ? 'Checking…' : 'Check mastery evidence'}</button><button className={styles.secondaryButton} disabled={!planningAccess.can_change_intent} onClick={() => setPlanAheadOpen(true)}>Plan ahead</button></div>}
+            {!draft && <div className={styles.statusActions}>{forecastError && <button className={styles.secondaryButton} onClick={() => { forecastAttempt.current = ''; createLearningForecast() }} disabled={working || !planningAccess.can_change_intent}>Retry forecast</button>}<button className={styles.secondaryButton} disabled={!planningAccess.can_change_intent} onClick={() => setPlanAheadOpen(true)}>Plan ahead</button></div>}
           </section>
 
-          {!draft && masteryMessage && <p className={styles.masteryMessage}>{masteryMessage}</p>}
-          {!draft && learningMessage && <p className={styles.masteryMessage}>{learningMessage}</p>}
+          {!draft && learningMessage && <p className={styles.statusMessage}>{learningMessage}</p>}
 
           {!draft && learningProposal && <section className={styles.learningProposal}>
-            <div className={styles.proposalHeading}><div><p className={styles.eyebrow}>Proposed instructional forecast</p><h2>Next week&apos;s open Syllabus slots</h2><p>Dates, subjects, and slot count come from the active weekly pattern. These title-and-description concepts remain inactive until you adopt them.</p></div><span>Revision {learningProposal.proposal_revision.revision_number}</span></div>
+            <div className={styles.proposalHeading}><div><p className={styles.eyebrow}>Proposed forecast</p><h2>Next week&apos;s open Syllabus slots</h2><p>Dates, subjects, and slot count come from the active weekly pattern. These title-and-description concepts remain inactive until you adopt them.</p></div><span>Revision {learningProposal.proposal_revision.revision_number}</span></div>
             <div className={styles.changeList}>{learningProposal.forecast_items.filter((item) => item.origin === 'learning_forecast').map((item) => <article key={item.lineage_id}>
               <strong>{item.subject}: {item.title}</strong>
               <p>{item.description}</p>
@@ -796,17 +727,7 @@ export default function SyllabusPage() {
               <div className={styles.conceptActions}><button className={styles.secondaryButton} disabled={working} onClick={() => setConceptEditor({ source: 'forecast', item, title: item.title, description: item.description || '' })}>Edit</button><button className={styles.secondaryButton} disabled={working || Boolean(replacingLineage)} onClick={() => replaceForecast(item)}>{replacingLineage === item.lineage_id ? 'Replacing…' : 'Replace'}</button></div>
               <button className={styles.secondaryButton} disabled={Boolean(materializingLineage) || working || recoveryRequiredLineages.has(item.lineage_id)} onClick={() => materializeForecast(item, { proposal: learningProposal })}>{materializingLineage === item.lineage_id ? 'Generating…' : recoveryRequiredLineages.has(item.lineage_id) ? 'Recovery required' : 'Adopt forecast and generate lesson'}</button>
             </article>)}</div>
-            <div className={styles.proposalDecision}><p>Adoption creates an immutable active Syllabus revision. It does not generate or schedule lessons.</p><button className={styles.primaryButton} onClick={activateLearningProposal} disabled={working || Boolean(materializingLineage) || !planningAccess.can_change_intent}>{working ? 'Adopting…' : 'Adopt instructional forecast'}</button></div>
-          </section>}
-
-          {!draft && masteryProposal && <section className={styles.masteryProposal}>
-            <div className={styles.proposalHeading}><div><p className={styles.eyebrow}>Proposed reforecast</p><h2>Mastery evidence suggests a small future-plan change</h2><p>The current active Syllabus has not changed. Review this inactive proposal before deciding whether to activate it.</p></div><span>Revision {masteryProposal.proposal_revision.revision_number}</span></div>
-            <div className={styles.changeList}>{(masteryProposal.changes || masteryChanges(masteryProposal.forecast_items)).map((item) => {
-              const evidence = item.metadata?.mastery_reforecast || item
-              return <article key={`${item.lineage_id || item.title}-${item.planned_date}`}><strong>{item.subject}: {item.title}</strong><p>{evidence.finding?.label || 'Mastery reporting identified a supported follow-up.'}</p><small>{evidence.recommendation?.label} Planned for {dateOnly(item.planned_date)}.</small></article>
-            })}</div>
-            <details className={styles.proposedForecast}><summary>Compare the complete proposed forecast</summary>{groupForecast(masteryProposal.forecast_items).map(([label, items]) => <div className={styles.forecastWeek} key={label}><h3>{label}</h3><ul>{items.map((item) => <li key={item.id || `${item.lineage_id}-${item.planned_date}`}><span className={styles.forecastDate}>{dateOnly(item.planned_date)}</span><div><strong>{item.subject}:</strong> {item.title}{item.origin === 'mastery_reforecast' && <em> Proposed from mastery evidence</em>}</div></li>)}</ul></div>)}</details>
-            <div className={styles.proposalDecision}><p>Activation uses the existing explicit Syllabus activation path and makes this immutable revision active today.</p><button className={styles.primaryButton} onClick={activateMasteryProposal} disabled={working || !planningAccess.can_change_intent}>{working ? 'Activating…' : 'Activate proposed reforecast'}</button></div>
+            <div className={styles.proposalDecision}><p>Adoption creates an immutable active Syllabus revision. It does not generate or schedule lessons.</p><button className={styles.primaryButton} onClick={activateLearningProposal} disabled={working || Boolean(materializingLineage) || !planningAccess.can_change_intent}>{working ? 'Adopting…' : 'Adopt forecast'}</button></div>
           </section>}
 
           {draft && !editingActiveSyllabus && <section className={styles.proposalBanner}><div><strong>Syllabus proposal</strong><p>Review the complete plan. Activation creates a new immutable revision effective today.</p></div><div className={styles.effectiveDate}><strong>Effective today</strong><span>{dateOnly(draft.effective_from)}</span></div></section>}
@@ -864,7 +785,6 @@ export default function SyllabusPage() {
               learnerId={learnerId}
               planTier={planTier}
               learnerName={selectedLearner?.name || ''}
-              proposedReforecast={syllabus.proposed_reforecast}
               onLessonAction={handleLessonAction}
               onReviewHistory={openReviewHistory}
               actionCapabilities={{ reviewHistory: true, lessonActions: true }}

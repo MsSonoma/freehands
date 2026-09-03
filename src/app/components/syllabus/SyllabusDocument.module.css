@@ -46,10 +46,7 @@
 .historicalControl button { margin-top:7px; padding:6px 8px; border:1px solid #6b382c; background:#fff; color:#6b382c; cursor:pointer; font-weight:700; }
 .historicalControl button:disabled { opacity:.55; cursor:wait; }
 .historicalControl small { display:block; margin-top:7px; color:#756b61; line-height:1.35; }
-.marginNote { border-left:3px solid #d39a4a; padding:8px 12px; background:#fff9eb; display:grid; gap:3px; font:13px Roboto,sans-serif; }
-.marginNote a { color:#7b3f32;font-weight:700; }.emptyWeek { margin:0;padding:28px 0;color:#7b7268;font-style:italic; }
-.unmatchedNotes { margin-top:18px; border-left:3px solid #d39a4a; padding:10px 12px; background:#fff9eb; display:grid; gap:4px; font:13px Roboto,sans-serif; }
-.unmatchedNotes p { margin:0; }.unmatchedNotes a { color:#7b3f32;font-weight:700; }
+.emptyWeek { margin:0;padding:28px 0;color:#7b7268;font-style:italic; }
 .futurePlanning,.learnerFuture { margin-top:20px; padding:14px 0; border-top:1px solid #cfc6b8; font:13px Roboto,sans-serif; }
 .futurePlanning { display:flex; justify-content:space-between; gap:20px; }.futurePlanning div { display:grid;gap:3px; }.futurePlanning a,.futurePlanning button { color:#6b382c;font-weight:700; }.futurePlanning button { min-height:40px; padding:8px 12px; border:1px solid #b9a99b; background:#fff; cursor:pointer; }.locked { color:#796f64;font-weight:700; }
 @media (max-width:900px) { .entries { grid-template-columns:1fr; }.day { border-right:0; border-bottom:1px solid #ded8cf; }.day:last-child { border-bottom:0; } }

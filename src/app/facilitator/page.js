@@ -327,7 +327,6 @@ export default function FacilitatorPage() {
             revision={syllabusModel.revision}
             forecastItems={syllabusModel.forecast_items}
             timelineItems={syllabusModel.timeline_items}
-            proposedReforecast={syllabusModel.proposed_reforecast}
             learnerName={selectedLearner?.name || ''}
             role="facilitator"
             learnerId={learnerId}

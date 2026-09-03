@@ -23,7 +23,10 @@
       "facilitator instructional teacher assignment",
       "immutable historical instructor identity",
       "instructional learning forecast",
+      "sole evidence-informed forecast",
       "learning_forecast proposals",
+      "retired mastery_reforecast authority",
+      "legacy mastery_reforecast read compatibility",
       "lineage-safe materialization",
       "forecast descriptions",
       "unified facilitator planning surface",
@@ -44,7 +47,7 @@
       "separate Slate assignment events",
       "on-demand Slate practice"
     ],
-    "last_updated": "2026-09-03T15:44:18Z",
+    "last_updated": "2026-09-03T20:54:51Z",
     "status": "canonical"
   },
   "learner-home": {
@@ -229,6 +232,7 @@
       "/api/syllabus/execution",
       "/api/syllabus/slate-assignments",
       "/api/syllabus/forecast",
+      "retired /api/syllabus/reforecast",
       "/api/syllabus/materialize",
       "complete_syllabus_materialization_generation",
       "start_lesson_session_transactional",
@@ -247,7 +251,7 @@
       "/api/visual-aids",
       "/api/content-safety"
     ],
-    "last_updated": "2026-09-02T16:21:37Z",
+    "last_updated": "2026-09-03T20:54:51Z",
     "status": "canonical"
   },
   "mastery-evidence": {
@@ -294,13 +298,15 @@
       "learning_review_events",
       "daily-weekly-independence",
       "instructional forecast evidence boundary",
+      "sole evidence-informed learning_forecast",
+      "retired mastery_reforecast authority",
       "occurrence-scoped evidence reporting",
       "deterministic learning_summary",
       "Review History conclusion authority",
       "Slate learning_summary isolation",
       "instructionalEvidenceContext"
     ],
-    "last_updated": "2026-09-03T15:44:18Z",
+    "last_updated": "2026-09-03T20:54:51Z",
     "status": "active-development"
   },
   "portfolio-generation": {

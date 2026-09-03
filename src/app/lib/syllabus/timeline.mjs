@@ -103,7 +103,6 @@ export function resolveSyllabusReadModel(payload) {
     revision: payload.active_revision,
     forecast_items: Array.isArray(payload.forecast_items) ? payload.forecast_items : [],
     timeline_items: Array.isArray(payload.timeline_items) ? payload.timeline_items : (Array.isArray(payload.forecast_items) ? payload.forecast_items : []),
-    proposed_reforecast: payload.proposed_reforecast || null,
     proposed_learning_forecast: payload.proposed_learning_forecast || null,
     resolved_today: dateOnly(payload.resolved_today),
     resolved_timezone: payload.resolved_timezone || 'UTC',
@@ -119,39 +118,6 @@ export function syllabusEntitlementsFor({ role, subscriptionTier = null, planTie
     can_launch_current_lessons: role === 'learner',
     future_visible: true,
   }
-}
-
-function annotationKey(item) {
-  return item?.id || item?.lineage_id || `${dateOnly(item?.planned_date)}:${item?.subject}:${item?.title}`
-}
-
-export function matchMasteryAnnotations(forecastItems = [], proposalItems = []) {
-  const assignments = new Map()
-  const available = (forecastItems || []).map((item, index) => ({ item, index })).sort((left, right) => (
-    dateOnly(left.item?.planned_date).localeCompare(dateOnly(right.item?.planned_date))
-    || Number(left.item?.sort_order || 0) - Number(right.item?.sort_order || 0)
-    || String(left.item?.lineage_id || left.item?.id || left.index).localeCompare(String(right.item?.lineage_id || right.item?.id || right.index))
-  ))
-  for (const note of (proposalItems || []).filter((item) => item?.origin === 'mastery_reforecast')) {
-    const metadata = note?.metadata?.mastery_reforecast || {}
-    const plannedDate = dateOnly(note?.planned_date)
-    const exactLineage = String(metadata.anchor_lineage_id || '').trim()
-    const lessonKey = String(note?.lesson_key || metadata.lesson_key || '').trim()
-    const unique = (predicate) => {
-      const matches = available.filter(({ item }) => predicate(item))
-      return matches.length === 1 ? matches[0] : null
-    }
-    const matched = (exactLineage && unique((item) => String(item?.lineage_id || '') === exactLineage))
-      || (lessonKey && plannedDate && unique((item) => String(item?.lesson_key || '') === lessonKey && dateOnly(item?.planned_date) === plannedDate))
-      || (lessonKey && unique((item) => String(item?.lesson_key || '') === lessonKey))
-    if (!matched) continue
-    const key = annotationKey(matched.item)
-    if (!assignments.has(key)) assignments.set(key, [])
-    assignments.get(key).push(note)
-  }
-  const assignedNotes = new Set([...assignments.values()].flat())
-  const unmatched = (proposalItems || []).filter((item) => item?.origin === 'mastery_reforecast' && !assignedNotes.has(item))
-  return { assignments, unmatched }
 }
 
 export function weeklyPatternRows(pattern) {

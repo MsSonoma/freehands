@@ -6,7 +6,6 @@ import { fileURLToPath } from 'node:url'
 import {
   buildSyllabusTimeline,
   classifySyllabusWeek,
-  matchMasteryAnnotations,
   moveSyllabusWeek,
   moveSyllabusTimeline,
   resolveSyllabusReadModel,
@@ -124,53 +123,18 @@ test('learner presentation never receives facilitator mutation authority', () =>
   assert.equal(syllabusEntitlementsFor({ role: 'facilitator', planTier: 'pro' }).can_change_intent, true)
 })
 
-function masteryFixture() {
-  const forecast = [
-    { id: 'first', lineage_id: 'lineage-a', planned_date: '2026-08-24', subject: 'math', lesson_key: 'math/a.json', title: 'A' },
-    { id: 'second', lineage_id: 'lineage-b', planned_date: '2026-08-24', subject: 'math', lesson_key: 'math/b.json', title: 'B' },
-  ]
-  const note = {
-    id: 'note', lineage_id: 'note-lineage', planned_date: '2026-08-24', subject: 'math', lesson_key: 'math/a.json', title: 'Review A', origin: 'mastery_reforecast',
-    metadata: { mastery_reforecast: { anchor_lineage_id: 'lineage-b' } },
-  }
-  return { forecast, note }
-}
-
-test('mastery annotations prefer an exact lineage match', () => {
-  const { forecast, note } = masteryFixture()
-  const { assignments, unmatched } = matchMasteryAnnotations(forecast, [note])
-  assert.equal(assignments.has('first'), false)
-  assert.deepEqual(assignments.get('second'), [note])
-  assert.deepEqual(unmatched, [])
-})
-
-test('missing lineage uses a unique supported lesson identity', () => {
-  const { forecast, note } = masteryFixture()
-  const supported = { ...note, metadata: { mastery_reforecast: {} }, lesson_key: 'math/a.json' }
-  const { assignments, unmatched } = matchMasteryAnnotations(forecast, [supported])
-  assert.deepEqual(assignments.get('first'), [supported])
-  assert.equal(assignments.has('second'), false)
-  assert.deepEqual(unmatched, [])
-})
-
-test('same-subject same-day ambiguity remains unmatched instead of selecting the first item', () => {
-  const { forecast, note } = masteryFixture()
-  const ambiguous = { ...note, metadata: { mastery_reforecast: {} }, lesson_key: null }
-  const { assignments, unmatched } = matchMasteryAnnotations(forecast, [ambiguous])
-  assert.equal(assignments.size, 0)
-  assert.deepEqual(unmatched, [ambiguous])
-})
-
-test('mastery notes are neither duplicated nor falsely attached', () => {
-  const { forecast, note } = masteryFixture()
-  const lineage = { ...note, id: 'lineage-note' }
-  const supported = { ...note, id: 'supported-note', metadata: { mastery_reforecast: {} }, lesson_key: 'math/a.json' }
-  const ambiguous = { ...note, id: 'ambiguous-note', metadata: { mastery_reforecast: {} }, lesson_key: null }
-  const { assignments, unmatched } = matchMasteryAnnotations(forecast, [lineage, supported, ambiguous])
-  const accountedFor = [...assignments.values()].flat().concat(unmatched)
-  assert.equal(accountedFor.length, 3)
-  assert.equal(new Set(accountedFor).size, 3)
-  assert.deepEqual(unmatched, [ambiguous])
+test('current read model omits retired mastery proposals while preserving activated legacy items', () => {
+  const legacyItem = { id: 'legacy', planned_date: '2026-08-24', origin: 'mastery_reforecast', title: 'Historical review' }
+  const model = resolveSyllabusReadModel({
+    has_active_syllabus: true,
+    active_revision: { id: 'active' },
+    forecast_items: [legacyItem],
+    timeline_items: [legacyItem],
+    proposed_reforecast: { revision: { id: 'retired' }, forecast_items: [] },
+  })
+  assert.deepEqual(model.forecast_items, [legacyItem])
+  assert.deepEqual(model.timeline_items, [legacyItem])
+  assert.equal('proposed_reforecast' in model, false)
 })
 
 test('only a current lesson artifact receives Start or Continue', () => {
@@ -310,7 +274,7 @@ test('new Syllabus UI source contains required readable labels and no mojibake',
     assert.match(source, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   }
   assert.doesNotMatch(source, /\uFFFD|Ã|Â|â€|â€™|â†/u)
-  assert.match(source, /could not be linked confidently to one specific Syllabus lesson/)
+  assert.doesNotMatch(source, /Mastery proposals for general review|Mastery note|proposedReforecast/)
   assert.match(source, /week\.days\.map/)
   assert.doesNotMatch(source, /timeline\.weeks\.map/)
 })

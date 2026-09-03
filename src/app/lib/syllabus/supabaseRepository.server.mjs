@@ -47,18 +47,6 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load Syllabus revision')
       return data
     },
-    async findLatestMasteryProposal(syllabusId, baseRevisionId) {
-      const { data, error } = await admin.from('syllabus_revisions').select('*')
-        .eq('syllabus_id', syllabusId)
-        .eq('base_revision_id', baseRevisionId)
-        .is('activated_at', null)
-        .eq('proposal_kind', 'mastery_reforecast')
-        .order('revision_number', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      throwOn(error, 'Failed to load proposed Syllabus reforecast')
-      return data
-    },
     async findLatestLearningForecastProposal(syllabusId, baseRevisionId) {
       const { data, error } = await admin.from('syllabus_revisions').select('*')
         .eq('syllabus_id', syllabusId)
@@ -69,25 +57,6 @@ export function createSyllabusRepository(admin) {
         .limit(1)
         .maybeSingle()
       throwOn(error, 'Failed to load proposed instructional forecast')
-      return data
-    },
-    async replaceMasteryProposal({ syllabusId, expectedActiveRevisionId, planning, proposalKey }) {
-      const { data, error } = await admin.rpc('replace_syllabus_mastery_proposal', {
-        p_syllabus_id: syllabusId,
-        p_expected_active_revision_id: expectedActiveRevisionId,
-        p_effective_from: planning.effective_from,
-        p_schema_version: planning.schema_version,
-        p_goals: planning.goals,
-        p_subjects: planning.subjects,
-        p_weekly_pattern: planning.weekly_pattern,
-        p_teaching_guidance: planning.teaching_guidance,
-        p_planning_policy: planning.planning_policy,
-        p_legacy_provenance: planning.legacy_provenance,
-        p_change_reason: planning.change_reason,
-        p_proposal_key: proposalKey,
-        p_forecast_items: planning.forecast_items,
-      })
-      throwOn(error, 'Failed to replace mastery reforecast proposal')
       return data
     },
     async replaceLearningForecastProposal({ syllabusId, expectedActiveRevisionId, planning, proposalKey }) {

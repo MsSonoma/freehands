@@ -98,7 +98,6 @@ function membershipRepository({
     async listAllTrackedSessions() { return sessions },
     async listAllLessonSessionEvents() { return sessionEvents },
     async listLegacyActivityRecords() { return [] },
-    async findLatestMasteryProposal() { return null },
     async insertLegacyActivityRecord(row) { state.legacyWrites.push(structuredClone(row)); return { id: 'history-1', ...row } },
   }
 }

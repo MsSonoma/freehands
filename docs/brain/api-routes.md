@@ -199,6 +199,7 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 - **Authority**: Server weekly-pattern slots own dates, subjects, and count; the model returns title and description only
 - **Idempotency**: Unchanged authoritative inputs reuse the current `learning_forecast` proposal without another model call
 - **Mutation boundary**: Writes an inactive proposal only; it does not change the active pointer, generate a full lesson, consume generation quota, or create schedule rows
+- **Sole authority**: This is the only current Syllabus forecasting endpoint. `/api/syllabus/reforecast` is retired and does not exist; generic proposal activation rejects legacy `mastery_reforecast` proposals.
 
 ### `/api/syllabus/materialize`
 **Purpose**: Materialize one exact adopted or proposed learning-forecast lineage as a canonical generated lesson

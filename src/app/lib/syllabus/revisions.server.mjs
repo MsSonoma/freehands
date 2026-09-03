@@ -88,10 +88,6 @@ export async function getActiveSyllabus({ repository, admin, facilitatorId, lear
     today: calendar.today,
     timeZone: calendar.timeZone,
   })
-  const proposedRevision = typeof repository.findLatestMasteryProposal === 'function'
-    ? await repository.findLatestMasteryProposal(syllabus.id, activeRevision.id)
-    : null
-  const proposedForecast = proposedRevision ? await repository.listForecastItems(proposedRevision.id) : []
   const learningForecastRevision = typeof repository.findLatestLearningForecastProposal === 'function'
     ? await repository.findLatestLearningForecastProposal(syllabus.id, activeRevision.id)
     : null
@@ -102,10 +98,6 @@ export async function getActiveSyllabus({ repository, admin, facilitatorId, lear
     active_revision: activeRevision,
     forecast_items: forecastItems,
     timeline_items: timelineItems,
-    proposed_reforecast: proposedRevision ? {
-      revision: proposedRevision,
-      forecast_items: proposedForecast,
-    } : null,
     proposed_learning_forecast: learningForecastRevision ? {
       revision: learningForecastRevision,
       forecast_items: learningForecastItems,
@@ -132,72 +124,43 @@ export async function activateProposedSyllabus({
   }
   const proposal = await repository.findRevision(proposalRevisionId, syllabus.id)
   if (!proposal || proposal.activated_at || proposal.base_revision_id !== expectedActiveRevisionId) {
-    throw new SyllabusError('This proposed reforecast is no longer available for activation.', 409, 'PROPOSAL_STALE')
+    throw new SyllabusError('This forecast proposal is no longer available for activation.', 409, 'PROPOSAL_STALE')
   }
-  if (proposal.proposal_kind || proposal.change_reason?.startsWith('Mastery evidence proposal:')) {
-    const canonical = proposal.proposal_kind === 'learning_forecast'
-      ? await repository.findLatestLearningForecastProposal(syllabus.id, expectedActiveRevisionId)
-      : await repository.findLatestMasteryProposal(syllabus.id, expectedActiveRevisionId)
-    if (!canonical || canonical.id !== proposal.id) {
-      throw new SyllabusError('This Syllabus proposal has been superseded. Review the current proposal instead.', 409, 'PROPOSAL_SUPERSEDED')
-    }
+  if (proposal.proposal_kind !== 'learning_forecast') {
+    throw new SyllabusError('Only the current instructional forecast can be adopted.', 409, 'PROPOSAL_KIND_RETIRED')
+  }
+  const canonical = await repository.findLatestLearningForecastProposal(syllabus.id, expectedActiveRevisionId)
+  if (!canonical || canonical.id !== proposal.id) {
+    throw new SyllabusError('This Syllabus proposal has been superseded. Review the current proposal instead.', 409, 'PROPOSAL_SUPERSEDED')
   }
   const proposalForecast = await repository.listForecastItems(proposal.id)
-  if (proposal.proposal_kind === 'learning_forecast') {
-    const activeForecast = await repository.listForecastItems(expectedActiveRevisionId)
-    return persistSyllabusActivation({
-      repository,
-      facilitatorId,
-      learnerId,
-      snapshot: {
-        effective_from: today,
-        goals: proposal.goals,
-        subjects: proposal.subjects,
-        weekly_pattern: proposal.weekly_pattern,
-        teaching_guidance: proposal.teaching_guidance,
-        planning_policy: proposal.planning_policy,
-        legacy_provenance: proposal.legacy_provenance,
-        forecast_items: mergeLearningProposalWithActive({ activeItems: activeForecast, proposalItems: proposalForecast, today }),
-        change_reason: `Facilitator adopted instructional forecast proposal ${proposal.id}`,
-      },
-      now,
-      today,
-      allowCapacityException,
-      expectedActiveRevisionId,
-    })
-  }
-  if (String(proposal.effective_from).slice(0, 10) !== today) {
-    throw new SyllabusError('This Syllabus proposal was prepared on an earlier date. Create a current proposal before activation.', 409, 'PROPOSAL_STALE')
-  }
-  await enforceActivationCapacity({
+  const activeForecast = await repository.listForecastItems(expectedActiveRevisionId)
+  return persistSyllabusActivation({
     repository,
     facilitatorId,
     learnerId,
-    snapshot: { ...proposal, forecast_items: proposalForecast },
+    snapshot: {
+      effective_from: today,
+      goals: proposal.goals,
+      subjects: proposal.subjects,
+      weekly_pattern: proposal.weekly_pattern,
+      teaching_guidance: proposal.teaching_guidance,
+      planning_policy: proposal.planning_policy,
+      legacy_provenance: proposal.legacy_provenance,
+      forecast_items: mergeLearningProposalWithActive({ activeItems: activeForecast, proposalItems: proposalForecast, today }),
+      change_reason: `Facilitator adopted instructional forecast proposal ${proposal.id}`,
+    },
+    now,
+    today,
     allowCapacityException,
+    expectedActiveRevisionId,
+    allowLegacyOrigins: true,
   })
-  try {
-    const revision = await repository.commitRevisionActivation({
-      syllabusId: syllabus.id,
-      revisionId: proposal.id,
-      expectedActiveRevisionId,
-    })
-    return {
-      syllabus: await repository.findSyllabus(facilitatorId, learnerId),
-      active_revision: revision,
-      forecast_items: await repository.listForecastItems(revision.id),
-    }
-  } catch (error) {
-    if (error.code === '40001') {
-      throw new SyllabusError('The active Syllabus changed while this proposal was being activated. Review and try again.', 409, 'ACTIVATION_CONFLICT')
-    }
-    throw error
-  }
 }
 
-async function persistSyllabusActivation({ repository, facilitatorId, learnerId, snapshot, now, today = now.toISOString().slice(0, 10), requireNoActiveRevision = false, allowCapacityException = false, expectedActiveRevisionId = undefined }) {
+async function persistSyllabusActivation({ repository, facilitatorId, learnerId, snapshot, now, today = now.toISOString().slice(0, 10), requireNoActiveRevision = false, allowCapacityException = false, expectedActiveRevisionId = undefined, allowLegacyOrigins = false }) {
   await requireOwnedLearner(repository, learnerId, facilitatorId)
-  const planning = validateSnapshot(snapshot, { today })
+  const planning = validateSnapshot(snapshot, { today, allowLegacyOrigins })
   await enforceActivationCapacity({ repository, facilitatorId, learnerId, snapshot: planning, allowCapacityException })
   let syllabus = await repository.findSyllabus(facilitatorId, learnerId)
   if (!syllabus) syllabus = await repository.createOrFindSyllabus(facilitatorId, learnerId)
@@ -432,6 +395,7 @@ export async function adoptLearningForecastLineage({
     today,
     allowCapacityException,
     expectedActiveRevisionId,
+    allowLegacyOrigins: true,
   })
   if (!carryForward) return { ...adopted, carry_forward: { status: 'deferred', source_proposal_revision_id: proposal.id } }
   try {

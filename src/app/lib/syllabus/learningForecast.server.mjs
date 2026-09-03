@@ -80,7 +80,7 @@ export async function createLearningForecastProposal({
   let planning
   try {
     built = buildLearningForecastSnapshot({ activeRevision, forecastItems: inputs.forecastItems, plan, generatedItems, today: calendar.today })
-    planning = validateSnapshot(built.snapshot, { today: calendar.today })
+    planning = validateSnapshot(built.snapshot, { today: calendar.today, allowLegacyOrigins: true })
   } catch {
     throw new SyllabusError('The instructional forecast could not be generated. The active Syllabus was not changed.', 502, 'FORECAST_GENERATION_FAILED')
   }

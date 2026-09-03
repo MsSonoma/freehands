@@ -59,7 +59,7 @@ function forecastRepository({ forecast = [item()] } = {}) {
     learner: { id: LEARNER, facilitator_id: FACILITATOR, name: 'Avery', grade: '5th', approved_lessons: {} },
     syllabus: { id: SYLLABUS, facilitator_id: FACILITATOR, learner_id: LEARNER, active_revision_id: ACTIVE },
     revisions: [activeRevision()], forecast: structuredClone(forecast), receipts: [], writes: 0,
-    masteryProposal: { id: 'mastery-proposal', proposal_kind: 'mastery_reforecast' }, failCommitOnce: false,
+    failCommitOnce: false,
   }
   let sequence = 1
   const clone = (value) => value == null ? value : structuredClone(value)
@@ -73,7 +73,6 @@ function forecastRepository({ forecast = [item()] } = {}) {
     async findLatestLearningForecastProposal(syllabusId, baseRevisionId) {
       return clone(state.revisions.filter((row) => row.syllabus_id === syllabusId && row.base_revision_id === baseRevisionId && row.proposal_kind === 'learning_forecast' && !row.activated_at).at(-1) || null)
     },
-    async findLatestMasteryProposal() { return clone(state.masteryProposal) },
     async replaceLearningForecastProposal({ syllabusId, expectedActiveRevisionId, planning, proposalKey }) {
       assert.equal(state.syllabus.active_revision_id, expectedActiveRevisionId)
       const existing = state.revisions.find((row) => row.proposal_kind === 'learning_forecast' && row.base_revision_id === expectedActiveRevisionId && !row.activated_at)
@@ -183,7 +182,7 @@ test('model output cannot recast Slate follow-up work as instructional lessons',
   }), /authority boundary/)
 })
 
-test('identical authoritative inputs reuse learning proposal; changed evidence replaces only its kind', async () => {
+test('identical authoritative inputs reuse the sole learning proposal; changed evidence replaces it', async () => {
   const repository = forecastRepository()
   let modelCalls = 0
   let capturedContext
@@ -201,7 +200,7 @@ test('identical authoritative inputs reuse learning proposal; changed evidence r
   assert.equal(third.reused, false)
   assert.equal(modelCalls, 2)
   assert.equal(repository.state.revisions.filter((row) => row.proposal_kind === 'learning_forecast' && !row.activated_at).length, 1)
-  assert.equal(repository.state.masteryProposal.proposal_kind, 'mastery_reforecast')
+  assert.equal(repository.state.revisions.some((row) => row.proposal_kind === 'mastery_reforecast'), false)
 })
 
 test('explicit proposal activation preserves learning origin and description', async () => {
@@ -235,20 +234,19 @@ test('a still-current learning forecast is accepted days later through a fresh l
   assert.equal(repository.state.revisions.find((row) => row.id === proposal.proposal_revision.id).activated_at, null)
 })
 
-test('mastery proposals retain the same-day activation guard', async () => {
+test('legacy mastery proposals cannot be activated through the current proposal path', async () => {
   const repository = forecastRepository()
   const mastery = {
     ...activeRevision(), id: 'mastery-proposal', revision_number: 2, base_revision_id: ACTIVE,
     effective_from: '2026-08-31', activated_at: null, proposal_kind: 'mastery_reforecast', proposal_key: 'mastery-key',
   }
-  repository.state.masteryProposal = mastery
   repository.state.revisions.push(mastery)
   repository.state.forecast.push(item({ id: 'mastery-item', revision_id: mastery.id, origin: 'mastery_reforecast', item_type: 'review' }))
   await assert.rejects(activateProposedSyllabus({
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER,
     proposalRevisionId: mastery.id, expectedActiveRevisionId: ACTIVE,
     now: new Date('2026-09-03T14:00:00.000Z'), today: '2026-09-03',
-  }), { code: 'PROPOSAL_STALE' })
+  }), { code: 'PROPOSAL_KIND_RETIRED' })
   assert.equal(repository.state.syllabus.active_revision_id, ACTIVE)
 })
 

@@ -2,7 +2,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 const REQUIRED_SECTIONS = ['goals', 'subjects', 'weekly_pattern', 'teaching_guidance', 'planning_policy', 'legacy_provenance', 'forecast_items']
 const ITEM_TYPES = new Set(['lesson', 'review', 'check', 'unit'])
-const ORIGINS = new Set(['legacy_import', 'generated', 'facilitator', 'mastery_reforecast', 'learning_forecast'])
+const CURRENT_ORIGINS = new Set(['legacy_import', 'generated', 'facilitator', 'learning_forecast'])
+const LEGACY_ORIGINS = new Set(['mastery_reforecast'])
 
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value)
 const cleanText = (value) => typeof value === 'string' ? value.trim() : ''
@@ -50,7 +51,7 @@ export function validateLearnerId(value) {
   return String(value)
 }
 
-export function validateSnapshot(input, { today = todayDate() } = {}) {
+export function validateSnapshot(input, { today = todayDate(), allowLegacyOrigins = false } = {}) {
   if (!isObject(input)) throw new SyllabusError('A complete Syllabus snapshot is required')
   const missing = REQUIRED_SECTIONS.filter((key) => !Object.prototype.hasOwnProperty.call(input, key))
   if (missing.length) throw new SyllabusError(`Missing required snapshot sections: ${missing.join(', ')}`)
@@ -103,7 +104,9 @@ export function validateSnapshot(input, { today = todayDate() } = {}) {
       throw new SyllabusError(`forecast_items[${index}].subject references undeclared subject "${subject}"`)
     }
     if (!ITEM_TYPES.has(itemType)) throw new SyllabusError(`forecast_items[${index}].item_type is invalid`)
-    if (!ORIGINS.has(origin)) throw new SyllabusError(`forecast_items[${index}].origin is invalid`)
+    if (!CURRENT_ORIGINS.has(origin) && !(allowLegacyOrigins && LEGACY_ORIGINS.has(origin))) {
+      throw new SyllabusError(`forecast_items[${index}].origin is invalid`)
+    }
     if (!UUID.test(String(item.lineage_id || ''))) throw new SyllabusError(`forecast_items[${index}].lineage_id is invalid`)
     if (description.length > 2000) throw new SyllabusError(`forecast_items[${index}].description is too long`)
     if (item.metadata !== undefined && !isObject(item.metadata)) throw new SyllabusError(`forecast_items[${index}].metadata must be an object`)

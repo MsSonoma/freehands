@@ -73,11 +73,13 @@ Standalone historical Slate-only rows remain visible as non-instructional activi
 
 The active weekly pattern, not the model, owns next week's instructional slot count, dates, and subjects. `POST /api/syllabus/forecast` expands that pattern on the server, subtracts timeline slots already occupied by educator-authored or materialized intent, and asks the model only for a title and concise first-class description for each remaining slot. The bounded model context contains current Syllabus planning inputs plus whitelisted `facilitator-evidence-v1` summaries; it never contains browser history prose, transcript text, or raw evidence events.
 
-The result is one inactive revision with `proposal_kind = learning_forecast`. Its deterministic `proposal_key` covers the active revision, target week, planning inputs, current intent, occupied timeline, and evidence summaries. Identical authoritative inputs reuse the current proposal before another model request. A learning forecast and a mastery reforecast are independent proposal kinds and may coexist. Only explicit facilitator adoption creates active intent.
+The result is one inactive revision with `proposal_kind = learning_forecast`. Its deterministic `proposal_key` covers the active revision, target week, planning inputs, current intent, occupied timeline, and evidence summaries. Identical authoritative inputs reuse the current proposal before another model request. This evidence-informed learning forecast is the sole current instructional forecasting authority. Only explicit facilitator adoption creates active intent.
+
+The former `mastery_reforecast` proposal authority is retired. Current reads do not load or expose inactive mastery proposals, no route or repository service can create one, and generic proposal activation accepts only `learning_forecast`. Historical database functions and constraints remain inert in immutable migrations. Schema and timeline presentation may still recognize already-activated `mastery_reforecast` items so a restored historical Syllabus remains readable, but browser-authored snapshots cannot introduce that legacy origin.
 
 Forecast descriptions live in `syllabus_forecast_items.description`; legacy rows may remain null. AI-proposed items retain `origin = learning_forecast` through adoption and later revision copying.
 
-Learning-forecast acceptance creates a fresh immutable active revision with the facilitator-local acceptance date after verifying that the proposal is still canonical and still based on the exact active pointer. This permits a still-current forecast to be deliberately accepted several days after generation without relaxing the existing same-day mastery-reforecast rule.
+Learning-forecast acceptance creates a fresh immutable active revision with the facilitator-local acceptance date after verifying that the proposal is still canonical and still based on the exact active pointer. This permits a still-current forecast to be deliberately accepted several days after generation.
 
 Materialization addresses one exact `lineage_id`, never a title. If the occurrence is still proposed, `adoptLearningForecastLineage()` copies only that selected conceptual item into a fresh active revision; sibling AI items never become active through the one-lineage action. Before claiming a materialization receipt or invoking the generator, the server deterministically carries non-conflicting unaccepted siblings into a fresh inactive `learning_forecast` proposal based on that adopted active pointer. Generator or binding failure therefore leaves the remainder current and actionable. If lesson-key binding succeeds and advances the active pointer again, that current remainder proposal is deterministically rebased onto the final bound revision without a forecast-model call. The carry-forward proposal stores only the remaining AI concepts, preserves their exact lineages/titles/descriptions/subjects/dates/metadata, records root and immediate proposal provenance, and uses a deterministic `learning-forecast-rebase-v1` identity. A sibling whose date/sort slot is occupied by active intent is dropped. Whole-proposal adoption merges these delta proposals with their exact active base, so deliberate adoption of the displayed remainder preserves already accepted intent.
 
@@ -88,6 +90,8 @@ The service-role receipt UUID is also the trusted generator operation identity. 
 ### Unified facilitator planning surface
 
 The facilitator Syllabus is the primary interaction surface for Goals, Subjects, Weekly Pattern, Teaching Guidance, future lesson concepts, and explicit multiweek planning. These controls do not introduce a second planning record: saves create complete immutable Syllabus revisions through the same activation transaction and exact expected-active pointer check. Subject and weekly-pattern edits reuse canonical snapshot validation and capacity enforcement; historical occurrences remain derived from their existing session/event authority.
+
+The facilitator sees one forecast workflow. There is no separate mastery-evidence check, mastery proposal state, annotation layer, or activation control. Mastery-specific practice, recovery, review, follow-up, and retention remain supplemental Mr. Slate work and are never converted into ordinary instructional forecast items.
 
 When the facilitator navigates to the next instructional week, the client performs one explicit `POST /api/syllabus/forecast` check for the learner, active revision, and target week. Response acceptance additionally requires the same selected week and request sequence, so a late success or error for week A cannot alter week B. Same-view overlay rerenders do not change that identity. The normal Syllabus GET remains read-only. The server remains the idempotency authority and either reuses the deterministic proposal, returns no action, or produces a replacement proposal from changed authoritative inputs. Inactive proposal controls are facilitator-only.
 
@@ -126,6 +130,7 @@ The active composer is not a replacement for the no-active-Syllabus compatibilit
 - Do not activate sibling forecast lineages when one proposed concept is selected for generation.
 - Do not fabricate a learner grade when the canonical owned learner record has none.
 - Do not treat `learning_forecast` as `mastery_reforecast` or turn Slate review/recovery options into ordinary instruction.
+- Do not restore a route, repository writer, read-model field, UI control, or generic activation path for current `mastery_reforecast` proposals.
 
 ## Key Files
 

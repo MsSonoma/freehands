@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   dateOnly,
-  matchMasteryAnnotations,
   moveSyllabusWeek,
   selectSyllabusWeek,
   syllabusActionPresentation,
@@ -103,7 +102,6 @@ export default function SyllabusDocument({
   learnerId = '',
   planTier = 'free',
   learnerName = '',
-  proposedReforecast = null,
   lessonState = () => ({ hasLessonArtifact: false, hasProgress: false }),
   onOpenLesson = null,
   onLessonAction = null,
@@ -115,7 +113,6 @@ export default function SyllabusDocument({
   onRecordHistoricalActivity = null,
   historicalActivityBusy = '',
   legacyWebbCompletions = {},
-  proposalHref = '/facilitator/syllabus',
   planningHref = '/facilitator/syllabus',
   onOpenPlanning = null,
   onEditSection = null,
@@ -135,8 +132,6 @@ export default function SyllabusDocument({
   const entitlements = syllabusEntitlementsFor({ role, planTier })
   const pattern = weeklyPatternRows(revision?.weekly_pattern)
   const guidanceSummary = teachingGuidanceSummary(revision?.teaching_guidance)
-  const proposalItems = proposedReforecast?.forecast_items || []
-  const { assignments: proposalAnnotations, unmatched: unmatchedProposals } = matchMasteryAnnotations(forecastItems, proposalItems)
   const move = (action) => setSelectedWeekStart((weekStart) => moveSyllabusWeek(weekStart, action, today))
   const actionHref = (item, actionId) => {
     if (typeof resolveActionHref === 'function') return resolveActionHref(item, actionId)
@@ -209,7 +204,6 @@ export default function SyllabusDocument({
             const currentLesson = lessonState(item) || {}
             const state = syllabusItemState({ item, today, hasProgress: currentLesson.hasProgress })
             const actions = syllabusItemActionsFor({ item, role, state, hasLessonArtifact: currentLesson.hasLessonArtifact, readinessState: item.readiness_state, isScheduled: item.is_explicit_schedule, isToday: dateOnly(item.planned_date) === dateOnly(today) })
-            const notes = proposalAnnotations.get(item.id || item.lineage_id || `${dateOnly(item.planned_date)}:${item.subject}:${item.title}`) || []
             const occurrenceKey = item.occurrence_id || item.id || `${item.lineage_id}-${item.planned_date}`
             const assignedTeacher = normalizeInstructionalTeacher(item.assigned_instructional_teacher || item.instructional_teacher) || 'sonoma'
             const historicalActivityAllowed = item.historical_record !== true
@@ -277,22 +271,12 @@ export default function SyllabusDocument({
                   busy={historicalActivityBusy === occurrenceKey}
                   onRecord={onRecordHistoricalActivity}
                 />}
-                {role === 'facilitator' && notes.length > 0 && <aside className={styles.marginNote}><strong>Mastery note</strong>{notes.map((note) => <span key={note.id || note.lineage_id}>{note.title}</span>)}<a href={proposalHref}>Review proposed change</a></aside>}
               </div>
             )
           })}
           </section>)}
         </div>
       </section>
-
-      {role === 'facilitator' && unmatchedProposals.length > 0 && (
-        <aside className={styles.unmatchedNotes}>
-          <strong>Mastery proposals for general review</strong>
-          <p>These proposals could not be linked confidently to one specific Syllabus lesson.</p>
-          {unmatchedProposals.map((note) => <span key={note.id || note.lineage_id}>{note.subject}: {note.title}</span>)}
-          <a href={proposalHref}>Review proposed change</a>
-        </aside>
-      )}
 
       {week.state === 'future' && role === 'facilitator' && (
         <div className={styles.futurePlanning}>

@@ -107,7 +107,7 @@ export async function replaceLearningForecastConcept({ repository, facilitatorId
   } catch { throw new SyllabusError('A replacement idea could not be generated. The current forecast was preserved.', 502, 'FORECAST_REPLACEMENT_FAILED') }
   const fields = conceptFields(generated)
   const replacement = { ...selected, ...fields, metadata: { ...(selected.metadata || {}), learning_forecast_replacement: { version: 1, source_proposal_revision_id: proposal.id } } }
-  const planning = validateSnapshot(snapshot(current.revision, proposalItems.map((item) => String(item.lineage_id) === String(lineageId) ? replacement : item), today, `Replaced instructional forecast concept ${lineageId}`), { today })
+  const planning = validateSnapshot(snapshot(current.revision, proposalItems.map((item) => String(item.lineage_id) === String(lineageId) ? replacement : item), today, `Replaced instructional forecast concept ${lineageId}`), { today, allowLegacyOrigins: true })
   const proposalKey = `learning-forecast-replace-v1:${createHash('sha256').update(JSON.stringify({ source: proposal.id, lineageId, title: fields.title, description: fields.description })).digest('hex')}`
   const result = await repository.replaceLearningForecastProposal({ syllabusId: current.syllabus.id, expectedActiveRevisionId, planning, proposalKey })
   return { kind: 'proposal', reused: result.reused === true, active_revision_id: expectedActiveRevisionId, proposal_revision: result.revision, forecast_items: await repository.listForecastItems(result.revision.id) }
